@@ -1,0 +1,110 @@
+.search-string-editor {
+    /* The mention autocomplete's colours. The Next theme swaps in the hover pair from
+       `theme-next/ribbon.css`; the legacy themes define those as transparent. */
+    --search-completion-selected-background: var(--active-item-background-color, color-mix(in srgb, var(--main-text-color) 15%, transparent));
+    --search-completion-selected-text: var(--active-item-text-color, inherit);
+
+    .cm-editor {
+        background: transparent;
+        max-height: 12em;
+    }
+
+    .cm-editor.cm-focused {
+        outline: none;
+    }
+
+    .cm-scroller {
+        /* Outweighs the global `.cm-scroller` rule, which puts code notes in the monospace font. */
+        font-family: var(--main-font-family) !important;
+        font-size: inherit;
+        line-height: inherit;
+        /* The max-height above only scrolls against an overflow here. */
+        overflow: auto;
+    }
+
+    .cm-content {
+        padding: 0;
+        caret-color: var(--input-text-color);
+    }
+
+    .cm-line {
+        padding: 0;
+        /* `.search-setting-table div` sets nowrap on every descendant. */
+        white-space: pre-wrap;
+    }
+
+    /* Over Bootstrap dropdowns, which sit at 1000: the quick search hangs its results off this
+       same field, and the popup and its lint tooltips have to cover them. */
+    .cm-editor .cm-tooltip {
+        z-index: 1010;
+    }
+
+    /* Outweighs CodeMirror's `&light .cm-tooltip`, which carries two classes. */
+    .cm-editor .cm-tooltip.cm-tooltip-autocomplete {
+        font-size: 0.8125em;
+        background: var(--menu-background-color-no-backdrop, var(--main-background-color));
+        color: var(--menu-text-color, var(--main-text-color));
+        border: 1px solid var(--dropdown-border-color, var(--main-border-color));
+        border-radius: var(--dropdown-border-radius, var(--bs-border-radius));
+        box-shadow: 0 5px 10px rgba(0, 0, 0, var(--dropdown-shadow-opacity, 0.2));
+        overflow: hidden;
+        padding: 4px;
+
+        /* CodeMirror sets monospace on the popup; the field itself is in the UI font. */
+        & > ul {
+            font-family: inherit;
+            max-height: 18em;
+        }
+
+        /* A mention row's metrics: `ul.ck.ck-list button.ck-button` in the Next theme, over the
+           1.84/13px line CKEditor gives `.ck-button__label`. 28px bare, 46px with a description. */
+        & > ul > li {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 2px 16px;
+            border-radius: 6px;
+            line-height: calc(1.84 * 13px);
+        }
+
+        .cm-completion-glyph {
+            margin-inline-end: 0.4em;
+            opacity: 0.7;
+        }
+
+        .cm-completionDetail {
+            flex-basis: 100%;
+            margin-left: 0;
+            font-size: 0.75em;
+            line-height: 1.84;
+            font-style: normal;
+            opacity: 0.75;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        & > ul > li[aria-selected] {
+            background: var(--search-completion-selected-background);
+            color: var(--search-completion-selected-text);
+        }
+    }
+
+    .cm-diagnostic {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5em;
+    }
+
+    .cm-diagnosticAction {
+        margin-left: 0;
+    }
+
+    .cm-placeholder {
+        /* The hint names several keys, and the field is one line tall. */
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

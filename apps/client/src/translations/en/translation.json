@@ -1261,7 +1261,8 @@
     "filter-none": "All icons",
     "filter-default": "Default icons",
     "icon_tooltip": "{{name}}\nIcon pack: {{iconPack}}",
-    "no_results": "No icons found."
+    "no_results": "No icons found.",
+    "insert_icon": "Insert icon"
   },
   "basic_properties": {
     "note_type": "Note type",
@@ -1514,7 +1515,7 @@
   },
   "search_string": {
     "title_column": "Search string:",
-    "placeholder": "fulltext keywords, #tag = value...",
+    "placeholder": "Ctrl+Space for suggestions, @ for a note, Shift+Enter for a new line, Enter to search",
     "search_syntax": "Search syntax",
     "also_see": "also see",
     "complete_help": "complete help on search syntax",
@@ -1526,7 +1527,13 @@
     "label_year_comparison": "numerical comparison (also >, >=, <).",
     "label_date_created": "notes created in the last month",
     "error": "Search error: {{error}}",
-    "search_prefix": "Search:"
+    "search_prefix": "Search:",
+    "hints": {
+      "title": "Search string",
+      "completions": "Show suggestions",
+      "new_line": "New line",
+      "run_search": "Run the search"
+    }
   },
   "attachment_detail": {
     "open_help_page": "Open help page on attachments",
@@ -2506,7 +2513,9 @@
   "shared_info": {
     "shared_publicly": "This note is shared publicly on {{- link}}.",
     "shared_locally": "This note is shared locally on {{- link}}.",
-    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
+    "shared_preview": "This note is shared on {{- link}}, but only this browser can open that page, and only while Trilium is open in it. Publishing it for others needs a Trilium server.",
+    "shared_export_only": "This note is shared, but the mobile app cannot open shared pages. To publish it, export the subtree as \"{{format}}\" and host the files on any web server, or use a Trilium server."
   },
   "read-only-info": {
     "read-only-note": "Currently viewing a read-only note.",
@@ -3464,6 +3473,8 @@
     "card-count-with-archived_other": "{{count}} active cards, {{archived}} archived",
     "card-count-over-limit": "The card limit set for this column is exceeded!",
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
+    "delete-column-notes_one": "Also delete the note in this column",
+    "delete-column-notes_other": "Also delete the {{count}} notes in this column",
     "new-item": "New card",
     "new-item-placeholder": "Enter card title...",
     "add-new-item": "Add new card",
@@ -3507,7 +3518,7 @@
     "new-template-name": "New card template",
     "more-templates": "More templates…",
     "card-template": "Select a card template",
-    "collapse-hint": "Double click to collapse",
+    "collapse-hint": "Double click or press Space to collapse",
     "set-limit": "Set limit...",
     "set-limit-ok": "Set limit",
     "limit-capacity": "Warn for exceeding the column capacity",
@@ -3531,6 +3542,7 @@
       "insert_item": "Insert card below / above",
       "insert_column": "Insert column after / before",
       "open_item": "Open card",
+      "toggle_column": "Collapse / expand the column (on a column header)",
       "rename": "Rename card or column",
       "remove_item": "Remove card from the board",
       "delete_item": "Delete the note",
@@ -3757,7 +3769,11 @@
     "save_status_error": "Save failed",
     "save_status_saving_tooltip": "Changes are being saved.",
     "save_status_unsaved_tooltip": "There are unsaved changes. They will be saved automatically in a moment.",
-    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application."
+    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application.",
+    "shared_preview": "Share preview",
+    "shared_preview_description": "Only this browser can open the shared page, and only while Trilium is open in it. To publish it, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server.",
+    "shared_export_only": "Not published",
+    "shared_export_only_description": "The mobile app cannot open shared pages. To publish this note, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server."
   },
   "status_bar": {
     "language_title": "Change content language",
@@ -4250,7 +4266,19 @@
       "upload-an-image-from-your-device": "Upload an image from your device.",
       "upload-image": "Upload image",
       "warning": "Warning",
-      "working": "Working…"
+      "working": "Working…",
+      "insert-icon": "Insert icon",
+      "icon": "Icon",
+      "insert-an-icon-from-an-installed-icon-pack": "Insert an icon from an installed icon pack",
+      "transform-icon": "Transform icon",
+      "icon-toolbar": "Icon toolbar",
+      "no-transform": "No transform",
+      "rotate-90": "Rotate 90°",
+      "rotate-180": "Rotate 180°",
+      "rotate-270": "Rotate 270°",
+      "flip-horizontally": "Flip horizontally",
+      "flip-vertically": "Flip vertically",
+      "change-icon": "Change icon"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -4302,5 +4330,58 @@
       "pan_right": "Right",
       "pan_fast": "Faster panning"
     }
+  },
+  "search_lint": {
+    "relation_needs_property": "Relations point to a note, so they cannot be checked for equality. Use . instead to access its properties.",
+    "text_needs_contains": "note.text searches the title and content together, so it can only be matched with *=*.",
+    "content_not_ordered": "Note content is text, so it cannot be ordered. Use *=* to match it instead.",
+    "compare_the_title": "Compare the title",
+    "use_operator": "Use {{operator}}"
+  },
+  "search_completion": {
+    "note": "Note title, properties and related notes",
+    "operator_equal": "Equals the whole value",
+    "operator_not_equal": "Does not equal the whole value",
+    "operator_contains": "Contains",
+    "operator_starts_with": "Starts with",
+    "operator_ends_with": "Ends with",
+    "operator_greater_than": "Greater than",
+    "operator_greater_or_equal": "Greater than or equal to",
+    "operator_less_than": "Less than",
+    "operator_less_or_equal": "Less than or equal to",
+    "operator_regex": "Matches a regular expression",
+    "operator_fuzzy_equal": "Equals, tolerating typos",
+    "operator_fuzzy_contains": "Contains, tolerating typos",
+    "property_content": "The note's body text",
+    "property_raw_content": "The note's body text, before its formatting is stripped",
+    "property_text": "The title or the body text",
+    "property_parents": "Continues on the note's parents",
+    "property_children": "Continues on the note's children",
+    "property_ancestors": "Continues on the note's ancestors",
+    "property_labels": "Followed by a label name",
+    "property_relations": "Followed by a relation name, then that note's own properties",
+    "property_attribute_count": "Number of labels and relations, including inherited ones",
+    "property_label_count": "Number of labels, including inherited ones",
+    "property_relation_count": "Number of relations, including inherited ones",
+    "property_relation_count_including_links": "Number of relations, counting the ones made by links",
+    "property_owned_relation_count_including_links": "Number of the note's own relations, counting the ones made by links",
+    "property_target_relation_count_including_links": "Number of relations targeting the note, counting the ones made by links",
+    "keyword_and": "Both conditions must match",
+    "keyword_or": "Either condition must match",
+    "keyword_not": "Excludes the notes the condition in parentheses matches",
+    "keyword_order_by": "Sorts the results by a property or label",
+    "keyword_limit": "Keeps only the first results",
+    "date_now": "The current date and time",
+    "date_today": "Today's date",
+    "date_month": "The current month",
+    "date_year": "The current year",
+    "date_now_offset": "Any number of seconds before now",
+    "date_today_offset": "Any number of days before today",
+    "date_month_offset": "Any number of months before this one",
+    "date_year_offset": "Any number of years before this one",
+    "label_marker": "Refers to a label. Press Enter to see the list of labels",
+    "label_marker_negated": "Excludes a label. Press Enter to see the list of labels",
+    "relation_marker": "Refers to a relation. Press Enter to see the list of relations",
+    "relation_marker_negated": "Excludes a relation. Press Enter to see the list of relations"
   }
 }

@@ -140,7 +140,7 @@ describe("Share API test", () => {
         // A note cloned both under the share tree and elsewhere can surface with a
         // best note path that never passes through the requested ancestor — such a
         // result must be treated as not visible.
-        const { isVisibleInShareTree } = await import("./routes.js");
+        const { isVisibleInShareTree } = await import("@triliumnext/core/src/share/index.js");
         expect(isVisibleInShareTree(SHARE_ROOT_ID, ["root", "someUnsharedNote"])).toBe(false);
     });
 

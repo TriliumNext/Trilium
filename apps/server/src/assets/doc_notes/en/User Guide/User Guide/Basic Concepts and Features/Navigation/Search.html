@@ -7,6 +7,46 @@
   You also have the option to save your searches, which will create a special
   search note which is visible on your navigation tree and contains the search
   results as sub-items.</p>
+<h2>Types of search</h2>
+<p>There are multiple types of searches, all using the same search mechanism
+  and query language:</p>
+<ul>
+  <li>
+    <p><a class="reference-link" href="#root/_help_Ms1nauBra7gq">Quick search</a>&nbsp;which
+      can be found in the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp;for
+      small one-off searches.</p>
+    <ul>
+      <li>The results are shown in a popup and it has an infinite scroll.</li>
+    </ul>
+  </li>
+  <li>
+    <p><em>Full search</em> is the more advanced search mechanism.</p>
+    <ul>
+      <li>The results are displayed in a separate page and it has multiple advanced
+        features (search script, fast search, include archived notes, order by,
+        limit).</li>
+      <li><a class="reference-link" href="#root/_help_ivYnonVFBxbQ">Bulk Actions</a>&nbsp;such
+        as adding a label/relation can be applied to the results.</li>
+      <li>The results are paginated and they can be displayed in any&nbsp;<a class="reference-link"
+        href="#root/_help_GTwFsgaA0lCt">Collections</a>&nbsp;view (e.g. grid, list,
+        calendar, table).</li>
+    </ul>
+  </li>
+  <li>
+    <p>Some&nbsp;<a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Collections</a>&nbsp;such
+      as board view have a dedicated search bar which applies to that collection.</p>
+    <ul>
+      <li>In this case, the results are displayed directly in the collection instead
+        of a popup and they are limited to the collection but the query language
+        remains the same.</li>
+    </ul>
+  </li>
+</ul>
+<aside class="admonition note">
+  <p><a href="#root/_help_F1r9QtzQLZqm">Jump to note</a> is a similar concept
+    but it's mainly used to search for notes by title, not by content. Nevertheless,
+    it also features a way to search in full text if the results are unsatisfactory.</p>
+</aside>
 <h2>Accessing the search</h2>
 <ul>
   <li>From the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>,
@@ -14,6 +54,8 @@
   <li>To limit the search to a note and its children, select <em>Search from subtree</em> from
     the&nbsp;<a class="reference-link" href="#root/_help_YtSN43OrfzaA">Note tree contextual menu</a>&nbsp;or
     press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>.</li>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_F1r9QtzQLZqm">Jump to &amp; command palette</a>,
+    look for something then press <em>Search in full text</em> (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).</li>
 </ul>
 <h2>Interaction</h2>
 <p>To search for notes, click on the magnifying glass icon on the toolbar
@@ -45,6 +87,66 @@
   <li>The <em>Save to note</em> will create a new note with the search configuration.
     For more information, see&nbsp;<a class="reference-link" href="#root/_help_m523cpzocqaD">Saved Search</a>.</li>
 </ol>
+<h2>Features</h2>
+<h3>Autocomplete</h3>
+<p>To help with the syntax, Trilium offers an autocomplete functionality
+  which can be triggered by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>.</p>
+<p>The autocomplete offers:</p>
+<ul>
+  <li>
+    <p>Basic operators such as <code>*=</code> and keywords (<code>limit</code>, <code>not</code>).</p>
+  </li>
+  <li>
+    <p>Fields for object-like fields such as <code>note</code> or <code>~relation</code>,
+      triggered by typing <code>.</code>.</p>
+  </li>
+  <li>
+    <p>Contextual enumerations such as <code>note.type = "</code> or <code>note.mime = "</code>.</p>
+  </li>
+  <li>
+    <p><a href="#root/_help_HI6GBBIduIgv">Label</a> names by typing <code>#</code>,
+      with user-defined ones shown first.</p>
+    <ul>
+      <li>A gear icon indicates system attributes.</li>
+      <li>After typing the label name, the value is also autocompleted with values
+        that are present in the database.</li>
+    </ul>
+  </li>
+  <li>
+    <p><a href="#root/_help_Cq5X6iKQop6R">Relation</a> names by typing <code>~</code>.</p>
+  </li>
+  <li>
+    <p><a href="#root/_help_m1lbrzyKDaRB">Note ID</a>s can be inserted easily
+      by typing <code>@</code> and looking for a note.</p>
+    <ul>
+      <li>If the note ID is under a valid syntax, it will be shown as a chip of
+        the note instead of the raw ID.</li>
+      <li>This is especially useful for queries that make use of the note ID such
+        as searching by template: <code>~template.noteId = @</code>
+      </li>
+    </ul>
+  </li>
+</ul>
+<h3>Syntax highlighting</h3>
+<p>The search input features syntax highlighting, making recognized fields
+  such as <code>note.</code> and operators like <code>NOT</code> stand out.</p>
+<h3>Error highlighting &amp; linting</h3>
+<p>The search is also checked for errors in two phases, which will be displayed
+  as a red squiggle:</p>
+<ul>
+  <li>Linter errors which identify common error patterns and also provide a
+    way to fix them.</li>
+  <li>Search errors which are checked by the server, without indicating the
+    exact place the error occurred.</li>
+</ul>
+<h3>Multiline</h3>
+<p>Long or complicated searches can be formatted by using newlines, similar
+  to SQL queries. Newlines are treated just like spaces.</p>
+<p>To add a new line, press <kbd>Shift</kbd>+<kbd>Enter</kbd>.</p>
+<aside class="admonition note">
+  <p>Multiline is available only for the full search, other inputs such as
+    the quick search or the collection filter are single line.</p>
+</aside>
 <h2>Search options</h2>
 <p>Click on which search option to apply from the Add search option section.</p>
 <ul>
@@ -141,567 +243,7 @@
     folded heading), that section is expanded automatically so the match is
     visible.</li>
 </ul>
-<h2>How search matches your text</h2>
-<p>The single most common source of confusion is that the <code>=</code> sign
-  means two <em>different</em> things depending on where it appears. Read this
-  section once and the rest of search becomes predictable.</p>
-<p>There are three matching modes:</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Mode</th>
-        <th>How you trigger it</th>
-        <th>What it matches</th>
-        <th>Substring?</th>
-        <th>Fuzzy (typos)?</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Default</strong>
-        </td>
-        <td>type words with no prefix</td>
-        <td>whole words <em>and</em> substrings, anywhere in title, content or attributes,
-          relevance-ranked</td>
-        <td>Yes</td>
-        <td>Yes</td>
-      </tr>
-      <tr>
-        <td><strong>Exact full-text</strong>
-        </td>
-        <td>a leading <code>=</code> (e.g. <code>=sync</code>)</td>
-        <td>the exact whole word or phrase, ignoring surrounding punctuation</td>
-        <td>No</td>
-        <td>No</td>
-      </tr>
-      <tr>
-        <td><strong>Attribute / property equality</strong>
-        </td>
-        <td><code>=</code> inside a <code>#label=value</code> or <code>note.property=value</code> clause</td>
-        <td>the <em>entire</em> attribute or property value, exactly</td>
-        <td>No</td>
-        <td>No</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<p>Every example below is backed 1:1 by an automated test, so the documentation
-  cannot drift from the engine.</p>
-<h3>Default matching (no prefix)</h3>
-<p><strong>Rule:</strong> typing words with no prefix finds notes that contain
-  those words anywhere in the title, content or attributes, as whole words
-  or as substrings. The closest matches are ranked first.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example note content</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>sync</code>
-        </td>
-        <td><code>please sync the folders</code>
-        </td>
-        <td>Yes (ranked higher)</td>
-        <td>contains the exact word <code>sync</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>sync</code>
-        </td>
-        <td><code>synchronize the database now</code>
-        </td>
-        <td>Yes (ranked lower)</td>
-        <td><code>sync</code> is a substring of <code>synchronize</code>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Exact match with the <code>=</code> prefix</h3>
-<p><strong>Rule:</strong> a leading <code>=</code> switches the full-text search
-  to exact matching. It finds the whole word or phrase only, ignoring surrounding
-  punctuation, with <strong>no</strong> substring and <strong>no</strong> fuzzy
-  matching. Use it when a normal search returns too many near-matches.</p>
-<figure
-class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example note content</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>=sync</code>
-        </td>
-        <td><code>see (sync) mode</code>
-        </td>
-        <td>Yes</td>
-        <td><code>(sync)</code> is the whole word <code>sync</code>; punctuation is
-          ignored</td>
-      </tr>
-      <tr>
-        <td><code>=sync</code>
-        </td>
-        <td><code>in sync, then continue</code>
-        </td>
-        <td>Yes</td>
-        <td><code>sync,</code> is the whole word <code>sync</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>=sync</code>
-        </td>
-        <td><code>he said "sync" out loud</code>
-        </td>
-        <td>Yes</td>
-        <td><code>"sync"</code> is the whole word <code>sync</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>=sync</code>
-        </td>
-        <td><code>synchronize the database now</code>
-        </td>
-        <td>No</td>
-        <td><code>=</code> never matches substrings</td>
-      </tr>
-      <tr>
-        <td><code>=sync</code>
-        </td>
-        <td><code>please send the file</code>
-        </td>
-        <td>No</td>
-        <td><code>=</code> never matches typos / fuzzy</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<p>To match an exact <strong>phrase</strong>, quote it after the <code>=</code> (single,
-  double or backtick quotes all work). The phrase must appear as consecutive
-  words, but punctuation between or around them is ignored:</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example note (title or content)</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>="project plan"</code>
-        </td>
-        <td>title <code>Project Plan</code>
-        </td>
-        <td>Yes</td>
-        <td>the title is exactly the phrase</td>
-      </tr>
-      <tr>
-        <td><code>="project plan"</code>
-        </td>
-        <td><code>the (project plan) is ready to share</code>
-        </td>
-        <td>Yes</td>
-        <td>the consecutive phrase appears; punctuation is ignored</td>
-      </tr>
-      <tr>
-        <td><code>="project plan"</code>
-        </td>
-        <td><code>the plan for this project is late</code>
-        </td>
-        <td>No</td>
-        <td>the words are present but not consecutive</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Attribute and property equality (<code>=</code>, <code>!=</code>)</h3>
-<p><strong>Rule:</strong> when <code>=</code> compares an attribute or property,
-  as in <code>#label=value</code> or <code>note.title=value</code>, it is <strong>strict full-value equality</strong>:
-  the <em>whole</em> value must equal what you typed, ignoring case and diacritics.
-  This is <strong>not</strong> word matching. <code>!=</code> inverts it.</p>
-<p>The examples below assume four notes: <em>Austria</em> (<code>#capital=Vienna</code>), <em>Somewhere</em> (<code>#capital=Vienna Austria</code>), <em>Czech Republic</em> (<code>#capital=Prague</code>)
-  and <em>Switzerland</em> (<code>#capital=Zürich</code>).</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example label value</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>#capital=Vienna</code>
-        </td>
-        <td><code>Vienna</code>
-        </td>
-        <td>Yes</td>
-        <td>the whole value equals <code>Vienna</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#capital=Vienna</code>
-        </td>
-        <td><code>Vienna Austria</code>
-        </td>
-        <td>No</td>
-        <td>the whole value is <code>Vienna Austria</code>, not <code>Vienna</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#capital="Vienna Austria"</code>
-        </td>
-        <td><code>Vienna Austria</code>
-        </td>
-        <td>Yes</td>
-        <td>quote a multi-word value to match it in full</td>
-      </tr>
-      <tr>
-        <td><code>#capital=Zurich</code>
-        </td>
-        <td><code>Zürich</code>
-        </td>
-        <td>Yes</td>
-        <td>equality ignores diacritics</td>
-      </tr>
-      <tr>
-        <td><code>#capital!=Vienna</code>
-        </td>
-        <td><code>Prague</code>
-        </td>
-        <td>Yes</td>
-        <td><code>!=</code> matches every value that is not <code>Vienna</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#capital!=Vienna</code>
-        </td>
-        <td><code>Vienna</code>
-        </td>
-        <td>No</td>
-        <td><code>!=</code> excludes the exact value</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<blockquote>
-  <p><strong>Quick search relaxes this.</strong> The <a href="#root/_help_Ms1nauBra7gq">Quick search</a> bar
-    and autocomplete treat an attribute <code>=</code> as "contains", so <code>#capital=Vienna</code> typed
-    there also matches <code>Vienna Austria</code>. The strict full-value equality
-    described here applies only in the full Search.</p>
-</blockquote>
-<h3>Fuzzy operators (<code>~=</code> and <code>~*</code>)</h3>
-<p><strong>Rule:</strong> the fuzzy operators tolerate typos. <code>~=</code> (fuzzy-equals)
-  matches a value that is a close whole-word variant of your term. <code>~*</code> (fuzzy-contains)
-  matches when your term appears anywhere inside the value, either as a fragment
-  or as a near-miss. Both work on note properties such as <code>note.title</code> and <code>note.content</code>,
-  and on labels (<code>#label</code>). Fuzzy operators accept terms of at least
-  3 characters, though how many typos each term tolerates depends on its length
-  — see <em>Fuzzy tolerance</em> below.</p>
-<p>The examples assume a note titled <code>Books</code> carrying the label <code>#author=Tolkien</code>,
-  and a note whose content is <code>learn programming today</code>.</p>
-<figure
-class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example value</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>note.title ~= boks</code>
-        </td>
-        <td>title <code>Books</code>
-        </td>
-        <td>Yes</td>
-        <td>one edit away from <code>books</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>#author ~= tolkein</code>
-        </td>
-        <td>author <code>Tolkien</code>
-        </td>
-        <td>Yes</td>
-        <td><code>tolkein</code> is a typo of <code>tolkien</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>note.content ~* progr</code>
-        </td>
-        <td><code>learn programming today</code>
-        </td>
-        <td>Yes</td>
-        <td><code>progr</code> is a fragment of <code>programming</code>
-        </td>
-      </tr>
-      <tr>
-        <td><code>note.content ~* programing</code>
-        </td>
-        <td><code>learn programming today</code>
-        </td>
-        <td>Yes</td>
-        <td><code>programing</code> is one edit from <code>programming</code>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Fuzzy tolerance</h3>
-<p><strong>Rule:</strong> how many typos are tolerated depends on the <strong>length</strong> of
-  your search term. Short terms must match exactly, because a single edit is
-  enough to turn one short word into an unrelated one; longer terms tolerate
-  more.</p>
-<figure
-class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Term length</th>
-        <th>Edits allowed</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1–3 characters</td>
-        <td>0 (exact only)</td>
-      </tr>
-      <tr>
-        <td>4–6 characters</td>
-        <td>1</td>
-      </tr>
-      <tr>
-        <td>7+ characters</td>
-        <td>2</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Term length</th>
-        <th>Example note content</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>cat</code>
-        </td>
-        <td>3</td>
-        <td><code>a bright red car</code>
-        </td>
-        <td>No</td>
-        <td>No edits are allowed below 4 characters, so <code>cat</code> does not
-          reach <code>car</code></td>
-      </tr>
-      <tr>
-        <td><code>carr</code>
-        </td>
-        <td>4</td>
-        <td><code>a blue debit card</code>
-        </td>
-        <td>Yes</td>
-        <td>1 edit is within budget for 4–6 character terms</td>
-      </tr>
-      <tr>
-        <td><code>ceck</code>
-        </td>
-        <td>4</td>
-        <td><code>the latest tech trends</code>
-        </td>
-        <td>No</td>
-        <td><code>ceck</code>→<code>tech</code> needs 2 edits; only 1 is allowed at
-          this length</td>
-      </tr>
-      <tr>
-        <td><code>combinef</code>
-        </td>
-        <td>8</td>
-        <td><code>the values were combined together</code>
-        </td>
-        <td>Yes</td>
-        <td><code>combinef</code>→<code>combined</code> is 1 edit; up to 2 are allowed
-          at 7+ characters</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Relevance ranking</h3>
-<p><strong>Rule:</strong> results are ordered by <em>how well</em> they match,
-  not merely whether they match. Exact whole-word and phrase matches rank
-  above substring and fuzzy matches, and a note where your words appear as
-  a consecutive phrase outranks one where they are scattered.</p>
-<figure
-class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Ranked higher</th>
-        <th>Ranked lower</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>sync</code>
-        </td>
-        <td><code>please sync the folders</code>
-        </td>
-        <td><code>synchronize the database now</code>
-        </td>
-        <td>exact word beats substring</td>
-      </tr>
-      <tr>
-        <td><code>you and me</code>
-        </td>
-        <td><code>I like you and me as a phrase</code>
-        </td>
-        <td><code>the menu is here and you know it</code>
-        </td>
-        <td>consecutive phrase beats scattered words</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>What is searchable</h3>
-<p>A search looks at more than the visible body text. All of the following
-  are indexed and searchable:</p>
-<ul>
-  <li>note titles,</li>
-  <li>note body content,</li>
-  <li>labels and relations (<a href="#root/_help_zEY4DaJG4YT5">attributes</a>),</li>
-  <li>link URLs and the titles/descriptions of link previews,</li>
-  <li>the titles of notes that a note reference-links to.</li>
-</ul>
-<p>The last point is the least obvious: if a note's only content is a reference
-  link to another note, searching for that other note's <strong>title</strong> still
-  finds the linking note.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Setup</th>
-        <th>Matches?</th>
-        <th>Why</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>special topic</code>
-        </td>
-        <td>a note whose only content is a reference link to a note titled <code>Special Topic</code>
-        </td>
-        <td>Yes, and the linked target ranks first</td>
-        <td>the target's title is indexed into the linking note's searchable text</td>
-      </tr>
-      <tr>
-        <td><code>special</code>
-        </td>
-        <td>the same note (only a reference link to <code>Special Topic</code>)</td>
-        <td>Yes, one word from the target's title is enough</td>
-        <td>the indexed title is normalized just like body text, so even one lowercased
-          word matches</td>
-      </tr>
-      <tr>
-        <td><code>zurich</code>
-        </td>
-        <td>a note whose only content is a reference link to a note titled <code>Zürich</code>
-        </td>
-        <td>Yes</td>
-        <td>the indexed title has its accents normalized, so the plain form matches
-          the accented title</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Diacritics</h3>
-<p><strong>Rule:</strong> accents are normalized on both sides, so an accented
-  word and its plain form match each other.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example note content</th>
-        <th>Matches?</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>ktory</code>
-        </td>
-        <td><code>slovo ktorý znamena nieco</code>
-        </td>
-        <td>Yes</td>
-      </tr>
-      <tr>
-        <td><code>ktorý</code>
-        </td>
-        <td><code>the word ktory appears here</code>
-        </td>
-        <td>Yes</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Regular expressions (<code>%=</code>)</h3>
-<p><strong>Rule:</strong> the <code>%=</code> operator matches a property or
-  label value against a regular expression.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Query</th>
-        <th>Example note content</th>
-        <th>Matches?</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>note.content %= 'colou?r'</code>
-        </td>
-        <td><code>my favorite color of all</code>
-        </td>
-        <td>Yes</td>
-      </tr>
-      <tr>
-        <td><code>note.content %= 'colou?r'</code>
-        </td>
-        <td><code>my favourite colour of all</code>
-        </td>
-        <td>Yes</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Simple Note Search Examples</h3>
+<h2>Simple Note Search Examples</h2>
 <ul>
   <li><code>rings tolkien</code>: Full-text search to find notes containing
     both "rings" and "tolkien".</li>
@@ -734,7 +276,7 @@ class="table">
   <li><code>note.content %= '\\d{2}:\\d{2} (PM|AM)'</code>: Find notes that
     mention a time. Backslashes in a regex must be escaped.</li>
 </ul>
-<h3>Advanced Use Cases</h3>
+<h2>Advanced Use Cases</h2>
 <ul>
   <li><code>~author.relations.son.title = 'Christopher Tolkien'</code>: Search
     for notes with an "author" relation to a note that has a "son" relation
@@ -775,6 +317,8 @@ class="table">
   <li><code>note.children.title = 'sub-note'</code>: Find notes with a child
     named "sub-note".</li>
 </ul>
+<p>See also&nbsp;<a class="reference-link" href="#root/_help_Oxyb6jOjjVNL">Under the hood</a>&nbsp;for
+  more syntax references.</p>
 <h3>Search with Note Properties</h3>
 <p>Notes have properties that can be used in searches, such as <code>noteId</code>, <code>dateModified</code>, <code>dateCreated</code>, <code>isProtected</code>, <code>type</code>, <code>title</code>, <code>text</code>, <code>content</code>, <code>rawContent</code>, <code>ownedLabelCount</code>, <code>labelCount</code>, <code>ownedRelationCount</code>, <code>relationCount</code>, <code>ownedRelationCountIncludingLinks</code>, <code>relationCountIncludingLinks</code>, <code>ownedAttributeCount</code>, <code>attributeCount</code>, <code>targetRelationCount</code>, <code>targetRelationCountIncludingLinks</code>, <code>parentCount</code>, <code>childrenCount</code>, <code>isArchived</code>, <code>contentSize</code>, <code>noteSize</code>,
   and <code>revisionCount</code>.</p>
@@ -791,70 +335,9 @@ class="table">
 <h3>Negation</h3>
 <p>Some queries can only be expressed with negation:</p><pre><code class="language-text-x-trilium-auto">#book AND not(note.ancestors.title = 'Tolkien')</code></pre>
 <p>This query finds all book notes not in the "Tolkien" subtree.</p>
-<h2>Progressive Search Strategy</h2>
-<p>Trilium uses a progressive search strategy that performs exact matching
-  first, then adds fuzzy matching when needed.</p>
-<h3>How Progressive Search Works</h3>
-<ol>
-  <li><strong>Phase 1 - Exact Matching</strong>: When you search, Trilium first
-    looks for exact matches of your search terms. This handles the vast majority
-    of searches (90%+) and returns results almost instantly.</li>
-  <li><strong>Phase 2 - Fuzzy Fallback</strong>: If Phase 1 doesn't find enough
-    high-quality results (fewer than 5 results with good relevance scores),
-    Trilium automatically adds fuzzy matching to find results with typos or
-    spelling variations.</li>
-  <li><strong>Result Ordering</strong>: Exact matches always appear before fuzzy
-    matches, regardless of individual scores. This ensures that when you search
-    for "project", notes containing the exact word "project" will appear before
-    notes containing similar words like "projects" or "projection".</li>
-</ol>
-<h3>Progressive Search Behavior</h3>
-<ul>
-  <li><strong>Speed</strong>: Most searches complete using only exact matching</li>
-  <li><strong>Ordering</strong>: Exact matches appear before fuzzy matches</li>
-  <li><strong>Fallback</strong>: Fuzzy matching activates when exact matches
-    return fewer than 5 results</li>
-  <li><strong>Identification</strong>: Results indicate whether they are exact
-    or fuzzy matches</li>
-</ul>
-<h3>Search Performance</h3>
-<p>Search system specifications:</p>
-<ul>
-  <li>Content size limit: 10MB per note (previously 50KB)</li>
-  <li>Edit distance calculations for fuzzy matching</li>
-  <li>Infinite scrolling in Quick Search</li>
-</ul>
 <h2>Under the Hood</h2>
-<h3>Label and Relation Shortcuts</h3>
-<p>The "full" syntax for searching by labels is:</p><pre><code class="language-text-x-trilium-auto">note.labels.publicationYear = 1954</code></pre>
-<p>For relations:</p><pre><code class="language-text-x-trilium-auto">note.relations.author.title *=* Tolkien</code></pre>
-<p>However, common label and relation searches have shortcut syntax:</p><pre><code class="language-text-x-trilium-auto">#publicationYear = 1954
-~author.title *=* Tolkien</code></pre>
-<h3>Separating Full-Text and Attribute Parts</h3>
-<p>Search syntax allows combining full-text search with attribute-based search.
-  For example, <code>tolkien #book</code> contains:</p>
-<ol>
-  <li>Full-text tokens - <code>tolkien</code>
-  </li>
-  <li>Attribute expressions - <code>#book</code>
-  </li>
-</ol>
-<p>Trilium detects the separation between full text search and attribute/property
-  search by looking for certain special characters or words that denote attributes
-  and properties (e.g., #, ~, note.). If you need to include these in full-text
-  search, escape them with a backslash so they are processed as regular text:</p><pre><code class="language-text-x-trilium-auto">"note.txt" 
-\#hash 
-#myLabel = 'Say "Hello World"'</code></pre>
-<h3>Escaping Special Characters</h3>
-<p>Special characters can be enclosed in quotes or escaped with a backslash
-  to be used in full-text search:</p><pre><code class="language-text-x-trilium-auto">"note.txt"
-\#hash
-#myLabel = 'Say "Hello World"'</code></pre>
-<p>Three types of quotes are supported: single, double, and backtick.</p>
-<h3>Type Coercion</h3>
-<p>Label values are technically strings but can be coerced for numeric comparisons:</p><pre><code class="language-text-x-trilium-auto">note.dateCreated =* '2019-05'</code></pre>
-<p>This finds notes created in May 2019. Numeric operators like <code>#publicationYear &gt;= 1960</code> convert
-  string values to numbers for comparison.</p>
+<p>See the <a href="#root/_help_Oxyb6jOjjVNL">dedicated page</a> to understand
+  how progressive search works in Trilium, as well as some advanced use cases.</p>
 <h2>Auto-Trigger Search from URL</h2>
 <p>You can open Trilium and automatically trigger a search by including the
   search <a href="https://meyerweb.com/eric/tools/dencoder/">url encoded</a> string
@@ -907,5 +390,6 @@ class="table">
     issues</li>
   <li>Notes exceeding this limit will still be included in title and attribute
     searches</li>
-  <li>Terms of 3 characters or fewer are matched exactly; typo tolerance starts at 4 characters</li>
+  <li>Terms of 3 characters or fewer are matched exactly; typo tolerance starts
+    at 4 characters</li>
 </ul>

@@ -15,8 +15,16 @@ vi.mock("../../services/utils", async (importOriginal) => ({
 const openDialogMock = vi.hoisted(() => vi.fn(async (dialog: JQuery<HTMLElement>, _closeActDialog?: boolean) => dialog));
 vi.mock("../../services/dialog", () => ({ openDialog: openDialogMock }));
 
+// The grid asks the server which icons the tree already uses, to lead with those. Anything else
+// asked of the server here is a module loading beside the picker, and wants a list back.
+vi.mock("../../services/server", () => ({
+    default: {
+        get: async (url: string) => (url === "other/icon-usage" ? { iconClassToCountMap: {} } : [])
+    }
+}));
+
 import { renderInto } from "../../test/render";
-import { IconPickerButton } from "./IconPicker";
+import IconPicker, { IconPickerButton } from "./IconPicker";
 
 describe("IconPickerButton", () => {
     /** Renders the button as the given device would see it. */
@@ -70,5 +78,28 @@ describe("IconPickerButton", () => {
         expect(openDialogMock).toHaveBeenCalledOnce();
         // The `closeActDialog` argument, which is what stands a dialog down to make room.
         expect(openDialogMock.mock.calls[0][1]).toBe(false);
+    });
+});
+
+describe("IconPicker", () => {
+    it("draws the compact grid smaller than the one a note's icon is picked from", () => {
+        glob.iconRegistry = { sources: [] };
+
+        const regular = renderInto(<IconPicker columnCount={9} onSelect={() => {}} />);
+        const compact = renderInto(<IconPicker columnCount={9} compact onSelect={() => {}} />);
+
+        const regularList = regular.querySelector<HTMLElement>(".icon-picker:not(.compact) .icon-list");
+        const compactList = compact.querySelector<HTMLElement>(".icon-picker.compact .icon-list");
+        expect(regularList).toBeTruthy();
+        expect(compactList).toBeTruthy();
+
+        // Nine columns of the compact cell, and the ten the stylesheet asks for besides.
+        expect(compactList?.style.width).toBe("370px");
+        // Eight rows and a quarter, the quarter being what tells the reader there is more below.
+        expect(compactList?.style.height).toBe("330px");
+
+        // The regular grid keeps the height the stylesheet gives it, which follows the screen.
+        expect(regularList?.style.width).toBe("442px");
+        expect(regularList?.style.height).toBe("");
     });
 });

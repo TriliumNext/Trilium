@@ -125,6 +125,25 @@ There is no base key — `find --key space_usage.my_notes` shows only the suffix
 
 `{{var}}` normally, `{{- var}}` to skip HTML-escaping when the value contains quotes. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
 
+### Multi-paragraph text
+
+Text that runs to several paragraphs is **one message with a blank line (`\n\n`) between paragraphs**,
+never one key per paragraph. The translator then sees the whole text and decides where its paragraphs
+fall — a language can merge two or split one — and a translation that drops the blank line still
+renders, as a single paragraph. Some 18 English strings already work this way
+(`toast.critical-error.message`, `call_to_action.new_layout_message`, the `breadcrumb_badges.*_description`
+tooltips, `llm.antigravity_agent_description`).
+
+Pass real newlines to `add` — in bash, `$'First paragraph.\n\nSecond paragraph.'`. Then render it so
+the breaks survive, by one of:
+
+- **`white-space`** — put the text in one element with the shared `.pre-wrap-text` class
+  (`stylesheets/style.css`), as the call-to-action dialog does. Tooltips (`pre-line`), toasts and
+  `confirm()` dialogs already keep line breaks on their own.
+- **Split into `<p>`** — when each paragraph should get paragraph spacing:
+  `text.split(/\n\s*\n/).map((p) => <p key={p}>{p}</p>)`, as the add-provider wizard does for
+  `connectionDescription`.
+
 ## Auditing
 
 `missing` is the one that catches real bugs — a `t("…")` whose key is in no catalogue renders the raw key to the user:

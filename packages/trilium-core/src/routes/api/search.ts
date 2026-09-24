@@ -1,6 +1,7 @@
 import {
-    dayjs, type SearchResultDetails, type SearchResultDetailsRequest,
-    type SearchResultDetailsResponse, type SearchWithTokensResponse, type TemplatesResponse
+    dayjs, type SearchLintRequest, type SearchLintResponse, type SearchResultDetails,
+    type SearchResultDetailsRequest, type SearchResultDetailsResponse, type SearchWithTokensResponse,
+    type TemplatesResponse
 } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 
@@ -108,6 +109,21 @@ function getSearchResultDetails(req: Request<{ noteId: string }>): SearchResultD
         highlightedTokenInfos: searchContext.getHighlightedTokenInfos(),
         error: searchContext.getError()
     };
+}
+
+/**
+ * Reads a search string without running it, so the editor can report what is wrong with a query
+ * while it is being typed rather than once it is run. Carries the message alone: `SearchContext`
+ * records no offsets, so the caller cannot mark where the fault is.
+ */
+function lintSearchString(req: Request): SearchLintResponse {
+    const { searchString } = (req.body ?? {}) as Partial<SearchLintRequest>;
+
+    if (typeof searchString !== "string") {
+        throw new ValidationError("searchString must be a string.");
+    }
+
+    return { error: searchService.validateSearchQuery(searchString) };
 }
 
 function quickSearch(req: Request<{ searchString: string }>) {
@@ -252,6 +268,7 @@ export function isNewTemplate(utcDateCreated: string | null, rootCreationDate: s
 }
 
 export default {
+    lintSearchString,
     searchFromNote,
     getSearchResultDetails,
     searchAndExecute,

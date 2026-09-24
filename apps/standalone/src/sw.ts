@@ -51,7 +51,20 @@ self.addEventListener("activate", (event) => {
 });
 
 function isLocalFirst(url) {
-    return LOCAL_FIRST_PREFIXES.some((p) => url.pathname.startsWith(p));
+    return isShareRequest(url.pathname) || LOCAL_FIRST_PREFIXES.some((p) => url.pathname.startsWith(p));
+}
+
+/**
+ * True for the shared-note pages and their API, which the local worker renders. `/share/assets/`
+ * is the share theme's own stylesheets, scripts and fonts: those ship with the build and are
+ * served like any other static file.
+ */
+function isShareRequest(pathname) {
+    if (pathname.startsWith("/share/assets/")) {
+        return false;
+    }
+
+    return pathname === "/share" || pathname.startsWith("/share/");
 }
 
 async function cacheFirst(request) {
@@ -161,6 +174,28 @@ async function findLeaderClient() {
     }
 
     return { client, candidates };
+}
+
+/**
+ * Answers a shared-note page. The pages are rendered by the tab holding the database, so with no
+ * app window open there is nobody to render them and no server to fall back to — which the plain
+ * forwarder would report as whatever the static host says. This says so instead.
+ */
+async function answerShareRequest(request, clientId) {
+    // @ts-expect-error - self.clients is valid in service worker context
+    const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+
+    if (!all.some(isMainAppWindow)) {
+        return new Response(
+            "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Trilium</title></head>"
+            + "<body><h1>Trilium is not open</h1>"
+            + "<p>Shared notes are rendered by the Trilium tab that holds your database. Open Trilium in this browser, then reload this page.</p>"
+            + "</body></html>",
+            { status: 503, headers: { "content-type": "text/html; charset=utf-8" } }
+        );
+    }
+
+    return forwardToClientLocalServer(request, clientId);
 }
 
 async function forwardToClientLocalServer(request, _clientId, retried = false) {
@@ -365,7 +400,9 @@ self.addEventListener("fetch", (event) => {
     // API-ish: local-first via bridge (must be checked before navigate handling,
     // because export triggers a navigation to an /api/ URL)
     if (isLocalFirst(url)) {
-        event.respondWith(forwardToClientLocalServer(event.request, event.clientId));
+        event.respondWith(isShareRequest(url.pathname)
+            ? answerShareRequest(event.request, event.clientId)
+            : forwardToClientLocalServer(event.request, event.clientId));
         return;
     }
 

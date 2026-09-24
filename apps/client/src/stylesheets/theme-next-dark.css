@@ -290,6 +290,17 @@
     --log-error-line-background-color: #d44b4b1f;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
+    /* Search query syntax (the search string of a saved search) */
+    --search-label-color: #79b8ff;
+    --search-relation-color: #c2a8ff;
+    --search-negation-color: #ff6b6b;
+    --search-property-color: #5bc4b1;
+    --search-keyword-color: #ff7eb6;
+    --search-operator-color: #9aa4b0;
+    --search-string-color: #8fd48f;
+    --search-literal-color: #e0a85c;
+    --search-bracket-color: #8a94a0;
+
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
     --card-border-color: transparent;

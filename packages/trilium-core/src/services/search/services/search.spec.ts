@@ -1088,6 +1088,18 @@ describe("Search", () => {
             return searchService.buildSearchResultDetails(results, searchContext);
         }
 
+        it("names the icon a note was found by, and highlights it", () => {
+            // An icon is an empty element. Striptags leaves no trace of it, so a note found by the
+            // icon's name had nothing in its snippet to centre on or to mark.
+            const icons = contentNote("Icons", `<p>${"padding ".repeat(60)}`
+                + `Press <span class="tn-icon bx bx-star"></span> to favourite.</p>`);
+
+            const detail = detailsFor("star").find((d) => d.noteId === icons.noteId);
+
+            expect(detail?.contentSnippet).toContain("[star]");
+            expect(detail?.highlightedContentSnippet).toContain("<b>star</b>");
+        });
+
         it("highlights the word a fuzzy body match actually matched", () => {
             // "writer" is two edits from "orbiter", which AUTO allows for a 7-character token, so
             // this note is a result even though the word the user typed appears nowhere in it.

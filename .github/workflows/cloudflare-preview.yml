@@ -116,7 +116,7 @@ jobs:
       # beside it. Renovate moves the pin (see customManagers in renovate.json).
       - name: Install Wrangler
         shell: bash
-        run: npm install -g wrangler@4.134.0
+        run: npm install -g wrangler@4.135.0
 
       - name: Deploy preview to Cloudflare Pages
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0

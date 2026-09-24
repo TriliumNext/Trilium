@@ -198,6 +198,20 @@ function branchDeleted(branchId: string) {
     if (branch.branchId) {
         delete becca.branches[branch.branchId];
     }
+
+    dropOrphanedSkeleton(childNote);
+    dropOrphanedSkeleton(parentNote);
+}
+
+/**
+ * Removes a skeleton note (see `BBranch.childNote`) once no branch or attribute refers to it. Its
+ * row can no longer arrive when the note was erased before becca was loaded.
+ */
+function dropOrphanedSkeleton(note: BNote | undefined) {
+    if (note && note.title === undefined && !note.parentBranches.length && !note.children.length
+        && !note.ownedAttributes.length) {
+        noteDeleted(note.noteId);
+    }
 }
 
 function noteUpdated(entityRow: NoteRow) {
@@ -265,6 +279,8 @@ function attributeDeleted(attributeId: string) {
     if (key in becca.attributeIndex) {
         becca.attributeIndex[key] = becca.attributeIndex[key].filter((attr) => attr.attributeId !== attribute.attributeId);
     }
+
+    dropOrphanedSkeleton(note);
 }
 
 function attributeUpdated(attributeRow: BAttribute) {

@@ -33,7 +33,7 @@
     "electron:start-prod": "pnpm desktop:start-prod",
     "chore:ci-update-nightly-version": "tsx ./scripts/update-nightly-version.ts",
     "chore:release-notes-body": "node --experimental-strip-types ./scripts/release-notes-body.mts",
-    "chore:update-build-info": "tsx ./scripts/update-build-info.ts",
+    "chore:update-build-info": "tsx ./scripts/update-build-info.mts",
     "chore:update-flake-electron": "tsx ./scripts/update-flake-electron.ts",
     "chore:update-version": "tsx ./scripts/update-version.ts",
     "chore:wipe-node-modules": "node --experimental-strip-types ./scripts/wipe-node-modules.mts",
@@ -60,7 +60,7 @@
     "@playwright/test": "1.63.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
-    "@types/node": "24.13.5",
+    "@types/node": "24.13.6",
     "@typescript/native": "npm:typescript@7.0.2",
     "@vitest/browser-playwright": "5.0.1",
     "@vitest/coverage-v8": "5.0.1",
@@ -68,7 +68,7 @@
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
-    "eslint": "10.10.0",
+    "eslint": "10.11.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.12.0",
     "eslint-plugin-simple-import-sort": "14.0.0",
@@ -98,5 +98,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.4.2"
+  "packageManager": "pnpm@12.5.1"
 }

@@ -1,3 +1,4 @@
+import { EditorView } from "@codemirror/view";
 import { deferred } from "@triliumnext/commons";
 import { render } from "preact";
 import { act } from "preact/test-utils";
@@ -14,7 +15,11 @@ import {
     type CollectionFilter, CollectionFilterInput, useCollectionFilter
 } from "./collection_filter";
 
-vi.mock("../../services/i18n", () => ({
+// The real module besides `t`, which is left to stand for the text it would return:
+// `command_registry.ts`, reached through `note_autocomplete.ts`, awaits
+// `translationsInitializedPromise`, and a mock without it rejects after the test has passed.
+vi.mock("../../services/i18n", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../services/i18n")>()),
     t: (key: string) => key
 }));
 
@@ -413,9 +418,11 @@ describe("CollectionFilterInput", () => {
                 <CollectionFilterInput filter={filter} />
             </ParentComponent.Provider>,
             container));
-        const input = container.querySelector("input");
-        expect(input).not.toBeNull();
-        return { filter, input: input as HTMLInputElement };
+        const content = container.querySelector<HTMLElement>(".cm-content");
+        expect(content).not.toBeNull();
+        const view = content && EditorView.findFromDOM(content);
+        expect(view).not.toBeNull();
+        return { filter, view: view as EditorView };
     }
 
     /**
@@ -423,46 +430,46 @@ describe("CollectionFilterInput", () => {
      * through and does not open on one at all. Narrowing the collection is the search it has.
      */
     it("takes the note's own search, on the pane it is drawn in", async () => {
-        const { input } = mountInput({ query: "#done" });
-        input.value = "#done";
+        const { view } = mountInput({ query: "#done" });
 
         await act(async () => { await parent.handleEvent("findInText", {}); });
-        expect(document.activeElement).toBe(input);
+        expect(document.activeElement).toBe(view.contentDOM);
         // Selected, so what is typed next replaces the query rather than running on from it.
-        expect(input.selectionStart).toBe(0);
-        expect(input.selectionEnd).toBe("#done".length);
+        expect(view.state.selection.main.from).toBe(0);
+        expect(view.state.selection.main.to).toBe("#done".length);
 
         // A search aimed at another pane leaves this one alone.
-        input.blur();
+        view.contentDOM.blur();
         await act(async () => { await parent.handleEvent("findInText", { ntxId: "ntx2" }); });
-        expect(document.activeElement).not.toBe(input);
+        expect(document.activeElement).not.toBe(view.contentDOM);
 
         await act(async () => { await parent.handleEvent("findInText", { ntxId: "ntx1" }); });
-        expect(document.activeElement).toBe(input);
+        expect(document.activeElement).toBe(view.contentDOM);
     });
 
-    function type(input: HTMLInputElement, value: string) {
-        input.value = value;
-        input.dispatchEvent(new Event("input", { bubbles: true }));
+    function type(view: EditorView, value: string) {
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
+    }
+
+    function press(view: EditorView, key: string) {
+        view.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
     }
 
     it("submits what is typed on Enter", async () => {
-        const { filter, input } = mountInput();
+        const { filter, view } = mountInput();
 
         // Typed first and submitted in a pass of its own, so the keydown runs against the
         // re-rendered handler that has seen the typing.
-        await act(async () => type(input, "#done"));
-        await act(async () => {
-            input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
-        });
+        await act(async () => type(view, "#done"));
+        await act(async () => press(view, "Enter"));
 
         expect(filter.setQuery).toHaveBeenCalledWith("#done");
     });
 
     it("submits what is typed through the search button", async () => {
-        const { filter, input } = mountInput();
+        const { filter, view } = mountInput();
 
-        await act(async () => type(input, "#done"));
+        await act(async () => type(view, "#done"));
         const submit = container.querySelector<HTMLElement>(".collection-filter-submit");
         expect(submit).not.toBeNull();
         await act(async () => submit?.click());
@@ -481,24 +488,26 @@ describe("CollectionFilterInput", () => {
         expect(submit).toBe(clear + 1);
     });
 
-    it("clears the filter through the button and refocuses the box", async () => {
-        const { filter } = mountInput({ query: "#done" });
+    it("clears the filter through the button, emptying the box and refocusing it", async () => {
+        const { filter, view } = mountInput({ query: "#done" });
 
         const clear = container.querySelector<HTMLElement>(".collection-filter-clear");
         expect(clear).not.toBeNull();
         await act(async () => clear?.click());
 
         expect(filter.setQuery).toHaveBeenCalledWith("");
+        expect(view.state.doc.toString()).toBe("");
+        expect(document.activeElement).toBe(view.contentDOM);
     });
 
     it("offers no clear button until a filter is in force, whatever is typed", async () => {
-        const { input } = mountInput();
+        const { view } = mountInput();
         const box = () => container.querySelector(".collection-filter");
         expect(box()?.classList.contains("active")).toBe(false);
         expect(container.querySelector(".collection-filter-clear")).toBeNull();
 
         // Typing is not yet a filter, so there is nothing for the button to take away.
-        await act(async () => type(input, "#done"));
+        await act(async () => type(view, "#done"));
         expect(container.querySelector(".collection-filter-clear")).toBeNull();
 
         mountInput({ query: "#done" });
@@ -508,8 +517,8 @@ describe("CollectionFilterInput", () => {
 
     // The box carries no tooltip, and a placeholder is gone as soon as something is typed.
     it("names the box for assistive technology", () => {
-        const { input } = mountInput();
-        expect(input.getAttribute("aria-label")).toBe("collection_filter.placeholder");
+        const { view } = mountInput();
+        expect(view.contentDOM.getAttribute("aria-label")).toBe("collection_filter.placeholder");
     });
 
     it("shows the query error under the box", () => {
@@ -518,14 +527,12 @@ describe("CollectionFilterInput", () => {
     });
 
     it("gives up unsubmitted typing on Escape without touching the filter", async () => {
-        const { filter, input } = mountInput({ query: "#kept" });
+        const { filter, view } = mountInput({ query: "#kept" });
 
-        await act(async () => type(input, "#typed"));
-        await act(async () => {
-            input.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-        });
+        await act(async () => type(view, "#typed"));
+        await act(async () => press(view, "Escape"));
 
-        expect(input.value).toBe("#kept");
+        expect(view.state.doc.toString()).toBe("#kept");
         expect(filter.setQuery).not.toHaveBeenCalled();
     });
 });

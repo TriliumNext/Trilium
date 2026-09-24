@@ -52,3 +52,47 @@ describe("syncOptions.getSyncTimeout", () => {
         expect(getSyncTimeout()).toBe(120000); // fallback for invalid config
     });
 });
+
+describe("syncOptions.isSyncSetup", () => {
+    let isSyncSetup: () => boolean;
+    let getOptionOrNullMock: ReturnType<typeof vi.fn>;
+    let mockSyncConfig: Record<string, string | undefined>;
+
+    beforeEach(async () => {
+        vi.resetModules();
+        mockSyncConfig = {};
+        getOptionOrNullMock = vi.fn();
+
+        vi.doMock("./config.js", () => ({ default: { Sync: mockSyncConfig } }));
+        vi.doMock("./options.js", () => ({
+            default: {
+                getOption: () => { throw new Error("Option 'syncServerHost' doesn't exist"); },
+                getOptionOrNull: getOptionOrNullMock
+            }
+        }));
+
+        const mod = await import("./sync_options.js");
+        isSyncSetup = mod.default.isSyncSetup;
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it("reports sync as not set up when the option does not exist yet", () => {
+        getOptionOrNullMock.mockReturnValue(null);
+        expect(isSyncSetup()).toBe(false);
+    });
+
+    it("follows the stored host, and the config override ahead of it", () => {
+        getOptionOrNullMock.mockReturnValue("https://sync.example.com");
+        expect(isSyncSetup()).toBe(true);
+
+        getOptionOrNullMock.mockReturnValue("");
+        expect(isSyncSetup()).toBe(false);
+
+        mockSyncConfig.syncServerHost = "disabled";
+        getOptionOrNullMock.mockReturnValue("https://sync.example.com");
+        expect(isSyncSetup()).toBe(false);
+    });
+});

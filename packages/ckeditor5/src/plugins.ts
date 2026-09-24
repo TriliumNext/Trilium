@@ -20,6 +20,7 @@ import TriliumMentionUI from "./plugins/mention/trilium_mention_ui.js";
 import TriliumSlashCommands from "./plugins/mention/slash_commands.js";
 import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
 import IncludeNote from "./plugins/includenote.js";
+import InlineIcon from "./plugins/inline_icon/inline_icon.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
@@ -71,6 +72,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     IndentBlockShortcutPlugin,
     MarkdownImportPlugin,
     IncludeNote,
+    InlineIcon,
     LinkEmbed,
     Uploadfileplugin,
     SyntaxHighlighting,

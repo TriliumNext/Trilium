@@ -599,7 +599,7 @@
     "run_at_hour": "실행할 시간을 지정합니다. <code>#run=hourly</code> 와 함께 사용해야 합니다. 하루에 여러 번 실행하려면 여러 번 정의할 수 있습니다.",
     "disable_inclusion": "이 라벨이 붙은 스크립트는 상위 스크립트 실행에 포함되지 않습니다.",
     "sorted": "하위 노트를 제목 기준 알파벳순으로 정렬합니다. 값을 지정하면 다른 기준으로 정렬할 수 있습니다. 쉼표로 구분된 여러 단계에 <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> 또는 라벨 이름을 지정하고, 각 항목 뒤에는 <code>asc</code> 또는 <code>desc</code>, 둘 중 하나를 선택적으로 붙일 수 있습니다. 예: <code>priority desc, dueDate</code>.",
-    "sort_direction": "<code>#sorted</code>가 하위 노트를 정렬하는 방향을 지정합니다. <code>desc</code>이면 내림차순으로 정렬하고, 그 외의 값은 오름차순으로 정렬합니다. 각 정렬 단계에 자체 <code>asc</code> 또는 <code>desc</code>가 지정되어 있으면 이 설정은 무시됩니다. <code>#sorted</code>가 설정된 경우에만 적용됩니다.",
+    "sort_direction": "정렬 방향은 <code>#sorted</code> 설정으로 결정됩니다. 내림차순은 <code>desc</code> 값을 사용하고, 그 외의 값은 오름차순입니다. 각 정렬 단계에 <code>asc</code> 또는 <code>desc</code> 값을 직접 지정하면 이 설정을 무시합니다. <code>#sorted</code> 설정이 없으면 적용되지 않습니다.",
     "sort_folders_first": "폴더(하위 노트가 있는 노트)를 맨 위에 정렬합니다.",
     "top": "이 노트를 상위 노트의 맨 위에 유지합니다. 상위 노트가 정렬된 경우에만 적용됩니다.",
     "hide_promoted_attributes": "이 노트에서 표시 속성을 숨깁니다.",
@@ -2711,7 +2711,9 @@
     "delete-notes-in-progress": "진행 중인 노트 삭제: {{count}}",
     "delete-finished-successfully": "삭제는 성공적으로 완료되었습니다.",
     "undeleting-notes-in-progress": "노트 삭제 취소 중: {{count}}",
-    "undeleting-notes-finished-successfully": "노트 삭제 해제는 성공적으로 완료되었습니다."
+    "undeleting-notes-finished-successfully": "노트 삭제 해제는 성공적으로 완료되었습니다.",
+    "delete-notes-in-progress-with-total": "총 {{total}}개 중 {{progress}}개 노트를 삭제했습니다",
+    "erasing-notes": "노트를 삭제하는 중…"
   },
   "frontend_script_api": {
     "async_warning": "`api.runOnBackend()`에 비동기 함수를 전달하면 의도한 대로 작동하지 않을 수 있습니다.\\n함수에서 `async` 키워드를 제거하여 동기 함수로 만들거나 `api.runAsyncOnBackendWithManualTransactionHandling()`을 사용하세요.",

@@ -549,6 +549,19 @@ describe("dialog service", () => {
             await expect(dialogService.confirm("sure?")).resolves.toBe(false);
         });
 
+        it("confirmWithNoteDeletion carries the caller's box and answers with the whole result", async () => {
+            const callbackResult = { confirmed: true, isDeleteNoteChecked: true };
+            triggerCommand.mockImplementation((_name, data: any) => data.callback(callbackResult));
+
+            await expect(dialogService.confirmWithNoteDeletion("Delete it?", "Also delete 2 notes"))
+                .resolves.toBe(callbackResult);
+
+            const [name, data] = triggerCommand.mock.calls[0];
+            expect(name).toBe("showConfirmDialog");
+            expect(data.message).toBe("Delete it?");
+            expect(data.checkboxLabel).toBe("Also delete 2 notes");
+        });
+
         it("confirmDeleteNoteBoxWithNote triggers the delete-box command and resolves with the callback value", async () => {
             const callbackResult = { confirmed: true, isDeleteNoteChecked: true };
             triggerCommand.mockImplementation((_name, data: any) => data.callback(callbackResult));

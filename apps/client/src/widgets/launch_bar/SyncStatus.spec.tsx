@@ -137,4 +137,30 @@ describe("SyncStatus", () => {
             expect(icon()).toBeNull();
         }
     });
+
+    it("fills a progress bar while pulling, and drops it once the pull is over", () => {
+        mount();
+        const bar = () => container.querySelector<HTMLElement>(".sync-status-progress");
+
+        act(() => { mocks.onMessage?.({ type: "sync-pull-in-progress", lastSyncedPush: 0 }); });
+        expect(bar()).toBeNull();
+
+        act(() => {
+            mocks.onMessage?.({ type: "sync-pull-in-progress", lastSyncedPush: 0, progress: { pulled: 25, total: 100 } });
+        });
+        const element = bar();
+        expect(element).not.toBeNull();
+        expect(element?.getAttribute("aria-valuenow")).toBe("25");
+        expect(element?.style.getPropertyValue("--sync-progress")).toBe("25%");
+
+        act(() => { mocks.onMessage?.({ type: "sync-push-in-progress", lastSyncedPush: 0 }); });
+        expect(bar()).toBeNull();
+
+        act(() => {
+            mocks.onMessage?.({ type: "sync-pull-in-progress", lastSyncedPush: 0, progress: { pulled: 5, total: 10 } });
+        });
+        expect(bar()).not.toBeNull();
+        act(() => { mocks.onMessage?.({ type: "sync-finished", lastSyncedPush: 0 }); });
+        expect(bar()).toBeNull();
+    });
 });

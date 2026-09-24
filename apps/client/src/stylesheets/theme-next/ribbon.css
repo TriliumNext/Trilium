@@ -172,3 +172,14 @@ ul.editability-dropdown li.dropdown-item > div {
 .note-info-widget {
     container: info-section / inline-size;
 }
+
+/*
+ * Search string
+ */
+
+/* The completion popup's selected row uses the hover colours from
+   `:root .ck-mentions` in `notes/text.css` rather than the active colours. */
+.search-string-editor {
+    --search-completion-selected-background: var(--hover-item-background-color);
+    --search-completion-selected-text: var(--hover-item-text-color);
+}

@@ -1,4 +1,4 @@
-import { type EntityChange, WebSocketMessage } from "@triliumnext/commons";
+import { type EntityChange, type SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
 import * as cls from "./context.js";
@@ -184,8 +184,8 @@ function sendTransactionEntityChangesToAllClients() {
     }
 }
 
-function syncPullInProgress() {
-    sendMessageToAllClients({ type: "sync-pull-in-progress", lastSyncedPush });
+function syncPullInProgress(progress?: SyncPullProgress) {
+    sendMessageToAllClients({ type: "sync-pull-in-progress", lastSyncedPush, ...(progress && { progress }) });
 }
 
 function syncPushInProgress() {

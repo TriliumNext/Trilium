@@ -65,6 +65,8 @@ The board view has mild support for keyboard-based navigation:
 *   Use Tab and Shift+Tab to navigate between column titles, notes and the “New item” button for each of the columns, in sequential order.
 *   To rename a column or a note, press F2 while it is focused.
 *   To open a specific note or create a new item, press Enter while it is focused.
+*   To create a card at the top of a column, press Enter while its header is focused; Shift+Enter creates one at the bottom.
+*   To collapse or expand a column, press Space while its header is focused.
 *   To dismiss a rename of a note or a column, press Escape.
 
 ## Configuration

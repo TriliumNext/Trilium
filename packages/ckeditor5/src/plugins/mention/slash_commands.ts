@@ -31,6 +31,7 @@ import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
+import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
 import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
 
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
@@ -44,6 +45,8 @@ import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admoni
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
+import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
+import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import { COMMAND_NAME as INSERT_DATE_TIME_COMMAND } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
@@ -392,6 +395,20 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Import Markdown from the clipboard"),
             icon: importMarkdownIcon,
             commandName: MARKDOWN_IMPORT_COMMAND
+        },
+        {
+            id: "icon",
+            title: t("Icon"),
+            description: t("Insert an icon from an installed icon pack"),
+            aliases: [ "symbol", "glyph" ],
+            icon: bxSticker,
+            commandName: INSERT_ICON_COMMAND,
+            // Deferred for the reason the anchor entry below is: the picker opens in a balloon
+            // placed at the caret, and the palette has not finished putting the selection back
+            // where it belongs until the tick is over.
+            execute: (target: Editor) => {
+                setTimeout(() => target.plugins.get(InlineIconUI).showPicker(), 0);
+            }
         },
         {
             id: "anchor",

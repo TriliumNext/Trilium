@@ -369,7 +369,20 @@ async function* backupChunks(passphrase: string | undefined): AsyncGenerator<Uin
 const MAX_BACKUP_CHUNKS_IN_FLIGHT = 4;
 
 export function isLocalApiRequest(url: URL): boolean {
-    return LOCAL_API_PREFIXES.some(p => url.pathname.startsWith(p));
+    return isShareRequest(url.pathname) || LOCAL_API_PREFIXES.some(p => url.pathname.startsWith(p));
+}
+
+/**
+ * True for the shared-note pages and their API, which the local worker renders. `/share/assets/`
+ * is the share theme's own stylesheets, scripts and fonts: those ship with the build and are
+ * served like any other static file. Mirrors the same check in `sw.ts`.
+ */
+function isShareRequest(pathname: string): boolean {
+    if (pathname.startsWith("/share/assets/")) {
+        return false;
+    }
+
+    return pathname === "/share" || pathname.startsWith("/share/");
 }
 
 export async function localFetch(request: Request): Promise<Response> {

@@ -361,6 +361,16 @@ export interface SearchResultDetailsRequest {
     noteIds: string[];
 }
 
+/** Request body for `POST /api/search/lint`, which reads a query without running it. */
+export interface SearchLintRequest {
+    searchString: string;
+}
+
+/** Response for `POST /api/search/lint`: the first fault in the query, or `null` where it has none. */
+export interface SearchLintResponse {
+    error: string | null;
+}
+
 /**
  * Per-note snippet + highlight details for one search result, built lazily for a
  * page of results. Snippet fields are absent when there is nothing to show (e.g.

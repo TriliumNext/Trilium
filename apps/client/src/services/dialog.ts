@@ -238,6 +238,22 @@ async function confirm(message: MessageType) {
 }
 
 /**
+ * Shows a confirmation with an optional checkbox for deleting the notes it asks about.
+ *
+ * @param checkboxLabel labels the checkbox; omit it to show no checkbox.
+ * @returns `confirmed` and `isDeleteNoteChecked`, or `false` when the dialog is dismissed.
+ */
+async function confirmWithNoteDeletion(message: MessageType, checkboxLabel?: string) {
+    return new Promise<ConfirmDialogResult | undefined>((res) =>
+        appContext.triggerCommand("showConfirmDialog", <ConfirmWithMessageOptions>{
+            message,
+            checkboxLabel,
+            callback: res
+        })
+    );
+}
+
+/**
  * Asks whether a note should be taken off whatever is showing it, offering to delete the note along
  * with it.
  *
@@ -283,6 +299,7 @@ export default {
     info,
     chooseNote,
     confirm,
+    confirmWithNoteDeletion,
     confirmDeleteNoteBoxWithNote,
     pickSingleItem,
     prompt

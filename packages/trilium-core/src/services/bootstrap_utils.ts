@@ -82,7 +82,7 @@ export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "ico
             ...iconPacks.map(p => generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                 : `api/attachments/download/${p.fontAttachmentId}`)),
-            generateTaskStateCss()
+            generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),

@@ -21,6 +21,7 @@ import type RootContainer from "../widgets/containers/root_container.js";
 import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import { IconPickerOpts } from "../widgets/dialogs/icon_picker.jsx";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
@@ -267,6 +268,7 @@ export type CommandMappings = {
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showIncludeNoteDialog: CommandData & IncludeNoteOpts;
     showAddLinkDialog: CommandData & AddLinkOpts;
+    showIconPickerDialog: CommandData & IconPickerOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;

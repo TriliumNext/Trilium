@@ -505,6 +505,23 @@ $$`;
         expect(markdownService.renderToHtml(`<p style="">Empty</p>`, "Title")).toStrictEqual(`<p>Empty</p>`);
     });
 
+    it("brings an exported icon back in the form it left", () => {
+        // The User Guide is kept as Markdown and read back from it, so an icon the exporter gives
+        // up on is gone from the note as well on the next pass through `edit-docs`.
+        const cog = `<span class="tn-icon bx bx-cog"></span>`;
+
+        for (const html of [
+            `<p>Press ${cog} to open it.</p>`,
+            `<p>${cog}</p>`,
+            `<p>a<span style="color:rgb(255,0,0);">${cog}</span>b</p>`,
+            `<ul><li>In a list ${cog} here</li></ul>`
+        ]) {
+            const markdown = markdownExportService.toMarkdown(html);
+
+            expect(markdownService.renderToHtml(markdown, "Title")).toStrictEqual(html);
+        }
+    });
+
     describe("collapsible blocks", () => {
         it("re-stamps the trilium-collapsible class and drops the indentation the exporter adds, so the block matches what the editor downcasts", () => {
             const input = trimIndentation`\

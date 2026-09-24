@@ -406,6 +406,13 @@ async function pullChanges(syncContext: SyncContext) {
         });
 
         if (batch.length > 0) {
+            if (totalPullCount) {
+                ws.syncPullInProgress({
+                    pulled: Math.max(0, totalPullCount - outstandingPullCount),
+                    total: totalPullCount
+                });
+            }
+
             log.info(
                 `Sync: pulled ${batch.length} chunk(s) (${batchChanges} changes, ~${Math.round(batchBytes / 1_048_576)} MB) in ${applyStart - fetchStart}ms and applied them in ${Date.now() - applyStart}ms, ${outstandingPullCount} outstanding pulls`
             );

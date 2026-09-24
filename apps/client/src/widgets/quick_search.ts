@@ -1,3 +1,4 @@
+import type { FieldEditor } from "@triliumnext/codemirror/src/field_editor";
 import { Dropdown, Tooltip } from "bootstrap";
 
 import appContext from "../components/app_context.js";
@@ -5,9 +6,10 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import linkService, { calculateHash, type ViewScope } from "../services/link.js";
 import server from "../services/server.js";
-import shortcutService, { isAppShortcutChord, isIMEComposing } from "../services/shortcuts.js";
+import shortcutService from "../services/shortcuts.js";
 import utils, { handleRightToLeftPlacement } from "../services/utils.js";
 import BasicWidget from "./basic_widget.js";
+import { createSearchFieldEditor, SEARCH_FIELD_EDITOR_CLASS } from "./search_field_editor.js";
 
 const TPL = /*html*/`
 <div class="quick-search input-group input-group-sm">
@@ -17,9 +19,25 @@ const TPL = /*html*/`
         height: 50px;
     }
 
-    .quick-search button, .quick-search input {
+    .quick-search button, .quick-search .search-string {
         border: 0;
         font-size: 100% !important;
+    }
+
+    .quick-search .search-string {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .quick-search .search-string .cm-editor {
+        width: 100%;
+    }
+
+    /* Outweighs the pre-wrap the shared stylesheet sets, which would wrap a long query onto a
+       second visual line and grow the field. */
+    .quick-search .search-string .cm-line {
+        white-space: pre;
     }
 
     .quick-search .dropdown-menu {
@@ -158,7 +176,7 @@ const TPL = /*html*/`
         </div>
     </div>
   </div>
-  <input type="text" class="form-control form-control-sm search-string" placeholder="${t("quick-search.placeholder")}">
+  <div class="form-control form-control-sm search-string ${SEARCH_FIELD_EDITOR_CLASS}"></div>
 </div>`;
 
 const INITIAL_DISPLAYED_NOTES = 15;
@@ -187,7 +205,9 @@ interface QuickSearchResponse {
 export default class QuickSearchWidget extends BasicWidget {
 
     private dropdown!: bootstrap.Dropdown;
-    private $searchString!: JQuery<HTMLElement>;
+    private $searchField!: JQuery<HTMLElement>;
+    /** Holds the query. The widget reads it instead of an input's value. */
+    editor?: FieldEditor;
     private $dropdownMenu!: JQuery<HTMLElement>;
     private $searchResults!: JQuery<HTMLElement>;
     private $footer!: JQuery<HTMLElement>;
@@ -204,17 +224,26 @@ export default class QuickSearchWidget extends BasicWidget {
 
     doRender() {
         this.$widget = $(TPL);
-        this.$searchString = this.$widget.find(".search-string");
+        this.$searchField = this.$widget.find(".search-string");
         this.$dropdownMenu = this.$widget.find(".dropdown-menu");
         this.$searchResults = this.$dropdownMenu.find(".quick-search-results");
         this.$footer = this.$dropdownMenu.find(".quick-search-footer");
 
         this.dropdown = Dropdown.getOrCreateInstance(this.$widget.find("[data-bs-toggle='dropdown']")[0], {
-            reference: this.$searchString[0],
+            reference: this.$searchField[0],
             popperConfig: {
                 strategy: "fixed",
                 placement: "bottom"
             }
+        });
+
+        this.editor = createSearchFieldEditor({
+            parent: this.$searchField[0],
+            placeholder: t("quick-search.placeholder"),
+            singleLine: true,
+            onEnter: () => this.runSearch(),
+            onArrowDown: () => this.focusFirstResult(),
+            onEscape: () => this.closeDropdown()
         });
 
         this.$widget.find(".input-group-prepend").on("shown.bs.dropdown", () => this.search());
@@ -228,71 +257,61 @@ export default class QuickSearchWidget extends BasicWidget {
         $showInFullSearchButton.on("click", () => this.showInFullSearch());
         shortcutService.bindElShortcut($showInFullSearchButton, "return", () => this.showInFullSearch());
 
-        if (utils.isMobile()) {
-            this.$searchString.keydown((e) => {
-                // Skip processing if IME is composing to prevent interference
-                // with text input in CJK languages
-                // Note: jQuery wraps the native event, so we access originalEvent
-                const originalEvent = e.originalEvent as KeyboardEvent;
-                if (originalEvent && isIMEComposing(originalEvent)) {
-                    return;
-                }
-
-                if (e.which === 13) {
-                    if (this.$dropdownMenu.is(":visible")) {
-                        this.search(); // just update already visible dropdown
-                    } else {
-                        this.dropdown.show();
-                    }
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-        }
-
-        shortcutService.bindElShortcut(this.$searchString, "return", () => {
-            if (this.$dropdownMenu.is(":visible")) {
-                this.search(); // just update already visible dropdown
-            } else {
-                this.dropdown.show();
-            }
-
-            this.$searchString.focus();
-        });
-
-        // Bootstrap moves between the results but ignores key events on an input, so the step from
-        // the search box into the list is bound here.
-        this.$searchString.on("keydown", (e) => {
-            const event = e.originalEvent as KeyboardEvent | undefined;
-
-            if (!event || event.key !== "ArrowDown" || !this.isDropdownOpen()) {
-                return;
-            }
-
-            if (isIMEComposing(event) || isAppShortcutChord(event) || event.shiftKey) {
-                return;
-            }
-
-            const $firstResult = this.$searchResults.find(".dropdown-item:not(.disabled)").first();
-
-            // Searching and no-results leave only a disabled item, and the caret keeps the key.
-            if (!$firstResult.length) {
-                return;
-            }
-
-            e.preventDefault();
-            $firstResult.focus();
-        });
-
-        shortcutService.bindElShortcut(this.$searchString, "esc", () => {
-            this.dropdown.hide();
-        });
-
         return this.$widget;
     }
 
+    cleanup() {
+        this.editor?.destroy();
+        this.editor = undefined;
+    }
+
+    /** The query as it stands in the field. */
+    private get searchString() {
+        return this.editor?.state.doc.toString() ?? "";
+    }
+
+    /** Runs on Enter: opens the results, or refreshes them when they are already open. */
+    private runSearch() {
+        if (this.isDropdownOpen()) {
+            void this.search();
+        } else {
+            this.dropdown.show();
+        }
+
+        this.editor?.focus();
+    }
+
+    /**
+     * Steps from the field into the results on ArrowDown, which Bootstrap does not do on its own.
+     * Searching and no-results leave only a disabled item, and the caret keeps the key.
+     */
+    private focusFirstResult() {
+        if (!this.isDropdownOpen()) {
+            return false;
+        }
+
+        const $firstResult = this.$searchResults.find(".dropdown-item:not(.disabled)").first();
+
+        if (!$firstResult.length) {
+            return false;
+        }
+
+        $firstResult.focus();
+        return true;
+    }
+
+    /** Closes the results on Escape, leaving the key to CodeMirror when they are already closed. */
+    private closeDropdown() {
+        if (!this.isDropdownOpen()) {
+            return false;
+        }
+
+        this.dropdown.hide();
+        return true;
+    }
+
     async search() {
-        const searchString = String(this.$searchString.val())?.trim();
+        const searchString = this.searchString.trim();
 
         if (!searchString) {
             this.dropdown.hide();
@@ -318,7 +337,7 @@ export default class QuickSearchWidget extends BasicWidget {
         this.lastResultViewScope = highlightedTokens?.length ? { searchTerms: highlightedTokens } : undefined;
 
         if (error) {
-            const tooltip = new Tooltip(this.$searchString[0], {
+            const tooltip = new Tooltip(this.$searchField[0], {
                 trigger: "manual",
                 title: `Search error: ${error}`,
                 placement: handleRightToLeftPlacement("right")
@@ -344,7 +363,7 @@ export default class QuickSearchWidget extends BasicWidget {
         await this.displayMoreResults(INITIAL_DISPLAYED_NOTES);
 
         this.$footer.removeClass("hidden-ext");
-        shortcutService.bindElShortcut(this.$searchResults.find(".dropdown-item:first"), "up", () => this.$searchString.focus());
+        shortcutService.bindElShortcut(this.$searchResults.find(".dropdown-item:first"), "up", () => this.editor?.focus());
 
         this.dropdown.update();
     }
@@ -463,11 +482,11 @@ export default class QuickSearchWidget extends BasicWidget {
         this.dropdown.hide();
 
         await appContext.triggerCommand("searchNotes", {
-            searchString: String(this.$searchString.val())
+            searchString: this.searchString
         });
     }
 
     quickSearchEvent() {
-        this.$searchString.focus();
+        this.editor?.focus();
     }
 }

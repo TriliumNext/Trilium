@@ -3696,6 +3696,81 @@
                                             "position": 10,
                                             "dataFileName": "Search_image.png"
                                         }
+                                    ],
+                                    "dirFileName": "Search",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Oxyb6jOjjVNL",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "wArbEsdSae6g",
+                                                "eIg8jdvaoNNd",
+                                                "Oxyb6jOjjVNL"
+                                            ],
+                                            "title": "Under the hood",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bxs-cog",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "under-the-hood",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Under the hood.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "WbjlujkUhEb5",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "wArbEsdSae6g",
+                                                "eIg8jdvaoNNd",
+                                                "WbjlujkUhEb5"
+                                            ],
+                                            "title": "How search matches your text",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "matching",
+                                                    "isInheritable": false,
+                                                    "position": 50
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-file-find",
+                                                    "isInheritable": false,
+                                                    "position": 60
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "How search matches your text.md",
+                                            "attachments": []
+                                        }
                                     ]
                                 },
                                 {
@@ -4392,7 +4467,47 @@
                                             ],
                                             "format": "markdown",
                                             "dataFileName": "Microsoft OneNote.md",
-                                            "attachments": []
+                                            "attachments": [],
+                                            "dirFileName": "Microsoft OneNote",
+                                            "children": [
+                                                {
+                                                    "isClone": false,
+                                                    "noteId": "LpvyEIBIAAj7",
+                                                    "notePath": [
+                                                        "pOsGYCXsbNQG",
+                                                        "gh7bpGYxajRS",
+                                                        "mHbBMPDPkVV5",
+                                                        "ckZ2uNWQmVeX",
+                                                        "GnhlmrATVqcH",
+                                                        "LpvyEIBIAAj7"
+                                                    ],
+                                                    "title": "Tags",
+                                                    "notePosition": 10,
+                                                    "prefix": null,
+                                                    "isExpanded": false,
+                                                    "type": "text",
+                                                    "mime": "text/html",
+                                                    "attributes": [
+                                                        {
+                                                            "type": "label",
+                                                            "name": "shareAlias",
+                                                            "value": "tags",
+                                                            "isInheritable": false,
+                                                            "position": 30
+                                                        },
+                                                        {
+                                                            "type": "label",
+                                                            "name": "iconClass",
+                                                            "value": "bx bx-star",
+                                                            "isInheritable": false,
+                                                            "position": 40
+                                                        }
+                                                    ],
+                                                    "format": "markdown",
+                                                    "dataFileName": "Tags.md",
+                                                    "attachments": []
+                                                }
+                                            ]
                                         },
                                         {
                                             "isClone": false,
@@ -6012,6 +6127,45 @@
                                             "position": 10,
                                             "dataFileName": "1_Insert buttons_plus.png"
                                         }
+                                    ],
+                                    "dirFileName": "Insert buttons",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "hD8GawVuazff",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "KSZ04uQ2D1St",
+                                                "iPIMuisry3hd",
+                                                "CohkqWQC1iBv",
+                                                "hD8GawVuazff"
+                                            ],
+                                            "title": "Icons",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-sticker",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "icons",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Icons.md",
+                                            "attachments": []
+                                        }
                                     ]
                                 },
                                 {
@@ -7269,7 +7423,7 @@
                             "dataFileName": "Mermaid Diagrams.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "EN4DhmgiSH6t",
+                                    "attachmentId": "6uRyawJoeKCM",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
@@ -7277,20 +7431,12 @@
                                     "dataFileName": "Mermaid Diagrams_image.png"
                                 },
                                 {
-                                    "attachmentId": "if9nzuWHt5KP",
+                                    "attachmentId": "EN4DhmgiSH6t",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
                                     "dataFileName": "1_Mermaid Diagrams_image.png"
-                                },
-                                {
-                                    "attachmentId": "TpPwoCFIePXm",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "2_Mermaid Diagrams_image.png"
                                 }
                             ],
                             "dirFileName": "Mermaid Diagrams",

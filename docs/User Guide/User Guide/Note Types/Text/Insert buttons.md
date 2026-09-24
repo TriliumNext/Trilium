@@ -59,3 +59,7 @@ Page breaks are marked in the editor with the words _Page break_, but they will 
 
 *   To insert a page break, press the <img src="Insert buttons_image.png" width="20" height="19"> in the formatting toolbar.
 *   To insert many page breaks at once, insert a page break first, click on it and press <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then use <kbd>Ctrl</kbd>+<kbd>V</kbd>, to paste as many times as needed.
+
+## Icons
+
+Icons just like the ones for the [note icon](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md) can be inserted in text. For more information see <a class="reference-link" href="Insert%20buttons/Icons.md">Icons</a>.

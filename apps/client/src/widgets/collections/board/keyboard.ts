@@ -289,6 +289,7 @@ export function useBoardKeyboard({
         }
 
         // Both keys, the collapsed header answering for a button and being announced as one.
+        // `column.tsx` handles Space on an open column, where the collapse is drawn faster.
         if ((e.key === " " || e.key === "Enter") && spot.kind === "header") {
             const column = columns[spot.column];
             if (!columnsOf(container)[spot.column]?.classList.contains("collapsed")) return;
@@ -334,12 +335,11 @@ export function useBoardKeyboard({
         if (e.key === "Delete" && spot.kind === "header" && !e.shiftKey) {
             take(e);
 
-            // Where focus goes once the column is gone, taken up only if it does go. Shift is left
-            // unanswered here: escalating a column would take every note in it, which nothing else
-            // on the board offers.
+            // Where focus goes once the column is gone, taken up only if it does go. Shift is
+            // left unanswered here: the confirmation asks about the notes in the column.
             const neighbour = columns[spot.column + 1] ?? columns[spot.column - 1];
             api.confirmAndRemoveColumn(columns[spot.column]).then((removed) => {
-                if (removed && neighbour) {
+                if (removed && neighbour !== undefined) {
                     pendingFocus.current = { intent: { column: neighbour, part: "header" } };
                 }
             });
@@ -580,7 +580,7 @@ function move(
             ? columns[key === "ArrowRight" ? columns.length - 1 : 0]
             : columns[spot.column + (key === "ArrowRight" ? 1 : -1)];
         // Only the whole way can ask for the column a card already stands in.
-        if (!target || target === column) return false;
+        if (target === undefined || target === column) return false;
 
         // A selection standing in several columns is left alone: each card has a neighbour of its
         // own, and sending them all to one column is not what the key means anywhere else.

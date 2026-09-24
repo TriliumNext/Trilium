@@ -6,6 +6,8 @@
 import { BootstrapDefinition } from '@triliumnext/commons';
 import { checkIntegrity, consistency_checks, entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, isScriptingEnabled, type Request, type Response, routes, sql_init } from '@triliumnext/core';
 import llmRoute from '@triliumnext/core/src/routes/api/llm.js';
+import type { ShareReply } from '@triliumnext/core/src/share/handlers.js';
+import { SHARE_ROUTE_PATHS, type ShareRoutePath } from '@triliumnext/core/src/share/route_paths.js';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest, BrowserRouter } from './browser_router';
@@ -357,6 +359,18 @@ export function registerRoutes(router: BrowserRouter): void {
         apiResultHandler
     );
 
+    // Shared notes, served from the same database the app reads. Nobody outside this browser can
+    // reach them — there is no server listening — but a published note renders at its real /share
+    // URL, which is what makes the feature testable here at all. Registered by path alone and
+    // loaded on the first request, so EJS, the share theme and the syntax highlighter stay out of
+    // the worker's startup bundle.
+    for (const path of SHARE_ROUTE_PATHS) {
+        router.get(path, (req) => dispatchShare(path, req));
+    }
+    // The share root is addressed as `/share/`; `/share` answers with the redirect that adds the
+    // slash, which the pattern above cannot match because a parameter needs a segment to fill it.
+    router.get("/share", (req) => dispatchShare("/share/", req));
+
     registerCustomRoute(router);
 
     // Dummy routes for compatibility.
@@ -405,6 +419,44 @@ function bootstrapRoute(req: { query: Record<string, string | undefined> }): Boo
         csrfToken: "dummy-csrf-token",
         baseApiUrl: "../api/",
         platform: "web",
+    };
+}
+
+/** Answers one share request, loading the share subsystem the first time one arrives. */
+async function dispatchShare(path: ShareRoutePath, req: BrowserRequest) {
+    const [ share, { registerShareProvider } ] = await Promise.all([
+        import("@triliumnext/core/src/share/index.js"),
+        import("./share_provider.js")
+    ]);
+
+    registerShareProvider();
+
+    /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
+    const headers = req.headers ?? {};
+    const shareRequest = {
+        path: req.path,
+        params: req.params,
+        query: req.query,
+        // `fetch` lower-cases the header names it sends, which is the form BrowserRouter stores them in.
+        getHeader: (name: string) => headers[name.toLowerCase()]
+    };
+
+    // Shared, and without a transaction: the share routes only read. The imports above are awaited
+    // before the lock is taken, so nothing is held open across them.
+    return dbLock.runShared(() => getContext().init(() => {
+        const reply = share.handleShareRequest(share.getShareRoute(path), shareRequest);
+
+        return toRawShareResponse(reply);
+    }));
+}
+
+/** Marks a share reply as already formatted, so {@link BrowserRouter} sends it rather than re-wrapping it. */
+function toRawShareResponse(reply: ShareReply) {
+    return {
+        [RAW_RESPONSE]: true as const,
+        status: reply.status,
+        headers: reply.redirect ? { ...reply.headers, location: reply.redirect } : reply.headers,
+        body: reply.body
     };
 }
 

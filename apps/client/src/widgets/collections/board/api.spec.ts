@@ -58,7 +58,13 @@ vi.mock("../../../services/note_create", () => ({
 }));
 
 vi.mock("../../../services/dialog", () => ({
-    default: { confirm: vi.fn(async () => true) }
+    default: {
+        confirm: vi.fn(async () => true),
+        confirmWithNoteDeletion: vi.fn(async () => ({
+            confirmed: true,
+            isDeleteNoteChecked: false
+        }))
+    }
 }));
 
 vi.mock("../../../services/i18n", () => ({
@@ -97,15 +103,15 @@ function createApi(
     return { api, board, saved, editing, pendingRenames: pending.renames };
 }
 
-describe("BoardApi filtering", () => {
-    /** Cards named by their note id, which is all the operations under test read them for. */
-    function cards(columns: Record<string, string[]>): ColumnMap {
-        return new Map(Object.entries(columns).map(([ column, ids ]) => [
-            column,
-            ids.map((noteId) => ({ note: { noteId }, branch: { branchId: `b_${noteId}` } }))
-        ])) as unknown as ColumnMap;
-    }
+/** Cards named by their note id, which is all the operations under test read them for. */
+function cards(columns: Record<string, string[]>): ColumnMap {
+    return new Map(Object.entries(columns).map(([ column, ids ]) => [
+        column,
+        ids.map((noteId) => ({ note: { noteId }, branch: { branchId: `b_${noteId}` } }))
+    ])) as unknown as ColumnMap;
+}
 
+describe("BoardApi filtering", () => {
     it("stores a submitted filter query and clears it for an empty one", () => {
         const { api, saved } = createApi({ filterQuery: undefined }, []);
 
@@ -1530,14 +1536,15 @@ describe("removing a column with the question put first", () => {
             { columns: [ { value: "To Do" }, { value: "Done" } ] },
             [ "To Do", "Done" ]
         );
-        const confirm = vi.spyOn(dialog, "confirm").mockResolvedValue(false);
+        const confirm = vi.spyOn(dialog, "confirmWithNoteDeletion").mockResolvedValue(false);
         const error = vi.spyOn(toast, "showError").mockReturnValue(undefined);
 
         expect(await api.confirmAndRemoveColumn("Done")).toBe(false);
-        expect(confirm).toHaveBeenCalled();
+        // The box is about notes to delete, and an empty column has none.
+        expect(confirm).toHaveBeenCalledWith("board_view.delete-column-confirmation", undefined);
         expect(saved).toEqual([]);
 
-        confirm.mockResolvedValue(true);
+        confirm.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
         expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
         expect(saved.at(-1)?.columns?.map(column => column.value)).toEqual([ "To Do" ]);
         expect(error).not.toHaveBeenCalled();
@@ -1546,6 +1553,40 @@ describe("removing a column with the question put first", () => {
         vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
         expect(await api.confirmAndRemoveColumn("To Do")).toBe(false);
         expect(error).toHaveBeenCalledWith("board_view.save-error");
+    });
+
+    /**
+     * Taking the offer deletes the column's cards, rather than stripping the grouping value and
+     * leaving them on the board.
+     */
+    it("deletes the notes in the column when the offer is taken", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ], undefined, "status", cards({ Done: [ "one", "two" ] }));
+        const confirm = vi.spyOn(dialog, "confirmWithNoteDeletion")
+            .mockResolvedValue({ confirmed: true, isDeleteNoteChecked: true });
+
+        expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
+
+        expect(confirm).toHaveBeenCalledWith(
+            "board_view.delete-column-confirmation", "board_view.delete-column-notes");
+        expect(executeBulkActions).toHaveBeenCalledWith(
+            [ "one", "two" ], [ { name: "deleteNote" } ], { silent: true });
+        expect(saved.at(-1)?.columns?.map(column => column.value)).toEqual([ "To Do" ]);
+    });
+
+    /** Left untaken, the cards stay on the board without the value that put them in the column. */
+    it("strips the grouping value when the offer is left untaken", async () => {
+        const { api } = createApi(
+            { columns: [ { value: "Done" } ] },
+            [ "Done" ], undefined, "status", cards({ Done: [ "one" ] }));
+        vi.spyOn(dialog, "confirmWithNoteDeletion")
+            .mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
+
+        expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
+
+        expect(executeBulkActions).toHaveBeenCalledWith(
+            [ "one" ], [ { name: "deleteLabel", labelName: "status" } ], { silent: true });
     });
 });
 
@@ -2003,6 +2044,25 @@ describe("filing a card under the inbox", () => {
         await api.removeFromBoard([ board.getChildNoteIds()[0] ]);
 
         expect(removeRelation).toHaveBeenCalled();
+    });
+});
+
+describe("the limit set on a column", () => {
+    /**
+     * The inbox takes every card without a grouping value, however many that is. A limit stored
+     * for it by an older board is read as none.
+     */
+    it("reads no limit for the inbox and writes none to it", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "", limit: 2 }, { value: "To Do", limit: 3 } ] },
+            [ "", "To Do" ]);
+
+        expect(api.getColumnLimit("")).toBeUndefined();
+        expect(api.getColumnLimit("To Do")).toBe(3);
+
+        await api.setColumnLimit("", 5);
+
+        expect(saved).toHaveLength(0);
     });
 });
 

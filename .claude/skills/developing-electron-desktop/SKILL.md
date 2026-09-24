@@ -26,6 +26,8 @@ apps/desktop/
   e2e/                           # Playwright against the built app (`pnpm --filter desktop e2e`)
   scripts/build.ts               # esbuild bundle + asset copy into dist/
   electron-forge/                # packaging (forge.config.ts, icons, dmg, portable/safe-mode launchers)
+                                 # flip-fuses.ts + trim-locales.ts are ALSO run as scripts by the
+                                 # Flathub manifest — see the packaging-for-flathub skill before editing
 ```
 
 ## Process and security model

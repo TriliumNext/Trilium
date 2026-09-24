@@ -1,5 +1,8 @@
 import type { TokenData } from "./types.js";
 
+/** Separates tokens outside quotes, so a query can be laid out over several lines. */
+const WHITESPACE = /\s/;
+
 function lex(str: string) {
     str = str.toLowerCase();
 
@@ -18,7 +21,7 @@ function lex(str: string) {
     
     // Check if the string starts with an exact match operator
     // This allows users to use "=searchterm" for exact matching
-    if (str.startsWith("=") && str.length > 1 && str[1] !== "=" && str[1] !== " ") {
+    if (str.startsWith("=") && str.length > 1 && str[1] !== "=" && !WHITESPACE.test(str[1])) {
         leadingOperator = "=";
         str = str.substring(1); // Remove the leading operator from the string
     }
@@ -110,7 +113,7 @@ function lex(str: string) {
                 // ~= and ~* are fuzzy-match operators, not a relation prefix followed by an operator
                 currentWord += chr;
                 continue;
-            } else if (chr === " ") {
+            } else if (WHITESPACE.test(chr)) {
                 finishWord(i - 1);
                 continue;
             } else if (fulltextEnded && ["(", ")", "."].includes(chr)) {
@@ -137,7 +140,9 @@ function lex(str: string) {
 
     finishWord(str.length - 1);
 
-    fulltextQuery = fulltextQuery.trim();
+    // Scoring compares the whole fulltext query against note titles, so the layout the query
+    // was typed in must not reach it.
+    fulltextQuery = fulltextQuery.replace(/\s+/g, " ").trim();
 
     return {
         fulltextQuery,

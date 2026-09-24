@@ -22,6 +22,15 @@ import Modal from "./Modal";
 /** The room one icon takes in the grid, which also decides how many fit across a given width. */
 export const ICON_SIZE = isMobile() ? 56 : 48;
 
+/** The size of one icon cell in the compact grid, in pixels. */
+const COMPACT_ICON_SIZE = 40;
+
+/**
+ * The number of icon rows the compact grid shows. The partial last row shows that the grid
+ * scrolls.
+ */
+const COMPACT_ROWS = 8.25;
+
 // One tooltip on the grid, delegated to the icon tiles. A module constant so the grid re-rendering
 // on every keystroke in the search does not tear the tooltip down and build it again each time.
 const ICON_TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
@@ -43,6 +52,8 @@ interface IconPickerProps {
     resetText?: string;
     /** How many icons stand side by side; the host decides from the room it can give the grid. */
     columnCount: number;
+    /** Renders smaller icons and `COMPACT_ROWS` rows, for the text editor's balloon. */
+    compact?: boolean;
 }
 
 /**
@@ -52,7 +63,8 @@ interface IconPickerProps {
  * It only reports what was picked — what that means is the host's own business, whether it is the
  * icon of a note or of something else entirely.
  */
-export default function IconPicker({ onSelect, onReset, resetText, columnCount }: IconPickerProps) {
+export default function IconPicker({ onSelect, onReset, resetText, columnCount, compact }: IconPickerProps) {
+    const iconSize = compact ? COMPACT_ICON_SIZE : ICON_SIZE;
     const iconListRef = useRef<HTMLDivElement>(null);
     const [ search, setSearch ] = useState<string>();
     const [ filterByPrefix, setFilterByPrefix ] = useState<string | null>(null);
@@ -64,7 +76,7 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount }
     return (
         // The legacy class is kept alongside the picker's own: the themes dress the icon grid
         // through it, having known the picker only as a part of the note icon widget.
-        <div className="icon-picker note-icon-widget">
+        <div className={clsx("icon-picker", "note-icon-widget", compact && "compact")}>
             <FilterRow
                 filterByPrefix={filterByPrefix}
                 search={search}
@@ -79,7 +91,10 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount }
                 class="icon-list"
                 ref={iconListRef}
                 style={{
-                    width: (columnCount * ICON_SIZE + 10),
+                    width: (columnCount * iconSize + 10),
+                    // The CSS sets the height of the regular grid; the compact grid shows
+                    // `COMPACT_ROWS` rows.
+                    ...(compact && { height: COMPACT_ROWS * iconSize })
                 }}
                 onClick={(e) => {
                     // Make sure we are not clicking on something else than a button.
@@ -92,9 +107,9 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount }
                 {filteredIcons.length ? (
                     <Grid
                         columnCount={columnCount}
-                        columnWidth={ICON_SIZE}
+                        columnWidth={iconSize}
                         rowCount={Math.ceil(filteredIcons.length / columnCount)}
-                        rowHeight={ICON_SIZE}
+                        rowHeight={iconSize}
                         cellComponent={IconItemCell}
                         cellProps={{
                             filteredIcons,
@@ -217,7 +232,6 @@ function IconPickerModalButton({
     icon, title, className, disabled, onSelect, onReset, resetText, onOpened, onClosed
 }: IconPickerButtonProps) {
     const [ modalShown, setModalShown ] = useState(false);
-    const { windowWidth } = useWindowSize();
 
     return (
         <div className={clsx("note-icon-widget", className)}>
@@ -236,39 +250,64 @@ function IconPickerModalButton({
                 disabled={disabled}
             />
 
-            {/* Out of whatever the button stands in — a panel floating over a note holds its own
-                stacking context, and the modal belongs to the page rather than to it. */}
-            {createPortal((
-                <Modal
-                    title={title}
-                    size="xl"
-                    show={modalShown}
-                    onHidden={() => {
-                        setModalShown(false);
-                        onClosed?.();
-                    }}
-                    className="icon-switcher note-icon-widget"
-                    scrollable
-                    stackable
-                >
-                    {/* As many icons as the screen has room for, rather than the twelve a menu is
-                        built for (see the CSS, which gives the grid the rest of the screen). */}
-                    <IconPicker
-                        columnCount={Math.max(1, Math.floor(windowWidth / ICON_SIZE))}
-                        resetText={resetText}
-                        onSelect={(iconClass) => {
-                            onSelect(iconClass);
-                            setModalShown(false);
-                        }}
-                        onReset={onReset && (() => {
-                            onReset();
-                            setModalShown(false);
-                        })}
-                    />
-                </Modal>
-            ), document.body)}
+            <IconPickerModal
+                title={title}
+                show={modalShown}
+                resetText={resetText}
+                onHidden={() => {
+                    setModalShown(false);
+                    onClosed?.();
+                }}
+                onSelect={(iconClass) => {
+                    onSelect(iconClass);
+                    setModalShown(false);
+                }}
+                onReset={onReset && (() => {
+                    onReset();
+                    setModalShown(false);
+                })}
+            />
         </div>
     );
+}
+
+interface IconPickerModalProps extends Pick<IconPickerProps, "onSelect" | "onReset" | "resetText"> {
+    /** The modal title. */
+    title: string;
+    show: boolean;
+    onHidden(): void;
+}
+
+/**
+ * Shows the picker in a modal, for mobile and for callers with no button to open a dropdown from.
+ *
+ * Picking an icon does not close the modal; the caller closes it through `show`.
+ */
+export function IconPickerModal({ title, show, onHidden, onSelect, onReset, resetText }: IconPickerModalProps) {
+    const { windowWidth } = useWindowSize();
+
+    // Portal to `document.body` so that a caller inside a stacking context, such as a panel
+    // floating over a note, does not trap the modal.
+    return createPortal((
+        <Modal
+            title={title}
+            size="xl"
+            show={show}
+            onHidden={onHidden}
+            className="icon-switcher note-icon-widget"
+            scrollable
+            stackable
+        >
+            {/* As many icons as the screen has room for, rather than the twelve a menu is built
+                for (see the CSS, which gives the grid the rest of the screen). */}
+            <IconPicker
+                columnCount={Math.max(1, Math.floor(windowWidth / ICON_SIZE))}
+                resetText={resetText}
+                onSelect={onSelect}
+                onReset={onReset}
+            />
+        </Modal>
+    ), document.body);
 }
 
 type IconWithName = (IconRegistry["sources"][number]["icons"][number] & { iconPack: string });

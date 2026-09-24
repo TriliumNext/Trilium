@@ -38,6 +38,23 @@
     border: 1px solid var(--main-border-color);
 }
 
+.icon-picker.compact .filter-row {
+    padding: 6px;
+    gap: 0.5em;
+    font-size: 0.85em;
+}
+
+.icon-picker.compact .filter-row .form-control {
+    padding: 3px 8px;
+    font-size: inherit;
+}
+
+/* The glyph, its padding and its border have to stay inside `COMPACT_ICON_SIZE` in IconPicker.tsx. */
+.icon-picker.compact .icon-list span {
+    padding: 6px;
+    font-size: 24px;
+}
+
 .icon-picker .icon-list span.bx-empty {
     width: unset;
 }

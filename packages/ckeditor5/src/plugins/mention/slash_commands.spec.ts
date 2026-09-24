@@ -19,6 +19,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
+import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
+import InlineIconUI from "../inline_icon/inline_icon_ui.js";
 import { COMMAND_NAME as INSERT_DATE_TIME_COMMAND } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
@@ -633,6 +635,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "include-note", "Include note", INCLUDE_NOTE_COMMAND ],
         [ "page-break", "Page break", "pageBreak" ],
         [ "markdown-import", "Markdown import", MARKDOWN_IMPORT_COMMAND ],
+        [ "icon", "Icon", INSERT_ICON_COMMAND ],
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],

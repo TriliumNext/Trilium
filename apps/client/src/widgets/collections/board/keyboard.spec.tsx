@@ -503,14 +503,28 @@ describe("Board keyboard", () => {
             expect(focusedName(board)).toBe("Third");
         });
 
-        it("leaves Space and Enter alone on a column that is not collapsed", async () => {
+        /** This harness never reads the write back, so `index.spec.tsx` covers the strip. */
+        it("collapses an open column with Space instead of walking on", async () => {
             const board = await renderBoard();
             focusHeader(board, 1);
 
             press(board, " ");
-            press(board, "Enter");
+            await act(async () => { await flush(); });
 
-            expect(document.activeElement).toBe(columnAt(board, 1).querySelector("h3"));
+            expect(saved.at(-1)?.columns?.find(col => col.value === "Doing")?.collapsed)
+                .toBe(true);
+        });
+
+        /** The column keeps its cards: only a collapsed heading answers Enter with an expand. */
+        it("makes a card instead of expanding a column that is not collapsed", async () => {
+            const board = await renderBoard();
+            focusHeader(board, 1);
+
+            press(board, "Enter");
+            await act(async () => { await flush(); });
+
+            expect(saved).toHaveLength(0);
+            expect(columnAt(board, 1).querySelector(".board-new-item.inserting")).toBeTruthy();
             expect(columnAt(board, 1).querySelectorAll(".board-note")).toHaveLength(1);
         });
     });
@@ -544,6 +558,20 @@ describe("Board keyboard", () => {
             // The card that moved is what focus rests on, as for any other cross-column move.
             expect(columnOf(board, "First")).toBe(1);
             expect(focusedName(board)).toBe("First");
+        });
+
+        /** The inbox is named by the empty string, which is a column like any other to move to. */
+        it("sends a card into the inbox column beside it", async () => {
+            const board = await renderBoard(undefined, undefined, [], true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            // The inbox is seeded at the front, so the first card is in the column after it.
+            focusCard(board, 1, 0);
+
+            press(board, "ArrowLeft", { ctrlKey: true });
+            await settleWrites();
+
+            expect(strip).toHaveBeenCalled();
+            expect(namesIn(board, 0)).toEqual([ "First" ]);
         });
 
         it("sends every picked-out card to the next column, and leaves them picked out", async () => {

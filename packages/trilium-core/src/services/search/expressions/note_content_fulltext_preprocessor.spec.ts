@@ -124,6 +124,64 @@ describe("Reference-link & link-preview searchability", () => {
     });
 });
 
+describe("Inline icon searchability", () => {
+    const type: NoteType = "text";
+    const mime = "text/html";
+
+    it("makes an icon findable by its class and by the name inside it", () => {
+        // dataDowncast markup from inline_icon_editing.ts: an element with nothing inside it, so
+        // stripping the markup would otherwise leave no trace of the icon at all.
+        const html = `<p>Press <span class="tn-icon bx bx-error-circle"></span> to stop.</p>`;
+
+        const result = preprocessContent(html, type, mime);
+
+        expect(result).toContain("press");
+        expect(result).toContain("bx-error-circle");
+        expect(result).toContain("error-circle");
+    });
+
+    it("leaves out the marker class and the pack's bare prefix, which name no icon", () => {
+        const html = `<p><span class="tn-icon bx bx-star"></span></p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words).toEqual([ "bx-star", "star" ]);
+    });
+
+    it("names an icon by its pack's class, not by another class the tag carries", () => {
+        // The editor keeps every class an imported icon wears, so a tag can carry a class from
+        // somewhere else entirely. Only a class whose prefix the tag also wears bare names an icon,
+        // and the snippet builder takes the first of them.
+        const html = `<p><span class="tn-icon text-big bx bx-star"></span></p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words).toEqual([ "bx-star", "star" ]);
+    });
+
+    it("names an icon once however often the note carries it", () => {
+        const icon = `<span class="tn-icon bx bx-star"></span>`;
+        const html = `<p>${icon} one ${icon} two ${icon}</p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words.filter((word) => word === "star")).toHaveLength(1);
+    });
+
+    it("reads the icon out of a colour wrapper, and out of single-quoted markup", () => {
+        const html = `<p><span style="color:red;">`
+            + `<span class='tn-icon bx bx-bulb'></span></span></p>`;
+
+        expect(preprocessContent(html, type, mime)).toContain("bulb");
+    });
+
+    it("leaves content carrying no icon as it was", () => {
+        const html = "<p>Nothing to see here.</p>";
+
+        expect(preprocessContent(html, type, mime).trim()).toBe("nothing to see here.");
+    });
+});
+
 describe("Spreadsheet preprocessing", () => {
     const type: NoteType = "spreadsheet";
     const mime = "application/json";

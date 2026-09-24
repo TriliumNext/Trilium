@@ -114,6 +114,11 @@ export interface OpenedFileUpdateStatus {
     filePath: string;
 }
 
+export interface SyncPullProgress {
+    pulled: number;
+    total: number;
+}
+
 type AllTaskDefinitions =
     | TaskDefinition<"empty">
     | TaskDefinition<"deleteNotes">
@@ -166,8 +171,13 @@ export type WebSocketMessage = AllTaskDefinitions | {
     type: "reload-frontend";
     reason: string;
 } | {
-    type: "sync-pull-in-progress" | "sync-push-in-progress" | "sync-finished" | "sync-failed";
+    type: "sync-push-in-progress" | "sync-finished" | "sync-failed";
     lastSyncedPush: number;
+} | {
+    type: "sync-pull-in-progress";
+    lastSyncedPush: number;
+    /** How many of the changes known to this sync run have been applied so far. */
+    progress?: SyncPullProgress;
 } | {
     /**
      * Syncing stopped because the content hashes of these sectors kept differing from the sync

@@ -11,14 +11,14 @@ test("Displays translation on desktop", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
 
-    await expect(page.locator("#left-pane .quick-search input")).toHaveAttribute("placeholder", "Quick search");
+    await expect(page.locator("#left-pane .quick-search .cm-content")).toHaveAttribute("aria-placeholder", "Quick search");
 });
 
 test("Displays translation on mobile", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto({ isMobile: true });
 
-    await expect(page.locator("#mobile-sidebar-wrapper .quick-search input")).toHaveAttribute("placeholder", "Quick search");
+    await expect(page.locator("#mobile-sidebar-wrapper .quick-search .cm-content")).toHaveAttribute("aria-placeholder", "Quick search");
 });
 
 test("Displays translations in Settings", async ({ page, context }) => {

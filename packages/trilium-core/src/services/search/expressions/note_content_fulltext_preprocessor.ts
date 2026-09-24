@@ -15,7 +15,10 @@ export default function preprocessContent(rawContent: string | Uint8Array, type:
         if (!raw) {
             // Runs before stripTags(), which discards the data-* metadata and anchor text, and
             // against the original markup, because normalize() lowercases the noteIds it needs.
-            const injectedText = extractLinkSearchText(originalContent, resolveNoteTitle);
+            const injectedText = [
+                extractLinkSearchText(originalContent, resolveNoteTitle),
+                extractIconSearchText(originalContent)
+            ].filter(Boolean).join(" ");
 
             // Content size already filtered at DB level, safe to process
             content = stripTags(content);
@@ -137,6 +140,37 @@ const LINK_PREVIEW_TAG_RE = /<(?:section|span)\b[^>]*\bclass=["'][^"']*\blink-(?
 // Mirrors findInternalLinks() in services/notes.ts, inlined to keep that import out of here.
 const INTERNAL_LINK_RE = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)\/?"/g;
 
+// Must match what inline_icon_editing.ts writes in its dataDowncast.
+export const ICON_TAG_RE = /<span\b[^>]*\bclass=["'][^"']*\btn-icon\b[^"']*["'][^>]*>/gi;
+
+/** The class every icon wears beside its pack's, which says nothing about which icon it is. */
+const ICON_MARKER_CLASS = "tn-icon";
+
+/**
+ * The pack classes an icon tag wears — `bx-error-circle` from `tn-icon bx bx-error-circle`.
+ *
+ * The marker is worn by every icon, and a pack's bare prefix — `bx` — by every icon that pack
+ * holds, so neither names one. A tag can also wear a class from outside any pack, since the editor
+ * keeps what imported markup carried: only a class the tag declares the prefix of draws a glyph,
+ * so only those are read. Markup declaring no prefix falls back to every hyphenated class, which
+ * is all there is left to go on.
+ */
+export function readIconClasses(tag: string): string[] {
+    const classNames = (extractAttribute(tag, "class") ?? "")
+        .split(/\s+/)
+        .filter((className) => className && className !== ICON_MARKER_CLASS);
+    const prefixes = new Set(classNames.filter((className) => !className.includes("-")));
+    const packClasses = classNames.filter((className) => className.includes("-"));
+    const named = packClasses.filter((className) => prefixes.has(className.slice(0, className.indexOf("-"))));
+
+    return named.length ? named : packClasses;
+}
+
+/** The name inside a pack class: `error-circle` from `bx-error-circle`. */
+export function readIconName(className: string): string {
+    return className.slice(className.indexOf("-") + 1);
+}
+
 /** Collects extra searchable text from a note's link previews and internal-link targets. */
 function extractLinkSearchText(content: string, resolveNoteTitle?: NoteTitleResolver): string {
     const parts: string[] = [];
@@ -169,6 +203,27 @@ function extractLinkSearchText(content: string, resolveNoteTitle?: NoteTitleReso
     }
 
     return parts.join(" ");
+}
+
+/**
+ * Collects what the icons in a note's content should be findable by.
+ *
+ * An icon is an empty element, so stripping the markup leaves nothing of it behind and a note
+ * marked with one is unfindable. Each icon's pack class and the name inside it are appended as
+ * words instead — `bx bx-error-circle` gives `bx-error-circle error-circle` — so the class serves
+ * a search that knows it and the name serves one that does not.
+ */
+function extractIconSearchText(content: string): string {
+    const parts = new Set<string>();
+
+    for (const tag of content.match(ICON_TAG_RE) ?? []) {
+        for (const className of readIconClasses(tag)) {
+            parts.add(className);
+            parts.add(readIconName(className));
+        }
+    }
+
+    return [ ...parts ].join(" ");
 }
 
 /** Reads a single/double-quoted HTML attribute value from a tag string, entity-decoded. */

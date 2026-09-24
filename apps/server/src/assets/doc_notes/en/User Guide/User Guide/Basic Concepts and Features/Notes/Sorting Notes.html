@@ -30,9 +30,9 @@
         <td>
           <p>Keeps child notes sorted by title alphabetically.</p>
           <p>When given a value, it will sort by other criteria instead: a comma-separated
-            list of levels, each <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> or the name of a label on the child
-            notes, optionally followed by <code>asc</code> or <code>desc</code>, as in a search's <code>orderBy</code>.
-            For example <code>#sorted="priority desc, dueDate"</code> sorts
+            list of levels, each <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> or
+            the name of a label on the child notes, optionally followed by <code>asc</code> or <code>desc</code>,
+            as in a search's <code>orderBy</code>. For example <code>#sorted="priority desc, dueDate"</code> sorts
             by priority, highest first, and notes of equal priority by due date. A
             child note without a level's label sorts after every child that has it,
             whichever direction the level runs in. When neither note has the label,
@@ -55,8 +55,8 @@
       <tr>
         <td><code>#sortFoldersFirst</code>
         </td>
-        <td>If <code>sorted</code> is applied, folders (notes with
-          children) will be sorted as a group at the top (at the bottom when <code>#sortDirection</code> is <code>desc</code>),
+        <td>If <code>sorted</code> is applied, folders (notes with children) will be
+          sorted as a group at the top (at the bottom when <code>#sortDirection</code> is <code>desc</code>),
           and the rest will be sorted.</td>
       </tr>
       <tr>
@@ -110,9 +110,8 @@
       <li><strong>Multi-Level Sorting</strong>: Several of the above can be combined,
         separated by commas; each level is applied only where the previous ones
         are equal. Every level can carry its own direction as a word after the
-        name, <code>asc</code> or <code>desc</code>,
-        otherwise it follows <code>#sortDirection</code>. For
-        example <code>#sorted="priority desc, area, dateCreated"</code> sorts
+        name, <code>asc</code> or <code>desc</code>, otherwise it follows <code>#sortDirection</code>.
+        For example <code>#sorted="priority desc, area, dateCreated"</code> sorts
         by priority, highest first, then by area, then by creation date.</li>
     </ul>
   </li>

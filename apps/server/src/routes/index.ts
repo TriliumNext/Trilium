@@ -187,7 +187,7 @@ export function bootstrap(req: Request, res: Response) {
                 .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
                     ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                     : `api/attachments/download/${p.fontAttachmentId}`)),
-            task_states.generateTaskStateCss()
+            task_states.generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),

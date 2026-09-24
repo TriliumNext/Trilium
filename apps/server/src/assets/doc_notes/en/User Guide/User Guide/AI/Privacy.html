@@ -29,30 +29,30 @@
       </tr>
       <tr>
         <td>Custom endpoint</td>
-        <td>Wherever you pointed it — which may be your own hardware or a hosted service</td>
+        <td>Wherever it was pointed, which may be your own hardware or a hosted service</td>
       </tr>
     </tbody>
   </table>
 </figure>
 <p>This is the reason the provider list is grouped this way, and why Trilium
-  pre-selects nothing: the choice of where your notes travel is made explicitly,
-  by you, before anything is sent.</p>
+  pre-selects nothing: the choice of where your note content is sent is made
+  explicitly by you, before anything is sent.</p>
 <aside class="admonition note">
   <p>The&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>&nbsp;has
-    a model selection of its own, so it maybe answered by a different provider
+    a model selection of its own, so it may be answered by a different provider
     than the one in the chat. The row at the bottom of the assistant's menu
     always names the one being used.</p>
 </aside>
 <h2>What is actually sent</h2>
 <ul>
-  <li><strong>Always, with every message</strong>
+  <li class="ck-list-marker-bold"><strong>Always, with every message</strong>
     <ul>
       <li>The conversation itself: your messages and the assistant's replies, including
         earlier turns</li>
       <li>Trilium's system prompt describing how to format answers and use tools.</li>
     </ul>
   </li>
-  <li><strong>The current note, only when note context is enabled.</strong>
+  <li class="ck-list-marker-bold"><strong>The current note, only when note context is enabled.</strong>
     <ul>
       <li>In the sidebar chat this is the file icon at the bottom; the dedicated
         chat note type never sends a current note.</li>
@@ -63,7 +63,7 @@
         the model must call a tool to read further.</li>
     </ul>
   </li>
-  <li><strong>Any note the model asks for, when note access is enabled.</strong>
+  <li class="ck-list-marker-bold"><strong>Any note the model asks for, when note access is enabled.</strong>
     <ul>
       <li>Tools let the model search your tree and read notes, attributes and attachments
         beyond the current one.</li>
