@@ -29,6 +29,8 @@ export const iconTools = defineTools({
 
             const matches: { iconClass: string; terms: string[]; score: IconScore }[] = [];
             for (const pack of icon_packs.getIconPacks()) {
+                if (pack.internal) continue;
+
                 for (const [name, icon] of Object.entries(pack.manifest.icons)) {
                     if (!name || !icon?.terms) {
                         continue;

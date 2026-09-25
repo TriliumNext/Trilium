@@ -171,7 +171,9 @@ When a workspace is hoisted for a given tab, it is possible to get the backgroun
 
 ## Custom fonts
 
-Currently the only way to include a custom font is to use [Custom resource providers](../Advanced%20Usage/Custom%20Resource%20Providers.md). Basically import a font into Trilium and assign it `#customResourceProvider=fonts/myfont.ttf` and then import the font in CSS via `/custom/fonts/myfont.ttf`. Use `../../../custom/fonts/myfont.ttf` if you run your Trilium server on a different path than `/`.
+The recommended way of using customized fonts is to import a font directly in Trilium. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for information on how to do so.
+
+Alternatively, for a theme providing its own font, [Custom resource providers](../Advanced%20Usage/Custom%20Resource%20Providers.md) can be used: Import a font into Trilium and assign it `#customResourceProvider=fonts/myfont.ttf` and then import the font in CSS via `/custom/fonts/myfont.ttf`. Use `../../../custom/fonts/myfont.ttf` if you run your Trilium server on a different path than `/`.
 
 ## Dark and light themes
 

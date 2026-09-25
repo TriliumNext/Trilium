@@ -26,55 +26,12 @@
     to better understand what data is being sent to a cloud provider.</p>
 </aside>
 <h2>Subscription-based providers</h2>
-<aside class="admonition important">
-  <p>Subscription-based providers are still in beta. They are safe to use (they
-    won't use additional funds and respect the terms of use), but you might
-    experience small issues. Consider&nbsp;<a class="reference-link" href="#root/_help_wy8So3yZZlH9">Reporting issues</a>.</p>
-</aside>
-<p>Some cloud providers offer a subscription, which has a fixed monthly fee
-  instead of pay-per-use (unlike the API keys). Trilium v0.104.0 introduces
-  beta support for Anthropic's Claude Pro/Max subscriptions. Other subscription-based
-  providers such as ChatGPT are on the roadmap, but not yet implemented.</p>
-<p>To use a subscription:</p>
-<ol>
-  <li>First, Claude Code needs to be installed on the machine that runs Trilium.
-    So for a&nbsp;<a class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>,
-    Claude needs to be installed locally and for a&nbsp;<a class="reference-link"
-    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;accessed via a browser,
-    Claude needs to be installed on the server.</li>
-  <li>Claude Code must already be authenticated. To do so, run <code spellcheck="false">claude</code> in
-    a terminal once, type <code spellcheck="false">/login</code> and follow the
-    instructions.</li>
-  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
-    add the Claude Code provider.</li>
-</ol>
-<p>Trilium will identify your Claude Code binary in this order:</p>
+<p>Trilium integrates multiple&nbsp;<a class="reference-link" href="#root/_help_eFhxp9laTW1S">Subscription-based providers</a>:</p>
 <ul>
-  <li>By looking for a <code spellcheck="false">TRILIUM_CLAUDE_CODE_PATH</code> environment
-    variable pointing to the Claude binary. This allows overriding the path
-    if needed.</li>
-  <li>By looking for <code spellcheck="false">claude</code> in your PATH, generally
-    works in most circumstances.</li>
-  <li>By asking your login shell for its <code spellcheck="false">PATH</code> which
-    lets a desktop install find a CLI installed through <code spellcheck="false">nvm</code>,
-    <code
-    spellcheck="false">fnm</code>, <code spellcheck="false">asdf</code> or Homebrew, since a GUI-launched
-      app doesn't inherit your terminal's environment.</li>
+  <li>Claude Code by reusing your CLI.</li>
+  <li>GitHub Copilot by reusing your CLI's ACP.</li>
+  <li>Google Antigravity by downloading and setting up an ACP for Trilium.</li>
 </ul>
-<p>After your provider is set up, you'll benefit from the same features as
-  an API key (note tools, web search, extended thinking, image/PDF attachments,
-  streaming).</p>
-<aside class="admonition note">
-  <p>Trilium intentionally uses your Claude Code binary in order not to have
-    to package a ~250 MB client with it, but this comes at a cost: there is
-    a small risk for a version incompatibility, if the version installed locally
-    doesn't match the one expected by Trilium. Generally it's best to keep
-    both Claude Code and Trilium updated to the latest version.</p>
-</aside>
-<aside class="admonition important">
-  <p>See also the dedicated&nbsp;<a class="reference-link" href="#root/_help_cRRrdZjgyhNc">Privacy</a>&nbsp;section
-    to better understand what data is being sent to a cloud provider.</p>
-</aside>
 <h2>Local/self-hosted providers</h2>
 <p>Local or self-hosted providers are a free alternative which respects your
   privacy but requires specific hardware.</p>
@@ -83,7 +40,7 @@
   <li>Ollama
     <ul>
       <li>Generally Ollama runs in the background so it should be directly usable
-        in Trilium as long as the models are downloaded (e.g. <code spellcheck="false">ollama pull llama3.2</code>).</li>
+        in Trilium as long as the models are downloaded (e.g. <code>ollama pull llama3.2</code>).</li>
     </ul>
   </li>
   <li>LM Studio
@@ -110,6 +67,10 @@
   from the <em>Custom endpoint</em> section.</p>
 <p>This allows you to set the base URL to an OpenAI-compatible API, with
   an optional API key if required by the service.</p>
+<p>Enter the base URL exactly as the service documents it, including its
+  version path, such as <code>https://api.groq.com/openai/v1</code> or <code>https://open.bigmodel.cn/api/paas/v4</code>.
+  Only a bare host such as <code>http://localhost:8080</code> is completed
+  with <code>/v1</code>.</p>
 <p>For custom endpoints, the pricing of the models is not known so the cost
   of a conversation will not be displayed; this is especially relevant for
   hosted providers.</p>

@@ -33,7 +33,7 @@
         "sync-from-desktop-step1": "Oscail sampla de Trilium Notes ar do dheasc.",
         "sync-from-desktop-step2": "Ón Roghchlár Trilium, cliceáil Roghanna.",
         "sync-from-desktop-step3": "Cliceáil ar an gcatagóir Sioncrónaigh sa chrann nótaí.",
-        "sync-from-desktop-step4": "Athraigh seoladh an fhreastalaí chun go mbeidh sé ag pointeáil chuig ceann de na seoltaí ar dheis agus cliceáil Sábháil.",
+        "sync-from-desktop-step4": "Athraigh seoladh an fhreastalaí chun go mbeidh sé ag pointeáil chuig ceann de na seoltaí ar dheis (nó thíos, ar scáileán caol) agus cliceáil ar Sábháil.",
         "sync-from-desktop-step5": "Cliceáil an cnaipe \"Tástáil sioncrónaithe\" chun a fhíorú go bhfuil an nasc rathúil.",
         "sync-from-desktop-warning": "Cinntigh go bhfuil an dá fheiste ar an líonra céanna.",
         "sync-from-desktop-waiting": "Ag fanacht le nasc...",
@@ -103,7 +103,7 @@
         "existing-data-backup-failed": "Níorbh fhéidir an cúltaca a chruthú.",
         "backup-data": "Cúltaca de do shonraí Trilium",
         "backup-name": "Ainm cúltaca",
-        "backup-name-description": "Tabhair ainm don chúltaca seo a aithneoidh tú níos déanaí, nó coinnigh an ceann molta.",
+        "backup-name-description": "Tabhair ainm ar an gcúltaca seo a aithneoidh tú níos déanaí, nó coinnigh an t-ainm atá molta.",
         "backup-password": "Pasfhocal (roghnach)",
         "backup-password-repeat": "Athdhéan an focal faire",
         "backup-password-description": "Má shonraíonn tú pasfhocal, cripteofar an comhad cúltaca. Coinnigh an pasfhocal in áit shábháilte: gan é, ní féidir an cúltaca a athchóiriú.",
@@ -134,7 +134,8 @@
         "existing-data-skip-warning": "Níl aon rud scriosta go fóill. Ní chuirtear bunachar eolais nua in áit ach amháin nuair a roghnaíonn tú ceann nua a chruthú, cúltaca a athbhunú nó sioncrónú ó ghléas eile.",
         "unlock-refused": "Níor glacadh leis na sonraí sin. Déan iarracht arís.",
         "keep-existing": "Fill ar ais chuig an aip",
-        "keep-existing-description": "Coinnigh ort ag úsáid do bhunachar eolais atá ann cheana féin agus téigh ar ais chuig an aip."
+        "keep-existing-description": "Coinnigh ort ag úsáid do bhunachar eolais atá ann cheana féin agus téigh ar ais chuig an aip.",
+        "backup-saved-to": "Tá an cóip chúltaca sábháilte in {{- location}}. Brúigh \"Críochnaigh\" chun filleadh ar an bhfeidhmchlár."
     },
     "login": {
         "password": "Pasfhocal",

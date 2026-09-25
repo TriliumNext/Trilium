@@ -152,6 +152,31 @@ describe("sync service", () => {
         expect(events.indexOf("fetch:2")).toBeGreaterThan(events.indexOf("apply"));
     });
 
+    it("broadcasts pull progress after each applied batch", async () => {
+        const prevInitialized = options.getOptionOrNull("initialized");
+        cls.init(() => options.setOption("initialized", "true"));
+        const bigChange = { entityChange: { entityName: "notes", entityId: "pp1" }, entity: { content: "x".repeat(33 * 1024 * 1024) } };
+        const smallChange = { entityChange: { entityName: "notes", entityId: "pp2" }, entity: { content: "y" } };
+        config.changed = [
+            { entityChanges: [bigChange], lastEntityChangeId: 1, outstandingPullCount: 1 },
+            { entityChanges: [smallChange], lastEntityChangeId: 2, outstandingPullCount: 0 },
+            { entityChanges: [], lastEntityChangeId: 2, outstandingPullCount: 0 }
+        ];
+        vi.spyOn(syncUpdateService, "updateEntities").mockImplementation(() => {});
+        const pullSpy = vi.spyOn(ws, "syncPullInProgress");
+
+        try {
+            await expect(runSync()).resolves.toEqual({ success: true });
+        } finally {
+            cls.init(() => options.setOption("initialized", prevInitialized ?? "true"));
+        }
+
+        expect(pullSpy.mock.calls).toEqual([
+            [ { pulled: 1, total: 2 } ],
+            [ { pulled: 2, total: 2 } ]
+        ]);
+    });
+
     it("marks the database as initialized once a sync converges", async () => {
         // An initial sync-from-server interrupted by a crash resumes via sync/now or the sync
         // timer — NOT via setup.triggerSync(), which is the only other place that sets the flag.

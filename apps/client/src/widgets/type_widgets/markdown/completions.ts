@@ -1,4 +1,4 @@
-import { autocompletion, type Completion, type CompletionContext, type CompletionResult } from "@codemirror/autocomplete";
+import type { Completion, CompletionContext, CompletionResult } from "@codemirror/autocomplete";
 import { syntaxTree } from "@codemirror/language";
 import type { EditorState } from "@codemirror/state";
 import type { SyntaxNode } from "@lezer/common";
@@ -41,210 +41,217 @@ export function useSlashCommands(parentComponent: TypeWidgetProps["parentCompone
     useEffect(() => {
         if (!editorView) return;
 
-        const ext = autocompletion({
-            override: [(ctx) => {
-                // `:` and `-` are allowed so `/todo:<state>` (e.g. `/todo:in-progress`) matches as one token.
-                const match = ctx.matchBefore(SLASH_COMMAND_REGEX);
-                if (!match) return null;
+        const slashCommands = (ctx: CompletionContext): CompletionResult | null => {
+            // `:` and `-` are allowed so `/todo:<state>` (e.g. `/todo:in-progress`) matches as one token.
+            const match = ctx.matchBefore(SLASH_COMMAND_REGEX);
+            if (!match) return null;
 
-                // Suppress slash menu inside fenced/indented code blocks and inline code spans —
-                // a leading `/` there is part of the code, not a command trigger.
-                for (let node: SyntaxNode | null = syntaxTree(ctx.state).resolveInner(ctx.pos, -1); node; node = node.parent) {
-                    if (node.name.includes("Code")) return null;
-                }
+            // Suppress slash menu inside fenced/indented code blocks and inline code spans —
+            // a leading `/` there is part of the code, not a command trigger.
+            for (let node: SyntaxNode | null = syntaxTree(ctx.state).resolveInner(ctx.pos, -1); node; node = node.parent) {
+                if (node.name.includes("Code")) return null;
+            }
 
-                return {
-                    from: match.from,
-                    options: [
-                        {
-                            label: "/date",
-                            detail: t("markdown_slash_commands.date"),
-                            apply(view, _completion, from, to) {
-                                view.dispatch({ changes: { from, to } });
-                                parentRef.current?.triggerCommand("insertDateTimeToText");
+            return {
+                from: match.from,
+                options: [
+                    {
+                        label: "/date",
+                        detail: t("markdown_slash_commands.date"),
+                        apply(view, _completion, from, to) {
+                            view.dispatch({ changes: { from, to } });
+                            parentRef.current?.triggerCommand("insertDateTimeToText");
+                        }
+                    },
+                    {
+                        label: "/include",
+                        detail: t("markdown_slash_commands.include"),
+                        apply(view, _completion, from, to) {
+                            view.dispatch({ changes: { from, to } });
+                            parentRef.current?.triggerCommand("addIncludeNoteToText");
+                        }
+                    },
+                    {
+                        label: "/image",
+                        detail: t("markdown_slash_commands.image"),
+                        apply(view, _completion, from, to) {
+                            view.dispatch({ changes: { from, to } });
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.addEventListener("change", () => {
+                                const file = input.files?.[0];
+                                if (file) uploadImageAndInsert(editorView, noteRef.current, file);
+                            });
+                            input.click();
+                        }
+                    },
+                    {
+                        label: "/link",
+                        detail: t("markdown_slash_commands.link"),
+                        apply(view, _completion, from, to) {
+                            view.dispatch({ changes: { from, to } });
+                            parentRef.current?.triggerCommand("addLinkToText");
+                        }
+                    },
+                    {
+                        label: "/math",
+                        detail: t("markdown_slash_commands.math"),
+                        apply(view, _completion, from, to) {
+                            const placeholder = `\\text{${t("markdown_slash_commands.placeholders.math")}}`;
+                            const template = `$$\n${placeholder}\n$$`;
+                            view.dispatch({
+                                changes: { from, to, insert: template },
+                                selection: { anchor: from + 3, head: from + 3 + placeholder.length }
+                            });
+                        }
+                    },
+                    {
+                        label: "/footnote",
+                        detail: t("markdown_slash_commands.footnote"),
+                        apply(view, _completion, from, to) {
+                            const doc = view.state.doc.toString();
+                            let maxFootnote = 0;
+                            for (const m of doc.matchAll(/\[\^(\d+)\]/g)) {
+                                maxFootnote = Math.max(maxFootnote, parseInt(m[1], 10));
                             }
-                        },
-                        {
-                            label: "/include",
-                            detail: t("markdown_slash_commands.include"),
-                            apply(view, _completion, from, to) {
-                                view.dispatch({ changes: { from, to } });
-                                parentRef.current?.triggerCommand("addIncludeNoteToText");
-                            }
-                        },
-                        {
-                            label: "/image",
-                            detail: t("markdown_slash_commands.image"),
-                            apply(view, _completion, from, to) {
-                                view.dispatch({ changes: { from, to } });
-                                const input = document.createElement("input");
-                                input.type = "file";
-                                input.accept = "image/*";
-                                input.addEventListener("change", () => {
-                                    const file = input.files?.[0];
-                                    if (file) uploadImageAndInsert(editorView, noteRef.current, file);
-                                });
-                                input.click();
-                            }
-                        },
-                        {
-                            label: "/link",
-                            detail: t("markdown_slash_commands.link"),
-                            apply(view, _completion, from, to) {
-                                view.dispatch({ changes: { from, to } });
-                                parentRef.current?.triggerCommand("addLinkToText");
-                            }
-                        },
-                        {
-                            label: "/math",
-                            detail: t("markdown_slash_commands.math"),
-                            apply(view, _completion, from, to) {
-                                const placeholder = `\\text{${t("markdown_slash_commands.placeholders.math")}}`;
-                                const template = `$$\n${placeholder}\n$$`;
-                                view.dispatch({
-                                    changes: { from, to, insert: template },
-                                    selection: { anchor: from + 3, head: from + 3 + placeholder.length }
-                                });
-                            }
-                        },
-                        {
-                            label: "/footnote",
-                            detail: t("markdown_slash_commands.footnote"),
-                            apply(view, _completion, from, to) {
-                                const doc = view.state.doc.toString();
-                                let maxFootnote = 0;
-                                for (const m of doc.matchAll(/\[\^(\d+)\]/g)) {
-                                    maxFootnote = Math.max(maxFootnote, parseInt(m[1], 10));
+                            const n = maxFootnote + 1;
+                            const ref = `[^${n}]`;
+                            const def = `\n\n[^${n}]: `;
+                            const docEnd = view.state.doc.length;
+                            const newDocEnd = docEnd - (to - from) + ref.length + def.length;
+                            view.dispatch({
+                                changes: [
+                                    { from, to, insert: ref },
+                                    { from: docEnd, insert: def }
+                                ],
+                                selection: { anchor: newDocEnd }
+                            });
+                        }
+                    },
+                    {
+                        label: "/mermaid",
+                        detail: t("markdown_slash_commands.mermaid"),
+                        apply(view, _completion, from, to) {
+                            const placeholder = "graph TD\n    A --> B";
+                            const template = `\`\`\`mermaid\n${placeholder}\n\`\`\``;
+                            view.dispatch({
+                                changes: { from, to, insert: template },
+                                selection: { anchor: from + 11, head: from + 11 + placeholder.length }
+                            });
+                        }
+                    },
+                    // One `/mermaid:<type>` per sample diagram (e.g. `/mermaid:flowchart`),
+                    // pre-filling the fenced block with that template's source.
+                    ...SAMPLE_DIAGRAMS.map((sample) => ({
+                        label: `/mermaid:${sample.name.toLowerCase().replace(/\s+/g, "-")}`,
+                        detail: t("markdown_slash_commands.mermaid_template", { name: sample.name }),
+                        apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                            const template = `\`\`\`mermaid\n${sample.content.trimEnd()}\n\`\`\``;
+                            view.dispatch({
+                                changes: { from, to, insert: template },
+                                selection: { anchor: from + 11 }
+                            });
+                        }
+                    })),
+                    {
+                        label: "/collapsible",
+                        detail: t("markdown_slash_commands.collapsible"),
+                        apply(view, _completion, from, to) {
+                            // No native markdown syntax — round-trips through the
+                            // importer as raw <details>/<summary> HTML (see markdown.ts).
+                            const placeholder = t("markdown_slash_commands.placeholders.collapsible_summary");
+                            const open = `<details class="trilium-collapsible">\n<summary>`;
+                            const close = `</summary>\n\n${t("markdown_slash_commands.placeholders.collapsible_details")}\n\n</details>`;
+                            const anchor = from + open.length;
+                            view.dispatch({
+                                changes: { from, to, insert: open + placeholder + close },
+                                selection: { anchor, head: anchor + placeholder.length }
+                            });
+                        }
+                    },
+                    {
+                        label: "/page-break",
+                        detail: t("markdown_slash_commands.page_break"),
+                        apply(view, _completion, from, to) {
+                            // No native markdown syntax — round-trips through the
+                            // importer as raw HTML and drives the print/PDF page break (see print.css).
+                            // The trailing blank line terminates the raw-HTML block; without it the
+                            // text on the next line is swallowed into the <div> and never rendered.
+                            const insert = `<div class="page-break"></div>\n\n`;
+                            view.dispatch({
+                                changes: { from, to, insert },
+                                selection: { anchor: from + insert.length }
+                            });
+                        }
+                    },
+                    {
+                        label: "/table",
+                        detail: t("markdown_slash_commands.table"),
+                        apply(view, _completion, from, to) {
+                            // GFM table skeleton. The trailing blank line terminates the table block
+                            // so following text isn't absorbed into it (see page break above).
+                            const header = t("markdown_slash_commands.placeholders.table_column", { number: 1 });
+                            const table = [
+                                `| ${header} | ${t("markdown_slash_commands.placeholders.table_column", { number: 2 })} |`,
+                                `| -------- | -------- |`,
+                                `|          |          |`
+                            ].join("\n");
+                            // Select the first header cell so the user can type the first column name.
+                            const anchor = from + 2; // skip the leading "| "
+                            view.dispatch({
+                                changes: { from, to, insert: `${table}\n\n` },
+                                selection: { anchor, head: anchor + header.length }
+                            });
+                        }
+                    },
+                    ...["note", "tip", "important", "caution", "warning"].map((admonitionType) => ({
+                        label: `/${admonitionType}`,
+                        detail: t("markdown_slash_commands.admonition", { type: admonitionType }),
+                        apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                            const template = `> [!${admonitionType.toUpperCase()}]\n> `;
+                            view.dispatch({
+                                changes: { from, to, insert: template },
+                                selection: { anchor: from + template.length }
+                            });
+                        }
+                    })),
+                    // One `/todo:<state>` per configured task state that has a markdown marker —
+                    // the ` ` (unchecked) and `x` (checked) anchors are markers too, so both are covered.
+                    ...taskStatesRef.current
+                        .filter((state) => state.markdownSymbol)
+                        .map((state) => {
+                            // Anchors (`none`/`done`) are the standard `[ ]`/`[x]`; custom states
+                            // use non-standard markers (e.g. `[/]`), so flag those in the description.
+                            const detailKey = isAnchorState(state.name)
+                                ? "markdown_slash_commands.todo"
+                                : "markdown_slash_commands.todo_nonstandard";
+                            return {
+                                label: `/todo:${state.name}`,
+                                detail: t(detailKey, { title: state.title }),
+                                apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
+                                    const precededByBullet = from >= 2 && view.state.doc.sliceString(from - 2, from) === "- ";
+                                    const insert = buildTaskItemInsert(state.markdownSymbol, precededByBullet);
+                                    view.dispatch({ changes: { from, to, insert } });
                                 }
-                                const n = maxFootnote + 1;
-                                const ref = `[^${n}]`;
-                                const def = `\n\n[^${n}]: `;
-                                const docEnd = view.state.doc.length;
-                                const newDocEnd = docEnd - (to - from) + ref.length + def.length;
-                                view.dispatch({
-                                    changes: [
-                                        { from, to, insert: ref },
-                                        { from: docEnd, insert: def }
-                                    ],
-                                    selection: { anchor: newDocEnd }
-                                });
-                            }
-                        },
-                        {
-                            label: "/mermaid",
-                            detail: t("markdown_slash_commands.mermaid"),
-                            apply(view, _completion, from, to) {
-                                const placeholder = "graph TD\n    A --> B";
-                                const template = `\`\`\`mermaid\n${placeholder}\n\`\`\``;
-                                view.dispatch({
-                                    changes: { from, to, insert: template },
-                                    selection: { anchor: from + 11, head: from + 11 + placeholder.length }
-                                });
-                            }
-                        },
-                        // One `/mermaid:<type>` per sample diagram (e.g. `/mermaid:flowchart`),
-                        // pre-filling the fenced block with that template's source.
-                        ...SAMPLE_DIAGRAMS.map((sample) => ({
-                            label: `/mermaid:${sample.name.toLowerCase().replace(/\s+/g, "-")}`,
-                            detail: t("markdown_slash_commands.mermaid_template", { name: sample.name }),
-                            apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
-                                const template = `\`\`\`mermaid\n${sample.content.trimEnd()}\n\`\`\``;
-                                view.dispatch({
-                                    changes: { from, to, insert: template },
-                                    selection: { anchor: from + 11 }
-                                });
-                            }
-                        })),
-                        {
-                            label: "/collapsible",
-                            detail: t("markdown_slash_commands.collapsible"),
-                            apply(view, _completion, from, to) {
-                                // No native markdown syntax — round-trips through the
-                                // importer as raw <details>/<summary> HTML (see markdown.ts).
-                                const placeholder = t("markdown_slash_commands.placeholders.collapsible_summary");
-                                const open = `<details class="trilium-collapsible">\n<summary>`;
-                                const close = `</summary>\n\n${t("markdown_slash_commands.placeholders.collapsible_details")}\n\n</details>`;
-                                const anchor = from + open.length;
-                                view.dispatch({
-                                    changes: { from, to, insert: open + placeholder + close },
-                                    selection: { anchor, head: anchor + placeholder.length }
-                                });
-                            }
-                        },
-                        {
-                            label: "/page-break",
-                            detail: t("markdown_slash_commands.page_break"),
-                            apply(view, _completion, from, to) {
-                                // No native markdown syntax — round-trips through the
-                                // importer as raw HTML and drives the print/PDF page break (see print.css).
-                                // The trailing blank line terminates the raw-HTML block; without it the
-                                // text on the next line is swallowed into the <div> and never rendered.
-                                const insert = `<div class="page-break"></div>\n\n`;
-                                view.dispatch({
-                                    changes: { from, to, insert },
-                                    selection: { anchor: from + insert.length }
-                                });
-                            }
-                        },
-                        {
-                            label: "/table",
-                            detail: t("markdown_slash_commands.table"),
-                            apply(view, _completion, from, to) {
-                                // GFM table skeleton. The trailing blank line terminates the table block
-                                // so following text isn't absorbed into it (see page break above).
-                                const header = t("markdown_slash_commands.placeholders.table_column", { number: 1 });
-                                const table = [
-                                    `| ${header} | ${t("markdown_slash_commands.placeholders.table_column", { number: 2 })} |`,
-                                    `| -------- | -------- |`,
-                                    `|          |          |`
-                                ].join("\n");
-                                // Select the first header cell so the user can type the first column name.
-                                const anchor = from + 2; // skip the leading "| "
-                                view.dispatch({
-                                    changes: { from, to, insert: `${table}\n\n` },
-                                    selection: { anchor, head: anchor + header.length }
-                                });
-                            }
-                        },
-                        ...["note", "tip", "important", "caution", "warning"].map((admonitionType) => ({
-                            label: `/${admonitionType}`,
-                            detail: t("markdown_slash_commands.admonition", { type: admonitionType }),
-                            apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
-                                const template = `> [!${admonitionType.toUpperCase()}]\n> `;
-                                view.dispatch({
-                                    changes: { from, to, insert: template },
-                                    selection: { anchor: from + template.length }
-                                });
-                            }
-                        })),
-                        // One `/todo:<state>` per configured task state that has a markdown marker —
-                        // the ` ` (unchecked) and `x` (checked) anchors are markers too, so both are covered.
-                        ...taskStatesRef.current
-                            .filter((state) => state.markdownSymbol)
-                            .map((state) => {
-                                // Anchors (`none`/`done`) are the standard `[ ]`/`[x]`; custom states
-                                // use non-standard markers (e.g. `[/]`), so flag those in the description.
-                                const detailKey = isAnchorState(state.name)
-                                    ? "markdown_slash_commands.todo"
-                                    : "markdown_slash_commands.todo_nonstandard";
-                                return {
-                                    label: `/todo:${state.name}`,
-                                    detail: t(detailKey, { title: state.title }),
-                                    apply(view: import("@codemirror/view").EditorView, _c: unknown, from: number, to: number) {
-                                        const precededByBullet = from >= 2 && view.state.doc.sliceString(from - 2, from) === "- ";
-                                        const insert = buildTaskItemInsert(state.markdownSymbol, precededByBullet);
-                                        view.dispatch({ changes: { from, to, insert } });
-                                    }
-                                };
-                            }),
-                        ...buildSnippetCompletions(snippetsRef.current.filter((snippet) => snippet.noteId !== noteRef.current.noteId))
-                    ]
-                };
-            }, codeFenceCompletionSource],
-            activateOnTyping: true
-        });
+                            };
+                        }),
+                    ...buildSnippetCompletions(snippetsRef.current.filter((snippet) => snippet.noteId !== noteRef.current.noteId))
+                ]
+            };
+        };
 
-        editorView.setNamedExtension("slashCommands", ext);
+        // CodeMirror allows one `override` config per editor, so sources go through
+        // `setCompletionSource` instead of each adding its own `autocompletion()`.
+        // Bridges the codemirror package's own @codemirror/autocomplete identity, as code/snippets.ts does.
+        type CmCompletionSource = Parameters<VanillaCodeMirror["setCompletionSource"]>[1];
+        editorView.setCompletionSource("slashCommands", slashCommands as unknown as CmCompletionSource);
+        editorView.setCompletionSource("markdownCodeFence", codeFenceCompletionSource as unknown as CmCompletionSource);
+
+        return () => {
+            editorView.setCompletionSource("slashCommands", null);
+            editorView.setCompletionSource("markdownCodeFence", null);
+        };
     }, [editorView]);
 }
 

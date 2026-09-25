@@ -26,12 +26,14 @@ apps/desktop/
   e2e/                           # Playwright against the built app (`pnpm --filter desktop e2e`)
   scripts/build.ts               # esbuild bundle + asset copy into dist/
   electron-forge/                # packaging (forge.config.ts, icons, dmg, portable/safe-mode launchers)
+                                 # flip-fuses.ts + trim-locales.ts are ALSO run as scripts by the
+                                 # Flathub manifest — see the packaging-for-flathub skill before editing
 ```
 
 ## Process and security model
 
 - **`nodeIntegration: false`, `contextIsolation: true`, `webviewTag: true`** on every window (`services/window.ts`). The renderer has no Node, no `require("electron")`, no `@electron/remote` (removed — never reintroduce it). Everything crosses through the preload bridge.
-- **`web_contents_security.ts`** vets every `<webview>` in `will-attach-webview` and denies `window.open`, routing allow-listed URLs to the OS. If a new feature needs a popup or a webview privilege, change it there — never relax `webPreferences` at the call site.
+- **`web_contents_security.ts`** vets every `<webview>` in `will-attach-webview` and decides `window.open`: the app shell's root URL becomes an extra window in the opener's renderer process (that is how the client opens new windows — no IPC channel), everything else is denied and allow-listed URLs are routed to the OS. If a new feature needs a popup or a webview privilege, change it there — never relax `webPreferences` at the call site.
 - **Main-process handlers validate their input** and never trust a path from the renderer: OS pickers run in the main process (`dialog.ts`, `import.ts`, `restore.ts`) and hand back a location the *user* chose; `import.ts` mints single-use access grants rather than accepting a path; `shell.ts` gates every channel with a validator that throws. Follow the same shape for anything that touches the filesystem or the OS.
 - **Secrets stay out of the DB where they must**: `security_settings.ts` reads `data_dir/security.json`, `backup_passphrase.ts` uses the OS keyring — the passphrase must not travel inside the backup it protects.
 - **`services/request.ts`** (`ElectronRequestProvider`) uses Electron's `net` so sync honours the system proxy; `referer.ts` keeps hosts that require an http(s) `Referer` working from the `trilium-app://` origin.
@@ -41,6 +43,14 @@ apps/desktop/
 - The UI loads from **`trilium-app://app/`**, a privileged custom scheme (`protocol.ts`). `registerTriliumAppScheme()` **must run before `app.ready`** (Electron ignores `registerSchemesAsPrivileged` afterwards and navigation aborts with `(blocked:origin)`); `setupTriliumAppProtocol(expressAppPromise)` installs the handler that synthesises a Node request/response and dispatches through the real Express app — session, CSRF, multer and error middleware all run. Requests arriving before the server is built simply wait on the promise. `apps/server/src/services/electron_request.ts` tags them so auth/CSRF middleware can tell them from external TCP traffic. The same two functions are reused by `apps/edit-docs`.
 - **WebSocket is replaced by IPC**: `ipc_messaging_provider.ts` implements `MessagingProvider` over `webContents.send` / `ipcMain.on`, one client per `webContents.id`; the client side picks it up through `window.electronApi.ws` (`apps/client/src/services/ws.ts`). Don't open a TCP WebSocket from desktop code.
 - Window creation is gated on core init, not full server startup, so the renderer spins up while Express is still building (`coreInitializedPromise` / `expressAppPromise` in `main.ts`).
+
+## The `main()` prologue runs before the database
+
+Everything from the top of `main()` down to `dbProvider.loadFromFile(…)` runs before `app.on("ready")` and long before `initializeCore()` wires core's SQL layer. Chromium switches (`app.commandLine.appendSwitch`, `app.disableHardwareAcceleration`) must be applied before `ready`, which forces that shape — current readers are `lang` via `getElectronLocale()`, `smoothScrollEnabled` (#10559) and `hardwareAccelerationEnabled` (#10572). Three rules hold in that window:
+
+- **`options.getOptionOrNull()` always returns `null` there.** It falls back to `getSql()`, which throws before the provider is wired, so an option-derived switch silently takes its default (#10559). Read pre-`ready` values with `readDbOption(dbProvider, name)` instead.
+- **Keep the prologue await-free.** `app`, `config` and `dataDirs` are static imports precisely so `ready` cannot fire before the database is open. Adding an `await` — including a `await import(…)` for something already statically available — reintroduces the race that lands a switch too late.
+- **Open the database once.** The `BetterSqlite3Provider` the switches read from is the same instance handed to `initializeCore({ dbConfig: { provider } })`; don't open a second connection. The single-instance lock check stays *before* the open, so a second launch exits without touching the file.
 
 ## Adding an Electron API (renderer → main)
 
@@ -154,6 +164,11 @@ CJS — the sandboxed renderer can't load an ESM preload, and the worker is spaw
   lands in a lazy chunk instead of the startup path — measured on identical boots, ESM +
   seams took the desktop main process from 348 MB to 287 MB RSS. The
   **`analyzing-backend-bundle` skill** has the measurement tools and the seam patterns.
+
+## Upstream Electron behaviours that bite
+
+- **`session.setSpellCheckerLanguages()` force-enables spell check.** Upstream runs `prefs.SetBoolean(kSpellCheckEnable, !langs.empty())`, so a non-empty language list clobbers an earlier `setSpellCheckerEnabled(false)` — the symptom is spell check reactivating on every launch even though the option is off (#10569). Set the languages **first** and `setSpellCheckerEnabled(enabled)` **last**; `setupSpellcheckForSession()` and `applySpellcheckLanguages()` in `services/window.ts` both re-assert the option afterwards for this reason.
+- **`electron.net` joins repeated header values with a bare comma**, where Node's `http` joins cookie arrays with `"; "` — which is why server↔server sync never hits this and desktop sync does. A `Cookie` header replayed from a raw `set-cookie` array arrives as `…HttpOnly,trilium.sid=x`, which `cookie.parse` reads as one junk key: the session cookie is lost and sync 401s with "Logged in session not found" as soon as a response carries any second `Set-Cookie` (a load-balancer affinity cookie) before Trilium's. `absorbSetCookies()` in `apps/server/src/services/request.ts` merges by name into a single `"; "`-joined string; keep any header a new `net`-based request path sends pre-joined (#10548).
 
 ## Running
 

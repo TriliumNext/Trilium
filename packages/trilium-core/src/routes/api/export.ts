@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import opmlExportService from "../../services/export/opml.js";

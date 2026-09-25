@@ -1,0 +1,133 @@
+<p>Some cloud providers offer a subscription, which has a fixed monthly fee
+  instead of pay-per-use (unlike the API keys).</p>
+<p>In a nutshell, subscription-based providers work by either reusing your
+  existing CLI tools (e.g. Claude Code, GitHub Copilot via ACP) whereas some
+  require installing the ACP server manually (e.g. Google Antigravity). Because
+  they require something to be installed on your device, these providers
+  are not available on Mobile (Android or iOS) or standalone mode.</p>
+<p>See also the dedicated&nbsp;<a class="reference-link" href="#root/_help_cRRrdZjgyhNc">Privacy</a>&nbsp;section
+  to better understand what data is being sent to a cloud provider.</p>
+<h2>Claude Code</h2>
+<p>To use a subscription:</p>
+<ol>
+  <li>First, Claude Code needs to be installed on the machine that runs Trilium.
+    So for a&nbsp;<a class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>,
+    Claude needs to be installed locally and for a&nbsp;<a class="reference-link"
+    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;accessed via
+    a browser, Claude needs to be installed on the server.</li>
+  <li>Claude Code must already be authenticated. To do so, run <code>claude</code> in
+    a terminal once, type <code>/login</code> and follow the instructions.</li>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
+    add the Claude Code provider.</li>
+</ol>
+<p>Trilium will identify your Claude Code binary in this order:</p>
+<ul>
+  <li>By looking for a <code>TRILIUM_CLAUDE_CODE_PATH</code> environment variable
+    pointing to the Claude binary. This allows overriding the path if needed.</li>
+  <li>By looking for <code>claude</code> in your PATH, generally works in most
+    circumstances.</li>
+  <li>By asking your login shell for its <code>PATH</code> which lets a desktop
+    install find a CLI installed through <code>nvm</code>, <code>fnm</code>, <code>asdf</code> or
+    Homebrew, since a GUI-launched app doesn't inherit your terminal's environment.</li>
+</ul>
+<p>After your provider is set up, you'll benefit from the same features as
+  an API key (note tools, web search, extended thinking, image/PDF attachments,
+  streaming).</p>
+<aside class="admonition note">
+  <p>Trilium intentionally uses your Claude Code binary in order not to have
+    to package a ~250 MB client with it, but this comes at a cost: there is
+    a small risk for a version incompatibility, if the version installed locally
+    doesn't match the one expected by Trilium. Generally it's best to keep
+    both Claude Code and Trilium updated to the latest version.</p>
+</aside>
+<h2>GitHub Copilot</h2>
+<aside class="admonition note">
+  <p>This subscription-based provider is still in beta. It is safe to use (won't
+    use additional funds and respects the terms of use), but you might experience
+    small issues. Consider&nbsp;<a class="reference-link" href="#root/_help_wy8So3yZZlH9">Reporting issues</a>.</p>
+</aside>
+<p>GitHub Copilot gives access to the models of your GitHub Copilot subscription
+  (Pro, Pro+, Business or Enterprise), without an API key. Usage counts against
+  your Copilot plan.</p>
+<ol>
+  <li>Install the GitHub Copilot CLI on the machine that runs Trilium, for example
+    with <code>npm install -g @github/copilot</code>. As with Claude Code, for
+    a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;it
+    needs to be installed on the server.</li>
+  <li>Sign in by running <code>copilot login</code> in a terminal once. If you
+    already use GitHub Copilot in another editor on the same machine, that
+    login is reused.</li>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em> and
+    add the GitHub Copilot provider.</li>
+</ol>
+<p>Trilium will identify your Copilot CLI in this order:</p>
+<ul>
+  <li>By looking for a <code>TRILIUM_COPILOT_PATH</code> environment variable
+    pointing to the Copilot binary.</li>
+  <li>By looking for <code>copilot</code> in your PATH.</li>
+  <li>By asking your login shell for its <code>PATH</code>, the same as for Claude
+    Code.</li>
+</ul>
+<h3>Known limitations</h3>
+<ul>
+  <li>The agent can only work with your notes through Trilium's note tools;
+    its own file, shell and web tools are blocked for security reasons.</li>
+  <li>Images can be attached to the conversation, PDFs cannot. The LLM should
+    still be able to read PDF notes and attachments via&nbsp;<a class="reference-link"
+    href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>&nbsp;when the
+    note tools are enabled.</li>
+</ul>
+<h2>Google Antigravity</h2>
+<aside class="admonition note">
+  <p>This subscription-based provider is still in beta. It is safe to use (won't
+    use additional funds and respects the terms of use), but you might experience
+    small issues. Consider&nbsp;<a class="reference-link" href="#root/_help_wy8So3yZZlH9">Reporting issues</a>.</p>
+</aside>
+<p>Google Antigravity gives access to Gemini models using a Google account
+  (free, Google AI Pro or Google AI Ultra), without an API key.</p>
+<p>Unlike Claude Code or GitHub Copilot, Google's Antigravity ACP server
+  is not part of the CLI so it needs to be installed manually just for Trilium.
+  The downloaded archive is around 112-334 MB and the extracted size is around
+  230 MB-2 GB based on the platform.</p>
+<p>On Windows, macOS and Linux (excluding NixOS):</p>
+<ol>
+  <li>Download Google's Antigravity ACP server for your platform. The link is
+    shown when adding the provider in&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>AI / LLM</em>.
+    Unpack it on the device that runs Trilium.</li>
+  <li>Make it findable by Trilium, either:
+    <ol>
+      <li>by adding the unpacked folder to your PATH, or</li>
+      <li>by setting a <code>TRILIUM_ANTIGRAVITY_ACP_PATH</code> environment variable
+        pointing to <code>agy_acp_server.exe</code> (Windows) or <code>agy_acp_server.par</code> (Linux
+        and macOS).</li>
+    </ol>
+  </li>
+  <li>Go to&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→
+    AI / LLM and add the Google Antigravity provider. When the list of models
+    is loaded for the first time, the Google sign-in page opens in a browser
+    on the machine running Trilium; finish signing in there.</li>
+</ol>
+<aside class="admonition note">
+  <p>Trilium needs <code>curl</code> to use Google Antigravity. It comes with
+    Windows 10 and later, macOS and most Linux distributions.</p>
+</aside>
+<p>On NixOS, <code>antigravity-acp</code> package is already available but
+  only in <code>nixos-unstable</code> at the time of writing. The easiest method
+  to test it out is to use the <code>nix shell</code> with flakes:</p><pre><code class="language-text-x-sh">NIXPKGS_ALLOW_UNFREE=1 nix shell --impure github:nixos/nixpkgs/nixos-unstable#antigravity-acp
+trilium</code></pre>
+<h3>Known limitations</h3>
+<ul>
+  <li>The agent can only work with your notes through Trilium's note tools;
+    its own file and shell tools are blocked for security reasons.</li>
+  <li>The Antigravity ACP server requires authentication via a login link. The
+    login link needs to be run on the same device, so it might not be possible
+    to set up the provider while using the web version of a Docker installation.&nbsp;<a
+    class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>&nbsp;should
+    work fine.</li>
+  <li>Images can be attached to the conversation, PDFs cannot. The LLM should
+    still be able to read PDF notes and attachments via&nbsp;<a class="reference-link"
+    href="#root/_help_TiQbQDgP8L5t">Text Extraction (OCR)</a>&nbsp;when the
+    note tools are enabled.</li>
+  <li>The results of tool calls (e.g. reading a note, writing attributes) are
+    not properly displayed because they are not exposed by the ACP server.</li>
+</ul>

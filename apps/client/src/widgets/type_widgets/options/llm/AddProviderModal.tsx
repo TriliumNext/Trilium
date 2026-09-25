@@ -14,6 +14,7 @@ import MaskedIcon from "../../../react/MaskedIcon";
 import SelectableCard, { SelectableCardGrid } from "../../../react/SelectableCard";
 import WizardModal, { type WizardStep } from "../../../react/WizardModal";
 import OptionsRow from "../components/OptionsRow";
+import { useAntigravityDownload } from "./antigravity_download";
 import ModelSelection from "./ModelSelection";
 import { PROVIDER_ICONS } from "./provider_icons.js";
 
@@ -52,7 +53,8 @@ export interface ProviderType {
     /**
      * What the connection step shows when the provider has neither a key nor an
      * endpoint to ask for: the full account-and-prerequisite story, in place of
-     * the fields that would otherwise fill the step.
+     * the fields that would otherwise fill the step. Blank lines separate its
+     * paragraphs, so the translation decides where they fall.
      */
     connectionDescription?: string;
     /** One-line setup reminder shown under the endpoint field (i18n key, rendered via `<Trans>`). */
@@ -79,6 +81,8 @@ export interface ProviderType {
      * an advanced override (vendor APIs), or not applicable. Defaults to `"advanced"`.
      */
     baseUrl?: "required" | "advanced" | "none";
+    /** How long listing the provider's models can take, when it needs longer than the default minute. */
+    modelListTimeoutMs?: number;
     /**
      * Which section of the provider list this card belongs to — how it is billed,
      * mirroring the three the user guide describes: metered API keys, a fixed-fee
@@ -116,13 +120,18 @@ export const PROVIDER_TYPES: ProviderType[] = [
     // Reachable through the custom endpoint card too — it speaks the OpenAI API —
     // but carded here so its models resolve against the committed price table,
     // which a nameless endpoint never can.
-    { id: "deepseek", name: "DeepSeek", group: "cloud", defaultBaseUrl: "https://api.deepseek.com/v1", iconUrl: PROVIDER_ICONS.deepseek, beta: true },
+    { id: "deepseek", name: "DeepSeek", group: "cloud", defaultBaseUrl: "https://api.deepseek.com/v1", iconUrl: PROVIDER_ICONS.deepseek },
     // Uses the Claude Agent SDK on the server; auth belongs to Claude Code (`claude /login`),
     // and usage is covered by the subscription rather than charged per token.
-    { id: "claude-agent", name: "Claude Code", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["claude-agent"], description: t("llm.provider_desc_claude_agent"), connectionDescription: t("llm.claude_agent_description"), beta: true, apiKey: "none", baseUrl: "none", needsHostProcess: true },
+    { id: "claude-agent", name: "Claude Code", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["claude-agent"], connectionDescription: t("llm.claude_agent_description"), apiKey: "none", baseUrl: "none", needsHostProcess: true },
     // The same arrangement over the GitHub Copilot CLI, driven in its ACP mode;
     // auth belongs to the CLI (`copilot login`).
-    { id: "copilot-agent", name: "GitHub Copilot", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["copilot-agent"], description: t("llm.provider_desc_copilot_agent"), connectionDescription: t("llm.copilot_agent_description"), beta: true, apiKey: "none", baseUrl: "none", needsHostProcess: true },
+    { id: "copilot-agent", name: "GitHub Copilot", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["copilot-agent"], connectionDescription: t("llm.copilot_agent_description"), beta: true, apiKey: "none", baseUrl: "none", needsHostProcess: true },
+    // Gemini on a Google account through Google's Antigravity ACP server; the server
+    // signs in itself, opening the Google sign-in page the first time models are listed.
+    // That sign-in runs inside the model-list request, so the request outlasts the
+    // server's own 5-minute wait for it (`SIGN_IN_TIMEOUT_MS`).
+    { id: "antigravity-agent", name: "Google Antigravity", group: "subscription", defaultBaseUrl: "", iconUrl: PROVIDER_ICONS["antigravity-agent"], connectionDescription: t("llm.antigravity_agent_description"), beta: true, apiKey: "none", baseUrl: "none", needsHostProcess: true, modelListTimeoutMs: 6 * 60_000 },
     // The three self-hosted cards share one server-side provider; they differ only in
     // the endpoint they prefill and the setup hint they show.
     // No blurbs: the group heading already says local/self-hosted, and how to start
@@ -130,20 +139,17 @@ export const PROVIDER_TYPES: ProviderType[] = [
     {
         id: "ollama", name: "Ollama", group: "local", defaultBaseUrl: "http://localhost:11434", prefillBaseUrl: true,
         iconUrl: PROVIDER_ICONS.ollama,
-        setupHintKey: "llm.setup_hint_ollama", apiKey: "none", baseUrl: "required",
-        beta: true
+        setupHintKey: "llm.setup_hint_ollama", apiKey: "none", baseUrl: "required"
     },
     {
         id: "lmstudio", name: "LM Studio", group: "local", defaultBaseUrl: "http://localhost:1234/v1", prefillBaseUrl: true,
         iconUrl: PROVIDER_ICONS.lmstudio,
-        setupHintKey: "llm.setup_hint_lmstudio", apiKey: "none", baseUrl: "required",
-        beta: true
+        setupHintKey: "llm.setup_hint_lmstudio", apiKey: "none", baseUrl: "required"
     },
     {
         id: "openai-compatible", name: t("llm.provider_openai_compatible"), group: "custom", defaultBaseUrl: "http://localhost:8080/v1",
         iconUrl: PROVIDER_ICONS["openai-compatible"], description: t("llm.provider_desc_openai_compatible"),
-        setupHintKey: "llm.setup_hint_openai_compatible", apiKey: "optional", baseUrl: "required",
-        beta: true
+        setupHintKey: "llm.setup_hint_openai_compatible", apiKey: "optional", baseUrl: "required"
     }
 ];
 
@@ -376,7 +382,7 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
                             )}
                             {baseUrlMode === "advanced" && baseUrlField}
                             {!usesApiKey && baseUrlMode === "none" && (
-                                <p>{providerType?.connectionDescription}</p>
+                                providerType?.connectionDescription?.split(/\n\s*\n/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)
                             )}
                         </CardSection>
                     </Card>
@@ -394,13 +400,11 @@ export default function AddProviderModal({ show, onHidden, onSave, existingProvi
                     <CardSection>
                         <ModelSelection
                             query={modelQuery}
+                            timeoutMs={providerType?.modelListTimeoutMs}
                             selected={selectedModels}
                             onChange={setSelectedModels}
                             autoSelectDefaults={seedDefaultModels}
-                            // Only for the local runtimes: the checklist is about starting a
-                            // server on your own machine, which says nothing useful about a
-                            // hosted endpoint failing to list.
-                            troubleshooting={providerType?.group === "local" ? <SelfHostedTroubleshooting /> : undefined}
+                            troubleshooting={troubleshootingFor(providerType)}
                         />
                     </CardSection>
                 </Card>
@@ -509,9 +513,43 @@ export function prefilledBaseUrl(providerId: string): string {
 }
 
 /**
- * Shown when a self-hosted endpoint can't be listed — the point at which the
- * user needs setup instructions, rather than on the way in.
+ * The checklist shown when a provider's models can't be listed, which is when
+ * the user needs setup instructions. Only the local runtimes and Google
+ * Antigravity have one: a hosted endpoint failing to list says nothing that
+ * steps on the user's own device would fix.
  */
+function troubleshootingFor(providerType: ProviderType | undefined) {
+    if (providerType?.id === "antigravity-agent") {
+        return <AntigravitySetup />;
+    }
+    return providerType?.group === "local" ? <SelfHostedTroubleshooting /> : undefined;
+}
+
+/**
+ * How to install Google's Antigravity ACP server, which Trilium does not bundle.
+ * The first step links the archive for the device running Trilium; without
+ * one, it links the registry entry that lists them all.
+ */
+function AntigravitySetup() {
+    const downloadUrl = useAntigravityDownload().url;
+    const components = {
+        Code: <code />,
+        // The registry entry lists the current archive for each platform.
+        Link: <a className="tn-link external" href="https://github.com/agentclientprotocol/registry/blob/main/antigravity-acp/agent.json" target="_blank" rel="noopener noreferrer" />
+    };
+    return (
+        <ol className="model-selection-troubleshooting">
+            <li>
+                {downloadUrl
+                    ? <Trans i18nKey="llm.antigravity_setup_archive" components={{ Link: <a className="tn-link external" href={downloadUrl} target="_blank" rel="noopener noreferrer" /> }} />
+                    : <Trans i18nKey="llm.antigravity_setup_download" components={components} />}
+            </li>
+            <li><Trans i18nKey="llm.antigravity_setup_path" components={components} /></li>
+            <li><Trans i18nKey="llm.antigravity_setup_sign_in" components={components} /></li>
+        </ol>
+    );
+}
+
 function SelfHostedTroubleshooting() {
     return (
         <ul className="model-selection-troubleshooting">

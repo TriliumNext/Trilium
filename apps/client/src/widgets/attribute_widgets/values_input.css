@@ -9,7 +9,7 @@
  * Only the mind map's node panel shows the growth: the promoted-attribute row and the table's
  * editor each give the field a height to sit against, which swallows it.
  */
-.values-input .values-input-add {
+.values-input-add {
     --values-input-add-size: 20px;
     /* Read by the themes that size an icon button through it; the rest is for those that don't. */
     --icon-button-size: var(--values-input-add-size);

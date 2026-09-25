@@ -139,4 +139,29 @@ describe("ConfirmDialog", () => {
         expect(checkbox()).toBeNull();
         expect(container.querySelector(".confirm-delete-note-outcome")).toBeNull();
     });
+
+    /**
+     * A caller removing something of its own, a board column say, words the offer itself. It
+     * counts the notes too, so the dialog adds no verdict line of its own.
+     */
+    it("offers the caller's own box, and answers with what was done to it", async () => {
+        const answers: { confirmed: boolean, isDeleteNoteChecked: boolean }[] = [];
+        await act(async () => {
+            void host.handleEventInChildren("showConfirmDialog", {
+                message: "Delete the column?",
+                checkboxLabel: "Also delete the 2 notes in it",
+                callback: (answer) => answer && answers.push(answer)
+            });
+        });
+
+        expect(checkbox()?.parentElement?.textContent).toContain("Also delete the 2 notes in it");
+        expect(container.querySelector(".confirm-delete-note-outcome")).toBeNull();
+
+        await tick(true);
+        await act(async () => {
+            container.querySelectorAll<HTMLButtonElement>(".modal-footer button")[1]?.click();
+        });
+
+        expect(answers.at(-1)).toEqual({ confirmed: true, isDeleteNoteChecked: true });
+    });
 });

@@ -33,24 +33,21 @@
   by Trilium runtime so when we restart Trilium, button won't be there.</p>
 <p>We need to execute it every time Trilium starts up, but we probably don't
   want to have to manually click on play button on every start up.</p>
-<p>The solution is marked by red circle at the bottom - this note has <a href="#root/_help_zEY4DaJG4YT5">label</a> 
-  <code
-  spellcheck="false">#run=frontendStartup</code>- this is one of the "system" labels which
-    Trilium understands. As you might guess, this will cause all such labeled
-    script notes to be executed once Trilium frontend starts up.</p>
-<p>(<code spellcheck="false">#run=frontendStartup</code> does not work for
-  <a
-  href="#root/_help_RDslemsQ6gCp">Mobile frontend</a>- if you want to have scripts running there, give the
-    script <code spellcheck="false">#run=mobileStartup</code> label).</p>
+<p>The solution is marked by red circle at the bottom - this note has <a href="#root/_help_zEY4DaJG4YT5">label</a>  <code>#run=frontendStartup</code> -
+  this is one of the "system" labels which Trilium understands. As you might
+  guess, this will cause all such labeled script notes to be executed once
+  Trilium frontend starts up.</p>
+<p>(<code>#run=frontendStartup</code> does not work for <a href="#root/_help_RDslemsQ6gCp">Mobile frontend</a> -
+  if you want to have scripts running there, give the script <code>#run=mobileStartup</code> label).</p>
 <h3>Execute button</h3>
 <p>Runnable code notes (frontend or backend) and saved SQL consoles can optionally
   have a dedicated execute button alongside a description.</p>
 <p>To do so, apply the following <a href="#root/_help_HI6GBBIduIgv">labels</a>:</p>
 <ul>
-  <li>A <code spellcheck="false">#executeButton</code> with the value of the label
-    being displayed as the label of the button.</li>
-  <li>An optional <code spellcheck="false">#executeDescription</code> which adds
-    explanatory text beside it.</li>
+  <li>A <code>#executeButton</code> with the value of the label being displayed
+    as the label of the button.</li>
+  <li>An optional <code>#executeDescription</code> which adds explanatory text
+    beside it.</li>
 </ul>
 <h2>Autocomplete &amp; linting</h2>
 <p>Starting with Trilium v0.104.0, frontend scripts, backend scripts and

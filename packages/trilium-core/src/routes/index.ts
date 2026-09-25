@@ -18,6 +18,7 @@ import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
 import deletedNotesApiRoute from "./api/deleted_notes";
+import boardRoute from "./api/board";
 import bulkActionRoute from "./api/bulk_action";
 import searchRoute from "./api/search";
 import specialNotesRoute from "./api/special_notes";
@@ -40,6 +41,8 @@ import ocrRoute from "./api/ocr";
 import linkEmbedRoute from "./api/link_embed";
 import spreadsheetRoute from "./api/spreadsheet";
 import llmRoute from "./api/llm";
+
+export { type CustomRequestResponse, handleCustomRequest } from "./custom";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -91,12 +94,14 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);
     asyncApiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
+    apiRoute(GET, "/api/options/user-fonts", optionsApiRoute.getUserFonts);
 
     apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
     apiRoute(PST, "/api/notes/:noteId/convert-format", notesApiRoute.convertNoteFormat);
     apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
     apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
     apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
+    apiRoute(PST, "/api/notes/metadata", notesApiRoute.getNotesMetadata);
     apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
@@ -110,6 +115,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
     apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
+    apiRoute(PST, "/api/delete-notes", notesApiRoute.deleteNotes);
 
     apiRoute(GET, "/api/notes/:noteId/attachments", attachmentsApiRoute.getAttachments);
     apiRoute(PST, "/api/notes/:noteId/attachments", attachmentsApiRoute.saveAttachment);
@@ -234,8 +240,12 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(GET, "/api/quick-search/:searchString", searchRoute.quickSearch);
     apiRoute(GET, "/api/search-note/:noteId", searchRoute.searchFromNote);
+    apiRoute(PST, "/api/search-note/:noteId/result-details", searchRoute.getSearchResultDetails);
     apiRoute(PST, "/api/search-and-execute-note/:noteId", searchRoute.searchAndExecute);
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
+    // Ahead of the `:searchString` catch-all below, which would otherwise claim the literal path
+    // were it ever given a POST handler too.
+    apiRoute(PST, "/api/search/lint", searchRoute.lintSearchString);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
 
@@ -246,7 +256,6 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     asyncApiRoute(PST, "/api/llm-chat/provider-models", llmRoute.getProviderModels);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
-    apiRoute(GET, "/api/autocomplete/notesCount", autocompleteApiRoute.getNotesCount);
 
     apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
     apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
@@ -254,6 +263,7 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(PUT, "/api/notes/:noteId/clone-after/:afterBranchId", cloningApiRoute.cloneNoteAfter);
 
     asyncApiRoute(GET, "/api/special-notes/inbox/:date", specialNotesRoute.getInboxNote);
+    apiRoute(GET, "/api/special-notes/inbox-target", specialNotesRoute.getInboxTarget);
     asyncApiRoute(GET, "/api/special-notes/days/:date", specialNotesRoute.getDayNote);
     asyncApiRoute(GET, "/api/special-notes/week-first-day/:date", specialNotesRoute.getWeekFirstDayNote);
     asyncApiRoute(GET, "/api/special-notes/weeks/:week", specialNotesRoute.getWeekNote);
@@ -293,6 +303,9 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(GET, "/api/sql/schema", sqlRoute.getSchema);
     apiRoute(PST, "/api/sql/execute/:noteId", sqlRoute.execute);
+
+    apiRoute(PUT, "/api/notes/:noteId/board/rename-column", boardRoute.renameColumn);
+    apiRoute(PUT, "/api/notes/:noteId/board/column-id", boardRoute.ensureColumnId);
 
     apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
     apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);

@@ -218,6 +218,74 @@ describe("useLlmChat", () => {
         expect(api().lastCompletionTokens).toBe(0);
     });
 
+    it("counts no tokens for a turn whose provider reports only the model", async () => {
+        const reports = [
+            { promptTokens: 1200, completionTokens: 300, totalTokens: 1500 },
+            { model: "GPT-5 mini", provider: "copilot-agent" }
+        ];
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, callbacks) => {
+            callbacks.onUsage(reports.shift());
+            callbacks.onDone();
+        });
+        await mountChat();
+
+        for (const text of ["first", "second"]) {
+            await act(async () => {
+                api().setInput(text);
+            });
+            await act(async () => {
+                await api().handleSubmit(new Event("submit"));
+            });
+        }
+        // The first turn's counts would otherwise stand in for a request they never described.
+        expect(api().lastPromptTokens).toBe(0);
+        expect(api().lastCompletionTokens).toBe(0);
+    });
+
+    it("keeps, saves and sends the reasoning effort, only for a model that has levels", async () => {
+        optionsGetJsonMock.mockReturnValue([
+            ...PROVIDERS,
+            { id: "ag_1", name: "Google Antigravity", provider: "antigravity-agent", selectedModels: [
+                { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", reasoningEfforts: [ "low", "medium", "high" ], defaultReasoningEffort: "high" }
+            ] }
+        ]);
+        await mountChat();
+        const sentOptions = async () => {
+            streamChatCompletionMock.mockClear();
+            await act(async () => {
+                api().setInput("hi");
+            });
+            await act(async () => {
+                await api().handleSubmit(new Event("submit"));
+            });
+            return streamChatCompletionMock.mock.calls[0][1];
+        };
+
+        await act(async () => {
+            api().setSelectedModel("gemini-3.8-flash", "antigravity-agent", "ag_1");
+        });
+        expect(api().reasoningEffort).toBeUndefined();
+        expect((await sentOptions()).reasoningEffort).toBeUndefined();
+
+        await act(async () => {
+            api().setReasoningEffort("low");
+        });
+        expect(api().getContent()).toMatchObject({ reasoningEffort: "low" });
+        expect((await sentOptions()).reasoningEffort).toBe("low");
+
+        // A model without levels is sent none.
+        await act(async () => {
+            api().setSelectedModel("opus", "anthropic", "a_1");
+        });
+        expect((await sentOptions()).reasoningEffort).toBeUndefined();
+
+        // A saved chat brings its level back.
+        await act(async () => {
+            api().loadFromContent({ version: 1, messages: [], selectedModel: "gemini-3.8-flash", selectedProvider: "antigravity-agent", selectedProviderId: "ag_1", reasoningEffort: "medium" });
+        });
+        expect(api().reasoningEffort).toBe("medium");
+    });
+
     it("round-trips the selected provider through getContent", async () => {
         await mountChat();
 
@@ -232,5 +300,33 @@ describe("useLlmChat", () => {
             api().setSelectedModel("mini", "openai", "o_1");
         });
         expect(api().getContent()).toMatchObject({ selectedModel: "mini", selectedProvider: "openai", selectedProviderId: "o_1" });
+    });
+
+    it("keeps what a turn waits on until the turn ends", async () => {
+        let callbacks: { onStatus: (status: string) => void } | undefined;
+        let finish: () => void = () => undefined;
+        streamChatCompletionMock.mockImplementation(async (_messages, _options, cb) => {
+            callbacks = cb;
+            await new Promise<void>(resolve => { finish = resolve; });
+            cb.onDone();
+        });
+        await mountChat();
+
+        await act(async () => {
+            api().setInput("hi");
+        });
+        await act(async () => {
+            void api().handleSubmit(new Event("submit"));
+        });
+        await act(async () => {
+            callbacks?.onStatus("starting_agent");
+        });
+        expect(api().streamingStatus).toBe("starting_agent");
+
+        await act(async () => {
+            finish();
+        });
+        expect(api().isStreaming).toBe(false);
+        expect(api().streamingStatus).toBeNull();
     });
 });

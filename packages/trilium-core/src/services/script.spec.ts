@@ -8,6 +8,27 @@ import { getContext } from "./context.js";
 import scriptService, { buildJsx, executeBundle, getScriptBundle } from "./script.js";
 import ws from "./ws.js";
 
+vi.mock("./sql.js", () => {
+    return {
+        default: {
+            transactional: (cb: Function) => {
+                cb();
+            },
+            execute: () => {},
+            replace: () => {},
+            getMap: () => {}
+        }
+    };
+});
+
+vi.mock("./sql_init.js", () => {
+    const mock = {
+        initializeDb: () => {},
+        dbReady: Promise.resolve()
+    };
+    return { default: mock, ...mock };
+});
+
 describe("Script", () => {
     // executeBundle enforces the backendScriptingEnabled security toggle (default false).
     const originalScriptingEnabled = config.Security.backendScriptingEnabled;
@@ -26,27 +47,6 @@ describe("Script", () => {
         vi.spyOn(ws, "sendMessageToAllClients").mockImplementation(() => {}).mockClear();
 
         buildNote({ id: "root", title: "root" });
-
-        vi.mock("./sql.js", () => {
-            return {
-                default: {
-                    transactional: (cb: Function) => {
-                        cb();
-                    },
-                    execute: () => {},
-                    replace: () => {},
-                    getMap: () => {}
-                }
-            };
-        });
-
-        vi.mock("./sql_init.js", () => {
-            const mock = {
-                initializeDb: () => {},
-                dbReady: Promise.resolve()
-            };
-            return { default: mock, ...mock };
-        });
     });
 
     it("returns result from script", () => {

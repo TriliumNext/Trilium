@@ -11,9 +11,11 @@ import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
 import { removeFromMap } from "./api.js";
-import { GPX_MIME, trackHitLayers } from "./GpxTrack.js";
+import { GPX_MIME } from "./GpxTrack.js";
 import { type GeoMouseEvent, ParentMap, toGeoMouseEvent } from "./map.js";
-import { formatLocation, MARKER_LAYER } from "./Markers.js";
+import { formatLocation } from "./Markers.js";
+import { featureAt } from "./ShapeLayer.js";
+import { isShapeNote } from "./shapes.js";
 
 interface ContextMenusProps {
     /** The map's own note, which is how the tree is told what the map holds a note by. */
@@ -39,16 +41,13 @@ export default function ContextMenus({ parentNote, isReadOnly, onRelocate, onCre
 
     const onContextMenu = useCallback((e: GeoMouseEvent) => {
         if (!map) return;
-        // The markers first and the tracks after, so that a pin standing on its own track opens the
-        // pin's menu rather than the line's — they are the same note either way, but a marker is the
-        // smaller target and is what the user was aiming at when they hit both.
-        const features = map.queryRenderedFeatures(e.point, {
-            layers: [ MARKER_LAYER, ...trackHitLayers(map) ]
-        });
+        // Whichever of the map's notes the click landed on. featureAt() decides the order
+        // between a marker, a track and a drawn shape.
+        const feature = featureAt(map, e.point);
 
-        if (features.length > 0) {
-            // Marker or track context menu.
-            openContextMenu(features[0].properties.id, e, { isEditable: !isReadOnly, onRelocate, parentNote });
+        if (feature) {
+            // A note's context menu.
+            openContextMenu(feature.properties.id, e, { isEditable: !isReadOnly, onRelocate, parentNote });
         } else {
             // Empty area context menu.
             openMapContextMenu(e, !isReadOnly, onCreateNote);
@@ -150,13 +149,14 @@ export function openMapContextMenu(e: GeoMouseEvent, isEditable: boolean, onCrea
  * The marker is moved by being placed again rather than dragged: the notes are drawn into one symbol
  * layer, not an element apiece, so there is nothing on the map to take hold of.
  *
- * A GPX track is offered nothing, which is why this is a list and not an item. A track is on the map
- * by being drawn across it — its place is the line its file holds, which no click can pick up. What
- * the offer did was write a location onto the note, planting a stray pin somewhere else while the
- * line stayed exactly where it was. The detail pane leaves the button out for the same reason.
+ * Neither a GPX track nor a drawn shape is offered anything, which is why this returns a list and
+ * not an item. Each is on the map by the figure it draws, which no click can pick up, and the offer
+ * only wrote a location onto the note, planting a stray pin while the figure stayed where it was.
+ * DetailPane leaves the button out for the same reason.
  */
 function buildRelocateItem(noteId: string, onRelocate: (noteId: string) => void): MenuItem<keyof CommandMappings>[] {
-    if (froca.getNoteFromCache(noteId)?.mime === GPX_MIME) {
+    const note = froca.getNoteFromCache(noteId);
+    if (!note || note.mime === GPX_MIME || isShapeNote(note)) {
         return [];
     }
 
@@ -171,7 +171,7 @@ function buildGeoLocationItem(e: GeoMouseEvent) {
     return [
         {
             title: formatLocation(coordinates),
-            uiIcon: "bx bx-current-location",
+            uiIcon: "bx bx-crosshair",
             handler: () => copyTextWithToast(formatLocation(coordinates, 15))
         },
         {

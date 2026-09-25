@@ -13,9 +13,11 @@ const isDev = process.env.NODE_ENV === "development";
 let plugins: any = [];
 
 if (isDev) {
-    // Add Prefresh for Preact HMR in development
     plugins = [
-        prefresh(),
+        // Prefresh keeps a growing list of vnodes per component type and scans it on every diff, so
+        // a view with thousands of instances of one component slows to a stop. Set TRILIUM_NO_HMR to
+        // work on such a view; components then reload with the page instead of in place.
+        ...(process.env.TRILIUM_NO_HMR ? [] : [ prefresh() ]),
         stripUniverHyphenation()
     ];
 } else {
@@ -149,7 +151,9 @@ export default defineConfig(() => ({
             // every path is unambiguous.
             reporter: ["text", "html", ["lcov", { projectRoot: join(import.meta.dirname, "../..") }]],
             include: ["src/**/*.{ts,tsx}"],
-            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
+            // Benchmarks are measured by `vitest bench`, which the test run never invokes, so a
+            // `*.bench.ts` left in scope reports as wholly uncovered source.
+            exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.bench.{ts,mts,cts,tsx}", "**/*.d.ts"]
         },
     },
     commonjsOptions: {

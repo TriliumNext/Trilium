@@ -67,6 +67,14 @@ interface FormAutocompleteProps extends Omit<FormTextBoxProps, "onChange"> {
      */
     leading?: ComponentChildren;
     /**
+     * Content rendered inside the field, after the input. Use it for a button that commits what the
+     * input holds, as {@link FormAutocompleteProps.leading} carries the chips that precede it.
+     *
+     * Passing either prop wraps the input in a `tn-field` element, which
+     * {@link computeDropdownPosition} then measures the dropdown against.
+     */
+    trailing?: ComponentChildren;
+    /**
      * Marks an entry as a heading over the ones below it rather than a choice of its own: it takes no
      * click, is stepped over on the way through the list, and is never what Enter takes.
      */
@@ -94,7 +102,7 @@ interface FormAutocompleteProps extends Omit<FormTextBoxProps, "onChange"> {
  * The dropdown is portalled to the body and positioned over everything else, so it is not clipped
  * by scrolling ancestors. Selecting a suggestion reports it through `onChange`, exactly like typing.
  */
-export default function FormAutocomplete({ currentValue, onChange, source, openOnFocus, openOnEnter, onPick, keepOpenOnPick, renderItem, leading, autoActivate, isHeading, dropdownMinWidth, inputRef, onFocus, onBlur, onKeyDown, ...restProps }: FormAutocompleteProps) {
+export default function FormAutocomplete({ currentValue, onChange, source, openOnFocus, openOnEnter, onPick, keepOpenOnPick, renderItem, leading, trailing, autoActivate, isHeading, dropdownMinWidth, inputRef, onFocus, onBlur, onKeyDown, ...restProps }: FormAutocompleteProps) {
     const ownInputRef = useRef<HTMLInputElement>(null);
     const inputEl = inputRef ?? ownInputRef;
     const fieldRef = useRef<HTMLDivElement>(null);
@@ -267,8 +275,8 @@ export default function FormAutocomplete({ currentValue, onChange, source, openO
 
     return (
         <>
-            {leading !== undefined
-                ? <div ref={fieldRef} className="tn-field form-autocomplete-field">{leading}{field}</div>
+            {leading !== undefined || trailing !== undefined
+                ? <div ref={fieldRef} className="tn-field form-autocomplete-field">{leading}{field}{trailing}</div>
                 : field}
 
             {isOpen && items.length > 0 && position && createPortal(

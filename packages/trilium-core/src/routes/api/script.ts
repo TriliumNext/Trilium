@@ -1,9 +1,10 @@
 
 
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import attributeService from "../../services/attributes.js";
+import { getPlatform } from "../../services/platform.js";
 import scriptService, { type Bundle } from "../../services/script.js";
 import syncService from "../../services/sync.js";
 import { assertScriptingEnabled } from "../../services/scripting_guard.js";
@@ -72,7 +73,7 @@ function getBundlesWithLabel(label: string, value?: string) {
 }
 
 function getStartupBundles(req: Request) {
-    if (!process.env.TRILIUM_SAFE_MODE) {
+    if (!getPlatform().getEnv("TRILIUM_SAFE_MODE")) {
         if (req.query.mobile === "true") {
             return getBundlesWithLabel("run", "mobileStartup");
         }
@@ -83,7 +84,7 @@ function getStartupBundles(req: Request) {
 }
 
 function getWidgetBundles() {
-    if (!process.env.TRILIUM_SAFE_MODE) {
+    if (!getPlatform().getEnv("TRILIUM_SAFE_MODE")) {
         return getBundlesWithLabel("widget");
     }
     return [];

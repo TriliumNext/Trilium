@@ -1,7 +1,7 @@
 # General formatting
 ## Headings
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:255/284;" src="3_General formatting_image.png" width="255" height="284"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:255/284;" src="2_General formatting_image.png" width="255" height="284"></figure>
 
 Trilium provides headings to define sections within text. Headings are numbered from 2 to 6.
 
@@ -31,7 +31,7 @@ Avoid using this feature just to simply make all text bigger. In that case it's 
 
 ## Bold, italic, underline, strike-through
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="4_General formatting_image.png" width="215" height="71"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:215/71;" src="3_General formatting_image.png" width="215" height="71"></figure>
 
 Text can be formatted as **Bold,** _Italic,_ Underline or ~~Strike-through~~ via the dedicated buttons in the formatting toolbar.
 
@@ -59,7 +59,7 @@ For mathematical formulas, prefer the <a class="reference-link" href="Math%20Eq
 
 ## Font color and background color
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="2_General formatting_image.png" width="167" height="204"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:167/204;" src="1_General formatting_image.png" width="167" height="204"></figure>
 
 Selected text can be colored with one of the predefined colors from a palette or any color can be selected using the color picker.
 
@@ -71,7 +71,7 @@ To remove either the background or foreground color of a text, select the corres
 
 ## Remove formatting
 
-The <img src="1_General formatting_image.png" width="17" height="16"> _Remove formatting_ button is a quick way to eliminate the general formatting styling of a particular text.
+The <span class="tn-icon cke cke-remove-format"></span> _Remove formatting_ button is a quick way to eliminate the general formatting styling of a particular text.
 
 Simply select the text and press the button to remove the formatting (bold, italic, colors, sizes, etc.). If the text does not have any removable formatting, the button will appear disabled.
 

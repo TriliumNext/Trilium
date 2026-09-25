@@ -133,6 +133,7 @@
     --quick-search-focus-color: #000;
     --quick-search-result-content-background: #0000000f;
     --quick-search-result-highlight-color: #c65050;
+    --quick-search-result-fuzzy-highlight-color: #e47b19;
 
     --left-pane-collapsed-border-color: #0000000d;
     --left-pane-background-color: #f2f2f2;
@@ -183,7 +184,7 @@
 
     --right-pane-heading-color: gray;
     --right-pane-peek-background: #ffffffea;
-    
+
     --peek-pane-backdrop-color: #0000000a;
     --peek-pane-shadow-color: #0000003a;
 
@@ -213,6 +214,7 @@
 
     --badge-temporaraily-editable-background-color: #35a64c;
     --badge-read-only-background-color: #c8302c;
+    --badge-office-preview-background-color: #566d87;
     --badge-share-background-color: #6b6b6b;
     --badge-snippet-background-color: #6b6b6b;
     --badge-clipped-note-background-color: #2284c0;
@@ -286,6 +288,17 @@
     --log-error-line-background-color: #ff000017;
     --log-info-color: inherit; /* Placeholder: give it a colour to make info lines stand out. */
 
+    /* Search query syntax (the search string of a saved search) */
+    --search-label-color: #1a6fc4;
+    --search-relation-color: #7d4bbd;
+    --search-negation-color: #c62828;
+    --search-property-color: #0f7b6c;
+    --search-keyword-color: #b02a5b;
+    --search-operator-color: #596573;
+    --search-string-color: #2e7d32;
+    --search-literal-color: #a35c00;
+    --search-bracket-color: #7b8794;
+
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
     --card-border-color: transparent;
@@ -341,6 +354,7 @@
     --note-list-view-large-icon-color: var(--note-icon-color);
     --note-list-view-search-result-highlight-background: transparent;
     --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
+    --note-list-view-search-result-fuzzy-highlight-color: var(--quick-search-result-fuzzy-highlight-color);
     --note-list-view-content-background: #b1b1b133;
     --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
     --note-list-view-content-search-result-highlight-color: white;
@@ -395,6 +409,34 @@
     --space-usage-donut-hover-saturation: 57%;
     --space-usage-donut-hover-lightness: 68%;
 
+    --board-limit-exceeded-background: #c62828;
+    --board-limit-exceeded-outline: #c6282880;
+    --board-column-background: #e7e7e7;
+    --board-column-background-saturation: 26%;
+    --board-column-background-lightness: 86%;
+
+    --board-item-background-saturation: 100%;
+    --board-item-background-lightness: 96%;
+
+    --board-item-hover-background-saturation: 100%;
+    --board-item-hover-background-lightness: 98.5%;
+
+    --board-drop-hint-background-saturation: 50%;
+    --board-drop-hint-background-lightness: 75%;
+    --board-drop-hint-color: #000000bf;
+
+    --board-text-saturation: 50%;
+    --board-text-lightness: 22%;
+    --board-muted-text-saturation: 20%;
+    --board-muted-text-lightness: 40%;
+    --board-column-header-text-saturation: 40%;
+    --board-column-header-text-lightness: 28%;
+    --board-column-header-muted-text-saturation: 20%;
+    --board-column-header-muted-text-lightness: 40%;
+
+    --board-focus-outline-saturation: 50%;
+    --board-focus-outline-lightness: 34%;
+
     --space-usage-donut-selected-saturation: 35%;
     --space-usage-donut-selected-lightness: 45%;
 
@@ -440,7 +482,8 @@
 .geo-detail-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
-.ck-template-icon.with-hue {
+.ck-template-icon.with-hue,
+.board-column h3 {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);

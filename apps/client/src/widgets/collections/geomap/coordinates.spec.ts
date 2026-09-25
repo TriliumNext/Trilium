@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { formatCoordinates, parseCoordinates } from "./coordinates";
+import { boundsOf, formatCoordinates, parseCoordinates, POINT_ZOOM, pointPlace } from "./coordinates";
 
 /** Sibiu, as each form writes it. Held as `[lng, lat]`, which is how the map holds a point. */
 const SIBIU: [number, number] = [ 24.9668, 45.9432 ];
@@ -69,5 +69,47 @@ describe("reading a point out of the search bar", () => {
         // Rather than padded out to a fixed precision: four decimals were meant as four.
         expect(formatCoordinates(SIBIU)).toBe("45.9432, 24.9668");
         expect(formatCoordinates([ 0, 0 ])).toBe("0, 0");
+    });
+
+    it("makes a place of a point, named by its coordinates and shown close in", () => {
+        expect(pointPlace(SIBIU)).toEqual({
+            id: "point:24.9668,45.9432",
+            name: "45.9432, 24.9668",
+            label: "45.9432, 24.9668",
+            lat: 45.9432,
+            lng: 24.9668,
+            zoom: POINT_ZOOM,
+            unnamed: true
+        });
+    });
+});
+
+describe("boxing a set of points", () => {
+    it("draws the box the points fit into, and nothing for no points at all", () => {
+        expect(boundsOf([ [ 10, 40 ], [ 20, 50 ], [ 15, 30 ] ])).toEqual([ [ 10, 30 ], [ 20, 50 ] ]);
+        // One point is a box with no width, which is what the caller's maxZoom is for.
+        expect(boundsOf([ SIBIU ])).toEqual([ SIBIU, SIBIU ]);
+        expect(boundsOf([])).toBeNull();
+    });
+
+    it("takes the short way round the seam rather than the long way round the world", () => {
+        // Either side of the antimeridian, a stroll apart on the ground. Read raw they span nearly
+        // the whole world; the western one is pushed a turn east so the box stays narrow.
+        expect(boundsOf([ [ 179, -17 ], [ -179, -18 ] ])).toEqual([ [ 179, -18 ], [ 181, -17 ] ]);
+    });
+
+    it("leaves a box narrower than half the world in the frame it was read in", () => {
+        // Florida, west of the meridian and nowhere near the seam. Shifting it would send it round
+        // the far side of the world, so a narrow box is never reconsidered.
+        expect(boundsOf([ [ -81, 25 ], [ -80, 26 ] ])).toEqual([ [ -81, 25 ], [ -80, 26 ] ]);
+        // Europe, which straddles the meridian and so holds longitudes of both signs.
+        expect(boundsOf([ [ -9, 38 ], [ 24, 60 ] ])).toEqual([ [ -9, 38 ], [ 24, 60 ] ]);
+        // Exactly half the world is still whole.
+        expect(boundsOf([ [ -90, 0 ], [ 90, 10 ] ])).toEqual([ [ -90, 0 ], [ 90, 10 ] ]);
+    });
+
+    it("frames three points across the seam by the ground between them", () => {
+        // The seam is a circle's, not a pair's: the far side is the long way round for all of them.
+        expect(boundsOf([ [ 170, 0 ], [ -170, 5 ], [ 178, 2 ] ])).toEqual([ [ 170, 0 ], [ 190, 5 ] ]);
     });
 });

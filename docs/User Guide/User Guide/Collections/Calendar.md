@@ -104,31 +104,31 @@ The following attributes can be added to the Collection type:
     </thead>
     <tbody>
         <tr>
-            <td><code spellcheck="false">#calendar:hideWeekends</code></td>
+            <td><code>#calendar:hideWeekends</code></td>
             <td>When present (regardless of value), it will hide Saturday and Sundays from the calendar.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#calendar:weekNumbers</code></td>
+            <td><code>#calendar:weekNumbers</code></td>
             <td>When present (regardless of value), it will show the number of the week on the calendar.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#calendar:initialDate</code></td>
+            <td><code>#calendar:initialDate</code></td>
             <td>Change the date the calendar opens on. When not present, the calendar opens on the current date.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#calendar:view</code></td>
-            <td><p>Which view to display in the calendar:</p><ul><li><code spellcheck="false">timeGridDay</code> for the <em>day</em> view;</li><li><code spellcheck="false">timeGridWeek</code> for the <em>week</em> view;</li><li><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li><li><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li><li><code spellcheck="false">listMonth</code> for the <em>list</em> view.</li></ul><p>Any other value will be dismissed and the default view (month) will be used instead.</p><p>The value of this label is automatically updated when changing the view using the UI buttons.</p></td>
+            <td><code>#calendar:view</code></td>
+            <td><p>Which view to display in the calendar:</p><ul><li><code>timeGridDay</code> for the <em>day</em> view;</li><li><code>timeGridWeek</code> for the <em>week</em> view;</li><li><code>dayGridMonth</code> for the <em>month</em> view;</li><li><code>multiMonthYear</code> for the <em>year</em> view;</li><li><code>listMonth</code> for the <em>list</em> view.</li></ul><p>Any other value will be dismissed and the default view (month) will be used instead.</p><p>The value of this label is automatically updated when changing the view using the UI buttons.</p></td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#calendar:slotDuration</code></td>
-            <td>Sets how long each timeslot is on the calendar. Defaults to <code spellcheck="false">00:15:00</code> (15 minutes). Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set <code spellcheck="false">#calendar:slotDuration="00:10:00"</code>.</td>
+            <td><code>#calendar:slotDuration</code></td>
+            <td>Sets how long each timeslot is on the calendar. Defaults to <code>00:15:00</code> (15 minutes). Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set <code>#calendar:slotDuration="00:10:00"</code>.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#calendar:slotLabelInterval</code></td>
-            <td>Sets how often the timeslots on the calendar should be labeled. Defaults to <code spellcheck="false">01:00:00</code> (1 hour). Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set <code spellcheck="false">#calendar:slotLabelInterval="00:30:00"</code>.</td>
+            <td><code>#calendar:slotLabelInterval</code></td>
+            <td>Sets how often the timeslots on the calendar should be labeled. Defaults to <code>01:00:00</code> (1 hour). Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set <code>#calendar:slotLabelInterval="00:30:00"</code>.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">~child:template</code></td>
+            <td><code>~child:template</code></td>
             <td>Defines the template for newly created notes in the calendar (via dragging or clicking).</td>
         </tr>
     </tbody>

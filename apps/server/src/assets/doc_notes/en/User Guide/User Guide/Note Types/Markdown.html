@@ -1,12 +1,12 @@
 <p>Trilium has always supported Markdown through its <a href="#root/_help_Oau6X9rCuegd">import feature</a>,
   however the file was either transformed to a&nbsp;<a class="reference-link"
-  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note (converted to Trilium's internal
-  HTML format) or saved as a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+  href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;note (converted to Trilium's
+  internal HTML format) or saved as a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
   with only syntax highlight.</p>
 <p>This note type is a split view, meaning that both the source code and
   a preview of the document are displayed side-by-side. See&nbsp;<a class="reference-link"
-  href="#root/_help_SL5f1Auq7sVN">Note types with split view</a>&nbsp;for more
-  information.</p>
+  href="#root/_help_SL5f1Auq7sVN">Note types with split view</a>&nbsp;for
+  more information.</p>
 <h2>Rationale</h2>
 <p>The goal of this note type is to fill a gap: rendering Markdown but not
   altering its structure or its whitespace which would inevitably change
@@ -36,16 +36,12 @@
     <p>All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).</p>
   </li>
   <li>
-    <p>Basic HTML is also supported (e.g. collapsible blocks using <code spellcheck="false">&lt;details&gt;</code> and
-      <code
-      spellcheck="false">&lt;summary&gt;</code>).</p>
+    <p>Basic HTML is also supported (e.g. collapsible blocks using <code>&lt;details&gt;</code> and <code>&lt;summary&gt;</code>).</p>
   </li>
   <li>
     <p>Code blocks with syntax highlight.</p>
     <ul>
-      <li>The language must be specified for syntax highlight to be applied (e.g.
-        <code
-        spellcheck="false">```js</code>).</li>
+      <li>The language must be specified for syntax highlight to be applied (e.g. <code>```js</code>).</li>
       <li>Code blocks will respect the text wrapping from the&nbsp;<a class="reference-link"
         href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;section in&nbsp;<a class="reference-link"
         href="#root/_help_4TIF1oA4VQRO">Options</a>.</li>
@@ -60,9 +56,7 @@
       inline and block)</p>
   </li>
   <li>
-    <p><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using
-      <code
-      spellcheck="false">```mermaid</code>
+    <p><a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>&nbsp;using <code>```mermaid</code>
     </p>
   </li>
   <li>
@@ -71,14 +65,13 @@
     &amp;nbsp;
 &lt;/section&gt;</code></pre>
     <ul>
-      <li>These can also be quickly created via the <code spellcheck="false">/include</code> command
+      <li>These can also be quickly created via the <code>/include</code> command
         or via a dedicated keyboard shortcut (not assigned by default).</li>
     </ul>
   </li>
   <li>
     <p><a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;via
-      its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;
-      <a
+      its HTML syntax, or through a <em>Wikilinks</em>-like format (only&nbsp;<a
       class="reference-link" href="#root/_help_m1lbrzyKDaRB">Note ID</a>):</p><pre><code class="language-text-x-trilium-auto">[[Hg8TS5ZOxti6]]</code></pre>
   </li>
   <li>
@@ -99,8 +92,8 @@
             </td>
             <td>
               <figure class="image image-style-align-right">
-                <img style="aspect-ratio:218/221;" src="Markdown_image.png"
-                width="218" height="221">
+                <img style="aspect-ratio:218/221;" src="Markdown_image.png" width="218"
+                height="221">
               </figure>
             </td>
           </tr>
@@ -108,9 +101,9 @@
       </table>
     </figure>
     <p>Task states are customizable: you can reorder them, create new ones with
-      different colors and symbols, or delete the ones you don't need. See&nbsp;
-      <a
-      class="reference-link" href="#root/_help_i16PM6A7GXdU">Customizing to-do task states</a>&nbsp;for more details.</p>
+      different colors and symbols, or delete the ones you don't need. See&nbsp;<a
+      class="reference-link" href="#root/_help_i16PM6A7GXdU">Customizing to-do task states</a>&nbsp;for
+      more details.</p>
     <p>Note that to-do items with task states other than "None" and "Done" are
       Trilium-specific and may not work well with other Markdown software.</p>
   </li>
@@ -121,14 +114,14 @@
 [^1]: the first footnote
 [^2]: the second footnote</code></pre>
     <ul>
-      <li>These can also be quickly created using the <code spellcheck="false">/footnote</code> command.</li>
+      <li>These can also be quickly created using the <code>/footnote</code> command.</li>
     </ul>
   </li>
   <li>
     <p>Page breaks for&nbsp;<a class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>:</p><pre><code class="language-text-x-trilium-auto">&lt;div class="page-break"&gt;&lt;/div&gt;</code></pre>
   </li>
   <li>
-    <p>Highlights (background color) are supported both via the <code spellcheck="false">==</code> Markdown
+    <p>Highlights (background color) are supported both via the <code>==</code> Markdown
       syntax, as well as the canonical HTML representation in Trilium:</p><pre><code class="language-text-x-trilium-auto">==highlighted==
 &lt;span style="background-color:hsl(0,0%,100%);"&gt;Highlighted&lt;/span&gt;</code></pre>
   </li>
@@ -140,19 +133,19 @@
     <p>Web URLs can be written with the standard Markdown syntax:</p><pre><code class="language-text-x-trilium-auto">[Wikipedia](https://www.wikipedia.org)</code></pre>
   </li>
   <li>
-    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with dynamic
-      title, either by manually entering the note ID or via the <em>Add link</em> dialog:</p><pre><code class="language-text-x-trilium-auto">[[B9oMG6rFvvfq]]</code></pre>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with
+      dynamic title, either by manually entering the note ID or via the <em>Add link</em> dialog:</p><pre><code class="language-text-x-trilium-auto">[[B9oMG6rFvvfq]]</code></pre>
   </li>
   <li>
-    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with a custom
-      text:</p><pre><code class="language-text-x-trilium-auto">[This is a link](#root/LhtnZxtVsUMp)</code></pre>
+    <p><a href="#root/_help_hrZ1D00cLbal">Reference link</a> to other notes with
+      a custom text:</p><pre><code class="language-text-x-trilium-auto">[This is a link](#root/LhtnZxtVsUMp)</code></pre>
   </li>
 </ul>
 <p>To create a link, either:</p>
 <ul>
   <li>Type it manually using the syntax described above.</li>
   <li>Use the <em>Add link</em> dialog by pressing <kbd>Ctrl</kbd>+<kbd>L</kbd> or
-    typing the <code spellcheck="false">/link</code> command.</li>
+    typing the <code>/link</code> command.</li>
 </ul>
 <p><a class="reference-link" href="#root/_help_UmgZAfcltxkS">Link Previews</a>&nbsp;are
   also rendered, but there is no mechanism to insert them automatically as
@@ -176,7 +169,7 @@
   <li><kbd>Ctrl</kbd>+<kbd>B</kbd> to toggle <strong>bold</strong>.</li>
   <li><kbd>Ctrl</kbd>+<kbd>I</kbd> to toggle <em>italic</em>.</li>
   <li><kbd>Ctrl</kbd>+<kbd>M</kbd> to wrap the current selection in an inline
-    math (<code spellcheck="false">$</code>).</li>
+    math (<code>$</code>).</li>
   <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> to toggle <del>strikethrough</del>.</li>
 </ul>
 <h3>Images &amp; attachments</h3>
@@ -185,7 +178,7 @@
   <li>Drag &amp; drop directly into the editor area.</li>
   <li>Pasting an image from clipboard.</li>
   <li>Pasting a reference to another <a href="#root/_help_0vhv7lsOLy82">attachment</a> (e.g. <em>Copy reference to clipboard</em> button).</li>
-  <li>Use the <code spellcheck="false">/image</code> slash command.</li>
+  <li>Use the <code>/image</code> slash command.</li>
 </ul>
 <p>An image reference to an attachment looks like this:</p><pre><code class="language-text-x-trilium-auto">![Name.jpeg](api/attachments/z50RceuHXe9J/image/image)</code></pre>
 <h3>Auto-completion</h3>
@@ -193,25 +186,22 @@
 <p>Just like&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
   Markdown notes support a selection of slash commands:</p>
 <ul>
-  <li>Inserting the current date &amp; time (<code spellcheck="false">/date</code>).</li>
-  <li><a href="#root/_help_nBAXQFj20hS1">Including</a> another note (<code spellcheck="false">/include</code>).</li>
-  <li>Uploading and inserting an image (<code spellcheck="false">/image</code>).</li>
-  <li>Inserting a note link (<code spellcheck="false">/link</code>).</li>
-  <li>Inserting a math equation block (<code spellcheck="false">/math</code>).</li>
-  <li>Inserting a <a href="#root/_help_AgjCISero73a">footnote</a> (<code spellcheck="false">/footnote</code>).</li>
-  <li>Inserting a <a href="#root/_help_s1aBHPd79XYj">Mermaid</a> diagram (<code spellcheck="false">/mermaid</code>),
-    with one variant per sample template (e.g. <code spellcheck="false">/mermaid:flowchart</code>).</li>
-  <li>Inserting a collapsible block (<code spellcheck="false">/collapsible</code>).</li>
-  <li>Inserting a page break for printing (<code spellcheck="false">/page-break</code>).</li>
-  <li>Inserting a table (<code spellcheck="false">/table</code>).</li>
-  <li>Creating admonitions (e.g. <code spellcheck="false">/tip</code>, <code spellcheck="false">/note</code>,
-    <code
-    spellcheck="false">/important</code>, <code spellcheck="false">/caution</code>, <code spellcheck="false">/warning</code>).</li>
-  <li>Inserting task items (<code spellcheck="false">/todo:&lt;state&gt;</code>,
-    e.g. <code spellcheck="false">/todo:done</code>), one per configured task
-    state.</li>
-  <li>Inserting code snippets (<code spellcheck="false">/snippet:&lt;name&gt;</code>)
-    from your Markdown/plain-text snippet notes.</li>
+  <li>Inserting the current date &amp; time (<code>/date</code>).</li>
+  <li><a href="#root/_help_nBAXQFj20hS1">Including</a> another note (<code>/include</code>).</li>
+  <li>Uploading and inserting an image (<code>/image</code>).</li>
+  <li>Inserting a note link (<code>/link</code>).</li>
+  <li>Inserting a math equation block (<code>/math</code>).</li>
+  <li>Inserting a <a href="#root/_help_AgjCISero73a">footnote</a> (<code>/footnote</code>).</li>
+  <li>Inserting a <a href="#root/_help_s1aBHPd79XYj">Mermaid</a> diagram (<code>/mermaid</code>),
+    with one variant per sample template (e.g. <code>/mermaid:flowchart</code>).</li>
+  <li>Inserting a collapsible block (<code>/collapsible</code>).</li>
+  <li>Inserting a page break for printing (<code>/page-break</code>).</li>
+  <li>Inserting a table (<code>/table</code>).</li>
+  <li>Creating admonitions (e.g. <code>/tip</code>, <code>/note</code>, <code>/important</code>, <code>/caution</code>, <code>/warning</code>).</li>
+  <li>Inserting task items (<code>/todo:&lt;state&gt;</code>, e.g. <code>/todo:done</code>),
+    one per configured task state.</li>
+  <li>Inserting code snippets (<code>/snippet:&lt;name&gt;</code>) from your
+    Markdown/plain-text snippet notes.</li>
 </ul>
 <p>Note that slash commands only work outside of code blocks and inline code.</p>
 <h4>Code block language auto-completion</h4>
@@ -219,8 +209,8 @@
   open a list of suggested language types which have syntax highlighting.</p>
 <p>The list of languages matches the one for&nbsp;<a class="reference-link"
   href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes set in&nbsp;<a class="reference-link"
-  href="#root/_help_4TIF1oA4VQRO">Options</a>, it's not the full list of languages
-  supported by Trilium.</p>
+  href="#root/_help_4TIF1oA4VQRO">Options</a>, it's not the full list of
+  languages supported by Trilium.</p>
 <h3>Other features</h3>
 <ul>
   <li>The&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a>&nbsp;will
@@ -254,11 +244,11 @@
     href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes with one of the following
     MIME types:</p>
   <ul>
-    <li><code spellcheck="false">text/markdown</code>
+    <li><code>text/markdown</code>
     </li>
-    <li><code spellcheck="false">text/x-markdown</code>
+    <li><code>text/x-markdown</code>
     </li>
-    <li><code spellcheck="false">text/x-gfm</code> (GitHub Flavored Markdown)</li>
+    <li><code>text/x-gfm</code> (GitHub Flavored Markdown)</li>
   </ul>
 </aside>
 <h2>Import/export</h2>
@@ -302,6 +292,6 @@
   <p>This feature of synchronizing the scroll is based on blocks but it's provided
     on a best-effort basis since our underlying Markdown library doesn't support
     this feature natively, so we had to implement our own algorithm. Feel free
-    to <a href="#root/_help_wy8So3yZZlH9">report issues</a>, but always provide a
-    sample Markdown file to be able to reproduce it.</p>
+    to <a href="#root/_help_wy8So3yZZlH9">report issues</a>, but always provide
+    a sample Markdown file to be able to reproduce it.</p>
 </aside>

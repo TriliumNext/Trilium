@@ -1,9 +1,9 @@
 import type { EntityChange, EntityChangeRecord, EntityRow, NoteRow } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../http_interface";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import becca from "../becca/becca.js";
-import "../becca/becca_loader.js";
+import beccaLoader from "../becca/becca_loader.js";
 import treeRoute from "../routes/api/tree.js";
 import * as cls from "./context.js";
 import { initMessaging } from "./messaging/index.js";
@@ -100,6 +100,39 @@ describe("sync: skeleton notes created by out-of-order entities", () => {
     });
 });
 
+describe("sync: entities erased by the sync partner", () => {
+    beforeAll(() => {
+        initMessaging(fakeMessagingProvider);
+        ws.init();
+    });
+
+    it("drops an erased note, its branch and its label from becca", () => {
+        const { noteId, branchId, attributeId } = syncLabeledNote();
+
+        eraseInSync("notes", noteId);
+        eraseInSync("branches", branchId);
+        eraseInSync("attributes", attributeId);
+
+        expect(beccaTraces(noteId, branchId, attributeId)).toEqual(NO_TRACES);
+    });
+
+    it("leaves no skeleton when becca reloads between a note's erase and its branch's", () => {
+        const { noteId, branchId, attributeId } = syncLabeledNote();
+
+        eraseInSync("notes", noteId);
+        // An app restart mid-sync: the note row is gone, its branch and label rows are not yet.
+        cls.init(() => beccaLoader.load());
+        const skeleton = becca.notes[noteId];
+        expect(skeleton).toBeDefined();
+        expect(skeleton?.title).toBeUndefined();
+
+        eraseInSync("branches", branchId);
+        eraseInSync("attributes", attributeId);
+
+        expect(beccaTraces(noteId, branchId, attributeId)).toEqual(NO_TRACES);
+    });
+});
+
 const REMOTE_INSTANCE_ID = "skeletonSpecRemote";
 
 const sentMessages: any[] = [];
@@ -122,6 +155,42 @@ function syncBranchAheadOfItsNote() {
     applySync([{ entityChange: buildEC({ entityName: "branches", entityId: branchId }), entity: remoteBranchRow(branchId, noteId) }]);
 
     return { noteId, branchId };
+}
+
+/** Applies a sync batch creating a note under root with a `status` label, in the partner's order. */
+function syncLabeledNote() {
+    counter++;
+    const noteId = `eraseSpecNote${counter}`;
+    const branchId = `root_${noteId}`;
+    const attributeId = `eraseSpecAttr${counter}`;
+
+    applySync([
+        { entityChange: buildEC({ entityName: "notes", entityId: noteId }), entity: remoteNoteRow(noteId) },
+        { entityChange: buildEC({ entityName: "branches", entityId: branchId }), entity: remoteBranchRow(branchId, noteId) },
+        { entityChange: buildEC({ entityName: "attributes", entityId: attributeId }), entity: remoteLabelRow(attributeId, noteId) }
+    ]);
+    expect(becca.getNoteOrThrow(noteId).title).toBe("arrived late");
+    expect(becca.branches[branchId]).toBeDefined();
+    expect(becca.attributes[attributeId]).toBeDefined();
+
+    return { noteId, branchId, attributeId };
+}
+
+const NO_TRACES = { note: false, branch: false, attribute: false, underRoot: false };
+
+/** What becca still holds of a synced note, so one assertion reports every leftover at once. */
+function beccaTraces(noteId: string, branchId: string, attributeId: string) {
+    return {
+        note: noteId in becca.notes,
+        branch: branchId in becca.branches,
+        attribute: attributeId in becca.attributes,
+        underRoot: becca.getNoteOrThrow("root").children.some((child) => child.noteId === noteId)
+    };
+}
+
+/** Applies a sync batch in which the partner reports the entity as erased, which carries no row. */
+function eraseInSync(entityName: string, entityId: string) {
+    applySync([{ entityChange: buildEC({ entityName, entityId, isErased: true }), entity: undefined }]);
 }
 
 function applySync(records: EntityChangeRecord[]) {
@@ -171,6 +240,20 @@ function remoteNoteRow(noteId: string): EntityRow {
         dateModified: now,
         utcDateCreated: now,
         utcDateModified: now
+    } as unknown as EntityRow;
+}
+
+function remoteLabelRow(attributeId: string, noteId: string): EntityRow {
+    return {
+        attributeId,
+        noteId,
+        type: "label",
+        name: "status",
+        value: "To Do",
+        position: 10,
+        isInheritable: 0,
+        isDeleted: 0,
+        utcDateModified: dateUtils.utcNowDateTime()
     } as unknown as EntityRow;
 }
 

@@ -56,7 +56,7 @@ function assertDbReady(): void {
     }
 }
 
-function getRawRows<T>(query: string, params = []): T[] {
+function getRawRows<T>(query: string, params: string[] = []): T[] {
     assertDbReady();
     return dbConnection.prepare(query).raw().all(params) as T[];
 }

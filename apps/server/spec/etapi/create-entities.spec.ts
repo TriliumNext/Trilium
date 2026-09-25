@@ -1,4 +1,4 @@
-import { BBranch, note_service as noteService } from "@triliumnext/core";
+import { BBranch, becca, note_service as noteService } from "@triliumnext/core";
 import { Application } from "express";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import supertest from "supertest";
@@ -74,6 +74,40 @@ describe("etapi/create-entities", () => {
             branchId: clonedBranchId,
             parentNoteId: "_hidden"
         });
+    });
+
+    it("keeps a given utcDateModified on create and on patch", async () => {
+        const utcDateModified = "2024-05-06 08:11:12.456Z";
+        const created = await supertest(app)
+            .post("/etapi/create-note")
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                parentNoteId: "root",
+                title: "Imported",
+                type: "text",
+                content: "x",
+                utcDateModified
+            })
+            .expect(201);
+        const { noteId } = created.body.note;
+        expect(created.body.note.utcDateModified).toBe(utcDateModified);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).toBe(utcDateModified);
+
+        await supertest(app)
+            .put(`/etapi/notes/${noteId}/content`)
+            .auth(USER, token, { "type": "basic"})
+            .set("Content-Type", "text/plain")
+            .send("rewritten")
+            .expect(204);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).not.toBe(utcDateModified);
+
+        const patched = await supertest(app)
+            .patch(`/etapi/notes/${noteId}`)
+            .auth(USER, token, { "type": "basic"})
+            .send({ utcDateModified })
+            .expect(200);
+        expect(patched.body.utcDateModified).toBe(utcDateModified);
+        expect(becca.getNoteOrThrow(noteId).utcDateModified).toBe(utcDateModified);
     });
 
     it("obtains attribute information", async () => {

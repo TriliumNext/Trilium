@@ -84,7 +84,6 @@ export function App() {
     );
 }
 
-// Skip the bootstrap render under test, where the component is imported directly.
-if (import.meta.env.MODE !== "test") {
-    void main();
-}
+// index.ts holds the splash up until the page has rendered. The render under test imports
+// the component directly, so it skips this one.
+export const ready = import.meta.env.MODE !== "test" ? main() : Promise.resolve();

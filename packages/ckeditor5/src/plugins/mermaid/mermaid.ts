@@ -57,6 +57,8 @@ declare module 'ckeditor5' {
 			config: MermaidConfig;
 			/** Diagram templates listed in the insert-diagram split button's dropdown. */
 			samples?: MermaidSample[];
+			/** Opens the Mermaid help, called by the `mermaidInfo` balloon toolbar button. */
+			openHelp?: () => void;
 		}
 	}
 

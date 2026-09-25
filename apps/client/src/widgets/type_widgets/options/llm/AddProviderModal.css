@@ -11,6 +11,11 @@
         margin-bottom: 1rem;
     }
 
+    .no-items {
+        word-break: break-word;
+        text-align: left;
+    }
+
     .tn-card:last-child {
         margin-bottom: 0;
     }

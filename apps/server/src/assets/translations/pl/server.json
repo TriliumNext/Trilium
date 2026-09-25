@@ -171,7 +171,8 @@
     "incorrect-totp": "Kod TOTP jest nieprawidłowy. Spróbuj ponownie.",
     "incorrect-password": "Hasło jest nieprawidłowe. Spróbuj ponownie.",
     "button": "Zaloguj",
-    "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}"
+    "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}",
+    "sso-wrong-account": "Te konto nie jest połączone z tą instancją Trilium. Zaloguj się połączonym kontem."
   },
   "weekdays": {
     "monday": "Poniedziałek",

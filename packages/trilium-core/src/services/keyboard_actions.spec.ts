@@ -16,6 +16,7 @@ vi.mock("i18next", async (importOriginal) => {
 import * as cls from "./context.js";
 import keyboardActions from "./keyboard_actions.js";
 import options from "./options.js";
+import { getPlatform, initPlatform } from "./platform.js";
 
 function upsertOption(name: string, value: string) {
     cls.init(() => {
@@ -73,6 +74,26 @@ describe("keyboard_actions service", () => {
         expect(actions.slice(firstIndex, firstIndex + splitActions.length)
             .map((a) => "actionName" in a && a.actionName)).toEqual(splitActions);
         expect(actions[firstIndex + splitActions.length]).toHaveProperty("separator");
+    });
+
+    it.each([
+        [true, { jumpToNote: ["Meta+J"], backInNoteHistory: ["Meta+["] }],
+        [false, { jumpToNote: ["Ctrl+J"], backInNoteHistory: ["Alt+Left"] }]
+    ])("resolves CommandOrControl and the history bindings for isMac=%s", (isMac, expected) => {
+        const real = getPlatform();
+        initPlatform(Object.create(real, { isMac: { value: isMac } }));
+
+        try {
+            const actions = keyboardActions.getDefaultKeyboardActions();
+
+            for (const [actionName, shortcuts] of Object.entries(expected)) {
+                const action = actions.find((a) => "actionName" in a && a.actionName === actionName);
+                expect(action, actionName).toBeDefined();
+                expect(action && "defaultShortcuts" in action && action.defaultShortcuts, actionName).toEqual(shortcuts);
+            }
+        } finally {
+            initPlatform(real);
+        }
     });
 
     it("throws if loaded before translations are available", async () => {

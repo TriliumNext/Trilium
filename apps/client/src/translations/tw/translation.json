@@ -332,8 +332,8 @@
     "deleted_notes_title": "已刪除的筆記",
     "more_actions": "更多操作",
     "deleted_notes_settings": "已刪除的筆記設定",
-    "no_deleted_notes_message": "無已刪除的筆記。",
-    "undelete_failed": "無法還原該筆記——該筆記可能已被永久刪除，或其父級項目已不存在。",
+    "no_deleted_notes_message": "沒有可顯示的已刪除筆記。",
+    "undelete_failed": "無法還原該筆記——該筆記可能已被永久刪除。",
     "title_with_ancestor": "{{- title}} - {{- ancestorTitle}}",
     "no_deleted_notes_erasure_hint": "已刪除的筆記會在 {{- duration}} 之後才會被永久刪除。",
     "confirm_undelete_to_default_location": "此筆記的父筆記已不存在，因此無法還原至原始位置。是否要將其還原至新筆記的預設位置？",
@@ -345,10 +345,8 @@
     "title": "標題",
     "date_created": "新增日期",
     "date_modified": "修改日期",
-    "sorting_direction": "排序方向",
     "ascending": "升冪",
     "descending": "降冪",
-    "folders": "資料夾",
     "sort_folders_at_top": "將資料夾置頂排序",
     "natural_sort": "自然排序",
     "sort_with_respect_to_different_character_sorting": "根據不同語言或地區的字符排序和排序規則排序。",
@@ -361,21 +359,21 @@
     "choose_files": "選擇檔案",
     "files_will_be_uploaded": "檔案將作為附件上傳至 {{noteTitle}}",
     "options": "選項",
-    "shrink_images": "縮小圖片",
+    "shrink_images": "壓縮相片",
     "upload": "上傳",
-    "tooltip": "如果您勾選此選項，Trilium 將嘗試透過縮放和最佳化來縮小上傳的圖片，這可能會影響圖片的觀看品質。如果未勾選，則將不進行修改直接上傳圖片。"
+    "tooltip": "降低上傳圖片的大小，這可能會稍微降低品質。取消選取時，圖片會以原樣上傳。"
   },
   "attribute_detail": {
     "close_button_title": "取消修改並關閉",
     "name": "名稱",
     "value": "值",
-    "target_note_title": "關聯是來源筆記和目標筆記之間的命名連接。",
+    "target_note_title": "此關聯所指向的筆記。",
     "target_note": "目標筆記",
-    "promoted_title": "升級屬性在筆記上突出顯示。",
+    "promoted_title": "顯示為所有擁有此屬性的筆記上的可編輯欄位。",
     "promoted": "升級",
-    "promoted_alias": "別名",
-    "multiplicity_title": "多重性定義了可以新增的含有相同名稱的屬性的數量 - 最多為 1 或多於 1。",
-    "multiplicity": "多重性",
+    "promoted_alias": "顯示名稱",
+    "multiplicity_title": "允許筆記多次擁有此屬性。",
+    "multiplicity": "多個數值",
     "single_value": "單值",
     "multi_value": "多重值",
     "label_type": "類型",
@@ -386,18 +384,18 @@
     "date_time": "日期和時間",
     "time": "時間",
     "url": "網址",
-    "precision_title": "值設定界面中浮點數後的位數。",
+    "precision_title": "小數點後最多位數。",
     "precision": "精度",
     "digits": "位數",
-    "inverse_relation_title": "可選設定，定義此關聯與哪個關聯相反。例如：父級 - 子級是彼此的反向關聯。",
+    "inverse_relation_title": "指向相反方向的關聯，例如父級對應的子級。可選。",
     "inverse_relation": "反向關聯",
-    "inheritable_title": "可繼承屬性將被繼承至此樹下的所有後代。",
+    "inheritable_title": "套用於此筆記及其在樹下的所有後代。",
     "inheritable": "可繼承",
     "delete": "刪除",
     "related_notes_title": "含有此標籤的其他筆記",
     "more_notes": "更多筆記",
-    "label": "標籤內容",
-    "relation": "關聯內容",
+    "label": "標籤",
+    "relation": "關聯",
     "disable_versioning": "禁用自動版本控制。適用於例如大型但不重要的筆記 - 例如用於腳本編寫的大型JS庫",
     "calendar_root": "標記應用作為每日筆記的根。只應標記一個筆記。",
     "archived": "含有此標籤的筆記預設在搜尋結果中不可見（也適用於跳轉至、新增連結對話方塊等）。",
@@ -406,7 +404,7 @@
     "run_on_instance": "定義應在哪個 Trilium 實例上運行。預設為所有實例。",
     "run_at_hour": "應在哪個小時運行。應與<code>#run=hourly</code>一起使用。可以多次定義，以便一天內運行多次。",
     "disable_inclusion": "含有此標籤的腳本不會包含在父腳本執行中。",
-    "sorted": "依標題字母順序保持子筆記排序",
+    "sorted": "依標題字母順序保持子筆記排序。",
     "sort_direction": "ASC（預設）或 DESC",
     "sort_folders_first": "資料夾（含有子筆記的筆記）應排在頂部",
     "top": "在其父級中保留給定筆記在頂部（僅適用於排序的父級）",
@@ -482,7 +480,17 @@
     "color_type": "顏色",
     "textarea": "多行文字",
     "print_scale": "匯出為 PDF 時，調整渲染內容的縮放比例。數值範圍為 0.1（10%）至 2（200%），預設值為 1（100%）。",
-    "print_margins": "在匯出為 PDF 時，設定頁面邊距。請使用 <code>default</code>、<code>none</code>、<code>minimum</code>，或自訂值，或以 <code>top,right,bottom,left</code> 的形式以毫米為單位指定。"
+    "print_margins": "在匯出為 PDF 時，設定頁面邊距。請使用 <code>default</code>、<code>none</code>、<code>minimum</code>，或自訂值，或以 <code>top,right,bottom,left</code> 的形式以毫米為單位指定。",
+    "email": "電郵",
+    "phone": "電話",
+    "select_type": "選擇",
+    "select_options": "選項",
+    "select_options_title": "此欄位提供的選項，依此順序排列。",
+    "select_options_placeholder": "輸入選項並按 Enter",
+    "add_option": "新增此選項",
+    "remove_option": "移除此選項",
+    "save_and_close_button": "儲存並關閉",
+    "definition": "屬性定義"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
@@ -800,10 +808,7 @@
     "button_title": "匯出 SVG 格式圖片"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "新增子筆記並添加至關聯圖",
-    "reset_pan_zoom_title": "重置平移和縮放至初始坐標和放大倍率",
-    "zoom_in_title": "放大",
-    "zoom_out_title": "縮小"
+    "create_child_note_title": "新增子筆記並添加至關聯圖"
   },
   "zpetne_odkazy": {
     "relation": "關聯",
@@ -1201,7 +1206,6 @@
     "note_tree_font": "筆記樹字型",
     "note_detail_font": "文件字型",
     "monospace_font": "等寬字型",
-    "not_all_fonts_available": "並非所有列出的字型都在您的系統上可用",
     "generic-fonts": "通用字型",
     "sans-serif-system-fonts": "無襯線系統字型",
     "serif-system-fonts": "襯線系統字型",
@@ -2105,7 +2109,6 @@
   },
   "board_view": {
     "delete-note": "刪除筆記…",
-    "move-to": "移動至",
     "insert-above": "在上方插入",
     "insert-below": "在下方插入",
     "delete-column": "刪除行",
@@ -2118,7 +2121,6 @@
     "new-item-placeholder": "輸入筆記標題…",
     "add-column-placeholder": "輸入行名…",
     "edit-note-title": "點擊以編輯筆記標題",
-    "edit-column-title": "點擊以編輯行標題",
     "column-already-exists": "此列已在看板上。"
   },
   "command_palette": {
@@ -2707,7 +2709,14 @@
     "import": "匯入所選內容",
     "attach_source": "附上原始 HTML（除錯）",
     "attach_source_hint": "將每頁未經修改的 OneNote HTML 儲存為匯入筆記的附件，以便與轉換後的結果進行比對。",
-    "device_instructions": "打開 Microsoft 登入頁面並輸入此代碼："
+    "device_instructions": "打開 Microsoft 登入頁面並輸入此代碼：",
+    "device_open_page": "開啟登入頁面",
+    "device_cancel": "取消登入",
+    "refresh": "重新整理",
+    "load_retry": "再試一次",
+    "no_notebooks_hint": "此帳戶本身的 OneDrive 所儲存的筆記本才會列出。他人與你分享的筆記本，或是儲存在 SharePoint 或 Teams 網站上的筆記本，均無法匯入。",
+    "import_count_one": "匯入 {{count}} 個分頁",
+    "import_count_other": ""
   },
   "notion_import": {
     "name": "Notion",
@@ -2762,11 +2771,6 @@
   "options": {
     "title": "選項",
     "back": "返回所有選項"
-  },
-  "image_buttons": {
-    "zoom_in": "放大",
-    "zoom_out": "縮小",
-    "reset_zoom": "重設縮放"
   },
   "image_navigation": {
     "previous": "上一張圖片：{{- title}}",
@@ -2826,7 +2830,6 @@
       "insert-a-page-break-for-printing": "插入分頁符號（用於列印）",
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "插入一個可折疊的區塊，點擊後可隱藏或顯示內容。",
       "insert-an-anchor-for-internal-linking": "插入一個錨點以建立內部連結",
-      "insert-the-current-date-and-time": "插入目前日期和時間",
       "justify-text-alignment": "將文字左右對齊"
     }
   }

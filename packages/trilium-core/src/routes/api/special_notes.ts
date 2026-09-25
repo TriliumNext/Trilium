@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
@@ -8,6 +8,10 @@ import { getSql } from "../../services/sql/index.js";
 
 function getInboxNote(req: Request<{ date: string }>) {
     return specialNotesService.getInboxNote(req.params.date);
+}
+
+function getInboxTarget() {
+    return specialNotesService.getInboxTarget();
 }
 
 function getDayNote(req: Request<{ date: string }>) {
@@ -132,6 +136,7 @@ function saveLlmChat(req: Request<{ llmChatNoteId: string }>) {
 
 export default {
     getInboxNote,
+    getInboxTarget,
     getDayNote,
     getWeekFirstDayNote,
     getWeekNote,

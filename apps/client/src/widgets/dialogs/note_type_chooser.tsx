@@ -3,14 +3,14 @@ import { t } from "../../services/i18n";
 import FormGroup from "../react/FormGroup";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import FormList, { FormListHeader, FormListItem } from "../react/FormList";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { RefObject } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import note_types from "../../services/note_types";
 import { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { TreeCommandNames } from "../../menus/tree_context_menu";
 import { Suggestion } from "../../services/note_autocomplete";
 import SimpleBadge from "../react/Badge";
 import { useTriliumEvent } from "../react/hooks";
-import { refToJQuerySelector } from "../react/react_utils";
 
 export interface ChooseNoteTypeResponse {
     success: boolean;
@@ -34,9 +34,10 @@ export default function NoteTypeChooserDialogComponent() {
     const [ parentNote, setParentNote ] = useState<Suggestion | null>();
     const [ noteTypes, setNoteTypes ] = useState<MenuItem<TreeCommandNames>[]>([]);
     const modalRef = useRef<HTMLDivElement>(null);
-    const autocompleteRef = useRef<HTMLInputElement>(null);
+    const { tryFocusFirstNoteType, resetAutoFocus } = useFirstNoteTypeFocus(modalRef, shown, noteTypes.length);
 
     useTriliumEvent("chooseNoteType", ({ callback }) => {
+        resetAutoFocus();
         setCallback(() => callback);
         setShown(true);
     });
@@ -79,11 +80,7 @@ export default function NoteTypeChooserDialogComponent() {
             size="md"
             zIndex={1100} // note type chooser needs to be higher than other dialogs from which it is triggered, e.g. "add link"
             scrollable
-            onShown={() => {
-                refToJQuerySelector(autocompleteRef)
-                    .trigger("focus")
-                    .trigger("select");
-            }}
+            onShown={tryFocusFirstNoteType}
             onHidden={() => {
                 callback?.({ success: false });
                 setShown(false);
@@ -93,7 +90,6 @@ export default function NoteTypeChooserDialogComponent() {
         >
             <FormGroup name="parent-note" label={t("note_type_chooser.change_path_prompt")}>
                 <NoteAutocomplete
-                    inputRef={autocompleteRef}
                     onChange={setParentNote}
                     placeholder={t("note_type_chooser.search_placeholder")}
                     opts={{
@@ -128,4 +124,55 @@ export default function NoteTypeChooserDialogComponent() {
             </FormGroup>
         </Modal>
     );
+}
+
+/**
+ * Focuses the first note type so Enter creates a text note, until the user moves focus themselves.
+ * Both the arrival of the types and `onShown` apply it, since either can be the one that comes last.
+ */
+function useFirstNoteTypeFocus(modalRef: RefObject<HTMLDivElement>, shown: boolean, noteTypeCount: number) {
+    const userMovedFocus = useRef(false);
+
+    const tryFocusFirstNoteType = useCallback(() => {
+        if (userMovedFocus.current) {
+            return;
+        }
+
+        modalRef.current?.querySelector<HTMLElement>(".dropdownWrapper .dropdown-item:not(.disabled)")?.focus();
+    }, [ modalRef ]);
+
+    // A gesture on the note types themselves is the auto focus landing, not the user leaving it.
+    useEffect(() => {
+        const modal = modalRef.current;
+        if (!shown || !modal) {
+            return;
+        }
+
+        const onUserGesture = (e: Event) => {
+            const target = e.target as HTMLElement | null;
+            if (target?.closest(".dropdown-item")) {
+                return;
+            }
+            userMovedFocus.current = true;
+        };
+
+        modal.addEventListener("pointerdown", onUserGesture);
+        modal.addEventListener("keydown", onUserGesture);
+        return () => {
+            modal.removeEventListener("pointerdown", onUserGesture);
+            modal.removeEventListener("keydown", onUserGesture);
+        };
+    }, [ modalRef, shown ]);
+
+    useEffect(() => {
+        if (shown && noteTypeCount > 0) {
+            tryFocusFirstNoteType();
+        }
+    }, [ shown, noteTypeCount, tryFocusFirstNoteType ]);
+
+    const resetAutoFocus = useCallback(() => {
+        userMovedFocus.current = false;
+    }, []);
+
+    return { tryFocusFirstNoteType, resetAutoFocus };
 }

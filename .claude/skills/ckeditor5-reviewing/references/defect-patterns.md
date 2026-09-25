@@ -289,13 +289,26 @@ nothing loads it, no button shows, or lint/license/localization is off.
 - Fix: add (or don't) as above; `pnpm --filter client exec vitest run src/services/i18n.spec.ts`
   checks both directions. (See the Localization group above.)
 
+**Editor icon changed without regenerating the `cke` icon pack.**
+- Spot: an SVG added, renamed, redrawn or deleted under `packages/ckeditor5/src/icons/` (or a
+  plugin's `theme/icons/`), or a `ckeditor5` version bump, with no matching change to
+  `apps/client/src/fonts/text-editor-icons.woff2` and
+  `packages/trilium-core/src/services/icon_pack_text_editor.json`. Also: an icon placed in a folder
+  that `TRILIUM_ICON_DIRS` in `apps/icon-pack-builder/src/providers/ckeditor.ts` does not list.
+- Why: the User Guide names toolbar buttons with that built-in font
+  (`<span class="tn-icon cke cke-…">`). A stale font shows the old glyph, and a removed or renamed
+  icon leaves every page that used its class with an empty span, in the in-app help and on the
+  docs site. Nothing fails: the docs build only checks that pages exist.
+- Fix: `pnpm --filter @triliumnext/icon-pack-builder start cke`, commit both outputs, and grep
+  `docs/User Guide` for the old `cke-<name>` class. (Minor; Major if docs lose icons.)
+
 **Test written against the wrong DOM assumptions.**
 - Spot: a synthetic event dispatched without `cancelable: true` whose `preventDefault()` is then
   expected to suppress native behaviour; an assertion made immediately after an event the browser
   dispatches asynchronously (`<details>` `toggle`, for one); or `preventDefault` used as proof
   that a handler ran when a CKEditor plugin also calls it.
-- Why: both CKEditor packages run in **real headless Chrome** (`@vitest/browser-webdriverio`, NOT
-  Playwright). Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
+- Why: both CKEditor packages run in **real headless Chromium** (`@vitest/browser-playwright`).
+  Tests ported from the old happy-dom setup relied on stubbed layout and synchronous
   events, and pass or fail for the wrong reasons here.
 - Fix: make synthetic events cancelable, await the real event before asserting, and prove a handler
   ran by spying on `editor.execute` or asserting the model.

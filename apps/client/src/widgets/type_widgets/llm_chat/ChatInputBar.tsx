@@ -1,7 +1,7 @@
 import "./ChatInputBar.css";
 
 import type { AttributeEditor as CKEditorAttributeEditor, CKTextEditor, MentionFeed } from "@triliumnext/ckeditor5";
-import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import type { DISPLAYABLE_LOCALE_IDS, LlmReasoningEffort } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -22,6 +22,7 @@ import { computeContextUsage } from "./chat_context_usage.js";
 import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
+import ReasoningEffortDropdown from "./ReasoningEffortDropdown.js";
 import { SafeImage } from "./retry_image.js";
 import { useChatAttachments } from "./useChatAttachments.js";
 import { type ModelOption, resolveSelectedModel } from "../../../services/llm_providers.js";
@@ -32,17 +33,13 @@ const READ_ONLY_LOCK = "llm-chat-streaming";
 const mentionFeeds: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, false),
         itemRenderer: (rawItem) => {
             const item = rawItem as Suggestion;
             const itemElement = document.createElement("button");
 
             const iconElement = document.createElement("span");
-            let iconClass = item.icon ?? "bx bx-note";
-            if (item.action === "create-note") {
-                iconClass = "bx bx-plus";
-            }
-            iconElement.className = iconClass;
+            iconElement.className = item.icon ?? "bx bx-note";
 
             itemElement.append(iconElement, document.createTextNode(" "));
             const titleContainer = document.createElement("span");
@@ -79,7 +76,7 @@ interface ChatInputBarProps {
     onWebSearchChange?: () => void;
     /** Callback when note tools toggle changes */
     onNoteToolsChange?: () => void;
-    /** Callback when extended thinking toggle changes */
+    /** Callback when the extended thinking switch or the reasoning effort changes */
     onExtendedThinkingChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
@@ -185,6 +182,11 @@ export default function ChatInputBar({
 
     const handleExtendedThinkingToggle = (newValue: boolean) => {
         chat.setEnableExtendedThinking(newValue);
+        onExtendedThinkingChange?.();
+    };
+
+    const handleReasoningEffortChange = (effort: LlmReasoningEffort) => {
+        chat.setReasoningEffort(effort);
         onExtendedThinkingChange?.();
     };
 
@@ -477,6 +479,15 @@ export default function ChatInputBar({
                                 </Fragment>
                             ))}
                         </Dropdown>
+                        {currentModel?.reasoningEfforts?.length ? (
+                            <ReasoningEffortDropdown
+                                model={currentModel}
+                                value={chat.reasoningEffort}
+                                onChange={handleReasoningEffortChange}
+                                disabled={chat.isStreaming}
+                                inSidebar={inSidebar}
+                            />
+                        ) : null}
                     </div>
                     {/* What the model can reach this turn. Lifted out of the model dropdown so
                         their state reads at a glance and flipping one is a single click — the
@@ -498,13 +509,15 @@ export default function ChatInputBar({
                             onToggle={handleNoteToolsToggle}
                             disabled={chat.isStreaming}
                         />
-                        <CapabilityToggle
-                            icon="bx bx-brain"
-                            label={t("llm_chat.extended_thinking")}
-                            active={chat.enableExtendedThinking}
-                            onToggle={handleExtendedThinkingToggle}
-                            disabled={chat.isStreaming}
-                        />
+                        {!currentModel?.reasoningEfforts?.length && (
+                            <CapabilityToggle
+                                icon="bx bx-brain"
+                                label={t("llm_chat.extended_thinking")}
+                                active={chat.enableExtendedThinking}
+                                onToggle={handleExtendedThinkingToggle}
+                                disabled={chat.isStreaming}
+                            />
+                        )}
                     </div>
                     {/* The actions, boxed so they keep a fixed gap from the capabilities. The
                         row's `auto` spacer collapses to nothing once the row is full — which is

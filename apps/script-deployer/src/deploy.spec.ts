@@ -145,6 +145,13 @@ describe("transpile", () => {
 
 // ── deployScript ─────────────────────────────────────────────────────────────
 
+describe("note ID helpers", () => {
+    it("builds note IDs that createNewNote() accepts from a kebab-case script ID", () => {
+        expect(codeNoteId("auto-import-xopp")).toBe("_sd_auto_import_xopp");
+        expect(renderNoteId("auto-import-xopp")).toBe("_sd_auto_import_xopp_render");
+    });
+});
+
 describe("deployScript", () => {
     /**
      * A NoteService backed by buildNote — each createNewNote call

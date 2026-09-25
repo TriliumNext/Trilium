@@ -172,14 +172,6 @@ describe("preload script", () => {
             expect(ipcRendererSent).toContainEqual({ channel: "close-window", args: [] });
         });
 
-        it("createExtraWindow sends correct IPC message", () => {
-            win().createExtraWindow("#root/abc123");
-            expect(ipcRendererSent).toContainEqual({
-                channel: "create-extra-window",
-                args: [{ extraWindowHash: "#root/abc123" }]
-            });
-        });
-
         it("isAlwaysOnTop uses sendSync", () => {
             ipcRendererSyncResults.set("is-always-on-top:undefined", true);
             expect(win().isAlwaysOnTop()).toBe(true);

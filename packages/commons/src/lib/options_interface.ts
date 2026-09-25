@@ -116,6 +116,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     totpEncryptionSalt: string;
     totpEncryptedSecret: string;
     totpVerificationHash: string;
+    totpLastUsedStep: number;
     encryptedRecoveryCodes: boolean;
     recoveryCodeInitialVector: string;
     recoveryCodeSecurityKey: string;
@@ -182,6 +183,13 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     backendScriptingEnabled: boolean;
     sqlConsoleEnabled: boolean;
     allowLanAccess: boolean;
+    /**
+     * Sync address actually in use, with any `user:password@` removed, or empty when sync is off.
+     * Read-only: derived from config.ini / environment variables and the stored `syncServerHost`.
+     */
+    effectiveSyncServerHost: string;
+    /** Whether config.ini or an environment variable supplies the sync address. Read-only. */
+    syncServerHostOverridden: boolean;
     hasUserBackendScripts: boolean;
     isPasswordSet: boolean;
     overrideThemeFonts: boolean;
@@ -296,6 +304,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     searchEnableFuzzyMatching: boolean;
     /** Whether fuzzy matching is enabled for autocomplete (typing in search bar). Disabled by default for faster response. */
     searchAutocompleteFuzzy: boolean;
+    /** Number of search results shown per page on the full-search results view. */
+    searchResultsPageSize: number;
 
     // Share settings
     redirectBareDomain: boolean;

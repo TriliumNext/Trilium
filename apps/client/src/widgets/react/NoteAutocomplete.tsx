@@ -21,9 +21,11 @@ interface NoteAutocompleteProps {
     noteId?: string;
     /** Shows the selected note without allowing a different one to be picked. */
     readOnly?: boolean;
+    /** Places the input in the tab order of a host that orders its fields with `tabIndex`. */
+    tabIndex?: number;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur, readOnly }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur, readOnly, tabIndex }: NoteAutocompleteProps) {
     const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
 
     useEffect(() => {
@@ -106,6 +108,7 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                 ref={ref}
                 className="note-autocomplete form-control"
                 readOnly={readOnly}
+                tabIndex={tabIndex}
                 placeholder={placeholder ?? t("add_link.search_note")} />
         </div>
     );

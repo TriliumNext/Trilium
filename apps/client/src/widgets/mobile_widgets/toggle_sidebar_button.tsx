@@ -11,6 +11,11 @@ export default function ToggleSidebarButton() {
                 icon="bx bx-sidebar"
                 text={t("note_tree.toggle-sidebar")}
                 onClick={(e) => {
+                    // `SplitNoteContainer` activates the split a click lands in, so letting this one
+                    // bubble would focus the main split -- the one this button sits in -- every time
+                    // the sidebar is opened.
+                    e.stopPropagation();
+
                     // Remove focus to prevent tooltip showing on top of the sidebar.
                     (e.currentTarget as HTMLButtonElement).blur();
 

@@ -46,6 +46,7 @@ describe("DesktopPlatformProvider", () => {
         withPlatform("darwin", () => {
             const p = new DesktopPlatformProvider();
             expect(p.isElectron).toBe(true);
+            expect(p.isStandalone).toBe(false);
             expect(p.isMac).toBe(true);
             expect(p.isWindows).toBe(false);
             expect(p.isLinux).toBe(false);

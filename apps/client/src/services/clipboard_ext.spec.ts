@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import toast from "./toast.js";
 import utils from "./utils.js";
-import { copyHtml, copyHtmlWithToast, copyText, copyTextWithToast } from "./clipboard_ext.js";
+import { buildNote } from "../test/easy-froca";
+import {
+    copyHtml, copyHtmlWithToast, copyReferenceWithToast, copyText, copyTextWithToast
+} from "./clipboard_ext.js";
 
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
 
@@ -194,5 +197,29 @@ describe("copyHtmlWithToast", () => {
 
         expect(showError).toHaveBeenCalledTimes(1);
         expect(showMessage).not.toHaveBeenCalled();
+    });
+});
+
+describe("copyReferenceWithToast", () => {
+    it("copies a reference link drawn from what the href points at", async () => {
+        setClipboard(undefined);
+        const copyHtmlToClipboard = vi.spyOn(utils, "copyHtmlToClipboard").mockReturnValue(true);
+        const showMessage = vi.spyOn(toast, "showMessage").mockImplementation(() => {});
+        const board = buildNote({ title: "Board" });
+        const href = `#root/${board.noteId}?column=colTodo00001&columnTitle=To%20Do`;
+
+        await copyReferenceWithToast(href);
+
+        const [ html, plainText ] = copyHtmlToClipboard.mock.calls[0];
+        // The editor keeps only the class and the href, and draws the rest from the href itself,
+        // so the markup is read back the way a paste parses it.
+        const parsed = document.createElement("div");
+        parsed.innerHTML = html;
+        const $anchor = parsed.querySelector("a.reference-link");
+        expect($anchor?.getAttribute("href")).toBe(href);
+        expect($anchor?.textContent).toContain("Board");
+        // What a Markdown or code note pastes, where the rich flavour is of no use.
+        expect(plainText).toBe(href);
+        expect(showMessage).toHaveBeenCalledTimes(1);
     });
 });

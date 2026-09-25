@@ -126,6 +126,18 @@ describe('OfficeProcessor (integration — real officeparser)', () => {
         expect(docx.text).toBe(odt.text);
         expect(docx.text.length).toBeGreaterThan(500);
     });
+
+    it('leaves embedded images out of the extracted text', async () => {
+        const processor = new OfficeProcessor();
+
+        // The sample holds a paragraph, an image with the alt text "Architecture diagram",
+        // and another paragraph.
+        const result = await processor.extractText(readSample('embedded_image.odt'), {
+            mimeType: ODT
+        });
+
+        expect(result.text).toBe('Text before the figure.\nText after the figure.');
+    });
 });
 
 function readSample(fileName: string): Buffer {

@@ -53,14 +53,36 @@ describe("etapi/attachment-content", () => {
         expect(response.text).toStrictEqual(text);
     });
 
-    it("supports binary content", async() => {
+    it("stores binary content uploaded to an attachment created without content", async() => {
+        const created = await supertest(app)
+            .post(`/etapi/attachments`)
+            .auth(USER, token, { "type": "basic"})
+            .send({
+                "ownerId": createdNoteId,
+                "role": "image",
+                "mime": "image/png",
+                "title": "image.png",
+                "position": 10
+            })
+            .expect(201);
+        const attachmentId = created.body.attachmentId;
+
+        // Bytes that are not valid UTF-8, so a text round trip would corrupt them.
+        const bytes = Buffer.from([ 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff, 0xfe, 0x80 ]);
         await supertest(app)
-            .put(`/etapi/attachments/${createdAttachmentId}/content`)
+            .put(`/etapi/attachments/${attachmentId}/content`)
             .auth(USER, token, { "type": "basic"})
             .set("Content-Type", "application/octet-stream")
-            .set("Content-Transfer-Encoding", "binary")
-            .send(Buffer.from("Hello world"))
+            .send(bytes)
             .expect(204);
+
+        const response = await supertest(app)
+            .get(`/etapi/attachments/${attachmentId}/content`)
+            .auth(USER, token, { "type": "basic"})
+            .responseType("blob")
+            .expect(200)
+            .expect("Content-Type", "image/png");
+        expect(Buffer.compare(response.body, bytes)).toBe(0);
     });
 
     it("refuses to read and write a protected attachment's content", async () => {

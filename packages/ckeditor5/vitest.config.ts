@@ -1,14 +1,13 @@
 import { resolve } from "node:path";
 
-import { webdriverio } from "@vitest/browser-webdriverio";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
 /**
- * The browser to drive, when the one webdriverio would fetch for itself cannot run — on NixOS the
- * downloaded Chrome for Testing dies on a missing `libxcb.so.1`, since nothing outside the store
- * provides it. Point `CHROME_BIN` at a system Chrome/Chromium and webdriverio skips the download
- * altogether; pair it with `CHROMEDRIVER_PATH` (webdriverio's own variable) for the driver, which
- * has the same problem. The Nix dev shell sets both.
+ * The browser to drive, when the one Playwright downloads for itself cannot run — on NixOS the
+ * bundled Chromium dies on a missing `libxcb.so.1`, since nothing outside the store provides it.
+ * Point `CHROME_BIN` at a system Chrome/Chromium and Playwright launches that instead. The Nix dev
+ * shell sets it.
  */
 const systemChrome = process.env.CHROME_BIN;
 
@@ -16,12 +15,15 @@ export default defineConfig({
     test: {
         browser: {
             enabled: true,
-            provider: webdriverio(systemChrome
-                ? { capabilities: { browserName: "chrome", "goog:chromeOptions": { binary: systemChrome } } }
-                : {}),
+            provider: playwright({
+                // Specs assert en-US number formatting (`toLocaleString()` renders 1,234 there and
+                // 1.234 under a European locale), so the host machine's locale must not decide.
+                contextOptions: { locale: "en-US" },
+                ...(systemChrome ? { launchOptions: { executablePath: systemChrome } } : {})
+            }),
             headless: true,
             ui: false,
-            instances: [{ browser: "chrome" }]
+            instances: [{ browser: "chromium" }]
         },
         include: ["src/**/*.spec.ts"],
         setupFiles: ["./test/setup.ts"],

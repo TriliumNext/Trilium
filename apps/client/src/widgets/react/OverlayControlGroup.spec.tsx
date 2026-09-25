@@ -7,7 +7,7 @@ const { staticTooltipSpy } = vi.hoisted(() => ({ staticTooltipSpy: vi.fn() }));
 vi.mock("./hooks", () => ({ useStaticTooltip: staticTooltipSpy }));
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
-import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton } from "./OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, OverlayFullscreenButton, ZoomControls } from "./OverlayControlGroup";
 
 let container: HTMLDivElement;
 
@@ -203,6 +203,47 @@ describe("OverlayControlGroup", () => {
         expect(container.querySelector(".my-group")?.hasAttribute("data-placement")).toBe(false);
     });
 
+    it("stacks into a column when asked, and says so for its own stylesheet to round the right ends", () => {
+        mount(
+            <OverlayControlGroup className="my-rail" placement="middle-start" vertical>
+                <OverlayControlButton title="Draw a path" icon="bx-vector" />
+                <OverlayControlButton title="Draw an area" icon="bx-shape-polygon" />
+            </OverlayControlGroup>
+        );
+
+        const rail = container.querySelector(".my-rail");
+        expect(rail?.getAttribute("data-orientation")).toBe("vertical");
+        expect(rail?.getAttribute("data-placement")).toBe("middle-start");
+    });
+
+    it("leaves a row saying nothing about its direction", () => {
+        mount(
+            <OverlayControlGroup className="my-group" placement="bottom-center">
+                <OverlayControlButton title="Zoom in" icon="bx-plus-circle" />
+            </OverlayControlGroup>
+        );
+
+        expect(container.querySelector(".my-group")?.hasAttribute("data-orientation")).toBe(false);
+    });
+
+    it("opens a column's tooltips sideways, away from the edge it runs down", () => {
+        // Read off the latest call rather than by label: the second render reuses the first
+        // button's element, so the ref the first call was handed answers to the second one's name.
+        const placement = () => staticTooltipSpy.mock.calls.at(-1)?.[1]?.placement;
+        const rail = (placement: "middle-start" | "middle-end") => (
+            <OverlayControlGroup placement={placement} vertical>
+                <OverlayControlButton title="Draw a path" icon="bx-vector" />
+            </OverlayControlGroup>
+        );
+
+        mount(rail("middle-start"));
+        expect(placement()).toBe("right");
+
+        // Against the trailing edge they open the other way, for the same reason.
+        act(() => render(rail("middle-end"), container));
+        expect(placement()).toBe("left");
+    });
+
     it("opens the tooltips of a group at the head downwards, away from the edge it stands at", () => {
         mount(
             <OverlayControlGroup placement="top-end">
@@ -263,5 +304,48 @@ describe("OverlayFullscreenButton", () => {
         // Called with nothing: the press is the caller's cue, not something to hand on.
         expect(onToggle).toHaveBeenCalledTimes(1);
         expect(onToggle).toHaveBeenCalledWith();
+    });
+});
+
+describe("ZoomControls", () => {
+    const handlers = () => ({ onZoomIn: vi.fn(), onZoomOut: vi.fn(), onReset: vi.fn() });
+
+    it("rounds the percentage it is handed, and hands each press back to the caller", () => {
+        const on = handlers();
+        mount(<ZoomControls percent={144.4} {...on} />);
+
+        const [ zoomOut, readout, zoomIn ] = container.querySelectorAll("button");
+        expect(readout.textContent).toBe("144%");
+        expect(zoomOut.getAttribute("aria-label")).toBe("zoom_controls.zoom_out");
+        expect(zoomIn.getAttribute("aria-label")).toBe("zoom_controls.zoom_in");
+
+        act(() => zoomOut.click());
+        act(() => readout.click());
+        act(() => zoomIn.click());
+        expect(on.onZoomOut).toHaveBeenCalledTimes(1);
+        expect(on.onReset).toHaveBeenCalledTimes(1);
+        expect(on.onZoomIn).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the two steps alive unless told a bound has been reached", () => {
+        mount(<ZoomControls percent={100} {...handlers()} />);
+        for (const button of container.querySelectorAll("button")) expect(button.disabled).toBe(false);
+
+        act(() => render(<ZoomControls percent={100} canZoomIn={false} canZoomOut={false} {...handlers()} />, container));
+        const [ zoomOut, readout, zoomIn ] = container.querySelectorAll("button");
+        expect(zoomOut.disabled).toBe(true);
+        expect(zoomIn.disabled).toBe(true);
+        // A bound disables the steps, not the readout, which always resets to the fitted view.
+        expect(readout.disabled).toBe(false);
+    });
+
+    it("shows the two steps alone where the content has no percentage worth saying, as a map has not", () => {
+        const on = handlers();
+        mount(<ZoomControls onZoomIn={on.onZoomIn} onZoomOut={on.onZoomOut} />);
+
+        const buttons = container.querySelectorAll("button");
+        expect(buttons).toHaveLength(2);
+        expect([ ...buttons ].map((b) => b.getAttribute("aria-label")))
+            .toEqual([ "zoom_controls.zoom_out", "zoom_controls.zoom_in" ]);
     });
 });

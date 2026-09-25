@@ -71,10 +71,15 @@ export default class HtmlExportProvider extends ZipExportProvider {
 </html>`;
             }
 
+            // Rewrite before pretty-printing: `html.prettyPrint` wraps at 70 columns and counts
+            // attribute text toward that budget, so printing first would place line breaks against
+            // hrefs that `rewriteFn` is about to replace. The same note then exports different
+            // line breaks depending on whether the editor last wrote a link as a full note path or
+            // an import wrote it as a bare ID.
+            content = this.rewriteFn(content, noteMeta);
             if (content.length < 100_000) {
                 content = html.prettyPrint(content, { indent_size: 2 });
             }
-            content = this.rewriteFn(content as string, noteMeta);
             return content;
         }
         return content;

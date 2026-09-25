@@ -320,10 +320,8 @@
     "title": "titre",
     "date_created": "date de création",
     "date_modified": "date de modification",
-    "sorting_direction": "Sens de tri",
     "ascending": "ascendant",
     "descending": "descendant",
-    "folders": "Dossiers",
     "sort_folders_at_top": "trier les dossiers en haut",
     "natural_sort": "Tri naturel",
     "sort_with_respect_to_different_character_sorting": "trier en fonction de différentes règles de tri et de classement des caractères dans différentes langues ou régions.",
@@ -768,10 +766,7 @@
     "button_title": "Exporter le diagramme au format SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte",
-    "reset_pan_zoom_title": "Réinitialiser le panoramique et le zoom aux coordonnées et à la position initiales",
-    "zoom_in_title": "Zoomer",
-    "zoom_out_title": "Dézoomer"
+    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte"
   },
   "zpetne_odkazy": {
     "relation": "relation",
@@ -1175,7 +1170,6 @@
     "note_tree_font": "Police de l'arborescence des notes",
     "note_detail_font": "Police du texte des notes",
     "monospace_font": "Police Monospace (code)",
-    "not_all_fonts_available": "Toutes les polices répertoriées peuvent ne pas être disponibles sur votre système",
     "generic-fonts": "Polices génériques",
     "sans-serif-system-fonts": "Polices système sans serif",
     "serif-system-fonts": "Polices système Serif",
@@ -2075,7 +2069,6 @@
     "remove-from-board": "Retirer du tableau",
     "archive-note": "Note archivée",
     "unarchive-note": "Note désarchivée",
-    "move-to": "Déplacer vers",
     "insert-above": "Insérer au-dessus",
     "insert-below": "Insérer au-dessous",
     "delete-column": "Supprimer la colonne",
@@ -2085,7 +2078,6 @@
     "add-column": "Ajouter une colonne",
     "add-column-placeholder": "Entrez le nom de la colonne...",
     "edit-note-title": "Cliquez pour modifier le titre de la note",
-    "edit-column-title": "Cliquez pour modifier le titre de la colonne",
     "column-already-exists": "Cette colonne existe déjà sur le tableau."
   },
   "presentation_view": {
@@ -2793,7 +2785,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Insérer une section repliable qui affiche/masque le contenu au clic.",
       "insert-an-anchor-for-internal-linking": "Insérer une ancre pour les liens internes",
       "insert-an-empty-mermaid-diagram": "Insérer un diagramme Mermaid vide",
-      "insert-the-current-date-and-time": "Insérer la date et l'heure actuelles",
       "justify-text-alignment": "Justifier le texte",
       "right-click-or-press-0-to-change-state": "Clic droit pour plus d'états.\nAppuyez sur %0 pour changer d'état.",
       "select-collapsible-block": "Sélectionner le bloc repliable",
@@ -2802,11 +2793,6 @@
       "type-the-content-here": "Saisissez le contenu ici...",
       "undefined-custom-task-state": "État personnalisé non défini"
     }
-  },
-  "image_buttons": {
-    "zoom_in": "Zoomer",
-    "zoom_out": "Dézoomer",
-    "reset_zoom": "Zoom par défaut"
   },
   "image_navigation": {
     "previous": "Image précédente : {{- title}}",

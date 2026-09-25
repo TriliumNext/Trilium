@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response } from "../http_interface";
 
 import { wrapStringOrBuffer } from "../services/utils/binary.js";
 import { getContentDisposition } from "../services/utils/index.js";
@@ -40,7 +40,8 @@ export function serveContentWithRanges(req: Request, res: Response, { content, f
         res.setHeader("ETag", /^(W\/)?".*"$/.test(etag) ? etag : `"${etag}"`);
     }
 
-    const rangeHeader = req.headers?.range;
+    const rawRange = req.headers.range;
+    const rangeHeader = Array.isArray(rawRange) ? rawRange[0] : rawRange;
 
     let range: ByteRange | null;
     try {

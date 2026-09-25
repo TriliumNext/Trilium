@@ -1,22 +1,20 @@
 <aside class="admonition warning">
-  <p>This documentation is outdated, as it refers to using the deprecated
-    <code
-    spellcheck="false">addButtonToToolbar</code>API which will only create widgets for desktop.</p>
+  <p>This documentation is outdated, as it refers to using the deprecated <code>addButtonToToolbar</code> API
+    which will only create widgets for desktop.</p>
   <p>Instead, a custom launcher widget can be created using the&nbsp;<a class="reference-link"
     href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>&nbsp;documentation.</p>
 </aside>
 <p>In this example we are going to extend the functionality of&nbsp;<a class="reference-link"
-  href="#root/_help_xYjQUYhpbUEW">Task Manager</a>&nbsp;showcase (which comes by
-  default with Trilium) by adding a button in the&nbsp;<a class="reference-link"
-  href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp; (
-  <img src="New Task launcher button_image.png">) to create a new task automatically and open it.</p>
+  href="#root/_help_xYjQUYhpbUEW">Task Manager</a>&nbsp;showcase (which comes
+  by default with Trilium) by adding a button in the&nbsp;<a class="reference-link"
+  href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp; (<span class="tn-icon bx bx-task"></span>)
+  to create a new task automatically and open it.</p>
 <h2>Creating the note</h2>
 <ol>
   <li>First, create a new&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
     type with the <em>JavaScript (Trilium frontend)</em> language.</li>
-  <li>Define the <code spellcheck="false">#run=frontendStartup</code> label in&nbsp;
-    <a
-    class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>.</li>
+  <li>Define the <code>#run=frontendStartup</code> label in&nbsp;<a class="reference-link"
+    href="#root/_help_zEY4DaJG4YT5">Attributes</a>.</li>
 </ol>
 <h2>Content of the script</h2>
 <p>Copy-paste the following script:</p><pre><code class="language-text-javascript">api.addButtonToToolbar({
@@ -35,8 +33,7 @@
     }
 });</code></pre>
 <h2>Testing the functionality</h2>
-<p>Since we set the script to be run on start-up, all we need to do is to
-  <a
+<p>Since we set the script to be run on start-up, all we need to do is to <a
   href="#root/_help_s8alTXmpFR61">refresh the application</a>.</p>
 <h2>Understanding how the script works</h2>
 <figure class="table">
@@ -57,12 +54,12 @@
 });</code></pre>
         </td>
         <td>
-          <p>This uses the <a href="#root/_help_yIhgI5H7A2Sm">Front-end API</a> to create a
-            icon in the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>,
+          <p>This uses the <a href="#root/_help_yIhgI5H7A2Sm">Front-end API</a> to create
+            a icon in the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>,
             by specifying:</p>
           <ul>
             <li>A title</li>
-            <li>A corresponding boxicons icon (without the <code spellcheck="false">bx-</code> prefix).</li>
+            <li>A corresponding boxicons icon (without the <code>bx-</code> prefix).</li>
             <li>Optionally, a keyboard shortcut to assign to it.</li>
             <li>The action, which will be executed when the button is pressed.</li>
           </ul>
@@ -83,7 +80,7 @@
               </ul>
             </li>
             <li>Here we can also see that it is possible to return results from the server
-              execution and read them in the client (<code spellcheck="false">taskNoteId</code>).</li>
+              execution and read them in the client (<code>taskNoteId</code>).</li>
           </ul>
         </td>
       </tr>
@@ -92,13 +89,11 @@
         </td>
         <td>
           <ul>
-            <li>Here we identify a note with the <a href="#root/_help_zEY4DaJG4YT5">label</a> 
-              <code
-              spellcheck="false">#taskTodoRoot</code>. This is how the&nbsp;<a class="reference-link" href="#root/_help_xYjQUYhpbUEW">Task Manager</a>&nbsp;showcase
-                knows where to place all the different tasks.</li>
-            <li>Normally this might return a <code spellcheck="false">null</code> value
-              if no such note could be identified, but error handling is outside the
-              scope of this example.&nbsp;</li>
+            <li>Here we identify a note with the <a href="#root/_help_zEY4DaJG4YT5">label</a>  <code>#taskTodoRoot</code>.
+              This is how the&nbsp;<a class="reference-link" href="#root/_help_xYjQUYhpbUEW">Task Manager</a>&nbsp;showcase
+              knows where to place all the different tasks.</li>
+            <li>Normally this might return a <code>null</code> value if no such note could
+              be identified, but error handling is outside the scope of this example.&nbsp;</li>
           </ul>
         </td>
       </tr>
@@ -128,8 +123,8 @@
         </td>
         <td>
           <ul>
-            <li>Since we know the <a href="#root/_help_m1lbrzyKDaRB">ID</a> of the newly created
-              note, all we have to do now is to show this note to the user.</li>
+            <li>Since we know the <a href="#root/_help_m1lbrzyKDaRB">ID</a> of the newly
+              created note, all we have to do now is to show this note to the user.</li>
           </ul>
         </td>
       </tr>

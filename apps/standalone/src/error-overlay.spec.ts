@@ -9,7 +9,6 @@ async function freshOverlay(): Promise<typeof import("./error-overlay.js")> {
 
 beforeEach(() => {
     document.body.innerHTML = "";
-    document.body.style.display = "";
 });
 
 afterEach(() => {
@@ -17,9 +16,9 @@ afterEach(() => {
 });
 
 describe("showErrorOverlay", () => {
-    it("renders the title, message, detail and a reload button, and reveals the body", async () => {
+    it("renders title, message, detail and a reload button, and removes the splash", async () => {
         const { showErrorOverlay } = await freshOverlay();
-        document.body.style.display = "none";
+        document.body.innerHTML = `<div id="splash"></div>`;
 
         showErrorOverlay("Trilium couldn't start", "MIME type wrong", "at worker.js:1");
 
@@ -29,8 +28,8 @@ describe("showErrorOverlay", () => {
         expect(overlay?.textContent).toContain("MIME type wrong");
         expect(overlay?.querySelector("pre")?.textContent).toBe("at worker.js:1");
         expect(overlay?.querySelector("button")?.textContent).toBe("Reload");
-        // The pre-client shell may hide the body; the overlay must un-hide it.
-        expect(document.body.style.display).toBe("block");
+        // The startup splash sits above everything and would cover the overlay.
+        expect(document.getElementById("splash")).toBeNull();
     });
 
     it("omits the detail block when no detail is given", async () => {

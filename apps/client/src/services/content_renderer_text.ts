@@ -7,7 +7,7 @@ import froca from "./froca.js";
 import { t } from "./i18n.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
-import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
+import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
@@ -69,6 +69,10 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     applyLinkEmbeds($renderedContent[0]);
     await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
     await formatCodeBlocks($renderedContent);
+
+    if (options.trim) {
+        $renderedContent.find("style").remove();
+    }
 }
 
 async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>, expandNested: boolean) {
@@ -238,7 +242,6 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     // surfaces its own error instead of blanking the diagrams beside it.
     for (const { visible, source } of pending) {
         try {
-            await loadElkIfNeeded(mermaid, source);
             const { svg } = await mermaid.render(`mermaid-inline-${mermaidRenderId++}`, source);
             const processed = postprocessMermaidSvg(svg);
             visible.innerHTML = processed;

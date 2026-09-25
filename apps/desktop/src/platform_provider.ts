@@ -5,6 +5,7 @@ import path from "path";
 
 export default class DesktopPlatformProvider implements PlatformProvider {
     readonly isElectron = true;
+    readonly isStandalone = false;
     readonly isMac = process.platform === "darwin";
     readonly isWindows = process.platform === "win32";
     readonly isLinux = process.platform === "linux";

@@ -16,11 +16,11 @@ Setting up the server securely is critical and can be complex. It is crucial to 
 This method is used when you already have a desktop instance of Trilium and want to set up a sync server on your web host.
 
 1.  **Server Deployment**: Ensure your server instance is deployed but uninitialized.
-2.  **Desktop Configuration**: Open your desktop instance, navigate to Options -> Sync tab -> Sync configuration, and set the "Server instance address" to your sync server's address. Click Save.
-
-![screenshot of the sync settings options modal](Synchronization_sync-config.png)
-
-1.  **Testing Sync**: Click the "Test sync" button to verify the connection to the sync server. If successful, the client will start pushing all data to the server instance. This process may take some time, but you can continue using Trilium. Periodically check the server instance to confirm when the sync is complete. Once finished, you should see the login screen on the server.
+2.  **Desktop Configuration**: Open your desktop instance, navigate to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Sync_ → _Sync server_, and set the _Server address_ to your sync server's address.
+    *   Note that the sync server can also be overridden through <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>, case in which that value takes precedence. If that's the case, a field called _Server in use_ indicates it.
+3.  **Testing Sync**: Click the _Test sync_ button to verify the connection to the sync server.
+    *   If successful, the client will start pushing all data to the server instance.
+    *   This process may take some time, but you can continue using Trilium. Periodically check the server instance to confirm when the sync is complete. Once finished, you should see the login screen on the server.
 
 ### Synchronizing a Desktop Instance from a Sync Server
 

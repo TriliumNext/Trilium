@@ -240,6 +240,33 @@ export class SqlService {
         return (this.wrap(query, (s) => s.all(params), "raw") as T[]) || [];
     }
 
+    /**
+     * Gets every row of a whole-table read as a positional array, the way {@link getRawRows} does,
+     * but crossing between JavaScript and the database once instead of once per column: under
+     * `@sqlite.org/sqlite-wasm` every column read is its own wasm round trip, so a wide
+     * whole-table read spends most of its time marshalling. `json_group_array()` hands the
+     * result set over as one value for `JSON.parse()`.
+     *
+     * Going through JSON puts two limits on `columns` that {@link getRawRows} does not have:
+     * `json_array()` rejects a BLOB column, and an integer above `Number.MAX_SAFE_INTEGER`
+     * arrives rounded here where {@link getRawRows} returns a BigInt.
+     *
+     * @param columns - the columns to read, in the order the returned arrays carry them
+     * @param fromClause - the rest of the query from `FROM` on, with ? as parameter
+     * placeholder. It must select a single group, since one JSON document holds every row.
+     * @param params - array of params if needed
+     */
+    getRawRowsBulk<T extends unknown[]>(
+        columns: string[],
+        fromClause: string,
+        params: Params = []
+    ): T[] {
+        const query = `SELECT json_group_array(json_array(${columns.join(", ")})) ${fromClause}`;
+        const json = this.getValue<string | null>(query, params);
+
+        return json ? JSON.parse(json) : [];
+    }
+
     iterateRows<T>(query: string, params: Params = []): IterableIterator<T> {
         if (LOG_ALL_QUERIES) {
             console.log(query);

@@ -1,4 +1,8 @@
 {
+  "metrics": {
+    "ascent": 0.9375,
+    "descent": 0.0625
+  },
   "icons": {
     "bx-child": {
       "glyph": "",

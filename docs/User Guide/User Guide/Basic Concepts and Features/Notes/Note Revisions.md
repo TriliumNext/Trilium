@@ -1,12 +1,12 @@
 # Note Revisions
-<figure class="image"><img style="aspect-ratio:2089/1515;" src="2_Note Revisions_image.png" width="2089" height="1515"></figure>
+<figure class="image"><img style="aspect-ratio:2089/1515;" src="Note Revisions_image.png" width="2089" height="1515"></figure>
 
 Trilium supports seamless versioning of notes by storing snapshots ("revisions") of notes at regular intervals.
 
 ## Displaying the revisions
 
 *   On the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>, press the [note context menu](../UI%20Elements/Note%20buttons.md) and select _Note revisions…_
-*   On the old layout, press directly the <img class="image_resized" style="aspect-ratio:27/25;width:2.32%;" src="1_Note Revisions_image.png" width="27" height="25"> button in the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> area.
+*   On the old layout, press directly the <span class="tn-icon bx bx-history"></span> button in the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> area.
 
 ## Interaction
 
@@ -16,7 +16,7 @@ Trilium supports seamless versioning of notes by storing snapshots ("revisions")
 *   The full list of revisions are displayed on the left in reverse chronological order.
     *   The revisions are grouped by the date the revision was taken.
     *   This list does not contain the _current state_ of the note, so it is possible to have notes with no revisions/snapshots saved.
-*   The icon of a revision indicates the _source_ of that revision (e.g. a <img class="image_resized" style="aspect-ratio:20/21;width:2.49%;" src="Note Revisions_image.png" width="20" height="21"> icon for a manually saved revision).
+*   The icon of a revision indicates the _source_ of that revision (e.g. a <span class="tn-icon bx bx-save"></span> icon for a manually saved revision).
 *   Pressing the \[…\] on the top-right of the dialog displays multiple options, including:
     *   Saving a new revision now.
     *   Checking the interval and limit for this note (see below).
@@ -40,7 +40,7 @@ In the list of note revisions:
 To create a named revision, either:
 
 *   Go to the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a>, select _Save named revision…_, enter the name of revision and confirm.
-*   Use the corresponding [keyboard shortcut](../Keyboard%20Shortcuts.md) or the <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to...</a> command with the same name.
+*   Use the corresponding [keyboard shortcut](../Keyboard%20Shortcuts.md) or the <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a> command with the same name.
 *   Save a revision normally, and adjust the name afterwards from the note revision list.
 
 ## When revisions are saved
@@ -61,13 +61,13 @@ Additionally, revisions can also come from somewhere else, and this is indicated
 
 #### Snapshot interval
 
-Time interval of taking note snapshot is configurable in the Options -> Other dialog. This provides a trade-off between more revisions and more data to store.
+Time interval of taking note snapshot is configurable in the Options → Other dialog. This provides a trade-off between more revisions and more data to store.
 
 To turn off note versioning for a particular note (or sub-tree), add `disableVersioning` [label](../../Advanced%20Usage/Attributes.md) to the note.
 
 #### Maximum revisions
 
-The limit on the number of note snapshots can be configured in the Options -> Other dialog. The note revision snapshot number limit refers to the maximum number of revisions that can be saved for each note. Where -1 means no limit, 0 means delete all revisions. You can set the maximum revisions for a single note through the `versioningLimit=X` label.
+The limit on the number of note snapshots can be configured in the Options → Other dialog. The note revision snapshot number limit refers to the maximum number of revisions that can be saved for each note. Where -1 means no limit, 0 means delete all revisions. You can set the maximum revisions for a single note through the `versioningLimit=X` label.
 
 The note limit will not take effect immediately; it will only apply when the note is modified.
 

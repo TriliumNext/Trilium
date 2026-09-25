@@ -1,5 +1,5 @@
 import type { ResolvedImage } from "@triliumnext/commons/src/lib/spreadsheet/render_to_xlsx.js";
-import type { Request, Response } from "express";
+import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import { decodeUtf8, encodeBase64 } from "../../services/utils/binary.js";

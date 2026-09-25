@@ -1,3 +1,5 @@
+import { ComponentChild } from "preact";
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../test/render";
@@ -108,6 +110,30 @@ describe("OptionCardSection", () => {
 
         const stacked = renderInto(<OptionCardSection label="Address" stacked><input /></OptionCardSection>);
         expect(stacked.querySelector(".tn-card-option")?.className).toContain("tn-card-option-stacked");
+    });
+
+    /**
+     * Which control a row holds is read off the row rather than matched by a `:has()` rule, a rule
+     * of that shape costing a restyle of the whole document on every change made anywhere in it.
+     */
+    it("marks a row whose control has no room to stand beside its label", () => {
+        // The row is read once it stands in the page, so the draw has to have settled.
+        const draw = (node: ComponentChild) => {
+            let container: HTMLElement | undefined;
+            act(() => { container = renderInto(node); });
+            return container?.querySelector(".tn-card-option")?.className ?? "";
+        };
+
+        expect(draw(<OptionCardSection label="Address"><input type="text" /></OptionCardSection>))
+            .toContain("tn-card-option-wide");
+        expect(draw(<OptionCardSection label="Enabled"><span className="switch-widget" /></OptionCardSection>))
+            .not.toContain("tn-card-option-wide");
+        expect(draw(<OptionCardSection label="Copies"><input type="number" /></OptionCardSection>))
+            .not.toContain("tn-card-option-wide");
+        // A row that leads somewhere carries a chevron rather than a control, and keeps its place
+        // at every width.
+        expect(draw(<OptionCardSection label="Backup" href="#root/_hidden/_options" />))
+            .not.toContain("tn-card-option-wide");
     });
 });
 

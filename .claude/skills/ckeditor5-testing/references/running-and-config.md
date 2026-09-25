@@ -23,50 +23,51 @@ pnpm --filter @triliumnext/ckeditor5 test
 Or, from the package directory: `vitest run`. Add `-t "name"` to filter by test name, or a
 filename substring to filter by file.
 
-### Supplying the browser and driver
+### Supplying the browser
 
-webdriverio downloads a Chrome for Testing build and a matching chromedriver into `/tmp` on first
-run. Where those cannot execute — NixOS, where they are linked against libraries no store path
-provides and abort on a missing `libxcb.so.1` — two variables hand it a system pair instead:
+Playwright downloads its own Chromium into a per-user cache (`~/.cache/ms-playwright`,
+`%LOCALAPPDATA%\ms-playwright` on Windows). Install it once with
+`pnpm exec playwright install chromium`; CI does this in the test step.
+
+Where that build cannot execute — NixOS, where it is linked against libraries no store path
+provides and aborts on a missing `libxcb.so.1` — `CHROME_BIN` hands Playwright a system browser
+instead:
 
 | Variable | Read by | Effect |
 |---|---|---|
-| `CHROMEDRIVER_PATH` | webdriverio (`@wdio/utils` `startWebDriver`) | Spawns that driver on a free port instead of downloading one. |
-| `CHROME_BIN` | `packages/ckeditor5/vitest.config.ts` | Passed as `goog:chromeOptions.binary`; `setupPuppeteerBrowser` returns early for a string `binary`, so no browser is downloaded either. |
+| `CHROME_BIN` | `packages/ckeditor5/vitest.config.ts` | Passed to the provider as `launchOptions.executablePath`, so Playwright launches that binary rather than its own download. |
 
 ```bash
-CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver \
-    pnpm --filter @triliumnext/ckeditor5 test
+CHROME_BIN=/path/to/chromium pnpm --filter @triliumnext/ckeditor5 test
 ```
 
-The versions must match at least in their major. `nix develop` exports both from `pkgs.chromium`
-and `pkgs.chromedriver` (same nixpkgs revision, so they agree), which is why the plain command works
-inside the dev shell. Starting a chromedriver by hand and writing a local config that connects to
-its port does work, but it is strictly more setup — reach for the variables.
+`nix develop` exports it from `pkgs.chromium`, which is why the plain command works inside the dev
+shell. There is no separate driver to supply — Playwright speaks CDP to the browser directly, which
+is what retired the old `CHROMEDRIVER_PATH` pairing.
 
 A failing browser test writes a PNG into a gitignored `__screenshots__` directory next to the spec.
 Clean those up when done.
 
 ## The config shape
 
-Both packages run **WebdriverIO browser mode**: real headless Chrome via
-`@vitest/browser-webdriverio` (**not** Playwright), with real DOM and layout, gating `src/**`
-coverage at 100%. Trilium previously ran some plugins on happy-dom; no CKEditor package does now.
+Both packages run **Playwright browser mode**: real headless Chromium via
+`@vitest/browser-playwright`, with real DOM and layout, gating `src/**` coverage at 100%. Trilium
+previously ran some plugins on happy-dom; no CKEditor package does now.
 
 ```ts
 import { defineConfig } from 'vitest/config';
 import svg from 'vite-plugin-svgo';
-import { webdriverio } from '@vitest/browser-webdriverio';
+import { playwright } from '@vitest/browser-playwright';
 
 export default defineConfig( {
 	plugins: [ svg() ],
 	test: {
 		browser: {
 			enabled: true,
-			provider: webdriverio(),
+			provider: playwright(),
 			headless: true,
 			ui: false,
-			instances: [ { browser: 'chrome' } ]
+			instances: [ { browser: 'chromium' } ]
 		},
 		include: [ 'src/**/*.spec.ts' ],       // math instead uses [ 'tests/**/*.[jt]s' ]
 		setupFiles: [ './test/setup.ts' ],     // aggregate only — wires the editor-kit teardown
@@ -122,29 +123,19 @@ analyzer (`lcov.info`) and Codecov consume — keep them when adding coverage to
 
 Two failure modes look like a broken suite but are environmental.
 
-### "This version of ChromeDriver only supports Chrome version N"
+### "Executable doesn't exist at …/ms-playwright/chromium-NNNN"
 
-webdriverio auto-manages the driver by detecting the installed Chrome's version. When Chrome has a
-**staged update** — a `new_chrome.exe` and a new version folder sitting in the install directory,
-waiting for a browser restart — detection reads the *staged* version and downloads that
-chromedriver, while the `chrome.exe` that actually launches is still the old major. Every run then
-dies at session start.
+Playwright resolves a browser build keyed to its own version, so the cache is empty on a fresh
+checkout and goes stale whenever the pinned `playwright` moves to a build that was never downloaded.
+Both cases raise this at session start.
 
-Restarting Chrome fixes it permanently. To run before then, point wdio at the matching driver
-already in its cache (`%TEMP%\chromedriver\win64-<version>\` on Windows) by editing
-`packages/ckeditor5/vitest.config.ts` — at the **provider factory** level, because
-`@vitest/browser-webdriverio` drops per-instance options and only the factory's reach `remote()`:
-
-```ts
-provider: webdriverio({
-    capabilities: {
-        "wdio:chromedriverOptions": { binary: "<cached>/chromedriver-win64/chromedriver.exe" }
-    }
-}),
+```bash
+pnpm exec playwright install chromium
 ```
 
-**Revert that edit after the run — never commit it.** `browserVersion` pins do not help at either
-level; wdio still resolves the local binary.
+Run it from the repo root so the pinned `playwright` resolves. Where the downloaded build cannot
+execute at all, supply a system browser through `CHROME_BIN` instead — see **Supplying the
+browser** above.
 
 ### The run hangs at `[vite] [optimizer] bundling dependencies...`
 

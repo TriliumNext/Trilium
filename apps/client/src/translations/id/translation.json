@@ -431,10 +431,8 @@
     "title": "judul",
     "date_created": "tanggal dibuat",
     "date_modified": "tanggal diubah",
-    "sorting_direction": "Arah pengurutan",
     "ascending": "menaik",
     "descending": "menurun",
-    "folders": "Folder",
     "sort_folders_at_top": "urutkan folder di atas",
     "natural_sort": "Natural Sort",
     "sort_with_respect_to_different_character_sorting": "urutkan dengan mempertimbangkan perbedaan aturan pengurutan karakter dan kolasi di berbagai bahasa atau wilayah.",
@@ -1075,15 +1073,7 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
-    "reset_pan_zoom_title": "Setel ulang pan & zoom ke koordinat dan pembesaran awal",
-    "zoom_in_title": "Perbesar",
-    "zoom_out_title": "Perkecil",
     "create_child_note_text": "Tambahkan catatan"
-  },
-  "image_buttons": {
-    "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil",
-    "reset_zoom": "Setel ulang zoom"
   },
   "zpetne_odkazy": {
     "backlink_other": "{{count}} Backlink",
@@ -1585,7 +1575,6 @@
     "monospace_font": "Teks monospace",
     "monospace_font_description": "Digunakan untuk catatan kode dan blok kode",
     "size_relative_to_general": "Ukuran bersifat relatif terhadap ukuran font umum",
-    "not_all_fonts_available": "Tidak semua font yang tercantum mungkin tersedia di sistem Anda",
     "apply_changes": "Muat ulang untuk menerapkan perubahan",
     "generic-fonts": "Font generik",
     "sans-serif-system-fonts": "Font sistem sans-serif",
@@ -2610,8 +2599,6 @@
     "move-marker-instruction": "Klik peta untuk memindahkan penanda ke lokasi tersebut atau tekan Escape untuk membatalkan.",
     "move-marker-toast-title": "Pindahkan penanda",
     "webgl-unavailable": "Peta ini tidak dapat digambar karena WebGL tidak tersedia. Periksa bahwa akselerasi perangkat keras telah diaktifkan dan driver grafis Anda sudah diperbarui.",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
     "enter-3d": "Miringkan ke tampilan 3D\nTahan Ctrl dan seret untuk memiringkan peta secara bebas",
     "exit-3d": "Ratakkan kembali peta",
     "close-details": "Tutup",
@@ -2705,10 +2692,7 @@
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
-    "export_to_svg": "Diagram tidak dapat diekspor ke SVG.",
-    "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil",
-    "reset_zoom": "Atur ulang zoom"
+    "export_to_svg": "Diagram tidak dapat diekspor ke SVG."
   },
   "code_theme": {
     "title": "Tampilan",
@@ -2784,7 +2768,6 @@
     "remove-from-board": "Hapus dari board",
     "archive-note": "Arsipkan catatan",
     "unarchive-note": "Batalkan arsip catatan",
-    "move-to": "Pindahkan ke",
     "insert-above": "Sisipkan di atas",
     "insert-below": "Sisipkan di bawah",
     "delete-column": "Hapus kolom",
@@ -2794,7 +2777,6 @@
     "add-column": "Tambahkan Kolom",
     "add-column-placeholder": "Masukkan nama kolom...",
     "edit-note-title": "Klik untuk edit judul catatan",
-    "edit-column-title": "Klik untuk edit judul kolom",
     "column-already-exists": "Kolom ini sudah ada di board.",
     "column-definition-save-error": "Kolom telah disimpan pada papan, tetapi tidak dapat disimpan ke atribut status.",
     "status-alias": "Status"
@@ -3179,9 +3161,6 @@
     "tags-differ": "Node yang dipilih tidak memiliki tag yang sama, sehingga tag ini hanya dapat dibaca.",
     "add-tag": "Tambahkan tag ini",
     "remove-tag": "Hapus tag ini",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
-    "reset-zoom": "Atur ulang zoom",
     "center-map": "Tengahkan peta",
     "direction-left": "Cabang di kiri",
     "direction-right": "Cabang di kanan",
@@ -3250,7 +3229,6 @@
     "models_reset_defaults": "Kembalikan ke bawaan",
     "provider_model_count_other": "{{count}} model",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Memerlukan Claude Code pada mesin yang menjalankan Trilium.",
     "claude_agent_description": "Menggunakan langganan Claude Pro/Max Anda melalui Claude Code, sehingga tidak memerlukan kunci API. Claude Code harus terpasang pada mesin yang menjalankan Trilium (server jika self-hosting, atau komputer ini pada aplikasi desktop); masuklah sekali dengan menjalankan \"claude /login\" di sana.",
     "add_provider_title_named": "Tambahkan {{- name}}",
     "provider_group_cloud": "Penyedia cloud",
@@ -3280,7 +3258,6 @@
     "mcp_config_warning": "Token memberikan akses baca dan tulis penuh ke seluruh catatan Anda, jadi perlakukan seperti kata sandi. Jika terhubung dari perangkat lain, sebaiknya gunakan HTTPS — token yang dikirim melalui HTTP biasa dapat disadap.",
     "enabled": "Fitur AI",
     "enabled_description": "Menambahkan bilah sisi obrolan AI dan catatan obrolan LLM, menggunakan penyedia yang dikonfigurasi di bawah ini.",
-    "provider_desc_copilot_agent": "Memerlukan GitHub Copilot CLI pada mesin yang menjalankan Trilium.",
     "provider_unavailable_standalone": "Tidak tersedia di versi browser: penyedia ini bekerja dengan menjalankan program terpisah di mesin, dan tidak ada mesin di sini untuk menjalankannya.",
     "copilot_agent_description": "Menggunakan langganan GitHub Copilot Anda melalui GitHub Copilot CLI, sehingga tidak diperlukan kunci API. Copilot CLI harus diinstal di mesin yang menjalankan Trilium (server saat hosting mandiri, atau komputer ini di desktop); masuk sekali dengan menjalankan \"copilot login\" di sana — login Copilot yang ada dari penyunting lain digunakan ulang secara otomatis.",
     "mcp_unavailable_standalone": "Tidak tersedia di versi browser: asisten akan terhubung ke Trilium melalui jaringan, tetapi build ini tidak memiliki alamat untuk diberikan kepada mereka, karena berjalan sepenuhnya di dalam halaman ini."
@@ -3332,7 +3309,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Sisipkan bagian yang dapat dibuka-tutup untuk menyembunyikan/menampilkan konten saat diklik.",
       "insert-an-anchor-for-internal-linking": "Sisipkan anchor untuk tautan internal",
       "insert-an-empty-mermaid-diagram": "Sisipkan diagram Mermaid kosong",
-      "insert-the-current-date-and-time": "Sisipkan tanggal dan waktu saat ini",
       "justify-text-alignment": "Ratakan teks kiri-kanan",
       "right-click-or-press-0-to-change-state": "Klik kanan untuk status tugas lainnya.\nTekan %0 untuk berpindah antarstatus.",
       "select-collapsible-block": "Pilih blok yang dapat dilipat",
@@ -3475,16 +3451,6 @@
   "image_viewer": {
     "loading_error": "Terjadi kesalahan saat memuat gambar.",
     "hints": {
-      "zoom": "Perbesar/Perkecil",
-      "zoom_in": "Perbesar",
-      "zoom_out": "Perkecil",
-      "reset_zoom": "Atur ulang pembesaran",
-      "pan": "Geser",
-      "pan_up": "Atas",
-      "pan_down": "Bawah",
-      "pan_left": "Kiri",
-      "pan_right": "Kanan",
-      "pan_fast": "Percepatan penggeseran",
       "navigation": "Navigasi",
       "next_image": "Gambar berikutnya",
       "previous_image": "Gambar sebelumnya",

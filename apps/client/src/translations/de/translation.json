@@ -345,10 +345,8 @@
     "title": "Titel",
     "date_created": "Erstellungsdatum",
     "date_modified": "Änderungsdatum",
-    "sorting_direction": "Sortierrichtung",
     "ascending": "aufsteigend",
     "descending": "absteigend",
-    "folders": "Ordner",
     "sort_folders_at_top": "Ordner oben sortieren",
     "natural_sort": "Natürliche Sortierung",
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
@@ -988,9 +986,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
-    "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
-    "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
@@ -1399,7 +1394,6 @@
     "note_tree_font": "Notizbaum-Schriftart",
     "note_detail_font": "Notiz-Detail-Schriftart",
     "monospace_font": "Monospace-Schriftart (Code)",
-    "not_all_fonts_available": "Möglicherweise sind nicht alle aufgelisteten Schriftarten auf Ihrem System verfügbar",
     "generic-fonts": "Generische Schriftarten",
     "sans-serif-system-fonts": "Sans-serif Systemschriftarten",
     "serif-system-fonts": "Serif Systemschriftarten",
@@ -2381,7 +2375,6 @@
   },
   "board_view": {
     "delete-note": "Notiz löschen...",
-    "move-to": "Verschieben zu",
     "insert-above": "Oberhalb einfügen",
     "insert-below": "Unterhalb einfügen",
     "delete-column": "Spalte entfernen",
@@ -2394,7 +2387,6 @@
     "new-item-placeholder": "Notiztitel eingeben...",
     "add-column-placeholder": "Spaltenname eingeben...",
     "edit-note-title": "Zum Bearbeiten des Notiztitels klicken",
-    "edit-column-title": "Zum Bearbeiten des Spaltentitels klicken",
     "column-already-exists": "Die Spalte ist auf dem Board bereits vorhanden."
   },
   "command_palette": {
@@ -2884,7 +2876,6 @@
     "provider_model_count_one": "{{count}} Modell",
     "provider_model_count_other": "{{count}} Modelle",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Erfordert Claude Code auf dem Computer, auf dem Trilium ausgeführt wird.",
     "claude_agent_description": "Verwendet Ihr Claude-Pro-/Max-Abonnement über Claude Code, daher ist kein API-Schlüssel erforderlich. Claude Code muss auf dem Computer installiert sein, auf dem Trilium ausgeführt wird (beim Self-Hosting der Server, bei der Desktop-App dieser Computer). Melden Sie sich dort einmalig mit „claude /login“ an.",
     "add_provider_title_named": "{{- name}} hinzufügen",
     "provider_group_cloud": "Cloud-Anbieter",
@@ -3137,7 +3128,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Einen ein-/ausklappbaren Abschnitt einfügen, der Inhalt per Klick verbirgt oder anzeigt.",
       "insert-an-anchor-for-internal-linking": "Anker für interne Verlinkung einfügen",
       "insert-an-empty-mermaid-diagram": "Leeres Mermaid-Diagramm einfügen",
-      "insert-the-current-date-and-time": "Aktuelles Datum und Uhrzeit einfügen",
       "justify-text-alignment": "Blocksatz",
       "link-preview": "Linkvorschau",
       "missing-definition": "(fehlende Definition)",
@@ -3153,11 +3143,6 @@
       "url": "URL"
     }
   },
-  "image_buttons": {
-    "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern",
-    "reset_zoom": "Zoom zurücksetzen"
-  },
   "image_navigation": {
     "previous": "Vorheriges Bild: {{- title}}",
     "next": "Nächstes Bild: {{- title}}"
@@ -3165,16 +3150,6 @@
   "image_viewer": {
     "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern",
-      "reset_zoom": "Zoom zurücksetzen",
-      "pan": "Verschieben",
-      "pan_up": "Nach oben",
-      "pan_down": "Nach unten",
-      "pan_left": "Nach links",
-      "pan_right": "Nach rechts",
-      "pan_fast": "Schneller verschieben",
       "navigation": "Navigation",
       "next_image": "Nächstes Bild",
       "previous_image": "Vorheriges Bild",
@@ -3409,6 +3384,11 @@
     "system_description": "Trilium verknüpft eine feste Bedeutung mit diesem Namen: Sein Wert kann das Verhalten der Notiz verändern, anstatt sie nur zu beschreiben."
   },
   "sidebar_help": {
-    "attributes_what": "Die Labels und Beziehungen, die direkt für diese Notiz festgelegt sind. Ein Label versieht die Notiz mit einem Namen und optional einem Wert; eine Beziehung verweist auf eine andere Notiz."
+    "attributes_what": "Die Labels und Beziehungen, die direkt für diese Notiz festgelegt sind. Ein Label versieht die Notiz mit einem Namen und optional einem Wert; eine Beziehung verweist auf eine andere Notiz.",
+    "attributes_inheritable": "Wenn eine als vererbbar markiert wird, wird sie an den gesamten Unterbaum unterhalb dieser Notiz weitergegeben, wo sie als „geerbt“ statt als „eigen“ aufgeführt wird.",
+    "attributes_inherited_what": "Beschriftungen (Labels) und Beziehungen (Relations), die von anderen Stellen auf diese Notiz verweisen: entweder vererbte Einträge, die bei einer übergeordneten Notiz gesetzt wurden, oder Einträge, die über eine Vorlage (Template) übernommen wurden.",
+    "attributes_inherited_source": "Diese sind hier schreibgeschützt. Jede Zeile zeigt die Notiz an, von der sie stammt. Dort können sie geändert oder entfernt werden.",
+    "attributes_definitions_what": "Eine Definition ist das Schema hinter einem Attributnamen: Sie legt fest, welchen Typ von Wert das Attribut annehmen kann, ob es mehrfach vergeben werden darf und ob es als promoted (hervorgehoben) gekennzeichnet ist.",
+    "attributes_definitions_promoted": "Ein hervorgehobenes Attribut (promoted attribute) wird direkt in der Notiz als Formularfeld angezeigt, anstatt nur in diesem Bereich aufgelistet zu werden. Definitionen stammen in der Regel aus einer Vorlage (Template), und jede Zeile zeigt die Notiz an, in der die jeweilige Definition gespeichert ist."
   }
 }

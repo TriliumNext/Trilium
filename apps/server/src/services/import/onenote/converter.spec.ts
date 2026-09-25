@@ -141,8 +141,8 @@ const TAGS_SAMPLE = `<html lang="en-US">
 </html>`;
 
 // Real OneNote source (web-OneNote Graph export): the decorative (non-checkbox) note tags. Each is a
-// paragraph carrying a `data-tag` that OneNote renders as an icon — we render it as an emoji prefix.
-const EMOJI_TAGS_SAMPLE = `<html lang="en-US">
+// paragraph carrying a `data-tag` that OneNote renders as an icon — we render it as an icon prefix.
+const DECORATIVE_TAGS_SAMPLE = `<html lang="en-US">
     <body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
         <div style="position:absolute;left:48px;top:115px;width:624px">
             <p data-tag="important" style="margin-top:0pt;margin-bottom:0pt">Important</p>
@@ -150,6 +150,17 @@ const EMOJI_TAGS_SAMPLE = `<html lang="en-US">
             <p data-tag="idea" style="margin-top:0pt;margin-bottom:0pt">Idea</p>
             <p data-tag="password" style="margin-top:0pt;margin-bottom:0pt">Password</p>
             <p data-tag="phone-number" style="margin-top:0pt;margin-bottom:0pt">Phone number</p>
+        </div>
+    </body>
+</html>`;
+
+// Constructed from the same shapes: the Project A/B tags, whose glyph is a character Boxicons has no
+// icon for.
+const CHARACTER_TAGS_SAMPLE = `<html lang="en-US">
+    <body data-absolute-enabled="true" style="font-family:Calibri;font-size:11pt">
+        <div style="position:absolute;left:48px;top:115px;width:624px">
+            <p data-tag="project-a" style="margin-top:0pt;margin-bottom:0pt">First project</p>
+            <p data-tag="project-b" style="margin-top:0pt;margin-bottom:0pt">Second project</p>
         </div>
     </body>
 </html>`;
@@ -529,42 +540,55 @@ describe("convertPageHtml", () => {
         expect(root.querySelectorAll(`input[type="checkbox"]`)).toHaveLength(4);
         // Only the schedule-meeting:completed item is checked.
         expect(root.querySelectorAll("input[checked]")).toHaveLength(1);
-        // Each meaningful checkbox tag keeps an inner emoji alongside the checkbox.
+        // Each meaningful checkbox tag keeps an inner glyph alongside the checkbox — an icon, or the
+        // emoji for the priorities, whose glyph is a numeral.
         expect(out).toContain("1️⃣ Priority 1");
-        expect(out).toContain("📅 Schedule meeting");
-        expect(out).toContain("🗣️ Discuss with Manager");
-        expect(out).toContain("📋 Client Request");
+        expect(out).toContain(`${icon("bx-calendar")} Schedule meeting`);
+        expect(out).toContain(`${icon("bx-conversation")} Discuss with Manager`);
+        expect(out).toContain(`${icon("bx-clipboard")} Client Request`);
         // The raw data-tag attribute is consumed, not left on the output.
         expect(out).not.toContain("data-tag");
     });
 
-    it("renders decorative tags as an emoji prefix, leaving the paragraph in place", () => {
-        const out = converter.convertPageHtml(EMOJI_TAGS_SAMPLE);
+    it("renders decorative tags as an icon prefix, leaving the paragraph in place", () => {
+        const out = converter.convertPageHtml(DECORATIVE_TAGS_SAMPLE);
         const root = parse(out);
 
         // No checkbox tags here, so nothing becomes a task list.
         expect(root.querySelectorAll("ul.todo-list")).toHaveLength(0);
         expect(root.querySelectorAll("p")).toHaveLength(5);
-        expect(out).toContain("⭐ Important");
-        expect(out).toContain("❓ Question");
-        expect(out).toContain("💡 Idea");
-        expect(out).toContain("🔑 Password");
-        expect(out).toContain("📞 Phone number");
+        expect(out).toContain(`${icon("bx-star")} Important`);
+        expect(out).toContain(`${icon("bx-help-circle")} Question`);
+        expect(out).toContain(`${icon("bx-bulb")} Idea`);
+        expect(out).toContain(`${icon("bx-key")} Password`);
+        expect(out).toContain(`${icon("bx-phone")} Phone number`);
         expect(out).not.toContain("data-tag");
+
+        // The sanitizer keeps the empty span and its classes, which is the whole of an icon.
+        expect(root.querySelectorAll("span.tn-icon")).toHaveLength(5);
+    });
+
+    it("keeps an emoji for the tags whose glyph is a character", () => {
+        const out = converter.convertPageHtml(CHARACTER_TAGS_SAMPLE);
+
+        // Boxicons has no alphabet, so Project A/B stay the boxed letters OneNote draws.
+        expect(out).toContain("🅰️ First project");
+        expect(out).toContain("🅱️ Second project");
+        expect(out).not.toContain("tn-icon");
     });
 
     it("supports multiple comma-separated tags on one paragraph", () => {
         const out = converter.convertPageHtml(MULTI_TAGS_SAMPLE);
         const root = parse(out);
 
-        // The checkbox tag turns its paragraph into a task item, prefixed with the decorative emoji.
+        // The checkbox tag turns its paragraph into a task item, prefixed with the decorative icons.
         expect(root.querySelectorAll("ul.todo-list")).toHaveLength(1);
         expect(root.querySelectorAll(`input[type="checkbox"]`)).toHaveLength(1);
         expect(root.querySelectorAll("input[checked]")).toHaveLength(0);
-        expect(out).toContain("⭐❓ Todo plus star plus question");
+        expect(out).toContain(`${icon("bx-star")}${icon("bx-help-circle")} Todo plus star plus question`);
 
-        // The decorative-only paragraph stays a <p>, prefixed with both emoji.
-        expect(out).toContain("🎬📚 Movie and book");
+        // The decorative-only paragraph stays a <p>, prefixed with both icons.
+        expect(out).toContain(`${icon("bx-movie")}${icon("bx-book")} Movie and book`);
     });
 
     it("normalizes OneNote resource references so the importer can rewrite them", () => {
@@ -890,3 +914,8 @@ describe("extractPageCreatedDate", () => {
         expect(converter.extractPageCreatedDate(`<html><head><meta name="created" /></head><body></body></html>`)).toBeUndefined();
     });
 });
+
+/** One note tag's icon, in the markup a text note stores icons as. */
+function icon(name: string) {
+    return `<span class="tn-icon bx ${name}"></span>`;
+}

@@ -44,6 +44,14 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("do not have access to web search");
     });
 
+    it("points the user at the toggle that turns a missing capability on", () => {
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        // The toggles' own icons, as ChatInputBar draws them, for the model to show the user.
+        expect(prompt).toContain(`<span class="tn-icon bx bx-globe"></span> "Web search" toggle`);
+        expect(prompt).toContain(`<span class="tn-icon bx bx-note"></span> "Note access" toggle`);
+        expect(prompt).not.toContain("model name dropdown");
+    });
+
     it("always appends the markdown formatting hints", () => {
         const prompt = buildSystemPrompt([], {}) ?? "";
         expect(prompt).toContain("Admonitions");
@@ -52,6 +60,12 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("Tables");
         expect(prompt).toContain("Collapsible blocks");
         expect(prompt).toContain("Keyboard keys");
+        expect(prompt).toContain(`<span class="tn-icon bx bx-cog"></span>`);
+    });
+
+    it("names the icon search tool in the icon hint only when the tool is there", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain("find one with search_icons");
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain("find one with search_icons");
     });
 
     it("lists the workspace's custom task-state markers so the model can recognize them", () => {

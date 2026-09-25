@@ -3,7 +3,7 @@ An external link is a standard web link targeting for example a website. For exa
 
 To create a link without a custom text:
 
-*   Press <img src="1_External links_image.png" width="15" height="16"> in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:
+*   Press <span class="tn-icon cke cke-link"></span> in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:
     *   A popup will appear, type or paste the URL in the box.
     *   Press <kbd>Enter</kbd> or the check mark icon to confirm.
 *   Alternatively, press <kbd>Ctrl</kbd>+<kbd>K</kbd> to trigger the aforementioned popup.
@@ -18,7 +18,7 @@ To create a link with a custom text:
 Once a link is inserted:
 
 *   The text inside the link can be changed if needed but the link itself will remain.
-*   To modify the link, click on the link to display the popup and press the <img src="External links_image.png" width="18" height="18"> _Edit link_ button.
-*   To remove a link, click on it and press the <img src="2_External links_image.png" width="18" height="18"> _Unlink_ button.
+*   To modify the link, click on the link to display the popup and press the <span class="tn-icon cke cke-pencil"></span> _Edit link_ button.
+*   To remove a link, click on it and press the <span class="tn-icon cke cke-unlink"></span> _Unlink_ button.
 
 You can follow external link by either double clicking (will open new tab/window) it or right clicking on them and choosing "Open in new tab".

@@ -1,0 +1,95 @@
+name: Release to Flathub
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag or ref to package (a tag pins tag + commit, anything else a bare commit)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  update-flathub-repo:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.event.release.tag_name || github.ref_name }}
+          # update-repo.mts resolves the ref against the checkout, so tags must be present.
+          fetch-depth: 0
+
+      - name: Clone the Flathub repo
+        uses: actions/checkout@v7
+        with:
+          repository: flathub/org.triliumnotes.Trilium
+          # Under the workspace so the pull request step can reach it.
+          path: flathub
+          token: ${{ secrets.FLATHUB_PAT }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install flatpak-node-generator
+        # Pinned to a master commit: there is no release, and bundled copies (org.flatpak.Builder)
+        # lag behind fixes such as skipping the linux-armv7l binaries Electron 44 dropped.
+        run: pipx install 'git+https://github.com/flatpak/flatpak-builder-tools.git@41c20aa10819cdb2a4f3ca171758a96d1955c018#subdirectory=node'
+
+      - name: Update the manifest and packaging files
+        id: update
+        run: node --experimental-strip-types scripts/flatpak/update-repo.mts flathub "$INPUT_REF"
+        env:
+          INPUT_REF: ${{ inputs.ref || github.event.release.tag_name || github.ref_name }}
+
+      - name: Generate the offline install sources
+        run: node --experimental-strip-types scripts/flatpak/generate-sources.mts flathub
+
+      - name: Validate the metainfo
+        # The build installs it from the pinned checkout, so this repo's copy is the one to check.
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes appstream
+          appstreamcli validate --explain apps/desktop/flatpak/org.triliumnotes.Trilium.metainfo.xml
+
+      - name: Show the resulting change
+        run: git -C flathub --no-pager diff --stat
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: flathub-repo
+          path: flathub
+
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          path: flathub
+          token: ${{ secrets.FLATHUB_PAT }}
+          # One branch per tag, one shared branch for betas, so a re-run supersedes
+          # its predecessor instead of leaving a stale pull request behind.
+          branch: update/${{ steps.update.outputs.tag || 'beta' }}
+          draft: ${{ steps.update.outputs.tag == '' }}
+          commit-message: |
+            Update to ${{ steps.update.outputs.tag || steps.update.outputs.short }}
+
+            Generated from TriliumNext/Trilium@${{ steps.update.outputs.commit }}
+            by .github/workflows/release-flathub.yml.
+          title: ${{ steps.update.outputs.tag != '' && format('Update to {0}', steps.update.outputs.tag) || format('Test build of {0}', steps.update.outputs.short) }}
+          body: |
+            Packaged from [`${{ steps.update.outputs.short }}`](https://github.com/TriliumNext/Trilium/commit/${{ steps.update.outputs.commit }}).
+
+            * The manifest comes from `apps/desktop/flatpak/` in that commit; the desktop
+              file and metainfo install from its checkout, so they need no copy here.
+            * `generated-sources.json` was regenerated from that commit's `pnpm-lock.yaml`
+              (pnpm ${{ steps.update.outputs.pnpm }}) with `flatpak-node-generator`.
+            * `appstreamcli validate` passed on the metainfo before this was opened.
+
+            The `builds/x86_64` check covers both architectures: open its run to read the
+            `build-aarch64` job, which nothing reports on its own.
+
+            ${{ steps.update.outputs.tag == '' && '**Draft:** this commit is not a release tag. Merging it would publish an unreleased build to the stable channel — it is here for the test build.' || '' }}

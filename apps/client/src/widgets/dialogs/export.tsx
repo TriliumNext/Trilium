@@ -6,7 +6,7 @@ import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import open from "../../services/open";
 import tree from "../../services/tree";
-import utils, { isStandalone } from "../../services/utils";
+import utils from "../../services/utils";
 import { ExtendedAdmonition } from "../react/Admonition";
 import { Badge } from "../react/Badge";
 import Button, { ButtonGroup } from "../react/Button";
@@ -119,8 +119,7 @@ const MARKDOWN_FORMAT: ExportFormat = { value: "markdown", name: t("export.forma
 const SHARE_FORMAT: ExportFormat = { value: "share", name: t("export.format_share_name"), description: t("export.format_share_description"), icon: "bx bx-globe" };
 const OPML_FORMAT: ExportFormat = { value: "opml", name: t("export.format_opml_name"), description: t("export.format_opml_description"), icon: "bx bx-list-ul" };
 
-// `share` publishes a static site and only makes sense on a full server, not the standalone build.
-const subtreeFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT, ...(isStandalone ? [] : [SHARE_FORMAT]), OPML_FORMAT];
+const subtreeFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT, SHARE_FORMAT, OPML_FORMAT];
 const singleFormats: ExportFormat[] = [HTML_FORMAT, MARKDOWN_FORMAT];
 
 // One-line summary of what the chosen export actually produces, shown in the dialog's result admonition.

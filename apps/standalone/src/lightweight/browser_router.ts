@@ -48,21 +48,25 @@ const encoder = new TextEncoder();
 
 /**
  * Convert an Express-style path pattern to a RegExp.
- * Supports :param syntax for path parameters.
+ * Supports :param syntax for path parameters and Express 5's *splat wildcard, which matches the
+ * rest of the path including slashes.
  *
  * Examples:
  *   /api/notes/:noteId -> /^\/api\/notes\/([^\/]+)$/
  *   /api/notes/:noteId/revisions -> /^\/api\/notes\/([^\/]+)\/revisions$/
+ *   /custom/*path -> /^\/custom\/(.*)$/
  */
 function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
     const paramNames: string[] = [];
 
-    // Escape special regex characters except for :param patterns
+    // Escape special regex characters first, so the placeholder scan below sees `\*splat` rather
+    // than a `*` that could be read as a quantifier. One pass over both forms keeps `paramNames`
+    // in the same order as the capture groups.
     const regexPattern = path
         .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
-        .replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, paramName) => {
-            paramNames.push(paramName);
-            return '([^/]+)';
+        .replace(/\\\*([a-zA-Z_][a-zA-Z0-9_]*)|:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, splat, param) => {
+            paramNames.push(splat ?? param);
+            return splat ? '(.*)' : '([^/]+)';
         });
 
     return {
@@ -108,6 +112,21 @@ function textResponse(text: string, status = 200, extraHeaders: Record<string, s
         headers: { "content-type": "text/plain; charset=utf-8", ...extraHeaders },
         body
     };
+}
+
+/**
+ * Builds the response for a handler's return value, mirroring the server's `send`: a string
+ * body goes out as-is (the office preview answers with an HTML fragment, which an envelope
+ * would escape), anything else is JSON. An error keeps text/plain so the client reads the
+ * message rather than a JSON-quoted copy of it.
+ */
+function sendResult(response: unknown, status: number): BrowserResponse {
+    if (typeof response === "string") {
+        return status >= 400
+            ? textResponse(response, status)
+            : textResponse(response, status, { "content-type": "text/html; charset=utf-8" });
+    }
+    return jsonResponse(response, status);
 }
 
 /**
@@ -274,7 +293,7 @@ export class BrowserRouter {
         // Handle [statusCode, response] format
         if (Array.isArray(result) && result.length > 0 && Number.isInteger(result[0])) {
             const [statusCode, response] = result;
-            return jsonResponse(response, statusCode);
+            return sendResult(response, statusCode);
         }
 
         // Handle undefined (no content) - 204 should have no body
@@ -286,8 +305,7 @@ export class BrowserRouter {
             };
         }
 
-        // Default: JSON response with 200
-        return jsonResponse(result, 200);
+        return sendResult(result, 200);
     }
 
     /**

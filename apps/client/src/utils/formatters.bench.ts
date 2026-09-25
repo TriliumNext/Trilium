@@ -26,10 +26,16 @@ vi.mock("../services/i18n", async () => {
     };
 });
 
-import { bench, describe, vi } from "vitest";
+import { test, vi } from "vitest";
 
 import options from "../services/options";
-import { formatDateNumeric, formatDateTime } from "./formatters";
+import { formatDateNumeric as importedFormatDateNumeric, formatDateTime as importedFormatDateTime } from "./formatters";
+
+// Vitest serves an import through a module-export getter, so naming one inside a benchmark pays for
+// a getter on every iteration while the floor, a local function, pays nothing — which lands on the
+// side of the pair being measured. Bind them once so the comparison is about formatting.
+const formatDateTime = importedFormatDateTime;
+const formatDateNumeric = importedFormatDateNumeric;
 
 const LOCALE = "en-GB";
 const DATE = new Date("2026-02-11T14:23:45Z");
@@ -41,50 +47,54 @@ options.set("formattingLocale", LOCALE);
 
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
-describe("formatDateTime — date and time", () => {
-    bench("formatters.ts", () => {
-        formatDateTime(DATE, "short", "short");
-    });
-
-    bench("floor: bare cached Intl.DateTimeFormat", () => {
-        cachedFormatter(`${LOCALE}|short|short`, { dateStyle: "short", timeStyle: "short" }).format(DATE);
-    });
-});
-
-describe("formatDateTime — date only", () => {
-    bench("formatters.ts", () => {
-        formatDateTime(DATE, "short", "none");
-    });
-
-    bench("floor: bare cached Intl.DateTimeFormat", () => {
-        cachedFormatter(`${LOCALE}|short|none`, { dateStyle: "short" }).format(DATE);
-    });
-});
-
-describe("formatDateNumeric — with time (also probes the locale's hour cycle)", () => {
-    bench("formatters.ts", () => {
-        formatDateNumeric(DATE, true);
-    });
-
-    bench("floor: bare cached Intl.DateTimeFormat", () => {
-        cachedFormatter(`${LOCALE}|numeric|withTime`, {
-            year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
-        }).format(DATE);
-    });
-});
-
-describe(`board redraw — ${BOARD_CARDS} cards, one dated label each`, () => {
-    bench("formatters.ts", () => {
-        for (let i = 0; i < BOARD_CARDS; i++) {
+test("formatDateTime — date and time", async ({ bench }) => {
+    await bench.compare(
+        bench("formatters.ts", () => {
             formatDateTime(DATE, "short", "short");
-        }
-    });
-
-    bench("floor: bare cached Intl.DateTimeFormat", () => {
-        for (let i = 0; i < BOARD_CARDS; i++) {
+        }),
+        bench("floor: bare cached Intl.DateTimeFormat", () => {
             cachedFormatter(`${LOCALE}|short|short`, { dateStyle: "short", timeStyle: "short" }).format(DATE);
-        }
-    });
+        })
+    );
+});
+
+test("formatDateTime — date only", async ({ bench }) => {
+    await bench.compare(
+        bench("formatters.ts", () => {
+            formatDateTime(DATE, "short", "none");
+        }),
+        bench("floor: bare cached Intl.DateTimeFormat", () => {
+            cachedFormatter(`${LOCALE}|short|none`, { dateStyle: "short" }).format(DATE);
+        })
+    );
+});
+
+test("formatDateNumeric — with time (also probes the locale's hour cycle)", async ({ bench }) => {
+    await bench.compare(
+        bench("formatters.ts", () => {
+            formatDateNumeric(DATE, true);
+        }),
+        bench("floor: bare cached Intl.DateTimeFormat", () => {
+            cachedFormatter(`${LOCALE}|numeric|withTime`, {
+                year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
+            }).format(DATE);
+        })
+    );
+});
+
+test(`board redraw — ${BOARD_CARDS} cards, one dated label each`, async ({ bench }) => {
+    await bench.compare(
+        bench("formatters.ts", () => {
+            for (let i = 0; i < BOARD_CARDS; i++) {
+                formatDateTime(DATE, "short", "short");
+            }
+        }),
+        bench("floor: bare cached Intl.DateTimeFormat", () => {
+            for (let i = 0; i < BOARD_CARDS; i++) {
+                cachedFormatter(`${LOCALE}|short|short`, { dateStyle: "short", timeStyle: "short" }).format(DATE);
+            }
+        })
+    );
 });
 
 /**

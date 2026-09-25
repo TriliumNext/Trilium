@@ -413,6 +413,16 @@ describe("convertNotionHtml — images", () => {
             `<figure class="image"><img src="x.png"></figure>`
         );
     });
+
+    it("drops the data-notion-image copy of the source the figure carries", () => {
+        // Notion repeats the whole source on the figure, so a data-URI image is stored twice — and for a
+        // bundled file the copy still names the zip path after the importer has rewritten the <img>.
+        const input = `<figure id="386c5eca" class="image" data-notion-image="Page/Screenshot.png"><a href="Page/Screenshot.png"><img src="Page/Screenshot.png"/></a></figure>`;
+        expect(convertNotionHtml(input)).toBe(`<figure class="image"><img src="Page/Screenshot.png"></figure>`);
+
+        const inline = `<figure class="image" data-notion-image="data:image/png;base64,AAAA"><img src="data:image/png;base64,AAAA"></figure>`;
+        expect(convertNotionHtml(inline)).toBe(`<figure class="image"><img src="data:image/png;base64,AAAA"></figure>`);
+    });
 });
 
 describe("convertNotionHtml — attachments", () => {

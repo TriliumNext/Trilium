@@ -18,4 +18,6 @@ setupClipboardImageEmbed();
 const MobileLayout = (await import("./layouts/mobile_layout.js")).default;
 
 appContext.setLayout(new MobileLayout());
-void appContext.start().then(preloadCommonNoteTypes);
+
+/** Resolves once the layout is rendered and froca has the note tree; see desktop.ts. */
+export const ready = appContext.start().then(preloadCommonNoteTypes);

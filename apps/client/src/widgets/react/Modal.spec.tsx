@@ -3,10 +3,23 @@ import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-    openDialog: vi.fn(async (dialog: JQuery<HTMLElement>) => dialog),
-    hide: vi.fn()
-}));
+const mocks = vi.hoisted(() => {
+    // What a dialog did on its way up, in the order it did it (see "suspends the focus-traps ...").
+    const raising: string[] = [];
+
+    return {
+        raising,
+        openDialog: vi.fn(async (dialog: JQuery<HTMLElement>) => {
+            raising.push("openDialog");
+            return dialog;
+        }),
+        hide: vi.fn(),
+        suspendModalFocusTraps: vi.fn(() => {
+            raising.push("suspendModalFocusTraps");
+            return () => {};
+        })
+    };
+});
 
 vi.mock("../../services/dialog", () => ({
     openDialog: mocks.openDialog
@@ -30,7 +43,7 @@ vi.mock("../../components/app_context", () => ({
 }));
 
 vi.mock("./modal_focustrap", () => ({
-    suspendModalFocusTraps: () => () => {}
+    suspendModalFocusTraps: mocks.suspendModalFocusTraps
 }));
 
 import Modal from "./Modal";
@@ -42,6 +55,8 @@ beforeEach(() => {
     document.body.appendChild(container);
     mocks.openDialog.mockClear();
     mocks.hide.mockClear();
+    mocks.suspendModalFocusTraps.mockClear();
+    mocks.raising.length = 0;
 });
 
 afterEach(() => {
@@ -107,6 +122,54 @@ describe("Modal", () => {
 
         await act(async () => { render(null, container); });
         expect(mocks.hide).toHaveBeenCalled();
+    });
+
+    /**
+     * Bootstrap marks a raised dialog with `show`, and Preact writes `className` in full whenever
+     * the prop changes — so a host that says something about its note in the class took its own
+     * dialog off the screen. Picking a colour in the geo map's marker sheet did exactly that: the
+     * note's colour class arrived, `show` left with the old attribute, and what remained was a
+     * backdrop over an empty page.
+     */
+    it("keeps the classes Bootstrap wrote when the host's own change", async () => {
+        await act(async () => {
+            render(<Modal className="test-dialog" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+
+        const dialog = container.querySelector<HTMLElement>(".test-dialog");
+        expect(dialog).toBeTruthy();
+        // What Bootstrap puts there once it has raised the dialog, it being mocked out here.
+        dialog?.classList.add("show");
+
+        await act(async () => {
+            render(<Modal className="test-dialog with-hue" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        expect(dialog?.classList.contains("show")).toBe(true);
+        expect(dialog?.classList.contains("with-hue")).toBe(true);
+        expect(dialog?.classList.contains("modal")).toBe(true);
+
+        // A class the host has stopped asking for goes, so this is not merely never writing again.
+        await act(async () => {
+            render(<Modal className="test-dialog" size="md" show onHidden={() => {}}>body</Modal>, container);
+        });
+        expect(dialog?.classList.contains("with-hue")).toBe(false);
+        expect(dialog?.classList.contains("test-dialog")).toBe(true);
+        expect(dialog?.classList.contains("show")).toBe(true);
+    });
+
+    /**
+     * `openDialog` moves focus onto the new backdrop synchronously, and a focus-trap still active on
+     * the dialog underneath pulls it straight back in. Over the Options dialog that lands in the
+     * settings search field, whose focus handler shows the search results in place of the page being
+     * configured — unmounting the dialog just opened and leaving its portaled markup on screen with
+     * nothing behind it. Every card in the "Add AI provider" wizard answered a click with nothing.
+     */
+    it("suspends the underlying focus-traps before opening", async () => {
+        await act(async () => {
+            render(<DialogWithTypedInto show onHidden={() => {}} />, container);
+        });
+
+        expect(mocks.raising).toEqual([ "suspendModalFocusTraps", "openDialog" ]);
     });
 
     it("opens a dialog that starts closed only once it is asked to show", async () => {

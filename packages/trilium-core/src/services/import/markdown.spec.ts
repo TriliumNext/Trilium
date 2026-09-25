@@ -484,9 +484,9 @@ $$`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 
-    it("adds spellcheck=false to inline code", () => {
+    it("renders inline code as a plain <code> element", () => {
         const input = `This is some inline code: \`const x = 10;\``;
-        const expected = /*html*/`<p>This is some inline code: <code spellcheck="false">const x = 10;</code></p>`;
+        const expected = /*html*/`<p>This is some inline code: <code>const x = 10;</code></p>`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 
@@ -503,6 +503,23 @@ $$`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
         // Sanitization drops an empty attribute, so nothing comes back holding `style=";"`.
         expect(markdownService.renderToHtml(`<p style="">Empty</p>`, "Title")).toStrictEqual(`<p>Empty</p>`);
+    });
+
+    it("brings an exported icon back in the form it left", () => {
+        // The User Guide is kept as Markdown and read back from it, so an icon the exporter gives
+        // up on is gone from the note as well on the next pass through `edit-docs`.
+        const cog = `<span class="tn-icon bx bx-cog"></span>`;
+
+        for (const html of [
+            `<p>Press ${cog} to open it.</p>`,
+            `<p>${cog}</p>`,
+            `<p>a<span style="color:rgb(255,0,0);">${cog}</span>b</p>`,
+            `<ul><li>In a list ${cog} here</li></ul>`
+        ]) {
+            const markdown = markdownExportService.toMarkdown(html);
+
+            expect(markdownService.renderToHtml(markdown, "Title")).toStrictEqual(html);
+        }
     });
 
     describe("collapsible blocks", () => {

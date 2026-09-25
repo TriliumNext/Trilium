@@ -186,7 +186,7 @@
     "download_helper_desktop_macos": {
         "title_x64": "macOS per Intel",
         "title_arm64": "macOS per Apple Silicon",
-        "description_x64": "Per Mac basati su Intel con macOS Monterey o versioni successive.",
+        "description_x64": "Per Mac basati su Intel con macOS Ventura o versioni successive.",
         "description_arm64": "Per i Mac Apple Silicon, come quelli con chip M1 e M2.",
         "quick_start": "Per installare tramite Homebrew:",
         "download_dmg": "Scarica il programma di installazione (.dmg)",

@@ -95,6 +95,64 @@ describe("Dropdown", () => {
         expect(instance.dispose).toHaveBeenCalledTimes(1);
     });
 
+    it("preserves Bootstrap's open marker when the button class changes", () => {
+        const el = renderInto(<Dropdown buttonClassName="bx bx-note">item</Dropdown>);
+        const dropdownEl = el.querySelector(".dropdown");
+        expect(dropdownEl).toBeTruthy();
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+        getToggle().classList.add("show");
+        expect(getToggle().classList.contains("show")).toBe(true);
+
+        void act(() => render(<Dropdown buttonClassName="bx bx-star">item</Dropdown>, el));
+
+        expect(getToggle().classList.contains("bx-star")).toBe(true);
+        expect(getToggle().classList.contains("show")).toBe(true);
+        expect(getToggle().getAttribute("aria-expanded")).toBe("true");
+    });
+
+    it("closes an open menu before disabling the toggle", () => {
+        const el = renderInto(<Dropdown>item</Dropdown>);
+        const dropdownEl = el.querySelector(".dropdown");
+        expect(dropdownEl).toBeTruthy();
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+
+        // Bootstrap's hide() returns early on a disabled toggle, so the state at call time matters.
+        let disabledAtHide: boolean | undefined;
+        instance.hide.mockImplementationOnce(() => {
+            disabledAtHide = getToggle().disabled;
+        });
+        void act(() => render(<Dropdown disabled>item</Dropdown>, el));
+        expect(instance.hide).toHaveBeenCalledTimes(1);
+        expect(disabledAtHide).toBe(false);
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
+        });
+        expect(getToggle().disabled).toBe(true);
+        expect(getToggle().getAttribute("aria-expanded")).toBe("false");
+
+        // A closed dropdown takes the attribute at once and has nothing to hide.
+        void act(() => render(null, el));
+        el.remove();
+        instance.hide.mockClear();
+        const closedEl = renderInto(<Dropdown disabled>item</Dropdown>);
+        expect(instance.hide).not.toHaveBeenCalled();
+        expect(getToggle().disabled).toBe(true);
+
+        // `forceShown` does not open a disabled dropdown, so the toggle keeps the attribute.
+        void act(() => render(null, closedEl));
+        closedEl.remove();
+        instance.show.mockClear();
+        renderInto(<Dropdown disabled forceShown>item</Dropdown>);
+        expect(instance.show).not.toHaveBeenCalled();
+        expect(getToggle().disabled).toBe(true);
+    });
+
     it("mounts the portaled menu on arm (pointerdown/focus), wires _menu, and tears down on blur without open", () => {
         renderInto(<Dropdown portalToBody className="my-scope" text="btn">item</Dropdown>);
 
@@ -148,6 +206,49 @@ describe("Dropdown", () => {
         });
         expect(onHidden).toHaveBeenCalledTimes(1);
         expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
+    });
+
+    /**
+     * A menu that is a task of its own dims the page behind it. The cover is drawn inside the same
+     * portal, before the menu, so what covers what is document order rather than two z-index scales
+     * meeting; and only while the menu is actually open, an armed but closed one covering nothing.
+     */
+    it("draws a backdrop under a portaled menu while it is open", () => {
+        const el = renderInto(
+            <Dropdown portalToBody backdrop className="my-scope">
+                <li>entry</li>
+            </Dropdown>
+        );
+
+        fire(getToggle(), "pointerdown");
+        expect(document.body.querySelector(":scope > .my-scope > .tn-dropdown-backdrop")).toBeNull();
+
+        const dropdownEl = el.querySelector(".dropdown");
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        });
+
+        const wrapper = document.body.querySelector<HTMLElement>(":scope > .my-scope");
+        const drawn = [ ...(wrapper?.children ?? []) ].map(child => child.className.split(" ")[0]);
+        expect(drawn).toEqual([ "tn-dropdown-backdrop", "dropdown-menu" ]);
+
+        void act(() => {
+            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
+        });
+        expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
+    });
+
+    it("leaves a menu without the prop undimmed", () => {
+        const el = renderInto(
+            <Dropdown portalToBody className="my-scope"><li>entry</li></Dropdown>
+        );
+
+        fire(getToggle(), "pointerdown");
+        void act(() => {
+            $(el.querySelector(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+        });
+
+        expect(document.body.querySelector(":scope > .my-scope > .tn-dropdown-backdrop")).toBeNull();
     });
 
     it("leaves a mobileBottomSheet menu alone on a desktop layout", () => {

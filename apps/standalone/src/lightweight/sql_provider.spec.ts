@@ -2,7 +2,7 @@ import { getSql } from "@triliumnext/core";
 import type { Statement } from "@triliumnext/core";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import BrowserSqlProvider from "./sql_provider.js";
+import BrowserSqlProvider, { waitForSahPoolRelease } from "./sql_provider.js";
 
 // The sqlite-wasm module can only be initialized once per worker (test_setup.ts
 // already does it for core). Reuse that initialized module rather than calling
@@ -537,5 +537,103 @@ describe("BrowserSqlProvider error and defensive paths", () => {
         const iterStmt = provider.prepare("SELECT 1 /* pluck-empty-iter */").pluck() as unknown as { stmt: unknown; iterate(...p: unknown[]): IterableIterator<unknown> };
         iterStmt.stmt = fakeStmt(1);
         expect([...iterStmt.iterate()]).toEqual([undefined]);
+    });
+});
+
+describe("waitForSahPoolRelease", () => {
+    type FakeEntry = { kind: string; createSyncAccessHandle?: () => Promise<{ close(): void }> };
+
+    /** A fake OPFS root holding `.opfs-sahpool/.opaque` with the given entries. */
+    function fakeRootWith(entries: [string, FakeEntry][]) {
+        const opaque = {
+            async *entries() {
+                yield* entries;
+            }
+        };
+        const pool = {
+            getDirectoryHandle: async (name: string) => {
+                if (name !== ".opaque") throw new DOMException(name, "NotFoundError");
+                return opaque;
+            }
+        };
+        const root = {
+            getDirectoryHandle: async (name: string) => {
+                if (name !== ".opfs-sahpool") throw new DOMException(name, "NotFoundError");
+                return pool;
+            }
+        };
+        return async () => root as unknown as FileSystemDirectoryHandle;
+    }
+
+    it("resolves immediately when the pool does not exist yet", async () => {
+        const emptyRoot = async () => ({
+            getDirectoryHandle: async (name: string) => {
+                throw new DOMException(name, "NotFoundError");
+            }
+        }) as unknown as FileSystemDirectoryHandle;
+
+        await expect(waitForSahPoolRelease({ getRoot: emptyRoot })).resolves.toBe(true);
+    });
+
+    it("probes every file, skipping directories, and closes the probe handles", async () => {
+        const closed: string[] = [];
+        const file = (name: string) => ({
+            kind: "file",
+            createSyncAccessHandle: async () => ({ close: () => closed.push(name) })
+        });
+        const getRoot = fakeRootWith([
+            ["subdir", { kind: "directory" }],
+            ["pool-1", file("pool-1")],
+            ["pool-2", file("pool-2")]
+        ]);
+
+        await expect(waitForSahPoolRelease({ getRoot })).resolves.toBe(true);
+        expect(closed).toEqual(["pool-1", "pool-2"]);
+    });
+
+    it("waits for a held file, and reports one still held at the deadline", async () => {
+        let denials = 3;
+        const eventuallyReleased = {
+            kind: "file",
+            createSyncAccessHandle: async () => {
+                if (denials > 0) {
+                    denials--;
+                    throw new DOMException("held", "NoModificationAllowedError");
+                }
+                return { close: () => {} };
+            }
+        };
+        await expect(waitForSahPoolRelease({
+            getRoot: fakeRootWith([["pool-1", eventuallyReleased]]),
+            pollMs: 1
+        })).resolves.toBe(true);
+        expect(denials).toBe(0);
+
+        const neverReleased = {
+            kind: "file",
+            createSyncAccessHandle: async () => {
+                throw new DOMException("held", "NoModificationAllowedError");
+            }
+        };
+        await expect(waitForSahPoolRelease({
+            getRoot: fakeRootWith([["pool-1", neverReleased]]),
+            pollMs: 1,
+            deadlineMs: 25
+        })).resolves.toBe(false);
+    });
+
+    it("treats a probe failure other than a held lock as nothing to wait for", async () => {
+        const broken = {
+            kind: "file",
+            createSyncAccessHandle: async () => {
+                throw new DOMException("gone", "NotFoundError");
+            }
+        };
+
+        await expect(waitForSahPoolRelease({
+            getRoot: fakeRootWith([["pool-1", broken]]),
+            pollMs: 1,
+            deadlineMs: 25
+        })).resolves.toBe(true);
     });
 });

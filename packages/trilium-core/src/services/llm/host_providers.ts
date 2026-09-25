@@ -13,7 +13,7 @@ import type { LlmProvider } from "./types.js";
  * knows it by.
  *
  * What they have in common is a dependency on the runtime around them rather
- * than on an API key: both are CLIs this process spawns, authenticating through
+ * than on an API key: each is a CLI this process spawns, authenticating through
  * the host's own account plumbing rather than a key the user pastes in. Core
  * runs in the browser too, where none of that exists, so the host that *can* do
  * it registers a factory at startup with {@link registerHostProvider}. Where
@@ -28,7 +28,9 @@ export const HOST_PROVIDED_TYPES = {
     /** Claude Pro/Max through the Claude Agent SDK, authenticated by `claude /login`. */
     "claude-agent": "Claude Code",
     /** GitHub Copilot through the Copilot CLI's ACP mode, authenticated by `copilot login`. */
-    "copilot-agent": "GitHub Copilot"
+    "copilot-agent": "GitHub Copilot",
+    /** A Google account's Gemini quota through Google's Antigravity ACP server, signed in from the provider screen. */
+    "antigravity-agent": "Google Antigravity"
 } as const;
 
 /** A provider type from {@link HOST_PROVIDED_TYPES}. */

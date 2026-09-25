@@ -4,7 +4,7 @@
  * The stack itself lives in `@triliumnext/core`, so the browser-hosted
  * (standalone) build can run it too. What could not follow it there is anything
  * that needs Node: the providers that spawn the Claude Code and GitHub Copilot
- * CLIs, and the User Guide tools, which read pages off disk. Core exposes a seam
+ * CLIs and Google's Antigravity ACP server, and the User Guide tools, which read pages off disk. Core exposes a seam
  * for each; this is where the server fills them in — including the skill sheets,
  * whose catalog is core's while the reading is per-runtime.
  *
@@ -34,6 +34,7 @@ import { getDocNoteHtml } from "./tools/doc_notes.js";
 export function registerServerLlmExtensions() {
     registerHostProvider("claude-agent", async () => new (await import("./providers/claude_agent.js")).ClaudeAgentProvider());
     registerHostProvider("copilot-agent", async () => new (await import("./providers/copilot_agent.js")).CopilotAgentProvider());
+    registerHostProvider("antigravity-agent", async () => new (await import("./providers/antigravity_agent.js")).AntigravityAgentProvider());
     registerDocNoteHtmlReader(getDocNoteHtml);
     registerSkillReader(loadSkillSheet);
     registerToolRegistryLoader(async () => (await import("./tools/help_tools.js")).helpTools);

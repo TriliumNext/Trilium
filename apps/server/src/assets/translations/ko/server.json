@@ -333,7 +333,8 @@
   "notes": {
     "new-note": "새 노트",
     "duplicate-note-suffix": "(복제본)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "노트 삭제 실패: {{- message}}"
   },
   "note_conversion": {
     "revision_before_markdown": "Markdown으로 변환하기 전",

@@ -22,9 +22,27 @@ declare global {
         unresolved?: boolean;
     }
 
+    interface IconPickerRequest {
+        /** The element to paint the picker into, which the editor owns and places. */
+        container: HTMLElement;
+        /** Receives the class of the icon picked, e.g. `bx bx-star`. */
+        onSelect(iconClass: string): void;
+    }
+
     interface EditorComponent extends Component {
+        /**
+         * Paints the host's icon picker into `container`, and answers with the way to take it down
+         * again. A host that shows the picker somewhere of its own — a phone, which has no room for
+         * a balloon — leaves `container` alone and answers `null`.
+         */
+        showIconPicker(request: IconPickerRequest): (() => void) | null;
+        /**
+         * Formats `date` for insertion in the Day.js `format`, or in the user's
+         * `customDateTimeFormat` when none is given.
+         */
+        formatDateTime(date: Date, format?: string): string;
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
-        createNoteForReferenceLink(title: string): Promise<string>;
+        createNoteForReferenceLink(title: string, intoInbox: boolean): Promise<string | undefined>;
         loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string): void;
         /**
          * Reads a page's preview metadata through the host. Never rejects: any failure — network
@@ -45,5 +63,5 @@ declare global {
         getHeaders(): Promise<Record<string, string>>;
         getReferenceLinkTitle(href: string): Promise<string>;
         getReferenceLinkTitleSync(href: string): string;
-    }
+    };
 }

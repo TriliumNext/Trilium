@@ -7,7 +7,7 @@ The _Jump to Note_ function allows easy navigation between notes by searching fo
 
 To enter the “Jump to” dialog:
 
-*   In the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, press ![](2_Jump%20to%20&%20command%20palette_image.png) button.
+*   In the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, press <span class="tn-icon bx bx-send"></span> button.
 *   Using the keyboard, press <kbd>Ctrl</kbd> + <kbd>J</kbd>.
 
 In addition to searching for notes, it is also possible to search for commands. See the dedicated section below for more information.
@@ -16,7 +16,9 @@ In addition to searching for notes, it is also possible to search for commands. 
 
 *   By default, when there is no text entered it will display the most recent notes.
 *   Using the keyboard, use the up or down arrow keys to navigate between items. Press <kbd>Enter</kbd> to open the desired note.
-*   If the note doesn't exist, it's possible to create it by typing the desired note title and selecting the _Create and link child note_ option.
+*   If the note doesn't exist, it's possible to create it by typing the desired note title and selecting one of two options:
+    *   _Create note_ places it in the <a class="reference-link" href="../Notes/Note%20Inbox.md">Note Inbox</a>: the note labelled `#inbox`, today's <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> if there is none, or the top level if there is no journal either. While hoisted into a <a class="reference-link" href="Workspaces.md">Workspaces</a>, the workspace's own inbox is used, then today's day note if the workspace has a `#workspaceCalendarRoot`, otherwise the workspace root itself. The option names the destination, so it is always visible before the note is created.
+    *   _Create child note_ places it under the note that is currently open.
 
 ## Recent notes
 

@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import type { Plugin } from "vite";
 
 /**
@@ -44,5 +46,5 @@ export const ENGINE_RENDER_ENTRY = "@univerjs/engine-render/lib/es/index.js";
 export const LANGUAGE_DETECTOR_PACKAGE = "franc-min";
 
 function stubPath(name: string): string {
-    return new URL(`./src/stubs/${name}.ts`, import.meta.url).pathname;
+    return fileURLToPath(new URL(`./src/stubs/${name}.ts`, import.meta.url));
 }

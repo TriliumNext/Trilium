@@ -216,19 +216,18 @@ describe( 'MermaidUI buttons', () => {
 		return editor.destroy();
 	} );
 
-	it( 'opens the syntax documentation in a new tab', () => {
+	it( 'opens the help through the configured callback, and does nothing without one', () => {
 		const open = vi.spyOn( window, 'open' ).mockReturnValue( null );
 		const button = editor.ui.componentFactory.create( 'mermaidInfo' );
 
 		button.fire( 'execute' );
-
-		expect( open ).toHaveBeenCalledWith(
-			'https://ckeditor.com/blog/basic-overview-of-creating-flowcharts-using-mermaid/',
-			'_blank',
-			'noopener'
-		);
-
+		expect( open ).not.toHaveBeenCalled();
 		open.mockRestore();
+
+		const openHelp = vi.fn();
+		editor.config.set( 'mermaid.openHelp', openHelp );
+		button.fire( 'execute' );
+		expect( openHelp ).toHaveBeenCalledOnce();
 	} );
 
 	it( 'runs the matching command and returns focus when a toolbar button executes', () => {

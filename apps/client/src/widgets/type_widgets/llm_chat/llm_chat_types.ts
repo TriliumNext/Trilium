@@ -1,4 +1,4 @@
-import type { LlmCitation, LlmErrorDetails, LlmUsage } from "@triliumnext/commons";
+import type { LlmCitation, LlmErrorDetails, LlmReasoningEffort, LlmUsage } from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -174,4 +174,6 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    /** The effort chosen for a model with levels; absent means the model's default. */
+    reasoningEffort?: LlmReasoningEffort;
 }

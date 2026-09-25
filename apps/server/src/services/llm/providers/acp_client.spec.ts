@@ -12,6 +12,7 @@ class FakeProc extends EventEmitter {
     stdout = new PassThrough();
     stderr = new PassThrough();
     killed = false;
+    pid = 4242;
     written: string[] = [];
 
     constructor() {
@@ -39,6 +40,12 @@ function lastWritten(proc: FakeProc): Record<string, unknown> {
     return JSON.parse(proc.written[proc.written.length - 1]);
 }
 
+const originalPlatform = Object.getOwnPropertyDescriptor(process, "platform");
+
+function stubPlatform(platform: NodeJS.Platform) {
+    Object.defineProperty(process, "platform", { ...originalPlatform, value: platform });
+}
+
 describe("AcpClient", () => {
     let proc: FakeProc;
 
@@ -51,19 +58,32 @@ describe("AcpClient", () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        if (originalPlatform) {
+            Object.defineProperty(process, "platform", originalPlatform);
+        }
     });
 
-    it("spawns with --acp and the given args", () => {
-        AcpClient.start("/usr/bin/copilot", { cwd: "/tmp", args: ["--no-color"] });
+    it("spawns with exactly the given args and the process environment", () => {
+        AcpClient.start("/usr/bin/copilot", { cwd: "/tmp", args: ["--acp", "--no-color"] });
         expect(spawnMock).toHaveBeenCalledWith(
             "/usr/bin/copilot",
             ["--acp", "--no-color"],
-            expect.objectContaining({ cwd: "/tmp" })
+            expect.objectContaining({ cwd: "/tmp", env: process.env })
         );
+
+        AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp" });
+        expect(spawnMock).toHaveBeenLastCalledWith("/opt/agy/agy_acp_server.par", [], expect.anything());
+    });
+
+    it("layers extra environment variables over the process environment", () => {
+        AcpClient.start("/opt/agy/agy_acp_server.par", { cwd: "/tmp", env: { GEMINI_HOME: "/data/home" } });
+        const env = spawnMock.mock.lastCall?.[2]?.env as NodeJS.ProcessEnv | undefined;
+        expect(env?.GEMINI_HOME).toBe("/data/home");
+        expect(env?.PATH).toBe(process.env.PATH);
     });
 
     it("quotes the binary path when launched through a shell", () => {
-        AcpClient.start("C:\\npm\\copilot.cmd", { cwd: "/tmp", shell: true });
+        AcpClient.start("C:\\npm\\copilot.cmd", { cwd: "/tmp", shell: true, args: ["--acp"] });
         expect(spawnMock).toHaveBeenCalledWith(
             `"C:\\npm\\copilot.cmd"`,
             ["--acp"],
@@ -205,6 +225,25 @@ describe("AcpClient", () => {
         await expect(promise).rejects.toThrow(/exited unexpectedly/);
     });
 
+    it("reports its own death to onExit once, but not a dispose", () => {
+        const onExit = vi.fn();
+        const client = AcpClient.start("/bin/copilot", { cwd: "/tmp", onExit });
+        expect(client.alive).toBe(true);
+
+        proc.emit("error", new Error("spawn ENOENT"));
+        proc.emit("exit", 1, null);
+        expect(client.alive).toBe(false);
+        expect(onExit).toHaveBeenCalledTimes(1);
+        expect(onExit).toHaveBeenCalledWith(new Error("Failed to start the ACP agent: spawn ENOENT"));
+
+        const disposedExit = vi.fn();
+        const disposed = AcpClient.start("/bin/copilot", { cwd: "/tmp", onExit: disposedExit });
+        disposed.dispose();
+        proc.emit("exit", 0, null);
+        expect(disposed.alive).toBe(false);
+        expect(disposedExit).not.toHaveBeenCalled();
+    });
+
     it("fails in-flight requests when the subprocess cannot be started", async () => {
         const client = AcpClient.start("/bin/copilot", { cwd: "/tmp" });
         const promise = client.request("initialize", {});
@@ -216,13 +255,40 @@ describe("AcpClient", () => {
             .rejects.toThrow(/Failed to start the ACP agent/);
     });
 
-    it("does not treat a post-dispose exit as an unexpected failure", async () => {
+    it("closes the agent's stdin on dispose and does not treat its exit as an unexpected failure", async () => {
+        vi.useFakeTimers();
         const client = AcpClient.start("/bin/copilot", { cwd: "/tmp" });
         client.dispose();
-        expect(proc.killed).toBe(true);
+        expect(proc.stdin.writableEnded).toBe(true);
+
+        // An agent that exits on end of input is never signalled.
+        proc.emit("exit", 0, null);
+        vi.advanceTimersByTime(60_000);
+        expect(proc.killed).toBe(false);
 
         // A request after disposal fails with the disposal error, not a crash.
         await expect(client.request("initialize", {})).rejects.toThrow(/disposed/);
+    });
+
+    it("kills an agent that is still running after the grace period", () => {
+        stubPlatform("linux");
+        vi.useFakeTimers();
+        const client = AcpClient.start("/bin/copilot", { cwd: "/tmp" });
+        client.dispose();
+        vi.advanceTimersByTime(4_999);
+        expect(proc.killed).toBe(false);
+        vi.advanceTimersByTime(1);
+        expect(proc.killed).toBe(true);
+    });
+
+    it("kills the agent's whole process tree on Windows, where it runs in a child of the spawned process", () => {
+        stubPlatform("win32");
+        vi.useFakeTimers();
+        const client = AcpClient.start("C:\\agy\\agy_acp_server.exe", { cwd: "C:\\tmp" });
+        client.dispose();
+        vi.advanceTimersByTime(5_000);
+        expect(spawnMock).toHaveBeenLastCalledWith("taskkill", [ "/pid", "4242", "/T", "/F" ], expect.objectContaining({ windowsHide: true }));
+        expect(proc.killed).toBe(false);
     });
 
     it("rejects in-flight requests on dispose and ignores a second dispose", async () => {

@@ -1,8 +1,29 @@
 import { createFontStylesheetLink } from "./services/font";
+import {
+    CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError
+} from "./services/splash";
 import { buildThemeStylesheetRefs, createStylesheetLink, getThemeStyle, initThemeChangeNotifier, StylesheetRef } from "./services/theme";
 
+/**
+ * How long the tab that owns the SQLite worker waits for it to answer `/bootstrap`. Matches the
+ * service worker's forwarding timeout in `apps/standalone/src/sw.ts`, so a worker that never
+ * finishes starting up fails the page at the same point on either transport.
+ */
+const LOCAL_BOOTSTRAP_TIMEOUT_MS = 270_000;
+
+/**
+ * Whether the tab that owns the SQLite worker answers `/bootstrap` itself. Mirrors
+ * `USE_LOCAL_FETCH` in `services/server.ts`, which gates the same choice for every later request;
+ * `VITE_DISABLE_LOCAL_FETCH=true` therefore takes the service worker's route for the whole
+ * session. Read here rather than imported, which would pull `server.ts` into the startup chunk.
+ */
+const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
+
 async function bootstrap() {
-    showSplash();
+    // The splash from index.html covers the page until hideSplash(). Standalone reports a longer
+    // sequence of its own before this one, so these phases only take effect on server and desktop.
+    initSplashProgress(CLIENT_STARTUP_PHASES);
+    reportSplashPhase("bootstrap");
     await setupGlob();
     await Promise.all([
         initJQuery(),
@@ -12,6 +33,7 @@ async function bootstrap() {
     initThemeChangeNotifier();
     loadIcons();
     setBodyAttributes();
+    reportSplashPhase("application");
     await loadScripts();
     hideSplash();
 }
@@ -34,8 +56,20 @@ async function initJQuery() {
 }
 
 async function setupGlob() {
-    const response = await fetch(`./bootstrap${window.location.search}`);
+    const url = `./bootstrap${window.location.search}`;
+    // The standalone tab that owns the SQLite worker answers this itself; every other build (and a
+    // follower tab, which has no worker) fetches, on standalone through the service worker.
+    const localFetch = USE_LOCAL_FETCH ? window.standaloneApi?.localFetch : undefined;
+    const startedAt = performance.now();
+    const response = localFetch
+        ? await withTimeout(localFetch(new Request(url)), LOCAL_BOOTSTRAP_TIMEOUT_MS)
+        : await fetch(url);
     const json = await response.json();
+    if (import.meta.env.DEV && localFetch) {
+        // The worker answers this one only once it has finished starting up, so the time it
+        // reports is mostly that wait rather than the request.
+        console.debug(`[api] GET bootstrap ${(performance.now() - startedAt).toFixed(1)}ms`);
+    }
 
     window.global = globalThis; /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.glob = {
@@ -44,6 +78,20 @@ async function setupGlob() {
         device: json.device || getDevice()
     };
     window.glob.getThemeStyle = getThemeStyle;
+}
+
+/**
+ * Rejects once `timeoutMs` has passed without `promise` settling, so a worker that never answers
+ * reaches `bootstrap()`'s error handler and the splash states the failure.
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        const timer = setTimeout(
+            () => reject(new Error("the local database worker did not answer in time")),
+            timeoutMs
+        );
+        promise.then(resolve, reject).finally(() => clearTimeout(timer));
+    });
 }
 
 function getDevice() {
@@ -141,42 +189,42 @@ function setBodyAttributes() {
 }
 
 async function loadScripts() {
+    const entry = await importEntry();
+
+    // Every entry point renders after its module has finished evaluating: the desktop layout, the
+    // note tree and the locale catalogue are all fetched from there. Waiting for the `ready` it
+    // exports keeps the splash up until the screen is actually populated, instead of handing the
+    // user a blank page for the seconds those fetches take on a slow connection.
+    reportSplashPhase("interface");
+    await entry.ready;
+}
+
+function importEntry(): Promise<{ ready?: Promise<unknown> }> {
     if (!glob.dbInitialized) {
-        await import("./setup.js");
-        return;
+        return import("./setup.js");
     }
 
     if (glob.passwordSet === false) {
-        await import("./set_password.js");
-        return;
+        return import("./set_password.js");
     }
 
     if (glob.loggedIn === false) {
-        await import("./login.js");
-        return;
+        return import("./login.js");
     }
 
     switch (glob.device) {
         case "mobile":
-            await import("./mobile.js");
-            break;
+            return import("./mobile.js");
         case "print":
-            await import("./print.js");
-            break;
+            return import("./print.js");
         case "desktop":
         default:
-            await import("./desktop.js");
-            break;
+            return import("./desktop.js");
     }
 }
 
-function showSplash() {
-    // hide body to reduce flickering on the startup. This is done through JS and not CSS to not hide <noscript>
-    document.body.style.display = "none";
-}
-
-function hideSplash() {
-    document.body.style.display = "block";
-}
-
-bootstrap();
+bootstrap().catch((err) => {
+    console.error("Trilium failed to start:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    showSplashError(`Trilium failed to start: ${message} — reload the page to try again.`);
+});

@@ -86,6 +86,30 @@ node $S add client dialog.my_thing "Save changes"
 
 Then use it: `t("dialog.my_thing")`. Only `en/` changes — Weblate carries the string to the other locales, and you should **not** hand-edit the other ~38 locale files.
 
+### Write US English, and mirror the difference into `en-GB`
+
+The `en` catalogues are **US English**: `color`, `center`, `meter`, `recognize`, `labeled`, `canceled`,
+`organize`, `defense`, `gray`. `en-GB` is a locale of its own, and unlike the ~38 translated locales it
+is sparse on purpose — it carries **only** the strings whose British spelling differs (`"color_type":
+"Colour"`, `"centerContent": "Keep content centred"`), and falls back to `en` for everything else.
+
+So a string containing one of those words is two edits, not one:
+
+```bash
+node $S add client dialog.my_thing "Pick a color"
+# then, only because the spelling differs:
+printf '{"dialog.my_thing":"Pick a colour"}' > /tmp/en-GB.json
+node .claude/skills/translating-locales/locale.mjs merge en-GB client /tmp/en-GB.json
+```
+
+Leave `en-GB` alone where the spelling is the same in both — an entry identical to English is noise
+that `measure` then reports as untranslated. `i18n.mjs` writes `en/` only, by design; `locale.mjs
+merge` is the sanctioned way into a locale file, and it preserves key order and formatting.
+
+To check a catalogue, grep its values for the British halves of those pairs — `colour`, `centre`,
+`metre`, `-ise`/`-isation`, `-lled`/`-lling`, `defence`, `licence`, `grey`, `programme`, `whilst`.
+The English catalogues currently read 0 hits, so anything found is newly introduced.
+
 ### Pluralization
 
 i18next pluralizes only when the translation has `_one` / `_other` keys **and** the call site passes `{ count }`. Add both forms and call `t("key", { count })`:
@@ -100,6 +124,25 @@ There is no base key — `find --key space_usage.my_notes` shows only the suffix
 ### Interpolation
 
 `{{var}}` normally, `{{- var}}` to skip HTML-escaping when the value contains quotes. When a string embeds **components** whose order varies by language (links, note references), use `<Trans>` from `react-i18next` rather than `t()`, so translators can reorder them.
+
+### Multi-paragraph text
+
+Text that runs to several paragraphs is **one message with a blank line (`\n\n`) between paragraphs**,
+never one key per paragraph. The translator then sees the whole text and decides where its paragraphs
+fall — a language can merge two or split one — and a translation that drops the blank line still
+renders, as a single paragraph. Some 18 English strings already work this way
+(`toast.critical-error.message`, `call_to_action.new_layout_message`, the `breadcrumb_badges.*_description`
+tooltips, `llm.antigravity_agent_description`).
+
+Pass real newlines to `add` — in bash, `$'First paragraph.\n\nSecond paragraph.'`. Then render it so
+the breaks survive, by one of:
+
+- **`white-space`** — put the text in one element with the shared `.pre-wrap-text` class
+  (`stylesheets/style.css`), as the call-to-action dialog does. Tooltips (`pre-line`), toasts and
+  `confirm()` dialogs already keep line breaks on their own.
+- **Split into `<p>`** — when each paragraph should get paragraph spacing:
+  `text.split(/\n\s*\n/).map((p) => <p key={p}>{p}</p>)`, as the add-provider wizard does for
+  `connectionDescription`.
 
 ## Auditing
 

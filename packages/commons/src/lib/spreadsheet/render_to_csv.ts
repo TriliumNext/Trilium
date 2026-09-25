@@ -3,10 +3,10 @@
  *
  * CSV is a flat, single-sheet, value-only format: it carries no styling, merges, or
  * formulas. So this emitter throws away everything the HTML/XLSX emitters preserve and
- * keeps only the cell values, laid out as a dense rectangle over the sheet's populated
- * bounds. Formula cells export their cached result (Univer stores it in `v`); most numbers
- * export their raw underlying value rather than the formatted display string, which is what
- * downstream CSV consumers expect.
+ * keeps only the cell values, laid out as a dense rectangle over the cells that hold one —
+ * a cell carrying nothing but formatting does not widen it. Formula cells export their cached
+ * result (Univer stores it in `v`); most numbers export their raw underlying value rather than
+ * the formatted display string, which is what downstream CSV consumers expect.
  *
  * Dates are the exception: Univer stores them as serial numbers (e.g. `46118`), which no
  * CSV consumer recognizes as a date. So date-formatted cells are emitted as ISO 8601
@@ -23,7 +23,9 @@ import { format as formatNumfmt, getFormatDateInfo, isDateFormat } from "numfmt"
 
 import {
     computeBounds,
+    getCellDocumentText,
     getVisibleSheets,
+    hasContent,
     type ICellData,
     isFiniteNumber,
     type IStyleData,
@@ -123,7 +125,13 @@ function uniqueFileName(sheetName: string, usedNames: Set<string>): string {
 
 function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | null>): string {
     const { cellData } = sheet;
-    const bounds = computeBounds(cellData, sheet.mergeData);
+
+    // A sheet usually carries formatting past its data: an Excel template borders or fills the rows
+    // someone is meant to fill in, and each of those empty cells is stored. CSV holds no formatting,
+    // so a rectangle bounded by every stored cell would trail hundreds of comma-only records. Only
+    // the cells that emit a field bound it, and a merge does not widen it: the merged value sits in
+    // the cell the rectangle already reaches.
+    const bounds = computeBounds(cellData, [], hasContent);
     if (!bounds) {
         return "";
     }
@@ -148,7 +156,10 @@ function renderSheet(sheet: IWorksheetData, styles: Record<string, IStyleData | 
  * serials (a numeric value with a date number format) are rendered as ISO 8601.
  */
 function cellText(cell: ICellData | undefined, styles: Record<string, IStyleData | null>): string {
-    if (!cell || cell.v == null) return "";
+    if (!cell) return "";
+
+    // A rich-text cell (a link, mixed formatting) can carry its text only in `p`.
+    if (cell.v == null || cell.v === "") return getCellDocumentText(cell);
     if (typeof cell.v === "boolean") return cell.v ? "TRUE" : "FALSE";
 
     const pattern = resolveCellStyle(cell.s, styles)?.n?.pattern;

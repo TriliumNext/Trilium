@@ -11,6 +11,7 @@ import StandaloneBackupService from "./lightweight/backup_provider.js";
 import BrowserExecutionContext from "./lightweight/cls_provider.js";
 import BrowserCryptoProvider from "./lightweight/crypto_provider.js";
 import StandalonePlatformProvider from "./lightweight/platform_provider.js";
+import { registerShareProvider } from "./lightweight/share_provider.js";
 import BrowserSqlProvider from "./lightweight/sql_provider.js";
 import BrowserZipProvider from "./lightweight/zip_provider.js";
 import { standaloneImageProvider } from "./services/image_provider.js";
@@ -134,4 +135,7 @@ beforeAll(async () => {
             onTransactionRollback: () => {}
         }
     });
+
+    // The share specs render real share-theme templates, which the provider carries in the bundle.
+    registerShareProvider();
 });

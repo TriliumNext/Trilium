@@ -1,7 +1,7 @@
 import branchService from "../../services/branches.js";
 import eraseService from "../../services/erase.js";
 import eventService from "../../services/events.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import entityChangesService from "../../services/entity_changes.js";
@@ -246,13 +246,14 @@ function deleteBranch(req: Request<{ branchId: string }>) {
     if (eraseNotes) {
         // erase automatically means deleting all clones + note itself
         branch.getNote().deleteNote(deleteId, taskContext);
-        eraseService.eraseNotesWithDeleteId(deleteId);
+        taskContext.scheduleErase(deleteId);
         noteDeleted = true;
     } else {
         noteDeleted = branch.deleteBranch(deleteId, taskContext);
     }
 
     if (last) {
+        eraseService.eraseNotesWithDeleteIds(taskContext.takeScheduledErases());
         taskContext.taskSucceeded(null);
     }
 

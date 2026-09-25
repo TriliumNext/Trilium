@@ -20,7 +20,7 @@
       configured properly. See&nbsp;<a class="reference-link" href="#root/_help_IgkTHSaFfq6A">Setting up with various providers</a>&nbsp;for
       concrete examples.</p>
     <ol>
-      <li>The redirect URL of Trilium is <code spellcheck="false">https://&lt;your-trilium-domain&gt;/callback</code>.</li>
+      <li>The redirect URL of Trilium is <code>https://&lt;your-trilium-domain&gt;/callback</code>.</li>
       <li>You should obtain the base URL, client ID and client secret.</li>
     </ol>
   </li>
@@ -32,7 +32,7 @@
         <thead>
           <tr>
             <th>Configuration</th>
-            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th><code>config.ini</code> in <code>[MultiFactorAuthentication]</code> section</th>
             <th>Environment variable</th>
             <th>Description</th>
           </tr>
@@ -40,72 +40,65 @@
         <tbody>
           <tr>
             <td>Base URL*</td>
-            <td><code spellcheck="false">oauthBaseUrl</code>
+            <td><code>oauthBaseUrl</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
             </td>
-            <td>The URL of your Trilium instance (e.g. <code spellcheck="false">https://example.com</code>).</td>
+            <td>The URL of your Trilium instance (e.g. <code>https://example.com</code>).</td>
           </tr>
           <tr>
             <td>Client ID*</td>
-            <td><code spellcheck="false">oauthClientId</code>
+            <td><code>oauthClientId</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
             </td>
             <td>The client ID from your provider configuration.</td>
           </tr>
           <tr>
             <td>Client Secret*</td>
-            <td><code spellcheck="false">oauthClientSecret</code>
+            <td><code>oauthClientSecret</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
             </td>
             <td>The client secret from your provider configuration.</td>
           </tr>
           <tr>
             <td>Client auth method</td>
-            <td><code spellcheck="false">oauthClientAuthMethod</code>
+            <td><code>oauthClientAuthMethod</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTAUTHMETHOD</code>
             </td>
-            <td>Token-endpoint auth method: <code spellcheck="false">client_secret_basic</code> or
-              <code
-              spellcheck="false">client_secret_post</code>. Empty auto-detects. &nbsp;Only needed if sign-in
-                fails with a <code spellcheck="false">WWW-Authenticate</code> or <code spellcheck="false">invalid_client</code> error.</td>
+            <td>Token-endpoint auth method: <code>client_secret_basic</code> or <code>client_secret_post</code>.
+              Empty auto-detects. &nbsp;Only needed if sign-in fails with a <code>WWW-Authenticate</code> or <code>invalid_client</code> error.</td>
           </tr>
           <tr>
             <td>ID token algorithm</td>
-            <td><code spellcheck="false">oauthIdTokenSigningAlg</code>
+            <td><code>oauthIdTokenSigningAlg</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHIDTOKENSIGNINGALG</code>
             </td>
-            <td><span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span> 
-              <code
-              spellcheck="false">RS256</code><span style="color:rgb(32,32,32);">,</span>  <code spellcheck="false">EdDSA</code>
-                <span
-                style="color:rgb(32,32,32);">,</span> <code spellcheck="false">ES256</code><span style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span> 
-                  <code
-                  spellcheck="false">unexpected JWT alg</code> <span style="color:rgb(32,32,32);">error.</span>
+            <td><span style="color:rgb(32,32,32);">The algorithm your provider signs ID tokens with, e.g.</span>  <code>RS256</code><span
+              style="color:rgb(32,32,32);">,</span>  <code>EdDSA</code><span style="color:rgb(32,32,32);">,</span>  <code>ES256</code><span
+              style="color:rgb(32,32,32);">. Empty auto-detects from the provider. Only needed if sign-in fails with an</span>  <code>unexpected JWT alg</code>  <span
+              style="color:rgb(32,32,32);">error.</span>
             </td>
           </tr>
         </tbody>
       </table>
-      </figure>
-      <p>Asterisk (*) marks a required field</p>
+    </figure>
+    <p>Asterisk (*) marks a required field</p>
   </li>
   <li>
     <p>The default OAuth issuer is Google. To use other services such as Authentik
-      or Auth0, you can configure the settings via <code spellcheck="false">oauthIssuerBaseUrl</code>,
-      <code
-      spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
-        the <code spellcheck="false">config.ini</code> file. Alternatively, these
-        values can be set using environment variables:</p>
+      or Auth0, you can configure the settings via <code>oauthIssuerBaseUrl</code>, <code>oauthIssuerName</code>,
+      and <code>oauthIssuerIcon</code> in the <code>config.ini</code> file. Alternatively,
+      these values can be set using environment variables:</p>
     <figure class="table">
       <table>
         <thead>
           <tr>
             <th>Configuration</th>
-            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th><code>config.ini</code> in <code>[MultiFactorAuthentication]</code> section</th>
             <th>Environment variable</th>
             <th>Description</th>
           </tr>
@@ -113,37 +106,33 @@
         <tbody>
           <tr>
             <td>Issuer base URL</td>
-            <td><code spellcheck="false">oauthIssuerBaseUrl</code>
+            <td><code>oauthIssuerBaseUrl</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
             </td>
-            <td>Either the issuer itself (<code spellcheck="false">https://auth.example.com</code>)
-              or a full discovery URL (<code spellcheck="false">https://auth.example.com/.well-known/openid-configuration</code>).
+            <td>Either the issuer itself (<code>https://auth.example.com</code>) or a
+              full discovery URL (<code>https://auth.example.com/.well-known/openid-configuration</code>).
               <br>
-              <br>A URL containing <code spellcheck="false">/.well-known/</code> is used as-is
-              <span
-              style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to
-                copy. A trailing slash may be included or omitted; Trilium matches whichever
-                spelling the provider advertises.</span>
-                <br>
-                <br>Use the full form when your provider advertises an issuer that differs
-                from the path serving its discovery document, such as Authentik in "global"
-                issuer mode.</td>
+              <br>A URL containing <code>/.well-known/</code> is used as-is<span style="color:rgb(32,32,32);">, which is convenient when your provider hands you a discovery URL to copy. A trailing slash may be included or omitted; Trilium matches whichever spelling the provider advertises.</span> 
+              <br>
+              <br>Use the full form when your provider advertises an issuer that differs
+              from the path serving its discovery document, such as Authentik in "global"
+              issuer mode.</td>
           </tr>
           <tr>
             <td>Issuer name</td>
-            <td><code spellcheck="false">oauthIssuerName</code>
+            <td><code>oauthIssuerName</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
             </td>
             <td>The name of your authentication provider, used for reference on the login
               screen and in settings. Default is “Google”.</td>
           </tr>
           <tr>
             <td>Issuer icon</td>
-            <td><code spellcheck="false">oauthIssuerIcon</code>
+            <td><code>oauthIssuerIcon</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
             </td>
             <td>Optionally, the URL to a logo of the provider. By default it will try
               to obtain the favicon from the website, so it's optional.</td>
@@ -161,7 +150,7 @@
         <thead>
           <tr>
             <th>Configuration</th>
-            <th><code spellcheck="false">config.ini</code> in <code spellcheck="false">[MultiFactorAuthentication]</code> section</th>
+            <th><code>config.ini</code> in <code>[MultiFactorAuthentication]</code> section</th>
             <th>Environment variable</th>
             <th>Description</th>
           </tr>
@@ -169,50 +158,40 @@
         <tbody>
           <tr>
             <td>HTTP timeout</td>
-            <td><code spellcheck="false">oauthHttpTimeout</code>
+            <td><code>oauthHttpTimeout</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT</code>
             </td>
             <td>Timeout in milliseconds for the provider HTTP requests (discovery, token
-              exchange, userinfo). Defaults to <code spellcheck="false">30000</code> (30s).
-              Raise this if your provider cold-starts slowly and you are occasionally
-              asked to sign in twice. Minimum accepted value is <code spellcheck="false">500</code>.</td>
+              exchange, userinfo). Defaults to <code>30000</code> (30s). Raise this if
+              your provider cold-starts slowly and you are occasionally asked to sign
+              in twice. Minimum accepted value is <code>500</code>.</td>
           </tr>
           <tr>
             <td>Scopes</td>
-            <td><code spellcheck="false">oauthScope</code>
+            <td><code>oauthScope</code>
             </td>
-            <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE</code>
+            <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE</code>
             </td>
-            <td>Space-separated list of OIDC scopes requested at login. Defaults to
-              <code
-              spellcheck="false">openid profile email</code>. <code spellcheck="false">openid</code> is required
-                and is prepended automatically if you omit it.</td>
+            <td>Space-separated list of OIDC scopes requested at login. Defaults to <code>openid profile email</code>. <code>openid</code> is
+              required and is prepended automatically if you omit it.</td>
           </tr>
         </tbody>
       </table>
     </figure>
     <p>The OIDC session lifetime is automatically bound to Trilium's own session
-      cookie lifetime (the <code spellcheck="false">cookieMaxAge</code> setting
-      in the <code spellcheck="false">[Session]</code> section, 21 days by default),
-      so a single sign-in stays valid for as long as your Trilium session does
-      rather than expiring early on the OIDC library's shorter internal defaults.</p>
+      cookie lifetime (the <code>cookieMaxAge</code> setting in the <code>[Session]</code> section,
+      21 days by default), so a single sign-in stays valid for as long as your
+      Trilium session does rather than expiring early on the OIDC library's shorter
+      internal defaults.</p>
   </li>
   <li>
     <p>Restart the server so that the changes are applied.</p>
   </li>
 </ol>
 <aside class="admonition note">
-  <p>Legacy environment variables are also supported: <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>,
-    <code
-    spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code>, <code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code>,
-      and for customizing the provider: <code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code>,
-      <code
-      spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code>, <code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code>,
-        <code
-        spellcheck="false">TRILIUM_OAUTH_HTTP_TIMEOUT</code>, <code spellcheck="false">TRILIUM_OAUTH_SCOPE</code>,
-          <code
-          spellcheck="false">TRILIUM_OAUTH_CLIENT_AUTH_METHOD</code>, <code spellcheck="false">TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG</code>.</p>
+  <p>Legacy environment variables are also supported: <code>TRILIUM_OAUTH_BASE_URL</code>, <code>TRILIUM_OAUTH_CLIENT_ID</code>, <code>TRILIUM_OAUTH_CLIENT_SECRET</code>,
+    and for customizing the provider: <code>TRILIUM_OAUTH_ISSUER_BASE_URL</code>, <code>TRILIUM_OAUTH_ISSUER_NAME</code>, <code>TRILIUM_OAUTH_ISSUER_ICON</code>, <code>TRILIUM_OAUTH_HTTP_TIMEOUT</code>, <code>TRILIUM_OAUTH_SCOPE</code>, <code>TRILIUM_OAUTH_CLIENT_AUTH_METHOD</code>, <code>TRILIUM_OAUTH_ID_TOKEN_SIGNING_ALG</code>.</p>
 </aside>
 <h2>Connecting to the authentication provider</h2>
 <p>Once the server has been configured at the previous step, the next step
@@ -260,43 +239,36 @@
 <p>To disable the OpenID Connect authentication and instead rely on the local
   password temporarily, you must:</p>
 <ol>
-  <li>Modify the <code spellcheck="false">config.ini</code> or environment variables
-    (depending on how you set up the provider information) and temporarily
-    deactivate the multi-factor authentication section by renaming <code spellcheck="false">[MultiFactorAuthentication]</code> to
-    something else (e.g. <code spellcheck="false">[MultiFactorAuthentication.bak]</code>.</li>
+  <li>Modify the <code>config.ini</code> or environment variables (depending on
+    how you set up the provider information) and temporarily deactivate the
+    multi-factor authentication section by renaming <code>[MultiFactorAuthentication]</code> to
+    something else (e.g. <code>[MultiFactorAuthentication.bak]</code>.</li>
   <li>Restart the server for the changes to take effect.</li>
 </ol>
 <h2>Troubleshooting</h2>
-<h3>Setup fails with a <code spellcheck="false">WWW-Authenticate</code> or <code spellcheck="false">invalid_client</code> error</h3>
+<h3>Setup fails with a <code>WWW-Authenticate</code> or <code>invalid_client</code> error</h3>
 <p>Your provider disagrees with Trilium about how client credentials should
-  be sent to the token endpoint. Set <code spellcheck="false">oauthClientAuthMethod</code> to
-  <code
-  spellcheck="false">client_secret_post</code>(or <code spellcheck="false">client_secret_basic</code> if
-    it's already set to post) and restart. Providers vary: some reject
-    <code
-    spellcheck="false">client_secret_post</code>outright because the method is fixed when the
-      client is registered (e.g. Authelia), so if one value doesn't work, try
-      the other.</p>
-<h3>Setup fails with <code spellcheck="false">invalid user</code></h3>
+  be sent to the token endpoint. Set <code>oauthClientAuthMethod</code> to <code>client_secret_post</code> (or <code>client_secret_basic</code> if
+  it's already set to post) and restart. Providers vary: some reject <code>client_secret_post</code> outright
+  because the method is fixed when the client is registered (e.g. Authelia),
+  so if one value doesn't work, try the other.</p>
+<h3>Setup fails with <code>invalid user</code></h3>
 <p>If you are running behind a <a href="#root/_help_vcjrb3VVYPZI">reverse proxy</a>,
-  a buffer overflow can also cause this issue. Here is a sample fix for&nbsp;
-  <a
+  a buffer overflow can also cause this issue. Here is a sample fix for&nbsp;<a
   class="reference-link" href="#root/_help_ud6MShXL4WpO">Nginx</a>: </p><pre><code class="language-text-x-trilium-auto">proxy_buffer_size 128k;
 proxy_buffers 4 256k;
 proxy_busy_buffers_size 256k;</code></pre>
-<h3>Setup fails with an <code spellcheck="false">unexpected JWT alg</code> error</h3>
-<p>Depending on your version the message reads <code spellcheck="false">unexpected JWT "alg" header parameter</code> or
-  <code
-  spellcheck="false">unexpected JWT alg received, expected RS256, got: EdDSA</code>. Both mean
-    the same thing: your provider signs ID tokens with an algorithm other than
-    RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.</p>
+<h3>Setup fails with an <code>unexpected JWT alg</code> error</h3>
+<p>Depending on your version the message reads <code>unexpected JWT "alg" header parameter</code> or <code>unexpected JWT alg received, expected RS256, got: EdDSA</code>.
+  Both mean the same thing: your provider signs ID tokens with an algorithm
+  other than RS256. Pocket ID (Ed25519) and Kanidm (ES256) do this.</p>
 <p>From v0.104.2 Trilium detects the algorithm from your provider automatically,
-  and the log records the outcome (<code spellcheck="false">OAuth: the issuer does not sign ID tokens with RS256; expecting ES256</code>).
+  and the log records the outcome (<code>OAuth: the issuer does not sign ID tokens with RS256; expecting ES256</code>).
   If detection can't reach the provider it falls back to RS256, so check
   that the issuer URL is correct and reachable first. Should it still fail,
-  set <code spellcheck="false">oauthIdTokenSigningAlg</code> explicitly to
-  the algorithm your provider uses.</p>
-<h3>Setup fails with <code spellcheck="false">OAUTH_RESPONSE_IS_NOT_CONFORM</code></h3>
+  set <code>oauthIdTokenSigningAlg</code> explicitly to the algorithm your
+  provider uses.</p>
+<h3>Setup fails with <code>OAUTH_RESPONSE_IS_NOT_CONFORM</code></h3>
 <p>Make sure the base URL is correct and that the identity provider actually
   supports OpenID Connect. Some providers such as GitHub offer only OAuth
   2.0.</p>

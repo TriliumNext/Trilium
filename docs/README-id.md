@@ -25,6 +25,9 @@ Trilium Notes adalah aplikasi pencatatan hierarkis lintas platform yang gratis
 dan open-source dengan fokus pada pembangunan basis pengetahuan pribadi berskala
 besar.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Unduh

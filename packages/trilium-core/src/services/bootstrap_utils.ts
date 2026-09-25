@@ -82,7 +82,7 @@ export function getIconConfig(assetPath: string): Pick<BootstrapDefinition, "ico
             ...iconPacks.map(p => generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                 : `api/attachments/download/${p.fontAttachmentId}`)),
-            generateTaskStateCss()
+            generateTaskStateCss(iconPacks)
         ]
             .filter(Boolean)
             .join("\n\n"),
@@ -119,7 +119,7 @@ function getCustomThemeCssUrl(theme: string, themeNote: BNote | null) {
         return undefined;
     }
 
-    if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
+    if (!getPlatform().getEnv("TRILIUM_SAFE_MODE") && themeNote) {
         return `api/notes/download/${themeNote.noteId}`;
     }
 

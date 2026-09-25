@@ -1,7 +1,12 @@
-import { dayjs, type TemplatesResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import {
+    dayjs, type SearchLintRequest, type SearchLintResponse, type SearchResultDetails,
+    type SearchResultDetailsRequest, type SearchResultDetailsResponse, type SearchWithTokensResponse,
+    type TemplatesResponse
+} from "@triliumnext/commons";
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
+import becca_service from "../../becca/becca_service.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import bulkActionService from "../../services/bulk_actions.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
@@ -9,7 +14,6 @@ import SearchContext from "../../services/search/search_context.js";
 import type SearchResult from "../../services/search/search_result.js";
 import searchService, { EMPTY_RESULT, type SearchNoteResult } from "../../services/search/services/search.js";
 import { ValidationError } from "../../errors.js";
-import becca_service from "../../becca/becca_service.js";
 import { getHoistedNoteId } from "../../services/context.js";
 
 /** The maximum age in days for a template to be marked as new. */
@@ -52,67 +56,132 @@ function searchAndExecute(req: Request<{ noteId: string }>) {
     bulkActionService.executeActionsFromNote(note, searchResultNoteIds);
 }
 
+/**
+ * Lazily builds snippet + highlight details for a page of a saved search's results.
+ * The client fetches these per visible page rather than for the whole result set.
+ *
+ * Stateless by design: the search is re-run per request. A future optimization
+ * could cache the result set in an LRU keyed by (search noteId + searchString),
+ * but that is intentionally not built here.
+ */
+function getSearchResultDetails(req: Request<{ noteId: string }>): SearchResultDetailsResponse {
+    const note = becca.getNoteOrThrow(req.params.noteId);
+
+    if (note.type !== "search") {
+        throw new ValidationError(`Note '${req.params.noteId}' is not a search note.`);
+    }
+
+    const { noteIds } = (req.body ?? {}) as Partial<SearchResultDetailsRequest>;
+    if (!Array.isArray(noteIds) || noteIds.some((noteId) => typeof noteId !== "string")) {
+        throw new ValidationError("Request body must contain a 'noteIds' string array.");
+    }
+    if (noteIds.length > 100) {
+        throw new ValidationError("A maximum of 100 noteIds can be requested at once.");
+    }
+
+    const { searchResults, searchContext } = searchService.searchFromNoteWithContext(note);
+
+    // Restrict to actual result notes so the endpoint can't be used as a snippet
+    // oracle for arbitrary notes; preserve the caller's requested order.
+    const resultByNoteId = new Map(searchResults.map((sr) => [sr.noteId, sr]));
+    const requestedResults = noteIds
+        .map((noteId) => resultByNoteId.get(noteId))
+        .filter((sr): sr is SearchResult => sr !== undefined);
+
+    // Script-based searches have no lexed query: return titles/icons, no snippets/tokens.
+    if (!searchContext) {
+        const results: SearchResultDetails[] = requestedResults.map((sr) => {
+            const { title, icon } = becca_service.getNoteTitleAndIcon(sr.noteId);
+            return {
+                noteId: sr.noteId,
+                notePath: sr.notePath,
+                noteTitle: title,
+                notePathTitle: sr.notePathTitle,
+                icon: icon ?? "bx bx-note"
+            };
+        });
+
+        return { results, highlightedTokenInfos: [], error: null };
+    }
+
+    return {
+        results: searchService.buildSearchResultDetails(requestedResults, searchContext),
+        highlightedTokenInfos: searchContext.getHighlightedTokenInfos(),
+        error: searchContext.getError()
+    };
+}
+
+/**
+ * Reads a search string without running it, so the editor can report what is wrong with a query
+ * while it is being typed rather than once it is run. Carries the message alone: `SearchContext`
+ * records no offsets, so the caller cannot mark where the fault is.
+ */
+function lintSearchString(req: Request): SearchLintResponse {
+    const { searchString } = (req.body ?? {}) as Partial<SearchLintRequest>;
+
+    if (typeof searchString !== "string") {
+        throw new ValidationError("searchString must be a string.");
+    }
+
+    return { error: searchService.validateSearchQuery(searchString) };
+}
+
 function quickSearch(req: Request<{ searchString: string }>) {
     const { searchString } = req.params;
 
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: false,
-        includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
         ignoreInternalAttributes: true,
-        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
+        // Quick search covers the subtree the user is looking at, so a hoist into the hidden
+        // subtree scopes it there too. Only link autocomplete widens to root, for link targets.
+        ancestorNoteId: hoistedNoteService.getHoistedNoteId()
     });
 
-    // Execute search with our context
-    const allSearchResults = searchService.findResultsWithQuery(searchString, searchContext);
-    const trimmed = allSearchResults.slice(0, 200);
-
-    // Extract snippets using highlightedTokens from our context
-    for (const result of trimmed) {
-        result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
-        result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
-    }
-
-    // Highlight the results
-    searchService.highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
-
-    // Map to API format
-    const searchResults = trimmed.map((result) => {
-        const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
-        return {
-            notePath: result.notePath,
-            noteTitle: title,
-            notePathTitle: result.notePathTitle,
-            highlightedNotePathTitle: result.highlightedNotePathTitle,
-            contentSnippet: result.contentSnippet,
-            highlightedContentSnippet: result.highlightedContentSnippet,
-            attributeSnippet: result.attributeSnippet,
-            highlightedAttributeSnippet: result.highlightedAttributeSnippet,
-            icon
-        };
-    });
-
-    const resultNoteIds = searchResults.map((result) => result.notePath.split("/").pop()).filter(Boolean) as string[];
+    const trimmed = searchService.findResultsWithQuery(searchString, searchContext).slice(0, 200);
+    const searchResults = searchService.buildSearchResultDetails(trimmed, searchContext);
 
     return {
-        searchResultNoteIds: resultNoteIds,
+        searchResultNoteIds: searchResults.map((result) => result.noteId),
         searchResults,
+        // Only plain tokens round-trip as literal jump-to-match search terms. Regex (`%=`) tokens
+        // are raw patterns the find bar would treat literally (a silent no-op), so drop them here.
+        // The client uses this field solely to seed jump-to-match; snippet highlighting already
+        // happened server-side on `searchResults`, so filtering the response is safe.
+        highlightedTokens: searchContext.highlightedTokens.filter((token) => !searchContext.regexTokens.has(token)),
         error: searchContext.getError()
     };
 }
 
-function search(req: Request<{ searchString: string }>) {
+function search(
+    req: Request<{ searchString: string }, { ancestorNoteId?: string, includeTokens?: string }>
+): string[] | SearchWithTokensResponse {
     const { searchString } = req.params;
+    const { ancestorNoteId, includeTokens } = req.query;
 
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: true,
         fuzzyAttributeSearch: false,
-        ignoreHoistedNote: true
+        ignoreHoistedNote: true,
+        // Restricts the results to one subtree, for callers that filter a collection rather
+        // than search the whole tree.
+        ancestorNoteId: ancestorNoteId || undefined
     });
 
-    return searchService.findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
+    const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
+        .map((sr) => sr.noteId);
+
+    if (includeTokens !== "true") {
+        return noteIds;
+    }
+
+    return {
+        searchResultNoteIds: noteIds,
+        highlightedTokens: searchContext.getHighlightedTokenInfos(),
+        error: searchContext.getError()
+    };
 }
 
 function getRelatedNotes(req: Request) {
@@ -199,7 +268,9 @@ export function isNewTemplate(utcDateCreated: string | null, rootCreationDate: s
 }
 
 export default {
+    lintSearchString,
     searchFromNote,
+    getSearchResultDetails,
     searchAndExecute,
     getRelatedNotes,
     quickSearch,

@@ -96,7 +96,7 @@ async function exportSubtree(branch: BBranch, format: ExportFormat = "html") {
     const ctx = new taskContext("no-progress-reporting", "export", null);
     const res = new FakeResponse();
     const done = collect(res);
-    await zip.exportToZip(ctx, branch, format, res as unknown as Record<string, unknown>);
+    await zip.exportToZip(ctx, branch, format, res);
     const buffer = await done;
     return { buffer, res, entries: await readArchive(buffer) };
 }
@@ -540,7 +540,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
                 const ctx = new taskContext("no-progress-reporting", "export", null);
                 const res = new FakeResponse();
                 const done = collect(res);
-                await zip.exportToZip(ctx, branch, "html", res as unknown as Record<string, unknown>);
+                await zip.exportToZip(ctx, branch, "html", res);
                 await done;
             } finally {
                 initZipProvider(original);

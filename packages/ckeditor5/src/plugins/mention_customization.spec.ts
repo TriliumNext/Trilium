@@ -80,15 +80,18 @@ describe("MentionCustomization", () => {
         expect(getModelData(editor.model)).toContain("noteAbc");
     });
 
-    it("creates a note then inserts the reference link for a create-note mention", async () => {
+    it.each([
+        { action: "create-note", intoInbox: true },
+        { action: "create-child-note", intoInbox: false }
+    ])("creates a note then inserts the reference link for a $action mention", async ({ action, intoInbox }) => {
         setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
 
         editor.execute("mention", {
-            mention: { id: "@Brand new note", action: "create-note", noteTitle: "Brand new note" },
+            mention: { id: "@Brand new note", action, noteTitle: "Brand new note" },
             marker: "@"
         });
 
-        expect(createNoteForReferenceLink).toHaveBeenCalledWith("Brand new note");
+        expect(createNoteForReferenceLink).toHaveBeenCalledWith("Brand new note", intoInbox);
 
         // Wait for the createNoteForReferenceLink promise (and the chained
         // getReferenceLinkTitle promise from the referenceLink command) to resolve.

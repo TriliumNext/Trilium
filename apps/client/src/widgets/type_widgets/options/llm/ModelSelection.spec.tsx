@@ -8,7 +8,16 @@ vi.mock("../../../../services/llm_chat", () => ({
     fetchProviderModels: fetchProviderModelsMock
 }));
 
-vi.mock("../../../../services/i18n", () => ({ t: (key: string) => key }));
+// A real i18next with its default escaping, so interpolated values render as the app would render
+// them. Keys without an entry come back as the key itself.
+vi.mock("../../../../services/i18n", async () => {
+    const i18next = (await import("i18next")).default.createInstance();
+    await i18next.init({
+        lng: "en",
+        resources: { en: { translation: { llm: { models_load_failed: "Could not load models: {{error}}" } } } }
+    });
+    return { t: (key: string, options?: Record<string, unknown>) => i18next.t(key, options) };
+});
 
 // A lightweight checkbox that records its onChange so we can toggle it directly.
 const checkboxHandlers = new Map<string, (checked: boolean) => void>();
@@ -64,9 +73,15 @@ describe("ModelSelection", () => {
         const query = { provider: "openai", apiKey: "sk-test", baseURL: "http://x/v1" };
         const el = await renderSelection({ query, selected: MODELS, onChange: vi.fn() });
 
-        expect(fetchProviderModelsMock).toHaveBeenCalledWith(query);
+        expect(fetchProviderModelsMock).toHaveBeenCalledWith(query, undefined);
         const names = [...el.querySelectorAll(".checkbox-stub")].map(node => node.getAttribute("data-name"));
         expect(names).toEqual(["model-gpt-4.1", "model-gpt-4o", "model-custom"]);
+    });
+
+    it("passes the provider's own timeout to the fetch", async () => {
+        const query = { provider: "antigravity-agent" };
+        await renderSelection({ query, timeoutMs: 6 * 60_000, selected: [], onChange: vi.fn() });
+        expect(fetchProviderModelsMock).toHaveBeenCalledWith(query, 6 * 60_000);
     });
 
     it("auto-selects the server-recommended models when nothing is selected yet", async () => {
@@ -119,10 +134,10 @@ describe("ModelSelection", () => {
         expect(onChange).toHaveBeenLastCalledWith([MODELS[0], MODELS[2]]); // gpt-4o (recommended: false) dropped
     });
 
-    it("renders an error state when the fetch fails", async () => {
-        fetchProviderModelsMock.mockRejectedValue(new Error("bad key"));
+    it("renders an error state with the server's message verbatim when the fetch fails", async () => {
+        fetchProviderModelsMock.mockRejectedValue(new Error("See \"Google Antigravity\" in the <User Guide> & retry."));
         const el = await renderSelection({ query: { provider: "openai" }, selected: [], onChange: vi.fn() });
-        expect(el.textContent).toContain("llm.models_load_failed");
+        expect(el.textContent).toContain("Could not load models: See \"Google Antigravity\" in the <User Guide> & retry.");
     });
 
     it("renders an empty state when the provider returns no models", async () => {

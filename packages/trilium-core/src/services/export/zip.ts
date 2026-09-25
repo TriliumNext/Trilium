@@ -6,6 +6,7 @@ import becca from "../../becca/becca.js";
 import type BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
+import type { Response } from "../../http_interface";
 import dateUtils from "../utils/date.js";
 import { getLog } from "../log.js";
 import protectedSessionService from "../protected_session.js";
@@ -24,8 +25,14 @@ import { stripListItemIds } from "./strip_list_item_ids.js";
 // Most filesystems cap a single path component at 255 bytes; keep exported file names within that.
 const MAX_FILENAME_BYTES = 255;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Record<string, any>, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
+/**
+ * Where the archive is written: a {@link Response} when a client asked for the download, or the
+ * writable a {@link FileStream} exposes when it goes to disk. `"sendStatus" in destination` tells
+ * the two apart — only the HTTP one carries a status code and headers.
+ */
+export type ZipExportDestination = Response | { write(chunk: string | Uint8Array): boolean; end(): unknown };
+
+async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: ZipExportDestination, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
     const archive = getZipProvider().createZipArchive();
     const rewriteFn = (zipExportOptions?.customRewriteLinks ? zipExportOptions?.customRewriteLinks(rewriteLinks, getNoteTargetUrl) : rewriteLinks);
     const provider = await buildProvider();
@@ -547,7 +554,7 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
         throw new ValidationError(`Note ${noteId} not found.`);
     }
 
-    await exportToZip(taskContext, note.getParentBranches()[0], format, destination as Record<string, any>, false, zipExportOptions);
+    await exportToZip(taskContext, note.getParentBranches()[0], format, destination as ZipExportDestination, false, zipExportOptions);
     await waitForFinish();
 
     getLog().info(`Exported '${noteId}' with format '${format}' to '${zipFilePath}'`);
@@ -569,7 +576,7 @@ async function exportBranchToZipFile(branchId: string, format: ExportFormat, zip
     const { destination, waitForFinish } = getZipProvider().createFileStream(zipFilePath);
 
     try {
-        await exportToZip(taskContext, branch, format, destination as Record<string, any>, false);
+        await exportToZip(taskContext, branch, format, destination as ZipExportDestination, false);
         await waitForFinish();
         // exportToZip defers success for non-HTTP destinations: only now, with the file fully flushed to
         // disk, is the export genuinely complete — so report it here rather than before the final write.

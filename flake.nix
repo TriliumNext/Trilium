@@ -23,7 +23,13 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          config = {
+            allowUnfreePredicate = pkg:
+               system == "aarch64-darwin" && nixpkgs.lib.getName pkg == "google-chrome";
+          };
+        };
 
         electronVersion = packageJsonDesktop.devDependencies.electron;
         # `or null` because a major bump lands in apps/desktop/package.json long before
@@ -31,26 +37,46 @@
         # with an attribute error instead of falling through to the pinned binary below.
         electronFromNixpkgs = pkgs."electron_${lib.versions.major electronVersion}" or null;
 
-        # nixpkgs lags behind the Electron version pinned in apps/desktop/package.json
-        # (electron_43 is still 43.1.0), and its source build cannot be bumped without
+        # nixpkgs lags behind the Electron version pinned in apps/desktop/package.json —
+        # often by a whole major — and its source build cannot be bumped without
         # upstream's Chromium dependency hashes. Build the exact pinned version from
         # Electron's official binary release instead, reusing the nixpkgs builder.
         #
         # Don't refresh these by hand — `pnpm chore:update-flake-electron` rewrites both
         # bindings from the release's SHASUMS256.txt, and the update-nix-flake workflow
         # opens a PR whenever apps/desktop/package.json moves ahead of the pin.
-        pinnedElectronVersion = "43.4.1";
+        pinnedElectronVersion = "44.4.3";
         pinnedElectronHashes = {
-          x86_64-linux = "79d4efd69f0ccf1fc11891ea5075329c7b3faddad79a08d9fb395bbd63169acf";
-          armv7l-linux = "2875860d6b7cb2e8a0142fb87f9f7be50a382a87a24bf15a0861f20ba53dc400";
-          aarch64-linux = "9e2b5cfbd387e138f06c7bb19b399bb3ee487dbb4110215df097d94e80431892";
-          x86_64-darwin = "4fd0f1826660a94216a0633600a3c3e2cd87ee9e4bc6f0e1edf717ad8e30c10b";
-          aarch64-darwin = "fe3cac8cbfd9ba1739fac6c69166cf30848741f93cbe251d800ae6ef7cebb64b";
-          headers = "0q7l48q2l4srmkw67l1bhk3qbybnqamcr5z8yrsnbxk8aazqjshv";
+          x86_64-linux = "fe880a7e37160cfd4e00193bc4c713ead7a778abfe74860a2d36d86fd0be48a8";
+          aarch64-linux = "61f084a5ac0f1835efc12b9db17042d92c8c617b03578f96a888acd4a05a0b10";
+          aarch64-darwin = "6b728f5dcfae74f3f936f2bca5b3cd9b9659ffea464f67939f004acb55425a85";
+          headers = "07qjxn071d21rcadjsawdvq3dj8ypsbkkq0nhr8bj0k4vzxigya0";
         };
         mkElectronBin = pkgs.callPackage (
           pkgs.path + "/pkgs/development/tools/electron/binary/generic.nix"
         ) { };
+
+        # The nixpkgs Linux builder rewrites the rpath of Electron's ANGLE libraries with
+        # an unguarded `patchelf ... lib*GL*`. Electron 44 links ANGLE into the main binary
+        # and ships no libEGL.so/libGLESv2.so, so the glob expands to nothing and patchelf
+        # exits with "missing filename". Let that one command tolerate an empty match; it
+        # still patches the libraries on releases that do ship them.
+        angleLibGlob = "$out/libexec/electron/lib*GL*";
+        tolerateMissingAngleLibs =
+          drv:
+          drv.overrideAttrs (prev: {
+            postFixup = lib.throwIf (!lib.hasInfix angleLibGlob prev.postFixup) ''
+              The nixpkgs Electron builder no longer runs patchelf over ${angleLibGlob};
+              drop tolerateMissingAngleLibs from flake.nix.
+            '' (builtins.replaceStrings [ angleLibGlob ] [ "${angleLibGlob} || true" ] prev.postFixup);
+          });
+
+        # Guarded on Linux because only that branch of the builder defines postFixup.
+        pinnedElectron =
+          let
+            bin = mkElectronBin pinnedElectronVersion pinnedElectronHashes;
+          in
+          if stdenv.hostPlatform.isLinux then tolerateMissingAngleLibs bin else bin;
 
         electron =
           if electronFromNixpkgs != null && electronFromNixpkgs.version == electronVersion then
@@ -59,7 +85,7 @@
             lib.throwIf (pinnedElectronVersion != electronVersion) ''
               flake.nix pins Electron ${pinnedElectronVersion}, but apps/desktop/package.json wants ${electronVersion}.
               Refresh pinnedElectronVersion/pinnedElectronHashes in flake.nix, or drop the override if nixpkgs ships ${electronVersion}.
-            '' (mkElectronBin pinnedElectronVersion pinnedElectronHashes);
+            '' pinnedElectron;
 
         nodejs = pkgs.nodejs_24;
         # pnpm creates an overly long PATH env variable for child processes.
@@ -100,7 +126,7 @@
           makeBinaryWrapper
           makeDesktopItem
           makeShellWrapper
-removeReferencesTo
+          removeReferencesTo
           stdenv
           wrapGAppsHook3
           xcodebuild
@@ -196,7 +222,7 @@ removeReferencesTo
 
             extraNativeBuildInputs =
               [
-nodejs.python
+                nodejs.python
                 removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [
@@ -258,13 +284,13 @@ nodejs.python
 
             desktopItems = lib.optionals (app == "desktop") [
               (makeDesktopItem {
-                name = "Trilium Notes";
+                name = meta.mainProgram;
                 exec = meta.mainProgram;
                 icon = "trilium";
                 comment = meta.description;
                 desktopName = "Trilium Notes";
                 categories = [ "Office" ];
-                startupWMClass = "Trilium Notes";
+                startupWMClass = meta.mainProgram;
               })
             ];
 
@@ -373,7 +399,11 @@ nodejs.python
               --set TRILIUM_RESOURCE_DIR $out/opt/trilium-build-docs/server
           '';
         };
-
+        chrome =
+          if stdenv.hostPlatform.system == "aarch64-darwin" then
+            pkgs.google-chrome
+          else
+            pkgs.chromium;
       in
       {
         packages.desktop = desktop;
@@ -394,18 +424,16 @@ nodejs.python
             pnpm
             electron
             nodejs.python
-            # For the browser-mode tests (packages/ckeditor5). The Chrome and chromedriver
-            # webdriverio downloads for itself are dynamically linked against libraries no NixOS
-            # system provides, so they die on a missing libxcb.so.1; these come from the same
-            # nixpkgs revision, so their versions match.
-            pkgs.chromium
-            pkgs.chromedriver
+            # For the browser-mode tests (packages/ckeditor5). The Chromium Playwright downloads
+            # for itself is dynamically linked against libraries no NixOS system provides, so it
+            # dies on a missing libxcb.so.1. Chromium is unsupported on aarch64-darwin, so we use
+            chrome
           ];
 
-          # Read by packages/ckeditor5/vitest.config.ts and by webdriverio itself, respectively.
-          # Without them webdriverio downloads its own pair and the suite cannot start.
-          CHROME_BIN = "${pkgs.chromium}/bin/chromium";
-          CHROMEDRIVER_PATH = "${pkgs.chromedriver}/bin/chromedriver";
+          # Read by packages/ckeditor5/vitest.config.ts and passed to Playwright as
+          # `launchOptions.executablePath`. Without it Playwright launches its own Chromium and the
+          # suite cannot start.
+          CHROME_BIN = lib.getExe chrome;
         };
       }
     );

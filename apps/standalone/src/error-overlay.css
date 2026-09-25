@@ -13,8 +13,10 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    padding: calc(1.5rem + env(safe-area-inset-top)) calc(1.5rem + env(safe-area-inset-right))
-             calc(1.5rem + env(safe-area-inset-bottom)) calc(1.5rem + env(safe-area-inset-left));
+    padding: calc(1.5rem + var(--safe-area-inset-top, env(safe-area-inset-top)))
+             calc(1.5rem + var(--safe-area-inset-right, env(safe-area-inset-right)))
+             calc(1.5rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))
+             calc(1.5rem + var(--safe-area-inset-left, env(safe-area-inset-left)));
     font-family: var(--main-font-family, "Inter", system-ui, sans-serif);
     color: var(--main-text-color, #1a1a1a);
     background:

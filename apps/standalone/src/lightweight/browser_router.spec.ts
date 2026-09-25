@@ -45,6 +45,26 @@ describe("BrowserRouter routing", () => {
         expect(captured?.query).toEqual({ expand: "true", depth: "2" });
     });
 
+    // What `/custom/*path` needs: a splat spans slashes, where a `:param` stops at one. The two
+    // are captured in one pass so `paramNames` stays in step with the capture groups whichever
+    // order they appear in.
+    it("captures a *splat across segments, alongside a :param", async () => {
+        const router = new BrowserRouter();
+        let captured: Record<string, string> | undefined;
+        router.get("/u/:userId/files/*filePath", (req) => {
+            captured = req.params;
+            return {};
+        });
+
+        await router.dispatch("GET", "http://localhost/u/u1/files/deep/nested/report.txt");
+        expect(captured).toEqual({ userId: "u1", filePath: "deep/nested/report.txt" });
+
+        // A splat also matches nothing, so `/custom/` itself reaches the handler.
+        router.get("/custom/*path", (req) => ({ path: req.params.path }));
+        expect(decodeBody((await router.dispatch("GET", "http://localhost/custom/")).body))
+            .toBe(JSON.stringify({ path: "" }));
+    });
+
     it("returns 404 text for an unmatched route", async () => {
         const router = new BrowserRouter();
         const res = await router.dispatch("GET", "http://localhost/missing");
@@ -169,6 +189,24 @@ describe("BrowserRouter result formatting", () => {
         const res = await router.dispatch("GET", "http://localhost/created");
         expect(res.status).toBe(201);
         expect(JSON.parse(decodeBody(res.body))).toEqual({ id: "x" });
+    });
+
+    it("sends a string result as-is, so an HTML fragment is not JSON-escaped", async () => {
+        const router = new BrowserRouter();
+        router.get("/preview", () => "<table><td>a</td></table>");
+        const res = await router.dispatch("GET", "http://localhost/preview");
+        expect(res.status).toBe(200);
+        expect(res.headers["content-type"]).toContain("text/html");
+        expect(decodeBody(res.body)).toBe("<table><td>a</td></table>");
+    });
+
+    it("sends an error tuple's string as plain text, not a JSON-quoted copy", async () => {
+        const router = new BrowserRouter();
+        router.get("/bad", () => [400, "Description must be a string."]);
+        const res = await router.dispatch("GET", "http://localhost/bad");
+        expect(res.status).toBe(400);
+        expect(res.headers["content-type"]).toContain("text/plain");
+        expect(decodeBody(res.body)).toBe("Description must be a string.");
     });
 
     it("serializes a plain object as a 200 JSON response", async () => {

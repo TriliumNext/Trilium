@@ -150,4 +150,22 @@ describe("importFile (dispatch)", () => {
             expect(stubbed.importSingleFile).toHaveBeenCalledWith(taskContext, file, parentNote);
         });
     });
+
+    describe("Obsidian detection (only for the \"auto\" tag a drag-and-drop sends)", () => {
+        it("hands the zip importer an Obsidian fallback that imports the vault in place of the archive", async () => {
+            const file = makeFile({ originalname: "MyVault.zip", path: "/tmp/v.zip" });
+            await importFile(taskContext, file, parentNote, makeOptions(), "auto");
+
+            // The zip importer's scan pass decides whether to call this; recognition is covered in zip.spec.ts.
+            const opts = stubbed.importZip.mock.calls[0]?.[3];
+            await opts?.onObsidianVault?.();
+            expect(stubbed.importObsidian).toHaveBeenCalledWith(taskContext, { path: "/tmp/v.zip" }, parentNote, "MyVault.zip");
+        });
+
+        it("offers no fallback for a .zip chosen in the import dialog", async () => {
+            // The dialog's Files tile sends no format: the user picked a plain archive import and gets one.
+            await importFile(taskContext, makeFile({ originalname: "MyVault.zip", path: "/tmp/v.zip" }), parentNote, makeOptions());
+            expect(stubbed.importZip).toHaveBeenCalledWith(taskContext, { path: "/tmp/v.zip" }, parentNote);
+        });
+    });
 });

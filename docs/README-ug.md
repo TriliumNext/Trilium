@@ -25,6 +25,9 @@ Trilium Notes بولسا ھەقسىز، ئوچۇق كودلۇق، سىستېما
 قالدۇرۇش ئەپى بولۇپ، ئۇ ئاساسلىقى چوڭ تىپتىكى شەخسىي بىلىم ئامبىرى قۇرۇشقا
 ئەھمىيەت بېرىدۇ.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## چۈشۈرۈش⏬

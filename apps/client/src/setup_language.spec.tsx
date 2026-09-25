@@ -109,6 +109,43 @@ async function tap(name: string) {
     await flushEffects();
 }
 
+describe("which languages the list offers", () => {
+    function names() {
+        return [ ...container.querySelectorAll<HTMLElement>("li.dropdown-item") ]
+            .map((element) => element.textContent?.trim());
+    }
+
+    async function renderAt(isDev: boolean) {
+        (window as any).glob.isDev = isDev;
+        render(renderState("selectLanguage", vi.fn()), container);
+        await flushEffects();
+    }
+
+    afterEach(() => {
+        delete (window as any).glob.isDev;
+    });
+
+    it("hides the development-only locales outside dev mode", async () => {
+        await renderAt(false);
+
+        expect(names()).toContain("English (United States)");
+        expect(names()).not.toContain("English RTL");
+    });
+
+    it("offers them in dev mode", async () => {
+        await renderAt(true);
+
+        expect(names()).toContain("English RTL");
+    });
+
+    it("never offers the content-only locales", async () => {
+        await renderAt(true);
+
+        // Hebrew is selectable as a note's language but the app is not translated into it.
+        expect(names()).not.toContain("עברית");
+    });
+});
+
 describe("choosing a language while the bundle is still loading", () => {
     beforeEach(async () => {
         render(renderState("selectLanguage", vi.fn()), container);

@@ -62,9 +62,6 @@ contextBridge.exposeInMainWorld("electronApi", {
         closeWindow() {
             ipcRenderer.send("close-window");
         },
-        createExtraWindow(extraWindowHash: string) {
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
-        },
         isAlwaysOnTop(): boolean {
             return ipcRenderer.sendSync("is-always-on-top");
         },

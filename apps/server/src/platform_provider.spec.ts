@@ -11,6 +11,7 @@ describe("ServerPlatformProvider", () => {
     it("reflects the runtime platform flags", () => {
         const provider = new ServerPlatformProvider();
         expect(provider.isElectron).toBe(!!process.versions["electron"]);
+        expect(provider.isStandalone).toBe(false);
         expect(provider.isMac).toBe(process.platform === "darwin");
         expect(provider.isWindows).toBe(process.platform === "win32");
         expect(provider.isLinux).toBe(process.platform === "linux");

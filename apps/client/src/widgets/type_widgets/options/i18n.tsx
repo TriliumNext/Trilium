@@ -13,6 +13,7 @@ import { LocaleSelector } from "./components/LocaleSelector";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";
 import RestartAction from "./components/RestartAction";
+import HelpButton from "../../react/HelpButton";
 
 export default function InternationalizationOptions() {
     return (
@@ -163,6 +164,7 @@ function ContentLanguages() {
         <Card
             heading={t("content_language.title")}
             description={t("content_language.description")}
+            actions={<HelpButton helpPage="veGu4faJErEM" />}
         >
             <CardSection className="i18n-content-languages">
                 <ContentLanguagesList />
