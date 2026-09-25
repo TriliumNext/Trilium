@@ -1,0 +1,103 @@
+/*
+ * Make sure not to import any modules that depend on localized messages via i18next here, as the initializations
+ * are loaded later and will result in an empty string.
+ */
+
+import { initializeCore, options } from "@triliumnext/core";
+import fs from "fs";
+import path from "path";
+
+import ServerBackupService from "./backup_provider.js";
+import AsyncLocalStorageExecutionContext from "./cls_provider.js";
+import { loadCoreSchema } from "./core_assets.js";
+import NodejsCryptoProvider from "./crypto_provider.js";
+import NodejsInAppHelpProvider from "./in_app_help_provider.js";
+import ServerLogService from "./log_provider.js";
+import ServerPlatformProvider from "./platform_provider.js";
+import dataDirs from "./services/data_dir.js";
+import NodeRequestProvider from "./services/request.js";
+import { RESOURCE_DIR } from "./services/resource_dir.js";
+import { consumeSetupMarker, setupPlatform } from "./services/setup_marker.js";
+import WebSocketMessagingProvider from "./services/ws_messaging_provider.js";
+import BetterSqlite3Provider from "./sql_provider.js";
+import NodejsZipProvider from "./zip_provider.js";
+
+/**
+ * Opens the database and hands every Node provider to `initializeCore()`.
+ *
+ * `startTriliumServer()` assumes this has already run, as does anything reaching for `cls`, `becca`
+ * or `sql` — those throw "Context not initialized" until it has.
+ */
+export async function initializeServerCore() {
+    const config = (await import("./services/config.js")).default;
+
+    // Before anything opens the database: a restore that was interrupted between moving the old
+    // document aside and opening the new one is undone here, so the instance starts on a database
+    // that is whole rather than on whichever half the interruption left behind.
+    (await import("./services/database_restore.js")).recoverInterruptedRestore();
+
+    const dbProvider = new BetterSqlite3Provider();
+    if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
+        // Load the database file into memory so mutations don't persist to
+        // disk between test runs. The fixture is provided externally (e.g.
+        // copied into the data dir by CI or the Playwright config).
+        dbProvider.loadFromBuffer(fs.readFileSync(dataDirs.DOCUMENT_PATH));
+    } else {
+        dbProvider.loadFromFile(dataDirs.DOCUMENT_PATH, config.General.readOnly);
+    }
+
+    const logService = new ServerLogService();
+
+    await initializeCore({
+        dbConfig: {
+            provider: dbProvider,
+            isReadOnly: config.General.readOnly,
+            onTransactionCommit() {
+                // Core types these hooks as synchronous (() => void) and invokes them without
+                // awaiting, so the dynamic import must stay fire-and-forget rather than async.
+                void import("@triliumnext/core").then(({ ws }) => {
+                    ws.sendTransactionEntityChangesToAllClients();
+                });
+            },
+            onTransactionRollback() {
+                void import("@triliumnext/core").then(({ cls, becca_loader, entity_changes }) => {
+                    const entityChangeIds = cls.getAndClearEntityChangeIds();
+
+                    if (entityChangeIds.length > 0) {
+                        logService.info("Transaction rollback dirtied the becca, forcing reload.");
+
+                        becca_loader.load();
+                    }
+
+                    // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
+                    entity_changes.recalculateMaxEntityChangeId();
+                });
+            }
+        },
+        crypto: new NodejsCryptoProvider(),
+        zip: new NodejsZipProvider(),
+        zipExportProviderFactory: (await import("./services/export/zip/factory.js")).serverZipExportProviderFactory,
+        request: new NodeRequestProvider(),
+        executionContext: new AsyncLocalStorageExecutionContext(),
+        messaging: new WebSocketMessagingProvider(),
+        schema: loadCoreSchema(),
+        platform: new ServerPlatformProvider(),
+        log: logService,
+        translations: (await import("./services/i18n.js")).initializeTranslationsWithParams,
+        // demo.zip is a server-owned asset; src/assets is copied to dist/assets
+        // by the build script, so the same RESOURCE_DIR-relative path works in
+        // both source and bundled-production modes.
+        getDemoArchive: async () => fs.readFileSync(path.join(RESOURCE_DIR, "db", "demo.zip")),
+        inAppHelp: new NodejsInAppHelpProvider(),
+        backup: new ServerBackupService(options),
+        image: (await import("./services/image_provider.js")).serverImageProvider,
+        config,
+        // Read before core exists, because what it says is whether to open the database at all.
+        setupMarker: consumeSetupMarker(),
+        setupPlatform,
+        extraAppInfo: {
+            nodeVersion: process.version,
+            dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)
+        }
+    });
+}

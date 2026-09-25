@@ -868,7 +868,6 @@
     "fonts": "Fonturi",
     "main_font": "Fontul principal",
     "monospace_font": "Fontul monospace (pentru cod)",
-    "not_all_fonts_available": "Nu toate fonturile listate aici pot fi disponibile pe acest sistem.",
     "note_detail_font": "Fontul pentru detaliile notițelor",
     "note_tree_font": "Fontul arborelui de notițe",
     "size": "Mărime",
@@ -1433,10 +1432,7 @@
     "rename_relation": "Redenumește relația"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor",
-    "reset_pan_zoom_title": "Resetează poziția și zoom-ul la valorile implicite",
-    "zoom_in_title": "Mărire",
-    "zoom_out_title": "Micșorare"
+    "create_child_note_title": "Crează o subnotiță și adaug-o în harta relațiilor"
   },
   "rename_label": {
     "name_title": "Caracterele permise sunt alfanumerice, underline și două puncte.",
@@ -1583,21 +1579,27 @@
     "title": "Notițe similare"
   },
   "sort_child_notes": {
-    "ascending": "ascendent",
-    "date_created": "data creării",
-    "date_modified": "data modificării",
-    "descending": "descendent",
-    "folders": "Dosare",
+    "ascending": "Ascendent",
+    "date_created": "Data creării",
+    "date_modified": "Data modificării",
+    "descending": "Descendent",
     "natural_sort": "Ordonare naturală",
     "natural_sort_language": "Limba pentru ordonare naturală",
     "sort": "Ordonare",
     "sort_children_by": "Ordonează subnotițele după...",
-    "sort_folders_at_top": "ordonează dosarele primele",
-    "sort_with_respect_to_different_character_sorting": "ordonează respectând regulile de sortare și clasificare diferite în funcție de limbă și regiune.",
+    "sort_folders_at_top": "Ordonează dosarele primele",
+    "sort_with_respect_to_different_character_sorting": "Ordonează respectând regulile de sortare și clasificare diferite în funcție de limbă și regiune.",
     "sorting_criteria": "Criterii de ordonare",
-    "sorting_direction": "Direcția de ordonare",
     "the_language_code_for_natural_sort": "Codul limbii pentru ordonarea naturală, e.g. „zn-CN” pentru chineză.",
-    "title": "titlu"
+    "title": "Titlu",
+    "sorting_criteria_description": "Notițele sunt ordonate după primul nivel; nivelul următor decide doar între notițele lăsate egale de nivelurile anterioare.",
+    "label": "Etichetă",
+    "label_name": "Numele etichetei",
+    "add_level": "Adaugă nivel",
+    "remove_level": "Elimină nivelul",
+    "move_level_up": "Mută nivelul mai sus",
+    "move_level_down": "Mută nivelul mai jos",
+    "folders_follow_first_level": "Ultimele, când primul nivel este descendent."
   },
   "spellcheck": {
     "description": "Aceste opțiuni se aplică doar pentru aplicația de desktop, navigatoarele web folosesc propriile corectoare ortografice.",
@@ -2213,8 +2215,6 @@
     "move-marker-instruction": "Faceți clic pe hartă pentru a muta marcajul în acea poziție sau apăsați Escape pentru a renunța.",
     "move-marker-toast-title": "Mută marcajul",
     "webgl-unavailable": "Această hartă nu poate fi desenată deoarece WebGL nu este disponibil. Verificați dacă accelerarea hardware este activată și dacă driverele plăcii video sunt actualizate.",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
     "enter-3d": "Înclină harta într-o vizualizare 3D\nȚineți apăsat Ctrl și trageți pentru a înclina harta liber",
     "exit-3d": "Readu harta în plan",
     "close-details": "Închide",
@@ -2451,7 +2451,6 @@
   },
   "board_view": {
     "delete-note": "Șterge notița...",
-    "move-to": "Mută la",
     "insert-above": "Inserează deasupra",
     "insert-below": "Inserează dedesubt",
     "delete-column": "Șterge coloana",
@@ -2464,7 +2463,6 @@
     "new-item-placeholder": "Introduceți titlul notiței...",
     "add-column-placeholder": "Introduceți denumirea coloanei...",
     "edit-note-title": "Clic pentru a edita titlul notiței",
-    "edit-column-title": "Clic pentru a edita titlul coloanei",
     "column-already-exists": "Această coloană deja există.",
     "column-definition-save-error": "Coloanele au fost salvate pe tablă, dar nu au putut fi salvate în atributul de stare.",
     "status-alias": "Stare"
@@ -2597,8 +2595,7 @@
   },
   "server": {
     "unknown_http_error_title": "Eroare de comunicare cu server-ul",
-    "unknown_http_error_content": "Cod: {{statusCode}}\nURL: {{method}} {{url}}\nMesaj: {{message}}",
-    "traefik_blocks_requests": "Dacă utilizați reverse proxy-ul Traefik, acesta a introdus o schimbare majoră ce afectează comunicarea cu server-ul."
+    "unknown_http_error_content": "Cod: {{statusCode}}\nURL: {{method}} {{url}}\nMesaj: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Înapoi la notița anterioară",
@@ -3182,9 +3179,6 @@
     "tags-differ": "Nodurile selectate nu au aceleași etichete, așa că acestea pot fi doar citite.",
     "add-tag": "Adaugă această etichetă",
     "remove-tag": "Elimină această etichetă",
-    "zoom-in": "Mărește",
-    "zoom-out": "Micșorează",
-    "reset-zoom": "Resetează zoomul",
     "center-map": "Centrează harta",
     "direction-left": "Ramuri spre stânga",
     "direction-right": "Ramuri spre dreapta",
@@ -3257,8 +3251,6 @@
     "provider_model_count_few": "{{count}} modele",
     "provider_model_count_other": "{{count}} de modele",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Necesită Claude Code pe calculatorul pe care rulează Trilium.",
-    "provider_desc_copilot_agent": "Necesită GitHub Copilot CLI pe calculatorul pe care rulează Trilium.",
     "provider_unavailable_standalone": "Indisponibil în versiunea din browser: acest furnizor funcționează rulând un program separat pe calculator, iar aici nu există un calculator pe care să îl ruleze.",
     "claude_agent_description": "Folosește abonamentul dumneavoastră Claude Pro/Max prin Claude Code, așa că nu este nevoie de o cheie API. Claude Code trebuie instalat pe calculatorul pe care rulează Trilium (serverul, în cazul găzduirii proprii, sau acest calculator, în varianta desktop); autentificați-vă o singură dată rulând acolo „claude /login”.",
     "copilot_agent_description": "Folosește abonamentul dumneavoastră GitHub Copilot prin GitHub Copilot CLI, așa că nu este nevoie de o cheie API. Copilot CLI trebuie instalat pe calculatorul pe care rulează Trilium (serverul, în cazul găzduirii proprii, sau acest calculator, în varianta desktop); autentificați-vă o singură dată rulând acolo „copilot login” — o autentificare Copilot existentă din alt editor este refolosită automat.",
@@ -3374,7 +3366,6 @@
       "insert-paragraph-after-code-block": "Inserează un paragraf după blocul de cod",
       "insert-paragraph-before-code-block": "Inserează un paragraf înainte de blocul de cod",
       "insert-text-snippet": "Inserează fragment de text",
-      "insert-the-current-date-and-time": "Inserează data și ora curentă",
       "internal-link": "Legătură internă",
       "justify-text-alignment": "Aliniază textul stânga-dreapta",
       "keyboard-shortcut": "Scurtătură de la tastatură",
@@ -3592,11 +3583,6 @@
     "title": "Opțiuni",
     "back": "Înapoi la toate opțiunile"
   },
-  "image_buttons": {
-    "zoom_in": "Mărește",
-    "zoom_out": "Micșorează",
-    "reset_zoom": "Resetează zoomul"
-  },
   "image_navigation": {
     "previous": "Imaginea anterioară: {{- title}}",
     "next": "Imaginea următoare: {{- title}}"
@@ -3604,16 +3590,6 @@
   "image_viewer": {
     "loading_error": "A apărut o eroare la încărcarea imaginii.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Mărește",
-      "zoom_out": "Micșorează",
-      "reset_zoom": "Resetează zoomul",
-      "pan": "Deplasare",
-      "pan_up": "Sus",
-      "pan_down": "Jos",
-      "pan_left": "Stânga",
-      "pan_right": "Dreapta",
-      "pan_fast": "Deplasare mai rapidă",
       "navigation": "Navigare",
       "next_image": "Imaginea următoare",
       "previous_image": "Imaginea anterioară",
@@ -3639,9 +3615,7 @@
     "note_paths_what": "O notiță se poate afla în mai multe locuri din arborele de notițe în același timp, iar fiecare dintre aceste locuri este listat aici ca o cale.",
     "note_paths_cloning": "Adăugarea unui loc se numește clonare: nimic nu este copiat, așa că o modificare făcută pe o cale apare pe toate, iar eliminarea unei căi lasă notița sub celelalte.",
     "backlinks_what": "Notițele care indică spre aceasta, fie printr-o legătură din textul lor, fie printr-o relație care o numește.",
-    "backlinks_listing": "O legătură din text este listată împreună cu pasajul din jurul ei, iar o relație cu numele prin care indică. Această parte a legăturii nu poate fi editată: dispare atunci când notița care a creat-o renunță la legătură.",
-    "similar_notes_what": "Notițe care par înrudite cu aceasta chiar și acolo unde nimic nu le leagă.",
-    "similar_notes_how": "Asemănarea este dedusă din conținutul notițelor, din atributele și relațiile pe care le poartă și din cât de apropiat în timp au fost create."
+    "backlinks_listing": "O legătură din text este listată împreună cu pasajul din jurul ei, iar o relație cu numele prin care indică. Această parte a legăturii nu poate fi editată: dispare atunci când notița care a creat-o renunță la legătură."
   },
   "split_editor": {
     "render_error": "Previzualizarea nu a putut fi randată",

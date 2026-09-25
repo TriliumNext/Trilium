@@ -7,7 +7,7 @@ import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
 import FormTextBox from "../../react/FormTextBox";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import TimeSelector from "./components/TimeSelector";
 
@@ -21,11 +21,11 @@ export default function SyncOptions() {
 }
 
 /**
- * Where to sync and how patiently, followed by the one thing on this page that acts rather than sets.
+ * The sync settings, followed by a card for what is not a setting: the address sync contacts, and
+ * the test that contacts it.
  *
- * The test stands on a card of its own, so that what it does is not read as one more setting; it is
- * still driven from here because it saves what has been typed before it runs, and so needs the values
- * still sitting in the boxes rather than the ones already stored.
+ * `testConnection()` saves the address boxes before it posts to `sync/test`, so it reads what is
+ * still on screen rather than what is stored.
  */
 export function SyncConfiguration() {
     const [syncServerHost, setSyncServerHost] = useTriliumOption("syncServerHost");
@@ -96,6 +96,8 @@ export function SyncConfiguration() {
             </Card>
 
             <Card>
+                <EffectiveSyncServer />
+
                 <OptionCardSection
                     label={t("sync_2.test_title")}
                     description={t("sync_2.test_description")}
@@ -109,5 +111,29 @@ export function SyncConfiguration() {
                 </OptionCardSection>
             </Card>
         </>
+    );
+}
+
+/**
+ * The address sync contacts, shown only when config.ini or an environment variable supplies it.
+ * Without an override it would repeat the box above, where the stored option is already editable.
+ */
+function EffectiveSyncServer() {
+    const [isOverridden] = useTriliumOptionBool("syncServerHostOverridden");
+    const [effectiveSyncServerHost] = useTriliumOption("effectiveSyncServerHost");
+
+    if (!isOverridden) {
+        return null;
+    }
+
+    return (
+        <OptionCardSection
+            label={t("sync_2.effective_server")}
+            description={t("sync_2.effective_server_description")}
+        >
+            <span className="tn-card-option-value">
+                {effectiveSyncServerHost || t("sync_2.effective_server_disabled")}
+            </span>
+        </OptionCardSection>
     );
 }

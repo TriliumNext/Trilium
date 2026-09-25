@@ -9,8 +9,7 @@
 
 @font-face {
     font-family: "Inter";
-    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations"),
-         url(../../fonts/Inter/Inter-VariableFont_opsz,wght.ttf) format("truetype-variations");
+    src: url(../../fonts/Inter/Inter-VariableFont_opsz,wght.woff2) format("woff2-variations");
     font-weight: 100 900;
     font-style: normal;
     font-display: swap;
@@ -119,7 +118,7 @@
     /* Tooltips */
     --tooltip-border-radius: 6px;
     --tooltip-padding: 2px 8px 4px 8px;
-    --tooltip-box-shadow: 
+    --tooltip-box-shadow:
         -1px -1px 2px var(--tooltip-shadow-color),
         2px 2px 8px var(--tooltip-shadow-color);
     --tooltip-backdrop-filter: blur(5px);
@@ -440,7 +439,7 @@ body.mobile .dropdown-menu {
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;
     --hover-item-background-color: var(--card-background-color);
-    font-size: 1em !important;
+    font-size: 1rem !important;
     backdrop-filter: var(--dropdown-backdrop-filter);
     position: relative;
 
@@ -488,6 +487,14 @@ body.mobile .dropdown-menu {
         padding: 0 !important;
         backdrop-filter: unset !important;
 
+        /* The submenu sits in a track that grows from 0fr to 1fr, so the expanded
+           height is whatever the items measure. The toggle's track is max-content
+           rather than auto: an auto track absorbs the slack mid-transition and
+           visibly stretches the item. */
+        display: grid !important;
+        grid-template-rows: max-content 0fr;
+        transition: grid-template-rows 100ms ease-in;
+
         .dropdown-toggle {
             padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal);
         }
@@ -496,17 +503,27 @@ body.mobile .dropdown-menu {
             --menu-background-color: --menu-submenu-mobile-background-color;
             --bs-dropdown-divider-margin-y: 0.25rem;
             border-radius: 0;
-            max-height: 0;
-            transition: max-height 100ms ease-in;
             display: block !important;
 
+            /* Counters align-items: center from style.css, which would let the
+               submenu keep its content height instead of following the track. */
+            align-self: stretch;
+            min-height: 0;
+            overflow: hidden;
+
+            /* The vertical padding grows with the track; applying it at once would
+               hold the collapsed submenu open by that much. */
+            padding: 0 0.75rem !important;
+            transition: padding 100ms ease-in;
+
             &.show {
-                max-height: 1000px;
-                padding: 0.5rem 0.75rem !important;
+                padding-block: 0.5rem !important;
             }
         }
 
         &.submenu-open {
+            grid-template-rows: max-content 1fr;
+
             .dropdown-toggle {
                 padding-bottom: var(--dropdown-menu-padding-vertical);
             }
@@ -647,13 +664,13 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     --tooltip-background-color: var(--note-tooltip-background-color);
     --tooltip-foreground-color: var(--main-text-color);
     --tooltip-box-shadow: var(--note-tooltip-box-shadow);
-    
+
     > .tooltip-inner {
         outline: 1px solid var(--main-border-color);
         border-radius: 12px;
         min-height: 120px;
     }
-    
+
     .rendered-content {
         font-size: .8em;
     }

@@ -13,6 +13,8 @@ import NoItems from "../../../react/NoItems";
 interface ModelSelectionProps {
     /** Credentials describing the provider whose models should be listed. */
     query: ProviderModelsQuery;
+    /** How long the fetch can take, when the provider needs longer than the default. */
+    timeoutMs?: number;
     /** Currently selected models (full metadata), controlled by the parent. */
     selected: LlmModelInfo[];
     onChange: (selected: LlmModelInfo[]) => void;
@@ -34,7 +36,7 @@ interface ModelSelectionProps {
  * keep. The picked set (with full metadata) is what the chat picker later shows,
  * so no live fetch is needed during normal chatting.
  */
-export default function ModelSelection({ query, selected, onChange, autoSelectDefaults, troubleshooting }: ModelSelectionProps) {
+export default function ModelSelection({ query, timeoutMs, selected, onChange, autoSelectDefaults, troubleshooting }: ModelSelectionProps) {
     const [models, setModels] = useState<LlmModelInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | undefined>();
@@ -46,7 +48,7 @@ export default function ModelSelection({ query, selected, onChange, autoSelectDe
         let active = true;
         setLoading(true);
         setError(undefined);
-        fetchProviderModels(query)
+        fetchProviderModels(query, timeoutMs)
             .then(fetched => {
                 if (!active) return;
                 setModels(fetched);
@@ -78,7 +80,8 @@ export default function ModelSelection({ query, selected, onChange, autoSelectDe
     }
     if (error) {
         return (
-            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error })}>
+            // JSX escapes the text itself, so i18next must not escape the message as well.
+            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}>
                 {troubleshooting}
             </NoItems>
         );

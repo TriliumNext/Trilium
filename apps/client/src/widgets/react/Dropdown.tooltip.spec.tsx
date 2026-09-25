@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import Dropdown from "./Dropdown";
 
-// Bootstrap is left real here — unlike Dropdown.spec.tsx, which mocks it away to assert the component's
-// wiring — because what is under test is what Bootstrap does with the elements it is handed.
+// This spec keeps Bootstrap real for the tooltip and for closing the menu. Dropdown.spec.tsx mocks
+// Bootstrap to assert the wiring of the component.
 
 class ResizeObserverStub {
     observe() {}
@@ -71,5 +71,32 @@ describe("Dropdown tooltip", () => {
         await act(async () => render(null, container));
         await settle();
         expect(shownTooltips(), "gone with the dropdown").toBe(0);
+    });
+});
+
+describe("Dropdown with a disabled toggle", () => {
+    let container: HTMLElement;
+
+    beforeEach(() => {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+        act(() => render(null, container));
+        container.remove();
+    });
+
+    it("closes an open menu when the toggle becomes disabled", () => {
+        act(() => render(<Dropdown>item</Dropdown>, container));
+        const toggle = container.querySelector("button");
+        const menu = container.querySelector(".dropdown-menu");
+        act(() => toggle?.click());
+        expect(menu?.classList.contains("show"), "opened by the click").toBe(true);
+
+        act(() => render(<Dropdown disabled>item</Dropdown>, container));
+        expect(menu?.classList.contains("show"), "closed by the disable").toBe(false);
+        expect(toggle?.disabled).toBe(true);
+        expect(toggle?.getAttribute("aria-expanded")).toBe("false");
     });
 });

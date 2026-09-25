@@ -300,6 +300,15 @@ function installStreamingBridge(
     // export to disk — would let the whole payload pile up in memory.
     const HIGH_WATER_MARK = 1024 * 1024; // 1 MiB
 
+    // Handlers watch `res` for the client going away — llm_chat.ts aborts the
+    // agent turn on it — and nothing else emits it on this mock response.
+    let disconnected = false;
+    function signalDisconnect() {
+        if (disconnected) return;
+        disconnected = true;
+        res.emit("close");
+    }
+
     function resumeProducerIfReady() {
         if (producerPaused && controller && controller.desiredSize !== null && controller.desiredSize > 0) {
             producerPaused = false;
@@ -314,7 +323,11 @@ function installStreamingBridge(
             start(c) { controller = c; },
             // The consumer pulled (queue has capacity again) → release a producer
             // that paused on backpressure.
-            pull() { resumeProducerIfReady(); }
+            pull() { resumeProducerIfReady(); },
+            // The renderer stopped reading — it aborted the fetch or its window
+            // went away. `controller` is already closed, so drop it before the
+            // handler's next write() and let the handler unwind through 'close'.
+            cancel() { controller = null; signalDisconnect(); }
         }, new ByteLengthQueuingStrategy({ highWaterMark: HIGH_WATER_MARK }));
         try {
             onCommit(new Response(body, {
@@ -329,7 +342,9 @@ function installStreamingBridge(
 
     function enqueue(chunk: unknown) {
         const buf = toUint8Array(chunk);
-        if (buf && controller) controller.enqueue(buf);
+        if (!buf || !controller) return;
+        /* v8 ignore next -- defensive: enqueue() only throws if the stream was torn down without cancel() firing */
+        try { controller.enqueue(buf); } catch { controller = null; }
     }
 
     function closeStream() {
@@ -383,7 +398,9 @@ function installStreamingBridge(
 
     // Renderer cancelled the fetch (e.g. user hit stop, tab navigated).
     abortSignal?.addEventListener("abort", () => {
-        if (streaming) errorStream(new Error("Renderer cancelled request"));
+        if (!streaming) return;
+        errorStream(new Error("Renderer cancelled request"));
+        signalDisconnect();
     });
 
     return {

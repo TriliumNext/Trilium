@@ -3,11 +3,6 @@
  * in its library or in `@types/*` packages.
  */
 
-declare module "normalize-strings" {
-    function normalizeString(string: string): string;
-    export default normalizeString;
-}
-
 declare module "is-animated" {
     function isAnimated(buffer: Buffer): boolean;
     export default isAnimated;

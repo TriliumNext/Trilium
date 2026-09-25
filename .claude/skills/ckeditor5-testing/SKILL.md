@@ -4,7 +4,7 @@ description: >-
   Testing CKEditor 5 plugins in the Trilium monorepo. Use when adding or
   reviewing unit tests for the packages/ckeditor5 aggregate (including its
   in-tree plugins under src/plugins/), debugging a
-  failing test, or setting up a package's test runner. Covers the WebdriverIO
+  failing test, or setting up a package's test runner. Covers the Playwright
   browser-mode Vitest setup, the vitest.config.ts, testing against a real ClassicEditor, the
   model/view helpers imported from 'ckeditor5' (_setModelData / _getModelData /
   _getViewData and their {}/[] selection syntax), vi spies/mocks, idiomatic
@@ -40,10 +40,10 @@ Trilium testing (Preact components, jQuery widgets, server routes), use `writing
 
 - **Runner:** Vitest 4 or later. **No shared factory** — each package has its own
   `vitest.config.ts` built with `defineConfig` directly.
-- **One environment: WebdriverIO browser mode** (`@vitest/browser-webdriverio`, headless Chrome),
+- **One environment: Playwright browser mode** (`@vitest/browser-playwright`, headless Chromium),
   used by `ckeditor5`. Real DOM and real layout, so
   `getBoundingClientRect()`, `elementFromPoint()` and pointer events behave as in a browser. Gates
-  `src/**` coverage at 100% (lines/functions/branches/statements). This is **not Playwright**.
+  `src/**` coverage at 100% (lines/functions/branches/statements).
   - Trilium used to run some plugins on **happy-dom**; that is gone. If you are porting an old
     test, note the two differences that bite: happy-dom returned zeros from layout APIs (so
     measurement-dependent code silently "passed"), and it fired some DOM events synchronously
@@ -87,21 +87,19 @@ run a filtered package suite instead (`pnpm --filter @triliumnext/ckeditor5 test
 leave the aggregates to CI. Each package exposes `"test": "vitest"` and
 `"test:debug": "vitest --inspect-brk --no-file-parallelism --browser.headless=false"`.
 
-**When the downloaded browser cannot run** — on NixOS the Chrome for Testing build and chromedriver
-webdriverio fetches into `/tmp` are linked against libraries no store path provides and die on a
-missing `libxcb.so.1` — point the suite at a system pair instead:
+Playwright downloads its own Chromium on demand; install it once with `pnpm exec playwright install
+chromium` from the repo root.
+
+**When that build cannot run** — on NixOS it is linked against libraries no store path provides and
+dies on a missing `libxcb.so.1` — point the suite at a system browser instead:
 
 ```bash
-CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver \
-    pnpm --filter @triliumnext/ckeditor5 test
+CHROME_BIN=/path/to/chromium pnpm --filter @triliumnext/ckeditor5 test
 ```
 
-`CHROMEDRIVER_PATH` is webdriverio's own variable and makes it spawn that driver on a free port;
-`CHROME_BIN` is read by the package's `vitest.config.ts` and passed as `goog:chromeOptions.binary`,
-which also stops the browser download (`setupPuppeteerBrowser` returns early for a string `binary`).
-The two versions must match at least in their major. `nix develop` sets both from `pkgs.chromium`
-and `pkgs.chromedriver`, so inside the dev shell the plain command works — **don't** start a driver
-by hand or write a local override config.
+`CHROME_BIN` is read by the package's `vitest.config.ts` and passed to the provider as
+`launchOptions.executablePath`. `nix develop` sets it from `pkgs.chromium`, so inside the dev shell
+the plain command works — **don't** write a local override config.
 
 Failed browser tests dump PNGs into a gitignored `__screenshots__` beside the spec; delete them
 afterwards.
@@ -230,7 +228,7 @@ into later specs.) See `references/patterns.md` for the recipe.
 |------|-----------|
 | `references/test-utilities.md` | Testing against a real `ClassicEditor` (lifecycle, `licenseKey: 'GPL'`), and the `_setModelData`/`_getModelData`/`_getViewData` helpers from `'ckeditor5'` + the `[]`/`{}` selection syntax. |
 | `references/patterns.md` | Idiomatic recipes per concern (schema, conversion round-trips, commands, UI, keystrokes, events, async), all against a real editor; the `glob`/clipboard/jQuery-`$` stubbing recipe (via the globals kit's `installGlobMock`/`mockClipboard`); note on the 100% coverage gate for browser-mode packages. |
-| `references/running-and-config.md` | The WebdriverIO `vitest.config.ts` shape, `pnpm --filter` commands, the debug command, `pnpm test:parallel`/`test:sequential` (ckeditor5 + math sequential), coverage thresholds, and troubleshooting a session that never starts (staged-Chrome/chromedriver version mismatch, the worktree dep-optimizer hang, orphaned headless Chrome). |
+| `references/running-and-config.md` | The WebdriverIO `vitest.config.ts` shape, `pnpm --filter` commands, the debug command, `pnpm test:parallel`/`test:sequential` (ckeditor5 + math sequential), coverage thresholds, and troubleshooting a session that never starts (a missing Playwright browser build, the worktree dep-optimizer hang, orphaned headless Chromium). |
 | `references/test-conventions.md` | Trilium test **conventions & gotchas**: real-browser event timing, real-editor teardown, the both-assertion-styles note, unreachable code vs. the 100% gate, and the pointer to `writing-unit-tests`. |
 
 ## Quick review checklist

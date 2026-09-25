@@ -30,6 +30,7 @@ import NoteAutocomplete from "../widgets/react/NoteAutocomplete";
 import NoteLink from "../widgets/react/NoteLink";
 import RawHtml from "../widgets/react/RawHtml";
 import Slider from "../widgets/react/Slider";
+import { SortableCard } from "../widgets/react/SortableCard";
 import RightPanelWidget from "../widgets/sidebar/RightPanelWidget";
 
 export interface WidgetDefinition {
@@ -100,6 +101,7 @@ export const preactAPI = Object.freeze({
     NoteLink,
     RawHtml,
     Slider,
+    SortableCard,
     Table,
 
     // Specialized widgets

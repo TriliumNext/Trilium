@@ -7,7 +7,6 @@
  * boundary over the widgets, what the user got was the empty container the map would have filled:
  * a blank panel and a console message they never see. It says what happened now.
  */
-import type { StyleSpecification } from "maplibre-gl";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,9 +28,10 @@ function failingMap(): never {
 const { MapConstructor } = vi.hoisted(() => ({ MapConstructor: vi.fn() }));
 
 vi.mock("maplibre-gl", () => ({
+    AttributionControl: class {},
     Map: MapConstructor,
     ScaleControl: class {},
-    AttributionControl: class {}
+    setWorkerUrl: vi.fn()
 }));
 
 vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));
@@ -45,6 +45,16 @@ const LAYER: MapLayer = {
     type: "raster",
     url: "https://tile.example.org/{z}/{x}/{y}.png",
     attribution: "&copy; Example"
+};
+
+/**
+ * The style the map reports once it has loaded one, which for a vector layer is the only place its
+ * contents can be read: the layer names it by URL and MapLibre fetches it.
+ */
+const LOADED_STYLE = {
+    version: 8,
+    sources: { "versatiles-shortbread": { type: "vector", tiles: [ "https://tiles.example.org/{z}/{x}/{y}" ] } },
+    layers: [ { id: "background", type: "background" } ]
 };
 
 /** The last map built, for the tests that ask what was done to it. */
@@ -105,6 +115,8 @@ function buildWorkingMap() {
         setStyle: vi.fn(),
         setCenter: vi.fn(),
         setZoom: vi.fn(),
+        // What the map reads on `style.load` to learn what the style it was built with is made of.
+        getStyle: () => structuredClone(LOADED_STYLE),
         getCenter: () => ({ lat: 0, lng: 0 }),
         getZoom: () => 2
     };
@@ -277,36 +289,67 @@ describe("Map initialization", () => {
      * against a style that has not finished loading, and every style is still loading for at least
      * one animation frame after it is handed over. Rather than wait that frame out it tears the
      * whole style down and rebuilds: a "Unable to perform style diff" warning and a map that blinks
-     * blank. The vector styles import asynchronously and routinely resolve inside that first frame,
-     * so whether the map blinked came down to which of the two won. A style that arrives early is
-     * held until `style.load` says the one before it is ready to be diffed against.
+     * blank. The effect that reacts to the layer runs on mount, right behind the map's own
+     * construction, so it always applies into that window. A style that arrives early is held until
+     * `style.load` says the one before it is ready to be diffed against.
      */
     describe("a style that arrives before the last one has loaded", () => {
-        /** The style a vector layer's import resolves to, recognizable by identity. */
-        const VECTOR_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] };
-
-        /** A vector layer whose style import resolves as fast as a cached chunk does. */
+        /** A vector layer, whose style MapLibre fetches from the URL naming it. */
         const VECTOR_LAYER: MapLayer = {
             name: "VersaTiles Colorful",
             type: "vector",
-            style: async () => VECTOR_STYLE,
-            styleFallback: { version: 8, sources: {}, layers: [] }
+            style: "https://tiles.versatiles.org/assets/styles/colorful/en.json"
         };
 
         beforeEach(() => {
             MapConstructor.mockImplementation(workingMap);
         });
 
-        it("is held until then, and applied the moment it is safe to diff", async () => {
+        it("is held until then, and applied the moment it is safe to diff", () => {
             renderMap({ layer: VECTOR_LAYER });
-            // The import resolves before the browser's next frame, which is the race this is about.
-            await act(async () => {});
             expect(lastMap?.setStyle).not.toHaveBeenCalled();
 
             act(() => lastMap?.fire("style.load"));
 
             expect(lastMap?.setStyle).toHaveBeenCalledOnce();
-            expect(lastMap?.setStyle.mock.calls[0][0]).toBe(VECTOR_STYLE);
+            expect(lastMap?.setStyle.mock.calls[0][0]).toBe(VECTOR_LAYER.style);
+        });
+
+        it("hands a vector layer's style to MapLibre as the URL naming it", () => {
+            renderMap({ layer: VECTOR_LAYER });
+
+            expect(MapConstructor.mock.calls[0][0].style).toBe(VECTOR_LAYER.style);
+        });
+
+        /**
+         * Switching between two styles neither of which we ever see, which is every switch between
+         * the built-in vector maps. What a child put on the outgoing style can only be told from the
+         * style itself by knowing what that style was made of, and a style named by URL says nothing
+         * about itself here: it is read where MapLibre resolves it, on the way in.
+         */
+        it("carries a child's additions between two styles named only by URL", () => {
+            renderMap({ layer: VECTOR_LAYER });
+            act(() => lastMap?.fire("style.load"));
+
+            const darkLayer: MapLayer = { ...VECTOR_LAYER, style: `${VECTOR_LAYER.style}?dark`, isDarkTheme: true };
+            renderMap({ layer: darkLayer });
+
+            const { transformStyle } = lastMap?.setStyle.mock.calls.at(-1)?.[1] ?? {};
+            // The map as it stands: the style it loaded, with a child's markers added on top.
+            const previous = {
+                ...LOADED_STYLE,
+                sources: { ...LOADED_STYLE.sources, points: { type: "geojson", data: {} } },
+                layers: [ ...LOADED_STYLE.layers, { id: "points-layer", type: "symbol", source: "points" } ]
+            };
+            const next = { version: 8, sources: { "versatiles-shortbread": { type: "vector" } }, layers: [ { id: "land", type: "background" } ] };
+
+            const merged = transformStyle?.(previous, next);
+
+            // The markers came across rather than blinking off until the new style loaded...
+            expect(Object.keys(merged.sources)).toContain("points");
+            expect(merged.layers.map((layer: { id: string }) => layer.id)).toEqual([ "land", "points-layer" ]);
+            // ...and the style they were sitting on stayed behind with the map it drew.
+            expect(merged.layers.map((layer: { id: string }) => layer.id)).not.toContain("background");
         });
 
         it("is applied straight away once the style before it has loaded", () => {

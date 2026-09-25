@@ -1,4 +1,5 @@
 import { RefObject } from "preact";
+import { useContext } from "preact/hooks";
 import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables";
 
 import { CommandListenerData } from "../../../components/app_context";
@@ -10,8 +11,14 @@ import note_create, { CreateNoteOpts } from "../../../services/note_create";
 import server from "../../../services/server";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { ParentComponent } from "../../react/react_utils";
 
 export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote): Partial<EventCallBackMethods> {
+    // Whose writes these are, so that useData can tell a cell this table edited itself from one
+    // changed elsewhere. Rebuilding the rows for its own edit replaces them wholesale in Tabulator,
+    // which cancels the editor Tab has just opened in the next cell.
+    const componentId = useContext(ParentComponent)?.componentId;
+
     // Adding new rows
     useLegacyImperativeHandlers({
         addNewRowCommand({ customOpts, parentNotePath: customNotePath }: CommandListenerData<"addNewRow">) {
@@ -42,7 +49,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
             let newValue = cell.getValue();
 
             if (field === "title") {
-                server.put(`notes/${noteId}/title`, { title: newValue });
+                server.put(`notes/${noteId}/title`, { title: newValue }, componentId);
                 return;
             }
 
@@ -54,7 +61,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     if (Array.isArray(newValue)) {
                         const note = await froca.getNote(noteId);
                         if (note) {
-                            await setLabelValues(note, name, newValue as string[]);
+                            await setLabelValues(note, name, newValue as string[], componentId);
                         }
                         return;
                     }
@@ -64,16 +71,16 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     } else if (typeof newValue === "number") {
                         newValue = String(newValue);
                     }
-                    setLabel(noteId, name, newValue);
+                    setLabel(noteId, name, newValue, false, componentId);
                 } else if (type === "relations") {
                     const note = await froca.getNote(noteId);
                     if (note) {
                         // A set of targets is written as the several relations it is, as a set of
                         // label values is.
                         if (Array.isArray(newValue)) {
-                            await setRelationValues(note, name, newValue as string[]);
+                            await setRelationValues(note, name, newValue as string[], componentId);
                         } else {
-                            setAttribute(note, "relation", name, newValue);
+                            setAttribute(note, "relation", name, newValue, componentId);
                         }
                     }
                 }

@@ -303,8 +303,28 @@ describe("loadSearchNote", () => {
         expect(out).toEqual({ error: null });
         expect(search.searchResultsLoaded).toBe(true);
         expect(search.highlightedTokens).toEqual(["token"]);
+        // No highlightedTokenInfos in the response (older/rolling-upgrade server) - derive it from the legacy field.
+        expect(search.highlightedTokenInfos).toEqual([{ token: "token", type: "plain" }]);
         expect(search.children).toContain(result.noteId);
         expect(search.children).not.toContain("stale");
+    });
+
+    it("stores the server's structured highlightedTokenInfos as-is when present", async () => {
+        const search = buildNote({ id: "ls-structured", title: "Search", type: "search" });
+
+        server.get = vi.fn(async () => ({
+            searchResultNoteIds: [],
+            highlightedTokens: ["ktory"],
+            highlightedTokenInfos: [{ token: "ktory", type: "plain" }, { token: "ba.", type: "regex" }],
+            error: null
+        })) as typeof server.get;
+
+        await froca.loadSearchNote(search.noteId);
+
+        expect(search.highlightedTokenInfos).toEqual([
+            { token: "ktory", type: "plain" },
+            { token: "ba.", type: "regex" }
+        ]);
     });
 
     it("tolerates the note disappearing from the cache mid-load", async () => {

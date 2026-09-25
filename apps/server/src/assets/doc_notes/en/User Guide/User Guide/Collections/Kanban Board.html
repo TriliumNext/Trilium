@@ -1,185 +1,695 @@
-<figure class="image">
-  <img style="aspect-ratio:918/248;" src="2_Kanban Board_image.png"
-  width="918" height="248">
-</figure>
-<p>The Board view presents sub-notes in columns for a Kanban-like experience.
-  Each column represents a possible value for a status label, which can be
-  adjusted.</p>
+<p>The Board view lets you arrange subnotes as cards on a <a href="https://en.wikipedia.org/wiki/Kanban_board">Kanban board</a>.</p>
 <h2>Creating a Kanban board</h2>
-<p>Right click on an existing note in the&nbsp;<a class="reference-link"
-  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and select <em>Insert child note</em> and
-  look for <em>Kanban Board</em>.</p>
+<p>Right-click an existing note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+  select <strong>Insert child note</strong>, and look for <strong>Kanban Board</strong>.</p>
 <h2>How it works</h2>
-<p>When first creating a collection of <em>Board</em> type, a few subnotes
-  will be created, each having a <code spellcheck="false">#status</code> label
-  set. The board then groups each note by the value of the status attribute.</p>
-<p>Notes are displayed recursively, so even the child notes of the child
-  notes will be displayed. However, unlike the&nbsp;<a class="reference-link"
-  href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed in a hierarchy.</p>
-<h2>Interaction</h2>
-<h3>Working with columns</h3>
+<p>When you first create a collection of the <em>Board</em> type, a few subnotes
+  are created, each with a <code>#status</code> label set. The board then groups
+  each note by the value of its status attribute.</p>
+<p>Notes are displayed recursively, so even grandchildren and more deeply
+  nested notes will be displayed. However, unlike the&nbsp;<a class="reference-link"
+  href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed
+  hierarchically.</p>
+<h2>Working with columns</h2>
+<h3>Creating columns</h3>
+<p>You can create a new column by pressing the <span class="tn-icon bx bx-plus"></span><strong>Add column</strong> button
+  located after the last column.</p>
+<p>Enter the new name (which must not match another column), optionally select
+  an icon by pressing the circle at the start of the text box, and then press
+  the (+) button or <kbd>Enter</kbd>. Click or tap outside the text box, or
+  press <kbd>Esc</kbd>, to dismiss it.</p>
+<h3>Reordering columns</h3>
+<p>The order of the columns can be changed at any time. There are several
+  ways to do this:</p>
 <ul>
-  <li>Create a new column by pressing <em>Add Column</em> near the last column.
+  <li><strong>Using touch or a mouse:</strong> Touch and hold the column header,
+    or click and hold it with the mouse. Drag the column left or right until
+    it reaches the desired location, and then release it.</li>
+  <li><strong>Using the keyboard:</strong> While the keyboard focus is anywhere
+    inside the column, you can use these key combinations. If the column header
+    itself is focused, you can omit <kbd>Alt</kbd>:
     <ul>
-      <li>Once pressed, a text box will be displayed to set the name of the column.
-        Press <kbd>Enter</kbd> to confirm, or <kbd>Escape</kbd> to dismiss.</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Right</kbd>: Move the column to the
+        right.</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Left</kbd>: Move the column to the
+        left.</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Home</kbd>: Make it the first column.</li>
+      <li><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>End</kbd>: Make it the last column.</li>
     </ul>
   </li>
-  <li>To reorder a column, simply hold the mouse over the title and drag it
-    to the desired position.</li>
-  <li>To delete a column, right click on its title and select <em>Delete column</em>.</li>
-  <li>To rename a column, click on the note title.
-    <ul>
-      <li>Press Enter to confirm.</li>
-      <li>Upon renaming a column, the corresponding status attribute of all its
-        notes will be changed in bulk.</li>
-    </ul>
-  </li>
-  <li>If there are many columns, use the mouse wheel to scroll.</li>
+  <li><strong>Using the column menu:</strong> Open the column menu and use the&nbsp;<span
+    class="tn-icon bx bx-horizontal-left"></span>  <strong>Move column</strong> submenu.</li>
 </ul>
-<h3>Working with notes</h3>
+<h3>Renaming and recoloring columns</h3>
+<p>To change the name of a column, open the column menu and select&nbsp;<span
+  class="tn-icon bx bx-edit-alt"></span>  <strong>Rename column</strong>, or
+  press <kbd>F2</kbd> while the column header is selected.</p>
+<p>From the same menu, you can tint the column with a different color by
+  using the color palette at the bottom of the menu.</p>
+<h3>Collapsing and expanding columns</h3>
+<h4>Collapsing</h4>
+<p>A column can be collapsed (minimized) to occupy less space on the screen
+  and make the board look less cluttered. This is particularly useful for
+  columns that are not frequently used, or when you want to focus on only
+  a few columns and keep the rest out of sight.</p>
+<p>To collapse a column:</p>
 <ul>
-  <li>Create a new note in any column by pressing <em>New item</em>
-    <ul>
-      <li>Enter the name of the note and press <kbd>Enter</kbd> or click away. To
-        dismiss the creation of a new note, simply press <kbd>Escape</kbd> or leave
-        the name empty.</li>
-      <li>Once created, the new note will have an attribute (<code spellcheck="false">status</code> label
-        by default) set to the name of the column.</li>
-    </ul>
-  </li>
-  <li>To open the note, simply click on it.</li>
-  <li>To change the title of the note directly from the board, hover the mouse
-    over its card and press the edit button on the right.</li>
-  <li>To change the state of a note, simply drag a note from one column to the
-    other to change its state.</li>
-  <li>The order of the notes in each column corresponds to their position in
-    the tree.
-    <ul>
-      <li>It's possible to reorder notes simply by dragging them to the desired
-        position within the same columns.</li>
-      <li>It's also possible to drag notes across columns, at the desired position.</li>
-    </ul>
-  </li>
-  <li>For more options, right click on a note to display a context menu with
-    the following options:
-    <ul>
-      <li>Open the note in a new tab/split/window or quick edit.</li>
-      <li>Move the note to any column.</li>
-      <li>Insert a new note above/below the current one.</li>
-      <li>Archive/unarchive the current note.</li>
-      <li>Delete the current note.</li>
-    </ul>
-  </li>
-  <li>If there are many notes within the column, move the mouse over the column
-    and use the mouse wheel to scroll.</li>
+  <li><strong>Using a mouse:</strong> Double-click the column header.</li>
+  <li><strong>Using touch:</strong> Tap the column header, and then press the&nbsp;<span
+    class="tn-icon bx bx-collapse-horizontal"></span> button on the side toolbar.</li>
+  <li><strong>Using the keyboard:</strong> Focus the column header, and then
+    press <kbd>Space</kbd>.</li>
 </ul>
-<h3>Working with the note tree</h3>
-<p>It's also possible to add items on the board using the&nbsp;<a class="reference-link"
-  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</p>
-<ol>
-  <li>Select the desired note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</li>
-  <li>Hold the mouse on the note and drag it to the to the desired column.</li>
-</ol>
-<p>This works for:</p>
+<p>Alternatively, you can use the&nbsp;<span class="tn-icon bx bx-collapse-horizontal"></span>  <strong>Collapse column</strong> command
+  from the column menu.</p>
+<p>Once a column is collapsed, its cards are no longer visible, but the column
+  can still receive cards from other columns:</p>
 <ul>
-  <li>Notes that are not children of the board, case in which a <a href="#root/_help_IakOLONlIfGI">clone</a> will
-    be created.</li>
-  <li>Notes that are children of the board, but not yet assigned on the board.</li>
-  <li>Notes that are children of the board, case in which they will be moved
-    to the new column.</li>
+  <li><strong>Drop cards onto a collapsed column:</strong> The cards will be
+    moved to the column (at the bottom if manual sorting is enabled).</li>
+  <li><strong>Hold cards over a collapsed column for a few seconds:</strong> The
+    column will expand, allowing you to drop the cards at the desired position
+    (if manual sorting is enabled) or peek at the other cards before deciding
+    whether to drop them.</li>
+  <li><strong>Move a card to a collapsed column using the keyboard:</strong> The
+    column will temporarily expand to reveal the moved card. You can then continue
+    moving the selected cards up or down, or to another column.</li>
 </ul>
-<h3>Keyboard interaction</h3>
-<p>The board view has mild support for keyboard-based navigation:</p>
+<p>Collapsed columns can still be reordered, and their menus remain available.</p>
+<h4>Expanding</h4>
+<p>You can restore a collapsed column so that its content is visible again
+  in the following ways:</p>
 <ul>
-  <li>Use <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to navigate between
-    column titles, notes and the “New item” button for each of the columns,
-    in sequential order.</li>
-  <li>To rename a column or a note, press <kbd>F2</kbd> while it is focused.</li>
-  <li>To open a specific note or create a new item, press <kbd>Enter</kbd> while
-    it is focused.</li>
-  <li>To dismiss a rename of a note or a column, press <kbd>Escape</kbd>.</li>
+  <li><strong>Using a mouse:</strong> Click the collapsed column.</li>
+  <li><strong>Using touch:</strong> Tap the collapsed column, and then press
+    the&nbsp;<span class="tn-icon bx bx-expand-horizontal"></span> button on
+    the side toolbar.</li>
+  <li><strong>Using the keyboard:</strong> Move the focus to the collapsed column,
+    and then press <kbd>Space</kbd>.</li>
 </ul>
-<h2>Configuration</h2>
-<h3>Displaying custom attributes</h3>
-<figure class="image image-style-align-center">
-  <img style="aspect-ratio:531/485;" src="Kanban Board_image.png"
-  width="531" height="485">
+<h4>Keeping a column collapsed</h4>
+<p>By default, once a column is expanded, it remains expanded. However, you
+  can configure a column to collapse again after you finish working with
+  it. To activate this behavior, open the column menu and check&nbsp;<span
+  class="tn-icon bx bx-lock-alt"></span>  <strong>Keep the column collapsed</strong>.</p>
+<p>A column configured to remain collapsed will expand like any other collapsed
+  column, but only temporarily, until another column is focused.</p>
+<h4>Collapsing and expanding all columns</h4>
+<p>You can expand or collapse all columns at once by using the&nbsp;<span
+  class="tn-icon bx bx-collapse-alt"></span> (collapse) and&nbsp;<span class="tn-icon bx bx-expand-alt"></span> (expand)
+  buttons. On the desktop, these buttons are located at the bottom of the
+  screen; on the mobile interface, they are in the header.</p>
+<h3>Sorting cards within a column</h3>
+<p>By default, the cards in a column are sorted manually by moving them up
+  and down. You can also keep them sorted automatically, using customizable
+  criteria for each column. To customize the sorting options, open the <strong>column menu</strong> → <strong>Sort</strong>.
+  The following options are available:</p>
+<ul>
+  <li><span class="tn-icon bx bx-collection"></span>&nbsp;<strong>Board's default</strong>:
+    Use the default sorting order (initially manual for new boards).</li>
+  <li><span class="tn-icon bx bx-move-vertical"></span>&nbsp;<strong>Manually</strong>:
+    Sort cards by manually moving them up and down.</li>
+  <li><span class="tn-icon bx bx-text"></span>&nbsp;<strong>Title</strong>:
+    Sort cards by title.</li>
+  <li><span class="tn-icon bx bx-calendar-plus"></span>&nbsp;<strong>Creation date &amp; time</strong>:
+    Sort cards by the creation date and time of the note represented by each
+    card. If a card was created from an existing note, the date and time will
+    match the original creation date and time of that note, not when the card
+    was added to the board.</li>
+  <li><strong>Any custom attribute</strong>: Any card attribute (see&nbsp;<a
+    class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>)
+    can be used as a sorting criterion.</li>
+  <li><span class="tn-icon bx bx-sort-up"></span>&nbsp;<strong>Ascending</strong>:
+    Sort from smallest to largest (A to Z, 0 to 9, or oldest to newest).</li>
+  <li><span class="tn-icon bx bx-sort-down"></span>&nbsp;<strong>Descending</strong>:
+    Sort in reverse order, from largest to smallest.</li>
+</ul>
+<aside class="admonition important">
+  <p>The card order you set is preserved after you switch away from manual
+    sorting. When you switch back to manual sorting, the cards will be in the
+    same order in which you arranged them.</p>
+</aside>
+<h4>How card attributes are sorted</h4>
+<p>When cards are sorted by an attribute, they are ordered according to the
+  following rules:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute type</th>
+        <th>Sort order (ascending)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Text, Multi-line text, URL, Email, Phone</td>
+        <td>A to Z, 0 to 9</td>
+      </tr>
+      <tr>
+        <td>Number</td>
+        <td>lowest → greatest</td>
+      </tr>
+      <tr>
+        <td>Date, Date &amp; time</td>
+        <td>oldest → newest</td>
+      </tr>
+      <tr>
+        <td>Time</td>
+        <td>earliest hour (closest to 0) → latest hour (closest to 24)</td>
+      </tr>
+      <tr>
+        <td>Boolean</td>
+        <td>unchecked → checked</td>
+      </tr>
+      <tr>
+        <td>Select</td>
+        <td>The order in which the options are declared.&nbsp;&nbsp;&nbsp;
+          <br>For example, a select attribute declared with “Low”, “Medium”, and “High”
+          options will be sorted as follows: Low → Medium → High.</td>
+      </tr>
+      <tr>
+        <td>Color</td>
+        <td>Grays → colors. Colors are ordered by their color-wheel <a href="https://en.wikipedia.org/wiki/Hue">hue</a> angle
+          (from 0° to 360°).</td>
+      </tr>
+    </tbody>
+  </table>
 </figure>
-<p>Since v0.100.0, note attributes can be displayed on the board to enhance
-  it with custom information such as adding a <em>Due date</em> for your tasks.</p>
-<p>This feature works exclusively via attribute definitions (<a class="reference-link"
-  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>). The easiest way to
-  add these is:</p>
-<ol>
-  <li>Go to board note.</li>
-  <li>In the ribbon select <em>Owned Attributes</em> → plus button → <em>Add new label/relation definition</em>.</li>
-  <li>Configure the attribute as desired.</li>
-  <li>Check <em>Inheritable</em> to make it applicable to child notes automatically.</li>
-</ol>
-<p>After creating the attribute, click on a note and fill in the promoted
-  attributes which should then reflect inside the board.</p>
-<p>Of note:</p>
+<p>Relation attributes are ordered according to the title of the target note.</p>
+<p>Cards with attributes that have no value set are always sorted at the
+  end of the column, regardless of whether the sort order is ascending or
+  descending. If an attribute holds more than one value, only the first value
+  is used for sorting.</p>
+<h4>Configuring the default sorting options</h4>
+<p>Every new column uses the <strong>Board's default</strong> sorting option,
+  which is initially set to manual sorting on new boards. However, the default
+  can be changed to any other sorting criterion and direction. To configure
+  it, go to <strong>Note menu</strong> → <strong>Board properties</strong> → <strong>Default card order</strong> (under
+  the <strong>General</strong> section).</p>
+<p>Once the default is changed, all columns set to the <strong>Board's default</strong> sorting
+  option will follow the new sorting options.</p>
+<p>Columns using a sorting option other than <strong>Board's default</strong> will
+  not be affected by the new default. To override all columns so that they
+  use the default sorting options, use the <strong>Reset sorting options to default for all columns</strong> command
+  in Board properties.</p>
+<aside class="admonition warning">
+  <p>Using the <code>#sorted</code> attribute on Kanban boards <strong>is no longer recommended</strong>,
+    because it applies to every column and prevents manual sorting. Instead,
+    use <code>#board:sortColumns</code>, which is designed exclusively for board
+    collections and can take one of the following values: <code>title</code>, <code>creationDate</code>,
+    or <code>attr:_&lt;attribute name&gt;_</code>, for example, <code>#board:sortColumns=attr:dueDate</code>.
+    Using the <code>#board:sortColumnsDescending</code> label will switch to
+    descending order.</p>
+</aside>
+<h3>Setting a limit</h3>
+<p>For each column, you can limit the number of cards it contains (also known
+  as a WIP limit). Once the limit is exceeded, the column displays a visual
+  warning to indicate that it is over its limit.</p>
+<p>To enable the limit, go to the column menu →&nbsp;<span class="tn-icon bx bx-tachometer"></span>  <strong>Set limit</strong>,
+  and then:</p>
 <ul>
-  <li>Both promoted and non-promoted attribute definitions are supported. The
-    only difference is that non-promoted attributes don't have an “Alias” for
-    assigning a custom name.</li>
-  <li>Both “Single value” and “Multi value” attributes are supported. In case
-    of multi-value, a badge is displayed for every instance of the attribute.</li>
-  <li>All label types are supported, including dates, booleans and URLs.</li>
-  <li>Relation attributes are also supported as well, showing a link with the
-    target note title and icon.</li>
-  <li>Currently, it's not possible to adjust which promoted attributes are displayed,
-    since all promoted attributes will be displayed (except the <code spellcheck="false">board:groupBy</code> one).
-    There are plans to improve upon this being able to hide promoted attributes
-    individually.</li>
+  <li>Turn on the <strong>Warn for exceeding the column capacity</strong> toggle.</li>
+  <li>Enter the desired limit in the <strong>Maximum number of cards in the column</strong> text
+    box.</li>
+  <li>Press the <strong>Set limit</strong> button.</li>
 </ul>
-<h3>Grouping by another label</h3>
-<p>By default, the label used to group the notes is <code spellcheck="false">#status</code>.
-  It is possible to use a different label if needed by defining a label named
-  <code
-  spellcheck="false">#board:groupBy</code>with the value being the attribute to use (with or
-    without <code spellcheck="false">#</code> attribute prefix).</p>
-<h3>Grouping by relations</h3>
-<figure class="image image-style-align-right">
-  <img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png"
-  width="535" height="245">
+<p>A column that has reached its limit can still accept new cards. Blocking
+  new cards is not supported and most likely never will be, due to the way
+  Trilium works: cards are regular notes, and the attributes used to group
+  them into columns can be set from anywhere in the app, outside the board
+  control. As a result, enforcing the limit would not be consistent.</p>
+<h3>Archiving a column</h3>
+<p>If you want to hide a column from the board without deleting it, you can
+  archive it by opening the <strong>column menu</strong> →&nbsp;<span class="tn-icon bx bx-archive-in"></span>  <strong>Archive column</strong>.
+  Archiving a column does not set the archived flag (see&nbsp;<a class="reference-link"
+  href="#root/_help_MKmLg5x6xkor">Archived Notes</a>) on the notes corresponding
+  to its cards.</p>
+<p>To show archived columns again, go to&nbsp;<span class="tn-icon bx bx-cog"></span>  <strong>Collection options</strong> and
+  toggle&nbsp;<span class="tn-icon bx bx-archive-in"></span>  <strong>Show archived notes</strong>.
+  Archived columns will appear faded. To restore one, open its column menu
+  and select&nbsp;<span class="tn-icon bx bx-archive-out"></span>  <strong>Unarchive column</strong>.</p>
+<h3>Deleting a column</h3>
+<p>You can delete a column by opening the <strong>column menu</strong> →&nbsp;<span
+  class="tn-icon bx bx-trash"></span>  <strong>Delete column</strong>, or by
+  pressing <kbd>Delete</kbd> when a column header is focused, and then confirming.
+  This removes the column from the board and unsets the grouping attribute
+  for each note represented by a card in that column. If the column contains
+  cards, the confirmation also offers to delete their notes instead of keeping
+  them.</p>
+<p>The inbox column is not deleted this way. Its menu entry is&nbsp;<span
+  class="tn-icon bx bx-trash"></span>  <strong>Remove inbox column</strong>,
+  and <kbd>Delete</kbd> on its header hides the inbox without changing any
+  card.</p>
+<h3>The inbox column</h3>
+<p>The inbox column is a special column containing cards that are not assigned
+  to another column. It is particularly useful when you switch an existing
+  collection containing child notes to a board collection. The inbox column
+  turns all child notes into cards that you can quickly distribute among
+  the other columns. It can also act as a backlog where you can keep new
+  cards that might eventually become part of the board.</p>
+<p>The inbox column is hidden by default. To show it, go to&nbsp;<span class="tn-icon bx bx-cog"></span>  <strong>Collection options</strong> and
+  toggle <strong>Show inbox column</strong>. The inbox column is distinguishable
+  by its transparent background. It is always the first column and cannot
+  be moved. It does not support a card limit. Otherwise, it operates like
+  a regular column: its title, icon, and color can be changed; it can be
+  sorted manually or automatically; and it can be collapsed.</p>
+<p>You can also show the inbox column by applying the <code>#board:showInbox</code> label
+  (read more about&nbsp;<a class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>)
+  to the board note.</p>
+<p>Optionally, the inbox column can also list nested notes from the board
+  collection's subtree. To enable this, open the <strong>column menu</strong> and
+  check&nbsp;<span class="tn-icon bx bx-subdirectory-right"></span>  <strong>Include nested notes</strong>.</p>
+<h3>Changing the width of columns</h3>
+<p>There are three predefined widths for board columns: narrow (default),
+  medium, and wide. To change the width, open the <strong>Note menu</strong> → <strong>Board properties</strong> → <strong>Column width</strong> (under
+  the <strong>General</strong> section). This option applies to every column
+  on the board, except in the mobile version.</p>
+<p>The same option is also available through the <code>#board:columnWidth</code> label
+  (read more about&nbsp;<a class="reference-link" href="#root/_help_zEY4DaJG4YT5">Attributes</a>)
+  on the board note, which accepts “<code>narrow</code>”, “<code>medium</code>”,
+  or “<code>wide</code>” as its value.</p>
+<p>You can also redefine these three widths by using custom app CSS (read
+  more about&nbsp;<a class="reference-link" href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>)
+  and assigning the desired pixel values as follows:</p><pre><code class="language-text-x-trilium-auto">#trilium-app {
+  --board-column-width-narrow: 275px;
+  --board-column-width-medium: 325px;
+  --board-column-width-wide: 400px;
+}</code></pre>
+<h2>Working with cards</h2>
+<h3>Creating a new card</h3>
+<p>To create a new card, press the <span class="tn-icon bx bx-plus"></span><strong>New card</strong> button
+  located at the bottom of each column. To create a new card above or below
+  a specific card, right-click or hold that card, and then select&nbsp;<span
+  class="tn-icon bx bx-list-plus bx-flip-vertical"></span>  <strong>Insert new above</strong> or&nbsp;<span
+  class="tn-icon bx bx-list-plus"></span>  <strong>Insert new below</strong> from
+  the context menu. Alternatively, press <kbd>Shift</kbd> + <kbd>Enter</kbd> to
+  create a new card above the focused card, or <kbd>Enter</kbd> to create one
+  below it.</p>
+<p>Next, type the title of the new card, and then press the&nbsp;<span class="tn-icon bx bx-plus-circle"></span> button
+  or <kbd>Enter</kbd> to complete it. Tap or click anywhere outside the text
+  box to dismiss it. You can also select a different icon and card template.
+  To learn more about card templates, see Card templates (learn more about&nbsp;<a
+  class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>).</p>
+<p>After the card is created, you can tap or click it, or press <kbd>Space</kbd>,
+  to edit the note content.</p>
+<p>When using the&nbsp;<span class="tn-icon bx bx-plus"></span>  <strong>New card</strong> button,
+  cards are always created at the end of the column. To create the card at
+  the top of the column, right-click or hold the&nbsp;<span class="tn-icon bx bx-plus-circle"></span> button
+  and select&nbsp;<span class="tn-icon bx bx-vertical-top"></span>  <strong>Create at top</strong>.
+  When using keyboard shortcuts, focus the column header and press <kbd>Enter</kbd> to
+  create a new card at the start of the column, or <kbd>Shift</kbd> + <kbd>Enter</kbd> to
+  create one at the end.</p>
+<h3>Adding an existing note as a card</h3>
+<p>Any note in your knowledge base can be represented as a card on a board.
+  To add an existing note to your board, create a new card but do not enter
+  a title. Instead, press the&nbsp;<span class="tn-icon bx bx-folder-open"></span> button.
+  Alternatively, use the&nbsp;<span class="tn-icon bx bx-folder-open"></span>  <strong>Add an existing note as a card</strong> command
+  from the column menu.</p>
+<p>In the dialog that opens, search for the note by name, and then press
+  the <strong>Add to column</strong> button to insert it. Alternatively, you
+  can drag any note from the tree and drop it at the desired position on
+  the board.</p>
+<p>If the target note is already in the board collection's subtree, it will
+  already be listed in the <strong>inbox column</strong>.</p>
+<aside class="admonition important">
+  <p>Notes added to the board are cloned, not duplicated. This means that changes
+    to their titles, content, and attributes on the board are reflected in
+    their original locations as well. Learn more about cloned notes.</p>
+</aside>
+<h3>Selecting multiple cards</h3>
+<p>When working with a board, you may need to perform operations on multiple
+  cards at once, such as moving them to another column, setting attributes
+  or colors, deleting them, or archiving them.</p>
+<p>You can select multiple cards in the following ways:</p>
+<ul>
+  <li><strong>Using a mouse and keyboard:</strong>
+    <ul>
+      <li>To add a card to the selection, hold <kbd>Ctrl</kbd> and click the card.
+        Repeat this for other cards until all the desired cards are selected. Clicking
+        a selected card again while holding <kbd>Ctrl</kbd> will deselect it.</li>
+      <li>If the cards you want to select form a continuous sequence within a column,
+        hold <kbd>Shift</kbd>, click the first card in the sequence, and then click
+        the last card.</li>
+      <li>Press <kbd>Esc</kbd> to clear the selection.</li>
+    </ul>
+  </li>
+  <li><strong>On mobile:</strong>
+    <ol>
+      <li>To enter selection mode, tap the&nbsp;<span class="tn-icon bx bx-select-multiple"></span> button
+        at the top of the screen. A selection toolbar will appear in the header,
+        displaying “0 cards selected”.</li>
+      <li>Tap the cards you want to select. If you tap a selected card again, it
+        will be deselected. To select all cards in a column, press the&nbsp;<span
+        class="tn-icon bx bx-list-check"></span> button on the selection toolbar.
+        To clear the selection, press the&nbsp;<span class="tn-icon bx bx-x"></span> button.</li>
+      <li>Use the side toolbar to apply actions to the selected cards.</li>
+    </ol>
+  </li>
+  <li><strong>Using only the keyboard:</strong>
+    <ul>
+      <li>To add the currently focused card to the selection, press <kbd>Ctrl</kbd> + <kbd>Space</kbd>.
+        Repeat this for the other cards you want to select. Pressing <kbd>Ctrl</kbd> + <kbd>Space</kbd> again
+        on a selected card will deselect it.</li>
+      <li>To select a continuous sequence of cards within a column, hold <kbd>Shift</kbd> and
+        use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to expand or shrink the
+        selection.</li>
+      <li>To select every card in the column the focus is in, press <kbd>Ctrl</kbd> + <kbd>A</kbd>.
+        The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span>  <strong>Select all cards</strong>.</li>
+      <li>Press <kbd>Esc</kbd> to clear the selection.</li>
+    </ul>
+  </li>
+</ul>
+<h3>Moving cards between columns</h3>
+<p>To move one or more cards to another column, use one of the following
+  methods:</p>
+<h4>Using touch or a mouse</h4>
+<p>Touch and hold the card, or click and hold it with the mouse, and then
+  drag it to the desired column. If the column uses manual sorting, you can
+  also position the card relative to the other cards.</p>
+<aside class="admonition tip">
+  <p>To drag a card outside the board, for example to the note tree, another
+    split, or another window, hold <kbd>Ctrl</kbd> and then start dragging.</p>
+</aside>
+<p>If the target column is collapsed, you can drop the card onto its header
+  to move it into that column (at the end if manually sorted), without expanding
+  it. However, if you want to reveal its cards before dropping, hold the
+  card over the column for a few seconds; the column will then expand.</p>
+<aside
+class="admonition tip">
+  <p><strong>You can quickly drop a card at the start or end of a column.</strong>
+  </p>
+  <p>Drop the card above the column while the “Drop as the first card” hint
+    is displayed to make it the first card in that column. Alternatively, drop
+    it below the column while the “Drop as the last card” hint is displayed
+    to make it the last card.</p>
+</aside>
+<h4>Using the keyboard</h4>
+<p>You can also use keyboard shortcuts to move the selected card or cards
+  between columns:</p>
+<ul>
+  <li><kbd>Ctrl</kbd> + <kbd>Right</kbd>: Move to the next column.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>Left</kbd>: Move to the previous column.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Right</kbd>: Move to the last column.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Left</kbd>: Move to the first column.</li>
+</ul>
+<h4>Using the context menu</h4>
+<p>To quickly move a card to another column, open the card's context menu
+  and select the destination column. The menu lists the first seven columns;
+  on a wider board, the remaining ones are grouped under <strong>More…</strong>.</p>
+<h3>Reordering cards within a column</h3>
+<p>Cards within a column can be freely reordered unless the column uses a
+  sorting option other than manual. To reposition a card, drag it as described
+  in the <strong>Moving cards between columns</strong> section and drop it
+  at the desired position.</p>
+<p>Alternatively, you can use keyboard shortcuts to move the selected card
+  or cards:</p>
+<ul>
+  <li><kbd>Ctrl</kbd> + <kbd>Up</kbd>: Move up.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>Down</kbd>: Move down.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>Home</kbd>: Move to the top of the column.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>End</kbd>: Move to the end of the column.</li>
+</ul>
+<p>If multiple cards are selected, the keyboard shortcuts work only if the
+  selection consists of a continuous sequence of cards.</p>
+<h3>Editing a card</h3>
+<p>Every card on a board is a regular note. To edit the note associated with
+  a card, click or tap the card, or press <kbd>Space</kbd> when the card is
+  selected. The note will open in a Quick Edit dialog, where you can modify
+  it. You can also open the note in a new tab, split, or window by using
+  the&nbsp;<span class="tn-icon bx bx-link-external"></span>  <strong>Open note</strong> submenu
+  in the card's context menu. To open the note in a new tab on the desktop
+  version, you can also click or tap the&nbsp;<span class="tn-icon bx bx-link-external"></span>  <strong>Open note</strong> menu
+  item directly, without opening its submenu.</p>
+<p>To change the title or icon of a card, use one of the following methods:</p>
+<ul>
+  <li><strong>Using a mouse:</strong> Place the mouse pointer over the card,
+    and then click the&nbsp;<span class="tn-icon bx bx-rename"></span> button.</li>
+  <li><strong>On mobile:</strong> Hold the card until the side toolbar appears,
+    and then tap the&nbsp;<span class="tn-icon bx bx-rename"></span> button.</li>
+  <li><strong>Using the keyboard:</strong> Select a card, and then press <kbd>F2</kbd>.</li>
+  <li><strong>Using the context menu:</strong> Open the card's context menu and
+    select&nbsp;<span class="tn-icon bx bx-rename"></span>  <strong>Edit title &amp; icon</strong>.</li>
+</ul>
+<p>You can then enter a new name and select another icon. To move the keyboard
+  focus from the title field to the icon selector, press <kbd>Shift</kbd> + <kbd>Tab</kbd>.
+  Click or tap anywhere outside the card, or press <kbd>Enter</kbd>, to apply
+  the change. Press <kbd>Esc</kbd> to discard the changes.</p>
+<p>Each card can be tinted with a different color. Open the card's context
+  menu and select the desired color. If no color is assigned, the card inherits
+  the column color.</p>
+<aside class="admonition important">
+  <p>The title, icon, and color of a card are the same as those of the corresponding
+    note. If that note exists in multiple locations in the tree, any change
+    to its title, icon, or color on the board will apply in those locations
+    as well, not only on the board.</p>
+</aside>
+<h3>Archiving a card</h3>
+<p>A card can be hidden from the board without deleting it by using the&nbsp;<span
+  class="tn-icon bx bx-archive-in"></span>  <strong>Archive note</strong> command
+  from the card's context menu.</p>
+<p>To show archived cards again, go to&nbsp;<span class="tn-icon bx bx-cog"></span>  <strong>Collection options</strong> and
+  toggle&nbsp;<span class="tn-icon bx bx-archive-in"></span>  <strong>Show archived notes</strong>.
+  Archived cards will appear faded. To restore one, open its context menu
+  and select&nbsp;<span class="tn-icon bx bx-archive-out"></span>  <strong>Unarchive note</strong>.</p>
+<aside
+class="admonition warning">
+  <p>Archiving a card sets the <code>#archived</code> flag on its note. If the
+    note exists in multiple locations in the tree, it will appear archived
+    in those locations as well. Read more about&nbsp;<a class="reference-link"
+    href="#root/_help_MKmLg5x6xkor">Archived Notes</a>.</p>
+</aside>
+<h3>Deleting a card</h3>
+<p>You can remove one or more cards from the board and delete their associated
+  notes by using the&nbsp;<span class="tn-icon bx bx-trash"></span>  <strong>Delete note…</strong> command
+  from the card's context menu, or by pressing <kbd>Shift</kbd> + <kbd>Delete</kbd>.
+  On mobile, hold the card until the side toolbar appears, and then tap the&nbsp;<span
+  class="tn-icon bx bx-trash"></span> button.</p>
+<h4>Removing a card from the board without deleting the note</h4>
+<p>To remove a card from the board's columns while keeping its note, open
+  the card's context menu and select&nbsp;<span class="tn-icon bx bx-task-x"></span>  <strong>Remove from column</strong>,
+  or press <kbd>Delete</kbd>. On mobile, hold the card until the side toolbar
+  appears, and then tap the&nbsp;<span class="tn-icon bx bx-task-x"></span> button.</p>
+<p>This command is not available when the inbox column is enabled. Instead,
+  drag the card to the inbox column to achieve the same result.</p>
+<p>The note remains in the board collection but is not assigned to any column.
+  To see it on the board again, enable the inbox column.</p>
+<aside class="admonition note">
+  <p>Under the hood, removing a card simply unsets the note's grouping attribute.</p>
+</aside>
+<h3>Working with custom card attributes</h3>
+<p>By default, the face of a card displays a minimal set of information:
+  the title, icon, and color. In some cases, this may not provide enough
+  useful information at a glance. You can extend the card to display extra
+  information, called card attributes, such as a due date, priority, completion
+  status, or any other information you need. Card attributes use the same
+  principles as&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>.</p>
+<h4>Creating a new attribute</h4>
+<p>To create a new attribute, follow these steps:</p>
+<ol>
+  <li>Go to <strong>Note menu</strong> → <strong>Board properties</strong>, find
+    the <strong>Card attributes</strong> section, and then press the&nbsp;<span
+    class="tn-icon bx bx-plus"></span>  <strong>Create a new attribute</strong> button.</li>
+  <li>Enter a name for the attribute. This is the internal name used by Trilium,
+    so do not use spaces or special characters.</li>
+  <li>Select a type (text, number, boolean, and so on).</li>
+  <li>Set the display name. This is the name shown on the card.</li>
+  <li>Press <strong>Save &amp; close</strong>.</li>
+</ol>
+<aside class="admonition note">
+  <p>For each newly created attribute, Trilium creates an attribute definition
+    on the board collection note. For an attribute to be displayed on the face
+    of a card, it must be declared as inheritable and promoted on the board
+    note.</p>
+</aside>
+<p>Here is an example of the attributes you can define for a typical Kanban
+  board used to track tasks:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute name</th>
+        <th>Attribute type</th>
+        <th>Attribute display name</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>dueDate</td>
+        <td>Date &amp; Time</td>
+        <td>Due date</td>
+      </tr>
+      <tr>
+        <td>priority</td>
+        <td>Select (options: Low, Medium, High, Urgent)</td>
+        <td>Priority</td>
+      </tr>
+      <tr>
+        <td>done</td>
+        <td>Boolean</td>
+        <td>Done</td>
+      </tr>
+    </tbody>
+  </table>
 </figure>
-<p>A more advanced use-case is grouping by <a href="#root/_help_Cq5X6iKQop6R">Relations</a>.</p>
-<p>During this mode:</p>
+<h4>Modifying the values of custom attributes</h4>
+<p>To set the value of a custom attribute, click or tap the card, and then
+  enter or select the desired value in the dialog header.</p>
+<p>For attributes of the “select” or “boolean” type, you can quickly change
+  the value by using the card's context menu under the <strong>Attributes</strong> section.</p>
+<h4>Reordering, hiding, redefining, and deleting custom attributes</h4>
+<p>Go to <strong>Note menu</strong> → <strong>Board properties</strong>. Under
+  the <strong>Card attributes</strong> section, you can:</p>
+<ul>
+  <li>Hold the <strong>=</strong> handle shown beside an attribute, and then drag
+    the item up or down to reorder the attributes. This determines the order
+    in which the attributes are displayed on the card.</li>
+  <li>Turn off the toggle to hide an attribute from the card's face. The attribute
+    remains available when you edit the card. For the current grouping attribute,
+    the toggle is disabled.</li>
+  <li>Press the&nbsp;<span class="tn-icon bx bxs-edit"></span> button to modify
+    the definition of an attribute.</li>
+  <li>Press the&nbsp;<span class="tn-icon bx bx-trash"></span> button to delete
+    the attribute and all its values from every note in the board collection.</li>
+</ul>
+<h3>Managing card templates</h3>
+<p>When you create a new card, Trilium offers four templates by default: <strong>Text</strong>, <strong>Markdown</strong>, <strong>Canvas</strong>,
+  and <strong>Spreadsheet</strong>. You can customize this list to include
+  other note types or custom templates with predefined placeholder content
+  and prefilled card attributes.</p>
+<p>To customize the card templates, go to <strong>Note menu</strong> → <strong>Board properties</strong> and
+  find <strong>Card templates</strong>. Here you can:</p>
+<ul>
+  <li>Include a note type or note template already created in your knowledge
+    base by pressing the&nbsp;<span class="tn-icon bx bx-list-plus"></span>  <strong>Add existing template</strong> button
+    and then selecting the desired note type or template.</li>
+  <li>Create a new template by pressing the&nbsp;<span class="tn-icon bx bx-plus"></span>  <strong>Create a new template</strong> button.
+    The template editor will open, where you can define the icon, title, default
+    attribute values, and default content. The note template will be created
+    as a child of the board collection.</li>
+  <li>Press the&nbsp;<span class="tn-icon bx bx-x"></span> button to remove a
+    template from the list. The template is removed only from the list, not
+    deleted from your knowledge base. You can add it again using&nbsp;<span
+    class="tn-icon bx bx-list-plus"></span>  <strong>Add existing template</strong>.</li>
+  <li>Press the&nbsp;<span class="tn-icon bx bx-dots-vertical-rounded"></span> button
+    to open a dropdown that lets you edit, open in a new window, duplicate,
+    or delete a template. This button is visible only for custom note templates.</li>
+  <li>Hold the <strong>=</strong> handle shown beside a template, and then drag
+    the item up or down to reorder the templates. This determines the order
+    in which templates are listed in the template dropdown when you create
+    a new card. You can move the most frequently used templates to the top
+    for faster access.</li>
+</ul>
+<h3>Grouping cards</h3>
+<p>On a board, cards are grouped into columns. The column to which a card
+  belongs is determined by the value of the <strong>grouping attribute</strong>,
+  which is a regular attribute of the card's note.</p>
+<p>By default, boards use the <strong>Status</strong> attribute as the grouping
+  attribute. When you move a card to a column called “Waiting on Customer”,
+  the card's Status attribute is set to “Waiting on Customer”.</p>
+<aside
+class="admonition note">
+  <p>Under the hood, the Status attribute is declared on the board collection
+    note with the name <code>status</code>. It is a select-type attribute that
+    is inheritable and promoted. Each select option becomes a column, and each
+    new column created on the board extends the list of options.</p>
+</aside>
+<h4>Creating a new grouping attribute</h4>
+<p>To quickly create a new grouping attribute:</p>
+<ol>
+  <li>Open the&nbsp;<span class="tn-icon bx bx-category-alt"></span>  <strong>Group by</strong> dropdown
+    in the board header and select&nbsp;<span class="tn-icon bx bx-plus"></span>  <strong>Create a new attribute</strong>.</li>
+  <li>Fill in the <strong>Name</strong> field. This is used internally by Trilium,
+    so do not use spaces or special characters.</li>
+  <li>Enter the <strong>Display name</strong>. This is the attribute name shown
+    in the dropdown list.</li>
+  <li>Press <strong>Save &amp; close</strong>.</li>
+</ol>
+<aside class="admonition tip">
+  <p>Because the grouping attribute is a regular card attribute, you can also
+    create it in <strong>Board properties</strong>. Make sure you set the attribute
+    type to “select”.</p>
+</aside>
+<h4>Switching the grouping attribute</h4>
+<p>Switching the grouping attribute lets you view your cards by priority,
+  category, or any other custom grouping attribute. You can switch the grouping
+  attribute at any time by using the&nbsp;<span class="tn-icon bx bx-category-alt"></span>  <strong>Group by</strong> dropdown
+  in the board header. You can also change it using the <code>#board:groupBy=&lt;_attribute name_&gt;</code> label.</p>
+<aside
+class="admonition warning">
+  <p>The order of cards in manually sorted columns corresponds to their positions
+    within the board collection subtree. This means that the card order is
+    shared across all views, regardless of the grouping attribute. Reordering
+    notes in one view will also reorder them in other views that use a different
+    grouping attribute.</p>
+</aside>
+<h4>Deleting a grouping attribute</h4>
+<p>To delete a grouping attribute, go to <strong>Note menu</strong> → <strong>Board properties</strong>,
+  find the attribute under the <strong>Card attributes</strong> section, and
+  press the corresponding&nbsp;<span class="tn-icon bx bx-trash"></span> button.</p>
+<h4>Grouping by relations</h4>
+<p>A more advanced use case is grouping by <a href="#root/_help_Cq5X6iKQop6R">Relations</a>.</p>
+<p>In this mode:</p>
 <ul>
   <li>The columns represent the <em>target notes</em> of a relation.</li>
-  <li>When creating a new column, a note is selected instead of a column name.</li>
-  <li>The column icon will match the target note.</li>
-  <li>Moving notes between columns will change its relation.</li>
-  <li>Renaming an existing column will change the target note of all the notes
-    in that column.</li>
+  <li>When creating a new column, you select a note instead of entering a column
+    name.</li>
+  <li>The column icon matches the target note.</li>
+  <li>Moving notes between columns changes their relations.</li>
+  <li>Renaming an existing column changes the target note for all notes in that
+    column.</li>
 </ul>
-<p>Using relations instead of labels has some benefits:</p>
+<p>Using relations instead of labels has several benefits:</p>
 <ul>
-  <li>The status/grouping of the notes is visible outside the Kanban board,
-    for example on the&nbsp;<a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>.</li>
-  <li>Columns can have icons.</li>
-  <li>Renaming columns is less intensive since it simply involves changing the
-    note title of the target note instead of having to do a bulk rename.</li>
+  <li>The status or grouping of notes is visible outside the Kanban board, for
+    example, on the&nbsp;<a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>.</li>
+  <li>A column takes its title and icon from the target note, so renaming that
+    note anywhere in the tree renames the column.</li>
 </ul>
-<p>To do so:</p>
+<p>To use relations for grouping:</p>
 <ol>
   <li>
-    <p>First, create a Kanban board from scratch and not a template:</p>
+    <p>Create a Kanban board from scratch rather than from a template.</p>
   </li>
   <li>
-    <p>Assign <code spellcheck="false">#viewType=board #hidePromotedAttributes</code> to
-      emulate the default template.</p>
+    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
+      default template.</p>
   </li>
   <li>
-    <p>Set <code spellcheck="false">#board:groupBy</code> to the name of a relation
-      to group by, <strong>including the</strong>  <code spellcheck="false">~</code>  <strong>prefix</strong> (e.g.
-      <code
-      spellcheck="false">~status</code>).</p>
+    <p>Set <code>#board:groupBy</code> to the name of a relation, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (for
+      example, <code>~status</code>).</p>
   </li>
   <li>
-    <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;for
-      easy status change within the note:</p><pre><code class="language-text-x-trilium-auto">#relation:status(inheritable)="promoted,alias=Status,single"</code></pre>
+    <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;to
+      make changing the status within the note easier:</p><pre><code class="language-text-x-trilium-auto">#relation:status(inheritable)="promoted,alias=Status,single"</code></pre>
   </li>
 </ol>
+<h2>Searching and filtering the board</h2>
+<p>You can search for cards using the search box at the top of the board.
+  Enter your keywords, and then press the&nbsp;<span class="tn-icon bx bx-search"></span> button
+  in the search field or press <kbd>Enter</kbd>. Only cards whose titles,
+  content, or attribute values match the query will be displayed. Columns
+  without results will be temporarily collapsed to make room for the matching
+  cards. Press the&nbsp;<span class="tn-icon bx bx-x"></span> button in the
+  search field to clear the search and display all cards again.</p>
+<h3>Advanced filtering</h3>
+<p>If you need to refine the view to display only cards matching specific
+  criteria beyond a regular text search, you can use Trilium's search query
+  syntax. Here are some example queries:</p>
+<p>Display only cards whose <strong>Priority</strong> attribute is set to “Low”:</p><pre><code class="language-text-x-trilium-auto">#priority=Low</code></pre>
+<p>Display only cards whose <strong>Issue Category</strong> is set to “Software”
+  and whose <strong>Site</strong> is set to either “Office” or “Factory”:</p><pre><code class="language-text-x-trilium-auto">#issueCategory="Software" AND (#site="Office" OR #site="Factory")</code></pre>
+<p>Display only cards with a <strong>Due Date</strong> in the next seven days
+  that are not yet marked as <strong>Done</strong>:</p><pre><code class="language-text-x-trilium-auto">#dueDate &gt;= TODAY AND #dueDate &lt;= TODAY+7 AND #!done</code></pre>
+<p>The filter persists even after you close the tab. When you reopen the
+  collection, the filter remains active until you clear the search query
+  by using the&nbsp;<span class="tn-icon bx bx-x"></span> button.</p>
+<h2>Linking to a column or a card</h2>
+<p>You can create a link that opens the board and points out a specific column
+  or card. Open the <strong>column menu</strong> or the card’s context menu,
+  select&nbsp;<span class="tn-icon bx bx-copy"></span>  <strong>Copy reference</strong>,
+  and then paste the link where you need it.</p>
+<p>In a text note, the pasted link displays the title, icon, and color of
+  the column or card it points to. In a Markdown or code note, the plain
+  link address is pasted instead. Opening the link scrolls the board to the
+  column or card and focuses it. If the column belongs to a different grouping
+  attribute, the board switches to that attribute first.</p>

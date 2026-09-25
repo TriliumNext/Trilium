@@ -193,7 +193,8 @@
     "broken_relations_to_be_deleted": "Наступні зв'язки будуть розірвані та видалені ({{ relationCount}})",
     "cancel": "Скасувати",
     "title": "Видалити нотатки",
-    "delete": "Видалити"
+    "delete": "Видалити",
+    "erase_notes_label": "Видалити назавжди"
   },
   "export": {
     "export_note_title": "Експорт нотатки",
@@ -304,7 +305,8 @@
     "no_changes_message": "Поки що жодних змін...",
     "undelete_link": "відновити",
     "confirm_undelete": "Ви хочете відновити цю нотатку та її піднотатки?",
-    "deleted_notes_title": "Видалені нотатки"
+    "deleted_notes_title": "Видалені нотатки",
+    "no_deleted_notes_erasure_hint": "Видалені нотатки зберігаються протягом {{- duration}}, перед тим як будуть видалені назавжди."
   },
   "include_note": {
     "dialog_title": "Включити нотатку",
@@ -361,10 +363,8 @@
     "title": "заголовок",
     "date_created": "дата створення",
     "date_modified": "дата зміни",
-    "sorting_direction": "Напрямок сортування",
     "ascending": "зростання",
     "descending": "спадний",
-    "folders": "Папки",
     "sort_folders_at_top": "сортувати папки зверху",
     "natural_sort": "Нативне сортування",
     "sort_with_respect_to_different_character_sorting": "сортувати з урахуванням різних правил сортування та порівняння символів у різних мовах або регіонах.",
@@ -785,10 +785,7 @@
     "button_title": "Експорт діаграми у форматі SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Створити нову дочірню нотатку та додати її до цієї Карти зв'язків",
-    "reset_pan_zoom_title": "Скинути панорамування та масштабування до початкових координат і збільшення",
-    "zoom_in_title": "Збільшити масштаб",
-    "zoom_out_title": "Зменшити масштаб"
+    "create_child_note_title": "Створити нову дочірню нотатку та додати її до цієї Карти зв'язків"
   },
   "zpetne_odkazy": {
     "relation": "зв'язок",
@@ -1156,7 +1153,6 @@
     "note_tree_font": "Шрифт Дерева нотатки",
     "note_detail_font": "Шрифт деталей нотатки",
     "monospace_font": "Monospace (кодовий) шрифт",
-    "not_all_fonts_available": "Не всі перелічені шрифти можуть бути доступні у вашій системі.",
     "generic-fonts": "Загальні шрифти",
     "sans-serif-system-fonts": "Системні шрифти Sans-serif",
     "serif-system-fonts": "Системні шрифти Serif",
@@ -1817,7 +1813,6 @@
   },
   "board_view": {
     "delete-note": "Видалити нотатку...",
-    "move-to": "Перемістити до",
     "insert-above": "Вставити вище",
     "insert-below": "Вставити нижче",
     "delete-column": "Видалити стовпець",
@@ -1829,8 +1824,7 @@
     "unarchive-note": "Розархівувати нотатку",
     "new-item-placeholder": "Введіть заголовок нотатки...",
     "add-column-placeholder": "Введіть назву стовпця...",
-    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки",
-    "edit-column-title": "Натисніть, щоб редагувати заголовок стовпця"
+    "edit-note-title": "Натисніть, щоб редагувати заголовок нотатки"
   },
   "command_palette": {
     "tree-action-name": "Дерево: {{name}}",

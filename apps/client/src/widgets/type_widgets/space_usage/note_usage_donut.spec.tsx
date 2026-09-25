@@ -120,7 +120,7 @@ describe("NoteUsageDonut", () => {
         // Note, Revisions, Subtree — each says what it covers through its own icon.
         expect(lines).toHaveLength(3);
         for (const line of lines) {
-            const icon = line.querySelector(".contextual-help");
+            const icon = line.querySelector(".contextual-help-icon");
             expect(icon?.classList.contains("bx-info-circle")).toBe(true);
             // The app's tooltip, never the browser's: a native title would style and place itself
             // apart from every other hint in the hole.

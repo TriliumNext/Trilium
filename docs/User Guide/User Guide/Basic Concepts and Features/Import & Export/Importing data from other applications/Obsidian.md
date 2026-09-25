@@ -17,6 +17,8 @@ Then, in Trilium Notes:
 2.  In the _Import from_ section, select _Obsidian_.
 3.  Upload the ZIP obtained in the previous step.
 
+Alternatively, simply drag & drop the .zip archive in the <a class="reference-link" href="../../UI%20Elements/Note%20Tree.md">Note Tree</a> and Trilium will auto-detect it as an Obsidian import provided there is a `.obsidian` directory. If not, follow the previous steps instead.
+
 ## Supported features
 
 The following features are preserved by Trilium during the import process:

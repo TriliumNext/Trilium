@@ -14,7 +14,9 @@ const requestBlacklist = [
     "/images",
     "/stylesheets",
     "/api/recent-notes",
-    "/api/backend-log"
+    "/api/backend-log",
+    // Docker probes this every 30 seconds, and the container runtime captures the echo too.
+    "/api/health-check"
 ];
 
 export default class ServerLogService extends FileBasedLogService {

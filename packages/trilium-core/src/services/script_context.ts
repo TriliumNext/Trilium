@@ -19,7 +19,6 @@ const ALLOWED_MODULES = new Set([
     "dayjs",
     "marked",
     "turndown",
-    "cheerio",
     "axios",
     "xml2js",
     "escape-html",

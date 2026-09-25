@@ -1,0 +1,176 @@
+# Publishes a preview that an unprivileged pull_request run has already built.
+#
+# A pull_request run started from a fork gets no secrets and no repository
+# variables, so it cannot reach Cloudflare. It uploads its build instead, and a
+# workflow_run event brings the result here, where the base repository's secrets
+# are available. Nothing below checks out or executes the pull request's code:
+# the only fork-controlled input is a directory of static files handed straight
+# to wrangler.
+name: Cloudflare Pages preview
+
+on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        description: "Artifact holding the built site, as uploaded by upload-cloudflare-preview."
+        required: true
+        type: string
+      project_name:
+        description: "Cloudflare Pages project name."
+        required: true
+        type: string
+      comment_body:
+        description: "The message to display when the preview is ready."
+        required: true
+        type: string
+      production_url:
+        description: "The URL to mention as the production URL."
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.repository == vars.REPO_MAIN }}
+
+    # Keep a superseded build from overwriting the preview of a newer commit.
+    concurrency:
+      group: cloudflare-preview-${{ inputs.project_name }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: true
+
+    permissions:
+      actions: read # Read the artifacts of the run that triggered this one
+      contents: read
+      deployments: write
+      pull-requests: write # For PR preview comments
+
+    steps:
+      - name: Download the built site
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: preview
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download the preview metadata
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.artifact_name }}-meta
+          path: preview-meta
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A pull request can edit the workflow that writes this file, so the number
+      # it claims is only trusted once the pull request is confirmed to sit on the
+      # commit the run built. Everything downstream uses the validated integer.
+      - name: Resolve the pull request
+        id: pr
+        uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const claimed = Number(fs.readFileSync('preview-meta/pr-number', 'utf8').trim());
+            if (!Number.isSafeInteger(claimed) || claimed <= 0) {
+              core.setFailed('The preview metadata holds no pull request number.');
+              return;
+            }
+
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: claimed
+            });
+
+            const headSha = process.env.HEAD_SHA;
+            if (pullRequest.head.sha !== headSha) {
+              core.setFailed(`Pull request #${claimed} is at ${pullRequest.head.sha}, but the build ran on ${headSha}.`);
+              return;
+            }
+
+            core.setOutput('number', String(claimed));
+
+      # download-artifact confines the artifact to preview/, and nothing here runs
+      # what it holds. Cloudflare Pages does run functions/ and _worker.js though,
+      # server-side, where the project's bindings are reachable. None of the three
+      # sites uses them, so a build that carries them is not a build to publish.
+      # _headers and _redirects stay: apps/standalone/public/_headers sets the
+      # cross-origin isolation the app needs.
+      - name: Reject server-side entry points
+        shell: bash
+        run: |
+          found=$(find preview -maxdepth 1 \( -name functions -o -name '_worker.js' -o -name '_routes.json' \) -print)
+          if [ -n "$found" ]; then
+            echo "::error::The build carries Cloudflare Pages Functions entry points, which this preview does not publish:"
+            echo "$found"
+            exit 1
+          fi
+
+      # Installed globally to avoid workspace issues, and at a fixed version:
+      # this job holds the Cloudflare token, so whatever npm resolves here runs
+      # beside it. Renovate moves the pin (see customManagers in renovate.json).
+      - name: Install Wrangler
+        shell: bash
+        run: npm install -g wrangler@4.135.0
+
+      - name: Deploy preview to Cloudflare Pages
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy preview --project-name=${{ inputs.project_name }} --branch=pr-${{ steps.pr.outputs.number }}
+          wranglerVersion: '' # Use pre-installed version
+
+      - name: Comment PR with Preview URL
+        uses: actions/github-script@v9
+        env:
+          COMMENT_BODY: ${{ inputs.comment_body }}
+          PRODUCTION_URL: ${{ inputs.production_url }}
+          PROJECT_NAME: ${{ inputs.project_name }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = Number(process.env.PR_NUMBER);
+            // Construct preview URL based on Cloudflare Pages pattern
+            const projectName = process.env.PROJECT_NAME;
+            const previewUrl = `https://pr-${prNumber}.${projectName}.pages.dev`;
+
+            // Check if we already commented
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+
+            const customMessage = process.env.COMMENT_BODY;
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes(customMessage)
+            );
+
+            const mainUrl = process.env.PRODUCTION_URL;
+            const commentBody = `${customMessage}!\n\n🔗 Preview URL: ${previewUrl}\n📖 Production URL: ${mainUrl}\n\n✅ All checks passed\n\n_This preview will be updated automatically with new commits._`;
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            }

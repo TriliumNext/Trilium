@@ -157,6 +157,41 @@ button.set( { icon: admonitionIcon } );      // the raw SVG string
 `icon` accepts the full SVG XML string. For a recolorable icon, strip `fill`/`stroke`
 attributes from the SVG so it inherits `currentColor`.
 
+### The `cke` icon pack (the User Guide's toolbar icons)
+
+Every editor icon also ships as a glyph in **Text Editor Icons**, a built-in icon font with prefix
+`cke`. The User Guide uses it to name a toolbar button in running text
+(`<span class="tn-icon cke cke-table-merge-cell"></span>`) instead of embedding a screenshot of
+the button. The pack is **internal**: its CSS goes out wherever Boxicons' does (app, in-app help,
+shares, exports, the docs site), but `generateIconRegistry()` lists it only when `isDev()`. So
+only `edit-docs` offers it in the icon picker; users never see it, and the LLM icon search skips
+it.
+
+- **Class names.** An upstream export `IconTableMergeCell` becomes `cke-table-merge-cell`. A
+  Trilium SVG becomes `cke-trilium-<file name>` (`src/icons/kbd.svg` → `cke-trilium-kbd`;
+  `trilium.svg` → `cke-trilium`), a namespace of its own because some names clash with upstream
+  (`copy`).
+- **Where the SVGs are read from.** All of `@ckeditor/ckeditor5-icons`, plus the folders listed in
+  `TRILIUM_ICON_DIRS` in `apps/icon-pack-builder/src/providers/ckeditor.ts` (`src/icons`, and the
+  `theme/icons` folders of `ai_assistant` and `snippets`). An icon kept anywhere else is not in the
+  pack until its folder is added to that list.
+- **Regenerate after any change.** Adding, renaming, redrawing or removing an SVG, or bumping
+  `ckeditor5`, calls for `pnpm --filter @triliumnext/icon-pack-builder start cke`. It writes
+  `apps/client/src/fonts/text-editor-icons.woff2` and
+  `packages/trilium-core/src/services/icon_pack_text_editor.json`; commit both. Also bump the
+  builder's own `@ckeditor/ckeditor5-icons` pin to the new `ckeditor5` version, because the pack is
+  built from that package.
+- **Renaming or removing an icon breaks the docs.** Grep `docs/User Guide` for the old
+  `cke-<name>` class and update those pages through `pnpm edit-docs:edit-docs`, or they render an
+  empty span.
+- **What survives the conversion to a font.** A glyph has one color. Parts drawn at reduced
+  `opacity` become solid (the table and image-alignment icons lose their two-tone contrast), and an
+  icon built from explicit colors can collapse into a blob (`template-generic` becomes a solid
+  square). Fills (either fill rule), strokes and `transform`s convert faithfully. `<text>` is
+  outlined in Arimo's Latin subset; an icon whose text needs another script is skipped with a
+  warning (`list-style-arabic-indic`). For a new icon, draw filled or stroked
+  paths in `currentColor`, and prefer paths over `<text>`.
+
 ## Dropdowns
 
 Use `createDropdown` + the appropriate `add…ToDropdown` helper; don't compose from scratch

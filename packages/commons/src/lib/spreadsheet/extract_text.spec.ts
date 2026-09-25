@@ -505,3 +505,30 @@ describe("extractSpreadsheetText", () => {
         expect(text).toContain("This text is available only in the spreadsheet");
     });
 });
+
+describe("extractSpreadsheetText rich-text cells", () => {
+    it("indexes cells whose text lives only in the rich-text document, lowercased keys included", () => {
+        const sheet = (dataStreamKey: string) => JSON.stringify({
+            version: 1,
+            workbook: {
+                sheetOrder: ["s1"],
+                sheets: {
+                    s1: {
+                        id: "s1",
+                        name: "Sheet1",
+                        hidden: 0,
+                        cellData: {
+                            "0": { "0": { p: { body: { [dataStreamKey]: "Notebook\r\n" } } } },
+                            "1": { "0": { v: "plain" } }
+                        },
+                        rowData: {},
+                        columnData: {}
+                    }
+                }
+            }
+        });
+
+        expect(extractSpreadsheetText(sheet("dataStream"))).toBe("Notebook plain");
+        expect(extractSpreadsheetText(sheet("datastream"))).toBe("Notebook plain");
+    });
+});

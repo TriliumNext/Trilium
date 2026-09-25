@@ -1,15 +1,12 @@
-import { Request, Response } from "express";
+import { Request, Response } from "../../http_interface";
 import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
-import type { File } from "../../services/import/common.js";
 import noteService from "../../services/notes.js";
 import { convertOfficeToHtml } from "../../services/office_preview.js";
 import protected_session from "../../services/protected_session";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
-
-type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
 const downloadFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, true);
 const openFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, false);
@@ -47,7 +44,7 @@ function openPartialAttachment(req: Request<{ attachmentId: string }>, res: Resp
  * PDF viewer saves annotations through. `replace=1` writes straight over the content — for an editor
  * saving its own work, where a revision per save would bury the note in them.
  */
-function updateFile(req: FileRequest<{ noteId: string }>) {
+function updateFile(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const file = req.file;
@@ -77,7 +74,7 @@ function updateFile(req: FileRequest<{ noteId: string }>) {
 }
 
 /** The attachment counterpart of {@link updateFile}: replacing an attachment's file with another. */
-function updateAttachment(req: FileRequest<{ attachmentId: string }>) {
+function updateAttachment(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
     const file = req.file;
     if (!file) {
@@ -101,17 +98,33 @@ function updateAttachment(req: FileRequest<{ attachmentId: string }>) {
  * Converts an office document note/attachment to an embeddable HTML fragment for the
  * inline preview shown by the client. The returned HTML is unsanitized — the client
  * sanitizes it before injecting it into the DOM.
+ *
+ * The fragment is sent as the response body rather than wrapped in a JSON object: a
+ * spreadsheet preview runs to megabytes, and an envelope would escape every attribute
+ * quote and make the client parse the whole document before it can use it.
+ *
+ * `?trim=1` answers with the corner of a workbook instead of the whole of it, for a caller
+ * showing a card rather than the document.
  */
 async function getNoteOfficePreview(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return { html: await convertOfficeToHtml(note.getContent(), note.mime) };
+    return await convertOfficeToHtml(note.getContent(), note.mime, { trim: isTrimmed(req) });
 }
 
 async function getAttachmentOfficePreview(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
 
-    return { html: await convertOfficeToHtml(attachment.getContent(), attachment.mime) };
+    return await convertOfficeToHtml(attachment.getContent(), attachment.mime, { trim: isTrimmed(req) });
+}
+
+/**
+ * Whether the caller asked for the corner of the document rather than all of it, which a note
+ * list does for every card it shows. The answer varies with the query, and so does the URL, so a
+ * trimmed preview and a whole one never share a cache entry.
+ */
+function isTrimmed(req: Request): boolean {
+    return req.query.trim === "1";
 }
 
 function openPartialInt(noteOrAttachment: BNote | BAttachment, req: Request, res: Response) {

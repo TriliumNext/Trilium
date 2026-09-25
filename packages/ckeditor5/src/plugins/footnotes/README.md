@@ -92,7 +92,7 @@ this package.
 | `utils.ts` | Model/view tree query helpers |
 | `constants.ts` | Element, class, attribute and command name tables |
 
-Tests sit beside each source as `*.spec.ts` and run in the aggregate's WebdriverIO browser-mode
+Tests sit beside each source as `*.spec.ts` and run in the aggregate's Playwright browser-mode
 suite against a real `ClassicEditor`. Fixtures come from `test/footnotes-kit.ts` and build the
 document with a model writer rather than `_setModelData()` — the parser coerces numeric-looking
 attribute values (`data-footnote-index="1"`) to numbers where the plugin writes and compares

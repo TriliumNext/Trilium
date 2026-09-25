@@ -1,4 +1,4 @@
-import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import { LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmMessagePart, type LlmModelInfo, type LlmReasoningEffort, type LlmStreamStatus, type LlmUsage } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -95,6 +95,8 @@ export interface UseLlmChatReturn {
     isStreaming: boolean;
     streamingBlocks: ContentBlock[];
     streamingThinking: string;
+    /** What the streaming turn waits on before its reply starts, if the server said. */
+    streamingStatus: LlmStreamStatus | null;
     pendingCitations: LlmCitation[];
     /** Images or files the user has attached but not yet sent. */
     pendingAttachments: AttachmentBlock[];
@@ -109,6 +111,8 @@ export interface UseLlmChatReturn {
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
+    /** The effort chosen for a model with levels; undefined means the model's default. */
+    reasoningEffort: LlmReasoningEffort | undefined;
     contextNoteId: string | undefined;
     /** The chat note's ID — used as the upload target for attachments. */
     chatNoteId: string | undefined;
@@ -145,6 +149,7 @@ export interface UseLlmChatReturn {
     setEnableWebSearch: (value: boolean) => void;
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
+    setReasoningEffort: (value: LlmReasoningEffort | undefined) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
     /** Append a freshly uploaded image or file to the pending-attachments list. */
@@ -197,6 +202,7 @@ export function useLlmChat(
     // block smoothed via useSmoothStreaming for a steady reveal cadence.
     const [targetBlocks, setTargetBlocks] = useState<ContentBlock[]>([]);
     const [streamingThinking, setStreamingThinking] = useState("");
+    const [streamingStatus, setStreamingStatus] = useState<LlmStreamStatus | null>(null);
     const { displayedText: smoothedTailText, append: smoothAppend, drain: smoothDrain, reset: smoothReset } = useSmoothStreaming();
     const [pendingCitations, setPendingCitations] = useState<LlmCitation[]>([]);
     const [pendingAttachments, setPendingAttachments] = useState<AttachmentBlock[]>([]);
@@ -208,6 +214,7 @@ export function useLlmChat(
     const [enableWebSearch, setEnableWebSearch] = useState(true);
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
+    const [reasoningEffort, setReasoningEffort] = useState<LlmReasoningEffort | undefined>(undefined);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
@@ -249,6 +256,8 @@ export function useLlmChat(
     enableNoteToolsRef.current = enableNoteTools;
     const enableExtendedThinkingRef = useRef(enableExtendedThinking);
     enableExtendedThinkingRef.current = enableExtendedThinking;
+    const reasoningEffortRef = useRef(reasoningEffort);
+    reasoningEffortRef.current = reasoningEffort;
     const chatNoteIdRef = useRef(chatNoteId);
     chatNoteIdRef.current = chatNoteId;
     const setChatNoteId = useCallback((noteId: string | undefined) => {
@@ -506,6 +515,7 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        setReasoningEffort(LLM_REASONING_EFFORTS.find(level => level === content.reasoningEffort));
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -526,6 +536,9 @@ export function useLlmChat(
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
         }
+        if (reasoningEffortRef.current) {
+            content.reasoningEffort = reasoningEffortRef.current;
+        }
         return content;
     }, [supportsExtendedThinking]);
 
@@ -545,6 +558,7 @@ export function useLlmChat(
         setIsStreaming(true);
         setTargetBlocks([]);
         setStreamingThinking("");
+        setStreamingStatus(null);
         smoothReset();
 
         let thinkingContent = "";
@@ -589,6 +603,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
+        }
+        if (reasoningEffort && matchedModel?.reasoningEfforts?.length) {
+            streamOptions.reasoningEffort = reasoningEffort;
         }
 
         const abortController = new AbortController();
@@ -647,6 +664,7 @@ export function useLlmChat(
             setTargetBlocks([]);
             setStreamingThinking("");
             setPendingCitations([]);
+            setStreamingStatus(null);
             setIsStreaming(false);
             abortControllerRef.current = null;
         }
@@ -655,6 +673,7 @@ export function useLlmChat(
             apiMessages,
             streamOptions,
             {
+                onStatus: setStreamingStatus,
                 onChunk: (text) => {
                     // A new text block begins whenever the previous tail is
                     // anything other than text (or there's nothing yet). In
@@ -757,8 +776,8 @@ export function useLlmChat(
                 },
                 onUsage: (u) => {
                     usage = u;
-                    setLastPromptTokens(u.promptTokens);
-                    setLastCompletionTokens(u.completionTokens);
+                    setLastPromptTokens(u.promptTokens ?? 0);
+                    setLastCompletionTokens(u.completionTokens ?? 0);
                 },
                 onError: (errorMsg, errorDetails) => {
                     console.error("Chat error:", errorMsg, errorDetails);
@@ -775,6 +794,7 @@ export function useLlmChat(
                     smoothReset();
                     setTargetBlocks([]);
                     setStreamingThinking("");
+                    setStreamingStatus(null);
                     setIsStreaming(false);
                 },
                 onDone: () => {
@@ -803,10 +823,11 @@ export function useLlmChat(
             smoothReset();
             setTargetBlocks([]);
             setStreamingThinking("");
+            setStreamingStatus(null);
             setIsStreaming(false);
             abortControllerRef.current = null;
         });
-    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
+    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, reasoningEffort, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
@@ -908,6 +929,7 @@ export function useLlmChat(
         isStreaming,
         streamingBlocks,
         streamingThinking,
+        streamingStatus,
         pendingCitations,
         pendingAttachments,
         availableModels,
@@ -918,6 +940,7 @@ export function useLlmChat(
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
+        reasoningEffort,
         contextNoteId,
         chatNoteId,
         lastPromptTokens,
@@ -942,6 +965,7 @@ export function useLlmChat(
         setEnableWebSearch,
         setEnableNoteTools,
         setEnableExtendedThinking,
+        setReasoningEffort,
         setContextNoteId,
         setChatNoteId,
         addPendingAttachment,

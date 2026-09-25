@@ -29,6 +29,9 @@ type WithNoteId<T> = T & {
 };
 export type Widget = WithNoteId<(LegacyWidget | WidgetDefinitionWithType)>;
 
+/** What a `#widget` note's script is allowed to return: one widget, or several. */
+export type WidgetBundleResult = Widget | Widget[] | null | undefined;
+
 async function getAndExecuteBundle(noteId: string, originEntity: FNote | null = null, script: string | null = null, params: ScriptParams | null = null, opts?: ExecuteBundleOpts) {
     const bundle = await server.post<Bundle>(`script/bundle/${noteId}`, {
         script,
@@ -150,11 +153,10 @@ async function getWidgetBundlesByParent() {
         const scriptBundles = await server.get<Bundle[]>("script/widgets");
 
         for (const bundle of scriptBundles) {
-            let widget;
-
             try {
-                widget = await executeBundle(bundle);
-                if (widget) {
+                const result = await executeBundle(bundle);
+
+                for (const widget of asWidgetList(result)) {
                     widget._noteId = bundle.noteId;
                     widgetsByParent.add(widget);
                 }
@@ -184,6 +186,18 @@ export default {
     executeStartupBundles,
     getWidgetBundlesByParent
 };
+
+/**
+ * Normalizes what a widget bundle returned into a list, so a single `#widget` note can contribute
+ * several widgets. Falsy entries are dropped: a script that renders nothing returns `undefined`.
+ */
+function asWidgetList(result: WidgetBundleResult): Widget[] {
+    if (!result) {
+        return [];
+    }
+
+    return (Array.isArray(result) ? result : [result]).filter((widget) => !!widget);
+}
 
 /**
  * Whether the failure was a disabled backend script (anywhere in its cause chain). Those already

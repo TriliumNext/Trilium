@@ -11,6 +11,7 @@
  */
 
 import anthropicIcon from "./icons/anthropic.svg?url";
+import antigravityIcon from "./icons/antigravity.svg?url";
 import claudeAgentIcon from "./icons/claude-ai.svg?url";
 import deepseekIcon from "./icons/deepseek.svg?url";
 import geminiIcon from "./icons/gemini.svg?url";
@@ -22,6 +23,7 @@ import openAiCompatibleIcon from "./icons/robot.svg?url";
 
 export const PROVIDER_ICONS: Record<string, string> = {
     anthropic: anthropicIcon,
+    "antigravity-agent": antigravityIcon,
     "claude-agent": claudeAgentIcon,
     "copilot-agent": githubCopilotIcon,
     deepseek: deepseekIcon,

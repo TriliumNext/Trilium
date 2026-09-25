@@ -193,7 +193,7 @@
     "download_helper_desktop_macos": {
         "title_x64": "macOS do Intel",
         "title_arm64": "macOS do Apple Silicon",
-        "description_x64": "Do Macs bunaithe ar Intel a bhfuil macOS Monterey nó níos déanaí á rith acu.",
+        "description_x64": "Do ríomhairí Mac bunaithe ar Intel a bhfuil macOS Ventura nó níos déanaí á rith acu.",
         "description_arm64": "Do ríomhairí Mac Apple Silicon ar nós iad siúd a bhfuil sceallóga M1 agus M2 acu.",
         "quick_start": "Chun a shuiteáil trí Homebrew:",
         "download_dmg": "Íoslódáil an Suiteálaí (.dmg)",

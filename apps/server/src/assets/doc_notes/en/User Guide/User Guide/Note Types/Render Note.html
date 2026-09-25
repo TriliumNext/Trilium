@@ -1,6 +1,6 @@
 <figure class="image">
-  <img style="aspect-ratio:601/216;" src="Render Note_image.png"
-  width="601" height="216">
+  <img style="aspect-ratio:601/216;" src="Render Note_image.png" width="601"
+  height="216">
 </figure>
 <p>Render Note is a special case of <a href="#root/_help_yIhgI5H7A2Sm">front-end scripting</a> which
   allows rendering custom content inside a note. This makes it possible to
@@ -12,12 +12,12 @@
     with the:
     <ol>
       <li>HTML language for the legacy/vanilla method, with what needs to be displayed
-        (for example <code spellcheck="false">&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
+        (for example <code>&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
       <li>JSX for the Preact-based approach (see below).</li>
     </ol>
   </li>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
-  <li>Assign the <code spellcheck="false">renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
+  <li>Assign the <code>renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
     point at the previously created code note.</li>
 </ol>
 <h2>Legacy scripting using jQuery</h2>
@@ -33,7 +33,7 @@ The current date &amp; time is &lt;span class="date"&gt;&lt;/span&gt;</code></pr
   language. Make sure the newly created note is a direct child of the HTML
   note created previously; with the following content:</p><pre><code class="language-text-javascript">const $dateEl = api.$container.find(".date");
 $dateEl.text(new Date());</code></pre>
-<p>Now create a render note at any place and set its <code spellcheck="false">~renderNote</code> relation
+<p>Now create a render note at any place and set its <code>~renderNote</code> relation
   to point to the HTML note. When the render note is accessed it will display:</p>
 <blockquote>
   <p><strong>Current date &amp; time</strong>
@@ -61,8 +61,8 @@ $dateEl.text(new Date());</code></pre>
 }</code></pre>
   </li>
   <li>
-    <p>In the parent render note, define a <code spellcheck="false">~renderNote</code> relation
-      pointing to the newly created child.</p>
+    <p>In the parent render note, define a <code>~renderNote</code> relation pointing
+      to the newly created child.</p>
   </li>
   <li>
     <p>Refresh the render note and it should display a “Hello world” message.</p>

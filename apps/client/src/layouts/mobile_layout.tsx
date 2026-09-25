@@ -1,6 +1,7 @@
 import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
+import ApiLog from "../widgets/api_log.jsx";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
@@ -83,6 +84,7 @@ export default class MobileLayout {
                                                 .child(<SearchResult />)
                                                 .child(<ScrollPadding />)
                                         )
+                                        .child(<ApiLog />)
                                         .child(<MobileEditorToolbar />)
                                         .child(new FindWidget())
                                 )

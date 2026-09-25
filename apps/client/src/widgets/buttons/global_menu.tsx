@@ -79,7 +79,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
                     text={t("global_menu.download-update", {latestVersion})} />
             </>}
 
-            {!isElectron() && <BrowserOnlyOptions />}
+            {!isElectron() && !isStandalone && <BrowserOnlyOptions />}
             {glob.isDev && <DevelopmentOptions dropStart={!isVerticalLayout} />}
         </Dropdown>
     );

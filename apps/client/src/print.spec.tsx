@@ -225,6 +225,7 @@ describe("main", () => {
     it("injects @page margins (browser) plus the font link and renders the app", async () => {
         buildNote({ id: "main-note", title: "Main Note", type: "text" });
         window.location.hash = "main-note";
+        document.title = "Trilium Notes";
 
         await main();
 
@@ -232,6 +233,7 @@ describe("main", () => {
         expect(document.head.querySelector('link[href="api/fonts"]')).toBeTruthy();
         const titles = [...document.body.querySelectorAll("h1")].map((el) => el.textContent);
         expect(titles).toContain("Main Note");
+        expect(document.title).toBe("Main Note");
     });
 
     it("skips @page injection under Electron", async () => {

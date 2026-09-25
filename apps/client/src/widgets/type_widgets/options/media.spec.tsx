@@ -225,7 +225,7 @@ describe("the images card", () => {
         expect(describes("space_usage.compress_quality")).toBe("images.jpeg_quality_description");
         // A row with nothing extra to say keeps its help mark alone rather than inventing prose.
         expect(describes("space_usage.compress_png_handling")).toBeUndefined();
-        expect(row("space_usage.compress_png_handling")?.querySelector(".contextual-help")).not.toBeNull();
+        expect(row("space_usage.compress_png_handling")?.querySelector(".contextual-help-icon")).not.toBeNull();
     });
 
     it("writes each choice back to the option it stands for", async () => {

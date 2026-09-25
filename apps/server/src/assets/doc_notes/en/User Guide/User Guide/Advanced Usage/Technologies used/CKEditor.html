@@ -7,11 +7,13 @@
   the editor supports quite a large number of features. Do note that not
   all the features are enabled in Trilium.</p>
 <h2>Premium features</h2>
-<p>Some features are marked as premium in the CKEditor feature set. This
-  means that they cannot be used without a license.</p>
-<p>Trilium cannot benefit from any of these premium features as they require
-  a commercial license, however we are in discussions with the CKEditor team
-  to allow us to use a subset of these premium features such as <a href="https://ckeditor.com/docs/ckeditor5/latest/features/slash-commands.html">Slash commands</a>.</p>
+<p>CKEditor ships some plugins as premium (slash commands, templates, AI
+  integration). Initially Trilium (since v0.96.0) shipped some of them like
+  slash commands as part of a license grant from CKEditor to the Trilium
+  Notes developers.</p>
+<p>In v0.105.0 we've decided to replace those premium plugins with our own
+  open-source implementations. This also means that we can better tailor
+  those plugins to the Trilium app.</p>
 <h2>Plugins</h2>
 <p>The CKEditor ecosystem is quite extensible, in the sense that custom plugins
   can be written to extend the functionality of the editor beyond its original
@@ -22,7 +24,7 @@
     by us to fit our needs.</li>
   <li>We also make use of modified upstream plugins such as <a href="https://github.com/ckeditor/ckeditor5-mermaid">ckeditor/ckeditor5-mermaid</a> to
     allow inline Mermaid code.</li>
-  <li><a href="https://github.com/mlewand/ckeditor5-keyboard-marker">mlewand/ckeditor5-keyboard-marker: Plugin adds support for the keyboard input element (<code spellcheck="false">&lt;kbd&gt;</code>) to CKEditor 5.</a>
+  <li><a href="https://github.com/mlewand/ckeditor5-keyboard-marker">mlewand/ckeditor5-keyboard-marker: Plugin adds support for the keyboard input element (<code>&lt;kbd&gt;</code>) to CKEditor 5.</a>
   </li>
   <li>A modified version of <a href="https://github.com/ThomasAitken/ckeditor5-footnotes">ThomasAitken/ckeditor5-footnotes: Footnotes plugin for CKEditor5</a> to
     allow footnotes.</li>
@@ -39,7 +41,7 @@
   </li>
   <li><a href="#root/_help_QEAPj01N5f7w">Reference links</a>
   </li>
-  <li><a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a>, we ended up creating our
-    own plugin but <a href="https://github.com/aarkue/ckeditor5-admonition">aarkue/ckeditor5-admonition</a> was
+  <li><a href="#root/_help_NwBbFdNZ9h7O">Admonitions</a>, we ended up creating
+    our own plugin but <a href="https://github.com/aarkue/ckeditor5-admonition">aarkue/ckeditor5-admonition</a> was
     a good inspiration (including the toolbar icon).</li>
 </ul>

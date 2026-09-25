@@ -84,6 +84,7 @@
     .tn-card-option-description {
         font-size: .85em;
         opacity: .7;
+        white-space: pre-line;
     }
 
     /* A fact rather than a control: unlike the buttons a row is built around, a value gives way
@@ -177,10 +178,8 @@ body[dir=rtl] .tn-card-option::after {
 }
 
 /* On a narrow card a text box, a combo or any other wide control has no room left beside its label,
-   so it takes the line below it instead. Small controls stay beside the label: they leave it room,
-   and moving a switch down would cost a whole row and break the line the labels are read down. A
-   bare figure is small enough to stay; one carrying a unit beside it is not. A chevron is no
-   control at all but the mark of a row that leads somewhere, and keeps its place at every width. */
+   so it takes the line below it instead. `OptionCardSection` reads which control a row holds and
+   marks the wide ones; `SMALL_CONTROLS` there is the list that stays beside the label. */
 @container (max-width: 500px) {
     /* On a narrow card the name reads as a field label, set apart by weight rather than by size.
        Every row gets it, or a card would mix two kinds of label between its rows. */
@@ -194,10 +193,7 @@ body[dir=rtl] .tn-card-option::after {
         --card-padding-block: 12px;
     }
 
-    .tn-card-option:not(:has(> :is(
-        .switch-widget, .icon-action, .tn-card-option-actions, select, .dropdown,
-        .tn-card-section-chevron, input[type="number"]
-    ))) {
+    .tn-card-option-wide {
         flex-direction: column;
         align-items: stretch;
         /* Down the page the label already leads its control, so they need less room between. */

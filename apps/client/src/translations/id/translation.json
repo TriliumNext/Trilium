@@ -431,10 +431,8 @@
     "title": "judul",
     "date_created": "tanggal dibuat",
     "date_modified": "tanggal diubah",
-    "sorting_direction": "Arah pengurutan",
     "ascending": "menaik",
     "descending": "menurun",
-    "folders": "Folder",
     "sort_folders_at_top": "urutkan folder di atas",
     "natural_sort": "Natural Sort",
     "sort_with_respect_to_different_character_sorting": "urutkan dengan mempertimbangkan perbedaan aturan pengurutan karakter dan kolasi di berbagai bahasa atau wilayah.",
@@ -974,7 +972,8 @@
     "new-version-available": "Pembaruan Baru Tersedia",
     "download-update": "Dapatkan Versi {{latestVersion}}",
     "search_notes": "Cari catatan",
-    "show_deleted_notes": "Tampilkan Catatan yang Dihapus"
+    "show_deleted_notes": "Tampilkan Catatan yang Dihapus",
+    "show_space_usage": "Tampilkan Penggunaan Ruang"
   },
   "zen_mode": {
     "button_exit": "Keluar dari Mode Zen"
@@ -1074,14 +1073,7 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
-    "reset_pan_zoom_title": "Setel ulang pan & zoom ke koordinat dan pembesaran awal",
-    "zoom_in_title": "Perbesar",
-    "zoom_out_title": "Perkecil"
-  },
-  "image_buttons": {
-    "zoom_in": "Perbesar",
-    "zoom_out": "Perkecil",
-    "reset_zoom": "Setel ulang zoom"
+    "create_child_note_text": "Tambahkan catatan"
   },
   "zpetne_odkazy": {
     "backlink_other": "{{count}} Backlink",
@@ -1543,7 +1535,7 @@
     "analyze_space_usage": "Analisis penggunaan ruang",
     "analyze_space_usage_description": "Identifikasi catatan mana yang memakan paling banyak ruang, dan dapatkan gambaran yang lebih jelas mengenai ukuran catatan Anda.",
     "analyze_space_usage_button": "Analisis",
-    "cleanup": "Lakukan pembersihan",
+    "cleanup": "Bersihkan basis data",
     "cleanup_description": "Hapus catatan dan lampiran yang dihapus, pangkas snapshot revisi, dan kompres gambar agar database tetap ramping.",
     "start_over_description": "Beralih ke database kosong baru, mulai lagi sinkronisasi dengan server baru, atau pulihkan cadangan. Anda akan diminta untuk mencadangkan data sebelum membuang data yang ada.",
     "start_over": "Mulai ulang",
@@ -1583,7 +1575,6 @@
     "monospace_font": "Teks monospace",
     "monospace_font_description": "Digunakan untuk catatan kode dan blok kode",
     "size_relative_to_general": "Ukuran bersifat relatif terhadap ukuran font umum",
-    "not_all_fonts_available": "Tidak semua font yang tercantum mungkin tersedia di sistem Anda",
     "apply_changes": "Muat ulang untuk menerapkan perubahan",
     "generic-fonts": "Font generik",
     "sans-serif-system-fonts": "Font sistem sans-serif",
@@ -1849,7 +1840,8 @@
     "formatting-locale-auto": "Berdasarkan bahasa aplikasi",
     "default-content-language": "Bahasa konten default",
     "default-content-language-description": "Bahasa yang digunakan untuk menulis catatan, kecuali jika bahasa ditetapkan pada catatan itu sendiri di bagian Properti Dasar. Bahasa ini memengaruhi fitur seperti perataan kanan ke kiri dan tanda kutip yang dihasilkan saat mengetik.",
-    "default-content-language-auto": "Berdasarkan bahasa aplikasi"
+    "default-content-language-auto": "Berdasarkan bahasa aplikasi",
+    "dates-title": "Tanggal & kalender"
   },
   "backup": {
     "title": "Cadangan",
@@ -2458,7 +2450,8 @@
     "cut": "Catatan telah dipotong ke clipboard.",
     "copied": "Catatan telah disalin ke clipboard.",
     "copy_failed": "Tidak dapat menyalin ke clipboard karena masalah izin.",
-    "copy_success": "Disalin ke clipboard."
+    "copy_success": "Disalin ke clipboard.",
+    "copied_without_links": "Catatan telah disalin ke papan klip, tetapi tautan catatan tidak dapat ditempatkan pada papan klip sistem."
   },
   "entrypoints": {
     "note-revision-created": "Revisi catatan telah dibuat.",
@@ -2606,15 +2599,27 @@
     "move-marker-instruction": "Klik peta untuk memindahkan penanda ke lokasi tersebut atau tekan Escape untuk membatalkan.",
     "move-marker-toast-title": "Pindahkan penanda",
     "webgl-unavailable": "Peta ini tidak dapat digambar karena WebGL tidak tersedia. Periksa bahwa akselerasi perangkat keras telah diaktifkan dan driver grafis Anda sudah diperbarui.",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
     "enter-3d": "Miringkan ke tampilan 3D\nTahan Ctrl dan seret untuk memiringkan peta secara bebas",
     "exit-3d": "Ratakkan kembali peta",
     "close-details": "Tutup",
     "marker-color": "Warna penanda",
     "copy-coordinates": "Salin koordinat",
     "expand-details": "Perluas catatan untuk mengisi peta",
-    "restore-details": "Kembalikan catatan di samping peta"
+    "restore-details": "Kembalikan catatan di samping peta",
+    "search": "Cari",
+    "search-placeholder": "Cari tempat",
+    "search-online": "Cari online untuk \"{{- query}}\"",
+    "searching-online": "Mencari online…",
+    "no-places-found": "Tidak ada tempat yang ditemukan",
+    "search-failed": "Tidak dapat mencari tempat",
+    "results-nearby": "Terdekat",
+    "results-far": "Jauh",
+    "add-place-as-marker": "Tambahkan sebagai penanda",
+    "previous-result": "Hasil sebelumnya",
+    "next-result": "Hasil berikutnya",
+    "result-position": "Hasil {{index}} dari {{total}}, klik untuk kembali ke sana",
+    "results-on-map": "Pada peta ini",
+    "go-to-coordinates": "Buka {{- coordinates}}"
   },
   "geo-map-context": {
     "open-location": "Buka lokasi",
@@ -2763,7 +2768,6 @@
     "remove-from-board": "Hapus dari board",
     "archive-note": "Arsipkan catatan",
     "unarchive-note": "Batalkan arsip catatan",
-    "move-to": "Pindahkan ke",
     "insert-above": "Sisipkan di atas",
     "insert-below": "Sisipkan di bawah",
     "delete-column": "Hapus kolom",
@@ -2773,7 +2777,6 @@
     "add-column": "Tambahkan Kolom",
     "add-column-placeholder": "Masukkan nama kolom...",
     "edit-note-title": "Klik untuk edit judul catatan",
-    "edit-column-title": "Klik untuk edit judul kolom",
     "column-already-exists": "Kolom ini sudah ada di board.",
     "column-definition-save-error": "Kolom telah disimpan pada papan, tetapi tidak dapat disimpan ke atribut status.",
     "status-alias": "Status"
@@ -2895,7 +2898,8 @@
   "server": {
     "unknown_http_error_title": "Kesalahan komunikasi dengan server",
     "unknown_http_error_content": "Kode status: {{statusCode}}\nURL: {{method}} {{url}}\nPesan: {{message}}",
-    "traefik_blocks_requests": "Jika Anda menggunakan reverse proxy Traefik, Traefik telah memperkenalkan perubahan yang bersifat breaking dan memengaruhi komunikasi dengan server."
+    "reverse_proxy_blocked_title": "Permintaan diblokir oleh proksi terbalik",
+    "reverse_proxy_blocked_message": "Beberapa permintaan ditolak (HTTP 400) sebelum mencapai Trilium, kemungkinan besar oleh proksi terbalik yang memblokir karakter terenkripsi persentase dalam URL.\n\nVersi Traefik 3.6.4 hingga 3.6.6 melakukan ini secara default: tingkatkan ke Traefik 3.6.7 atau lebih baru, atau izinkan karakter terenkripsi dalam konfigurasinya."
   },
   "tab_history_navigation_buttons": {
     "go-back": "Kembali ke catatan sebelumnya",
@@ -2963,7 +2967,8 @@
     "tab_width_style_tabs": "Tab"
   },
   "attributes_panel": {
-    "title": "Atribut Catatan"
+    "title": "Atribut Catatan",
+    "edit_in_sidebar": "Edit di bilah sisi"
   },
   "right_pane": {
     "empty_message": "Tidak ada yang ditampilkan untuk catatan ini",
@@ -3018,7 +3023,11 @@
     "pages_other": "{{count}} halaman",
     "pages_alt": "Halaman {{pageNumber}}",
     "pages_loading": "Memuat...",
-    "annotations_other": "{{count}} anotasi"
+    "annotations_other": "{{count}} anotasi",
+    "annotation_drawing": "Menggambar pada halaman {{pageNumber}}",
+    "annotation_highlight": "Sorotan pada halaman {{pageNumber}}",
+    "annotation_note": "Catatan pada halaman {{pageNumber}}",
+    "annotation_text_box": "Kotak teks pada halaman {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Tersedia di {{platform}}"
@@ -3152,9 +3161,6 @@
     "tags-differ": "Node yang dipilih tidak memiliki tag yang sama, sehingga tag ini hanya dapat dibaca.",
     "add-tag": "Tambahkan tag ini",
     "remove-tag": "Hapus tag ini",
-    "zoom-in": "Perbesar",
-    "zoom-out": "Perkecil",
-    "reset-zoom": "Atur ulang zoom",
     "center-map": "Tengahkan peta",
     "direction-left": "Cabang di kiri",
     "direction-right": "Cabang di kanan",
@@ -3223,7 +3229,6 @@
     "models_reset_defaults": "Kembalikan ke bawaan",
     "provider_model_count_other": "{{count}} model",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Memerlukan Claude Code pada mesin yang menjalankan Trilium.",
     "claude_agent_description": "Menggunakan langganan Claude Pro/Max Anda melalui Claude Code, sehingga tidak memerlukan kunci API. Claude Code harus terpasang pada mesin yang menjalankan Trilium (server jika self-hosting, atau komputer ini pada aplikasi desktop); masuklah sekali dengan menjalankan \"claude /login\" di sana.",
     "add_provider_title_named": "Tambahkan {{- name}}",
     "provider_group_cloud": "Penyedia cloud",
@@ -3253,14 +3258,15 @@
     "mcp_config_warning": "Token memberikan akses baca dan tulis penuh ke seluruh catatan Anda, jadi perlakukan seperti kata sandi. Jika terhubung dari perangkat lain, sebaiknya gunakan HTTPS — token yang dikirim melalui HTTP biasa dapat disadap.",
     "enabled": "Fitur AI",
     "enabled_description": "Menambahkan bilah sisi obrolan AI dan catatan obrolan LLM, menggunakan penyedia yang dikonfigurasi di bawah ini.",
-    "provider_desc_copilot_agent": "Memerlukan GitHub Copilot CLI pada mesin yang menjalankan Trilium.",
     "provider_unavailable_standalone": "Tidak tersedia di versi browser: penyedia ini bekerja dengan menjalankan program terpisah di mesin, dan tidak ada mesin di sini untuk menjalankannya.",
     "copilot_agent_description": "Menggunakan langganan GitHub Copilot Anda melalui GitHub Copilot CLI, sehingga tidak diperlukan kunci API. Copilot CLI harus diinstal di mesin yang menjalankan Trilium (server saat hosting mandiri, atau komputer ini di desktop); masuk sekali dengan menjalankan \"copilot login\" di sana — login Copilot yang ada dari penyunting lain digunakan ulang secara otomatis.",
     "mcp_unavailable_standalone": "Tidak tersedia di versi browser: asisten akan terhubung ke Trilium melalui jaringan, tetapi build ini tidak memiliki alamat untuk diberikan kepada mereka, karena berjalan sepenuhnya di dalam halaman ini."
   },
   "common": {
     "save": "Simpan",
-    "cancel": "Batal"
+    "cancel": "Batal",
+    "fullscreen": "Layar penuh",
+    "exit_fullscreen": "Keluar layar penuh"
   },
   "spreadsheet": {
     "read-only": "Catatan ini hanya-baca.",
@@ -3303,7 +3309,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Sisipkan bagian yang dapat dibuka-tutup untuk menyembunyikan/menampilkan konten saat diklik.",
       "insert-an-anchor-for-internal-linking": "Sisipkan anchor untuk tautan internal",
       "insert-an-empty-mermaid-diagram": "Sisipkan diagram Mermaid kosong",
-      "insert-the-current-date-and-time": "Sisipkan tanggal dan waktu saat ini",
       "justify-text-alignment": "Ratakan teks kiri-kanan",
       "right-click-or-press-0-to-change-state": "Klik kanan untuk status tugas lainnya.\nTekan %0 untuk berpindah antarstatus.",
       "select-collapsible-block": "Pilih blok yang dapat dilipat",
@@ -3432,7 +3437,12 @@
   },
   "options": {
     "back": "Kembali ke semua opsi",
-    "title": "Opsi"
+    "title": "Opsi",
+    "search_placeholder": "Pengaturan pencarian",
+    "search_clear": "Hapus pencarian",
+    "search_title": "Pencarian opsi",
+    "search_hint": "Ketik kata kunci untuk mencari di seluruh halaman pengaturan.",
+    "search_no_results": "Tidak ada pengaturan yang sesuai dengan yang Anda cari."
   },
   "image_navigation": {
     "previous": "Gambar sebelumnya: {{- title}}",
@@ -3441,16 +3451,6 @@
   "image_viewer": {
     "loading_error": "Terjadi kesalahan saat memuat gambar.",
     "hints": {
-      "zoom": "Perbesar/Perkecil",
-      "zoom_in": "Perbesar",
-      "zoom_out": "Perkecil",
-      "reset_zoom": "Atur ulang pembesaran",
-      "pan": "Geser",
-      "pan_up": "Atas",
-      "pan_down": "Bawah",
-      "pan_left": "Kiri",
-      "pan_right": "Kanan",
-      "pan_fast": "Percepatan penggeseran",
       "navigation": "Navigasi",
       "next_image": "Gambar berikutnya",
       "previous_image": "Gambar sebelumnya",
@@ -3612,9 +3612,7 @@
     "note_paths_what": "Sebuah catatan dapat berada di lebih dari satu lokasi dalam pohon catatan sekaligus, dan setiap lokasi tersebut ditampilkan di sini sebagai sebuah jalur.",
     "note_paths_cloning": "Menambahkan lokasi disebut cloning: tidak ada yang disalin, sehingga perubahan yang dilakukan melalui satu jalur akan muncul di semua jalur lainnya, dan menghapus satu jalur hanya menghilangkan lokasi tersebut tanpa memengaruhi yang lain.",
     "backlinks_what": "Catatan yang menunjuk ke catatan ini, baik melalui tautan di dalam teks maupun melalui relasi yang menamainya.",
-    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut.",
-    "similar_notes_what": "Catatan yang tampak berkaitan dengan catatan ini meskipun tidak ada tautan yang menghubungkannya.",
-    "similar_notes_how": "Kemiripannya ditentukan berdasarkan isi catatan, atribut dan relasi yang dimilikinya, serta seberapa dekat waktu pembuatannya."
+    "backlinks_listing": "Tautan teks ditampilkan bersama potongan teks di sekitarnya, sedangkan relasi ditampilkan bersama nama relasinya. Sisi tautan ini tidak dapat diedit: tautan akan hilang ketika catatan yang membuatnya menghapus tautan tersebut."
   },
   "icon_pack": {
     "preview_title": "Pratinjau paket ikon",
@@ -3817,7 +3815,13 @@
     "compress_result_none": "Tidak ada gambar yang dapat dikompresi.",
     "compress_result_stopped": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, mengurangi ukurannya dari {{before}} menjadi {{after}}.",
     "compress_result_stopped_no_gain": "Dihentikan setelah {{done}} dari {{total}} gambar diproses, dan tidak ada satu pun yang dapat diperkecil lagi.",
-    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses."
+    "compress_result_stopped_none": "Dihentikan sebelum ada gambar yang diproses.",
+    "status_notes": "Catatan",
+    "status_total": "Total",
+    "status_attachments": "Lampiran",
+    "status_deleted_items": "Item yang dihapus",
+    "selection_hint": "Ketuk item untuk detail",
+    "show_selection_details": "Tampilkan detail pilihan"
   },
   "wizard": {
     "back": "Kembali",

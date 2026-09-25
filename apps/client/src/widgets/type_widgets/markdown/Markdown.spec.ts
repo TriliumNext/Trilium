@@ -4,7 +4,7 @@
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
 import { describe, expect, it } from "vitest";
 
-import { renderWithSourceLines } from "./Markdown.js";
+import { findActiveBlock, renderWithSourceLines } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -297,6 +297,33 @@ describe("renderWithSourceLines", () => {
     it("renders a colour the exporter preserved as inline HTML", () => {
         // Non-default colours survive a Markdown export as a span, so the preview has to show them.
         expect(html(`a <span style="color:#ff0000">**red**</span> b`))
-            .toBe(`<p>a <span style="color:#ff0000"><strong>red</strong></span> b</p>`);
+            .toBe(`<p>a <span style="color:#ff0000;"><strong>red</strong></span> b</p>`);
+    });
+});
+
+describe("findActiveBlock", () => {
+    /** The preview's blocks, tagged with the source lines they start at. */
+    function blocks(...sourceLines: number[]) {
+        return sourceLines.map((line) => {
+            const el = document.createElement("p");
+            el.dataset.sourceLine = String(line);
+            return el;
+        });
+    }
+
+    it("picks the block the cursor sits in, and the last one past the end", () => {
+        const [ first, second, third ] = blocks(1, 5, 9);
+        const all = [ first, second, third ];
+
+        expect(findActiveBlock(all, 1)).toBe(first);
+        expect(findActiveBlock(all, 4)).toBe(first);
+        expect(findActiveBlock(all, 5)).toBe(second);
+        expect(findActiveBlock(all, 9)).toBe(third);
+        expect(findActiveBlock(all, 100)).toBe(third);
+    });
+
+    it("matches nothing above the first block or in an empty preview", () => {
+        expect(findActiveBlock(blocks(3), 1)).toBeNull();
+        expect(findActiveBlock([], 1)).toBeNull();
     });
 });

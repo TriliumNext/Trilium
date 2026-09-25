@@ -10,8 +10,6 @@ import infoIcon from '../../icons/mermaid-info.svg?raw';
 import { addListToDropdown, ButtonView, Collection, createDropdown, Editor, ListDropdownItemDefinition, Locale, ModelElement, Observable, Plugin, SplitButtonView, ViewModel } from 'ckeditor5';
 import InsertMermaidCommand, { INSERT_MERMAID_COMMAND } from './insert_mermaid_command.js';
 
-/* global window, document */
-
 /**
  * A selectable Mermaid diagram template (a localized name and its source
  * markup), listed in the insert-diagram split button's dropdown.
@@ -152,7 +150,7 @@ export default class MermaidUI extends Plugin {
 	}
 
 	/**
-	 * Adds the button linking to the mermaid guide.
+	 * Adds the button that opens the Mermaid help through the `mermaid.openHelp` config callback.
 	 *
 	 * @private
 	 */
@@ -162,7 +160,6 @@ export default class MermaidUI extends Plugin {
 
 		editor.ui.componentFactory.add( 'mermaidInfo', locale => {
 			const buttonView = new ButtonView( locale );
-			const link = 'https://ckeditor.com/blog/basic-overview-of-creating-flowcharts-using-mermaid/';
 
 			buttonView.set( {
 				label: t( 'Read more about Mermaid diagram syntax' ),
@@ -171,7 +168,7 @@ export default class MermaidUI extends Plugin {
 			} );
 
 			buttonView.on( 'execute', () => {
-				window.open( link, '_blank', 'noopener' );
+				editor.config.get( 'mermaid.openHelp' )?.();
 			} );
 
 			return buttonView;

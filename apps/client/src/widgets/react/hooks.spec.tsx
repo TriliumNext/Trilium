@@ -1,10 +1,12 @@
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useStaticTooltip, useTooltip } from "./hooks";
+import { buildNote } from "../../test/easy-froca";
+import { type DelayedVisibilityPhase, useDelayedVisibility, useImperativeSearchHighlighlighting, useNoteLabelBoolean, useStaticTooltip, useTooltip } from "./hooks";
 
 /**
  * mark.js delegating to the real implementation, so marking still works, while recording the calls
@@ -21,6 +23,10 @@ vi.mock("mark.js", async (importOriginal) => {
 
             constructor(ctx: unknown) {
                 this.inner = new actual.default(ctx);
+            }
+
+            mark(...args: unknown[]) {
+                return this.inner.mark(...args);
             }
 
             markRegExp(...args: unknown[]) {
@@ -374,28 +380,60 @@ describe("useTooltip", () => {
 
 describe("useImperativeSearchHighlighlighting", () => {
     let container: HTMLElement;
-    let highlight: ((el: HTMLElement | null | undefined) => void) | undefined;
-
-    function Probe({ tokens }: { tokens: string[] | null | undefined }) {
-        highlight = useImperativeSearchHighlighlighting(tokens);
-        return null;
-    }
+    let target: HTMLElement;
+    let liveHighlight: ((el: HTMLElement | null | undefined) => void) | undefined;
 
     beforeEach(() => {
         container = document.createElement("div");
         document.body.appendChild(container);
+        target = document.createElement("div");
+        document.body.appendChild(target);
     });
 
     afterEach(() => {
         render(null, container);
         container.remove();
-        highlight = undefined;
+        target.remove();
+        liveHighlight = undefined;
     });
 
-    async function mount(tokens: string[] | null | undefined) {
-        await act(async () => render(<Probe tokens={tokens} />, container));
+    function Probe({ tokens, onReady }: {
+        tokens: (string | HighlightedTokenInfo)[] | null | undefined;
+        onReady: (fn: (el: HTMLElement | null | undefined) => void) => void;
+    }) {
+        const highlight = useImperativeSearchHighlighlighting(tokens);
+        onReady(highlight);
+        return null;
     }
 
+    /** Mounts a fresh hook instance (so each call gets its own `Mark` instance) and applies it to `target`. */
+    function highlight(tokens: (string | HighlightedTokenInfo)[] | null | undefined, html: string) {
+        target.innerHTML = html;
+        render(null, container);
+        let highlightFn: ((el: HTMLElement | null | undefined) => void) | undefined;
+        act(() => {
+            render(<Probe tokens={tokens} onReady={(fn) => { highlightFn = fn; }} />, container);
+        });
+        highlightFn?.(target);
+        return target;
+    }
+
+    function markedTexts(el: HTMLElement) {
+        return Array.from(el.querySelectorAll("span.ck-find-result")).map((mark) => mark.textContent);
+    }
+
+    /**
+     * Re-renders the *same* hook instance with new tokens, unlike {@link highlight}, which remounts.
+     * Keeping the instance alive is the point: its `Mark` has to survive into the next call for the
+     * clear-on-empty behaviour to be observable at all.
+     */
+    async function remount(tokens: (string | HighlightedTokenInfo)[] | null | undefined) {
+        await act(async () => {
+            render(<Probe tokens={tokens} onReady={(fn) => { liveHighlight = fn; }} />, container);
+        });
+    }
+
+    /** A detached element to highlight into, so it outlives a {@link remount}. */
     function content(html: string): HTMLElement {
         const el = document.createElement("div");
         el.innerHTML = html;
@@ -403,15 +441,14 @@ describe("useImperativeSearchHighlighlighting", () => {
         return el;
     }
 
-    it("highlights matches and opens the collapsed <details> that contains them", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>a needle here</p></details>");
+    it("wraps a diacritic match when searching a plain, unaccented token (#10616)", () => {
+        const el = highlight(["ktory"], "<p>Aký ktorý</p>");
+        expect(markedTexts(el)).toEqual(["ktorý"]);
+    });
 
-        highlight?.(target);
-
-        expect(target.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
-        expect(target.querySelector("details")?.open).toBe(true);
-        target.remove();
+    it("wraps a CJK substring match inside a larger word", () => {
+        const el = highlight(["笔记"], "<p>我的笔记本</p>");
+        expect(markedTexts(el)).toEqual(["笔记"]);
     });
 
     it("clears previous highlights once the tokens are cleared", async () => {
@@ -421,49 +458,102 @@ describe("useImperativeSearchHighlighlighting", () => {
         // The removal itself is asserted through mark.js rather than the DOM: its `unmark()` is a
         // no-op under happy-dom (it removes nothing even from a fresh instance), so only the call
         // can be observed here.
-        await mount([ "needle" ]);
-        const target = content("<p>a needle here</p>");
-        highlight?.(target);
-        expect(target.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
+        await remount([ "needle" ]);
+        const el = content("<p>a needle here</p>");
+        liveHighlight?.(el);
+        expect(el.querySelectorAll(".ck-find-result").length).toBeGreaterThan(0);
         markSpies.unmark.mockClear();
 
-        await mount(null);
-        highlight?.(target);
+        await remount(null);
+        liveHighlight?.(el);
 
         expect(markSpies.unmark).toHaveBeenCalled();
-        target.remove();
+        el.remove();
     });
 
     it("does not touch an element that was never highlighted", async () => {
-        await mount(null);
-        const target = content("<p>a needle here</p>");
+        await remount(null);
+        const el = content("<p>a needle here</p>");
         markSpies.unmark.mockClear();
 
-        highlight?.(target);
+        liveHighlight?.(el);
 
         expect(markSpies.unmark).not.toHaveBeenCalled();
-        expect(target.innerHTML).toBe("<p>a needle here</p>");
-        target.remove();
+        expect(el.innerHTML).toBe("<p>a needle here</p>");
+        el.remove();
     });
 
-    it("leaves a collapsed block closed when it holds no match", async () => {
-        await mount([ "needle" ]);
-        const target = content("<details><summary>t</summary><p>nothing relevant</p></details>");
-
-        highlight?.(target);
-
-        expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    it("wraps every match of a regex-typed token (#5332)", () => {
+        const el = highlight([{ token: "ba.", type: "regex" }], "<p>foo bar baz qux</p>");
+        expect(markedTexts(el)).toEqual(["bar", "baz"]);
     });
 
-    it("does nothing without tokens", async () => {
-        await mount([]);
-        const target = content("<details><summary>t</summary><p>needle</p></details>");
+    it("skips an invalid regex token without throwing", () => {
+        expect(() => highlight([{ token: "(unterminated", type: "regex" }], "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+    });
 
-        highlight?.(target);
+    it("still highlights when given legacy string[] input", () => {
+        const el = highlight(["bar"], "<p>foo bar baz</p>");
+        expect(markedTexts(el)).toEqual(["bar"]);
+    });
 
-        expect(target.querySelectorAll(".ck-find-result").length).toBe(0);
+    it("is a no-op for null or undefined tokens", () => {
+        expect(() => highlight(null, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        expect(() => highlight(undefined, "<p>foo bar</p>")).not.toThrow();
+        expect(markedTexts(target)).toEqual([]);
+
+        highlight([], "<details><summary>t</summary><p>needle</p></details>");
+        expect(markedTexts(target)).toEqual([]);
         expect(target.querySelector("details")?.open).toBe(false);
-        target.remove();
+    });
+
+    it("highlights matches and opens the collapsed <details> that contains them", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>a needle here</p></details>");
+        expect(markedTexts(el)).toEqual(["needle"]);
+        expect(el.querySelector("details")?.open).toBe(true);
+    });
+
+    it("leaves a collapsed block closed when it holds no match", () => {
+        const el = highlight(["needle"], "<details><summary>t</summary><p>nothing relevant</p></details>");
+        expect(markedTexts(el)).toEqual([]);
+        expect(el.querySelector("details")?.open).toBe(false);
+    });
+});
+
+describe("useNoteLabelBoolean", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    /**
+     * The render that mounts a consumer has already read the label, so forcing another one after it
+     * draws everything twice for a value that has not changed. A board draws this once a card.
+     */
+    it("draws a consumer once for a label that has not changed", async () => {
+        const note = buildNote({ title: "Card", "#archived": "true" });
+        const draws: boolean[] = [];
+
+        function Consumer() {
+            const [ archived ] = useNoteLabelBoolean(note, "archived");
+            draws.push(archived);
+            return <span>{String(archived)}</span>;
+        }
+
+        container = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(<Consumer />, container as HTMLElement);
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+
+        expect(draws).toEqual([ true ]);
     });
 });

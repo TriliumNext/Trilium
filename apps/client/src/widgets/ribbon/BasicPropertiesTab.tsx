@@ -11,7 +11,7 @@ import { isExperimentalFeatureEnabled } from "../../services/experimental_featur
 import { getAvailableLocales, getLocaleById, t } from "../../services/i18n";
 import { resolveContentLanguage } from "../../utils/formatters";
 import mime_types from "../../services/mime_types";
-import { NOTE_TYPES } from "../../services/note_types";
+import { isCurrentNoteType, NOTE_TYPES, selectableNoteTypes } from "../../services/note_types";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import sync from "../../services/sync";
@@ -76,7 +76,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
     noCodeNotes?: boolean;
 }) {
     const { enabledMimeTypes } = useMimeTypes();
-    const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static && (nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))), []);
+    const noteTypes = useMemo(() => selectableNoteTypes(!noCodeNotes), [ noCodeNotes ]);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
         if (!note || (type === currentNoteType && mime === currentNoteMime)) {
             return;
@@ -111,11 +111,10 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
                     });
                 }
 
-                const checked = (type === currentNoteType);
                 if (noCodeNotes || type !== "code") {
                     return (
                         <FormListItem
-                            checked={checked}
+                            checked={isCurrentNoteType({ type, mime }, note)}
                             badges={badges}
                             onClick={() => changeNoteType(type, mime)}
                         >{title}</FormListItem>
@@ -124,17 +123,14 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
                 return (
                     <>
                         <FormDropdownDivider />
-                        <FormListItem
-                            checked={checked}
-                            disabled
-                        >
+                        <FormListItem disabled>
                             <strong>{title}</strong>
                         </FormListItem>
                     </>
                 );
             })}
 
-            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={enabledMimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
+            {!noCodeNotes && <NoteTypeCodeNoteList currentMimeType={currentNoteMime ?? undefined} mimeTypes={enabledMimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
         </>
     );
 }

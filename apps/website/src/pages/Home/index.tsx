@@ -181,7 +181,7 @@ function ProductivityBenefitsSection() {
                     <Card iconSvg={templatesIcon} title={t("productivity_benefits.templates_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/advanced-usage/template">{t("productivity_benefits.templates_content")}</Card>
                     <Card iconSvg={webClipperIcon} title={t("productivity_benefits.web_clipper_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/setup/web-clipper">{t("productivity_benefits.web_clipper_content")}</Card>
                     <Card iconSvg={shareIcon} title={t("productivity_benefits.share_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/advanced-usage/sharing">{t("productivity_benefits.share_content")}</Card>
-                    <Card iconSvg={authIcon} title={t("productivity_benefits.auth_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/installation/server/authentication">{t("productivity_benefits.auth_content")}</Card>
+                    <Card iconSvg={authIcon} title={t("productivity_benefits.auth_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/setup/server/auth">{t("productivity_benefits.auth_content")}</Card>
                     <Card iconSvg={restApiIcon} title={t("productivity_benefits.api_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/advanced-usage/etapi">{t("productivity_benefits.api_content")}</Card>
                 </div>
             </Section>
@@ -219,7 +219,7 @@ function NoteTypesSection() {
                     title: t("note_types.spreadsheet_title"),
                     imageUrl: "/type_spreadsheet.webp",
                     iconSvg: tableIcon,
-                    moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/Spreadsheets",
+                    moreInfo: "https://docs.triliumnotes.org/user-guide/note-types/spreadsheets",
                     description: t("note_types.spreadsheet_description")
                 },
                 {
@@ -307,7 +307,7 @@ function CollectionsSection() {
                     title: t("collections.dashboard_title"),
                     iconSvg: dashboardIcon,
                     imageUrl: "/collection_dashboard.webp",
-                    moreInfo: "https://docs.triliumnotes.org/user-guide/collections/Dashboard",
+                    moreInfo: "https://docs.triliumnotes.org/user-guide/collections/dashboard",
                     description: t("collections.dashboard_description")
                 }
             ]} />

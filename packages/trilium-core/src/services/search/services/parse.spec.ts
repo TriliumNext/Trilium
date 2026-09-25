@@ -262,6 +262,37 @@ describe("Parser", () => {
     });
 });
 
+describe("Fuzzy operator parsing (#9426)", () => {
+    it("parses a label fuzzy comparison (#label ~= value) without error", () => {
+        const searchContext = new SearchContext();
+        const rootExp = parse(
+            {
+                fulltextTokens: [],
+                expressionTokens: tokens(["#title", "~=", "books"]),
+                searchContext
+            },
+            AndExp
+        );
+
+        expect(searchContext.error).toBeNull();
+        const labelComparisonExp = expectExpression(rootExp.subExpressions[2], LabelComparisonExp);
+        expect(labelComparisonExp.attributeName).toEqual("title");
+        expect(labelComparisonExp.comparator).toBeTruthy();
+    });
+
+    it("parses note-property, relation-property and ~* fuzzy comparisons without error", () => {
+        for (const expressionTokens of [
+            tokens(["note", ".", "title", "~=", "books"]),
+            tokens(["~author", ".", "title", "~=", "tolkien"]),
+            tokens(["#title", "~*", "books"])
+        ]) {
+            const searchContext = new SearchContext();
+            parseInternal({ fulltextTokens: [], expressionTokens, searchContext });
+            expect(searchContext.error).toBeNull();
+        }
+    });
+});
+
 describe("Invalid expressions", () => {
     it("incomplete comparison", () => {
         const searchContext = new SearchContext();

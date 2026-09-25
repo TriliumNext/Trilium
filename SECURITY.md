@@ -69,6 +69,15 @@ User scripting (see Self-XSS above) still intentionally allows arbitrary JavaScr
 #### Authenticated User Actions
 Actions that require valid authentication and only affect the authenticated user's own data are generally not vulnerabilities.
 
+#### The CSRF Token Being Readable From the Page
+`glob.csrfToken` is readable by any script running on the page, and it is meant to be: the client attaches it to every internal API call as the `x-csrf-token` header, so a token the client could not read would be a client that could not reach its own backend. The half that must stay out of reach is the `trilium-csrf` cookie, which is `httpOnly` and `sameSite: strict`, and does.
+
+That pairing is the whole of what a double-submit token claims to do. It establishes that a request came from our own page rather than from someone else's, and it was never a barrier to anything already running on our page. Concealing the value would not change that either: `./bootstrap` issues a fresh, valid token to any same-origin request carrying the session cookie, which is how the client itself recovers from an expired one.
+
+So "the CSRF token can be read out of the page" is not a finding on its own, and neither is the follow-on that script holding it can call the internal API as the logged-in user. That describes what script execution is worth, not how it was obtained — and only the second half is a vulnerability.
+
+**How it was obtained is the report we want.** Any path that gets JavaScript running in the app from content the user did not author — an imported note, a note arriving over sync, a clipped page, a filename, an attribute value — is in scope, however small the resulting foothold looks. So is a real failure of the protection: a state-changing endpoint that accepts a cross-origin request, a token that validates against a session other than the one it was issued for, or the session cookie losing `httpOnly` or its `sameSite` attribute. On the desktop the check is deliberately skipped for requests the renderer dispatches over the `trilium-app://` protocol, where Express sessions do not round-trip and there is nothing to validate against; requests reaching the desktop's HTTP listener over TCP are checked in full, and a way to have one treated as the other is in scope.
+
 #### Private Addresses Reached by a Configured LLM Endpoint
 Outbound requests the server makes on behalf of note content — link previews, image fetches, imports — are vetted against a strict rule: the hostname is resolved, every address behind it must be a public unicast one, and the connection is pinned to the addresses actually checked. Note content is not entitled to the network its host can see.
 

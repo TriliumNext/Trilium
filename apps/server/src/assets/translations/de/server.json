@@ -69,7 +69,15 @@
     "toggle-archived-notes": "Archivierte Notizen im Notizbaum anzeigen/ausblenden",
     "show-deleted-notes": "Dialog „Gelöschte Notizen“ anzeigen",
     "show-shortcut-hints": "Tastenkürzel für das fokussierte Widget anzeigen",
-    "peek-right-pane": "Rechten Bereich als temporäres Panel einblenden, das über dem Inhalt schwebt und beim Verlust des Fokus geschlossen wird"
+    "peek-right-pane": "Rechten Bereich als temporäres Panel einblenden, das über dem Inhalt schwebt und beim Verlust des Fokus geschlossen wird",
+    "show-space-usage": "Die Seite „Speichernutzung“ öffnen",
+    "create-new-split": "Eine neue leere Teilansicht rechts neben der aktiven öffnen",
+    "close-active-split": "Die aktive Teilansicht schließen und die anderen Teilansichten des Tabs geöffnet lassen",
+    "focus-split-left": "Den Fokus auf die Teilansicht links neben der aktiven verschieben",
+    "focus-split-right": "Den Fokus auf die Teilansicht rechts neben der aktiven verschieben",
+    "split-view": "Geteilte Ansicht",
+    "move-split-left": "Die aktive Teilansicht mit der linken Teilansicht tauschen, sodass die Notiz verschoben wird und der Fokus ihr folgt",
+    "move-split-right": "Die aktive Teilansicht mit der rechten Teilansicht tauschen, sodass die Notiz verschoben wird und der Fokus ihr folgt"
   },
   "login": {
     "title": "Anmeldung",
@@ -78,7 +86,7 @@
     "password": "Passwort",
     "remember-me": "Angemeldet bleiben",
     "button": "Anmelden",
-    "incorrect-totp": "TOTP ist falsch. Bitte versuchen Sie es erneut.",
+    "incorrect-totp": "Der TOTP-Code ist falsch. Bitte versuche es erneut.",
     "sign_in_with_sso": "Mit {{ ssoIssuerName }} anmelden",
     "sso-wrong-account": "Dieses Konto ist nicht mit dieser Trilium-Instanz verknüpft. Melden Sie sich mit dem verknüpften Konto an.",
     "sso-not-enrolled": "Single Sign-on ist noch nicht eingerichtet. Melden Sie sich zuerst mit Ihrem Passwort an und verknüpfen Sie anschließend Ihr Konto in den Einstellungen."
@@ -203,7 +211,10 @@
     "security-title": "Sicherheit",
     "desktop-title": "Desktop",
     "deleted-notes-title": "Gelöschte Notizen",
-    "color-scheme-switcher-title": "Farbschema-Umschalter"
+    "color-scheme-switcher-title": "Farbschema-Umschalter",
+    "space-usage-title": "Speichernutzung",
+    "content-manager-title": "Inhaltsverwaltung",
+    "database-title": "Datenbank"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -215,7 +226,8 @@
     "reading-log-failed": "Das Lesen der Backend-Log-Datei '{{ fileName }}' ist fehlgeschlagen."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Dieser Notiztyp kann nicht angezeigt werden."
+    "note-cannot-be-displayed": "Dieser Notiztyp kann nicht angezeigt werden.",
+    "included-note-requires-credentials": "Diese eingebundene Notiz ist passwortgeschützt und kann hier nicht angezeigt werden."
   },
   "pdf": {
     "export_filter": "PDF-Dokument (*.pdf)",
@@ -263,7 +275,8 @@
     "background": "Hintergrund",
     "markdown-snippet": "Markdown-Snippet",
     "code-snippet": "Code-Snippet",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "ai-quick-action": "KI-Schnellaktion"
   },
   "keyboard_action_names": {
     "copy-notes-to-clipboard": "Notizen in Zwischenablage kopieren",
@@ -365,7 +378,14 @@
     "toggle-archived-notes": "Sichtbarkeit archivierter Notizen umschalten",
     "show-deleted-notes": "Gelöschte Notizen anzeigen",
     "show-shortcut-hints": "Tastenkürzel-Hinweise anzeigen",
-    "peek-right-pane": "Rechten Bereich einblenden"
+    "peek-right-pane": "Rechten Bereich einblenden",
+    "show-space-usage": "Speichernutzung anzeigen",
+    "create-new-split": "Neue Teilansicht erstellen",
+    "close-active-split": "Aktive Teilansicht schließen",
+    "move-split-left": "Teilansicht nach links verschieben",
+    "move-split-right": "Teilansicht nach rechts verschieben",
+    "focus-split-left": "Fokus auf die linke Teilansicht verschieben",
+    "focus-split-right": "Fokus auf die rechte Teilansicht verschieben"
   },
   "weekdayNumber": "Woche {weekNumber}",
   "quarterNumber": "Quartal {quarterNumber}",
@@ -487,5 +507,39 @@
   },
   "import": {
     "invalid_file_grant": "Die Dateiauswahl ist abgelaufen oder ungültig. Bitte wählen Sie die Datei erneut aus."
+  },
+  "restore": {
+    "pick_backup_title": "Backup zur Wiederherstellung auswählen",
+    "backup_filter": "Trilium-Backup (*.db, *.tnbackup)",
+    "any_file_filter": "Alle Dateien"
+  },
+  "backup": {
+    "custom_directory_unwritable": "Datenbank-Backup fehlgeschlagen: Schreiben nach {{- location}} nicht möglich. Das Backup wird stattdessen am Standardspeicherort erstellt.",
+    "passphrase_unavailable": "Das Backup-Passwort konnte nicht gelesen werden, daher ist dieses Backup nicht verschlüsselt. Es wurde stattdessen am Standardspeicherort und nicht am gewählten Speicherort gespeichert."
+  },
+  "dialog": {
+    "select_directory": "Ordner auswählen"
+  },
+  "backup-password-dialog": {
+    "cancel": "Abbrechen",
+    "set-title": "Backup-Passwort festlegen?",
+    "set-message": "Zukünftige Backups werden mit diesem Passwort verschlüsselt.",
+    "set-detail": "Trilium kann dieses Passwort später nicht erneut anzeigen. Bewahre daher eine Kopie an einem sicheren Ort auf – ohne dieses Passwort kann ein Backup nicht wiederhergestellt werden.\n\nWenn du nicht damit gerechnet hast, dass du danach gefragt wirst, klicke auf „Abbrechen“ – möglicherweise wurde die Abfrage von einer Notiz oder einem Skript ausgelöst.",
+    "set-confirm": "Passwort festlegen",
+    "clear-title": "Backup-Passwort vergessen?",
+    "clear-message": "Backups werden künftig nicht mehr verschlüsselt.",
+    "clear-detail": "Bereits erstellte Backups behalten das Passwort, mit dem sie erstellt wurden, und können weiterhin damit wiederhergestellt werden.\n\nWenn du nicht damit gerechnet hast, dass du danach gefragt wirst, klicke auf „Abbrechen“ – möglicherweise wurde die Abfrage von einer Notiz oder einem Skript ausgelöst.",
+    "clear-confirm": "Passwort vergessen"
+  },
+  "setup-window": {
+    "getting-started": "Erste Schritte – Trilium Notes",
+    "start-over": "Neu beginnen – Trilium Notes"
+  },
+  "start-over-dialog": {
+    "title": "Neu beginnen",
+    "message": "Trilium neu starten und zum Einrichtungsbildschirm zurückkehren?",
+    "detail": "Zunächst wird dir ein Backup deiner aktuellen Wissensdatenbank angeboten. Es wird nichts gelöscht, bis du dich dafür entscheidest, eine neue Wissensdatenbank zu erstellen, ein Backup wiederherzustellen oder mit einem anderen Gerät zu synchronisieren.\n\nFahre nicht fort, wenn du durch ein Skript oder eine unbekannte Notiz dazu aufgefordert wurdest.",
+    "cancel": "Abbrechen",
+    "confirm": "Neu starten und von vorne beginnen"
   }
 }

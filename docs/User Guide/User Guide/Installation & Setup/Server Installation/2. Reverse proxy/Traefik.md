@@ -5,19 +5,19 @@ The goal of this article is to configure Traefik proxy and HTTPS. See [#7768](ht
 
 Traefik 3.6.4 introduced a [breaking change](https://doc.traefik.io/traefik/migrate/v3/#encoded-characters-in-request-path) regarding how percent-encoded characters are handled in URLs. More specifically some URLs used by Trilium (such as `search/%23workspace%20%23!template`) are automatically rejected by Traefik, resulting in HTTP 400 errors.
 
-To solve this, the Traefik [**static** configuration](https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-install-configuration) must be modified in order to allow those characters:
+The easiest solution is to update to Traefik 3.6.7 or later which reverts this configuration change. Alternatively, the configuration can be changed according to the section below.
 
-```yaml
-entryPoints:
+<details>
+    <summary>Configuration change</summary>
+    <p>To solve this, the Traefik <a href="https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-install-configuration"><strong>static</strong> configuration</a> must be modified in order to allow those characters:</p>
+    <pre><code class="language-text-x-yaml">entryPoints:
   web:
     http:
       encodedCharacters:
         allowEncodedSlash: true
-        allowEncodedHash: true
-```
-
-> [!TIP]
-> If you still have issues, depending on how Trilium is used (especially regarding search), you might need to enable more encoded character groups. For more information, see [the relevant GitHub issue](https://github.com/TriliumNext/Trilium/issues/7968); feel free to report your findings.
+        allowEncodedHash: true</code></pre>
+    <aside class="admonition tip"><p>If you still have issues, depending on how Trilium is used (especially regarding search), you might need to enable more encoded character groups. For more information, see <a href="https://github.com/TriliumNext/Trilium/issues/7968">the relevant GitHub issue</a>; feel free to report your findings.</p></aside>
+</details>
 
 ### Build the docker-compose file
 

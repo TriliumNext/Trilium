@@ -21,7 +21,8 @@ import {
     IconParagraph,
     IconQuote,
     IconTable,
-    IconTodoList
+    IconTodoList,
+    IconImage
 } from "@ckeditor/ckeditor5-icons";
 import bxBookmark from "boxicons/svg/regular/bx-bookmark.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
@@ -30,6 +31,7 @@ import bxError from "boxicons/svg/regular/bx-error.svg?raw";
 import bxErrorCircle from "boxicons/svg/regular/bx-error-circle.svg?raw";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxNetworkChart from "boxicons/svg/regular/bx-network-chart.svg?raw";
+import bxSticker from "boxicons/svg/regular/bx-sticker.svg?raw";
 import { BookmarkUI, type Editor, type MentionFeedObjectItem, Plugin } from "ckeditor5";
 
 import collapsibleIcon from "../../icons/collapsible.svg?raw";
@@ -43,7 +45,9 @@ import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admoni
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
 import aiIcon from "../ai_assistant/theme/icons/ai.svg?raw";
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
-import { COMMAND_NAME as INSERT_DATE_TIME_COMMAND } from "../insert_date_time.js";
+import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
+import InlineIconUI from "../inline_icon/inline_icon_ui.js";
+import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, getDateTimeFormatOptions } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
@@ -140,7 +144,11 @@ export default class TriliumSlashCommands extends Plugin {
         const config = (editor.config.get("slashCommand") ?? {}) as SlashCommandConfig;
         const removed = new Set(config.removeCommands ?? []);
 
-        return [ ...buildDefaultSlashCommands(editor), ...buildTriliumSlashCommands(editor), ...buildSnippetSlashCommands(editor) ]
+        return [
+            ...buildDefaultSlashCommands(editor),
+            ...buildTriliumSlashCommands(editor),
+            ...buildSnippetSlashCommands(editor)
+        ]
             .filter((definition) => !removed.has(definition.id))
             .filter((definition) => isSlashCommandEnabled(editor, definition));
     }
@@ -295,7 +303,8 @@ export function buildDefaultSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Decrease the indentation of the current block."),
             icon: IconOutdent,
             commandName: "outdent"
-        }
+        },
+        buildImageUploadCommand(editor)
     ];
 }
 
@@ -343,13 +352,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             icon: insertFootnoteIcon,
             commandName: "InsertFootnote"
         },
-        {
-            id: "datetime",
-            title: t("Insert date/time"),
-            description: t("Insert the current date and time"),
-            icon: dateTimeIcon,
-            commandName: INSERT_DATE_TIME_COMMAND
-        },
+        ...buildDateTimeSlashCommands(editor),
         {
             id: "internal-link",
             title: t("Internal link"),
@@ -386,6 +389,20 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             description: t("Import Markdown from the clipboard"),
             icon: importMarkdownIcon,
             commandName: MARKDOWN_IMPORT_COMMAND
+        },
+        {
+            id: "icon",
+            title: t("Icon"),
+            description: t("Insert an icon from an installed icon pack"),
+            aliases: [ "symbol", "glyph" ],
+            icon: bxSticker,
+            commandName: INSERT_ICON_COMMAND,
+            // Deferred for the reason the anchor entry below is: the picker opens in a balloon
+            // placed at the caret, and the palette has not finished putting the selection back
+            // where it belongs until the tick is over.
+            execute: (target: Editor) => {
+                setTimeout(() => target.plugins.get(InlineIconUI).showPicker(), 0);
+            }
         },
         {
             id: "anchor",
@@ -470,6 +487,7 @@ function buildListSlashCommands(editor: Editor): SlashCommandDefinition[] {
             id: "todoList",
             title: t("To-do list"),
             description: t("Create a to-do list"),
+            aliases: [ "todo", "task", "checklist", "checkbox" ],
             icon: IconTodoList,
             commandName: "todoList"
         }
@@ -504,6 +522,42 @@ function buildMermaidSlashCommands(editor: Editor): SlashCommandDefinition[] {
     }));
 
     return [ blank, ...templates ];
+}
+
+/**
+ * One entry per format `getDateTimeFormatOptions()` offers. The entry for the user's default format
+ * shows its output as the description; each preset carries it in the title, so the rows differ at a
+ * glance. `_catalog()` runs on every query, so the previews show the current time.
+ */
+function buildDateTimeSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    if (!editor.plugins.has(InsertDateTimePlugin)) {
+        return [];
+    }
+
+    const t = editor.locale.t;
+    const [ defaultOption, ...presets ] = getDateTimeFormatOptions(editor);
+    const aliases = [ "date", "time", "now", "today", "timestamp" ];
+
+    const defaultEntry: SlashCommandDefinition = {
+        id: "datetime",
+        title: t("Insert date/time"),
+        description: defaultOption.preview,
+        aliases,
+        icon: dateTimeIcon,
+        commandName: INSERT_DATE_TIME_COMMAND
+    };
+
+    const presetEntries = presets.map(({ format, kind, preview }) => ({
+        id: `datetime-${format}`,
+        title: kind === "time" ? t("Insert time: %0", preview) : t("Insert date/time: %0", preview),
+        aliases,
+        icon: dateTimeIcon,
+        // `commandName` supplies the enabled state; `execute` passes the format along.
+        commandName: INSERT_DATE_TIME_COMMAND,
+        execute: (target: Editor) => target.execute(INSERT_DATE_TIME_COMMAND, { format })
+    }));
+
+    return [ defaultEntry, ...presetEntries ];
 }
 
 function buildAlignmentSlashCommands(editor: Editor): SlashCommandDefinition[] {
@@ -625,6 +679,55 @@ function buildHeadingSlashCommands(editor: Editor): SlashCommandDefinition[] {
             execute: (target: Editor) => target.execute("heading", { value: option.model })
         };
     });
+}
+
+function buildImageUploadCommand(editor: Editor): SlashCommandDefinition {
+    const t = editor.locale.t;
+
+    return {
+        id: "uploadImage",
+        title: t("Upload image"),
+        description: t("Upload an image from your device."),
+        aliases: [ "picture", "photo" ],
+        icon: IconImage,
+        // The entry opens a file picker instead of naming `uploadImage`, so `commandName` cannot
+        // gate it; without this it would be offered in an editor that has no `ImageUpload`.
+        isEnabled: (target) => target.commands.get("uploadImage")?.isEnabled ?? false,
+        execute(target) {
+            const imageTypes = target.config.get("image.upload.types") ?? [];
+            const imageTypesRegExp = createImageTypeRegExp(imageTypes);
+            const input = document.createElement("input");
+
+            input.type = "file";
+            input.accept = imageTypes.map((type) => `image/${type}`).join(",");
+            input.multiple = true;
+            input.style.display = "none";
+
+            input.addEventListener("change", () => {
+                /* v8 ignore next -- `files` is only null on an input that is not of type `file` */
+                const imagesToUpload = Array.from(input.files ?? [])
+                    .filter((file) => imageTypesRegExp.test(file.type));
+
+                if (imagesToUpload.length) {
+                    target.execute("uploadImage", { file: imagesToUpload });
+                    target.editing.view.focus();
+                }
+
+                input.remove();
+            }, { once: true });
+
+            document.body.appendChild(input);
+            input.click();
+        }
+    };
+}
+
+// Source: https://github.com/ckeditor/ckeditor5/blob/master/packages/ckeditor5-image/src/imageupload/utils.ts
+function createImageTypeRegExp(types: string[]): RegExp {
+    // Sanitize the MIME type name which can include: "+", "-" or ".".
+    const regExpSafeNames = types.map((type) => type.replace("+", "\\+"));
+
+    return new RegExp(`^image\\/(${regExpSafeNames.join("|")})$`);
 }
 
 /**

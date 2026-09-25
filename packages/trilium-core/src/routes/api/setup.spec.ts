@@ -6,7 +6,11 @@ import * as passwordService from "../../services/encryption/password";
 import passwordEncryptionService from "../../services/encryption/password_encryption";
 import optionService from "../../services/options";
 import setupService from "../../services/setup";
-import { isSetupAuthorized, resetSetupAuth } from "../../services/setup_auth";
+import {
+    initSetupSecondFactor,
+    isSetupAuthorized,
+    resetSetupAuth
+} from "../../services/setup_auth";
 import {
     enterSetupMode,
     initSetupPlatform,
@@ -298,13 +302,28 @@ describe("unlocking the wizard (core)", () => {
         expect(isSetupAuthorized(res.body.token)).toBe(true);
     });
 
-    it("says only no for the wrong one, and hands back nothing to go on", async () => {
+    it("refuses the wrong one with 401, and hands back nothing to go on", async () => {
         vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(false);
 
         const res = await api.post<{ authenticated: boolean; token?: string }>(
             "/api/setup/auth", { body: { password: "wrong" } });
 
-        expect(res.status).toBe(200);
+        // 401 rather than 200, so `loginRateLimiter` counts the attempt: it runs with
+        // `skipSuccessfulRequests`, which refunds every response below 400.
+        expect(res.status).toBe(401);
+        expect(res.body).toEqual({ authenticated: false });
+    });
+
+    it("refuses a wrong second factor exactly as it refuses a wrong password", async () => {
+        // The one that unlimited guessing actually breaks: a passcode is six digits, and
+        // `SetupSecondFactor.verify` deliberately does not consume a recovery code here.
+        vi.spyOn(passwordEncryptionService, "verifyPassword").mockResolvedValue(true);
+        initSetupSecondFactor({ isRequired: () => true, verify: () => false });
+
+        const res = await api.post<{ authenticated: boolean; token?: string }>(
+            "/api/setup/auth", { body: { password: "hunter2", totpToken: "000000" } });
+
+        expect(res.status).toBe(401);
         expect(res.body).toEqual({ authenticated: false });
     });
 

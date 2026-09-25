@@ -1,7 +1,8 @@
 /*
- * A bar standing over a canvas: the same surface, border and blur a menu is drawn on, so that
- * everything floating over a map — bars, panels, whatever else — reads as one family rather than as
- * pieces from three places. Where each bar stands is settled by whoever puts it there.
+ * A bar standing over a canvas: the surface and blur a menu is drawn on, lifted the way the control
+ * groups beside it are, so that everything floating over a map — bars, chips, panels — reads as one
+ * family rather than as pieces from three places. Where each bar stands is settled by whoever puts
+ * it there.
  */
 .tn-overlay-toolbar {
     position: absolute;
@@ -11,9 +12,11 @@
     padding: 4px;
     background: var(--menu-background-color, #fff);
     color: var(--menu-text-color, inherit);
-    border: 1px solid var(--dropdown-border-color, var(--main-border-color, #0000002e));
-    border-radius: 8px;
-    box-shadow: 0 2px 8px #0003;
+    border-radius: var(--overlay-button-border-radius, 6px);
+    /* Two edges rather than four, the light in this app coming from the top leading corner — the
+       same lift a run of buttons is given (see OverlayControlGroup.css). */
+    border-right: 1px solid var(--overlay-button-shadow-color, var(--main-border-color, #0000002e));
+    border-bottom: 1px solid var(--overlay-button-shadow-color, var(--main-border-color, #0000002e));
     /* The frosting a menu is given, rather than a blur of this bar's own: the theme sets what glass
        looks like in the app (see shell.css in theme-next, the one theme that sets it), and a bar
        over a map is the one place it is looked through at something with colour in it. Nothing to

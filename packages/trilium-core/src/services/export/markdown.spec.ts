@@ -201,6 +201,25 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(html);
     });
 
+    it("keeps an icon, the space beside it and the colour around it", () => {
+        // Turndown drops an element holding nothing before it consults a single rule, and
+        // collapses the space beside it away with it, so the icon is given something to hold.
+        const cog = `<span class="tn-icon bx bx-cog"></span>`;
+        const star = `<span class="tn-icon bx bx-star"></span>`;
+        const red = `<span style="color:rgb(255,0,0);">`;
+
+        expect(markdownExportService.toMarkdown(`<p>Press ${cog} to open it.</p>`))
+            .toBe(`Press ${cog} to open it.`);
+        expect(markdownExportService.toMarkdown(`<p>Two ${cog}${star} in a row.</p>`))
+            .toBe(`Two ${cog}${star} in a row.`);
+        expect(markdownExportService.toMarkdown(`<p>a${red}${cog}</span>b</p>`))
+            .toBe(`a${red}${cog}</span>b`);
+
+        // A note that only talks about the class is returned as it came, not re-serialized.
+        expect(markdownExportService.toMarkdown(`<p>The <code>tn-icon</code> class.</p>`))
+            .toBe("The `tn-icon` class.");
+    });
+
     it("exports admonitions properly", () => {
         const html = trimIndentation`\
             <p>

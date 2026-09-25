@@ -8,13 +8,11 @@
  * arrangement outright rather than layering on top of it.
  */
 
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { getLog, options as optionService } from "@triliumnext/core";
 import type express from "express";
 import rateLimit from "express-rate-limit";
 
 import etapiTokenService from "../services/etapi_tokens.js";
-import { createMcpServer } from "../services/mcp/mcp_server.js";
 
 export function register(app: express.Application) {
     const mcpRateLimiter = createMcpRateLimiter();
@@ -124,7 +122,15 @@ function mcpGuard(req: express.Request, res: express.Response, next: express.Nex
 
 async function handleMcpRequest(req: express.Request, res: express.Response) {
     try {
-        const server = createMcpServer();
+        // Imported here rather than at module scope so the MCP SDK and the
+        // tool stack land in lazy chunks: the route registers at startup, but
+        // the guard above answers unauthenticated traffic before any of this
+        // loads.
+        const [{ StreamableHTTPServerTransport }, { createMcpServer }] = await Promise.all([
+            import("@modelcontextprotocol/sdk/server/streamableHttp.js"),
+            import("../services/mcp/mcp_server.js")
+        ]);
+        const server = await createMcpServer();
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined, // stateless
             // Off because the guard above has already required a bearer token, which the

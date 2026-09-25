@@ -5,7 +5,7 @@ This can be useful for e.g. including a dynamically generated chart (from script
 
 ## Including a note
 
-In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, look for the ![](Include%20Note_image.png) button. There is also a keyboard shortcut defined for it but it is not allocated by default.
+In the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>, look for the <span class="tn-icon cke cke-trilium-note"></span> button. There is also a keyboard shortcut defined for it but it is not allocated by default.
 
 ## Included notes in the share functionality
 

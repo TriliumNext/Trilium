@@ -1,0 +1,107 @@
+<p>The <code>api.cheerio</code> library has been removed from the backend scripting
+  API.</p>
+<p>Scripts that attempt to use <code>api.cheerio</code> will now throw an error
+  with migration instructions.</p>
+<h2>Reasoning</h2>
+<p><code>cheerio</code> was deprecated in v0.103.0 in favor of <code>api.htmlParser</code> (<a
+  href="https://github.com/taoqf/node-fast-html-parser">node-html-parser</a>),
+  which Trilium already uses for all of its own HTML parsing. The scripting
+  API was the only place that still needed <code>cheerio</code>.</p>
+<p>Shipping both parsers was costly, because <code>cheerio</code> was loaded
+  at startup on every platform. It added roughly 1.35 MB of bundled code
+  to the server and desktop builds, and roughly 370 kB to the in-browser
+  build, where it was loaded into the database worker before the application
+  could start.</p>
+<h2>Migration</h2>
+<p>Replace <code>api.cheerio</code> calls with <code>api.htmlParser</code>.
+  Note that <code>api.htmlParser</code> returns plain elements rather than
+  a wrapped collection, so there is no <code>$</code> object and no chaining.</p>
+<h3>Reading values</h3>
+<p>Before (<code>cheerio</code>):</p><pre><code class="language-text-javascript">const $ = api.cheerio.load(html);
+const title = $('h1').text();
+const links = $('a').map((i, el) =&gt; $(el).attr('href')).get();</code></pre>
+<p>After (<code>htmlParser</code>):</p><pre><code class="language-text-javascript">const root = api.htmlParser.parse(html);
+const title = root.querySelector('h1')?.textContent;
+const links = root.querySelectorAll('a').map(a =&gt; a.getAttribute('href'));</code></pre>
+<h3>Modifying the document</h3>
+<p>Before (<code>cheerio</code>):</p><pre><code class="language-text-javascript">const $ = api.cheerio.load(html);
+$('a').each((i, el) =&gt; {
+    $(el).attr('href', '#root/' + noteId);
+    $(el).addClass('reference-link');
+});
+note.setContent($('body').html());</code></pre>
+<p>After (<code>htmlParser</code>):</p><pre><code class="language-text-javascript">const root = api.htmlParser.parse(html);
+for (const el of root.querySelectorAll('a')) {
+    el.setAttribute('href', '#root/' + noteId);
+    el.classList.add('reference-link');
+}
+note.setContent(root.toString());</code></pre>
+<h3>Equivalent operations</h3>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th><code>cheerio</code>
+        </th>
+        <th><code>htmlParser</code>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>api.cheerio.load(html)</code>
+        </td>
+        <td><code>api.htmlParser.parse(html)</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$('sel')</code>
+        </td>
+        <td><code>root.querySelectorAll('sel')</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$('sel').first()</code>
+        </td>
+        <td><code>root.querySelector('sel')</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$el.text()</code>
+        </td>
+        <td><code>el.textContent</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$el.html()</code>
+        </td>
+        <td><code>el.innerHTML</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$el.attr('name')</code>
+        </td>
+        <td><code>el.getAttribute('name')</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$el.attr('name', value)</code>
+        </td>
+        <td><code>el.setAttribute('name', value)</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$el.addClass('name')</code>
+        </td>
+        <td><code>el.classList.add('name')</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>$('body').html()</code>
+        </td>
+        <td><code>root.toString()</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>

@@ -5,6 +5,7 @@ import dataDir from "./services/data_dir.js";
 
 export default class ServerPlatformProvider implements PlatformProvider {
     readonly isElectron = !!process.versions["electron"];
+    readonly isStandalone = false;
     readonly isMac = process.platform === "darwin";
     readonly isWindows = process.platform === "win32";
     readonly isLinux = process.platform === "linux";

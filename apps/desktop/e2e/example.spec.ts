@@ -5,7 +5,7 @@ import App from './support';
 let app: ElectronApplication;
 
 test.beforeAll(async () => {
-    const distPath = join(__dirname, '../../desktop/dist/main.cjs');
+    const distPath = join(__dirname, '../../desktop/dist/main.mjs');
     console.log("Dir", join(__dirname, 'traces'));
     app = await electron.launch({
         args: [ distPath ]

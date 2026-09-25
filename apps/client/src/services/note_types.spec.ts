@@ -17,7 +17,7 @@ vi.mock("./experimental_features.js", () => ({
 }));
 
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
-import noteTypesService from "./note_types";
+import noteTypesService, { isCurrentNoteType, selectableNoteTypes } from "./note_types";
 
 const llmFlag = vi.mocked(isExperimentalFeatureEnabled);
 
@@ -72,6 +72,85 @@ function withTemplatesRoot(children: FakeNote[] | null) {
         froca.getNote = realGetNote;
     };
 }
+
+describe("getNoteTypeOptions", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        llmFlag.mockReturnValue(false);
+    });
+
+    /**
+     * What anything offering "make a new note of..." picks from: the note types the tree offers,
+     * then the templates the app ships, then the reader's own, each named by an id that outlives
+     * the list it came from.
+     */
+    it("lists the note types the tree offers, then every template", async () => {
+        withTemplates([ "userTemplate" ]);
+        const restore = withTemplatesRoot([
+            fakeTemplate("shipped", [ "template" ], "Shipped"),
+            fakeTemplate("notATemplate", [], "Not a template")
+        ]);
+        const user = buildNote({ id: "userTemplate", title: "Mine", "#template": "" });
+
+        try {
+            const options = await noteTypesService.getNoteTypeOptions();
+
+            const types = options.filter(option => option.group === "type");
+            expect(types.every(option => option.id.startsWith("type:"))).toBe(true);
+            expect(types.some(option => option.id === "type:text:text/html")).toBe(true);
+            expect(types.some(option => option.id.startsWith("type:book"))).toBe(false);
+            expect(types.some(option => option.id.startsWith("type:image"))).toBe(false);
+
+            // A note under `_templates` that carries no `#template` is not one.
+            expect(options.map(option => option.id)).toContain("template:shipped");
+            expect(options.map(option => option.id)).not.toContain("template:notATemplate");
+
+            const mine = options.find(option => option.id === `template:${user.noteId}`);
+            expect(mine?.group).toBe("user");
+            expect(mine?.options).toEqual(expect.objectContaining({ templateNoteId: user.noteId }));
+
+            // A note type is made from its type and mime, which is what `createNote` takes.
+            expect(options.find(option => option.id === "type:canvas:application/json")?.options)
+                .toEqual({ type: "canvas", mime: "application/json" });
+        } finally {
+            restore();
+        }
+    });
+
+    it("offers the chat note type only where that feature is switched on", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([]);
+
+        try {
+            const isOffered = async () => (await noteTypesService.getNoteTypeOptions())
+                .some(option => option.id.startsWith("type:llmChat"));
+
+            expect(await isOffered()).toBe(false);
+            llmFlag.mockReturnValue(true);
+            expect(await isOffered()).toBe(true);
+        } finally {
+            restore();
+        }
+    });
+
+    /** A stored list outlives what it names, and what is gone is left out rather than reported. */
+    it("resolves stored ids in their own order, dropping what no longer exists", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([]);
+
+        try {
+            const available = await noteTypesService.getNoteTypeOptions();
+            const offered = noteTypesService.resolveNoteTypeOptions(
+                [ "type:canvas:application/json", "template:gone", "type:text:text/html" ],
+                available);
+
+            expect(offered.map(option => option.id))
+                .toEqual([ "type:canvas:application/json", "type:text:text/html" ]);
+        } finally {
+            restore();
+        }
+    });
+});
 
 describe("getBlankNoteTypes (via getNoteTypeItems)", () => {
     beforeEach(() => {
@@ -138,12 +217,8 @@ describe("getBlankNoteTypes (via getNoteTypeItems)", () => {
             const types = cmdItems.map((i: any) => i.type);
             expect(types).toContain("llmChat");
 
-            // llmChat is isBeta only -> exactly one BETA badge (title, no className).
             const llmChat = cmdItems.find((i: any) => i.type === "llmChat");
-            expect(llmChat.badges).toHaveLength(1);
-            expect(llmChat.badges[0].className).toBeUndefined();
-            expect(typeof llmChat.badges[0].title).toBe("string");
-            expect(llmChat.badges[0].title.length).toBeGreaterThan(0);
+            expect(llmChat.badges).toEqual([]);
         } finally {
             restore();
         }
@@ -327,6 +402,62 @@ describe("new template badges", () => {
             expect(second.every((i: any) => !i.type || i.command === "insertChildNote")).toBe(true);
         } finally {
             restore();
+        }
+    });
+});
+
+describe("isCurrentNoteType", () => {
+    const CODE = { type: "code", mime: "text/plain" } as const;
+    const MARKDOWN = { type: "code", mime: "text/x-markdown" } as const;
+
+    it("tells the two code entries apart, which share a type", () => {
+        // A JavaScript note is the plain code entry, never the Markdown one.
+        const script = buildNote({ title: "script", type: "code", mime: "application/javascript" });
+        expect(isCurrentNoteType(CODE, script)).toBe(true);
+        expect(isCurrentNoteType(MARKDOWN, script)).toBe(false);
+
+        // Every mime `isMarkdown()` accepts picks the Markdown entry, `text/x-gfm` included.
+        for (const mime of [ "text/x-markdown", "text/markdown", "text/x-gfm" ]) {
+            const note = buildNote({ title: mime, type: "code", mime });
+            expect(isCurrentNoteType(MARKDOWN, note)).toBe(true);
+            expect(isCurrentNoteType(CODE, note)).toBe(false);
+        }
+    });
+
+    it("matches every other type on the type alone, and nothing without a note", () => {
+        const text = buildNote({ title: "prose", type: "text", mime: "text/html" });
+        expect(isCurrentNoteType({ type: "text", mime: "text/html" }, text)).toBe(true);
+        expect(isCurrentNoteType({ type: "canvas", mime: "application/json" }, text)).toBe(false);
+        expect(isCurrentNoteType(CODE, text)).toBe(false);
+        expect(isCurrentNoteType(CODE, null)).toBe(false);
+    });
+});
+
+describe("selectableNoteTypes", () => {
+    // The suite's other resets live inside their own describes, so pin the flag here rather than
+    // inheriting whatever the last test left behind.
+    beforeEach(() => llmFlag.mockReturnValue(false));
+
+    it("drops Markdown only where the MIME list already offers it", () => {
+        const markdownEntry = (withMimeList: boolean) =>
+            selectableNoteTypes(withMimeList).filter((nt) => nt.mime === "text/x-markdown");
+
+        // Beside the MIME list the code entries are only its heading, so one heading is left.
+        expect(markdownEntry(true)).toHaveLength(0);
+        expect(selectableNoteTypes(true).filter((nt) => nt.type === "code")).toHaveLength(1);
+
+        // On its own the menu is the only way to reach Markdown, so it stays.
+        expect(markdownEntry(false)).toHaveLength(1);
+    });
+
+    it("leaves out what cannot be created either way", () => {
+        for (const withMimeList of [ true, false ]) {
+            const types = selectableNoteTypes(withMimeList);
+            expect(types.some((nt) => nt.reserved)).toBe(false);
+            expect(types.some((nt) => nt.static)).toBe(false);
+            // The chat type is behind an experimental flag, mocked off for this suite.
+            expect(types.some((nt) => nt.type === "llmChat")).toBe(false);
+            expect(types.some((nt) => nt.type === "text")).toBe(true);
         }
     });
 });

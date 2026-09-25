@@ -128,6 +128,7 @@ export { type SearchParams } from "./services/search/services/types";
 export { checkImageAttachments, collectCanvasImageFileIds, default as note_service, findBookmarks, findLlmChatLinks, findMindMapLinks, saveLinks } from "./services/notes";
 export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
+export { assertScriptingEnabled, assertSqlConsoleEnabled, isScriptingEnabled } from "./services/scripting_guard";
 export * as routes from "./routes";
 export { default as ws } from "./services/ws";
 export { default as request } from "./services/request";
@@ -154,6 +155,7 @@ export { default as imageService } from "./services/image";
 export { t } from "i18next";
 export type { RequestProvider, ExecOpts, CookieJar, FetchApiOpts, FetchResourceOpts, FetchedResource } from "./services/request";
 export type * from "./meta";
+export type { QueryString, QueryValue, Request, RequestHeaders, Response } from "./http_interface";
 export * as routeHelpers from "./routes/helpers";
 
 export { getZipProvider, type ZipArchive, type ZipProvider } from "./services/zip_provider";

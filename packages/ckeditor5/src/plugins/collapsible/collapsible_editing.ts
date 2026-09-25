@@ -139,6 +139,7 @@ export default class CollapsibleEditing extends Plugin {
         });
         this.registerSchema();
         this.registerConversion();
+        this.registerListItemRefresh();
         this.registerBodyPlaceholder();
         this.registerKeyHandlers();
         this.registerMergeGuard();
@@ -402,6 +403,42 @@ export default class CollapsibleEditing extends Plugin {
             keepOnFocus: true
         });
         return summary;
+    }
+
+    /**
+     * Rebuilds the body's list blocks whenever the collapsible is reconverted, instead of
+     * letting CKEditor reuse their existing view.
+     *
+     * The editing downcast is an `elementToStructure`, so a reconversion re-slots the
+     * surviving children by moving their mapped view element. A to-do item's checkbox is a
+     * UIElement sibling of that element inside <span class="todo-list__label">, so the move
+     * leaves it behind. CKEditor's own opt-out, `isItemBlockInsideStructureSlot()`, walks up
+     * through `ol`/`ul`/`li` only and stops at that label. No-op when the editor has no list
+     * plugin.
+     */
+    private registerListItemRefresh() {
+        if (!this.editor.plugins.has("ListEditing")) return;
+        const model = this.editor.model;
+        // Default priority puts this between ListEditing's "high" handler, whose own refreshes
+        // add insert/remove entries that reconvert a <details>, and the editing controller's
+        // "low" one, which is what then runs the conversion.
+        this.listenTo(model.document, "change:data", () => {
+            const reconverted = new Set<any>();
+            for (const entry of model.document.differ.getChanges()) {
+                // Only a changed child list reconverts the structure, never an attribute.
+                if (entry.type !== "insert" && entry.type !== "remove") continue;
+                if (entry.position.parent.is("element", "details")) {
+                    reconverted.add(entry.position.parent);
+                }
+            }
+            for (const details of reconverted) {
+                for (const block of details.getChildren()) {
+                    if (block.is("element") && block.hasAttribute("listItemId")) {
+                        this.editor.editing.reconvertItem(block);
+                    }
+                }
+            }
+        });
     }
 
     // -----------------------------------------------------------------

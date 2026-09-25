@@ -97,6 +97,22 @@ export default class App {
         }
     }
 
+    /**
+     * Sends this tab's API calls through the service worker, where Playwright can see them.
+     *
+     * Standalone's leader tab answers its own calls from the in-page SQLite worker
+     * (`standaloneApi.localFetch`), so they never reach the network stack and
+     * `page.waitForResponse()` never fires. Call this in a test that waits on a request rather than
+     * on what the request changes. Does nothing on the server build, which has no `standaloneApi`,
+     * and lasts until the next navigation re-runs standalone's bootstrap.
+     */
+    async observeApiRequests() {
+        await this.page.evaluate(() => {
+            const standaloneApi = (window as unknown as { standaloneApi?: { localFetch?: unknown } }).standaloneApi;
+            delete standaloneApi?.localFetch;
+        });
+    }
+
     async goToNoteInNewTab(noteTitle: string) {
         const autocomplete = this.currentNoteSplit.locator(".note-autocomplete");
         await expect(autocomplete).toBeVisible();
@@ -107,13 +123,13 @@ export default class App {
         await autocomplete.clear();
         await autocomplete.pressSequentially(noteTitle);
 
-        // The second suggestion is the best candidate; the first is "Create a
-        // new note". Asserting on the suggestion itself (instead of the parent
+        // The best candidate follows the two creation suggestions ("Create note" and
+        // "Create child note"). Asserting on the suggestion itself (instead of the parent
         // `.note-detail-empty-results`, which also contains the recent-notes
         // list) ensures the dropdown actually opened.
         const suggestionSelector = this.currentNoteSplit
             .locator(".note-detail-empty-results .aa-suggestion")
-            .nth(1);
+            .nth(2);
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }

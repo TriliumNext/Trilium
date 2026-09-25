@@ -89,8 +89,7 @@
   "sort_child_notes": {
     "title": "títol",
     "ascending": "ascendent",
-    "descending": "descendent",
-    "folders": "Carpetes"
+    "descending": "descendent"
   },
   "upload_attachments": {
     "options": "Opcions",

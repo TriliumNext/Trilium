@@ -1,3 +1,4 @@
+import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 
 import ServerLogService from "./log_provider.js";
@@ -50,3 +51,41 @@ describe("ServerLogService console echo", () => {
         }
     });
 });
+
+describe("ServerLogService request logging", () => {
+    it("keeps polling routes out of the log, the docker healthcheck included", () => {
+        const log = new ServerLogService();
+        const writes: string[] = [];
+        const writeEntry = vi
+            .spyOn(log as unknown as { writeEntry(entry: string): void }, "writeEntry")
+            .mockImplementation((entry: string) => void writes.push(entry));
+
+        try {
+            const polled = [
+                "/api/health-check", "/api/recent-notes", "/api/backend-log",
+                "/app/index.js", "/images/icon.png", "/stylesheets/theme.css",
+                "/assets/bundle.js.map", "/assets/theme.css.map"
+            ];
+
+            for (const url of polled) {
+                logRequest(log, url);
+            }
+
+            expect(writes).toEqual([]);
+
+            // Anything else is still recorded, so the filter cannot swallow real traffic.
+            logRequest(log, "/api/notes/root");
+
+            expect(writes.join("")).toContain("200 GET /api/notes/root");
+        } finally {
+            writeEntry.mockRestore();
+        }
+    });
+});
+
+function logRequest(log: ServerLogService, url: string) {
+    const req = { url, method: "GET" } as unknown as Request;
+    const res = { statusCode: 200 } as unknown as Response;
+
+    log.request(req, res, 1, 15);
+}

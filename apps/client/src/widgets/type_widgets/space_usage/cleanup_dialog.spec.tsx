@@ -263,7 +263,7 @@ describe("showCleanupDialog", () => {
 
         // Both qualifiers leave something open that their label cannot answer — how the count is
         // reckoned, and against what — so each carries the explanation beside its title.
-        expect(nestedRows().map((row) => !!row.querySelector(".cleanup-item-title .contextual-help")))
+        expect(nestedRows().map((row) => !!row.querySelector(".cleanup-item-title .contextual-help-icon")))
             .toEqual([ true, true ]);
     });
 

@@ -37,7 +37,7 @@ export async function generateChatTitle(chatNoteId: string, firstMessage: string
 
     // Whichever provider is configured first, which is not necessarily the one
     // the chat itself is talking to.
-    const provider = getProvider();
+    const provider = await getProvider();
     log.info(`Naming chat note ${chatNoteId} with the ${provider.name} provider.`);
 
     const title = await provider.generateTitle(firstMessage);

@@ -6,6 +6,11 @@ export interface PlatformProvider {
     /** Returns the value of an environment variable, or undefined if not set. */
     getEnv(key: string): string | undefined;
     readonly isElectron: boolean;
+    /**
+     * `true` in the standalone build, where core runs inside a browser worker rather than on Node.
+     * The OS flags below stay honest there, so this is what tells standalone apart from a desktop.
+     */
+    readonly isStandalone: boolean;
     readonly isMac: boolean;
     readonly isWindows: boolean;
     readonly isLinux: boolean;

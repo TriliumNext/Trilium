@@ -25,7 +25,7 @@ import { getSql } from "./sql/index.js";
 import type TaskContext from "./task_context.js";
 import { decodeBase64 } from "./utils/binary.js";
 import date_utils from "./utils/date.js";
-import { newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
+import { isValidEntityId, newEntityId, replaceAll, toMap, unescapeHtml } from "./utils/index.js";
 import ws from "./ws.js";
 
 interface FoundLink {
@@ -39,7 +39,7 @@ interface Attachment {
 }
 
 export interface NoteParams {
-    /** optionally can force specific noteId */
+    /** Forces a specific noteId: 4 to 128 letters, digits or underscores. */
     noteId?: string;
     branchId?: string;
     parentNoteId: string;
@@ -241,6 +241,15 @@ function createNewNote(params: NoteParams): {
 
     if ((error = date_utils.validateUtcDateTime(params.utcDateCreated))) {
         throw new Error(error);
+    }
+
+    const forcedNoteId: unknown = params.noteId;
+    if (
+        forcedNoteId !== undefined && forcedNoteId !== null && forcedNoteId !== ""
+        && (typeof forcedNoteId !== "string" || !isValidEntityId(forcedNoteId))
+    ) {
+        throw new ValidationError(`Note ID '${forcedNoteId}' is not valid. `
+            + "Only letters, digits and underscores are allowed, with a length of 4 to 128.");
     }
 
     // When creating from a template, inherit the template's type and mime if not explicitly provided.
@@ -1286,10 +1295,14 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
     );
 }
 
+/** The note types `saveLinks()` reads links out of, minus the ones whose content holds none. */
+const SCANNED_ON_IMPORT: NoteType[] = ["text", "relationMap", "mindMap", "llmChat"];
+
 function scanForLinks(note: BNote, content: string | Uint8Array) {
-    // A mind map is scanned here as well as on save, so that one arriving by import carries its
-    // links to the notes it points at without having to be opened and edited first.
-    if (!note || !["text", "relationMap", "mindMap"].includes(note.type)) {
+    // Scanned here as well as on save, so that a note arriving by import carries its links to the
+    // notes it points at without having to be opened and edited first. A Markdown note is asked
+    // separately: it is a `code` note, whose type alone says nothing about the links it holds.
+    if (!note || !(SCANNED_ON_IMPORT.includes(note.type) || note.isMarkdown())) {
         return;
     }
 

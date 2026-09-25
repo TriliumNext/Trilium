@@ -1,0 +1,19 @@
+/* One row per setting: label on the left, control on the right. */
+.modal.board-column-limit-dialog .board-column-limit-fields {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    /* Right-align the controls, whatever width each one takes. */
+    justify-items: end;
+    gap: 8px 20px;
+}
+
+.modal.board-column-limit-dialog .board-column-limit-fields > label {
+    justify-self: start;
+    margin-bottom: 0;
+}
+
+/* Fits a count and its spinner. */
+.modal.board-column-limit-dialog .board-column-limit-count {
+    width: 7em;
+}

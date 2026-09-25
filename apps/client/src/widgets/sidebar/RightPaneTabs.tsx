@@ -1,5 +1,3 @@
-import "./RightPaneTabs.css";
-
 import { t } from "../../services/i18n";
 import TabStrip, { type TabStripTabDefinition } from "../react/TabStrip";
 
@@ -40,9 +38,8 @@ interface RightPaneTabsProps {
 }
 
 /**
- * The right pane's header: which group of widgets is on show. It doubles as the row the pane's own
- * pin/close actions sit in, so it is rendered whenever the pane is open — which is what the row it
- * hands the shared strip is for (see RightPaneTabs.css).
+ * The tab strip of the right pane's header row: which group of widgets is on show. RightPanelContainer
+ * lays it out beside the pane's pin/close actions (see RightPanelContainer.css).
  */
 export default function RightPaneTabs({ tabs, activeTabId, onSelect }: RightPaneTabsProps) {
     return (

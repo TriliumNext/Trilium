@@ -1,0 +1,39 @@
+/* The corner the detail pane stands in, and the width it is given, the two never standing at once.
+   Sized to what it holds, though: it is a card rather than a pane the height of the map. */
+.geo-map-container .geo-place-panel {
+    position: absolute;
+    top: var(--geo-map-inset-top);
+    inset-inline-end: var(--geo-map-inset-end);
+    width: var(--geo-detail-pane-width);
+    max-width: calc(100% - var(--geo-map-inset-start) - var(--geo-map-inset-end));
+    /* Clear of MapLibre's own control corners, which sit at 2 (see MapToolbar.css). */
+    z-index: 3;
+}
+
+/* On a phone the panel is as wide as the map, so at the head it would cover the search bar and the
+   result navigator standing under it (see index.css). It stands at the foot instead, which leaves
+   those reachable: results can be stepped through with a place open. */
+body.mobile .geo-map-container .geo-place-panel {
+    top: auto;
+    bottom: var(--geo-map-foot);
+    /* Half the map at most, so a long address cannot grow the card back over the bar; what does not
+       fit scrolls within it (see OverlayPanel.css). */
+    max-height: 50%;
+}
+
+.geo-map-container .geo-place-panel .geo-place-panel-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px 12px;
+}
+
+.geo-map-container .geo-place-panel .geo-place-panel-address {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.geo-map-container .geo-place-panel .geo-place-panel-add {
+    align-self: stretch;
+}

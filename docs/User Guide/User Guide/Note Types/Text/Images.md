@@ -16,7 +16,6 @@ To add an image to the note:
 Trilium has a special handling for images copied to and pasted from the clipboard.
 
 *   For a mix of text and images, the images are downloaded automatically by the server (or desktop app, depending on what is being used).
-    
     *   This means that the image must be publicly accessible and reachable from wherever Trilium is running. Inaccessible images will end up as broken images.
 *   If a single image is pasted into Trilium, it will prefer the image that comes in the clipboard. This makes it possible to copy images that Trilium would not otherwise be able to reach, such as Google Chat, Slack, etc.
 *   When a text with images is copied from Trilium and pasted in another app (such as Microsoft Word or LibreOffice Writer), the images will be preserved.
@@ -26,7 +25,7 @@ The automatic download of images is enabled by default and can be toggled from 
 ## Configuring the images
 
 Clicking on an image will reveal a popup with multiple options:  
-![](7_Images_image.png)
+![](4_Images_image.png)
 
 ### Alignment
 
@@ -34,10 +33,10 @@ The first set of options configure the alignment are, in order:
 
 | Icon | Option | Preview | Description |
 | --- | --- | --- | --- |
-| ![](5_Images_image.png) | Inline | ![](1_Images_image.png) | As the name suggests, the name can be put inside a paragraph and moved around similarly as if it was a block of text. Use drag & drop or cut-paste to move it around. |
-| ![](8_Images_image.png) | Centered image | ![](2_Images_image.png) | The image will be displayed as a block and centered, not allowing text in either the left or right of it. |
-| ![](4_Images_image.png) | Wrap text | ![](6_Images_image.png) | The image will be displayed to the left or the right of the text. |
-| ![](Images_image.png) | Block align | ![](3_Images_image.png) | Similarly to _Centered image_, the image will be displayed as a block and aligned either to the left or to the right, but not allowing text to flow on either of its sides. |
+| <span class="tn-icon cke cke-object-inline"></span> | Inline | ![](Images_image.png) | As the name suggests, the name can be put inside a paragraph and moved around similarly as if it was a block of text. Use drag & drop or cut-paste to move it around. |
+| <span class="tn-icon cke cke-object-center"></span> | Centered image | ![](1_Images_image.png) | The image will be displayed as a block and centered, not allowing text in either the left or right of it. |
+| <span class="tn-icon cke cke-object-inline-right"></span> | Wrap text | ![](3_Images_image.png) | The image will be displayed to the left or the right of the text. |
+| <span class="tn-icon cke cke-object-left"></span> | Block align | ![](2_Images_image.png) | Similarly to _Centered image_, the image will be displayed as a block and aligned either to the left or to the right, but not allowing text to flow on either of its sides. |
 
 ## Compression
 

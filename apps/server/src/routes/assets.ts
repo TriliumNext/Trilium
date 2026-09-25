@@ -106,9 +106,13 @@ async function register(app: express.Application) {
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
-    app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts"), STATIC_OPTIONS));
-    app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images"), STATIC_OPTIONS));
-    app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets"), STATIC_OPTIONS));
+    // `vX` is a version-independent alias so custom themes and scripts can reference built-in assets
+    // without naming a version they would have to bump on every upgrade. It serves the same files as
+    // the versioned routes above, but without `maxAge`: the URL no longer changes between releases,
+    // so a long-lived cache entry would pin the client to the previous version's assets.
+    app.use(`/assets/vX/stylesheets`, express.static(path.join(getClientDir(), "stylesheets"), STATIC_OPTIONS));
+    app.use(`/assets/vX/fonts`, express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS));
+    app.use(`/assets/vX/images`, express.static(path.join(resourceDir, "assets", "images"), STATIC_OPTIONS));
 }
 
 export function getShareThemeAssetDir() {

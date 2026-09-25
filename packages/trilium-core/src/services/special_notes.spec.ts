@@ -158,7 +158,9 @@ describe("special_notes (core, real DB)", () => {
         });
 
         it("falls back to the day note when no #inbox label exists at the root", () => {
-            vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
+            // A journal has to exist, or the capture stays at the top level instead.
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? becca.getNoteOrThrow("root").getChildNotes()[0] : null);
 
             // getDayNote may create the day note, so it needs a CLS context.
             const result = getContext().init(() => specialNotes.getInboxNote("2026-05-29"));
@@ -186,6 +188,97 @@ describe("special_notes (core, real DB)", () => {
             // The stub workspace reports its own noteId via the underlying real note.
             const result = specialNotes.getInboxNote("2026-05-29");
             expect(result).toBe(workspace);
+        });
+
+        it("places a capture under the workspace calendar when hoisted into that workspace", () => {
+            const { workspace, calendar } = getContext().init(() => {
+                const workspace = noteService.createNewNote({
+                    parentNoteId: "root",
+                    title: "workspace-for-inbox-calendar",
+                    content: "",
+                    type: "text"
+                }).note;
+                workspace.setLabel("workspace");
+
+                const calendar = noteService.createNewNote({
+                    parentNoteId: workspace.noteId,
+                    title: "workspace-journal",
+                    content: "",
+                    type: "text"
+                }).note;
+                calendar.setLabel("workspaceCalendarRoot");
+
+                return { workspace, calendar };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", workspace.noteId);
+
+                expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dayNote" });
+
+                const inbox = specialNotes.getInboxNote("2026-09-15");
+                expect(inbox.hasAncestor(calendar.noteId)).toBe(true);
+                expect(inbox.getParentNotes().some((parent) => parent.noteId === workspace.noteId))
+                    .toBe(false);
+            });
+        });
+    });
+
+    describe("getInboxTarget", () => {
+        it("names the #inbox note at the root workspace", () => {
+            const inbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(inbox);
+
+            expect(specialNotes.getInboxTarget()).toEqual({
+                kind: "inbox",
+                noteId: inbox.noteId,
+                title: inbox.getTitleOrProtected()
+            });
+        });
+
+        it("reports the day note without creating it", () => {
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? becca.getNoteOrThrow("root").getChildNotes()[0] : null);
+            const noteCountBefore = Object.keys(becca.notes).length;
+
+            // No CLS context: reaching getDayNote() would need one, so this also proves it is
+            // never called.
+            expect(specialNotes.getInboxTarget()).toEqual({ kind: "dayNote", noteId: undefined, title: undefined });
+            expect(Object.keys(becca.notes).length).toBe(noteCountBefore);
+        });
+
+        it("keeps a capture at the top level when the journal has been deleted, rather than rebuilding it", () => {
+            // Nulls both labels this path consults, #inbox and #calendarRoot.
+            vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
+            const noteCountBefore = Object.keys(becca.notes).length;
+
+            expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "root", noteId: "root" });
+            expect(specialNotes.getInboxNote("2026-05-29").noteId).toBe("root");
+            // No calendar was built on the way.
+            expect(Object.keys(becca.notes).length).toBe(noteCountBefore);
+        });
+
+        it("distinguishes the workspace inbox, a plain inbox, the workspace calendar and the workspace root", () => {
+            const workspaceInbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const plainInbox = becca.getNoteOrThrow("root").getChildNotes()[1];
+
+            const withBoth = makeWorkspaceStub({ "#workspaceInbox": workspaceInbox, "#inbox": plainInbox });
+            vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withBoth as any);
+            expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "workspaceInbox", noteId: workspaceInbox.noteId });
+
+            const withPlainOnly = makeWorkspaceStub({ "#inbox": plainInbox });
+            vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withPlainOnly as any);
+            expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "inbox", noteId: plainInbox.noteId });
+
+            const withNeither = makeWorkspaceStub({});
+            vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withNeither as any);
+            expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "workspaceRoot", noteId: withNeither.noteId });
+
+            const withCalendar = makeWorkspaceStub({
+                "#workspaceCalendarRoot": becca.getNoteOrThrow("root").getChildNotes()[0]
+            });
+            vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withCalendar as any);
+            expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dayNote" });
         });
     });
 

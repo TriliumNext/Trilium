@@ -10,7 +10,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { app_info as appInfo } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
-import { allToolRegistries } from "@triliumnext/core/src/services/llm/tools/index.js";
+import { allToolRegistries, resolveToolRegistries } from "@triliumnext/core/src/services/llm/tools/index.js";
 import type { ToolDefinition } from "@triliumnext/core/src/services/llm/tools/tool_registry.js";
 
 import sql from "../sql.js";
@@ -38,7 +38,11 @@ function registerTool(server: McpServer, name: string, def: ToolDefinition) {
     });
 }
 
-export function createMcpServer(): McpServer {
+export async function createMcpServer(): Promise<McpServer> {
+    // Host-registered registries (the User Guide tools) load lazily; the array
+    // is complete only after this resolves.
+    await resolveToolRegistries();
+
     const server = new McpServer({
         name: "trilium-notes",
         version: appInfo.appVersion

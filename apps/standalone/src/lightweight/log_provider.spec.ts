@@ -1,7 +1,7 @@
 import type { LogFileInfo } from "@triliumnext/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import StandaloneLogService from "./log_provider.js";
+import StandaloneLogService, { MAX_PENDING_ENTRIES } from "./log_provider.js";
 
 interface NavWithStorage {
     storage?: { getDirectory?: () => Promise<unknown> };
@@ -20,6 +20,7 @@ interface LogInternals {
     currentFile: unknown;
     currentFileName: string;
     logDir: unknown;
+    pendingEntries: string[];
 }
 
 const realStorageDescriptor = Object.getOwnPropertyDescriptor(navigator, "storage");
@@ -160,10 +161,15 @@ describe("StandaloneLogService file handling", () => {
         expect(internal.currentFileName).toBe("");
     });
 
-    it("writeEntry logs to the console when no file is open", () => {
+    it("keeps entries in memory while no file is open, dropping the oldest past the cap", () => {
         const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-        internalsOf(new StandaloneLogService()).writeEntry("console fallback");
-        expect(logSpy).toHaveBeenCalledWith("console fallback");
+        const internal = internalsOf(new StandaloneLogService());
+        for (let i = 0; i <= MAX_PENDING_ENTRIES; i++) {
+            internal.writeEntry(`entry ${i}\n`);
+        }
+        expect(logSpy).not.toHaveBeenCalled();
+        expect(internal.pendingEntries).toHaveLength(MAX_PENDING_ENTRIES);
+        expect(internal.pendingEntries[0]).toBe("entry 1\n");
     });
 
     it("closeLogFile is a no-op when nothing is open", () => {
@@ -181,6 +187,80 @@ describe("StandaloneLogService file handling", () => {
         installOpfs({ createSyncAccessHandle: async () => handle });
         await internal.openLogFile("trilium-2024-05-01.log");
         expect(internal.readLogFile("trilium-2024-05-01.log")).toBeNull();
+    });
+});
+
+describe("StandaloneLogService when the log file is held elsewhere", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    /** Sync access handles fail until `release()` is called, as when another worker holds them. */
+    function installHeldOpfs() {
+        const handle = makeSyncHandle();
+        let held = true;
+        let attempts = 0;
+        installOpfs({
+            createSyncAccessHandle: async () => {
+                attempts++;
+                if (held) {
+                    throw new Error("locked");
+                }
+                return handle;
+            }
+        });
+        return { handle, release: () => { held = false; }, attempts: () => attempts };
+    }
+
+    it("serves the in-memory entries, then writes them to the file once it opens", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(console, "log").mockImplementation(() => {});
+        const opfs = installHeldOpfs();
+
+        const service = new StandaloneLogService();
+        const init = service.initialize();
+        await vi.advanceTimersByTimeAsync(1_000);
+        await init;
+        expect(internalsOf(service).currentFile).toBeNull();
+
+        service.info("while held");
+        const inMemory = service.getLogContents();
+        expect(inMemory).toContain("The log file could not be opened");
+        expect(inMemory).toContain("while held");
+
+        // Retries keep going in the background.
+        const attemptsBefore = opfs.attempts();
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(opfs.attempts()).toBeGreaterThan(attemptsBefore);
+
+        opfs.release();
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(internalsOf(service).currentFile).toBe(opfs.handle);
+        expect(internalsOf(service).pendingEntries).toEqual([]);
+
+        service.info("after release");
+        const fromFile = service.getLogContents();
+        expect(fromFile).not.toContain("The log file could not be opened");
+        expect(fromFile).toMatch(/while held\n.*after release\n$/s);
+    });
+
+    it("stops retrying once the file is closed", async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
+        const opfs = installHeldOpfs();
+        const internal = internalsOf(new StandaloneLogService());
+
+        const open = internal.openLogFile("trilium-2024-07-01.log");
+        await vi.advanceTimersByTimeAsync(1_000);
+        await open;
+        internal.closeLogFile();
+
+        const attemptsAfterClose = opfs.attempts();
+        opfs.release();
+        await vi.advanceTimersByTimeAsync(120_000);
+        expect(opfs.attempts()).toBe(attemptsAfterClose);
+        expect(internal.currentFile).toBeNull();
     });
 });
 

@@ -27,7 +27,13 @@ function getOptionOrNull(name: OptionNames): string | null {
     } else {
         // e.g. in initial sync becca is not loaded because DB is not initialized
         try {
-            option = getSql().getRow<OptionRow>("SELECT * FROM options WHERE name = ?", [name]);
+            const sql = getSql();
+            // Checked first because `sql.getRow()` logs a query against a missing table before it throws.
+            if (!sql.getValue("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'options'")) {
+                return null;
+            }
+
+            option = sql.getRow<OptionRow>("SELECT * FROM options WHERE name = ?", [name]);
         } catch (e: unknown) {
             // DB is not initialized.
             return null;

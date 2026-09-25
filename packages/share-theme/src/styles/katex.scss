@@ -1,0 +1,8 @@
+// Builds KaTeX's stylesheet with only the woff2 faces. The prebuilt katex.min.css lists
+// woff and ttf sources as well, and the bundler emits a file for every url() it finds.
+@use "katex/src/styles/katex.scss" with (
+    $use-woff: false,
+    $use-ttf: false,
+    // Sass emits url() verbatim, so the path resolves against this file, not the package.
+    $font-folder: "../../../../node_modules/katex/dist/fonts"
+);

@@ -243,48 +243,48 @@ The URL must be absolute and include the scheme (e.g. `https://`).
     </thead>
     <tbody>
         <tr>
-            <td><code spellcheck="false">#shareHiddenFromTree</code></td>
+            <td><code>#shareHiddenFromTree</code></td>
             <td>this note is hidden from left navigation tree, but still accessible with its URL</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareExternalLink</code></td>
-            <td>when a link points to this note (from the share index, a subpage list, or an inline link in another shared note), it redirects to the given external URL in a new tab instead of the note's shared page. Value is the absolute URL, e.g. <code spellcheck="false">https://example.com</code>.</td>
+            <td><code>#shareExternalLink</code></td>
+            <td>when a link points to this note (from the share index, a subpage list, or an inline link in another shared note), it redirects to the given external URL in a new tab instead of the note's shared page. Value is the absolute URL, e.g. <code>https://example.com</code>.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareAlias</code></td>
-            <td>define an alias using which the note will be available under <code spellcheck="false">https://your_trilium_host/share/[your_alias]</code></td>
+            <td><code>#shareAlias</code></td>
+            <td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code></td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareOmitDefaultCss</code></td>
+            <td><code>#shareOmitDefaultCss</code></td>
             <td>default share page CSS will be omitted. Use when you make extensive styling changes.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareRoot</code></td>
+            <td><code>#shareRoot</code></td>
             <td>marks note which is served on /share root.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareDescription</code></td>
+            <td><code>#shareDescription</code></td>
             <td>define text to be added to the HTML meta tag for description</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareRaw</code></td>
+            <td><code>#shareRaw</code></td>
             <td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20of%20a%20note.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareDisallowRobotIndexing</code></td>
-            <td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li>Setting the <code spellcheck="false">X-Robots-Tag: noindex</code> HTTP header.</li><li>Setting the <code spellcheck="false">noindex, follow</code> meta tag.</li></ul></td>
+            <td><code>#shareDisallowRobotIndexing</code></td>
+            <td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li>Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li><li>Setting the <code>noindex, follow</code> meta tag.</li></ul></td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareCredentials</code></td>
-            <td>require credentials to access this shared note. Value is expected to be in format <code spellcheck="false">username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td>
+            <td><code>#shareCredentials</code></td>
+            <td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareIndex</code></td>
+            <td><code>#shareIndex</code></td>
             <td>Note with this label will list all roots of shared notes.</td>
         </tr>
         <tr>
-            <td><code spellcheck="false">#shareHtmlLocation</code></td>
-            <td>defines where custom HTML injected via <code spellcheck="false">~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code spellcheck="false">location:position</code> where location is <code spellcheck="false">head</code>, <code spellcheck="false">body</code>, or <code spellcheck="false">content</code> and position is <code spellcheck="false">start</code> or <code spellcheck="false">end</code>. Defaults to <code spellcheck="false">content:end</code>.</td>
+            <td><code>#shareHtmlLocation</code></td>
+            <td>defines where custom HTML injected via <code>~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where location is <code>head</code>, <code>body</code>, or <code>content</code> and position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td>
         </tr>
     </tbody>
 </table>

@@ -6,7 +6,11 @@ This note type displays the children notes on a geographical map, based on an at
 ## Features
 
 *   Add markers on the map, which can be customized with icons, colors and text.
+*   Search the notes already on the map, and look up places anywhere in the world.
+*   Turn a place the map already shows into a marker by clicking it.
+*   Draw paths, areas, rectangles and circles onto the map.
 *   Display tracks on the map using `.gpx` files.
+*   Show your own location on the map and follow it as you move.
 *   3D view of the map, which displays buildings when using a vector map.
 
 ## System requirements
@@ -15,14 +19,20 @@ Starting with v0.105.0, the geomap uses MapLibre GL which requires WebGL v1 supp
 
 If the map could not be drawn because WebGL could not be initialized, an error message will appear instead of the map (_This map can't be drawn because WebGL isn't available…_).
 
+The button that shows your location is offered only when Trilium is reached over HTTPS, in the desktop application or in the mobile application. Browsers refuse to share the location of a device with a page served over plain HTTP, so on such a server the button does not appear.
+
 ## Interaction
 
+*   At the top-left there is the search bar. It searches the notes already on the map, and it can also search for places online when you ask it to. While you move through the results of a search, a counter with previous and next buttons appears under it.
 *   At the bottom-center there is a central toolbar which provides editing features: adding new markers on the map and importing GPX tracks.
 *   At the bottom-right there are the viewport items:
     *   Zoom in/out
         *   On mobile these are hidden, use pinch to zoom instead.
         *   On desktop, alternatively use the scroll wheel to adjust the zoom.
+    *   A button that shows your location on the map and follows it (see _Going to your location_ below).
     *   Full screen button which focuses the entire map onto the screen, while still allowing for edits.
+*   At the top-center (on desktop, or left-center on mobile and in split views) there are the drawing tools such as paths, areas, rectangles and circles.
+    *   When the map is read-only, the toolbar is not shown.
 
 ## Creating a new geo map
 
@@ -36,6 +46,93 @@ By default the map will be empty and will show the entire world.
 *   Use the mouse wheel, two-finger gesture on a touchpad or the +/- buttons on the bottom-right to adjust the zoom.
 
 The position on the map and the zoom are saved inside the map note and restored when visiting again the note.
+
+A map that has no position saved yet is framed around the markers it contains when you open it, so they are all in view without having to go looking for them. A map that contains no markers shows the whole world instead.
+
+In practice this applies to maps whose markers were added externally, by a script or through <a class="reference-link" href="../Advanced%20Usage/ETAPI%20(REST%20API).md">ETAPI (REST API)</a>. When you add markers yourself you have already moved the map to reach the place you are marking, and that movement saves a position.
+
+## Going to your location
+
+Press the _Show your location_ button at the bottom-right of the map, beside the zoom buttons. The first time, the browser or the operating system asks whether Trilium may know where the device is. In the desktop application the operating system's location settings decide.
+
+The map then moves to where the device is and marks it with a blue dot. A lighter circle around the dot shows how accurate the position is: a phone with GPS gives a dot on the street, while a computer located through its network connection can give a circle that covers a neighbourhood. The map follows the dot as it moves, and the button stays pressed while it does.
+
+Dragging the map stops it from following. The dot stays and keeps moving, and pressing the button again brings the map back to it. Pressing the button while the map is following turns the dot off.
+
+Click the dot to see its coordinates in the panel a searched place is shown in. From there the position can be kept as a marker (see _Keeping a place as a marker_). Clicking the lighter circle around the dot is a click on the map.
+
+If the position cannot be found, a message says so and the button keeps waiting for one; press it again to stop. If you refuse the permission, the button is disabled until the map is opened again. To allow it after all, change the permission for Trilium in the browser or in the system's location settings.
+
+Your position is not stored in the note, and Trilium does not send it anywhere on its own. Moving the map there does what any other pan or zoom does: the tile provider behind the map's style sees the coordinates of the area now on screen. The map does remember where you left it, as it does after any other movement, so a map you have taken to your location opens there the next time.
+
+## Searching the map
+
+The search bar at the top-left of the map searches in two places. It always searches the notes that are already on the map. It can also search for places online, but only when you ask it to.
+
+### Searching the notes already on the map
+
+Type in the search bar, and the notes on the map are matched by their title as you type. Accents are ignored, both in what you type and in the titles, so `zurich` finds _Zürich Hauptbahnhof_. Each word is searched for on its own, so `hotel paris` finds _Paris Hotel_. Notes without a `#geolocation` attribute are not offered, since there would be nowhere to go. Drawn shapes and GPS tracks are offered, even though they carry no such attribute: selecting one brings the whole shape or route into view.
+
+If more notes match than the list can show, you are offered the ones closest to the area you are viewing.
+
+### Searching for places online
+
+Looking up a place sends what you typed to a third-party service. For this reason, it never happens while you type. Instead, the last row of the result list offers the search. That row reads _Search online for "…"_, with the name of the service below it. The search runs only when you press that row or select it with Enter.
+
+Trilium uses Nominatim, the place search run by the OpenStreetMap Foundation. It needs no account and no API key. Its name is shown on every row that belongs to it: the row that offers the search, the row that says a search is running, and the row that reports that nothing was found or that the service could not be reached.
+
+The search prefers the area you are viewing. Places inside the current view are searched for first and listed above the others. If you search for a shop while looking at your own town, you therefore find the branch in that town, and not one with the same name on another continent. The view is always treated as at least 25 km across, so a search made while zoomed into a single street still covers the town around it.
+
+### Going to a point
+
+If you type or paste coordinates into the search bar, a _Go to_ row is offered above all the other results. Selecting it moves the map to that exact spot and marks it. You can then keep it as a marker, in the same way you keep a place found by searching.
+
+Points are untitled by default; the corresponding note opens with the default name selected so it can be easily replaced. If the map has a <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Default Note Title</a> label, the marker is named by that template instead.
+
+The supported forms are:
+
+*   A plain pair, such as `45.9432, 24.9668`. This is what Google Maps and OpenStreetMap both give you when you ask for the coordinates of a place, and it is also what the `#geolocation` attribute holds.
+*   The `geo:` link that the map itself offers for a place, through the _Open location_ action.
+*   The address of a place on Google Maps or OpenStreetMap, pasted whole.
+
+A pair that is not a place on Earth, such as `1234, 5678`, is not offered.
+
+### Reading the results
+
+Results are gathered under headings, and each group is ordered by distance from the middle of the map:
+
+*   _On this map_: notes that are already on the map, whatever their distance.
+*   _Nearby_: places found within about 25 km of the view.
+*   _Far away_: all the other places.
+
+The headings only appear when at least two of the three groups contain something. Every row that has a position shows how far away it is, in kilometres or miles according to your locale. A place found online shows its name on the first line and its address on the second.
+
+### Selecting a result
+
+Selecting a note already on the map moves to its marker and opens the note beside the map, as clicking the marker would.
+
+Selecting a place found online moves the map to it and marks it with a temporary pin. The pin has a different color from the map's own markers. The map is fitted to the area that the place covers, so a country fills the view, while a house is shown at street level. Some places have a boundary, such as a country, a county or a park. When the service reports one, that boundary is outlined under the pin.
+
+A panel then opens with the place's full address and its coordinates: in the top-right corner on desktop, and at the bottom of the map on mobile, where the top is kept for the search bar and the result counter. Pressing the coordinates copies them to the clipboard.
+
+### Keeping a place as a marker
+
+Press _Add as marker_ in that panel to keep the place. A child note is created under the map. It takes the name of the place, as well as the icon, which matches the kind of place it is. Its `#geolocation` attribute is already set. The note opens beside the map, so you can edit it straight away. The temporary pin disappears, because the place is now a marker like any other.
+
+The button is not offered on a map that cannot be edited, where the panel can still be read.
+
+Press the panel's close button, or the Escape key, to send the place away without keeping it. The pin goes with it.
+
+### Stepping through the results
+
+Once you select a result, a counter appears under the search bar, with a previous and a next button. These buttons move through everything the search offered, in the order it was listed. You can therefore compare several results without opening the list again. Pressing the counter itself moves the map back to the current result, which is useful after you have moved the map away from it.
+
+### The keyboard
+
+*   **Enter** runs the online search when its row is the one selected, and otherwise moves to the highlighted result. Pressed after a result has been taken, it brings the list back.
+*   **Escape** closes the result list, and closes the place panel.
+*   Returning to the search bar reopens the list it was showing.
+*   The **X** at the end of the bar empties it, which also takes a searched place, its pin and its panel off the map.
 
 ## Adding a marker using the map
 
@@ -68,6 +165,24 @@ This works for:
 > [!NOTE]
 > Dragging existing notes only works if the map is in editing mode. See the _Read-only_ section for more information.
 
+### Adding a note from a place the map already shows
+
+When a vector map style is used, the map itself draws the shops, cafés, museums and other places around the area being viewed. Once the map is zoomed in far enough for these to be drawn, they can be clicked:
+
+1.  Look for the places drawn in orange. This is the same color used for a place found by searching. These are the places you can click. They are drawn almost solid, while the other places on the map stay a faint grey.
+2.  Rest the mouse on one of them. Its name appears above it, and the mouse cursor changes to a pointer. The map draws these places as icons without names, so you read a name by hovering over it. If all the names were shown at once, they would crowd out the titles of your own markers.
+3.  Click it. The same panel used for a place found by searching appears. It shows the name of the place and its coordinates, and a pin is placed on the map.
+4.  Press _Add as marker_ to keep it. The note is created with the name of the place as its title, and with the icon that matches the kind of place it is.
+
+Places are read from the map data that has already been downloaded, so clicking one does not send anything to the internet.
+
+Some things to keep in mind:
+
+*   Places with no name in the map data, such as benches or parking spaces, show no name and cannot be clicked. Clicking them does nothing, just like clicking an empty part of the map.
+*   The map's own markers come first. If a marker covers a place, clicking it opens the note and not the place.
+*   This does not work with the raster (OpenStreetMap) style, because its places are part of the map image. It also does not work with the _Neutrino_ style, which draws no places.
+*   In read-only mode you can still click a place and read it, but you cannot keep it as a marker.
+
 ## How the location of the markers is stored
 
 The location of a marker is stored in the `#geolocation` attribute of the child notes:
@@ -86,7 +201,7 @@ After clicking the button to move the marker, click at the desired position on t
 > [!NOTE]
 > If the map is locked for editing (see below), the map needs to be unlocked before moving the marker.
 
-## Interaction with the markers
+## Interaction with the markers, tracks or shapes
 
 *   Hovering over a marker will display a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tooltip.md">Note Tooltip</a> with the content of the note it belongs to.
     *   Clicking on the note title in the tooltip will navigate to the note in the current view.
@@ -95,16 +210,19 @@ After clicking the button to move the marker, click at the desired position on t
 
 ### Popup view
 
-When a marker or a track is clicked, a popup will open to the right which contains the following information:
+When a marker, a [shape](Geo%20Map/Drawing%20shapes.md), or track is clicked, a popup will open to the right which contains the following information:
 
 *   The title and icon of the marker, both editable.
 *   An indicator for the coordinates; clicking it will copy the coordinates to clipboard.
 *   A button to maximize the popup.
-*   Buttons to interact with the markers:
+*   Buttons to interact with the current item:
     *   Open the marker in the same pane, new tab, etc.
     *   A button to open the location in a dedicated application (e.g. Google Maps on mobile).
     *   Color picker to change the color of the marker.
-    *   Button to remove the marker from the map, which can optionally delete its corresponding note. Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
+    *   Markers can also be moved, unlike tracks or shapes (which need to be redrawn).
+    *   Button to remove the marker from the map, which can optionally delete its corresponding note.
+        *   Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
+        *   Similarly, removing a shape will remove its `#geoShape` attribute.
 *   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the marker, if any.
 *   The note's content which can be edited directly from the panel.
 
@@ -133,8 +251,9 @@ It's possible to press the right mouse button to display a contextual menu.
     2.  Open the location using an external application (if the operating system supports it).
     3.  Open the note in a new tab, split or window.
     4.  Button to remove the marker from the map, which can optionally delete its corresponding note. Removing a marker without deleting the note will only remove its `#geolocation` attribute (case in which the coordinates have to be manually added back in in order to get the note to show on the map again).
+3.  Shapes can also be right-clicked and the menu is similar to markers except they cannot be moved.
 
-### Icon and color of the markers
+### Icon and color
 
 <figure class="image image-style-align-right image_resized" style="width:47.42%;"><img style="aspect-ratio:885/321;" src="3_Geo Map_image.png" width="885" height="321"></figure>
 
@@ -142,7 +261,14 @@ The markers will have the same icon as the note.
 
 It's possible to add a custom color to a marker by assigning them a `#color` attribute such as `#color=green`.
 
+This also applies to tracks and [shapes](Geo%20Map/Drawing%20shapes.md).
+
+> [!NOTE]
+> The color as it will be displayed on the map might be slightly tinted in order to make the text or icon more legible.
+
 ### Adding the coordinates manually
+
+Searching for the place is usually quicker (see _Searching the map_ above). The steps below remain useful for a coordinate that is already to hand, or for a place the search cannot find.
 
 In a nutshell, create a child note and set the `#geolocation` attribute to the coordinates.
 
@@ -163,6 +289,10 @@ Similarly to the Google Maps approach:
 1.  Go to any location on openstreetmap.org and right click to bring up the context menu. Select the _Show address_ item.
 2.  The address will be visible in the top-left of the screen, in the place of the search bar. Select the coordinates and copy them into the clipboard.
 3.  Simply paste the value inside the text box into the `#geolocation` attribute of a child note of the map and then it should be displayed on the map.
+
+## Drawing shapes on the map
+
+See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Drawing shapes</a> page.
 
 ## Adding GPS tracks (.gpx)
 
@@ -195,6 +325,8 @@ When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%2
 *   The add button at the bottom of the map.
 *   Repositioning markers.
 *   Editing from the contextual menu (removing locations or adding new items).
+*   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
+*   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
 
 To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ → _Read-only_ (on the new layout, or in Basic Properties on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> for the old layout).
 

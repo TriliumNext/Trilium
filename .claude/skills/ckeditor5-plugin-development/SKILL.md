@@ -153,8 +153,12 @@ Key rules (inherited from the upstream conventions via `eslint-config-ckeditor5`
   `'name'` is added to Trilium's toolbar config (`apps/client/.../text/toolbar.ts`).
 - Make features self-configuring: pre-configure the schema and provide config defaults via
   `editor.config.define( 'feature', { … } )`, read with `editor.config.get( 'feature.key' )`.
-- SVG icons are imported with `?raw` (`import fooIcon from '../theme/icons/foo.svg?raw';`) and
-  surfaced through `export const icons = { fooIcon }` in `index.ts`.
+- SVG icons are imported with `?raw` straight into the file that uses them
+  (`import fooIcon from '../../icons/foo.svg?raw';`); there is no `icons` export any more.
+- Every editor icon, CKEditor's and ours, is also a glyph in the built-in `cke` icon font that the
+  User Guide uses to name toolbar buttons (`cke-table-merge-cell`, `cke-trilium-kbd`). Adding,
+  renaming or removing an SVG, or bumping `ckeditor5`, means regenerating that font and checking
+  the docs for the old class. See "The `cke` icon pack" in `references/ui-and-localization.md`.
 
 ## Minimal end-to-end example (inline text attribute)
 
@@ -260,11 +264,11 @@ Load the focused reference for the task at hand:
 | `references/ui-and-localization.md` | Views & templates, component catalog (buttons, inputs, dropdowns, dialogs/modals, balloons, toolbars), icons, `componentFactory`, focus/keystroke management, and `t()` localization. |
 | `references/widgets.md` | Block & inline widgets: `toWidget`/`toWidgetEditable`, nested editables, `insertObject`, widget toolbars, view↔model position mapping, custom properties, and external/async-rendered widgets (UI-element render callbacks, re-render on change, stale-render guard, lazy-load). |
 | `references/conventions.md` | Trilium conventions: imports from `ckeditor5`/`@triliumnext` + required file extensions, per-package license/headers (not uniform), `@triliumnext` scope + `workspace:*`, per-package tsconfig, `?raw` icons, localization via `editor.t()` message ids, `declare module 'ckeditor5'` augmentation, plus the upstream naming/CSS/BEM/JSDoc/TypeScript rules inherited via `eslint-config-ckeditor5`. For writing idiomatic code and reviewing. |
-| `references/tooling-and-packaging.md` | Trilium packaging & wiring: the `@triliumnext/ckeditor5-<feature>` package layout, `workspace:*` deps, `main: src/index.ts` (no per-package dist), tsconfig/eslint/stylelint setup, the full registration flow (`plugins.ts` arrays → editor classes `builtinPlugins` → `toolbar.ts`), the three editor classes, the Vite build, how `apps/client` creates the editor (config, watchdog, lazy premium), and the Inspector. |
+| `references/tooling-and-packaging.md` | Trilium packaging & wiring: the `@triliumnext/ckeditor5-<feature>` package layout, `workspace:*` deps, `main: src/index.ts` (no per-package dist), tsconfig/eslint/stylelint setup, the full registration flow (`plugins.ts` arrays → editor classes `builtinPlugins` → `toolbar.ts`), the three editor classes, the Vite build, how `apps/client` creates the editor (config, watchdog, lazy premium), the Inspector, and how to read CKEditor's own source (via bundle sourcemaps) and trace its runtime decisions. |
 | `references/persisted-attributes.md` | Persisting a `data-trilium-*` attribute end to end: schema → both conversion directions → the **deliberate** markdown export/import decision (collapsed is DROPPED, task-state is KEPT) → editing-view-only CSS so read-only and share rendering stay correct. Read it before storing plugin state in the saved note content. |
 | `references/review-checklist.md` | A structured checklist for reviewing an existing plugin (architecture, schema, conversion, commands, UI, a11y, conventions). |
 | `references/recipes.md` | Task-oriented how-tos: insert content, find/iterate nodes, custom observers, place caret, extend other plugins' UI, etc. |
-| `references/core-plugin-patterns.md` | Canonical idioms mined from the actual `packages/*/src` source: toolbar+menu-bar button factory, plugin flags & `augmentation.ts`, `AttributeCommand`/`setAttributeProperties`, inline-attribute boundary helpers, `elementToStructure`+slots, reconversion, `BalloonToolbar`, raw-HTML widgets, sanitizing untrusted HTML (CKEditor ships no sanitizer — the host supplies one per feature namespace), clipboard pipeline, markers, post-fixers, async/upload. Each cites its source file. |
+| `references/core-plugin-patterns.md` | Canonical idioms mined from the actual `packages/*/src` source: toolbar+menu-bar button factory, plugin flags & `augmentation.ts`, `AttributeCommand`/`setAttributeProperties`, inline-attribute boundary helpers, `elementToStructure`+slots, reconversion, `BalloonToolbar`, raw-HTML widgets, sanitizing untrusted HTML (CKEditor ships no sanitizer — the host supplies one per feature namespace), clipboard pipeline, markers, post-fixers, async/upload. Each cites its source file. Includes the reconversion hazard that drops sibling UIElements (to-do checkboxes) from reused child views, and the listener-priority rule a forced `reconvertItem()` depends on. |
 
 For **testing** a plugin (Vitest setup, test editors, model/view assertions, command/UI test
 patterns), use the separate **`ckeditor5-testing`** skill.

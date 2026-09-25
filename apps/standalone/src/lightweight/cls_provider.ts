@@ -1,81 +1,80 @@
 import { ExecutionContext } from "@triliumnext/core";
 
 /**
- * Browser execution context implementation.
- * 
- * Handles per-request context isolation with support for fire-and-forget async operations
- * using a context stack and grace-period cleanup to allow unawaited promises to complete.
+ * Browser execution context.
+ *
+ * The browser has no `AsyncLocalStorage`, so scopes are tracked on a stack. That model holds
+ * because the worker keeps at most one *asynchronous* scope live at a time: `dbLock` gives an
+ * async route exclusive use of the connection, and a synchronous scope cannot be interleaved at
+ * all. What the stack owes in return is LIFO discipline — a scope ends when its callback does,
+ * and ending it uncovers the one it was opened inside.
  */
 export default class BrowserExecutionContext implements ExecutionContext {
-    private contextStack: Map<string, any>[] = [];
-    private cleanupTimers = new WeakMap<Map<string, any>, ReturnType<typeof setTimeout>>();
-    private readonly CLEANUP_GRACE_PERIOD = 1000; // 1 second for fire-and-forget operations
-
-    private getCurrentContext(): Map<string, any> {
-        if (this.contextStack.length === 0) {
-            throw new Error("ExecutionContext not initialized");
-        }
-        return this.contextStack[this.contextStack.length - 1];
-    }
+    private stack: Map<string, any>[] = [];
 
     get<T = any>(key: string): T | undefined {
-        if (this.contextStack.length === 0) {
-            return undefined;
-        }
-        return this.contextStack[this.contextStack.length - 1].get(key);
+        return this.current()?.get(key);
     }
 
     set(key: string, value: any): void {
-        this.getCurrentContext().set(key, value);
+        const current = this.current();
+
+        if (!current) {
+            throw new Error("ExecutionContext not initialized");
+        }
+
+        current.set(key, value);
     }
 
     reset(): void {
-        this.contextStack = [];
+        this.stack = [];
     }
 
     init<T>(callback: () => T): T {
-        const context = new Map<string, any>();
-        this.contextStack.push(context);
+        // A nested scope starts from a copy of the enclosing one, as it does on the server:
+        // `routes/api/llm.ts` opens one while its request is still on the stack and reads the
+        // request's componentId and hoistedNoteId through it. Writes land on the copy.
+        const enclosing = this.current();
+        const scope = enclosing ? new Map(enclosing) : new Map<string, any>();
+        this.stack.push(scope);
 
-        // Cancel any pending cleanup timer for this context
-        const existingTimer = this.cleanupTimers.get(context);
-        /* v8 ignore next 3 -- @preserve: `context` is freshly created above, so it can never already have a pending cleanup timer; guard kept defensively. */
-        if (existingTimer) {
-            clearTimeout(existingTimer);
-            this.cleanupTimers.delete(context);
-        }
+        let result: T;
 
         try {
-            const result = callback();
-
-            // If the result is a Promise
-            if (result && typeof result === 'object' && 'then' in result && 'catch' in result) {
-                const promise = result as unknown as Promise<any>;
-                return promise.finally(() => {
-                    this.scheduleContextCleanup(context);
-                }) as T;
-            } else {
-                // For synchronous results, schedule delayed cleanup to allow fire-and-forget operations
-                this.scheduleContextCleanup(context);
-                return result;
-            }
+            result = callback();
         } catch (error) {
-            // Always clean up on error with grace period
-            this.scheduleContextCleanup(context);
+            this.end(scope);
             throw error;
         }
+
+        if (isThenable(result)) {
+            return result.finally(() => this.end(scope)) as T;
+        }
+
+        this.end(scope);
+
+        return result;
     }
 
-    private scheduleContextCleanup(context: Map<string, any>): void {
-        const timer = setTimeout(() => {
-            // Remove from stack if still present
-            const index = this.contextStack.indexOf(context);
-            if (index !== -1) {
-                this.contextStack.splice(index, 1);
-            }
-            this.cleanupTimers.delete(context);
-        }, this.CLEANUP_GRACE_PERIOD);
-
-        this.cleanupTimers.set(context, timer);
+    private current(): Map<string, any> | undefined {
+        return this.stack[this.stack.length - 1];
     }
+
+    /**
+     * Ends `scope`, which is the top of the stack unless an asynchronous scope opened inside it is
+     * still running. Matched by identity so that one outliving its parent removes the right entry.
+     */
+    private end(scope: Map<string, any>) {
+        const at = this.stack.lastIndexOf(scope);
+
+        if (at !== -1) {
+            this.stack.splice(at, 1);
+        }
+    }
+}
+
+function isThenable(value: unknown): value is Promise<unknown> {
+    const candidate = value as { then?: unknown; finally?: unknown } | null;
+
+    return typeof candidate?.then === "function" && typeof candidate.finally === "function";
 }

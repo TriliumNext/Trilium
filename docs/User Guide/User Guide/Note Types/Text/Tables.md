@@ -1,7 +1,7 @@
 # Tables
 Tables are a powerful feature for <a class="reference-link" href="../Text.md">Text</a> notes, since editing them is generally easy.
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:176/204;" src="6_Tables_image.png" width="176" height="204"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:176/204;" src="2_Tables_image.png" width="176" height="204"></figure>
 
 To create a table, simply press the table button and select with the mouse the desired amount of columns and rows, as indicated in the adjacent figure.
 
@@ -9,14 +9,14 @@ To create a table, simply press the table button and select with the mouse the d
 
 When a table is selected, a special formatting toolbar will appear:
 
-<img src="10_Tables_image.png" width="384" height="100">
+<img src="3_Tables_image.png" width="384" height="100">
 
 ## Navigating a table
 
 *   Using the mouse:
     *   Click on a cell to focus it.
-    *   Click the <img src="11_Tables_image.png" width="28" height="27"> button at the top or the bottom of a table to insert an empty paragraph near it.
-    *   Click the <img src="5_Tables_image.png" width="24" height="26"> button at the top-left of the table to select it entirely (for easy copy-pasting or cutting) or drag and drop it to relocate the table.
+    *   Click the <span class="tn-icon cke cke-return-arrow"></span> button at the top or the bottom of a table to insert an empty paragraph near it.
+    *   Click the <span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span> button at the top-left of the table to select it entirely (for easy copy-pasting or cutting) or drag and drop it to relocate the table.
 *   Using the keyboard:
     *   Use the arrow keys on the keyboard to easily navigate between cells.
     *   It's also possible to use <kbd>Tab</kbd> to go to the next cell and Shift+Tab to go to the previous cell.
@@ -27,17 +27,17 @@ When a table is selected, a special formatting toolbar will appear:
 
 *   Columns can be resized by hovering the mouse over the border of two adjacent cells and dragging it.
 *   By default, the row height is not adjustable using the mouse, but it can be configured from the cell settings (see below).
-*   To adjust exactly the width (in pixels or percentages) of a cell, select the <img src="8_Tables_image.png" width="19" height="19"> button.
+*   To adjust exactly the width (in pixels or percentages) of a cell, select the <span class="tn-icon cke cke-table-cell-properties"></span> button.
 
 ## Inserting new rows and new columns
 
-*   To insert a new column, click on a desired location, then press the <img src="Tables_image.png" width="18" height="20"> button from the formatting toolbar and select _Insert column left or right._
-*   To insert a new row, click on a desired location, then press the <img src="7_Tables_image.png" width="20" height="18"> button and select _Insert row above_ or _below_.
+*   To insert a new column, click on a desired location, then press the <span class="tn-icon cke cke-table-column"></span> button from the formatting toolbar and select _Insert column left or right._
+*   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
 
 ## Merging cells
 
-To merge two or more cells together, simply select them via drag & drop and press the <img src="1_Tables_image.png" width="19" height="19"> button from the formatting toolbar.
+To merge two or more cells together, simply select them via drag & drop and press the <span class="tn-icon cke cke-table-merge-cell"></span> button from the formatting toolbar.
 
 More options are available by pressing the arrow next to it:
 
@@ -46,9 +46,9 @@ More options are available by pressing the arrow next to it:
 
 ## Table properties
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:312/311;" src="2_Tables_image.png" width="312" height="311"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:312/311;" src="Tables_image.png" width="312" height="311"></figure>
 
-The table properties can be accessed via the <img src="13_Tables_image.png" width="19" height="19"> button and allows for the following adjustments:
+The table properties can be accessed via the <span class="tn-icon cke cke-table-properties"></span> button and allows for the following adjustments:
 
 *   Border (not the border of the cells, but the outer rim of the table), which includes the style (single, double), color and width.
 *   The background color, with none set by default.
@@ -61,9 +61,9 @@ The table will immediately update to reflect the changes, but the _Save_ button 
 
 ## Cell properties
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:320/386;" src="3_Tables_image.png" width="320" height="386"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:320/386;" src="1_Tables_image.png" width="320" height="386"></figure>
 
-Similarly to table properties, the <img src="12_Tables_image.png" width="19" height="19"> button opens a popup which adjusts the styling of one or more cells (based on the user's selection).
+Similarly to table properties, the <span class="tn-icon cke cke-table-cell-properties"></span> button opens a popup which adjusts the styling of one or more cells (based on the user's selection).
 
 The following options can be adjusted:
 
@@ -77,7 +77,7 @@ The cell will immediately update to reflect the changes, but the _Save_ button m
 
 ## Caption
 
-Press the <img src="4_Tables_image.png" width="18" height="17"> button to insert a caption or a text description of the table, which is going to be displayed above the table.
+Press the <span class="tn-icon cke cke-caption"></span> button to insert a caption or a text description of the table, which is going to be displayed above the table.
 
 ## Table borders
 
@@ -86,13 +86,13 @@ By default, tables will come with a predefined gray border.
 To adjust the borders, follow these steps:
 
 1.  Select the table.
-2.  In the floating panel, select the _Table properties_ option (<img src="14_Tables_image.png" width="21" height="21">).
+2.  In the floating panel, select the _Table properties_ option (<span class="tn-icon cke cke-table-properties"></span>).
     1.  Look for the _Border_ section at the top of the newly opened panel.
     2.  This will control the outer borders of the table.
     3.  Select a style for the border. Generally _Single_ is the desirable option.
     4.  Select a color for the border.
     5.  Select a width for the border, expressed in pixels.
-3.  Select all the cells of the table and then press the _Cell properties_ option (<img src="9_Tables_image.png" width="21" height="21">).
+3.  Select all the cells of the table and then press the _Cell properties_ option (<span class="tn-icon cke cke-table-cell-properties"></span>).
     1.  This will control the inner borders of the table, at cell level.
     2.  Note that it's possible to change the borders individually by selecting one or more cells, case in which it will only change the borders that intersect these cells.
     3.  Repeat the same steps as from step (2).
@@ -113,7 +113,7 @@ Tables can be set to have invisible borders in order to allow for basic layouts 
 
 Since v0.104.1, tables can be indented as a block (the whole table moves, rather than just the content of a cell).
 
-1.  Click the <img src="5_Tables_image.png" width="24" height="26"> button to select the entire table. Otherwise, the indentation applies only to the current cell's content.
+1.  Click the <span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span> button to select the entire table. Otherwise, the indentation applies only to the current cell's content.
 2.  Press <kbd>Tab</kbd> to increase the indent, or <kbd>Shift</kbd>+<kbd>Tab</kbd> to decrease it. Alternatively, use the indentation buttons in the formatting toolbar.
 
 Markdown does not support indented tables, so the indentation is lost when converting to Markdown.

@@ -151,7 +151,7 @@ const slider = () => document.body.querySelector<HTMLInputElement>(".slider");
 const qualityRows = () => rows().filter((row) => !!row.querySelector(".slider"));
 const qualityReading = () => document.body.querySelector(".image-compression-section-value")?.textContent ?? "";
 const toggles = () => Array.from(document.body.querySelectorAll<HTMLInputElement>(".switch-toggle"));
-const hasHelp = (row: HTMLElement) => !!row.querySelector(".tn-card-option-title .contextual-help");
+const hasHelp = (row: HTMLElement) => !!row.querySelector(".tn-card-option-title .contextual-help-icon");
 
 /** The buttons of one format's choice, the groups being in the order the card lists them. */
 const choiceButtons = (group: number) =>

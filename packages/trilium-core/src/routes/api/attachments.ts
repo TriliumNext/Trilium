@@ -1,9 +1,6 @@
 import { ConvertAttachmentToNoteResponse, isAcceptedImageMime } from "@triliumnext/commons";
 import { ValidationError } from "../../errors";
-import type { Request } from "express";
-import type { File } from "../../services/import/common.js";
-
-type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import blobService from "../../services/blob.js";
@@ -47,7 +44,7 @@ function saveAttachment(req: Request<{ noteId: string }>) {
     note.saveAttachment({ attachmentId, role, mime, title, content }, matchBy);
 }
 
-async function uploadAttachment(req: FileRequest<{ noteId: string }>) {
+async function uploadAttachment(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 

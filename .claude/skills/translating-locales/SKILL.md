@@ -9,6 +9,13 @@ Trilium's UI is localized with **i18next**. English is the source of truth; othe
 
 **Scope — this skill *fills* an already-registered locale.** To **add a brand-new locale** (e.g. Polish) you must first do the one-time registration and build wiring; that's a separate task. Follow `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md` to register it, then come back here to translate the strings.
 
+**`en-GB` is the exception and must never be filled.** The `en` catalogues are US English, and `en-GB`
+carries **only** the strings whose British spelling differs — `"color_type": "Colour"`,
+`"centerContent": "Keep content centred"` — falling back to `en` for the rest. So `measure en-GB`
+reporting a few percent is the intended state, not a gap: an entry that merely repeats the English is
+noise, and `measure` would then report it as untranslated anyway. Use `merge en-GB <catalog> <file>`
+for the handful of spelling variants a change introduces, and nothing else.
+
 Every mechanical step is [locale.mjs](locale.mjs) — measure, export, validate, merge, audit. Read [romanian.md](romanian.md) for Romanian grammar and terminology.
 
 ```bash

@@ -1,5 +1,5 @@
 import { scryptAsync } from "@noble/hashes/scrypt.js";
-import { sha256 } from "@noble/hashes/sha2.js";
+import { createSHA256 } from "hash-wasm";
 
 import type { ByteSource, ContainerBackend } from "./backend.js";
 import { concatBytes } from "./bytes.js";
@@ -8,9 +8,11 @@ import { KEY_BYTES, TAG_BYTES } from "./format.js";
 
 /**
  * The browser backend: AES-256-GCM and randomness from WebCrypto, gzip from the platform's
- * `CompressionStream`, and the two primitives WebCrypto does not offer, scrypt and incremental
- * SHA-256, from `@noble/hashes`. Runs under Node just as well, which is how the cross-backend
- * tests exercise it.
+ * `CompressionStream`, and the two primitives WebCrypto does not offer from elsewhere — scrypt
+ * from `@noble/hashes`, incremental SHA-256 from `hash-wasm`. The hash is WASM rather than pure
+ * JS because it runs over every payload byte, where the JS penalty on a phone paces the whole
+ * backup; scrypt stays JS because it runs once per container. Runs under Node just as well,
+ * which is how the cross-backend tests exercise it.
  *
  * WebCrypto's `subtle` interface only exists in secure contexts (HTTPS, localhost, workers of
  * either), so this backend cannot serve a page loaded over plain HTTP.
@@ -23,15 +25,18 @@ export const webBackend: ContainerBackend = {
         return bytes;
     },
 
-    createSha256() {
-        const hash = sha256.create();
+    async createSha256() {
+        // hash-wasm compiles the module once and reuses it, so only the first call pays for
+        // compilation; each call gets its own hasher state.
+        const hasher = await createSHA256();
+        hasher.init();
 
         return {
             update(chunk: Uint8Array) {
-                hash.update(chunk);
+                hasher.update(chunk);
             },
             digest() {
-                return hash.digest();
+                return hasher.digest("binary");
             }
         };
     },

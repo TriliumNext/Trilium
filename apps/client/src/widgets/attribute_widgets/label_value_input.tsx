@@ -3,9 +3,10 @@ import "./label_value_input.css";
 import { type LabelType } from "@triliumnext/commons";
 import clsx from "clsx";
 import { createElement, type HTMLInputTypeAttribute, type InputHTMLAttributes, type MouseEventHandler } from "preact";
-import { useRef } from "preact/hooks";
+import { useCallback, useRef } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import { normalizeExternalUrl } from "../../utils/url";
 import { SelectComboBox } from "./select_input";
 
@@ -286,4 +287,31 @@ export function getTypedInputForLabel(labelType: LabelType | undefined): LabelTy
     }
 
     return labelType;
+}
+
+/**
+ * Returns a suggestion source for a free-text label value: the values `name` already has across
+ * the database, filtered by the query.
+ *
+ * `attribute-values/<name>` is requested on the first query and cached per name, then filtered in
+ * memory. An empty `name` returns no suggestions, since `attribute-values/` matches no route.
+ */
+export function useLabelValueSuggestions(name: string) {
+    const known = useRef<{ name: string; values: string[] }>();
+
+    return useCallback(async (query: string) => {
+        if (!name.trim()) {
+            return [];
+        }
+
+        if (known.current?.name !== name) {
+            known.current = {
+                name,
+                values: await server.get<string[]>(`attribute-values/${encodeURIComponent(name)}`)
+            };
+        }
+
+        const term = query.toLowerCase();
+        return known.current.values.filter((value) => value.toLowerCase().includes(term));
+    }, [ name ]);
 }

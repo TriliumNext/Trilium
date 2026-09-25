@@ -10,9 +10,22 @@ describe("StandalonePlatformProvider", () => {
     it("exposes the standalone platform flags", () => {
         const provider = new StandalonePlatformProvider("");
         expect(provider.isElectron).toBe(false);
-        expect(provider.isMac).toBe(false);
-        expect(provider.isWindows).toBe(false);
-        expect(provider.isLinux).toBe(false);
+        expect(provider.isStandalone).toBe(true);
+    });
+
+    it.each([
+        ["MacIntel", "Mozilla/5.0 (Macintosh)", { isMac: true, isWindows: false, isLinux: false }],
+        ["Win32", "Mozilla/5.0 (Windows NT 10.0)", { isMac: false, isWindows: true, isLinux: false }],
+        ["Linux x86_64", "Mozilla/5.0 (X11; Linux x86_64)", { isMac: false, isWindows: false, isLinux: true }],
+        // Android reports a Linux platform, but is not desktop Linux.
+        ["Linux armv8l", "Mozilla/5.0 (Linux; Android 14)", { isMac: false, isWindows: false, isLinux: false }],
+        ["iPhone", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)", { isMac: false, isWindows: false, isLinux: false }]
+    ])("reads the host OS from navigator.platform %s", (platform, userAgent, expected) => {
+        vi.spyOn(navigator, "platform", "get").mockReturnValue(platform);
+        vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+
+        const provider = new StandalonePlatformProvider("");
+        expect({ isMac: provider.isMac, isWindows: provider.isWindows, isLinux: provider.isLinux }).toEqual(expected);
     });
 
     it("maps known query parameters to TRILIUM_ env vars", () => {

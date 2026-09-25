@@ -11,7 +11,7 @@ Image references are an easy way to embed the preview of another note type into 
 
 ## Steps
 
-1.  Go to one of the supported notes (listed above) and look for the ![](1_Image%20references_image.png) button in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+1.  Go to one of the supported notes (listed above) and look for the <span class="tn-icon bx bx-copy"></span> button in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
 2.  Go to a <a class="reference-link" href="../../Text.md">Text</a> note and use the Paste function to insert the reference to that note.
 
 ## Interaction

@@ -1,5 +1,5 @@
-import { consistency_checks, getSql, routes, sql_init } from "@triliumnext/core";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cls, consistency_checks, getConfig, getSql, note_service as noteService, routes, sql_init } from "@triliumnext/core";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { BrowserRouter } from "./browser_router.js";
 import { createConfiguredRouter, registerRoutes } from "./browser_routes.js";
@@ -227,8 +227,10 @@ describe("route wrapper branches (via controlled handlers)", () => {
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-obj")).body)).toEqual({ a: 1 });
         expect(parseJson((await router.dispatch("GET", "http://localhost/t/r-tuple")).body)).toEqual({ created: true });
 
+        // apiResultHandler turns undefined into "", which goes out as an empty body — what the
+        // server's send() does with the same value, rather than a JSON-quoted empty string.
         const undefRes = await router.dispatch("GET", "http://localhost/t/r-undef");
-        expect(text(undefRes.body)).toBe('""');
+        expect(text(undefRes.body)).toBe("");
     });
 
     it("returns a plain route() result when no result handler is supplied", async () => {
@@ -278,5 +280,145 @@ describe("route wrapper branches (via controlled handlers)", () => {
         // ...and is a no-op once the DB is reported uninitialized.
         vi.spyOn(sql_init, "isDbInitialized").mockReturnValue(false);
         expect(() => (ctx.checkAppNotInitialized as () => void)()).not.toThrow();
+    });
+});
+
+// `/custom/` is registered outside the shared table, so nothing else would catch its loss. Unlike
+// the server's route it cannot hold the response open past the handler returning, so what the tests
+// below pin down is not only that a handler runs but that its answer is complete when it is sent.
+describe("custom request handlers and resource providers", () => {
+    const router = createConfiguredRouter();
+    const coreConfig = getConfig();
+    const originalScripting = coreConfig.Security.backendScriptingEnabled;
+
+    beforeAll(() => {
+        coreConfig.Security.backendScriptingEnabled = true;
+
+        cls.init(() => {
+            createHandler("Greeter", "greet/([a-z]+)", `api.res.status(200).send("handled:" + api.pathParams[0]);`);
+            createHandler("Thrower", "explode", `throw new Error("boom in handler");`);
+            createHandler("Echo", "echo", `api.res.json({ method: api.req.method, body: api.req.body });`);
+            // A handler that answers after an await: what the server gets for free by holding the
+            // connection open, this runtime has to wait for.
+            createHandler("Deferred", "deferred", `
+return (async () => {
+    await Promise.resolve();
+    api.res.status(200).send("late");
+})();`);
+            // A handler that returns without answering. The server leaves such a request hanging
+            // until the client gives up; here the worker has to send something.
+            createHandler("Silent", "silent", `api.log("thinking about it");`);
+            // Express routes a number or a boolean through res.json(). The User Guide's own
+            // example answers `api.res.send(400)`, so this is the documented shape.
+            createHandler("Primitive", "primitive", `api.res.send(api.req.query.kind === "bool" ? false : 404);`);
+
+            const resource = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Custom resource",
+                type: "text",
+                content: "<p>resource body</p>"
+            }).note;
+            resource.setLabel("customResourceProvider", "resource");
+        });
+    });
+
+    afterAll(() => {
+        coreConfig.Security.backendScriptingEnabled = originalScripting;
+    });
+
+    function createHandler(title: string, pattern: string, content: string) {
+        const note = noteService.createNewNote({
+            parentNoteId: "root",
+            title,
+            type: "code",
+            mime: "application/javascript;env=backend",
+            content
+        }).note;
+        note.setLabel("customRequestHandler", pattern);
+    }
+
+    it("runs a handler with the captured path params", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/greet/world");
+        expect(res.status).toBe(200);
+        expect(text(res.body)).toBe("handled:world");
+    });
+
+    it("reaches a handler over a method other than GET, carrying the parsed body", async () => {
+        const body = new TextEncoder().encode(JSON.stringify({ hello: "there" })).buffer as ArrayBuffer;
+        const res = await router.dispatch("POST", "http://localhost/custom/echo", body, {
+            "content-type": "application/json"
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.headers["Content-Type"]).toContain("application/json");
+        expect(parseJson(res.body)).toEqual({ method: "POST", body: { hello: "there" } });
+    });
+
+    // `send()` leaving a number in the body would reach BrowserRouter as something it cannot
+    // encode, and the handler would answer 200 with nothing at all.
+    it("sends a primitive body the way Express does, through json()", async () => {
+        const number = await router.dispatch("GET", "http://localhost/custom/primitive");
+        expect(number.status).toBe(200);
+        expect(text(number.body)).toBe("404");
+        expect(number.headers["Content-Type"]).toContain("application/json");
+
+        const bool = await router.dispatch("GET", "http://localhost/custom/primitive?kind=bool");
+        expect(text(bool.body)).toBe("false");
+    });
+
+    // The server registers its route as an Express `all`, which covers HEAD. A HEAD reaching the
+    // worker with no route to match would answer the router's own 404 instead of the handler.
+    it("answers HEAD from the handler, with the body dropped", async () => {
+        const res = await router.dispatch("HEAD", "http://localhost/custom/greet/world");
+        expect(res.status).toBe(200);
+        expect(res.body).toBeNull();
+    });
+
+    it("waits for a handler that answers after an await", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/deferred");
+        expect(res.status).toBe(200);
+        expect(text(res.body)).toBe("late");
+    });
+
+    it("answers 500 when a handler returns without responding", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/silent");
+        expect(res.status).toBe(500);
+        expect(text(res.body)).toContain("did not send a response");
+    });
+
+    it("answers 500 when the handler throws", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/explode");
+        expect(res.status).toBe(500);
+        expect(text(res.body)).toContain("boom in handler");
+    });
+
+    it("serves a resource provider note", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/resource");
+        expect(res.status).toBe(200);
+        expect(text(res.body)).toContain("resource body");
+    });
+
+    it("answers 404 when no handler matches", async () => {
+        const res = await router.dispatch("GET", "http://localhost/custom/no-such-path");
+        expect(res.status).toBe(404);
+        expect(text(res.body)).toContain("No handler matched");
+    });
+
+    // A resource provider executes no code, so it stays readable with scripting off; a request
+    // handler runs a script and must not.
+    it("gates only the request handler on the backend-scripting toggle", async () => {
+        coreConfig.Security.backendScriptingEnabled = false;
+
+        try {
+            const handler = await router.dispatch("GET", "http://localhost/custom/greet/world");
+            expect(handler.status).toBe(403);
+            expect(text(handler.body)).toContain("Backend script execution is disabled");
+
+            const resource = await router.dispatch("GET", "http://localhost/custom/resource");
+            expect(resource.status).toBe(200);
+            expect(text(resource.body)).toContain("resource body");
+        } finally {
+            coreConfig.Security.backendScriptingEnabled = true;
+        }
     });
 });

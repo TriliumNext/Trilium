@@ -37,6 +37,11 @@ describe("X API (core)", () => {
 - `api.<verb>(path, { body, query, headers, file })`. `createTextNote(api, {...})` → `{ noteId, branchId }`. Assert real state via `getSql()` / `becca`.
 - Mutations are auto-wrapped in cls + a SQL transaction — **no `cls.init` needed** (unlike Pattern 3 direct service calls).
 - Header-reading handlers (e.g. sync) work: pass `headers` and the handler's `req.get(name)` reads them case-insensitively.
+- **`trilium-*` headers seed the execution context**, exactly as `route_api.ts` (Express) and `browser_routes.ts` (standalone) do: `trilium-hoisted-note-id` → `cls.getHoistedNoteId()` (defaults to `"root"`), plus `trilium-component-id` and `trilium-local-now-datetime`. This is the **only** way to test a hoist-dependent route — anything reading `hoistedNoteService.getHoistedNoteId()` (quick search, autocomplete, `SearchContext`'s implicit `ancestorNoteId`) sees `"root"` unless you pass the header:
+  ```ts
+  api.get(`/api/quick-search/${token}`, { headers: { "trilium-hoisted-note-id": workspaceId } });
+  ```
+  A spec that omits it is asserting the *unhoisted* path, so don't read a pass as proof that scoping works.
 
 ### It runs REAL services end to end — including streaming + multipart. Don't mock them.
 Both test setups (`apps/server/spec/setup.ts`, `apps/standalone/src/test_setup.ts`) inject the **real platform providers** (zip = archiver/fflate, image = sharp/magic-bytes, backup = fs/OPFS), and **both vitest suites run on Node** (the standalone setup itself imports `node:fs`/`node:module`) — so `Buffer`, `node:stream`, `node:fs` are available in either runtime. The tester's mock `res` is a real Node `Writable` that also implements the Express surface (`set`/`setHeader`/`removeHeader`/`status`/`send`/`sendStatus`/`write`/`end`), so the **server** export path (`archiver.pipe(res)`, needs a real writable) and the **browser** path (`BrowserZipArchive.finalize()` → `res.send(bytes)`) both run. Match the ETAPI **zero-mock** convention: drive real inputs and assert real output.

@@ -20,7 +20,7 @@
  *     with every built-in Claude Code tool (file access, bash, …) disabled.
  */
 
-import { type Options as AgentOptions, query, type SDKAssistantMessage, type SDKMessage, type SDKUserMessage, type SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
+import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SDKMessage, SDKUserMessage, SpawnedProcess } from "@anthropic-ai/claude-agent-sdk";
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
@@ -38,6 +38,14 @@ import path from "path";
 import dataDirs from "../../data_dir.js";
 import { createMcpServer } from "../../mcp/mcp_server.js";
 import { resolveClaudeBinaryPath } from "./claude_binary.js";
+import {
+    type ClaudeSession,
+    closeSession,
+    Pushable,
+    releaseSession,
+    rememberSession as rememberWarmSession,
+    takeWarmSession
+} from "./claude_session_pool.js";
 import { attachmentPlaceholder, buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
 
 // Re-exported for existing importers (specs, siblings); the implementations
@@ -282,6 +290,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             })
         };
 
+        const query = await loadQuery();
         const response = query({
             prompt: noInput,
             options: {
@@ -370,6 +379,10 @@ export class ClaudeAgentProvider implements LlmProvider {
         const modelDisplayName = describeModel(model);
         let sessionId: string | undefined;
         let assistantText = "";
+        /** The session this turn is driving, released (not closed) at the end. */
+        let held: ClaudeSession | undefined;
+        /** Set once the turn reaches its `result`; only then is the session in a known state. */
+        let turnComplete = false;
         // tool_use id → name, for labelling results; also serves as the guard
         // that only results belonging to *this* turn's tool calls are emitted.
         const toolNamesById = new Map<string, string>();
@@ -377,21 +390,78 @@ export class ClaudeAgentProvider implements LlmProvider {
         const toolIdsByBlockIndex = new Map<number, string>();
 
         try {
-            const response = query({
-                prompt,
-                options: {
-                    ...await this.buildBaseOptions(config),
-                    systemPrompt: this.composeSystemPrompt(messages, config),
-                    model,
-                    resume,
-                    includePartialMessages: true,
-                    maxTurns: MAX_TURNS,
-                    abortController
-                }
+            const query = await loadQuery();
+            const systemPrompt = this.composeSystemPrompt(messages, config);
+            // Options the SDK fixes at query() construction: a change to any of
+            // them can't be applied to a live session, so it forces a new one.
+            // `model` is deliberately absent — setModel() handles it in place.
+            const fingerprint = JSON.stringify({
+                systemPrompt,
+                noteTools: areNoteToolsAvailable(config),
+                webSearch: !!config.enableWebSearch,
+                thinking: !!config.enableExtendedThinking
             });
 
-            for await (const message of response) {
+            // Only reuse a warm session when the transcript still matches what
+            // it last saw (`resume`), so an edited history reseeds as before.
+            const warm = config.chatNoteId && resume
+                ? takeWarmSession(config.chatNoteId, fingerprint)
+                : undefined;
+            let session = warm?.sessionId === resume ? warm : undefined;
+            if (warm && !session) {
+                // Right chat, wrong conversation — retire it rather than reply
+                // into the wrong session.
+                closeSession(config.chatNoteId ?? "", warm);
+            }
+
+            if (session) {
+                if (model && session.model !== model) {
+                    // Streaming input mode only; ~0 ms in practice.
+                    await session.query.setModel(model);
+                    session.model = model;
+                }
+            } else {
+                yield { type: "status", status: "starting_agent" };
+                const input = new Pushable<SDKUserMessage>();
+                session = {
+                    query: query({
+                        prompt: input,
+                        options: {
+                            ...await this.buildBaseOptions(config),
+                            systemPrompt,
+                            model,
+                            resume,
+                            includePartialMessages: true,
+                            maxTurns: MAX_TURNS,
+                            abortController
+                        }
+                    }),
+                    input,
+                    fingerprint,
+                    closed: false,
+                    busy: true,
+                    model
+                };
+                if (config.chatNoteId) {
+                    rememberWarmSession(config.chatNoteId, session);
+                }
+            }
+            const active = session;
+            held = active;
+            await pushUserTurn(active.input, prompt);
+
+            // Manual iteration on purpose: `for await (…) { break }` calls
+            // iterator.return(), which closes the query and kills the process
+            // this whole pool exists to keep warm.
+            for (;;) {
+                const next = await active.query.next();
+                if (next.done) {
+                    active.closed = true;
+                    break;
+                }
+                const message = next.value;
                 sessionId = takeSessionId(message) ?? sessionId;
+                active.sessionId = sessionId ?? active.sessionId;
 
                 switch (message.type) {
                     case "stream_event": {
@@ -497,6 +567,9 @@ export class ClaudeAgentProvider implements LlmProvider {
                                 provider: this.name
                             }
                         };
+                        // The turn is over, but the session stays open for the
+                        // next one — this is what keeps the process warm.
+                        turnComplete = true;
                         break;
                     }
 
@@ -518,6 +591,10 @@ export class ClaudeAgentProvider implements LlmProvider {
                     default:
                         break;
                 }
+
+                if (turnComplete) {
+                    break;
+                }
             }
 
             if (config.chatNoteId && sessionId) {
@@ -535,12 +612,27 @@ export class ClaudeAgentProvider implements LlmProvider {
             yield { type: "error", error: describeAgentError(error) };
         } finally {
             signal?.removeEventListener("abort", onAbort);
-            abortController.abort();
+            const reusable = held && config.chatNoteId && turnComplete && !held.closed && !signal?.aborted;
+            if (reusable && held && config.chatNoteId) {
+                // Keep the subprocess warm; the pool reaps it when idle.
+                releaseSession(config.chatNoteId, held);
+            } else {
+                // A cancelled or failed turn stops mid-stream, so the session's
+                // real state is unknown and the SDK may be wedged mid-`next()`
+                // (interrupt() is not guaranteed to make it yield). Killing the
+                // process is the one reliable way out: the next turn simply
+                // pays a cold start rather than inheriting a broken session.
+                if (held) {
+                    closeSession(config.chatNoteId ?? "", held);
+                }
+                abortController.abort();
+            }
         }
     }
 
     async generateTitle(firstMessage: string): Promise<string> {
         try {
+            const query = await loadQuery();
             const response = query({
                 prompt: `Generate a short title (at most 5 words) summarizing this chat message. Reply with only the title, no quotes or punctuation around it:\n\n${firstMessage.substring(0, 500)}`,
                 options: {
@@ -631,7 +723,7 @@ export class ClaudeAgentProvider implements LlmProvider {
             // open port, and no dependency on the user-facing `mcpEnabled`
             // toggle (which exists to expose notes to *external* clients).
             options.mcpServers = {
-                trilium: { type: "sdk", name: "trilium", instance: createMcpServer() }
+                trilium: { type: "sdk", name: "trilium", instance: await createMcpServer() }
             };
             // Bare server prefix auto-allows every tool from that server.
             allowedTools.push("mcp__trilium");
@@ -897,6 +989,26 @@ async function* streamSingleUserMessage(content: ContentBlockParam[]): AsyncIter
     yield { type: "user", message: { role: "user", content }, parent_tool_use_id: null };
 }
 
+/**
+ * Feed one user turn into a live session's streaming input. Accepts both prompt
+ * forms {@link buildPrompt} produces: a plain string, or the one-message stream
+ * used for natively-consumable attachments (drained here, since a pooled
+ * session's input is the only stream the SDK is reading).
+ */
+async function pushUserTurn(input: Pushable<SDKUserMessage>, prompt: string | AsyncIterable<SDKUserMessage>): Promise<void> {
+    if (typeof prompt !== "string") {
+        for await (const message of prompt) {
+            input.push(message);
+        }
+        return;
+    }
+    input.push({
+        type: "user",
+        message: { role: "user", content: [{ type: "text", text: prompt }] },
+        parent_tool_use_id: null
+    });
+}
+
 /** Strip the MCP prefix so the client shows "search_notes", not "mcp__trilium__search_notes". */
 function friendlyToolName(name: string): string {
     return name.replace(/^mcp__trilium__/, "");
@@ -936,4 +1048,9 @@ function describeAgentError(error: unknown): string {
         return `Failed to start Claude Code: ${text}`;
     }
     return text;
+}
+
+// Dynamically imported so the agent SDK only loads when an agent chat actually runs.
+async function loadQuery(): Promise<typeof queryFn> {
+    return (await import("@anthropic-ai/claude-agent-sdk")).query;
 }

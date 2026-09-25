@@ -1,3 +1,4 @@
+import * as cls from "./context.js";
 import { getLog } from "./log.js";
 
 const scheduledExecutions: Record<string, boolean> = {};
@@ -19,7 +20,9 @@ function scheduleExecution(name: string, milliseconds: number, cb: () => void) {
         delete scheduledExecutions[name];
 
         try {
-            cb();
+            // A scope of its own, because the browser ExecutionContext cannot carry one across a
+            // timer, and a write in the callback needs somewhere to record its entity changes.
+            cls.init(cb);
         } catch (e: unknown) {
             // A synchronous throw here would surface as an uncaughtException and kill the process
             // (see #10549), so contain it — a scheduled maintenance task must never take the app down.

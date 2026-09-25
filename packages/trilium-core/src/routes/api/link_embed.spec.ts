@@ -1,5 +1,5 @@
 import { extractYouTubeVideoId } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import { Jimp } from "jimp";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

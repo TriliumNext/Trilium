@@ -1,5 +1,5 @@
 import { type EntityChange, type EntityChangeRecord, SyncTestResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import { t } from "i18next";
 
 import consistencyChecksService from "../../services/consistency_checks.js";

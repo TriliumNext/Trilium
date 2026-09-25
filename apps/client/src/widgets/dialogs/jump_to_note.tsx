@@ -49,6 +49,10 @@ export default function JumpToNoteDialogComponent() {
             setMode(newMode);
         }
 
+        // `showInFullSearch` reads this ref, so it has to follow the text about to be displayed
+        // rather than keep the previous session's query.
+        actualText.current = initialText;
+
         setInitialText(initialText);
         setShown(true);
         setLastOpenedTs(Date.now());

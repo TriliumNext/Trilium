@@ -8,13 +8,17 @@
  * origin (which is correct for the server build and for a browser hitting the desktop).
  */
 export function buildShareLink(shareId: string, syncServerHost: string | null | undefined): string {
+    // A shareId is either a noteId or a free-form shareAlias, so it can hold spaces, quotes and
+    // path separators. Encoding keeps it a single segment the /share/:shareId route decodes back.
+    const encodedShareId = encodeURIComponent(shareId);
+
     if (syncServerHost) {
-        return new URL(`/share/${shareId}`, syncServerHost).href;
+        return new URL(`/share/${encodedShareId}`, syncServerHost).href;
     }
 
     if (window.glob.httpBaseUrl) {
-        return new URL(`/share/${shareId}`, window.glob.httpBaseUrl).href;
+        return new URL(`/share/${encodedShareId}`, window.glob.httpBaseUrl).href;
     }
 
-    return `${location.protocol}//${location.host}${location.pathname}share/${shareId}`;
+    return `${location.protocol}//${location.host}${location.pathname}share/${encodedShareId}`;
 }

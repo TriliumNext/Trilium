@@ -3,7 +3,6 @@
     position: relative;
     width: 100%;
     height: 100%;
-    outline: none;
 }
 
 /* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is only what it

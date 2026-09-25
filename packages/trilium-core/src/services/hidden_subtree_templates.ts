@@ -265,7 +265,11 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "hidePromotedAttributes",
                         type: "label"
                     },
-                    hideSubtreeAttributes
+                    {
+                        // A board shows its children as cards, so the tree would repeat them.
+                        name: "subtreeHidden",
+                        type: "label"
+                    }
                     // Deliberately no `label:status`: the columns a board shows are the options of a
                     // select definition, and a definition here would be shared by every board in the
                     // document — one board's columns would be everyone's. Each board owns its own

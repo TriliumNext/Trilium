@@ -257,10 +257,8 @@
     "title": "título",
     "date_created": "data de criação",
     "date_modified": "data de modificação",
-    "sorting_direction": "Direção de ordenação",
     "ascending": "crescente",
     "descending": "decrescente",
-    "folders": "Pastas",
     "sort_folders_at_top": "posicionar pastas no topo",
     "natural_sort": "Ordenação Natural",
     "sort_with_respect_to_different_character_sorting": "classificar de acordo com diferentes regras de ordenação de caracteres e colação em diferentes idiomas ou regiões.",
@@ -690,10 +688,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Criar nota filha e adicione neste mapa de relação",
-    "reset_pan_zoom_title": "Redefinir pan & zoom para coordenadas e ampliação iniciais",
-    "zoom_in_title": "Aumentar",
-    "zoom_out_title": "Reduzir"
+    "create_child_note_title": "Criar nota filha e adicione neste mapa de relação"
   },
   "zpetne_odkazy": {
     "relation": "relação",
@@ -1067,7 +1062,6 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis no seu sistema.",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1827,7 +1821,6 @@
     "delete_row": "Apagar linha"
   },
   "board_view": {
-    "move-to": "Mover para",
     "insert-above": "Inserir acima",
     "insert-below": "Inserir abaixo",
     "delete-column": "Apagar coluna",
@@ -1841,7 +1834,6 @@
     "add-column-placeholder": "Inserir nome da coluna...",
     "edit-note-title": "Clicar para editar o titulo da nota",
     "unarchive-note": "Remover nota do arquivo",
-    "edit-column-title": "Click para editar titulo da coluna",
     "column-already-exists": "Esta coluna já existe no quadro."
   },
   "command_palette": {
@@ -1928,8 +1920,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erro na comunicação com servidor",
-    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}",
-    "traefik_blocks_requests": "Se está a usar o Traefik, este introduz uma alteração que afecta a comunicação com o servidor."
+    "unknown_http_error_content": "Código de estado: {{statusCode}}\nURL: {{method}} {{url}}\nMessagem: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Ir para a nota anterior",

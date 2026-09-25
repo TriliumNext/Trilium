@@ -1,5 +1,5 @@
 # Insert buttons
-Press the <img src="4_Insert buttons_image.png" width="34" height="16"> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> to reveal special inserable items and blocks such as symbols, Math expressions and separators.
+Press the <span class="tn-icon cke cke-plus"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a> to reveal special inserable items and blocks such as symbols, Math expressions and separators.
 
 ## Bookmarks
 
@@ -19,9 +19,9 @@ There is also the possibility of inserting emojis directly by typing `:` followe
 
 ## Symbols
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:346/322;" src="1_Insert buttons_image.png" width="346" height="322"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:346/322;" src="Insert buttons_image.png" width="346" height="322"></figure>
 
-Pressing the <img src="7_Insert buttons_image.png" width="18" height="15"> button will reveal a popup window displaying a list of characters that are generally more difficult to insert directly from the keyboard, such as a subset of emojis, quotation characters, etc.
+Pressing the <span class="tn-icon cke cke-special-characters"></span> button will reveal a popup window displaying a list of characters that are generally more difficult to insert directly from the keyboard, such as a subset of emojis, quotation characters, etc.
 
 Interaction:
 
@@ -35,27 +35,41 @@ See the dedicated <a class="reference-link" href="Math%20Equations.md">Math Equ
 
 ## Mermaid diagram
 
-Press the <img src="2_Insert buttons_image.png" width="16" height="17"> button to create an inline Mermaid diagram.
+Press the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> button to create an inline Mermaid diagram.
 
 This feature is quite similar to the <a class="reference-link" href="../Mermaid%20Diagrams.md">Mermaid Diagrams</a> note types and is meant as an alternative to it for simple diagrams. For more complex diagrams, use the <a class="reference-link" href="Include%20Note.md">Include Note</a> feature for a dedicated Mermaid note.
 
-<figure class="image"><img style="aspect-ratio:1174/358;" src="6_Insert buttons_image.png" width="1174" height="358"></figure>
+<figure class="image"><img style="aspect-ratio:1174/358;" src="2_Insert buttons_image.png" width="1174" height="358"></figure>
 
 ## Horizontal ruler
 
-This feature will display a horizontal line, generally useful to separate different sections of the text. To do so, press the <img src="5_Insert buttons_image.png" width="18" height="16"> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>.
+This feature will display a horizontal line, generally useful to separate different sections of the text. To do so, press the <span class="tn-icon cke cke-horizontal-line"></span> button in the <a class="reference-link" href="Formatting%20toolbar.md">Formatting toolbar</a>.
 
-<img src="3_Insert buttons_image.png" width="502" height="95">
+<img src="1_Insert buttons_image.png" width="502" height="95">
 
 Alternatively, it's possible to insert a horizontal ruler by typing `---`.
 
 ## Page break
 
-<figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="8_Insert buttons_image.png" width="371" height="79"></figure>
+<figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="3_Insert buttons_image.png" width="371" height="79"></figure>
 
 Page breaks provide a way to force the next paragraph or block (table, image, etc.) to be displayed onto the next page when printing (either to a real printer to [when exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md)).
 
 Page breaks are marked in the editor with the words _Page break_, but they will not actually be shown when printed.
 
-*   To insert a page break, press the <img src="Insert buttons_image.png" width="20" height="19"> in the formatting toolbar.
+*   To insert a page break, press the <span class="tn-icon cke cke-page-break"></span> in the formatting toolbar.
 *   To insert many page breaks at once, insert a page break first, click on it and press <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then use <kbd>Ctrl</kbd>+<kbd>V</kbd>, to paste as many times as needed.
+
+## Date and time
+
+The <span class="tn-icon cke cke-trilium-date-time"></span> button inserts the current date and time at the cursor, replacing the selected text if there is any. The inserted text takes the formatting of the text around it, so a date inserted inside bold text is bold too.
+
+*   To insert the date in the default format, press the button itself or press <kbd>Alt</kbd>+<kbd>T</kbd>.
+*   To insert it in another format, press the arrow next to the button and pick a format from the list. Each entry shows the current date and time in that format: the default one, the date or the time alone, the date written out, and ISO 8601.
+*   The same formats are offered by the <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>: type `/date`, `/time`, `/now` or `/today`. The _Insert date/time_ entry uses the default format, and shows what it inserts underneath; the other entries show their output in the title.
+
+The default format can be changed in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Editor_ → _Date/time format_, using [Day.js format tokens](https://day.js.org/docs/en/display/format) (for example `DD.MM.YYYY HH:mm`).
+
+## Icons
+
+Icons just like the ones for the [note icon](../../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md) can be inserted in text. For more information see <a class="reference-link" href="Insert%20buttons/Icons.md">Icons</a>.

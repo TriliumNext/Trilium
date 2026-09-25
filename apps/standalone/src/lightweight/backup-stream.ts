@@ -32,14 +32,6 @@ export interface LiveDatabaseReader {
     getColumn(sql: string, params?: unknown[]): unknown[];
 }
 
-/** What the read cost, for a caller that wants to say where a slow backup spent its time. */
-export interface StreamTiming {
-    /** Milliseconds spent inside the page reads, as against waiting on whatever consumes them. */
-    readMs: number;
-    /** Pages handed over so far. */
-    pages: number;
-}
-
 /** Thrown by {@link streamLiveDatabasePages} when a write lands mid-stream. The caller retries. */
 export class DatabaseChangedError extends Error {
     constructor() {
@@ -52,8 +44,6 @@ export interface DatabaseStream {
     /** Exact size of the streamed database, known before the first byte flows. */
     byteSize: number;
     stream: ReadableStream<Uint8Array>;
-    /** Updated as the stream runs, so a caller can report where the time went. */
-    timing: StreamTiming;
 }
 
 /**
@@ -75,15 +65,12 @@ export function streamLiveDatabasePages(db: LiveDatabaseReader): DatabaseStream 
     const pageCount = countOf(db.getValue("PRAGMA page_count"), "page_count");
     const fingerprint = fingerprintOf(db);
 
-    const timing: StreamTiming = { readMs: 0, pages: 0 };
     let nextPage = 1;
 
     return {
         byteSize: pageSize * pageCount,
-        timing,
         stream: new ReadableStream<Uint8Array>({
             pull(controller) {
-                const startedAt = Date.now();
                 try {
                     if (fingerprintOf(db) !== fingerprint) {
                         throw new DatabaseChangedError();
@@ -96,13 +83,10 @@ export function streamLiveDatabasePages(db: LiveDatabaseReader): DatabaseStream 
                     const pages = Math.min(BATCH_PAGES, pageCount - nextPage + 1);
                     const batch = readLivePages(db, nextPage, pages, pageSize);
                     nextPage += pages;
-                    timing.pages += pages;
 
                     controller.enqueue(batch);
                 } catch (e) {
                     controller.error(e);
-                } finally {
-                    timing.readMs += Date.now() - startedAt;
                 }
             }
         })

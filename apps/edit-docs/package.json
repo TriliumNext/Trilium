@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/edit-docs",
-  "version": "0.105.0",
+  "version": "0.106.0",
   "private": true,
   "description": "Desktop version of Trilium which imports the demo database (presented to new users at start-up) or the user guide and other documentation and saves the modifications for committing.",
   "dependencies": {
@@ -12,13 +12,14 @@
     "@triliumnext/core": "workspace:*",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
-    "electron": "43.4.0"
+    "electron": "44.4.3"
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
     "test": "vitest",
     "test-build": "vitest --config vitest.build.config.mts",
     "edit-docs": "cross-env TRILIUM_PORT=37741 TRILIUM_DATA_DIR=data TRILIUM_INTEGRATION_TEST=memory-no-store tsx ../../scripts/electron-start.mts src/edit-docs.ts",
+    "sync-docs": "cross-env TRILIUM_DATA_DIR=data TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_ENV=dev TRILIUM_RESOURCE_DIR=../server/src tsx src/sync-docs.ts",
     "edit-demo": "cross-env TRILIUM_PORT=37744 TRILIUM_DATA_DIR=data TRILIUM_INTEGRATION_TEST=memory-no-store DOCS_ROOT=../../../docs USER_GUIDE_ROOT=\"../../server/src/assets/doc_notes/en/User Guide\" tsx ../../scripts/electron-start.mts src/edit-demo.ts"
   }
 }

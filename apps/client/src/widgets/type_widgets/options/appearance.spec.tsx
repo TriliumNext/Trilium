@@ -30,13 +30,17 @@ vi.mock("../../../services/server", () => ({
     }
 }));
 
+vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
+
+// The fonts card reaches for the user's own fonts and the device's as it mounts, and is covered by
+// `appearance_fonts.spec.tsx`; here only its place on the page matters.
+vi.mock("./appearance_fonts", () => ({ default: () => <div className="fonts-stub" /> }));
+
 vi.mock("../../react/hooks", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../react/hooks")>()),
     useTriliumOption: (name: string) => [ String(mocks.stored[name] ?? ""), vi.fn() ],
     useTriliumOptionBool: (name: string) => [ mocks.stored[name] === true, vi.fn() ]
 }));
-
-vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 
 import AppearanceSettings from "./appearance";
 
@@ -65,39 +69,6 @@ function open() {
     });
 }
 
-const fontRows = () => [ ...host.querySelectorAll(".font-option") ];
-
-describe("the font settings", () => {
-    it("keeps the fonts on show with custom fonts off, greyed rather than gone", () => {
-        open();
-
-        // What turning the switch on would put in force is the whole reason for turning it on.
-        expect(fontRows()).toHaveLength(4);
-        expect(fontRows().every((row) => row.className.includes("disabled"))).toBe(true);
-    });
-
-    it("brings them within reach once custom fonts are on", () => {
-        mocks.stored = { overrideThemeFonts: true };
-        open();
-
-        expect(fontRows()).toHaveLength(4);
-        expect(fontRows().some((row) => row.className.includes("disabled"))).toBe(false);
-    });
-
-    it("nests them under the switch that governs them", () => {
-        open();
-        expect(fontRows().every((row) => row.className.includes("tn-card-section-nested"))).toBe(true);
-    });
-
-    it("leaves ligatures alone, since they come from the theme's own font", () => {
-        open();
-
-        // Not nested under custom fonts: the setting is needed exactly when those are off.
-        const ligatures = host.querySelector("input.switch-toggle[id^='monospace-ligatures-enabled-']");
-        expect(ligatures?.closest(".tn-card-option")?.className).not.toContain("tn-card-section-nested");
-        expect((ligatures as HTMLInputElement | null)?.disabled).toBe(false);
-    });
-});
 
 describe("the layout choices", () => {
     it("gives each an illustrated card of its own, side by side", () => {

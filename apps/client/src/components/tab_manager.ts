@@ -338,8 +338,19 @@ export default class TabManager extends Component {
         return !!noteContext.getMainContext().pinned;
     }
 
-    async openInNewTab(targetNoteId: string, hoistedNoteId: string | null = null, activate: boolean = false) {
-        const noteContext = await this.openEmptyTab(null, hoistedNoteId || this.getActiveContext()?.hoistedNoteId);
+    async openInNewTab(
+        targetNoteId: string,
+        hoistedNoteId: string | null = null,
+        activate: boolean = false,
+        placement: TabPlacement = "end"
+    ) {
+        const noteContext = await this.openEmptyTab(
+            null,
+            hoistedNoteId || this.getActiveContext()?.hoistedNoteId,
+            null,
+            false,
+            placement
+        );
 
         await noteContext.setNote(targetNoteId);
 

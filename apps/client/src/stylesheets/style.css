@@ -2,13 +2,13 @@
 
 @font-face {
     font-family: Montserrat;
-    src: url(../fonts/Montserrat-Light.ttf);
+    src: url(../fonts/Montserrat-Light.woff2) format("woff2");
     font-weight: normal;
 }
 
 @font-face {
     font-family: Montserrat;
-    src: url(../fonts/Montserrat-SemiBold.ttf);
+    src: url(../fonts/Montserrat-SemiBold.woff2) format("woff2");
     font-weight: bold;
 }
 
@@ -91,7 +91,7 @@ body {
     --native-titlebar-darwin-y-offset: 12;
     --launcher-pane-height: 53px;
     --tab-bar-height: 40px;
-    --mobile-bottom-offset: env(safe-area-inset-bottom);
+    --mobile-bottom-offset: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
 }
 
 /*
@@ -148,19 +148,19 @@ body.desktop {
         #left-pane,
         #rest-pane {
             padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }
 
     &.experimental-feature-new-layout #root-widget.horizontal-layout {
         >.status-bar {
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }
 
     &:not(.experimental-feature-new-layout) #root-widget.horizontal-layout {
         #horizontal-main-container {
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }
 
@@ -463,6 +463,16 @@ body > .tn-dropdown-portal > .dropdown-menu {
     --bs-dropdown-zindex: 1200;
 }
 
+/* Under the menu above, which is what it is drawn for; stated beside it so the two stay in step.
+   Dressed as a dialog's backdrop, a menu that dims the page being the same thing to the reader. */
+body > .tn-dropdown-portal > .tn-dropdown-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1199;
+    background-color: var(--modal-backdrop-color);
+    opacity: var(--bs-backdrop-opacity, 0.5);
+}
+
 body.desktop .dropdown-menu,
 body.desktop .tabulator-popup-container,
 :root .excalidraw .dropdown-menu .dropdown-menu-container,
@@ -548,6 +558,7 @@ body.mobile .dropdown .dropdown-submenu {
 }
 
 .dropdown-item span.keyboard-shortcut,
+.dropdown-item span.menu-trailing-icon,
 .dropdown-item *:not(.keyboard-shortcut) > kbd {
     flex-grow: 1;
     text-align: end;
@@ -593,6 +604,11 @@ body.mobile .dropdown .dropdown-submenu {
     color: var(--dropdown-item-icon-destructive-color);
 }
 
+.dropdown-item .tn-icon.use-note-color {
+    --menu-item-icon-color: var(--custom-color);
+    color: var(--custom-color, inherit);
+}
+
 .dropdown-item > span:not([class]) {
     width: 100%;
 }
@@ -612,8 +628,21 @@ body.mobile .dropdown .dropdown-submenu {
     font-family: var(--monospace-font-family) !important;
 }
 
-body .cm-editor .cm-placeholder {
-    color: #999 !important;
+.cm-editor .cm-placeholder {
+    color: inherit;
+    opacity: 0.5;
+    /* Out of flow, so the caret takes its height from the line rather than from the hint. */
+    position: absolute;
+}
+
+/* Firefox draws the caret against the spacer CodeMirror puts before the placeholder widget,
+   short (https://bugzilla.mozilla.org/show_bug.cgi?id=904846). The spacer must stay in layout:
+   CodeMirror measures a position next to a widget from its rect, and a hidden one reads as
+   zeros, which hides the completion popup as off-screen. */
+@supports (-moz-appearance: none) {
+    .cm-editor .cm-widgetBuffer:has(+ .cm-placeholder) {
+        vertical-align: baseline;
+    }
 }
 
 #sql-console-query {
@@ -1078,10 +1107,6 @@ table.promoted-attributes-in-tooltip th {
 
 .help-button {
     color: orange;
-}
-
-.multiplicity {
-    font-size: 1.3em;
 }
 
 /* this is because bootstrap (?) sets code color to red for some reason */
@@ -1657,7 +1682,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     overflow: auto !important;
     user-select: none;
     -webkit-user-select: none;
-    padding-bottom: max(env(safe-area-inset-bottom), var(--padding, var(--menu-padding-size))) !important;
+    padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
 }
 
 body.mobile .dropdown-menu {
@@ -1673,6 +1698,7 @@ body.mobile .dropdown-submenu > .dropdown-menu {
     top: unset !important;
     margin-top: 0 !important;
     width: 100%;
+    max-height: none;
 }
 
 #context-menu-container,
@@ -1688,6 +1714,21 @@ body.mobile .dropdown-submenu > .dropdown-menu {
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
+}
+
+/* What stands between a menu item's icon and its title. */
+.dropdown-item .tn-menu-gap {
+    flex: none;
+    width: 0.5em;
+}
+
+/* A name the user wrote, boxed by `menuName()`: clipped rather than widening the menu. */
+.dropdown-item .tn-menu-name {
+    display: block;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
@@ -1723,7 +1764,10 @@ body.desktop .dropdown-submenu > .dropdown-menu {
     max-width: 300px;
 }
 
+/* Opened on the other side (`submenu-flip-start` added by ContextMenu.repositionSubmenu) when the
+   submenu would overflow the side it opens on. */
 .dropdown-submenu.dropstart > .dropdown-menu,
+.dropdown-submenu > .dropdown-menu.submenu-flip-start,
 body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     inset-inline-start: auto;
     inset-inline-end: calc(100% - 2px);
@@ -1988,7 +2032,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
     body.mobile .dropdown-menu.mobile-bottom-menu.show {
         --dropdown-bottom: 0px;
-        padding-bottom: calc(max(var(--menu-padding-size), env(safe-area-inset-bottom))) !important;
+        padding-bottom: calc(max(var(--menu-padding-size), var(--safe-area-inset-bottom, env(safe-area-inset-bottom)))) !important;
     }
 
     #mobile-sidebar-container {
@@ -2065,7 +2109,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         max-width: unset;
 
         .modal-header {
-            margin-top: env(safe-area-inset-top);
+            margin-top: var(--safe-area-inset-top, env(safe-area-inset-top));
         }
 
         .modal-content {
@@ -2085,7 +2129,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
     body.mobile .modal-footer {
         padding-top: 12px;
-        padding-bottom: calc(max(env(safe-area-inset-bottom), 12px));
+        padding-bottom: calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
     }
 
     body.mobile .help-dialog kbd {
@@ -2257,9 +2301,28 @@ button.close:hover {
 }
 
 .reference-link .tn-icon {
+    /* A line can wrap after an inline-block. An inline box that does not wrap and ends with a
+       word joiner keeps the icon on the line of the first title character. */
+    display: inline;
     position: relative;
     top: 1px;
     margin-inline-end: 3px;
+    white-space: nowrap;
+}
+
+.reference-link .tn-icon::before {
+    /* An inline-block glyph does not take the underline of the link. */
+    display: inline-block;
+}
+
+.reference-link .tn-icon::after {
+    content: "\2060";
+}
+
+/* The board column a reference points at. `--custom-color` is set by the theme on
+   `.use-note-color`. */
+.reference-link small.use-note-color {
+    color: var(--custom-color, inherit);
 }
 
 .options-section:first-of-type h4 {
@@ -2407,7 +2470,7 @@ body.zen .note-split:not(.type-book) .note-list-widget {
 
 body.experimental-feature-new-layout.zen #vertical-main-container {
     /* Remove the placeholder for the right pane peek button */
-    --right-pane-peek-button-gutter: 0;
+    --right-pane-peek-button-gutter: 0 !important;
 }
 
 body.zen .split-note-container-widget > .gutter {
@@ -2999,6 +3062,12 @@ iframe.print-iframe {
     overflow: hidden;
 }
 
+/* A full-height note fills the container instead of scrolling it, so the padding that lets
+   flowing content scroll past its end would only take height away from the note. */
+.scrolling-container:has(> .note-detail.full-height) > .scroll-padding-widget {
+    display: none;
+}
+
 @media (max-width: 991px) {
     body.mobile {
         .split-note-container-widget {
@@ -3013,7 +3082,7 @@ iframe.print-iframe {
             }
         }
 
-        body:not(.ios) #root-widget.virtual-keyboard-opened .note-split:not(.active) {
+        &:not(.ios) #root-widget.virtual-keyboard-opened .note-split:not(.active) {
             max-height: 80px;
             opacity: 0.4;
         }

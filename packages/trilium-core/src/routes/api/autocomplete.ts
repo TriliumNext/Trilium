@@ -1,10 +1,9 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import * as cls from "../../services/context.js";
 import { getLog } from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";
-import { getSql } from "../../services/sql/index.js";
 import { escapeHtml } from "../../services/utils/index.js";
 import { ValidationError } from "../../errors.js";
 import becca_service from "../../becca/becca_service.js";
@@ -80,15 +79,6 @@ function getRecentNotes(activeNoteId: string) {
     });
 }
 
-// Get the total number of notes
-function getNotesCount(req: Request) {
-    const notesCount = getSql().getRow(
-        /*sql*/`SELECT COUNT(*) AS count FROM notes WHERE isDeleted = 0;`,
-    ) as { count: number };
-    return notesCount.count;
-}
-
 export default {
-    getAutocomplete,
-    getNotesCount
+    getAutocomplete
 };

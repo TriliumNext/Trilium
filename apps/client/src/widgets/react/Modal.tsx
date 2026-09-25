@@ -3,7 +3,7 @@ import "./Modal.css";
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { useEffect, useMemo, useRef } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { openDialog } from "../../services/dialog";
@@ -112,6 +112,30 @@ export default function Modal({ children, className, size, title, customTitleBar
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
 
+    /*
+     * Bootstrap writes classes of its own onto this element — `show` above all, which is what makes
+     * a dialog visible — and Preact sets `className` in full whenever the prop changes, which takes
+     * them off again. The rendered attribute is therefore held at what the first render gave it,
+     * and the host's own classes are added and removed by hand below: a host that names what it is
+     * showing in its class (the note's colour, say) must be able to change it without putting its
+     * own dialog out.
+     */
+    const renderedClassName = useRef(`modal fade mx-auto ${className}`);
+    const hostClasses = useRef(splitClasses(className));
+    useLayoutEffect(() => {
+        const modalElement = modalRef.current;
+        if (!modalElement) return;
+
+        const classes = splitClasses(className);
+        for (const cls of hostClasses.current) {
+            if (!classes.includes(cls)) {
+                modalElement.classList.remove(cls);
+            }
+        }
+        modalElement.classList.add(...classes);
+        hostClasses.current = classes;
+    }, [ className ]);
+
     useEffect(() => {
         const modalElement = modalRef.current;
         if (!modalElement) return;
@@ -147,6 +171,18 @@ export default function Modal({ children, className, size, title, customTitleBar
             modalElement.removeEventListener("hidden.bs.modal", onModalHidden);
         };
     }, [ onShown, onHidden ]);
+
+    // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
+    // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
+    // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
+    // Options dialog gets no cursor). Suspend the other modals' traps here and restore them on close.
+    //
+    // Must run before the effect that opens the dialog: `openDialog` focuses the new backdrop, and
+    // a trap still active at that point pulls focus into the modal underneath.
+    useEffect(() => {
+        if (!show || !modalRef.current) return;
+        return suspendModalFocusTraps(modalRef.current);
+    }, [ show ]);
 
     useEffect(() => {
         if (show && modalRef.current) {
@@ -213,15 +249,6 @@ export default function Modal({ children, className, size, title, customTitleBar
         modalInstanceRef.current?.hide();
     }, []);
 
-    // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
-    // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
-    // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
-    // Options dialog gets no cursor). Suspend the other modals' traps here and restore them on close.
-    useEffect(() => {
-        if (!show || !modalRef.current) return;
-        return suspendModalFocusTraps(modalRef.current);
-    }, [ show ]);
-
     // Memoize styles to prevent recreation on every render
     const dialogStyle = useMemo<CSSProperties>(() => {
         const style: CSSProperties = {};
@@ -243,7 +270,7 @@ export default function Modal({ children, className, size, title, customTitleBar
     }, [maxWidth, minWidth]);
 
     return (
-        <div className={`modal fade mx-auto ${className}`} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
+        <div className={renderedClassName.current} tabIndex={-1} style={dialogStyle} role="dialog" aria-label={ariaLabel} ref={modalRef}>
             {(show || keepInDom) && <ContainerVisibilityContext.Provider value={show}><div className={clsx("modal-dialog", `modal-${size}`, {"modal-dialog-scrollable": scrollable, "modal-dialog-full-page-on-mobile": isFullPageOnMobile, "modal-content-with-sidebar": sidebar})} style={documentStyle} role="document">
                 <div className={clsx("modal-content", sidebar && "modal-content-with-sidebar")}>
                     {sidebar && <div className="modal-sidebar">
@@ -297,6 +324,11 @@ export default function Modal({ children, className, size, title, customTitleBar
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+}
+
+/** The classes a host asked for, as `classList` takes them. */
+function splitClasses(className: string) {
+    return className.split(" ").filter((cls) => cls !== "");
 }
 
 function ModalMain({ sidebar, children }: { sidebar: boolean; children: ComponentChildren }) {

@@ -3,14 +3,25 @@ import $ from "jquery";
 
 // --- Mocks (hoisted above imports) ---
 
-const { triggerCommand, getActiveContextNoteId, getActiveContext, chooseNoteType, createNote, getAllCommands, searchCommands } = vi.hoisted(() => ({
+const {
+    triggerCommand, getActiveContextNoteId, getActiveContext, chooseNoteType, createNote,
+    getInboxNotePath, getInboxTarget, translate, getAllCommands, searchCommands, logError
+} = vi.hoisted(() => ({
     triggerCommand: vi.fn(),
     getActiveContextNoteId: vi.fn<() => string | null>(() => "activeNote"),
     getActiveContext: vi.fn<() => any>(() => ({ hoistedNoteId: "hoisted" })),
     chooseNoteType: vi.fn(),
     createNote: vi.fn(),
+    getInboxNotePath: vi.fn<() => Promise<string | undefined>>(async () => "root/inbox"),
+    getInboxTarget: vi.fn<() => Promise<unknown>>(
+        async () => ({ kind: "inbox", noteId: "inb", title: "Inbox" })
+    ),
+    // i18next is never initialised here, so the real `t` returns undefined. Echoing the key
+    // keeps the label assertions about which string is chosen rather than about its English.
+    translate: vi.fn((key: string, _opts?: Record<string, unknown>) => key),
     getAllCommands: vi.fn(() => [] as any[]),
-    searchCommands: vi.fn(() => [] as any[])
+    searchCommands: vi.fn(() => [] as any[]),
+    logError: vi.fn()
 }));
 
 vi.mock("../components/app_context.js", () => ({
@@ -27,8 +38,29 @@ vi.mock("./note_create.js", () => ({
     default: { chooseNoteType, createNote }
 }));
 
+vi.mock("./date_notes.js", () => ({
+    default: { getInboxNotePath, getInboxTarget }
+}));
+
+vi.mock("./i18n.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("./i18n.js")>()),
+    t: translate
+}));
+
 vi.mock("./command_registry.js", () => ({
     default: { getAllCommands, searchCommands }
+}));
+
+// Narrows the blanket ws mock from test/setup.ts to a spy, so what the module reports can be asserted.
+vi.mock("./ws.js", () => ({
+    default: {
+        subscribeToMessages() {},
+        async waitForMaxKnownEntityChangeId() {}
+    },
+    subscribeToMessages() {},
+    unsubscribeToMessage() {},
+    async waitForMaxKnownEntityChangeId() {},
+    logError
 }));
 
 // Imports AFTER vi.mock calls.
@@ -105,7 +137,7 @@ describe("note_autocomplete", () => {
             ]) as typeof server.get;
 
             const result = (await noteAutocomplete.autocompleteSourceForCKEditor("Foo")) as any[];
-            // autocompleteSourceForCKEditor forces allowCreatingNotes -> a create-note row is prepended.
+            // autocompleteSourceForCKEditor forces allowCreatingNotes -> the creation rows are prepended.
             const mapped = result.find((r) => r.notePath === "root/abc");
             expect(mapped).toEqual({
                 action: "search-notes",
@@ -119,14 +151,23 @@ describe("note_autocomplete", () => {
             });
         });
 
+        it("omits the creation rows when the host cannot act on them", async () => {
+            server.get = vi.fn(async () => [
+                { noteTitle: "Foo", notePathTitle: "Root / Foo", notePath: "root/abc" }
+            ]) as typeof server.get;
+
+            const result = (await noteAutocomplete.autocompleteSourceForCKEditor("Foo", false)) as any[];
+            expect(result.map((r) => r.action)).toEqual([ undefined ]);
+        });
+
         it("falls back to empty name when notePathTitle is missing", async () => {
             server.get = vi.fn(async () => []) as typeof server.get;
             const result = (await noteAutocomplete.autocompleteSourceForCKEditor("X")) as any[];
-            // only the synthetic create-note row remains; it has no notePathTitle.
+            // only the synthetic creation rows remain; they have no notePathTitle.
             const createRow = result.find((r) => r.action === "create-note");
             expect(createRow).toBeDefined();
-            expect(createRow!.name).toBe("");
-            expect(createRow!.id).toBe("@undefined");
+            expect(createRow?.name).toBe("");
+            expect(createRow?.id).toBe("@undefined");
         });
     });
 });
@@ -198,43 +239,6 @@ describe("autocompleteSource (via dataset)", () => {
         expect(rows[0].commandId).toBe("c");
     });
 
-    it("resets searchDelay back to the computed value after it was zeroed", async () => {
-        server.get = vi.fn(async () => []) as typeof server.get;
-        // Capture the delay arg the source's debounce schedules with, so we can
-        // observe that the zeroed searchDelay is restored to the computed value.
-        const scheduledDelays: number[] = [];
-        const originalSetTimeout = globalThis.setTimeout;
-        const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: any, delay?: number, ...rest: any[]) => {
-            scheduledDelays.push(delay as number);
-            // call through to the real timer so runSource's cb still resolves
-            return originalSetTimeout(fn, delay as number, ...rest);
-        }) as unknown as typeof setTimeout);
-        try {
-            const { $el, dataset } = initAndGetSource();
-            // showRecentNotes zeroes the shared module-level searchDelay...
-            noteAutocomplete.showRecentNotes($el);
-            // ...so the FIRST source invocation debounces with delay 0 (immediate)
-            // and, because searchDelay === 0, restores it to getSearchDelay(notesCount).
-            await runSource(dataset, "x");
-            // ...and the SECOND source invocation now sees the restored (non-zero)
-            // delay rather than 0 — this is the reset behaviour the test name claims.
-            await runSource(dataset, "y");
-            expect(server.get).toHaveBeenCalled();
-
-            // The source-callback delays we captured (filtering out any unrelated
-            // timers froca/setup may schedule): the run after zeroing uses 0, the
-            // following run uses the restored computed delay (which is NOT 0).
-            // notesCount resolves to undefined in this mocked environment, so
-            // getSearchDelay(undefined) === NaN — still distinct from the zeroed 0.
-            expect(scheduledDelays).toContain(0); // the immediate run after zeroing
-            const restored = scheduledDelays[scheduledDelays.length - 1];
-            expect(restored).not.toBe(0); // searchDelay was restored away from 0
-            expect(Number.isNaN(restored)).toBe(true); // == getSearchDelay(undefined)
-        } finally {
-            setTimeoutSpy.mockRestore();
-        }
-    });
-
     it("queries the server and returns plain results", async () => {
         server.get = vi.fn(async () => [{ noteTitle: "Result", notePath: "root/x" }]) as typeof server.get;
         const { dataset } = initAndGetSource();
@@ -275,21 +279,68 @@ describe("autocompleteSource (via dataset)", () => {
         expect(server.get).not.toHaveBeenCalled();
     });
 
-    it("prepends a create-note suggestion when allowCreatingNotes and term is non-empty", async () => {
+    it("keeps both creation rows above the results, so neither is scrolled or sliced away", async () => {
         server.get = vi.fn(async () => [{ noteTitle: "Existing", notePath: "root/y" }]) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true, allowJumpToSearchNotes: true });
+        const rows = await runSource(dataset, "New");
+        expect(rows.map((r) => r.action)).toEqual([ "create-note", "create-child-note", undefined, "search-notes" ]);
+        // the inbox is resolved on selection, so the row carries no parent
+        expect(rows[0].parentNoteId).toBeUndefined();
+        expect(rows[1].parentNoteId).toBe("activeNote");
+        expect(rows[2].noteTitle).toBe("Existing");
+    });
+
+    it.each([
+        { kind: "inbox", title: "Inbox" },
+        { kind: "workspaceInbox", title: "Work" },
+        { kind: "workspaceRoot", title: "Project" }
+    ])("names the $kind destination in the create-note row", async ({ kind, title }) => {
+        getInboxTarget.mockResolvedValueOnce({ kind, title });
+        server.get = vi.fn(async () => []) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "New");
+        expect(rows[0].highlightedNotePathTitle).toBe("note_autocomplete.create-note-into");
+        expect(translate).toHaveBeenCalledWith("note_autocomplete.create-note-into", { term: "New", parentTitle: title });
+    });
+
+    it("says top level for a database with neither an inbox nor a journal", async () => {
+        getInboxTarget.mockResolvedValueOnce({ kind: "root", noteId: "root", title: "root" });
+        server.get = vi.fn(async () => []) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "New");
+        // The root note's title would be meaningless in the label, so it is not used.
+        expect(rows[0].highlightedNotePathTitle).toBe("note_autocomplete.create-note-into-root");
+        expect(translate).toHaveBeenCalledWith("note_autocomplete.create-note-into-root", { term: "New" });
+    });
+
+    it("names the day note, which has no title of its own until it is created", async () => {
+        getInboxTarget.mockResolvedValueOnce({ kind: "dayNote" });
+        server.get = vi.fn(async () => []) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "New");
+        expect(rows[0].highlightedNotePathTitle).toBe("note_autocomplete.create-note-into-day-note");
+        expect(translate).toHaveBeenCalledWith("note_autocomplete.create-note-into-day-note", { term: "New" });
+    });
+
+    it.each([
+        { when: "the lookup fails", arrange: () => getInboxTarget.mockRejectedValueOnce(new Error("nope")) },
+        { when: "the destination has no title", arrange: () => getInboxTarget.mockResolvedValueOnce({ kind: "inbox" }) }
+    ])("falls back to an unqualified label when $when", async ({ arrange }) => {
+        arrange();
+        server.get = vi.fn(async () => []) as typeof server.get;
         const { dataset } = initAndGetSource({ allowCreatingNotes: true });
         const rows = await runSource(dataset, "New");
         expect(rows[0].action).toBe("create-note");
-        expect(rows[0].parentNoteId).toBe("activeNote");
-        expect(rows[1].noteTitle).toBe("Existing");
+        expect(rows[0].highlightedNotePathTitle).toBe("note_autocomplete.create-note");
     });
 
-    it("uses root as parent when there is no active note", async () => {
+    it("uses root as the child-note parent when there is no active note", async () => {
         getActiveContextNoteId.mockReturnValue(null);
         server.get = vi.fn(async () => []) as typeof server.get;
         const { dataset } = initAndGetSource({ allowCreatingNotes: true });
         const rows = await runSource(dataset, "New");
-        expect(rows[0].parentNoteId).toBe("root");
+        const childRow = rows.find((r) => r.action === "create-child-note");
+        expect(childRow?.parentNoteId).toBe("root");
     });
 
     it("appends a search-notes suggestion when allowJumpToSearchNotes", async () => {
@@ -311,8 +362,9 @@ describe("autocompleteSource (via dataset)", () => {
         server.get = vi.fn(async () => [{ noteTitle: "A", notePath: "root/a" }]) as typeof server.get;
         const { dataset } = initAndGetSource({ allowCreatingNotes: true, allowJumpToSearchNotes: true, allowExternalLinks: true });
         const rows = await runSource(dataset, "   ");
-        // length === 0 so neither create-note nor search-notes nor external-link added
+        // length === 0 so neither creation row nor search-notes nor external-link added
         expect(rows.every((r) => r.action !== "create-note")).toBe(true);
+        expect(rows.every((r) => r.action !== "create-child-note")).toBe(true);
         expect(rows.every((r) => r.action !== "search-notes")).toBe(true);
     });
 
@@ -337,6 +389,18 @@ describe("autocompleteSource (via dataset)", () => {
         expect(html).toContain("#color=red");
     });
 
+    it("never renders a content snippet, whatever the suggestion carries", () => {
+        // The dropdown lists notes matched by title and attributes, so a body excerpt would
+        // suggest a content match that fast search never made.
+        const { dataset } = initAndGetSource();
+        const html = dataset.templates.suggestion({
+            highlightedNotePathTitle: "T",
+            highlightedContentSnippet: "some <b>matched</b> content"
+        });
+        expect(html).not.toContain("search-result-content");
+        expect(html).not.toContain("matched");
+    });
+
     it("renders search-notes, create-note and external-link suggestion icons/classes", () => {
         const { dataset } = initAndGetSource();
         expect(dataset.templates.suggestion({ action: "search-notes", highlightedNotePathTitle: "S" }))
@@ -345,6 +409,8 @@ describe("autocompleteSource (via dataset)", () => {
             .toContain("bx bx-search");
         expect(dataset.templates.suggestion({ action: "create-note", highlightedNotePathTitle: "C" }))
             .toContain("bx bx-plus");
+        expect(dataset.templates.suggestion({ action: "create-child-note", highlightedNotePathTitle: "C" }))
+            .toContain("bx bx-subdirectory-right");
         expect(dataset.templates.suggestion({ action: "external-link", highlightedNotePathTitle: "E" }))
             .toContain("bx bx-link-external");
     });
@@ -377,7 +443,10 @@ describe("autocompleteSource (via dataset)", () => {
     });
 });
 
-describe("source debounce + searchDelay reset", () => {
+// Mirrors SEARCH_DEBOUNCE_MS in note_autocomplete.ts, which is internal.
+const DEBOUNCE_MS = 50;
+
+describe("source debounce", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
@@ -389,6 +458,104 @@ describe("source debounce + searchDelay reset", () => {
 
     afterEach(() => {
         vi.useRealTimers();
+    });
+
+    it("runs the first search of a burst without waiting", () => {
+        const { dataset } = initAndGetSource();
+        dataset.source("hi", vi.fn());
+        // No timer is advanced: an idle input queries on the keystroke itself.
+        expect(server.get).toHaveBeenCalledTimes(1);
+    });
+
+    it("coalesces the rest of a burst into one search for the final term", async () => {
+        const { dataset } = initAndGetSource();
+        for (const term of ["h", "he", "hel", "hell"]) {
+            dataset.source(term, vi.fn());
+        }
+        expect(server.get).toHaveBeenCalledTimes(1);
+
+        await vi.runAllTimersAsync();
+        expect(server.get).toHaveBeenCalledTimes(2);
+        expect(server.get).toHaveBeenLastCalledWith(expect.stringContaining("query=hell"));
+    });
+
+    it("holds the window open while typing continues instead of pacing searches", async () => {
+        const { dataset } = initAndGetSource();
+        // Keystrokes arriving closer together than the window: the one that opens the burst
+        // queries at once, and each one after it pushes the pending search back again.
+        dataset.source("h", vi.fn());
+        for (const term of ["he", "hel", "hell"]) {
+            await vi.advanceTimersByTimeAsync(30);
+            dataset.source(term, vi.fn());
+        }
+        expect(server.get).toHaveBeenCalledTimes(1);
+
+        await vi.runAllTimersAsync();
+        expect(server.get).toHaveBeenCalledTimes(2);
+        expect(server.get).toHaveBeenLastCalledWith(expect.stringContaining("query=hell"));
+    });
+
+    it("gives each input its own timer, so one cannot cancel another's pending search", async () => {
+        const first = initAndGetSource();
+        const second = initAndGetSource();
+        // The leading-edge search of each burst, so both inputs hold a debounced one afterwards.
+        first.dataset.source("a1", vi.fn());
+        second.dataset.source("b1", vi.fn());
+        // Typing in one input must not drop the search the other is waiting on.
+        first.dataset.source("a2", vi.fn());
+        second.dataset.source("b2", vi.fn());
+        await vi.runAllTimersAsync();
+
+        const queries = vi.mocked(server.get).mock.calls.map(([url]) => url);
+        expect(queries.some((url) => url.includes("query=a2"))).toBe(true);
+        expect(queries.some((url) => url.includes("query=b2"))).toBe(true);
+    });
+
+    it("keeps one search in flight, so a slow one cannot make the rest queue behind it", async () => {
+        const pending: Array<() => void> = [];
+        server.get = vi.fn(
+            () => new Promise<any[]>((resolve) => pending.push(() => resolve([])))
+        ) as typeof server.get;
+
+        const { dataset } = initAndGetSource();
+        dataset.source("h", vi.fn());
+        expect(server.get).toHaveBeenCalledTimes(1);
+
+        // Each keystroke opens its own burst, so without single-flight every one of them would
+        // reach the server while the first search is still running.
+        for (const term of ["he", "hel", "hell", "hello"]) {
+            await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 10);
+            dataset.source(term, vi.fn());
+        }
+        expect(server.get).toHaveBeenCalledTimes(1);
+
+        pending[0]();
+        await vi.runAllTimersAsync();
+
+        // Only the newest term is searched for; the ones typed past are dropped, not queued.
+        expect(server.get).toHaveBeenCalledTimes(2);
+        expect(server.get).toHaveBeenLastCalledWith(expect.stringContaining("query=hello"));
+    });
+
+    it("reports a failed search and keeps accepting the next one", async () => {
+        server.get = vi.fn(async () => {
+            throw new Error("boom");
+        }) as typeof server.get;
+
+        const { dataset } = initAndGetSource();
+        dataset.source("h", vi.fn());
+        await vi.runAllTimersAsync();
+
+        // The scheduler awaits the search, so a rejection has to be reported here rather than
+        // left to surface as an unhandled one.
+        expect(logError).toHaveBeenCalledWith(expect.stringContaining("boom"));
+
+        server.get = vi.fn(async () => []) as typeof server.get;
+        await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 10);
+        dataset.source("hi", vi.fn());
+
+        // The failure released the slot, rather than wedging the input for good.
+        expect(server.get).toHaveBeenCalledTimes(1);
     });
 
     it("debounces and skips the search while composing input", async () => {
@@ -519,12 +686,22 @@ describe("initNoteAutocomplete wiring", () => {
         expect($group.find(".full-text-search-button").length).toBe(1);
         expect($group.find(".go-to-selected-note-button").length).toBe(1);
 
-        // clear button -> autocomplete("val", "") + change trigger
+        const onInput = vi.fn();
+        $el.on("input", onInput);
+
+        // clear button -> autocomplete("val", "") + change trigger. Also re-triggers "input" so
+        // consumers tracking the live query (e.g. jump_to_note.tsx's actualText ref) don't go
+        // stale when the value is cleared programmatically instead of by typing.
         $group.find(".input-clearer-button").trigger("click");
         expect(autocompleteCalls.some((c) => c[0] === "val" && c[1] === "")).toBe(true);
+        expect(onInput).toHaveBeenCalled();
 
-        // show-recent-notes button click returns false (prevent focus steal)
+        onInput.mockClear();
+        // show-recent-notes button click returns false (prevent focus steal), and likewise
+        // re-triggers "input" for the same reason.
         $group.find(".show-recent-notes-button").trigger("click");
+        expect(onInput).toHaveBeenCalled();
+
         // full text search button click
         $el.autocomplete("val", "search me");
         $group.find(".full-text-search-button").trigger("click");
@@ -744,16 +921,33 @@ describe("autocomplete:selected handler", () => {
         expect(triggerCommand).toHaveBeenCalledWith("searchNotes", { searchString: "query" });
     });
 
-    it("creates a note then selects it", async () => {
-        const note = buildNote({ title: "Created" });
+    it("creates a note in the inbox then selects it", async () => {
         chooseNoteType.mockResolvedValue({ success: true, noteType: "text", templateNoteId: undefined, notePath: undefined });
         createNote.mockResolvedValue({ note: { getBestNotePathString: () => "root/created" } });
         const { $el, handlers } = initWithSelected();
-        await fireSelected($el, { action: "create-note", noteTitle: "Created", parentNoteId: "parent" });
+        await fireSelected($el, { action: "create-note", noteTitle: "Created" });
         expect(chooseNoteType).toHaveBeenCalled();
-        expect(createNote).toHaveBeenCalledWith("parent", expect.objectContaining({ title: "Created", type: "text" }));
+        expect(createNote).toHaveBeenCalledWith("root/inbox", expect.objectContaining({ title: "Created", type: "text" }));
         expect(handlers["autocomplete:noteselected"]).toBeDefined();
         expect(handlers["autocomplete:noteselected"].notePath).toBe("root/created");
+    });
+
+    it("creates a child note under the suggested parent", async () => {
+        chooseNoteType.mockResolvedValue({ success: true, noteType: "text", templateNoteId: undefined, notePath: undefined });
+        createNote.mockResolvedValue({ note: { getBestNotePathString: () => "root/created" } });
+        const { $el } = initWithSelected();
+        await fireSelected($el, { action: "create-child-note", noteTitle: "Created", parentNoteId: "parent" });
+        expect(getInboxNotePath).not.toHaveBeenCalled();
+        expect(createNote).toHaveBeenCalledWith("parent", expect.objectContaining({ title: "Created" }));
+    });
+
+    it("aborts when the inbox cannot be resolved", async () => {
+        chooseNoteType.mockResolvedValue({ success: true, noteType: "text" });
+        getInboxNotePath.mockResolvedValueOnce(undefined);
+        const { $el, handlers } = initWithSelected();
+        await fireSelected($el, { action: "create-note", noteTitle: "X" });
+        expect(createNote).not.toHaveBeenCalled();
+        expect(handlers["autocomplete:noteselected"]).toBeUndefined();
     });
 
     it("aborts the create-note flow when the type chooser is cancelled", async () => {
@@ -799,24 +993,34 @@ describe("public helpers", () => {
 
     it("setText sets the trimmed value and opens the dropdown", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.setText($el, "  hello  ");
         expect(lastCommandWith("open")).toBe(true);
         expect($el.attr("data-note-path")).toBe("");
+        // re-triggers "input" so consumers tracking the live query stay in sync
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("showRecentNotes clears path, blanks val, opens and focuses", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.showRecentNotes($el);
         expect(lastCommandWith("open")).toBe(true);
         expect($el.attr("data-note-path")).toBe("");
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("showAllCommands sets the '>' prefix and opens", () => {
         const $el = makeEl();
+        const onInput = vi.fn();
+        $el.on("input", onInput);
         noteAutocomplete.showAllCommands($el);
         // val was set to ">"
         expect($el.autocomplete("val")).toBe(">");
         expect(lastCommandWith("open")).toBe(true);
+        expect(onInput).toHaveBeenCalled();
     });
 
     it("triggerRecentNotes is a no-op for a missing element", () => {
@@ -846,12 +1050,10 @@ describe("fullTextSearch guards", () => {
         const callsBefore = autocompleteCalls.length;
         const ev = $.Event("keydown", { shiftKey: true, key: "Enter" });
         $el.trigger(ev);
-        // fullTextSearch bailed out at the blank-string guard before re-setting
-        // val / focus. The ONLY autocomplete call it may make is the single getter
-        // read ("val" with datasets === undefined) at its first line. Assert that
-        // NO setter call ("val", <non-undefined>) was added afterwards, which is
-        // what would distinguish the early-return path from the full execution
-        // (which would have written ["val", ""] then ["val", "   "]).
+        // `fullTextSearch` bails out at the blank-string guard, so the only autocomplete call it
+        // can make is the getter read on its first line. Running on would have written
+        // ["val", ""] and then ["val", "   "], so the absence of any setter call is what
+        // separates the two paths.
         const callsAfter = autocompleteCalls.slice(callsBefore);
         const setterCalls = callsAfter.filter((c) => c[0] === "val" && c[1] !== undefined);
         expect(setterCalls).toEqual([]);

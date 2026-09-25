@@ -10,12 +10,12 @@ Once you send a message or run the <a class="reference-link" href="../Note%20Ty
 | Cloud providers | The provider's servers (Anthropic, OpenAI, Google, DeepSeek) |
 | Subscription-based | The provider's servers, via Claude Code running locally |
 | Local / self-hosted | Nothing leaves the machine running the model |
-| Custom endpoint | Wherever you pointed it — which may be your own hardware or a hosted service |
+| Custom endpoint | Wherever it was pointed, which may be your own hardware or a hosted service |
 
-This is the reason the provider list is grouped this way, and why Trilium pre-selects nothing: the choice of where your notes travel is made explicitly, by you, before anything is sent.
+This is the reason the provider list is grouped this way, and why Trilium pre-selects nothing: the choice of where your note content is sent is made explicitly by you, before anything is sent.
 
 > [!NOTE]
-> The <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> has a model selection of its own, so it maybe answered by a different provider than the one in the chat. The row at the bottom of the assistant's menu always names the one being used.
+> The <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> has a model selection of its own, so it may be answered by a different provider than the one in the chat. The row at the bottom of the assistant's menu always names the one being used.
 
 ## What is actually sent
 

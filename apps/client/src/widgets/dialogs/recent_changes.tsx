@@ -1,23 +1,24 @@
+import type { RecentChangeRow } from "@triliumnext/commons";
 import { Dispatch, StateUpdater, useEffect, useState } from "preact/hooks";
+
 import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import dateNoteService from "../../services/date_notes";
 import dialog from "../../services/dialog";
+import froca from "../../services/froca";
+import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
+import link from "../../services/link";
 import server from "../../services/server";
 import toast from "../../services/toast";
+import ws from "../../services/ws";
+import { formatDateTime, formatDuration } from "../../utils/formatters";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { useTriliumEvent, useTriliumOptionInt } from "../react/hooks";
 import Modal from "../react/Modal";
 import NoItems from "../react/NoItems";
-import hoisted_note from "../../services/hoisted_note";
-import type { RecentChangeRow } from "@triliumnext/commons";
-import froca from "../../services/froca";
-import { formatDateTime, formatDuration } from "../../utils/formatters";
-import link from "../../services/link";
 import RawHtml from "../react/RawHtml";
-import ws from "../../services/ws";
-import { useTriliumEvent, useTriliumOptionInt } from "../react/hooks";
 
 export default function RecentChangesDialog() {
     const [ ancestorNoteId, setAncestorNoteId ] = useState<string>();
@@ -80,7 +81,7 @@ export default function RecentChangesDialog() {
                 const groupedByDate = groupByDate(recentChanges);
                 setGroupedByDate(groupedByDate);
             });
-    }, [ shown, refreshCounter, deletedOnly, ancestorNoteId ])
+    }, [ shown, refreshCounter, deletedOnly, ancestorNoteId ]);
 
     const baseTitle = deletedOnly ? t("recent_changes.deleted_notes_title") : t("recent_changes.title");
     // Null until the options have loaded, in which case the retention hint is omitted rather than
@@ -134,7 +135,7 @@ export default function RecentChangesDialog() {
                         : <NoItems icon="bx bx-history" text={t("recent_changes.no_changes_message")} />}
             </div>
         </Modal>
-    )
+    );
 }
 
 function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map<string, RecentChangeRow[]>, setShown: Dispatch<StateUpdater<boolean>> }) {
@@ -158,8 +159,8 @@ function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map
                                     <li className={isDeleted ? "deleted-note" : ""}>
                                         <span title={change.date}>{formattedTime}</span>
                                         { notePath && !isDeleted
-                                        ? <NoteLink notePath={notePath} title={change.current_title} />
-                                        : <DeletedNoteLink change={change} setShown={setShown} /> }
+                                            ? <NoteLink notePath={notePath} title={change.current_title} />
+                                            : <DeletedNoteLink change={change} setShown={setShown} /> }
                                     </li>
                                 );
                             })}
@@ -186,14 +187,14 @@ function NoteLink({ notePath, title }: { notePath: string, title: string }) {
 
 function DeletedNoteLink({ change, setShown }: { change: RecentChangeRow, setShown: Dispatch<StateUpdater<boolean>> }) {
     return (
-        <>
+        <span>
             {/* `data-href` (not `href`, so it stays non-navigable) carries the note id to the global
                 tooltip; the trailing `?` marks it as a note link rather than an in-page anchor.
                 `data-note-deleted` tells the tooltip to resolve it via the deleted-content route. */}
             <span className="note-title" data-href={`#${change.noteId}?`} data-note-deleted>{change.current_title}</span>
             &nbsp;
             (<a href="javascript:" onClick={() => undeleteNote(change, setShown)}>{t("recent_changes.undelete_link")}</a>)
-        </>
+        </span>
     );
 }
 

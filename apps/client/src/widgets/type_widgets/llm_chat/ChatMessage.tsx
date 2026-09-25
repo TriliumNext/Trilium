@@ -215,21 +215,21 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                 >
                     {utils.formatTime(new Date(message.createdAt))}
                 </span>
+                {message.usage?.model && (
+                    <span className="llm-chat-usage-model" title={message.usage.model}>
+                        {shortModelName(message.usage.model, message.usage.provider)}
+                    </span>
+                )}
                 {message.usage && typeof message.usage.promptTokens === "number" && (
                     <>
-                        {message.usage.model && (
-                            <span className="llm-chat-usage-model" title={message.usage.model}>
-                                {shortModelName(message.usage.model, message.usage.provider)}
-                            </span>
-                        )}
                         <span
                             className="llm-chat-usage-tokens"
                             title={t("llm_chat.tokens_detail", {
                                 prompt: message.usage.promptTokens.toLocaleString(),
-                                completion: message.usage.completionTokens.toLocaleString()
+                                completion: (message.usage.completionTokens ?? 0).toLocaleString()
                             })}
                         >
-                            {t("llm_chat.total_tokens", { total: shortenNumber(message.usage.totalTokens) })}
+                            {t("llm_chat.total_tokens", { total: shortenNumber(message.usage.totalTokens ?? message.usage.promptTokens) })}
                         </span>
                         {message.usage.cost != null && (
                             <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(2)}</span>

@@ -14,6 +14,7 @@ import { safeExtractMessageAndStackFromError } from "../utils/index.js";
 import { generateChatTitle } from "./chat_title.js";
 import { getProvider, getProviderByType, getSelectedModel, hasConfiguredProviders, type LlmProviderConfig } from "./index.js";
 import { formatStreamError, streamToChunks } from "./stream.js";
+import { resolveToolRegistries } from "./tools/index.js";
 
 /**
  * Stream one assistant turn, yielding the chunks as the provider produces them.
@@ -40,9 +41,13 @@ export async function* runChat(
         // Prefer routing by the provider config id — it disambiguates multiple
         // configs of the same type (e.g. OpenAI + a self-hosted Ollama). Chats
         // saved before providerId existed fall back to type-based resolution.
+        // Host-provided tool registries load lazily; the providers' synchronous
+        // buildTools() reads the registry array, so it must be complete first.
+        await resolveToolRegistries();
+
         const provider = config.providerId
-            ? getProvider(config.providerId)
-            : getProviderByType(config.provider || "anthropic");
+            ? await getProvider(config.providerId)
+            : await getProviderByType(config.provider || "anthropic");
 
         const modelId = config.model || provider.getAvailableModels().find(m => m.isDefault)?.id;
         if (!modelId) {

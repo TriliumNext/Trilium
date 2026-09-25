@@ -1,3 +1,4 @@
+import type { MenuItemConstructorOptions } from "electron";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Handler = (...args: unknown[]) => unknown;
@@ -34,6 +35,7 @@ const state = vi.hoisted(() => ({
     // controllable nativeImage isEmpty / throw
     nativeImageEmpty: false,
     nativeImageThrow: false,
+    windowStateManage: vi.fn(),
     // when set, every new FakeWebContents reuses this session object
     sharedSession: undefined as undefined | FakeSession
 }));
@@ -159,15 +161,21 @@ const fakeGlobalShortcut = {
 const fakeNativeImage = {
     createFromBuffer: vi.fn(() => {
         if (state.nativeImageThrow) throw new Error("bad buffer");
-        return { isEmpty: () => state.nativeImageEmpty };
+        return { isEmpty: () => state.nativeImageEmpty, toPNG: () => Buffer.from([137, 80, 78, 71]) };
     })
 };
+
+class FakeClipboardItem {
+    constructor(readonly items: Record<string, unknown>) {}
+}
+
 const fakeApp = {
     setUserTasks: vi.fn(),
     relaunch: vi.fn(),
     exit: vi.fn(),
     quit: vi.fn(),
-    on: vi.fn((event: string, cb: Handler) => state.appOn.set(event, cb))
+    on: vi.fn((event: string, cb: Handler) => state.appOn.set(event, cb)),
+    whenReady: vi.fn(() => Promise.resolve())
 };
 
 const electronSurface = {
@@ -175,9 +183,14 @@ const electronSurface = {
     shell: fakeShell,
     globalShortcut: fakeGlobalShortcut,
     nativeImage: fakeNativeImage,
-    clipboard: { writeImage: vi.fn() },
+    clipboard: { write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()), readText: vi.fn(() => Promise.resolve("")) },
+    ClipboardItem: FakeClipboardItem,
     nativeTheme: { themeSource: "system" },
     BrowserWindow: fakeBrowserWindowClass,
+    Menu: {
+        setApplicationMenu: vi.fn(),
+        buildFromTemplate: vi.fn((template: MenuItemConstructorOptions[]) => ({ template }))
+    },
     ipcMain: {
         on: (channel: string, fn: Handler) => state.ipcOn.set(channel, fn),
         handle: (channel: string, fn: Handler) => state.ipcHandle.set(channel, fn),
@@ -193,7 +206,7 @@ vi.mock("electron", () => ({
 }));
 
 vi.mock("electron-window-state", () => ({
-    default: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: vi.fn() })
+    default: () => ({ x: 0, y: 0, width: 1200, height: 800, manage: state.windowStateManage })
 }));
 
 // setupWindowing() installs the WebContents security policy; that behaviour has
@@ -248,6 +261,7 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
 const windowService = (await import("./window.js")).default;
 const { setupWindowing } = await import("./window.js");
 const { markStartupMetric } = await import("./startup_metrics.js");
+const { setupWebContentsSecurity } = await import("./web_contents_security.js");
 
 function fireOn(channel: string, event: unknown, ...args: unknown[]) {
     const fn = state.ipcOn.get(channel);
@@ -382,12 +396,52 @@ describe("window service", () => {
             expect(opts.frame).toBeUndefined();
         });
 
-        it("creates the window hidden when startHidden is set, visible otherwise", async () => {
+        it("restores hidden state before reveal and does not manage a window that stays hidden", async () => {
             await windowService.createMainWindow(true);
-            expect((state.windows[state.windows.length - 1].opts as Record<string, unknown>).show).toBe(false);
+            const closedWindow = state.windows[state.windows.length - 1];
+
+            closedWindow.fire("closed");
+            expect(state.windowStateManage).not.toHaveBeenCalled();
+
+            await windowService.createMainWindow(true);
+            const hiddenWindow = state.windows[state.windows.length - 1];
+            expect((hiddenWindow.opts as Record<string, unknown>).show).toBe(false);
+            expect(state.windowStateManage).not.toHaveBeenCalled();
+
+            windowService.showAndFocusWindow(hiddenWindow as never);
+            expect(state.windowStateManage).toHaveBeenCalledOnce();
+            expect(state.windowStateManage).toHaveBeenCalledWith(hiddenWindow);
+            expect(state.windowStateManage.mock.invocationCallOrder[0])
+                .toBeLessThan(hiddenWindow.show.mock.invocationCallOrder[0]);
+
+            hiddenWindow.fire("show");
+            expect(state.windowStateManage).toHaveBeenCalledOnce();
 
             await windowService.createMainWindow();
-            expect((state.windows[state.windows.length - 1].opts as Record<string, unknown>).show).toBe(true);
+            const visibleWindow = state.windows[state.windows.length - 1];
+            expect((visibleWindow.opts as Record<string, unknown>).show).toBe(true);
+            expect(state.windowStateManage).toHaveBeenLastCalledWith(visibleWindow);
+        });
+
+        it("uses the show event as a one-time fallback", async () => {
+            await windowService.createMainWindow(true);
+            const hiddenWindow = state.windows[state.windows.length - 1];
+
+            hiddenWindow.fire("show");
+            hiddenWindow.fire("show");
+
+            expect(state.windowStateManage).toHaveBeenCalledOnce();
+            expect(state.windowStateManage).toHaveBeenCalledWith(hiddenWindow);
+        });
+
+        it("manages state once when restoration emits show synchronously", async () => {
+            await windowService.createMainWindow(true);
+            const hiddenWindow = state.windows[state.windows.length - 1];
+            state.windowStateManage.mockImplementationOnce(() => hiddenWindow.fire("show"));
+
+            windowService.showAndFocusWindow(hiddenWindow as never);
+
+            expect(state.windowStateManage).toHaveBeenCalledOnce();
         });
 
         it("marks startup metrics for creation, first paint, and load finish", async () => {
@@ -411,6 +465,21 @@ describe("window service", () => {
             const win = state.windows[state.windows.length - 1];
             expect(win.loadURL).toHaveBeenCalledWith("trilium-app://app/?extraWindow=1#root/abc");
             expect(win.webContents.session.setSpellCheckerLanguages).toHaveBeenCalled();
+        });
+
+        it("adopts a window the renderer opened through window.open", async () => {
+            state.optionBools = { spellCheckEnabled: false };
+            await windowService.createExtraWindow("#opener");
+            const opener = state.windows[state.windows.length - 1];
+
+            const child = new FakeBrowserWindow();
+            opener.webContents.fire("did-create-window", child);
+
+            expect(child.setMenuBarVisibility).toHaveBeenCalledWith(false);
+            expect(child.webContents.session.setSpellCheckerEnabled).toHaveBeenCalledWith(false);
+            state.ipcEmit.mockClear();
+            child.fire("focus");
+            expect(state.ipcEmit).toHaveBeenCalledWith("reload-tray");
         });
     });
 
@@ -703,6 +772,18 @@ describe("window service", () => {
         it("restores, shows and focuses a minimized window", async () => {
             await windowService.createMainWindow();
             const win = state.windows[state.windows.length - 1];
+            win.isMinimized.mockReturnValue(true);
+
+            windowService.showAndFocusWindow(win as never);
+
+            expect(win.restore).toHaveBeenCalled();
+            expect(win.show).toHaveBeenCalled();
+            expect(win.focus).toHaveBeenCalled();
+            expect(win.restore.mock.invocationCallOrder[0])
+                .toBeLessThan(win.show.mock.invocationCallOrder[0]);
+            expect(win.show.mock.invocationCallOrder[0])
+                .toBeLessThan(win.focus.mock.invocationCallOrder[0]);
+
             win.fire("focus");
             expect(windowService.getLastFocusedWindow()).toBe(win);
             expect(windowService.getAllWindows()).toContain(win);
@@ -763,10 +844,13 @@ describe("window service", () => {
             new FakeBrowserWindow();
         });
 
-        it("create-extra-window invokes createExtraWindow", async () => {
-            fireOn("create-extra-window", makeEvent(), { extraWindowHash: "#h" });
-            await new Promise((r) => setTimeout(r, 0));
-            expect(state.windows.some(w => w.loadURL.mock.calls.length > 0)).toBe(true);
+        it("hands the window-open policy the extra-window options, preload included", () => {
+            const [options] = vi.mocked(setupWebContentsSecurity).mock.calls.at(-1) ?? [];
+            const extraWindowOptions = options?.extraWindowOptions();
+            expect(extraWindowOptions?.width).toBe(1000);
+            const preload = extraWindowOptions?.webPreferences?.preload;
+            expect(preload).toMatch(/preload\.(compiled\.)?cjs$/);
+            expect(extraWindowOptions?.webPreferences?.nodeIntegration).toBe(false);
         });
 
         it("reload-all-windows reloads every window", () => {
@@ -781,21 +865,25 @@ describe("window service", () => {
             expect(fakeApp.exit).toHaveBeenCalled();
         });
 
-        it("copy-image-to-clipboard writes a valid image", () => {
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1, 2, 3]));
-            expect(electronSurface.clipboard.writeImage).toHaveBeenCalled();
+        it("copy-image-to-clipboard writes a PNG clipboard item", async () => {
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1, 2, 3]));
+            const [items] = electronSurface.clipboard.write.mock.calls[0] as [FakeClipboardItem[]];
+            expect(items[0]).toBeInstanceOf(FakeClipboardItem);
+            const blob = items[0].items["image/png"] as Blob;
+            expect(blob.type).toBe("image/png");
+            expect(blob.size).toBe(4);
         });
 
-        it("copy-image-to-clipboard logs when the image is empty", () => {
+        it("copy-image-to-clipboard logs when the image is empty", async () => {
             state.nativeImageEmpty = true;
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("nativeImage is empty"));
-            expect(electronSurface.clipboard.writeImage).not.toHaveBeenCalled();
+            expect(electronSurface.clipboard.write).not.toHaveBeenCalled();
         });
 
-        it("copy-image-to-clipboard logs when conversion throws", () => {
+        it("copy-image-to-clipboard logs when conversion throws", async () => {
             state.nativeImageThrow = true;
-            fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
+            await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("failed"));
         });
 
@@ -803,6 +891,7 @@ describe("window service", () => {
             const win = state.windows[state.windows.length - 1];
             fireOn("show-window", makeEvent());
             expect(win.show).toHaveBeenCalled();
+            expect(win.focus).not.toHaveBeenCalled();
 
             state.fromWebContentsResult = "null";
             fireOn("show-window", makeEvent());
@@ -823,6 +912,7 @@ describe("window service", () => {
             win.isVisible.mockReturnValue(false);
             fireOn("toggle-all-windows", makeEvent());
             expect(win.show).toHaveBeenCalled();
+            expect(win.focus).not.toHaveBeenCalled();
         });
 
         it("get-available-spellchecker-languages returns the list", () => {
@@ -999,6 +1089,71 @@ describe("window service", () => {
             const ev = makeEvent();
             fireOn("navigation-history-go-to-index", ev, 3);
             expect(ev.sender.navigationHistory.goToIndex).toHaveBeenCalledWith(3);
+        });
+    });
+
+    describe("application menu", () => {
+        const realPlatform = process.platform;
+
+        async function setupWindowingOn(platform: NodeJS.Platform) {
+            vi.clearAllMocks();
+            Object.defineProperty(process, "platform", { value: platform, configurable: true });
+            setupWindowing();
+            await Promise.resolve(); // let whenReady().then(...) run
+        }
+
+        function flattenItems(items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] {
+            return items.flatMap((item) => [
+                item,
+                ...(Array.isArray(item.submenu) ? flattenItems(item.submenu) : [])
+            ]);
+        }
+
+        afterEach(() => {
+            Object.defineProperty(process, "platform", { value: realPlatform, configurable: true });
+        });
+
+        it("installs a menu without the minimize accelerator, except on macOS", async () => {
+            const { buildFromTemplate, setApplicationMenu } = electronSurface.Menu;
+
+            for (const platform of ["linux", "win32"] as const) {
+                await setupWindowingOn(platform);
+
+                expect(buildFromTemplate).toHaveBeenCalledTimes(1);
+                const menu = buildFromTemplate.mock.results[0]?.value;
+                expect(setApplicationMenu.mock.calls).toEqual([[menu]]);
+
+                const items = flattenItems(buildFromTemplate.mock.calls[0]?.[0] ?? []);
+                const roles = items.map((item) => item.role);
+                expect(roles).toEqual(
+                    expect.arrayContaining(["fileMenu", "editMenu", "viewMenu", "close"])
+                );
+                expect(roles).not.toContain("minimize");
+                // Without its own submenu, a `windowMenu` gets Electron's defaults and `minimize`.
+                const defaultWindowMenus = items.filter((item) =>
+                    item.role === "windowMenu" && !Array.isArray(item.submenu));
+                expect(defaultWindowMenus).toEqual([]);
+            }
+
+            await setupWindowingOn("darwin");
+            expect(setApplicationMenu).not.toHaveBeenCalled();
+        });
+
+        it("reports a menu that Electron rejects", async () => {
+            const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+            electronSurface.Menu.buildFromTemplate.mockImplementationOnce(() => {
+                throw new Error("bad template");
+            });
+
+            try {
+                await setupWindowingOn("linux");
+                await new Promise((resolve) => setImmediate(resolve));
+
+                expect(consoleError).toHaveBeenCalledWith(expect.stringContaining("bad template"));
+                expect(electronSurface.Menu.setApplicationMenu).not.toHaveBeenCalled();
+            } finally {
+                consoleError.mockRestore();
+            }
         });
     });
 

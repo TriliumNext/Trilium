@@ -30,6 +30,11 @@
       "output": 50,
       "ctx": 1000000
     },
+    "claude-fable-5-1": {
+      "input": 10,
+      "output": 50,
+      "ctx": 1000000
+    },
     "claude-haiku-4-5": {
       "input": 1,
       "output": 5,
@@ -41,6 +46,11 @@
       "ctx": 200000
     },
     "claude-mythos-5": {
+      "input": 10,
+      "output": 50,
+      "ctx": 1000000
+    },
+    "claude-mythos-5-1": {
       "input": 10,
       "output": 50,
       "ctx": 1000000
@@ -113,12 +123,12 @@
     "claude-sonnet-4-5": {
       "input": 3,
       "output": 15,
-      "ctx": 200000
+      "ctx": 1000000
     },
     "claude-sonnet-4-5-20250929": {
       "input": 3,
       "output": 15,
-      "ctx": 200000
+      "ctx": 1000000
     },
     "claude-sonnet-4-6": {
       "input": 3,
@@ -137,26 +147,36 @@
       "output": 0.42,
       "ctx": 131072
     },
+    "deepseek-flash": {
+      "input": 0.3,
+      "output": 1.2,
+      "ctx": 1000000
+    },
     "deepseek-reasoner": {
       "input": 0.28,
       "output": 0.42,
       "ctx": 131072
     },
     "deepseek-v4-flash": {
-      "input": 0.14,
-      "output": 0.28,
+      "input": 0.3,
+      "output": 1.2,
+      "ctx": 1000000
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "input": 0.3,
+      "output": 1.2,
       "ctx": 1000000
     },
     "deepseek-v4-pro": {
-      "input": 0.435,
-      "output": 0.87,
+      "input": 1.32,
+      "output": 3.96,
       "ctx": 1000000
     }
   },
   "google": {
     "gemini-2.0-flash": {
-      "input": 0.1,
-      "output": 0.4,
+      "input": 0.15,
+      "output": 0.6,
       "ctx": 1048576
     },
     "gemini-2.0-flash-001": {
@@ -199,21 +219,6 @@
       "output": 0.4,
       "ctx": 1048576
     },
-    "gemini-2.5-flash-native-audio-latest": {
-      "input": 0.3,
-      "output": 2.5,
-      "ctx": 1048576
-    },
-    "gemini-2.5-flash-native-audio-preview-09-2025": {
-      "input": 0.3,
-      "output": 2.5,
-      "ctx": 1048576
-    },
-    "gemini-2.5-flash-native-audio-preview-12-2025": {
-      "input": 0.3,
-      "output": 2.5,
-      "ctx": 1048576
-    },
     "gemini-2.5-flash-preview-09-2025": {
       "input": 0.3,
       "output": 2.5,
@@ -225,8 +230,8 @@
       "ctx": 1048576
     },
     "gemini-2.5-pro-preview-tts": {
-      "input": 1.25,
-      "output": 10,
+      "input": 1,
+      "output": 20,
       "ctx": 1048576
     },
     "gemini-3-flash-preview": {
@@ -249,11 +254,6 @@
       "output": 1.5,
       "ctx": 1048576
     },
-    "gemini-3.1-flash-live-preview": {
-      "input": 0.75,
-      "output": 4.5,
-      "ctx": 131072
-    },
     "gemini-3.1-pro-preview": {
       "input": 2,
       "output": 12,
@@ -275,11 +275,16 @@
       "ctx": 1048576
     },
     "gemini-3.6-flash": {
-      "input": 1.5,
-      "output": 7.5,
+      "input": 0.75,
+      "output": 3.75,
       "ctx": 1048576
     },
     "gemini-3.7-flash": {
+      "input": 0.75,
+      "output": 3.75,
+      "ctx": 1048576
+    },
+    "gemini-3.8-flash": {
       "input": 0.75,
       "output": 3.75,
       "ctx": 1048576
@@ -290,13 +295,13 @@
       "ctx": 1048576
     },
     "gemini-flash-latest": {
-      "input": 0.3,
-      "output": 2.5,
+      "input": 0.75,
+      "output": 3.75,
       "ctx": 1048576
     },
     "gemini-flash-lite-latest": {
-      "input": 0.1,
-      "output": 0.4,
+      "input": 0.3,
+      "output": 2.5,
       "ctx": 1048576
     },
     "gemini-omni-flash-preview": {
@@ -305,8 +310,8 @@
       "ctx": 1048576
     },
     "gemini-pro-latest": {
-      "input": 1.25,
-      "output": 10,
+      "input": 2,
+      "output": 12,
       "ctx": 1048576
     },
     "gemini-robotics-er-1.5-preview": {
@@ -611,25 +616,39 @@
       "output": 30,
       "ctx": 1050000
     },
+    "gpt-5.5-cyber": {
+      "input": 12.5,
+      "output": 75
+    },
     "gpt-5.6": {
-      "input": 5,
-      "output": 30,
-      "ctx": 1050000
+      "input": 4,
+      "output": 20,
+      "ctx": 922000
+    },
+    "gpt-5.6-cyber": {
+      "input": 12.5,
+      "output": 75,
+      "ctx": 400000
     },
     "gpt-5.6-luna": {
       "input": 0.2,
       "output": 1.2,
-      "ctx": 1050000
+      "ctx": 922000
     },
     "gpt-5.6-sol": {
-      "input": 5,
-      "output": 30,
-      "ctx": 1050000
+      "input": 4,
+      "output": 20,
+      "ctx": 922000
     },
     "gpt-5.6-terra": {
       "input": 2,
       "output": 12,
-      "ctx": 1050000
+      "ctx": 922000
+    },
+    "gpt-6-astra": {
+      "input": 10,
+      "output": 50,
+      "ctx": 922000
     },
     "gpt-audio": {
       "input": 2.5,
@@ -660,6 +679,10 @@
       "input": 0.6,
       "output": 2.4,
       "ctx": 128000
+    },
+    "gpt-rosalind-research": {
+      "input": 5,
+      "output": 25
     },
     "o1": {
       "input": 15,

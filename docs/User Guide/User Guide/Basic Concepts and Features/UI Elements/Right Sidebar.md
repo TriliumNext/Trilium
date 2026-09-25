@@ -1,5 +1,5 @@
 # Right Sidebar
-<figure class="image"><img style="aspect-ratio:1990/1168;" src="1_Right Sidebar_image.png" width="1990" height="1168"></figure>
+<figure class="image"><img style="aspect-ratio:1990/1168;" src="Right Sidebar_image.png" width="1990" height="1168"></figure>
 
 The right sidebar displays specific content for the current note. The sidebar is grouped into multiple tabs:
 
@@ -15,7 +15,7 @@ The right sidebar displays specific content for the current note. The sidebar is
 
 There are two ways to toggle the right sidebar:
 
-*   Via the <img src="Right Sidebar_image.png" width="25" height="21"> icon near the title bar, which toggles whether the sidebar is docked.
+*   Via the <span class="tn-icon bx bx-sidebar bx-flip-horizontal"></span> icon near the title bar, which toggles whether the sidebar is docked.
 *   Via the _Toggle right pane_ [keyboard shortcut](../Keyboard%20Shortcuts.md), which is not assigned by default.
 
 ## Peeking the sidebar

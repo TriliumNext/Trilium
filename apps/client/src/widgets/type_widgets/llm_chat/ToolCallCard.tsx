@@ -48,7 +48,7 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
         return { noteId, parentNoteId: null, detailText: null };
     }
 
-    const detailText = (input?.name ?? input?.query) as string | undefined;
+    const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined;
     return { noteId: null, parentNoteId: null, detailText: detailText || null };
 }
 

@@ -31,9 +31,8 @@ export function showErrorOverlay(title: string, message: string, detail?: string
     }
     shown = true;
 
-    // The pre-client shell may still be hiding the body; reveal it so the
-    // overlay is actually visible (mirrors main.ts's bootstrap catch).
-    document.body.style.display = "block";
+    // The startup splash sits above everything and would cover the overlay.
+    document.getElementById("splash")?.remove();
 
     // Defensive: never stack two overlays if one was somehow left behind.
     document.getElementById(OVERLAY_ID)?.remove();

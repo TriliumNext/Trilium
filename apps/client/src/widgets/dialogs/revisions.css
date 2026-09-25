@@ -29,7 +29,7 @@ body.mobile .revisions-dialog {
         flex-shrink: 0;
         display: flex;
         gap: 8px;
-        padding: 12px 16px calc(max(env(safe-area-inset-bottom), 12px));
+        padding: 12px 16px calc(max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 12px));
         border-top: 1px solid var(--main-border-color);
         background-color: var(--modal-background-color);
 

@@ -15,7 +15,8 @@
   "include": [
     "**/*.ts",
     "**/*.mts",
-    "../packages/commons/src/lib/i18n.ts"
+    "../packages/commons/src/lib/i18n.ts",
+    "../apps/website/src/locales.ts"
   ],
   "exclude": [
     "dist"

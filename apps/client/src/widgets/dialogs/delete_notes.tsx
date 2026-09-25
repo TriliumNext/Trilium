@@ -25,6 +25,12 @@ export interface ResolveOptions {
     proceed: boolean;
     deleteAllClones?: boolean;
     eraseNotes?: boolean;
+    /**
+     * How many notes the preview says the deletion takes down, which the backend reports progress
+     * against. Carried from here because the dialog has already asked for it, and because the toast
+     * then counts towards the number the reader was shown before they confirmed.
+     */
+    noteCountToDelete?: number;
 }
 
 interface ShowDeleteNotesDialogOpts {
@@ -104,6 +110,7 @@ export default function DeleteNotesDialog() {
             className="delete-notes-dialog"
             size="lg"
             title={t("delete_notes.title")}
+            zIndex={2000}
             onShown={() => okButtonRef.current?.focus()}
             onHidden={() => {
                 opts.callback?.({ proceed: false });
@@ -115,11 +122,17 @@ export default function DeleteNotesDialog() {
                 <Button text={t("delete_notes.delete")} kind="primary"
                     buttonRef={okButtonRef}
                     onClick={() => {
-                        opts.callback?.({ proceed: true, deleteAllClones, eraseNotes });
+                        opts.callback?.({
+                            proceed: true,
+                            deleteAllClones,
+                            eraseNotes,
+                            noteCountToDelete: noteIdsToBeDeleted.length
+                        });
                         setShown(false);
                     }} />
             </>}
             show={shown}
+            stackable
         >
             <Card>
                 <CardSection>

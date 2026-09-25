@@ -104,7 +104,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 "footnote",
                 {
                     ...buildInsertGroup(),
-                    items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji"]
+                    items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji", "insertIcon"]
                 },
                 "|",
                 buildAlignmentToolbar(),
@@ -184,7 +184,8 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "insertTemplate",
             "markdownImport",
             "specialCharacters",
-            "emoji"
+            "emoji",
+            "insertIcon"
         ]
     };
 }

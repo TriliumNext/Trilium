@@ -68,6 +68,7 @@ function toMarkdown(content: string) {
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("linkPreview", buildLinkPreviewFilter());
+        instance.addRule("inlineIcon", buildInlineIconFilter());
         // Before "math": rules are consulted in reverse registration order, so a highlighted
         // formula stays a formula instead of being flattened into `==\(x\)==`.
         instance.addRule("highlight", buildHighlightFilter());
@@ -77,7 +78,53 @@ function toMarkdown(content: string) {
         instance.keep([ "kbd", "sup", "sub" ]);
     }
 
-    return instance.render(injectLinkPreviewFallbacks(content));
+    return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(content)));
+}
+
+/** The class every icon in the application wears beside its pack's own. */
+const ICON_CLASS = "tn-icon";
+
+/**
+ * Stands in for an icon's own content while Turndown runs. Turndown drops an element holding
+ * nothing before it consults a single rule, and collapses the space beside it away with it.
+ */
+const ICON_PLACEHOLDER = String.fromCodePoint(0xE000);
+
+function injectIconFallbacks(content: string): string {
+    if (!content.includes(ICON_CLASS)) {
+        return content;
+    }
+
+    const root = parseHtml(content);
+    const icons = root.querySelectorAll(`span.${ICON_CLASS}`);
+    // Returned as it came where the class was only ever mentioned, rather than serialized back out
+    // of a parse that had nothing to change.
+    if (!icons.length) {
+        return content;
+    }
+
+    for (const icon of icons) {
+        icon.textContent = ICON_PLACEHOLDER;
+    }
+
+    return root.toString();
+}
+
+function buildInlineIconFilter() {
+    const iconFilter: Rule = {
+        filter(node) {
+            return node.nodeName === "SPAN" && node.classList.contains(ICON_CLASS);
+        },
+        replacement(_content, node) {
+            // Written from the class alone, so an icon leaves in the form it is stored in and the
+            // placeholder injected above never reaches the file.
+            const classNames = "getAttribute" in node ? node.getAttribute("class") ?? "" : "";
+
+            return `<span class="${escapeHtml(classNames)}"></span>`;
+        }
+    };
+
+    return iconFilter;
 }
 
 function rewriteLanguageTag(source: string) {
@@ -323,9 +370,10 @@ function buildLinkPreviewFilter(): Rule {
  * verbatim as well so its content is never dropped.
  *
  * The Trilium-only `trilium-collapsible` styling hook is dropped from the
- * exported <details> (any user-added classes are kept). It is not needed to
- * round-trip: the importer upcasts <details> by tag name and the collapsible
- * plugin re-stamps the class on the next save.
+ * exported <details> (any user-added classes are kept), so the Markdown stays
+ * portable. `normalizeCollapsibles()` in `services/import/markdown.ts` puts the
+ * class and the collapsed whitespace back, so the cycle returns the note
+ * unchanged.
  */
 function buildDetailsFilter(): Rule {
     // Block containers whose children are themselves blocks. Inline-content

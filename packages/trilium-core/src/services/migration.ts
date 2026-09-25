@@ -142,8 +142,9 @@ async function migrateIfNecessary() {
     }
 
     if (!isDbUpToDate()) {
-        if (process.env.TRILIUM_MANUAL_DB_MIGRATION === "true") {
-            await getPlatform().crash(t("migration.automatic_migrations_disabled", { envVarValue: process.env.TRILIUM_MANUAL_DB_MIGRATION}));
+        const manualMigration = getPlatform().getEnv("TRILIUM_MANUAL_DB_MIGRATION");
+        if (manualMigration === "true") {
+            await getPlatform().crash(t("migration.automatic_migrations_disabled", { envVarValue: manualMigration }));
             return;
         }
         await migrate();

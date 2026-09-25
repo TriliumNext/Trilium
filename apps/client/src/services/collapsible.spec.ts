@@ -41,4 +41,27 @@ describe("expandAncestorDetails", () => {
         const match = mount(`<p><span class="m">hit</span></p>`, ".m");
         expect(() => expandAncestorDetails(match)).not.toThrow();
     });
+
+    it("opens only the closed ancestors in a mixed open/closed chain", () => {
+        const match = mount(`
+            <details class="outer"><summary>o</summary>
+                <details class="middle" open><summary>m</summary>
+                    <details class="inner"><summary>i</summary><span class="m">hit</span></details>
+                </details>
+            </details>`, ".m");
+        expandAncestorDetails(match);
+        for (const cls of [ "outer", "middle", "inner" ]) {
+            const details = match.closest(`details.${cls}`);
+            expect(details instanceof HTMLDetailsElement && details.open).toBe(true);
+        }
+    });
+
+    it("expands the element itself when it is a closed <details>", () => {
+        const match = mount(`<details class="outer"><summary>o</summary><details class="m"><summary>i</summary>x</details></details>`, ".m");
+        expandAncestorDetails(match);
+        const self = match.closest("details.m");
+        const outer = match.closest("details.outer");
+        expect(self instanceof HTMLDetailsElement && self.open).toBe(true);
+        expect(outer instanceof HTMLDetailsElement && outer.open).toBe(true);
+    });
 });

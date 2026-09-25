@@ -7,6 +7,7 @@ import tmp from "tmp";
 
 import buildApp from "./app.js";
 import config from "./services/config.js";
+import dataDir from "./services/data_dir.js";
 import { startCpuProfiler, writeCpuProfile } from "./services/cpu_profiler.js";
 import { registerOcrHandlers } from "./services/handlers.js";
 import host from "./services/host.js";
@@ -14,6 +15,7 @@ import { registerServerLlmExtensions } from "./services/llm/index.js";
 import port from "./services/port.js";
 import { installProcessErrorHandlers, markAppReady } from "./services/process_errors.js";
 import { isScriptingEnabled } from "./services/scripting_guard.js";
+import { publishHealthcheckTarget } from "./services/healthcheck.js";
 import { getDbSize } from "./services/sql_init.js";
 import { isHttpAttachableMessagingProvider } from "./services/ws_messaging_provider.js";
 
@@ -208,6 +210,9 @@ function startHttpServer(app: Express) {
         } else {
             getLog().info(`Listening on unix socket ${host}`);
         }
+
+        publishHealthcheckTarget(
+            dataDir.TRILIUM_DATA_DIR, httpServer.address(), config.Network.https);
     });
 
     return httpServer;

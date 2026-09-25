@@ -13,27 +13,27 @@
         overflow: auto;
         padding: 0.5em 1em;
         user-select: text;
-    }
 
-    /* The marker is drawn as an overlay so it doesn't disturb each block's own box. */
-    .markdown-preview [data-source-line] {
-        position: relative;
-    }
+        /* The active-block marker is the preview's own background rather than a pseudo-element
+         * on the block: `.admonition` already draws its icon in `::before`, and a block that
+         * sets `overflow: hidden` clips anything drawn in its gutter. `local` attachment
+         * scrolls it with the content; `useSyncedHighlight` writes the custom properties. */
+        background-image: linear-gradient(var(--main-text-color), var(--main-text-color));
+        background-attachment: local;
+        background-repeat: no-repeat;
+        background-position: 0.5em var(--markdown-preview-marker-top, 0);
+        background-size: 2px var(--markdown-preview-marker-height, 0);
 
-    .markdown-preview [data-source-line].markdown-preview-active::before {
-        content: "";
-        position: absolute;
-        inset-block: 0;
-        left: -0.5em;
-        width: 2px;
-        background: var(--main-text-color);
-    }
+        /* Only while the cursor moves to another block: the hook adds the class for that update
+         * alone, so the marker still resizes instantly as the block it sits in is edited. */
+        &.markdown-preview-marker-moving {
+            transition: background-position 150ms ease, background-size 150ms ease;
 
-    /* Collapsibles clip their overflow, so the marker has to sit inside the block. */
-    .markdown-preview details.trilium-collapsible.markdown-preview-active::before {
-        left: 0;
+            @media (prefers-reduced-motion: reduce) {
+                transition: none;
+            }
+        }
     }
-
 }
 
 /* Markdown preview content blocks in split-view */

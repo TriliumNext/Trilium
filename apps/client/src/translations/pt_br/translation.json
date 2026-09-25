@@ -232,7 +232,8 @@
     "inPageSearch": "pesquisa na página",
     "title": "Folha de Dicas",
     "editShortcuts": "Editar atalhos de teclado",
-    "toggleArchivedNotes": "mostrar/esconder notas arquivadas"
+    "toggleArchivedNotes": "mostrar/esconder notas arquivadas",
+    "openAiAssistant": "abrir o assistente de IA na seleção"
   },
   "import": {
     "importIntoNote": "Importar para a nota",
@@ -356,10 +357,8 @@
     "title": "título",
     "date_created": "data de criação",
     "date_modified": "data de modificação",
-    "sorting_direction": "Direção de ordenação",
     "ascending": "crescente",
     "descending": "decrescente",
-    "folders": "Pastas",
     "sort_folders_at_top": "colocar pastas no topo",
     "natural_sort": "Ordenação Natural",
     "sort_with_respect_to_different_character_sorting": "classificar de acordo com diferentes regras de ordenação de caracteres e colação em diferentes idiomas ou regiões.",
@@ -1105,10 +1104,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "zoom_in_title": "Aumentar",
-    "zoom_out_title": "Reduzir",
-    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação",
-    "reset_pan_zoom_title": "Redefinir pan & zoom para coordenadas e ampliação iniciais"
+    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação"
   },
   "zpetne_odkazy": {
     "relation": "relação",
@@ -1476,7 +1472,6 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis em seu sistema",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -2134,8 +2129,6 @@
     "move-marker-instruction": "Clique no mapa para mover o marcador para aquele local ou pressione Escape para dispensar.",
     "move-marker-toast-title": "Mover marcador",
     "webgl-unavailable": "Este mapa não pode ser desenhado porque o WebGL não está disponível. Verifique se a aceleração de hardware está ativada e se os drivers gráficos estão atualizados.",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
     "enter-3d": "Inclinar para uma visualização 3D\nSegure Ctrl e arraste para inclinar o mapa livremente",
     "exit-3d": "Deixar o mapa plano novamente",
     "close-details": "Fechar",
@@ -2279,7 +2272,6 @@
   },
   "board_view": {
     "delete-note": "Deletar nota...",
-    "move-to": "Mover para",
     "insert-above": "Inserir acima",
     "insert-below": "Inserir abaixo",
     "delete-column": "Excluir coluna",
@@ -2292,7 +2284,6 @@
     "new-item-placeholder": "Escreva o título da nota...",
     "add-column-placeholder": "Escreva o nome da coluna...",
     "edit-note-title": "Clique para editar o título da nota",
-    "edit-column-title": "Clique para editar o título da coluna",
     "column-already-exists": "Esta coluna já existe no quadro.",
     "column-definition-save-error": "As colunas foram salvas no quadro, mas não puderam ser salvas no atributo de status.",
     "status-alias": "Status"
@@ -2591,8 +2582,7 @@
   },
   "server": {
     "unknown_http_error_title": "Erro de comunicação com o servidor",
-    "unknown_http_error_content": "Código de status: {{statusCode}}\nURL: {{method}} {{url}}\nMensagem: {{message}}",
-    "traefik_blocks_requests": "Se você estiver usando o proxy reverso Traefik, ele introduziu uma alteração que afeta a comunicação com o servidor."
+    "unknown_http_error_content": "Código de status: {{statusCode}}\nURL: {{method}} {{url}}\nMensagem: {{message}}"
   },
   "tab_history_navigation_buttons": {
     "go-back": "Voltar para a nota anterior",
@@ -2916,7 +2906,6 @@
     "configured_providers": "Provedores configurados",
     "no_providers_configured": "Nenhum provedor configurado ainda.",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Requer o Claude Code na máquina que executa o Trilium.",
     "provider_unavailable_standalone": "Indisponível na versão de navegador: este provedor funciona executando o Claude Code como um programa separado, e não há máquina aqui para executá-lo.",
     "base_url": "URL base",
     "base_url_description": "Opcional. Alcança a mesma API por meio de um proxy ou gateway. Para executar um modelo você mesmo, adicione um provedor Ollama ou LM Studio em vez disso.",
@@ -3006,9 +2995,6 @@
     "tags-differ": "Os nós selecionados não carregam as mesmas etiquetas, então estas só podem ser lidas.",
     "add-tag": "Adicionar esta etiqueta",
     "remove-tag": "Remover esta etiqueta",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
-    "reset-zoom": "Redefinir zoom",
     "center-map": "Centralizar o mapa",
     "direction-left": "Ramos para a esquerda",
     "direction-right": "Ramos para a direita",
@@ -3329,11 +3315,6 @@
     "title": "Opções",
     "back": "Voltar a todas as opções"
   },
-  "image_buttons": {
-    "zoom_in": "Ampliar",
-    "zoom_out": "Reduzir",
-    "reset_zoom": "Redefinir zoom"
-  },
   "image_navigation": {
     "previous": "Imagem anterior: {{- title}}",
     "next": "Próxima imagem: {{- title}}"
@@ -3341,16 +3322,6 @@
   "image_viewer": {
     "loading_error": "Ocorreu um erro ao carregar a imagem.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Ampliar",
-      "zoom_out": "Reduzir",
-      "reset_zoom": "Redefinir zoom",
-      "pan": "Movimentar",
-      "pan_up": "Para cima",
-      "pan_down": "Para baixo",
-      "pan_left": "Para a esquerda",
-      "pan_right": "Para a direita",
-      "pan_fast": "Movimentação mais rápida",
       "navigation": "Navegação",
       "next_image": "Próxima imagem",
       "previous_image": "Imagem anterior",
@@ -3376,9 +3347,7 @@
     "note_paths_what": "Uma nota pode ficar em mais de um lugar na árvore de notas ao mesmo tempo, e cada um desses lugares é listado aqui como um caminho.",
     "note_paths_cloning": "Adicionar um lugar chama-se clonar: nada é copiado, então uma edição feita sob um caminho aparece sob todos eles, e remover um caminho deixa a nota sob os outros.",
     "backlinks_what": "As notas que apontam para esta, seja por um link em seu texto, seja por uma relação que a nomeia.",
-    "backlinks_listing": "Um link de texto é listado com a passagem ao seu redor, uma relação com o nome pelo qual aponta. Este lado de um link não é editável: ele desaparece quando a nota que o criou remove o link.",
-    "similar_notes_what": "Notas que parecem relacionadas a esta mesmo onde nada as vincula.",
-    "similar_notes_how": "A semelhança é calculada a partir do conteúdo das notas, dos atributos e relações que elas carregam e de quão próximas foram criadas."
+    "backlinks_listing": "Um link de texto é listado com a passagem ao seu redor, uma relação com o nome pelo qual aponta. Este lado de um link não é editável: ele desaparece quando a nota que o criou remove o link."
   },
   "split_editor": {
     "render_error": "Não foi possível renderizar a pré-visualização",
@@ -3901,7 +3870,6 @@
       "insert-paragraph-after-code-block": "Inserir parágrafo após o bloco de código",
       "insert-paragraph-before-code-block": "Inserir parágrafo antes do bloco de código",
       "insert-text-snippet": "Inserir trecho de texto",
-      "insert-the-current-date-and-time": "Inserir a data e a hora atuais",
       "internal-link": "Link interno",
       "justify-text-alignment": "Justificar o alinhamento do texto",
       "keyboard-shortcut": "Atalho de teclado",
@@ -3972,5 +3940,9 @@
       "invalid-symbol": "o símbolo markdown deve ter um caractere, exceto \"[\", \" \", \"X\" e \"]\"",
       "duplicate-symbol": "símbolo markdown duplicado"
     }
+  },
+  "note_picker": {
+    "label": "Nota",
+    "ok": "Escolha"
   }
 }

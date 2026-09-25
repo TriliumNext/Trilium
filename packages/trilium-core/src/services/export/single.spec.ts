@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Response } from "../../http_interface";
 import { describe, expect, it, vi } from "vitest";
 
 import becca from "../../becca/becca.js";

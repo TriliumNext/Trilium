@@ -64,7 +64,7 @@ describe("ContextualHelp", () => {
         act(() => render(<ContextualHelp helpMessage="What this figure covers." />, container));
 
         const span = container.querySelector("span");
-        expect(span?.className).toBe("bx bx-info-circle contextual-help");
+        expect(span?.className).toBe("bx bx-info-circle contextual-help-icon");
         // No title of its own: a native tooltip would open somewhere else, in its own styling.
         expect(span?.getAttribute("title")).toBeNull();
 
@@ -133,7 +133,7 @@ describe("ContextualHelp", () => {
 
         // The same affordance, and no tooltip behind it: a phone would never show one.
         const span = container.querySelector("span");
-        expect(span?.className).toBe("bx bx-info-circle contextual-help");
+        expect(span?.className).toBe("bx bx-info-circle contextual-help-icon");
         expect(mocks.useStaticTooltip).not.toHaveBeenCalled();
         expect(document.body.querySelector(".sheet-stub")).toBeNull();
 

@@ -4,7 +4,7 @@ import net from "node:net";
 import { ValidationError } from "@triliumnext/core";
 import { validateFetchableUrl } from "@triliumnext/core/src/services/request.js";
 import ipaddr from "ipaddr.js";
-import { Agent, fetch as undiciFetch, type RequestInit as UndiciRequestInit, type Response as UndiciResponse } from "undici";
+import type { Agent, RequestInit as UndiciRequestInit, Response as UndiciResponse } from "undici";
 
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 5;
@@ -213,13 +213,24 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
     const { allowPrivateNetwork = false, timeoutMs = FETCH_TIMEOUT_MS, maxRedirects = MAX_REDIRECTS } = policy;
     let currentUrl = url;
 
+    // Imported here rather than at module scope so undici lands in a lazy chunk:
+    // request.ts imports this module during startup, while an outbound request
+    // happens only once a feature that makes one runs.
+    //
+    // undici is CommonJS, so a bundled ESM build can only expose it as `default`
+    // — destructuring the namespace directly yields undefined for every name.
+    // The fallback covers the shapes that do carry the names: CJS output's
+    // interop wrapper, Node's own, and the spec's module mock.
+    const undici = await import("undici");
+    const { Agent: UndiciAgent, fetch: undiciFetch } = undici.default ?? undici;
+
     for (let i = 0; i <= maxRedirects; i++) {
         const parsed = validateUrl(currentUrl);
         const validatedAddresses = await validateHostResolution(parsed.hostname, allowPrivateNetwork);
 
         // Use a custom dispatcher that pins DNS to the validated IPs,
         // preventing a second DNS lookup from resolving to a different (private) IP.
-        const dispatcher = new Agent({
+        const dispatcher = new UndiciAgent({
             connect: {
                 lookup: createPinnedLookup(validatedAddresses) as never
             }

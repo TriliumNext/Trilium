@@ -31,16 +31,27 @@ Use Playwright imported by **absolute path**
 (`file:///…/node_modules/playwright/index.mjs`) — a script written into the scratchpad cannot
 resolve `playwright` by name.
 
+`window.glob` is exposed, so most UI can be summoned without clicking through to it:
+`glob.appContext.triggerCommand("showOptions")`, `"openInTreePopup"` (with
+`{ noteIdOrPath, hoistedNoteId }`), `"showDeleteNotesDialog"`, …, and `glob.froca` for note lookups.
+
 Fixture gotchas:
 
 - It opens on a **protected** note, so click another note first.
 - It runs the **new layout**, so there is no ribbon — the attributes editor opens from the
   `… attributes` button in `.status-bar`.
+- **On NixOS, Playwright's downloaded browsers fail on libX11.** Launch the system one instead:
+  `chromium.launch({ executablePath: "/etc/profiles/per-user/<user>/bin/chromium" })` — the same
+  trick as the untracked `apps/server/playwright.config.nixos.ts`.
 
 ## Stopping it
 
 Killing the backgrounded `npx tsx` wrapper leaves the node child alive and still holding the port,
 so the next boot fails with "Port 37999 is already in use". Kill the listener:
+
+```bash
+fuser -k 37999/tcp          # Linux; or: ss -tlnp 'sport = :37999' to find the pid first
+```
 
 ```powershell
 Get-NetTCPConnection -LocalPort 37999 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }
@@ -57,3 +68,9 @@ Get-NetTCPConnection -LocalPort 37999 -State Listen | % { Stop-Process -Id $_.Ow
 - **A mispositioned or self-dimming fixed-position menu** — walk the ancestors for `transform`,
   `filter` and `container-type` rather than reading the stylesheets; any of them creates a
   containing block and a stacking context (see "Dropdown menus and the backdrop blur" in `SKILL.md`).
+
+**Transient state can vanish between reading it and screenshotting it.** An async re-render between
+the `evaluate()` that dumps computed styles and the later `screenshot()` can wipe the state you are
+studying (`fancytree-active`, a hover class, an open menu), which reads as "the CSS never painted"
+and has produced a wrong diagnosis before. Re-assert the state *at screenshot time*, and pixel-sample
+with `pngjs` (available through the e2e require) rather than eyeballing the image.

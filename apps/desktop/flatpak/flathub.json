@@ -1,0 +1,4 @@
+{
+    "disable-external-data-checker": true,
+    "automerge-flathubbot-prs": false
+}

@@ -4,7 +4,7 @@
  * should be imported from @triliumnext/commons.
  */
 
-import type { LlmChatConfig, LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
+import type { LlmChatConfig, LlmMessage, LlmReasoningEffort, LlmStreamChunk } from "@triliumnext/commons";
 import type { streamText } from "ai";
 
 /**
@@ -56,6 +56,10 @@ export interface ModelInfo {
     recommended?: boolean;
     /** Whether usage is covered by a subscription plan rather than metered per token */
     isSubscription?: boolean;
+    /** The reasoning efforts the model can be run at, weakest first; see `LlmModelInfo`. */
+    reasoningEfforts?: LlmReasoningEffort[];
+    /** The effort used when a chat has not chosen one. */
+    defaultReasoningEffort?: LlmReasoningEffort;
 }
 
 export interface LlmProvider {

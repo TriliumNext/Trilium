@@ -1,0 +1,12 @@
+// Stacks that stand behind the family a theme names, so a slide still renders in something chosen
+// rather than in whatever `sans-serif` resolves to. The vendored themes embed no fonts, so a named
+// family applies only where the reader already has it installed.
+//
+// $sans is the stack reveal.js's own Dracula theme carries.
+
+$sans: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
+	helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+
+// Display headings. Impact is the condensed face Windows and macOS both ship, and the one upstream
+// already falls back to.
+$condensed: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Liberation Sans Narrow', sans-serif;

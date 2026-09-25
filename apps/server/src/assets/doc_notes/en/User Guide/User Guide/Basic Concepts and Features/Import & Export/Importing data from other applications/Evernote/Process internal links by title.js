@@ -5,31 +5,29 @@ for (const note of notes) {
     api.log(`Processing note ${note.title}...`);
     
     const content = note.getContent();
-    const $ = api.cheerio.load(content);
+    const root = api.htmlParser.parse(content);
     
-    $("a").each((i, el) => {
-        const $el = $(el);
-        
-        const url = $el.attr("href");
-        if (!url.startsWith("evernote:///")) return;
+    for (const el of root.querySelectorAll("a")) {
+        const url = el.getAttribute("href");
+        if (!url?.startsWith("evernote:///")) continue;
 
-        const text = $el.text();
+        const text = el.textContent;
         const matchingNotes = api.searchForNotes(`note.title = "${text}"`);
         if (matchingNotes.length === 0) {
             api.log(`No matching notes for "${text}..."`);
-            return;
+            continue;
         }
 
         if (matchingNotes.length > 1) {
             api.log(`Found multiple matching notes for "${text}". Skipping.`);
-            return;
+            continue;
         }
 
         const matchingNote = matchingNotes[0];
         
         api.log(`Found matching note: ${matchingNote.title} ${matchingNote.noteId}`);
-        $el.attr("href", `#root/${matchingNote.noteId}`);
-        $el.addClass("reference-link");
-    });
-    note.setContent($("body").html());   
+        el.setAttribute("href", `#root/${matchingNote.noteId}`);
+        el.classList.add("reference-link");
+    }
+    note.setContent(root.toString());   
 }

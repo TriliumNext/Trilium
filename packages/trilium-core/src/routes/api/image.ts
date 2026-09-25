@@ -1,8 +1,5 @@
 import { type ImageCompressionOptions, isAcceptedImageMime, isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
-import type { Request, Response } from "express";
-import type { File } from "../../services/import/common.js";
-
-type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
+import type { Request, Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
@@ -111,7 +108,7 @@ function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Respon
     }
 }
 
-async function updateImage(req: FileRequest<{ noteId: string }>) {
+async function updateImage(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 

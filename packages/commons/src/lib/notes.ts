@@ -2,6 +2,7 @@
  * @module notes Common logic for notes (across front-end and back-end)
  */
 
+import { isFontMimeType } from "./font_mimes.js";
 import { MIME_TYPES_DICT } from "./mime_type.js";
 import { NoteType } from "./rows.js";
 
@@ -82,19 +83,57 @@ const FILE_MIME_MAPPINGS: Record<string, string> = {
     "application/pdf": "bx bxs-file-pdf",
     "application/vnd.oasis.opendocument.text": "bx bxs-file-doc",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "bx bxs-file-doc",
+    "application/gpx+xml": "bx bx-trip",
+    // Workbooks kept as file notes or attachments, which `convertOfficeToHtml` previews as a grid.
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "bx bx-spreadsheet",
+    "application/vnd.oasis.opendocument.spreadsheet": "bx bx-spreadsheet",
+    "application/vnd.ms-excel": "bx bx-spreadsheet",
+    "text/csv": "bx bx-spreadsheet",
 };
 
 const IMAGE_MIME_MAPPINGS: Record<string, string> = {
     "image/gif": "bx bxs-file-gif",
 };
 
-export function getNoteIcon({ noteId, type, mime, iconClass, workspaceIconClass, isFolder }: {
+/** The labels a note carries to stand on a geo map, read by {@link getNoteIcon}. */
+export const GEO_LOCATION_ATTRIBUTE = "geolocation";
+export const GEO_SHAPE_ATTRIBUTE = "geoShape";
+
+/** The icon a note on a geo map is drawn under where it has none of its own. */
+export const GEO_MARKER_ICON = "bx bx-pin";
+
+/**
+ * The icon for a drawn shape, keyed by the kind its `#geoShape` label names (see the client's
+ * geomap/shapes.ts for the format). An unreadable label falls back to the line icon.
+ */
+export const GEO_SHAPE_ICONS: Record<string, string> = {
+    line: "bx bx-vector",
+    polygon: "bx bx-shape-polygon",
+    circle: "bx bx-shape-circle"
+};
+
+/**
+ * The icon a note is drawn under: its own `#iconClass` where it has one, and a default read off
+ * what the note is otherwise.
+ *
+ * A note carrying a non-empty `#geolocation` is drawn as a pin, and one carrying a `#geoShape` as
+ * the shape it names, where neither has anything more specific. The geo map therefore writes no
+ * `#iconClass` onto a marker or a shape it creates, so an icon it hands down through
+ * `#child:iconClass` or a template still applies, and redrawing a shape as another kind changes the
+ * icon with it. `iconClass` stays an argument rather than being read here because the share tree
+ * narrows it to the prefixes an icon pack supplies.
+ */
+export function getNoteIcon({
+    noteId, type, mime, iconClass, workspaceIconClass, isFolder, getLabelValue
+}: {
     noteId: string;
     type: NoteType;
     mime: string;
     iconClass: string | undefined;
     workspaceIconClass: string | undefined;
     isFolder: () => boolean;
+    /** One of the note's labels, inherited ones included, as every note entity resolves them. */
+    getLabelValue: (name: string) => string | null;
 }) {
     if (iconClass) {
         return iconClass;
@@ -106,6 +145,15 @@ export function getNoteIcon({ noteId, type, mime, iconClass, workspaceIconClass,
     if (noteId === "_share") {
         return "bx bx-share-alt";
     } else if (type === "text") {
+        // A place on a map is written onto a note deliberately, so it outranks the folder icon the
+        // note picks up from having children.
+        if (getLabelValue(GEO_LOCATION_ATTRIBUTE)) {
+            return GEO_MARKER_ICON;
+        }
+        const shape = getLabelValue(GEO_SHAPE_ATTRIBUTE);
+        if (shape) {
+            return GEO_SHAPE_ICONS[shape.split(":", 1)[0]] ?? GEO_SHAPE_ICONS.line;
+        }
         if (isFolder()) {
             return "bx bx-folder";
         }
@@ -140,6 +188,7 @@ export function getMimeIcon(mime: string | undefined | null): string {
 function getFileMimeIcon(mime: string): string {
     if (mime.startsWith("video/")) return "bx bx-video";
     if (mime.startsWith("audio/")) return "bx bx-music";
+    if (isFontMimeType(mime)) return "bx bx-font";
     return lookUpMime(FILE_MIME_MAPPINGS, mime) ?? NOTE_TYPE_ICONS.file;
 }
 

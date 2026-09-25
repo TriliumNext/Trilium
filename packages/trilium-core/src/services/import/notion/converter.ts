@@ -487,10 +487,11 @@ function stripTableAttributes(table: HTMLElement) {
 
 // #region Images
 /**
- * Notion image blocks are `<figure class="image"><a href="…"><img src="…"></a></figure>`, where the
- * `<a>` is a self-link to the file and the `<img>` carries an inline pixel width. Reduce each to Trilium's
- * canonical `<figure class="image"><img src="…"></figure>` (unwrap the link, drop the sizing and the
- * Notion id). The `src` still points at the zip-relative path; the importer rewrites it to an attachment.
+ * Notion image blocks are `<figure class="image" data-notion-image="…"><a href="…"><img src="…"></a></figure>`,
+ * where the `<a>` is a self-link to the file, `data-notion-image` repeats that same source and the `<img>`
+ * carries an inline pixel width. Reduce each to Trilium's canonical `<figure class="image"><img src="…"></figure>`
+ * (unwrap the link, drop the sizing, the Notion id and the repeated source). The `src` still points at the
+ * zip-relative path; the importer rewrites it to an attachment.
  */
 function convertImages(root: HTMLElement) {
     for (const figure of root.querySelectorAll("figure.image")) {
@@ -500,6 +501,7 @@ function convertImages(root: HTMLElement) {
         }
         img.removeAttribute("style");
         figure.removeAttribute("id");
+        figure.removeAttribute("data-notion-image");
         figure.set_content(img.toString());
     }
 }

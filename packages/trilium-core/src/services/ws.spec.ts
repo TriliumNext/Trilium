@@ -172,6 +172,11 @@ describe("ws service (real DB)", () => {
         ]));
         const pull = sentAll.find((m) => m.type === "sync-pull-in-progress");
         expect(pull).toMatchObject({ lastSyncedPush: 42 });
+
+        ws.syncPullInProgress({ pulled: 3, total: 10 });
+        expect(sentAll.at(-1)).toEqual({
+            type: "sync-pull-in-progress", lastSyncedPush: 42, progress: { pulled: 3, total: 10 }
+        });
         expect(sentAll.find((m) => m.type === "sync-hash-check-failed")).toMatchObject({ sectors: ["blobs/9"] });
     });
 

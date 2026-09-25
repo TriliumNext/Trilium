@@ -1,0 +1,75 @@
+.font-preview {
+    max-width: 1000px;
+    /* Its own padding rather than the wrapper's: the wrapper is the unpadded scroll host (see
+       File.css), so the scrollbar hugs the split edge and this padding scrolls with the content. */
+    padding: 10px;
+
+    .font-preview-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .font-preview-offer {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    .font-preview-specimen-input {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .font-preview-size {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .font-preview-size-value {
+        color: var(--muted-text-color);
+        font-variant-numeric: tabular-nums;
+        /* Room for the widest reading, so the slider does not shift as the value grows. */
+        min-width: 5ch;
+    }
+
+    .font-preview-specimen {
+        font-family: var(--font-preview-family);
+        font-size: var(--font-preview-specimen-size);
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+        margin-bottom: 24px;
+    }
+
+    .font-preview-ladder {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px 16px;
+        align-items: baseline;
+        margin-bottom: 24px;
+    }
+
+    .font-preview-ladder-size {
+        color: var(--muted-text-color);
+        font-size: 0.85em;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+
+    .font-preview-ladder-line {
+        font-family: var(--font-preview-family);
+        font-size: var(--font-preview-ladder-size);
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    .font-preview-characters {
+        font-family: var(--font-preview-family);
+        font-size: 22px;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+    }
+}

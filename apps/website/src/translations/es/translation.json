@@ -7,8 +7,8 @@
         "server_title": "Configura un servidor para acceder desde múltiples dispositivos"
     },
     "hero_section": {
-        "title": "Organiza tus ideas. Construye tu propia base de conocimiento personal.",
-        "subtitle": "Trilium es una aplicación de código abierto para tomar notas y organizar tu base de conocimiento personal. Puedes usarla localmente en tu escritorio o sincronizarla con tu propio servidor para tener tus notas disponibles en cualquier lugar.",
+        "title": "Organice sus ideas. Construya su propia base de conocimiento personal.",
+        "subtitle": "Trilium es una aplicación de código abierto para tomar notas y organizar su base de conocimiento personal. Puede usarla localmente en su escritorio o sincronizarla con su propio servidor para tener sus notas disponibles en cualquier lugar.",
         "get_started": "Comenzar",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
@@ -18,21 +18,21 @@
         "tagline_cross_platform": "Funciona sin conexión a internet"
     },
     "organization_benefits": {
-        "title": "Organiza tus notas, a tu manera",
+        "title": "Organice sus notas, a su manera",
         "note_structure_title": "Estructura de notas",
         "note_structure_description": "Las notas se pueden organizar de forma jerárquica. No necesitas carpetas, ya que cada nota puede contener subnotas. Una misma nota puede añadirse en varios lugares de la jerarquía.",
         "attributes_title": "Etiquetas de notas y relaciones",
-        "attributes_description": "Puedes establecer relaciones entre notas o añadir etiquetas para categorizarlas más fácilmente. Los atributos promovidos te permiten ingresar información estructurada, que luego puedes usar en tablas o tableros.",
+        "attributes_description": "Puede establecer relaciones entre notas o añadir etiquetas para categorizarlas más fácilmente. Los atributos promovidos permiten ingresar información estructurada, que luego puede usar en tablas o tableros.",
         "hoisting_title": "Espacios de trabajo y organización jerárquica",
-        "hoisting_description": "Se pueden separar fácilmente tus notas personales y de trabajo agrupándolas en un espacio de trabajo, lo que centra el árbol de notas en mostrar únicamente un conjunto específico de ellas.",
+        "hoisting_description": "Se pueden separar fácilmente sus notas personales y de trabajo agrupándolas en un espacio de trabajo, lo que centra el árbol de notas en mostrar únicamente un conjunto específico de ellas.",
         "screenshot_alt": "Árbol jerárquico de notas en Trilium"
     },
     "productivity_benefits": {
         "title": "Productividad y seguridad",
         "revisions_title": "Revisiones de notas",
-        "revisions_content": "Las notas se guardan automáticamente en segundo plano y las revisiones te permiten revisarlas o deshacer cambios accidentales. También se pueden crear revisiones manualmente cuando se necesite.",
+        "revisions_content": "Las notas se guardan automáticamente en segundo plano y las revisiones permiten revisarlas o deshacer cambios accidentales. También se pueden crear revisiones manualmente cuando se necesite.",
         "sync_title": "Sincronización",
-        "sync_content": "Usa una instancia propia o en la nube para sincronizar fácilmente tus notas entre varios dispositivos y acceder a ellas desde el móvil mediante una PWA.",
+        "sync_content": "Use una instancia propia o en la nube para sincronizar fácilmente sus notas entre varios dispositivos y acceder a ellas desde el móvil mediante una PWA.",
         "protected_notes_title": "Notas protegidas",
         "protected_notes_content": "Protege información personal sensible cifrando las notas y bloqueándolas dentro de una sesión protegida con contraseña.",
         "search_title": "Búsqueda potente",
@@ -40,17 +40,17 @@
         "web_clipper_title": "Clipper web",
         "web_clipper_content": "Captura páginas web (o capturas de pantalla) y agrégalas directamente a Trilium usando la extensión del \"Clipper web\" para el navegador.",
         "auth_title": "Inicio de sesión seguro",
-        "auth_content": "Protege el inicio de sesión de tu servidor con autenticación multifactor (TOTP) o inicia sesión mediante tu proveedor de identidad con OpenID Connect.",
+        "auth_content": "Proteja el inicio de sesión de su servidor con autenticación multifactor (TOTP) o inicie sesión mediante su proveedor de identidad con OpenID Connect.",
         "templates_title": "Plantillas",
         "templates_content": "Define plantillas de notas reutilizables con una estructura, atributos y contenido predefinidos, y crea nuevas notas a partir de ellas con un solo clic.",
         "share_title": "Comparte notas en la red",
-        "share_content": "Si tienes un servidor, publica cualquier subárbol de tus notas como un sitio web público de solo lectura que cualquiera puede explorar sin necesidad de una cuenta.",
+        "share_content": "Si dispone de un servidor, publique cualquier subárbol de sus notas como un sitio web público de solo lectura que cualquiera puede explorar sin necesidad de una cuenta.",
         "api_title": "REST API",
-        "api_content": "Lee, crea y actualiza tus notas mediante programación a través de HTTP con la API REST integrada de Trilium, ideal para automatizaciones e integraciones de terceros."
+        "api_content": "Lea, cree y actualice sus notas mediante programación a través de HTTP con la API REST integrada de Trilium, ideal para automatizaciones e integraciones de terceros."
     },
     "note_types": {
         "text_title": "Notas tipo texto",
-        "text_description": "Las notas se editan con un editor visual (WYSIWYG), con soporte para tablas, imágenes, expresiones matemáticas y bloques de código con resaltado de sintaxis. Puedes formatear rápidamente el texto usando una sintaxis similar a Markdown o mediante comandos con barra (/).",
+        "text_description": "Las notas se editan con un editor visual (WYSIWYG), con soporte para tablas, imágenes, expresiones matemáticas y bloques de código con resaltado de sintaxis. Puede formatear rápidamente el texto usando una sintaxis similar a Markdown o mediante comandos con barra (/).",
         "code_title": "Notas tipo código",
         "code_description": "Fragmentos extensos de código fuente o scripts se manejan en un editor dedicado, con resaltado de sintaxis para múltiples lenguajes de programación y distintos temas de color.",
         "file_title": "Notas tipo archivo",
@@ -60,9 +60,9 @@
         "mermaid_title": "Diagramas Mermaid",
         "mermaid_description": "Crea diagramas de flujo, de clases, de secuencia, de Gantt y muchos más con la sintaxis de Mermaid.",
         "mindmap_title": "Mapa mental",
-        "mindmap_description": "Organiza ideas visualmente o haz una sesión de lluvia de ideas.",
+        "mindmap_description": "Organice ideas visualmente o realice una sesión de lluvia de ideas.",
         "title": "Múltiples formas de representar su información",
-        "subtitle": "No todo encaja perfectamente en un párrafo. Trilium ofrece una amplia variedad de tipos de notas, desde texto enriquecido y código hasta hojas de cálculo, diagramas y mapas mentales, para que puedas capturar cada idea en el formato que mejor se adapte a ella y combinarlos libremente en tu árbol de notas.",
+        "subtitle": "No todo encaja perfectamente en un párrafo. Trilium ofrece una amplia variedad de tipos de notas, desde texto enriquecido y código hasta hojas de cálculo, diagramas y mapas mentales, para que pueda capturar cada idea en el formato que mejor se adapte a ella y combinarlos libremente en su árbol de notas.",
         "others_label": "Y más",
         "notemap_title": "Mapa de notas",
         "relationmap_title": "Mapa de relaciones",
@@ -70,22 +70,25 @@
         "rendernote_title": "Nota de renderización",
         "webview_title": "Vistas web",
         "markdown_title": "Markdown",
-        "markdown_description": "¿Prefieres texto plano? Escribe tus notas directamente en Markdown, manteniéndolas portables y fáciles de versionar, mientras sigues viendo tablas, bloques de código y formato enriquecido en una vista previa en paralelo.",
-        "spreadsheet_title": "Hojas de cálculo"
+        "markdown_description": "¿Prefiere texto plano? Escriba sus notas directamente en Markdown, manteniéndolas portables y fáciles de versionar, mientras sigue viendo tablas, bloques de código y formato enriquecido en una vista previa en paralelo.",
+        "spreadsheet_title": "Hojas de cálculo",
+        "spreadsheet_description": "Una hoja de cálculo completa para datos tabulares, con fórmulas, formato condicional, validación de datos, ordenación y filtrado. Importe y exporte archivos Excel (.xlsx) y CSV."
     },
     "collections": {
         "calendar_title": "Calendario",
-        "calendar_description": "Organiza tus eventos personales o profesionales en un calendario, con soporte para eventos de todo el día o de varios días. Consulta tus eventos rápidamente con las vistas semanal, mensual y anual. Añade o mueve eventos de forma sencilla.",
+        "calendar_description": "Organice sus eventos personales o profesionales en un calendario, con soporte para eventos de todo el día o de varios días. Consulte sus eventos rápidamente con las vistas semanal, mensual y anual. Añada o mueva eventos de forma sencilla.",
         "table_title": "Tabla",
         "table_description": "Muestra y edita información sobre las notas en una estructura tabular, con distintos tipos de columna como texto, número, casillas de verificación, fecha y hora, enlaces y colores, y con soporte para relaciones. Opcionalmente, muestra las notas dentro de una jerarquía en forma de árbol dentro de la tabla.",
         "board_title": "Tablero Kanban",
-        "board_description": "Organiza tus tareas o el progreso de tus proyectos en un tablero Kanban. Crea fácilmente nuevos elementos y columnas, y cambia su estado simplemente arrastrándolos por el tablero.",
+        "board_description": "Organice sus tareas o el progreso de sus proyectos en un tablero Kanban. Cree fácilmente nuevos elementos y columnas, y cambie su estado simplemente arrastrándolos por el tablero.",
         "geomap_title": "Mapa geográfico",
         "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios.",
         "title": "Colecciones",
         "presentation_title": "Presentación",
         "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente.",
-        "dashboard_title": "Panel de control"
+        "dashboard_title": "Panel de control",
+        "subtitle": "Las colecciones dan a un grupo de notas una vista específica. Muestre las mismas notas como calendario, tabla, tablero Kanban, mapa interactivo y más, y cambie de diseño cuando cambien sus necesidades.",
+        "dashboard_description": "Organice sus notas como mosaicos arrastrables y redimensionables en una cuadrícula. Las notas se convierten en widgets vivos que muestran su contenido de un vistazo; ideal para construir una página de inicio personal o una vista general de proyecto que reúna todo en un solo lugar."
     },
     "faq": {
         "title": "Preguntas frecuentes",
@@ -100,11 +103,18 @@
         "network_share_question": "¿Puedo compartir mi base de datos a través de una unidad de red?",
         "network_share_answer": "No, generalmente no es recomendable compartir una base de datos SQLite mediante una unidad de red. Aunque a veces podría funcionar, existe el riesgo de que la base de datos se corrompa debido a bloqueos de archivos imperfectos en la red.",
         "security_question": "¿Cómo se protegen mis datos?",
-        "security_answer": "Por defecto, las notas no están encriptadas y se pueden leer directamente desde la base de datos. Una vez que una nota se marca como encriptada, se cifra usando AES-128-CBC."
+        "security_answer": "Por defecto, las notas no están encriptadas y se pueden leer directamente desde la base de datos. Una vez que una nota se marca como encriptada, se cifra usando AES-128-CBC.",
+        "free_question": "¿Trilium es gratuito?",
+        "free_answer": "Sí, por completo. Trilium es libre y de código abierto bajo la licencia AGPL-3.0, sin niveles de pago, cuentas ni barreras de pago por funciones. Es libre de usarlo, autohospedarlo y modificarlo como desee.",
+        "cloud_question": "¿Existe una versión alojada o en la nube?",
+        "cloud_answer": "Aún no hay una versión oficial, aunque nos gustaría ofrecerla en el futuro. Por ahora Trilium es autohospedado: ejecute la aplicación de escritorio o aloje el servidor usted mismo. Si prefiere no gestionar un servidor, proveedores externos como <0>PikaPods</0> ofrecen alojamiento gestionado de Trilium.",
+        "collaboration_question": "¿Pueden varias personas colaborar en las mismas notas?",
+        "collaboration_answer": "Trilium está diseñado como aplicación monousuario. Puede sincronizar sus propias notas en todos sus dispositivos y publicar notas de solo lectura en la web para que otros las consulten, pero no se admite la edición multiusuario en tiempo real de las mismas notas.",
+        "more_questions": "¿Aún tiene preguntas? <0>Pregunte a la comunidad</0>"
     },
     "final_cta": {
         "title": "¿Listo para empezar con Trilium Notes?",
-        "description": "Construye tu propia base de conocimiento con funciones avanzadas y total privacidad.",
+        "description": "Construya su propia base de conocimiento con funciones avanzadas y total privacidad.",
         "get_started": "Comenzar"
     },
     "components": {
@@ -131,7 +141,7 @@
     "support_us": {
         "title": "Apóyanos",
         "financial_donations_title": "Donaciones económicas",
-        "financial_donations_description": "Trilium se desarrolla y mantiene con <Link>cientos de horas de trabajo</Link>. Tu apoyo ayuda a mantenerlo de código abierto, mejorar sus funciones y cubrir gastos como el alojamiento.",
+        "financial_donations_description": "Trilium se desarrolla y mantiene con <Link>cientos de horas de trabajo</Link>. Su apoyo ayuda a mantenerlo de código abierto, mejorar sus funciones y cubrir gastos como el alojamiento.",
         "financial_donations_cta": "Considera apoyar al desarrollador principal (<Link>eliandoran</Link>) de la aplicación a través de:",
         "github_sponsors": "Patrocinadores de GitHub",
         "paypal": "PayPal",
@@ -139,7 +149,7 @@
     },
     "contribute": {
         "title": "Otras formas de contribuir",
-        "way_translate": "Traduce la aplicación a tu idioma nativo a través de <Link>Weblate</Link>.",
+        "way_translate": "Traduzca la aplicación a su idioma nativo a través de <Link>Weblate</Link>.",
         "way_community": "Interactúa con la comunidad en <Discussions>GitHub Discussions</Discussions> o en <Matrix>Matrix</Matrix>.",
         "way_reports": "Reporta errores a través de <Link>GitHub Issues</Link>.",
         "way_document": "Ayuda a mejorar la documentación señalando vacíos en ella o contribuyendo con guías, preguntas frecuentes o tutoriales.",
@@ -164,7 +174,7 @@
         "title_arm64": "Linux en ARM",
         "description_x64": "Compatible con la mayoría de distribuciones Linux, para arquitectura x86_64.",
         "description_arm64": "Compatible con distribuciones Linux basadas en ARM, para arquitectura aarch64.",
-        "quick_start": "Selecciona el formato de paquete adecuado según tu distribución:",
+        "quick_start": "Seleccione el formato de paquete adecuado según su distribución:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
         "download_flatpak": ".flatpak",
@@ -191,7 +201,7 @@
     },
     "download_helper_server_linux": {
         "title": "Autohospedado en Linux",
-        "description": "Despliega Trilium Notes en tu propio servidor o VPS, compatible con la mayoría de las distribuciones.",
+        "description": "Despliegue Trilium Notes en su propio servidor o VPS, compatible con la mayoría de las distribuciones.",
         "download_tar_x64": "x64 (.tar.xz)",
         "download_tar_arm64": "ARM (.tar.xz)",
         "download_nixos": "Módulo de NixOS"
@@ -205,7 +215,8 @@
         "get-started": "Comencemos",
         "documentation": "Documentación",
         "support-us": "Apóyanos",
-        "resources": "Recursos"
+        "resources": "Recursos",
+        "language": "Idioma"
     },
     "resources": {
         "title": "Recursos",
@@ -224,5 +235,53 @@
         "scripting": "Scripting",
         "ai_integration": "IA",
         "faq": "FAQ"
+    },
+    "import": {
+        "title": "Sus notas nunca quedan bloqueadas",
+        "subtitle": "Sus notas son libres de moverse. Impórtelas desde otras aplicaciones, extráigalas en formatos abiertos o conviértalas en documentos pulidos, cuando lo desee.",
+        "pillar_import_title": "Importar",
+        "pillar_import_description": "Importe sus notas desde otras aplicaciones con su estructura intacta, o importe archivos estándar Markdown, HTML y OPML.",
+        "pillar_export_title": "Exportar",
+        "pillar_export_description": "Extraiga cualquier nota o todo su árbol en un formato abierto y portable en cualquier momento:",
+        "pillar_export_markdown": "Markdown para texto plano portable",
+        "pillar_export_html": "HTML para páginas autocontenidas",
+        "pillar_export_opml": "OPML para esquemas",
+        "pillar_pdf_title": "Imprimir a PDF",
+        "pillar_pdf_description": "Convierta sus notas en un PDF pulido, con aspecto de libro:",
+        "pillar_pdf_single": "Una sola nota",
+        "pillar_pdf_subtree": "Un subárbol completo, conservando el orden",
+        "pillar_pdf_ready": "Listo para imprimir o compartir",
+        "sources_label": "Importa directamente desde",
+        "onenote_title": "Microsoft OneNote",
+        "notion_title": "Notion",
+        "keep_title": "Google Keep",
+        "evernote_title": "Evernote",
+        "anytype_title": "Anytype",
+        "obsidian_title": "Obsidian"
+    },
+    "ai_integration": {
+        "title": "IA bajo sus condiciones",
+        "subtitle": "Opcional y completamente bajo sus condiciones. Las funciones de IA son optativas y están desactivadas de forma predeterminada: sus notas nunca se envían a ningún sitio salvo que las active y conecte su propio proveedor.",
+        "screenshot_alt": "El chat de IA de Trilium creando notas en su nombre mediante herramientas integradas",
+        "chat_title": "Converse con sus notas",
+        "chat_description": "Formule preguntas e intercambie ideas en un chat integrado que puede basarse en el contenido de sus propias notas.",
+        "tools_title": "IA que trabaja con sus notas",
+        "tools_description": "Permita que un asistente busque, cree y actualice notas en su nombre mediante un conjunto de herramientas integradas.",
+        "providers_title": "Su proveedor, sus claves",
+        "providers_description": "Conecte OpenAI, Anthropic o Google con su propia clave de API, o apunte Trilium a un modelo autohospedado compatible con OpenAI. Exponga sus notas a asistentes externos mediante MCP.",
+        "learn_more": "Más información"
+    },
+    "scripting": {
+        "title": "Si puede imaginarlo, puede programarlo",
+        "subtitle": "Trilium no es solo un lugar para almacenar notas: es programable. Escriba JavaScript que se ejecute en la aplicación o en el servidor, construya su propia interfaz y automatice sus flujos de trabajo, desde un ajuste de una línea hasta una aplicación personalizada completa.",
+        "screenshot_alt": "Una nota de renderización de Trilium mostrando un reloj analógico interactivo construido con un script",
+        "widgets_title": "Widgets personalizados",
+        "widgets_description": "Añada sus propios botones, paneles y widgets de lanzador a la interfaz de Trilium mediante JavaScript de frontend.",
+        "backend_title": "Scripts de backend y eventos",
+        "backend_description": "Ejecute scripts del lado del servidor según una programación o en respuesta a eventos como la creación o modificación de una nota.",
+        "render_title": "Notas de renderización",
+        "render_description": "Construya paneles interactivos y miniaplicaciones que se renderizan directamente dentro de una nota, como el reloj que se muestra aquí.",
+        "api_title": "Script API",
+        "api_description": "Una API tipada para notas, ramas, atributos y búsqueda, disponible tanto para scripts de frontend como de backend."
     }
 }

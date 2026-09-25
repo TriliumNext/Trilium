@@ -33,13 +33,18 @@ permissions:
 jobs:
   electron-pin:
     name: Sync the pinned Electron binary
+    # A fork replays the package.json bump when it syncs main, so without the guard it
+    # opens the flake PR against a pin it does not own.
+    if: ${{ github.repository == vars.REPO_MAIN }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Set up node & dependencies
         uses: actions/setup-node@v7
         with:
@@ -50,7 +55,7 @@ jobs:
       - name: Set up Nix
         # The headers hash is a NAR hash of the unpacked tarball, so only Nix can
         # compute it — and the verification step below needs a working builder.
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -70,7 +75,7 @@ jobs:
         run: nix build --no-link '.#electron' '.#electron.headers'
       - name: Open a PR
         if: steps.refresh.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           add-paths: flake.nix
           branch: chore/update-flake-electron

@@ -1,10 +1,11 @@
 import "./GhostPin.css";
 
+import { GEO_MARKER_ICON } from "@triliumnext/commons";
 import type { MapMouseEvent } from "maplibre-gl";
 import { useContext, useEffect, useRef } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
-import { CHILD_NOTE_ICON } from "./api";
+import { MARKER_NOTE_TYPE } from "./api";
 import { ParentMap } from "./map";
 import { DEFAULT_MARKER_COLOR, drawMarkerImage } from "./Markers";
 
@@ -13,22 +14,32 @@ import { DEFAULT_MARKER_COLOR, drawMarkerImage } from "./Markers";
  * preceded by a picture of what it will do: the crosshair says a place is wanted, and this says
  * what will stand on it.
  *
- * Drawn with the very image the symbol layer would stamp there (see {@link drawMarkerImage}) — the
- * note's own colour and icon for a marker being moved, the pin a new note is given for one being
- * created — and translucent, so it reads as an offer rather than as a marker already standing.
+ * Drawn with the very image the symbol layer would stamp there (see {@link drawMarkerImage}) and
+ * translucent, so it reads as an offer rather than as a marker already standing.
+ *
+ * A marker being moved wears its own colour and icon. One being created wears what the map would
+ * give it — a `#child:iconClass`, a template, an inheritable label (see
+ * {@link FNote.getLabelValueForNewChild}) — and the pin a located note is drawn under otherwise,
+ * so a map that dresses its markers offers the marker it will actually drop.
  *
  * Positioned by hand off the map's `mousemove` rather than as a MapLibre marker: the ghost follows
  * the pointer, not a coordinate, so there is no lngLat for a marker to be held at.
  */
-export default function GhostPin({ note }: {
+export default function GhostPin({ note, parentNote }: {
     /** The note being moved, whose pin the ghost wears — or none, for a note yet to be created. */
     note?: FNote;
+    /** The map, which a note yet to be created takes its look from. */
+    parentNote: FNote;
 }) {
     const map = useContext(ParentMap);
     const elementRef = useRef<HTMLDivElement>(null);
 
-    const color = note?.getLabelValue("color") ?? DEFAULT_MARKER_COLOR;
-    const iconClass = note?.getIcon() ?? CHILD_NOTE_ICON;
+    const color = note?.getLabelValue("color")
+        ?? parentNote.getLabelValueForNewChild("color", MARKER_NOTE_TYPE)
+        ?? DEFAULT_MARKER_COLOR;
+    const iconClass = note?.getIcon()
+        ?? parentNote.getLabelValueForNewChild("iconClass", MARKER_NOTE_TYPE)
+        ?? GEO_MARKER_ICON;
 
     // The pin image, drawn fresh rather than through the layer's cache: the cache keeps one <img>
     // element per look, and an element can only stand in one place — two maps split side by side,

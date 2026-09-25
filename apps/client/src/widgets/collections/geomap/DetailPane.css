@@ -10,17 +10,13 @@
 }
 
 .geo-map-container .geo-detail-pane {
-    /* Room at the foot for the bar of buttons, which stands in this same corner: wherever that bar
-       has been pushed up to (a home bar in fullscreen, say — see the insets in index.css), its own
-       height, and as much air again. Standing clear of it rather than moving it aside — the mind
-       map's panel reckons its foot the same way. */
-    --detail-pane-foot: calc(var(--geo-map-inset-bottom) + var(--geo-map-toolbar-height) + var(--geo-map-inset));
-
     position: absolute;
     /* A fixed height rather than one sized to its contents, which would be a different pane for
-       every marker. What it holds scrolls within it (see OverlayPanel.css). */
+       every marker. What it holds scrolls within it (see OverlayPanel.css). It stands clear of the
+       bar of buttons in this same corner rather than moving it aside — the mind map's panel reckons
+       its foot the same way. */
     top: var(--geo-map-inset-top);
-    bottom: var(--detail-pane-foot);
+    bottom: var(--geo-map-foot);
     inset-inline-end: var(--geo-map-inset-end);
     width: var(--geo-detail-pane-width);
     /* An embedded map may be narrower than the pane would like to be — and in fullscreen the sides
@@ -81,6 +77,7 @@
  * own until it is aimed at.
  */
 .geo-map-container .geo-detail-pane .geo-detail-pane-location,
+.geo-map-container .geo-place-panel .geo-detail-pane-location,
 .modal.geo-detail-sheet .geo-detail-pane-location {
     display: flex;
     align-items: center;

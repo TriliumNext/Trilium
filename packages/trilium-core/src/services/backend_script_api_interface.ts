@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { ScriptRequest, ScriptResponse } from "@triliumnext/commons/src/lib/script_api.js";
 
 import type BNote from "../becca/entities/bnote.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
@@ -7,6 +7,6 @@ export interface ApiParams {
     startNote?: BNote | null;
     originEntity?: AbstractBeccaEntity<any> | null;
     pathParams?: string[];
-    req?: Request;
-    res?: Response;
+    req?: ScriptRequest;
+    res?: ScriptResponse;
 }

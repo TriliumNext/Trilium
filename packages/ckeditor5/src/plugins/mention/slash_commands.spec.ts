@@ -8,6 +8,8 @@ import {
     Essentials,
     _getModelData as getModelData,
     Heading,
+    Image,
+    ImageUpload,
     keyCodes,
     MentionEditing,
     Paragraph,
@@ -16,8 +18,11 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
+import { installGlobMock } from "../../../test/globals-test-kit.js";
 import { COMMAND_NAME as INCLUDE_NOTE_COMMAND } from "../includenote.js";
-import { COMMAND_NAME as INSERT_DATE_TIME_COMMAND } from "../insert_date_time.js";
+import { INSERT_ICON_COMMAND } from "../inline_icon/inline_icon_editing.js";
+import InlineIconUI from "../inline_icon/inline_icon_ui.js";
+import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TIME_PRESETS } from "../insert_date_time.js";
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
@@ -184,9 +189,10 @@ describe("TriliumSlashCommands", () => {
 
             // No `heading.options` to derive from, so the palette carries no headings at all...
             expect(buildDefaultSlashCommands(editor).map((definition) => definition.id))
-                .toEqual([ "blockQuote", "codeBlock", "insertTable", "horizontalLine", "indent", "outdent" ]);
+                .toEqual([ "blockQuote", "codeBlock", "insertTable", "horizontalLine", "indent", "outdent", "uploadImage" ]);
 
-            // ...and of those, only the one whose plugin is actually loaded survives the catalog.
+            // ...and of the command-backed ones, only the one whose plugin is actually loaded
+            // survives the catalog.
             const ids = (await queryPalette("")).map((item) => (item as { id: string }).id);
             expect(ids).toContain("/blockQuote");
             expect(ids).not.toContain("/codeBlock");
@@ -261,6 +267,107 @@ describe("TriliumSlashCommands", () => {
             expect(ids[0]).toBe("/paragraph");
             expect(ids.indexOf("/blockQuote")).toBeLessThan(ids.indexOf("/align-left"));
             expect(ids.indexOf("/align-left")).toBeLessThan(ids.indexOf("/anchor"));
+        });
+    });
+
+    describe("image upload", () => {
+        /** The palette entry opens a file picker, so the spec drives the `<input>` it creates. */
+        function uploadEntry(target: Editor): SlashCommandDefinition {
+            const definition = buildDefaultSlashCommands(target).find((candidate) => candidate.id === "uploadImage");
+
+            if (!definition) {
+                throw new Error("the palette should carry an `uploadImage` entry");
+            }
+
+            return definition;
+        }
+
+        function filesOf(...files: File[]): FileList {
+            const transfer = new DataTransfer();
+
+            for (const file of files) {
+                transfer.items.add(file);
+            }
+
+            return transfer.files;
+        }
+
+        it("is offered only where an `uploadImage` command is registered", async () => {
+            // The entry runs a file picker rather than naming the command, so `commandName` cannot
+            // gate it and `isEnabled` has to.
+            expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(false);
+            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).not.toContain("/uploadImage");
+
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ]
+            );
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+            expect(isSlashCommandEnabled(editor, uploadEntry(editor))).toBe(true);
+            expect((await queryPalette("")).map((item) => (item as { id: string }).id)).toContain("/uploadImage");
+        });
+
+        it("uploads only the picked files whose type `image.upload.types` allows", async () => {
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
+                { image: { upload: { types: [ "png", "svg+xml" ] } } }
+            );
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+            const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+
+            expect(click).toHaveBeenCalledOnce();
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            // `accept` narrows the native picker to the configured types, and the `+` in a type
+            // like `svg+xml` survives into the filter regexp rather than being read as a quantifier.
+            expect(input.accept).toBe("image/png,image/svg+xml");
+            expect(input.type).toBe("file");
+            expect(input.isConnected).toBe(true);
+
+            const png = new File([ "" ], "a.png", { type: "image/png" });
+            const svg = new File([ "<svg/>" ], "b.svg", { type: "image/svg+xml" });
+            const text = new File([ "" ], "c.txt", { type: "text/plain" });
+            const gif = new File([ "" ], "d.gif", { type: "image/gif" });
+
+            input.files = filesOf(png, svg, text, gif);
+            input.dispatchEvent(new Event("change"));
+
+            expect(execute).toHaveBeenCalledWith("uploadImage", { file: [ png, svg ] });
+            expect(input.isConnected).toBe(false);
+        });
+
+        it("uploads nothing, and still cleans up, when the picker yields no allowed image", async () => {
+            editor = await createTestEditor(
+                [ Essentials, Paragraph, Image, ImageUpload, MentionEditing, TriliumMentionUI, TriliumSlashCommands ],
+                { image: { upload: { types: [ "png" ] } } }
+            );
+
+            const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            input.files = filesOf(new File([ "" ], "c.txt", { type: "text/plain" }));
+            input.dispatchEvent(new Event("change"));
+
+            expect(execute).not.toHaveBeenCalled();
+            expect(input.isConnected).toBe(false);
+        });
+
+        it("accepts nothing in an editor that configures no upload types", async () => {
+            // `image.upload.types` is undefined without `ImageUpload`; reading it must not throw.
+            const click = vi.spyOn(HTMLInputElement.prototype, "click").mockReturnValue(undefined);
+
+            uploadEntry(editor).execute?.(editor);
+            const input = click.mock.instances[0] as HTMLInputElement;
+
+            expect(input.accept).toBe("");
+            input.remove();
         });
     });
 
@@ -524,11 +631,11 @@ describe("buildTriliumSlashCommands", () => {
     it.each([
         [ "collapsible", "Collapsible block", "collapsible" ],
         [ "footnote", "Footnote", "InsertFootnote" ],
-        [ "datetime", "Insert date/time", INSERT_DATE_TIME_COMMAND ],
         [ "internal-link", "Internal link", INTERNAL_LINK_COMMAND ],
         [ "include-note", "Include note", INCLUDE_NOTE_COMMAND ],
         [ "page-break", "Page break", "pageBreak" ],
         [ "markdown-import", "Markdown import", MARKDOWN_IMPORT_COMMAND ],
+        [ "icon", "Icon", INSERT_ICON_COMMAND ],
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
@@ -553,6 +660,73 @@ describe("buildTriliumSlashCommands", () => {
         definition(id).execute?.(fake);
 
         expect(executeSpy).toHaveBeenCalledWith("alignment", { value });
+    });
+
+    it("offers no date/time entries without the date/time plugin", () => {
+        expect(buildTriliumSlashCommands(editor).some((entry) => entry.id.startsWith("datetime"))).toBe(false);
+    });
+
+    describe("date/time entries", () => {
+        let formatDateTime: ReturnType<typeof vi.fn>;
+
+        beforeEach(async () => {
+            formatDateTime = vi.fn((_date: Date, format?: string) => format ?? "2026-09-25 10:30");
+            installGlobMock({ getComponentByEl: () => ({ formatDateTime }) });
+            editor = await createTestEditor([ Essentials, Paragraph, InsertDateTimePlugin ]);
+        });
+
+        function dateTimeEntries() {
+            return buildTriliumSlashCommands(editor).filter((entry) => entry.id.startsWith("datetime"));
+        }
+
+        it("shows the default format's output under the plain entry", () => {
+            const entry = definition("datetime");
+
+            expect(entry.title).toBe("Insert date/time");
+            expect(entry.description).toBe("2026-09-25 10:30");
+            expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
+            expect(entry.icon).toContain("<svg");
+        });
+
+        it("offers each preset titled with its output, inserting in that format", () => {
+            const { fake, executeSpy } = makeFakeEditor();
+            const presets = dateTimeEntries().slice(1);
+
+            expect(presets.map((entry) => entry.title))
+                .toEqual(DATE_TIME_PRESETS.map(({ format, kind }) => (kind === "time" ? `Insert time: ${format}` : `Insert date/time: ${format}`)));
+            expect(presets.map((entry) => entry.title)).toContain("Insert time: HH:mm");
+
+            for (const [ index, entry ] of presets.entries()) {
+                expect(entry.commandName).toBe(INSERT_DATE_TIME_COMMAND);
+                entry.execute?.(fake);
+                expect(executeSpy).toHaveBeenLastCalledWith(INSERT_DATE_TIME_COMMAND, { format: DATE_TIME_PRESETS[index].format });
+            }
+        });
+
+        it("leaves out a preset whose output matches the default format", () => {
+            formatDateTime.mockImplementation((_date: Date, format?: string) => (format === "HH:mm" ? "2026-09-25 10:30" : format ?? "2026-09-25 10:30"));
+
+            expect(dateTimeEntries()).toHaveLength(DATE_TIME_PRESETS.length);
+        });
+
+        it("finds every date/time entry by the words people type for it", () => {
+            const entries = dateTimeEntries();
+
+            for (const query of [ "date", "time", "now", "today", "timestamp" ]) {
+                expect(matchSlashCommands(entries, query)).toHaveLength(entries.length);
+            }
+        });
+    });
+
+    it("finds the to-do list under the names other editors give it", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+
+        // None of these reach the title: the hyphen in "To-do list" keeps "todo" from matching it
+        // as a prefix or a substring, and the rest are words the title never uses.
+        for (const query of [ "todo", "task", "checklist", "checkbox" ]) {
+            expect(matchSlashCommands(definitions, query).map((entry) => entry.id))
+                .toContain("todoList");
+        }
     });
 
     it("finds the collapsible block under the names other editors give it", () => {

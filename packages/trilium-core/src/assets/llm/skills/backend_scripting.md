@@ -85,7 +85,6 @@ Note: `#customResourceProvider` notes never execute a script — the note's cont
 - `api.dayjs` - date manipulation
 - `api.xml2js` - XML parser
 - `api.htmlParser` - HTML parser (node-html-parser), use `api.htmlParser.parse(html)` to parse
-- `api.cheerio` - **DEPRECATED**, use `api.htmlParser` instead
 
 ### HTTP Requests
 Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top-level `await` is not allowed (see "Async code" above), wrap it in an async IIFE:

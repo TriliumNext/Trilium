@@ -140,7 +140,12 @@ async function downloadImage(noteId: string, imageUrl: string) {
         const parsedUrl = url.parse(unescapedUrl);
         const title = basename(parsedUrl.pathname || "");
 
-        const attachment = imageService.saveImageToAttachment(noteId, imageBuffer, title, true, true);
+        // Given a context of its own, as the link rewrite below is: the download resumes long
+        // after the request that started it has answered, and a write with no context around it
+        // has nowhere to record its entity change.
+        const attachment = cls.getContext().init(
+            () => imageService.saveImageToAttachment(noteId, imageBuffer, title, true, true)
+        );
 
         if (attachment.attachmentId) {
             imageUrlToAttachmentIdMapping[imageUrl] = attachment.attachmentId;

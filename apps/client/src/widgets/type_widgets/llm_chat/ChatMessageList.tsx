@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
+import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import ChatMessage from "./ChatMessage.js";
 import type { StoredMessage } from "./llm_chat_types.js";
@@ -66,6 +67,14 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                     <NoItems icon="bx bx-conversation" text={emptyStateText} />
                 )}
                 {storedMessages}
+                {isStreaming && !thinkingMessage && !streamingMessage && (
+                    <div className={`chat-stream-status ${chat.streamingStatus ? "" : "chat-stream-status-waiting"}`} role="status">
+                        <LoadingSpinner />
+                        {chat.streamingStatus
+                            ? t(`llm_chat.stream_status.${chat.streamingStatus}`)
+                            : t("llm_chat.stream_status.waiting_for_reply")}
+                    </div>
+                )}
                 {isStreaming && thinkingMessage && (
                     <ChatMessage
                         message={thinkingMessage}
