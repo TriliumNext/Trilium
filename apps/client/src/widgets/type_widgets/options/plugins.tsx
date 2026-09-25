@@ -15,6 +15,7 @@ import NoItems from "../../react/NoItems";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import OptionsRow, { OptionsRowWithButton, OptionsRowWithToggle } from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
+import "./plugins.css";
 
 const COMMUNITY_PACKAGES_MANAGER_NOTE_ID = "_sd_community-packages-manager_render";
 const PACKAGE_PINNED_LABEL = "packagePinned";
@@ -380,7 +381,7 @@ export default function PluginsSettings() {
                 {state.packages.map((pkg) => (
                     <div key={pkg.noteId}>
                         <OptionsRow name={`community-package-${pkg.noteId}`} label={pkg.title} description={formatInstalledPackageDescription(pkg)}>
-                            <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.4em" }}>
+                            <span className="plugin-row-actions">
                                 <Button
                                     text={pkg.enabled ? t("plugins.disable") : t("plugins.enable")}
                                     kind={pkg.enabled ? undefined : "primary"}
@@ -435,28 +436,28 @@ export default function PluginsSettings() {
                 {!state.loading && state.settings ? <>
                     <OptionsRow name="community-package-registries" label={t("plugins.registry_label")} description={t("plugins.registry_description")} stacked>
                         <textarea
+                            className="plugin-source-textarea"
                             rows={3}
                             value={state.registryUrls.join("\n")}
                             placeholder={t("plugins.registry_placeholder")}
-                            style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, registryUrls: parseRegistryUrls(event.currentTarget.value) }))}
                         />
                     </OptionsRow>
                     <OptionsRow name="community-package-direct-manifests" label={t("plugins.direct_manifest_label")} description={t("plugins.direct_manifest_description")} stacked>
                         <textarea
+                            className="plugin-source-textarea"
                             rows={3}
                             value={state.directManifestUrls.join("\n")}
                             placeholder={t("plugins.direct_manifest_placeholder")}
-                            style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, directManifestUrls: parseRegistryUrls(event.currentTarget.value) }))}
                         />
                     </OptionsRow>
                     <OptionsRow name="community-package-source-hosts" label={t("plugins.download_hosts_label")} description={t("plugins.download_hosts_description")} stacked>
                         <textarea
+                            className="plugin-source-textarea"
                             rows={3}
                             value={state.allowedSourceHosts}
                             placeholder={t("plugins.download_hosts_placeholder")}
-                            style={{ width: "100%", boxSizing: "border-box" }}
                             onInput={(event) => setState((current) => ({ ...current, allowedSourceHosts: event.currentTarget.value }))}
                         />
                     </OptionsRow>
