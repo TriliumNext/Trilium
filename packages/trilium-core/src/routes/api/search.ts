@@ -126,8 +126,8 @@ function lintSearchString(req: Request): SearchLintResponse {
     return { error: searchService.validateSearchQuery(searchString) };
 }
 
-function quickSearch(req: Request<{ searchString: string }>) {
-    const { searchString } = req.params;
+function quickSearch(req: Request) {
+    const searchString = (req.params as Record<string, string>)[0];
 
     const searchContext = new SearchContext({
         fastSearch: false,
@@ -155,9 +155,9 @@ function quickSearch(req: Request<{ searchString: string }>) {
 }
 
 function search(
-    req: Request<{ searchString: string }, { ancestorNoteId?: string, includeTokens?: string }>
+    req: Request<{}, { ancestorNoteId?: string, includeTokens?: string }>
 ): string[] | SearchWithTokensResponse {
-    const { searchString } = req.params;
+    const searchString = (req.params as Record<string, string>)[0];
     const { ancestorNoteId, includeTokens } = req.query;
 
     const searchContext = new SearchContext({
