@@ -24,7 +24,7 @@ import MovePaneButton from "../buttons/move_pane_button";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
-import Dropdown from "../react/Dropdown";
+import Dropdown, { keepMenuInViewport } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
@@ -115,6 +115,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
         <>
             <Dropdown
                 dropdownRef={dropdownRef}
+                dropdownOptions={isMobile ? undefined : { popperConfig: keepMenuInViewport }}
                 buttonClassName={ isNewLayout ? "bx bx-dots-horizontal-rounded" : "bx bx-dots-vertical-rounded" }
                 className="note-actions"
                 dropdownContainerClassName="mobile-bottom-menu"

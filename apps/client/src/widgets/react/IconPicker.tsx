@@ -13,7 +13,7 @@ import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
-import Dropdown from "./Dropdown";
+import Dropdown, { keepMenuInViewport } from "./Dropdown";
 import { FormDropdownDivider, FormListItem } from "./FormList";
 import FormTextBox from "./FormTextBox";
 import { useStaticTooltip, useWindowSize } from "./hooks";
@@ -180,17 +180,7 @@ function IconPickerDropdownButton({
             dropdownContainerStyle={{ width: "620px" }}
             dropdownOptions={{
                 autoClose: "outside",
-                // Popper guards only the main axis against overflow, so a menu this tall, hung off
-                // a button with room for it neither above nor below, was left hanging off the
-                // bottom of the screen. Guarding the other axis too slides it back into view; the
-                // side it opens on is still `flip`'s to choose.
-                popperConfig: (defaults) => ({
-                    ...defaults,
-                    modifiers: [
-                        ...(defaults.modifiers ?? []),
-                        { name: "preventOverflow", options: { altAxis: true, padding: 8 } }
-                    ]
-                })
+                popperConfig: keepMenuInViewport
             }}
             // The menu is wider than some of the places a button stands in, and the inline title
             // establishes a backdrop root that would flatten its blur into a tint; hand the menu to

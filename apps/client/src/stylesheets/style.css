@@ -1751,7 +1751,7 @@ body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
     overflow: auto;
 }
 
-/* Flipped upward (added by ContextMenu.repositionSubmenu) when the submenu would overflow the bottom of the viewport. */
+/* Flipped upward (added by `repositionSubmenu()`) when the submenu would overflow the bottom of the viewport. */
 .dropdown-submenu > .dropdown-menu.submenu-flip-up {
     top: auto;
     bottom: 0;
@@ -1764,7 +1764,7 @@ body.desktop .dropdown-submenu > .dropdown-menu {
     max-width: 300px;
 }
 
-/* Opened on the other side (`submenu-flip-start` added by ContextMenu.repositionSubmenu) when the
+/* Opened on the other side (`submenu-flip-start` added by `repositionSubmenu()`) when the
    submenu would overflow the side it opens on. */
 .dropdown-submenu.dropstart > .dropdown-menu,
 .dropdown-submenu > .dropdown-menu.submenu-flip-start,
