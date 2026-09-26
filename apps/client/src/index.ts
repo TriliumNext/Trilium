@@ -20,6 +20,10 @@ const LOCAL_BOOTSTRAP_TIMEOUT_MS = 270_000;
 const USE_LOCAL_FETCH = import.meta.env.VITE_DISABLE_LOCAL_FETCH !== "true";
 
 async function bootstrap() {
+    // Before any request: on the desktop this swaps in the port straight to the backend process,
+    // which the /bootstrap fetch below and every later call then prefer. A no-op everywhere else.
+    await (await import("./services/electron_backend_transport.js")).installElectronBackendTransport();
+
     // The splash from index.html covers the page until hideSplash(). Standalone reports a longer
     // sequence of its own before this one, so these phases only take effect on server and desktop.
     initSplashProgress(CLIENT_STARTUP_PHASES);

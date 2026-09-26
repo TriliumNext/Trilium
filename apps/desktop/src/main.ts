@@ -1,7 +1,10 @@
 import { becca_loader, cls, entity_changes, getLog, initializeCore, options, sql_init, ws } from "@triliumnext/core";
+import { initPlatform } from "@triliumnext/core/src/services/platform";
+import { initLog } from "@triliumnext/core/src/services/log";
 import ServerBackupService from "@triliumnext/server/src/backup_provider.js";
 import AsyncLocalStorageExecutionContext from "@triliumnext/server/src/cls_provider.js";
 import { loadCoreSchema } from "@triliumnext/server/src/core_assets.js";
+import { initializeTranslationsWithParams } from "@triliumnext/server/src/services/i18n.js";
 import NodejsCryptoProvider from "@triliumnext/server/src/crypto_provider.js";
 import NodejsInAppHelpProvider from "@triliumnext/server/src/in_app_help_provider.js";
 import ServerLogService from "@triliumnext/server/src/log_provider.js";
@@ -14,19 +17,22 @@ import { RESOURCE_DIR } from "@triliumnext/server/src/services/resource_dir.js";
 import WebSocketMessagingProvider from "@triliumnext/server/src/services/ws_messaging_provider.js";
 import BetterSqlite3Provider from "@triliumnext/server/src/sql_provider.js";
 import NodejsZipProvider from "@triliumnext/server/src/zip_provider.js";
-import { app, BrowserWindow,globalShortcut } from "electron";
+import { app, BrowserWindow,globalShortcut, ipcMain } from "electron";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
 import type { Application } from "express";
 import fs from "fs";
-import { t } from "i18next";
+import i18next, { t } from "i18next";
 import path, { join, resolve } from "path";
 
-import { deferred, LOCALES } from "../../../packages/commons/src";
+import { deferred, type LOCALE_IDS, LOCALES } from "../../../packages/commons/src";
 import { PRODUCT_NAME } from "./app-info";
 import CompositeMessagingProvider from "./composite_messaging_provider";
 import IpcMessagingProvider from "./ipc_messaging_provider";
 import DesktopPlatformProvider from "./platform_provider";
+import { type BackendHandle, startBackendProcess } from "./backend/backend_bridge";
+import * as mainOptions from "./backend/main_options";
+import { applyOptionChange, readOptionSnapshot, useOptionReplica } from "./backend/main_options";
 import { registerTriliumAppScheme, setupTriliumAppProtocol } from "./protocol";
 import { applyLaunchOnStartup, setupAutoLaunch, wasLaunchedHidden } from "./services/auto_launch";
 import { setupCustomDictionary } from "./services/custom_dictionary";
@@ -48,6 +54,26 @@ import { setupShellHandlers } from "./services/shell";
 import { markStartupMetric, setupStartupMetricsIpc } from "./services/startup_metrics";
 import { setupSystemTray } from "./services/tray";
 import windowService, { setupWindowing } from "./services/window";
+
+/**
+ * Whether the backend runs in its own `utilityProcess` rather than here.
+ *
+ * In the main process, a long synchronous backend operation — a `VACUUM`, a
+ * flat-text search over a large database — pins Chromium's browser-process UI
+ * thread, which is the thread that routes input to the renderer and serves every
+ * `trilium-app://` request. Out of process it pins only itself.
+ */
+const USE_BACKEND_PROCESS = process.env.TRILIUM_BACKEND_PROCESS === "1";
+
+/**
+ * Whether the database has been through setup, read from the file while main still
+ * had it open. With the backend out of process core cannot be asked.
+ */
+let databaseInitialized: boolean | undefined;
+
+function isDatabaseInitialized(): boolean {
+    return databaseInitialized ?? sql_init.isDbInitialized();
+}
 
 export async function main() {
     markStartupMetric("main-process-start");
@@ -77,7 +103,22 @@ export async function main() {
     // trilium-app:// protocol handler awaits this per request, so renderer
     // requests that arrive before the server is up simply wait.
     const expressAppPromise = deferred<Application>();
-    setupTriliumAppProtocol(expressAppPromise);
+    // The protocol handler serves the app shell, its scripts and its images. Those
+    // are requested by Chromium on the renderer's behalf and so always arrive here,
+    // even when the page's own API calls go straight to the backend process.
+    const backendPromise = deferred<BackendHandle>();
+    setupTriliumAppProtocol(USE_BACKEND_PROCESS ? backendPromise : expressAppPromise);
+
+    // The preload asks for a port to the backend process as it loads. Both modes
+    // answer: without a reply the client would wait for a transport that is never
+    // coming, and never make its first request.
+    ipcMain.on("trilium-backend-port-request", async (event) => {
+        if (!USE_BACKEND_PROCESS) {
+            event.sender.send("trilium-backend-port-unavailable");
+            return;
+        }
+        (await backendPromise).attachRenderer(event.sender);
+    });
 
     // Prevent Trilium starting twice on first install and on uninstall for the Windows installer.
     /* v8 ignore next 3 -- squirrel uses a CJS require() that vi.mock cannot intercept, so the truthy/exit path is un-coverable in unit tests */
@@ -202,7 +243,7 @@ export async function main() {
     recoverInterruptedRestore();
 
     const dbProvider = new BetterSqlite3Provider();
-    dbProvider.loadFromFile(dataDirs.DOCUMENT_PATH, config.General.readOnly);
+    dbProvider.loadFromFile(dataDirs.DOCUMENT_PATH, config.General.readOnly || USE_BACKEND_PROCESS);
     markStartupMetric("database-opened");
 
     // These Chromium switches must be applied before `ready`; the prologue above is
@@ -224,6 +265,38 @@ export async function main() {
     // The IPC provider just registers an `ipcMain.on` listener; no TCP socket
     // or session parser needed, so we can init it here (before startTriliumServer).
     // It's the messaging channel to the trusted renderer window(s).
+    if (USE_BACKEND_PROCESS) {
+        // Taken while main still holds its read-only handle, and kept current from the
+        // backend afterwards. The handle closes before the backend opens the database
+        // for writing, so only one process ever has a write connection to the file.
+        useOptionReplica(readOptionSnapshot((name) => readDbOption(dbProvider, name)));
+        const locale = (readDbOption(dbProvider, "locale") ?? "en") as LOCALE_IDS;
+        databaseInitialized = readDbOption(dbProvider, "initialized") === "true";
+        dbProvider.close();
+
+        // initializeCore() does both of these, and it does not run here. window.ts reads
+        // the platform accessors, and the menus, dialogs and tray translate against the
+        // catalogue.
+        initPlatform(new DesktopPlatformProvider());
+        initLog(new ServerLogService());
+        await initializeTranslationsWithParams(i18next, locale);
+
+        const backend = startBackendProcess();
+        backend.onOptionChanged(applyOptionChange);
+        backendPromise.resolve(backend);
+
+        // Core's messaging provider lives in the backend process, so the channel the
+        // renderer already uses is relayed by hand in this direction too.
+        ipcMain.on("trilium-ws-from-renderer", (event, message) => {
+            backend.sendClientMessage(String(event.sender.id), message);
+        });
+
+        await backend.ready;
+        markStartupMetric("core-initialized");
+        coreInitializedPromise.resolve();
+        return;
+    }
+
     const ipcMessaging = new IpcMessagingProvider();
     ipcMessaging.init();
 
@@ -356,13 +429,15 @@ async function onReady() {
 
     // if db is not initialized -> setup process
     // if db is initialized, then we need to wait until the migration process is finished
-    if (sql_init.isDbInitialized()) {
-        await sql_init.dbReady;
+    if (isDatabaseInitialized()) {
+        if (!mainOptions.isBackendOutOfProcess()) {
+            await sql_init.dbReady;
+        }
 
         // Open minimized to the tray only when launched at login with the option
         // on (never on a manual launch, which expects a window) and the tray is
         // available to summon it from.
-        const startHidden = wasLaunchedHidden() && !options.getOptionBool("disableTray");
+        const startHidden = wasLaunchedHidden() && !mainOptions.getOptionBool("disableTray");
         await windowService.createMainWindow(startHidden);
 
         // Repair the OS autostart entry so it matches the stored option (it can

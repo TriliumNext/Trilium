@@ -1,11 +1,12 @@
 import type { KeyboardActionNames } from "@triliumnext/commons";
-import { becca, becca_service, type BNote, type BRecentNote, cls, date_notes, options as optionService, sql_init, utils as coreUtils } from "@triliumnext/core";
+import { becca, becca_service, type BNote, type BRecentNote, cls, date_notes, sql_init, utils as coreUtils } from "@triliumnext/core";
 import { getResourceDir } from "@triliumnext/server/src/services/utils.js";
 import windowService from "./window.js";
 import type { BrowserWindow, Tray } from "electron";
 import electron from "electron";
 import { default as i18next, t } from "i18next";
 import path from "path";
+import * as mainOptions from "../backend/main_options.js";
 
 let tray: Tray | null = null;
 let listenersRegistered = false;
@@ -322,7 +323,7 @@ function destroyTray() {
  * refreshes the tray as appropriate.
  */
 function reloadTray() {
-    if (optionService.getOptionBool("disableTray")) {
+    if (mainOptions.getOptionBool("disableTray")) {
         destroyTray();
         return;
     }
