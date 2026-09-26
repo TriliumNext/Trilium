@@ -13,6 +13,8 @@ function lex(str: string) {
     let quotes: boolean | string = false; // otherwise contains used quote - ', " or `
     let fulltextEnded = false;
     let currentWord = "";
+    // Set while the word being built opens with a parenthesis the query escaped.
+    let openingParenEscaped = false;
     let leadingOperator = "";
 
     function isSymbolAnOperator(chr: string) {
@@ -55,6 +57,18 @@ function lex(str: string) {
         }
 
         currentWord = "";
+        openingParenEscaped = false;
+    }
+
+    /**
+     * Emits the grouping parentheses that open the expression part, in source order, so
+     * handleParens can match each one with its closing counterpart.
+     */
+    function emitOpeningParens(parens: string, start: number) {
+        for (let offset = 0; offset < parens.length; offset++) {
+            currentWord = "(";
+            finishWord(start + offset);
+        }
     }
 
     for (let i = 0; i < str.length; i++) {
@@ -63,6 +77,10 @@ function lex(str: string) {
         if (chr === "\\") {
             if (i + 1 < str.length) {
                 i++;
+
+                if (str[i] === "(" && /^\(*$/.test(currentWord)) {
+                    openingParenEscaped = true;
+                }
 
                 currentWord += str[i];
             } else {
@@ -92,18 +110,40 @@ function lex(str: string) {
 
             continue;
         } else if (!quotes) {
-            if (!fulltextEnded && currentWord === "note" && chr === "." && i + 1 < str.length) {
+            // Grouping parentheses can open either kind of expression, so they are read off
+            // the pending word before it is matched against what starts one. An escaped one
+            // is a character to search for, so it stays part of the word instead.
+            const openingParens = openingParenEscaped ? "" : (/^\(+/.exec(currentWord)?.[0] ?? "");
+            const pendingWord = currentWord.slice(openingParens.length);
+
+            if (!fulltextEnded && pendingWord === "note" && chr === "." && i + 1 < str.length) {
                 fulltextEnded = true;
+
+                emitOpeningParens(openingParens, i - currentWord.length);
+                currentWord = pendingWord;
             }
 
             if (chr === "#" || chr === "~") {
-                if (!fulltextEnded) {
-                    fulltextEnded = true;
-                } else {
+                // A prefix closes the pending word, so "towers#book" keeps
+                // "towers" as a full-text token next to the #book filter.
+                // A pending word of only parentheses is grouping syntax rather than a
+                // term, so it is not emitted as one.
+                const parenthesesOnly = /^\(+$/.test(currentWord);
+
+                if (!parenthesesOnly) {
                     finishWord(i - 1);
                 }
 
+                fulltextEnded = true;
+
+                // Unescaped parentheses alone open the expression, so "(#a)" emits "("
+                // for handleParens rather than searching for "(" or dropping it.
+                if (!pendingWord) {
+                    emitOpeningParens(openingParens, i - openingParens.length);
+                }
+
                 currentWord = chr;
+                openingParenEscaped = false;
 
                 continue;
             } else if (["#", "~"].includes(currentWord) && chr === "!") {
