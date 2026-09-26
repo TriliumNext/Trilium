@@ -153,7 +153,11 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 *   SVG images (sent as raw HTML).
 *   Text files.
 
-A model that can't read an attachment receives only its name, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content. DeepSeek reads no PDFs, and images only with its vision models.
+Not every model reads every kind of attachment: DeepSeek reads no PDFs, and images only with its vision models; OpenAI Codex, GitHub Copilot and Google Antigravity read images but no PDFs. For such a model:
+
+*   The attach button offers only the kinds the model reads, and a pasted or dropped file it can't read is not attached.
+*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span> warning, and the message can't be sent until the attachment is removed or another model is selected.
+*   An attachment sent in an earlier message reaches the model as its name only, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content.
 
 To upload an attachment:
 

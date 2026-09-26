@@ -1,7 +1,9 @@
+import type { LlmAttachmentKind, LlmModelInfo } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
+import { nativeAttachmentKind, readsAttachmentKind, resolveSelectedModel } from "../../../services/llm_providers.js";
 import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
 import type { LightboxOptions } from "../../dialogs/lightbox.js";
@@ -35,8 +37,6 @@ const ACCEPTED_TEXT_EXTENSIONS = [
     ".html", ".htm", ".css", ".scss", ".vue", ".svelte"
 ];
 
-/** Joined `accept=` value for the hidden `<input type="file">` element. */
-const ACCEPT_ATTR = [...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_BINARY_FILE_TYPES, ...ACCEPTED_TEXT_EXTENSIONS].join(",");
 
 /** Best-effort classification of an uploaded file. */
 type UploadKind = "image" | "binary_file" | "text_file" | null;
@@ -156,6 +156,12 @@ export function useChatAttachments(chat: UseLlmChatReturn): UseChatAttachmentsRe
             toast.showError(t("llm_chat.attachment_unsupported_type", { name: file.name }));
             return;
         }
+        const model = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
+        const refusal = uploadRefusal(model, file, kind);
+        if (refusal) {
+            toast.showError(refusal);
+            return;
+        }
         const block = await uploadFileAsAttachment(chat.chatNoteId, file, kind);
         if (block) {
             chat.addPendingAttachment(block);
@@ -216,15 +222,38 @@ export function useChatAttachments(chat: UseLlmChatReturn): UseChatAttachmentsRe
         fileInputRef.current?.click();
     }, []);
 
+    const model = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
+
     return {
         fileInputRef,
-        acceptAttr: ACCEPT_ATTR,
+        acceptAttr: acceptAttrFor(model),
         pasteHandlerRef,
         openFilePicker,
         handleFilePickerChange,
         handleDrop,
         handleDragOver
     };
+}
+
+/** `accept` for the file input: what `model` reads natively, plus SVGs and text files, which every model gets as text. */
+export function acceptAttrFor(model: LlmModelInfo | undefined): string {
+    const images = readsAttachmentKind(model, "image") ? ACCEPTED_IMAGE_TYPES : [ "image/svg+xml" ];
+    const files = readsAttachmentKind(model, "file") ? ACCEPTED_BINARY_FILE_TYPES : [];
+    return [ ...images, ...files, ...ACCEPTED_TEXT_EXTENSIONS ].join(",");
+}
+
+/** Why `model` can't read an attachment of `kind`. */
+export function unreadableReason(model: LlmModelInfo, kind: LlmAttachmentKind): string {
+    return t(`llm_chat.attachment_model_cannot_read_${kind}`, { model: model.name });
+}
+
+/** The error for a file `model` can't read, which is then not uploaded; undefined when it can. */
+export function uploadRefusal(model: LlmModelInfo | undefined, file: File, kind: Exclude<UploadKind, null>): string | undefined {
+    const nativeKind = nativeAttachmentKind(kind === "binary_file" ? "file" : kind, file.type);
+    if (!model || !nativeKind || readsAttachmentKind(model, nativeKind)) {
+        return undefined;
+    }
+    return t("llm_chat.attachment_refused", { name: file.name, reason: unreadableReason(model, nativeKind) });
 }
 
 /**

@@ -3,7 +3,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { streamChatCompletion } from "../../../services/llm_chat.js";
-import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel } from "../../../services/llm_providers.js";
+import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
 import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
@@ -839,12 +839,15 @@ export function useLlmChat(
         // restore a model ID that has since been deselected (so it's absent from
         // availableModels). Sending it anyway would let the server silently fall
         // back to some default, so block until an available model is chosen.
-        if (!resolveSelectedModel(availableModelsRef.current, selectedModelRef.current, selectedProviderRef.current, selectedProviderIdRef.current)) {
+        const model = resolveSelectedModel(availableModelsRef.current, selectedModelRef.current, selectedProviderRef.current, selectedProviderIdRef.current);
+        if (!model) {
             return;
         }
         const trimmedInput = inputRef.current.trim();
         const attachments = pendingAttachmentsRef.current;
         if (!trimmedInput && attachments.length === 0) return;
+        // An attachment the model can't read would reach it as a placeholder only; the input bar says why Send is blocked.
+        if (unreadableAttachments(model, attachments).length > 0) return;
 
         // If there are attachments, build a block-shaped content array so the
         // images travel alongside the text. Otherwise stay with the simple

@@ -133,6 +133,26 @@
     cursor: not-allowed;
 }
 
+.llm-chat-attachment-chip-unreadable {
+    border-color: var(--admonition-warning-accent-color);
+
+    & > :first-child {
+        opacity: 0.45;
+    }
+}
+
+.llm-chat-attachment-unreadable-icon {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    border-radius: 50%;
+    background: var(--accented-background-color);
+    color: var(--admonition-warning-accent-color);
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
 /*
  * The editor. Stripped of its own chrome so the island owns the border, the
  * background and the focus ring. The `!important`s override CKEditor's bundled

@@ -162,6 +162,35 @@ describe("useLlmChat", () => {
         expect(options.providerId).toBe("ca_1");
     });
 
+    it("holds back a message whose attachments the model cannot read, until the model changes", async () => {
+        optionsGetJsonMock.mockReturnValue([
+            { id: "ds_1", name: "DeepSeek", provider: "deepseek", selectedModels: [
+                { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro", isDefault: true, attachmentKinds: [] }
+            ] },
+            { id: "a_1", name: "Anthropic", provider: "anthropic", selectedModels: [{ id: "opus", name: "Opus" }] }
+        ]);
+        await mountChat();
+        expect(api().selectedModel).toBe("deepseek-v4-pro");
+        await act(async () => {
+            api().setInput("Summarize this");
+            api().addPendingAttachment({ type: "file", attachmentId: "pdf1", mime: "application/pdf", title: "report.pdf", url: "#" });
+        });
+
+        await act(async () => {
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(streamChatCompletionMock).not.toHaveBeenCalled();
+        expect(api().pendingAttachments).toHaveLength(1);
+
+        await act(async () => {
+            api().setSelectedModel("opus", "anthropic", "a_1");
+        });
+        await act(async () => {
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(streamChatCompletionMock).toHaveBeenCalledOnce();
+    });
+
     it("resolves the provider by model ID for chats saved before selectedProvider existed", async () => {
         await mountChat();
         // A pre-selectedProvider chat: content carries a model but no provider.
