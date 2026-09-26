@@ -105,7 +105,8 @@
         "download_zip": "포터블 (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
-        "download_appimage": ".AppImage"
+        "download_appimage": ".AppImage",
+        "download_flathub": "Flathub"
     },
     "note_types": {
         "text_title": "텍스트 노트",
