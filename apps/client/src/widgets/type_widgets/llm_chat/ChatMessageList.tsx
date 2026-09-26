@@ -1,14 +1,17 @@
 import "./ChatMessageList.css";
 
-import { useMemo } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import ChatMessage from "./ChatMessage.js";
-import type { StoredMessage } from "./llm_chat_types.js";
+import type { ContentBlock, StoredMessage } from "./llm_chat_types.js";
 import type { UseLlmChatReturn } from "./useLlmChat.js";
+
+/** How long a streaming reply goes without changing before the list says it is still working. */
+const STREAM_IDLE_MS = 2000;
 
 interface ChatMessageListProps {
     /** The chat hook result. */
@@ -26,6 +29,7 @@ interface ChatMessageListProps {
  */
 export default function ChatMessageList({ chat, emptyStateText, className }: ChatMessageListProps) {
     const { messages, isStreaming, retryLast } = chat;
+    const isStreamIdle = useStreamIdle(chat.streamingBlocks, isStreaming);
 
     // Rebuilt only when the timeline itself changes: renders caused by anything else
     // (streaming commits, toggles) skip the O(messages) vnode allocation and the
@@ -73,6 +77,12 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                         isStreaming
                     />
                 )}
+                {isStreaming && streamingMessage && isStreamIdle && !showsOwnProgress(chat.streamingBlocks) && (
+                    <div className="chat-stream-status chat-stream-status-idle" role="status">
+                        <LoadingSpinner />
+                        {t("llm_chat.stream_status.still_working")}
+                    </div>
+                )}
                 <div ref={chat.messagesEndRef} className="chat-messages-end" aria-hidden="true" />
                 <div ref={chat.bottomSpacerRef} className="chat-bottom-spacer" aria-hidden="true" />
             </div>
@@ -87,4 +97,22 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
             )}
         </div>
     );
+}
+
+/** Whether `blocks` has gone {@link STREAM_IDLE_MS} without changing while the turn streams. */
+function useStreamIdle(blocks: ContentBlock[], isStreaming: boolean) {
+    const [isIdle, setIsIdle] = useState(false);
+    useEffect(() => {
+        setIsIdle(false);
+        if (!isStreaming) return;
+        const timer = setTimeout(() => setIsIdle(true), STREAM_IDLE_MS);
+        return () => clearTimeout(timer);
+    }, [blocks, isStreaming]);
+    return isIdle;
+}
+
+/** A thought being streamed and a tool call awaiting its result each show a spinner of their own. */
+function showsOwnProgress(blocks: ContentBlock[]) {
+    const last = blocks.at(-1);
+    return last?.type === "thinking" || (last?.type === "tool_call" && !last.toolCall.result);
 }

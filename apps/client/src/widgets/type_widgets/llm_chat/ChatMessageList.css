@@ -78,6 +78,11 @@
     &.chat-stream-status-waiting {
         animation: chat-stream-status-appear 0.2s ease-out 0.6s backwards;
     }
+
+    &.chat-stream-status-idle {
+        margin-top: 0.5rem;
+        animation: chat-stream-status-appear 0.2s ease-out;
+    }
 }
 
 @keyframes chat-stream-status-appear {

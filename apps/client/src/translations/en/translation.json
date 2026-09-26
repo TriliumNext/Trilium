@@ -2657,7 +2657,8 @@
     "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file.",
     "stream_status": {
       "starting_agent": "Starting the agent. This can take a while.",
-      "waiting_for_reply": "Waiting for the reply…"
+      "waiting_for_reply": "Waiting for the reply…",
+      "still_working": "Still working…"
     },
     "show_tool_call_details": "Show input and output",
     "tool_call_no_result": "No result yet.",
