@@ -70,6 +70,11 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
         return { noteId, parentNoteId: null, detailText: null };
     }
 
+    if (toolCall.toolName === "load_skill" && typeof input?.name === "string") {
+        const skillTitle = t(`llm_chat.skills.${input.name}`, { defaultValue: input.name });
+        return { noteId: null, parentNoteId: null, detailText: skillTitle };
+    }
+
     const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined;
     return { noteId: null, parentNoteId: null, detailText: detailText || null };
 }

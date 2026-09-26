@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../../../services/i18n.js", () => ({
     t: (key: string, options?: { defaultValue?: string }) => {
         if (key.startsWith("llm.tools.")) return key.slice("llm.tools.".length);
+        if (key === "llm_chat.skills.search_syntax") return "Search syntax";
         return options?.defaultValue ?? (options ? `${key}${JSON.stringify(options)}` : key);
     }
 }));
@@ -623,5 +624,45 @@ describe("ToolCallCard", () => {
 
         expect(content?.querySelector(".llm-chat-note-card-facts")?.textContent).toBe("llm_chat.attachment_ocr");
         expect(content?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("Quarterly report");
+    });
+
+    it("names a skill the AI loaded by its display name, falling back to its ID", () => {
+        const target = renderCard([
+            { id: "1", toolName: "load_skill", input: { name: "search_syntax" }, result: JSON.stringify({ skill: "search_syntax", instructions: "…" }) },
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            { id: "3", toolName: "load_skill", input: { name: "brand_new" }, result: JSON.stringify({ skill: "brand_new", instructions: "…" }) }
+        ]);
+        const [ known, , unknown ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        expect(known instanceof HTMLDetailsElement).toBe(false);
+        expect(known?.querySelector(".llm-chat-tool-call-detail")?.textContent).toBe("Search syntax");
+        expect(unknown?.querySelector(".llm-chat-tool-call-detail")?.textContent).toBe("brand_new");
+    });
+
+    it("lays out the User Guide contents as a tree whose pages open as contextual help", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "get_help_toc",
+            input: {},
+            result: JSON.stringify({ pageCount: 3, toc: "Getting started (_help_a)\n  Install (_help_b)\nNotes (_help_c)" })
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        expect(line?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.search_help_count{\"count\":3}");
+
+        const header = (row: Element | null | undefined) => row?.querySelector(":scope > .llm-chat-note-result-header");
+        const rows = [ ...(line?.querySelectorAll(".llm-chat-note-result") ?? []) ];
+        expect(rows.map(row => ({
+            page: header(row)?.querySelector("a")?.textContent,
+            parent: header(row.parentElement?.closest(".llm-chat-note-result"))?.querySelector("a")?.textContent ?? null
+        }))).toEqual([
+            { page: "Getting started", parent: null },
+            { page: "Install", parent: "Getting started" },
+            { page: "Notes", parent: null }
+        ]);
+
+        const install = header(rows[1])?.querySelector<HTMLAnchorElement>("a");
+        expect(install).not.toBeNull();
+        act(() => install?.click());
+        expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("b");
     });
 });

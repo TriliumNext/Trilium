@@ -2681,7 +2681,13 @@
     "search_icons_count_one": "({{count}} icon)",
     "search_icons_count_other": "({{count}} icons)",
     "attachment_size": "({{size}})",
-    "attachment_ocr": "Text recognized from the file"
+    "attachment_ocr": "Text recognized from the file",
+    "skills": {
+      "search_syntax": "Search syntax",
+      "backend_scripting": "Backend scripting",
+      "frontend_scripting": "Frontend scripting",
+      "dashboards": "Dashboards"
+    }
   },
   "sidebar_chat": {
     "title": "AI Chat",

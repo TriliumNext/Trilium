@@ -6,11 +6,13 @@ import { Trans } from "react-i18next";
 import { isAutoLinkAttribute } from "../../../entities/fattribute.js";
 import { formatValue } from "../../../services/attribute_renderer.js";
 import { t } from "../../../services/i18n.js";
+import { calculateHash } from "../../../services/link.js";
 import { NOTE_TYPES } from "../../../services/note_types.js";
 import { formatSize, openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
 import { useNote } from "../../react/hooks.js";
 import { TooltipIcon } from "../../react/Icon.js";
+import { PageLink } from "../../react/LinkButton.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { renderMarkdown } from "./chat_markdown.js";
@@ -114,6 +116,18 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 summary: t("llm_chat.search_icons_count", { count: result.totalResults }),
                 body: result.icons.length > 0
                     ? <IconSearchResults {...result} limit={typeof limit === "number" ? limit : result.icons.length} />
+                    : undefined
+            };
+        }
+        case "get_help_toc": {
+            const result = parseJson(toolCall.result);
+            if (!isRecord(result) || typeof result.toc !== "string") return null;
+            const pages = parseHelpToc(result.toc);
+            const count = typeof result.pageCount === "number" ? result.pageCount : pages.length;
+            return {
+                summary: t("llm_chat.search_help_count", { count }),
+                body: pages.length > 0
+                    ? <div className="llm-chat-note-results llm-chat-subtree"><HelpTocList pages={pages} /></div>
                     : undefined
             };
         }
@@ -333,13 +347,7 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
                 <NewNoteLink
                     notePath={noteId}
                     showNoteIcon
-                    onClick={onLinkClick && ((e) => {
-                        // A modified or middle click goes on to `goToLink()` in `services/link.ts`.
-                        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-                        if (!onLinkClick(noteId)) return;
-                        e.preventDefault();
-                        e.stopPropagation();
-                    })}
+                    onClick={onLinkClick && onPlainClick(() => onLinkClick(noteId))}
                 />
                 {children}
             </div>
@@ -598,6 +606,66 @@ function firstNumber(text: unknown): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * A link click handler that gives a plain left click to `handle`, and lets a modified or middle click
+ * go on to `goToLink()` in `services/link.ts`. `handle` returns whether it took the click.
+ */
+function onPlainClick(handle: () => boolean) {
+    return (e: MouseEvent) => {
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        if (!handle()) return;
+        e.preventDefault();
+        e.stopPropagation();
+    };
+}
+
+/** A page of the User Guide contents, with the pages below it. */
+interface HelpTocPage {
+    noteId: string;
+    title: string;
+    children: HelpTocPage[];
+}
+
+/**
+ * The User Guide contents a `get_help_toc` call read. Titles come from the result rather than froca,
+ * which would otherwise load every page of the guide for one line.
+ */
+function HelpTocList({ pages }: { pages: HelpTocPage[] }) {
+    return (
+        <ul>
+            {pages.map((page) => (
+                <li key={page.noteId} className="llm-chat-note-result">
+                    <div className="llm-chat-note-result-header">
+                        <PageLink
+                            href={calculateHash({ notePath: page.noteId })}
+                            text={page.title}
+                            onClick={onPlainClick(() => openAsHelp(page.noteId))}
+                        />
+                    </div>
+                    {page.children.length > 0 && <HelpTocList pages={page.children} />}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/** Reads the `Title (noteId)` lines of a `get_help_toc` result, indented two spaces per level. */
+function parseHelpToc(toc: string): HelpTocPage[] {
+    const roots: HelpTocPage[] = [];
+    const ancestors: HelpTocPage[] = [];
+    for (const line of toc.split("\n")) {
+        const match = /^( *)(.+) \(([^()\s]+)\)$/.exec(line);
+        if (!match) continue;
+        const depth = Math.floor(match[1].length / 2);
+        const page: HelpTocPage = { noteId: match[3], title: match[2], children: [] };
+        ancestors.length = Math.min(depth, ancestors.length);
+        const parent = ancestors[ancestors.length - 1];
+        (parent ? parent.children : roots).push(page);
+        ancestors.push(page);
+    }
+    return roots;
 }
 
 /** Opens a User Guide page in the contextual help split, as `HelpButton` does. */
