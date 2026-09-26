@@ -49,7 +49,9 @@ const mentionFeeds: MentionFeed[] = [
 
             return itemElement;
         },
-        minimumCharacters: 0
+        minimumCharacters: 0,
+        // Note titles contain spaces, so the query must be allowed to as well.
+        allowSpaces: true
     }
 ];
 
