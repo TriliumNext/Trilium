@@ -311,4 +311,23 @@ describe("ToolCallCard", () => {
             .toBe("llm_chat.subtree_more{\"count\":1}");
         expect(card?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("Title Some text");
     });
+
+    it("previews the content a get_note_content call read, and keeps an empty note to a plain line", () => {
+        const target = renderCard([
+            {
+                id: "1",
+                toolName: "get_note_content",
+                input: { noteId: "n" },
+                result: JSON.stringify({ noteId: "n", content: `# Title\n\nSome **text**${" more".repeat(400)}` })
+            },
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            { id: "3", toolName: "get_note_content", input: { noteId: "e" }, result: JSON.stringify({ noteId: "e", content: "" }) }
+        ]);
+        const [ read, , empty ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const preview = read?.querySelector(".llm-chat-note-card .llm-chat-note-result-preview")?.textContent;
+        expect(preview?.startsWith("Title Some text more more")).toBe(true);
+        expect(preview?.length).toBeLessThan(1000);
+        expect(read?.querySelector(".llm-chat-note-card-facts")).toBeNull();
+        expect(empty instanceof HTMLDetailsElement).toBe(false);
+    });
 });

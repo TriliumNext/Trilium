@@ -12,6 +12,7 @@ import { NewNoteLink } from "../../react/NoteLink.js";
 import type { ToolCall } from "./llm_chat_types.js";
 
 const HELP_NOTE_PREFIX = "_help_";
+const CONTENT_PREVIEW_SOURCE_LENGTH = 1000;
 
 /** What a finished call shows: a short summary beside its label, and the view it folds open to. */
 export interface ToolCallView {
@@ -66,6 +67,12 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         case "get_note": {
             const meta = parseNoteMeta(toolCall.result);
             return meta ? { body: <NoteMetaCard {...meta} /> } : null;
+        }
+        case "get_note_content": {
+            const content = parseNoteContent(toolCall.result);
+            // A preview shows two lines, so the start of a long note is enough to flatten.
+            const preview = content ? markdownToPlainPreview(content.slice(0, CONTENT_PREVIEW_SOURCE_LENGTH)) : "";
+            return preview ? { body: <div className="llm-chat-note-card"><div className="llm-chat-note-result-preview">{preview}</div></div> } : null;
         }
         case "get_subtree": {
             const nodes = parseSubtreeResult(toolCall.result);
@@ -299,6 +306,15 @@ function parseNoteMeta(result: string): NoteMeta | null {
         },
         contentPreview: typeof parsed.contentPreview === "string" ? parsed.contentPreview : null
     };
+}
+
+function parseNoteContent(result: string): string | null {
+    try {
+        const parsed: unknown = JSON.parse(result);
+        return isRecord(parsed) && typeof parsed.content === "string" ? parsed.content : null;
+    } catch {
+        return null;
+    }
 }
 
 function parseCappedList(value: unknown): CappedList<unknown> {
