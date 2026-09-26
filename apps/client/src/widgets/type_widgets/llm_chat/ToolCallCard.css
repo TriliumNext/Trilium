@@ -10,16 +10,11 @@
 }
 
 .llm-chat-tool-call-detail,
+.llm-chat-tool-call-count,
 .llm-chat-tool-call-result-count {
     font-size: 0.75rem;
     font-weight: 400;
     opacity: 0.75;
-}
-
-.llm-chat-tool-call-count {
-    font-weight: 400;
-    color: var(--muted-text-color);
-    margin-left: 0.35rem;
 }
 
 .llm-chat-tool-call-note-ref {
