@@ -444,9 +444,10 @@ function buildMathFilter(): Rule {
             // We have to use the raw HTML text, otherwise the content is escaped too much.
             const content = (node as HTMLElement).innerText;
 
-            // Inline math
+            // Inline math. The import only reads `$…$` as math when no space touches a delimiter,
+            // so the equation is trimmed, as CKEditor does when it loads one.
             if (content.startsWith(MATH_INLINE_PREFIX) && content.endsWith(MATH_INLINE_SUFFIX)) {
-                return `$${content.substring(MATH_INLINE_PREFIX.length, content.length - MATH_INLINE_SUFFIX.length)}$`;
+                return `$${content.substring(MATH_INLINE_PREFIX.length, content.length - MATH_INLINE_SUFFIX.length).trim()}$`;
             }
 
             // Display math

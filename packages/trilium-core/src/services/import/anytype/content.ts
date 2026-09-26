@@ -526,10 +526,12 @@ export function renderLatexBlock(text: string, processor: string | undefined): s
  * Finds the inline-math runs in a text block. Anytype carries an inline formula as literal `$…$` (inline) or
  * `$$…$$` (display) text with no mark. The delimiter rules mirror Trilium's markdown renderer: a delimiter
  * `$`/`$$` may not sit next to another `$` (so `${VAR}` and mismatched `$$x$` stay literal) and the body may
- * not contain a `$` or a blank line. Ranges are returned in document order with their original offsets.
+ * not contain a `$` or a blank line. An inline `$` pair also needs a non-space character inside each
+ * delimiter and no digit after the closing one, so prices such as `$15 and $6` stay literal. Ranges are
+ * returned in document order with their original offsets.
  */
 function splitInlineFormulas(text: string): { from: number; to: number; body: string; display: boolean }[] {
-    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?!\$)([^$\n]+?)\$(?!\$)/g;
+    const pattern = /(?<![\\$])\$\$(?!\$)((?:(?!\n{2,})[^$])+?)\$\$(?!\$)|(?<![\\$])\$(?![\s$])([^$\n]*?[^\s$])\$(?![$\d])/g;
     const formulas: { from: number; to: number; body: string; display: boolean }[] = [];
     for (const match of text.matchAll(pattern)) {
         const display = match[1] !== undefined;

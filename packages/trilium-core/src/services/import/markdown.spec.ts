@@ -286,6 +286,12 @@ $$`;
             <pre><code class="language-text-x-trilium-auto">$$a+b$$</code></pre>`);
     });
 
+    it("imports dollar amounts as literal text (#5682)", () => {
+        const input = `Assembled Item A has an Avg cost of $15. A Raw Material has an Avg cost of $6.`;
+        const expected = /*html*/`<p>Assembled Item A has an Avg cost of $15. A Raw Material has an Avg cost of $6.</p>`;
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
     it("converts specific inline math expression into Mathtex format", () => {
         const input = `This is a formula: $\\mathcal{L}_{task} + \\mathcal{L}_{od}$ inside a sentence.`;
         const expected = /*html*/`<p>This is a formula: <span class="math-tex">\\(\\mathcal{L}_{task} + \\mathcal{L}_{od}\\)</span> inside a sentence.</p>`;
