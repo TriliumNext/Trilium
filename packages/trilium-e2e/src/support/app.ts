@@ -123,15 +123,32 @@ export default class App {
         await autocomplete.clear();
         await autocomplete.pressSequentially(noteTitle);
 
-        // The best candidate follows the two creation suggestions ("Create note" and
-        // "Create child note"). Asserting on the suggestion itself (instead of the parent
-        // `.note-detail-empty-results`, which also contains the recent-notes
-        // list) ensures the dropdown actually opened.
-        const suggestionSelector = this.currentNoteSplit
-            .locator(".note-detail-empty-results .aa-suggestion")
-            .nth(2);
-        await expect(suggestionSelector).toContainText(noteTitle);
-        await suggestionSelector.click();
+        const suggestion = this.existingNoteAutocompleteSuggestion(
+            this.currentNoteSplit.locator(".note-detail-empty-results"),
+            noteTitle
+        );
+        await expect(suggestion).toBeVisible();
+        await suggestion.click();
+    }
+
+    /**
+     * Existing-note autocomplete row whose visible title contains `noteTitle`.
+     * Create / search / external-link actions also mention the query, so those
+     * rows are excluded. Matching is case-sensitive so an Options page such as
+     * "Code Notes" is not taken for the fixture note "Code notes".
+     */
+    existingNoteAutocompleteSuggestion(scope: Locator, noteTitle: string) {
+        const escaped = noteTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return scope
+            .locator(".aa-suggestion")
+            .filter({
+                has: this.page.locator(
+                    ".note-suggestion:not(.create-note-action):not(.create-child-note-action)" +
+                        ":not(.search-notes-action):not(.external-link-action)"
+                )
+            })
+            .filter({ hasText: new RegExp(escaped) })
+            .first();
     }
 
     /** Opens the settings dialog via the launcher cog and waits for it to appear. */
