@@ -341,7 +341,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
 }
 
 .llm-chat-markdown blockquote p {
-    margin: 0;
+    margin: 0 1.5em;
 }
 
 .llm-chat-markdown a {
