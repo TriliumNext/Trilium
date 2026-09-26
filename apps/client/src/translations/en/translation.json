@@ -2673,7 +2673,9 @@
     "search_help_count_one": "({{count}} page)",
     "search_help_count_other": "({{count}} pages)",
     "subtree_more_one": "+{{count}} more",
-    "subtree_more_other": "+{{count}} more"
+    "subtree_more_other": "+{{count}} more",
+    "attachment_count_one": "{{count}} attachment",
+    "attachment_count_other": "{{count}} attachments"
   },
   "sidebar_chat": {
     "title": "AI Chat",

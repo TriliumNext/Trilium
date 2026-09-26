@@ -276,4 +276,39 @@ describe("ToolCallCard", () => {
         expect(more?.textContent).toBe("llm_chat.subtree_more{\"count\":3}");
         expect(more?.closest(".llm-chat-note-result")).toBeNull();
     });
+
+    it("shows what a get_note call learned: type, counts, attributes and a preview", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "get_note",
+            input: { noteId: "n" },
+            result: JSON.stringify({
+                noteId: "n",
+                title: "N",
+                type: "code",
+                mime: "text/x-markdown",
+                childNotes: { totalCount: 12, results: [] },
+                attributes: {
+                    totalCount: 5,
+                    results: [
+                        { type: "label", name: "book", value: "" },
+                        { type: "label", name: "status", value: "in progress" },
+                        { type: "relation", name: "author", value: "tolkien" },
+                        { type: "relation", name: "internalLink", value: "other" }
+                    ]
+                },
+                attachments: { totalCount: 1, results: [] },
+                contentPreview: "# Title\n\nSome **text**"
+            })
+        } ]);
+        const card = target.querySelector("details.llm-chat-tool-call .llm-chat-note-card");
+        expect(card?.querySelector(".llm-chat-note-card-facts")?.textContent)
+            .toBe("note_types.markdown · llm_chat.child_count{\"count\":12} · llm_chat.attachment_count{\"count\":1}");
+        expect([ ...(card?.querySelectorAll(".llm-chat-attribute") ?? []) ].map(pill => pill.textContent))
+            .toEqual([ "#book", "#status=\"in progress\"", "~author=tolkien" ]);
+        expect(card?.querySelector(".llm-chat-attribute .note-link-stub")?.textContent).toBe("tolkien");
+        expect(card?.querySelector(".llm-chat-note-card-attributes .llm-chat-note-results-more")?.textContent)
+            .toBe("llm_chat.subtree_more{\"count\":1}");
+        expect(card?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("Title Some text");
+    });
 });

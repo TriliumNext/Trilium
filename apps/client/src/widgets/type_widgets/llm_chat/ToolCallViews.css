@@ -86,3 +86,31 @@
         padding-bottom: 0;
     }
 }
+
+/* What a `get_note` call learned about a note. */
+.llm-chat-note-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.2rem 0;
+    font-size: 0.78rem;
+}
+
+.llm-chat-note-card-attributes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem;
+
+    > .llm-chat-note-results-more {
+        padding: 0;
+    }
+}
+
+.llm-chat-attribute {
+    padding: 0 0.35rem;
+    border-radius: 4px;
+    background: var(--accented-background-color);
+    color: var(--main-text-color);
+    overflow-wrap: anywhere;
+}

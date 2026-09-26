@@ -3,7 +3,10 @@ import "./ToolCallViews.css";
 import type { ComponentChildren } from "preact";
 import { Trans } from "react-i18next";
 
+import { isAutoLinkAttribute } from "../../../entities/fattribute.js";
+import { formatValue } from "../../../services/attribute_renderer.js";
 import { t } from "../../../services/i18n.js";
+import { NOTE_TYPES } from "../../../services/note_types.js";
 import { openInAppHelpFromUrl } from "../../../services/utils.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import type { ToolCall } from "./llm_chat_types.js";
@@ -59,6 +62,10 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 summary: t("llm_chat.child_notes_count", { count: children.length }),
                 body: children.length > 0 ? <ChildNoteList notes={children} /> : undefined
             };
+        }
+        case "get_note": {
+            const meta = parseNoteMeta(toolCall.result);
+            return meta ? { body: <NoteMetaCard {...meta} /> } : null;
         }
         case "get_subtree": {
             const nodes = parseSubtreeResult(toolCall.result);
@@ -204,6 +211,102 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
             {nested}
         </li>
     );
+}
+
+/** A capped list in a `get_note` result: `totalCount` counts past the entries it lists. */
+interface CappedList<T> {
+    totalCount: number;
+    results: T[];
+}
+
+interface NoteMetaAttribute {
+    type: string;
+    name: string;
+    value: string;
+}
+
+interface NoteMeta {
+    type: string;
+    mime?: string;
+    childCount: number;
+    attachmentCount: number;
+    attributes: CappedList<NoteMetaAttribute>;
+    contentPreview?: string | null;
+}
+
+/** What a `get_note` call learned about the note its summary line links. */
+function NoteMetaCard({ type, mime, childCount, attachmentCount, attributes, contentPreview }: NoteMeta) {
+    const noteType = NOTE_TYPES.find((nt) => nt.type === type && nt.mime === mime) ?? NOTE_TYPES.find((nt) => nt.type === type);
+    const facts = [
+        noteType?.title ?? type,
+        childCount > 0 && t("llm_chat.child_count", { count: childCount }),
+        attachmentCount > 0 && t("llm_chat.attachment_count", { count: attachmentCount })
+    ].filter(Boolean);
+    const shown = attributes.results.filter(({ type, name }) => !isAutoLinkAttribute(type, name));
+    const hiddenAttributes = attributes.totalCount - attributes.results.length;
+    const preview = contentPreview ? markdownToPlainPreview(contentPreview) : "";
+
+    return (
+        <div className="llm-chat-note-card">
+            <div className="llm-chat-note-card-facts">{facts.join(" · ")}</div>
+            {(shown.length > 0 || hiddenAttributes > 0) && (
+                <div className="llm-chat-note-card-attributes">
+                    {shown.map((attribute, idx) => <AttributePill key={idx} {...attribute} />)}
+                    {hiddenAttributes > 0 && (
+                        <span className="llm-chat-note-results-more">{t("llm_chat.subtree_more", { count: hiddenAttributes })}</span>
+                    )}
+                </div>
+            )}
+            {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
+        </div>
+    );
+}
+
+/**
+ * A label or relation as the model read it, written the way `attribute_renderer` writes the attribute
+ * bar's. It draws from the result rather than froca, which holds the attribute as it is now.
+ */
+function AttributePill({ type, name, value }: NoteMetaAttribute) {
+    if (type === "relation") {
+        return (
+            <span className="llm-chat-attribute">
+                ~{name}={value && <NewNoteLink notePath={value} showNoteIcon />}
+            </span>
+        );
+    }
+    return <span className="llm-chat-attribute">#{name}{value && `=${formatValue(value)}`}</span>;
+}
+
+function parseNoteMeta(result: string): NoteMeta | null {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(result);
+    } catch {
+        return null;
+    }
+    if (!isRecord(parsed) || typeof parsed.noteId !== "string" || typeof parsed.type !== "string") return null;
+
+    const attributes = parseCappedList(parsed.attributes);
+    return {
+        type: parsed.type,
+        mime: typeof parsed.mime === "string" ? parsed.mime : undefined,
+        childCount: parseCappedList(parsed.childNotes).totalCount,
+        attachmentCount: parseCappedList(parsed.attachments).totalCount,
+        attributes: {
+            totalCount: attributes.totalCount,
+            results: attributes.results.filter((item): item is NoteMetaAttribute =>
+                isRecord(item) && typeof item.type === "string" && typeof item.name === "string" && typeof item.value === "string")
+        },
+        contentPreview: typeof parsed.contentPreview === "string" ? parsed.contentPreview : null
+    };
+}
+
+function parseCappedList(value: unknown): CappedList<unknown> {
+    if (!isRecord(value) || !Array.isArray(value.results)) return { totalCount: 0, results: [] };
+    return {
+        totalCount: typeof value.totalCount === "number" ? value.totalCount : value.results.length,
+        results: value.results
+    };
 }
 
 /**
