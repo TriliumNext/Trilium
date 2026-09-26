@@ -7,7 +7,7 @@ import { isAutoLinkAttribute } from "../../../entities/fattribute.js";
 import { formatValue } from "../../../services/attribute_renderer.js";
 import { t } from "../../../services/i18n.js";
 import { NOTE_TYPES } from "../../../services/note_types.js";
-import { openInAppHelpFromUrl } from "../../../services/utils.js";
+import { formatSize, openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
 import { useNote } from "../../react/hooks.js";
 import { TooltipIcon } from "../../react/Icon.js";
@@ -129,6 +129,39 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
             // The note link shows the note's title now, so the one it replaced comes from the result.
             const oldTitle = parseStringField(toolCall.result, "oldTitle");
             return oldTitle ? { lead: <span className="llm-chat-tool-call-old-title">{oldTitle}</span> } : null;
+        }
+        case "get_attachment": {
+            // The input names only the attachment's ID, so its title and owner come from the result.
+            const result = parseJson(toolCall.result);
+            if (!isRecord(result) || typeof result.title !== "string" || typeof result.ownerId !== "string") return null;
+            const components = {
+                Title: <span className="llm-chat-tool-call-attachment-title">{result.title}</span>,
+                Note: <NewNoteLink notePath={result.ownerId} showNoteIcon noPreview />
+            };
+            return {
+                lead: (
+                    <span className="llm-chat-tool-call-note-ref">
+                        <Trans i18nKey="llm.tools.attachment_in_note" components={components as any} />
+                    </span>
+                ),
+                summary: typeof result.contentLength === "number"
+                    ? t("llm_chat.attachment_size", { size: formatSize(result.contentLength) })
+                    : undefined
+            };
+        }
+        case "get_attachment_content": {
+            const content = parseStringField(toolCall.result, "content");
+            const preview = content ? markdownToPlainPreview(content.slice(0, CONTENT_PREVIEW_SOURCE_LENGTH)) : "";
+            if (!preview) return null;
+            const isOcr = parseStringField(toolCall.result, "source") === "ocr";
+            return {
+                body: (
+                    <div className="llm-chat-note-card">
+                        {isOcr && <div className="llm-chat-note-card-facts">{t("llm_chat.attachment_ocr")}</div>}
+                        <div className="llm-chat-note-result-preview">{preview}</div>
+                    </div>
+                )
+            };
         }
         case "get_note": {
             const meta = parseNoteMeta(toolCall.result);

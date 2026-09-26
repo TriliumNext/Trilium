@@ -2679,7 +2679,9 @@
     "attribute_count_one": "({{count}} attribute)",
     "attribute_count_other": "({{count}} attributes)",
     "search_icons_count_one": "({{count}} icon)",
-    "search_icons_count_other": "({{count}} icons)"
+    "search_icons_count_other": "({{count}} icons)",
+    "attachment_size": "({{size}})",
+    "attachment_ocr": "Text recognized from the file"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -4157,7 +4159,8 @@
       "get_help_toc": "Get User Guide contents",
       "read_web_page": "Read web page",
       "note_moved_from": "<Note/> from <From/> to <To/>",
-      "note_moved": "<Note/> to <To/>"
+      "note_moved": "<Note/> to <To/>",
+      "attachment_in_note": "<Title/> in <Note/>"
     }
   },
   "common": {

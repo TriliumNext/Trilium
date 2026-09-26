@@ -10,6 +10,7 @@
 }
 
 .llm-chat-tool-call-detail,
+.llm-chat-tool-call-attachment-title,
 .llm-chat-tool-call-count,
 .llm-chat-tool-call-result-count {
     font-size: 0.75rem;

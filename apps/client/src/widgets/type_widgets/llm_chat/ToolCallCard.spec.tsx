@@ -598,4 +598,30 @@ describe("ToolCallCard", () => {
         expect(line?.querySelector(".llm-chat-note-results-more")?.textContent)
             .toBe("llm_chat.search_notes_limited{\"count\":5,\"limit\":2}");
     });
+
+    it("names an attachment and its note, and previews the text read from one", () => {
+        const target = renderCard([
+            {
+                id: "1",
+                toolName: "get_attachment",
+                input: { attachmentId: "a" },
+                result: JSON.stringify({ attachmentId: "a", ownerId: "n", role: "file", mime: "application/pdf", title: "report.pdf", contentLength: 2048 })
+            },
+            {
+                id: "2",
+                toolName: "get_attachment_content",
+                input: { attachmentId: "a" },
+                result: JSON.stringify({ attachmentId: "a", source: "ocr", content: "Quarterly **report**" })
+            }
+        ]);
+        const [ meta, content ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        expect(meta instanceof HTMLDetailsElement).toBe(false);
+        expect(meta?.querySelector(".llm-chat-tool-call-attachment-title")?.textContent).toBe("report.pdf");
+        expect(meta?.querySelector(".note-link-stub")?.textContent).toBe("n");
+        expect(meta?.querySelector(".llm-chat-tool-call-result-count")?.textContent).toBe("llm_chat.attachment_size{\"size\":\"2 KiB\"}");
+
+        expect(content?.querySelector(".llm-chat-note-card-facts")?.textContent).toBe("llm_chat.attachment_ocr");
+        expect(content?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("Quarterly report");
+    });
 });
