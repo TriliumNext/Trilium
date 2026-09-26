@@ -138,7 +138,10 @@
   "search_result": {
     "search_now": "Cari sekarang",
     "no_notes_found": "Tidak ada catatan yang ditemukan untuk parameter pencarian yang diberikan.",
-    "search_not_executed": "Pencarian belum dijalankan."
+    "search_not_executed": "Pencarian belum dijalankan.",
+    "result_count_other": "{{count}} hasil",
+    "page_size": "Per halaman",
+    "snippet_unavailable": "Pratinjau tidak tersedia."
   },
   "export": {
     "export_note_title": "Ekspor catatan",
@@ -429,16 +432,23 @@
     "sort_children_by": "Urutkan anak berdasarkan...",
     "sorting_criteria": "Kriteria pengurutan",
     "title": "judul",
-    "date_created": "tanggal dibuat",
-    "date_modified": "tanggal diubah",
-    "ascending": "menaik",
-    "descending": "menurun",
-    "sort_folders_at_top": "urutkan folder di atas",
-    "natural_sort": "Natural Sort",
-    "sort_with_respect_to_different_character_sorting": "urutkan dengan mempertimbangkan perbedaan aturan pengurutan karakter dan kolasi di berbagai bahasa atau wilayah.",
+    "date_created": "Tanggal dibuat",
+    "date_modified": "Tanggal diubah",
+    "ascending": "Menaik",
+    "descending": "Menurun",
+    "sort_folders_at_top": "Urutkan folder di bagian atas",
+    "natural_sort": "Pengurutan alami",
+    "sort_with_respect_to_different_character_sorting": "Urutkan dengan mempertimbangkan aturan pengurutan karakter dan kolasi yang berbeda dalam berbagai bahasa atau wilayah.",
     "natural_sort_language": "Bahasa natural sort",
     "the_language_code_for_natural_sort": "Kode bahasa untuk natural sort, misalnya \"zh-CN\" untuk bahasa Tionghoa.",
-    "sort": "Urutkan"
+    "sort": "Urutkan",
+    "label": "Label",
+    "label_name": "Nama label",
+    "add_level": "Tambahkan tingkat",
+    "remove_level": "Hapus tingkat",
+    "move_level_up": "Pindahkan tingkat ke atas",
+    "move_level_down": "Pindahkan tingkat ke bawah",
+    "folders_follow_first_level": "Sebagai gantinya, di bagian bawah ketika tingkat pertama diurutkan menurun."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Unggah lampiran ke catatan",
@@ -491,8 +501,8 @@
     "run_on_instance": "Tentukan instans Trilium mana yang harus menjalankan ini. Default-nya adalah semua instans.",
     "run_at_hour": "Pada jam berapa ini harus dijalankan. Harus digunakan bersama dengan <code>#run=hourly</code>. Dapat didefinisikan beberapa kali untuk beberapa kali eksekusi dalam sehari.",
     "disable_inclusion": "Skrip dengan label ini tidak akan disertakan dalam eksekusi skrip induk.",
-    "sorted": "Menjaga agar catatan anak diurutkan berdasarkan judul secara alfabetis.",
-    "sort_direction": "Arah <code>#sorted</code> mengurutkan catatan anak menjadi: <code>desc</code> untuk urutan menurun, selain itu untuk urutan menaik. Diabaikan kecuali <code>#sorted</code> diaktifkan.",
+    "sorted": "Mempertahankan catatan anak agar diurutkan berdasarkan judul secara alfabetis. Nilai akan mengurutkan berdasarkan kriteria lain: tingkat yang dipisahkan dengan koma berupa <code>title</code>, <code>dateCreated</code>, <code>dateModified</code>, atau nama label, yang masing-masing dapat diikuti secara opsional oleh <code>asc</code> atau <code>desc</code>, misalnya <code>priority desc, dueDate</code>.",
+    "sort_direction": "Arah <code>#sorted</code> mengurutkan catatan anak dalam: <code>desc</code> untuk urutan menurun, selain itu untuk urutan menaik. Tingkat yang diikuti oleh <code>asc</code> atau <code>desc</code> miliknya sendiri akan mengabaikannya. Diabaikan kecuali <code>#sorted</code> ditetapkan.",
     "sort_folders_first": "Folder (catatan yang memiliki anak) harus diurutkan di bagian atas.",
     "top": "Pertahankan catatan ini di bagian paling atas dalam induknya (hanya berlaku pada induk yang diurutkan).",
     "hide_promoted_attributes": "Sembunyikan atribut yang dipromosikan pada catatan ini.",
@@ -670,7 +680,7 @@
     "calendar_hide_weekends": "Menyembunyikan hari Sabtu dan Minggu dari kalender. Berlaku apa pun nilainya.",
     "calendar_week_numbers": "Menampilkan nomor minggu pada kalender. Berlaku apa pun nilainya.",
     "calendar_slot_duration": "Durasi setiap slot waktu pada kalender, dalam format <code>HH:MM:SS</code>. Nilai bawaan adalah 15 menit.",
-    "calendar_slot_label_interval": "Frekuensi pemberian label pada slot waktu kalender, dalam format <code>HH:MM:SS</code>. Nilai bawaan adalah satu jam.",
+    "calendar_slot_label_interval": "Seberapa sering slot waktu kalender diberi label, dalam format <code>HH:MM:SS</code>. Secara default adalah satu jam.",
     "calendar_title": "Menentukan atribut yang digunakan suatu acara sebagai judulnya, sebagai pengganti judul catatan. Dapat berupa label atau relasi, ditulis tanpa awalan <code>#</code> atau <code>~</code>.",
     "calendar_displayed_attributes": "Nama atribut yang dipisahkan dengan koma dan nilainya akan ditampilkan pada acara. Relasi akan ditampilkan sebagai judul catatan yang ditunjuknya.",
     "calendar_start_date": "Menentukan label yang digunakan acara untuk membaca tanggal mulai, sebagai pengganti <code>#startDate</code>. Ditulis tanpa awalan <code>#</code>.",
@@ -713,7 +723,15 @@
     "share_html": "Catatan HTML yang disisipkan ke halaman berbagi pada lokasi yang ditentukan oleh <code>#shareHtmlLocation</code> di catatan tersebut. Catatan harus berada di dalam subpohon yang dibagikan.",
     "map_dark_style": "Memberi tahu peta geo bahwa gaya kustom yang diberikan dalam <code>map:style</code> adalah gaya gelap, sehingga judul penanda digambar dengan warna terang di atasnya. Gaya yang ditawarkan dalam properti koleksi sudah menyatakannya sendiri dan tidak memerlukan label tersebut.",
     "map_cluster": "Menggabungkan penanda yang digambar berdekatan menjadi satu gelembung bernomor, yang terbuka saat diklik.",
-    "ai_quick_action": "Menawarkan catatan ini sebagai instruksi di menu asisten AI penyunting teks. Judul menamai tindakan, konten adalah prompt."
+    "ai_quick_action": "Menawarkan catatan ini sebagai instruksi di menu asisten AI penyunting teks. Judul menamai tindakan, konten adalah prompt.",
+    "custom_font": "Menandai berkas font yang ditawarkan dalam pemilih font di opsi Trilium, di bawah judul catatan itu sendiri.",
+    "template_new_note_default_parent": "Ditetapkan pada catatan templat: catatan yang dibuat dari templat tersebut (misalnya melalui penyelesaian @) ditempatkan di bawah catatan target, kecuali lokasi lain dipilih secara eksplisit.",
+    "board_column_width": "Untuk koleksi papan, menentukan lebar kolom yang ditampilkan: <code>narrow</code>, <code>medium</code>, atau <code>wide</code>. Diabaikan pada perangkat seluler yang menampilkan kolom dengan lebarnya sendiri.",
+    "board_show_inbox": "Untuk koleksi papan, menampilkan kolom kotak masuk yang mencantumkan semua catatan anak yang belum ditetapkan ke kolom papan.",
+    "board_card_redirect_to": "Pada kartu papan, membuka kartu akan langsung menuju ke catatan yang ditunjuk atribut ini, alih-alih membuka kartu itu sendiri.",
+    "board_sort_columns": "Untuk koleksi papan, urutan pengurutan kartu pada kolom, yang diikuti oleh suatu kolom kecuali kolom tersebut memiliki urutannya sendiri. Berisi <code>title</code>, <code>creationDate</code>, atau <code>attr:</code> yang diikuti nama atribut yang dipromosikan.",
+    "board_sort_columns_descending": "Untuk koleksi papan, menjalankan urutan dalam <code>#board:sortColumns</code> secara terbalik.",
+    "geo_shape": "Bentuk catatan yang digambar pada peta geografis: jenis bentuk, lalu lintang dan bujur setiap titik, misalnya <code>line:48.85,2.29 48.86,2.35</code> — atau lingkaran dengan pusat dan jangkauannya dalam meter, <code>circle:48.85,2.29 500</code>."
   },
   "attribute_editor": {
     "help_text_body1": "Untuk menambahkan label, cukup ketik misalnya <code>#rock</code> atau jika Anda juga ingin menambahkan nilai maka misalnya <code>#year = 2020</code>",
@@ -1099,7 +1117,8 @@
     "filter-none": "Semua ikon",
     "filter-default": "Ikon default",
     "icon_tooltip": "{{name}}\nPaket ikon: {{iconPack}}",
-    "no_results": "Tidak ada ikon ditemukan."
+    "no_results": "Tidak ada ikon ditemukan.",
+    "insert_icon": "Sisipkan ikon"
   },
   "basic_properties": {
     "note_type": "Jenis catatan",
@@ -1223,7 +1242,15 @@
     "remove_value": "Hapus nilai ini",
     "select_values_placeholder": "Pilih sebuah opsi atau buat yang baru",
     "values_placeholder": "Ketik sebuah nilai lalu tekan Enter",
-    "add_value": "Tambahkan nilai ini"
+    "add_value": "Tambahkan nilai ini",
+    "create_attribute": "Buat atribut baru",
+    "label_name": "Label: {{name}}",
+    "relation_name": "Relasi: {{name}}",
+    "edit_attribute": "Edit atribut ini",
+    "delete_attribute": "Hapus atribut ini",
+    "delete_confirmation": "Hapus <strong>{{name}}</strong> beserta nilainya dari setiap catatan dalam koleksi ini? Tindakan ini tidak dapat dibatalkan.",
+    "drawn_by_collection": "Koleksi diatur berdasarkan atribut ini, sehingga itemnya tidak mengulanginya",
+    "display_on_items": "Tampilkan atribut pada item koleksi"
   },
   "script_executor": {
     "query": "Kueri",
@@ -1320,7 +1347,7 @@
   },
   "search_string": {
     "title_column": "String pencarian:",
-    "placeholder": "kata kunci fulltext, #tag = value...",
+    "placeholder": "Ctrl+Space untuk saran, @ untuk catatan, Shift+Enter untuk baris baru, Enter untuk mencari",
     "search_syntax": "Sintaks pencarian",
     "also_see": "lihat juga",
     "complete_help": "bantuan lengkap tentang sintaks pencarian",
@@ -1332,7 +1359,13 @@
     "label_year_comparison": "perbandingan numerik (juga >, >=, <).",
     "label_date_created": "catatan yang dibuat dalam satu bulan terakhir",
     "error": "Kesalahan pencarian: {{error}}",
-    "search_prefix": "Pencarian:"
+    "search_prefix": "Pencarian:",
+    "hints": {
+      "title": "String pencarian",
+      "completions": "Tampilkan saran",
+      "new_line": "Baris baru",
+      "run_search": "Jalankan pencarian"
+    }
   },
   "attachment_detail": {
     "open_help_page": "Buka halaman bantuan tentang lampiran",
@@ -1543,7 +1576,12 @@
     "start_over_pending": "Layar pengaturan akan muncul saat server ini dimulai ulang berikutnya. Mulai ulang server ketika Anda siap, atau batalkan di bawah untuk membiarkan semuanya seperti adanya.",
     "start_over_cancel": "Batalkan mulai ulang",
     "related_backup": "Cadangan",
-    "related_backup_description": "Buat atau pulihkan cadangan database, kelola cadangan otomatis."
+    "related_backup_description": "Buat atau pulihkan cadangan database, kelola cadangan otomatis.",
+    "info_persistence": "Persistensi",
+    "info_persistence_persistent": "Persisten",
+    "info_persistence_best_effort": "Upaya terbaik",
+    "info_persistence_persistent_description": "Browser telah berkomitmen untuk menyimpan basis data ini hingga Anda menghapusnya.",
+    "info_persistence_best_effort_description": "Browser dapat menghapus basis data ini untuk membebaskan ruang.\nMenginstal Trilium sebagai aplikasi atau menambahkannya ke layar utama biasanya memberikan persistensi."
   },
   "vacuum_database": {
     "title": "Vacuum Database",
@@ -1565,7 +1603,7 @@
   "fonts": {
     "theme_defined": "Tema ditentukan",
     "fonts": "Font",
-    "custom_fonts": "Gunakan font kustom",
+    "custom_fonts": "Gunakan font yang berbeda",
     "main_font": "Teks antarmuka",
     "font_family": "Keluarga font",
     "size": "Ukuran",
@@ -1577,16 +1615,27 @@
     "size_relative_to_general": "Ukuran bersifat relatif terhadap ukuran font umum",
     "apply_changes": "Muat ulang untuk menerapkan perubahan",
     "generic-fonts": "Font generik",
-    "sans-serif-system-fonts": "Font sistem sans-serif",
-    "serif-system-fonts": "Font sistem serif",
-    "monospace-system-fonts": "Font sistem monospace",
-    "handwriting-system-fonts": "Font sistem tulisan tangan",
+    "sans-serif-system-fonts": "Font sans-serif",
+    "serif-system-fonts": "Font serif",
+    "monospace-system-fonts": "Font monospace",
+    "handwriting-system-fonts": "Font tulisan tangan",
     "serif": "Serif",
     "sans-serif": "Sans Serif",
     "monospace": "Monospace",
     "system-default": "Default sistem",
     "monospace_ligatures": "Ligatur pemrograman",
-    "monospace_ligatures_description": "Merender pasangan karakter seperti != dan -> sebagai simbol tunggal (≠, →), jika font monospace mendukungnya. Teks itu sendiri tidak berubah."
+    "monospace_ligatures_description": "Merender pasangan karakter seperti != dan -> sebagai simbol tunggal (≠, →), jika font monospace mendukungnya. Teks itu sendiri tidak berubah.",
+    "main_font_short": "Antarmuka",
+    "note_tree_font_short": "Pohon catatan",
+    "note_detail_font_short": "Dokumen",
+    "monospace_font_short": "Monospace",
+    "custom_fonts_description": "Menggantikan font tema. Font yang diunggah ke Trilium dapat ditambahkan dari catatannya sendiri.",
+    "user-fonts": "Font khusus",
+    "proportional-system-fonts": "Font proporsional",
+    "search_placeholder": "Cari font",
+    "no_fonts_found": "Tidak ada font yang sesuai dengan pencarian Anda.",
+    "document_preview_heading": "Stek tanaman hati ungu",
+    "document_preview_body": "Memotong 4 batang tepat di bawah ruas lalu menegakkannya dalam air di ambang jendela; akar pertama muncul setelah <strong>9 hari</strong>. Warnanya tetap kuat di bawah <em>sinar matahari penuh</em> dan memudar menjadi hijau di tempat teduh."
   },
   "max_content_width": {
     "title": "Lebar Konten",
@@ -1935,7 +1984,17 @@
     "lan_access_title": "Akses jaringan",
     "lan_access_section_description": "Secara bawaan aplikasi desktop bersifat mandiri: aplikasi dan catatan yang dibagikan tidak disajikan melalui jaringan, dan hanya integrasi lokal (Web Clipper, MCP, ETAPI) yang dapat mengaksesnya dari komputer ini. Aktifkan opsi ini agar aplikasi dan catatan yang dibagikan dapat dibuka melalui peramban, serta agar perangkat lain dapat terhubung—misalnya untuk sinkronisasi. Aktifkan hanya pada jaringan yang Anda percayai.",
     "lan_access_label": "Izinkan akses web dan jaringan",
-    "lan_access_description": "Menyajikan aplikasi, catatan yang dibagikan, dan pembaruan langsung melalui HTTP—dapat diakses dari peramban di komputer ini maupun dari perangkat lain di jaringan Anda. Jika dinonaktifkan, hanya integrasi lokal (Web Clipper, MCP, ETAPI) yang tetap dapat diakses."
+    "lan_access_description": "Menyajikan aplikasi, catatan yang dibagikan, dan pembaruan langsung melalui HTTP—dapat diakses dari peramban di komputer ini maupun dari perangkat lain di jaringan Anda. Jika dinonaktifkan, hanya integrasi lokal (Web Clipper, MCP, ETAPI) yang tetap dapat diakses.",
+    "standalone": {
+      "backend_scripting_section_description": "Skrip backend berjalan di dalam browser ini, dengan akses penuh ke catatan, pengaturan, dan kredensial sinkronisasi Anda. Skrip tersebut dapat dipicu melalui sinkronisasi, impor, atau konten apa pun yang menyertakan atribut yang dapat dieksekusi, tanpa Anda membuka catatan tersebut. Skrip frontend selalu diaktifkan dan tidak memiliki jangkauan lebih jauh daripada aplikasi itu sendiri.",
+      "reload_required": "Halaman perlu dimuat ulang agar perubahan ini berlaku.",
+      "reload_now": "Muat ulang halaman sekarang",
+      "other_tab_hint": "Pengaturan ini diubah dari tab yang memiliki basis data, biasanya tab Trilium pertama yang Anda buka. Tutup tab lainnya dan muat ulang halaman ini untuk mengubahnya di sini.",
+      "confirm_enable": "Aktifkan {{- setting}}?\n\n{{- warning}} Skrip dalam catatan Anda dapat meminta hal ini, jadi lanjutkan hanya jika Anda memang memintanya sendiri.",
+      "confirm_disable": "Nonaktifkan {{- setting}}?",
+      "confirm_backend_scripting_warning": "Skrip backend mendapatkan akses penuh ke catatan, pengaturan, dan kredensial sinkronisasi Anda.",
+      "confirm_sql_console_warning": "Konsol SQL dapat membaca kredensial sinkronisasi dan hash kata sandi Anda, serta mengubah atau menghapus catatan apa pun."
+    }
   },
   "password": {
     "heading": "Kata sandi",
@@ -2102,7 +2161,10 @@
     "test_title": "Uji Koneksi",
     "test_description": "Uji koneksi ke server sinkronisasi. Jika belum diinisialisasi, ini akan menyiapkan sinkronisasi.",
     "test_button": "Uji sekarang",
-    "handshake_failed": "Handshake server sinkronisasi gagal, error: {{message}}"
+    "handshake_failed": "Handshake server sinkronisasi gagal, error: {{message}}",
+    "effective_server": "Server yang digunakan",
+    "effective_server_description": "Ditetapkan melalui config.ini atau variabel lingkungan, yang diprioritaskan daripada alamat server di atas.",
+    "effective_server_disabled": "Sinkronisasi dinonaktifkan."
   },
   "api_log": {
     "close": "Tutup"
@@ -2173,7 +2235,9 @@
   "shared_info": {
     "shared_publicly": "Catatan ini dibagikan secara publik di {{- link}}.",
     "shared_locally": "Catatan ini dibagikan secara lokal di {{- link}}.",
-    "help_link": "Untuk bantuan, kunjungi <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "Untuk bantuan, kunjungi <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
+    "shared_preview": "Catatan ini dibagikan di {{- link}}, tetapi hanya browser ini yang dapat membuka halaman tersebut, dan hanya selama Trilium tetap terbuka di dalamnya. Mempublikasikannya untuk orang lain memerlukan server Trilium.",
+    "shared_export_only": "Catatan ini dibagikan, tetapi aplikasi seluler tidak dapat membuka halaman yang dibagikan. Untuk mempublikasikannya, ekspor subpohon sebagai \"{{format}}\" dan hos berkasnya pada server web apa pun, atau gunakan server Trilium."
   },
   "read-only-info": {
     "read-only-note": "Saat ini sedang melihat catatan hanya-baca.",
@@ -2206,7 +2270,9 @@
     "task-list": "Daftar Tugas",
     "new-feature": "Baru",
     "collections": "Koleksi",
-    "spreadsheet": "Spreadsheet"
+    "spreadsheet": "Spreadsheet",
+    "note-types": "Jenis catatan",
+    "built-in-templates": "Templat bawaan"
   },
   "protect_note": {
     "toggle-on": "Lindungi catatan",
@@ -2280,7 +2346,21 @@
     "save_note_failed": "Gagal membuat catatan dari pesan.",
     "regenerate": "Hasilkan ulang",
     "delete_message": "Hapus pesan",
-    "delete_message_confirm": "Hapus pesan ini? Tindakan ini tidak dapat dibatalkan."
+    "delete_message_confirm": "Hapus pesan ini? Tindakan ini tidak dapat dibatalkan.",
+    "reasoning_effort_title": "Upaya penalaran: {{level}}",
+    "reasoning_effort_levels": {
+      "none": "Tidak ada",
+      "minimal": "Minimal",
+      "low": "Rendah",
+      "medium": "Sedang",
+      "high": "Tinggi",
+      "xhigh": "Sangat tinggi",
+      "max": "Maksimum"
+    },
+    "stream_status": {
+      "starting_agent": "Memulai agen. Ini mungkin memerlukan waktu.",
+      "waiting_for_reply": "Menunggu balasan…"
+    }
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -2465,7 +2545,9 @@
     "delete-notes-in-progress": "Penghapusan catatan sedang berlangsung: {{count}}",
     "delete-finished-successfully": "Penghapusan selesai dengan sukses.",
     "undeleting-notes-in-progress": "Pemulihan catatan sedang berlangsung: {{count}}",
-    "undeleting-notes-finished-successfully": "Pemulihan catatan selesai dengan sukses."
+    "undeleting-notes-finished-successfully": "Pemulihan catatan selesai dengan sukses.",
+    "delete-notes-in-progress-with-total": "Menghapus {{progress}} dari {{total}} catatan",
+    "erasing-notes": "Menghapus catatan…"
   },
   "frontend_script_api": {
     "async_warning": "Anda meneruskan fungsi async ke `api.runOnBackend()` yang kemungkinan besar tidak akan bekerja seperti yang Anda maksud.\nJadikan fungsi tersebut sinkron (dengan menghapus keyword `async`), atau gunakan `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2564,7 +2646,8 @@
     "open_note_in_new_split": "Buka catatan di split baru",
     "open_note_in_other_split": "Buka catatan di split lainnya",
     "open_note_in_new_window": "Buka catatan di jendela baru",
-    "open_note_in_popup": "Edit cepat"
+    "open_note_in_popup": "Edit cepat",
+    "open_note": "Buka catatan"
   },
   "electron_integration": {
     "desktop-application": "Aplikasi Desktop",
@@ -2577,11 +2660,15 @@
   },
   "note_autocomplete": {
     "search-for": "Cari \"{{term}}\"",
-    "create-note": "Buat dan tautkan catatan anak \"{{term}}\"",
+    "create-note": "Buat catatan \"{{term}}\"",
     "insert-external-link": "Sisipkan tautan eksternal ke \"{{term}}\"",
     "clear-text-field": "Kosongkan field teks",
     "show-recent-notes": "Tampilkan catatan terbaru",
-    "full-text-search": "Pencarian teks penuh"
+    "full-text-search": "Pencarian teks penuh",
+    "create-note-into": "Buat catatan \"{{term}}\" di {{parentTitle}}",
+    "create-note-into-day-note": "Buat catatan \"{{term}}\" dalam catatan hari ini",
+    "create-note-into-root": "Buat catatan \"{{term}}\" di tingkat teratas",
+    "create-child-note": "Buat catatan anak \"{{term}}\""
   },
   "note_tooltip": {
     "note-has-been-deleted": "Catatan telah dihapus.",
@@ -2619,7 +2706,28 @@
     "next-result": "Hasil berikutnya",
     "result-position": "Hasil {{index}} dari {{total}}, klik untuk kembali ke sana",
     "results-on-map": "Pada peta ini",
-    "go-to-coordinates": "Buka {{- coordinates}}"
+    "go-to-coordinates": "Buka {{- coordinates}}",
+    "draw-line": "Gambar jalur pada peta",
+    "draw-polygon": "Gambar area pada peta",
+    "draw-cancel": "Batalkan menggambar",
+    "draw-line-toast-title": "Gambar jalur",
+    "draw-line-instruction": "Klik peta untuk menambahkan titik. Klik kembali titik terakhir atau tekan Enter untuk menyelesaikan, atau tekan Escape untuk membatalkan.",
+    "draw-polygon-toast-title": "Gambar area",
+    "draw-polygon-instruction": "Klik peta untuk menambahkan sudut. Klik kembali sudut pertama atau tekan Enter untuk menyelesaikan, atau tekan Escape untuk membatalkan.",
+    "draw-rectangle": "Gambar persegi panjang pada peta",
+    "draw-rectangle-toast-title": "Gambar persegi panjang",
+    "draw-rectangle-instruction": "Klik peta pada satu sudut, lalu klik kembali pada sudut yang berlawanan. Anda juga dapat menyeret dari satu sudut ke sudut lainnya. Tekan Escape untuk membatalkan.",
+    "draw-circle": "Gambar lingkaran pada peta",
+    "draw-circle-toast-title": "Gambar lingkaran",
+    "draw-circle-instruction": "Klik peta di titik pusat, lalu klik kembali pada jarak yang harus dijangkau lingkaran. Anda juga dapat menyeret dari titik pusat. Tekan Escape untuk membatalkan.",
+    "locate": "Tampilkan lokasi Anda",
+    "locate-waiting": "Mencari lokasi Anda…",
+    "locate-following": "Berhenti mengikuti lokasi Anda",
+    "locate-return": "Kembali ke lokasi Anda",
+    "locate-error": "Lokasi Anda tidak dapat ditemukan. Tekan lagi untuk berhenti mencari.",
+    "locate-unavailable": "Lokasi Anda tidak tersedia",
+    "location-denied": "Akses lokasi ditolak. Izinkan akses untuk Trilium dalam pengaturan browser atau sistem Anda agar lokasi Anda dapat ditampilkan di peta.",
+    "location-unavailable": "Lokasi Anda tidak dapat ditentukan saat ini."
   },
   "geo-map-context": {
     "open-location": "Buka lokasi",
@@ -2692,7 +2800,8 @@
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
-    "export_to_svg": "Diagram tidak dapat diekspor ke SVG."
+    "export_to_svg": "Diagram tidak dapat diekspor ke SVG.",
+    "preview": "Pratinjau diagram"
   },
   "code_theme": {
     "title": "Tampilan",
@@ -2758,28 +2867,154 @@
     "vector_dark": "Vector (Gelap)",
     "show-scale": "Tampilkan skala",
     "show-labels": "Tampilkan nama marker",
-    "cluster-markers": "Kelompokkan penanda yang berdekatan"
+    "cluster-markers": "Kelompokkan penanda yang berdekatan",
+    "board-inbox-column": "Tampilkan kolom kotak masuk",
+    "board-inbox-column-help": "Menampilkan kolom kotak masuk, yang mencantumkan catatan anak yang tidak ditetapkan ke suatu kolom.",
+    "vector_auto": "Vektor (Otomatis)",
+    "presentation-theme": "Tema"
   },
   "table_context_menu": {
     "delete_row": "Hapus baris"
   },
   "board_view": {
     "delete-note": "Hapus catatan...",
-    "remove-from-board": "Hapus dari board",
+    "remove-from-board": "Hapus dari kolom",
     "archive-note": "Arsipkan catatan",
     "unarchive-note": "Batalkan arsip catatan",
-    "insert-above": "Sisipkan di atas",
-    "insert-below": "Sisipkan di bawah",
-    "delete-column": "Hapus kolom",
+    "insert-above": "Sisipkan baru di atas",
+    "insert-below": "Sisipkan baru di bawah",
+    "delete-column": "Hapus kolom...",
     "delete-column-confirmation": "Apakah Anda yakin ingin menghapus kolom ini? Atribut yang terkait juga akan dihapus dari catatan di bawah kolom ini.",
-    "new-item": "Item baru",
-    "new-item-placeholder": "Masukkan judul catatan...",
-    "add-column": "Tambahkan Kolom",
+    "new-item": "Kartu baru",
+    "new-item-placeholder": "Masukkan judul kartu...",
+    "add-column": "Tambahkan kolom",
     "add-column-placeholder": "Masukkan nama kolom...",
-    "edit-note-title": "Klik untuk edit judul catatan",
+    "edit-note-title": "Klik untuk mengedit judul kartu",
     "column-already-exists": "Kolom ini sudah ada di board.",
     "column-definition-save-error": "Kolom telah disimpan pada papan, tetapi tidak dapat disimpan ke atribut status.",
-    "status-alias": "Status"
+    "status-alias": "Status",
+    "status-header": "Status",
+    "duplicate-item": "Duplikat",
+    "edit-title": "Edit judul & ikon",
+    "insert-new": "Sisipkan baru",
+    "move-to-top": "Pindahkan ke paling atas",
+    "more-columns": "Lainnya…",
+    "archive-column": "Arsipkan kolom",
+    "unarchive-column": "Batalkan pengarsipan kolom",
+    "archived-badge": "Diarsipkan",
+    "inbox": "Kotak masuk",
+    "inherited-column": "Kartu ini mengambil kolomnya dari templat atau catatan induk, dan perubahan dapat dilakukan di sana.",
+    "inbox-nested": "Sertakan catatan bertingkat",
+    "inbox-remove": "Hapus kolom kotak masuk",
+    "card-count_other": "{{count}} kartu",
+    "card-count-with-archived_other": "{{count}} kartu aktif, {{archived}} diarsipkan",
+    "card-count-over-limit": "Batas kartu yang ditetapkan untuk kolom ini telah terlampaui!",
+    "delete-column-notes_other": "Hapus juga {{count}} catatan dalam kolom ini",
+    "add-new-item": "Tambahkan kartu baru",
+    "add-existing-item": "Tambahkan catatan yang sudah ada sebagai kartu...",
+    "add-existing-item-title": "Tambahkan catatan yang sudah ada ke papan",
+    "add-existing-item-ok": "Tambahkan ke kolom",
+    "add-new-column": "Tambahkan kolom baru",
+    "create-new-note": "Buat kartu",
+    "create-new-column": "Buat kolom",
+    "create-hold-hint": "Klik kanan atau tekan dan tahan untuk opsi lainnya.",
+    "create-at-top": "Buat di bagian atas",
+    "create-at-bottom": "Buat di bagian bawah",
+    "create-column-at-start": "Buat kolom di awal",
+    "create-column-at-end": "Buat kolom di akhir",
+    "add-column-before": "Sebelum",
+    "add-column-after": "Sesudah",
+    "new-column": "Kolom baru",
+    "existing-item-conflict": "Catatan ini sudah termasuk dalam papan lain yang mengelompokkan berdasarkan “{{label}}”. Menambahkannya di sini juga akan memindahkannya ke kolom yang berbeda pada papan asli. Tetap tambahkan?",
+    "rename-column": "Ganti nama kolom",
+    "collapse-column": "Ciutkan kolom",
+    "keep-column-collapsed": "Pertahankan kolom dalam keadaan diciutkan",
+    "collapse-all-columns": "Ciutkan semua kolom",
+    "expand-all-columns": "Perluas semua kolom",
+    "show-inbox-column": "Tampilkan kolom kotak masuk",
+    "show-archived-notes": "Tampilkan kartu/kolom yang diarsipkan",
+    "general": "Umum",
+    "show-archived": "Tampilkan kartu dan kolom yang diarsipkan",
+    "copy-reference": "Salin referensi",
+    "reference-column-missing": "Kolom tersebut sudah tidak ada di papan ini.",
+    "reference-archived": "Kartu tersebut diarsipkan sehingga tidak ditampilkan di papan.",
+    "reference-missing": "Kartu tersebut sudah tidak ada di papan ini.",
+    "properties": "Properti papan",
+    "properties-title": "Properti papan",
+    "card-templates": "Templat kartu",
+    "card-templates-hint": "Pilih jenis catatan dan templat catatan yang ingin digunakan saat membuat kartu papan baru.",
+    "promoted-attributes": "Atribut kartu",
+    "promoted-attributes-hint": "Pilih atribut yang ditampilkan kartu, lalu seret untuk menentukan urutan tampilnya.",
+    "new-template-name": "Templat kartu baru",
+    "more-templates": "Templat lainnya…",
+    "card-template": "Pilih templat kartu",
+    "collapse-hint": "Klik dua kali atau tekan Spasi untuk menciutkan",
+    "set-limit": "Tetapkan batas...",
+    "set-limit-ok": "Tetapkan batas",
+    "limit-capacity": "Peringatkan jika kapasitas kolom terlampaui",
+    "limit-count": "Jumlah maksimum kartu dalam kolom",
+    "move-column": "Pindahkan kolom",
+    "move-column-first": "Sebagai kolom pertama",
+    "move-column-after": "Setelah {{column}}",
+    "change-column-icon": "Ubah ikon kolom",
+    "change-note-icon": "Ubah ikon",
+    "column-menu": "Menu kolom",
+    "column-name-taken": "Kolom bernama “{{- column}}” sudah ada.",
+    "save-error": "Perubahan tidak dapat disimpan.",
+    "hints": {
+      "navigation": "Navigasi",
+      "navigate_items": "Navigasi antar kartu",
+      "navigate_columns": "Navigasi antar kolom",
+      "first_last_item": "Kartu pertama / terakhir pada kolom",
+      "editing": "Pengeditan",
+      "insert_item": "Sisipkan kartu di bawah / atas",
+      "insert_column": "Sisipkan kolom setelah / sebelum",
+      "open_item": "Buka kartu",
+      "toggle_column": "Ciutkan / perluas kolom (pada header kolom)",
+      "rename": "Ganti nama kartu atau kolom",
+      "remove_item": "Hapus kartu dari papan",
+      "delete_item": "Hapus catatan",
+      "remove_column": "Hapus kolom (pada header kolom yang dipilih)",
+      "moving": "Pemindahan",
+      "move_item": "Pindahkan kartu ke atas / bawah",
+      "move_within": "Pindahkan ke bagian atas / bawah kolom",
+      "move_across": "Pindahkan ke kolom sebelumnya / berikutnya",
+      "move_to_end_column": "Pindahkan ke kolom pertama / terakhir",
+      "move_column": "Pindahkan kolom ke kiri / kanan",
+      "move_column_to_edge": "Pindahkan kolom ke paling kiri / kanan",
+      "selection": "Pemilihan",
+      "select_column": "Pilih setiap kartu dalam kolom",
+      "clear_selection": "Hapus pilihan",
+      "extend_selection": "Perluas pilihan ke bawah / atas",
+      "toggle_selection": "Keluarkan kartu dari pilihan atau masukkan kembali"
+    },
+    "filter-placeholder": "Filter papan...",
+    "group-by": "Kelompokkan kartu berdasarkan",
+    "grouping-already-defined": "\"{{- name}}\" sudah ditetapkan pada papan ini. Pilih dari daftar untuk mengelompokkan berdasarkan atribut tersebut.",
+    "card-outside-filter": "Kartu ini berada di luar cakupan filter saat ini",
+    "sort": "Urutkan",
+    "sort-manually": "Secara manual",
+    "default-card-order": "Urutan kartu default",
+    "columns-title": "Kolom",
+    "columns-empty": "Papan ini belum memiliki kolom.",
+    "column-width": "Lebar kolom",
+    "drop-as-first-item": "Letakkan sebagai kartu pertama",
+    "drop-as-last-item": "Letakkan sebagai kartu terakhir",
+    "column-width-narrow": "Sempit (default)",
+    "column-width-medium": "Sedang",
+    "column-width-wide": "Lebar",
+    "default-card-order-description": "Cara kartu diurutkan dalam setiap kolom, kecuali Anda memilih opsi pengurutan berbeda untuk kolom tertentu.",
+    "sort-board-default": "Default papan",
+    "reset-column-sorting": "Atur ulang opsi pengurutan ke default untuk semua kolom",
+    "reset-column-sorting-confirm": "Apakah Anda ingin mengatur ulang opsi pengurutan semua kolom dari tampilan saat ini ke default?",
+    "sorted-no-reorder": "Kartu tidak dapat diubah urutannya karena ini adalah kolom yang diurutkan.",
+    "more-actions": "Tindakan lainnya",
+    "selection-mode": "Pilih kartu",
+    "cards-selected_other": "{{count}} kartu dipilih",
+    "select-column-cards": "Pilih setiap kartu dalam kolom",
+    "reset-selection": "Atur ulang pilihan",
+    "expand-column": "Perluas kolom",
+    "select-all-cards": "Pilih semua kartu"
   },
   "presentation_view": {
     "edit-slide": "Edit slide ini",
@@ -2939,7 +3174,13 @@
     "save_status_error": "Gagal menyimpan",
     "save_status_saving_tooltip": "Perubahan sedang disimpan.",
     "save_status_unsaved_tooltip": "Ada perubahan yang belum disimpan. Perubahan tersebut akan disimpan secara otomatis sebentar lagi.",
-    "save_status_error_tooltip": "Terjadi kesalahan saat menyimpan catatan. Jika memungkinkan, coba salin isi catatan ke tempat lain lalu muat ulang aplikasi."
+    "save_status_error_tooltip": "Terjadi kesalahan saat menyimpan catatan. Jika memungkinkan, coba salin isi catatan ke tempat lain lalu muat ulang aplikasi.",
+    "office_preview": "Pratinjau",
+    "office_preview_description": "Dokumen ini ditampilkan sebagai pratinjau baca-saja sehingga tidak dapat diedit di sini.\n\nUntuk mengubahnya, unduh berkas, edit dalam aplikasi eksternal, lalu unggah kembali sebagai revisi baru.",
+    "shared_preview": "Bagikan pratinjau",
+    "shared_preview_description": "Hanya browser ini yang dapat membuka halaman bersama, dan hanya selama Trilium terbuka di dalamnya. Untuk mempublikasikannya, ekspor subpohon sebagai \"{{- format}}\" dan hos berkasnya pada server web apa pun, atau gunakan server Trilium.",
+    "shared_export_only": "Belum dipublikasikan",
+    "shared_export_only_description": "Aplikasi seluler tidak dapat membuka halaman bersama. Untuk mempublikasikan catatan ini, ekspor subpohon sebagai \"{{- format}}\" dan hos berkasnya pada server web apa pun, atau gunakan server Trilium."
   },
   "status_bar": {
     "language_title": "Ubah bahasa konten",
@@ -3213,7 +3454,8 @@
       "clone_note": "Kloning catatan",
       "search_icons": "Cari ikon",
       "search_help": "Cari Panduan Pengguna",
-      "get_help_toc": "Ambil isi Panduan Pengguna"
+      "get_help_toc": "Ambil isi Panduan Pengguna",
+      "read_web_page": "Baca halaman web"
     },
     "edit_provider_title": "Edit {{- name}}",
     "edit_provider": "Edit",
@@ -3234,7 +3476,7 @@
     "provider_group_cloud": "Penyedia cloud",
     "provider_group_cloud_description": "Bayar sesuai penggunaan dengan kunci API, ditagihkan terpisah dari langganan apa pun yang sudah Anda miliki. Catatan Anda dikirim ke server penyedia.",
     "provider_group_subscription": "Langganan",
-    "provider_group_subscription_description": "Menggunakan kembali langganan yang sudah Anda bayar, tanpa biaya tambahan. Catatan Anda dikirim ke server penyedia.",
+    "provider_group_subscription_description": "Menggunakan akun yang sudah Anda miliki sebagai pengganti API key, tanpa biaya tambahan: Claude Pro/Max, GitHub Copilot, atau akun Google. Program penyedia harus terpasang pada perangkat yang menjalankan Trilium, dan catatan Anda dikirim ke server penyedia.",
     "provider_group_local": "Lokal / self-hosted",
     "provider_group_local_description": "Tanpa kunci API, tanpa biaya penggunaan. Catatan Anda hanya dikirim ke mesin yang menjalankan model.",
     "provider_group_custom": "Endpoint kustom",
@@ -3260,7 +3502,13 @@
     "enabled_description": "Menambahkan bilah sisi obrolan AI dan catatan obrolan LLM, menggunakan penyedia yang dikonfigurasi di bawah ini.",
     "provider_unavailable_standalone": "Tidak tersedia di versi browser: penyedia ini bekerja dengan menjalankan program terpisah di mesin, dan tidak ada mesin di sini untuk menjalankannya.",
     "copilot_agent_description": "Menggunakan langganan GitHub Copilot Anda melalui GitHub Copilot CLI, sehingga tidak diperlukan kunci API. Copilot CLI harus diinstal di mesin yang menjalankan Trilium (server saat hosting mandiri, atau komputer ini di desktop); masuk sekali dengan menjalankan \"copilot login\" di sana — login Copilot yang ada dari penyunting lain digunakan ulang secara otomatis.",
-    "mcp_unavailable_standalone": "Tidak tersedia di versi browser: asisten akan terhubung ke Trilium melalui jaringan, tetapi build ini tidak memiliki alamat untuk diberikan kepada mereka, karena berjalan sepenuhnya di dalam halaman ini."
+    "mcp_unavailable_standalone": "Tidak tersedia di versi browser: asisten akan terhubung ke Trilium melalui jaringan, tetapi build ini tidak memiliki alamat untuk diberikan kepada mereka, karena berjalan sepenuhnya di dalam halaman ini.",
+    "antigravity_agent_description": "Menggunakan kuota Gemini dari akun Google Anda (gratis, Google AI Pro, atau Ultra) melalui Google Antigravity, sehingga tidak memerlukan API key.\n\nServer ACP Google Antigravity harus diunduh ke perangkat yang menjalankan Trilium: server jika self-hosting, atau komputer ini pada desktop. Jika belum terpasang, langkah berikutnya menjelaskan cara memasangnya.\n\nSaat daftar model pertama kali ditampilkan, halaman masuk Google akan terbuka di browser pada perangkat tersebut.",
+    "codex_agent_description": "Menggunakan kuota Codex dari paket ChatGPT Anda (Free, Go, Plus, Pro, atau Business) melalui OpenAI Codex, sehingga tidak memerlukan API key.\n\nCodex CLI harus terpasang pada perangkat yang menjalankan Trilium: server jika self-hosting, atau komputer ini pada desktop, misalnya dengan menjalankan \"npm install -g @openai/codex\" di perangkat tersebut.\n\nSaat daftar model pertama kali ditampilkan, halaman masuk ChatGPT akan terbuka di browser pada perangkat tersebut.",
+    "antigravity_setup_download": "Pada perangkat yang menjalankan Trilium, unduh arsip untuk platform Anda dari <Link>entri registri ACP</Link> Google, lalu ekstrak ke folder yang dapat digunakan sebagai lokasi penyimpanan permanen.",
+    "antigravity_setup_archive": "Unduh <Link>arsip untuk perangkat yang menjalankan Trilium</Link>, lalu ekstrak di perangkat tersebut ke folder yang dapat digunakan sebagai lokasi penyimpanan permanen.",
+    "antigravity_setup_path": "Tambahkan folder tersebut ke <Code>PATH</Code>, atau atur variabel lingkungan <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> ke <Code>agy_acp_server.par</Code> di dalamnya (<Code>agy_acp_server.exe</Code> pada Windows), lalu mulai ulang Trilium.",
+    "antigravity_setup_sign_in": "Kembali ke langkah ini. Saat pertama kali dilakukan, halaman masuk Google akan terbuka di browser pada perangkat tersebut."
   },
   "common": {
     "save": "Simpan",
@@ -3423,7 +3671,23 @@
       "the-server-responded-with-http-0": "Server merespons dengan HTTP %0.",
       "tokens": "token",
       "try-again": "Coba lagi",
-      "working": "Bekerja…"
+      "working": "Bekerja…",
+      "insert-date-time-0": "Sisipkan tanggal/waktu: %0",
+      "insert-time-0": "Sisipkan waktu: %0",
+      "upload-an-image-from-your-device": "Unggah gambar dari perangkat Anda.",
+      "upload-image": "Unggah gambar",
+      "insert-icon": "Sisipkan ikon",
+      "icon": "Ikon",
+      "insert-an-icon-from-an-installed-icon-pack": "Sisipkan ikon dari paket ikon yang telah terpasang",
+      "transform-icon": "Transformasikan ikon",
+      "icon-toolbar": "Toolbar ikon",
+      "no-transform": "Tanpa transformasi",
+      "rotate-90": "Putar 90°",
+      "rotate-180": "Putar 180°",
+      "rotate-270": "Putar 270°",
+      "flip-horizontally": "Balik secara horizontal",
+      "flip-vertically": "Balik secara vertikal",
+      "change-icon": "Ubah ikon"
     },
     "task-state-dropped-title": "Status tugas tidak valid",
     "task-state-dropped-message_other": "{{count}} definisi status tugas kustom tidak valid dan diabaikan.",
@@ -3456,7 +3720,8 @@
       "previous_image": "Gambar sebelumnya",
       "first_image": "Gambar pertama",
       "last_image": "Gambar terakhir"
-    }
+    },
+    "viewport": "Tampilan gambar"
   },
   "dashboard_view": {
     "refresh-widget": "Muat ulang",
@@ -3606,7 +3871,7 @@
     "attributes_definitions_what": "Definisi adalah skema di balik nama atribut: jenis nilai yang diterima, apakah boleh memiliki lebih dari satu nilai, dan apakah atribut tersebut dipromosikan.",
     "attributes_definitions_promoted": "Atribut yang dipromosikan ditampilkan langsung pada catatan sebagai bidang formulir, bukan hanya di panel ini. Definisi biasanya berasal dari templat, dan setiap baris menunjukkan catatan tempat definisi tersebut berada.",
     "highlights_what": "Bagian-bagian yang dipilih oleh catatan ini berdasarkan pemformatannya. Cakupannya lebih luas daripada yang terdengar: kalimat biasa yang dicetak tebal atau miring juga dihitung, bukan hanya teks yang Anda sorot.",
-    "highlights_configure": "Anda dapat menentukan format mana yang dihitung: teks tebal, miring, bergaris bawah, berwarna, dan teks dengan warna latar masing-masing dapat disertakan atau dikecualikan melalui ikon roda gigi di header kartu ini. Menekan sebuah entri akan menggulir catatan ke bagian tersebut.",
+    "highlights_configure": "Anda dapat menentukan format mana yang dihitung: teks tebal, miring, bergaris bawah, berwarna, dan teks dengan warna latar dapat masing-masing dicantumkan atau dikecualikan melalui ikon roda gigi pada header kartu ini. Menekan sebuah entri akan menggulir catatan ke entri tersebut.",
     "note_map_what": "Peta yang menunjukkan hubungan catatan ini. Peta tautan menampilkan tautan internal dan relasi yang masuk maupun keluar; peta pohon menampilkan posisi catatan dalam pohon catatan. Pengalih pada header ini digunakan untuk memilih di antara keduanya.",
     "note_map_interaction": "Saat Anda mengarahkan kursor ke sebuah catatan, hubungan catatan tersebut akan disorot sementara hubungan lainnya akan dipudarkan. Tombol perluas membuka peta yang sama sebesar jendela.",
     "note_paths_what": "Sebuah catatan dapat berada di lebih dari satu lokasi dalam pohon catatan sekaligus, dan setiap lokasi tersebut ditampilkan di sini sebagai sebuah jalur.",
@@ -3873,7 +4138,8 @@
     "mismatch": "Kata sandi tidak cocok."
   },
   "open": {
-    "directory_failed": "Tidak dapat membuka {{- directory}}: {{- reason}}"
+    "directory_failed": "Tidak dapat membuka {{- directory}}: {{- reason}}",
+    "download_failed": "Tidak dapat menyimpan unduhan: {{- reason}}"
   },
   "attachment_roles": {
     "favicon": "Ikon situs",
@@ -3955,5 +4221,123 @@
     "reformat_callout": "Callout",
     "reformat_collapsible": "Dapat dilipat",
     "reformat_action_items": "Item tindakan"
+  },
+  "sorting": {
+    "title": "Judul",
+    "default": "Default",
+    "none": "Tidak ada",
+    "creation-date": "Tanggal dan waktu pembuatan",
+    "ascending": "Menaik",
+    "descending": "Menurun"
+  },
+  "note_picker": {
+    "title": "Pilih catatan",
+    "label": "Catatan",
+    "ok": "Pilih"
+  },
+  "font_preview": {
+    "pangram": "Rubah cokelat cepat melompati anjing malas",
+    "specimen_placeholder": "Ketik untuk melihat pratinjau teks Anda sendiri…",
+    "size": "Ukuran pratinjau",
+    "size_pixels": "{{size}} px",
+    "in_picker": "Dalam pemilih font",
+    "offer_in_picker": "Tawarkan font ini dalam pengaturan tampilan",
+    "remove_from_picker": "Berhenti menawarkan font ini dalam pengaturan tampilan"
+  },
+  "template_selection": {
+    "add-existing": "Tambahkan templat yang sudah ada",
+    "add-title": "Tambahkan templat",
+    "create": "Buat templat baru",
+    "new-name": "Templat baru",
+    "menu": "Menu templat",
+    "remove": "Hapus dari daftar"
+  },
+  "item_picker": {
+    "title": "Pilih item",
+    "search": "Cari…",
+    "nothing-found": "Tidak ada yang sesuai dengan teks yang Anda ketik."
+  },
+  "sortable_card": {
+    "reorder": "Seret untuk mengubah urutan"
+  },
+  "attribute_menu": {
+    "attributes": "Atribut",
+    "not-set": "Belum ditetapkan"
+  },
+  "collection_filter": {
+    "placeholder": "Filter...",
+    "clear": "Hapus filter",
+    "fetch-error": "Filter tidak dapat dijalankan.",
+    "submit": "Terapkan filter"
+  },
+  "zoom_controls": {
+    "zoom_out": "Perkecil zoom",
+    "reset": "Atur ulang zoom",
+    "zoom_in": "Perbesar zoom",
+    "hints": {
+      "zoom": "Zoom",
+      "zoom_in": "Perbesar zoom",
+      "zoom_out": "Perkecil zoom",
+      "reset_zoom": "Atur ulang zoom",
+      "pan": "Geser tampilan",
+      "pan_up": "Atas",
+      "pan_down": "Bawah",
+      "pan_left": "Kiri",
+      "pan_right": "Kanan",
+      "pan_fast": "Geser tampilan lebih cepat"
+    }
+  },
+  "search_lint": {
+    "relation_needs_property": "Relasi mengarah ke sebuah catatan, sehingga tidak dapat diperiksa kesamaannya. Gunakan . untuk mengakses propertinya.",
+    "text_needs_contains": "note.text mencari judul dan konten secara bersamaan, sehingga hanya dapat dicocokkan dengan *=*.",
+    "content_not_ordered": "Konten catatan berupa teks, sehingga tidak dapat diurutkan. Gunakan *=* untuk mencocokkannya.",
+    "compare_the_title": "Bandingkan judul",
+    "use_operator": "Gunakan {{operator}}"
+  },
+  "search_completion": {
+    "note": "Judul catatan, properti, dan catatan terkait",
+    "operator_equal": "Sama dengan seluruh nilai",
+    "operator_not_equal": "Tidak sama dengan seluruh nilai",
+    "operator_contains": "Memuat",
+    "operator_starts_with": "Dimulai dengan",
+    "operator_ends_with": "Diakhiri dengan",
+    "operator_greater_than": "Lebih besar dari",
+    "operator_greater_or_equal": "Lebih besar dari atau sama dengan",
+    "operator_less_than": "Lebih kecil dari",
+    "operator_less_or_equal": "Lebih kecil dari atau sama dengan",
+    "operator_regex": "Cocok dengan ekspresi reguler",
+    "operator_fuzzy_equal": "Sama dengan, dengan toleransi terhadap kesalahan ketik",
+    "operator_fuzzy_contains": "Memuat, dengan toleransi terhadap kesalahan ketik",
+    "property_content": "Teks isi catatan",
+    "property_raw_content": "Teks isi catatan sebelum formatnya dihapus",
+    "property_text": "Judul atau teks isi",
+    "property_parents": "Berlanjut pada induk catatan",
+    "property_children": "Berlanjut pada anak catatan",
+    "property_ancestors": "Berlanjut pada leluhur catatan",
+    "property_labels": "Diikuti oleh nama label",
+    "property_relations": "Diikuti oleh nama relasi, lalu properti catatan tersebut sendiri",
+    "property_attribute_count": "Jumlah label dan relasi, termasuk yang diwariskan",
+    "property_label_count": "Jumlah label, termasuk yang diwariskan",
+    "property_relation_count": "Jumlah relasi, termasuk yang diwariskan",
+    "property_relation_count_including_links": "Jumlah relasi, termasuk yang dibuat oleh tautan",
+    "property_owned_relation_count_including_links": "Jumlah relasi milik catatan itu sendiri, termasuk yang dibuat oleh tautan",
+    "property_target_relation_count_including_links": "Jumlah relasi yang menargetkan catatan, termasuk yang dibuat oleh tautan",
+    "keyword_and": "Kedua kondisi harus cocok",
+    "keyword_or": "Salah satu kondisi harus cocok",
+    "keyword_not": "Mengecualikan catatan yang cocok dengan kondisi dalam tanda kurung",
+    "keyword_order_by": "Mengurutkan hasil berdasarkan properti atau label",
+    "keyword_limit": "Hanya mempertahankan hasil pertama",
+    "date_now": "Tanggal dan waktu saat ini",
+    "date_today": "Tanggal hari ini",
+    "date_month": "Bulan saat ini",
+    "date_year": "Tahun saat ini",
+    "date_now_offset": "Sejumlah detik sebelum saat ini",
+    "date_today_offset": "Sejumlah hari sebelum hari ini",
+    "date_month_offset": "Sejumlah bulan sebelum bulan ini",
+    "date_year_offset": "Sejumlah tahun sebelum tahun ini",
+    "label_marker": "Merujuk pada label. Tekan Enter untuk melihat daftar label",
+    "label_marker_negated": "Mengecualikan label. Tekan Enter untuk melihat daftar label",
+    "relation_marker": "Merujuk pada relasi. Tekan Enter untuk melihat daftar relasi",
+    "relation_marker_negated": "Mengecualikan relasi. Tekan Enter untuk melihat daftar relasi"
   }
 }
