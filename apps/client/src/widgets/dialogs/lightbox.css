@@ -1,4 +1,4 @@
-.modal.image-lightbox-dialog {
+.modal.lightbox-dialog {
     .modal-body {
         height: 80vh;
         padding: 0;
@@ -6,7 +6,7 @@
     }
 }
 
-body.mobile .modal.image-lightbox-dialog .modal-body {
+body.mobile .modal.lightbox-dialog .modal-body {
     flex: 1;
     height: auto;
     min-height: 0;

@@ -4,6 +4,8 @@ import { useCallback, useRef } from "preact/hooks";
 import { t } from "../../../services/i18n.js";
 import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
+import type { LightboxOptions } from "../../dialogs/lightbox.js";
+import { getPdfUrl } from "../file/PdfViewer.js";
 import type { FileBlock, ImageBlock, TextFileBlock } from "./llm_chat_types.js";
 import type { AttachmentBlock, UseLlmChatReturn } from "./useLlmChat.js";
 
@@ -223,4 +225,18 @@ export function useChatAttachments(chat: UseLlmChatReturn): UseChatAttachmentsRe
         handleDrop,
         handleDragOver
     };
+}
+
+/**
+ * What the lightbox shows for an attachment: an image, or a PDF read through
+ * `attachments/<id>/open`. Other files have no preview and return `undefined`.
+ */
+export function getAttachmentLightbox(att: AttachmentBlock): LightboxOptions | undefined {
+    if (att.type === "image") {
+        return { src: att.url, title: att.title };
+    }
+    if (att.type === "file" && att.mime === "application/pdf") {
+        return { src: getPdfUrl(`attachments/${att.attachmentId}/open`), kind: "pdf", title: att.title };
+    }
+    return undefined;
 }

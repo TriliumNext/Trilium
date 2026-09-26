@@ -15,7 +15,7 @@ import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormListHeader, FormListItem } from "../../react/FormList.js";
 import { useLegacyImperativeHandlers, useTriliumOption } from "../../react/hooks.js";
-import ImageLightboxLink from "../../react/ImageLightboxLink.js";
+import LightboxLink from "../../react/LightboxLink.js";
 import MaskedIcon from "../../react/MaskedIcon.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { providerIconUrl } from "../options/llm/provider_icons.js";
@@ -25,9 +25,9 @@ import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
 import ReasoningEffortDropdown from "./ReasoningEffortDropdown.js";
 import { SafeImage } from "./retry_image.js";
-import { useChatAttachments } from "./useChatAttachments.js";
+import { getAttachmentLightbox, useChatAttachments } from "./useChatAttachments.js";
 import { type ModelOption, resolveSelectedModel } from "../../../services/llm_providers.js";
-import { type UseLlmChatReturn } from "./useLlmChat.js";
+import { type AttachmentBlock, type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";
 
@@ -300,16 +300,7 @@ export default function ChatInputBar({
                                 className={`llm-chat-attachment-chip llm-chat-attachment-chip-${att.type}`}
                                 title={att.title}
                             >
-                                {att.type === "image" ? (
-                                    <ImageLightboxLink src={att.url} title={att.title} className="llm-chat-attachment-image-link">
-                                        <SafeImage src={att.url} alt={att.title} />
-                                    </ImageLightboxLink>
-                                ) : (
-                                    <div className="llm-chat-attachment-file">
-                                        <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
-                                        <span className="llm-chat-attachment-file-name">{att.title}</span>
-                                    </div>
-                                )}
+                                <AttachmentChipPreview att={att} />
                                 <button
                                     type="button"
                                     className="llm-chat-attachment-remove"
@@ -595,6 +586,23 @@ export default function ChatInputBar({
             />
         </>
     );
+}
+
+/** The inside of a pending attachment's chip; an image or PDF opens in the lightbox when clicked. */
+function AttachmentChipPreview({ att }: { att: AttachmentBlock }) {
+    const lightbox = getAttachmentLightbox(att);
+    const preview = att.type === "image"
+        ? <SafeImage src={att.url} alt={att.title} />
+        : (
+            <div className="llm-chat-attachment-file">
+                <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
+                <span className="llm-chat-attachment-file-name">{att.title}</span>
+            </div>
+        );
+
+    return lightbox
+        ? <LightboxLink lightbox={lightbox} href={att.url} className="llm-chat-attachment-preview-link">{preview}</LightboxLink>
+        : preview;
 }
 
 /**

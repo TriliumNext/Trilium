@@ -64,10 +64,12 @@
     width: 56px;
 }
 
-.llm-chat-attachment-image-link {
+.llm-chat-attachment-preview-link {
     display: block;
     width: 100%;
     height: 100%;
+    color: inherit;
+    text-decoration: none;
     cursor: zoom-in;
 }
 

@@ -144,7 +144,7 @@ Once one or more attachments are uploaded, they will appear directly above the t
 *   Images have a small thumbnail for easy identifications.
 *   Every attachment can be deleted by pressing their corresponding X button.
 
-Clicking an image, either its thumbnail above the text box or the image shown in a sent message, opens it in a viewer where it can be zoomed and panned. The button next to the viewer's close button opens the original image in a new tab; so does <kbd>Ctrl</kbd>\-clicking the image.
+Clicking an image or a PDF, either its chip above the text box or where it appears in a sent message, opens it in a viewer: an image can be zoomed and panned there, a PDF read page by page. The button next to the viewer's close button opens the original file in a new browser tab. <kbd>Ctrl</kbd>\-clicking instead opens an image in a new browser tab, and a PDF as an attachment in a new Trilium tab.
 
 When an attachment is present, the LLM is instructed to consider the attachment with priority, even if it has access to the current note.
 

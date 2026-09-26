@@ -10,7 +10,7 @@ import utils from "../../../services/utils.js";
 import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
 import { useResizeObserver } from "../../react/hooks.js";
-import ImageLightboxLink from "../../react/ImageLightboxLink.js";
+import LightboxLink from "../../react/LightboxLink.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { formatErrorDetails } from "./chat_error.js";
@@ -21,6 +21,7 @@ import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, typ
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";
+import { getAttachmentLightbox } from "./useChatAttachments.js";
 
 function shortenNumber(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -356,20 +357,34 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
 
         if (group.type === "image") {
             return (
-                <ImageLightboxLink
+                <LightboxLink
                     key={group.index}
-                    src={group.block.url}
-                    title={group.block.title}
+                    lightbox={{ src: group.block.url, title: group.block.title }}
                     className="llm-chat-message-image"
                 >
                     <SafeImage src={group.block.url} alt={group.block.title} />
-                </ImageLightboxLink>
+                </LightboxLink>
             );
         }
 
         if (group.type === "file" || group.type === "text_file") {
             const icon = group.type === "file" ? "bxs-file-pdf" : "bxs-file-blank";
-            return (
+            const lightbox = getAttachmentLightbox(group.block);
+            const content = <>
+                <span className={`bx ${icon}`} />
+                <span className="llm-chat-message-file-name">{group.block.title}</span>
+            </>;
+
+            return lightbox ? (
+                <LightboxLink
+                    key={group.index}
+                    lightbox={lightbox}
+                    href={group.block.url}
+                    className="llm-chat-message-file"
+                >
+                    {content}
+                </LightboxLink>
+            ) : (
                 <a
                     key={group.index}
                     href={group.block.url}
@@ -378,8 +393,7 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
                     className="llm-chat-message-file"
                     title={group.block.title}
                 >
-                    <span className={`bx ${icon}`} />
-                    <span className="llm-chat-message-file-name">{group.block.title}</span>
+                    {content}
                 </a>
             );
         }
