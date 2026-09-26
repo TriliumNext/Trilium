@@ -12,11 +12,19 @@ vi.mock("react-i18next", () => ({
     Trans: ({ i18nKey, components }: { i18nKey: string; components: Record<string, preact.ComponentChildren> }) =>
         <>{i18nKey}{Object.values(components)}</>
 }));
-const mocks = vi.hoisted(() => ({ triggerEvent: vi.fn(), openInAppHelpFromUrl: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+    triggerEvent: vi.fn(),
+    openInAppHelpFromUrl: vi.fn(),
+    notes: {} as Record<string, { type: string; mime: string }>
+}));
 vi.mock("../../../components/app_context.js", () => ({ default: { triggerEvent: mocks.triggerEvent } }));
 vi.mock("../../../services/utils.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils.js")>()),
     openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
+}));
+vi.mock("../../react/hooks.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../react/hooks.js")>()),
+    useNote: (noteId: string) => mocks.notes[noteId]
 }));
 vi.mock("../text/ReadOnlyText.js", () => ({
     ReadOnlyTextContent: ({ html }: { html: string }) => <div className="markdown-stub">{html}</div>
@@ -367,5 +375,29 @@ describe("ToolCallCard", () => {
         expect(url?.getAttribute("href")).toBe("https://triliumnotes.org");
 
         expect(search?.querySelector(".llm-chat-written .code-block-stub")?.textContent).toBe("#book");
+    });
+
+    it("shows what set_note_content and append_to_note wrote, by the type of the note they wrote to", () => {
+        mocks.notes = {
+            t: { type: "text", mime: "text/html" },
+            c: { type: "code", mime: "text/x-python" },
+            j: { type: "canvas", mime: "application/json" }
+        };
+        const target = renderCard([
+            { id: "1", toolName: "set_note_content", input: { noteId: "t", content: "Some **bold**" } },
+            { id: "2", toolName: "append_to_note", input: { noteId: "c", content: "print(1)" } },
+            { id: "3", toolName: "set_note_content", input: { noteId: "j", content: "{\"elements\":[]}" } }
+        ]);
+        const [ set, append, json ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        expect(set?.querySelector(".llm-chat-written .markdown-stub")?.textContent).toContain("<strong>bold</strong>");
+        expect(set?.querySelector(".llm-chat-written-appended")).toBeNull();
+
+        const codeBlock = append?.querySelector(".llm-chat-written.llm-chat-written-appended .code-block-stub");
+        expect(codeBlock?.textContent).toBe("print(1)");
+        expect(codeBlock?.getAttribute("data-mime")).toBe("text/x-python");
+
+        expect(json).not.toBeUndefined();
+        expect(json?.querySelector(".llm-chat-written")).toBeNull();
     });
 });

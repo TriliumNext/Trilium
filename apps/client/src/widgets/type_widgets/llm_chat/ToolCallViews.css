@@ -125,3 +125,9 @@
         margin: 0;
     }
 }
+
+/* Appended content is new at the end of the note, so it wears the diff's color for added lines. */
+.llm-chat-written-appended {
+    padding-left: 0.5rem;
+    border-left: 2px solid rgb(60, 160, 60);
+}

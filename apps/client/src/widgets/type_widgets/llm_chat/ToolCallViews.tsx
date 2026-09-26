@@ -9,6 +9,7 @@ import { t } from "../../../services/i18n.js";
 import { NOTE_TYPES } from "../../../services/note_types.js";
 import { openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
+import { useNote } from "../../react/hooks.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { renderMarkdown } from "./chat_markdown.js";
@@ -33,6 +34,12 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         if (typeof type !== "string" || typeof content !== "string") return null;
         const body = <WrittenContent type={type} mime={typeof mime === "string" ? mime : undefined} content={content} />;
         return hasWrittenContentView(type, content) ? { body } : null;
+    }
+
+    if (toolCall.toolName === "set_note_content" || toolCall.toolName === "append_to_note") {
+        const { noteId, content } = toolCall.input;
+        if (typeof noteId !== "string" || typeof content !== "string" || !content.trim()) return null;
+        return { body: <NoteWrittenContent noteId={noteId} content={content} appended={toolCall.toolName === "append_to_note"} /> };
     }
 
     if (!toolCall.result) return null;
@@ -237,12 +244,12 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
  * The content a tool wrote into a note, shown the way its type reads: text as rendered Markdown, code
  * and diagrams as a code block, a web view as its URL. JSON types (canvas, mind map) have no view.
  */
-function WrittenContent({ type, mime, content }: { type: string; mime?: string; content: string }) {
+function WrittenContent({ type, mime, content, appended }: { type: string; mime?: string; content: string; appended?: boolean }) {
     const noteType = type !== "text" && findNoteType(type, mime);
     return (
         <div className="llm-chat-note-card">
             {noteType && <div className="llm-chat-note-card-facts">{noteType.title}</div>}
-            <div className="llm-chat-written">
+            <div className={`llm-chat-written ${appended ? "llm-chat-written-appended" : ""}`}>
                 {type === "text" && <ReadOnlyTextContent html={renderMarkdown(content)} className="llm-chat-markdown" />}
                 {type === "code" && <CodeBlock code={content} mimeType={mime} wrap />}
                 {type === "mermaid" && <CodeBlock code={content} mimeType="text/mermaid" wrap />}
@@ -253,6 +260,16 @@ function WrittenContent({ type, mime, content }: { type: string; mime?: string; 
             </div>
         </div>
     );
+}
+
+/**
+ * The content `set_note_content` or `append_to_note` wrote. Their input names no type, so it comes
+ * from the note itself, and nothing shows until froca has it.
+ */
+function NoteWrittenContent({ noteId, content, appended }: { noteId: string; content: string; appended: boolean }) {
+    const note = useNote(noteId);
+    if (!note || !hasWrittenContentView(note.type, content)) return null;
+    return <WrittenContent type={note.type} mime={note.mime} content={content} appended={appended} />;
 }
 
 function hasWrittenContentView(type: string, content: string): boolean {
