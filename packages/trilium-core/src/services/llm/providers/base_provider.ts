@@ -518,11 +518,19 @@ export abstract class BaseProvider implements LlmProvider {
      */
     private titleNeedsRoomToThink = false;
 
+    /**
+     * Whether a title call asks the model not to reason (`reasoning: "none"`). Each
+     * provider package maps that to its own switch, such as DeepSeek's
+     * `thinking: { type: "disabled" }`.
+     */
+    protected titleSkipsReasoning = true;
+
     /** One title call, with whatever the caller is willing to spend on it. */
     private async requestTitle(firstMessage: string, maxOutputTokens: number) {
         const { text, finishReason, usage } = await generateText({
             model: this.createModel(this.titleModel),
             maxOutputTokens,
+            ...(this.titleSkipsReasoning && { reasoning: "none" as const }),
             telemetry: TELEMETRY_OFF,
             messages: [
                 {

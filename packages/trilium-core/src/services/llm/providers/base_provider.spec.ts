@@ -601,6 +601,7 @@ describe("BaseProvider chat / pricing / models / title", () => {
         expect(provider.createdModelIds).toContain("cheap");
         const args = generateTextMock.mock.calls[0][0] as any;
         expect(args.maxOutputTokens).toBe(30);
+        expect(args.reasoning).toBe("none");
         expect(args.messages[0].content).toContain("Some long first message");
     });
 
