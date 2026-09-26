@@ -38,6 +38,31 @@ describe("Search", () => {
         expect(findNoteByTitle(searchResults, "Austria")).toBeTruthy();
     });
 
+    it("full-text word written against a label prefix still narrows the results", () => {
+        rootNote
+            .child(note("Two Towers").label("book"))
+            .child(note("Random Book").label("book"));
+
+        // "towers" still narrows the #book filter, so only the note holding it matches.
+        const searchContext = new SearchContext();
+        const searchResults = searchService.findResultsWithQuery("towers#book", searchContext);
+
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "Two Towers")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "Random Book")).toBeFalsy();
+    });
+
+    it("a parenthesised label query is not searched for its parentheses", () => {
+        rootNote
+            .child(note("Alpha").label("a"))
+            .child(note("Beta").label("b"));
+
+        const searchContext = new SearchContext();
+        const results = searchService.findResultsWithQuery("(#a OR #b)", searchContext);
+
+        expect(results.length).toEqual(2);
+    });
+
     it("normal search looks also at attributes", () => {
         const austria = note("Austria");
         const vienna = note("Vienna");
