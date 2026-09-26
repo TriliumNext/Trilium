@@ -153,6 +153,8 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 *   SVG images (sent as raw HTML).
 *   Text files.
 
+A model that can't read an attachment receives only its name, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content. DeepSeek reads no PDFs, and images only with its vision models.
+
 To upload an attachment:
 
 *   Press the dedicated _Attach_ button (paperclip icon) underneath the text box.

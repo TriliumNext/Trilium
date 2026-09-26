@@ -21,7 +21,7 @@
 
 import { LLM_REASONING_EFFORTS, type LlmMessage, type LlmMessagePart, type LlmReasoningEffort, type LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
-import { resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
+import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
 import { buildSystemPrompt } from "@triliumnext/core/src/services/llm/system_prompt.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "@triliumnext/core/src/services/llm/types.js";
@@ -33,7 +33,7 @@ import dataDirs from "../../data_dir.js";
 import { AcpClient, AcpError } from "./acp_client.js";
 import { AcpClientPool, type AcpLease, type AcpPoolConnection } from "./acp_client_pool.js";
 import { getAcpMcpEndpointUrl } from "./acp_mcp_endpoint.js";
-import { attachmentPlaceholder, buildHistoryReplay, hashTranscript } from "./transcript.js";
+import { buildHistoryReplay, hashTranscript } from "./transcript.js";
 
 /** How an ACP provider starts its agent subprocess. */
 export interface AcpLaunchSpec {

@@ -24,7 +24,7 @@ import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SD
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
-import { resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
+import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
 import { anthropicRecommendedIds } from "@triliumnext/core/src/services/llm/providers/anthropic.js";
 import { buildModelList, mergeModelLists, type RemoteModel } from "@triliumnext/core/src/services/llm/providers/base_provider.js";
@@ -46,7 +46,7 @@ import {
     rememberSession as rememberWarmSession,
     takeWarmSession
 } from "./claude_session_pool.js";
-import { attachmentPlaceholder, buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
+import { buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
 
 // Re-exported for existing importers (specs, siblings); the implementations
 // now live in the shared transcript module.

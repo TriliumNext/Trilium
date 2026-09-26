@@ -17,6 +17,19 @@ vi.mock("@ai-sdk/deepseek", async (importOriginal) => {
     };
 });
 
+// Attachments resolve by kind rather than from Becca: an image part to PNG bytes, a file part to a PDF.
+vi.mock("../attachment_content.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../attachment_content.js")>();
+    return {
+        ...actual,
+        resolveAttachmentPart: (part: { type: string; text?: string; filename?: string }) => {
+            if (part.type === "text") return { kind: "text", text: part.text };
+            if (part.type === "image") return { kind: "image", bytes: new Uint8Array([ 137, 80, 78, 71 ]), mime: "image/png" };
+            return { kind: "file", bytes: new Uint8Array([ 37, 80, 68, 70 ]), mime: "application/pdf", filename: part.filename };
+        }
+    };
+});
+
 const { generateTextMock } = vi.hoisted(() => ({
     generateTextMock: vi.fn(async () => ({ text: "  A generated title  " }) as any)
 }));
@@ -26,7 +39,7 @@ vi.mock("ai", async (importOriginal) => {
     return { ...actual, generateText: generateTextMock };
 });
 
-import type { LlmStreamChunk } from "@triliumnext/commons";
+import type { LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
 
 import { installGlobalFetchAsApiTransport } from "../../../test/request_provider.js";
 import { streamToChunks } from "../stream.js";
@@ -281,6 +294,48 @@ describe("DeepSeekProvider reasoning effort", () => {
         const legacy = await requestBody({ model: "deepseek-chat", reasoningEffort: "max" });
         expect(legacy).not.toHaveProperty("thinking");
         expect(legacy).not.toHaveProperty("reasoning_effort");
+    });
+});
+
+describe("DeepSeekProvider attachments", () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        fetchMock.mockImplementation(async () => sseResponse([
+            { choices: [{ index: 0, delta: { role: "assistant", content: "Ok" }, finish_reason: "stop" }] }
+        ]));
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    const messages: LlmMessage[] = [{ role: "user", content: [
+        { type: "text", text: "What is in these?" },
+        { type: "image", attachmentId: "img1", mime: "image/png" },
+        { type: "file", attachmentId: "pdf1", mime: "application/pdf", filename: "report.pdf" }
+    ] }];
+
+    async function sentUserContent(model: string) {
+        fetchMock.mockClear();
+        for await (const _ of streamToChunks(new DeepSeekProvider("sk-deep").chat(messages, { model }))) { /* drain */ }
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+        return body.messages.find((m: { role: string }) => m.role === "user").content;
+    }
+
+    it("names what a text-only model cannot read instead of sending or dropping it", async () => {
+        const content = await sentUserContent("deepseek-v4-pro");
+        expect(typeof content).toBe("string");
+        expect(content).toContain("What is in these?");
+        expect(content).toContain("[attached image]");
+        expect(content).toContain("[attached file: report.pdf]");
+    });
+
+    it("sends images to the vision model, and names the PDF it cannot read", async () => {
+        const content = await sentUserContent("deepseek-v4-flash-vision-exp");
+        expect(content).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "image_url" }),
+            expect.objectContaining({ type: "text", text: expect.stringContaining("[attached file: report.pdf]") })
+        ]));
     });
 });
 

@@ -77,6 +77,11 @@ export class DeepSeekProvider extends BaseProvider {
         return { deepseek: options };
     }
 
+    /** DeepSeek reads no PDFs, and images only on its vision models (`deepseek-v4-flash-vision-exp`). */
+    protected override acceptsAttachment(kind: "image" | "file", modelId: string): boolean {
+        return kind === "image" && modelId.includes("vision");
+    }
+
     /** Everything DeepSeek lists is a chat model, so nothing is filtered out. */
     protected override async fetchRemoteModels(): Promise<RemoteModel[] | null> {
         const payload = await this.fetchJson(`${this.baseURL ?? OFFICIAL_BASE_URL}/models`, {

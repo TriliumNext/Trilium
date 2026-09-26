@@ -31,7 +31,10 @@ vi.mock("./acp_hook.js", async (importOriginal) => ({
     resolveCurlPath: async () => "/usr/bin/curl"
 }));
 vi.mock("@triliumnext/core/src/services/llm/note_hint.js", () => ({ buildNoteHint: () => null }));
-vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: vi.fn() }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/attachment_content.js")>(),
+    resolveAttachmentPart: vi.fn()
+}));
 
 class FakeAcpError extends Error {
     constructor(public readonly code: number, message: string) {

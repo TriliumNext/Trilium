@@ -46,7 +46,10 @@ vi.mock("./claude_binary.js", () => ({ resolveClaudeBinaryPath: resolveClaudeBin
 // Attachment resolution reads bytes out of Becca, which the core mock above
 // omits — stub it so the multimodal tests drive block construction directly.
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
-vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/attachment_content.js")>(),
+    resolveAttachmentPart: resolveAttachmentPartMock
+}));
 
 // The Windows `.cmd` shim delegates to child_process.spawn; the provider never
 // spawns otherwise, so mocking the whole module is safe.
