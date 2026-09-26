@@ -511,6 +511,11 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("trims the spaces inside inline math delimiters, so the import reads it back as math", () => {
+        const html = /*html*/String.raw`<p>Area: <span class="math-tex">\( \pi r^2 \)</span></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`Area: $\pi r^2$`);
+    });
+
     it("keeps a math expression without delimiters verbatim", () => {
         // Neither \( \) nor \[ \] — nothing can be inferred, so the raw text is passed through
         // rather than guessed into the wrong math mode.
