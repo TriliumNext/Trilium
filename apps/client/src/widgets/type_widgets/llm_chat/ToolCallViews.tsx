@@ -8,7 +8,10 @@ import { formatValue } from "../../../services/attribute_renderer.js";
 import { t } from "../../../services/i18n.js";
 import { NOTE_TYPES } from "../../../services/note_types.js";
 import { openInAppHelpFromUrl } from "../../../services/utils.js";
+import CodeBlock from "../../react/CodeBlock.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
+import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
+import { renderMarkdown } from "./chat_markdown.js";
 import type { ToolCall } from "./llm_chat_types.js";
 
 const HELP_NOTE_PREFIX = "_help_";
@@ -22,7 +25,17 @@ export interface ToolCallView {
 
 /** The view of a successful call to a tool that has one, or `null` to show the bare line. */
 export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
-    if (!toolCall.result || toolCall.isError) return null;
+    if (toolCall.isError) return null;
+
+    // What a writing tool writes is in its input, so it shows before the result arrives.
+    if (toolCall.toolName === "create_note") {
+        const { type, mime, content } = toolCall.input;
+        if (typeof type !== "string" || typeof content !== "string") return null;
+        const body = <WrittenContent type={type} mime={typeof mime === "string" ? mime : undefined} content={content} />;
+        return hasWrittenContentView(type, content) ? { body } : null;
+    }
+
+    if (!toolCall.result) return null;
 
     switch (toolCall.toolName) {
         case "search_notes": {
@@ -220,6 +233,38 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
     );
 }
 
+/**
+ * The content a tool wrote into a note, shown the way its type reads: text as rendered Markdown, code
+ * and diagrams as a code block, a web view as its URL. JSON types (canvas, mind map) have no view.
+ */
+function WrittenContent({ type, mime, content }: { type: string; mime?: string; content: string }) {
+    const noteType = type !== "text" && findNoteType(type, mime);
+    return (
+        <div className="llm-chat-note-card">
+            {noteType && <div className="llm-chat-note-card-facts">{noteType.title}</div>}
+            <div className="llm-chat-written">
+                {type === "text" && <ReadOnlyTextContent html={renderMarkdown(content)} className="llm-chat-markdown" />}
+                {type === "code" && <CodeBlock code={content} mimeType={mime} wrap />}
+                {type === "mermaid" && <CodeBlock code={content} mimeType="text/mermaid" wrap />}
+                {type === "search" && <CodeBlock code={content} wrap />}
+                {type === "webView" && (
+                    <a className="tn-link external" href={content} target="_blank" rel="noopener noreferrer">{content}</a>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function hasWrittenContentView(type: string, content: string): boolean {
+    if (!content.trim()) return false;
+    if (type === "webView") return /^https?:\/\//i.test(content.trim());
+    return [ "text", "code", "mermaid", "search" ].includes(type);
+}
+
+function findNoteType(type: string, mime?: string) {
+    return NOTE_TYPES.find((nt) => nt.type === type && nt.mime === mime) ?? NOTE_TYPES.find((nt) => nt.type === type);
+}
+
 /** A capped list in a `get_note` result: `totalCount` counts past the entries it lists. */
 interface CappedList<T> {
     totalCount: number;
@@ -243,7 +288,7 @@ interface NoteMeta {
 
 /** What a `get_note` call learned about the note its summary line links. */
 function NoteMetaCard({ type, mime, childCount, attachmentCount, attributes, contentPreview }: NoteMeta) {
-    const noteType = NOTE_TYPES.find((nt) => nt.type === type && nt.mime === mime) ?? NOTE_TYPES.find((nt) => nt.type === type);
+    const noteType = findNoteType(type, mime);
     const facts = [
         noteType?.title ?? type,
         childCount > 0 && t("llm_chat.child_count", { count: childCount }),

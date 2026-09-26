@@ -114,3 +114,14 @@
     color: var(--main-text-color);
     overflow-wrap: anywhere;
 }
+
+/* The content a writing tool put into a note. */
+.llm-chat-written {
+    max-height: 300px;
+    overflow: auto;
+    font-size: 0.85rem;
+
+    > .code-block {
+        margin: 0;
+    }
+}

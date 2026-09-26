@@ -18,6 +18,12 @@ vi.mock("../../../services/utils.js", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils.js")>()),
     openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
 }));
+vi.mock("../text/ReadOnlyText.js", () => ({
+    ReadOnlyTextContent: ({ html }: { html: string }) => <div className="markdown-stub">{html}</div>
+}));
+vi.mock("../../react/CodeBlock.js", () => ({
+    default: ({ code, mimeType }: { code: string; mimeType?: string }) => <pre className="code-block-stub" data-mime={mimeType}>{code}</pre>
+}));
 vi.mock("../../react/NoteLink.js", () => ({
     NewNoteLink: ({ notePath, onClick }: { notePath: string; onClick?: (e: MouseEvent) => void }) =>
         <a className="note-link-stub" href="#" onClick={onClick}>{notePath}</a>
@@ -329,5 +335,37 @@ describe("ToolCallCard", () => {
         expect(preview?.length).toBeLessThan(1000);
         expect(read?.querySelector(".llm-chat-note-card-facts")).toBeNull();
         expect(empty instanceof HTMLDetailsElement).toBe(false);
+    });
+
+    it("shows what a create_note call wrote, by the type of the note, before its result arrives", () => {
+        const call = (id: string, type: string, content: string, mime?: string): ToolCall => ({
+            id, toolName: "create_note", input: { parentNoteId: "p", title: "T", type, content, mime }
+        });
+        const target = renderCard([
+            { ...call("1", "text", "# Heading\n\nSome **bold**"), result: JSON.stringify({ success: true, noteId: "n", title: "T", type: "text" }) },
+            call("2", "code", "const a = 1;", "application/javascript;env=frontend"),
+            call("3", "canvas", "{\"elements\":[]}"),
+            call("4", "webView", "https://triliumnotes.org"),
+            call("5", "search", "#book")
+        ]);
+        // Consecutive calls to one tool fold into a group, so the calls are the lines inside it.
+        const [ text, code, canvas, webView, search ] = [ ...target.querySelectorAll(".expandable-section-body > .llm-chat-tool-call") ];
+
+        expect(text instanceof HTMLDetailsElement).toBe(true);
+        expect(text?.querySelector(".llm-chat-written .markdown-stub")?.textContent).toContain("<strong>bold</strong>");
+        expect(text?.querySelector(".llm-chat-note-card-facts")).toBeNull();
+
+        const codeBlock = code?.querySelector(".llm-chat-written .code-block-stub");
+        expect(code instanceof HTMLDetailsElement).toBe(true);
+        expect(codeBlock?.textContent).toBe("const a = 1;");
+        expect(codeBlock?.getAttribute("data-mime")).toBe("application/javascript;env=frontend");
+        expect(code?.querySelector(".llm-chat-note-card-facts")?.textContent).toBe("note_types.code");
+
+        expect(canvas instanceof HTMLDetailsElement).toBe(false);
+
+        const url = webView?.querySelector<HTMLAnchorElement>(".llm-chat-written a.external");
+        expect(url?.getAttribute("href")).toBe("https://triliumnotes.org");
+
+        expect(search?.querySelector(".llm-chat-written .code-block-stub")?.textContent).toBe("#book");
     });
 });
