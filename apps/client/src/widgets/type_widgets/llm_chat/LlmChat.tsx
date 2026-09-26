@@ -15,7 +15,7 @@ import ChatReadOnlyNotice from "./ChatReadOnlyNotice.js";
 import type { LlmChatContent } from "./llm_chat_types.js";
 import { useLlmChat } from "./useLlmChat.js";
 
-export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
+export default function LlmChat({ note, noteContext, isVisible }: TypeWidgetProps) {
     const spacedUpdateRef = useRef<{ scheduleUpdate: () => void }>(null);
 
     // A `#readOnly` chat is immutable: the reply bar is replaced by a notice and every
@@ -46,9 +46,7 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
     useChatMessageJumps(chat.scrollContainerRef);
 
     // Switching to the tab or creating the note focuses the reply input, like other types' editors.
-    useTriliumEvent("focusOnDetail", ({ ntxId }) => {
-        if (ntxId === noteContext?.ntxId) chat.focusInput();
-    });
+    useFocusInputOnDetail(chat.focusInput, noteContext?.ntxId, isVisible);
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -98,4 +96,16 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
             )}
         </div>
     );
+}
+
+/**
+ * Focuses the reply input on a `focusOnDetail` for this chat's context. A chat kept mounted but
+ * hidden after its note's type changed (`isVisible` is `false`) ignores it.
+ */
+export function useFocusInputOnDetail(
+    focusInput: () => void, ntxId: string | null | undefined, isVisible: boolean | undefined
+) {
+    useTriliumEvent("focusOnDetail", (data) => {
+        if (data.ntxId === ntxId && isVisible !== false) focusInput();
+    });
 }
