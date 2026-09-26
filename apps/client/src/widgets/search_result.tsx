@@ -4,11 +4,14 @@ import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
+import froca from "../services/froca";
 import { t } from "../services/i18n";
+import toast from "../services/toast";
+import { getErrorMessage } from "../services/utils";
 import { SearchNoteList, useNoteViewType } from "./collections/NoteList";
 import SearchResultsList from "./collections/search/SearchResultsList";
 import Button from "./react/Button";
-import { useNoteContext,  useTriliumEvent } from "./react/hooks";
+import { useNoteContext, useTriliumEvent } from "./react/hooks";
 import NoItems from "./react/NoItems";
 
 enum SearchResultState {
@@ -18,7 +21,7 @@ enum SearchResultState {
 }
 
 export default function SearchResult() {
-    const { note, notePath, ntxId } = useNoteContext();
+    const { note, notePath, ntxId, parentComponent } = useNoteContext();
     const viewType = useNoteViewType(note);
     const [ state, setState ] = useState<SearchResultState>();
     const [ highlightedTokens, setHighlightedTokens ] = useState<(string | HighlightedTokenInfo)[]>();
@@ -34,6 +37,18 @@ export default function SearchResult() {
             setState(SearchResultState.GOT_RESULTS);
             setHighlightedTokens(note.highlightedTokenInfos ?? note.highlightedTokens);
         }
+    }
+
+    async function executeSearch() {
+        if (!note?.noteId) {
+            return;
+        }
+        try {
+            await froca.loadSearchNote(note.noteId);
+        } catch (e: unknown) {
+            toast.showError(getErrorMessage(e));
+        }
+        parentComponent?.triggerEvent("searchRefreshed", { ntxId });
     }
 
     useEffect(() => refresh(), [ note ]);
@@ -52,7 +67,7 @@ export default function SearchResult() {
         <div className={clsx("search-result-widget", state === undefined && "hidden-ext")}>
             {state === SearchResultState.NOT_EXECUTED && (
                 <NoItems icon="bx bx-file-find" text={t("search_result.search_not_executed")}>
-                    <Button text={t("search_result.search_now")} triggerCommand="searchNotes" />
+                    <Button text={t("search_result.search_now")} onClick={executeSearch} />
                 </NoItems>
             )}
 
