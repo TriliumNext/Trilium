@@ -351,6 +351,8 @@ describe("AntigravityAgentProvider", () => {
         expect(FakeAcpClient.current?.methods()).toEqual(["initialize", "session/new", "authenticate", "session/new"]);
         expect(FakeAcpClient.current?.requests[2].params).toEqual({ methodId: "oauth-personal" });
         expect(models.map(m => m.id)).toEqual(["default", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro"]);
+        // The ACP prompt carries images but no PDFs, which become placeholders.
+        expect(models.map(m => m.attachmentKinds)).toEqual(models.map(() => ["image"]));
     });
 
     it("leaves the default model to the server, selects any other, and titles on the newest Flash Low", async () => {

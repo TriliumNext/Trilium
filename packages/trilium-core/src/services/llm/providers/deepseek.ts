@@ -1,5 +1,5 @@
 import { createDeepSeek, type DeepSeekLanguageModelChatOptions, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
-import type { LlmReasoningEffort } from "@triliumnext/commons";
+import type { LlmAttachmentKind, LlmReasoningEffort } from "@triliumnext/commons";
 
 import type { LlmProviderConfig, ModelInfo } from "../types.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
@@ -78,7 +78,7 @@ export class DeepSeekProvider extends BaseProvider {
     }
 
     /** DeepSeek reads no PDFs, and images only on its vision models (`deepseek-v4-flash-vision-exp`). */
-    protected override acceptsAttachment(kind: "image" | "file", modelId: string): boolean {
+    protected override acceptsAttachment(kind: LlmAttachmentKind, modelId: string): boolean {
         return kind === "image" && modelId.includes("vision");
     }
 

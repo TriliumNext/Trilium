@@ -158,7 +158,17 @@ export interface LlmModelInfo {
     reasoningEfforts?: LlmReasoningEffort[];
     /** The effort used when a chat has not chosen one. One of {@link reasoningEfforts}. */
     defaultReasoningEffort?: LlmReasoningEffort;
+    /**
+     * The attachment kinds the model reads natively. Absent means every kind; text attachments
+     * are inlined as text for every model and never listed.
+     */
+    attachmentKinds?: LlmAttachmentKind[];
 }
+
+/** An attachment a model reads natively: an image, or a file such as a PDF. */
+export const LLM_ATTACHMENT_KINDS = [ "image", "file" ] as const;
+
+export type LlmAttachmentKind = (typeof LLM_ATTACHMENT_KINDS)[number];
 
 /**
  * Token usage information from the LLM response.

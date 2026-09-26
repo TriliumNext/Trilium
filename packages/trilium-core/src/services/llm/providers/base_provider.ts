@@ -3,7 +3,7 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
+import { LLM_ATTACHMENT_KINDS, type LlmAttachmentKind, type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
 import { getLog } from "../../log.js";
@@ -114,7 +114,7 @@ function resolveMessagePart(part: LlmMessagePart, accepts: AttachmentFilter): Te
 }
 
 /** Whether a model reads an attachment of this kind natively. Text attachments are always inlined. */
-export type AttachmentFilter = (kind: "image" | "file") => boolean;
+export type AttachmentFilter = (kind: LlmAttachmentKind) => boolean;
 
 /**
  * Build a single ModelMessage from an LlmMessage. Plain string content stays
@@ -301,11 +301,19 @@ export abstract class BaseProvider implements LlmProvider {
         if (!remote || remote.length === 0) {
             // The provider doesn't support dynamic listing, or the endpoint
             // returned nothing — the price-table catalog is the answer, not an error.
-            return this.getAvailableModels();
+            return this.withAttachmentKinds(this.getAvailableModels());
         }
-        const merged = mergeModelLists(this.getAvailableModels(), remote);
+        const merged = this.withAttachmentKinds(mergeModelLists(this.getAvailableModels(), remote));
         this.modelListCache = { models: merged, fetchedAt: Date.now() };
         return merged;
+    }
+
+    /** Lists {@link ModelInfo.attachmentKinds} on the models {@link acceptsAttachment} limits. */
+    private withAttachmentKinds(models: ModelInfo[]): ModelInfo[] {
+        return models.map(model => {
+            const kinds = LLM_ATTACHMENT_KINDS.filter(kind => this.acceptsAttachment(kind, model.id));
+            return kinds.length === LLM_ATTACHMENT_KINDS.length ? model : { ...model, attachmentKinds: kinds };
+        });
     }
 
     /**
@@ -332,7 +340,7 @@ export abstract class BaseProvider implements LlmProvider {
      * Whether `modelId` reads an image or file attachment natively. One it doesn't is sent as an
      * `[attached …]` placeholder, so the model knows something was attached instead of never seeing it.
      */
-    protected acceptsAttachment(_kind: "image" | "file", _modelId: string): boolean {
+    protected acceptsAttachment(_kind: LlmAttachmentKind, _modelId: string): boolean {
         return true;
     }
 

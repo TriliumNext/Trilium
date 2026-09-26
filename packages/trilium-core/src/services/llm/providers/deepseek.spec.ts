@@ -330,6 +330,14 @@ describe("DeepSeekProvider attachments", () => {
         expect(content).toContain("[attached file: report.pdf]");
     });
 
+    it("lists what each model reads natively", async () => {
+        const okJson = (body: unknown) => ({ ok: true, json: async () => body });
+        fetchMock.mockResolvedValue(okJson({ data: [{ id: "deepseek-v4-pro" }, { id: "deepseek-v4-flash-vision-exp" }] }));
+        const models = await new DeepSeekProvider("sk-deep").listModels();
+        expect(models.find(m => m.id === "deepseek-v4-pro")?.attachmentKinds).toEqual([]);
+        expect(models.find(m => m.id === "deepseek-v4-flash-vision-exp")?.attachmentKinds).toEqual(["image"]);
+    });
+
     it("sends images to the vision model, and names the PDF it cannot read", async () => {
         const content = await sentUserContent("deepseek-v4-flash-vision-exp");
         expect(content).toEqual(expect.arrayContaining([

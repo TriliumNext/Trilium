@@ -4,7 +4,7 @@
  * should be imported from @triliumnext/commons.
  */
 
-import type { LlmChatConfig, LlmMessage, LlmReasoningEffort, LlmStreamChunk } from "@triliumnext/commons";
+import type { LlmAttachmentKind, LlmChatConfig, LlmMessage, LlmReasoningEffort, LlmStreamChunk } from "@triliumnext/commons";
 import type { streamText } from "ai";
 
 /**
@@ -60,6 +60,8 @@ export interface ModelInfo {
     reasoningEfforts?: LlmReasoningEffort[];
     /** The effort used when a chat has not chosen one. */
     defaultReasoningEffort?: LlmReasoningEffort;
+    /** The attachment kinds the model reads natively; see `LlmModelInfo`. */
+    attachmentKinds?: LlmAttachmentKind[];
 }
 
 export interface LlmProvider {

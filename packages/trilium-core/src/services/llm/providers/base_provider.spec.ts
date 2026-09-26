@@ -249,6 +249,22 @@ describe("listModels", () => {
         expect(models.map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
     });
 
+    it("lists attachmentKinds only on models that don't read every kind", async () => {
+        class NoPdfProvider extends TestProvider {
+            protected override acceptsAttachment(kind: "image" | "file", modelId: string) {
+                return kind === "image" || modelId === "spendy";
+            }
+        }
+        const fromTable = await new NoPdfProvider().listModels();
+        expect(fromTable.map(m => m.attachmentKinds)).toEqual([["image"], ["image"], undefined]);
+
+        const listed = new NoPdfProvider();
+        listed.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);
+        expect((await listed.listModels()).map(m => m.attachmentKinds)).toEqual([["image"], ["image"]]);
+
+        expect((await new TestProvider().listModels()).some(m => "attachmentKinds" in m)).toBe(false);
+    });
+
     it("merges the remote list with price-table metadata and caches the result", async () => {
         const provider = new TestProvider();
         provider.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);

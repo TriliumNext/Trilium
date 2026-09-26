@@ -19,7 +19,7 @@
  * permission policy; the protocol handling lives here.
  */
 
-import { LLM_REASONING_EFFORTS, type LlmMessage, type LlmMessagePart, type LlmReasoningEffort, type LlmStreamChunk } from "@triliumnext/commons";
+import { LLM_REASONING_EFFORTS, type LlmAttachmentKind, type LlmMessage, type LlmMessagePart, type LlmReasoningEffort, type LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
 import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
@@ -96,6 +96,9 @@ type AcpMcpServer = { name: string; type: "http"; url: string; headers: never[] 
 
 /** Image media types the ACP prompt accepts as a base64 image block. */
 const SUPPORTED_IMAGE_MIMES = new Set<string>(["image/png", "image/jpeg", "image/gif", "image/webp"]);
+
+/** What {@link buildPromptBlocks} sends natively: images, while a PDF becomes a placeholder. */
+const ACP_ATTACHMENT_KINDS: LlmAttachmentKind[] = [ "image" ];
 
 /**
  * How long a probed catalog is reused. The line-up changes with the vendor's
@@ -383,7 +386,7 @@ export abstract class AcpAgentProvider implements LlmProvider {
     }
 
     getAvailableModels(): ModelInfo[] {
-        return this.fallbackModels;
+        return withAcpAttachmentKinds(this.fallbackModels);
     }
 
     /**
@@ -423,7 +426,7 @@ export abstract class AcpAgentProvider implements LlmProvider {
         try {
             client = await this.startClient(() => {});
             const created = await this.createSession(client, { cwd: this.agentCwd(), mcpServers: [] }, true, MODEL_PROBE_TIMEOUT_MS);
-            const models = this.buildModelList(created.models ?? {});
+            const models = withAcpAttachmentKinds(this.buildModelList(created.models ?? {}));
             this.state().modelCatalogCache = { models, fetchedAt: Date.now() };
             return models;
         } catch (err) {
@@ -1020,6 +1023,11 @@ export function buildPromptBlocks(content: string | LlmMessagePart[], prefix: st
         }
     }
     return blocks;
+}
+
+/** Declares {@link ACP_ATTACHMENT_KINDS} on each model. */
+function withAcpAttachmentKinds(models: ModelInfo[]): ModelInfo[] {
+    return models.map(model => ({ ...model, attachmentKinds: ACP_ATTACHMENT_KINDS }));
 }
 
 export function describeError(error: unknown): string {
