@@ -441,4 +441,22 @@ describe("ToolCallCard", () => {
         expect(line?.querySelector(".llm-chat-tool-call-error-message")?.textContent)
             .toBe("edit_note_content does not support rich-text notes.");
     });
+
+    it("names the title a note had before a rename, on the plain line", () => {
+        const rename = (id: string, result: object): ToolCall => ({
+            id, toolName: "rename_note", input: { noteId: "n", newTitle: "New" }, result: JSON.stringify(result)
+        });
+        const target = renderCard([
+            rename("1", { success: true, noteId: "n", title: "New", oldTitle: "Old" }),
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            rename("3", { success: true, noteId: "n", title: "New" })
+        ]);
+        const [ renamed, , older ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        expect(renamed instanceof HTMLDetailsElement).toBe(false);
+        const oldTitle = renamed?.querySelector(".llm-chat-tool-call-old-title");
+        expect(oldTitle?.textContent).toBe("Old");
+        expect(oldTitle?.nextElementSibling?.querySelector(".note-link-stub")?.textContent).toBe("n");
+        expect(older?.querySelector(".llm-chat-tool-call-old-title")).toBeNull();
+    });
 });

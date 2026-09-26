@@ -9,7 +9,7 @@ import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
 import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
-import { getToolCallView } from "./ToolCallViews.js";
+import { getToolCallView, type ToolCallView } from "./ToolCallViews.js";
 
 interface ToolCallContext {
     /** The primary note the tool operates on or created. */
@@ -88,7 +88,7 @@ function getErrorMessage(result: string): string {
 }
 
 /** Build the label content for a tool call section. */
-function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: string }) {
+function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallView | null }) {
     const { noteId: refNoteId, parentNoteId: refParentId, detailText } = getToolCallContext(toolCall);
     const hasError = isFailedToolCall(toolCall);
 
@@ -98,6 +98,7 @@ function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: st
             {detailText && (
                 <span className="llm-chat-tool-call-detail">{detailText}</span>
             )}
+            {view?.lead}
             {refNoteId && (
                 <span className="llm-chat-tool-call-note-ref">
                     {refParentId ? (
@@ -113,7 +114,7 @@ function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: st
                     )}
                 </span>
             )}
-            {summary && <span className="llm-chat-tool-call-result-count">{summary}</span>}
+            {view?.summary && <span className="llm-chat-tool-call-result-count">{view.summary}</span>}
             {hasError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>
     );
@@ -139,7 +140,7 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
 
     const className = `llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`;
     const icon = toolCallIcon(toolCall);
-    const label = <ToolCallLabel toolCall={toolCall} summary={view?.summary} />;
+    const label = <ToolCallLabel toolCall={toolCall} view={view} />;
     const debugButton = <ToolCallDebugButton toolCall={toolCall} />;
 
     if (!isStreamingInput && !noteContentEdits && !errorMessage && !view?.body) {

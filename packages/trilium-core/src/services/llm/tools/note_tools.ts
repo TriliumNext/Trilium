@@ -319,13 +319,15 @@ export const noteTools = defineTools({
                 return { error: "Title cannot be empty" };
             }
 
+            const oldTitle = note.title;
             note.title = trimmedTitle;
             note.save();
 
             return {
                 success: true,
                 noteId: note.noteId,
-                title: note.getTitleOrProtected()
+                title: note.getTitleOrProtected(),
+                oldTitle
             };
         }
     },

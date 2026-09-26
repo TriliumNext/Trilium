@@ -84,3 +84,17 @@
 @keyframes llm-chat-tool-call-caret {
     50% { opacity: 0; }
 }
+
+/* The title a rename replaced, struck through and followed by an arrow to the note link. The arrow is
+   an inline block, which keeps the strike-through off it. */
+.llm-chat-tool-call-old-title {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    text-decoration: line-through;
+
+    &::after {
+        content: "→";
+        display: inline-block;
+        margin-left: 0.3rem;
+    }
+}

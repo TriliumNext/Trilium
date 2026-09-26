@@ -20,6 +20,8 @@ const CONTENT_PREVIEW_SOURCE_LENGTH = 1000;
 
 /** What a finished call shows: a short summary beside its label, and the view it folds open to. */
 export interface ToolCallView {
+    /** Shown on the summary line before the note link, such as the title a rename replaced. */
+    lead?: ComponentChildren;
     summary?: string;
     body?: ComponentChildren;
 }
@@ -84,12 +86,17 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 body: children.length > 0 ? <ChildNoteList notes={children} /> : undefined
             };
         }
+        case "rename_note": {
+            // The note link shows the note's title now, so the one it replaced comes from the result.
+            const oldTitle = parseStringField(toolCall.result, "oldTitle");
+            return oldTitle ? { lead: <span className="llm-chat-tool-call-old-title">{oldTitle}</span> } : null;
+        }
         case "get_note": {
             const meta = parseNoteMeta(toolCall.result);
             return meta ? { body: <NoteMetaCard {...meta} /> } : null;
         }
         case "get_note_content": {
-            const content = parseNoteContent(toolCall.result);
+            const content = parseStringField(toolCall.result, "content");
             // A preview shows two lines, so the start of a long note is enough to flatten.
             const preview = content ? markdownToPlainPreview(content.slice(0, CONTENT_PREVIEW_SOURCE_LENGTH)) : "";
             return preview ? { body: <div className="llm-chat-note-card"><div className="llm-chat-note-result-preview">{preview}</div></div> } : null;
@@ -370,10 +377,11 @@ function parseNoteMeta(result: string): NoteMeta | null {
     };
 }
 
-function parseNoteContent(result: string): string | null {
+/** A string field of a JSON object result, or `null` when the result has no such field. */
+function parseStringField(result: string, field: string): string | null {
     try {
         const parsed: unknown = JSON.parse(result);
-        return isRecord(parsed) && typeof parsed.content === "string" ? parsed.content : null;
+        return isRecord(parsed) && typeof parsed[field] === "string" ? parsed[field] : null;
     } catch {
         return null;
     }

@@ -362,8 +362,8 @@ describe("note_tools — write tools return post-write content", () => {
         it("renames a note and trims the title", () => {
             const note = buildNote({ id: "rn", title: "Old" });
             note.save = vi.fn() as typeof note.save;
-            const result = getTool("rename_note").execute({ noteId: "rn", newTitle: "  New  " }) as { title: string };
-            expect(result.title).toBe("New");
+            const result = getTool("rename_note").execute({ noteId: "rn", newTitle: "  New  " });
+            expect(result).toMatchObject({ title: "New", oldTitle: "Old" });
             expect(note.title).toBe("New");
             expect(note.save).toHaveBeenCalledOnce();
         });
