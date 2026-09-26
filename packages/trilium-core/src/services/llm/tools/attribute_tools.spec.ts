@@ -102,7 +102,7 @@ describe("attribute_tools", () => {
             expect(result.value).toBe("");
         });
 
-        it("rejects a missing note, protected note, dangerous attribute, and missing relation target", () => {
+        it("rejects a missing note, protected note, and missing relation target", () => {
             expect(getTool("set_attribute").execute({ noteId: "missing", type: "label", name: "x" }))
                 .toEqual({ error: "Note not found" });
 
@@ -113,15 +113,32 @@ describe("attribute_tools", () => {
             }))).toMatchObject({ error: expect.stringContaining("protected") });
             protectedNote.isProtected = false;
 
-            const dangerHost = createNote("Danger host");
-            expect(cls.init(() => getTool("set_attribute").execute({
-                noteId: dangerHost.noteId, type: "label", name: "run"
-            }))).toMatchObject({ error: expect.stringContaining("dangerous") });
-
             const relHost = createNote("Relation host");
             expect(cls.init(() => getTool("set_attribute").execute({
                 noteId: relHost.noteId, type: "relation", name: "ref", value: "doesNotExist"
             }))).toEqual({ error: "Target note not found for relation" });
+        });
+
+        it("prefixes a dangerous attribute with disabled: instead of activating it", () => {
+            const note = createNote("Danger host");
+            const result = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: " run ", value: "frontendStartup"
+            }));
+            expect(result).toMatchObject({
+                success: true, type: "label", name: "disabled:run", value: "frontendStartup",
+                disabled: true, message: expect.stringContaining("#run")
+            });
+            expect(note.getOwnedLabelValue("disabled:run")).toBe("frontendStartup");
+            expect(note.hasOwnedLabel("run")).toBe(false);
+
+            const relation = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "relation", name: "renderNote", value: "root"
+            }));
+            expect(relation).toMatchObject({
+                name: "disabled:renderNote", disabled: true, message: expect.stringContaining("~renderNote")
+            });
+            expect(note.getOwnedRelationValue("disabled:renderNote")).toBe("root");
+            expect(note.getOwnedRelation("renderNote")).toBeNull();
         });
 
         it("creates a relation to an existing target note", () => {

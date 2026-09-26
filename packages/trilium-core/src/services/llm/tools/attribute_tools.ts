@@ -56,7 +56,7 @@ export const attributeTools = defineTools({
     },
 
     set_attribute: {
-        description: "Add or update an attribute on a note. If an attribute with the same type and name exists, it is updated; otherwise a new one is created. Use type 'label' for text values, 'relation' for linking to another note (value must be a noteId).",
+        description: "Add or update an attribute on a note. If an attribute with the same type and name exists, it is updated; otherwise a new one is created. Use type 'label' for text values, 'relation' for linking to another note (value must be a noteId). Attributes that run code (such as #run, #widget, ~renderNote) are saved with a 'disabled:' prefix (e.g. #disabled:run) and stay inactive until the user reviews the code and removes the prefix; when that happens, tell the user which note to open and which attribute to rename.",
         inputSchema: z.object({
             noteId: z.string().describe("The ID of the note"),
             type: z.enum(["label", "relation"]).describe("The attribute type"),
@@ -72,11 +72,25 @@ export const attributeTools = defineTools({
             if (note.isProtected) {
                 return { error: "Note is protected and cannot be modified" };
             }
-            if (attributeService.isAttributeDangerous(type, name)) {
-                return { error: `Attribute '${name}' is potentially dangerous and cannot be set by the LLM` };
-            }
             if (type === "relation" && value && !becca.getNote(value)) {
                 return { error: "Target note not found for relation" };
+            }
+
+            if (attributeService.isAttributeDangerous(type, name)) {
+                const sigil = type === "label" ? "#" : "~";
+                const disabledName = `disabled:${name.trim()}`;
+                note.setAttribute(type, disabledName, value);
+
+                return {
+                    success: true,
+                    noteId: note.noteId,
+                    type,
+                    name: disabledName,
+                    value,
+                    disabled: true,
+                    message: `${sigil}${name.trim()} can run code, so it was saved as ${sigil}${disabledName} and is inactive. `
+                        + `Tell the user to review the code and, if they trust it, remove the "disabled:" prefix from the attribute to activate it.`
+                };
             }
 
             note.setAttribute(type, name, value);

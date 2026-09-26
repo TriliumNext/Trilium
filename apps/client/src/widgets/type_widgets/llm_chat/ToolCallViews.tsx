@@ -54,7 +54,9 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
     }
 
     if (toolCall.toolName === "set_attribute") {
-        const attribute = parseAttribute(toolCall.input);
+        // The result names the attribute as saved, which differs from the input when the tool prefixed it with `disabled:`.
+        const saved = toolCall.result ? parseAttribute(parseJson(toolCall.result)) : null;
+        const attribute = saved ?? parseAttribute(toolCall.input);
         return attribute ? { lead: <AttributePill {...attribute} /> } : null;
     }
 

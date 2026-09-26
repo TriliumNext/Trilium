@@ -173,7 +173,15 @@ class="admonition note">
   <li>At attribute level:
     <ul>
       <li>Get the full list of attributes, or a specific attribute.</li>
-      <li>Set the value of an attribute.</li>
+      <li>Set the value of an attribute.
+        <ul>
+          <li>An attribute that runs code, such as <code>#run</code>, <code>#widget</code> or <code>~renderNote</code>,
+            is saved with a <code>disabled:</code> prefix (for example <code>#disabled:widget</code>),
+            the same way a safe import disables it (see <a class="reference-link" href="#root/_help_YzMcWlCVeW09">Active content</a>).
+            The AI tells you which note it is on; review the code, then remove the <code>disabled:</code> prefix
+            to activate it.</li>
+        </ul>
+      </li>
       <li>Delete an attribute.</li>
     </ul>
   </li>

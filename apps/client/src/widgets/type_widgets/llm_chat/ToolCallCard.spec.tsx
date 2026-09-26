@@ -559,9 +559,15 @@ describe("ToolCallCard", () => {
                 toolName: "delete_attribute",
                 input: { noteId: "n", attributeId: "a4" },
                 result: JSON.stringify({ success: true, attributeId: "a4", type: "label", name: "temp", value: "1" })
+            },
+            {
+                id: "5",
+                toolName: "set_attribute",
+                input: { noteId: "n", type: "label", name: "run", value: "frontendStartup" },
+                result: JSON.stringify({ success: true, noteId: "n", type: "label", name: "disabled:run", value: "frontendStartup", disabled: true })
             }
         ]);
-        const [ list, single, set, deleted ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const [ list, single, set, deleted, disabled ] =[ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
         const pills = (line: Element | undefined) => [ ...(line?.querySelectorAll(".llm-chat-attribute") ?? []) ].map(pill => pill.textContent);
 
         expect(list instanceof HTMLDetailsElement).toBe(true);
@@ -576,6 +582,8 @@ describe("ToolCallCard", () => {
 
         expect(pills(deleted)).toEqual([ "#temp=1" ]);
         expect(deleted?.querySelector(".llm-chat-attribute")?.classList.contains("llm-chat-attribute-deleted")).toBe(true);
+
+        expect(pills(disabled)).toEqual([ "#disabled:run=frontendStartup" ]);
     });
 
     it("shows the icons an icon search found, and how many it left out", () => {
