@@ -2802,7 +2802,6 @@
     "thought_process": "Processo de raciocínio",
     "tool_calls": "{{count}} chamada(s) de ferramenta",
     "input": "Entrada",
-    "input_streaming": "Entrada (transmitindo…)",
     "edit_index": "Editar {{index}} de {{total}}",
     "error_api": "Erro de API (HTTP {{status}})",
     "error_show_details": "Mostrar detalhes",

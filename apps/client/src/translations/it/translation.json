@@ -3070,7 +3070,6 @@
     "edit_index": "Modifica {{index}} di {{total}}",
     "retry": "Riprova",
     "web_search_unavailable_gemini": "Non disponibile sui modelli Gemini quando l'accesso alle note è attivo: l'API di Google non consente di combinare entrambe le funzioni. Disattiva l'accesso alle note o passa a un altro provider per utilizzare la ricerca sul web.",
-    "input_streaming": "Input (in streaming…)",
     "attach_file": "Allega un'immagine, un PDF o un file di testo",
     "remove_attachment": "Rimuovi allegato",
     "attachment_upload_failed": "Caricamento non riuscito \"{{name}}\".",

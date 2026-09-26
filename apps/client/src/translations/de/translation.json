@@ -352,7 +352,8 @@
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
     "natural_sort_language": "Natürliche Sortiersprache",
     "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"zh-CN\" für Chinesisch.",
-    "sort": "Sortieren"
+    "sort": "Sortieren",
+    "sorting_criteria_description": "Notizen sind nach der ersten Ebene sortiert; die erste Ebene dient nur zur Entscheidung zw. Notizen, die auf der vorherigen Ebene gleichwertig waren."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Anhänge zur Notiz hochladen",
@@ -2765,7 +2766,6 @@
     "edit_index": "Bearbeitung {{index}} von {{total}}",
     "retry": "Erneut versuchen",
     "web_search_unavailable_gemini": "Bei Gemini-Modellen nicht verfügbar solange der Notizzugriff aktiv ist — Googles API erlaubt keine Kombination beider Funktionen. Notizzugriff deaktivieren oder einen anderen Anbieter wählen um die Websuche zu nutzen.",
-    "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
     "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",

@@ -2216,7 +2216,6 @@
     "tokens_used_with_model": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
     "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
     "web_search_unavailable_gemini": "غير متاح في نماذج Gemini أثناء تفعيل الوصول إلى الملاحظات — واجهة Google البرمجية لا تسمح بدمج الاثنين معًا. عطّل الوصول إلى الملاحظات أو بدّل إلى مزود آخر لاستخدام البحث على الويب.",
-    "input_streaming": "الإدخال (تدفق مباشر…)",
     "attach_file": "إرفاق صورة أو ملف PDF أو ملف نصي",
     "remove_attachment": "إزالة المرفق",
     "attachment_upload_failed": "فشل رفع \"{{name}}\".",

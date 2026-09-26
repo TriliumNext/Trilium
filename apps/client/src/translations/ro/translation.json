@@ -2918,7 +2918,6 @@
     "thought_process": "Procesul de gândire",
     "tool_calls": "{{count}} apel(uri) de unelte",
     "input": "Intrare",
-    "input_streaming": "Intrare (streaming…)",
     "edit_index": "Editarea {{index}} din {{total}}",
     "result": "Rezultat",
     "error": "Eroare",

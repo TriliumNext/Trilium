@@ -3041,7 +3041,6 @@
     "edit_index": "编辑第 {{index}} 条（共 {{total}} 条）",
     "retry": "重试",
     "web_search_unavailable_gemini": "在笔记访问功能开启时，Gemini 模型不可用 — Google 的 API 不允许同时使用两者。如需使用网络搜索，请关闭笔记访问功能，或切换到其他提供商。",
-    "input_streaming": "正在输入（流式传输…）",
     "attach_file": "添加图片、PDF 或文本文件",
     "remove_attachment": "移除附件",
     "attachment_upload_failed": "上传“{{name}}”失败。",
