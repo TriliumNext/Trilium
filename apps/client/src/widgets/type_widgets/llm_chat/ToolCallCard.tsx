@@ -9,6 +9,7 @@ import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
 import type { ToolCall } from "./llm_chat_types.js";
+import { getToolCallView } from "./ToolCallViews.js";
 
 interface ToolCallContext {
     /** The primary note the tool operates on or created. */
@@ -87,7 +88,7 @@ function getErrorMessage(result: string): string {
 }
 
 /** Build the label content for a tool call section. */
-function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
+function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: string }) {
     const { noteId: refNoteId, parentNoteId: refParentId, detailText } = getToolCallContext(toolCall);
     const hasError = toolCall.isError;
 
@@ -112,6 +113,7 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
                     )}
                 </span>
             )}
+            {summary && <span className="llm-chat-tool-call-result-count">{summary}</span>}
             {hasError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>
     );
@@ -119,7 +121,8 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
 
 /**
  * A single tool call. It folds open only for what is worth reading inline: the input while it
- * streams, the diff of an `edit_note_content` call, or why the call failed. The raw input and
+ * streams, the diff of an `edit_note_content` call, why the call failed, or the view
+ * `getToolCallView()` builds for the tools that have one. The raw input and
  * result are in the dialog the debug button opens.
  */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
@@ -131,13 +134,14 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
         ? parseNoteContentEdits(toolCall.input?.edits)
         : null;
     const errorMessage = hasError && toolCall.result ? getErrorMessage(toolCall.result) : null;
+    const view = isStreamingInput ? null : getToolCallView(toolCall);
 
     const className = `llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`;
     const icon = toolCallIcon(toolCall);
-    const label = <ToolCallLabel toolCall={toolCall} />;
+    const label = <ToolCallLabel toolCall={toolCall} summary={view?.summary} />;
     const debugButton = <ToolCallDebugButton toolCall={toolCall} />;
 
-    if (!isStreamingInput && !noteContentEdits && !errorMessage) {
+    if (!isStreamingInput && !noteContentEdits && !errorMessage && !view?.body) {
         return (
             <div className={`expandable-line ${className}`}>
                 <div className="expandable-line-header">
@@ -165,6 +169,7 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
                 </div>
             )}
             {errorMessage && <p className="llm-chat-tool-call-error-message">{errorMessage}</p>}
+            {view?.body}
         </ExpandableSection>
     );
 }

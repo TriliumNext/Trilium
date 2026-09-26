@@ -81,3 +81,8 @@
 @keyframes llm-chat-tool-call-caret {
     50% { opacity: 0; }
 }
+
+.llm-chat-tool-call-result-count {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
