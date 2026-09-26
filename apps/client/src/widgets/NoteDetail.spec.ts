@@ -1,3 +1,5 @@
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import NoteContext from "../components/note_context";
@@ -8,7 +10,7 @@ import froca from "../services/froca";
 // global the test env doesn't provide. The pure function under test never touches the tree, so stub it.
 vi.mock("./note_tree", () => ({ default: class {} }));
 
-import { getExtendedWidgetType, isContextInActiveTab } from "./NoteDetail";
+import { getExtendedWidgetType, isContextInActiveTab, useDeferredDetailFocus } from "./NoteDetail";
 
 const FAKE_NOTE_ID = "blob-stub-note";
 
@@ -100,5 +102,43 @@ describe("getExtendedWidgetType blob-stub routing", () => {
         const note = fakeNote({ type: "launcher", getBlob });
         expect(await getExtendedWidgetType(note, fakeContext())).toBe("doc");
         expect(getBlob).not.toHaveBeenCalled();
+    });
+});
+
+describe("useDeferredDetailFocus", () => {
+    const replay = vi.fn();
+    let request: ReturnType<typeof useDeferredDetailFocus> | undefined;
+    const host = document.createElement("div");
+
+    function Harness({ isReady }: { isReady: boolean }) {
+        request = useDeferredDetailFocus(isReady, replay);
+        return null;
+    }
+    const renderHarness = (isReady: boolean) => act(() => render(h(Harness, { isReady }), host));
+
+    afterEach(() => {
+        render(null, host);
+        replay.mockReset();
+    });
+
+    it("holds a focus that arrives before the note's type widget shows, and replays it once", () => {
+        renderHarness(false);
+        request?.({ ntxId: "ntx-1" });
+        expect(replay).not.toHaveBeenCalled();
+
+        renderHarness(true);
+        expect(replay).toHaveBeenCalledExactlyOnceWith({ ntxId: "ntx-1" });
+
+        renderHarness(false);
+        renderHarness(true);
+        expect(replay).toHaveBeenCalledOnce();
+    });
+
+    it("leaves a focus that arrives once the widget shows to the widget itself", () => {
+        renderHarness(true);
+        request?.({ ntxId: "ntx-1" });
+        renderHarness(false);
+        renderHarness(true);
+        expect(replay).not.toHaveBeenCalled();
     });
 });

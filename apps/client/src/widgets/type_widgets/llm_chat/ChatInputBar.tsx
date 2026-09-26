@@ -154,13 +154,18 @@ export default function ChatInputBar({
     submitRef.current = handleSubmit;
 
     // Expose the reply-input editor to the chat hook so timeline actions (e.g. quoting a selection)
-    // can write into it. A stable wrapper reads the live api ref, so it works regardless of whether
-    // the CKEditor's imperative handle has committed by the time this effect first runs.
+    // can write into it and the note can focus it. Registered once the editor has initialized, so a
+    // focus the hook holds for it lands on an editor that exists.
     const registerInputEditor = chat.registerInputEditor;
+    const [ isEditorReady, setIsEditorReady ] = useState(false);
     useEffect(() => {
-        registerInputEditor({ appendBlockQuote: (text) => editorApiRef.current?.appendBlockQuote(text) });
+        if (!isEditorReady) return;
+        registerInputEditor({
+            appendBlockQuote: (text) => editorApiRef.current?.appendBlockQuote(text),
+            focus: () => editorApiRef.current?.focus()
+        });
         return () => registerInputEditor(undefined);
-    }, [registerInputEditor]);
+    }, [registerInputEditor, isEditorReady]);
 
     // Reflect streaming state into CKEditor's read-only lock.
     useEffect(() => {
@@ -342,6 +347,7 @@ export default function ChatInputBar({
                         }}
                         onInitialized={(editor) => {
                             editorInstanceRef.current = editor;
+                            setIsEditorReady(true);
                             const insertNewBlock = () => {
                                 insertNewBlockCommand(editor);
                                 editor.editing.view.scrollToTheSelection();

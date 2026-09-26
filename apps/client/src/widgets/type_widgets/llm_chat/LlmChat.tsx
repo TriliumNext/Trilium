@@ -3,7 +3,7 @@ import "./LlmChat.css";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
-import { useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks.js";
+import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks.js";
 import { TypeWidgetProps } from "../type_widget.js";
 import { useChatContextMenu } from "./chat_context_menu.js";
 import { useChatHighlights } from "./chat_highlights.js";
@@ -44,6 +44,11 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
 
     // Make the "Show quote source" links in submitted quotes jump to the referenced message.
     useChatMessageJumps(chat.scrollContainerRef);
+
+    // Switching to the tab or creating the note focuses the reply input, like other types' editors.
+    useTriliumEvent("focusOnDetail", ({ ntxId }) => {
+        if (ntxId === noteContext?.ntxId) chat.focusInput();
+    });
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,

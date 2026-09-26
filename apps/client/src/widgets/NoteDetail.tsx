@@ -3,9 +3,9 @@ import "./NoteDetail.css";
 import clsx from "clsx";
 import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
-import appContext from "../components/app_context";
+import appContext, { type EventData } from "../components/app_context";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
@@ -138,6 +138,15 @@ export default function NoteDetail() {
         }
     });
 
+    // A focus requested while the note is still switching (e.g. right after creating it) reaches
+    // a type widget that is hidden or not mounted yet, so it is sent again once the new one shows.
+    const isTypeWidgetShown = !!note && note.noteId === noteContext?.noteId && !!type && activeNoteType === type;
+    const requestDetailFocus = useDeferredDetailFocus(isTypeWidgetShown,
+        (data) => parentComponent.handleEventInChildren("focusOnDetail", data));
+    useTriliumEvent("focusOnDetail", (data) => {
+        if (data.ntxId === ntxId) requestDetailFocus(data);
+    });
+
     // Automatically focus the editor.
     useTriliumEvent("activeNoteChanged", ({ ntxId: eventNtxId }) => {
         if (eventNtxId != ntxId) return;
@@ -240,6 +249,27 @@ export default function NoteDetail() {
             <NoteDetailLoadingOverlay noteContext={noteContext} />
         </div>
     );
+}
+
+/**
+ * Holds a `focusOnDetail` that arrives while `isReady` is false and calls `replay` with it once
+ * `isReady` turns true. A request made while ready is left to the widgets that already received it.
+ */
+export function useDeferredDetailFocus(isReady: boolean, replay: (data: EventData<"focusOnDetail">) => void) {
+    const pendingRef = useRef<EventData<"focusOnDetail">>();
+    const replayRef = useRef(replay);
+    replayRef.current = replay;
+
+    useEffect(() => {
+        const pending = pendingRef.current;
+        if (!isReady || !pending) return;
+        pendingRef.current = undefined;
+        replayRef.current(pending);
+    }, [ isReady ]);
+
+    return useCallback((data: EventData<"focusOnDetail">) => {
+        if (!isReady) pendingRef.current = data;
+    }, [ isReady ]);
 }
 
 /**

@@ -96,6 +96,21 @@ describe("useLlmChat", () => {
         streamChatCompletionMock.mockReset();
     });
 
+    it("focuses the input at once when it is ready, or as soon as it registers", async () => {
+        await mountChat();
+        const early = { appendBlockQuote: vi.fn(), focus: vi.fn() };
+        api().focusInput();
+        api().registerInputEditor(early);
+        expect(early.focus).toHaveBeenCalledOnce();
+
+        // The request is spent: registering again does not steal the focus a second time.
+        const ready = { appendBlockQuote: vi.fn(), focus: vi.fn() };
+        api().registerInputEditor(ready);
+        expect(ready.focus).not.toHaveBeenCalled();
+        api().focusInput();
+        expect(ready.focus).toHaveBeenCalledOnce();
+    });
+
     it("selects the default model with its provider and annotates model costs", async () => {
         await mountChat();
 

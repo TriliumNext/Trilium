@@ -18,6 +18,7 @@ export type AttachmentBlock = ImageBlock | FileBlock | TextFileBlock;
 /** The subset of the reply-input editor API the chat needs to write into it imperatively. */
 export interface InputEditorApi {
     appendBlockQuote(markdown: string): void;
+    focus(): void;
 }
 
 /** Distance (px) past the content bottom edge within which the timeline counts as "at bottom". */
@@ -138,6 +139,8 @@ export interface UseLlmChatReturn {
     registerInputEditor: (api: InputEditorApi | undefined) => void;
     /** Append a preformatted block (e.g. a Markdown quote) to the reply input and focus it. */
     appendToInput: (text: string) => void;
+    /** Focus the reply input, or, while its editor is still loading, as soon as it registers. */
+    focusInput: () => void;
 
     /** Read the current reply-input draft text (kept in a ref, not state — see {@link hasInputText}). */
     getInput: () => string;
@@ -268,11 +271,24 @@ export function useLlmChat(
     const pendingAttachmentsRef = useRef(pendingAttachments);
     pendingAttachmentsRef.current = pendingAttachments;
 
-    // The reply-input editor, registered by ChatInputBar once mounted. Held in a ref so timeline
-    // actions (e.g. quoting a selection) can write into it without a render-order dependency.
+    // The reply-input editor, registered by ChatInputBar once its CKEditor has initialized. Held in a
+    // ref so timeline actions (e.g. quoting a selection) can write into it without a render-order
+    // dependency.
     const inputEditorRef = useRef<InputEditorApi | undefined>();
+    const isInputFocusPendingRef = useRef(false);
     const registerInputEditor = useCallback((api: InputEditorApi | undefined) => {
         inputEditorRef.current = api;
+        if (api && isInputFocusPendingRef.current) {
+            isInputFocusPendingRef.current = false;
+            api.focus();
+        }
+    }, []);
+    const focusInput = useCallback(() => {
+        if (inputEditorRef.current) {
+            inputEditorRef.current.focus();
+        } else {
+            isInputFocusPendingRef.current = true;
+        }
     }, []);
     const appendToInput = useCallback((text: string) => {
         inputEditorRef.current?.appendBlockQuote(text);
@@ -941,6 +957,7 @@ export function useLlmChat(
 
         registerInputEditor,
         appendToInput,
+        focusInput,
         getInput,
 
         // Setters
