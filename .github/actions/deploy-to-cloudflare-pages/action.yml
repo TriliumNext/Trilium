@@ -24,7 +24,7 @@ runs:
 
     # Deploy using Wrangler (use pre-installed wrangler)
     - name: Deploy to Cloudflare Pages
-      uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+      uses: cloudflare/wrangler-action@4e88846969242f7752bcfdaf5511bfbb3985ca47 # v4.1.1
       with:
         apiToken: ${{ inputs.cloudflare_api_token }}
         accountId: ${{ inputs.cloudflare_account_id }}
