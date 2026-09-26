@@ -53,12 +53,11 @@ describe("ToolCallDetailsDialog", () => {
         expect(sections()[1]).toEqual({ heading: "llm_chat.error", code: "Sunny", empty: undefined });
     });
 
-    it("says so when a call has no result yet", async () => {
-        await open({ id: "1", toolName: "read_web_page", input: { url: "https://triliumnotes.org" } });
-        expect(sections()[1]).toEqual({
-            heading: "llm_chat.result",
-            code: undefined,
-            empty: "llm_chat.tool_call_no_result"
-        });
+    it("shows the partial input of a call still streaming as it is, and says it has no result yet", async () => {
+        await open({ id: "1", toolName: "read_web_page", input: {}, inputStreaming: "{\"url\":\"https://tri" });
+        expect(sections()).toEqual([
+            { heading: "llm_chat.input", code: "{\"url\":\"https://tri", empty: undefined },
+            { heading: "llm_chat.result", code: undefined, empty: "llm_chat.tool_call_no_result" }
+        ]);
     });
 });

@@ -65,10 +65,14 @@ describe("ToolCallCard", () => {
         const card = renderCard([
             { id: "1", toolName: "search_icons", input: { query: "rocket" }, result: "[]" },
             { id: "2", toolName: "web_search", input: { query: "weather Sibiu" }, result: "Sunny" },
-            { id: "3", toolName: "read_web_page", input: { url: "https://triliumnotes.org" }, result: "Fetched" }
+            { id: "3", toolName: "read_web_page", input: { url: "https://triliumnotes.org" }, result: "Fetched" },
+            // OpenAI's web_search takes no input and names what it did in its result's action.
+            { id: "4", toolName: "web_search", input: {}, result: JSON.stringify({ action: { type: "search", queries: [ "a", "b" ] } }) },
+            { id: "5", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            { id: "6", toolName: "web_search", input: {}, result: JSON.stringify({ action: { type: "open_page", url: "https://a.com" } }) }
         ]);
         expect([ ...card.querySelectorAll(".llm-chat-tool-call-detail") ].map(detail => detail.textContent))
-            .toEqual([ "rocket", "weather Sibiu", "https://triliumnotes.org" ]);
+            .toEqual([ "rocket", "weather Sibiu", "https://triliumnotes.org", "a; b", "https://a.com" ]);
     });
 
     it("lists the calls as bare lines, folding only those with something to show inline", () => {
@@ -109,6 +113,9 @@ describe("ToolCallCard", () => {
         act(() => line?.querySelector<HTMLButtonElement>(".llm-chat-tool-call-debug")?.click());
         expect(mocks.triggerEvent).toHaveBeenCalledOnce();
         expect((line as HTMLDetailsElement | null)?.open).toBe(false);
+
+        const plain = renderCard([ { id: "2", toolName: "get_attachment", input: { attachmentId: "a" }, result: "Attachment not found", isError: true } ]);
+        expect(plain.querySelector(".llm-chat-tool-call-error-message")?.textContent).toBe("Attachment not found");
     });
 
     it("lists the notes a search found, with their parents and a plain preview", () => {
@@ -688,9 +695,11 @@ describe("ToolCallCard", () => {
             { id: "4", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
             search("5", { query: "t" }, "Web search results for query: \"t\"\n\nLinks: [{\"title\":\"T\",\"url\":\"https://t.org/p\"}]\n\nSummary"),
             { id: "6", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
-            search("7", { query: "q" }, "Searching the web")
+            search("7", { query: "q" }, "Searching the web"),
+            { id: "8", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            search("9", { query: "u" }, [ { url: "https://bad host/", title: "Bad" } ])
         ]);
-        const [ anthropic, , openai, , claude, , bare ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const [ anthropic, , openai, , claude, , bare, , badUrl ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
         const sources = (line: Element | undefined) => [ ...(line?.querySelectorAll(".llm-chat-note-result") ?? []) ].map(row => ({
             text: row.querySelector("a.external")?.textContent,
             href: row.querySelector("a.external")?.getAttribute("href"),
@@ -709,6 +718,7 @@ describe("ToolCallCard", () => {
         expect(sources(claude)).toEqual([ { text: "T", href: "https://t.org/p", domain: "t.org" } ]);
 
         expect(bare instanceof HTMLDetailsElement).toBe(false);
+        expect(sources(badUrl)).toEqual([ { text: "Bad", href: "https://bad host/", domain: "" } ]);
     });
 
     it("links the page a call read, and previews what it read there", () => {

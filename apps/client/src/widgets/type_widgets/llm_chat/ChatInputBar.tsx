@@ -25,8 +25,8 @@ import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
 import ReasoningEffortDropdown from "./ReasoningEffortDropdown.js";
 import { SafeImage } from "./retry_image.js";
-import { getAttachmentLightbox, unreadableReason, useChatAttachments } from "./useChatAttachments.js";
-import { type ModelOption, nativeAttachmentKind, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
+import { getAttachmentLightbox, getUnreadableReasons, useChatAttachments } from "./useChatAttachments.js";
+import { type ModelOption, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
 import { type AttachmentBlock, type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";
@@ -244,14 +244,7 @@ export default function ChatInputBar({
     // shows as selected is exactly what will be sent (see resolveSelectedModel).
     const currentModel = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
     const isSelectedModel = (m: ModelOption) => m === currentModel;
-    const unreadable = unreadableAttachments(currentModel, chat.pendingAttachments);
-    const unreadableReasons = new Map<string, string>();
-    for (const att of unreadable) {
-        const kind = nativeAttachmentKind(att.type, att.mime);
-        if (currentModel && kind) {
-            unreadableReasons.set(att.attachmentId, unreadableReason(currentModel, kind));
-        }
-    }
+    const unreadableReasons = getUnreadableReasons(currentModel, chat.pendingAttachments);
     // Gemini 2.x cannot combine googleSearch with function tools in a single
     // request. When note tools are enabled on a Gemini model we silently drop
     // web search server-side; reflect that here by disabling the toggle so the
@@ -554,10 +547,10 @@ export default function ChatInputBar({
                             text={chat.isStreaming
                                 ? t("llm_chat.stop")
                                 : !currentModel ? t("llm_chat.no_model_selected")
-                                    : unreadable.length > 0 ? t("llm_chat.remove_unreadable_attachments", { model: currentModel.name })
+                                    : unreadableReasons.size > 0 ? t("llm_chat.remove_unreadable_attachments", { model: currentModel.name })
                                         : t("llm_chat.send")}
                             onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
-                            disabled={!chat.isStreaming && (!currentModel || unreadable.length > 0 || (!chat.hasInputText && chat.pendingAttachments.length === 0))}
+                            disabled={!chat.isStreaming && (!currentModel || unreadableReasons.size > 0 || (!chat.hasInputText && chat.pendingAttachments.length === 0))}
                             className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
                         />
                     </div>
@@ -599,7 +592,7 @@ export default function ChatInputBar({
 }
 
 /** A pending attachment above the input, marked when the selected model can't read it. */
-function PendingAttachmentChip({ att, reason, onRemove, disabled }: {
+export function PendingAttachmentChip({ att, reason, onRemove, disabled }: {
     att: AttachmentBlock;
     /** Why the selected model can't read it; undefined when it can. */
     reason?: string;

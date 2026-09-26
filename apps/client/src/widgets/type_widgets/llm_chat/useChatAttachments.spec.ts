@@ -1,11 +1,20 @@
 import type { LlmModelInfo } from "@triliumnext/commons";
+import { h } from "preact";
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
+const mocks = vi.hoisted(() => ({ showError: vi.fn() }));
 vi.mock("../../../services/i18n.js", () => ({
     t: (key: string, options?: Record<string, unknown>) => (options ? `${key} ${JSON.stringify(options)}` : key)
 }));
+vi.mock("../../../services/toast.js", () => ({ default: { showError: mocks.showError } }));
 
-import { acceptAttrFor, getAttachmentLightbox, uploadRefusal } from "./useChatAttachments";
+import { renderInto } from "../../../test/render";
+import {
+    acceptAttrFor, getAttachmentLightbox, getUnreadableReasons, uploadRefusal,
+    type UseChatAttachmentsReturn, useChatAttachments
+} from "./useChatAttachments";
+import type { AttachmentBlock, UseLlmChatReturn } from "./useLlmChat";
 
 describe("getAttachmentLightbox", () => {
     it("previews images and PDFs, and nothing else", () => {
@@ -48,5 +57,47 @@ describe("attachments a model cannot read", () => {
         expect(uploadRefusal(textOnly, file("d.svg", "image/svg+xml"), "image")).toBeUndefined();
         expect(uploadRefusal(imagesOnly, file("cat.png", "image/png"), "image")).toBeUndefined();
         expect(uploadRefusal(undefined, file("report.pdf", "application/pdf"), "binary_file")).toBeUndefined();
+    });
+
+    it("names why the model cannot read each pending attachment, and not the others", () => {
+        const attachments: AttachmentBlock[] = [
+            { type: "image", attachmentId: "img", mime: "image/png", title: "c.png", url: "u" },
+            { type: "image", attachmentId: "svg", mime: "image/svg+xml", title: "d.svg", url: "u" },
+            { type: "file", attachmentId: "pdf", mime: "application/pdf", title: "r.pdf", url: "u" },
+            { type: "text_file", attachmentId: "txt", mime: "text/plain", title: "n.txt", url: "u" }
+        ];
+        expect([ ...getUnreadableReasons(imagesOnly, attachments) ]).toEqual([
+            [ "pdf", `llm_chat.attachment_model_cannot_read_file {"model":"Codex"}` ]
+        ]);
+        expect([ ...getUnreadableReasons(textOnly, attachments).keys() ]).toEqual([ "img", "pdf" ]);
+        expect(getUnreadableReasons(undefined, attachments).size).toBe(0);
+    });
+
+    it("keeps the picker and uploads to what the selected model reads", async () => {
+        const chat = {
+            chatNoteId: "chat1",
+            availableModels: [ { ...textOnly, provider: "deepseek", providerId: "p1" } ],
+            selectedModel: textOnly.id,
+            selectedProvider: "deepseek",
+            selectedProviderId: "p1",
+            addPendingAttachment: vi.fn()
+        } as unknown as UseLlmChatReturn;
+        let result: UseChatAttachmentsReturn | undefined;
+        function Harness() {
+            result = useChatAttachments(chat);
+            return null;
+        }
+        renderInto(h(Harness, {}));
+
+        expect(result?.acceptAttr.split(",")).not.toContain("application/pdf");
+
+        const input = document.createElement("input");
+        Object.defineProperty(input, "files", { value: [ file("report.pdf", "application/pdf") ] });
+        await act(async () => {
+            await result?.handleFilePickerChange({ target: input } as unknown as Event);
+        });
+        expect(mocks.showError)
+            .toHaveBeenCalledExactlyOnceWith(expect.stringContaining("attachment_refused"));
+        expect(chat.addPendingAttachment).not.toHaveBeenCalled();
     });
 });

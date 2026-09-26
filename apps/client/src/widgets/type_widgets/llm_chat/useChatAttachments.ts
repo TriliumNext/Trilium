@@ -3,7 +3,9 @@ import { RefObject } from "preact";
 import { useCallback, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
-import { nativeAttachmentKind, readsAttachmentKind, resolveSelectedModel } from "../../../services/llm_providers.js";
+import {
+    nativeAttachmentKind, readsAttachmentKind, resolveSelectedModel, unreadableAttachments
+} from "../../../services/llm_providers.js";
 import server from "../../../services/server.js";
 import toast from "../../../services/toast.js";
 import type { LightboxOptions } from "../../dialogs/lightbox.js";
@@ -245,6 +247,21 @@ export function acceptAttrFor(model: LlmModelInfo | undefined): string {
 /** Why `model` can't read an attachment of `kind`. */
 export function unreadableReason(model: LlmModelInfo, kind: LlmAttachmentKind): string {
     return t(`llm_chat.attachment_model_cannot_read_${kind}`, { model: model.name });
+}
+
+/** Why `model` can't read each of `attachments`, by attachment ID; readable ones are left out. */
+export function getUnreadableReasons(
+    model: LlmModelInfo | undefined,
+    attachments: AttachmentBlock[]
+): Map<string, string> {
+    const reasons = new Map<string, string>();
+    for (const att of unreadableAttachments(model, attachments)) {
+        const kind = nativeAttachmentKind(att.type, att.mime);
+        if (model && kind) {
+            reasons.set(att.attachmentId, unreadableReason(model, kind));
+        }
+    }
+    return reasons;
 }
 
 /** The error for a file `model` can't read, which is then not uploaded; undefined when it can. */
