@@ -31,6 +31,7 @@ import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
+import { diffTreeChildren, shouldShowReconciledChildren } from "./tree_child_reconciliation.js";
 
 const TPL = /*html*/`
 <div class="tree-wrapper">
@@ -813,13 +814,15 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     async updateNode(node: Fancytree.FancytreeNode) {
         const note = froca.getNoteFromCache(node.data.noteId);
-        const branch = froca.getBranch(node.data.branchId);
+        const branch = froca.getBranch(node.data.branchId, true);
 
         if (!note) {
             console.log(`Node update not possible because note '${node.data.noteId}' was not found.`);
             return;
         } else if (!branch) {
-            console.log(`Node update not possible because branch '${node.data.branchId}' was not found.`);
+            if (node.getParent()) {
+                node.remove();
+            }
             return;
         }
 
@@ -1295,6 +1298,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         const branchRows = loadResults.getBranchRows();
         const { movedActiveNode, parentsOfAddedNodes } = await this.#processBranchRows(branchRows, refreshCtx);
+        this.#reconcileAffectedParents(branchRows);
 
         for (const noteId of loadResults.getNoteIds()) {
             const contentReloaded = loadResults.isNoteContentReloaded(noteId);
@@ -1457,6 +1461,92 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             movedActiveNode,
             parentsOfAddedNodes
         };
+    }
+
+    /**
+     * Sync each parent that appeared in this batch with froca's child list.
+     */
+    #reconcileAffectedParents(branchRows: BranchRow[]) {
+        const parentNoteIds = new Set<string>();
+        for (const branchRow of branchRows) {
+            if (branchRow.parentNoteId) {
+                parentNoteIds.add(branchRow.parentNoteId);
+            }
+        }
+
+        for (const parentNoteId of parentNoteIds) {
+            const note = froca.getNoteFromCache(parentNoteId);
+            if (!note || note.type === "search") {
+                continue;
+            }
+
+            for (const parentNode of this.getNodesByNoteId(parentNoteId)) {
+                this.#reconcileParentNode(parentNode, note);
+            }
+        }
+    }
+
+    #reconcileParentNode(parentNode: Fancytree.FancytreeNode, note: FNote) {
+        const isFolder = note.isFolder();
+        parentNode.folder = isFolder;
+
+        const frocaBranch = froca.getBranch(parentNode.data.branchId, true);
+        const showChildren = shouldShowReconciledChildren({
+            isFolder,
+            treeIsLoaded: parentNode.isLoaded(),
+            treeIsExpanded: parentNode.isExpanded(),
+            frocaIsExpanded: !!frocaBranch?.isExpanded
+        });
+
+        if (!showChildren) {
+            if (!isFolder && parentNode.isLoaded()) {
+                const leftoverChildren = [...(parentNode.getChildren() || [])];
+                for (const child of leftoverChildren) {
+                    child.remove();
+                }
+            }
+            return;
+        }
+
+        const preparedChildren = this.prepareChildren(note);
+        const frocaChildBranchIds: string[] = [];
+        for (const prepared of preparedChildren) {
+            if (prepared.branchId) {
+                frocaChildBranchIds.push(prepared.branchId);
+            }
+        }
+
+        const treeChildren = parentNode.isLoaded() ? (parentNode.getChildren() || []) : [];
+        const treeChildBranchIds = treeChildren.map((child) => child.data.branchId);
+        const { toRemove, toAdd } = diffTreeChildren(treeChildBranchIds, frocaChildBranchIds);
+        const toRemoveSet = new Set(toRemove);
+
+        for (const child of [...treeChildren]) {
+            if (toRemoveSet.has(child.data.branchId)) {
+                child.remove();
+            }
+        }
+
+        const nodesToAdd: Fancytree.FancytreeNewNode[] = [];
+        for (const branchId of toAdd) {
+            const branch = froca.getBranch(branchId, true);
+            if (!branch) {
+                continue;
+            }
+
+            const newNode = this.prepareNode(branch, true);
+            if (newNode) {
+                nodesToAdd.push(newNode);
+            }
+        }
+
+        if (nodesToAdd.length > 0) {
+            parentNode.addChildren(nodesToAdd);
+        }
+
+        if (parentNode.isLoaded()) {
+            this.sortChildren(parentNode);
+        }
     }
 
     async #executeTreeUpdates(refreshCtx: RefreshContext, loadResults: LoadResults) {

@@ -185,6 +185,16 @@ describe("froca_updater - branch changes", () => {
         // branch change => attribute-related => invalidate cache + event
         expect(invalidateSpy).toHaveBeenCalled();
         expect(triggerSpy).toHaveBeenCalledTimes(1);
+
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getBranchRows()).toEqual([
+            expect.objectContaining({
+                branchId,
+                noteId: childId,
+                parentNoteId: parent.noteId,
+                isDeleted: true
+            })
+        ]);
     });
 
     it("returns early for a deleted branch that is not loaded", async () => {

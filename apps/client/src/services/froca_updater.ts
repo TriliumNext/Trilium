@@ -134,6 +134,10 @@ async function processBranchChange(loadResults: LoadResults, ec: EntityChange) {
     let branch = froca.branches[ec.entityId];
 
     if (ec.isErased || ec.entity?.isDeleted) {
+        const branchEntity = ec.entity as FBranchRow | undefined;
+        const noteId = branch?.noteId ?? branchEntity?.noteId;
+        const parentNoteId = branch?.parentNoteId ?? branchEntity?.parentNoteId;
+
         if (branch) {
             const childNote = froca.notes[branch.noteId];
             const parentNote = froca.notes[branch.parentNoteId];
@@ -148,11 +152,17 @@ async function processBranchChange(loadResults: LoadResults, ec: EntityChange) {
                 delete parentNote.childToBranch[branch.noteId];
             }
 
-            if (ec.componentId) {
-                loadResults.addBranch(ec.entityId, ec.componentId);
-            }
-
             delete froca.branches[ec.entityId];
+        }
+
+        // Record identity so the tree can drop leftover nodes when the entity
+        // payload has no noteId (deleted branches are already gone from becca).
+        if (noteId || parentNoteId) {
+            loadResults.addBranch(ec.entityId, ec.componentId || "NA", {
+                noteId,
+                parentNoteId,
+                isDeleted: true
+            });
         }
 
         return;
