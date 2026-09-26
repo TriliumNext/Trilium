@@ -98,7 +98,7 @@ class TestProvider extends BaseProvider {
         return this.applyNoteHint(m, c);
     }
     public callBuildMessages(m: LlmMessage[]) {
-        return this.buildMessages(m);
+        return this.buildMessages(m, "mid");
     }
     /** Reach the base implementation past this class's own override. */
     public callBaseFetchRemoteModels() {
@@ -249,6 +249,22 @@ describe("listModels", () => {
         expect(models.map((m) => m.id)).toEqual(["cheap", "mid", "spendy"]);
     });
 
+    it("lists attachmentKinds only on models that don't read every kind", async () => {
+        class NoPdfProvider extends TestProvider {
+            protected override acceptsAttachment(kind: "image" | "file", modelId: string) {
+                return kind === "image" || modelId === "spendy";
+            }
+        }
+        const fromTable = await new NoPdfProvider().listModels();
+        expect(fromTable.map(m => m.attachmentKinds)).toEqual([["image"], ["image"], undefined]);
+
+        const listed = new NoPdfProvider();
+        listed.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);
+        expect((await listed.listModels()).map(m => m.attachmentKinds)).toEqual([["image"], ["image"]]);
+
+        expect((await new TestProvider().listModels()).some(m => "attachmentKinds" in m)).toBe(false);
+    });
+
     it("merges the remote list with price-table metadata and caches the result", async () => {
         const provider = new TestProvider();
         provider.fetchRemoteModelsMock.mockResolvedValue([{ id: "mid" }, { id: "brand-new" }]);
@@ -371,6 +387,25 @@ describe("buildModelMessage", () => {
         expect(part.type).toBe("text");
         expect(part.text).toContain("<file name=\"image.svg\">");
         expect(part.text).toContain("<svg/>");
+    });
+
+    it("names an attachment the filter rejects, but still inlines an SVG, which is text", () => {
+        beccaStub.getAttachment.mockImplementation((id: string) => makeAttachment(id === "svg1"
+            ? { mime: "image/svg+xml", title: "d.svg", getContent: () => encodeUtf8("<svg/>") }
+            : { mime: id === "f1" ? "application/pdf" : "image/png" }));
+        const msg = buildModelMessage({
+            role: "user",
+            content: [
+                { type: "image", attachmentId: "a1", mime: "image/png" },
+                { type: "file", attachmentId: "f1", mime: "application/pdf", filename: "doc.pdf" },
+                { type: "image", attachmentId: "svg1", mime: "image/svg+xml" }
+            ]
+        }, () => false);
+        const parts = msg.content as any[];
+        expect(parts.map(p => p.type)).toEqual(["text", "text", "text"]);
+        expect(parts[0].text).toContain("[attached image]");
+        expect(parts[1].text).toContain("[attached file: doc.pdf]");
+        expect(parts[2].text).toContain("<svg/>");
     });
 
     it("resolves a file attachment, using part overrides for mime and filename", () => {
@@ -601,6 +636,7 @@ describe("BaseProvider chat / pricing / models / title", () => {
         expect(provider.createdModelIds).toContain("cheap");
         const args = generateTextMock.mock.calls[0][0] as any;
         expect(args.maxOutputTokens).toBe(30);
+        expect(args.reasoning).toBe("none");
         expect(args.messages[0].content).toContain("Some long first message");
     });
 

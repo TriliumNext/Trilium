@@ -46,7 +46,10 @@ vi.mock("./claude_binary.js", () => ({ resolveClaudeBinaryPath: resolveClaudeBin
 // Attachment resolution reads bytes out of Becca, which the core mock above
 // omits — stub it so the multimodal tests drive block construction directly.
 const resolveAttachmentPartMock = vi.hoisted(() => vi.fn());
-vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", () => ({ resolveAttachmentPart: resolveAttachmentPartMock }));
+vi.mock("@triliumnext/core/src/services/llm/attachment_content.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@triliumnext/core/src/services/llm/attachment_content.js")>(),
+    resolveAttachmentPart: resolveAttachmentPartMock
+}));
 
 // The Windows `.cmd` shim delegates to child_process.spawn; the provider never
 // spawns otherwise, so mocking the whole module is safe.
@@ -156,6 +159,51 @@ describe("ClaudeAgentProvider.chatChunks", () => {
         resetClaudeSessionPoolForTests();
         setModelMock.mockClear();
         closeMock.mockClear();
+    });
+
+    it("names Claude Code's web tools the way the other providers name theirs", async () => {
+        const webCall = (id: string, name: string, input: Record<string, unknown>) => [
+            {
+                type: "stream_event",
+                parent_tool_use_id: null,
+                session_id: "sess-1",
+                event: { type: "content_block_start", index: 0, content_block: { type: "tool_use", id, name } }
+            },
+            {
+                type: "assistant",
+                parent_tool_use_id: null,
+                session_id: "sess-1",
+                message: { content: [{ type: "tool_use", id, name, input }] }
+            },
+            {
+                type: "user",
+                parent_tool_use_id: null,
+                session_id: "sess-1",
+                message: { content: [{ type: "tool_result", tool_use_id: id, content: "found" }] }
+            }
+        ];
+        scriptAgent([
+            { type: "system", subtype: "init", session_id: "sess-1" },
+            ...webCall("toolu_s", "WebSearch", { query: "trilium" }),
+            ...webCall("toolu_f", "WebFetch", { url: "https://triliumnotes.org", prompt: "Summarize" }),
+            successResult()
+        ]);
+
+        const provider = new ClaudeAgentProvider();
+        const chunks = await collect(provider.chatChunks([{ role: "user", content: "hi" }], { enableWebSearch: true }));
+
+        expect(chunks.filter(c => c.type.startsWith("tool_")).map(c => [c.type, "toolName" in c ? c.toolName : undefined])).toEqual([
+            ["tool_input_start", "web_search"],
+            ["tool_use", "web_search"],
+            ["tool_result", "web_search"],
+            ["tool_input_start", "read_web_page"],
+            ["tool_use", "read_web_page"],
+            ["tool_result", "read_web_page"]
+        ]);
+        expect(chunks).toContainEqual({
+            type: "tool_use", toolCallId: "toolu_f", toolName: "read_web_page",
+            toolInput: { url: "https://triliumnotes.org", prompt: "Summarize" }
+        });
     });
 
     it("maps stream events, tool calls, results, and usage to chunks in order", async () => {

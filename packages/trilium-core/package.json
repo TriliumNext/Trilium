@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.60",
+    "@ai-sdk/deepseek": "3.0.50",
     "@ai-sdk/google": "4.0.77",
     "@ai-sdk/openai": "4.0.72",
     "@braintree/sanitize-url": "7.1.2",

@@ -24,7 +24,7 @@ import type { Options as AgentOptions, query as queryFn, SDKAssistantMessage, SD
 import type { ContentBlockParam } from "@anthropic-ai/sdk/resources";
 import type { LlmMessage, LlmMessagePart, LlmStreamChunk } from "@triliumnext/commons";
 import { getLog } from "@triliumnext/core";
-import { resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
+import { attachmentPlaceholder, resolveAttachmentPart } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { buildNoteHint } from "@triliumnext/core/src/services/llm/note_hint.js";
 import { anthropicRecommendedIds } from "@triliumnext/core/src/services/llm/providers/anthropic.js";
 import { buildModelList, mergeModelLists, type RemoteModel } from "@triliumnext/core/src/services/llm/providers/base_provider.js";
@@ -46,7 +46,7 @@ import {
     rememberSession as rememberWarmSession,
     takeWarmSession
 } from "./claude_session_pool.js";
-import { attachmentPlaceholder, buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
+import { buildHistoryReplay, flattenContent, hashTranscript } from "./transcript.js";
 
 // Re-exported for existing importers (specs, siblings); the implementations
 // now live in the shared transcript module.
@@ -1009,10 +1009,19 @@ async function pushUserTurn(input: Pushable<SDKUserMessage>, prompt: string | As
     });
 }
 
-/** Strip the MCP prefix so the client shows "search_notes", not "mcp__trilium__search_notes". */
+/**
+ * The name the client knows a tool by: Trilium's tools without their MCP prefix ("search_notes", not
+ * "mcp__trilium__search_notes"), and Claude Code's web tools under the names the other providers give
+ * theirs. Their inputs already carry the `query` and `url` the chat shows.
+ */
 function friendlyToolName(name: string): string {
-    return name.replace(/^mcp__trilium__/, "");
+    return BUILTIN_TOOL_NAMES[name] ?? name.replace(/^mcp__trilium__/, "");
 }
+
+const BUILTIN_TOOL_NAMES: Record<string, string> = {
+    WebSearch: "web_search",
+    WebFetch: "read_web_page"
+};
 
 function flattenToolResult(content: unknown): string {
     if (typeof content === "string") {

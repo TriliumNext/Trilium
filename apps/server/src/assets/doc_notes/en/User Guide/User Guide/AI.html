@@ -119,6 +119,25 @@ class="admonition note">
   <p>Currently only the search native to the LLM provider is supported. External
     search providers such as Exa, Tavily &amp; SearXNG are not yet supported.</p>
 </aside>
+<h3>Thinking</h3>
+<p>Some models reason before they answer. While the model is thinking, its
+  reasoning is shown in full under a spinner; once it is done, it folds into
+  a collapsible <em>Thought process</em> line above the reply.</p>
+<p>How much a model thinks is set per chat, in one of two ways depending
+  on the model:</p>
+<ul>
+  <li>Most models have an <em>Extended thinking</em> switch, next to <em>Web search</em>.</li>
+  <li>Models that offer several levels of reasoning (DeepSeek V4, OpenAI Codex,
+    Antigravity) have a <span class="tn-icon bx bx-brain"></span> reasoning effort
+    dropdown next to the model selector instead. <em>None</em>, where offered,
+    turns thinking off; higher levels give better answers to hard questions,
+    but take longer and cost more.</li>
+</ul>
+<aside class="admonition note">
+  <p>The effort dropdown only appears once Trilium knows the model's levels.
+    For a DeepSeek provider set up with an earlier version of Trilium, edit
+    the provider in the model selection box and press <em>Save</em> once.</p>
+</aside>
 <h3>Note access (tools)</h3>
 <p>Tools allow the agentic AI to understand and operate on notes directly
   within your Trilium instance.</p>
@@ -134,18 +153,39 @@ class="admonition note">
         <ul>
           <li>There are multiple mechanism for the LLM to edit a note: completely by
             re-writing it, find/replace of a text sequence or append.</li>
+          <li>When re-writing a note, the LLM can also change its type (for example
+            from a text note to a code note) or the language of a code note, rewriting
+            the content to match.</li>
           <li>Whenever the AI makes a change, a <a href="#root/_help_vZWERwf8U3nx">revision</a> is
             saved to be able to revert any unwanted changes.</li>
         </ul>
       </li>
-      <li>Create a new note</li>
+      <li>Create a new note
+        <ul>
+          <li>Asked for a drawing, the LLM can create an SVG image note, or turn an
+            existing note into one. It can write only SVG images, not other formats
+            such as PNG.</li>
+        </ul>
+      </li>
       <li>Rename or delete a note.</li>
     </ul>
   </li>
   <li>At attribute level:
     <ul>
       <li>Get the full list of attributes, or a specific attribute.</li>
-      <li>Set the value of an attribute.</li>
+      <li>Set the value of an attribute.
+        <ul>
+          <li>An attribute that runs code, such as <code>#run</code>, <code>#widget</code> or <code>~renderNote</code>,
+            is saved with a <code>disabled:</code> prefix (for example <code>#disabled:widget</code>),
+            the same way a safe import disables it (see <a class="reference-link" href="#root/_help_YzMcWlCVeW09">Active content</a>).
+            If the note already had that attribute enabled, the AI removes it, so none
+            of it runs until you enable the new value. The AI tells you which note
+            it is on; review the code, then enable it with the toggle next to the active
+            content badge beside the note's title or, for a <a class="reference-link"
+            href="#root/_help_HcABDtFCkbFN">Render Note</a>, the <em>Enable render note</em> button
+            in the note.</li>
+        </ul>
+      </li>
       <li>Delete an attribute.</li>
     </ul>
   </li>
@@ -164,6 +204,28 @@ class="admonition note">
   </li>
   <li>Skills (see the dedicated section).</li>
 </ul>
+<p>Each tool the AI uses appears in the chat as a single line naming the
+  tool and the note or query it worked on; a renamed note shows its previous
+  title struck through, a deleted note its title struck through, a moved
+  note where it was moved from and to, an attribute the AI read, set or deleted
+  as a pill (struck through once deleted), an attachment by its title, note
+  and size, and a web page the AI read as a link. A line folds open only
+  when there is something to read inline: the notes a search found, the pages
+  a web search found, the icons an icon search found, the type, attributes
+  or start of the content of a note the AI read, all the attributes of a
+  note, the text of an attachment or of a web page, the User Guide pages
+  the AI looked up or its table of contents (both open in the help panel),
+  the children or the whole subtree of a note, what the AI wrote into a note
+  it created, rewrote or added to, the changes of an edit, or the reason
+  a tool failed. A search also shows how many notes it found, the part of
+  the tree it was confined to, if any, and how many of the matches the AI
+  asked for; each note it lists opens with a click. To see exactly what the
+  AI sent to a tool and what it got back, hover the line and press the <span
+  class="tn-icon bx bx-code-alt"></span> button next to it; on touch screens
+  the button is always shown.</p>
+<p>When the reply stops moving for a couple of seconds while the AI is still
+  at work, for example while it reads what a tool returned, a <em>Still working…</em> line
+  appears under it until the next part of the reply arrives.</p>
 <aside class="admonition warning">
   <p>Currently there is <strong>no permission management</strong> implemented
     for note tools, meaning that the LLM could potentially remove existing
@@ -187,6 +249,19 @@ class="admonition note">
   <li>SVG images (sent as raw HTML).</li>
   <li>Text files.</li>
 </ul>
+<p>Not every model reads every kind of attachment: DeepSeek reads no PDFs,
+  and images only with its vision models; OpenAI Codex, GitHub Copilot and
+  Google Antigravity read images but no PDFs. For such a model:</p>
+<ul>
+  <li>The attach button offers only the kinds the model reads, and a pasted
+    or dropped file it can't read is not attached.</li>
+  <li>After switching to such a model, an attachment it can't read is marked
+    with a <span class="tn-icon bx bx-error"></span> warning, and the message
+    can't be sent until the attachment is removed or another model is selected.</li>
+  <li>An attachment sent in an earlier message reaches the model as its name
+    only, such as <code>[attached file: report.pdf]</code>, so it can tell you
+    it doesn't see the content.</li>
+</ul>
 <p>To upload an attachment:</p>
 <ul>
   <li>Press the dedicated <em>Attach</em> button (paperclip icon) underneath the
@@ -199,6 +274,12 @@ class="admonition note">
   <li>Images have a small thumbnail for easy identifications.</li>
   <li>Every attachment can be deleted by pressing their corresponding X button.</li>
 </ul>
+<p>Clicking an image or a PDF, either its chip above the text box or where
+  it appears in a sent message, opens it in a viewer: an image can be zoomed
+  and panned there, a PDF read page by page. The button next to the viewer's
+  close button opens the original file in a new browser tab. <kbd>Ctrl</kbd>-clicking
+  instead opens an image in a new browser tab, and a PDF as an attachment
+  in a new Trilium tab.</p>
 <p>When an attachment is present, the LLM is instructed to consider the attachment
   with priority, even if it has access to the current note.</p>
 <aside class="admonition note">
@@ -227,6 +308,9 @@ class="admonition note">
     href="#root/_help_SPirpZypehBG">Backend scripts</a>.</li>
   <li>Frontend scripting: to be able to write proper <a href="#root/_help_yIhgI5H7A2Sm">front-end scripts</a> (basic
     scripts, widgets,&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>).</li>
+  <li>Dashboards: to build a <a class="reference-link" href="#root/_help_IF7Q6I9x7zuw">Dashboard</a> and
+    its widgets, including interactive ones made with a <a class="reference-link"
+    href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
 </ul>
 <p>When <em>Note tools</em> are enabled the skills will automatically be made
   available to the AI, so no user interaction is required.</p>

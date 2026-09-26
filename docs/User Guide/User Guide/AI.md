@@ -90,6 +90,18 @@ This feature is on by default but it can easily be disabled by clicking on the m
 > [!NOTE]
 > Currently only the search native to the LLM provider is supported. External search providers such as Exa, Tavily & SearXNG are not yet supported.
 
+### Thinking
+
+Some models reason before they answer. While the model is thinking, its reasoning is shown in full under a spinner; once it is done, it folds into a collapsible _Thought process_ line above the reply.
+
+How much a model thinks is set per chat, in one of two ways depending on the model:
+
+*   Most models have an _Extended thinking_ switch, next to _Web search_.
+*   Models that offer several levels of reasoning (DeepSeek V4, OpenAI Codex, Antigravity) have a <span class="tn-icon bx bx-brain"></span> reasoning effort dropdown next to the model selector instead. _None_, where offered, turns thinking off; higher levels give better answers to hard questions, but take longer and cost more.
+
+> [!NOTE]
+> The effort dropdown only appears once Trilium knows the model's levels. For a DeepSeek provider set up with an earlier version of Trilium, edit the provider in the model selection box and press _Save_ once.
+
 ### Note access (tools)
 
 Tools allow the agentic AI to understand and operate on notes directly within your Trilium instance.
@@ -103,12 +115,15 @@ Here are a few tools that Trilium provides for the LLM:
     *   Get the metadata or content of a note.
     *   Edit a note
         *   There are multiple mechanism for the LLM to edit a note: completely by re-writing it, find/replace of a text sequence or append.
+        *   When re-writing a note, the LLM can also change its type (for example from a text note to a code note) or the language of a code note, rewriting the content to match.
         *   Whenever the AI makes a change, a [revision](Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md) is saved to be able to revert any unwanted changes.
     *   Create a new note
+        *   Asked for a drawing, the LLM can create an SVG image note, or turn an existing note into one. It can write only SVG images, not other formats such as PNG.
     *   Rename or delete a note.
 *   At attribute level:
     *   Get the full list of attributes, or a specific attribute.
     *   Set the value of an attribute.
+        *   An attribute that runs code, such as `#run`, `#widget` or `~renderNote`, is saved with a `disabled:` prefix (for example `#disabled:widget`), the same way a safe import disables it (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Active%20content.md">Active content</a>). If the note already had that attribute enabled, the AI removes it, so none of it runs until you enable the new value. The AI tells you which note it is on; review the code, then enable it with the toggle next to the active content badge beside the note's title or, for a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, the _Enable render note_ button in the note.
     *   Delete an attribute.
 *   At tree level:
     *   Get the direct children of a note.
@@ -118,6 +133,10 @@ Here are a few tools that Trilium provides for the LLM:
     *   Get metadata for an attachment.
     *   Get the content of an attachment.
 *   Skills (see the dedicated section).
+
+Each tool the AI uses appears in the chat as a single line naming the tool and the note or query it worked on; a renamed note shows its previous title struck through, a deleted note its title struck through, a moved note where it was moved from and to, an attribute the AI read, set or deleted as a pill (struck through once deleted), an attachment by its title, note and size, and a web page the AI read as a link. A line folds open only when there is something to read inline: the notes a search found, the pages a web search found, the icons an icon search found, the type, attributes or start of the content of a note the AI read, all the attributes of a note, the text of an attachment or of a web page, the User Guide pages the AI looked up or its table of contents (both open in the help panel), the children or the whole subtree of a note, what the AI wrote into a note it created, rewrote or added to, the changes of an edit, or the reason a tool failed. A search also shows how many notes it found, the part of the tree it was confined to, if any, and how many of the matches the AI asked for; each note it lists opens with a click. To see exactly what the AI sent to a tool and what it got back, hover the line and press the <span class="tn-icon bx bx-code-alt"></span> button next to it; on touch screens the button is always shown.
+
+When the reply stops moving for a couple of seconds while the AI is still at work, for example while it reads what a tool returned, a _Still working…_ line appears under it until the next part of the reply arrives.
 
 > [!WARNING]
 > Currently there is **no permission management** implemented for note tools, meaning that the LLM could potentially remove existing notes or clutter the tree with notes. Generally most actions are easily reversible (deleting the notes, restoring deleted notes, reverting modifications to a note), but there are some that are harder to revert (e.g. setting an attribute because there is no attribute history).
@@ -134,6 +153,12 @@ Since Trilium v0.140.0, <a class="reference-link" href="Basic%20Concepts%20and%
 *   SVG images (sent as raw HTML).
 *   Text files.
 
+Not every model reads every kind of attachment: DeepSeek reads no PDFs, and images only with its vision models; OpenAI Codex, GitHub Copilot and Google Antigravity read images but no PDFs. For such a model:
+
+*   The attach button offers only the kinds the model reads, and a pasted or dropped file it can't read is not attached.
+*   After switching to such a model, an attachment it can't read is marked with a <span class="tn-icon bx bx-error"></span> warning, and the message can't be sent until the attachment is removed or another model is selected.
+*   An attachment sent in an earlier message reaches the model as its name only, such as `[attached file: report.pdf]`, so it can tell you it doesn't see the content.
+
 To upload an attachment:
 
 *   Press the dedicated _Attach_ button (paperclip icon) underneath the text box.
@@ -143,6 +168,8 @@ Once one or more attachments are uploaded, they will appear directly above the t
 
 *   Images have a small thumbnail for easy identifications.
 *   Every attachment can be deleted by pressing their corresponding X button.
+
+Clicking an image or a PDF, either its chip above the text box or where it appears in a sent message, opens it in a viewer: an image can be zoomed and panned there, a PDF read page by page. The button next to the viewer's close button opens the original file in a new browser tab. <kbd>Ctrl</kbd>\-clicking instead opens an image in a new browser tab, and a PDF as an attachment in a new Trilium tab.
 
 When an attachment is present, the LLM is instructed to consider the attachment with priority, even if it has access to the current note.
 
@@ -166,6 +193,7 @@ The following skills are built-in:
 *   Search syntax: understands the full syntax of <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.
 *   Backend scripting: to be able to write proper <a class="reference-link" href="Scripting/Backend%20scripts.md">Backend scripts</a>.
 *   Frontend scripting: to be able to write proper [front-end scripts](Scripting/Frontend%20Basics.md) (basic scripts, widgets, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>).
+*   Dashboards: to build a <a class="reference-link" href="Collections/Dashboard.md">Dashboard</a> and its widgets, including interactive ones made with a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.
 
 When _Note tools_ are enabled the skills will automatically be made available to the AI, so no user interaction is required.
 

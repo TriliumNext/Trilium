@@ -7,6 +7,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { isToolErrorResult } from "@triliumnext/commons";
 import { app_info as appInfo } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
@@ -34,7 +35,9 @@ function registerTool(server: McpServer, name: string, def: ToolDefinition) {
                 : def.execute(args);
         });
 
-        return { content: [{ type: "text", text: JSON.stringify(result) }] };
+        const content: CallToolResult["content"] = [{ type: "text", text: JSON.stringify(result) }];
+        // Without `isError`, an agent (and the chat behind it) takes a failure for a success.
+        return isToolErrorResult(result) ? { content, isError: true } : { content };
     });
 }
 

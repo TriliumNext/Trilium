@@ -3,11 +3,11 @@
  * tool assembly, model pricing, and title generation.
  */
 
-import { type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
+import { LLM_ATTACHMENT_KINDS, type LlmAttachmentKind, type LlmMessage, type LlmMessagePart } from "@triliumnext/commons";
 import { type FilePart, generateText, type ImagePart, type LanguageModel, type ModelMessage, stepCountIs, streamText, type SystemModelMessage, type TextPart, type ToolSet } from "ai";
 
 import { getLog } from "../../log.js";
-import { resolveAttachmentPart } from "../attachment_content.js";
+import { attachmentPlaceholder, resolveAttachmentPart } from "../attachment_content.js";
 import { llmFetch } from "./fetch.js";
 import { buildNoteHint } from "../note_hint.js";
 import { buildSystemPrompt as composeSystemPrompt } from "../system_prompt.js";
@@ -94,10 +94,14 @@ const MODEL_LIST_TIMEOUT_MS = 10_000;
  * the provider-neutral {@link resolveAttachmentPart} result into `ai`'s block
  * shapes. Returns null (and the caller drops the part) when it can't resolve.
  */
-function resolveMessagePart(part: LlmMessagePart): TextPart | ImagePart | FilePart | null {
+function resolveMessagePart(part: LlmMessagePart, accepts: AttachmentFilter): TextPart | ImagePart | FilePart | null {
     const resolved = resolveAttachmentPart(part);
     if (!resolved) {
         return null;
+    }
+    if (resolved.kind !== "text" && part.type !== "text" && !accepts(resolved.kind)) {
+        // Text parts can be joined with no separator (`@ai-sdk/deepseek` does), so the placeholder carries its own line breaks.
+        return { type: "text", text: `\n${attachmentPlaceholder(part)}\n` };
     }
     switch (resolved.kind) {
         case "text":
@@ -109,17 +113,21 @@ function resolveMessagePart(part: LlmMessagePart): TextPart | ImagePart | FilePa
     }
 }
 
+/** Whether a model reads an attachment of this kind natively. Text attachments are always inlined. */
+export type AttachmentFilter = (kind: LlmAttachmentKind) => boolean;
+
 /**
  * Build a single ModelMessage from an LlmMessage. Plain string content stays
- * as-is; multimodal content is resolved into AI SDK text/image/file parts.
+ * as-is; multimodal content is resolved into AI SDK text/image/file parts, and
+ * an attachment `accepts` rejects becomes an `[attached …]` placeholder.
  */
-export function buildModelMessage(m: LlmMessage): ModelMessage {
+export function buildModelMessage(m: LlmMessage, accepts: AttachmentFilter = () => true): ModelMessage {
     const role = m.role as "user" | "assistant";
     if (typeof m.content === "string") {
         return { role, content: m.content };
     }
     const resolved = m.content
-        .map(resolveMessagePart)
+        .map(part => resolveMessagePart(part, accepts))
         .filter((p): p is TextPart | ImagePart | FilePart => p !== null);
     // Assistant turns can only carry TextParts (per the AI SDK type), so
     // strip any stray attachments — they only make sense on user turns anyway.
@@ -293,11 +301,19 @@ export abstract class BaseProvider implements LlmProvider {
         if (!remote || remote.length === 0) {
             // The provider doesn't support dynamic listing, or the endpoint
             // returned nothing — the price-table catalog is the answer, not an error.
-            return this.getAvailableModels();
+            return this.withAttachmentKinds(this.getAvailableModels());
         }
-        const merged = mergeModelLists(this.getAvailableModels(), remote);
+        const merged = this.withAttachmentKinds(mergeModelLists(this.getAvailableModels(), remote));
         this.modelListCache = { models: merged, fetchedAt: Date.now() };
         return merged;
+    }
+
+    /** Lists {@link ModelInfo.attachmentKinds} on the models {@link acceptsAttachment} limits. */
+    private withAttachmentKinds(models: ModelInfo[]): ModelInfo[] {
+        return models.map(model => {
+            const kinds = LLM_ATTACHMENT_KINDS.filter(kind => this.acceptsAttachment(kind, model.id));
+            return kinds.length === LLM_ATTACHMENT_KINDS.length ? model : { ...model, attachmentKinds: kinds };
+        });
     }
 
     /**
@@ -316,8 +332,16 @@ export abstract class BaseProvider implements LlmProvider {
      * separately via the `system` option of `streamText` (see `buildSystemMessage`),
      * which is resilient against prompt injection.
      */
-    protected buildMessages(chatMessages: LlmMessage[]): ModelMessage[] {
-        return chatMessages.map(m => buildModelMessage(m));
+    protected buildMessages(chatMessages: LlmMessage[], modelId: string): ModelMessage[] {
+        return chatMessages.map(m => buildModelMessage(m, kind => this.acceptsAttachment(kind, modelId)));
+    }
+
+    /**
+     * Whether `modelId` reads an image or file attachment natively. One it doesn't is sent as an
+     * `[attached …]` placeholder, so the model knows something was attached instead of never seeing it.
+     */
+    protected acceptsAttachment(_kind: LlmAttachmentKind, _modelId: string): boolean {
+        return true;
     }
 
     /**
@@ -397,10 +421,11 @@ export abstract class BaseProvider implements LlmProvider {
     chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
         const systemPrompt = this.buildSystemPrompt(messages, config);
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
-        const coreMessages = this.buildMessages(chatMessages);
+        const modelId = config.model || this.defaultModel;
+        const coreMessages = this.buildMessages(chatMessages, modelId);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
-            model: this.createModel(config.model || this.defaultModel),
+            model: this.createModel(modelId),
             system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: config.maxTokens || DEFAULT_MAX_TOKENS,
@@ -413,6 +438,10 @@ export abstract class BaseProvider implements LlmProvider {
             onError: () => {},
             telemetry: TELEMETRY_OFF
         };
+        const providerOptions = this.chatProviderOptions(config);
+        if (providerOptions) {
+            streamOptions.providerOptions = providerOptions;
+        }
 
         const tools = this.buildTools(config);
         if (Object.keys(tools).length > 0) {
@@ -422,6 +451,11 @@ export abstract class BaseProvider implements LlmProvider {
         }
 
         return streamText(streamOptions);
+    }
+
+    /** Provider-specific `providerOptions` for a chat turn, such as a reasoning effort. */
+    protected chatProviderOptions(_config: LlmProviderConfig): Parameters<typeof streamText>[0]["providerOptions"] {
+        return undefined;
     }
 
     /**
@@ -518,11 +552,19 @@ export abstract class BaseProvider implements LlmProvider {
      */
     private titleNeedsRoomToThink = false;
 
+    /**
+     * Whether a title call asks the model not to reason (`reasoning: "none"`). Each
+     * provider package maps that to its own switch, such as DeepSeek's
+     * `thinking: { type: "disabled" }`.
+     */
+    protected titleSkipsReasoning = true;
+
     /** One title call, with whatever the caller is willing to spend on it. */
     private async requestTitle(firstMessage: string, maxOutputTokens: number) {
         const { text, finishReason, usage } = await generateText({
             model: this.createModel(this.titleModel),
             maxOutputTokens,
+            ...(this.titleSkipsReasoning && { reasoning: "none" as const }),
             telemetry: TELEMETRY_OFF,
             messages: [
                 {

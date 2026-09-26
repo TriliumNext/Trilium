@@ -1231,6 +1231,11 @@
     },
     "viewport": "Image view"
   },
+  "lightbox": {
+    "image": "Image",
+    "pdf": "PDF",
+    "open_original": "Open the original in a new tab"
+  },
   "shortcut_hints": {
     "show_button": "Show shortcut hints",
     "esc_hint": "to close"
@@ -2604,7 +2609,6 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
-    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
@@ -2653,8 +2657,44 @@
     "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file.",
     "stream_status": {
       "starting_agent": "Starting the agent. This can take a while.",
-      "waiting_for_reply": "Waiting for the reply…"
-    }
+      "waiting_for_reply": "Waiting for the reply…",
+      "still_working": "Still working…"
+    },
+    "show_tool_call_details": "Show input and output",
+    "tool_call_no_result": "No result yet.",
+    "search_notes_count_one": "({{count}} note)",
+    "search_notes_count_other": "({{count}} notes)",
+    "search_notes_limited_one": "{{count}} total result, limited to {{limit}}",
+    "search_notes_limited_other": "{{count}} total results, limited to {{limit}}",
+    "search_notes_scope": "Searched in <Note/>",
+    "child_notes_count_one": "({{count}} child)",
+    "child_notes_count_other": "({{count}} children)",
+    "child_count_one": "{{count}} child",
+    "child_count_other": "{{count}} children",
+    "search_help_count_one": "({{count}} page)",
+    "search_help_count_other": "({{count}} pages)",
+    "subtree_more_one": "+{{count}} more",
+    "subtree_more_other": "+{{count}} more",
+    "attachment_count_one": "{{count}} attachment",
+    "attachment_count_other": "{{count}} attachments",
+    "attribute_count_one": "({{count}} attribute)",
+    "attribute_count_other": "({{count}} attributes)",
+    "search_icons_count_one": "({{count}} icon)",
+    "search_icons_count_other": "({{count}} icons)",
+    "attachment_size": "({{size}})",
+    "attachment_ocr": "Text recognized from the file",
+    "skills": {
+      "search_syntax": "Search syntax",
+      "backend_scripting": "Backend scripting",
+      "frontend_scripting": "Frontend scripting",
+      "dashboards": "Dashboards"
+    },
+    "web_sources_count_one": "({{count}} source)",
+    "web_sources_count_other": "({{count}} sources)",
+    "attachment_model_cannot_read_image": "{{- model}} can't read images.",
+    "attachment_model_cannot_read_file": "{{- model}} can't read PDFs.",
+    "attachment_refused": "\"{{name}}\" wasn't attached. {{- reason}}",
+    "remove_unreadable_attachments": "Remove the attachments {{- model}} can't read"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -4130,7 +4170,10 @@
       "search_icons": "Search icons",
       "search_help": "Search User Guide",
       "get_help_toc": "Get User Guide contents",
-      "read_web_page": "Read web page"
+      "read_web_page": "Read web page",
+      "note_moved_from": "<Note/> from <From/> to <To/>",
+      "note_moved": "<Note/> to <To/>",
+      "attachment_in_note": "<Title/> in <Note/>"
     }
   },
   "common": {

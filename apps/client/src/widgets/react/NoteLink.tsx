@@ -1,3 +1,5 @@
+import "./NoteLink.css";
+
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
@@ -92,7 +94,7 @@ export default function NoteLink({ className, containerClassName, notePath, show
     return <span className={containerClassName} ref={ref} />;
 }
 
-interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu"> {
+interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu" | "onClick" | "onDblClick"> {
     className?: string;
     notePath: string;
     viewScope?: ViewScope;
@@ -121,7 +123,7 @@ export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, 
             data-no-context-menu={noContextMenu}
             {...linkProps}
         >
-            {icon && <><Icon icon={icon} />&nbsp;</>}
+            {icon && <Icon icon={icon} className="note-link-icon" />}
             {title}
         </a>
     );

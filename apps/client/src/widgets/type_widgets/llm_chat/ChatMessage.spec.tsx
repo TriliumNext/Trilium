@@ -9,6 +9,8 @@ vi.mock("../../../services/i18n.js", () => ({
         return key;
     }
 }));
+const mocks = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
+vi.mock("../../../components/app_context.js", () => ({ default: { triggerEvent: mocks.triggerEvent } }));
 vi.mock("../text/ReadOnlyText.js", () => ({
     ReadOnlyTextContent: ({ html }: { html: string }) => <div className="markdown-stub">{html}</div>
 }));
@@ -59,15 +61,15 @@ describe("ChatMessage footer", () => {
     });
 });
 
-describe("ChatMessage thinking", () => {
-    function renderMessage(content: StoredMessage["content"], options: { type?: StoredMessage["type"]; isStreaming?: boolean } = {}) {
-        host ??= document.body.appendChild(document.createElement("div"));
-        const target = host;
-        const message: StoredMessage = { id: "m1", role: "assistant", type: options.type, createdAt: "2026-01-01T00:00:00.000Z", content };
-        act(() => render(<ChatMessage message={message} isStreaming={options.isStreaming} />, target));
-        return target;
-    }
+function renderMessage(content: StoredMessage["content"], options: { type?: StoredMessage["type"]; isStreaming?: boolean } = {}) {
+    host ??= document.body.appendChild(document.createElement("div"));
+    const target = host;
+    const message: StoredMessage = { id: "m1", role: "assistant", type: options.type, createdAt: "2026-01-01T00:00:00.000Z", content };
+    act(() => render(<ChatMessage message={message} isStreaming={options.isStreaming} />, target));
+    return target;
+}
 
+describe("ChatMessage thinking", () => {
     it("folds each finished thought to its title or first line, in stream order between the tool calls", () => {
         const target = renderMessage([
             { type: "thinking", content: "**Retrieving PC hostname with command**\n\nI'll read `/etc/hostname`." },
@@ -158,5 +160,23 @@ describe("ChatMessage thinking", () => {
 
         const plain = renderMessage([{ type: "text", content: "Hello." }]);
         expect(plain.querySelector(".llm-chat-reply")).toBeNull();
+    });
+});
+
+describe("ChatMessage attachments", () => {
+    it("opens a PDF in the lightbox and any other file through its link", () => {
+        const target = renderMessage([
+            { type: "file", attachmentId: "pdf1", mime: "application/pdf", title: "report.pdf", url: "#root/n1?attachmentId=pdf1" },
+            { type: "text_file", attachmentId: "txt1", mime: "text/plain", title: "notes.txt", url: "#root/n1?attachmentId=txt1" }
+        ]);
+        const [ pdf, text ] = [ ...target.querySelectorAll<HTMLAnchorElement>("a.llm-chat-message-file") ];
+        expect(pdf?.querySelector(".bxs-file-pdf")).not.toBeNull();
+        act(() => pdf?.click());
+        expect(mocks.triggerEvent).toHaveBeenCalledExactlyOnceWith("showLightbox", { src: "/api/attachments/pdf1/open", kind: "pdf", title: "report.pdf" });
+
+        expect(text?.getAttribute("href")).toBe("#root/n1?attachmentId=txt1");
+        expect(text?.querySelector(".bxs-file-blank")).not.toBeNull();
+        act(() => text?.click());
+        expect(mocks.triggerEvent).toHaveBeenCalledOnce();
     });
 });

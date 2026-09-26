@@ -2,29 +2,35 @@ import "./ToolCallCard.css";
 
 import { Trans } from "react-i18next";
 
+import appContext from "../../../components/app_context.js";
 import { t } from "../../../services/i18n.js";
+import ActionButton from "../../react/ActionButton.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
-import type { ToolCall } from "./llm_chat_types.js";
+import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
+import { ExternalLink, getToolCallView, type ToolCallView } from "./ToolCallViews.js";
 
 interface ToolCallContext {
     /** The primary note the tool operates on or created. */
     noteId: string | null;
     /** The parent note, shown as "in <parent>" for creation tools. */
     parentNoteId: string | null;
+    /** Where `move_note` took the note: the new parent, and the old one when the result names it. */
+    move?: { toNoteId: string; fromNoteId: string | null };
+    /** The title of a note `delete_note` deleted, shown in place of a link to a note that is gone. */
+    deletedTitle?: string;
     /** Plain-text detail (e.g. skill name, search query) when no note ref is available. */
     detailText: string | null;
 }
 
-/** Try to extract a noteId from the tool call's result JSON. */
-function parseResultNoteId(toolCall: ToolCall): string | null {
+/** Try to extract a string field from the tool call's result JSON. */
+function parseResultField(toolCall: ToolCall, field: string): string | null {
     if (!toolCall.result) return null;
     try {
-        const result = typeof toolCall.result === "string"
-            ? JSON.parse(toolCall.result)
-            : toolCall.result;
-        return result?.noteId || null;
+        const result = JSON.parse(toolCall.result);
+        const value = result?.[field];
+        return typeof value === "string" && value ? value : null;
     } catch {
         return null;
     }
@@ -35,21 +41,59 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
     const input = toolCall.input;
     const parentNoteId = (input?.parentNoteId as string) || null;
 
+    if (toolCall.toolName === "move_note"
+            && typeof input?.noteId === "string" && typeof input.newParentNoteId === "string") {
+        const move = {
+            toNoteId: input.newParentNoteId,
+            fromNoteId: parseResultField(toolCall, "oldParentNoteId")
+        };
+        return { noteId: input.noteId, parentNoteId: null, move, detailText: null };
+    }
+
+    const deletedTitle = toolCall.toolName === "delete_note"
+        ? parseResultField(toolCall, "deletedTitle")
+        : null;
+    if (deletedTitle) {
+        return { noteId: null, parentNoteId: null, deletedTitle, detailText: null };
+    }
+
     // For creation tools, the created note ID is in the result.
     if (parentNoteId) {
-        const createdNoteId = parseResultNoteId(toolCall);
+        const createdNoteId = parseResultField(toolCall, "noteId");
         if (createdNoteId) {
             return { noteId: createdNoteId, parentNoteId, detailText: null };
         }
     }
 
-    const noteId = (input?.noteId as string) || parentNoteId || parseResultNoteId(toolCall);
+    const noteId = (input?.noteId as string) || parentNoteId || parseResultField(toolCall, "noteId");
     if (noteId) {
         return { noteId, parentNoteId: null, detailText: null };
     }
 
-    const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined;
+    if (toolCall.toolName === "load_skill" && typeof input?.name === "string") {
+        const skillTitle = t(`llm_chat.skills.${input.name}`, { defaultValue: input.name });
+        return { noteId: null, parentNoteId: null, detailText: skillTitle };
+    }
+
+    const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined
+        ?? readWebSearchAction(toolCall);
     return { noteId: null, parentNoteId: null, detailText: detailText || null };
+}
+
+/**
+ * The query or page of an OpenAI `web_search` call, which takes no input and names what it did in its
+ * result's `action` instead.
+ */
+function readWebSearchAction(toolCall: ToolCall): string | undefined {
+    if (toolCall.toolName !== "web_search" || !toolCall.result) return undefined;
+    try {
+        const action = JSON.parse(toolCall.result)?.action;
+        if (typeof action?.query === "string") return action.query;
+        if (Array.isArray(action?.queries)) return action.queries.join("; ");
+        return typeof action?.url === "string" ? action.url : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 function toolNameIcon(toolName: string): string {
@@ -66,164 +110,144 @@ function toolNameIcon(toolName: string): string {
 }
 
 function toolCallIcon(toolCall: ToolCall): string {
-    if (toolCall.isError) return "bx bx-error-circle";
+    if (isFailedToolCall(toolCall)) return "bx bx-error-circle";
     if (!toolCall.result) return "bx bx-loader-alt bx-spin";
     return toolNameIcon(toolCall.toolName);
 }
 
-/** Try to parse a JSON string into a structured value. */
-function tryParseJson(data: unknown): unknown {
-    if (typeof data === "string") {
-        try {
-            return JSON.parse(data);
-        } catch {
-            return data;
+/** The message of a failed call: the `error` field of a JSON result, or else the whole result. */
+function getErrorMessage(result: string): string {
+    try {
+        const parsed: unknown = JSON.parse(result);
+        if (typeof parsed === "object" && parsed !== null && "error" in parsed && typeof parsed.error === "string") {
+            return parsed.error;
         }
+    } catch {
+        // A result that is not JSON is the message itself.
     }
-    return data;
-}
-
-/** Check if a value is a plain object (not null, not array). */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-const MAX_TABLE_DEPTH = 2;
-
-/** Render a single value — recurse for objects/arrays up to max depth. */
-function ValueCell({ value, depth }: { value: unknown; depth: number }) {
-    if (value === null || value === undefined) return <pre />;
-
-    // Beyond max depth, fall back to JSON.
-    if (depth >= MAX_TABLE_DEPTH) {
-        if (isPlainObject(value) || Array.isArray(value)) {
-            return <pre>{JSON.stringify(value, null, 2)}</pre>;
-        }
-        return <pre>{String(value)}</pre>;
-    }
-
-    if (isPlainObject(value)) {
-        return <KeyValueTable data={value} depth={depth} />;
-    }
-
-    if (Array.isArray(value)) {
-        if (value.length === 0) return <pre>{"[]"}</pre>;
-
-        // Array of objects: render each as a nested table.
-        if (value.every(isPlainObject)) {
-            return (
-                <div className="llm-chat-tool-call-table-array">
-                    {value.map((item, idx) => (
-                        <KeyValueTable key={idx} data={item} depth={depth} />
-                    ))}
-                </div>
-            );
-        }
-
-        // Array of primitives: comma-separated.
-        return <pre>{value.map(String).join(", ")}</pre>;
-    }
-
-    return <pre>{String(value)}</pre>;
-}
-
-/** Renders a data object as a recursive two-column key-value table. */
-function KeyValueTable({ data, className, depth = 0 }: { data: unknown; className?: string; depth?: number }) {
-    const obj = tryParseJson(data);
-
-    if (!isPlainObject(obj)) {
-        const raw = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        return <pre className={className}>{raw}</pre>;
-    }
-
-    return (
-        <table className={`llm-chat-tool-call-table ${className ?? ""}`}>
-            <tbody>
-                {Object.entries(obj).map(([key, value]) => (
-                    <tr key={key}>
-                        <td className="llm-chat-tool-call-table-key">{key}</td>
-                        <td className="llm-chat-tool-call-table-value">
-                            <ValueCell value={value} depth={depth + 1} />
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
+    return result;
 }
 
 /** Build the label content for a tool call section. */
-function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
-    const { noteId: refNoteId, parentNoteId: refParentId, detailText } = getToolCallContext(toolCall);
-    const hasError = toolCall.isError;
+function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallView | null }) {
+    const context = getToolCallContext(toolCall);
+    const { noteId: refNoteId, parentNoteId: refParentId, move, deletedTitle, detailText } = context;
+    const hasError = isFailedToolCall(toolCall);
 
     return (
         <>
-            {t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}
+            <span className="llm-chat-tool-call-name">{t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}</span>
             {detailText && (
-                <span className="llm-chat-tool-call-detail">{detailText}</span>
-            )}
-            {refNoteId && (
-                <span className="llm-chat-tool-call-note-ref">
-                    {refParentId ? (
-                        <Trans
-                            i18nKey="llm.tools.note_in_parent"
-                            components={{
-                                Note: <NewNoteLink notePath={refNoteId} showNoteIcon noPreview />,
-                                Parent: <NewNoteLink notePath={refParentId} showNoteIcon noPreview />
-                            } as any}
-                        />
-                    ) : (
-                        <NewNoteLink notePath={refNoteId} showNoteIcon noPreview />
-                    )}
+                <span className="llm-chat-tool-call-detail">
+                    {toolCall.toolName === "read_web_page" && /^https?:\/\//i.test(detailText)
+                        ? <ExternalLink url={detailText}>{detailText}</ExternalLink>
+                        : detailText}
                 </span>
             )}
+            {view?.lead}
+            {deletedTitle && <span className="llm-chat-tool-call-deleted-title">{deletedTitle}</span>}
+            {refNoteId && (
+                <span className="llm-chat-tool-call-note-ref">
+                    <NoteRef noteId={refNoteId} parentNoteId={refParentId} move={move} />
+                </span>
+            )}
+            {view?.summary && <span className="llm-chat-tool-call-result-count">{view.summary}</span>}
             {hasError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>
     );
 }
 
-/** A single tool call section within a ToolCallCard. */
+/** The notes a call worked on: the note alone, the note in its parent, or where a move took it. */
+function NoteRef({ noteId, parentNoteId, move }: {
+    noteId: string;
+    parentNoteId: string | null;
+    move?: ToolCallContext["move"];
+}) {
+    const link = (notePath: string) => <NewNoteLink notePath={notePath} showNoteIcon noPreview />;
+
+    if (move) {
+        const components = move.fromNoteId
+            ? { Note: link(noteId), From: link(move.fromNoteId), To: link(move.toNoteId) }
+            : { Note: link(noteId), To: link(move.toNoteId) };
+        const key = move.fromNoteId ? "llm.tools.note_moved_from" : "llm.tools.note_moved";
+        return <Trans i18nKey={key} components={components as any} />;
+    }
+    if (parentNoteId) {
+        const components = { Note: link(noteId), Parent: link(parentNoteId) };
+        return <Trans i18nKey="llm.tools.note_in_parent" components={components as any} />;
+    }
+    return link(noteId);
+}
+
+/**
+ * A single tool call. It folds open only for what is worth reading inline: the input while it
+ * streams, the diff of an `edit_note_content` call, why the call failed, or the view
+ * `getToolCallView()` builds for the tools that have one. The raw input and
+ * result are in the dialog the debug button opens.
+ */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
-    const hasError = toolCall.isError;
+    const hasError = isFailedToolCall(toolCall);
     const isStreamingInput = toolCall.inputStreaming !== undefined;
 
-    // The `edit_note_content` tool gets a fancy unified diff instead of a raw input table.
-    // Suppress the diff view while input is still streaming — the partial JSON isn't parseable yet.
+    // The partial JSON of a streaming input does not parse, so the diff waits for the whole input.
     const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
         ? parseNoteContentEdits(toolCall.input?.edits)
         : null;
+    const editedNoteId = typeof toolCall.input.noteId === "string" ? toolCall.input.noteId : undefined;
+    const errorMessage = hasError && toolCall.result ? getErrorMessage(toolCall.result) : null;
+    const view = isStreamingInput ? null : getToolCallView(toolCall);
+
+    const className = `llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`;
+    const icon = toolCallIcon(toolCall);
+    const label = <ToolCallLabel toolCall={toolCall} view={view} />;
+    const debugButton = <ToolCallDebugButton toolCall={toolCall} />;
+
+    if (!isStreamingInput && !noteContentEdits && !errorMessage && !view?.body) {
+        return (
+            <div className={`expandable-line ${className}`}>
+                <div className="expandable-line-header">
+                    <span className={icon} />
+                    <span className="expandable-section-label">{label}</span>
+                    {debugButton}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <ExpandableSection
-            icon={toolCallIcon(toolCall)}
-            label={<ToolCallLabel toolCall={toolCall} />}
+            icon={icon}
+            label={label}
+            actions={debugButton}
             variant="line"
-            className={`llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`}
+            className={className}
             open={noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined}
         >
-            <div className={`llm-chat-tool-call-input ${isStreamingInput ? "llm-chat-tool-call-input-streaming" : ""}`}>
-                {isStreamingInput ? (
-                    <>
-                        <strong>{t("llm_chat.input_streaming")}</strong>
-                        <pre>{toolCall.inputStreaming}</pre>
-                    </>
-                ) : noteContentEdits ? (
-                    <EditNoteContentDiff edits={noteContentEdits} />
-                ) : (
-                    <>
-                        <strong>{t("llm_chat.input")}</strong>
-                        <KeyValueTable data={toolCall.input} />
-                    </>
-                )}
-            </div>
-            {toolCall.result && (!noteContentEdits || hasError) && (
-                <div className={`llm-chat-tool-call-result ${hasError ? "llm-chat-tool-call-result-error" : ""}`}>
-                    <strong>{hasError ? t("llm_chat.error") : t("llm_chat.result")}</strong>
-                    <KeyValueTable data={toolCall.result} />
+            {isStreamingInput && <pre className="llm-chat-tool-call-streaming">{toolCall.inputStreaming}</pre>}
+            {noteContentEdits && (
+                <div className="llm-chat-tool-call-diff">
+                    <EditNoteContentDiff noteId={editedNoteId} edits={noteContentEdits} />
                 </div>
             )}
+            {errorMessage && <p className="llm-chat-tool-call-error-message">{errorMessage}</p>}
+            {view?.body}
         </ExpandableSection>
+    );
+}
+
+/** Opens the raw input and result of a call in `ToolCallDetailsDialog`. */
+function ToolCallDebugButton({ toolCall }: { toolCall: ToolCall }) {
+    return (
+        <ActionButton
+            className="llm-chat-tool-call-debug"
+            icon="bx bx-code-alt"
+            text={t("llm_chat.show_tool_call_details")}
+            onClick={(e) => {
+                // Inside a summary, the click would also fold the line open or shut.
+                e.preventDefault();
+                void appContext.triggerEvent("showToolCallDetails", { toolCall });
+            }}
+        />
     );
 }
 
@@ -231,13 +255,13 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
 function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
     const first = toolCalls[0];
     const anyPending = toolCalls.some(tc => !tc.result);
-    const anyError = toolCalls.some(tc => tc.isError);
+    const anyError = toolCalls.some(isFailedToolCall);
 
     const icon = anyPending ? "bx bx-loader-alt bx-spin" : toolNameIcon(first.toolName);
     const friendlyName = t(`llm.tools.${first.toolName}`, { defaultValue: first.toolName });
     const label = (
         <>
-            {friendlyName}
+            <span className="llm-chat-tool-call-name">{friendlyName}</span>
             <span className="llm-chat-tool-call-count">×{toolCalls.length}</span>
             {anyError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>

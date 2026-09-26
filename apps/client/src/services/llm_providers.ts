@@ -1,4 +1,4 @@
-import type { LlmModelInfo } from "@triliumnext/commons";
+import type { LlmAttachmentKind, LlmModelInfo } from "@triliumnext/commons";
 
 import { formatModelCost } from "./llm_model_cost.js";
 import options from "./options.js";
@@ -68,6 +68,30 @@ export function resolveSelectedModel(
         m.id === selectedModel
         && (!selectedProvider || m.provider === selectedProvider)
         && (!selectedProviderId || m.providerId === selectedProviderId));
+}
+
+/**
+ * The attachments `model` cannot read natively. Text files and SVGs reach every model as text, and
+ * a model without `attachmentKinds`, or no model at all, restricts nothing.
+ */
+export function unreadableAttachments<T extends { type: string; mime: string }>(model: LlmModelInfo | undefined, attachments: T[]): T[] {
+    return attachments.filter(att => {
+        const kind = nativeAttachmentKind(att.type, att.mime);
+        return kind !== null && !readsAttachmentKind(model, kind);
+    });
+}
+
+/** Whether `model` reads an attachment of `kind` natively. */
+export function readsAttachmentKind(model: LlmModelInfo | undefined, kind: LlmAttachmentKind): boolean {
+    return !model?.attachmentKinds || model.attachmentKinds.includes(kind);
+}
+
+/** The kind a model must read natively to take an attachment, or null for one every model gets as text. */
+export function nativeAttachmentKind(type: string, mime: string): LlmAttachmentKind | null {
+    if (type === "image") {
+        return mime === "image/svg+xml" ? null : "image";
+    }
+    return type === "file" ? "file" : null;
 }
 
 /** Minimal shape of a provider config as stored in the `llmProviders` option. */

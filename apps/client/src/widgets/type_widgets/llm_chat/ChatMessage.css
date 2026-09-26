@@ -69,6 +69,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     display: block;
     margin: 0.5rem 0;
     max-width: 100%;
+    cursor: zoom-in;
 }
 
 .llm-chat-message-image img {
@@ -238,16 +239,15 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     white-space: nowrap;
 }
 
-/* Aligning the content to the end clips the overflow at the top, keeping the newest lines in view. */
-.llm-chat-thinking-live .llm-chat-thinking-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    max-height: calc(4 * 1.6em);
-    overflow: hidden;
+/* Spaced like `.llm-chat-thinking` and `.llm-chat-tool-calls`, the lines it follows. */
+.llm-chat-stream-idle {
+    margin: 0.25rem 0;
+    animation: llm-chat-stream-idle-appear 0.2s ease-out;
+}
 
-    > * {
-        flex-shrink: 0;
+@keyframes llm-chat-stream-idle-appear {
+    from {
+        opacity: 0;
     }
 }
 
@@ -341,7 +341,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
 }
 
 .llm-chat-markdown blockquote p {
-    margin: 0;
+    margin: 0 1.5em;
 }
 
 .llm-chat-markdown a {

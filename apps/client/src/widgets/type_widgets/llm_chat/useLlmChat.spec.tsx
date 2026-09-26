@@ -96,6 +96,21 @@ describe("useLlmChat", () => {
         streamChatCompletionMock.mockReset();
     });
 
+    it("focuses the input at once when it is ready, or as soon as it registers", async () => {
+        await mountChat();
+        const early = { appendBlockQuote: vi.fn(), focus: vi.fn() };
+        api().focusInput();
+        api().registerInputEditor(early);
+        expect(early.focus).toHaveBeenCalledOnce();
+
+        // The request is spent: registering again does not steal the focus a second time.
+        const ready = { appendBlockQuote: vi.fn(), focus: vi.fn() };
+        api().registerInputEditor(ready);
+        expect(ready.focus).not.toHaveBeenCalled();
+        api().focusInput();
+        expect(ready.focus).toHaveBeenCalledOnce();
+    });
+
     it("selects the default model with its provider and annotates model costs", async () => {
         await mountChat();
 
@@ -145,6 +160,35 @@ describe("useLlmChat", () => {
         expect(options.model).toBe("sonnet");
         expect(options.provider).toBe("claude-agent");
         expect(options.providerId).toBe("ca_1");
+    });
+
+    it("holds back a message whose attachments the model cannot read, until the model changes", async () => {
+        optionsGetJsonMock.mockReturnValue([
+            { id: "ds_1", name: "DeepSeek", provider: "deepseek", selectedModels: [
+                { id: "deepseek-v4-pro", name: "DeepSeek V4 Pro", isDefault: true, attachmentKinds: [] }
+            ] },
+            { id: "a_1", name: "Anthropic", provider: "anthropic", selectedModels: [{ id: "opus", name: "Opus" }] }
+        ]);
+        await mountChat();
+        expect(api().selectedModel).toBe("deepseek-v4-pro");
+        await act(async () => {
+            api().setInput("Summarize this");
+            api().addPendingAttachment({ type: "file", attachmentId: "pdf1", mime: "application/pdf", title: "report.pdf", url: "#" });
+        });
+
+        await act(async () => {
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(streamChatCompletionMock).not.toHaveBeenCalled();
+        expect(api().pendingAttachments).toHaveLength(1);
+
+        await act(async () => {
+            api().setSelectedModel("opus", "anthropic", "a_1");
+        });
+        await act(async () => {
+            await api().handleSubmit(new Event("submit"));
+        });
+        expect(streamChatCompletionMock).toHaveBeenCalledOnce();
     });
 
     it("resolves the provider by model ID for chats saved before selectedProvider existed", async () => {

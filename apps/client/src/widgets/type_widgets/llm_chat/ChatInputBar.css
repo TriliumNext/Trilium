@@ -64,6 +64,15 @@
     width: 56px;
 }
 
+.llm-chat-attachment-preview-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+    cursor: zoom-in;
+}
+
 .llm-chat-attachment-chip-image img {
     width: 100%;
     height: 100%;
@@ -122,6 +131,26 @@
 .llm-chat-attachment-remove:disabled {
     opacity: 0.4;
     cursor: not-allowed;
+}
+
+.llm-chat-attachment-chip-unreadable {
+    border-color: var(--admonition-warning-accent-color);
+
+    & > :first-child {
+        opacity: 0.45;
+    }
+}
+
+.llm-chat-attachment-unreadable-icon {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    border-radius: 50%;
+    background: var(--accented-background-color);
+    color: var(--admonition-warning-accent-color);
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
 }
 
 /*

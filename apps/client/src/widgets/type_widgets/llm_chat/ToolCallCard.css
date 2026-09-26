@@ -3,96 +3,53 @@
     margin: 0.25rem 0;
 }
 
-.llm-chat-tool-call-detail {
-    font-weight: 400;
-    color: var(--muted-text-color);
+/* The name reads stronger than the line and its parameters fainter. Both derive from the inherited
+   color, so they follow the summary's hover. */
+.llm-chat-tool-call:not(.llm-chat-tool-call-error) > :is(.expandable-section-summary, .expandable-line-header) .llm-chat-tool-call-name {
+    color: color-mix(in srgb, currentColor, var(--main-text-color) 45%);
 }
 
-.llm-chat-tool-call-count {
+.llm-chat-tool-call-detail,
+.llm-chat-tool-call-attachment-title,
+.llm-chat-tool-call-count,
+.llm-chat-tool-call-result-count {
+    font-size: 0.75rem;
     font-weight: 400;
-    color: var(--muted-text-color);
-    margin-left: 0.35rem;
+    opacity: 0.75;
 }
 
 .llm-chat-tool-call-note-ref {
+    font-size: 0.75rem;
     font-weight: 400;
     margin-left: 0.25rem;
 }
 
-/* Section body (input + result) */
-.llm-chat-tool-call-input,
-.llm-chat-tool-call-result {
-    padding: 0.25rem 0;
+/* Shown on hover, on focus, on an open line, and always where there is no hover. */
+.llm-chat-tool-call-debug.icon-action {
+    --icon-button-size: 1.4rem;
+    --icon-button-icon-ratio: 0.7;
+
+    opacity: 0;
+}
+
+.llm-chat-tool-call > :is(.expandable-section-summary, .expandable-line-header):is(:hover, :focus-within) > .llm-chat-tool-call-debug,
+.llm-chat-tool-call[open] > .expandable-section-summary > .llm-chat-tool-call-debug {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .llm-chat-tool-call-debug.icon-action {
+        opacity: 1;
+    }
+}
+
+.llm-chat-tool-call-diff {
     max-height: 300px;
     overflow: auto;
 }
 
-.expandable-section-body pre {
-    margin: 0;
-    padding: 0;
-    font-size: 0.8rem;
-    font-family: var(--monospace-font-family, monospace);
-}
-
-.llm-chat-tool-call-input strong,
-.llm-chat-tool-call-result strong {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--muted-text-color);
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-}
-
-/* Tool call key-value table */
-.llm-chat-tool-call-table {
-    width: 100%;
-    table-layout: auto;
-    border-collapse: collapse;
-    font-size: 0.8rem;
-}
-
-.llm-chat-tool-call-table td {
-    padding: 0.25rem 0;
-    padding-right: 0.75rem;
-    vertical-align: top;
-}
-
-.llm-chat-tool-call-table tr:last-child td {
-    border-bottom: none;
-}
-
-.llm-chat-tool-call-table-key {
-    font-weight: 600;
-    white-space: nowrap;
-    width: 0;
-    color: var(--muted-text-color);
-}
-
-.llm-chat-tool-call-table-value pre {
-    margin: 0;
-    padding: 0;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-/* Nested tables */
-.llm-chat-tool-call-table-value .llm-chat-tool-call-table {
-    width: auto;
-    min-width: 100%;
-}
-
-.llm-chat-tool-call-table-array {
-    display: flex;
-    flex-direction: column;
-}
-
-.llm-chat-tool-call-table-array > .llm-chat-tool-call-table + .llm-chat-tool-call-table {
-    border-top: 1px solid var(--main-border-color);
-}
-
-/* Tool call error styling */
-/* Outranks the summary's hover color, so an errored call stays red. */
-.llm-chat-tool-call.llm-chat-tool-call-error > .expandable-section-summary {
+/* An errored call's summary. This outranks the summary's hover color, so it stays red. */
+.llm-chat-tool-call.llm-chat-tool-call-error > :is(.expandable-section-summary, .expandable-line-header) {
     color: var(--danger-color, #dc3545);
 }
 
@@ -103,23 +60,45 @@
     opacity: 0.8;
 }
 
-.llm-chat-tool-call-result-error pre {
-    color: var(--danger-color, #dc3545);
-}
-
-/* Streaming-input view: raw JSON arriving from the LLM, shown until it's parsed.
-   The trailing block-caret hints that text is still landing. */
-.llm-chat-tool-call-input-streaming pre {
+.llm-chat-tool-call-error-message {
+    margin: 0;
     white-space: pre-wrap;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
-.llm-chat-tool-call-input-streaming pre::after {
-    content: "▍";
-    color: var(--muted-text-color);
-    animation: llm-chat-tool-call-caret 1s steps(1) infinite;
+/* Raw JSON arriving from the LLM, shown until it parses. The blinking caret marks it as still
+   arriving. */
+.llm-chat-tool-call-streaming {
+    margin: 0;
+    max-height: 300px;
+    overflow: auto;
+    font-size: 0.8rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+
+    &::after {
+        content: "▍";
+        color: var(--muted-text-color);
+        animation: llm-chat-tool-call-caret 1s steps(1) infinite;
+    }
 }
 
 @keyframes llm-chat-tool-call-caret {
     50% { opacity: 0; }
 }
+
+/* The title a note had before a rename or a deletion, struck through. After a rename an arrow leads
+   to the note link; the arrow is an inline block, which keeps the strike-through off it. */
+.llm-chat-tool-call-old-title,
+.llm-chat-tool-call-deleted-title {
+    font-size: 0.75rem;
+    opacity: 0.75;
+    text-decoration: line-through;
+}
+
+.llm-chat-tool-call-old-title::after {
+    content: "→";
+    display: inline-block;
+    margin-left: 0.3rem;
+}
+

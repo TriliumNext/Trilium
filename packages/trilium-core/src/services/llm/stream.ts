@@ -2,7 +2,7 @@
  * Shared streaming utilities for converting AI SDK streams to SSE chunks.
  */
 
-import type { LlmErrorDetails, LlmStreamChunk } from "@triliumnext/commons";
+import { isToolErrorResult, type LlmErrorDetails, type LlmStreamChunk } from "@triliumnext/commons";
 import { APICallError, type LanguageModelUsage } from "ai";
 
 import type { ModelPricing, StreamResult } from "./types.js";
@@ -163,7 +163,7 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
 
                 case "tool-result": {
                     const output = part.output;
-                    const isError = typeof output === "object" && output !== null && "error" in output;
+                    const isError = isToolErrorResult(output);
                     yield {
                         type: "tool_result",
                         toolCallId: part.toolCallId,

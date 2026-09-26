@@ -3,7 +3,7 @@ import "./LlmChat.css";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
-import { useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks.js";
+import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks.js";
 import { TypeWidgetProps } from "../type_widget.js";
 import { useChatContextMenu } from "./chat_context_menu.js";
 import { useChatHighlights } from "./chat_highlights.js";
@@ -15,7 +15,7 @@ import ChatReadOnlyNotice from "./ChatReadOnlyNotice.js";
 import type { LlmChatContent } from "./llm_chat_types.js";
 import { useLlmChat } from "./useLlmChat.js";
 
-export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
+export default function LlmChat({ note, noteContext, isVisible }: TypeWidgetProps) {
     const spacedUpdateRef = useRef<{ scheduleUpdate: () => void }>(null);
 
     // A `#readOnly` chat is immutable: the reply bar is replaced by a notice and every
@@ -44,6 +44,9 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
 
     // Make the "Show quote source" links in submitted quotes jump to the referenced message.
     useChatMessageJumps(chat.scrollContainerRef);
+
+    // Switching to the tab or creating the note focuses the reply input, like other types' editors.
+    useFocusInputOnDetail(chat.focusInput, noteContext?.ntxId, isVisible);
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -93,4 +96,16 @@ export default function LlmChat({ note, noteContext }: TypeWidgetProps) {
             )}
         </div>
     );
+}
+
+/**
+ * Focuses the reply input on a `focusOnDetail` for this chat's context. A chat kept mounted but
+ * hidden after its note's type changed (`isVisible` is `false`) ignores it.
+ */
+export function useFocusInputOnDetail(
+    focusInput: () => void, ntxId: string | null | undefined, isVisible: boolean | undefined
+) {
+    useTriliumEvent("focusOnDetail", (data) => {
+        if (data.ntxId === ntxId && isVisible !== false) focusInput();
+    });
 }

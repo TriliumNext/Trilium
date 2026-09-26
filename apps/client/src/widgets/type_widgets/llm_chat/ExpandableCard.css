@@ -86,6 +86,11 @@
         font-size: 1rem;
         margin-left: 0;
     }
+
+    /* Smaller text in the label, such as a tool call's query, sits on the label's baseline. */
+    > .expandable-section-label {
+        align-items: baseline;
+    }
 }
 
 /* `:where()` keeps the hover below a variant's own color, such as an errored tool call's. */

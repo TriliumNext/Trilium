@@ -73,6 +73,11 @@ export class LocalProvider extends BaseProvider {
     // whatever the user installed, so there is nothing sensible to hardcode.
     protected defaultModel = "";
     protected titleModel = "";
+    /**
+     * The OpenAI package sends `reasoning_effort: "none"` to any model, and self-hosted
+     * servers disagree on what that means, so a thinking model gets the larger retry instead.
+     */
+    protected override titleSkipsReasoning = false;
 
     private readonly kind: LocalProviderKind;
     private openai: OpenAISDKProvider;

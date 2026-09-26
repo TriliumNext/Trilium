@@ -10,6 +10,7 @@ import utils from "../../../services/utils.js";
 import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
 import { useResizeObserver } from "../../react/hooks.js";
+import LightboxLink from "../../react/LightboxLink.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { formatErrorDetails } from "./chat_error.js";
@@ -20,6 +21,7 @@ import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, typ
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";
+import { getAttachmentLightbox } from "./useChatAttachments.js";
 
 function shortenNumber(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -52,6 +54,8 @@ interface Props {
     isStreaming?: boolean;
     /** When set on an error message, renders a Retry button that re-runs the failed turn. */
     onRetry?: () => void;
+    /** A progress line under the streamed blocks, such as the one a stalled reply shows. */
+    streamStatus?: string;
 }
 
 type ContentGroup =
@@ -124,8 +128,7 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
 /**
  * One stretch of the model's reasoning. A finished one folds to a single muted line: its leading
  * `**Title**` (the shape of Codex's reasoning summaries), or else its first line, which the body
- * then leaves out. The one being generated stays open, clamped to its last lines under a spinner
- * and its latest title.
+ * then leaves out. The one being generated stays open in full under a spinner and its latest title.
  */
 function ThinkingCard({ content, isLive }: { content: string; isLive?: boolean }) {
     if (isLive) {
@@ -182,7 +185,7 @@ function ThinkingLine({ label }: { label: string }) {
     );
 }
 
-function ChatMessage({ message, isStreaming, onRetry }: Props) {
+function ChatMessage({ message, isStreaming, onRetry, streamStatus }: Props) {
     const isError = message.type === "error";
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
@@ -259,6 +262,14 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                         renderContentBlocks(message.content as ContentBlock[], isStreaming)
                     ) : (
                         <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming && message.role === "assistant"} />
+                    )}
+                    {streamStatus && (
+                        <div className="expandable-line llm-chat-stream-idle" role="status">
+                            <div className="expandable-line-header">
+                                <LoadingSpinner />
+                                <span>{streamStatus}</span>
+                            </div>
+                        </div>
                     )}
                 </div>
                 {message.citations && message.citations.length > 0 && (
@@ -355,22 +366,34 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
 
         if (group.type === "image") {
             return (
-                <a
+                <LightboxLink
                     key={group.index}
-                    href={group.block.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    lightbox={{ src: group.block.url, title: group.block.title }}
                     className="llm-chat-message-image"
-                    title={group.block.title}
                 >
                     <SafeImage src={group.block.url} alt={group.block.title} />
-                </a>
+                </LightboxLink>
             );
         }
 
         if (group.type === "file" || group.type === "text_file") {
             const icon = group.type === "file" ? "bxs-file-pdf" : "bxs-file-blank";
-            return (
+            const lightbox = getAttachmentLightbox(group.block);
+            const content = <>
+                <span className={`bx ${icon}`} />
+                <span className="llm-chat-message-file-name">{group.block.title}</span>
+            </>;
+
+            return lightbox ? (
+                <LightboxLink
+                    key={group.index}
+                    lightbox={lightbox}
+                    href={group.block.url}
+                    className="llm-chat-message-file"
+                >
+                    {content}
+                </LightboxLink>
+            ) : (
                 <a
                     key={group.index}
                     href={group.block.url}
@@ -379,8 +402,7 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
                     className="llm-chat-message-file"
                     title={group.block.title}
                 >
-                    <span className={`bx ${icon}`} />
-                    <span className="llm-chat-message-file-name">{group.block.title}</span>
+                    {content}
                 </a>
             );
         }
