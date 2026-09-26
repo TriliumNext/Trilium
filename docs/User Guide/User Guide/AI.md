@@ -187,6 +187,7 @@ The following skills are built-in:
 *   Search syntax: understands the full syntax of <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.
 *   Backend scripting: to be able to write proper <a class="reference-link" href="Scripting/Backend%20scripts.md">Backend scripts</a>.
 *   Frontend scripting: to be able to write proper [front-end scripts](Scripting/Frontend%20Basics.md) (basic scripts, widgets, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>).
+*   Dashboards: to build a <a class="reference-link" href="Collections/Dashboard.md">Dashboard</a> and its widgets, including interactive ones made with a <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>.
 
 When _Note tools_ are enabled the skills will automatically be made available to the AI, so no user interaction is required.
 
