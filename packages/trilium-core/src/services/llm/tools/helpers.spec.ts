@@ -380,4 +380,10 @@ describe("getSvgImageError", () => {
         expect(getSvgImageError("image/svg+xml", "Here is your drawing: <svg></svg>")).toBe(notSvg);
         expect(getSvgImageError("image/svg+xml", "<svg><rect/>")).toBe(notSvg);
     });
+
+    it("rejects a run of empty comments in linear time", () => {
+        const start = performance.now();
+        expect(getSvgImageError("image/svg+xml", `<!--${"--><!--".repeat(30)}x`)).toBeDefined();
+        expect(performance.now() - start).toBeLessThan(1000);
+    });
 });

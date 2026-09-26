@@ -26,7 +26,7 @@ export const LLM_NOTE_TYPES = [
 export const SVG_MIME = "image/svg+xml";
 
 /** An optional XML prolog, doctype and comments, then an `<svg>` root element through to `</svg>`. */
-const SVG_SOURCE_RE = /^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:(?:<!--[\s\S]*?-->|<!DOCTYPE[^>]*>)\s*)*<svg[\s>/][\s\S]*<\/svg>\s*$/i;
+const SVG_SOURCE_RE = /^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:(?:<!--(?:(?!-->)[\s\S])*-->|<!DOCTYPE[^>]*>)\s*)*<svg[\s>/][\s\S]*<\/svg>\s*$/i;
 
 /** Note IDs that must not be deleted, moved, or cloned by the LLM. */
 export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lbRoot", "_globalNoteMap"]);
