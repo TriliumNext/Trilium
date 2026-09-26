@@ -221,12 +221,26 @@ function parseSearchNotesResult(result: string): SearchNotesResult | null {
 export function markdownToPlainPreview(markdown: string): string {
     if (/^\[\d+KB - /.test(markdown)) return "";
 
+    // The Markdown export keeps what it cannot express (reference links, `<kbd>`, icon spans) as
+    // HTML. Entities are decoded last, so an escaped `&lt;b&gt;` stays text.
     return markdown
+        .replace(/<\/?[a-z][^>]*>/gi, "")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
         .replace(/^\s*\|?[\s:|-]+\|?\s*$/gm, "")
         .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
         .replace(/\*\*|__|~~|`|\|/g, "")
+        .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, decodeEntity)
         .replace(/\s+/g, " ")
         .trim();
+}
+
+const NAMED_ENTITIES: Record<string, string> = { nbsp: " ", amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'" };
+
+function decodeEntity(entity: string, name: string): string {
+    if (name.startsWith("#")) {
+        const codePoint = name[1] === "x" || name[1] === "X" ? parseInt(name.slice(2), 16) : parseInt(name.slice(1), 10);
+        return codePoint <= 0x10FFFF ? String.fromCodePoint(codePoint) : entity;
+    }
+    return NAMED_ENTITIES[name.toLowerCase()] ?? entity;
 }

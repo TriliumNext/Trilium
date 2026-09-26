@@ -205,7 +205,12 @@ describe("ToolCallCard", () => {
             result: JSON.stringify({
                 totalResults: 5,
                 results: [
-                    { noteId: "_help_abc", title: "Cloning", path: "Basic Concepts > Notes", contentPreview: "**Clones** share a note" },
+                    {
+                        noteId: "_help_abc",
+                        title: "Cloning",
+                        path: "Basic Concepts > Notes",
+                        contentPreview: "**Clones** share&nbsp;<a class=\"reference-link\" href=\"#root/x\">a note</a>: <kbd>Ctrl</kbd>+<kbd>C</kbd> <span class=\"tn-icon bx bx-copy\"></span>&amp; 1 < 2"
+                    },
                     { noteId: "_help_def", title: "Tree", path: "", contentPreview: null }
                 ]
             })
@@ -220,7 +225,7 @@ describe("ToolCallCard", () => {
             path: row.querySelector(".llm-chat-note-result-parent")?.textContent ?? null,
             preview: row.querySelector(".llm-chat-note-result-preview")?.textContent ?? null
         }))).toEqual([
-            { note: "_help_abc", path: "Basic Concepts > Notes", preview: "Clones share a note" },
+            { note: "_help_abc", path: "Basic Concepts > Notes", preview: "Clones share a note: Ctrl+C & 1 < 2" },
             { note: "_help_def", path: null, preview: null }
         ]);
         expect(line?.querySelector(".llm-chat-note-results-more")?.textContent)
