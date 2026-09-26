@@ -115,6 +115,7 @@ Here are a few tools that Trilium provides for the LLM:
     *   Get the metadata or content of a note.
     *   Edit a note
         *   There are multiple mechanism for the LLM to edit a note: completely by re-writing it, find/replace of a text sequence or append.
+        *   When re-writing a note, the LLM can also change its type (for example from a text note to a code note) or the language of a code note, rewriting the content to match.
         *   Whenever the AI makes a change, a [revision](Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md) is saved to be able to revert any unwanted changes.
     *   Create a new note
     *   Rename or delete a note.

@@ -78,6 +78,58 @@ describe("note_tools — write tools return post-write content", () => {
             const result = getTool("set_note_content").execute({ noteId: "missing", content: "x" });
             expect(result).toEqual({ error: "Note not found" });
         });
+
+        it("changes the type along with the content", () => {
+            const note = buildNote({ id: "text3", type: "text", mime: "text/html", content: "<pre>print(1)</pre>" });
+            withMutableContent(note, "<pre>print(1)</pre>");
+            note.save = vi.fn() as typeof note.save;
+
+            const toCode = getTool("set_note_content").execute({
+                noteId: "text3", content: "print(1)", type: "code", mime: "text/x-python"
+            });
+            expect(toCode).toEqual({
+                success: true, noteId: "text3", title: note.title,
+                type: "code", mime: "text/x-python", content: "print(1)"
+            });
+            expect(note.setContent).toHaveBeenLastCalledWith("print(1)");
+            expect(note.save).toHaveBeenCalled();
+
+            // A code note keeps its mime unless one is given; only the mime can change too.
+            const mimeOnly = getTool("set_note_content").execute({
+                noteId: "text3", content: "console.log(1)", mime: "text/javascript"
+            });
+            expect(mimeOnly).toMatchObject({ type: "code", mime: "text/javascript" });
+
+            // Back to text: the content is Markdown again and the mime is the type's default.
+            const toText = getTool("set_note_content").execute({
+                noteId: "text3", content: "# Heading", type: "text"
+            });
+            expect(toText).toMatchObject({ type: "text", mime: "text/html" });
+            expect(note.setContent).toHaveBeenLastCalledWith(expect.stringContaining("<h2>Heading</h2>"));
+        });
+
+        it("requires a mime when a note becomes code, and leaves the note untouched", () => {
+            const note = buildNote({ id: "text4", type: "text", mime: "text/html", content: "<p>a</p>" });
+            withMutableContent(note, "<p>a</p>");
+
+            const result = getTool("set_note_content").execute({ noteId: "text4", content: "a", type: "code" });
+
+            expect(result).toEqual({ error: "mime is required when changing a note to code" });
+            expect(note.type).toBe("text");
+            expect(note.setContent).not.toHaveBeenCalled();
+        });
+
+        it("omits type and mime from the result when neither changed", () => {
+            const note = buildNote({ id: "code4", type: "code", mime: "text/plain", content: "old" });
+            withMutableContent(note, "old");
+
+            const result = getTool("set_note_content").execute({
+                noteId: "code4", content: "new", type: "code", mime: "text/plain"
+            });
+
+            expect(result).not.toHaveProperty("type");
+            expect(result).not.toHaveProperty("mime");
+        });
     });
 
     describe("append_to_note", () => {

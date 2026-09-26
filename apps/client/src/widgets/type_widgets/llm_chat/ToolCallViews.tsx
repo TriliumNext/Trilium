@@ -39,9 +39,14 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
     }
 
     if (toolCall.toolName === "set_note_content" || toolCall.toolName === "append_to_note") {
-        const { noteId, content } = toolCall.input;
+        const { noteId, content, type, mime } = toolCall.input;
         if (typeof noteId !== "string" || typeof content !== "string" || !content.trim()) return null;
-        return { body: <NoteWrittenContent noteId={noteId} content={content} appended={toolCall.toolName === "append_to_note"} /> };
+        return { body: (
+            <NoteWrittenContent
+                noteId={noteId} content={content} appended={toolCall.toolName === "append_to_note"}
+                type={typeof type === "string" ? type : undefined} mime={typeof mime === "string" ? mime : undefined}
+            />
+        ) };
     }
 
     if (!toolCall.result) return null;
@@ -270,13 +275,22 @@ function WrittenContent({ type, mime, content, appended }: { type: string; mime?
 }
 
 /**
- * The content `set_note_content` or `append_to_note` wrote. Their input names no type, so it comes
- * from the note itself, and nothing shows until froca has it.
+ * The content `set_note_content` or `append_to_note` wrote. The type and mime come from the input
+ * when `set_note_content` changes them, otherwise from the note, so nothing shows until froca has it.
  */
-function NoteWrittenContent({ noteId, content, appended }: { noteId: string; content: string; appended: boolean }) {
+function NoteWrittenContent({ noteId, content, appended, type, mime }: {
+    noteId: string;
+    content: string;
+    appended: boolean;
+    type?: string;
+    mime?: string;
+}) {
     const note = useNote(noteId);
-    if (!note || !hasWrittenContentView(note.type, content)) return null;
-    return <WrittenContent type={note.type} mime={note.mime} content={content} appended={appended} />;
+    if (!note) return null;
+    const writtenType = type ?? note.type;
+    const writtenMime = mime ?? (writtenType === note.type ? note.mime : undefined);
+    if (!hasWrittenContentView(writtenType, content)) return null;
+    return <WrittenContent type={writtenType} mime={writtenMime} content={content} appended={appended} />;
 }
 
 function hasWrittenContentView(type: string, content: string): boolean {

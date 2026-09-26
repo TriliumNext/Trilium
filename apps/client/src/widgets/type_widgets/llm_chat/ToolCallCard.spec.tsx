@@ -401,6 +401,25 @@ describe("ToolCallCard", () => {
         expect(json?.querySelector(".llm-chat-written")).toBeNull();
     });
 
+    it("shows what set_note_content wrote by the type and mime it changed the note to", () => {
+        mocks.notes = { t: { type: "text", mime: "text/html" }, c: { type: "code", mime: "text/x-python" } };
+        // A call in between keeps the two from grouping into one section.
+        const target = renderCard([
+            { id: "1", toolName: "set_note_content", input: { noteId: "t", content: "print(1)", type: "code", mime: "text/x-python" } },
+            { id: "2", toolName: "get_note", input: { noteId: "t" } },
+            { id: "3", toolName: "set_note_content", input: { noteId: "c", content: "# Title", type: "text" } }
+        ]);
+        const [ toCode, , toText ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        const codeBlock = toCode?.querySelector(".llm-chat-written .code-block-stub");
+        expect(codeBlock?.textContent).toBe("print(1)");
+        expect(codeBlock?.getAttribute("data-mime")).toBe("text/x-python");
+        expect(toCode?.querySelector(".llm-chat-written .markdown-stub")).toBeNull();
+
+        expect(toText?.querySelector(".llm-chat-written .markdown-stub")).not.toBeNull();
+        expect(toText?.querySelector(".llm-chat-written .code-block-stub")).toBeNull();
+    });
+
     it("shows an edit as blocks with colored edges, rendering Markdown on a Markdown note", () => {
         mocks.notes = {
             m: { type: "code", mime: "text/x-markdown" },
