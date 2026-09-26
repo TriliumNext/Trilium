@@ -132,3 +132,9 @@
     padding-left: 0.5rem;
     border-left: 2px solid rgb(60, 160, 60);
 }
+
+.llm-chat-written-svg {
+    display: block;
+    max-width: 100%;
+    max-height: 280px;
+}

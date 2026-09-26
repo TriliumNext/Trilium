@@ -118,6 +118,7 @@ Here are a few tools that Trilium provides for the LLM:
         *   When re-writing a note, the LLM can also change its type (for example from a text note to a code note) or the language of a code note, rewriting the content to match.
         *   Whenever the AI makes a change, a [revision](Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.md) is saved to be able to revert any unwanted changes.
     *   Create a new note
+        *   Asked for a drawing, the LLM can create an SVG image note, or turn an existing note into one. It can write only SVG images, not other formats such as PNG.
     *   Rename or delete a note.
 *   At attribute level:
     *   Get the full list of attributes, or a specific attribute.

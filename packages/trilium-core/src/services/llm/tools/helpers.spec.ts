@@ -23,6 +23,7 @@ import {
     getDocNoteHtml,
     getNoteContentForLlm,
     getNoteMeta,
+    getSvgImageError,
     registerDocNoteHtmlReader,
     setNoteContentFromLlm
 } from "./helpers.js";
@@ -356,5 +357,27 @@ describe("applyTextEdits", () => {
         // so a partially-applied batch can never reach the note.
         expect(result).toMatchObject({ ok: false, error: expect.stringContaining("edit 2 of 2") });
         expect(result).not.toHaveProperty("content");
+    });
+});
+
+describe("getSvgImageError", () => {
+    it("accepts SVG source, with or without a prolog, doctype or comment", () => {
+        expect(getSvgImageError("image/svg+xml", "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>")).toBeUndefined();
+        expect(getSvgImageError("image/svg+xml", [
+            "<?xml version=\"1.0\"?>",
+            "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"x.dtd\">",
+            "<!-- logo -->",
+            "<SVG viewBox=\"0 0 1 1\">",
+            "  <rect/>",
+            "</SVG>\n"
+        ].join("\n"))).toBeUndefined();
+    });
+
+    it("rejects another mime, other markup and a truncated SVG", () => {
+        expect(getSvgImageError("image/png", "<svg></svg>")).toBe("Only SVG images are supported; use mime 'image/svg+xml'");
+        const notSvg = "Image content must be complete SVG source: an <svg> root element and its closing </svg>";
+        expect(getSvgImageError("image/svg+xml", "<svgx></svgx>")).toBe(notSvg);
+        expect(getSvgImageError("image/svg+xml", "Here is your drawing: <svg></svg>")).toBe(notSvg);
+        expect(getSvgImageError("image/svg+xml", "<svg><rect/>")).toBe(notSvg);
     });
 });

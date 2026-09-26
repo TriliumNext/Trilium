@@ -401,6 +401,27 @@ describe("ToolCallCard", () => {
         expect(json?.querySelector(".llm-chat-written")).toBeNull();
     });
 
+    it("previews an SVG a call wrote as an image, never as live markup", () => {
+        mocks.notes = { s: { type: "image", mime: "image/svg+xml" } };
+        const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script><circle r=\"4\"/></svg>";
+        const target = renderCard([
+            { id: "1", toolName: "create_note", input: { parentNoteId: "root", title: "Dot", content: svg, type: "image" } },
+            { id: "2", toolName: "get_note", input: { noteId: "s" } },
+            { id: "3", toolName: "set_note_content", input: { noteId: "s", content: svg } },
+            { id: "4", toolName: "append_to_note", input: { noteId: "s", content: "<rect/>" } }
+        ]);
+        const [ created, , rewritten, appended ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        for (const call of [ created, rewritten ]) {
+            const img = call?.querySelector<HTMLImageElement>(".llm-chat-written img.llm-chat-written-svg");
+            expect(img).not.toBeNull();
+            expect(decodeURIComponent(img?.getAttribute("src") ?? "")).toBe(`data:image/svg+xml;charset=utf-8,${svg}`);
+        }
+        expect(target.querySelector("svg, script")).toBeNull();
+        expect(appended).not.toBeUndefined();
+        expect(appended?.querySelector(".llm-chat-written")).toBeNull();
+    });
+
     it("shows what set_note_content wrote by the type and mime it changed the note to", () => {
         mocks.notes = { t: { type: "text", mime: "text/html" }, c: { type: "code", mime: "text/x-python" } };
         // A call in between keeps the two from grouping into one section.

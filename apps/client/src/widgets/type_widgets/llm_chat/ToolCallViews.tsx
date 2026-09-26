@@ -17,6 +17,7 @@ import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
 
 const HELP_NOTE_PREFIX = "_help_";
 const CONTENT_PREVIEW_SOURCE_LENGTH = 1000;
+const SVG_MIME = "image/svg+xml";
 
 /** What a finished call shows: a short summary beside its label, and the view it folds open to. */
 export interface ToolCallView {
@@ -35,7 +36,7 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         const { type, mime, content } = toolCall.input;
         if (typeof type !== "string" || typeof content !== "string") return null;
         const body = <WrittenContent type={type} mime={typeof mime === "string" ? mime : undefined} content={content} />;
-        return hasWrittenContentView(type, content) ? { body } : null;
+        return hasWrittenContentView(type, typeof mime === "string" ? mime : undefined, content) ? { body } : null;
     }
 
     if (toolCall.toolName === "set_note_content" || toolCall.toolName === "append_to_note") {
@@ -254,7 +255,8 @@ function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
 
 /**
  * The content a tool wrote into a note, shown the way its type reads: text as rendered Markdown, code
- * and diagrams as a code block, a web view as its URL. JSON types (canvas, mind map) have no view.
+ * and diagrams as a code block, a web view as its URL, an SVG as an image. JSON types (canvas, mind
+ * map) have no view. The SVG loads through an `<img>`, which runs none of its scripts.
  */
 function WrittenContent({ type, mime, content, appended }: { type: string; mime?: string; content: string; appended?: boolean }) {
     const noteType = type !== "text" && findNoteType(type, mime);
@@ -268,6 +270,9 @@ function WrittenContent({ type, mime, content, appended }: { type: string; mime?
                 {type === "search" && <CodeBlock code={content} wrap />}
                 {type === "webView" && (
                     <a className="tn-link external" href={content} target="_blank" rel="noopener noreferrer">{content}</a>
+                )}
+                {type === "image" && (
+                    <img className="llm-chat-written-svg" src={`data:${SVG_MIME};charset=utf-8,${encodeURIComponent(content)}`} alt="" />
                 )}
             </div>
         </div>
@@ -289,13 +294,18 @@ function NoteWrittenContent({ noteId, content, appended, type, mime }: {
     if (!note) return null;
     const writtenType = type ?? note.type;
     const writtenMime = mime ?? (writtenType === note.type ? note.mime : undefined);
-    if (!hasWrittenContentView(writtenType, content)) return null;
+    if (!hasWrittenContentView(writtenType, writtenMime, content, appended)) return null;
     return <WrittenContent type={writtenType} mime={writtenMime} content={content} appended={appended} />;
 }
 
-function hasWrittenContentView(type: string, content: string): boolean {
+/**
+ * An image the LLM writes is always an SVG, so one without a mime is too. Markup appended to an SVG
+ * has no picture of its own.
+ */
+function hasWrittenContentView(type: string, mime: string | undefined, content: string, appended = false): boolean {
     if (!content.trim()) return false;
     if (type === "webView") return /^https?:\/\//i.test(content.trim());
+    if (type === "image") return !appended && (mime ?? SVG_MIME) === SVG_MIME;
     return [ "text", "code", "mermaid", "search" ].includes(type);
 }
 

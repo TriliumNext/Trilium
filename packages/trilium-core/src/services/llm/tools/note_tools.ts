@@ -11,7 +11,7 @@ import SearchContext from "../../../services/search/search_context.js";
 import TaskContext from "../../../services/task_context.js";
 import { z } from "zod";
 
-import { applyTextEdits, getContentPreview, getNoteContentForLlm, getNoteMeta, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm,TOOL_LIMITS } from "./helpers.js";
+import { applyTextEdits, getContentPreview, getNoteContentForLlm, getNoteMeta, getSvgImageError, LLM_NOTE_TYPES, PROTECTED_SYSTEM_NOTES, setNoteContentFromLlm, SVG_MIME, TOOL_LIMITS } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
 
 export const noteTools = defineTools({
@@ -129,10 +129,16 @@ export const noteTools = defineTools({
             const typeChanged = newType !== note.type;
             let newMime = mime ?? note.mime;
             if (typeChanged && !mime) {
-                newMime = newType === "code" ? "" : noteTypesService.getDefaultMimeForNoteType(newType);
+                newMime = newType === "image" ? SVG_MIME
+                    : newType === "code" ? ""
+                        : noteTypesService.getDefaultMimeForNoteType(newType);
             }
             if (!newMime) {
                 return { error: "mime is required when changing a note to code" };
+            }
+            const svgError = newType === "image" ? getSvgImageError(newMime, content) : undefined;
+            if (svgError) {
+                return { error: svgError };
             }
             const mimeChanged = newMime !== note.mime;
 
@@ -170,6 +176,9 @@ export const noteTools = defineTools({
             }
             if (!note.hasStringContent()) {
                 return { error: `Cannot update content for note type: ${note.type}` };
+            }
+            if (note.type === "image") {
+                return { error: "Cannot append to an SVG image; use edit_note_content or set_note_content instead." };
             }
 
             const existingContent = note.getContent();
@@ -244,6 +253,10 @@ export const noteTools = defineTools({
             if (!result.ok) {
                 return { error: result.error };
             }
+            const svgError = note.type === "image" ? getSvgImageError(note.mime, result.content) : undefined;
+            if (svgError) {
+                return { error: svgError };
+            }
 
             note.saveRevision({ source: "llm" });
             note.setContent(result.content);
@@ -270,6 +283,7 @@ export const noteTools = defineTools({
             "- 'relationMap': visual map of note relations (JSON content)",
             "- 'search': saved search (content is the search query)",
             "- 'mindMap': mind map (JSON content)",
+            "- 'image': an SVG drawing (content is complete SVG source, mime 'image/svg+xml'; no other image formats). For flowcharts, sequence, class or state diagrams prefer 'mermaid'.",
             "Common mime values for code notes:",
             "'text/javascript' (plain JavaScript, not executed as a Trilium script),",
             "'application/javascript;env=frontend' (JavaScript, Trilium frontend script),",
@@ -280,7 +294,7 @@ export const noteTools = defineTools({
         inputSchema: z.object({
             parentNoteId: z.string().describe("The ID of the parent note. Use 'root' for top-level notes."),
             title: z.string().describe("The title of the new note"),
-            content: z.string().describe("The content of the note (Markdown for text notes, plain text for code notes, empty string for render notes)"),
+            content: z.string().describe("The content of the note (Markdown for text notes, plain text for code notes, SVG source for image notes, empty string for render notes)"),
             type: z.enum(LLM_NOTE_TYPES).describe("The type of note to create."),
             mime: z.string().optional().describe("MIME type, REQUIRED for code notes (e.g. 'application/javascript;env=backend', 'text/jsx'). Ignored for other types.")
         }),
@@ -288,6 +302,13 @@ export const noteTools = defineTools({
         execute: ({ parentNoteId, title, content, type, mime }) => {
             if (type === "code" && !mime) {
                 return { error: "mime is required when creating code notes" };
+            }
+            if (type === "image") {
+                mime ??= SVG_MIME;
+                const svgError = getSvgImageError(mime, content);
+                if (svgError) {
+                    return { error: svgError };
+                }
             }
 
             const parentNote = becca.getNote(parentNoteId);
