@@ -379,7 +379,28 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
     let ranked = searchResults;
 
     if (twoPass) {
-        ranked = searchResults.sort((a, b) => b.score - a.score).slice(0, RANK_SHORTLIST);
+        // The cut is part of the ranking, so it breaks an equal score the way the final comparator
+        // does. Left to score alone, the surviving shortlist is whichever notes the scan met first.
+        const sorted = searchResults.sort((a, b) => {
+            if (a.score !== b.score) {
+                return b.score - a.score;
+            }
+
+            return a.notePathArray.length - b.notePathArray.length;
+        });
+
+        // Depth stands in here for the path score the cut has not paid for yet, so it must never be
+        // the only reason a note is dropped: a deep note under query-matching ancestors ties at this
+        // score and would lose the bonus that ranks it above the shallow notes kept in its place.
+        // Carry the whole tie group straddling the boundary instead, capped so a plateau far larger
+        // than the shortlist still costs one pass.
+        const boundaryScore = sorted[RANK_SHORTLIST - 1].score;
+        let cutTo = RANK_SHORTLIST;
+        while (cutTo < RANK_SHORTLIST * 2 && cutTo < sorted.length && sorted[cutTo].score === boundaryScore) {
+            cutTo++;
+        }
+
+        ranked = sorted.slice(0, cutTo);
 
         for (const res of ranked) {
             res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching, searchContext.contentMatches.get(res.noteId), scoringTerms);
