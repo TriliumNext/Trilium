@@ -156,4 +156,38 @@ describe("ToolCallCard", () => {
         expect(lines[0]?.querySelector(".llm-chat-tool-call-result-count")?.textContent).toBe("llm_chat.search_notes_count{\"count\":0}");
         expect(target.querySelector(".llm-chat-note-result")).toBeNull();
     });
+
+    it("lists the children a call read, each with how many children it has", () => {
+        const target = renderCard([
+            {
+                id: "1",
+                toolName: "get_child_notes",
+                input: { noteId: "parent" },
+                result: JSON.stringify([
+                    { noteId: "a", title: "Alpha", type: "text", childCount: 3 },
+                    { noteId: "b", title: "Beta", type: "text", childCount: 0 }
+                ])
+            },
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            { id: "3", toolName: "get_child_notes", input: { noteId: "leaf" }, result: "[]" }
+        ]);
+        const [ children, , empty ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        expect(children instanceof HTMLDetailsElement).toBe(true);
+        expect(children?.querySelector(".llm-chat-tool-call-note-ref .note-link-stub")?.textContent).toBe("parent");
+        expect(children?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.child_notes_count{\"count\":2}");
+        const rows = [ ...(children?.querySelectorAll(".llm-chat-note-result") ?? []) ];
+        expect(rows.map(row => ({
+            note: row.querySelector(".note-link-stub")?.textContent,
+            detail: row.querySelector(".llm-chat-note-result-detail")?.textContent ?? null
+        }))).toEqual([
+            { note: "a", detail: "llm_chat.child_count{\"count\":3}" },
+            { note: "b", detail: null }
+        ]);
+
+        expect(empty instanceof HTMLDetailsElement).toBe(false);
+        expect(empty?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.child_notes_count{\"count\":0}");
+    });
 });

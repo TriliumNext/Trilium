@@ -29,7 +29,8 @@
     }
 }
 
-.llm-chat-note-result-parent {
+.llm-chat-note-result-parent,
+.llm-chat-note-result-detail {
     flex-shrink: 10;
     min-width: 0;
     overflow: hidden;

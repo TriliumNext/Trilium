@@ -33,6 +33,14 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 body: search.results.length > 0 || search.ancestorNoteId ? <NoteSearchResults {...search} /> : undefined
             };
         }
+        case "get_child_notes": {
+            const children = parseChildNotesResult(toolCall.result);
+            if (!children) return null;
+            return {
+                summary: t("llm_chat.child_notes_count", { count: children.length }),
+                body: children.length > 0 ? <ChildNoteList notes={children} /> : undefined
+            };
+        }
         default:
             return null;
     }
@@ -69,22 +77,19 @@ function NoteSearchResults({ totalResults, results, ancestorNoteId, limit }: Not
             )}
             {results.length > 0 && (
                 <ul>
-                    {results.map(({ noteId, parentTitle, contentPreview }) => {
-                        const preview = contentPreview ? markdownToPlainPreview(contentPreview) : "";
-                        return (
-                            <li key={noteId} className="llm-chat-note-result">
-                                <div className="llm-chat-note-result-header">
-                                    <NewNoteLink notePath={noteId} showNoteIcon />
-                                    {parentTitle && (
-                                        <span className="llm-chat-note-result-parent">
-                                            <span className="bx bx-folder" />{parentTitle}
-                                        </span>
-                                    )}
-                                </div>
-                                {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
-                            </li>
-                        );
-                    })}
+                    {results.map(({ noteId, parentTitle, contentPreview }) => (
+                        <NoteResultRow
+                            key={noteId}
+                            noteId={noteId}
+                            preview={contentPreview ? markdownToPlainPreview(contentPreview) : ""}
+                        >
+                            {parentTitle && (
+                                <span className="llm-chat-note-result-parent">
+                                    <span className="bx bx-folder" />{parentTitle}
+                                </span>
+                            )}
+                        </NoteResultRow>
+                    ))}
                 </ul>
             )}
             {totalResults > results.length && (
@@ -94,6 +99,56 @@ function NoteSearchResults({ totalResults, results, ancestorNoteId, limit }: Not
             )}
         </div>
     );
+}
+
+function ChildNoteList({ notes }: { notes: ChildNote[] }) {
+    return (
+        <div className="llm-chat-note-results">
+            <ul>
+                {notes.map(({ noteId, childCount }) => (
+                    <NoteResultRow key={noteId} noteId={noteId}>
+                        {childCount > 0 && (
+                            <span className="llm-chat-note-result-detail">
+                                {t("llm_chat.child_count", { count: childCount })}
+                            </span>
+                        )}
+                    </NoteResultRow>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+/** One note in a list a tool returned: its link, muted details beside it, and a preview below. */
+function NoteResultRow({ noteId, preview, children }: { noteId: string; preview?: string; children?: ComponentChildren }) {
+    return (
+        <li className="llm-chat-note-result">
+            <div className="llm-chat-note-result-header">
+                <NewNoteLink notePath={noteId} showNoteIcon />
+                {children}
+            </div>
+            {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
+        </li>
+    );
+}
+
+interface ChildNote {
+    noteId: string;
+    childCount: number;
+}
+
+function parseChildNotesResult(result: string): ChildNote[] | null {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(result);
+    } catch {
+        return null;
+    }
+    if (!Array.isArray(parsed)) return null;
+    return parsed
+        .filter((item): item is { noteId: string; childCount?: unknown } =>
+            typeof item === "object" && item !== null && typeof item.noteId === "string")
+        .map(({ noteId, childCount }) => ({ noteId, childCount: typeof childCount === "number" ? childCount : 0 }));
 }
 
 function parseSearchNotesResult(result: string): SearchNotesResult | null {
