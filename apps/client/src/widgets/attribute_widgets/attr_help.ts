@@ -167,6 +167,7 @@ export const ATTR_HELP: AttrHelpMap = {
         "calendar:slotDuration": t("attribute_detail.calendar_slot_duration"),
         "calendar:slotLabelInterval": t("attribute_detail.calendar_slot_label_interval"),
         "calendar:title": t("attribute_detail.calendar_title"),
+        "calendar:titleTemplate": t("attribute_detail.calendar_title_template"),
         "calendar:displayedAttributes": t("attribute_detail.calendar_displayed_attributes"),
         "calendar:startDate": t("attribute_detail.calendar_start_date"),
         "calendar:endDate": t("attribute_detail.calendar_end_date"),
