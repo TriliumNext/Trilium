@@ -76,7 +76,7 @@ function DiffHunk({ edit, markdown }: { edit: NoteContentEdit; markdown: boolean
                 <div key={idx} className={`llm-diff-block llm-diff-block-${block.type}`}>
                     {markdown
                         ? <ReadOnlyTextContent html={renderMarkdown(block.text)} className="llm-chat-markdown" />
-                        : <pre>{block.text || " "}</pre>}
+                        : <div className="llm-diff-code">{block.text || " "}</div>}
                 </div>
             ))}
         </div>

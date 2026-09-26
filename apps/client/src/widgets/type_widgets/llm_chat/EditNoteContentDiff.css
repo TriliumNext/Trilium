@@ -23,8 +23,8 @@
     padding-left: 0.5rem;
     border-left: 2px solid transparent;
 
-    > pre {
-        margin: 0;
+    > .llm-diff-code {
+        font-family: var(--monospace-font-family, monospace);
         font-size: 0.8rem;
         white-space: pre-wrap;
         overflow-wrap: anywhere;

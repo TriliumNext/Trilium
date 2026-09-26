@@ -424,7 +424,7 @@ describe("ToolCallCard", () => {
         expect(blocks[2]?.querySelector(".markdown-stub")?.textContent).toContain("<strong>new</strong>");
 
         const codeRemoved = code?.querySelector(".llm-diff-block-remove");
-        expect(codeRemoved?.querySelector("pre")?.textContent).toBe("y = 2");
+        expect(codeRemoved?.querySelector(".llm-diff-code")?.textContent).toBe("y = 2");
         expect(codeRemoved?.querySelector(".markdown-stub")).toBeNull();
     });
 
