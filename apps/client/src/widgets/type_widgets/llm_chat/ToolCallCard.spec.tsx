@@ -665,4 +665,55 @@ describe("ToolCallCard", () => {
         act(() => install?.click());
         expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("b");
     });
+
+    it("lists the sources a web search found, whichever provider ran it", () => {
+        const search = (id: string, input: Record<string, unknown>, result: unknown): ToolCall => ({
+            id, toolName: "web_search", input, result: typeof result === "string" ? result : JSON.stringify(result)
+        });
+        const target = renderCard([
+            search("1", { query: "trilium" }, [
+                { type: "web_search_result", url: "https://triliumnotes.org/docs", title: "Docs", pageAge: null, encryptedContent: "x" },
+                { type: "web_search_result", url: "https://github.com/TriliumNext/Trilium", title: null, pageAge: null, encryptedContent: "y" }
+            ]),
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            search("3", {}, { action: { type: "search", query: "weather" }, sources: [ { type: "url", url: "https://a.com/x" }, { type: "api", name: "oai" } ] }),
+            { id: "4", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            search("5", { query: "t" }, "Web search results for query: \"t\"\n\nLinks: [{\"title\":\"T\",\"url\":\"https://t.org/p\"}]\n\nSummary"),
+            { id: "6", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            search("7", { query: "q" }, "Searching the web")
+        ]);
+        const [ anthropic, , openai, , claude, , bare ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const sources = (line: Element | undefined) => [ ...(line?.querySelectorAll(".llm-chat-note-result") ?? []) ].map(row => ({
+            text: row.querySelector("a.external")?.textContent,
+            href: row.querySelector("a.external")?.getAttribute("href"),
+            domain: row.querySelector(".llm-chat-note-result-detail")?.textContent
+        }));
+
+        expect(anthropic?.querySelector(".llm-chat-tool-call-result-count")?.textContent).toBe("llm_chat.web_sources_count{\"count\":2}");
+        expect(sources(anthropic)).toEqual([
+            { text: "Docs", href: "https://triliumnotes.org/docs", domain: "triliumnotes.org" },
+            { text: "https://github.com/TriliumNext/Trilium", href: "https://github.com/TriliumNext/Trilium", domain: "github.com" }
+        ]);
+
+        expect(openai?.querySelector(".llm-chat-tool-call-detail")?.textContent).toBe("weather");
+        expect(sources(openai)).toEqual([ { text: "https://a.com/x", href: "https://a.com/x", domain: "a.com" } ]);
+
+        expect(sources(claude)).toEqual([ { text: "T", href: "https://t.org/p", domain: "t.org" } ]);
+
+        expect(bare instanceof HTMLDetailsElement).toBe(false);
+    });
+
+    it("links the page a call read, and previews what it read there", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "read_web_page",
+            input: { url: "https://triliumnotes.org" },
+            result: "The page describes **Trilium**."
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        const link = line?.querySelector<HTMLAnchorElement>(".llm-chat-tool-call-detail a.external");
+        expect(link?.getAttribute("href")).toBe("https://triliumnotes.org");
+        expect(link?.getAttribute("target")).toBe("_blank");
+        expect(line?.querySelector(".llm-chat-note-result-preview")?.textContent).toBe("The page describes Trilium.");
+    });
 });

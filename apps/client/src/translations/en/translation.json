@@ -2687,7 +2687,9 @@
       "backend_scripting": "Backend scripting",
       "frontend_scripting": "Frontend scripting",
       "dashboards": "Dashboards"
-    }
+    },
+    "web_sources_count_one": "({{count}} source)",
+    "web_sources_count_other": "({{count}} sources)"
   },
   "sidebar_chat": {
     "title": "AI Chat",

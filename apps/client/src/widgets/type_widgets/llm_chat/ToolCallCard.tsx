@@ -9,7 +9,7 @@ import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
 import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
-import { getToolCallView, type ToolCallView } from "./ToolCallViews.js";
+import { ExternalLink, getToolCallView, type ToolCallView } from "./ToolCallViews.js";
 
 interface ToolCallContext {
     /** The primary note the tool operates on or created. */
@@ -75,8 +75,25 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
         return { noteId: null, parentNoteId: null, detailText: skillTitle };
     }
 
-    const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined;
+    const detailText = (input?.name ?? input?.query ?? input?.url) as string | undefined
+        ?? readWebSearchAction(toolCall);
     return { noteId: null, parentNoteId: null, detailText: detailText || null };
+}
+
+/**
+ * The query or page of an OpenAI `web_search` call, which takes no input and names what it did in its
+ * result's `action` instead.
+ */
+function readWebSearchAction(toolCall: ToolCall): string | undefined {
+    if (toolCall.toolName !== "web_search" || !toolCall.result) return undefined;
+    try {
+        const action = JSON.parse(toolCall.result)?.action;
+        if (typeof action?.query === "string") return action.query;
+        if (Array.isArray(action?.queries)) return action.queries.join("; ");
+        return typeof action?.url === "string" ? action.url : undefined;
+    } catch {
+        return undefined;
+    }
 }
 
 function toolNameIcon(toolName: string): string {
@@ -121,7 +138,11 @@ function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallV
         <>
             <span className="llm-chat-tool-call-name">{t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}</span>
             {detailText && (
-                <span className="llm-chat-tool-call-detail">{detailText}</span>
+                <span className="llm-chat-tool-call-detail">
+                    {toolCall.toolName === "read_web_page" && /^https?:\/\//i.test(detailText)
+                        ? <ExternalLink url={detailText}>{detailText}</ExternalLink>
+                        : detailText}
+                </span>
             )}
             {view?.lead}
             {deletedTitle && <span className="llm-chat-tool-call-deleted-title">{deletedTitle}</span>}

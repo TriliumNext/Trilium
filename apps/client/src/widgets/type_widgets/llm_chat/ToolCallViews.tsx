@@ -131,6 +131,23 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                     : undefined
             };
         }
+        case "web_search": {
+            const sources = parseWebSources(toolCall.result);
+            if (!sources?.length) return null;
+            return {
+                summary: t("llm_chat.web_sources_count", { count: sources.length }),
+                body: <WebSourceList sources={sources} />
+            };
+        }
+        case "read_web_page": {
+            // Some agents report only a status title here, which reads as text all the same.
+            if (parseJson(toolCall.result) !== null) return null;
+            const preview = markdownToPlainPreview(toolCall.result.slice(0, CONTENT_PREVIEW_SOURCE_LENGTH));
+            if (!preview) return null;
+            return {
+                body: <div className="llm-chat-note-card"><div className="llm-chat-note-result-preview">{preview}</div></div>
+            };
+        }
         case "get_child_notes": {
             const children = parseChildNotesResult(toolCall.result);
             if (!children) return null;
@@ -288,6 +305,64 @@ function parseIconSearchResult(result: string): IconSearchResult | null {
         .map((item) => (isRecord(item) && typeof item.iconClass === "string" ? item.iconClass : null))
         .filter((iconClass): iconClass is string => !!iconClass);
     return { totalResults: parsed.totalResults, icons };
+}
+
+interface WebSource {
+    url: string;
+    title: string | null;
+}
+
+/** The pages a web search found, each an external link with its site beside it. */
+function WebSourceList({ sources }: { sources: WebSource[] }) {
+    return (
+        <div className="llm-chat-note-results">
+            <ul>
+                {sources.map(({ url, title }, idx) => (
+                    <li key={idx} className="llm-chat-note-result">
+                        <div className="llm-chat-note-result-header">
+                            <ExternalLink url={url}>{title || url}</ExternalLink>
+                            <span className="llm-chat-note-result-detail">{hostnameOf(url)}</span>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+/**
+ * The sources of a `web_search` result, in each provider's shape: Anthropic's array of results,
+ * OpenAI's `sources`, or the `Links: [...]` line Claude Code writes into its text. Only web URLs count.
+ */
+function parseWebSources(result: string): WebSource[] | null {
+    let items: unknown = parseJson(result);
+    if (isRecord(items)) {
+        items = items.sources;
+    } else if (items === null) {
+        const links = /^Links: (\[.*\])$/m.exec(result);
+        items = links ? parseJson(links[1]) : null;
+    }
+    if (!Array.isArray(items)) return null;
+    const sources: WebSource[] = [];
+    for (const item of items) {
+        if (isRecord(item) && typeof item.url === "string" && /^https?:\/\//i.test(item.url)) {
+            sources.push({ url: item.url, title: typeof item.title === "string" ? item.title : null });
+        }
+    }
+    return sources;
+}
+
+/** A link to a page outside Trilium, opened in the browser. */
+export function ExternalLink({ url, children }: { url: string; children: ComponentChildren }) {
+    return <a className="tn-link external" href={url} target="_blank" rel="noopener noreferrer">{children}</a>;
+}
+
+function hostnameOf(url: string): string {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        return "";
+    }
 }
 
 function ChildNoteList({ notes }: { notes: ChildNote[] }) {
