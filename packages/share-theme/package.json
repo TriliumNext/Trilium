@@ -26,16 +26,15 @@
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
-    "katex": "0.18.7",
-    "mermaid": "12.0.0"
+    "katex": "0.18.7"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
-    "dotenv": "18.0.1",
+    "dotenv": "18.0.3",
     "esbuild": "0.28.2",
     "highlight.js": "11.12.0",
-    "sass": "1.104.1",
+    "sass": "1.105.0",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
   }

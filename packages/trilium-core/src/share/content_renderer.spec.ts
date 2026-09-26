@@ -3,10 +3,14 @@ import ejs from "ejs";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
 
+import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
-import { getContent, readShareTemplate, renderCode, renderNoteContent, type Result, shouldSyntaxHighlight } from "./content_renderer.js";
+import {
+    ensureShareHighlighting, getContent, getMimeTypesForOption, readShareTemplate, renderCode,
+    renderNoteContent, type Result, shouldSyntaxHighlight
+} from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
 import shareRoot from "./share_root.js";
@@ -251,7 +255,8 @@ describe("content_renderer", () => {
             expect(result.content).toContain("<p>After</p>");
         });
 
-        it("handles syntax highlight for code blocks with escaped syntax", () => {
+        it("handles syntax highlight for code blocks with escaped syntax", async () => {
+            await ensureShareHighlighting();
             const note = buildShareNote({
                 id: "note",
                 content: trimIndentation`\
@@ -278,6 +283,49 @@ describe("content_renderer", () => {
                 <span class="hljs-tag">&lt;/<span class="hljs-name">t</span>&gt;</span></code>
                 </pre>
             `);
+        });
+
+        it("highlights a code block in the language it declares", async () => {
+            await ensureShareHighlighting();
+            const xml = "&lt;t t-name=&quot;x&quot;&gt;&lt;/t&gt;";
+            // text-x-cobol is not enabled by default, so it is never registered.
+            const languages = [
+                "text-x-python", "text-plain", "text-x-cobol", "text-x-trilium-auto"
+            ];
+            const note = buildShareNote({
+                content: languages
+                    .map((lang) => `<pre><code class="language-${lang}">${xml}</code></pre>`)
+                    .join("")
+            });
+
+            const result = getContent(note);
+            if (typeof result.content !== "string") throw new Error("expected string content");
+            const [ python, plain, cobol, auto ] = parse(result.content, { blockTextElements: {} })
+                .querySelectorAll("code");
+            expect(python.classList.contains("hljs")).toBe(true);
+            expect(python.innerHTML).toContain("hljs-string");
+            expect(python.innerHTML).not.toContain("hljs-tag");
+            expect(plain.innerHTML).toBe(xml);
+            expect(cobol.innerHTML).toBe(xml);
+            expect(auto.innerHTML).toContain("hljs-tag");
+        });
+
+        it("highlights an included code note in its own language", async () => {
+            await ensureShareHighlighting();
+            buildShareNotes([
+                { id: "pycode", type: "code", mime: "text/x-python", content: `<t t-name="x"></t>` }
+            ]);
+            const note = buildShareNote({
+                content: '<section class="include-note" data-note-id="pycode" '
+                    + 'data-box-size="medium">&nbsp;</section>'
+            });
+
+            const result = getContent(note);
+            if (typeof result.content !== "string") throw new Error("expected string content");
+            const code = parse(result.content, { blockTextElements: {} }).querySelector("code");
+            expect(code?.classList.contains("language-text-x-python")).toBe(true);
+            expect(code?.innerHTML).toContain("hljs-string");
+            expect(code?.innerHTML).not.toContain("hljs-tag");
         });
 
         describe("Reference links", () => {
@@ -686,6 +734,47 @@ describe("content_renderer", () => {
             // No newlines, so the line check never trips — the character ceiling must catch it.
             expect(shouldSyntaxHighlight("x".repeat(50_000))).toBe(true);
             expect(shouldSyntaxHighlight("x".repeat(50_001))).toBe(false);
+        });
+    });
+
+    describe("ensureShareHighlighting", () => {
+        it("registers once per option value and drops a disabled language", async () => {
+            const getOption = vi.spyOn(options, "getOptionOrNull");
+            const pythonBlock = () => buildShareNote({
+                content: `<pre><code class="language-text-x-python">def x(): pass</code></pre>`
+            });
+
+            getOption.mockReturnValue(JSON.stringify([ "text/x-python" ]));
+            const first = ensureShareHighlighting();
+            expect(ensureShareHighlighting()).toBe(first);
+            await first;
+            expect(getContent(pythonBlock()).content).toContain("hljs-keyword");
+
+            getOption.mockReturnValue(JSON.stringify([ "text/x-go" ]));
+            const second = ensureShareHighlighting();
+            expect(second).not.toBe(first);
+            await second;
+            expect(getContent(pythonBlock()).content).not.toContain("hljs");
+
+            getOption.mockRestore();
+            await ensureShareHighlighting();
+        });
+    });
+
+    describe("getMimeTypesForOption", () => {
+        const enabledMimes = (optionValue: string | null) => getMimeTypesForOption(optionValue)
+            .filter((mt) => mt.enabled)
+            .map((mt) => mt.mime);
+
+        it("enables the listed MIME types plus text/plain", () => {
+            expect(enabledMimes(JSON.stringify([ "text/x-python", null ])))
+                .toStrictEqual([ "text/plain", "text/x-python" ]);
+        });
+
+        it("falls back to the default MIME types when the option is missing", () => {
+            const enabled = enabledMimes(null);
+            expect(enabled).toContain("text/x-python");
+            expect(enabled).not.toContain("text/x-cobol");
         });
     });
 

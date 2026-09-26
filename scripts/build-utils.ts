@@ -69,7 +69,10 @@ export default class BuildHelper {
                 "pdfjs-dist",
                 "./xhr-sync-worker.js",
                 "vite",
-                "tesseract.js",
+                // tesseract.js requires it only when `global.fetch` is missing, which no
+                // supported Node or Electron version is. Bundling it would pull in
+                // `encoding` and a second iconv-lite.
+                "node-fetch",
                 // Test fixtures referenced via require.resolve from
                 // integration-test-only code paths in apps/server. These
                 // paths are gated at runtime by TRILIUM_INTEGRATION_TEST and
@@ -136,14 +139,23 @@ export default class BuildHelper {
             minify: true
         });
         writeFileSync(join(this.outDir, "meta.json"), JSON.stringify(result.metafile));
+    }
 
-        // Tesseract.js is marked as external above because its worker runs in
-        // a separate worker_thread. Copy the worker source, WASM core and all
-        // transitive runtime deps so they are available in dist/node_modules.
-        this.copyNodeModules([
-            "tesseract.js", "tesseract.js-core", "wasm-feature-detect",
-            "regenerator-runtime", "is-url", "bmp-js"
-        ]);
+    /**
+     * Bundles the Tesseract.js OCR worker into the bundle root and copies the engine builds beside
+     * it, where their loaders read them from, one per CPU feature level.
+     *
+     * Only the full engine builds are copied, not the `-lstm` ones. The Node worker's `getCore()`
+     * compares its `lstmOnly` boolean against OEM numbers, so it never selects an `-lstm` build.
+     *
+     * @param entryPoint the path of `tesseract_worker.ts`, relative to the project.
+     */
+    async buildTesseractWorker(entryPoint: string) {
+        await this.buildBackend([ entryPoint ]);
+        for (const variant of [ "", "-simd", "-relaxedsimd" ]) {
+            const file = `tesseract-core${variant}.wasm`;
+            this.copy(`/node_modules/tesseract.js-core/${file}`, file);
+        }
     }
 
     buildFrontend() {

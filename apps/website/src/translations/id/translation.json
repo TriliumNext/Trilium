@@ -185,7 +185,6 @@
         "download_deb": ".deb",
         "download_rpm": ".rpm",
         "download_appimage": ".AppImage",
-        "download_flatpak": ".flatpak",
         "download_zip": "Portabel (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR"

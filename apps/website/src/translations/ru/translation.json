@@ -193,7 +193,6 @@
         "quick_start": "Выберите подходящий формат пакета в зависимости от вашего дистрибутива:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
         "download_appimage": ".AppImage"

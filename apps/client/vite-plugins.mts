@@ -1,5 +1,7 @@
+import { posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import type { ShareMermaidManifest } from "@triliumnext/commons";
 import type { Plugin } from "vite";
 
 /**
@@ -47,4 +49,95 @@ export const LANGUAGE_DETECTOR_PACKAGE = "franc-min";
 
 function stubPath(name: string): string {
     return fileURLToPath(new URL(`./src/stubs/${name}.ts`, import.meta.url));
+}
+
+/** The name of the entry the share theme loads mermaid through, `src/share_mermaid.ts`. */
+export const SHARE_MERMAID_ENTRY = "share_mermaid";
+
+/**
+ * Adds `src/share_mermaid.ts` as the `share_mermaid` entry and writes its
+ * {@link ShareMermaidManifest} to `manifestPath`. Shared pages read the manifest to import the
+ * entry, and the share-theme export reads it to copy the files.
+ *
+ * The entry is emitted here rather than listed in `input` because an app build drops the exports
+ * of its entries, and shared pages import the entry's default export.
+ */
+export function shareMermaidManifest(manifestPath: string): Plugin {
+    return {
+        name: "share-mermaid-manifest",
+        apply: "build",
+        buildStart() {
+            this.emitFile({
+                type: "chunk",
+                id: fileURLToPath(new URL("./src/share_mermaid.ts", import.meta.url)),
+                name: SHARE_MERMAID_ENTRY,
+                preserveSignature: "exports-only"
+            });
+        },
+        generateBundle(_, bundle) {
+            this.emitFile({
+                type: "asset",
+                fileName: manifestPath,
+                source: JSON.stringify(buildShareMermaidManifest(bundle, manifestPath))
+            });
+        }
+    };
+}
+
+type BundleOutput =
+    | { type: "asset"; fileName: string }
+    | {
+        type: "chunk";
+        fileName: string;
+        name: string;
+        isEntry: boolean;
+        imports: string[];
+        dynamicImports: string[];
+        viteMetadata?: { importedCss: Set<string>; importedAssets: Set<string> };
+    };
+
+/**
+ * Collects the `share_mermaid` entry and everything it imports, statically or dynamically,
+ * including the CSS and assets Vite preloads alongside a chunk.
+ */
+export function buildShareMermaidManifest(
+    bundle: Record<string, BundleOutput>,
+    manifestPath: string
+): ShareMermaidManifest {
+    const entry = Object.values(bundle).find((output) =>
+        output.type === "chunk" && output.isEntry && output.name === SHARE_MERMAID_ENTRY);
+    if (!entry) {
+        throw new Error(`The bundle has no '${SHARE_MERMAID_ENTRY}' entry.`);
+    }
+
+    const files = new Set<string>();
+    const pending = [ entry.fileName ];
+    for (let fileName = pending.pop(); fileName !== undefined; fileName = pending.pop()) {
+        const output = bundle[fileName];
+        if (!output || files.has(fileName)) {
+            continue;
+        }
+
+        files.add(fileName);
+        if (output.type === "chunk") {
+            pending.push(
+                ...output.imports,
+                ...output.dynamicImports,
+                ...(output.viteMetadata?.importedCss ?? []),
+                ...(output.viteMetadata?.importedAssets ?? [])
+            );
+        }
+    }
+
+    const directories = new Set([ ...files ].map((fileName) => posix.dirname(fileName)));
+    if (directories.size !== 1) {
+        const list = [ ...directories ].join(", ");
+        throw new Error(`The '${SHARE_MERMAID_ENTRY}' files span several directories: ${list}.`);
+    }
+
+    const manifestDir = posix.dirname(manifestPath);
+    return {
+        entry: posix.relative(manifestDir, entry.fileName),
+        files: [ ...files ].sort().map((fileName) => posix.relative(manifestDir, fileName))
+    };
 }

@@ -1,8 +1,15 @@
 import { getLog, options } from "@triliumnext/core";
 import fs from "fs";
+import { join } from "path";
 import Tesseract from "tesseract.js";
 
 import dataDirs from "../data_dir.js";
+
+/**
+ * The worker the build bundles from `tesseract_worker.ts` into the bundle root. Running from
+ * source, it does not exist and tesseract.js spawns the worker script inside its own package.
+ */
+const BUNDLED_WORKER_PATH = join(__dirname, "tesseract_worker.cjs");
 
 export interface RecognitionResult {
     /** Recognized text after per-word confidence filtering. */
@@ -65,6 +72,8 @@ class TesseractRecognizer {
         getLog().info(`Initializing Tesseract worker for language(s): ${language}`);
         const worker = await Tesseract.createWorker(language, 1, {
             cachePath: dataDirs.OCR_CACHE_DIR,
+            // Spread rather than passed as `undefined`, which would override the default path.
+            ...(fs.existsSync(BUNDLED_WORKER_PATH) && { workerPath: BUNDLED_WORKER_PATH }),
             // Without an errorHandler, tesseract.js rethrows job failures (e.g. undecodable
             // images) from its worker message handler as uncaught exceptions — in the desktop
             // app that surfaces as Electron's blocking "JavaScript error" dialog (#9754).

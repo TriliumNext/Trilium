@@ -3,7 +3,12 @@ import { createRequire } from "module";
 import { dirname, join } from "path";
 import { describe, expect, it } from "vitest";
 
-import { ENGINE_RENDER_ENTRY, LANGUAGE_DETECTOR_PACKAGE, resolveUniverHyphenationStub } from "./vite-plugins.mjs";
+import {
+    buildShareMermaidManifest,
+    ENGINE_RENDER_ENTRY,
+    LANGUAGE_DETECTOR_PACKAGE,
+    resolveUniverHyphenationStub
+} from "./vite-plugins.mjs";
 
 const entryPath = createRequire(import.meta.url).resolve("@univerjs/engine-render/lib/es/index.js");
 const entrySource = readFileSync(entryPath, "utf8");
@@ -67,6 +72,62 @@ describe("stripUniverHyphenation", () => {
 
         const { franc } = await import("./src/stubs/franc_min.js");
         expect(franc()).toBe("und");
+    });
+});
+
+describe("buildShareMermaidManifest", () => {
+    const chunk = (fileName: string, extra: { name?: string; isEntry?: boolean; imports?: string[];
+        dynamicImports?: string[]; css?: string[] } = {}) => ({
+        type: "chunk" as const,
+        fileName,
+        name: extra.name ?? fileName,
+        isEntry: extra.isEntry ?? false,
+        imports: extra.imports ?? [],
+        dynamicImports: extra.dynamicImports ?? [],
+        viteMetadata: { importedCss: new Set(extra.css ?? []), importedAssets: new Set<string>() }
+    });
+    const bundle = Object.fromEntries([
+        chunk("src/share_mermaid-a.js", {
+            name: "share_mermaid",
+            isEntry: true,
+            imports: [ "src/core-b.js" ]
+        }),
+        chunk("src/core-b.js", {
+            dynamicImports: [ "src/flowchart-c.js", "src/elk-d.js" ],
+            css: [ "src/core-e.css" ]
+        }),
+        chunk("src/flowchart-c.js", { imports: [ "src/core-b.js" ] }),
+        chunk("src/elk-d.js"),
+        { type: "asset" as const, fileName: "src/core-e.css" },
+        chunk("src/index-f.js", { name: "index", isEntry: true, imports: [ "src/core-b.js" ] })
+    ].map((output) => [ output.fileName, output ]));
+
+    it("lists the entry and everything it loads, relative to the manifest", () => {
+        const files = [
+            "core-b.js", "core-e.css", "elk-d.js", "flowchart-c.js", "share_mermaid-a.js"
+        ];
+
+        expect(buildShareMermaidManifest(bundle, "src/share_mermaid.json"))
+            .toEqual({ entry: "share_mermaid-a.js", files });
+        const standaloneManifest = "share/assets/client/share_mermaid.json";
+        expect(buildShareMermaidManifest(bundle, standaloneManifest)).toEqual({
+            entry: "../../../src/share_mermaid-a.js",
+            files: files.map((file) => `../../../src/${file}`)
+        });
+    });
+
+    it("rejects a bundle without the entry or with files outside one directory", () => {
+        const MANIFEST = "src/share_mermaid.json";
+        const { "src/share_mermaid-a.js": _, ...withoutEntry } = bundle;
+        expect(() => buildShareMermaidManifest(withoutEntry, MANIFEST))
+            .toThrow("no 'share_mermaid' entry");
+
+        const nested = {
+            ...bundle,
+            "src/elk-d.js": chunk("src/elk-d.js", { imports: [ "src/nested/g.js" ] }),
+            "src/nested/g.js": chunk("src/nested/g.js")
+        };
+        expect(() => buildShareMermaidManifest(nested, MANIFEST)).toThrow("several directories");
     });
 });
 

@@ -177,7 +177,6 @@
         "quick_start": "Wybierz odpowiedni format paczki, w zależności od twojej dystrybucji:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "Wersja przenośna - Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",

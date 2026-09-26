@@ -144,7 +144,6 @@
         "quick_start": "請根據您的發行版選擇適當的套件格式：",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "免安裝版 (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",

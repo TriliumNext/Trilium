@@ -78,7 +78,6 @@
         "quick_start": "根据你的发行版选择合适的软件包格式：",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "便携版（.zip）",
         "download_appimage": ".AppImage"
     },

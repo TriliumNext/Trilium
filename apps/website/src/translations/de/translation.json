@@ -110,7 +110,6 @@
         "download_aur": "AUR",
         "download_nixpkgs": "nixpkgs",
         "download_zip": "Portable (.zip)",
-        "download_flatpak": ".flatpak",
         "download_rpm": ".rpm",
         "title_x64": "Linux 64-bit",
         "title_arm64": "Linux on ARM",

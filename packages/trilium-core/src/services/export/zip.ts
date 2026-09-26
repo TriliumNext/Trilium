@@ -49,6 +49,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             zipExportOptions
         };
 
+        if (format === "share") {
+            const { ensureShareHighlighting } = await import("../../share/index.js");
+            await ensureShareHighlighting();
+        }
+
         return getZipExportProviderFactory()(format, providerData);
     }
 

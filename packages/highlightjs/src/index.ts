@@ -1,4 +1,4 @@
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
 import { normalizeMimeTypeForCKEditor, type MimeType } from "@triliumnext/commons";
 import syntaxDefinitions from "./syntax_highlighting.js";
 import { type Theme } from "./themes.js";
@@ -10,6 +10,7 @@ export { default as Themes, type Theme, type ThemeVariant, getThemeVariant } fro
 const registeredMimeTypes = new Set<string>();
 const unsupportedMimeTypes = new Set<string>();
 let highlightingThemeEl: HTMLStyleElement | null = null;
+let lastSync: Promise<void> = Promise.resolve();
 
 export async function ensureMimeTypes(mimeTypes: MimeType[]) {
     for (const mimeType of mimeTypes) {
@@ -32,6 +33,30 @@ export async function ensureMimeTypes(mimeTypes: MimeType[]) {
         hljs.registerLanguage(mime, language);
         registeredMimeTypes.add(mime);
     }
+}
+
+/**
+ * Makes the registered languages match `mimeTypes`: registers the enabled ones, like
+ * {@link ensureMimeTypes}, and unregisters the disabled ones that are registered. Calls run one
+ * after another, so a language import still pending from an earlier call cannot register a
+ * language that a later call disabled.
+ */
+export function syncMimeTypes(mimeTypes: MimeType[]): Promise<void> {
+    const sync = lastSync.then(() => applyMimeTypes(mimeTypes));
+    lastSync = sync.catch(() => undefined);
+    return sync;
+}
+
+async function applyMimeTypes(mimeTypes: MimeType[]) {
+    for (const mimeType of mimeTypes) {
+        const mime = normalizeMimeTypeForCKEditor(mimeType.mime);
+        if (!mimeType.enabled && registeredMimeTypes.has(mime)) {
+            hljs.unregisterLanguage(mime);
+            registeredMimeTypes.delete(mime);
+        }
+    }
+
+    await ensureMimeTypes(mimeTypes);
 }
 
 export function highlight(code: string, options: HighlightOptions) {
@@ -81,4 +106,4 @@ export async function loadTheme(theme: "none" | Theme) {
     highlightingThemeEl.textContent = normalizeThemeCss(themeCss);
 }
 
-export const { highlightAuto } = hljs;
+export const { getLanguage, highlightAuto } = hljs;

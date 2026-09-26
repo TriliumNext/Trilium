@@ -814,7 +814,11 @@
     "template_new_note_default_parent": "템플릿 노트에 설정합니다. 템플릿에서 생성된 노트(예: @ 자동 완성 사용)는 다른 위치를 명시적으로 선택하지 않는 한 대상 노트 아래에 배치됩니다.",
     "custom_font": "Trilium 옵션의 글꼴 선택기에 표시할 글꼴 파일을 지정합니다. 노트 자체 제목 아래에 표시됩니다.",
     "board_card_redirect_to": "보드 카드에서 카드를 열면 카드 자체가 아니라 이 카드가 가리키는 노트로 이동합니다.",
-    "geo_shape": "지리 지도에서 노트를 표시할 도형을 지정합니다. 먼저 도형 종류를 입력한 다음 각 지점의 위도와 경도를 입력합니다. 예: <code>line:48.85,2.29 48.86,2.35</code> — 원의 경우에는 중심점과 반경(미터)을 입력합니다. 예: <code>circle:48.85,2.29 500</code>."
+    "geo_shape": "지리 지도에서 노트를 표시할 도형을 지정합니다. 먼저 도형 종류를 입력한 다음 각 지점의 위도와 경도를 입력합니다. 예: <code>line:48.85,2.29 48.86,2.35</code> — 원의 경우에는 중심점과 반경(미터)을 입력합니다. 예: <code>circle:48.85,2.29 500</code>.",
+    "board_show_inbox": "보드 컬렉션에서 받은 편지함 열을 표시합니다. 이 열에는 보드의 어떤 열에도 할당되지 않은 모든 하위 노트가 나열됩니다.",
+    "board_column_width": "보드 컬렉션에서 열이 표시되는 너비를 지정합니다: <code>narrow</code>, <code>medium</code> 또는 <code>wide</code>. 모바일에서는 무시되며, 모바일 화면에 맞는 너비로 표시됩니다.",
+    "board_sort_columns": "보드 컬렉션에서 열이 카드를 정렬하는 순서를 지정합니다. 열에 별도의 정렬 순서가 지정되지 않은 경우 이 설정을 따릅니다. <code>title</code>, <code>creationDate</code> 또는 <code>attr:</code> 뒤에 승격된 속성의 이름을 지정할 수 있습니다.",
+    "board_sort_columns_descending": "보드 컬렉션에서 <code>#board:sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -3241,7 +3245,7 @@
   },
   "board_view": {
     "delete-note": "노트 삭제...",
-    "remove-from-board": "보드에서 제거",
+    "remove-from-board": "열에서 제거",
     "archive-note": "노트 보관",
     "unarchive-note": "노트 보관 해제",
     "insert-above": "위에 새 항목 삽입",
@@ -3300,7 +3304,9 @@
       "selection": "선택",
       "select_column": "열의 모든 카드 선택",
       "clear_selection": "선택 해제",
-      "toggle_column": "열 접기/펼치기(열 머리글에서)"
+      "toggle_column": "열 접기/펼치기(열 머리글에서)",
+      "extend_selection": "선택 영역을 아래/위로 확장",
+      "toggle_selection": "카드를 선택하거나 선택 해제"
     },
     "inbox": "받은 편지함",
     "inherited-column": "이 카드는 템플릿 또는 상위 노트에서 열을 상속받으며, 해당 위치에서 변경할 수 있습니다.",
@@ -3374,7 +3380,8 @@
     "reset-selection": "선택 초기화",
     "expand-column": "열 펼치기",
     "cards-selected_other": "{{count}}개 카드 선택됨",
-    "delete-column-notes_other": "이 열의 노트 {{count}}개도 함께 삭제"
+    "delete-column-notes_other": "이 열의 노트 {{count}}개도 함께 삭제",
+    "select-all-cards": "모든 카드 선택"
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
@@ -4058,7 +4065,9 @@
       "rotate-270": "270° 회전",
       "flip-horizontally": "수평으로 뒤집기",
       "flip-vertically": "수직으로 뒤집기",
-      "change-icon": "아이콘 변경"
+      "change-icon": "아이콘 변경",
+      "insert-date-time-0": "날짜/시간 삽입: %0",
+      "insert-time-0": "시간 삽입: %0"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",

@@ -1,6 +1,7 @@
+import type { ShareMermaidManifest } from "@triliumnext/commons";
+import ejs from "ejs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
-import ejs from "ejs";
 
 import becca from "../../../becca/becca.js";
 import type BBranch from "../../../becca/entities/bbranch.js";
@@ -9,11 +10,16 @@ import type { ExportFormat, NoteMeta, NoteMetaFile } from "../../../meta.js";
 import { readShareTemplate, renderNoteForExport } from "../../../share/index.js";
 import * as iconPackService from "../../icon_packs.js";
 import { getLog } from "../../log.js";
+import { basename } from "../../utils/path.js";
 import { ZipExportProvider, type ZipExportProviderData } from "./abstract_provider.js";
 
 /** The static files a share-theme export copies into the archive, read by each platform its own way. */
 export interface ShareThemeExportAssets {
-    /** The share theme's files, keyed by their path in the archive: `icon-color.svg` and `assets/<file>`. */
+    /**
+     * The share theme's files, keyed by their path in the archive: `icon-color.svg`,
+     * `assets/<file>`, and the client's mermaid under `assets/client/` when
+     * {@link hasMermaidDiagrams} finds a diagram.
+     */
     files: Map<string, string | Uint8Array>;
     /** Returns the font of a built-in icon pack, such as `boxicons.woff2`. */
     readBuiltinFont(fileName: string): Uint8Array | undefined;
@@ -176,4 +182,54 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         this.archive.append(content, { name: "404.html" });
     }
 
+}
+
+/** Where the exported pages find the client's mermaid: `client/` next to `assets/scripts.js`. */
+const MERMAID_ARCHIVE_DIR = "assets/client";
+
+/**
+ * Whether `note` or a note below it has a mermaid code block the shared page renders: a text note's
+ * `language-mermaid` block or a Markdown note's fenced one. Only then does the export carry the
+ * client's mermaid, several megabytes the pages load on demand.
+ */
+export function hasMermaidDiagrams(note: BNote) {
+    return note.getSubtree().notes.some((subtreeNote) => {
+        if (!subtreeNote.isContentAvailable()) {
+            return false;
+        }
+
+        if (subtreeNote.type === "text") {
+            return String(subtreeNote.getContent()).includes("language-mermaid");
+        }
+
+        return subtreeNote.type === "code" && subtreeNote.mime === "text/x-markdown"
+            && MARKDOWN_MERMAID_FENCE.test(String(subtreeNote.getContent()));
+    });
+}
+
+const MARKDOWN_MERMAID_FENCE = /^ {0,3}(`{3,}|~{3,})\s*mermaid\b/m;
+
+/**
+ * Maps the files `manifest` lists to their place in the archive, flattened into `assets/client/`,
+ * and returns the manifest the exported pages read there. Returns `undefined` when the manifest
+ * does not list its own entry: a development server's points at a source module and lists no files.
+ */
+export function mapMermaidExportFiles(manifest: ShareMermaidManifest) {
+    if (!manifest.files.includes(manifest.entry)) {
+        return undefined;
+    }
+
+    return {
+        manifest: {
+            path: `${MERMAID_ARCHIVE_DIR}/share_mermaid.json`,
+            content: JSON.stringify({
+                entry: basename(manifest.entry),
+                files: manifest.files.map(basename)
+            })
+        },
+        files: manifest.files.map((source) => ({
+            source,
+            target: `${MERMAID_ARCHIVE_DIR}/${basename(source)}`
+        }))
+    };
 }

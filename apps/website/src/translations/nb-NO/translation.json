@@ -97,7 +97,6 @@
     "download_helper_desktop_linux": {
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
         "title_x64": "Linux 64-bit",

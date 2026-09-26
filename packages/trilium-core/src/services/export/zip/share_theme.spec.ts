@@ -26,7 +26,11 @@ vi.mock("../../../becca/becca.js", () => ({ default: mockBecca }));
 const mockLog = { error: vi.fn(), info: vi.fn() };
 vi.mock("../../log.js", () => ({ getLog: () => mockLog }));
 
-const { default: ShareThemeExportProvider } = await import("./share_theme.js");
+const {
+    default: ShareThemeExportProvider,
+    hasMermaidDiagrams,
+    mapMermaidExportFiles
+} = await import("./share_theme.js");
 
 // --- Test scaffolding -------------------------------------------------------
 
@@ -307,6 +311,75 @@ describe("ShareThemeExportProvider", () => {
             const names = appendCalls.map((c) => c.options.name);
             expect(names).not.toContain("assets/icon-pack-missing.ttf");
             expect(names).not.toContain("assets/icon-pack-absent.woff2");
+        });
+    });
+});
+
+describe("hasMermaidDiagrams", () => {
+    type FakeNote = { type: string; mime?: string; available?: boolean; content: string };
+
+    function subtreeOf(...notes: FakeNote[]) {
+        return {
+            getSubtree: () => ({
+                notes: notes.map(({ type, mime = "text/html", available = true, content }) => ({
+                    type,
+                    mime,
+                    isContentAvailable: () => available,
+                    getContent: () => content
+                }))
+            })
+        } as any;
+    }
+
+    it("finds a mermaid block only in a readable text note", () => {
+        const mermaid = `<pre><code class="language-mermaid">graph TD;</code></pre>`;
+
+        expect(hasMermaidDiagrams(subtreeOf(
+            { type: "text", content: "<p>root</p>" },
+            { type: "text", content: mermaid }
+        ))).toBe(true);
+        expect(hasMermaidDiagrams(subtreeOf(
+            { type: "code", content: mermaid },
+            { type: "text", available: false, content: mermaid },
+            { type: "text", content: `<pre><code class="language-javascript">x</code></pre>` }
+        ))).toBe(false);
+    });
+
+    it("finds a fenced mermaid block only in a Markdown note", () => {
+        const markdown = { type: "code", mime: "text/x-markdown" };
+
+        const fenced = "# Title\n\n~~~ mermaid\ngraph TD;\n~~~";
+
+        expect(hasMermaidDiagrams(subtreeOf({ ...markdown, content: fenced }))).toBe(true);
+        expect(hasMermaidDiagrams(subtreeOf(
+            { ...markdown, content: "Inline ```mermaid is not a fence.\n\n```js\nmermaid();\n```" },
+            { type: "code", mime: "application/javascript", content: "```mermaid" }
+        ))).toBe(false);
+    });
+});
+
+describe("mapMermaidExportFiles", () => {
+    it("maps nothing from a development manifest, which lists no built files", () => {
+        expect(mapMermaidExportFiles({ entry: "/@fs/repo/apps/client/src/share_mermaid.ts", files: [] }))
+            .toBeUndefined();
+    });
+
+    it("flattens the listed files into assets/client and rewrites the manifest to match", () => {
+        const entry = "../../../src/share_mermaid-abc.js";
+        const core = "../../../src/mermaid.core-def.js";
+        const mapped = mapMermaidExportFiles({ entry, files: [ entry, core ] });
+        if (!mapped) {
+            throw new Error("The manifest mapped to nothing.");
+        }
+
+        expect(mapped.files).toEqual([
+            { source: entry, target: "assets/client/share_mermaid-abc.js" },
+            { source: core, target: "assets/client/mermaid.core-def.js" }
+        ]);
+        expect(mapped.manifest.path).toBe("assets/client/share_mermaid.json");
+        expect(JSON.parse(mapped.manifest.content)).toEqual({
+            entry: "share_mermaid-abc.js",
+            files: [ "share_mermaid-abc.js", "mermaid.core-def.js" ]
         });
     });
 });

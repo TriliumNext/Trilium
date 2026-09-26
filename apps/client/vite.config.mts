@@ -5,7 +5,7 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { stripUniverHyphenation } from './vite-plugins.mjs';
+import { shareMermaidManifest, stripUniverHyphenation } from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
@@ -23,6 +23,7 @@ if (isDev) {
 } else {
     plugins = [
         stripUniverHyphenation(),
+        shareMermaidManifest("src/share_mermaid.json"),
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,

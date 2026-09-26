@@ -27,7 +27,7 @@ Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting to the
 
 Interaction:
 
-*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. If this is problematic, consider changing the language of the code block manually.
+*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. Only the languages enabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_ are considered. If this is problematic, consider changing the language of the code block manually.
 *   When the language is set to _Plain text_, there will be no syntax highlighting.
 
 Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). This value is currently not configurable. For <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, this limitation is not applied.

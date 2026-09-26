@@ -102,7 +102,6 @@
         "quick_start": "사용 중인 배포판에 맞는 패키지 형식을 선택하세요:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "포터블 (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",

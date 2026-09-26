@@ -144,7 +144,6 @@
         "download_deb": ".deb",
         "download_zip": "Portabil (.zip)",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR"
     },

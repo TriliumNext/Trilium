@@ -671,7 +671,7 @@
     "delete-column-confirmation": "本当にこの列を削除しますか？対応する属性は、この列の下のノートでも削除されます。",
     "new-item": "新しいカード",
     "add-column": "列を追加",
-    "remove-from-board": "ボードから削除",
+    "remove-from-board": "列から削除",
     "archive-note": "アーカイブノート",
     "unarchive-note": "ノートのアーカイブを解除",
     "new-item-placeholder": "カードのタイトルを入力...",
@@ -724,7 +724,9 @@
       "selection": "選択",
       "select_column": "列のすべてのカードを選択",
       "clear_selection": "選択を解除",
-      "toggle_column": "列を折りたたむ／展開する（列ヘッダー上で）"
+      "toggle_column": "列を折りたたむ／展開する（列ヘッダー上で）",
+      "extend_selection": "選択範囲を下/上に拡張",
+      "toggle_selection": "カードを取り出す、または戻す"
     },
     "inbox": "インボックス",
     "inherited-column": "このカードは、テンプレートまたは親ノートから列情報を取得するため、そこで変更できます。",
@@ -798,7 +800,8 @@
     "select-column-cards": "列のすべてのカードを選択",
     "reset-selection": "選択を解除",
     "expand-column": "列を展開",
-    "delete-column-notes_other": "この列にある {{count}} 件のノートも削除"
+    "delete-column-notes_other": "この列にある {{count}} 件のノートも削除",
+    "select-all-cards": "すべてのカードを選択"
   },
   "code_buttons": {
     "execute_button_title": "スクリプトを実行",
@@ -1684,7 +1687,11 @@
     "template_new_note_default_parent": "テンプレートノートに設定した場合: テンプレートから作成されたノート（例: @補完機能によるもの）は、明示的に別の場所が選択されない限り、対象のノートの配下に配置されます。",
     "custom_font": "Trilium のオプションにあるフォント選択画面で、ノートのタイトルの下に表示されるフォントファイルを指定します。",
     "board_card_redirect_to": "ボード上のカードを開いたとき、カード自体を開くのではなく、そのカードが指し示しているノートに移動します。",
-    "geo_shape": "ジオマップ上にノートを描画する際の形状指定: 形状の種類に続けて、各ポイントの緯度・経度を指定します。例: <code>line:48.85,2.29 48.86,2.35</code> — または、中心を円とし、メートル単位で到達範囲を指定します。<code>circle:48.85,2.29 500</code>。"
+    "geo_shape": "ジオマップ上にノートを描画する際の形状指定: 形状の種類に続けて、各ポイントの緯度・経度を指定します。例: <code>line:48.85,2.29 48.86,2.35</code> — または、中心を円とし、メートル単位で到達範囲を指定します。<code>circle:48.85,2.29 500</code>。",
+    "board_column_width": "ボードコレクションでの列幅の指定: <code>narrow</code>、<code>medium</code>、<code>wide</code> （狭い、中、広い ）。モバイル環境では独自の幅で描画されるため、この設定は無視されます。",
+    "board_show_inbox": "ボードコレクションに inbox 列を表示します。この列には、どのボード列にも割り当てられていないすべての子ノートが一覧表示されます。",
+    "board_sort_columns": "ボードコレクションの列内でのカードの並び順を指定します。個別の並び順が設定されていない限り、列はこの設定に従います。値には <code>title</code>、<code>creationDate</code>、または <code>attr:</code> に続けて昇格された属性名を指定します。",
+    "board_sort_columns_descending": "ボードコレクションでは、<code>#board:sortColumns</code> の並び順が逆向きに適用されます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -3647,7 +3654,9 @@
       "rotate-270": "270° 回転",
       "flip-horizontally": "左右反転",
       "flip-vertically": "上下反転",
-      "change-icon": "アイコンを変更"
+      "change-icon": "アイコンを変更",
+      "insert-date-time-0": "日付/時刻を挿入: %0",
+      "insert-time-0": "時刻を挿入: %0"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",

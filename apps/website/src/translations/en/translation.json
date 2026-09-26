@@ -243,8 +243,8 @@
     "quick_start": "Select an appropriate package format, depending on your distribution:",
     "download_deb": ".deb",
     "download_rpm": ".rpm",
+    "download_flathub": "Flathub",
     "download_appimage": ".AppImage",
-    "download_flatpak": ".flatpak",
     "download_zip": "Portable (.zip)",
     "download_nixpkgs": "nixpkgs",
     "download_aur": "AUR"

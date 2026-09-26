@@ -6,11 +6,14 @@ import prefresh from "@prefresh/vite";
 import { defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
-import { stripUniverHyphenation } from "../client/vite-plugins.mjs";
+import { shareMermaidManifest, stripUniverHyphenation } from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
+
+// Next to the share theme's own files, where `scripts.js` looks for it.
+const SHARE_MERMAID_MANIFEST = "share/assets/client/share_mermaid.json";
 
 // The share pages resolve built-in assets against `assets/v<version>`, the same prefix the server
 // serves them under. Read from trilium-core because that is the version `assetUrlFragment` is
@@ -55,6 +58,19 @@ const clientWatchPlugin = () => ({
                 }
             });
         }
+    }
+});
+
+// Points the share pages at the client's mermaid entry, which the build lists in its manifest.
+const shareMermaidDevPlugin = (): Plugin => ({
+    name: "share-mermaid-dev",
+    configureServer(server) {
+        const entry = join(__dirname, "../client/src/share_mermaid.ts").replace(/\\/g, "/");
+
+        server.middlewares.use(`/${SHARE_MERMAID_MANIFEST}`, (_req, res) => {
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ entry: `/@fs/${entry.replace(/^\//, "")}`, files: [] }));
+        });
     }
 });
 
@@ -214,8 +230,11 @@ let plugins: any = [
     ...(isDev ? [
         prefresh(),
         clientWatchPlugin(),
-        pdfjsServePlugin()
-    ] : [])
+        pdfjsServePlugin(),
+        shareMermaidDevPlugin()
+    ] : [
+        shareMermaidManifest(SHARE_MERMAID_MANIFEST)
+    ])
 ];
 
 if (!isDev) {

@@ -342,7 +342,8 @@
   },
   "backend_log": {
     "log-does-not-exist": "백엔드 로그 파일 '{{ fileName }}'은 아직 존재하지 않습니다.",
-    "reading-log-failed": "백엔드 로그 파일 '{{ fileName }}'을(를) 읽지 못했습니다."
+    "reading-log-failed": "백엔드 로그 파일 '{{ fileName }}'을(를) 읽지 못했습니다.",
+    "log-file-unavailable": "로그 파일을 열 수 없어 메모리에 보관된 가장 최근 항목만 표시됩니다. Trilium은 계속 로그 파일 열기를 시도하며, 열 수 있게 되면 이 항목들을 파일에 기록합니다."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다.",

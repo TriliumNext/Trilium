@@ -323,7 +323,8 @@
   },
   "backend_log": {
     "log-does-not-exist": "バックエンドのログファイル '{{ fileName }}' は（まだ）存在しません。",
-    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。"
+    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。",
+    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",

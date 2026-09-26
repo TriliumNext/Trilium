@@ -1,4 +1,8 @@
-import { classifyFaviconContrast, faviconContrastClass, measureFaviconVisibility } from "@triliumnext/commons";
+import {
+    classifyFaviconContrast,
+    faviconContrastClass,
+    measureFaviconVisibility
+} from "@triliumnext/commons/src/lib/favicon_contrast.js";
 
 /**
  * Corrects link-preview favicons that would be invisible against the page.

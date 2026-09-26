@@ -20,3 +20,9 @@ export const SHARE_ROUTE_PATHS = [
 ] as const;
 
 export type ShareRoutePath = (typeof SHARE_ROUTE_PATHS)[number];
+
+/** The share paths that can render a text or Markdown note, the only notes that highlight code. */
+export const SHARE_PAGE_PATHS: ReadonlySet<ShareRoutePath> = new Set([
+    "/share/",
+    "/share/:shareId"
+]);

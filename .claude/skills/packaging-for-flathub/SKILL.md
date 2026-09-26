@@ -15,6 +15,9 @@ place and the workflow's first unattended run opened
 [org.triliumnotes.Trilium#1](https://github.com/flathub/org.triliumnotes.Trilium/pull/1):
 `validate-manifest` passed, `build-x86_64` took 8m07s and `build-aarch64` 10m40s, both
 green. That run also carried the first prune, removing the three leftover `.mts` scripts.
+Flathub ships the latest release and CI keeps it current, so it is the Flatpak that
+`apps/website/src/download-helper.ts` recommends on the Linux download card; the Forge
+`.flatpak` asset is no longer linked from the website.
 
 **Flathub bans AI-generated submissions** (policy May 2026). Everything addressed to
 Flathub — pull request descriptions, review replies, linter-exception requests — is
@@ -233,7 +236,9 @@ build adjudicates it).
    which no permission can substitute for (see "Sandboxed data dir"). The old Flathub app,
    the Forge `.flatpak` and every `.deb`/AppImage keep notes at host
    `~/.local/share/trilium-data`; the new app starts on an empty
-   `$XDG_DATA_HOME/trilium-data` and says nothing about why. Options not yet weighed: a
+   `$XDG_DATA_HOME/trilium-data` and says nothing about why. Until then, the User Guide's
+   _Desktop Installation_ page documents copying the directory into
+   `~/.var/app/org.triliumnotes.Trilium/data` by hand. Options not yet weighed: a
    first-run prompt that asks for the directory through the file portal, a documented
    `flatpak override --filesystem=…` in the release notes, or exposing the legacy
    database read-only for a one-time import. Settle it **before** the rebase — after it,

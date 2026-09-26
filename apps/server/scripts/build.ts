@@ -9,6 +9,7 @@ async function main() {
     // Its own call so it lands beside the bundle rather than under a `services/` path: the pool
     // looks for it next to whatever is running, and desktop builds it the same way.
     await build.buildBackend([ "src/services/image_worker.ts" ]);
+    await build.buildTesseractWorker("src/services/ocr/tesseract_worker.ts");
 
     // Copy assets
     build.copy("src/assets", "assets/");

@@ -20,6 +20,7 @@ async function main() {
     // The image compression worker, which lives in the server it embeds. Built here too so the
     // desktop app can compress off-thread rather than falling back to doing it in the main process.
     await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
+    await build.buildTesseractWorker("../server/src/services/ocr/tesseract_worker.ts");
 
     // Copy assets.
     build.copy("src/assets", "assets/");
