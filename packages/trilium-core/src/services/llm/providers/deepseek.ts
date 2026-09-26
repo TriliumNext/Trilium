@@ -1,4 +1,4 @@
-import { createOpenAI, type OpenAIProvider as OpenAISDKProvider } from "@ai-sdk/openai";
+import { createDeepSeek, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
 
 import type { ModelInfo } from "../types.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
@@ -12,7 +12,9 @@ import { llmFetch } from "./fetch.js";
 const OFFICIAL_BASE_URL = "https://api.deepseek.com/v1";
 
 /**
- * DeepSeek, over its OpenAI-compatible API. It could be reached through the
+ * DeepSeek, over its OpenAI-compatible API. `@ai-sdk/deepseek` rather than
+ * `@ai-sdk/openai` reads the thinking from `reasoning_content` and sends it back
+ * with later turns. DeepSeek could also be reached through the
  * generic custom-endpoint card, but a card of its own is what makes its models
  * priced: {@link BaseProvider.getProviderPrices} keys the committed table by
  * provider name, and DeepSeek publishes bare ids (`deepseek-chat`) that the
@@ -32,22 +34,18 @@ export class DeepSeekProvider extends BaseProvider {
     /** Whether the two above have been replaced by ids the endpoint actually offers. */
     private defaultsFromListing = false;
 
-    private openai: OpenAISDKProvider;
+    private deepseek: DeepSeekSDKProvider;
 
     constructor(apiKey: string, baseURL?: string) {
         super(apiKey, baseURL);
         if (!apiKey) {
             throw new Error("API key is required for DeepSeek provider");
         }
-        this.openai = createOpenAI({ apiKey, baseURL: this.baseURL ?? OFFICIAL_BASE_URL, fetch: llmFetch });
+        this.deepseek = createDeepSeek({ apiKey, baseURL: this.baseURL ?? OFFICIAL_BASE_URL, fetch: llmFetch });
     }
 
-    /**
-     * Chat Completions rather than the Responses API, which DeepSeek doesn't
-     * implement — the same reason the self-hosted provider pins `.chat()`.
-     */
     protected createModel(modelId: string) {
-        return this.openai.chat(modelId);
+        return this.deepseek.chat(modelId);
     }
 
     /** Everything DeepSeek lists is a chat model, so nothing is filtered out. */

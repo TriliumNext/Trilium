@@ -1,16 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const createOpenAiMock = vi.fn();
-const chatMock = vi.fn(() => ({}));
-
-vi.mock("@ai-sdk/openai", () => ({
-    createOpenAI: (opts: unknown) => {
-        createOpenAiMock(opts);
-        const fn: any = () => ({});
-        fn.chat = chatMock;
-        return fn;
-    }
+const { createDeepSeekMock, chatMock } = vi.hoisted(() => ({
+    createDeepSeekMock: vi.fn(),
+    chatMock: vi.fn()
 }));
+
+// Spies around the real SDK, so a stream fed through `fetch` is parsed as it is in production.
+vi.mock("@ai-sdk/deepseek", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@ai-sdk/deepseek")>();
+    return {
+        createDeepSeek: (opts: Parameters<typeof actual.createDeepSeek>[0]) => {
+            createDeepSeekMock(opts);
+            const sdk = actual.createDeepSeek(opts);
+            return { chat: (modelId: string) => { chatMock(modelId); return sdk.chat(modelId); } };
+        }
+    };
+});
 
 const { generateTextMock } = vi.hoisted(() => ({
     generateTextMock: vi.fn(async () => ({ text: "  A generated title  " }) as any)
@@ -21,8 +26,11 @@ vi.mock("ai", async (importOriginal) => {
     return { ...actual, generateText: generateTextMock };
 });
 
-import { DeepSeekProvider, deepSeekModelName } from "./deepseek.js";
+import type { LlmStreamChunk } from "@triliumnext/commons";
+
 import { installGlobalFetchAsApiTransport } from "../../../test/request_provider.js";
+import { streamToChunks } from "../stream.js";
+import { DeepSeekProvider, deepSeekModelName } from "./deepseek.js";
 import { llmFetch } from "./fetch.js";
 
 // A provider reaches its endpoint through the request provider rather than the global `fetch`, so
@@ -31,19 +39,19 @@ beforeEach(installGlobalFetchAsApiTransport);
 
 describe("DeepSeekProvider construction", () => {
     beforeEach(() => {
-        createOpenAiMock.mockClear();
+        createDeepSeekMock.mockClear();
         chatMock.mockClear();
     });
 
     it("points at the official endpoint unless overridden, and requires a key", () => {
         new DeepSeekProvider("sk-deep");
-        expect(createOpenAiMock).toHaveBeenCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
 
         // An override reaches a gateway in front of DeepSeek; a blank one is no override.
         new DeepSeekProvider("sk-deep", "https://gateway.example/v1");
-        expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://gateway.example/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://gateway.example/v1", fetch: llmFetch });
         new DeepSeekProvider("sk-deep", "");
-        expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
 
         expect(() => new DeepSeekProvider("")).toThrow(/API key is required/);
     });
@@ -194,6 +202,33 @@ describe("DeepSeekProvider title generation", () => {
         const title = await new DeepSeekProvider("sk-deep").generateTitle("Explain quantum tunnelling");
         expect(chatMock).toHaveBeenCalledWith("deepseek-chat");
         expect(title).toBe("A generated title");
+    });
+});
+
+describe("DeepSeekProvider streaming", () => {
+    it("streams `reasoning_content` as thinking ahead of the answer", async () => {
+        const events = [
+            { choices: [{ index: 0, delta: { role: "assistant", reasoning_content: "Weighing " } }] },
+            { choices: [{ index: 0, delta: { reasoning_content: "the options." } }] },
+            { choices: [{ index: 0, delta: { content: "Pick B." } }] },
+            { choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 5, completion_tokens: 7 } }
+        ];
+        const body = `${events.map(e => `data: ${JSON.stringify({ id: "c1", created: 0, model: "deepseek-v4-pro", ...e })}\n\n`).join("")}data: [DONE]\n\n`;
+        const fetchMock = vi.fn(async () => new Response(body, { headers: { "content-type": "text/event-stream" } }));
+        vi.stubGlobal("fetch", fetchMock);
+
+        const provider = new DeepSeekProvider("sk-deep");
+        const chunks: LlmStreamChunk[] = [];
+        for await (const chunk of streamToChunks(provider.chat([{ role: "user", content: "A or B?" }], { model: "deepseek-v4-pro" }))) {
+            chunks.push(chunk);
+        }
+
+        expect(fetchMock).toHaveBeenCalledWith("https://api.deepseek.com/v1/chat/completions", expect.anything());
+        expect(chunks.filter(c => c.type === "thinking" || c.type === "text")).toEqual([
+            { type: "thinking", content: "Weighing " },
+            { type: "thinking", content: "the options." },
+            { type: "text", content: "Pick B." }
+        ]);
     });
 });
 
