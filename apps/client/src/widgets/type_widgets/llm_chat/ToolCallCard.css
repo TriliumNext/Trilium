@@ -18,6 +18,7 @@
 }
 
 .llm-chat-tool-call-note-ref {
+    font-size: 0.75rem;
     font-weight: 400;
     margin-left: 0.25rem;
 }
