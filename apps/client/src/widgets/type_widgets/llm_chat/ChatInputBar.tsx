@@ -15,6 +15,7 @@ import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormListHeader, FormListItem } from "../../react/FormList.js";
 import { useLegacyImperativeHandlers, useTriliumOption } from "../../react/hooks.js";
+import ImageLightboxLink from "../../react/ImageLightboxLink.js";
 import MaskedIcon from "../../react/MaskedIcon.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { providerIconUrl } from "../options/llm/provider_icons.js";
@@ -300,7 +301,9 @@ export default function ChatInputBar({
                                 title={att.title}
                             >
                                 {att.type === "image" ? (
-                                    <SafeImage src={att.url} alt={att.title} />
+                                    <ImageLightboxLink src={att.url} title={att.title} className="llm-chat-attachment-image-link">
+                                        <SafeImage src={att.url} alt={att.title} />
+                                    </ImageLightboxLink>
                                 ) : (
                                     <div className="llm-chat-attachment-file">
                                         <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />

@@ -64,6 +64,13 @@
     width: 56px;
 }
 
+.llm-chat-attachment-image-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: zoom-in;
+}
+
 .llm-chat-attachment-chip-image img {
     width: 100%;
     height: 100%;

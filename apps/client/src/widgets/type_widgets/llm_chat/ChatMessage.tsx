@@ -10,6 +10,7 @@ import utils from "../../../services/utils.js";
 import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
 import { useResizeObserver } from "../../react/hooks.js";
+import ImageLightboxLink from "../../react/ImageLightboxLink.js";
 import LoadingSpinner from "../../react/LoadingSpinner.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { formatErrorDetails } from "./chat_error.js";
@@ -355,16 +356,14 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
 
         if (group.type === "image") {
             return (
-                <a
+                <ImageLightboxLink
                     key={group.index}
-                    href={group.block.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="llm-chat-message-image"
+                    src={group.block.url}
                     title={group.block.title}
+                    className="llm-chat-message-image"
                 >
                     <SafeImage src={group.block.url} alt={group.block.title} />
-                </a>
+                </ImageLightboxLink>
             );
         }
 

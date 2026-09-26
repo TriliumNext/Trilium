@@ -69,6 +69,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     display: block;
     margin: 0.5rem 0;
     max-width: 100%;
+    cursor: zoom-in;
 }
 
 .llm-chat-message-image img {

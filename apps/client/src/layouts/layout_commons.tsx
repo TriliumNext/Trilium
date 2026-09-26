@@ -33,6 +33,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<LazyDialog triggerEvents={["showRevisions"]} loader={() => import("../widgets/dialogs/revisions.js")} />)
         .child(<LazyDialog triggerEvents={["showDeleteNotesDialog"]} loader={() => import("../widgets/dialogs/delete_notes.js")} />)
         .child(<LazyDialog triggerEvents={["showPrintPreview"]} loader={() => import("../widgets/dialogs/print_preview.jsx")} />)
+        .child(<LazyDialog triggerEvents={["showImageLightbox"]} loader={() => import("../widgets/dialogs/image_lightbox.js")} />)
         .child(<LazyDialog triggerEvents={["showInfoDialog"]} loader={() => import("../widgets/dialogs/info.js")} />)
         .child(<LazyDialog triggerEvents={["showConfirmDialog", "showConfirmDeleteNoteBoxWithNoteDialog"]} loader={() => import("../widgets/dialogs/confirm.js")} />)
         .child(<LazyDialog triggerEvents={["showPromptDialog"]} loader={() => import("../widgets/dialogs/prompt.js")} />)

@@ -144,6 +144,8 @@ Once one or more attachments are uploaded, they will appear directly above the t
 *   Images have a small thumbnail for easy identifications.
 *   Every attachment can be deleted by pressing their corresponding X button.
 
+Clicking an image, either its thumbnail above the text box or the image shown in a sent message, opens it in a viewer where it can be zoomed and panned. The button next to the viewer's close button opens the original image in a new tab; so does <kbd>Ctrl</kbd>\-clicking the image.
+
 When an attachment is present, the LLM is instructed to consider the attachment with priority, even if it has access to the current note.
 
 > [!NOTE]

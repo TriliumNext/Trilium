@@ -20,6 +20,8 @@ interface ImageViewerProps {
     alt?: string;
     minScale?: number;
     maxScale?: number;
+    /** The shortcut hints to offer; defaults to zoom, pan and navigation between a folder's images. */
+    shortcutHints?: ShortcutHintDefinition;
 }
 
 /** Beyond this multiple of the image's native resolution, switch to crisp (non-smoothed) rendering. */
@@ -56,7 +58,9 @@ export function evaluateImageZoom(scale: number, img: { naturalWidth: number; cl
  * Interactive image viewer: the image is fit to the viewport on load, then the user can zoom
  * (wheel/pinch/buttons/keyboard) and pan (drag/keyboard). Double-clicking resets to the fitted view.
  */
-export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.5, maxScale = 50 }: ImageViewerProps) {
+export default function ImageViewer({
+    src, imgClassName, alt = "", minScale = 0.5, maxScale = 50, shortcutHints = IMAGE_VIEWER_HINTS
+}: ImageViewerProps) {
     const [ pannable, setPannable ] = useState(false);
     const [ panning, setPanning ] = useState(false);
     const [ largeZoom, setLargeZoom ] = useState(false);
@@ -119,7 +123,7 @@ export default function ImageViewer({ src, imgClassName, alt = "", minScale = 0.
 
     useZoomPanKeyboard(zoom.ref, rootEl);
     useZoomPanWheel(zoom.ref, rootEl);
-    useContextualShortcutHints(IMAGE_VIEWER_HINTS);
+    useContextualShortcutHints(shortcutHints);
 
     const wrapperClass = [
         "image-viewer-viewport",

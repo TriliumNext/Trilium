@@ -1,0 +1,14 @@
+.modal.image-lightbox-dialog {
+    .modal-body {
+        height: 80vh;
+        padding: 0;
+        overflow: hidden;
+    }
+}
+
+body.mobile .modal.image-lightbox-dialog .modal-body {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+    overflow: hidden;
+}

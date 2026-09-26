@@ -22,6 +22,7 @@ import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import { IconPickerOpts } from "../widgets/dialogs/icon_picker.jsx";
+import type { ImageLightboxOptions } from "../widgets/dialogs/image_lightbox.jsx";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
@@ -156,6 +157,7 @@ export type CommandMappings = {
     showItemPickerDialog: ItemPickerDialogOptions;
     showNotePickerDialog: NotePickerDialogOptions;
     showInfoDialog: InfoProps;
+    showImageLightbox: ImageLightboxOptions;
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showDeletedNotes: CommandData & { ancestorNoteId?: string };

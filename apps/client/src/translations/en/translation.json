@@ -1229,7 +1229,9 @@
       "first_image": "First image",
       "last_image": "Last image"
     },
-    "viewport": "Image view"
+    "viewport": "Image view",
+    "lightbox_title": "Image",
+    "open_original": "Open the original image in a new tab"
   },
   "shortcut_hints": {
     "show_button": "Show shortcut hints",
