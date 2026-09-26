@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { diffLines, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
+import { diffBlocks, diffLines, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 
 describe("diffLines", () => {
     it("marks a replaced line as remove then add, keeping surrounding context", () => {
@@ -66,5 +66,16 @@ describe("parseNoteContentEdits", () => {
         expect(parseNoteContentEdits("nope")).toBeNull();
         expect(parseNoteContentEdits([{ oldText: "a" }])).toBeNull();
         expect(parseNoteContentEdits([{ oldText: 1, newText: 2 }])).toBeNull();
+    });
+});
+
+describe("diffBlocks", () => {
+    it("joins consecutive lines of one kind into a block", () => {
+        expect(diffBlocks("a\nb\nold 1\nold 2\nc", "a\nb\nnew\nc")).toEqual([
+            { type: "context", text: "a\nb" },
+            { type: "remove", text: "old 1\nold 2" },
+            { type: "add", text: "new" },
+            { type: "context", text: "c" }
+        ]);
     });
 });

@@ -3,6 +3,10 @@ import "./EditNoteContentDiff.css";
 import { diffLines as jsDiffLines } from "diff";
 
 import { t } from "../../../services/i18n.js";
+import { MARKDOWN_NOTE_TYPE_MIME } from "../../../services/note_types.js";
+import { useNote } from "../../react/hooks.js";
+import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
+import { renderMarkdown } from "./chat_markdown.js";
 
 /** A single find-and-replace edit performed by the `edit_note_content` tool. */
 export interface NoteContentEdit {
@@ -41,21 +45,38 @@ export function diffLines(oldText: string, newText: string): DiffLine[] {
     return result;
 }
 
-const GUTTER_MARKER: Record<DiffLineType, string> = {
-    add: "+",
-    remove: "-",
-    context: " "
-};
+/** A run of consecutive diff lines of one kind, joined back into text. */
+export interface DiffBlock {
+    type: DiffLineType;
+    text: string;
+}
 
-/** Renders a single edit (one find/replace pair) as a unified diff hunk. */
-function DiffHunk({ edit }: { edit: NoteContentEdit }) {
-    const lines = diffLines(edit.oldText, edit.newText);
+/** Diffs two texts into blocks, each a run of added, removed or unchanged lines. */
+export function diffBlocks(oldText: string, newText: string): DiffBlock[] {
+    const blocks: DiffBlock[] = [];
+    for (const line of diffLines(oldText, newText)) {
+        const last = blocks[blocks.length - 1];
+        if (last?.type === line.type) {
+            last.text += `\n${line.text}`;
+        } else {
+            blocks.push({ ...line });
+        }
+    }
+    return blocks;
+}
+
+/**
+ * Renders a single edit (one find/replace pair) as blocks: added text on a green edge, removed text on
+ * a red edge and struck through. A Markdown note's blocks render as Markdown; other notes stay code.
+ */
+function DiffHunk({ edit, markdown }: { edit: NoteContentEdit; markdown: boolean }) {
     return (
         <div className="llm-diff-hunk">
-            {lines.map((line, idx) => (
-                <div key={idx} className={`llm-diff-line llm-diff-line-${line.type}`}>
-                    <span className="llm-diff-gutter">{GUTTER_MARKER[line.type]}</span>
-                    <span className="llm-diff-text">{line.text || " "}</span>
+            {diffBlocks(edit.oldText, edit.newText).map((block, idx) => (
+                <div key={idx} className={`llm-diff-block llm-diff-block-${block.type}`}>
+                    {markdown
+                        ? <ReadOnlyTextContent html={renderMarkdown(block.text)} className="llm-chat-markdown" />
+                        : <pre>{block.text || " "}</pre>}
                 </div>
             ))}
         </div>
@@ -95,7 +116,9 @@ export function parseNoteContentEdits(value: unknown): NoteContentEdit[] | null 
 }
 
 /** A fancy unified diff for the `edit_note_content` tool's list of edits. */
-export function EditNoteContentDiff({ edits }: { edits: NoteContentEdit[] }) {
+export function EditNoteContentDiff({ noteId, edits }: { noteId?: string; edits: NoteContentEdit[] }) {
+    const note = useNote(noteId);
+    const markdown = note?.type === "code" && note.mime === MARKDOWN_NOTE_TYPE_MIME;
     return (
         <div className="llm-diff">
             {edits.map((edit, idx) => (
@@ -105,7 +128,7 @@ export function EditNoteContentDiff({ edits }: { edits: NoteContentEdit[] }) {
                             {t("llm_chat.edit_index", { index: idx + 1, total: edits.length })}
                         </div>
                     )}
-                    <DiffHunk edit={edit} />
+                    <DiffHunk edit={edit} markdown={markdown} />
                 </div>
             ))}
         </div>

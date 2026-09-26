@@ -126,7 +126,8 @@
     }
 }
 
-/* Appended content is new at the end of the note, so it wears the diff's color for added lines. */
+/* Appended content is new at the end of the note. The green matches `.llm-diff-block-add` in
+   EditNoteContentDiff.css. */
 .llm-chat-written-appended {
     padding-left: 0.5rem;
     border-left: 2px solid rgb(60, 160, 60);

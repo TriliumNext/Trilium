@@ -400,4 +400,31 @@ describe("ToolCallCard", () => {
         expect(json).not.toBeUndefined();
         expect(json?.querySelector(".llm-chat-written")).toBeNull();
     });
+
+    it("shows an edit as blocks with colored edges, rendering Markdown on a Markdown note", () => {
+        mocks.notes = {
+            m: { type: "code", mime: "text/x-markdown" },
+            c: { type: "code", mime: "text/x-python" }
+        };
+        const edit = (id: string, noteId: string, oldText: string, newText: string): ToolCall => ({
+            id, toolName: "edit_note_content", input: { noteId, edits: [ { oldText, newText } ] }
+        });
+        const target = renderCard([
+            edit("1", "m", "a\n**old**\nc", "a\n**new**\nc"),
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            edit("3", "c", "x = 1\ny = 2", "x = 1\ny = 3")
+        ]);
+        const [ markdown, , code ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        const blocks = [ ...(markdown?.querySelectorAll(".llm-diff-block") ?? []) ];
+        expect(blocks.map(block => block.className.replace("llm-diff-block ", ""))).toEqual([
+            "llm-diff-block-context", "llm-diff-block-remove", "llm-diff-block-add", "llm-diff-block-context"
+        ]);
+        expect(blocks[1]?.querySelector(".markdown-stub")?.textContent).toContain("<strong>old</strong>");
+        expect(blocks[2]?.querySelector(".markdown-stub")?.textContent).toContain("<strong>new</strong>");
+
+        const codeRemoved = code?.querySelector(".llm-diff-block-remove");
+        expect(codeRemoved?.querySelector("pre")?.textContent).toBe("y = 2");
+        expect(codeRemoved?.querySelector(".markdown-stub")).toBeNull();
+    });
 });

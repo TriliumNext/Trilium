@@ -133,6 +133,7 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
     const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
         ? parseNoteContentEdits(toolCall.input?.edits)
         : null;
+    const editedNoteId = typeof toolCall.input.noteId === "string" ? toolCall.input.noteId : undefined;
     const errorMessage = hasError && toolCall.result ? getErrorMessage(toolCall.result) : null;
     const view = isStreamingInput ? null : getToolCallView(toolCall);
 
@@ -165,7 +166,7 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
             {isStreamingInput && <pre className="llm-chat-tool-call-streaming">{toolCall.inputStreaming}</pre>}
             {noteContentEdits && (
                 <div className="llm-chat-tool-call-diff">
-                    <EditNoteContentDiff edits={noteContentEdits} />
+                    <EditNoteContentDiff noteId={editedNoteId} edits={noteContentEdits} />
                 </div>
             )}
             {errorMessage && <p className="llm-chat-tool-call-error-message">{errorMessage}</p>}
