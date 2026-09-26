@@ -96,6 +96,19 @@ describe("ModelSelection", () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 
+    it("refreshes the stored metadata of selected models from the listing", async () => {
+        // Stored before the provider listed effort levels, with an old price; `gone` is no longer listed.
+        const stale: LlmModelInfo = { id: "gpt-4.1", name: "GPT-4.1", pricing: { input: 1, output: 1 } };
+        const gone: LlmModelInfo = { id: "gone", name: "Gone" };
+        const fresh: LlmModelInfo = { ...MODELS[0], reasoningEfforts: ["low", "high"], defaultReasoningEffort: "high" };
+        fetchProviderModelsMock.mockResolvedValue([fresh, MODELS[1], MODELS[2]]);
+        const onChange = vi.fn();
+
+        await renderSelection({ query: { provider: "openai" }, selected: [stale, gone], onChange, autoSelectDefaults: true });
+        expect(onChange).toHaveBeenCalledOnce();
+        expect(onChange).toHaveBeenCalledWith([fresh, gone]);
+    });
+
     it("leaves an empty selection untouched when auto-select is off", async () => {
         // A provider deliberately emptied to "hide all" — reopening its editor
         // must not silently re-populate it (see shouldSeedDefaultModels).

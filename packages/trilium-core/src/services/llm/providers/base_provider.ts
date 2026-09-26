@@ -413,6 +413,10 @@ export abstract class BaseProvider implements LlmProvider {
             onError: () => {},
             telemetry: TELEMETRY_OFF
         };
+        const providerOptions = this.chatProviderOptions(config);
+        if (providerOptions) {
+            streamOptions.providerOptions = providerOptions;
+        }
 
         const tools = this.buildTools(config);
         if (Object.keys(tools).length > 0) {
@@ -422,6 +426,11 @@ export abstract class BaseProvider implements LlmProvider {
         }
 
         return streamText(streamOptions);
+    }
+
+    /** Provider-specific `providerOptions` for a chat turn, such as a reasoning effort. */
+    protected chatProviderOptions(_config: LlmProviderConfig): Parameters<typeof streamText>[0]["providerOptions"] {
+        return undefined;
     }
 
     /**

@@ -119,6 +119,24 @@ class="admonition note">
   <p>Currently only the search native to the LLM provider is supported. External
     search providers such as Exa, Tavily &amp; SearXNG are not yet supported.</p>
 </aside>
+<h3>Thinking</h3>
+<p>Some models reason before they answer. Their reasoning appears above the
+  reply as a collapsible <em>Thought process</em> line.</p>
+<p>How much a model thinks is set per chat, in one of two ways depending
+  on the model:</p>
+<ul>
+  <li>Most models have an <em>Extended thinking</em> switch, next to <em>Web search</em>.</li>
+  <li>Models that offer several levels of reasoning (DeepSeek V4, OpenAI Codex,
+    Antigravity) have a <span class="tn-icon bx bx-brain"></span> reasoning effort
+    dropdown next to the model selector instead. <em>None</em>, where offered,
+    turns thinking off; higher levels give better answers to hard questions,
+    but take longer and cost more.</li>
+</ul>
+<aside class="admonition note">
+  <p>The effort dropdown only appears once Trilium knows the model's levels.
+    For a DeepSeek provider set up with an earlier version of Trilium, edit
+    the provider in the model selection box and press <em>Save</em> once.</p>
+</aside>
 <h3>Note access (tools)</h3>
 <p>Tools allow the agentic AI to understand and operate on notes directly
   within your Trilium instance.</p>

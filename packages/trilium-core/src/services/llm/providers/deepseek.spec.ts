@@ -30,6 +30,7 @@ import type { LlmStreamChunk } from "@triliumnext/commons";
 
 import { installGlobalFetchAsApiTransport } from "../../../test/request_provider.js";
 import { streamToChunks } from "../stream.js";
+import type { LlmProviderConfig } from "../types.js";
 import { DeepSeekProvider, deepSeekModelName } from "./deepseek.js";
 import { llmFetch } from "./fetch.js";
 
@@ -213,8 +214,7 @@ describe("DeepSeekProvider streaming", () => {
             { choices: [{ index: 0, delta: { content: "Pick B." } }] },
             { choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 5, completion_tokens: 7 } }
         ];
-        const body = `${events.map(e => `data: ${JSON.stringify({ id: "c1", created: 0, model: "deepseek-v4-pro", ...e })}\n\n`).join("")}data: [DONE]\n\n`;
-        const fetchMock = vi.fn(async () => new Response(body, { headers: { "content-type": "text/event-stream" } }));
+        const fetchMock = vi.fn(async () => sseResponse(events));
         vi.stubGlobal("fetch", fetchMock);
 
         const provider = new DeepSeekProvider("sk-deep");
@@ -229,6 +229,58 @@ describe("DeepSeekProvider streaming", () => {
             { type: "thinking", content: "the options." },
             { type: "text", content: "Pick B." }
         ]);
+    });
+});
+
+describe("DeepSeekProvider reasoning effort", () => {
+    const fetchMock = vi.fn();
+    const okJson = (body: unknown) => ({ ok: true, json: async () => body });
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it("offers the effort levels on V4 models only", async () => {
+        fetchMock.mockResolvedValue(okJson({ data: [{ id: "deepseek-v4-pro" }, { id: "deepseek-flash" }, { id: "deepseek-chat" }] }));
+        const models = await new DeepSeekProvider("sk-deep").listModels();
+
+        for (const id of ["deepseek-v4-pro", "deepseek-flash"]) {
+            expect(models.find(m => m.id === id)).toMatchObject({
+                reasoningEfforts: ["none", "low", "high", "max"],
+                defaultReasoningEffort: "high"
+            });
+        }
+        const legacy = models.find(m => m.id === "deepseek-chat");
+        expect(legacy).toBeDefined();
+        expect(legacy).not.toHaveProperty("reasoningEfforts");
+    });
+
+    it("sends the chosen effort, and the default when the chat has none", async () => {
+        fetchMock.mockImplementation(async () => sseResponse([
+            { choices: [{ index: 0, delta: { role: "assistant", content: "Ok" }, finish_reason: "stop" }] }
+        ]));
+        const provider = new DeepSeekProvider("sk-deep");
+        const requestBody = async (config: LlmProviderConfig) => {
+            fetchMock.mockClear();
+            for await (const _ of streamToChunks(provider.chat([{ role: "user", content: "Hi" }], config))) { /* drain */ }
+            expect(fetchMock).toHaveBeenCalledOnce();
+            return JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+        };
+
+        expect(await requestBody({ model: "deepseek-v4-pro", reasoningEffort: "max" }))
+            .toMatchObject({ thinking: { type: "enabled" }, reasoning_effort: "max" });
+        expect(await requestBody({ model: "deepseek-v4-pro" }))
+            .toMatchObject({ thinking: { type: "enabled" }, reasoning_effort: "high" });
+
+        const none = await requestBody({ model: "deepseek-v4-pro", reasoningEffort: "none" });
+        expect(none).toMatchObject({ thinking: { type: "disabled" } });
+        expect(none).not.toHaveProperty("reasoning_effort");
+
+        // A model without levels is left to DeepSeek's own default.
+        const legacy = await requestBody({ model: "deepseek-chat", reasoningEffort: "max" });
+        expect(legacy).not.toHaveProperty("thinking");
+        expect(legacy).not.toHaveProperty("reasoning_effort");
     });
 });
 
@@ -256,3 +308,9 @@ describe("deepSeekModelName", () => {
         expect(deepSeekModelName("llama3.2")).toBe("llama3.2");
     });
 });
+
+/** A Chat Completions stream carrying `events`, as DeepSeek sends it. */
+function sseResponse(events: object[]) {
+    const body = `${events.map(e => `data: ${JSON.stringify({ id: "c1", created: 0, model: "deepseek-v4-pro", ...e })}\n\n`).join("")}data: [DONE]\n\n`;
+    return new Response(body, { headers: { "content-type": "text/event-stream" } });
+}

@@ -1,6 +1,7 @@
-import { createDeepSeek, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
+import { createDeepSeek, type DeepSeekLanguageModelChatOptions, type DeepSeekProvider as DeepSeekSDKProvider } from "@ai-sdk/deepseek";
+import type { LlmReasoningEffort } from "@triliumnext/commons";
 
-import type { ModelInfo } from "../types.js";
+import type { LlmProviderConfig, ModelInfo } from "../types.js";
 import { BaseProvider, type RemoteModel } from "./base_provider.js";
 import { llmFetch } from "./fetch.js";
 
@@ -10,6 +11,11 @@ import { llmFetch } from "./fetch.js";
  * bare host answers identically.
  */
 const OFFICIAL_BASE_URL = "https://api.deepseek.com/v1";
+
+/** The thinking levels of a V4 model, weakest first: `none` turns thinking off, the rest set `reasoning_effort`. */
+const V4_REASONING_EFFORTS = [ "none", "low", "high", "max" ] as const satisfies LlmReasoningEffort[];
+type V4ReasoningEffort = (typeof V4_REASONING_EFFORTS)[number];
+const V4_DEFAULT_REASONING_EFFORT: V4ReasoningEffort = "high";
 
 /**
  * DeepSeek, over its OpenAI-compatible API. `@ai-sdk/deepseek` rather than
@@ -46,6 +52,29 @@ export class DeepSeekProvider extends BaseProvider {
 
     protected createModel(modelId: string) {
         return this.deepseek.chat(modelId);
+    }
+
+    /** V4 models get the reasoning effort dropdown in place of the extended thinking switch. */
+    override async listModels(): Promise<ModelInfo[]> {
+        const models = await super.listModels();
+        return models.map(m => isDeepSeekV4Model(m.id)
+            ? { ...m, reasoningEfforts: [ ...V4_REASONING_EFFORTS ], defaultReasoningEffort: V4_DEFAULT_REASONING_EFFORT }
+            : m);
+    }
+
+    /**
+     * Sends the chat's effort to a V4 model, or the default when the chat has none, so the
+     * level the dropdown shows is the one DeepSeek runs at.
+     */
+    protected override chatProviderOptions(config: LlmProviderConfig) {
+        if (!isDeepSeekV4Model(config.model || this.defaultModel)) {
+            return undefined;
+        }
+        const effort = V4_REASONING_EFFORTS.find(level => level === config.reasoningEffort) ?? V4_DEFAULT_REASONING_EFFORT;
+        const options: DeepSeekLanguageModelChatOptions = effort === "none"
+            ? { thinking: { type: "disabled" } }
+            : { thinking: { type: "enabled" }, reasoningEffort: effort };
+        return { deepseek: options };
     }
 
     /** Everything DeepSeek lists is a chat model, so nothing is filtered out. */
@@ -147,4 +176,9 @@ export function deepSeekModelName(id: string): string {
         .split("-")
         .map(word => (/^v\d+$/i.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)));
     return `DeepSeek ${words.join(" ")}`;
+}
+
+/** The V4 line, which takes `thinking` and `reasoning_effort`; the same test `@ai-sdk/deepseek` applies. */
+function isDeepSeekV4Model(id: string): boolean {
+    return id.includes("deepseek-v4") || id.startsWith("deepseek-flash") || id.startsWith("deepseek-pro");
 }
