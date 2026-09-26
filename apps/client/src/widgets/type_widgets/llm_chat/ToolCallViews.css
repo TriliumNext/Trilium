@@ -148,3 +148,26 @@
 .expandable-section-label > .llm-chat-attribute {
     font-size: 0.75rem;
 }
+
+/* The icons a `search_icons` call found. */
+.llm-chat-icon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.2rem 0;
+
+    > .tn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 6px;
+        font-size: 1.3rem;
+        color: var(--main-text-color);
+
+        &:hover {
+            background: var(--hover-item-background-color);
+        }
+    }
+}

@@ -576,4 +576,26 @@ describe("ToolCallCard", () => {
         expect(pills(deleted)).toEqual([ "#temp=1" ]);
         expect(deleted?.querySelector(".llm-chat-attribute")?.classList.contains("llm-chat-attribute-deleted")).toBe(true);
     });
+
+    it("shows the icons an icon search found, and how many it left out", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "search_icons",
+            input: { query: "rocket", limit: 2 },
+            result: JSON.stringify({
+                totalResults: 5,
+                results: [
+                    { iconClass: "bx bx-rocket", terms: [ "rocket", "launch" ] },
+                    { iconClass: "bx bxs-rocket", terms: [ "rocket" ] }
+                ]
+            })
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        expect(line?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.search_icons_count{\"count\":5}");
+        const icons = [ ...(line?.querySelectorAll(".llm-chat-icon-results .tn-icon") ?? []) ];
+        expect(icons.map(icon => [ ...icon.classList ].filter(c => c.startsWith("bx")).join(" "))).toEqual([ "bx bx-rocket", "bx bxs-rocket" ]);
+        expect(line?.querySelector(".llm-chat-note-results-more")?.textContent)
+            .toBe("llm_chat.search_notes_limited{\"count\":5,\"limit\":2}");
+    });
 });

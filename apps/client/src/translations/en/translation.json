@@ -2677,7 +2677,9 @@
     "attachment_count_one": "{{count}} attachment",
     "attachment_count_other": "{{count}} attachments",
     "attribute_count_one": "({{count}} attribute)",
-    "attribute_count_other": "({{count}} attributes)"
+    "attribute_count_other": "({{count}} attributes)",
+    "search_icons_count_one": "({{count}} icon)",
+    "search_icons_count_other": "({{count}} icons)"
   },
   "sidebar_chat": {
     "title": "AI Chat",

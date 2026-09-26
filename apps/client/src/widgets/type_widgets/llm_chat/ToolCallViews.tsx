@@ -10,6 +10,7 @@ import { NOTE_TYPES } from "../../../services/note_types.js";
 import { openInAppHelpFromUrl } from "../../../services/utils.js";
 import CodeBlock from "../../react/CodeBlock.js";
 import { useNote } from "../../react/hooks.js";
+import { TooltipIcon } from "../../react/Icon.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { renderMarkdown } from "./chat_markdown.js";
@@ -103,6 +104,17 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
             return {
                 summary: t("llm_chat.search_help_count", { count: result.totalResults }),
                 body: search.results.length > 0 ? <NoteSearchResults {...search} /> : undefined
+            };
+        }
+        case "search_icons": {
+            const result = parseIconSearchResult(toolCall.result);
+            if (!result) return null;
+            const { limit } = toolCall.input;
+            return {
+                summary: t("llm_chat.search_icons_count", { count: result.totalResults }),
+                body: result.icons.length > 0
+                    ? <IconSearchResults {...result} limit={typeof limit === "number" ? limit : result.icons.length} />
+                    : undefined
             };
         }
         case "get_child_notes": {
@@ -199,6 +211,36 @@ function NoteSearchResults({ totalResults, results, ancestorNoteId, limit, isHel
             )}
         </div>
     );
+}
+
+interface IconSearchResult {
+    totalResults: number;
+    icons: string[];
+}
+
+/** The icons a `search_icons` call found, drawn rather than named, with each class as its tooltip. */
+function IconSearchResults({ totalResults, icons, limit }: IconSearchResult & { limit: number }) {
+    return (
+        <div className="llm-chat-icon-results">
+            <div className="llm-chat-icon-grid">
+                {icons.map((iconClass) => <TooltipIcon key={iconClass} icon={iconClass} tooltip={iconClass} />)}
+            </div>
+            {totalResults > icons.length && (
+                <div className="llm-chat-note-results-more">
+                    {t("llm_chat.search_notes_limited", { count: totalResults, limit })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function parseIconSearchResult(result: string): IconSearchResult | null {
+    const parsed = parseJson(result);
+    if (!isRecord(parsed) || typeof parsed.totalResults !== "number" || !Array.isArray(parsed.results)) return null;
+    const icons = parsed.results
+        .map((item) => (isRecord(item) && typeof item.iconClass === "string" ? item.iconClass : null))
+        .filter((iconClass): iconClass is string => !!iconClass);
+    return { totalResults: parsed.totalResults, icons };
 }
 
 function ChildNoteList({ notes }: { notes: ChildNote[] }) {
