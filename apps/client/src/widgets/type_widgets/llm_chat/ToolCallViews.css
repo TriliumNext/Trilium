@@ -11,20 +11,7 @@
 }
 
 .llm-chat-note-result {
-    position: relative;
     padding: 0.3rem 0.5rem;
-    border-radius: 6px;
-
-    &:hover {
-        background: var(--hover-item-background-color);
-    }
-
-    /* Stretches the note link over the row, so the whole row opens the note. */
-    .llm-chat-note-result-header > a::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-    }
 }
 
 .llm-chat-note-result-header {
@@ -39,9 +26,6 @@
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
-        color: var(--main-text-color);
-        font-weight: 500;
-        text-decoration: none;
     }
 }
 

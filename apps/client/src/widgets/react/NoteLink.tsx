@@ -1,3 +1,5 @@
+import "./NoteLink.css";
+
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { HTMLAttributes } from "preact";
@@ -121,7 +123,7 @@ export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, 
             data-no-context-menu={noContextMenu}
             {...linkProps}
         >
-            {icon && <><Icon icon={icon} />&nbsp;</>}
+            {icon && <Icon icon={icon} className="note-link-icon" />}
             {title}
         </a>
     );
