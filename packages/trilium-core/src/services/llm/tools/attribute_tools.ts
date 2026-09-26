@@ -116,7 +116,10 @@ export const attributeTools = defineTools({
 
             return {
                 success: true,
-                attributeId
+                attributeId,
+                type: attribute.type,
+                name: attribute.name,
+                value: attribute.value
             };
         }
     }

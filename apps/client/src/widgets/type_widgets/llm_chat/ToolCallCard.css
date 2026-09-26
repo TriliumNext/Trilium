@@ -85,16 +85,18 @@
     50% { opacity: 0; }
 }
 
-/* The title a rename replaced, struck through and followed by an arrow to the note link. The arrow is
-   an inline block, which keeps the strike-through off it. */
-.llm-chat-tool-call-old-title {
+/* The title a note had before a rename or a deletion, struck through. After a rename an arrow leads
+   to the note link; the arrow is an inline block, which keeps the strike-through off it. */
+.llm-chat-tool-call-old-title,
+.llm-chat-tool-call-deleted-title {
     font-size: 0.75rem;
     opacity: 0.75;
     text-decoration: line-through;
-
-    &::after {
-        content: "→";
-        display: inline-block;
-        margin-left: 0.3rem;
-    }
 }
+
+.llm-chat-tool-call-old-title::after {
+    content: "→";
+    display: inline-block;
+    margin-left: 0.3rem;
+}
+

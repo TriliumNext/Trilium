@@ -138,3 +138,13 @@
     max-width: 100%;
     max-height: 280px;
 }
+
+.llm-chat-attribute-deleted {
+    color: var(--muted-text-color);
+    text-decoration: line-through;
+}
+
+/* An attribute pill on a summary line sits at the size of the line's other details. */
+.expandable-section-label > .llm-chat-attribute {
+    font-size: 0.75rem;
+}

@@ -50,9 +50,30 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
         ) };
     }
 
+    if (toolCall.toolName === "set_attribute") {
+        const attribute = parseAttribute(toolCall.input);
+        return attribute ? { lead: <AttributePill {...attribute} /> } : null;
+    }
+
     if (!toolCall.result) return null;
 
     switch (toolCall.toolName) {
+        case "get_attributes": {
+            const attributes = parseAttributeList(toolCall.result);
+            if (!attributes) return null;
+            return {
+                summary: t("llm_chat.attribute_count", { count: attributes.length }),
+                body: attributes.length > 0
+                    ? <div className="llm-chat-note-card"><AttributeRow attributes={attributes} /></div>
+                    : undefined
+            };
+        }
+        case "get_attribute":
+        case "delete_attribute": {
+            const attribute = parseAttribute(parseJson(toolCall.result));
+            const deleted = toolCall.toolName === "delete_attribute";
+            return attribute ? { lead: <AttributePill {...attribute} deleted={deleted} /> } : null;
+        }
         case "search_notes": {
             const result = parseSearchNotesResult(toolCall.result);
             if (!result) return null;
@@ -342,39 +363,67 @@ function NoteMetaCard({ type, mime, childCount, attachmentCount, attributes, con
         childCount > 0 && t("llm_chat.child_count", { count: childCount }),
         attachmentCount > 0 && t("llm_chat.attachment_count", { count: attachmentCount })
     ].filter(Boolean);
-    const shown = attributes.results.filter(({ type, name }) => !isAutoLinkAttribute(type, name));
-    const hiddenAttributes = attributes.totalCount - attributes.results.length;
     const preview = contentPreview ? markdownToPlainPreview(contentPreview) : "";
 
     return (
         <div className="llm-chat-note-card">
             <div className="llm-chat-note-card-facts">{facts.join(" · ")}</div>
-            {(shown.length > 0 || hiddenAttributes > 0) && (
-                <div className="llm-chat-note-card-attributes">
-                    {shown.map((attribute, idx) => <AttributePill key={idx} {...attribute} />)}
-                    {hiddenAttributes > 0 && (
-                        <span className="llm-chat-note-results-more">{t("llm_chat.subtree_more", { count: hiddenAttributes })}</span>
-                    )}
-                </div>
-            )}
+            <AttributeRow attributes={attributes.results} hiddenCount={attributes.totalCount - attributes.results.length} />
             {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
+        </div>
+    );
+}
+
+/** A note's attributes as pills, leaving out the ones Trilium keeps for links, as the attribute bar does. */
+function AttributeRow({ attributes, hiddenCount = 0 }: { attributes: NoteMetaAttribute[]; hiddenCount?: number }) {
+    const shown = attributes.filter(({ type, name }) => !isAutoLinkAttribute(type, name));
+    if (shown.length === 0 && hiddenCount <= 0) return null;
+    return (
+        <div className="llm-chat-note-card-attributes">
+            {shown.map((attribute, idx) => <AttributePill key={idx} {...attribute} />)}
+            {hiddenCount > 0 && (
+                <span className="llm-chat-note-results-more">{t("llm_chat.subtree_more", { count: hiddenCount })}</span>
+            )}
         </div>
     );
 }
 
 /**
  * A label or relation as the model read it, written the way `attribute_renderer` writes the attribute
- * bar's. It draws from the result rather than froca, which holds the attribute as it is now.
+ * bar's. It draws from the call rather than froca, which holds the attribute as it is now.
  */
-function AttributePill({ type, name, value }: NoteMetaAttribute) {
+function AttributePill({ type, name, value, deleted }: NoteMetaAttribute & { deleted?: boolean }) {
+    const className = `llm-chat-attribute ${deleted ? "llm-chat-attribute-deleted" : ""}`;
     if (type === "relation") {
         return (
-            <span className="llm-chat-attribute">
+            <span className={className}>
                 ~{name}={value && <NewNoteLink notePath={value} showNoteIcon />}
             </span>
         );
     }
-    return <span className="llm-chat-attribute">#{name}{value && `=${formatValue(value)}`}</span>;
+    return <span className={className}>#{name}{value && `=${formatValue(value)}`}</span>;
+}
+
+function parseAttributeList(result: string): NoteMetaAttribute[] | null {
+    const parsed = parseJson(result);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.map(parseAttribute).filter((attribute): attribute is NoteMetaAttribute => !!attribute);
+}
+
+function parseJson(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return null;
+    }
+}
+
+/** A label or relation out of a tool's input or result, or `null` when it does not describe one. */
+function parseAttribute(value: unknown): NoteMetaAttribute | null {
+    if (!isRecord(value) || (value.type !== "label" && value.type !== "relation") || typeof value.name !== "string") {
+        return null;
+    }
+    return { type: value.type, name: value.name, value: typeof value.value === "string" ? value.value : "" };
 }
 
 function parseNoteMeta(result: string): NoteMeta | null {

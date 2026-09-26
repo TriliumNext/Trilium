@@ -515,4 +515,65 @@ describe("ToolCallCard", () => {
         expect(ref(moved)?.textContent).toBe("llm.tools.note_moved_fromnfromto");
         expect(ref(older)?.textContent).toBe("llm.tools.note_movednto");
     });
+
+    it("shows a deleted note by the title it had, since its link has nothing left to show", () => {
+        const target = renderCard([
+            {
+                id: "1",
+                toolName: "delete_note",
+                input: { noteId: "d" },
+                result: JSON.stringify({ success: true, noteId: "d", deletedTitle: "Doomed" })
+            },
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            { id: "3", toolName: "delete_note", input: { noteId: "p" } }
+        ]);
+        const [ deleted, , pending ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+
+        expect(deleted?.querySelector(".llm-chat-tool-call-deleted-title")?.textContent).toBe("Doomed");
+        expect(deleted?.querySelector(".note-link-stub")).toBeNull();
+        expect(pending?.querySelector(".note-link-stub")?.textContent).toBe("p");
+        expect(pending?.querySelector(".llm-chat-tool-call-deleted-title")).toBeNull();
+    });
+
+    it("shows the attributes each attribute tool read, set or deleted, as pills", () => {
+        const target = renderCard([
+            {
+                id: "1",
+                toolName: "get_attributes",
+                input: { noteId: "n" },
+                result: JSON.stringify([
+                    { attributeId: "a1", type: "label", name: "book", value: "" },
+                    { attributeId: "a2", type: "relation", name: "author", value: "tolkien" }
+                ])
+            },
+            {
+                id: "2",
+                toolName: "get_attribute",
+                input: { attributeId: "a3" },
+                result: JSON.stringify({ attributeId: "a3", noteId: "n", type: "label", name: "status", value: "done" })
+            },
+            { id: "3", toolName: "set_attribute", input: { noteId: "n", type: "label", name: "year", value: "1954" } },
+            {
+                id: "4",
+                toolName: "delete_attribute",
+                input: { noteId: "n", attributeId: "a4" },
+                result: JSON.stringify({ success: true, attributeId: "a4", type: "label", name: "temp", value: "1" })
+            }
+        ]);
+        const [ list, single, set, deleted ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const pills = (line: Element | undefined) => [ ...(line?.querySelectorAll(".llm-chat-attribute") ?? []) ].map(pill => pill.textContent);
+
+        expect(list instanceof HTMLDetailsElement).toBe(true);
+        expect(list?.querySelector(".llm-chat-tool-call-result-count")?.textContent).toBe("llm_chat.attribute_count{\"count\":2}");
+        expect(pills(list)).toEqual([ "#book", "~author=tolkien" ]);
+
+        expect(single instanceof HTMLDetailsElement).toBe(false);
+        expect(pills(single)).toEqual([ "#status=done" ]);
+        expect(single?.querySelector(".llm-chat-tool-call-note-ref .note-link-stub")?.textContent).toBe("n");
+
+        expect(pills(set)).toEqual([ "#year=1954" ]);
+
+        expect(pills(deleted)).toEqual([ "#temp=1" ]);
+        expect(deleted?.querySelector(".llm-chat-attribute")?.classList.contains("llm-chat-attribute-deleted")).toBe(true);
+    });
 });

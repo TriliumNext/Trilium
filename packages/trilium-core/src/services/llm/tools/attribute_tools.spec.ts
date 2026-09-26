@@ -143,7 +143,9 @@ describe("attribute_tools", () => {
                 noteId: note.noteId,
                 attributeId: attr.attributeId
             }));
-            expect(result).toEqual({ success: true, attributeId: attr.attributeId });
+            expect(result).toEqual({
+                success: true, attributeId: attr.attributeId, type: "label", name: "temp", value: "1"
+            });
             expect(becca.getAttribute(attr.attributeId)).toBeNull();
         });
 

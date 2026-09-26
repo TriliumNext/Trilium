@@ -2675,7 +2675,9 @@
     "subtree_more_one": "+{{count}} more",
     "subtree_more_other": "+{{count}} more",
     "attachment_count_one": "{{count}} attachment",
-    "attachment_count_other": "{{count}} attachments"
+    "attachment_count_other": "{{count}} attachments",
+    "attribute_count_one": "({{count}} attribute)",
+    "attribute_count_other": "({{count}} attributes)"
   },
   "sidebar_chat": {
     "title": "AI Chat",

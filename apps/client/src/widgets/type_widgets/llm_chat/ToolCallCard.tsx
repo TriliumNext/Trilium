@@ -18,6 +18,8 @@ interface ToolCallContext {
     parentNoteId: string | null;
     /** Where `move_note` took the note: the new parent, and the old one when the result names it. */
     move?: { toNoteId: string; fromNoteId: string | null };
+    /** The title of a note `delete_note` deleted, shown in place of a link to a note that is gone. */
+    deletedTitle?: string;
     /** Plain-text detail (e.g. skill name, search query) when no note ref is available. */
     detailText: string | null;
 }
@@ -46,6 +48,13 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
             fromNoteId: parseResultField(toolCall, "oldParentNoteId")
         };
         return { noteId: input.noteId, parentNoteId: null, move, detailText: null };
+    }
+
+    const deletedTitle = toolCall.toolName === "delete_note"
+        ? parseResultField(toolCall, "deletedTitle")
+        : null;
+    if (deletedTitle) {
+        return { noteId: null, parentNoteId: null, deletedTitle, detailText: null };
     }
 
     // For creation tools, the created note ID is in the result.
@@ -99,7 +108,8 @@ function getErrorMessage(result: string): string {
 
 /** Build the label content for a tool call section. */
 function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallView | null }) {
-    const { noteId: refNoteId, parentNoteId: refParentId, move, detailText } = getToolCallContext(toolCall);
+    const context = getToolCallContext(toolCall);
+    const { noteId: refNoteId, parentNoteId: refParentId, move, deletedTitle, detailText } = context;
     const hasError = isFailedToolCall(toolCall);
 
     return (
@@ -109,6 +119,7 @@ function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallV
                 <span className="llm-chat-tool-call-detail">{detailText}</span>
             )}
             {view?.lead}
+            {deletedTitle && <span className="llm-chat-tool-call-deleted-title">{deletedTitle}</span>}
             {refNoteId && (
                 <span className="llm-chat-tool-call-note-ref">
                     <NoteRef noteId={refNoteId} parentNoteId={refParentId} move={move} />
