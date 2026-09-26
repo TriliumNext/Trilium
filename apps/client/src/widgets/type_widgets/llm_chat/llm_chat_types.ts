@@ -1,4 +1,10 @@
-import type { LlmCitation, LlmErrorDetails, LlmReasoningEffort, LlmUsage } from "@triliumnext/commons";
+import {
+    isToolErrorResult,
+    type LlmCitation,
+    type LlmErrorDetails,
+    type LlmReasoningEffort,
+    type LlmUsage
+} from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -108,6 +114,14 @@ export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]
 /**
  * Extract tool calls from message content blocks.
  */
+/**
+ * Whether a tool call failed: flagged so by the provider, or answered with the `{ error }` a note tool
+ * returns. The result covers chats saved while a provider did not pass the flag on.
+ */
+export function isFailedToolCall(toolCall: ToolCall): boolean {
+    return !!toolCall.isError || isToolErrorResult(toolCall.result);
+}
+
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
     if (Array.isArray(message.content)) {
         return message.content

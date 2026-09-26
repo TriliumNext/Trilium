@@ -427,4 +427,18 @@ describe("ToolCallCard", () => {
         expect(codeRemoved?.querySelector("pre")?.textContent).toBe("y = 2");
         expect(codeRemoved?.querySelector(".markdown-stub")).toBeNull();
     });
+
+    it("shows a call as failed from its { error } result even when the provider did not flag it", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "edit_note_content",
+            input: { noteId: "t", edits: [ { oldText: "a", newText: "b" } ] },
+            result: JSON.stringify({ error: "edit_note_content does not support rich-text notes." })
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        expect(line?.classList.contains("llm-chat-tool-call-error")).toBe(true);
+        expect(line?.querySelector(".llm-chat-tool-call-error-badge")).not.toBeNull();
+        expect(line?.querySelector(".llm-chat-tool-call-error-message")?.textContent)
+            .toBe("edit_note_content does not support rich-text notes.");
+    });
 });

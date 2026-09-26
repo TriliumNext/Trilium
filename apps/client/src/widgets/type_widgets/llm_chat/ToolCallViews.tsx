@@ -13,7 +13,7 @@ import { useNote } from "../../react/hooks.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { renderMarkdown } from "./chat_markdown.js";
-import type { ToolCall } from "./llm_chat_types.js";
+import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
 
 const HELP_NOTE_PREFIX = "_help_";
 const CONTENT_PREVIEW_SOURCE_LENGTH = 1000;
@@ -26,7 +26,7 @@ export interface ToolCallView {
 
 /** The view of a successful call to a tool that has one, or `null` to show the bare line. */
 export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
-    if (toolCall.isError) return null;
+    if (isFailedToolCall(toolCall)) return null;
 
     // What a writing tool writes is in its input, so it shows before the result arrives.
     if (toolCall.toolName === "create_note") {

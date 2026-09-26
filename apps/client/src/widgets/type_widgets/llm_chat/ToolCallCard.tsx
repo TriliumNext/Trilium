@@ -8,7 +8,7 @@ import ActionButton from "../../react/ActionButton.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
-import type { ToolCall } from "./llm_chat_types.js";
+import { isFailedToolCall, type ToolCall } from "./llm_chat_types.js";
 import { getToolCallView } from "./ToolCallViews.js";
 
 interface ToolCallContext {
@@ -69,7 +69,7 @@ function toolNameIcon(toolName: string): string {
 }
 
 function toolCallIcon(toolCall: ToolCall): string {
-    if (toolCall.isError) return "bx bx-error-circle";
+    if (isFailedToolCall(toolCall)) return "bx bx-error-circle";
     if (!toolCall.result) return "bx bx-loader-alt bx-spin";
     return toolNameIcon(toolCall.toolName);
 }
@@ -90,7 +90,7 @@ function getErrorMessage(result: string): string {
 /** Build the label content for a tool call section. */
 function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: string }) {
     const { noteId: refNoteId, parentNoteId: refParentId, detailText } = getToolCallContext(toolCall);
-    const hasError = toolCall.isError;
+    const hasError = isFailedToolCall(toolCall);
 
     return (
         <>
@@ -126,7 +126,7 @@ function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: st
  * result are in the dialog the debug button opens.
  */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
-    const hasError = toolCall.isError;
+    const hasError = isFailedToolCall(toolCall);
     const isStreamingInput = toolCall.inputStreaming !== undefined;
 
     // The partial JSON of a streaming input does not parse, so the diff waits for the whole input.
@@ -195,7 +195,7 @@ function ToolCallDebugButton({ toolCall }: { toolCall: ToolCall }) {
 function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
     const first = toolCalls[0];
     const anyPending = toolCalls.some(tc => !tc.result);
-    const anyError = toolCalls.some(tc => tc.isError);
+    const anyError = toolCalls.some(isFailedToolCall);
 
     const icon = anyPending ? "bx bx-loader-alt bx-spin" : toolNameIcon(first.toolName);
     const friendlyName = t(`llm.tools.${first.toolName}`, { defaultValue: first.toolName });

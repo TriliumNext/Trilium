@@ -208,6 +208,22 @@ export interface LlmErrorDetails {
 export type LlmStreamStatus = "starting_agent";
 
 /**
+ * Whether a tool result is the `{ error }` object the note tools return on failure. Takes the object
+ * itself or its JSON, as a `tool_result` chunk carries it.
+ */
+export function isToolErrorResult(result: unknown): boolean {
+    let value = result;
+    if (typeof value === "string") {
+        try {
+            value = JSON.parse(value);
+        } catch {
+            return false;
+        }
+    }
+    return typeof value === "object" && value !== null && !Array.isArray(value) && "error" in value;
+}
+
+/**
  * Stream chunk types for real-time SSE updates.
  * Defines the protocol between server and client.
  */
