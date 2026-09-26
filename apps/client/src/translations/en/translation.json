@@ -2609,7 +2609,6 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
-    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
@@ -2659,7 +2658,9 @@
     "stream_status": {
       "starting_agent": "Starting the agent. This can take a while.",
       "waiting_for_reply": "Waiting for the reply…"
-    }
+    },
+    "show_tool_call_details": "Show input and output",
+    "tool_call_no_result": "No result yet."
   },
   "sidebar_chat": {
     "title": "AI Chat",

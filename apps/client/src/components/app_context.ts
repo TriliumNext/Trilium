@@ -33,6 +33,7 @@ import type { ItemPickerDialogOptions } from "../widgets/dialogs/item_picker.js"
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
+import type { ToolCall } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import Component from "./component.js";
 import Entrypoints from "./entrypoints.js";
 import MainTreeExecutors from "./main_tree_executors.js";
@@ -158,6 +159,7 @@ export type CommandMappings = {
     showNotePickerDialog: NotePickerDialogOptions;
     showInfoDialog: InfoProps;
     showLightbox: LightboxOptions;
+    showToolCallDetails: { toolCall: ToolCall };
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showDeletedNotes: CommandData & { ancestorNoteId?: string };

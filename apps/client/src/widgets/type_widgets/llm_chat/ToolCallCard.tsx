@@ -2,7 +2,9 @@ import "./ToolCallCard.css";
 
 import { Trans } from "react-i18next";
 
+import appContext from "../../../components/app_context.js";
 import { t } from "../../../services/i18n.js";
+import ActionButton from "../../react/ActionButton.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import { EditNoteContentDiff, isSmallEdit, parseNoteContentEdits } from "./EditNoteContentDiff.js";
 import { ExpandableSection } from "./ExpandableCard.js";
@@ -71,85 +73,17 @@ function toolCallIcon(toolCall: ToolCall): string {
     return toolNameIcon(toolCall.toolName);
 }
 
-/** Try to parse a JSON string into a structured value. */
-function tryParseJson(data: unknown): unknown {
-    if (typeof data === "string") {
-        try {
-            return JSON.parse(data);
-        } catch {
-            return data;
+/** The message of a failed call: the `error` field of a JSON result, or else the whole result. */
+function getErrorMessage(result: string): string {
+    try {
+        const parsed: unknown = JSON.parse(result);
+        if (typeof parsed === "object" && parsed !== null && "error" in parsed && typeof parsed.error === "string") {
+            return parsed.error;
         }
+    } catch {
+        // A result that is not JSON is the message itself.
     }
-    return data;
-}
-
-/** Check if a value is a plain object (not null, not array). */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-const MAX_TABLE_DEPTH = 2;
-
-/** Render a single value — recurse for objects/arrays up to max depth. */
-function ValueCell({ value, depth }: { value: unknown; depth: number }) {
-    if (value === null || value === undefined) return <pre />;
-
-    // Beyond max depth, fall back to JSON.
-    if (depth >= MAX_TABLE_DEPTH) {
-        if (isPlainObject(value) || Array.isArray(value)) {
-            return <pre>{JSON.stringify(value, null, 2)}</pre>;
-        }
-        return <pre>{String(value)}</pre>;
-    }
-
-    if (isPlainObject(value)) {
-        return <KeyValueTable data={value} depth={depth} />;
-    }
-
-    if (Array.isArray(value)) {
-        if (value.length === 0) return <pre>{"[]"}</pre>;
-
-        // Array of objects: render each as a nested table.
-        if (value.every(isPlainObject)) {
-            return (
-                <div className="llm-chat-tool-call-table-array">
-                    {value.map((item, idx) => (
-                        <KeyValueTable key={idx} data={item} depth={depth} />
-                    ))}
-                </div>
-            );
-        }
-
-        // Array of primitives: comma-separated.
-        return <pre>{value.map(String).join(", ")}</pre>;
-    }
-
-    return <pre>{String(value)}</pre>;
-}
-
-/** Renders a data object as a recursive two-column key-value table. */
-function KeyValueTable({ data, className, depth = 0 }: { data: unknown; className?: string; depth?: number }) {
-    const obj = tryParseJson(data);
-
-    if (!isPlainObject(obj)) {
-        const raw = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-        return <pre className={className}>{raw}</pre>;
-    }
-
-    return (
-        <table className={`llm-chat-tool-call-table ${className ?? ""}`}>
-            <tbody>
-                {Object.entries(obj).map(([key, value]) => (
-                    <tr key={key}>
-                        <td className="llm-chat-tool-call-table-key">{key}</td>
-                        <td className="llm-chat-tool-call-table-value">
-                            <ValueCell value={value} depth={depth + 1} />
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    );
+    return result;
 }
 
 /** Build the label content for a tool call section. */
@@ -183,47 +117,71 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
     );
 }
 
-/** A single tool call section within a ToolCallCard. */
+/**
+ * A single tool call. It folds open only for what is worth reading inline: the input while it
+ * streams, the diff of an `edit_note_content` call, or why the call failed. The raw input and
+ * result are in the dialog the debug button opens.
+ */
 function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
     const hasError = toolCall.isError;
     const isStreamingInput = toolCall.inputStreaming !== undefined;
 
-    // The `edit_note_content` tool gets a fancy unified diff instead of a raw input table.
-    // Suppress the diff view while input is still streaming — the partial JSON isn't parseable yet.
+    // The partial JSON of a streaming input does not parse, so the diff waits for the whole input.
     const noteContentEdits = !isStreamingInput && toolCall.toolName === "edit_note_content"
         ? parseNoteContentEdits(toolCall.input?.edits)
         : null;
+    const errorMessage = hasError && toolCall.result ? getErrorMessage(toolCall.result) : null;
+
+    const className = `llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`;
+    const icon = toolCallIcon(toolCall);
+    const label = <ToolCallLabel toolCall={toolCall} />;
+    const debugButton = <ToolCallDebugButton toolCall={toolCall} />;
+
+    if (!isStreamingInput && !noteContentEdits && !errorMessage) {
+        return (
+            <div className={`expandable-line ${className}`}>
+                <div className="expandable-line-header">
+                    <span className={icon} />
+                    <span className="expandable-section-label">{label}</span>
+                    {debugButton}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <ExpandableSection
-            icon={toolCallIcon(toolCall)}
-            label={<ToolCallLabel toolCall={toolCall} />}
+            icon={icon}
+            label={label}
+            actions={debugButton}
             variant="line"
-            className={`llm-chat-tool-call ${hasError ? "llm-chat-tool-call-error" : ""}`}
+            className={className}
             open={noteContentEdits ? isSmallEdit(noteContentEdits) : isStreamingInput || undefined}
         >
-            <div className={`llm-chat-tool-call-input ${isStreamingInput ? "llm-chat-tool-call-input-streaming" : ""}`}>
-                {isStreamingInput ? (
-                    <>
-                        <strong>{t("llm_chat.input_streaming")}</strong>
-                        <pre>{toolCall.inputStreaming}</pre>
-                    </>
-                ) : noteContentEdits ? (
+            {isStreamingInput && <pre className="llm-chat-tool-call-streaming">{toolCall.inputStreaming}</pre>}
+            {noteContentEdits && (
+                <div className="llm-chat-tool-call-diff">
                     <EditNoteContentDiff edits={noteContentEdits} />
-                ) : (
-                    <>
-                        <strong>{t("llm_chat.input")}</strong>
-                        <KeyValueTable data={toolCall.input} />
-                    </>
-                )}
-            </div>
-            {toolCall.result && (!noteContentEdits || hasError) && (
-                <div className={`llm-chat-tool-call-result ${hasError ? "llm-chat-tool-call-result-error" : ""}`}>
-                    <strong>{hasError ? t("llm_chat.error") : t("llm_chat.result")}</strong>
-                    <KeyValueTable data={toolCall.result} />
                 </div>
             )}
+            {errorMessage && <p className="llm-chat-tool-call-error-message">{errorMessage}</p>}
         </ExpandableSection>
+    );
+}
+
+/** Opens the raw input and result of a call in `ToolCallDetailsDialog`. */
+function ToolCallDebugButton({ toolCall }: { toolCall: ToolCall }) {
+    return (
+        <ActionButton
+            className="llm-chat-tool-call-debug"
+            icon="bx bx-code-alt"
+            text={t("llm_chat.show_tool_call_details")}
+            onClick={(e) => {
+                // Inside a summary, the click would also fold the line open or shut.
+                e.preventDefault();
+                void appContext.triggerEvent("showToolCallDetails", { toolCall });
+            }}
+        />
     );
 }
 
