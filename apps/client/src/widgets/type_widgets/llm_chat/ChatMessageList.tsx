@@ -75,13 +75,10 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                     <ChatMessage
                         message={streamingMessage}
                         isStreaming
+                        streamStatus={isStreamIdle && !showsOwnProgress(chat.streamingBlocks)
+                            ? t("llm_chat.stream_status.still_working")
+                            : undefined}
                     />
-                )}
-                {isStreaming && streamingMessage && isStreamIdle && !showsOwnProgress(chat.streamingBlocks) && (
-                    <div className="chat-stream-status chat-stream-status-idle" role="status">
-                        <LoadingSpinner />
-                        {t("llm_chat.stream_status.still_working")}
-                    </div>
                 )}
                 <div ref={chat.messagesEndRef} className="chat-messages-end" aria-hidden="true" />
                 <div ref={chat.bottomSpacerRef} className="chat-bottom-spacer" aria-hidden="true" />

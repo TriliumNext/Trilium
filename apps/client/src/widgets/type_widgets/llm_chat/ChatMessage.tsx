@@ -54,6 +54,8 @@ interface Props {
     isStreaming?: boolean;
     /** When set on an error message, renders a Retry button that re-runs the failed turn. */
     onRetry?: () => void;
+    /** A progress line under the streamed blocks, such as the one a stalled reply shows. */
+    streamStatus?: string;
 }
 
 type ContentGroup =
@@ -183,7 +185,7 @@ function ThinkingLine({ label }: { label: string }) {
     );
 }
 
-function ChatMessage({ message, isStreaming, onRetry }: Props) {
+function ChatMessage({ message, isStreaming, onRetry, streamStatus }: Props) {
     const isError = message.type === "error";
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
@@ -260,6 +262,14 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                         renderContentBlocks(message.content as ContentBlock[], isStreaming)
                     ) : (
                         <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming && message.role === "assistant"} />
+                    )}
+                    {streamStatus && (
+                        <div className="expandable-line llm-chat-stream-idle" role="status">
+                            <div className="expandable-line-header">
+                                <LoadingSpinner />
+                                <span>{streamStatus}</span>
+                            </div>
+                        </div>
                     )}
                 </div>
                 {message.citations && message.citations.length > 0 && (

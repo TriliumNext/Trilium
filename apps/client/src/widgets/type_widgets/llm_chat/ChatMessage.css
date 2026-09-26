@@ -239,6 +239,18 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     white-space: nowrap;
 }
 
+/* Spaced like `.llm-chat-thinking` and `.llm-chat-tool-calls`, the lines it follows. */
+.llm-chat-stream-idle {
+    margin: 0.25rem 0;
+    animation: llm-chat-stream-idle-appear 0.2s ease-out;
+}
+
+@keyframes llm-chat-stream-idle-appear {
+    from {
+        opacity: 0;
+    }
+}
+
 /* The text after the last thought or tool call, set apart from the steps that led to it. */
 .llm-chat-reply {
     margin-top: 1rem;

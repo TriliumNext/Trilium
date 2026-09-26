@@ -78,7 +78,7 @@ describe("ChatMessageList idle stream", () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => vi.useRealTimers());
 
-    const idleRow = (target: HTMLElement) => target.querySelector(".chat-stream-status");
+    const idleRow = (target: HTMLElement) => target.querySelector(".llm-chat-stream-idle");
 
     it("says it is still working once the reply stops changing, until it moves again", () => {
         const target = renderStreamingTurn([ { type: "text", content: "Hello" } ], null);
@@ -86,7 +86,10 @@ describe("ChatMessageList idle stream", () => {
         expect(idleRow(target)).toBeNull();
 
         act(() => { vi.advanceTimersByTime(100); });
-        expect(idleRow(target)?.textContent).toBe("llm_chat.stream_status.still_working");
+        // A line of the reply itself, shaped like the streaming thought and the tool calls above it.
+        const row = target.querySelector(".llm-chat-message-content > .expandable-line.llm-chat-stream-idle > .expandable-line-header");
+        expect(row?.textContent).toBe("llm_chat.stream_status.still_working");
+        expect(row?.firstElementChild?.classList.contains("bx-spin")).toBe(true);
 
         rerenderStreamingTurn([ { type: "text", content: "Hello there" } ]);
         expect(idleRow(target)).toBeNull();
