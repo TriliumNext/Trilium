@@ -2477,7 +2477,6 @@
     "thought_process": "사고 과정",
     "tool_calls": "도구 호출 {{count}}건",
     "input": "입력",
-    "input_streaming": "입력 (스트리밍...)",
     "edit_index": "{{index}} 수정 {{total}}",
     "result": "결과",
     "error": "오류",

@@ -2296,7 +2296,6 @@
     "thought_process": "Proses berpikir",
     "tool_calls": "{{count}} panggilan tool",
     "input": "Input",
-    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} dari {{total}}",
     "result": "Hasil",
     "error": "Kesalahan",

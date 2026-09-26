@@ -2715,7 +2715,6 @@
     "thought_process": "Düşünme süreci",
     "tool_calls": "{{count}} araç çağrısı",
     "input": "Girdi",
-    "input_streaming": "Girdi (akış halinde…)",
     "edit_index": "{{total}} içinden {{index}}. düzenleme",
     "result": "Sonuç",
     "error": "Hata",

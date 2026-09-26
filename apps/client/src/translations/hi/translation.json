@@ -2564,7 +2564,6 @@
     "thought_process": "विचार प्रक्रिया",
     "tool_calls": "{{count}} टूल कॉल",
     "input": "इनपुट",
-    "input_streaming": "इनपुट (स्ट्रीमिंग…)",
     "edit_index": "{{total}} में से {{index}} संपादित करें",
     "result": "परिणाम",
     "error": "त्रुटि",

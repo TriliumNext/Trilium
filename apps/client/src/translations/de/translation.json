@@ -2766,7 +2766,6 @@
     "edit_index": "Bearbeitung {{index}} von {{total}}",
     "retry": "Erneut versuchen",
     "web_search_unavailable_gemini": "Bei Gemini-Modellen nicht verfügbar solange der Notizzugriff aktiv ist — Googles API erlaubt keine Kombination beider Funktionen. Notizzugriff deaktivieren oder einen anderen Anbieter wählen um die Websuche zu nutzen.",
-    "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
     "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",

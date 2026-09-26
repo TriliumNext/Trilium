@@ -3220,7 +3220,6 @@
     "no_models_selected": "No hay modelos seleccionados: haga clic en el lápiz para elegir",
     "no_model_selected": "Seleccione un modelo",
     "edit_models": "Editar modelos",
-    "input_streaming": "Entrada (transmitiendo…)",
     "edit_index": "Edición {{index}} de {{total}}",
     "free": "Gratis",
     "retry": "Reintentar",

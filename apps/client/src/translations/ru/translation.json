@@ -3105,7 +3105,6 @@
     "highlight_remove": "Удалить акцент",
     "highlight_remove_confirm": "Удалить этот акцент?",
     "highlights_empty": "Пока нет акцентов. Выделите текст в сообщении и нажмите \"Акцент\".",
-    "input_streaming": "Ввод (потоковая передача…)",
     "model_cost_included": "Подписка",
     "no_model_selected": "Выберите модель",
     "no_models_selected": "Модель не выбрана — нажмите на карандаш, чтобы выбрать",
