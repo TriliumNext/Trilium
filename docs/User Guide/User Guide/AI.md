@@ -92,7 +92,7 @@ This feature is on by default but it can easily be disabled by clicking on the m
 
 ### Thinking
 
-Some models reason before they answer. Their reasoning appears above the reply as a collapsible _Thought process_ line.
+Some models reason before they answer. While the model is thinking, its reasoning is shown in full under a spinner; once it is done, it folds into a collapsible _Thought process_ line above the reply.
 
 How much a model thinks is set per chat, in one of two ways depending on the model:
 

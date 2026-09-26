@@ -126,8 +126,7 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
 /**
  * One stretch of the model's reasoning. A finished one folds to a single muted line: its leading
  * `**Title**` (the shape of Codex's reasoning summaries), or else its first line, which the body
- * then leaves out. The one being generated stays open, clamped to its last lines under a spinner
- * and its latest title.
+ * then leaves out. The one being generated stays open in full under a spinner and its latest title.
  */
 function ThinkingCard({ content, isLive }: { content: string; isLive?: boolean }) {
     if (isLive) {

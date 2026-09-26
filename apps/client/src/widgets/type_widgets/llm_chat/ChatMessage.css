@@ -239,19 +239,6 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     white-space: nowrap;
 }
 
-/* Aligning the content to the end clips the overflow at the top, keeping the newest lines in view. */
-.llm-chat-thinking-live .llm-chat-thinking-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    max-height: calc(4 * 1.6em);
-    overflow: hidden;
-
-    > * {
-        flex-shrink: 0;
-    }
-}
-
 /* The text after the last thought or tool call, set apart from the steps that led to it. */
 .llm-chat-reply {
     margin-top: 1rem;
