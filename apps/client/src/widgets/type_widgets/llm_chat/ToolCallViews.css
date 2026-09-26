@@ -76,8 +76,16 @@
     max-height: 300px;
     overflow: auto;
 
+    ul {
+        gap: 0;
+    }
+
+    .llm-chat-note-result {
+        padding-block: 0.1rem;
+    }
+
     .llm-chat-note-result > ul {
-        margin: 0.2rem 0 0 0.35rem;
+        margin: 0.1rem 0 0 0.35rem;
         padding-left: 0.5rem;
         border-left: 1px solid var(--main-border-color);
     }
