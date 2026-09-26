@@ -16,18 +16,19 @@ interface ToolCallContext {
     noteId: string | null;
     /** The parent note, shown as "in <parent>" for creation tools. */
     parentNoteId: string | null;
+    /** Where `move_note` took the note: the new parent, and the old one when the result names it. */
+    move?: { toNoteId: string; fromNoteId: string | null };
     /** Plain-text detail (e.g. skill name, search query) when no note ref is available. */
     detailText: string | null;
 }
 
-/** Try to extract a noteId from the tool call's result JSON. */
-function parseResultNoteId(toolCall: ToolCall): string | null {
+/** Try to extract a string field from the tool call's result JSON. */
+function parseResultField(toolCall: ToolCall, field: string): string | null {
     if (!toolCall.result) return null;
     try {
-        const result = typeof toolCall.result === "string"
-            ? JSON.parse(toolCall.result)
-            : toolCall.result;
-        return result?.noteId || null;
+        const result = JSON.parse(toolCall.result);
+        const value = result?.[field];
+        return typeof value === "string" && value ? value : null;
     } catch {
         return null;
     }
@@ -38,15 +39,24 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
     const input = toolCall.input;
     const parentNoteId = (input?.parentNoteId as string) || null;
 
+    if (toolCall.toolName === "move_note"
+            && typeof input?.noteId === "string" && typeof input.newParentNoteId === "string") {
+        const move = {
+            toNoteId: input.newParentNoteId,
+            fromNoteId: parseResultField(toolCall, "oldParentNoteId")
+        };
+        return { noteId: input.noteId, parentNoteId: null, move, detailText: null };
+    }
+
     // For creation tools, the created note ID is in the result.
     if (parentNoteId) {
-        const createdNoteId = parseResultNoteId(toolCall);
+        const createdNoteId = parseResultField(toolCall, "noteId");
         if (createdNoteId) {
             return { noteId: createdNoteId, parentNoteId, detailText: null };
         }
     }
 
-    const noteId = (input?.noteId as string) || parentNoteId || parseResultNoteId(toolCall);
+    const noteId = (input?.noteId as string) || parentNoteId || parseResultField(toolCall, "noteId");
     if (noteId) {
         return { noteId, parentNoteId: null, detailText: null };
     }
@@ -89,7 +99,7 @@ function getErrorMessage(result: string): string {
 
 /** Build the label content for a tool call section. */
 function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallView | null }) {
-    const { noteId: refNoteId, parentNoteId: refParentId, detailText } = getToolCallContext(toolCall);
+    const { noteId: refNoteId, parentNoteId: refParentId, move, detailText } = getToolCallContext(toolCall);
     const hasError = isFailedToolCall(toolCall);
 
     return (
@@ -101,23 +111,35 @@ function ToolCallLabel({ toolCall, view }: { toolCall: ToolCall; view: ToolCallV
             {view?.lead}
             {refNoteId && (
                 <span className="llm-chat-tool-call-note-ref">
-                    {refParentId ? (
-                        <Trans
-                            i18nKey="llm.tools.note_in_parent"
-                            components={{
-                                Note: <NewNoteLink notePath={refNoteId} showNoteIcon noPreview />,
-                                Parent: <NewNoteLink notePath={refParentId} showNoteIcon noPreview />
-                            } as any}
-                        />
-                    ) : (
-                        <NewNoteLink notePath={refNoteId} showNoteIcon noPreview />
-                    )}
+                    <NoteRef noteId={refNoteId} parentNoteId={refParentId} move={move} />
                 </span>
             )}
             {view?.summary && <span className="llm-chat-tool-call-result-count">{view.summary}</span>}
             {hasError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>
     );
+}
+
+/** The notes a call worked on: the note alone, the note in its parent, or where a move took it. */
+function NoteRef({ noteId, parentNoteId, move }: {
+    noteId: string;
+    parentNoteId: string | null;
+    move?: ToolCallContext["move"];
+}) {
+    const link = (notePath: string) => <NewNoteLink notePath={notePath} showNoteIcon noPreview />;
+
+    if (move) {
+        const components = move.fromNoteId
+            ? { Note: link(noteId), From: link(move.fromNoteId), To: link(move.toNoteId) }
+            : { Note: link(noteId), To: link(move.toNoteId) };
+        const key = move.fromNoteId ? "llm.tools.note_moved_from" : "llm.tools.note_moved";
+        return <Trans i18nKey={key} components={components as any} />;
+    }
+    if (parentNoteId) {
+        const components = { Note: link(noteId), Parent: link(parentNoteId) };
+        return <Trans i18nKey="llm.tools.note_in_parent" components={components as any} />;
+    }
+    return link(noteId);
 }
 
 /**

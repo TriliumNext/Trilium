@@ -4151,7 +4151,9 @@
       "search_icons": "Search icons",
       "search_help": "Search User Guide",
       "get_help_toc": "Get User Guide contents",
-      "read_web_page": "Read web page"
+      "read_web_page": "Read web page",
+      "note_moved_from": "<Note/> from <From/> to <To/>",
+      "note_moved": "<Note/> to <To/>"
     }
   },
   "common": {

@@ -459,4 +459,20 @@ describe("ToolCallCard", () => {
         expect(oldTitle?.nextElementSibling?.querySelector(".note-link-stub")?.textContent).toBe("n");
         expect(older?.querySelector(".llm-chat-tool-call-old-title")).toBeNull();
     });
+
+    it("says where a move took a note from and to", () => {
+        const move = (id: string, result: object): ToolCall => ({
+            id, toolName: "move_note", input: { noteId: "n", newParentNoteId: "to" }, result: JSON.stringify(result)
+        });
+        const target = renderCard([
+            move("1", { success: true, noteId: "n", newParentNoteId: "to", oldParentNoteId: "from" }),
+            { id: "2", toolName: "get_note", input: { noteId: "x" }, result: "{}" },
+            move("3", { success: true, noteId: "n", newParentNoteId: "to" })
+        ]);
+        const [ moved, , older ] = [ ...(target.querySelector(".llm-chat-tool-calls")?.children ?? []) ];
+        const ref = (line: Element | undefined) => line?.querySelector(".llm-chat-tool-call-note-ref");
+
+        expect(ref(moved)?.textContent).toBe("llm.tools.note_moved_fromnfromto");
+        expect(ref(older)?.textContent).toBe("llm.tools.note_movednto");
+    });
 });
