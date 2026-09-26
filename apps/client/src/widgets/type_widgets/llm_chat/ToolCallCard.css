@@ -3,9 +3,17 @@
     margin: 0.25rem 0;
 }
 
-.llm-chat-tool-call-detail {
+/* The name reads stronger than the line and its parameters fainter. Both derive from the inherited
+   color, so they follow the summary's hover. */
+.llm-chat-tool-call:not(.llm-chat-tool-call-error) > :is(.expandable-section-summary, .expandable-line-header) .llm-chat-tool-call-name {
+    color: color-mix(in srgb, currentColor, var(--main-text-color) 45%);
+}
+
+.llm-chat-tool-call-detail,
+.llm-chat-tool-call-result-count {
+    font-size: 0.75rem;
     font-weight: 400;
-    color: var(--muted-text-color);
+    opacity: 0.75;
 }
 
 .llm-chat-tool-call-count {
@@ -80,9 +88,4 @@
 
 @keyframes llm-chat-tool-call-caret {
     50% { opacity: 0; }
-}
-
-.llm-chat-tool-call-result-count {
-    font-size: 0.75rem;
-    opacity: 0.8;
 }

@@ -94,7 +94,7 @@ function ToolCallLabel({ toolCall, summary }: { toolCall: ToolCall; summary?: st
 
     return (
         <>
-            {t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}
+            <span className="llm-chat-tool-call-name">{t(`llm.tools.${toolCall.toolName}`, { defaultValue: toolCall.toolName })}</span>
             {detailText && (
                 <span className="llm-chat-tool-call-detail">{detailText}</span>
             )}
@@ -200,7 +200,7 @@ function ToolCallGroupSection({ toolCalls }: { toolCalls: ToolCall[] }) {
     const friendlyName = t(`llm.tools.${first.toolName}`, { defaultValue: first.toolName });
     const label = (
         <>
-            {friendlyName}
+            <span className="llm-chat-tool-call-name">{friendlyName}</span>
             <span className="llm-chat-tool-call-count">×{toolCalls.length}</span>
             {anyError && <span className="llm-chat-tool-call-error-badge">{t("llm_chat.tool_error")}</span>}
         </>

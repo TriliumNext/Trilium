@@ -2661,8 +2661,8 @@
     },
     "show_tool_call_details": "Show input and output",
     "tool_call_no_result": "No result yet.",
-    "search_notes_count_one": "{{count}} note",
-    "search_notes_count_other": "{{count}} notes",
+    "search_notes_count_one": "({{count}} note)",
+    "search_notes_count_other": "({{count}} notes)",
     "search_notes_limited_one": "{{count}} total result, limited to {{limit}}",
     "search_notes_limited_other": "{{count}} total results, limited to {{limit}}",
     "search_notes_scope": "Searched in <Note/>"
