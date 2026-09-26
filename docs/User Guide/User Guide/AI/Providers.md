@@ -54,3 +54,8 @@ This allows you to set the base URL to an OpenAI-compatible API, with an optiona
 Enter the base URL exactly as the service documents it, including its version path, such as `https://api.groq.com/openai/v1` or `https://open.bigmodel.cn/api/paas/v4`. Only a bare host such as `http://localhost:8080` is completed with `/v1`.
 
 For custom endpoints, the pricing of the models is not known so the cost of a conversation will not be displayed; this is especially relevant for hosted providers.
+
+Trilium refuses endpoints that resolve into address ranges nothing is ordinarily served on — notably `100.64.0.0/10`, the range a Tailscale tailnet uses.
+
+> [!NOTE]
+> If your custom endpoint is only reachable over a tailnet, set the `TRILIUM_SAFE_FETCH_ALLOWLIST` environment variable on the machine running Trilium to a comma-separated list of the IPv4 addresses or CIDRs it may contact anyway (e.g. `TRILIUM_SAFE_FETCH_ALLOWLIST=100.83.121.222`), and restart Trilium. Only AI endpoint calls honor the list, and only addresses inside the Tailscale range can be allowed; entries must be dotted-quad IPv4 addresses or CIDRs, and anything else (an IPv6 address, a hostname) is ignored and logged. Prefer exact addresses over broad CIDRs: a `/10` entry also covers cloud metadata endpoints such as `100.100.100.200`.
