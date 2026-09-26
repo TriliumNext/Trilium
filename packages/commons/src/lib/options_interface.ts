@@ -144,12 +144,19 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     rightPaneCollapsedItems: string;
     rightPaneSelectedTab: string;
     /**
-     * Which map the connections tab draws, `link` or `tree`. A preference of the reader's rather than
-     * a property of any one note: the tab is a lens on whatever note is being read, and a note map
-     * that is a note's own thing — a note map note, a hoisted map — is told which to draw by that
-     * note's own `mapType` label instead.
+     * Which map the connections tab draws: `link`, `tree`, or `clone`. A preference of the reader's
+     * rather than a property of any one note: the tab is a lens on whatever note is being read, and a
+     * note map that is a note's own thing — a note map note, a hoisted map — is told which to draw by
+     * that note's own `mapType` label instead.
      */
     rightPaneNoteMapType: string;
+    /**
+     * How the connections tab's clone map merges a search's results: `any` or `all`. A preference of
+     * the reader's, like {@link rightPaneNoteMapType}; a note map that is a note's own thing is told
+     * by that note's `mapCloneCombine` label instead. Decided on clone paths: `any` keeps a note if
+     * at least one seed sits below it, `all` if every seed does.
+     */
+    rightPaneNoteMapCloneCombine: string;
     eraseEntitiesAfterTimeInSeconds: number;
     eraseEntitiesAfterTimeScale: number;
     autoReadonlySizeText: number;

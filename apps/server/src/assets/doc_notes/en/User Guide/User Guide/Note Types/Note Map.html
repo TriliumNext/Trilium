@@ -8,7 +8,8 @@
   it displays.</p>
 <p>Once created, the note map will display the relations between notes. Only
   the notes that are part of the parent of the note map will be displayed
-  (including their children).</p>
+  (including their children). The clone map is the exception: it shows the
+  placements of the root note rather than that note's subtree.</p>
 <h2>Root note</h2>
 <p>The root note defines the starting point of the graph, from which the
   relations and the hierarchy are derived from.</p>
@@ -33,6 +34,20 @@
       </tr>
     </thead>
     <tbody>
+      <tr>
+        <td><code>#mapType</code>
+        </td>
+        <td>Which visualization to draw: <code>link</code>, <code>tree</code>, or <code>clone</code>.
+          The clone map shows every placement of the root note, not that note's
+          subtree.</td>
+      </tr>
+      <tr>
+        <td><code>#mapCloneCombine</code>
+        </td>
+        <td>On a clone map of a search: <code>any</code> keeps a note if at least one
+          seed sits on a clone path below it; <code>all</code> keeps a note if every
+          seed does, plus the clone paths from that meet down to the seeds.</td>
+      </tr>
       <tr>
         <td><code>#mapIncludeRelation</code>
         </td>
