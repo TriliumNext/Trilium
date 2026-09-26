@@ -283,6 +283,14 @@ describe("validateHostResolution, with an allowlist of the operator's addresses"
         // Without the operator flag the address stays refused.
         await expect(safeFetch("http://100.83.121.222/v1")).rejects.toThrow("private/internal");
     });
+
+    it("unwraps an IPv4-mapped IPv6 literal so an IPv4 allowlist entry matches it", async () => {
+        // ::ffff:100.83.121.222 maps to 100.83.121.222 in the IPv4 space; the allowlist lists that
+        // address, so the literal must be permitted on the relaxed path.
+        await expect(validateHostResolution("::ffff:100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "::ffff:100.83.121.222", family: 6 }
+        ]);
+    });
 });
 
 describe("parseAllowlist", () => {
@@ -360,6 +368,44 @@ describe("request.ts allowlist wiring", () => {
         await provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true });
         expect(infoMessages).toHaveLength(1);
         expect(infoMessages[0]).toContain("not-an-address");
+    });
+
+    it("emits no warning when the env list has only valid entries", async () => {
+        // No dropped tokens means the `dropped.length > 0` branch in warnDroppedAllowlistTokens
+        // must not run, and `getLog` is never called for a clean env.
+        vi.resetModules();
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,100.83.121.0/24");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        expect(infoMessages).toHaveLength(0);
+    });
+
+    it("uses the plural \"entries\" form when the env list drops more than one token", async () => {
+        // Two malformed tokens → the ternary picks "entries" over "entry" and both names appear.
+        vi.resetModules();
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address,also-bad");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        expect(infoMessages).toHaveLength(1);
+        expect(infoMessages[0]).toMatch(/ignoring 2 entries/);
+        expect(infoMessages[0]).toContain("not-an-address");
+        expect(infoMessages[0]).toContain("also-bad");
     });
 });
 
