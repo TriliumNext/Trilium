@@ -94,7 +94,7 @@ export default function NoteLink({ className, containerClassName, notePath, show
     return <span className={containerClassName} ref={ref} />;
 }
 
-interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu"> {
+interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onContextMenu" | "onClick" | "onDblClick"> {
     className?: string;
     notePath: string;
     viewScope?: ViewScope;

@@ -4,8 +4,11 @@ import type { ComponentChildren } from "preact";
 import { Trans } from "react-i18next";
 
 import { t } from "../../../services/i18n.js";
+import { openInAppHelpFromUrl } from "../../../services/utils.js";
 import { NewNoteLink } from "../../react/NoteLink.js";
 import type { ToolCall } from "./llm_chat_types.js";
+
+const HELP_NOTE_PREFIX = "_help_";
 
 /** What a finished call shows: a short summary beside its label, and the view it folds open to. */
 export interface ToolCallView {
@@ -33,6 +36,22 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 body: search.results.length > 0 || search.ancestorNoteId ? <NoteSearchResults {...search} /> : undefined
             };
         }
+        case "search_help": {
+            const result = parseSearchNotesResult(toolCall.result);
+            if (!result) return null;
+            const { limit } = toolCall.input;
+            const search: NoteSearch = {
+                totalResults: result.totalResults,
+                // The guide path stands where a note search shows the parent.
+                results: result.results.map(({ noteId, path, contentPreview }) => ({ noteId, parentTitle: path, contentPreview })),
+                limit: typeof limit === "number" ? limit : result.results.length,
+                isHelp: true
+            };
+            return {
+                summary: t("llm_chat.search_help_count", { count: result.totalResults }),
+                body: search.results.length > 0 ? <NoteSearchResults {...search} /> : undefined
+            };
+        }
         case "get_child_notes": {
             const children = parseChildNotesResult(toolCall.result);
             if (!children) return null;
@@ -49,6 +68,8 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
 interface NoteSearchResult {
     noteId: string;
     parentTitle?: string | null;
+    /** The chain of User Guide sections above a `search_help` result. */
+    path?: string | null;
     contentPreview?: string | null;
 }
 
@@ -61,9 +82,11 @@ interface SearchNotesResult {
 interface NoteSearch extends SearchNotesResult {
     ancestorNoteId?: string;
     limit: number;
+    /** The results are User Guide pages, which open as contextual help. */
+    isHelp?: boolean;
 }
 
-function NoteSearchResults({ totalResults, results, ancestorNoteId, limit }: NoteSearch) {
+function NoteSearchResults({ totalResults, results, ancestorNoteId, limit, isHelp }: NoteSearch) {
     return (
         <div className="llm-chat-note-results">
             {ancestorNoteId && (
@@ -82,6 +105,7 @@ function NoteSearchResults({ totalResults, results, ancestorNoteId, limit }: Not
                             key={noteId}
                             noteId={noteId}
                             preview={contentPreview ? markdownToPlainPreview(contentPreview) : ""}
+                            onLinkClick={isHelp ? openAsHelp : undefined}
                         >
                             {parentTitle && (
                                 <span className="llm-chat-note-result-parent">
@@ -120,16 +144,39 @@ function ChildNoteList({ notes }: { notes: ChildNote[] }) {
 }
 
 /** One note in a list a tool returned: its link, muted details beside it, and a preview below. */
-function NoteResultRow({ noteId, preview, children }: { noteId: string; preview?: string; children?: ComponentChildren }) {
+function NoteResultRow({ noteId, preview, onLinkClick, children }: {
+    noteId: string;
+    preview?: string;
+    /** Takes a plain click on the link. Returns whether it handled the click. */
+    onLinkClick?: (noteId: string) => boolean;
+    children?: ComponentChildren;
+}) {
     return (
         <li className="llm-chat-note-result">
             <div className="llm-chat-note-result-header">
-                <NewNoteLink notePath={noteId} showNoteIcon />
+                <NewNoteLink
+                    notePath={noteId}
+                    showNoteIcon
+                    onClick={onLinkClick && ((e) => {
+                        // A modified or middle click goes on to `goToLink()` in `services/link.ts`.
+                        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                        if (!onLinkClick(noteId)) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                    })}
+                />
                 {children}
             </div>
             {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
         </li>
     );
+}
+
+/** Opens a User Guide page in the contextual help split, as `HelpButton` does. */
+function openAsHelp(noteId: string): boolean {
+    if (!noteId.startsWith(HELP_NOTE_PREFIX)) return false;
+    void openInAppHelpFromUrl(noteId.slice(HELP_NOTE_PREFIX.length));
+    return true;
 }
 
 interface ChildNote {

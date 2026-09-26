@@ -12,10 +12,15 @@ vi.mock("react-i18next", () => ({
     Trans: ({ i18nKey, components }: { i18nKey: string; components: Record<string, preact.ComponentChildren> }) =>
         <>{i18nKey}{Object.values(components)}</>
 }));
-const mocks = vi.hoisted(() => ({ triggerEvent: vi.fn() }));
+const mocks = vi.hoisted(() => ({ triggerEvent: vi.fn(), openInAppHelpFromUrl: vi.fn() }));
 vi.mock("../../../components/app_context.js", () => ({ default: { triggerEvent: mocks.triggerEvent } }));
+vi.mock("../../../services/utils.js", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../../../services/utils.js")>()),
+    openInAppHelpFromUrl: mocks.openInAppHelpFromUrl
+}));
 vi.mock("../../react/NoteLink.js", () => ({
-    NewNoteLink: ({ notePath }: { notePath: string }) => <a className="note-link-stub">{notePath}</a>
+    NewNoteLink: ({ notePath, onClick }: { notePath: string; onClick?: (e: MouseEvent) => void }) =>
+        <a className="note-link-stub" href="#" onClick={onClick}>{notePath}</a>
 }));
 
 import ToolCallCard from "./ToolCallCard.js";
@@ -25,6 +30,7 @@ let host: HTMLElement | undefined;
 
 afterEach(() => {
     mocks.triggerEvent.mockClear();
+    mocks.openInAppHelpFromUrl.mockClear();
     if (host) {
         render(null, host);
         host.remove();
@@ -189,5 +195,44 @@ describe("ToolCallCard", () => {
         expect(empty instanceof HTMLDetailsElement).toBe(false);
         expect(empty?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
             .toBe("llm_chat.child_notes_count{\"count\":0}");
+    });
+
+    it("lists the User Guide pages a help search found, opening each as contextual help", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "search_help",
+            input: { query: "clone", limit: 2 },
+            result: JSON.stringify({
+                totalResults: 5,
+                results: [
+                    { noteId: "_help_abc", title: "Cloning", path: "Basic Concepts > Notes", contentPreview: "**Clones** share a note" },
+                    { noteId: "_help_def", title: "Tree", path: "", contentPreview: null }
+                ]
+            })
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        expect(line?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.search_help_count{\"count\":5}");
+
+        const rows = [ ...(line?.querySelectorAll(".llm-chat-note-result") ?? []) ];
+        expect(rows.map(row => ({
+            note: row.querySelector(".note-link-stub")?.textContent,
+            path: row.querySelector(".llm-chat-note-result-parent")?.textContent ?? null,
+            preview: row.querySelector(".llm-chat-note-result-preview")?.textContent ?? null
+        }))).toEqual([
+            { note: "_help_abc", path: "Basic Concepts > Notes", preview: "Clones share a note" },
+            { note: "_help_def", path: null, preview: null }
+        ]);
+        expect(line?.querySelector(".llm-chat-note-results-more")?.textContent)
+            .toBe("llm_chat.search_notes_limited{\"count\":5,\"limit\":2}");
+
+        const link = rows[0]?.querySelector<HTMLAnchorElement>(".note-link-stub");
+        expect(link).not.toBeNull();
+        act(() => {
+            link?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true }));
+        });
+        expect(mocks.openInAppHelpFromUrl).not.toHaveBeenCalled();
+        act(() => link?.click());
+        expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("abc");
     });
 });

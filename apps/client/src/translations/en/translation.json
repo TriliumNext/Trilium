@@ -2669,7 +2669,9 @@
     "child_notes_count_one": "({{count}} child)",
     "child_notes_count_other": "({{count}} children)",
     "child_count_one": "{{count}} child",
-    "child_count_other": "{{count}} children"
+    "child_count_other": "{{count}} children",
+    "search_help_count_one": "({{count}} page)",
+    "search_help_count_other": "({{count}} pages)"
   },
   "sidebar_chat": {
     "title": "AI Chat",
