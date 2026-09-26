@@ -1009,10 +1009,19 @@ async function pushUserTurn(input: Pushable<SDKUserMessage>, prompt: string | As
     });
 }
 
-/** Strip the MCP prefix so the client shows "search_notes", not "mcp__trilium__search_notes". */
+/**
+ * The name the client knows a tool by: Trilium's tools without their MCP prefix ("search_notes", not
+ * "mcp__trilium__search_notes"), and Claude Code's web tools under the names the other providers give
+ * theirs. Their inputs already carry the `query` and `url` the chat shows.
+ */
 function friendlyToolName(name: string): string {
-    return name.replace(/^mcp__trilium__/, "");
+    return BUILTIN_TOOL_NAMES[name] ?? name.replace(/^mcp__trilium__/, "");
 }
+
+const BUILTIN_TOOL_NAMES: Record<string, string> = {
+    WebSearch: "web_search",
+    WebFetch: "read_web_page"
+};
 
 function flattenToolResult(content: unknown): string {
     if (typeof content === "string") {
