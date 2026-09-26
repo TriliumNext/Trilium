@@ -65,4 +65,8 @@ describe("markdownToPlainPreview", () => {
     it("decodes numeric and named entities, and keeps the ones it cannot", () => {
         expect(markdownToPlainPreview("&#65;&#x42;&#X43; &AMP; &#99999999; &bogus;")).toBe("ABC & &#99999999; &bogus;");
     });
+
+    it("strips a tag that removing another one leaves behind", () => {
+        expect(markdownToPlainPreview("<<b>script>alert(1)<</b>/script>")).toBe("alert(1)");
+    });
 });

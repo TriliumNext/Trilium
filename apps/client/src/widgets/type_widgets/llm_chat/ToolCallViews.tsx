@@ -796,8 +796,7 @@ export function markdownToPlainPreview(markdown: string): string {
 
     // The Markdown export keeps what it cannot express (reference links, `<kbd>`, icon spans) as
     // HTML. Entities are decoded last, so an escaped `&lt;b&gt;` stays text.
-    return markdown
-        .replace(/<\/?[a-z][^>]*>/gi, "")
+    return stripTags(markdown)
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
         .replace(/^\s*\|?[\s:|-]+\|?\s*$/gm, "")
@@ -806,6 +805,19 @@ export function markdownToPlainPreview(markdown: string): string {
         .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, decodeEntity)
         .replace(/\s+/g, " ")
         .trim();
+}
+
+/**
+ * Removes HTML tags until none is left, since removing one can join the text around it into another.
+ */
+function stripTags(html: string): string {
+    let previous: string;
+    let text = html;
+    do {
+        previous = text;
+        text = text.replace(/<\/?[a-z][^>]*>/gi, "");
+    } while (text !== previous);
+    return text;
 }
 
 const NAMED_ENTITIES: Record<string, string> = { nbsp: " ", amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'" };
