@@ -141,6 +141,25 @@ describe("attribute_tools", () => {
             expect(note.getOwnedRelation("renderNote")).toBeNull();
         });
 
+        it("removes an active dangerous attribute it replaces with a disabled one", () => {
+            const note = createNote("Active danger host");
+            cls.init(() => {
+                note.addLabel("run", "frontendStartup");
+                note.addLabel("run", "backendStartup");
+            });
+            expect(note.getOwnedLabels("run")).toHaveLength(2);
+
+            const result = cls.init(() => getTool("set_attribute").execute({
+                noteId: note.noteId, type: "label", name: "run", value: "hourly"
+            }));
+            expect(result).toMatchObject({
+                success: true, name: "disabled:run", disabled: true,
+                message: expect.stringContaining("removed the active #run")
+            });
+            expect(note.getOwnedLabels("run")).toHaveLength(0);
+            expect(note.getOwnedLabelValue("disabled:run")).toBe("hourly");
+        });
+
         it("creates a relation to an existing target note", () => {
             const note = createNote("Relation ok host");
             const result = cls.init(() => getTool("set_attribute").execute({

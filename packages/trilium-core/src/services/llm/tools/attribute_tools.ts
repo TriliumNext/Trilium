@@ -79,6 +79,11 @@ export const attributeTools = defineTools({
             if (attributeService.isAttributeDangerous(type, name)) {
                 const sigil = type === "label" ? "#" : "~";
                 const disabledName = `disabled:${name.trim()}`;
+                // An active attribute left in place would keep running its old value while the reply says it is inactive.
+                const activeAttributes = note.getOwnedAttributes(type, name.trim());
+                for (const attribute of activeAttributes) {
+                    attribute.markAsDeleted();
+                }
                 note.setAttribute(type, disabledName, value);
 
                 return {
@@ -89,6 +94,9 @@ export const attributeTools = defineTools({
                     value,
                     disabled: true,
                     message: `${sigil}${name.trim()} can run code, so it was saved as ${sigil}${disabledName} and is inactive. `
+                        + (activeAttributes.length
+                            ? `This removed the active ${sigil}${name.trim()}, so the note runs none of it until the user enables the new one. `
+                            : "")
                         + `Tell the user which note to open and to enable it there once they have reviewed the code: `
                         + `a render note shows an "Enable render note" button, other notes a toggle next to the badge beside the note title.`
                 };
