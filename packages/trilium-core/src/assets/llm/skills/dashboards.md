@@ -30,7 +30,7 @@ For widgets that compute something, fetch data, or respond to clicks, use a rend
 
 1. Create a note of type `render` as a **child of the dashboard** — this is the widget.
 2. Create a `code` note with mime `text/jsx` as a **child of the render note**, exporting a default component.
-3. Call `set_attribute` on the render note with the relation `renderNote` pointing to the JSX note. Because it enables code execution, it is saved as `~disabled:renderNote` and the widget stays inactive until the user activates it. Tell the user exactly what to do, e.g.: "Open the widget note '<render note title>', review '<JSX note title>', then in the attribute area rename `~disabled:renderNote` to `~renderNote`."
+3. Call `set_attribute` on the render note with the relation `renderNote` pointing to the JSX note. Because it enables code execution, it is saved as `~disabled:renderNote` and the widget stays inactive until the user enables it. Tell the user exactly what to do, e.g.: "Review '<JSX note title>', then open the widget note '<render note title>' and press **Enable render note**."
 
 JSX rules (load the `frontend_scripting` skill for the full API):
 
@@ -76,7 +76,7 @@ export default function RecentNotesWidget() {
 ## Anti-patterns (do NOT do this)
 
 - ❌ Putting the JSX code note directly under the dashboard — it would render as a code widget showing its own source. The JSX note belongs under the render note.
-- ❌ Telling the user the widget is ready after setting `~renderNote` — it is saved as `~disabled:renderNote` and renders nothing until the user removes the `disabled:` prefix.
+- ❌ Telling the user the widget is ready after setting `~renderNote` — it is saved as `~disabled:renderNote` and renders nothing until the user enables it.
 - ❌ Directing the user to set `~renderNote` on the dashboard note itself — it belongs on the `render`-type child.
 - ❌ Trying to write the `dashboard.json` attachment (or any view configuration) to lay out widgets — attachments cannot be modified by tools, and the dashboard picks up new widgets automatically; rely on auto-placement.
 - ❌ Using `getActiveContextNote()` inside a widget's JSX to get "this widget's note" — when the dashboard is open, the active note is the dashboard, not the widget. Use `originEntity` (the render note) instead.
