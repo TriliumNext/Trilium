@@ -60,6 +60,14 @@ export function getToolCallView(toolCall: ToolCall): ToolCallView | null {
                 body: children.length > 0 ? <ChildNoteList notes={children} /> : undefined
             };
         }
+        case "get_subtree": {
+            const nodes = parseSubtreeResult(toolCall.result);
+            if (!nodes) return null;
+            return {
+                summary: t("llm_chat.search_notes_count", { count: countSubtreeNotes(nodes) }),
+                body: nodes.length > 0 ? <div className="llm-chat-note-results llm-chat-subtree"><SubtreeList nodes={nodes} /></div> : undefined
+            };
+        }
         default:
             return null;
     }
@@ -143,10 +151,35 @@ function ChildNoteList({ notes }: { notes: ChildNote[] }) {
     );
 }
 
+/** A level of a `get_subtree` result; `children` of a note are the next level, nested in its row. */
+function SubtreeList({ nodes }: { nodes: SubtreeNode[] }) {
+    return (
+        <ul>
+            {nodes.map((node, idx) => ("more" in node ? (
+                <li key={idx} className="llm-chat-note-results-more">{t("llm_chat.subtree_more", { count: node.more })}</li>
+            ) : (
+                <NoteResultRow
+                    key={idx}
+                    noteId={node.noteId}
+                    nested={node.children.length > 0 && <SubtreeList nodes={node.children} />}
+                >
+                    {node.hiddenChildren > 0 && (
+                        <span className="llm-chat-note-result-detail">
+                            {t("llm_chat.child_count", { count: node.hiddenChildren })}
+                        </span>
+                    )}
+                </NoteResultRow>
+            )))}
+        </ul>
+    );
+}
+
 /** One note in a list a tool returned: its link, muted details beside it, and a preview below. */
-function NoteResultRow({ noteId, preview, onLinkClick, children }: {
+function NoteResultRow({ noteId, preview, nested, onLinkClick, children }: {
     noteId: string;
     preview?: string;
+    /** A list nested under the row, such as the next level of a subtree. */
+    nested?: ComponentChildren;
     /** Takes a plain click on the link. Returns whether it handled the click. */
     onLinkClick?: (noteId: string) => boolean;
     children?: ComponentChildren;
@@ -168,8 +201,66 @@ function NoteResultRow({ noteId, preview, onLinkClick, children }: {
                 {children}
             </div>
             {preview && <div className="llm-chat-note-result-preview">{preview}</div>}
+            {nested}
         </li>
     );
+}
+
+/**
+ * A note of a `get_subtree` result, or the marker that stands for the children past the ten a level
+ * lists. `hiddenChildren` counts the children past the depth limit.
+ */
+type SubtreeNode = { noteId: string; children: SubtreeNode[]; hiddenChildren: number } | { more: number };
+
+/**
+ * Reads the root's children out of a `get_subtree` result. The tool reports what it left out in
+ * English for the model ("... and 3 more", "5 children not shown"), so the counts are read out of
+ * that text.
+ */
+function parseSubtreeResult(result: string): SubtreeNode[] | null {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(result);
+    } catch {
+        return null;
+    }
+    if (!isRecord(parsed) || typeof parsed.noteId !== "string") return null;
+    return Array.isArray(parsed.children) ? parseSubtreeLevel(parsed.children) : [];
+}
+
+function parseSubtreeLevel(items: unknown[]): SubtreeNode[] {
+    const nodes: SubtreeNode[] = [];
+    for (const item of items) {
+        if (!isRecord(item) || typeof item.noteId !== "string") continue;
+        if (!item.noteId) {
+            const more = firstNumber(item.title);
+            if (more) nodes.push({ more });
+            continue;
+        }
+        nodes.push({
+            noteId: item.noteId,
+            children: Array.isArray(item.children) ? parseSubtreeLevel(item.children) : [],
+            hiddenChildren: firstNumber(item.children)
+        });
+    }
+    return nodes;
+}
+
+function countSubtreeNotes(nodes: SubtreeNode[]): number {
+    let count = 0;
+    for (const node of nodes) {
+        if ("noteId" in node) count += 1 + countSubtreeNotes(node.children);
+    }
+    return count;
+}
+
+function firstNumber(text: unknown): number {
+    const match = typeof text === "string" ? /\d+/.exec(text) : null;
+    return match ? Number(match[0]) : 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** Opens a User Guide page in the contextual help split, as `HelpButton` does. */

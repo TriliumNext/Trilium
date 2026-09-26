@@ -2671,7 +2671,9 @@
     "child_count_one": "{{count}} child",
     "child_count_other": "{{count}} children",
     "search_help_count_one": "({{count}} page)",
-    "search_help_count_other": "({{count}} pages)"
+    "search_help_count_other": "({{count}} pages)",
+    "subtree_more_one": "+{{count}} more",
+    "subtree_more_other": "+{{count}} more"
   },
   "sidebar_chat": {
     "title": "AI Chat",

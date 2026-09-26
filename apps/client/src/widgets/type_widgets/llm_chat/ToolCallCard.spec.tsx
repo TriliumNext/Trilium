@@ -240,4 +240,40 @@ describe("ToolCallCard", () => {
         act(() => link?.click());
         expect(mocks.openInAppHelpFromUrl).toHaveBeenCalledExactlyOnceWith("abc");
     });
+
+    it("nests the notes of a subtree, with what the depth and width limits left out", () => {
+        const target = renderCard([ {
+            id: "1",
+            toolName: "get_subtree",
+            input: { noteId: "top", depth: 2 },
+            result: JSON.stringify({
+                noteId: "top", title: "Top", type: "text", children: [
+                    { noteId: "a", title: "A", type: "text", children: [
+                        { noteId: "a1", title: "A1", type: "text", children: "5 children not shown (depth limit reached)" }
+                    ] },
+                    { noteId: "b", title: "B", type: "text" },
+                    { noteId: "", title: "... and 3 more", type: "truncated" }
+                ]
+            })
+        } ]);
+        const line = target.querySelector("details.llm-chat-tool-call");
+        expect(line?.querySelector(".llm-chat-tool-call-result-count")?.textContent)
+            .toBe("llm_chat.search_notes_count{\"count\":3}");
+
+        const header = (row: Element | null | undefined) => row?.querySelector(":scope > .llm-chat-note-result-header");
+        const rows = [ ...(line?.querySelectorAll(".llm-chat-note-result") ?? []) ];
+        expect(rows.map(row => ({
+            note: header(row)?.querySelector(".note-link-stub")?.textContent,
+            detail: header(row)?.querySelector(".llm-chat-note-result-detail")?.textContent ?? null,
+            parent: header(row.parentElement?.closest(".llm-chat-note-result"))?.querySelector(".note-link-stub")?.textContent ?? null
+        }))).toEqual([
+            { note: "a", detail: null, parent: null },
+            { note: "a1", detail: "llm_chat.child_count{\"count\":5}", parent: "a" },
+            { note: "b", detail: null, parent: null }
+        ]);
+
+        const more = line?.querySelector(".llm-chat-note-results-more");
+        expect(more?.textContent).toBe("llm_chat.subtree_more{\"count\":3}");
+        expect(more?.closest(".llm-chat-note-result")).toBeNull();
+    });
 });

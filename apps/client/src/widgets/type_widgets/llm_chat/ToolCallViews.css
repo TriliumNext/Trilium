@@ -70,3 +70,19 @@
         align-self: center;
     }
 }
+
+/* The notes of a `get_subtree` call, one indent and guide line per level. */
+.llm-chat-subtree {
+    max-height: 300px;
+    overflow: auto;
+
+    .llm-chat-note-result > ul {
+        margin: 0.2rem 0 0 0.35rem;
+        padding-left: 0.5rem;
+        border-left: 1px solid var(--main-border-color);
+    }
+
+    .llm-chat-note-result:has(> ul) {
+        padding-bottom: 0;
+    }
+}
