@@ -29,6 +29,8 @@ describe("package operation lock", () => {
     });
 
     it("renews only for the current owner", () => {
+        expect(renew("community-packages", "any-token", 500)).toEqual({ ok: false, expiresAt: 0 });
+
         const first = acquire("community-packages", 1000);
         expect(first.ok).toBe(true);
         if (!first.ok) return;
@@ -58,7 +60,36 @@ describe("package operation lock", () => {
         expect(request({ action: "unknown" })).toEqual([400, { error: "action must be acquire, renew, or release" }]);
         expect(request({ action: "acquire", name: "other-operation" })).toEqual([400, { error: "name must be community-packages" }]);
         expect(request({ action: "renew", token: "" })).toEqual([400, { error: "token is required" }]);
+        expect(request({ action: "renew", token: "a".repeat(129) })).toEqual([400, { error: "token is required" }]);
         expect(request({ action: "release", token: "wrong-token" })).toEqual([409, { error: "operation lock is missing or owned by another client" }]);
+    });
+
+    it("rejects invalid lock names in service operations", () => {
+        expect(() => acquire("Invalid Name!")).toThrow("Invalid operation lock name");
+        expect(() => renew("Invalid Name!", "token")).toThrow("Invalid operation lock name");
+        expect(() => release("Invalid Name!", "token")).toThrow("Invalid operation lock name");
+    });
+
+    it("supports acquire with default parameters", () => {
+        const result = acquire();
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.token).toBeDefined();
+            expect(result.expiresAt).toBeGreaterThan(Date.now());
+        }
+    });
+
+    it("supports API renewal for the current owner and rejects others", () => {
+        const acquired = request({ action: "acquire" }) as { token: string; expiresAt: number };
+        expect(acquired.token).toBeDefined();
+
+        const renewed = request({ action: "renew", token: acquired.token });
+        expect(renewed).toEqual({ expiresAt: expect.any(Number) });
+
+        expect(request({ action: "renew", token: "expired-or-other-token" })).toEqual([
+            409,
+            { error: "operation lock is missing or owned by another client", expiresAt: expect.any(Number) }
+        ]);
     });
 
     it("serializes API owners and permits only the owner to release", () => {
