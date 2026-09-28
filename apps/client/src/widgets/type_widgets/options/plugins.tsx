@@ -330,7 +330,7 @@ export default function PluginsSettings() {
     const availablePackages = state.catalog.filter((pkg) => !installedPackageIds.has(pkg.id) && (!pkg.deprecated || state.includeDeprecatedPackages));
 
     return (
-        <>
+        <div className="plugins-settings">
             <OptionsPageHeader />
 
             <OptionsSection
@@ -498,7 +498,7 @@ export default function PluginsSettings() {
                     />
                 </> : !state.loading && <p>{t("plugins.initialize_advanced")}</p>}
             </OptionsSection>
-        </>
+        </div>
     );
 }
 
