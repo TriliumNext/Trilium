@@ -181,10 +181,35 @@ describe.skipIf(process.platform === "win32")("the docker healthcheck script", (
         expect(seen).toEqual([ "/api/health-check" ]);
     });
 
-    /** Runs the real script the image ships, with the data directory this test wrote into. */
-    function probe() {
+    it("finds the data directory the server picked when `TRILIUM_DATA_DIR` is unset", async () => {
+        // `getTriliumDataDir()` prefers `~/trilium-data` if it exists, then `~/.local/share`.
+        const home = path.join(dataDir, "home");
+        const appDataDir = path.join(home, ".local", "share", "trilium-data");
+        fs.mkdirSync(appDataDir, { recursive: true });
+        await publishServer((_req, res) => {
+            res.statusCode = 200;
+            res.end();
+        });
+        fs.renameSync(path.join(dataDir, HEALTHCHECK_URL_FILE),
+            path.join(appDataDir, HEALTHCHECK_URL_FILE));
+
+        expect(await probe({ HOME: home })).toBe(0);
+
+        fs.mkdirSync(path.join(home, "trilium-data"));
+        expect(await probe({ HOME: home })).toBe(1);
+    });
+
+    /**
+     * Runs the real script the image ships, with the data directory this test wrote into, or with
+     * `TRILIUM_DATA_DIR` unset and `home` as the home directory.
+     */
+    function probe({ HOME: home }: { HOME?: string } = {}) {
         return new Promise<number>((resolve) => {
-            const env = { ...process.env, TRILIUM_DATA_DIR: dataDir };
+            const env: NodeJS.ProcessEnv = { ...process.env, TRILIUM_DATA_DIR: dataDir };
+            if (home) {
+                delete env.TRILIUM_DATA_DIR;
+                env.HOME = home;
+            }
 
             execFile("/bin/sh", [ PROBE_SCRIPT ], { env },
                 (error) => resolve(error ? (typeof error.code === "number" ? error.code : 1) : 0));

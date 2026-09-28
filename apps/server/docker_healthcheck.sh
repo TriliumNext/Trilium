@@ -9,7 +9,16 @@
 # status is compared here instead of relying on --fail. Docker reads 0 as healthy and 1 as
 # unhealthy, and reserves 2, so every failure is collapsed onto 1.
 
-data_dir="${TRILIUM_DATA_DIR:-/home/node/trilium-data}"
+# Resolves the data directory in the same order as `getTriliumDataDir()` in data_dir.ts.
+if [ -n "$TRILIUM_DATA_DIR" ]; then
+    data_dir="$TRILIUM_DATA_DIR"
+elif [ -d "$HOME/trilium-data" ]; then
+    data_dir="$HOME/trilium-data"
+elif [ -d "$HOME/.local/share" ]; then
+    data_dir="$HOME/.local/share/trilium-data"
+else
+    data_dir="$HOME/trilium-data"
+fi
 url_file="$data_dir/healthcheck-url"
 socket_file="$data_dir/healthcheck-socket"
 

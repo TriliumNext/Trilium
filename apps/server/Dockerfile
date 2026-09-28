@@ -19,10 +19,8 @@ WORKDIR /usr/src/app
 COPY ./dist /usr/src/app
 COPY ./start-docker.sh /usr/src/app
 
-# The healthcheck reads the listening address the server records here.
-ENV TRILIUM_DATA_DIR=/home/node/trilium-data
-
 # Configure container
 EXPOSE 8080
 CMD [ "sh", "./start-docker.sh" ]
-HEALTHCHECK --interval=60s --timeout=5s --start-period=30s CMD exec gosu node sh /usr/src/app/docker_healthcheck.sh
+# gosu keeps the inherited HOME (/root), and the probe looks for the data directory under HOME.
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s CMD HOME=/home/node exec gosu node sh /usr/src/app/docker_healthcheck.sh

@@ -17,9 +17,6 @@ COPY ./start-docker.sh /usr/src/app
 # Add application user
 RUN adduser -s /bin/false node; exit 0
 
-# The healthcheck reads the listening address the server records here.
-ENV TRILIUM_DATA_DIR=/home/node/trilium-data
-
 # Configure container
 EXPOSE 8080
 CMD [ "sh", "./start-docker.sh" ]
