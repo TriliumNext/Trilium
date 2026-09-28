@@ -9,6 +9,8 @@ import { t } from "../../../services/i18n";
 import search from "../../../services/search";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
+import FormSelect from "../../react/FormSelect";
+import FormTextArea from "../../react/FormTextArea";
 import FormTextBox from "../../react/FormTextBox";
 import { useTriliumEvent } from "../../react/hooks";
 import NoItems from "../../react/NoItems";
@@ -435,30 +437,30 @@ export default function PluginsSettings() {
             >
                 {!state.loading && state.settings ? <>
                     <OptionsRow name="community-package-registries" label={t("plugins.registry_label")} description={t("plugins.registry_description")} stacked>
-                        <textarea
+                        <FormTextArea
                             className="plugin-source-textarea"
                             rows={3}
-                            value={state.registryUrls.join("\n")}
+                            currentValue={state.registryUrls.join("\n")}
                             placeholder={t("plugins.registry_placeholder")}
-                            onInput={(event) => setState((current) => ({ ...current, registryUrls: parseRegistryUrls(event.currentTarget.value) }))}
+                            onChange={(value) => setState((current) => ({ ...current, registryUrls: parseRegistryUrls(value) }))}
                         />
                     </OptionsRow>
                     <OptionsRow name="community-package-direct-manifests" label={t("plugins.direct_manifest_label")} description={t("plugins.direct_manifest_description")} stacked>
-                        <textarea
+                        <FormTextArea
                             className="plugin-source-textarea"
                             rows={3}
-                            value={state.directManifestUrls.join("\n")}
+                            currentValue={state.directManifestUrls.join("\n")}
                             placeholder={t("plugins.direct_manifest_placeholder")}
-                            onInput={(event) => setState((current) => ({ ...current, directManifestUrls: parseRegistryUrls(event.currentTarget.value) }))}
+                            onChange={(value) => setState((current) => ({ ...current, directManifestUrls: parseRegistryUrls(value) }))}
                         />
                     </OptionsRow>
                     <OptionsRow name="community-package-source-hosts" label={t("plugins.download_hosts_label")} description={t("plugins.download_hosts_description")} stacked>
-                        <textarea
+                        <FormTextArea
                             className="plugin-source-textarea"
                             rows={3}
-                            value={state.allowedSourceHosts}
+                            currentValue={state.allowedSourceHosts}
                             placeholder={t("plugins.download_hosts_placeholder")}
-                            onInput={(event) => setState((current) => ({ ...current, allowedSourceHosts: event.currentTarget.value }))}
+                            onChange={(value) => setState((current) => ({ ...current, allowedSourceHosts: value }))}
                         />
                     </OptionsRow>
                     <OptionsRowWithToggle
@@ -561,15 +563,15 @@ async function loadCatalog(registryUrls: string[], directManifestUrls: string[],
     const catalog = indexes.flat()
         .filter(isCatalogPackageEntry)
         .filter((entry) => {
-            if (seen.has(entry.id!)) return false;
-            seen.add(entry.id!);
+            if (seen.has(entry.id)) return false;
+            seen.add(entry.id);
             return true;
         })
         .map((entry) => ({
-            id: entry.id!,
-            name: entry.name!,
+            id: entry.id,
+            name: entry.name,
             description: entry.description || "",
-            version: entry.version!,
+            version: entry.version,
             permissions: Array.isArray(entry.permissions) ? entry.permissions.filter((permission): permission is string => typeof permission === "string") : [],
             settings: Array.isArray(entry.settings) ? entry.settings.filter(isPackageSettingDefinition) : [],
             artifacts: Array.isArray(entry.artifacts) ? entry.artifacts.filter(isPackageArtifact) : [],
@@ -697,11 +699,17 @@ function PackageSettingEditor({ packageId, setting, value, onChange, disabled }:
         return <OptionsRowWithToggle name={name} label={setting.title} description={setting.description} currentValue={Boolean(value)} onChange={onChange} disabled={disabled} />;
     }
     if (setting.type === "select") {
+        const options = (setting.options || []).map((option) => ({ value: option, title: option }));
         return (
             <OptionsRow name={name} label={setting.title} description={setting.description}>
-                <select value={String(value ?? "")} onChange={(event) => onChange(event.currentTarget.value)} disabled={disabled}>
-                    {(setting.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
+                <FormSelect
+                    values={options}
+                    keyProperty="value"
+                    titleProperty="title"
+                    currentValue={String(value ?? "")}
+                    onChange={(newValue) => onChange(newValue)}
+                    disabled={disabled}
+                />
             </OptionsRow>
         );
     }

@@ -587,12 +587,15 @@ describe("PluginsSettings component", () => {
 
         await act(async () => {
             textareas[0].value = "https://new-registry.example.com/packages.json";
+            textareas[0].dispatchEvent(new Event("change", { bubbles: true }));
             textareas[0].dispatchEvent(new Event("input", { bubbles: true }));
 
             textareas[1].value = "https://new-direct.example.com/plugin.json";
+            textareas[1].dispatchEvent(new Event("change", { bubbles: true }));
             textareas[1].dispatchEvent(new Event("input", { bubbles: true }));
 
             textareas[2].value = "custom.example.com";
+            textareas[2].dispatchEvent(new Event("change", { bubbles: true }));
             textareas[2].dispatchEvent(new Event("input", { bubbles: true }));
         });
 
