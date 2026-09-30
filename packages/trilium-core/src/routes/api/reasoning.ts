@@ -2,7 +2,13 @@ import type { Request } from "../../http_interface.js";
 
 import becca from "../../becca/becca.js";
 import { ValidationError } from "../../errors.js";
-import { getReasoningReport, inferredAttributeIds, releaseInferred, runReasoning } from "../../services/reasoning/reasoning.js";
+import {
+    getReasoningReport,
+    inferredAttributeIds,
+    noteOpened,
+    releaseInferred,
+    runReasoning
+} from "../../services/reasoning/reasoning.js";
 
 function getReasoning(_req: Request) {
     return getReasoningReport();
@@ -14,6 +20,14 @@ function run(_req: Request) {
 
 function getInferred(req: Request<{ noteId: string }>) {
     return { attributeIds: inferredAttributeIds(req.params.noteId) };
+}
+
+function activate(req: Request<{ noteId: string }>) {
+    const note = becca.notes[req.params.noteId];
+    if (!note || note.isDeleted) {
+        return;
+    }
+    noteOpened(req.params.noteId);
 }
 
 function keep(req: Request<{ noteId: string; attributeId: string }>) {
@@ -29,5 +43,6 @@ export default {
     getReasoning,
     run,
     getInferred,
+    activate,
     keep
 };

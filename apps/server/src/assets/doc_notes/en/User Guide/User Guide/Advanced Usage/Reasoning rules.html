@@ -77,10 +77,11 @@
   the rule leaves it alone. Deleting it removes it, and the next run brings
   it back while the rule still holds. If the rule later concludes a different
   value, that value appears beside the one you kept.</p>
-<p>An edit rechecks the notes next to the change. Opening the database, or
-  editing a rule note, rechecks the workspace or the whole database. A problem
-  in a rule is the <code>#reasoningError</code> label on the rule note. Fix
-  the rule and the label is cleared on the next run.</p>
+<p>An edit rechecks the notes next to the change. Opening a note applies
+  the rules to that note, and then to notes that gained a conclusion. Opening
+  the database, or editing a rule note, rechecks the workspace or the whole
+  database. A problem in a rule is the <code>#reasoningError</code> label on
+  the rule note. Fix the rule and the label is cleared on the next run.</p>
 <p>Deleting the rule note removes its conclusions on the next run. Deleting
   the note it describes deletes the child rule note with it.</p>
 <h2>Limitations</h2>
@@ -99,4 +100,6 @@
   <li>A protected rule note is read only while the protected session is unlocked.</li>
   <li><code>descendant</code> does not follow a cycle of clones. A note that
     is also a direct child is still reached by <code>child</code>.</li>
+  <li>Opening a note does not walk every descendant of a very large tree. That
+    check runs when the database opens or a rule note is edited.</li>
 </ul>

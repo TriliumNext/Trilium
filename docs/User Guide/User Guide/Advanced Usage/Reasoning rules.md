@@ -59,7 +59,7 @@ The conclusions are ordinary labels and relations, shown in the attributes list 
 
 To keep an inferred attribute after the rule stops concluding it, press <span class="tn-icon bx bx-pin"></span> _Keep this attribute_ on its row. Changing the value does the same: the attribute becomes a normal one, and the rule leaves it alone. Deleting it removes it, and the next run brings it back while the rule still holds. If the rule later concludes a different value, that value appears beside the one you kept.
 
-An edit rechecks the notes next to the change. Opening the database, or editing a rule note, rechecks the workspace or the whole database. A problem in a rule is the `#reasoningError` label on the rule note. Fix the rule and the label is cleared on the next run.
+An edit rechecks the notes next to the change. Opening a note applies the rules to that note, and then to notes that gained a conclusion. Opening the database, or editing a rule note, rechecks the workspace or the whole database. A problem in a rule is the `#reasoningError` label on the rule note. Fix the rule and the label is cleared on the next run.
 
 Deleting the rule note removes its conclusions on the next run. Deleting the note it describes deletes the child rule note with it.
 
@@ -72,3 +72,4 @@ Deleting the rule note removes its conclusions on the next run. Deleting the not
 *   Hidden notes are not part of the rules.
 *   A protected rule note is read only while the protected session is unlocked.
 *   `descendant` does not follow a cycle of clones. A note that is also a direct child is still reached by `child`.
+*   Opening a note does not walk every descendant of a very large tree. That check runs when the database opens or a rule note is edited.

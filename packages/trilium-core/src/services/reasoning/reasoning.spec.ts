@@ -4,7 +4,13 @@ import becca from "../../becca/becca.js";
 import attributeService from "../attributes.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
-import { inferredAttributeIds, releaseInferred, runReasoning, runReasoningOn } from "./reasoning.js";
+import {
+    activateNote,
+    inferredAttributeIds,
+    releaseInferred,
+    runReasoning,
+    runReasoningOn
+} from "./reasoning.js";
 
 describe("reasoning on notes", () => {
     it("writes a scoped conclusion and retracts it when the fact it depends on is gone", async () => {
@@ -378,6 +384,128 @@ describe("reasoning on notes", () => {
 
             await runReasoning();
             expect(essay.getOwnedRelations("listed")[0]?.value).toBe(book.noteId);
+        });
+    });
+
+    it("applies the rules to the opened note and leaves a distant conclusion in place", async () => {
+        await getContext().init(async () => {
+            noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Open rules",
+                type: "code",
+                mime: "text/plain",
+                content: `#opened(?note, "yes") :- #status(?note, "fresh").`,
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
+            });
+            const holder = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Open holder",
+                content: "",
+                type: "book"
+            }).note;
+            const mid = noteService.createNewNote({
+                parentNoteId: holder.noteId,
+                title: "Open mid",
+                content: "",
+                type: "book"
+            }).note;
+            const kept = noteService.createNewNote({
+                parentNoteId: mid.noteId,
+                title: "Kept fresh",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(kept.noteId, "status", "fresh");
+            await runReasoning();
+            expect(kept.getOwnedAttribute("label", "opened")?.value).toBe("yes");
+
+            const status = kept.getOwnedAttribute("label", "status");
+            expect(status).toBeTruthy();
+            if (!status) {
+                return;
+            }
+            status.markAsDeleted();
+
+            const opened = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Opened fresh",
+                content: "",
+                type: "text"
+            }).note;
+            const skipped = noteService.createNewNote({
+                parentNoteId: mid.noteId,
+                title: "Skipped fresh",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(opened.noteId, "status", "fresh");
+            attributeService.createLabel(skipped.noteId, "status", "fresh");
+
+            await activateNote(opened.noteId);
+            expect(opened.getOwnedAttribute("label", "opened")?.value).toBe("yes");
+            expect(skipped.getOwnedAttribute("label", "opened")).toBeNull();
+            expect(kept.getOwnedAttribute("label", "opened")?.value).toBe("yes");
+        });
+    });
+
+    it("follows a conclusion onto a note the first neighborhood did not contain", async () => {
+        await getContext().init(async () => {
+            const wave = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Wave",
+                content: "",
+                type: "book"
+            }).note;
+            const source = noteService.createNewNote({
+                parentNoteId: wave.noteId,
+                title: "Wave source",
+                content: "",
+                type: "text"
+            }).note;
+            const middle = noteService.createNewNote({
+                parentNoteId: source.noteId,
+                title: "Wave middle",
+                content: "",
+                type: "text"
+            }).note;
+            const near = noteService.createNewNote({
+                parentNoteId: middle.noteId,
+                title: "Wave near",
+                content: "",
+                type: "text"
+            }).note;
+            const far = noteService.createNewNote({
+                parentNoteId: near.noteId,
+                title: "Wave far",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createRelation(source.noteId, "link", middle.noteId);
+            attributeService.createRelation(middle.noteId, "link", near.noteId);
+            attributeService.createRelation(near.noteId, "link", far.noteId);
+            const rules = noteService.createNewNote({
+                parentNoteId: wave.noteId,
+                title: "Wave rules",
+                type: "code",
+                mime: "text/plain",
+                content: [
+                    `#flag(?note, "yes") :- #status(?note, "todo").`,
+                    `#wave(?target, "yes") :- ~link(?source, ?target), #flag(?source, ?value).`,
+                    `#ripple(?target, "yes") :- ~link(?source, ?target), #wave(?source, ?value).`,
+                    `#echo(?target, "yes") :- ~link(?source, ?target), #ripple(?source, ?value).`
+                ].join("\n"),
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
+            }).note;
+
+            await runReasoning();
+            expect(rules.getOwnedAttribute("label", "reasoningError")).toBeNull();
+            attributeService.createLabel(source.noteId, "status", "todo");
+            await activateNote(source.noteId);
+
+            expect(source.getOwnedAttribute("label", "flag")?.value).toBe("yes");
+            expect(middle.getOwnedAttribute("label", "wave")?.value).toBe("yes");
+            expect(near.getOwnedAttribute("label", "ripple")?.value).toBe("yes");
+            expect(far.getOwnedAttribute("label", "echo")?.value).toBe("yes");
         });
     });
 });

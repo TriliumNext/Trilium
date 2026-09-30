@@ -57,6 +57,9 @@ interface StoredFact {
 }
 
 const BURST_CAP = 8;
+/** Notes that gained a conclusion and are activated from the one that was opened. */
+const SPREAD_CAP = 8;
+const OPEN_DELAY_MS = 200;
 
 interface RunnableClause {
     edn: string;
@@ -90,6 +93,8 @@ let rerun = false;
 let burst = 0;
 let chain: Promise<ReasoningReport> | null = null;
 let program: Program | null = null;
+let activating = false;
+let openNoteId: string | null = null;
 const pending: ReasoningChange[] = [];
 let lastReport: ReasoningReport = { ruleNotes: 0, inferred: 0, retracted: 0, errors: [] };
 
@@ -142,6 +147,10 @@ export function startReasoningEngine() {
                 return;
             }
             if (running) {
+                // `executeActivation` follows the conclusions it just wrote.
+                if (activating && change.kind !== "rule") {
+                    return;
+                }
                 pending.push(change);
                 rerun = true;
                 return;
@@ -184,18 +193,62 @@ export function runReasoningOn(changes: readonly ReasoningChange[]): Promise<Rea
     return chain;
 }
 
+/**
+ * Applies the rules the neighborhood of `noteId` can answer, then activates notes that gained
+ * a conclusion. A descendant rule whose tree is larger than the neighborhood waits for a full pass.
+ */
+export function activateNote(noteId: string): Promise<ReasoningReport> {
+    if (!noteId || noteId.startsWith("_")) {
+        return Promise.resolve(lastReport);
+    }
+    if (chain) {
+        openNoteId = noteId;
+        return chain;
+    }
+    chain = getContext().init(() => execute(() => executeActivation(noteId))).finally(() => {
+        chain = null;
+        finishRun();
+    });
+    return chain;
+}
+
+/** Schedules `activateNote` for the note just opened. A quick series keeps the last note. */
+export function noteOpened(noteId: string) {
+    if (!noteId || noteId.startsWith("_")) {
+        return;
+    }
+    openNoteId = noteId;
+    if (chain) {
+        return;
+    }
+    oneTimeTimer.scheduleExecution("reasoning-open", OPEN_DELAY_MS, () => {
+        const id = openNoteId;
+        openNoteId = null;
+        if (!id) {
+            return;
+        }
+        void activateNote(id).catch((error) => {
+            const message = error instanceof Error ? error.message : String(error);
+            getLog().error(`Reasoning failed: ${message}`);
+        });
+    });
+}
+
 function finishRun() {
-    if (!rerun) {
+    if (rerun) {
+        rerun = false;
+        burst += 1;
+        if (burst >= BURST_CAP) {
+            pending.length = 0;
+        } else {
+            scheduleReasoning(true);
+        }
+    } else {
         burst = 0;
-        return;
     }
-    rerun = false;
-    burst += 1;
-    if (burst >= BURST_CAP) {
-        pending.length = 0;
-        return;
+    if (openNoteId && !chain) {
+        noteOpened(openNoteId);
     }
-    scheduleReasoning(true);
 }
 
 async function execute(body: () => Promise<ReasoningReport>): Promise<ReasoningReport> {
@@ -888,6 +941,155 @@ async function executeIncremental(changes: readonly ReasoningChange[]): Promise<
         retracted: applied.retracted,
         errors: lastReport.errors
     };
+}
+
+interface ActivationStep {
+    notes: string[];
+    retracted: number;
+    inferred: number;
+}
+
+async function executeActivation(seed: string): Promise<ReasoningReport> {
+    if (!program) {
+        return executeOnce();
+    }
+    if (program.clauses.length === 0) {
+        return lastReport;
+    }
+    const note = becca.notes[seed];
+    if (!note || note.isDeleted) {
+        return lastReport;
+    }
+
+    activating = true;
+    const activated = new Set<string>();
+    const queue = [seed];
+    let index = 0;
+    let retracted = 0;
+    let inferred = lastReport.inferred;
+    try {
+        while (index < queue.length && activated.size < SPREAD_CAP) {
+            const id = queue[index];
+            index += 1;
+            if (!id || activated.has(id) || id.startsWith("_")) {
+                continue;
+            }
+            const current = becca.notes[id];
+            if (!current || current.isDeleted) {
+                continue;
+            }
+            activated.add(id);
+            const step = await applyAround(id, id === seed);
+            retracted += step.retracted;
+            inferred = step.inferred;
+            for (const other of step.notes) {
+                if (!activated.has(other) && !queue.includes(other)) {
+                    queue.push(other);
+                }
+            }
+        }
+    } finally {
+        activating = false;
+    }
+
+    return {
+        ruleNotes: program.ruleCount,
+        inferred,
+        retracted,
+        errors: lastReport.errors
+    };
+}
+
+/** Runs the rules `seed` can answer. Retracts in that neighborhood only when `retract` is set. */
+async function applyAround(seed: string, retract: boolean): Promise<ActivationStep> {
+    const current = program;
+    if (!current) {
+        return { notes: [], retracted: 0, inferred: lastReport.inferred };
+    }
+    const selected = current.clauses.filter((clause) => !clause.interest.descendant);
+    const deep = current.clauses.filter((clause) => clause.interest.descendant);
+    const ids = collectTouch([seed], false, null).ids;
+    if (deep.length > 0) {
+        const deepTouch = collectTouch([seed], true, descendantStop(deep));
+        if (deepTouch.complete) {
+            for (const id of deepTouch.ids) {
+                ids.add(id);
+            }
+            for (const clause of deep) {
+                selected.push(clause);
+            }
+        }
+    }
+    if (selected.length === 0) {
+        return { notes: [], retracted: 0, inferred: lastReport.inferred };
+    }
+    for (const clause of selected) {
+        if (clause.anchorNoteId) {
+            ids.add(clause.anchorNoteId);
+        }
+        if (clause.templateNoteId) {
+            ids.add(clause.templateNoteId);
+        }
+        if (clause.workspaceNoteId) {
+            ids.add(clause.workspaceNoteId);
+        }
+    }
+
+    const provenanceNote = becca.notes[PROVENANCE_NOTE_ID];
+    const stored = provenanceNote ? readProvenance(provenanceNote) : [];
+    const before = new Set<string>();
+    for (const fact of stored) {
+        if (factStillOwned(fact)) {
+            before.add(factKey(fact));
+        }
+    }
+    const inferredIds = new Set(stored.map((fact) => fact.attributeId));
+    const graph = projectGraph(current.ruleIds, inferredIds, ids);
+    const rules = assembleRules(selected.map((clause) => clause.edn));
+    const inferred = await inferFacts(graph, rules, queriesOf(selected));
+    if (inferred.failures.length > 0) {
+        return { notes: [], retracted: 0, inferred: lastReport.inferred };
+    }
+
+    const writes = new Set<string>();
+    if (retract) {
+        for (const clause of selected) {
+            writes.add(`${clause.form}\n${clause.name}`);
+        }
+    }
+    const applied = applyFacts(inferred.facts, stored, { notes: ids, writes });
+    const released = releasedSince(stored);
+    const next = released.size === 0
+        ? applied.next
+        : applied.next.filter((fact) => !released.has(fact.attributeId));
+    writeProvenance(next);
+
+    const notes: string[] = [];
+    const seen = new Set<string>();
+    for (const fact of next) {
+        if (before.has(factKey(fact)) || seen.has(fact.noteId)) {
+            continue;
+        }
+        seen.add(fact.noteId);
+        notes.push(fact.noteId);
+    }
+    return { notes, retracted: applied.retracted, inferred: next.length };
+}
+
+function descendantStop(clauses: readonly RunnableClause[]): string | null {
+    const workspaces = new Set<string>();
+    let globalDescendant = false;
+    for (const clause of clauses) {
+        if (clause.workspaceNoteId) {
+            workspaces.add(clause.workspaceNoteId);
+        } else {
+            globalDescendant = true;
+        }
+    }
+    if (globalDescendant || workspaces.size !== 1) {
+        return null;
+    }
+    return [...workspaces][0] ?? null;
 }
 
 function selectClauses(current: Program, changes: readonly ReasoningChange[]): RunnableClause[] {
