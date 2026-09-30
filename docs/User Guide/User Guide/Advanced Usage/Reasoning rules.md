@@ -55,7 +55,9 @@ The concept note can also be a template: `#template` counts the same way as `#re
 
 ## What the rules write
 
-The conclusions are ordinary labels and relations, shown in _Owned Attributes_. When a rule no longer concludes one, it is removed. An attribute created by hand, with the same name and value, is left in place.
+The conclusions are ordinary labels and relations, shown in the attributes list with a <span class="tn-icon bx bx-network-chart"></span> mark. When a rule no longer concludes one, it is removed. An attribute created by hand, with the same name and value, is left in place.
+
+To keep an inferred attribute after the rule stops concluding it, press <span class="tn-icon bx bx-pin"></span> _Keep this attribute_ on its row. Changing the value does the same: the attribute becomes a normal one, and the rule leaves it alone. Deleting it removes it, and the next run brings it back while the rule still holds. If the rule later concludes a different value, that value appears beside the one you kept.
 
 Rules run shortly after a note, a title, or an attribute changes, and once when Trilium opens the database, if any rule notes exist. A problem in a rule is the `#reasoningError` label on the rule note. Fix the rule and the label is cleared on the next run.
 

@@ -163,6 +163,7 @@ describe("AttributeList", () => {
         setDevBuild(false);
         put = vi.fn(async () => ({}));
         server.put = put as unknown as typeof server.put;
+        server.get = (async () => ({ attributeIds: [] })) as typeof server.get;
         // The detail popup looks up the notes sharing the attribute it opens on, against the tab the
         // note is being read in — neither of which a rendered widget brings with it.
         server.post = (async () => ({ results: [], count: 0 })) as unknown as typeof server.post;
@@ -177,6 +178,37 @@ describe("AttributeList", () => {
         for (const orphan of document.querySelectorAll(".attr-detail")) {
             orphan.remove();
         }
+    });
+
+    it("marks an attribute the reasoner owns, and one press keeps it", async () => {
+        const note = buildNote({ id: "reasoned", title: "Reasoned", "#priority": "high" });
+        const priority = note.getOwnedAttributes().find((attribute) => attribute.name === "priority");
+        expect(priority).toBeTruthy();
+        if (!priority) {
+            return;
+        }
+
+        server.get = (async () => ({ attributeIds: [ priority.attributeId ] })) as typeof server.get;
+        const post = vi.fn(async () => ({}));
+        server.post = post as unknown as typeof server.post;
+        renderPanel(note);
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(container.querySelector(".attribute-inferred")).not.toBeNull();
+        const keep = container.querySelector<HTMLElement>(".attribute-keep-button");
+        expect(keep).not.toBeNull();
+
+        await act(async () => {
+            keep?.click();
+            await Promise.resolve();
+        });
+
+        expect(post).toHaveBeenCalledWith(
+            `notes/${note.noteId}/reasoning-attributes/${priority.attributeId}/keep`
+        );
+        expect(container.querySelector(".attribute-inferred")).toBeNull();
     });
 
     it("gives the note's own attributes, the inherited ones and the definitions of either a card each", () => {
@@ -862,7 +894,12 @@ describe("AttributeList", () => {
 
     /** Hands the panel a reload, answering the row lookup as the given function does. */
     function fireEntitiesReloaded(getAttributeRows: (componentId?: string) => Partial<FAttributeRow>[]) {
-        eventHandlers.get("entitiesReloaded")?.({ loadResults: { getAttributeRows } as unknown as LoadResults });
+        eventHandlers.get("entitiesReloaded")?.({
+            loadResults: {
+                getAttributeRows,
+                isNoteContentReloaded: () => false
+            } as unknown as LoadResults
+        });
     }
 
     /** The reload's rows for a change touching the note, whoever made it. */

@@ -64,6 +64,31 @@ export function getReasoningReport(): ReasoningReport {
     return lastReport;
 }
 
+/** Attribute ids on `noteId` that the reasoner still owns. A hand-edited value is no longer owned. */
+export function inferredAttributeIds(noteId: string): string[] {
+    const note = becca.notes[PROVENANCE_NOTE_ID];
+    if (!note || note.isDeleted) {
+        return [];
+    }
+    const ids: string[] = [];
+    for (const fact of readProvenance(note)) {
+        if (fact.noteId === noteId && factStillOwned(fact)) {
+            ids.push(fact.attributeId);
+        }
+    }
+    return ids;
+}
+
+/** The attribute stays. The reasoner stops creating, changing, and deleting it. */
+export function releaseInferred(attributeId: string) {
+    const note = becca.notes[PROVENANCE_NOTE_ID];
+    if (!note || note.isDeleted) {
+        return;
+    }
+    const facts = readProvenance(note).filter((fact) => fact.attributeId !== attributeId);
+    writeProvenance(facts);
+}
+
 export function startReasoningEngine() {
     if (started) {
         return;
@@ -246,7 +271,11 @@ async function executeOnce(): Promise<ReasoningReport> {
     }
 
     const applied = applyFacts(inferred.facts, stored);
-    writeProvenance(applied.next);
+    const released = releasedSince(stored);
+    const next = released.size === 0
+        ? applied.next
+        : applied.next.filter((fact) => !released.has(fact.attributeId));
+    writeProvenance(next);
 
     return {
         ruleNotes: ruleNotes.length,
@@ -391,8 +420,8 @@ function applyFacts(desired: readonly InferredFact[], stored: readonly StoredFac
     const storedByKey = new Map<string, StoredFact>();
     const storedIds = new Set<string>();
     for (const fact of stored) {
-        const attr = becca.attributes[fact.attributeId];
-        if (!attr) {
+        // Gone, so the rule may write it again. Changed by hand, so it is now a normal attribute.
+        if (!factStillOwned(fact)) {
             continue;
         }
         storedByKey.set(factKey(fact), fact);
@@ -522,6 +551,29 @@ function setRuleError(note: BNote, message: string | null) {
         return;
     }
     attributeService.createLabel(note.noteId, "reasoningError", text);
+}
+
+function factStillOwned(fact: StoredFact): boolean {
+    const attr = becca.attributes[fact.attributeId];
+    return !!attr
+        && !attr.isDeleted
+        && attr.noteId === fact.noteId
+        && attr.type === fact.type
+        && attr.name === fact.name
+        && attr.value === fact.value;
+}
+
+/** Ids removed from provenance after this run read it, so the run does not write them back. */
+function releasedSince(snapshot: readonly StoredFact[]): Set<string> {
+    const note = becca.notes[PROVENANCE_NOTE_ID];
+    const current = new Set((note && !note.isDeleted ? readProvenance(note) : []).map((fact) => fact.attributeId));
+    const released = new Set<string>();
+    for (const fact of snapshot) {
+        if (!current.has(fact.attributeId)) {
+            released.add(fact.attributeId);
+        }
+    }
+    return released;
 }
 
 function factKey(fact: { noteId: string; type: string; name: string; value: string }): string {

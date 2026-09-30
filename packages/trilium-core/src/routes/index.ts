@@ -140,6 +140,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
 
     apiRoute(GET, "/api/reasoning", reasoningRoute.getReasoning);
     asyncApiRoute(PST, "/api/reasoning/run", reasoningRoute.run);
+    apiRoute(GET, "/api/notes/:noteId/reasoning-attributes", reasoningRoute.getInferred);
+    apiRoute(PST, "/api/notes/:noteId/reasoning-attributes/:attributeId/keep", reasoningRoute.keep);
 
     apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
     apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);

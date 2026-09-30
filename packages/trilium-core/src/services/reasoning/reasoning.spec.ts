@@ -4,7 +4,7 @@ import becca from "../../becca/becca.js";
 import attributeService from "../attributes.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
-import { runReasoning } from "./reasoning.js";
+import { inferredAttributeIds, releaseInferred, runReasoning } from "./reasoning.js";
 
 describe("reasoning on notes", () => {
     it("writes a scoped conclusion and retracts it when the fact it depends on is gone", async () => {
@@ -192,6 +192,86 @@ describe("reasoning on notes", () => {
             expect(johannes.getOwnedAttribute("label", "vollmacht")?.value).toBe("Ja");
             expect(loose.getOwnedAttribute("label", "vollmacht")).toBeNull();
             expect(becca.notes[schema.noteId]?.getOwnedAttribute("label", "reasoningError")).toBeNull();
+        });
+    });
+
+    it("stops owning an inferred label when it is kept or its value is edited", async () => {
+        await getContext().init(async () => {
+            const project = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Kept project",
+                content: "",
+                type: "book"
+            }).note;
+            const task = noteService.createNewNote({
+                parentNoteId: project.noteId,
+                title: "Kept task",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(task.noteId, "status", "todo");
+            const rules = noteService.createNewNote({
+                parentNoteId: project.noteId,
+                title: "Kept rules",
+                type: "code",
+                mime: "text/plain",
+                content: `#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").`
+            }).note;
+            attributeService.createLabel(rules.noteId, "reasoningRule", "");
+
+            await runReasoning();
+            const inferred = task.getOwnedAttribute("label", "priority");
+            expect(inferred?.value).toBe("high");
+            expect(inferred).toBeTruthy();
+            if (!inferred) {
+                return;
+            }
+            expect(inferredAttributeIds(task.noteId)).toEqual([ inferred.attributeId ]);
+
+            releaseInferred(inferred.attributeId);
+            expect(inferredAttributeIds(task.noteId)).toEqual([]);
+
+            const status = task.getOwnedAttribute("label", "status");
+            expect(status).toBeTruthy();
+            if (!status) {
+                return;
+            }
+            status.value = "done";
+            status.save();
+            await runReasoning();
+            expect(task.getOwnedAttributes("label", "priority")).toHaveLength(1);
+            expect(task.getOwnedAttribute("label", "priority")?.value).toBe("high");
+            expect(inferredAttributeIds(task.noteId)).toEqual([]);
+
+            const other = noteService.createNewNote({
+                parentNoteId: project.noteId,
+                title: "Edited task",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(other.noteId, "status", "todo");
+            await runReasoning();
+            const created = other.getOwnedAttribute("label", "priority");
+            expect(created?.value).toBe("high");
+            if (!created) {
+                return;
+            }
+            expect(inferredAttributeIds(other.noteId)).toEqual([ created.attributeId ]);
+            created.value = "low";
+            created.save();
+            await runReasoning();
+
+            const values = other.getOwnedAttributes("label", "priority").map((attribute) => attribute.value).sort();
+            expect(values).toEqual([ "high", "low" ]);
+            const kept = other.getOwnedAttributes("label", "priority").find((attribute) => attribute.value === "low");
+            const fresh = other.getOwnedAttributes("label", "priority").find((attribute) => attribute.value === "high");
+            expect(kept).toBeTruthy();
+            expect(fresh).toBeTruthy();
+            if (!kept || !fresh) {
+                return;
+            }
+            expect(inferredAttributeIds(other.noteId)).toEqual([ fresh.attributeId ]);
+            expect(inferredAttributeIds(other.noteId)).not.toContain(kept.attributeId);
         });
     });
 });

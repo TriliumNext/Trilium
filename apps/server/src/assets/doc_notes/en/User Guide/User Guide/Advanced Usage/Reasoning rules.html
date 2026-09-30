@@ -66,9 +66,16 @@
     counts, except in a global rule.</li>
 </ul>
 <h2>What the rules write</h2>
-<p>The conclusions are ordinary labels and relations, shown in <em>Owned Attributes</em>.
-  When a rule no longer concludes one, it is removed. An attribute created
-  by hand, with the same name and value, is left in place.</p>
+<p>The conclusions are ordinary labels and relations, shown in the attributes
+  list with a <span class="tn-icon bx bx-network-chart"></span> mark. When
+  a rule no longer concludes one, it is removed. An attribute created by
+  hand, with the same name and value, is left in place.</p>
+<p>To keep an inferred attribute after the rule stops concluding it, press <span
+  class="tn-icon bx bx-pin"></span>  <em>Keep this attribute</em> on its row.
+  Changing the value does the same: the attribute becomes a normal one, and
+  the rule leaves it alone. Deleting it removes it, and the next run brings
+  it back while the rule still holds. If the rule later concludes a different
+  value, that value appears beside the one you kept.</p>
 <p>Rules run shortly after a note, a title, or an attribute changes, and
   once when Trilium opens the database, if any rule notes exist. A problem
   in a rule is the <code>#reasoningError</code> label on the rule note. Fix

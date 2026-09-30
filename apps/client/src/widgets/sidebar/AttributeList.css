@@ -239,6 +239,15 @@
     padding-inline-end: 27px;
 }
 
+/* Always in the row, unlike the hover actions: keeping an inferred attribute is the point of the mark. */
+.attribute-list-panel .attribute-keep-button.icon-action {
+    --icon-button-size: 24px;
+    --icon-button-icon-ratio: 0.8;
+
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
 /* Both at the compact size the theme reserves for close crosses (`.icon-action.bx-x`), which the
    trash and the pencil do not get by name. */
 .attribute-list-panel .attribute-row-actions .icon-action {
