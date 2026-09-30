@@ -634,6 +634,9 @@ importers:
 
   apps/script-deployer:
     devDependencies:
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../../packages/commons
       '@triliumnext/core':
         specifier: workspace:*
         version: link:../../packages/trilium-core

@@ -9,6 +9,7 @@
     "clean": "rm -rf data"
   },
   "devDependencies": {
+    "@triliumnext/commons": "workspace:*",
     "@triliumnext/core": "workspace:*"
   }
 }
