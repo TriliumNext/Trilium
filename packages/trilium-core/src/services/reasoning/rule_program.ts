@@ -209,12 +209,24 @@ export function compileRuleNote(
 }
 
 export function assembleRules(clauses: readonly string[]): string {
+    // `note/scc` is a strongly connected component of the child graph, so a clone cycle
+    // stays reachable in both directions and the walk still ends.
     const builtin = [
         `[(builtin_descendant ?a ?b)`,
-        `  [?a "note/child" ?b]]`,
-        `[(builtin_descendant ?a ?c)`,
-        `  [?a "note/child" ?b]`,
-        `  (builtin_descendant ?b ?c)]`
+        `  [?a "note/scc" ?s]`,
+        `  [?b "note/scc" ?s]`,
+        `  [(!= ?a ?b)]]`,
+        `[(builtin_descendant ?a ?b)`,
+        `  [?a "note/scc" ?sa]`,
+        `  [?b "note/scc" ?sb]`,
+        `  (builtin_scc_reaches ?sa ?sb)]`,
+        `[(builtin_scc_reaches ?x ?y)`,
+        `  [?e "scc/id" ?x]`,
+        `  [?e "scc/child" ?y]]`,
+        `[(builtin_scc_reaches ?x ?z)`,
+        `  [?e "scc/id" ?x]`,
+        `  [?e "scc/child" ?y]`,
+        `  (builtin_scc_reaches ?y ?z)]`
     ].join("\n ");
 
     if (clauses.length === 0) {
@@ -347,7 +359,7 @@ function compileClause(
     }
 
     for (const atom of positive) {
-        parts.push(emitPattern(atom.pattern, idb, fresh, parts, false));
+        parts.push(emitPattern(atom.pattern, idb, fresh, parts, false, symbol));
     }
     for (const atom of clause.body) {
         if (atom.kind === "cmp") {
@@ -359,7 +371,7 @@ function compileClause(
     }
     for (const atom of clause.body) {
         if (atom.kind === "not") {
-            parts.push(emitPattern(atom.pattern, idb, fresh, parts, true));
+            parts.push(emitPattern(atom.pattern, idb, fresh, parts, true, symbol));
         }
     }
 
@@ -679,7 +691,14 @@ function emitTerm(term: Term, fresh: () => string, parts: string[]): string {
     return `?${name}`;
 }
 
-function emitPattern(pattern: Pattern, idb: ReadonlyMap<string, IdbPredicate>, fresh: () => string, parts: string[], negate: boolean): string {
+function emitPattern(
+    pattern: Pattern,
+    idb: ReadonlyMap<string, IdbPredicate>,
+    fresh: () => string,
+    parts: string[],
+    negate: boolean,
+    headSymbol: string
+): string {
     const args = pattern.args.map((arg) => emitTerm(arg, fresh, parts));
     let form: string;
     if (pattern.form === "builtin") {
@@ -700,8 +719,20 @@ function emitPattern(pattern: Pattern, idb: ReadonlyMap<string, IdbPredicate>, f
         const kw = attributeKeyword(pattern.form, pattern.name);
         const edb = arity === 1 ? `[${args[0]} "${kw}" _]` : `[${args[0]} "${kw}" ${args[1]}]`;
         const known = idb.get(predicateKey(pattern.form, arity, pattern.name));
-        if (known) {
-            form = `(or (${known.symbol} ${args.join(" ")}) ${edb})`;
+        // Calling the rule being defined recurses without a bound when the notes form a cycle.
+        if (known && known.symbol !== headSymbol) {
+            const callArgs: string[] = [];
+            for (const arg of args) {
+                if (arg.startsWith("?")) {
+                    callArgs.push(arg);
+                    continue;
+                }
+                // A constant inside `or` is not a binding DataScript can parse. Ground it first.
+                const name = fresh();
+                parts.push(`[(ground ${arg}) ?${name}]`);
+                callArgs.push(`?${name}`);
+            }
+            form = `(or (${known.symbol} ${callArgs.join(" ")}) ${edb})`;
         } else {
             form = edb;
         }

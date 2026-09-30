@@ -12,7 +12,6 @@ import sqlInit from "../sql_init.js";
 import { unwrapStringOrBuffer } from "../utils/binary.js";
 import { addSubtree, collectTouch, type ReasoningChange, wakes } from "./activate.js";
 import {
-    dropBackEdges,
     inferFacts,
     type InferenceQuery,
     type InferredFact,
@@ -500,7 +499,7 @@ function projectGraph(
     }
 
     const includedIds = new Set(included.map((note) => note.noteId));
-    const rawChildren = new Map<string, string[]>();
+    const children = new Map<string, string[]>();
     for (const note of included) {
         if (ruleIds.has(note.noteId)) {
             continue;
@@ -509,12 +508,11 @@ function projectGraph(
             if (!includedIds.has(branch.parentNoteId)) {
                 continue;
             }
-            const list = rawChildren.get(branch.parentNoteId) ?? [];
+            const list = children.get(branch.parentNoteId) ?? [];
             list.push(note.noteId);
-            rawChildren.set(branch.parentNoteId, list);
+            children.set(branch.parentNoteId, list);
         }
     }
-    const children = dropBackEdges(rawChildren);
 
     const projected: ProjectedNote[] = [];
     for (const note of included) {
@@ -882,7 +880,7 @@ async function executeIncremental(changes: readonly ReasoningChange[]): Promise<
     if (!program || changes.some((change) => change.kind === "rule")) {
         return executeOnce();
     }
-    const selected = selectClauses(program, changes);
+    let selected = selectClauses(program, changes);
     if (selected.length === 0) {
         return lastReport;
     }
@@ -899,9 +897,14 @@ async function executeIncremental(changes: readonly ReasoningChange[]): Promise<
         }
     }
     const stopAt = !globalDescendant && workspaces.size === 1 ? [...workspaces][0] ?? null : null;
-    const touch = collectTouch(seeds, needsDescendant, stopAt);
+    let touch = collectTouch(seeds, needsDescendant, stopAt);
     if (!touch.complete) {
-        return executeOnce();
+        // The descendant rules are skipped. The other selected rules still run on the neighborhood.
+        selected = selected.filter((clause) => !clause.interest.descendant);
+        if (selected.length === 0) {
+            return lastReport;
+        }
+        touch = collectTouch(seeds, false, null);
     }
 
     const ids = touch.ids;

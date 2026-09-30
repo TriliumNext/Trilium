@@ -38,39 +38,6 @@ interface DatascriptApi {
     q: (query: string, db: unknown, rules?: string) => unknown;
 }
 
-/**
- * Drops child links that point at an ancestor. `descendant` is a recursive rule, and a clone cycle
- * would otherwise keep it running.
- */
-export function dropBackEdges(childIdsByParent: ReadonlyMap<string, readonly string[]>): Map<string, string[]> {
-    const state = new Map<string, "open" | "done">();
-    const result = new Map<string, string[]>();
-
-    const visit = (id: string) => {
-        if (state.get(id) === "done") {
-            return;
-        }
-        state.set(id, "open");
-        const kept: string[] = [];
-        for (const child of childIdsByParent.get(id) ?? []) {
-            if (state.get(child) === "open") {
-                continue;
-            }
-            kept.push(child);
-            if (state.get(child) !== "done") {
-                visit(child);
-            }
-        }
-        result.set(id, kept);
-        state.set(id, "done");
-    };
-
-    for (const id of childIdsByParent.keys()) {
-        visit(id);
-    }
-    return result;
-}
-
 /** A label whose text is an integer or decimal is stored as a number so `?age > 18` can see it. */
 export function storedLabelValue(value: string): string | number {
     if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)) {
@@ -92,7 +59,9 @@ export async function inferFacts(graph: readonly ProjectedNote[], rulesEdn: stri
     const schema: Record<string, unknown> = {
         "note/id": { ":db/unique": ":db.unique/identity" },
         "note/child": { ":db/valueType": ":db.type/ref", ":db/cardinality": ":db.cardinality/many" },
-        "note/parent": { ":db/valueType": ":db.type/ref", ":db/cardinality": ":db.cardinality/many" }
+        "note/parent": { ":db/valueType": ":db.type/ref", ":db/cardinality": ":db.cardinality/many" },
+        "scc/id": { ":db/unique": ":db.unique/identity" },
+        "scc/child": { ":db/cardinality": ":db.cardinality/many" }
     };
     const labelNames = new Set<string>();
     const relationNames = new Set<string>();
@@ -124,6 +93,13 @@ export async function inferFacts(graph: readonly ProjectedNote[], rulesEdn: stri
         tempIds.set(noteId, assigned);
         return assigned;
     };
+
+    const childMap = new Map<string, string[]>();
+    for (const note of graph) {
+        childMap.set(note.noteId, note.childIds.filter((id) => present.has(id)));
+    }
+    const sccOf = componentIds(childMap);
+    const sccChildren = sccChildLinks(childMap, sccOf);
 
     const tx: Record<string, unknown>[] = [];
     for (const note of graph) {
@@ -162,7 +138,26 @@ export async function inferFacts(graph: readonly ProjectedNote[], rulesEdn: stri
         } else if (children.length > 1) {
             entity["note/child"] = children;
         }
+        const scc = sccOf.get(note.noteId);
+        if (scc) {
+            entity["note/scc"] = scc;
+        }
         tx.push(entity);
+    }
+
+    let sccTemp = -(tempIds.size + 1);
+    for (const [scc, children] of sccChildren) {
+        const component: Record<string, unknown> = {
+            ":db/id": sccTemp,
+            "scc/id": scc
+        };
+        sccTemp -= 1;
+        if (children.length === 1) {
+            component["scc/child"] = children[0];
+        } else if (children.length > 1) {
+            component["scc/child"] = children;
+        }
+        tx.push(component);
     }
 
     const parentLinks = new Map<number, number[]>();
@@ -263,6 +258,109 @@ function errorText(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
     const line = message.split("\n")[0] ?? message;
     return line.length > 240 ? `${line.slice(0, 240)}…` : line;
+}
+
+/** Assigns each note to a strongly connected component of the child graph. */
+function componentIds(childIdsByParent: ReadonlyMap<string, readonly string[]>): Map<string, string> {
+    const forward = new Map<string, string[]>();
+    const reverse = new Map<string, string[]>();
+    const nodes = new Set<string>();
+    for (const [parent, children] of childIdsByParent) {
+        nodes.add(parent);
+        const kids = [...children].sort();
+        forward.set(parent, kids);
+        for (const child of kids) {
+            nodes.add(child);
+            const incoming = reverse.get(child) ?? [];
+            incoming.push(parent);
+            reverse.set(child, incoming);
+        }
+    }
+
+    const state = new Map<string, "open" | "done">();
+    const postorder: string[] = [];
+    for (const start of [...nodes].sort()) {
+        if (state.has(start)) {
+            continue;
+        }
+        const stack: { id: string; next: number }[] = [{ id: start, next: 0 }];
+        state.set(start, "open");
+        while (stack.length > 0) {
+            const frame = stack[stack.length - 1];
+            if (!frame) {
+                break;
+            }
+            const children = forward.get(frame.id) ?? [];
+            if (frame.next < children.length) {
+                const child = children[frame.next];
+                frame.next += 1;
+                if (!child || state.has(child)) {
+                    continue;
+                }
+                state.set(child, "open");
+                stack.push({ id: child, next: 0 });
+                continue;
+            }
+            stack.pop();
+            state.set(frame.id, "done");
+            postorder.push(frame.id);
+        }
+    }
+
+    const sccOf = new Map<string, string>();
+    const assigned = new Set<string>();
+    let count = 0;
+    for (let index = postorder.length - 1; index >= 0; index -= 1) {
+        const start = postorder[index];
+        if (!start || assigned.has(start)) {
+            continue;
+        }
+        const scc = `s${count}`;
+        count += 1;
+        const stack = [start];
+        while (stack.length > 0) {
+            const id = stack.pop();
+            if (!id || assigned.has(id)) {
+                continue;
+            }
+            assigned.add(id);
+            sccOf.set(id, scc);
+            for (const parent of reverse.get(id) ?? []) {
+                if (!assigned.has(parent)) {
+                    stack.push(parent);
+                }
+            }
+        }
+    }
+    return sccOf;
+}
+
+/** Child edges that leave a component, which is a DAG even when the notes form a cycle. */
+function sccChildLinks(
+    childIdsByParent: ReadonlyMap<string, readonly string[]>,
+    sccOf: ReadonlyMap<string, string>
+): Map<string, string[]> {
+    const links = new Map<string, Set<string>>();
+    for (const [parent, children] of childIdsByParent) {
+        const from = sccOf.get(parent);
+        if (!from) {
+            continue;
+        }
+        for (const child of children) {
+            const to = sccOf.get(child);
+            if (!to || to === from) {
+                continue;
+            }
+            const set = links.get(from) ?? new Set<string>();
+            set.add(to);
+            links.set(from, set);
+        }
+    }
+    const result = new Map<string, string[]>();
+    for (const [from, set] of links) {
+        result.set(from, [...set].sort());
+    }
+    return result;
 }
 
 async function loadDatascript(): Promise<DatascriptApi> {

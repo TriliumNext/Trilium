@@ -66,10 +66,10 @@ Deleting the rule note removes its conclusions on the next run. Deleting the not
 ## Limitations
 
 *   Rules read attributes owned by a note. Inherited attributes are not seen, apart from the `~template` relation that binds `?this` on a template.
-*   A rule does not see the attributes it wrote itself, so a conclusion cannot be the condition of that same rule. It does see attributes written by hand, and the conclusions of other rules.
+*   A rule does not see the attributes it wrote itself, so its own conclusion cannot be one of its conditions. It does see attributes written by hand, and the conclusions other rules derive in the same run. A stored conclusion cannot keep itself true after the ordinary condition is gone.
 *   The names `reasoningRule`, `reasoningError`, `reasoningScope`, `reasoningSchema`, `template` and `inherit` cannot be conclusions.
 *   The rule note is not treated as a child of its parent, so a rule about every child does not match the rule note.
 *   Hidden notes are not part of the rules.
 *   A protected rule note is read only while the protected session is unlocked.
-*   `descendant` does not follow a cycle of clones. A note that is also a direct child is still reached by `child`.
-*   Opening a note does not walk every descendant of a very large tree. That check runs when the database opens or a rule note is edited.
+*   `descendant` follows a cycle of clones. A note is not a descendant of itself. A note that is also a direct child is still reached by `child`.
+*   Opening or editing a note does not walk every descendant of a very large tree. That check runs when the database opens or a rule note is edited.

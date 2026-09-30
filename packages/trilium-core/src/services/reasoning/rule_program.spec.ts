@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { dropBackEdges, inferFacts } from "./evaluate.js";
-import { assembleRules, compileRuleNote, queryFor, resolveScope, type Scope } from "./rule_program.js";
+import { inferFacts } from "./evaluate.js";
+import {
+    assembleRules,
+    compileRuleNote,
+    type IdbPredicate,
+    predicateKey,
+    queryFor,
+    resolveScope,
+    type Scope
+} from "./rule_program.js";
 
 const anchored: Scope = { mode: "anchored", anchorNoteId: "project" };
 
@@ -150,14 +158,42 @@ describe("reasoning rules", () => {
 });
 
 describe("reasoning evaluation", () => {
-    it("drops a child link that would cycle and still infers a scoped label", async () => {
-        const children = dropBackEdges(new Map([
-            ["a", ["b"]],
-            ["b", ["c"]],
-            ["c", ["a"]]
-        ]));
-        expect(children.get("c")).toEqual([]);
-        expect(children.get("a")).toEqual(["b"]);
+    it("reaches every note around a clone cycle and still infers a scoped label", async () => {
+        const around = compileRuleNote(
+            [
+                `#seen(?note, "yes") :- descendant(?this, ?note).`,
+                `#back(?note, "yes") :- child(?this, ?note).`
+            ].join("\n"),
+            { mode: "anchored", anchorNoteId: "c" },
+            new Map(),
+            new Map()
+        );
+        expect(around.diagnostics).toEqual([]);
+        const seen = around.clauses.find((clause) => clause.name === "seen");
+        const back = around.clauses.find((clause) => clause.name === "back");
+        expect(seen).toBeTruthy();
+        expect(back).toBeTruthy();
+        if (!seen || !back) {
+            return;
+        }
+        const cycle = await inferFacts(
+            [
+                { noteId: "a", title: "A", type: "text", labels: [], relations: [], childIds: ["b"] },
+                { noteId: "b", title: "B", type: "text", labels: [], relations: [], childIds: ["c"] },
+                { noteId: "c", title: "C", type: "text", labels: [], relations: [], childIds: ["a"] }
+            ],
+            assembleRules([seen.edn, back.edn]),
+            [
+                queryOf(seen),
+                queryOf(back)
+            ]
+        );
+        expect(cycle.failures).toEqual([]);
+        const seenIds = cycle.facts.filter((fact) => fact.name === "seen").map((fact) => fact.noteId);
+        const backIds = cycle.facts.filter((fact) => fact.name === "back").map((fact) => fact.noteId);
+        seenIds.sort();
+        expect(seenIds).toEqual(["a", "b"]);
+        expect(backIds).toEqual(["a"]);
 
         const compiled = compileRuleNote(
             `#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").`,
@@ -194,4 +230,85 @@ describe("reasoning evaluation", () => {
             { noteId: "task", type: "label", name: "priority", value: "high", ruleNoteIds: ["rules"] }
         ]);
     });
+
+    it("lets another rule use a conclusion and does not let a rule feed itself", async () => {
+        const compiled = compileWithIdb(
+            [
+                `#reach(?note, "yes") :- #status(?note, "todo").`,
+                `#reach(?target, "yes") :- ~link(?source, ?target), #reach(?source, "yes").`,
+                `#wave(?target, "yes") :- ~link(?source, ?target), #reach(?source, "yes").`
+            ].join("\n"),
+            { mode: "global" }
+        );
+        expect(compiled.diagnostics).toEqual([]);
+        const reach = compiled.clauses.find((clause) => clause.name === "reach");
+        const wave = compiled.clauses.find((clause) => clause.name === "wave");
+        expect(reach).toBeTruthy();
+        expect(wave).toBeTruthy();
+        if (!reach || !wave) {
+            return;
+        }
+
+        const { facts, failures } = await inferFacts(
+            [
+                {
+                    noteId: "a",
+                    title: "A",
+                    type: "text",
+                    labels: [{ name: "status", value: "todo" }],
+                    relations: [{ name: "link", targetNoteId: "b" }],
+                    childIds: []
+                },
+                {
+                    noteId: "b",
+                    title: "B",
+                    type: "text",
+                    labels: [],
+                    relations: [
+                        { name: "link", targetNoteId: "a" },
+                        { name: "link", targetNoteId: "c" }
+                    ],
+                    childIds: []
+                },
+                { noteId: "c", title: "C", type: "text", labels: [], relations: [], childIds: [] }
+            ],
+            assembleRules(compiled.clauses.map((item) => item.edn)),
+            [queryOf(reach), queryOf(wave)]
+        );
+
+        expect(failures).toEqual([]);
+        const reached = facts.filter((fact) => fact.name === "reach").map((fact) => fact.noteId);
+        const waved = facts.filter((fact) => fact.name === "wave").map((fact) => fact.noteId);
+        waved.sort();
+        expect(reached).toEqual(["a"]);
+        expect(waved).toEqual(["b"]);
+    });
 });
+
+function compileWithIdb(source: string, scope: Scope) {
+    const first = compileRuleNote(source, scope, new Map(), new Map());
+    const idb = new Map<string, IdbPredicate>();
+    for (const clause of first.clauses) {
+        const key = predicateKey(clause.form, clause.arity, clause.name);
+        if (!idb.has(key)) {
+            idb.set(key, {
+                symbol: clause.symbol,
+                arity: clause.arity,
+                form: clause.form,
+                name: clause.name
+            });
+        }
+    }
+    return compileRuleNote(source, scope, new Map(), idb);
+}
+
+function queryOf(clause: { form: "label" | "relation"; name: string; arity: 1 | 2; symbol: string }) {
+    return {
+        form: clause.form,
+        name: clause.name,
+        arity: clause.arity,
+        symbol: clause.symbol,
+        ruleNoteIds: ["rules"],
+        query: queryFor(clause.form, clause.arity, clause.symbol)
+    };
+}

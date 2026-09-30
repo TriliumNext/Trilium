@@ -508,4 +508,47 @@ describe("reasoning on notes", () => {
             expect(far.getOwnedAttribute("label", "echo")?.value).toBe("yes");
         });
     });
+
+    it("skips a descendant rule whose tree is larger than the cap", async () => {
+        await getContext().init(async () => {
+            const folder = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Huge folder",
+                content: "",
+                type: "book"
+            }).note;
+            noteService.createNewNote({
+                parentNoteId: folder.noteId,
+                title: "Huge rules",
+                type: "code",
+                mime: "text/plain",
+                content: [
+                    `#mark(?note, "yes") :- #status(?note, "todo").`,
+                    `#inside(?note, "yes") :- descendant(?this, ?note), #status(?note, "todo").`
+                ].join("\n"),
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
+            });
+            for (let index = 0; index < 1500; index += 1) {
+                noteService.createNewNote({
+                    parentNoteId: folder.noteId,
+                    title: `Bulk ${index}`,
+                    content: "",
+                    type: "text"
+                });
+            }
+            await runReasoning();
+
+            const fresh = noteService.createNewNote({
+                parentNoteId: folder.noteId,
+                title: "Fresh bulk",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(fresh.noteId, "status", "todo");
+            await runReasoningOn([{ noteId: fresh.noteId, kind: "label", name: "status" }]);
+
+            expect(fresh.getOwnedAttribute("label", "mark")?.value).toBe("yes");
+            expect(fresh.getOwnedAttribute("label", "inside")).toBeNull();
+        });
+    });
 });

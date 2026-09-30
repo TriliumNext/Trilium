@@ -9,7 +9,7 @@ export interface ReasoningChange {
 }
 
 const HOPS = 2;
-/** A descendant walk bigger than this falls back to a full pass. */
+/** A descendant walk bigger than this is skipped until the database opens. */
 const SUBTREE_CAP = 1500;
 
 export function wakes(interest: ClauseInterest, change: ReasoningChange): boolean {

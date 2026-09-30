@@ -89,17 +89,18 @@
   <li>Rules read attributes owned by a note. Inherited attributes are not seen,
     apart from the <code>~template</code> relation that binds <code>?this</code> on
     a template.</li>
-  <li>A rule does not see the attributes it wrote itself, so a conclusion cannot
-    be the condition of that same rule. It does see attributes written by hand,
-    and the conclusions of other rules.</li>
+  <li>A rule does not see the attributes it wrote itself, so its own conclusion
+    cannot be one of its conditions. It does see attributes written by hand,
+    and the conclusions other rules derive in the same run. A stored conclusion
+    cannot keep itself true after the ordinary condition is gone.</li>
   <li>The names <code>reasoningRule</code>, <code>reasoningError</code>, <code>reasoningScope</code>, <code>reasoningSchema</code>, <code>template</code> and <code>inherit</code> cannot
     be conclusions.</li>
   <li>The rule note is not treated as a child of its parent, so a rule about
     every child does not match the rule note.</li>
   <li>Hidden notes are not part of the rules.</li>
   <li>A protected rule note is read only while the protected session is unlocked.</li>
-  <li><code>descendant</code> does not follow a cycle of clones. A note that
-    is also a direct child is still reached by <code>child</code>.</li>
-  <li>Opening a note does not walk every descendant of a very large tree. That
-    check runs when the database opens or a rule note is edited.</li>
+  <li><code>descendant</code> follows a cycle of clones. A note is not a descendant
+    of itself. A note that is also a direct child is still reached by <code>child</code>.</li>
+  <li>Opening or editing a note does not walk every descendant of a very large
+    tree. That check runs when the database opens or a rule note is edited.</li>
 </ul>
