@@ -48,6 +48,7 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_board",
             "_template_presentation_slide",
             "_template_presentation",
+            "_template_reasoning_rule",
             "_template_dashboard"
         ]);
         // No duplicate ids.
@@ -228,6 +229,22 @@ describe("buildHiddenSubtreeTemplates", () => {
         const background = slide.attributes?.find((a) => a.name === "label:slide:background");
         expect(background?.type).toBe("label");
         expect(background?.value).toContain("color");
+    });
+
+    it("configures the reasoning rule template as a plain-text code note", () => {
+        const templates = buildHiddenSubtreeTemplates();
+        const rule = childById(templates, "_template_reasoning_rule");
+
+        expect(rule.type).toBe("code");
+        expect(rule.mime).toBe("text/plain");
+        expect(rule.icon).toBe("bx-network-chart");
+        expect(rule.content).toContain("?this");
+        expect(rule.content).toContain("#reasoningScope=global");
+
+        const names = (rule.attributes ?? []).map((a) => a.name);
+        expect(names).toContain("template");
+        expect(names).toContain("reasoningRule");
+        expect(names).not.toContain("reasoningScope");
     });
 
     it("returns a fresh independent structure on each invocation", () => {

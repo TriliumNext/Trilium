@@ -8933,6 +8933,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "NJKlKTFCzKTG",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "tC7s2alapj8V",
+                                "NJKlKTFCzKTG"
+                            ],
+                            "title": "Reasoning rules",
+                            "notePosition": 40,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "reasoning-rules",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-network-chart",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Reasoning rules.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "B2ORr7OVEZtc",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -8940,7 +8974,7 @@
                                 "B2ORr7OVEZtc"
                             ],
                             "title": "Snippets",
-                            "notePosition": 40,
+                            "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9063,7 +9097,7 @@
                                 "BCkXAVs63Ttv"
                             ],
                             "title": "Note Map (Link map, Tree map)",
-                            "notePosition": 50,
+                            "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9114,7 +9148,7 @@
                                 "R9pX4DGra2Vt"
                             ],
                             "title": "Sharing",
-                            "notePosition": 70,
+                            "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9325,7 +9359,7 @@
                                 "5668rwcirq1t"
                             ],
                             "title": "Advanced Showcases",
-                            "notePosition": 100,
+                            "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9502,7 +9536,7 @@
                                 "i16PM6A7GXdU"
                             ],
                             "title": "Customizing to-do task states",
-                            "notePosition": 110,
+                            "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9536,7 +9570,7 @@
                                 "J5Ex1ZrMbyJ6"
                             ],
                             "title": "Custom Request Handler",
-                            "notePosition": 120,
+                            "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9570,7 +9604,7 @@
                                 "d3fAXQ2diepH"
                             ],
                             "title": "Custom Resource Providers",
-                            "notePosition": 130,
+                            "notePosition": 140,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9604,7 +9638,7 @@
                                 "pgxEVkzLl1OP"
                             ],
                             "title": "ETAPI (REST API)",
-                            "notePosition": 140,
+                            "notePosition": 150,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9675,7 +9709,7 @@
                                 "47ZrP6FNuoG8"
                             ],
                             "title": "Default Note Title",
-                            "notePosition": 170,
+                            "notePosition": 180,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9709,7 +9743,7 @@
                                 "wX4HbRucYSDD"
                             ],
                             "title": "Database",
-                            "notePosition": 190,
+                            "notePosition": 200,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9881,7 +9915,7 @@
                                 "Gzjqa934BdH4"
                             ],
                             "title": "Configuration (config.ini or environment variables)",
-                            "notePosition": 200,
+                            "notePosition": 210,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -9988,7 +10022,7 @@
                                 "ivYnonVFBxbQ"
                             ],
                             "title": "Bulk Actions",
-                            "notePosition": 220,
+                            "notePosition": 230,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10031,7 +10065,7 @@
                                 "4FahAwuGTAwC"
                             ],
                             "title": "Note source",
-                            "notePosition": 230,
+                            "notePosition": 240,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10074,7 +10108,7 @@
                                 "1YeN2MzFUluU"
                             ],
                             "title": "Technologies used",
-                            "notePosition": 240,
+                            "notePosition": 250,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10146,7 +10180,7 @@
                                 "m1lbrzyKDaRB"
                             ],
                             "title": "Note ID",
-                            "notePosition": 250,
+                            "notePosition": 260,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10180,7 +10214,7 @@
                                 "0vTSyvhPTAOz"
                             ],
                             "title": "Internal API",
-                            "notePosition": 260,
+                            "notePosition": 270,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10250,7 +10284,7 @@
                                 "2mUhVmZK8RF3"
                             ],
                             "title": "Hidden Notes",
-                            "notePosition": 270,
+                            "notePosition": 280,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10293,7 +10327,7 @@
                                 "uYF7pmepw27K"
                             ],
                             "title": "Metrics",
-                            "notePosition": 280,
+                            "notePosition": 290,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10382,7 +10416,7 @@
                                 "64ZTlUPgEPtW"
                             ],
                             "title": "Safe mode",
-                            "notePosition": 290,
+                            "notePosition": 300,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10416,7 +10450,7 @@
                                 "HAIOFBoYIIdO"
                             ],
                             "title": "Nightly release",
-                            "notePosition": 310,
+                            "notePosition": 320,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10450,7 +10484,7 @@
                                 "ZmT9ln8XJX2o"
                             ],
                             "title": "Read-only database",
-                            "notePosition": 320,
+                            "notePosition": 330,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10484,7 +10518,7 @@
                                 "TiQbQDgP8L5t"
                             ],
                             "title": "Text Extraction (OCR)",
-                            "notePosition": 330,
+                            "notePosition": 340,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

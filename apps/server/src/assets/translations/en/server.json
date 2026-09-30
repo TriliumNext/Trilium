@@ -328,7 +328,8 @@
     "localization": "Language & Region",
     "inbox-title": "Inbox",
     "tab-switcher-title": "Tab Switcher",
-    "sidebar-chat-title": "AI Chat"
+    "sidebar-chat-title": "AI Chat",
+    "reasoning-provenance-title": "Reasoning"
   },
   "notes": {
     "new-note": "New note",
@@ -486,7 +487,8 @@
     "presentation_slide_first": "First slide",
     "presentation_slide_second": "Second slide",
     "background": "Background",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "reasoning-rule": "Reasoning rule"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
@@ -544,5 +546,19 @@
     "detail": "You will be offered a backup of your current knowledge base first. Nothing is deleted until you choose to create a new knowledge base, restore a backup or sync from another device.\n\nDo not continue if a script or an unfamiliar note prompted you to.",
     "cancel": "Cancel",
     "confirm": "Restart and start over"
+  },
+  "reasoning": {
+    "parse": "Line {{line}}: {{detail}}",
+    "unscoped": "Variable ?{{name}} is not connected to ?this. This rule only applies to its own note and what that note is linked to. A rule for every note belongs on a schema note (#reasoningSchema, or a template) together with #reasoningScope=global.",
+    "unsafe": "Variable ?{{name}} is used before the rule knows its value.",
+    "global_not_schema": "A global rule is only allowed on a schema note. Add #reasoningSchema, or put the rule on a template.",
+    "unknown_note": "No note is titled \"{{name}}\".",
+    "ambiguous_note": "More than one note is titled \"{{name}}\".",
+    "type": "{{name}} does not fit here ({{detail}}).",
+    "arity": "{{name}} must take {{detail}} arguments.",
+    "reserved": "{{name}} is reserved and cannot be concluded by a rule.",
+    "builtin": "{{name}} cannot be used there.",
+    "engine": "{{detail}}",
+    "protected": "This rule note is protected, so its rules cannot be read."
   }
 }

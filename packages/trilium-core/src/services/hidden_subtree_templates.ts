@@ -382,6 +382,29 @@ export default function buildHiddenSubtreeTemplates() {
                 ]
             },
             {
+                // A code note so the rules stay plain text. Placed under the note they describe,
+                // `?this` is that parent; under a template, `?this` is each instance.
+                id: "_template_reasoning_rule",
+                type: "code",
+                mime: "text/plain",
+                title: t("hidden_subtree_templates.reasoning-rule"),
+                icon: "bx-network-chart",
+                content: [
+                    "// Rules on this note apply to its parent. ?this is that parent.",
+                    "// Put the note inside a template and ?this is each instance of the template.",
+                    "// A rule that should apply everywhere needs #reasoningSchema on the parent",
+                    "// and #reasoningScope=global on this note.",
+                    "//",
+                    "// #priority(?task, \"high\") :- child(?this, ?task), #status(?task, \"todo\").",
+                    "// #blocked(?this) :- descendant(?this, ?task), #status(?task, \"blocked\").",
+                    "// ~listed(?citing, ?this) :- ~cites(?citing, ?this)."
+                ].join("\n"),
+                attributes: [
+                    { name: "template", type: "label" },
+                    { name: "reasoningRule", type: "label" }
+                ]
+            },
+            {
                 id: "_template_dashboard",
                 type: "book",
                 title: t("hidden_subtree_templates.dashboard"),

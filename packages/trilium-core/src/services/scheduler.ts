@@ -9,6 +9,7 @@ import { getLog } from "./log.js";
 import options from "./options.js";
 import { getPlatform } from "./platform.js";
 import protected_session from "./protected_session.js";
+import { startReasoningEngine } from "./reasoning/reasoning.js";
 import scriptService from "./script.js";
 import { isScriptingEnabled } from "./scripting_guard.js";
 import sqlInit from "./sql_init.js";
@@ -40,6 +41,8 @@ function runNotesWithLabel(runAttrValue: string) {
 }
 
 export function startScheduler() {
+    startReasoningEngine();
+
     // Whenever a database comes up, whichever way it got here. This used to be asked of the instance
     // at the moment the scheduler started, which is the wrong moment: an instance that starts in the
     // setup wizard has no database yet and answers no, and the one it goes on to open — restored

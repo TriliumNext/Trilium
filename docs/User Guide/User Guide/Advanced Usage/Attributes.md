@@ -40,3 +40,7 @@ Attributes in Trilium can be "multi-valued", meaning multiple attributes with th
 ## Attribute Inheritance
 
 Trilium supports attribute inheritance, allowing child notes to inherit attributes from their parents. For more information, see <a class="reference-link" href="Attributes/Attribute%20Inheritance.md">Attribute Inheritance</a>.
+
+## Reasoning rules
+
+A note can carry rules that add labels and relations when their conditions hold, and remove them when they no longer do. By default the rules apply only to the note they sit under. See <a class="reference-link" href="Reasoning%20rules.md">Reasoning rules</a>.

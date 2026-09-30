@@ -1,0 +1,94 @@
+<p>A reasoning rule is a note whose content is a list of if-then rules. The
+  rules add <a href="#root/_help_zEY4DaJG4YT5">labels and relations</a> to
+  other notes. By default they describe only the note they sit under: in
+  a rule, <code>?this</code> is that parent. A rule that should apply to every
+  note in the database belongs on a concept note, and has to say so.</p>
+<h2>Creating a rule note</h2>
+<p>To add rules to a note, right-click it in the&nbsp;<a class="reference-link"
+  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a> and select <em>Insert child note</em>,
+  then choose <em>Reasoning rule</em> (<span class="tn-icon bx bx-network-chart"></span>)
+  under <em>Built-in templates</em>.</p>
+<p>The new note is a code note. Its content starts as comments that show
+  the shape of a rule. Remove the <code>//</code> from a line to turn that
+  rule on, or replace the comments with your own rules. Any text or code
+  note with the <code>#reasoningRule</code> label is read the same way; the
+  template already carries that label.</p>
+<p>A rule note placed directly under the root describes itself, not the whole
+  tree.</p>
+<h2>Rules on one note</h2>
+<p>Under a note called <em>The Lord of the Rings</em>, a rule note can say:</p><pre><code class="language-text-x-trilium-auto">#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").
+~listed(?citing, ?this) :- ~cites(?citing, ?this).</code></pre>
+<p>The first rule gives <code>#priority=high</code> to every direct child that
+  has <code>#status=todo</code>. The second gives <code>~listed</code>, pointing
+  back at the book, to every note that has <code>~cites</code> pointing at
+  the book. That citing note does not have to live under the book. What it
+  has to be is named in the rule by a path that starts at <code>?this</code>.</p>
+<p>A rule that names a note with no such path is refused. The rule note then
+  gets a <code>#reasoningError</code> label, and nothing is written. That is
+  what keeps a note that only records a fact, such as <code>#role=priest</code> on
+  a person, from quietly defining a rule about every person.</p>
+<h2>Rules on a template</h2>
+<p>Put the rule note inside a&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;note
+  (one that has the <code>#template</code> label). Then <code>?this</code> is
+  each instance of that template, and the same rules run for every instance.</p><pre><code class="language-text-x-trilium-auto">#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").
+#blocked(?this) :- descendant(?this, ?task), #status(?task, "blocked").</code></pre>
+<p>On a <em>Project</em> template, every instance marks its to-do children
+  with <code>#priority=high</code>, and marks itself <code>#blocked</code> when
+  any note under it has <code>#status=blocked</code>.</p>
+<h2>Rules for the whole database</h2>
+<p>A rule that should match notes with no connection to one parent is a rule
+  about a concept. Add the <code>#reasoningSchema</code> label to that concept
+  note, put the rule note under it, and add <code>#reasoningScope=global</code> on
+  the rule note itself (the label has to be owned there, not only inherited).</p><pre><code class="language-text-x-trilium-auto">#authority(?person, "yes") :- #role(?person, "priest").</code></pre>
+<p>The concept note can also be a template: <code>#template</code> counts the
+  same way as <code>#reasoningSchema</code>. Without one of those labels,
+  a global rule is refused and the rule note gets <code>#reasoningError</code>.</p>
+<h2>Writing a rule</h2>
+<ul>
+  <li>One rule per clause, ending with a period. <code>//</code> starts a comment
+    that runs to the end of the line.</li>
+  <li><code>#name(?note)</code> matches a label with no value. <code>#name(?note, "value")</code> matches
+    a label with that value. A number is written without quotes, as in <code>#age(?person, ?years), ?years &gt; 18</code>.
+    A label whose value is a plain number is compared as a number; <code>"21"</code> in
+    quotes stays text.</li>
+  <li><code>~name(?source, ?target)</code> matches a relation from the source
+    note to the target note.</li>
+  <li><code>child(?parent, ?child)</code> is a direct child, and <code>parent(?child, ?parent)</code> is
+    the reverse. <code>descendant(?ancestor, ?note)</code> is a child, or a child
+    of a child, and so on. <code>title(?note, "Exact title")</code> and <code>type(?note, "text")</code> read
+    the title and the note type.</li>
+  <li><code>@"Exact title"</code> names the one note with that title. Zero matches,
+    or more than one, is an error.</li>
+  <li><code>not</code> in front of a condition excludes it, as in <code>not #status(?task, "done")</code>.
+    Comparisons are <code>=</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code> and <code>&gt;=</code>.</li>
+  <li>Every name in the conclusion, and every name used under <code>not</code> or
+    in a comparison, has to appear in an ordinary condition. <code>?this</code> already
+    counts, except in a global rule.</li>
+</ul>
+<h2>What the rules write</h2>
+<p>The conclusions are ordinary labels and relations, shown in <em>Owned Attributes</em>.
+  When a rule no longer concludes one, it is removed. An attribute created
+  by hand, with the same name and value, is left in place.</p>
+<p>Rules run shortly after a note, a title, or an attribute changes, and
+  once when Trilium opens the database, if any rule notes exist. A problem
+  in a rule is the <code>#reasoningError</code> label on the rule note. Fix
+  the rule and the label is cleared on the next run.</p>
+<p>Deleting the rule note removes its conclusions on the next run. Deleting
+  the note it describes deletes the child rule note with it.</p>
+<h2>Limitations</h2>
+<ul>
+  <li>Rules read attributes owned by a note. Inherited attributes are not seen,
+    apart from the <code>~template</code> relation that binds <code>?this</code> on
+    a template.</li>
+  <li>A rule does not see the attributes it wrote itself, so a conclusion cannot
+    be the condition of that same rule. It does see attributes written by hand,
+    and the conclusions of other rules.</li>
+  <li>The names <code>reasoningRule</code>, <code>reasoningError</code>, <code>reasoningScope</code>, <code>reasoningSchema</code>, <code>template</code> and <code>inherit</code> cannot
+    be conclusions.</li>
+  <li>The rule note is not treated as a child of its parent, so a rule about
+    every child does not match the rule note.</li>
+  <li>Hidden notes are not part of the rules.</li>
+  <li>A protected rule note is read only while the protected session is unlocked.</li>
+  <li><code>descendant</code> does not follow a cycle of clones. A note that
+    is also a direct child is still reached by <code>child</code>.</li>
+</ul>
