@@ -6,7 +6,7 @@ import { assembleRules, compileRuleNote, queryFor, resolveScope, type Scope } fr
 const anchored: Scope = { mode: "anchored", anchorNoteId: "project" };
 
 describe("reasoning rules", () => {
-    it("keeps a rule that is about ?this and rejects one that quantifies over every note", () => {
+    it("keeps a rule about ?this and lets a free variable match the workspace", () => {
         const scoped = compileRuleNote(
             `#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").`,
             anchored,
@@ -17,18 +17,35 @@ describe("reasoning rules", () => {
         expect(scoped.clauses[0]?.edn).toContain('"project"');
         expect(scoped.clauses[0]?.edn).toContain("(ground \"high\")");
 
-        const global = compileRuleNote(
+        const workspace = compileRuleNote(
             `#mark(?x, "yes") :- #status(?x, "todo").`,
-            anchored,
+            { mode: "workspace", workspaceNoteId: "work", anchorNoteId: "work" },
             new Map(),
             new Map()
         );
-        expect(global.clauses).toEqual([]);
-        expect(global.diagnostics[0]?.code).toBe("unscoped");
-        expect(global.diagnostics[0]?.name).toBe("x");
+        expect(workspace.diagnostics).toEqual([]);
+        expect(workspace.clauses[0]?.edn).toContain("builtin_descendant");
+        expect(workspace.clauses[0]?.edn).toContain('"work"');
+
+        const linked = compileRuleNote(
+            `#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").`,
+            { mode: "workspace", workspaceNoteId: "work", anchorNoteId: "work" },
+            new Map(),
+            new Map()
+        );
+        expect(linked.clauses[0]?.edn).not.toContain("builtin_descendant");
+
+        const citing = compileRuleNote(
+            `~listed(?citing, ?this) :- ~cites(?citing, ?this).`,
+            { mode: "workspace", workspaceNoteId: "work", anchorNoteId: "book" },
+            new Map(),
+            new Map()
+        );
+        expect(citing.diagnostics).toEqual([]);
+        expect(citing.clauses[0]?.edn).not.toContain("builtin_descendant");
     });
 
-    it("binds ?this to each instance of a template and allows a global rule only on a schema note", () => {
+    it("binds ?this to each instance of a template and lets #reasoningScope=global leave a workspace", () => {
         const onTemplate = resolveScope({
             ruleNoteId: "rules",
             parentId: "projekt",
@@ -36,11 +53,13 @@ describe("reasoning rules", () => {
             parentIsSchema: false,
             selfIsTemplate: false,
             selfIsSchema: false,
-            wantsGlobal: false
+            wantsGlobal: false,
+            workspaceId: null
         });
         expect(onTemplate.ok).toBe(true);
         if (onTemplate.ok) {
-            expect(onTemplate.scope).toEqual({ mode: "template", templateNoteId: "projekt" });
+            expect(onTemplate.scope.mode).toBe("template");
+            expect(onTemplate.scope.templateNoteId).toBe("projekt");
         }
 
         const compiled = compileRuleNote(
@@ -53,16 +72,37 @@ describe("reasoning rules", () => {
         expect(compiled.clauses[0]?.edn).toContain('"projekt"');
         expect(compiled.clauses[0]?.edn).toContain("relation/template");
 
-        const refused = resolveScope({
+        const openScope = resolveScope({
             ruleNoteId: "rules",
             parentId: "johannes",
             parentIsTemplate: false,
             parentIsSchema: false,
             selfIsTemplate: false,
             selfIsSchema: false,
-            wantsGlobal: true
+            wantsGlobal: true,
+            workspaceId: "parish"
         });
-        expect(refused.ok).toBe(false);
+        expect(openScope.ok).toBe(true);
+        if (openScope.ok) {
+            expect(openScope.scope.mode).toBe("global");
+            expect(openScope.scope.workspaceNoteId).toBeUndefined();
+        }
+
+        const inWorkspace = resolveScope({
+            ruleNoteId: "rules",
+            parentId: "parish",
+            parentIsTemplate: false,
+            parentIsSchema: false,
+            selfIsTemplate: false,
+            selfIsSchema: false,
+            wantsGlobal: false,
+            workspaceId: "parish"
+        });
+        expect(inWorkspace.ok).toBe(true);
+        if (inWorkspace.ok) {
+            expect(inWorkspace.scope.mode).toBe("workspace");
+            expect(inWorkspace.scope.workspaceNoteId).toBe("parish");
+        }
 
         const allowed = resolveScope({
             ruleNoteId: "priesthood",
@@ -71,7 +111,8 @@ describe("reasoning rules", () => {
             parentIsSchema: false,
             selfIsTemplate: false,
             selfIsSchema: true,
-            wantsGlobal: true
+            wantsGlobal: true,
+            workspaceId: null
         });
         expect(allowed.ok).toBe(true);
         if (allowed.ok) {

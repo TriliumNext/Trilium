@@ -10,6 +10,7 @@ import noteService from "../notes.js";
 import oneTimeTimer from "../one_time_timer.js";
 import sqlInit from "../sql_init.js";
 import { unwrapStringOrBuffer } from "../utils/binary.js";
+import { addSubtree, collectTouch, type ReasoningChange, wakes } from "./activate.js";
 import {
     dropBackEdges,
     inferFacts,
@@ -19,6 +20,7 @@ import {
 } from "./evaluate.js";
 import {
     assembleRules,
+    type ClauseInterest,
     compileRuleNote,
     type IdbPredicate,
     predicateKey,
@@ -26,6 +28,7 @@ import {
     type ResolvedScope,
     type RuleDiagnostic,
     resolveScope,
+    type Scope,
     type ScopeFacts
 } from "./rule_program.js";
 
@@ -53,11 +56,41 @@ interface StoredFact {
     value: string;
 }
 
+const BURST_CAP = 8;
+
+interface RunnableClause {
+    edn: string;
+    form: "label" | "relation";
+    name: string;
+    arity: 1 | 2;
+    symbol: string;
+    interest: ClauseInterest;
+    ruleNoteId: string;
+    mode: Scope["mode"];
+    workspaceNoteId: string | null;
+    anchorNoteId: string | null;
+    templateNoteId: string | null;
+    query: InferenceQuery;
+}
+
+interface Program {
+    clauses: RunnableClause[];
+    ruleIds: Set<string>;
+    ruleCount: number;
+}
+
+interface Covered {
+    notes: ReadonlySet<string>;
+    writes: ReadonlySet<string>;
+}
+
 let started = false;
 let running = false;
 let rerun = false;
-let armed = false;
+let burst = 0;
 let chain: Promise<ReasoningReport> | null = null;
+let program: Program | null = null;
+const pending: ReasoningChange[] = [];
 let lastReport: ReasoningReport = { ruleNotes: 0, inferred: 0, retracted: 0, errors: [] };
 
 export function getReasoningReport(): ReasoningReport {
@@ -104,14 +137,20 @@ export function startReasoningEngine() {
             eventService.NOTE_TITLE_CHANGED
         ],
         (payload) => {
+            const change = describeChange(payload);
+            if (!change) {
+                return;
+            }
             if (running) {
+                pending.push(change);
                 rerun = true;
                 return;
             }
-            if (!armed && !eventArms(payload)) {
+            if (change.kind !== "rule" && program && !programWakes(program, change)) {
                 return;
             }
-            scheduleReasoning();
+            pending.push(change);
+            scheduleReasoning(false);
         }
     );
 
@@ -126,20 +165,43 @@ export function runReasoning(): Promise<ReasoningReport> {
     if (chain) {
         return chain;
     }
-    chain = getContext().init(() => execute()).finally(() => {
+    chain = getContext().init(() => execute(() => executeOnce())).finally(() => {
         chain = null;
-        if (rerun) {
-            rerun = false;
-            scheduleReasoning();
-        }
+        finishRun();
     });
     return chain;
 }
 
-async function execute(): Promise<ReasoningReport> {
+/** Rechecks `changes` against the notes next to them. A rule change runs the full pass. */
+export function runReasoningOn(changes: readonly ReasoningChange[]): Promise<ReasoningReport> {
+    if (chain) {
+        return chain;
+    }
+    chain = getContext().init(() => execute(() => executeIncremental(changes))).finally(() => {
+        chain = null;
+        finishRun();
+    });
+    return chain;
+}
+
+function finishRun() {
+    if (!rerun) {
+        burst = 0;
+        return;
+    }
+    rerun = false;
+    burst += 1;
+    if (burst >= BURST_CAP) {
+        pending.length = 0;
+        return;
+    }
+    scheduleReasoning(true);
+}
+
+async function execute(body: () => Promise<ReasoningReport>): Promise<ReasoningReport> {
     running = true;
     try {
-        lastReport = await executeOnce();
+        lastReport = await body();
         return lastReport;
     } catch (error) {
         getLog().error(`Reasoning failed: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
@@ -156,24 +218,14 @@ async function executeOnce(): Promise<ReasoningReport> {
     const stored = provenanceNote ? readProvenance(provenanceNote) : [];
 
     if (ruleNotes.length === 0 && stored.length === 0) {
-        armed = false;
+        program = null;
         return { ruleNotes: 0, inferred: 0, retracted: 0, errors: [] };
     }
 
-    armed = true;
     const messages = new Map<string, string[]>();
     const ruleIds = new Set(ruleNotes.map((note) => note.noteId));
     const inferredIds = new Set(stored.map((fact) => fact.attributeId));
-    const graph = projectGraph(ruleIds, inferredIds);
-    const titles = new Map<string, string[]>();
-    for (const note of graph) {
-        if (note.title === null) {
-            continue;
-        }
-        const list = titles.get(note.title) ?? [];
-        list.push(note.noteId);
-        titles.set(note.title, list);
-    }
+    const titles = noteTitles();
 
     const idb = new Map<string, IdbPredicate>();
     const definers = new Map<string, string[]>();
@@ -207,9 +259,7 @@ async function executeOnce(): Promise<ReasoningReport> {
         }
     }
 
-    const clauseEdn: string[] = [];
-    const queries: InferenceQuery[] = [];
-    const seenSymbols = new Set<string>();
+    const built: RunnableClause[] = [];
 
     for (const note of ruleNotes) {
         const resolved = scopes.get(note.noteId);
@@ -223,22 +273,35 @@ async function executeOnce(): Promise<ReasoningReport> {
         const second = compileRuleNote(source, resolved.scope, titles, idb);
         compiled.set(note.noteId, second);
         for (const clause of second.clauses) {
-            clauseEdn.push(clause.edn);
-            if (seenSymbols.has(clause.symbol)) {
-                continue;
-            }
-            seenSymbols.add(clause.symbol);
             const key = predicateKey(clause.form, clause.arity, clause.name);
-            queries.push({
+            const query: InferenceQuery = {
                 form: clause.form,
                 name: clause.name,
                 arity: clause.arity,
                 symbol: clause.symbol,
                 ruleNoteIds: definers.get(key) ?? [note.noteId],
                 query: queryFor(clause.form, clause.arity, clause.symbol)
+            };
+            built.push({
+                edn: clause.edn,
+                form: clause.form,
+                name: clause.name,
+                arity: clause.arity,
+                symbol: clause.symbol,
+                interest: clause.interest,
+                ruleNoteId: note.noteId,
+                mode: resolved.scope.mode,
+                workspaceNoteId: resolved.scope.workspaceNoteId ?? null,
+                anchorNoteId: resolved.scope.anchorNoteId ?? null,
+                templateNoteId: resolved.scope.templateNoteId ?? null,
+                query
             });
         }
     }
+    program = { clauses: built, ruleIds, ruleCount: ruleNotes.length };
+    const queries = queriesOf(built);
+    const clauseEdn = built.map((clause) => clause.edn);
+    const graph = projectGraph(ruleIds, inferredIds, notesForFullPass(built));
 
     for (const note of ruleNotes) {
         const result = compiled.get(note.noteId);
@@ -270,7 +333,7 @@ async function executeOnce(): Promise<ReasoningReport> {
         setRuleError(note, list && list.length > 0 ? list.join(" | ") : null);
     }
 
-    const applied = applyFacts(inferred.facts, stored);
+    const applied = applyFacts(inferred.facts, stored, null);
     const released = releasedSince(stored);
     const next = released.size === 0
         ? applied.next
@@ -338,14 +401,46 @@ function scopeFacts(note: BNote): ScopeFacts {
         parentIsSchema: owns(parent, "reasoningSchema"),
         selfIsTemplate: owns(note, "template"),
         selfIsSchema: owns(note, "reasoningSchema"),
-        wantsGlobal: scopeLabel?.value === "global"
+        wantsGlobal: scopeLabel?.value === "global",
+        workspaceId: workspaceOf(note)
     };
 }
 
-function projectGraph(ruleIds: ReadonlySet<string>, inferredIds: ReadonlySet<string>): ProjectedNote[] {
+function workspaceOf(note: BNote): string | null {
+    const seen = new Set<string>();
+    const queue = [note];
+    let index = 0;
+    while (index < queue.length) {
+        const current = queue[index];
+        index += 1;
+        if (!current || seen.has(current.noteId)) {
+            continue;
+        }
+        seen.add(current.noteId);
+        if (current.getOwnedAttribute("label", "workspace")) {
+            return current.noteId;
+        }
+        for (const parent of current.getParentNotes()) {
+            if (parent.noteId === "root" || parent.noteId.startsWith("_")) {
+                continue;
+            }
+            queue.push(parent);
+        }
+    }
+    return null;
+}
+
+function projectGraph(
+    ruleIds: ReadonlySet<string>,
+    inferredIds: ReadonlySet<string>,
+    only: ReadonlySet<string> | null
+): ProjectedNote[] {
     const included: BNote[] = [];
     for (const note of Object.values(becca.notes)) {
         if (!note || note.isDeleted || note.noteId.startsWith("_")) {
+            continue;
+        }
+        if (only && !only.has(note.noteId)) {
             continue;
         }
         included.push(note);
@@ -411,7 +506,11 @@ function readRuleSource(note: BNote): string | null {
     return content;
 }
 
-function applyFacts(desired: readonly InferredFact[], stored: readonly StoredFact[]): { retracted: number; next: StoredFact[] } {
+function applyFacts(
+    desired: readonly InferredFact[],
+    stored: readonly StoredFact[],
+    covered: Covered | null
+): { retracted: number; next: StoredFact[] } {
     const desiredByKey = new Map<string, InferredFact>();
     for (const fact of desired) {
         desiredByKey.set(factKey(fact), fact);
@@ -429,16 +528,39 @@ function applyFacts(desired: readonly InferredFact[], stored: readonly StoredFac
     }
 
     const manual = new Set<string>();
-    for (const attr of Object.values(becca.attributes)) {
-        if (storedIds.has(attr.attributeId)) {
-            continue;
+    type Row = { attributeId: string; noteId: string; type: string; name: string; value: string };
+    const manualFrom = (attrs: readonly Row[]) => {
+        for (const attr of attrs) {
+            if (storedIds.has(attr.attributeId)) {
+                continue;
+            }
+            manual.add(factKey(attr));
         }
-        manual.add(factKey(attr));
+    };
+    if (covered) {
+        const attrs: Row[] = [];
+        for (const noteId of covered.notes) {
+            const note = becca.notes[noteId];
+            if (!note) {
+                continue;
+            }
+            for (const attr of note.getOwnedAttributes()) {
+                attrs.push(attr);
+            }
+        }
+        manualFrom(attrs);
+    } else {
+        manualFrom(Object.values(becca.attributes));
     }
 
     let retracted = 0;
+    const next: StoredFact[] = [];
     for (const [key, fact] of storedByKey) {
         if (desiredByKey.has(key)) {
+            continue;
+        }
+        if (covered && !inZone(fact, covered)) {
+            next.push(fact);
             continue;
         }
         const attr = becca.attributes[fact.attributeId];
@@ -449,7 +571,6 @@ function applyFacts(desired: readonly InferredFact[], stored: readonly StoredFac
         retracted += 1;
     }
 
-    const next: StoredFact[] = [];
     for (const [key, fact] of desiredByKey) {
         if (manual.has(key)) {
             continue;
@@ -621,43 +742,286 @@ function describeDiagnostic(diagnostic: RuleDiagnostic): string {
     }
 }
 
-function eventArms(payload: unknown): boolean {
+function describeChange(payload: unknown): ReasoningChange | null {
     if (!payload || typeof payload !== "object") {
-        return false;
+        return null;
     }
     const record = payload as {
         entityName?: string;
-        entity?: { name?: string; noteId?: string; value?: string; type?: string; hasLabel?: (name: string) => boolean };
+        entity?: {
+            name?: string;
+            noteId?: string;
+            value?: string;
+            type?: string;
+            parentNoteId?: string;
+            hasLabel?: (name: string) => boolean;
+        };
         hasLabel?: (name: string) => boolean;
         noteId?: string;
     };
 
-    if (typeof record.hasLabel === "function") {
-        return record.hasLabel("reasoningRule") && !record.noteId?.startsWith("_");
+    if (typeof record.hasLabel === "function" && typeof record.noteId === "string") {
+        if (record.noteId.startsWith("_")) {
+            return null;
+        }
+        if (record.hasLabel("reasoningRule")) {
+            return { noteId: record.noteId, kind: "rule" };
+        }
+        return { noteId: record.noteId, kind: "title" };
     }
 
     const entity = record.entity;
-    if (!entity) {
-        return false;
+    if (!entity || typeof entity.noteId !== "string" || entity.noteId.startsWith("_")) {
+        return null;
     }
-    if (record.entityName === "attributes" && entity.name === "reasoningRule") {
-        return typeof entity.noteId === "string" && !entity.noteId.startsWith("_");
+
+    if (record.entityName === "attributes") {
+        const name = entity.name ?? "";
+        const structural = name === "reasoningRule" || name === "reasoningScope"
+            || name === "reasoningSchema" || name === "workspace";
+        if (structural) {
+            return { noteId: entity.noteId, kind: "rule" };
+        }
+        if (entity.type === "relation" && name === "template") {
+            return { noteId: entity.noteId, kind: "rule" };
+        }
+        if (entity.type === "relation") {
+            return { noteId: entity.noteId, kind: "relation", name };
+        }
+        return { noteId: entity.noteId, kind: "label", name };
     }
-    if (record.entityName === "attributes" && entity.type === "relation" && entity.name === "template" && typeof entity.value === "string") {
-        return !!becca.notes[entity.value]?.getOwnedAttribute("label", "reasoningRule");
+
+    if (record.entityName === "branches") {
+        const childId = entity.noteId;
+        const parentId = entity.parentNoteId;
+        const child = becca.notes[childId];
+        const parent = parentId ? becca.notes[parentId] : undefined;
+        if (child?.hasLabel("reasoningRule") || parent?.hasLabel("reasoningRule")) {
+            return { noteId: childId, kind: "rule" };
+        }
+        return { noteId: childId, kind: "structure" };
     }
+
     if (typeof entity.hasLabel === "function") {
-        return entity.hasLabel("reasoningRule") && !entity.noteId?.startsWith("_");
+        if (entity.hasLabel("reasoningRule")) {
+            return { noteId: entity.noteId, kind: "rule" };
+        }
+        return { noteId: entity.noteId, kind: "content" };
+    }
+    return null;
+}
+
+function scheduleReasoning(fromRerun: boolean) {
+    if (!fromRerun) {
+        burst = 0;
+    }
+    oneTimeTimer.scheduleExecution("reasoning", 400, () => {
+        const changes = pending.splice(0, pending.length);
+        const full = !program || changes.length === 0 || changes.some((change) => change.kind === "rule");
+        const run = full ? runReasoning() : runReasoningOn(changes);
+        void run.catch((error) => {
+            getLog().error(`Reasoning failed: ${error instanceof Error ? error.message : String(error)}`);
+        });
+    });
+}
+
+async function executeIncremental(changes: readonly ReasoningChange[]): Promise<ReasoningReport> {
+    if (!program || changes.some((change) => change.kind === "rule")) {
+        return executeOnce();
+    }
+    const selected = selectClauses(program, changes);
+    if (selected.length === 0) {
+        return lastReport;
+    }
+
+    const seeds = [...new Set(changes.map((change) => change.noteId))];
+    const needsDescendant = selected.some((clause) => clause.interest.descendant);
+    const workspaces = new Set<string>();
+    let globalDescendant = false;
+    for (const clause of selected) {
+        if (clause.workspaceNoteId) {
+            workspaces.add(clause.workspaceNoteId);
+        } else if (clause.interest.descendant) {
+            globalDescendant = true;
+        }
+    }
+    const stopAt = !globalDescendant && workspaces.size === 1 ? [...workspaces][0] ?? null : null;
+    const touch = collectTouch(seeds, needsDescendant, stopAt);
+    if (!touch.complete) {
+        return executeOnce();
+    }
+
+    const ids = touch.ids;
+    for (const clause of selected) {
+        if (clause.anchorNoteId) {
+            ids.add(clause.anchorNoteId);
+        }
+        if (clause.templateNoteId) {
+            ids.add(clause.templateNoteId);
+        }
+        if (clause.workspaceNoteId) {
+            ids.add(clause.workspaceNoteId);
+        }
+    }
+
+    const provenanceNote = becca.notes[PROVENANCE_NOTE_ID];
+    const stored = provenanceNote ? readProvenance(provenanceNote) : [];
+    const inferredIds = new Set(stored.map((fact) => fact.attributeId));
+    const graph = projectGraph(program.ruleIds, inferredIds, ids);
+    const queries = queriesOf(selected);
+    const inferred = await inferFacts(graph, assembleRules(selected.map((clause) => clause.edn)), queries);
+    if (inferred.failures.length > 0) {
+        return executeOnce();
+    }
+
+    const writes = new Set(selected.map((clause) => `${clause.form}\n${clause.name}`));
+    const applied = applyFacts(inferred.facts, stored, { notes: ids, writes });
+    const released = releasedSince(stored);
+    const next = released.size === 0
+        ? applied.next
+        : applied.next.filter((fact) => !released.has(fact.attributeId));
+    writeProvenance(next);
+
+    return {
+        ruleNotes: program.ruleCount,
+        inferred: applied.next.length,
+        retracted: applied.retracted,
+        errors: lastReport.errors
+    };
+}
+
+function selectClauses(current: Program, changes: readonly ReasoningChange[]): RunnableClause[] {
+    const writes = new Set<string>();
+    for (const clause of current.clauses) {
+        for (const change of changes) {
+            if (wakes(clause.interest, change)) {
+                writes.add(`${clause.form}\n${clause.name}`);
+                break;
+            }
+        }
+    }
+    if (writes.size === 0) {
+        return [];
+    }
+    return current.clauses.filter((clause) => writes.has(`${clause.form}\n${clause.name}`));
+}
+
+function programWakes(current: Program, change: ReasoningChange): boolean {
+    for (const clause of current.clauses) {
+        if (wakes(clause.interest, change)) {
+            return true;
+        }
     }
     return false;
 }
 
-function scheduleReasoning() {
-    oneTimeTimer.scheduleExecution("reasoning", 400, () => {
-        void runReasoning().catch((error) => {
-            getLog().error(`Reasoning failed: ${error instanceof Error ? error.message : String(error)}`);
-        });
-    });
+function queriesOf(clauses: readonly RunnableClause[]): InferenceQuery[] {
+    const queries: InferenceQuery[] = [];
+    const seen = new Set<string>();
+    for (const clause of clauses) {
+        if (seen.has(clause.symbol)) {
+            continue;
+        }
+        seen.add(clause.symbol);
+        queries.push(clause.query);
+    }
+    return queries;
+}
+
+function inZone(fact: StoredFact, covered: Covered): boolean {
+    return covered.notes.has(fact.noteId) && covered.writes.has(`${fact.type}\n${fact.name}`);
+}
+
+function noteTitles(): Map<string, string[]> {
+    const titles = new Map<string, string[]>();
+    for (const note of Object.values(becca.notes)) {
+        if (!note || note.isDeleted || note.noteId.startsWith("_") || !note.isContentAvailable()) {
+            continue;
+        }
+        const list = titles.get(note.title) ?? [];
+        list.push(note.noteId);
+        titles.set(note.title, list);
+    }
+    return titles;
+}
+
+/** Notes a full pass has to load. `null` is the whole database. */
+function notesForFullPass(clauses: readonly RunnableClause[]): Set<string> | null {
+    if (clauses.some((clause) => clause.mode === "global" || !clause.workspaceNoteId)) {
+        return null;
+    }
+
+    const ids = new Set<string>();
+    const templates = new Set<string>();
+    for (const clause of clauses) {
+        if (clause.workspaceNoteId) {
+            addSubtree(clause.workspaceNoteId, ids, Number.POSITIVE_INFINITY);
+        }
+        if (clause.anchorNoteId) {
+            ids.add(clause.anchorNoteId);
+        }
+        if (clause.templateNoteId) {
+            templates.add(clause.templateNoteId);
+            ids.add(clause.templateNoteId);
+        }
+    }
+    for (const rel of becca.findAttributes("relation", "template")) {
+        if (!templates.has(rel.value) || rel.noteId.startsWith("_")) {
+            continue;
+        }
+        ids.add(rel.noteId);
+        const instance = becca.notes[rel.noteId];
+        if (!instance || instance.isDeleted) {
+            continue;
+        }
+        for (const child of instance.getChildNotes()) {
+            if (!child.noteId.startsWith("_")) {
+                ids.add(child.noteId);
+            }
+        }
+    }
+
+    const snapshot = [...ids];
+    for (const id of snapshot) {
+        const note = becca.notes[id];
+        if (!note) {
+            continue;
+        }
+        for (const attr of note.getOwnedAttributes()) {
+            if (attr.type === "relation" && attr.value && !attr.value.startsWith("_")) {
+                ids.add(attr.value);
+            }
+        }
+        for (const incoming of note.getTargetRelations()) {
+            if (!incoming.isDeleted && !incoming.noteId.startsWith("_")) {
+                ids.add(incoming.noteId);
+            }
+        }
+    }
+    addNamedTitles(clauses, ids);
+    return ids;
+}
+
+function addNamedTitles(clauses: readonly RunnableClause[], ids: Set<string>) {
+    const titles = noteTitles();
+    for (const clause of clauses) {
+        const pattern = /"note\/title" ("(?:\\.|[^"\\])*")/g;
+        let match = pattern.exec(clause.edn);
+        while (match) {
+            const raw = match[1];
+            if (raw) {
+                try {
+                    const title = JSON.parse(raw) as string;
+                    for (const noteId of titles.get(title) ?? []) {
+                        ids.add(noteId);
+                    }
+                } catch {
+                    // The rule reports the missing title when the next full pass compiles it.
+                }
+            }
+            match = pattern.exec(clause.edn);
+        }
+    }
 }
 
 function htmlToPlain(html: string): string {

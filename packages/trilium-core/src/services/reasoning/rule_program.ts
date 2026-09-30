@@ -1,10 +1,9 @@
 /**
  * Scoped Datalog for one note.
  *
- * A rule note describes its context (the parent, or itself when it sits under root). `?this` is that
- * context. On a template, `?this` is each instance. Every variable has to be connected to `?this`,
- * so a rule cannot quantify over the whole graph unless the note is an explicit schema
- * (`#reasoningSchema` or a template) and the rule note says `#reasoningScope=global`.
+ * `?this` is the parent of the rule note, or each instance when the rule note sits in a template.
+ * A variable with no path back to `?this` matches the workspace the rule note is in. With no
+ * workspace, or with `#reasoningScope=global`, it matches the whole database.
  */
 
 export type AttributeForm = "label" | "relation";
@@ -27,9 +26,11 @@ export interface RuleDiagnostic {
 }
 
 export interface Scope {
-    mode: "anchored" | "template" | "global";
+    mode: "anchored" | "template" | "workspace" | "global";
     anchorNoteId?: string;
     templateNoteId?: string;
+    /** Free variables have to be this note or one of its descendants. */
+    workspaceNoteId?: string;
 }
 
 export interface ScopeFacts {
@@ -41,6 +42,19 @@ export interface ScopeFacts {
     selfIsTemplate: boolean;
     selfIsSchema: boolean;
     wantsGlobal: boolean;
+    /** Nearest ancestor, including the rule note, that owns `#workspace`. */
+    workspaceId: string | null;
+}
+
+/** Body predicates a clause reads. A change wakes the clause when it touches one of these. */
+export interface ClauseInterest {
+    labels: string[];
+    relations: string[];
+    child: boolean;
+    parent: boolean;
+    descendant: boolean;
+    title: boolean;
+    type: boolean;
 }
 
 export type ResolvedScope =
@@ -54,6 +68,7 @@ export interface CompiledClause {
     name: string;
     arity: 1 | 2;
     symbol: string;
+    interest: ClauseInterest;
 }
 
 export interface CompileResult {
@@ -106,20 +121,18 @@ interface Tok {
 
 export function resolveScope(facts: ScopeFacts): ResolvedScope {
     const contextNoteId = facts.parentId ?? facts.ruleNoteId;
-    const schemaOk = facts.selfIsTemplate || facts.selfIsSchema || facts.parentIsTemplate || facts.parentIsSchema;
+    const anchorNoteId = facts.parentId ?? facts.ruleNoteId;
+    const workspaceNoteId = facts.workspaceId ?? undefined;
 
     if (facts.wantsGlobal) {
-        if (!schemaOk) {
-            return { ok: false, diagnostic: { code: "global_not_schema" } };
-        }
-        return { ok: true, contextNoteId, scope: { mode: "global" } };
+        return { ok: true, contextNoteId, scope: { mode: "global", anchorNoteId } };
     }
 
     if (facts.selfIsTemplate) {
         return {
             ok: true,
             contextNoteId: facts.ruleNoteId,
-            scope: { mode: "template", templateNoteId: facts.ruleNoteId }
+            scope: { mode: "template", templateNoteId: facts.ruleNoteId, anchorNoteId: facts.ruleNoteId, workspaceNoteId }
         };
     }
 
@@ -127,12 +140,19 @@ export function resolveScope(facts: ScopeFacts): ResolvedScope {
         return {
             ok: true,
             contextNoteId: facts.parentId,
-            scope: { mode: "template", templateNoteId: facts.parentId }
+            scope: { mode: "template", templateNoteId: facts.parentId, anchorNoteId: facts.parentId, workspaceNoteId }
         };
     }
 
-    const anchorNoteId = facts.parentId ?? facts.ruleNoteId;
-    return { ok: true, contextNoteId: anchorNoteId, scope: { mode: "anchored", anchorNoteId } };
+    if (facts.workspaceId) {
+        return {
+            ok: true,
+            contextNoteId: anchorNoteId,
+            scope: { mode: "workspace", anchorNoteId, workspaceNoteId: facts.workspaceId }
+        };
+    }
+
+    return { ok: true, contextNoteId: anchorNoteId, scope: { mode: "global", anchorNoteId } };
 }
 
 export function attributeKeyword(form: AttributeForm, name: string): string {
@@ -227,7 +247,8 @@ function compileClause(
     }
 
     const sorts = new Map<string, Sort>();
-    if (scope.mode !== "global") {
+    const mentioned = variableNames(clause);
+    if (mentioned.has("this") && bindsThis(scope)) {
         sorts.set("this", "note");
     }
 
@@ -263,11 +284,6 @@ function compileClause(
         return { diagnostic: safety };
     }
 
-    const connected = checkConnected(clause, scope);
-    if (connected) {
-        return { diagnostic: connected };
-    }
-
     const arity = clause.head.args.length as 1 | 2;
     const symbol = ruleSymbol(clause.head.form as AttributeForm, arity, clause.head.name);
     const used = variableNames(clause);
@@ -284,12 +300,33 @@ function compileClause(
     };
 
     const parts: string[] = [];
-    if (scope.mode === "anchored" && scope.anchorNoteId) {
-        parts.push(`[?this "note/id" ${ednString(scope.anchorNoteId)}]`);
-    } else if (scope.mode === "template" && scope.templateNoteId) {
+    if (mentioned.has("this") && scope.mode === "template" && scope.templateNoteId) {
         const tpl = fresh();
         parts.push(`[?this "relation/template" ?${tpl}]`);
         parts.push(`[?${tpl} "note/id" ${ednString(scope.templateNoteId)}]`);
+    } else if (mentioned.has("this") && scope.anchorNoteId) {
+        parts.push(`[?this "note/id" ${ednString(scope.anchorNoteId)}]`);
+    }
+
+    if (scope.workspaceNoteId && scope.mode !== "global") {
+        const linked = connectedToThis(clause);
+        const free: string[] = [];
+        for (const [name, sort] of sorts) {
+            if (sort !== "note" || !mentioned.has(name) || linked.has(name)) {
+                continue;
+            }
+            free.push(name);
+        }
+        if (free.length > 0) {
+            const ws = fresh();
+            const wid = ednString(scope.workspaceNoteId);
+            parts.push(`[?${ws} "note/id" ${wid}]`);
+            for (const name of free) {
+                const down = `(builtin_descendant ?${ws} ?${name})`;
+                const self = `[?${name} "note/id" ${wid}]`;
+                parts.push(`(or ${down} ${self})`);
+            }
+        }
     }
 
     const headArgs: string[] = [];
@@ -333,9 +370,57 @@ function compileClause(
             form: clause.head.form as AttributeForm,
             name: clause.head.name,
             arity,
-            symbol
+            symbol,
+            interest: interestOf(clause)
         }
     };
+}
+
+function bindsThis(scope: Scope): boolean {
+    return scope.mode === "template" || !!scope.anchorNoteId;
+}
+
+function interestOf(clause: Clause): ClauseInterest {
+    const interest: ClauseInterest = {
+        labels: [],
+        relations: [],
+        child: false,
+        parent: false,
+        descendant: false,
+        title: false,
+        type: false
+    };
+    const see = (pattern: Pattern) => {
+        if (pattern.form === "label") {
+            if (!interest.labels.includes(pattern.name)) {
+                interest.labels.push(pattern.name);
+            }
+            return;
+        }
+        if (pattern.form === "relation") {
+            if (!interest.relations.includes(pattern.name)) {
+                interest.relations.push(pattern.name);
+            }
+            return;
+        }
+        if (pattern.name === "child") {
+            interest.child = true;
+        } else if (pattern.name === "parent") {
+            interest.parent = true;
+        } else if (pattern.name === "descendant") {
+            interest.descendant = true;
+        } else if (pattern.name === "title") {
+            interest.title = true;
+        } else if (pattern.name === "type") {
+            interest.type = true;
+        }
+    };
+    for (const atom of clause.body) {
+        if (atom.kind === "call" || atom.kind === "not") {
+            see(atom.pattern);
+        }
+    }
+    return interest;
 }
 
 function checkHead(head: Pattern, localArity: Map<string, 1 | 2>, idb: ReadonlyMap<string, IdbPredicate>): RuleDiagnostic | null {
@@ -462,7 +547,7 @@ function bindCmp(atom: Extract<BodyAtom, { kind: "cmp" }>, sorts: Map<string, So
 
 function checkSafety(clause: Clause, scope: Scope): RuleDiagnostic | null {
     const bound = positiveVars(clause);
-    if (scope.mode !== "global") {
+    if (variableNames(clause).has("this") && bindsThis(scope)) {
         bound.add("this");
     }
 
@@ -486,11 +571,8 @@ function checkSafety(clause: Clause, scope: Scope): RuleDiagnostic | null {
     return null;
 }
 
-function checkConnected(clause: Clause, scope: Scope): RuleDiagnostic | null {
-    if (scope.mode === "global") {
-        return null;
-    }
-
+/** Names that share a path with `?this` through a positive condition or `=`. */
+function connectedToThis(clause: Clause): Set<string> {
     const parent = new Map<string, string>();
     const find = (name: string): string => {
         const prev = parent.get(name);
@@ -525,19 +607,18 @@ function checkConnected(clause: Clause, scope: Scope): RuleDiagnostic | null {
             union(atom.left.name, atom.right.name);
         }
     }
-    for (const arg of clause.head.args) {
-        if (arg.kind === "var") {
-            find(arg.name);
-        }
-    }
 
     const root = find("this");
+    const linked = new Set<string>();
+    if (variableNames(clause).has("this")) {
+        linked.add("this");
+    }
     for (const name of variableNames(clause)) {
-        if (find(name) !== root) {
-            return { code: "unscoped", line: clause.line, name };
+        if (find(name) === root) {
+            linked.add(name);
         }
     }
-    return null;
+    return linked;
 }
 
 function positiveVars(clause: Clause): Set<string> {

@@ -69,4 +69,4 @@ Additionally, see <a class="reference-link" href="Default%20Note%20Title.md">De
 
 ## Reasoning rules
 
-A _Reasoning rule_ child note inside a template runs for every instance of that template. In those rules, `?this` is the instance. See <a class="reference-link" href="Reasoning%20rules.md">Reasoning rules</a>.
+A _Reasoning rule_ child note inside a template runs for every instance of that template. In those rules, `?this` is the instance. A name with no path back to `?this` matches the workspace the template is in, or the whole database when the template is not in one. See <a class="reference-link" href="Reasoning%20rules.md">Reasoning rules</a>.

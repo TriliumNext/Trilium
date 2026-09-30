@@ -4,7 +4,7 @@ import becca from "../../becca/becca.js";
 import attributeService from "../attributes.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
-import { inferredAttributeIds, releaseInferred, runReasoning } from "./reasoning.js";
+import { inferredAttributeIds, releaseInferred, runReasoning, runReasoningOn } from "./reasoning.js";
 
 describe("reasoning on notes", () => {
     it("writes a scoped conclusion and retracts it when the fact it depends on is gone", async () => {
@@ -44,10 +44,11 @@ describe("reasoning on notes", () => {
             attributeService.createLabel(rules.noteId, "reasoningRule", "");
 
             const first = await runReasoning();
-            expect(first.errors.map((error) => error.noteId)).toEqual([rules.noteId]);
+            expect(first.errors.map((error) => error.noteId)).not.toContain(rules.noteId);
             expect(task.getOwnedAttributes("label", "priority")).toHaveLength(1);
             expect(task.getOwnedAttribute("label", "priority")?.value).toBe("high");
-            expect(task.getOwnedAttribute("label", "mark")).toBeNull();
+            expect(task.getOwnedAttribute("label", "mark")?.value).toBe("yes");
+            expect(bystander.getOwnedAttribute("label", "mark")?.value).toBe("yes");
             expect(bystander.getOwnedAttribute("label", "priority")).toBeNull();
 
             const status = task.getOwnedAttribute("label", "status");
@@ -60,9 +61,11 @@ describe("reasoning on notes", () => {
             // The manual priority label stays; the rule no longer adds another one.
             expect(task.getOwnedAttributes("label", "priority")).toHaveLength(1);
             expect(task.getOwnedAttribute("label", "mark")).toBeNull();
+            expect(bystander.getOwnedAttribute("label", "mark")?.value).toBe("yes");
 
             rules.setContent(`#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").`);
             await runReasoning();
+            expect(bystander.getOwnedAttribute("label", "mark")).toBeNull();
             expect(rules.getOwnedAttribute("label", "reasoningError")).toBeNull();
         });
     });
@@ -118,7 +121,7 @@ describe("reasoning on notes", () => {
         });
     });
 
-    it("applies a template's rules to each instance and a global rule only from a schema note", async () => {
+    it("applies a template's rules to each instance and a free rule to its workspace", async () => {
         await getContext().init(async () => {
             const projekt = noteService.createNewNote({
                 parentNoteId: "root",
@@ -163,34 +166,46 @@ describe("reasoning on notes", () => {
             expect(css.getOwnedAttribute("label", "priority")?.value).toBe("high");
             expect(loose.getOwnedAttribute("label", "priority")).toBeNull();
 
-            const schema = noteService.createNewNote({
+            const parish = noteService.createNewNote({
                 parentNoteId: "root",
+                title: "Parish",
+                content: "",
+                type: "book",
+                attributes: [{ type: "label", name: "workspace", value: "" }]
+            }).note;
+            const schema = noteService.createNewNote({
+                parentNoteId: parish.noteId,
                 title: "Priesthood",
                 content: `#vollmacht(?person, "Ja") :- #rolle(?person, "Priester").`,
                 type: "code",
                 mime: "text/plain",
-                attributes: [
-                    { type: "label", name: "reasoningRule", value: "" },
-                    { type: "label", name: "reasoningScope", value: "global" }
-                ]
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
             }).note;
             const johannes = noteService.createNewNote({
-                parentNoteId: "root",
+                parentNoteId: parish.noteId,
                 title: "Johannes",
                 content: "",
                 type: "text"
             }).note;
             attributeService.createLabel(johannes.noteId, "rolle", "Priester");
+            const outsider = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Outsider",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(outsider.noteId, "rolle", "Priester");
 
-            const refused = await runReasoning();
-            expect(refused.errors.some((error) => error.noteId === schema.noteId)).toBe(true);
-            expect(johannes.getOwnedAttribute("label", "vollmacht")).toBeNull();
+            const scoped = await runReasoning();
+            expect(scoped.errors.some((error) => error.noteId === schema.noteId)).toBe(false);
+            expect(johannes.getOwnedAttribute("label", "vollmacht")?.value).toBe("Ja");
+            expect(outsider.getOwnedAttribute("label", "vollmacht")).toBeNull();
+            expect(loose.getOwnedAttribute("label", "vollmacht")).toBeNull();
 
-            attributeService.createLabel(schema.noteId, "reasoningSchema", "");
+            attributeService.createLabel(schema.noteId, "reasoningScope", "global");
             const allowed = await runReasoning();
             expect(allowed.errors.some((error) => error.noteId === schema.noteId)).toBe(false);
-            expect(johannes.getOwnedAttribute("label", "vollmacht")?.value).toBe("Ja");
-            expect(loose.getOwnedAttribute("label", "vollmacht")).toBeNull();
+            expect(outsider.getOwnedAttribute("label", "vollmacht")?.value).toBe("Ja");
             expect(becca.notes[schema.noteId]?.getOwnedAttribute("label", "reasoningError")).toBeNull();
         });
     });
@@ -272,6 +287,97 @@ describe("reasoning on notes", () => {
             }
             expect(inferredAttributeIds(other.noteId)).toEqual([ fresh.attributeId ]);
             expect(inferredAttributeIds(other.noteId)).not.toContain(kept.attributeId);
+        });
+    });
+
+    it("rechecks the edited note and leaves a distant conclusion in place", async () => {
+        await getContext().init(async () => {
+            noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Mark rules",
+                type: "code",
+                mime: "text/plain",
+                content: `#mark(?x, "yes") :- #status(?x, "todo").`,
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
+            });
+            const near = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Near todo",
+                content: "",
+                type: "text"
+            }).note;
+            const folder = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Far folder",
+                content: "",
+                type: "book"
+            }).note;
+            const mid = noteService.createNewNote({
+                parentNoteId: folder.noteId,
+                title: "Mid",
+                content: "",
+                type: "book"
+            }).note;
+            const far = noteService.createNewNote({
+                parentNoteId: mid.noteId,
+                title: "Far todo",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createLabel(near.noteId, "status", "todo");
+            attributeService.createLabel(far.noteId, "status", "todo");
+
+            await runReasoning();
+            expect(near.getOwnedAttribute("label", "mark")?.value).toBe("yes");
+            expect(far.getOwnedAttribute("label", "mark")?.value).toBe("yes");
+
+            const status = near.getOwnedAttribute("label", "status");
+            expect(status).toBeTruthy();
+            if (!status) {
+                return;
+            }
+            status.value = "done";
+            status.save();
+            await runReasoningOn([{ noteId: near.noteId, kind: "label", name: "status" }]);
+
+            expect(near.getOwnedAttribute("label", "mark")).toBeNull();
+            expect(far.getOwnedAttribute("label", "mark")?.value).toBe("yes");
+        });
+    });
+
+    it("lets a citation leave the workspace", async () => {
+        await getContext().init(async () => {
+            const parish = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Library",
+                content: "",
+                type: "book",
+                attributes: [{ type: "label", name: "workspace", value: "" }]
+            }).note;
+            const book = noteService.createNewNote({
+                parentNoteId: parish.noteId,
+                title: "The book",
+                content: "",
+                type: "text"
+            }).note;
+            const essay = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Outside essay",
+                content: "",
+                type: "text"
+            }).note;
+            attributeService.createRelation(essay.noteId, "cites", book.noteId);
+            noteService.createNewNote({
+                parentNoteId: book.noteId,
+                title: "Cite rules",
+                type: "code",
+                mime: "text/plain",
+                content: `~listed(?citing, ?this) :- ~cites(?citing, ?this).`,
+                attributes: [{ type: "label", name: "reasoningRule", value: "" }]
+            });
+
+            await runReasoning();
+            expect(essay.getOwnedRelations("listed")[0]?.value).toBe(book.noteId);
         });
     });
 });

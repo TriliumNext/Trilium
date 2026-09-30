@@ -1,8 +1,9 @@
 <p>A reasoning rule is a note whose content is a list of if-then rules. The
   rules add <a href="#root/_help_zEY4DaJG4YT5">labels and relations</a> to
-  other notes. By default they describe only the note they sit under: in
-  a rule, <code>?this</code> is that parent. A rule that should apply to every
-  note in the database belongs on a concept note, and has to say so.</p>
+  other notes. In a rule, <code>?this</code> is the parent of the rule note.
+  A name with no path back to <code>?this</code> matches the <a href="#root/_help_9sRHySam5fXb">workspace</a> the
+  rule note is in, or the whole database when the rule note is not inside
+  one.</p>
 <h2>Creating a rule note</h2>
 <p>To add rules to a note, right-click it in the&nbsp;<a class="reference-link"
   href="#root/_help_oPVyFC7WL2Lp">Note Tree</a> and select <em>Insert child note</em>,
@@ -13,20 +14,21 @@
   rule on, or replace the comments with your own rules. Any text or code
   note with the <code>#reasoningRule</code> label is read the same way; the
   template already carries that label.</p>
-<p>A rule note placed directly under the root describes itself, not the whole
-  tree.</p>
+<p>A rule note placed directly under the root uses itself as <code>?this</code>.
+  A rule that does not use <code>?this</code> still matches the whole database,
+  unless the rule note sits inside a workspace.</p>
 <h2>Rules on one note</h2>
 <p>Under a note called <em>The Lord of the Rings</em>, a rule note can say:</p><pre><code class="language-text-x-trilium-auto">#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").
 ~listed(?citing, ?this) :- ~cites(?citing, ?this).</code></pre>
 <p>The first rule gives <code>#priority=high</code> to every direct child that
   has <code>#status=todo</code>. The second gives <code>~listed</code>, pointing
   back at the book, to every note that has <code>~cites</code> pointing at
-  the book. That citing note does not have to live under the book. What it
-  has to be is named in the rule by a path that starts at <code>?this</code>.</p>
-<p>A rule that names a note with no such path is refused. The rule note then
-  gets a <code>#reasoningError</code> label, and nothing is written. That is
-  what keeps a note that only records a fact, such as <code>#role=priest</code> on
-  a person, from quietly defining a rule about every person.</p>
+  the book. That citing note does not have to live under the book, or inside
+  the same workspace. A path that starts at <code>?this</code> can leave the
+  workspace.</p>
+<p>A name with no such path matches every note in the workspace, or every
+  note in the database when there is no workspace. <code>#mark(?task, "yes") :- #status(?task, "todo").</code> is
+  that kind of rule.</p>
 <h2>Rules on a template</h2>
 <p>Put the rule note inside a&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;note
   (one that has the <code>#template</code> label). Then <code>?this</code> is
@@ -35,14 +37,13 @@
 <p>On a <em>Project</em> template, every instance marks its to-do children
   with <code>#priority=high</code>, and marks itself <code>#blocked</code> when
   any note under it has <code>#status=blocked</code>.</p>
-<h2>Rules for the whole database</h2>
-<p>A rule that should match notes with no connection to one parent is a rule
-  about a concept. Add the <code>#reasoningSchema</code> label to that concept
-  note, put the rule note under it, and add <code>#reasoningScope=global</code> on
-  the rule note itself (the label has to be owned there, not only inherited).</p><pre><code class="language-text-x-trilium-auto">#authority(?person, "yes") :- #role(?person, "priest").</code></pre>
-<p>The concept note can also be a template: <code>#template</code> counts the
-  same way as <code>#reasoningSchema</code>. Without one of those labels,
-  a global rule is refused and the rule note gets <code>#reasoningError</code>.</p>
+<h2>Rules in a workspace</h2>
+<p>Put the rule note inside a workspace and a free name matches that workspace
+  only.</p><pre><code class="language-text-x-trilium-auto">#authority(?person, "yes") :- #role(?person, "priest").</code></pre>
+<p>Under a workspace, that rule marks every note in the workspace that has <code>#role=priest</code>,
+  and leaves notes outside it alone. Add <code>#reasoningScope=global</code> on
+  the rule note itself (the label has to be owned there, not only inherited)
+  to match the whole database even inside a workspace.</p>
 <h2>Writing a rule</h2>
 <ul>
   <li>One rule per clause, ending with a period. <code>//</code> starts a comment
@@ -63,7 +64,7 @@
     Comparisons are <code>=</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code> and <code>&gt;=</code>.</li>
   <li>Every name in the conclusion, and every name used under <code>not</code> or
     in a comparison, has to appear in an ordinary condition. <code>?this</code> already
-    counts, except in a global rule.</li>
+    counts when the rule uses it.</li>
 </ul>
 <h2>What the rules write</h2>
 <p>The conclusions are ordinary labels and relations, shown in the attributes
@@ -76,8 +77,8 @@
   the rule leaves it alone. Deleting it removes it, and the next run brings
   it back while the rule still holds. If the rule later concludes a different
   value, that value appears beside the one you kept.</p>
-<p>Rules run shortly after a note, a title, or an attribute changes, and
-  once when Trilium opens the database, if any rule notes exist. A problem
+<p>An edit rechecks the notes next to the change. Opening the database, or
+  editing a rule note, rechecks the workspace or the whole database. A problem
   in a rule is the <code>#reasoningError</code> label on the rule note. Fix
   the rule and the label is cleared on the next run.</p>
 <p>Deleting the rule note removes its conclusions on the next run. Deleting

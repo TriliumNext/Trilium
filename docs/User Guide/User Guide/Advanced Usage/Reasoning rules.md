@@ -1,5 +1,5 @@
 # Reasoning rules
-A reasoning rule is a note whose content is a list of if-then rules. The rules add [labels and relations](Attributes.md) to other notes. By default they describe only the note they sit under: in a rule, `?this` is that parent. A rule that should apply to every note in the database belongs on a concept note, and has to say so.
+A reasoning rule is a note whose content is a list of if-then rules. The rules add [labels and relations](Attributes.md) to other notes. In a rule, `?this` is the parent of the rule note. A name with no path back to `?this` matches the [workspace](../Basic%20Concepts%20and%20Features/Navigation/Workspaces.md) the rule note is in, or the whole database when the rule note is not inside one.
 
 ## Creating a rule note
 
@@ -7,7 +7,7 @@ To add rules to a note, right-click it in the <a class="reference-link" href=".
 
 The new note is a code note. Its content starts as comments that show the shape of a rule. Remove the `//` from a line to turn that rule on, or replace the comments with your own rules. Any text or code note with the `#reasoningRule` label is read the same way; the template already carries that label.
 
-A rule note placed directly under the root describes itself, not the whole tree.
+A rule note placed directly under the root uses itself as `?this`. A rule that does not use `?this` still matches the whole database, unless the rule note sits inside a workspace.
 
 ## Rules on one note
 
@@ -18,9 +18,9 @@ Under a note called _The Lord of the Rings_, a rule note can say:
 ~listed(?citing, ?this) :- ~cites(?citing, ?this).
 ```
 
-The first rule gives `#priority=high` to every direct child that has `#status=todo`. The second gives `~listed`, pointing back at the book, to every note that has `~cites` pointing at the book. That citing note does not have to live under the book. What it has to be is named in the rule by a path that starts at `?this`.
+The first rule gives `#priority=high` to every direct child that has `#status=todo`. The second gives `~listed`, pointing back at the book, to every note that has `~cites` pointing at the book. That citing note does not have to live under the book, or inside the same workspace. A path that starts at `?this` can leave the workspace.
 
-A rule that names a note with no such path is refused. The rule note then gets a `#reasoningError` label, and nothing is written. That is what keeps a note that only records a fact, such as `#role=priest` on a person, from quietly defining a rule about every person.
+A name with no such path matches every note in the workspace, or every note in the database when there is no workspace. `#mark(?task, "yes") :- #status(?task, "todo").` is that kind of rule.
 
 ## Rules on a template
 
@@ -33,15 +33,15 @@ Put the rule note inside a <a class="reference-link" href="Templates.md">Templa
 
 On a _Project_ template, every instance marks its to-do children with `#priority=high`, and marks itself `#blocked` when any note under it has `#status=blocked`.
 
-## Rules for the whole database
+## Rules in a workspace
 
-A rule that should match notes with no connection to one parent is a rule about a concept. Add the `#reasoningSchema` label to that concept note, put the rule note under it, and add `#reasoningScope=global` on the rule note itself (the label has to be owned there, not only inherited).
+Put the rule note inside a workspace and a free name matches that workspace only.
 
 ```
 #authority(?person, "yes") :- #role(?person, "priest").
 ```
 
-The concept note can also be a template: `#template` counts the same way as `#reasoningSchema`. Without one of those labels, a global rule is refused and the rule note gets `#reasoningError`.
+Under a workspace, that rule marks every note in the workspace that has `#role=priest`, and leaves notes outside it alone. Add `#reasoningScope=global` on the rule note itself (the label has to be owned there, not only inherited) to match the whole database even inside a workspace.
 
 ## Writing a rule
 
@@ -51,7 +51,7 @@ The concept note can also be a template: `#template` counts the same way as `#re
 *   `child(?parent, ?child)` is a direct child, and `parent(?child, ?parent)` is the reverse. `descendant(?ancestor, ?note)` is a child, or a child of a child, and so on. `title(?note, "Exact title")` and `type(?note, "text")` read the title and the note type.
 *   `@"Exact title"` names the one note with that title. Zero matches, or more than one, is an error.
 *   `not` in front of a condition excludes it, as in `not #status(?task, "done")`. Comparisons are `=`, `!=`, `<`, `>`, `<=` and `>=`.
-*   Every name in the conclusion, and every name used under `not` or in a comparison, has to appear in an ordinary condition. `?this` already counts, except in a global rule.
+*   Every name in the conclusion, and every name used under `not` or in a comparison, has to appear in an ordinary condition. `?this` already counts when the rule uses it.
 
 ## What the rules write
 
@@ -59,7 +59,7 @@ The conclusions are ordinary labels and relations, shown in the attributes list 
 
 To keep an inferred attribute after the rule stops concluding it, press <span class="tn-icon bx bx-pin"></span> _Keep this attribute_ on its row. Changing the value does the same: the attribute becomes a normal one, and the rule leaves it alone. Deleting it removes it, and the next run brings it back while the rule still holds. If the rule later concludes a different value, that value appears beside the one you kept.
 
-Rules run shortly after a note, a title, or an attribute changes, and once when Trilium opens the database, if any rule notes exist. A problem in a rule is the `#reasoningError` label on the rule note. Fix the rule and the label is cleared on the next run.
+An edit rechecks the notes next to the change. Opening the database, or editing a rule note, rechecks the workspace or the whole database. A problem in a rule is the `#reasoningError` label on the rule note. Fix the rule and the label is cleared on the next run.
 
 Deleting the rule note removes its conclusions on the next run. Deleting the note it describes deletes the child rule note with it.
 

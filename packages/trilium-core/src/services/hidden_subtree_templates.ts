@@ -390,13 +390,13 @@ export default function buildHiddenSubtreeTemplates() {
                 title: t("hidden_subtree_templates.reasoning-rule"),
                 icon: "bx-network-chart",
                 content: [
-                    "// Rules on this note apply to its parent. ?this is that parent.",
-                    "// Put the note inside a template and ?this is each instance of the template.",
-                    "// A rule that should apply everywhere needs #reasoningSchema on the parent",
-                    "// and #reasoningScope=global on this note.",
+                    "// ?this is the parent of this note. Inside a template, ?this is each instance.",
+                    "// A rule that does not use ?this matches the workspace this note is in,",
+                    "// or the whole database when there is no workspace.",
+                    "// #reasoningScope=global matches the whole database even inside a workspace.",
                     "//",
                     "// #priority(?task, \"high\") :- child(?this, ?task), #status(?task, \"todo\").",
-                    "// #blocked(?this) :- descendant(?this, ?task), #status(?task, \"blocked\").",
+                    "// #mark(?task, \"yes\") :- #status(?task, \"todo\").",
                     "// ~listed(?citing, ?this) :- ~cites(?citing, ?this)."
                 ].join("\n"),
                 attributes: [
