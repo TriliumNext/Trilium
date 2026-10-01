@@ -1,13 +1,18 @@
 import { type LabelType } from "./promoted_attribute_definition_parser.js";
 import {
+    REIFICATION_BINDING,
     REIFICATION_GENERATED_TITLE,
+    REIFICATION_INSTANCE,
     REIFICATION_KIND,
     REIFICATION_LITERAL,
     REIFICATION_OBJECT,
     REIFICATION_OF,
     REIFICATION_OF_PREDICATE,
+    REIFICATION_PATTERN,
     REIFICATION_PREDICATE,
-    REIFICATION_SUBJECT
+    REIFICATION_SUBJECT,
+    SELF_REIFICATION_GENERATED_TITLE,
+    SELF_REIFICATION_OF
 } from "./reification.js";
 
 /**
@@ -401,7 +406,12 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: REIFICATION_SUBJECT },
     { type: "relation", name: REIFICATION_OBJECT },
     // The note this sits on is the relation name itself, the concept rather than one instance.
-    { type: "label", name: REIFICATION_OF_PREDICATE, valueType: "text", hasUserValue: true }
+    { type: "label", name: REIFICATION_OF_PREDICATE, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_PATTERN, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_INSTANCE, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_BINDING, valueType: "text", hasUserValue: true },
+    { type: "label", name: SELF_REIFICATION_OF, valueType: "text", hasUserValue: true },
+    { type: "label", name: SELF_REIFICATION_GENERATED_TITLE, valueType: "text", hasUserValue: true }
 ] as const satisfies readonly (BuiltinLabel | BuiltinRelation)[];
 
 /**

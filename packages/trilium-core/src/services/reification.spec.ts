@@ -10,9 +10,17 @@ import {
     createPredicateConcept,
     deleteReification,
     findReificationNote,
+    listPredicateOptions,
     listReificationsIncluding,
+    defineReification,
+    expandReification,
+    refreshReificationInstance,
     reifyAttribute,
-    retarget
+    specifyReificationPlace,
+    retarget,
+    selfReifyNote,
+    specifyObject,
+    unspecifyObject
 } from "./reification.js";
 
 function makeNote(title: string): string {
@@ -172,5 +180,119 @@ describe("reification", () => {
         const kept = clsInit(() => connectPredicateConcept("hates", other));
         expect(kept.note.noteId).toBe(kindness);
         expect(() => clsInit(() => connectPredicateConcept("adores", kindness))).toThrow(ValidationError);
+    });
+
+    it("turns a label into a relation by specifying its object, and back into a label", () => {
+        const source = makeNote("Climate paper");
+        const label = clsInit(() => attributeService.createLabel(source, "certainty", "0.8"));
+        const token = clsInit(() => reifyAttribute(label.attributeId)).note;
+
+        expect(listPredicateOptions("certainty")).toEqual([]);
+
+        const specified = clsInit(() => specifyObject(label.attributeId));
+        expect(specified.created).toBe(true);
+        expect(specified.note.title).toBe("0.8");
+        expect(specified.note.getParentBranches().some((branch) => branch.parentNoteId === "_reifications")).toBe(false);
+        expect(becca.getNote(source)?.getOwnedRelations("certainty").map((relation) => relation.value)).toEqual([ specified.note.noteId ]);
+        expect(findReificationNote(specified.attributeId)?.noteId).toBe(token.noteId);
+        expect(token.getOwnedLabelValue("reificationKind")).toBe("relation");
+
+        clsInit(() => createPredicateConcept("certainty"));
+        expect(listPredicateOptions("certainty")).toEqual([ { noteId: specified.note.noteId, title: "0.8" } ]);
+
+        const high = makeNote("High");
+        const again = clsInit(() => attributeService.createLabel(source, "certainty", "high"));
+        const connected = clsInit(() => specifyObject(again.attributeId, high));
+        expect(connected.created).toBe(false);
+        expect(connected.note.noteId).toBe(high);
+        expect(listPredicateOptions("certainty").map((option) => option.title)).toEqual([ "0.8", "High" ]);
+
+        const unspecified = clsInit(() => unspecifyObject(specified.attributeId));
+        expect(unspecified.value).toBe("0.8");
+        expect(findReificationNote(unspecified.attributeId)?.noteId).toBe(token.noteId);
+        expect(token.getOwnedLabelValue("reificationKind")).toBe("label");
+        expect(listPredicateOptions("certainty").map((option) => option.noteId)).toEqual([ high ]);
+        expect(becca.getNote(specified.note.noteId)?.isDeleted).toBe(false);
+    });
+
+    it("names the note that talks about a note, one level at a time", () => {
+        const mary = makeNote("Mary");
+        const first = clsInit(() => selfReifyNote(mary));
+        expect(first.created).toBe(true);
+        expect(first.note.title).toBe("Mary'");
+        expect(first.note.getOwnedLabelValue("selfReificationOf")).toBe(mary);
+        expect(first.note.getParentBranches().some((branch) => branch.parentNoteId === "_reifications")).toBe(false);
+
+        const again = clsInit(() => selfReifyNote(mary));
+        expect(again.created).toBe(false);
+        expect(again.note.noteId).toBe(first.note.noteId);
+
+        const second = clsInit(() => selfReifyNote(first.note.noteId));
+        const third = clsInit(() => selfReifyNote(second.note.noteId));
+        const fourth = clsInit(() => selfReifyNote(third.note.noteId));
+        const fifth = clsInit(() => selfReifyNote(fourth.note.noteId));
+        expect(second.note.title).toBe("Mary''");
+        expect(third.note.title).toBe("Mary'''");
+        expect(fourth.note.title).toBe("Mary(4)");
+        expect(fifth.note.title).toBe("Mary(5)");
+
+        clsInit(() => {
+            const source = becca.getNoteOrThrow(mary);
+            source.title = "Maria";
+            source.save();
+            noteService.triggerNoteTitleChanged(source);
+        });
+        expect(becca.getNote(first.note.noteId)?.title).toBe("Maria'");
+        expect(becca.getNote(second.note.noteId)?.title).toBe("Maria''");
+
+        clsInit(() => {
+            first.note.title = "kept";
+            first.note.save();
+            const source = becca.getNoteOrThrow(mary);
+            source.title = "Marie";
+            source.save();
+            noteService.triggerNoteTitleChanged(source);
+        });
+        expect(becca.getNote(first.note.noteId)?.title).toBe("kept");
+        expect(becca.getNote(second.note.noteId)?.title).toBe("Maria''");
+    });
+
+    it("fills a formula from the places that were given and leaves the rest empty", () => {
+        const pattern = clsInit(() => defineReification("helloFormula(A, B) = R(A, B), B'"));
+        expect(pattern.pattern).toBe("helloFormula(A, B) = R(A, B); B'");
+
+        const ann = makeNote("Ann");
+        const bob = makeNote("Bob");
+        const instance = clsInit(() => expandReification("helloFormula", { A: ann })).note;
+        expect(instance.title).toBe("helloFormula(Ann, B)");
+        expect(instance.getChildNotes().map((note) => note.title)).toEqual([ "Ann" ]);
+
+        const again = clsInit(() => expandReification("helloFormula", { A: ann }));
+        expect(again.note.noteId).toBe(instance.noteId);
+
+        const blank = clsInit(() => expandReification("helloFormula")).note;
+        expect(blank.title).toBe("helloFormula(A, B)");
+        expect(blank.noteId).not.toBe(instance.noteId);
+        expect(blank.getChildNotes()).toHaveLength(0);
+
+        clsInit(() => specifyReificationPlace(instance.noteId, "B", bob));
+        const titles = instance.getChildNotes().map((note) => note.title);
+        expect(titles).toContain("Bob");
+        expect(titles).toContain("R(Ann, Bob)");
+        expect(titles).toContain("Bob'");
+        const lifted = instance.getChildNotes().find((note) => note.title === "Bob'");
+        expect(lifted?.getOwnedLabelValue("selfReificationOf")).toBe(bob);
+
+        clsInit(() => defineReification("helloFormula(A, B) = R(A, B); B'; A'"));
+        clsInit(() => refreshReificationInstance(instance.noteId));
+        expect(instance.getChildNotes().map((note) => note.title)).toContain("Ann'");
+
+        clsInit(() => defineReification("outerFormula(A, B) = helloFormula(A, B)"));
+        const outer = clsInit(() => expandReification("outerFormula", { A: ann, B: bob })).note;
+        const token = outer.getChildNotes().find((note) => note.title === "helloFormula(Ann, Bob)");
+        expect(token?.getOwnedLabelValue("reificationOf")).toBeTruthy();
+        expect(token?.getOwnedLabelValue("reificationInstance")).toBeFalsy();
+
+        expect(() => clsInit(() => defineReification("wideFormula(A, B, C) = mystery(A, B, C)"))).toThrow(/mystery/);
     });
 });

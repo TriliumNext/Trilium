@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildReificationTitle, isReificationStructuralName, predicateForTitle, REIFICATION_TITLE_MAX_LENGTH } from "./reification.js";
+import { buildReificationTitle, formatReificationDefinition, isReificationStructuralName, nextSelfReificationTitle, parseReificationDefinition, predicateForTitle, REIFICATION_TITLE_MAX_LENGTH } from "./reification.js";
 
 describe("predicateForTitle", () => {
     it("splits camelCase and underscores into words", () => {
@@ -59,11 +59,71 @@ describe("buildReificationTitle", () => {
     });
 });
 
+describe("nextSelfReificationTitle", () => {
+    it("marks the first three levels with primes and numbers them from the fourth", () => {
+        expect(nextSelfReificationTitle("B")).toBe("B'");
+        expect(nextSelfReificationTitle("B'")).toBe("B''");
+        expect(nextSelfReificationTitle("B''")).toBe("B'''");
+        expect(nextSelfReificationTitle("B'''")).toBe("B(4)");
+        expect(nextSelfReificationTitle("B(4)")).toBe("B(5)");
+        expect(nextSelfReificationTitle("B(12)")).toBe("B(13)");
+        expect(nextSelfReificationTitle("B(3)")).toBe("B(3)'");
+        expect(nextSelfReificationTitle("   ")).toBe("note'");
+    });
+});
+
+describe("parseReificationDefinition", () => {
+    it("reads a formula as a name, its places, and the notes it creates", () => {
+        const definition = parseReificationDefinition(
+            "argument(A, B, C, D) = R1(A, B); R2(B, C); C'; R3(C', D); R1(A, B)'"
+        );
+        expect(definition).toEqual({
+            name: "argument",
+            params: [ "A", "B", "C", "D" ],
+            terms: [
+                { name: "R1", level: 0, args: [ { name: "A", level: 0 }, { name: "B", level: 0 } ] },
+                { name: "R2", level: 0, args: [ { name: "B", level: 0 }, { name: "C", level: 0 } ] },
+                { name: "C", level: 1 },
+                {
+                    name: "R3",
+                    level: 0,
+                    args: [ { name: "C", level: 1 }, { name: "D", level: 0 } ]
+                },
+                { name: "R1", level: 1, args: [ { name: "A", level: 0 }, { name: "B", level: 0 } ] }
+            ]
+        });
+        expect(definition ? formatReificationDefinition(definition) : "").toBe(
+            "argument(A, B, C, D) = R1(A, B); R2(B, C); C'; R3(C', D); R1(A, B)'"
+        );
+        const fromCommas = parseReificationDefinition("Hello(A, B) = R(A, B), B'");
+        expect(fromCommas ? formatReificationDefinition(fromCommas) : "").toBe("Hello(A, B) = R(A, B); B'");
+
+        const composed = parseReificationDefinition(
+            "complex_argument(A, B, C, D, E) = argument(A, B, C, D); argument(E, B, C, D); R1(A, E)"
+        );
+        expect(composed?.name).toBe("complex_argument");
+        expect(composed?.terms[0]).toEqual({
+            name: "argument",
+            level: 0,
+            args: [
+                { name: "A", level: 0 },
+                { name: "B", level: 0 },
+                { name: "C", level: 0 },
+                { name: "D", level: 0 }
+            ]
+        });
+        expect(parseReificationDefinition("C(4)")).toBeNull();
+        expect(parseReificationDefinition("argument(A) = A''''")).toBeNull();
+        expect(parseReificationDefinition("argument(A, A) = A")).toBeNull();
+    });
+});
+
 describe("isReificationStructuralName", () => {
     it("recognizes the projection attributes and nothing else", () => {
         expect(isReificationStructuralName("reificationOf")).toBe(true);
         expect(isReificationStructuralName("reificationObject")).toBe(true);
         expect(isReificationStructuralName("reificationOfPredicate")).toBe(true);
+        expect(isReificationStructuralName("selfReificationOf")).toBe(true);
         expect(isReificationStructuralName("supports")).toBe(false);
     });
 });

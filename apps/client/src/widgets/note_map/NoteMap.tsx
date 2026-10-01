@@ -65,6 +65,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ fixNodes, setFixNodes ] = useState(false);
     const [ linkDistance, setLinkDistance ] = useState(40);
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
+    // Bumped when a relation is turned back into a label, so the line leaves the map.
+    const [ mapEpoch, setMapEpoch ] = useState(0);
     const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData>();
     const collapsedRef = useRef(new Set<string>());
@@ -213,7 +215,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                         }
                         collapsedRef.current.add(link.id);
                         showView(false);
-                    });
+                    }, () => setMapEpoch((epoch) => epoch + 1));
                 });
 
             // Set data
@@ -229,7 +231,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph._destructor();
             container.replaceChildren();
         };
-    }, [ note, mapType, bypassLimit, themeStyle ]);
+    }, [ note, mapType, bypassLimit, themeStyle, mapEpoch ]);
 
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
@@ -410,7 +412,7 @@ interface PredicateConcept {
  * Right-click on a relation: fold that instance, open a reification that already
  * includes it, or open the concept of the relation name itself.
  */
-async function showRelationMenu(link: NoteMapLinkObject, event: MouseEvent, fold: () => void) {
+async function showRelationMenu(link: NoteMapLinkObject, event: MouseEvent, fold: () => void, reload: () => void) {
     const sourceId = linkEndId(link.source);
     const targetId = linkEndId(link.target);
     const predicate = link.name.split(",")[0]?.trim() ?? "";
@@ -425,9 +427,20 @@ async function showRelationMenu(link: NoteMapLinkObject, event: MouseEvent, fold
 
     const seen = new Set<string>();
     const listed: ReificationListItem[] = [];
-    for (const attributeId of await relationAttributeIds(sourceId, targetId, link.name)) {
+    const rows = await relationRows(sourceId, targetId, link.name);
+    for (const row of rows) {
+        if (!row.owned) {
+            continue;
+        }
+        items.push({
+            title: t("note_map.make_attribute", { name: row.predicate }),
+            command: `unspecify:${row.attributeId}`,
+            uiIcon: "bx bx-hash"
+        });
+    }
+    for (const row of rows) {
         try {
-            const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${attributeId}/reifications`);
+            const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${row.attributeId}/reifications`);
             for (const item of response.items) {
                 if (seen.has(item.noteId)) {
                     continue;
@@ -487,17 +500,22 @@ async function showRelationMenu(link: NoteMapLinkObject, event: MouseEvent, fold
         y: event.pageY,
         items,
         selectMenuItemHandler: ({ command }) => {
-            void applyRelationCommand(command, fold);
+            void applyRelationCommand(command, fold, reload);
         }
     });
 }
 
-async function applyRelationCommand(command: string | undefined, fold: () => void) {
+async function applyRelationCommand(command: string | undefined, fold: () => void, reload: () => void) {
     if (!command) {
         return;
     }
     if (command === "fold") {
         fold();
+        return;
+    }
+    if (command.startsWith("unspecify:")) {
+        await server.remove(`attributes/${command.slice("unspecify:".length)}/object`);
+        reload();
         return;
     }
     if (command.startsWith("open:") || command.startsWith("concept-open:")) {
@@ -571,29 +589,37 @@ function linkEndName(end: NoteMapLinkObject["source"]): string {
     return "";
 }
 
-async function relationAttributeIds(sourceNoteId: string, targetNoteId: string, names: string): Promise<string[]> {
+async function relationRows(
+    sourceNoteId: string,
+    targetNoteId: string,
+    names: string
+): Promise<{ attributeId: string; predicate: string; owned: boolean }[]> {
     const source = await froca.getNote(sourceNoteId);
     if (!source) {
         return [];
     }
-    const ids: string[] = [];
+    const rows: { attributeId: string; predicate: string; owned: boolean }[] = [];
+    const seen = new Set<string>();
     for (const name of names.split(",")) {
         const predicate = name.trim();
         if (!predicate) {
             continue;
         }
-        const attributes = [
-            ...source.getOwnedRelations(predicate),
-            ...source.getRelations(predicate)
-        ];
+        const owned = source.getOwnedRelations(predicate);
+        const attributes = [ ...owned, ...source.getRelations(predicate) ];
         for (const attribute of attributes) {
-            if (attribute.value !== targetNoteId || ids.includes(attribute.attributeId)) {
+            if (attribute.value !== targetNoteId || seen.has(attribute.attributeId)) {
                 continue;
             }
-            ids.push(attribute.attributeId);
+            seen.add(attribute.attributeId);
+            rows.push({
+                attributeId: attribute.attributeId,
+                predicate,
+                owned: owned.some((item) => item.attributeId === attribute.attributeId)
+            });
         }
     }
-    return ids;
+    return rows;
 }
 
 /** Creates the note for a folded relation, if it does not exist yet, and opens it. */

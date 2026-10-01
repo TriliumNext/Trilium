@@ -1,3 +1,26 @@
+.modal.formula-places-dialog {
+    .formula-places-hint {
+        margin-bottom: 0.75em;
+    }
+
+    .formula-place {
+        display: flex;
+        align-items: center;
+        gap: 0.75em;
+        margin-bottom: 0.5em;
+    }
+
+    .formula-place-name {
+        font-weight: bold;
+        min-width: 4em;
+    }
+
+    .formula-place-value {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
 .component.note-badges {
     contain: none;
 }
@@ -24,6 +47,17 @@
         &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
         &.snippet-badge {--color: var(--badge-snippet-background-color);}
+        &.self-reification-badge,
+        &.pattern-badge,
+        &.places-badge {
+            --color: var(--main-text-color);
+
+            .text {
+                max-width: 16em;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
         &.save-status-badge {
             --default-opacity: 0.4;
             opacity: var(--default-opacity);

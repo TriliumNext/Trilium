@@ -1,17 +1,35 @@
 import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
 import appContext, { type CommandNames } from "../components/app_context.js";
+import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
+import { openSelfReification, selfReificationMenuTitle } from "../services/self_reification.js";
 import utils, { isMobile } from "../services/utils.js";
 import { getClosestNtxId } from "../widgets/widget_utils.js";
 import contextMenu, { type ContextMenuEvent, type MenuItem } from "./context_menu.js";
 
-function openContextMenu(notePath: string, e: ContextMenuEvent, viewScope: ViewScope = {}, hoistedNoteId: string | null = null) {
+type LinkMenuCommand = CommandNames | "selfReify";
+
+async function openContextMenu(notePath: string, e: ContextMenuEvent, viewScope: ViewScope = {}, hoistedNoteId: string | null = null) {
+    const items: MenuItem<LinkMenuCommand>[] = [ ...getItems(e) as MenuItem<LinkMenuCommand>[] ];
+    const noteId = notePath.split("/").pop();
+    if (noteId) {
+        const note = await froca.getNote(noteId);
+        if (note && note.type !== "search") {
+            items.push({ kind: "separator" });
+            items.push({
+                title: await selfReificationMenuTitle(noteId, note.title),
+                command: "selfReify",
+                uiIcon: "bx bx-chevrons-up"
+            });
+        }
+    }
+
     contextMenu.show({
         x: e.pageX,
         y: e.pageY,
-        items: getItems(e),
+        items,
         selectMenuItemHandler: ({ command }) => handleLinkContextMenuItem(command, e, notePath, viewScope, hoistedNoteId)
     });
 }
@@ -73,6 +91,12 @@ function handleLinkContextMenuItem(command: string | undefined, e: ContextMenuEv
         return true;
     } else if (command === "openNoteInPopup") {
         appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath, viewScope });
+        return true;
+    } else if (command === "selfReify") {
+        const noteId = notePath.split("/").pop();
+        if (noteId) {
+            void openSelfReification(noteId);
+        }
         return true;
     }
 

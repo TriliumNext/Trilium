@@ -163,4 +163,98 @@ describe("Reification API (core)", () => {
         const missing = await api.post(`/api/attributes/missingAttribute/reification`);
         expect(missing.status).toBe(404);
     });
+
+    it("turns a label into a relation by specifying the object, and back into a label", async () => {
+        const source = await createTextNote(api, { title: "Climate paper" });
+        const created = await api.put<{ attributeId: string }>(`/api/notes/${source.noteId}/attribute`, {
+            body: { type: "label", name: "assurance", value: "0.8" }
+        });
+        const attributeId = created.body.attributeId;
+
+        const bare = await api.get<{ options: unknown[] }>(`/api/reification-concepts/assurance/options`);
+        expect(bare.status).toBe(200);
+        expect(bare.body.options).toEqual([]);
+
+        await api.post(`/api/reification-concepts/assurance`);
+        const specified = await api.post<{ noteId: string; title: string; attributeId: string; created: boolean }>(
+            `/api/attributes/${attributeId}/object`
+        );
+        expect(specified.status).toBe(200);
+        expect(specified.body.created).toBe(true);
+        expect(specified.body.title).toBe("0.8");
+
+        const options = await api.get<{ options: { noteId: string; title: string }[] }>(
+            `/api/reification-concepts/assurance/options`
+        );
+        expect(options.body.options).toEqual([ { noteId: specified.body.noteId, title: "0.8" } ]);
+
+        const back = await api.delete<{ attributeId: string; value: string }>(
+            `/api/attributes/${specified.body.attributeId}/object`
+        );
+        expect(back.status).toBe(200);
+        expect(back.body.value).toBe("0.8");
+    });
+
+    it("creates the note that talks about a note, and returns the same one again", async () => {
+        const mary = await createTextNote(api, { title: "Mary Toulmin" });
+        const missing = await api.get<{ noteId: string | null }>(`/api/notes/${mary.noteId}/self-reification`);
+        expect(missing.status).toBe(200);
+        expect(missing.body.noteId).toBeNull();
+
+        const created = await api.post<{ noteId: string; title: string; created: boolean }>(
+            `/api/notes/${mary.noteId}/self-reification`
+        );
+        expect(created.status).toBe(200);
+        expect(created.body.created).toBe(true);
+        expect(created.body.title).toBe("Mary Toulmin'");
+
+        const again = await api.post<{ noteId: string; created: boolean }>(
+            `/api/notes/${mary.noteId}/self-reification`
+        );
+        expect(again.body.created).toBe(false);
+        expect(again.body.noteId).toBe(created.body.noteId);
+
+        const found = await api.get<{ noteId: string | null; title: string | null }>(
+            `/api/notes/${mary.noteId}/self-reification`
+        );
+        expect(found.body).toEqual({ noteId: created.body.noteId, title: "Mary Toulmin'" });
+    });
+
+    it("stores a formula on its concept and fills it", async () => {
+        const saved = await api.put<{ pattern: string }>(`/api/reification-concepts/apiArgument/pattern`, {
+            body: { pattern: "apiArgument(A, B) = R(A, B); A'" }
+        });
+        expect(saved.status).toBe(200);
+        expect(saved.body.pattern).toBe("apiArgument(A, B) = R(A, B); A'");
+
+        const created = await api.post<{ noteId: string; title: string }>(`/api/reification-concepts/apiArgument/instance`);
+        expect(created.status).toBe(200);
+        expect(created.body.title).toBe("apiArgument(A, B)");
+
+        const ann = await createTextNote(api, { title: "Ann" });
+        const filled = await api.post<{ noteId: string; title: string }>(`/api/reification-concepts/apiArgument/instance`, {
+            body: { notes: { A: ann.noteId } }
+        });
+        expect(filled.status).toBe(200);
+        expect(filled.body.title).toBe("apiArgument(Ann, B)");
+
+        const places = await api.post<{ places: { name: string; noteId: string | null; title: string | null }[] }>(
+            `/api/notes/${filled.body.noteId}/reification-places`
+        );
+        expect(places.status).toBe(200);
+        expect(places.body.places[1]).toEqual({ name: "B", noteId: null, title: null });
+
+        const bob = await createTextNote(api, { title: "Bob" });
+        const specified = await api.post<{ places: { title: string | null }[] }>(
+            `/api/notes/${filled.body.noteId}/reification-places/B`,
+            { body: { noteId: bob.noteId } }
+        );
+        expect(specified.status).toBe(200);
+        expect(specified.body.places[1]?.title).toBe("Bob");
+
+        const wrong = await api.put(`/api/reification-concepts/apiArgument/pattern`, {
+            body: { pattern: "otherName(A) = A" }
+        });
+        expect(wrong.status).toBe(400);
+    });
 });

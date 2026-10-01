@@ -72,7 +72,34 @@
   map, right-click the line. If the concept already exists, <em>Go to loves</em> opens
   it. Otherwise <em>Create loves in inbox</em> files a new note in the inbox,
   and <em>Connect loves to a note</em> points the name at a note you already
-  have. There is one concept per relation name.</p>
+  have. In the attributes list, hover the row and press <em>Go to loves</em>.
+  That opens the same note, creating it the first time. There is one concept
+  per relation name. Beside its title, <code>loves'</code> opens the relation
+  name one level up. <code>loves(John, Mary)'</code> is a different note: the
+  statement one level up, reached by self-reifying that statement.</p>
+<p>A label is that same statement with the other end left as text. <code>confidence(Climate paper, 0.8)</code> is
+  an attribute; once <code>0.8</code> is a note, it is a relation. In the attributes
+  list, hover a label and press <em>Make a relation</em>. <em>Create 0.8 in inbox</em> files
+  a note for that value, and <em>Connect to a note</em> uses one you already
+  have. Hover a relation and press <em>Make an attribute</em> to put the other
+  note's title back into a label. On a link map, the line's menu offers the
+  same for a relation. Once the name is a concept, notes already used as
+  its other end are offered as choices. Until then the name has no choices
+  of its own.</p>
+<p>A note can be reified itself: the statement about that statement. Right-click
+  the note and choose <em>Self-reify as Mary'</em>. The next levels are <code>Mary''</code>, <code>Mary'''</code>,
+  then <code>Mary(4)</code>. A note that is already a reification, or already
+  one of these levels, shows that next title beside its name. <code>Mary'</code> does
+  not take on Mary's relations. A relation of that higher note is written
+  on it, as <code>R(Mary', Mark)</code>.</p>
+<p>A concept can carry a formula. On the concept, choose <em>Define Hello</em> and
+  write <code>Hello(A, B) = R(A, B); B'</code>. Semicolons separate the notes
+  it creates. <em>New Hello</em> asks which note fills each place, and a place
+  can stay empty. A relation with no formula is just that relation, <code>R(A, B)</code>. <code>B'</code> is
+  B one level up. The formula does not expand another formula. On the note
+  the formula made, <em>Specify B</em> fills a place that was left empty, and
+  leaving it empty is fine. Filling the same places again opens the note
+  already made for them.</p>
 <p>In the attributes list, hover a row and press the turn-into-note button.
   On a <a class="reference-link" href="#root/_help_iRwzGnHPzonm">relation map</a>,
   click a relation. The two notes and the arrow become one circle, and clicking

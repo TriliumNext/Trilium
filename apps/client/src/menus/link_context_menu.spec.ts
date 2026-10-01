@@ -20,6 +20,19 @@ vi.mock("./context_menu", () => ({ default: { show: mocks.show } }));
 
 vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
 
+vi.mock("../services/froca", () => ({
+    default: {
+        getNote: vi.fn(async () => ({ noteId: "n1", title: "Mary", type: "text" }))
+    }
+}));
+
+vi.mock("../services/server", () => ({
+    default: {
+        get: vi.fn(async () => ({ noteId: null, title: null })),
+        post: vi.fn(async () => ({ noteId: "meta-1" }))
+    }
+}));
+
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
     isMobile: mocks.isMobile
@@ -191,12 +204,13 @@ describe("handleLinkContextMenuItem", () => {
 });
 
 describe("openContextMenu", () => {
-    it("shows the menu at the pointer and routes the chosen item with the link's own state", () => {
-        linkContextMenu.openContextMenu("root/n1", contextMenuEvent(), VIEW_SCOPE, "explicitHoist");
+    it("shows the menu at the pointer and routes the chosen item with the link's own state", async () => {
+        await linkContextMenu.openContextMenu("root/n1", contextMenuEvent(), VIEW_SCOPE, "explicitHoist");
 
         const shown = mocks.show.mock.calls[0][0];
         expect(shown).toMatchObject({ x: 12, y: 34 });
-        expect(shown.items).toHaveLength(4);
+        expect(shown.items).toHaveLength(6);
+        expect(shown.items[5].command).toBe("selfReify");
 
         shown.selectMenuItemHandler({ command: "openNoteInPopup" });
         expect(mocks.triggerCommand).toHaveBeenCalledWith("openInPopup", {
