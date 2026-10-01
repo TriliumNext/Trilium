@@ -28,9 +28,13 @@ const NOTE_BOX_TARGET_CONFIG = {
 
 interface NoteBoxProps extends MapDataNoteEntry {
     mapApiRef: RefObject<RelationMapApi>;
+    /** Opens this note as the center of the map, or the menu of a collapsed relation. */
+    onFocus: (noteId: string, event: MouseEvent) => void;
+    /** Right-click puts a folded fact back into its two notes. */
+    onUnfold?: () => void;
 }
 
-export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {
+export function NoteBox({ noteId, x, y, mapApiRef, onFocus, onUnfold }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
     useEffect(() => {
@@ -45,8 +49,27 @@ export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {
         <JsPlumbItem
             id={noteIdToId(noteId)}
             className={`note-box ${note?.getCssClass()}`}
-            onContextMenu={contextMenuHandler}
+            onContextMenu={(event) => {
+                if (!onUnfold) {
+                    contextMenuHandler(event);
+                    return;
+                }
+                event.preventDefault();
+                onUnfold();
+            }}
             x={x} y={y}
+            onClick={(event) => {
+                const target = event.target instanceof Element ? event.target : null;
+                if (!target?.closest("a")) {
+                    return;
+                }
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                onFocus(noteId, event);
+            }}
             draggable={{
                 start() {},
                 drag() {},

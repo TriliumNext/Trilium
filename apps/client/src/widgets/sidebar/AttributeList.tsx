@@ -6,12 +6,13 @@ import { ComponentChildren } from "preact";
 import { createPortal } from "preact/compat";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { isBuiltinAttribute } from "../../services/attributes";
-import dialog from "../../services/dialog";
+import dialog, { chooseNote } from "../../services/dialog";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isMobile } from "../../services/utils";
@@ -295,6 +296,29 @@ export default function AttributeList() {
         await save();
     }
 
+    async function openPredicateConcept(attribute: Attribute) {
+        if (!attribute.name) {
+            return;
+        }
+        const result = await server.post<{ noteId: string }>(`reification-concepts/${encodeURIComponent(attribute.name)}`);
+        appContext.tabManager.openContextWithNote(result.noteId, { placement: "afterCurrent" });
+    }
+
+    async function reifyAttribute(attribute: Attribute) {
+        if (!attribute.attributeId) {
+            return;
+        }
+        const result = await server.post<{ noteId: string }>(`attributes/${attribute.attributeId}/reification`);
+        appContext.tabManager.openContextWithNote(result.noteId, { placement: "afterCurrent" });
+    }
+
+    async function unspecifyObject(attribute: Attribute) {
+        if (!attribute.attributeId) {
+            return;
+        }
+        await server.remove(`attributes/${attribute.attributeId}/object`);
+    }
+
     const sections = splitIntoSections(owned.current, inherited.current);
     const internalRows = internal.current.map((attribute) => toEntry(attribute, true));
     // Not built for an attribute the list no longer holds: a reload can rebuild the rows out from
@@ -341,7 +365,11 @@ export default function AttributeList() {
         valueEditor,
         onOpen: openDetail,
         onEditValue: startValueEdit,
-        onDelete: (attribute: Attribute) => void deleteAttribute(attribute)
+        onDelete: (attribute: Attribute) => void deleteAttribute(attribute),
+        onReify: (attribute: Attribute) => void reifyAttribute(attribute),
+        onOpenConcept: (attribute: Attribute) => void openPredicateConcept(attribute),
+        onSpecify: (attribute: Attribute, event: MouseEvent) => void openSpecifyMenu(attribute, event),
+        onUnspecify: (attribute: Attribute) => void unspecifyObject(attribute)
     };
     // The cards a section has nothing for are left out, so an ordinary note sees one or two of the four.
     const shownCards = 1
@@ -528,6 +556,80 @@ function AttributeSection({ id, title, children, buttons, grow }: AttributeSecti
     );
 }
 
+interface ObjectOption {
+    noteId: string;
+    title: string;
+}
+
+/**
+ * Gives a label a note for its object: one already used for this name, a new note
+ * in the inbox titled with the label's text, or a note the reader picks.
+ */
+async function openSpecifyMenu(attribute: Attribute, event: MouseEvent) {
+    const attributeId = attribute.attributeId;
+    if (!attributeId || !attribute.name) {
+        return;
+    }
+    const named = attribute.value?.trim() || attribute.name;
+    let options: ObjectOption[] = [];
+    try {
+        const response = await server.get<{ options: ObjectOption[] }>(
+            `reification-concepts/${encodeURIComponent(attribute.name)}/options`
+        );
+        options = response.options;
+    } catch {
+        // The name can be asked about before its concept exists. Creating and connecting still work.
+    }
+
+    const items: MenuItem<string>[] = [];
+    for (const option of options) {
+        items.push({ title: option.title, command: `option:${option.noteId}`, uiIcon: "bx bx-note" });
+    }
+    if (options.length > 0) {
+        items.push({ kind: "separator" });
+    }
+    items.push({
+        title: t("attribute_list_panel.create_object", { name: named }),
+        command: "create",
+        uiIcon: "bx bx-inbox"
+    });
+    items.push({
+        title: t("attribute_list_panel.connect_object"),
+        command: "connect",
+        uiIcon: "bx bx-link"
+    });
+
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items,
+        selectMenuItemHandler: ({ command }) => {
+            void applySpecifyCommand(attributeId, command);
+        }
+    });
+}
+
+async function applySpecifyCommand(attributeId: string, command: string | undefined) {
+    if (!command) {
+        return;
+    }
+    if (command === "create") {
+        await server.post(`attributes/${attributeId}/object`);
+        return;
+    }
+    if (command === "connect") {
+        const chosen = await chooseNote({ title: t("attribute_list_panel.connect_object") });
+        if (!chosen) {
+            return;
+        }
+        await server.post(`attributes/${attributeId}/object`, { noteId: chosen });
+        return;
+    }
+    if (command.startsWith("option:")) {
+        await server.post(`attributes/${attributeId}/object`, { noteId: command.slice("option:".length) });
+    }
+}
+
 interface AttributeRowListProps {
     rows: AttributeEntry[];
     /** The note the rows belong to, read for the definitions that type their values. */
@@ -547,6 +649,13 @@ interface AttributeRowListProps {
     /** Asks for the in-place editor over the attribute's value; wired to editable labels alone. */
     onEditValue: (attribute: Attribute) => void;
     onDelete: (attribute: Attribute) => void;
+    onReify: (attribute: Attribute) => void;
+    /** Opens the note that is this name, creating it the first time. */
+    onOpenConcept: (attribute: Attribute) => void;
+    /** Opens the menu that gives a label a note for its object. */
+    onSpecify: (attribute: Attribute, event: MouseEvent) => void;
+    /** Turns a relation back into a label, keeping the object's title as the text. */
+    onUnspecify: (attribute: Attribute) => void;
 }
 
 /**
@@ -554,7 +663,7 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete, onReify, onOpenConcept, onSpecify, onUnspecify }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
@@ -582,6 +691,15 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, 
                             ? () => onEditValue(attribute)
                             : undefined}
                         onDelete={isOwned && !readOnly ? () => onDelete(attribute) : undefined}
+                        onReify={!readOnly && !isSystem && attribute.attributeId ? () => onReify(attribute) : undefined}
+                        onOpenConcept={!isSystem && attribute.name ? () => onOpenConcept(attribute) : undefined}
+                        onSpecify={isOwned && !readOnly && !isSystem && attribute.attributeId && getAttributeKind(attribute) === "label"
+                            ? (event) => onSpecify(attribute, event)
+                            : undefined}
+                        onUnspecify={isOwned && !readOnly && !isSystem && attribute.attributeId && attribute.value
+                            && getAttributeKind(attribute) === "relation"
+                            ? () => onUnspecify(attribute)
+                            : undefined}
                     />
                 ))}
             </ul>
@@ -618,9 +736,14 @@ interface AttributeRowProps {
     /** Starts the in-place edit of the value; absent for rows whose value is not edited in place. */
     onEditValue?: () => void;
     onDelete?: () => void;
+    onReify?: () => void;
+    /** Opens the note that is this attribute's name, creating it the first time. */
+    onOpenConcept?: () => void;
+    onSpecify?: (event: MouseEvent) => void;
+    onUnspecify?: () => void;
 }
 
-function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete }: AttributeRowProps) {
+function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete, onReify, onOpenConcept, onSpecify, onUnspecify }: AttributeRowProps) {
     const rowRef = useRef<HTMLLIElement>(null);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
@@ -659,8 +782,56 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
             {/* The row's actions float over its trailing end on hover rather than reserving room in
                 it (see the stylesheet), so the values keep the whole edge to themselves. Put away
                 while the row's editor is open, whose field already is the edit. */}
-            {(onDelete || (onEditValue && attrType === "relation")) && !valueEditor && (
+            {(onDelete || onReify || onOpenConcept || onSpecify || onUnspecify || (onEditValue && attrType === "relation")) && !valueEditor && (
                 <span class="attribute-row-actions">
+                    {onSpecify && (
+                        <ActionButton
+                            className="attribute-specify-button"
+                            icon="bx bx-transfer"
+                            text={t("attribute_list_panel.make_relation")}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSpecify(e);
+                            }}
+                        />
+                    )}
+
+                    {onUnspecify && (
+                        <ActionButton
+                            className="attribute-unspecify-button"
+                            icon="bx bx-hash"
+                            text={t("attribute_list_panel.make_attribute")}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUnspecify();
+                            }}
+                        />
+                    )}
+
+                    {onOpenConcept && (
+                        <ActionButton
+                            className="attribute-concept-button"
+                            icon="bx bx-cube"
+                            text={t("note_map.go_to_concept", { name: attribute.name })}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenConcept();
+                            }}
+                        />
+                    )}
+
+                    {onReify && (
+                        <ActionButton
+                            className="attribute-reify-button"
+                            icon="bx bx-git-commit"
+                            text={t("attribute_list_panel.reify")}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onReify();
+                            }}
+                        />
+                    )}
+
                     {/* A relation's value is a link and stays one, so its edit has a way in of its own. */}
                     {onEditValue && attrType === "relation" && (
                         <ActionButton

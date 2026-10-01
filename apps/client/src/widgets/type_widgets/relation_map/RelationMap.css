@@ -85,3 +85,45 @@
 .note-detail-relation-map .ui-contextmenu {
     z-index: 100;
 }
+
+.note-detail-relation-map .reification-token {
+    position: absolute;
+    z-index: 5;
+    background-color: var(--accented-background-color);
+    color: var(--main-text-color);
+    border: 1px solid #666;
+    cursor: pointer;
+}
+
+.note-detail-relation-map .reification-token.relation {
+    width: 1em;
+    height: 1em;
+    background: none;
+    border: none;
+}
+
+.note-detail-relation-map .reification-token.label {
+    max-width: 160px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+}
+
+.note-detail-relation-map .reification-token.label .token-title {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.note-detail-relation-map .reification-token.relation .endpoint {
+    inset: 0;
+    bottom: 0;
+    inset-inline-end: 0;
+}
+
+.note-detail-relation-map .reification-token.label .endpoint {
+    bottom: auto;
+    inset-inline-end: -6px;
+    inset-block-start: 4px;
+}

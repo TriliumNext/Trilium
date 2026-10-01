@@ -1,5 +1,6 @@
 import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons";
 import branchService from "./branches";
+import reificationService from "./reification.js";
 import eraseService from "./erase.js";
 
 import becca from "../becca/becca.js";
@@ -72,6 +73,7 @@ const ACTION_HANDLERS: ActionHandlerMap = {
             const newLabel = label.createClone("label", action.newLabelName, label.value);
 
             newLabel.save();
+            reificationService.retarget(label, newLabel);
             label.markAsDeleted();
         }
     },
@@ -81,6 +83,7 @@ const ACTION_HANDLERS: ActionHandlerMap = {
             const newRelation = relation.createClone("relation", action.newRelationName, relation.value);
 
             newRelation.save();
+            reificationService.retarget(relation, newRelation);
             relation.markAsDeleted();
         }
     },

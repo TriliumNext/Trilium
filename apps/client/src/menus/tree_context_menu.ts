@@ -14,6 +14,7 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import noteCreateService from "../services/note_create.js";
 import noteTypesService from "../services/note_types.js";
+import { openSelfReification, selfReificationMenuTitle } from "../services/self_reification.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import treeService from "../services/tree.js";
@@ -144,6 +145,14 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
         { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right", enabled: noSelectedNotes },
         { title: t("tree-context-menu.open-in-a-new-window"), command: "openNoteInWindow", uiIcon: "bx bx-window-open", enabled: noSelectedNotes },
         { title: t("tree-context-menu.open-in-popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit", enabled: noSelectedNotes },
+        noSelectedNotes && notSearch
+            ? {
+                title: await selfReificationMenuTitle(note.noteId, note.title),
+                uiIcon: "bx bx-chevrons-up",
+                enabled: true,
+                handler: () => openSelfReification(note.noteId)
+            }
+            : null,
 
         isHoisted
             ? null

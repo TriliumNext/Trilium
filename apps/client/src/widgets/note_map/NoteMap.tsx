@@ -1,21 +1,41 @@
 import "./NoteMap.css";
 
+import {
+    buildReificationTitle,
+    REIFICATION_OBJECT,
+    REIFICATION_OF,
+    REIFICATION_PREDICATE,
+    REIFICATION_SUBJECT,
+    ReificationResponse
+} from "@triliumnext/commons";
 import ForceGraph from "force-graph";
 import { RefObject } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import contextMenu, { type MenuItem } from "../../menus/context_menu";
 import link_context_menu from "../../menus/link_context_menu";
+import { chooseNote } from "../../services/dialog";
+import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
 import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
-import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
+import {
+    loadNotesAndRelations,
+    NoteMapFold,
+    NoteMapLinkObject,
+    NoteMapNodeObject,
+    NotesAndRelationsData,
+    presentRelations,
+    ReificationEnds
+} from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
@@ -45,8 +65,13 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ fixNodes, setFixNodes ] = useState(false);
     const [ linkDistance, setLinkDistance ] = useState(40);
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
+    // Bumped when a relation is turned back into a label, so the line leaves the map.
+    const [ mapEpoch, setMapEpoch ] = useState(0);
     const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData>();
+    const collapsedRef = useRef(new Set<string>());
+    const unfoldedRef = useRef(false);
+    const unfoldEndsRef = useRef<ReificationEnds | null>(null);
 
     const mapRootId = useMemo(() => {
         if (note.noteId && isRootedAtCurrentNote(widgetMode)) {
@@ -77,6 +102,10 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph.width(size.width).height(size.height);
         }
 
+        // A fold belongs to the map that was open when it was made.
+        collapsedRef.current = new Set();
+        unfoldedRef.current = false;
+        unfoldEndsRef.current = null;
         // Navigating away mid-load must not let the outgoing note's data land on the new graph.
         let disposed = false;
         let teardownRendering: (() => void) | undefined;
@@ -89,8 +118,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             // it does not have yet says nothing and draws tofu, and the map is painted the moment its
             // data lands. Every pack's font, since which of them the map wears is not known until the
             // notes are in hand — and by then there is no waiting left to do.
-            warmIconFonts()
-        ]).then(([ notesAndRelations ]) => {
+            warmIconFonts(),
+            reificationEnds(note)
+        ]).then(([ notesAndRelations, , unfoldEnds ]) => {
             if (disposed || !containerRef.current || !styleResolverRef.current) return;
 
             // Guard against rendering too many notes which would freeze the browser.
@@ -117,8 +147,35 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             });
 
             // Interaction
+            unfoldEndsRef.current = unfoldEnds;
+            const showView = (refit: boolean) => {
+                const base = notesAndRelationsRef.current;
+                if (!base) {
+                    return;
+                }
+                graph.graphData(presentRelations(
+                    base,
+                    collapsedRef.current,
+                    unfoldedRef.current ? unfoldEndsRef.current : null
+                ));
+                graph.d3ReheatSimulation();
+                // The click that asked for this view also told the map to stop framing itself,
+                // so the notes just put back would otherwise land outside the picture.
+                if (refit) {
+                    graph.zoomToFit(400, 40);
+                }
+            };
+
             graph
+                .linkHoverPrecision(10)
                 .onNodeClick((node) => {
+                    if (node.joint) {
+                        return;
+                    }
+                    if (node.fold) {
+                        void openFoldedRelation(node.fold);
+                        return;
+                    }
                     if (!node.id) return;
                     appContext.tabManager.getActiveContext()?.setNote(node.id);
                     // The map always sends the reader to the pane behind it, never to its own host — so a
@@ -127,14 +184,43 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                     // popup's backdrop while that is open, and so cannot be the one being pressed.
                     void appContext.triggerEvent("closePopupEditor", {});
                 })
-                .onNodeRightClick((node, e) => {
+                .onNodeRightClick((node, event) => {
+                    if (node.joint) {
+                        return;
+                    }
+                    if (node.fold) {
+                        event.preventDefault();
+                        collapsedRef.current.delete(node.fold.linkId);
+                        showView(true);
+                        return;
+                    }
+                    // The open note is the fact. Right-click puts its two notes back in this view.
+                    if (node.id === mapRootId && unfoldEndsRef.current && !unfoldedRef.current) {
+                        event.preventDefault();
+                        unfoldedRef.current = true;
+                        showView(true);
+                        return;
+                    }
                     if (!node.id) return;
-                    link_context_menu.openContextMenu(node.id, e);
+                    link_context_menu.openContextMenu(node.id, event);
+                })
+                .onLinkRightClick((link, event) => {
+                    if (mapType !== "link" || !link.name || !link.id) {
+                        return;
+                    }
+                    event.preventDefault();
+                    void showRelationMenu(link, event, () => {
+                        if (!link.id) {
+                            return;
+                        }
+                        collapsedRef.current.add(link.id);
+                        showView(false);
+                    }, () => setMapEpoch((epoch) => epoch + 1));
                 });
 
             // Set data
-            graph.graphData(notesAndRelations);
             notesAndRelationsRef.current = notesAndRelations;
+            showView(false);
         });
 
         return () => {
@@ -145,12 +231,16 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph._destructor();
             container.replaceChildren();
         };
-    }, [ note, mapType, bypassLimit, themeStyle ]);
+    }, [ note, mapType, bypassLimit, themeStyle, mapEpoch ]);
 
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
-        graphRef.current.graphData(notesAndRelationsRef.current);
+        graphRef.current.graphData(presentRelations(
+            notesAndRelationsRef.current,
+            collapsedRef.current,
+            unfoldedRef.current ? unfoldEndsRef.current : null
+        ));
     }, [ linkDistance, mapType ]);
 
     // React to container size
@@ -257,6 +347,39 @@ function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (map
  * What the map is drawn in, asked of the theme through elements wearing the colours it is after: a
  * canvas knows nothing of a stylesheet, and a theme is free to have its own idea of any of them.
  */
+async function reificationEnds(note: FNote): Promise<ReificationEnds | null> {
+    if (!note.getOwnedLabelValue(REIFICATION_OF)) {
+        return null;
+    }
+    const subjectId = note.getOwnedRelation(REIFICATION_SUBJECT)?.value;
+    const predicate = note.getOwnedLabelValue(REIFICATION_PREDICATE) ?? "";
+    if (!subjectId) {
+        return null;
+    }
+    const subject = await froca.getNote(subjectId);
+    if (!subject) {
+        return null;
+    }
+    const objectId = note.getOwnedRelation(REIFICATION_OBJECT)?.value;
+    const object = objectId ? await froca.getNote(objectId) : null;
+    return {
+        rootId: note.noteId,
+        predicate,
+        subject: nodeFrom(subject),
+        object: object ? nodeFrom(object) : null
+    };
+}
+
+function nodeFrom(note: FNote): NoteMapNodeObject {
+    return {
+        id: note.noteId,
+        name: note.title,
+        type: note.type,
+        color: note.getLabelValue("color"),
+        icon: note.getIcon()
+    };
+}
+
 function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData {
     const containerStyle = window.getComputedStyle(container);
     const colorOf = (selector: string) => {
@@ -272,4 +395,243 @@ function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData
         anchorColor: colorOf(".style-resolver-anchor"),
         anchorIconColor: colorOf(".style-resolver-anchor-icon")
     };
+}
+
+interface ReificationListItem {
+    noteId: string;
+    title: string;
+    direct: boolean;
+}
+
+interface PredicateConcept {
+    noteId: string | null;
+    title: string | null;
+}
+
+/**
+ * Right-click on a relation: fold that instance, open a reification that already
+ * includes it, or open the concept of the relation name itself.
+ */
+async function showRelationMenu(link: NoteMapLinkObject, event: MouseEvent, fold: () => void, reload: () => void) {
+    const sourceId = linkEndId(link.source);
+    const targetId = linkEndId(link.target);
+    const predicate = link.name.split(",")[0]?.trim() ?? "";
+    const title = buildReificationTitle({
+        subjectTitle: linkEndName(link.source),
+        predicate,
+        objectTitle: linkEndName(link.target)
+    });
+    const items: MenuItem<string>[] = [
+        { title: t("note_map.fold_as", { title }), command: "fold", uiIcon: "bx bx-collapse" }
+    ];
+
+    const seen = new Set<string>();
+    const listed: ReificationListItem[] = [];
+    const rows = await relationRows(sourceId, targetId, link.name);
+    for (const row of rows) {
+        if (!row.owned) {
+            continue;
+        }
+        items.push({
+            title: t("note_map.make_attribute", { name: row.predicate }),
+            command: `unspecify:${row.attributeId}`,
+            uiIcon: "bx bx-hash"
+        });
+    }
+    for (const row of rows) {
+        try {
+            const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${row.attributeId}/reifications`);
+            for (const item of response.items) {
+                if (seen.has(item.noteId)) {
+                    continue;
+                }
+                seen.add(item.noteId);
+                listed.push(item);
+            }
+        } catch {
+            // The row can disappear between the click and the lookup. Folding still works.
+        }
+    }
+
+    const direct = listed.find((item) => item.direct);
+    const rest = listed.filter((item) => !item.direct);
+    if (direct) {
+        items.push({
+            title: t("note_map.open_reification", { title: direct.title }),
+            command: `open:${direct.noteId}`,
+            uiIcon: "bx bx-git-commit"
+        });
+    }
+    if (rest.length > 0) {
+        items.push({ kind: "separator" });
+        for (const item of rest) {
+            items.push({ title: item.title, command: `open:${item.noteId}`, uiIcon: "bx bx-git-commit" });
+        }
+    }
+
+    const predicates = linkPredicates(link.name);
+    if (predicates.length > 0) {
+        items.push({ kind: "separator" });
+    }
+    for (const name of predicates) {
+        const concept = await loadPredicateConcept(name);
+        if (concept?.noteId) {
+            items.push({
+                title: t("note_map.go_to_concept", { name }),
+                command: `concept-open:${concept.noteId}`,
+                uiIcon: "bx bx-cube"
+            });
+            continue;
+        }
+        items.push({
+            title: t("note_map.create_concept", { name }),
+            command: `concept-create:${name}`,
+            uiIcon: "bx bx-cube"
+        });
+        items.push({
+            title: t("note_map.connect_concept", { name }),
+            command: `concept-connect:${name}`,
+            uiIcon: "bx bx-link"
+        });
+    }
+
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items,
+        selectMenuItemHandler: ({ command }) => {
+            void applyRelationCommand(command, fold, reload);
+        }
+    });
+}
+
+async function applyRelationCommand(command: string | undefined, fold: () => void, reload: () => void) {
+    if (!command) {
+        return;
+    }
+    if (command === "fold") {
+        fold();
+        return;
+    }
+    if (command.startsWith("unspecify:")) {
+        await server.remove(`attributes/${command.slice("unspecify:".length)}/object`);
+        reload();
+        return;
+    }
+    if (command.startsWith("open:") || command.startsWith("concept-open:")) {
+        const noteId = command.startsWith("concept-open:")
+            ? command.slice("concept-open:".length)
+            : command.slice("open:".length);
+        openNote(noteId);
+        return;
+    }
+    if (command.startsWith("concept-create:")) {
+        const predicate = command.slice("concept-create:".length);
+        const created = await server.post<PredicateConcept>(
+            `reification-concepts/${encodeURIComponent(predicate)}`
+        );
+        if (created.noteId) {
+            openNote(created.noteId);
+        }
+        return;
+    }
+    if (command.startsWith("concept-connect:")) {
+        const predicate = command.slice("concept-connect:".length);
+        const chosen = await chooseNote({ title: t("note_map.connect_concept", { name: predicate }) });
+        if (!chosen) {
+            return;
+        }
+        const saved = await server.post<PredicateConcept>(
+            `reification-concepts/${encodeURIComponent(predicate)}`,
+            { noteId: chosen }
+        );
+        if (saved.noteId) {
+            openNote(saved.noteId);
+        }
+    }
+}
+
+function linkPredicates(names: string): string[] {
+    const predicates: string[] = [];
+    for (const name of names.split(",")) {
+        const predicate = name.trim();
+        if (predicate && !predicates.includes(predicate)) {
+            predicates.push(predicate);
+        }
+    }
+    return predicates;
+}
+
+async function loadPredicateConcept(predicate: string): Promise<PredicateConcept | null> {
+    try {
+        return await server.get<PredicateConcept>(`reification-concepts/${encodeURIComponent(predicate)}`);
+    } catch {
+        return null;
+    }
+}
+
+function openNote(noteId: string) {
+    appContext.tabManager.getActiveContext()?.setNote(noteId);
+    void appContext.triggerEvent("closePopupEditor", {});
+}
+
+function linkEndId(end: NoteMapLinkObject["source"]): string {
+    if (typeof end === "object" && end) {
+        return end.id;
+    }
+    return String(end ?? "");
+}
+
+function linkEndName(end: NoteMapLinkObject["source"]): string {
+    if (typeof end === "object" && end) {
+        return end.name;
+    }
+    return "";
+}
+
+async function relationRows(
+    sourceNoteId: string,
+    targetNoteId: string,
+    names: string
+): Promise<{ attributeId: string; predicate: string; owned: boolean }[]> {
+    const source = await froca.getNote(sourceNoteId);
+    if (!source) {
+        return [];
+    }
+    const rows: { attributeId: string; predicate: string; owned: boolean }[] = [];
+    const seen = new Set<string>();
+    for (const name of names.split(",")) {
+        const predicate = name.trim();
+        if (!predicate) {
+            continue;
+        }
+        const owned = source.getOwnedRelations(predicate);
+        const attributes = [ ...owned, ...source.getRelations(predicate) ];
+        for (const attribute of attributes) {
+            if (attribute.value !== targetNoteId || seen.has(attribute.attributeId)) {
+                continue;
+            }
+            seen.add(attribute.attributeId);
+            rows.push({
+                attributeId: attribute.attributeId,
+                predicate,
+                owned: owned.some((item) => item.attributeId === attribute.attributeId)
+            });
+        }
+    }
+    return rows;
+}
+
+/** Creates the note for a folded relation, if it does not exist yet, and opens it. */
+async function openFoldedRelation(fold: NoteMapFold) {
+    const source = await froca.getNote(fold.sourceNoteId);
+    const owned = source?.getOwnedRelations(fold.predicate) ?? [];
+    const attribute = owned.find((item) => item.value === fold.targetNoteId)
+        ?? source?.getRelations(fold.predicate).find((item) => item.value === fold.targetNoteId);
+    if (!attribute) {
+        return;
+    }
+    const { noteId } = await server.post<ReificationResponse>(`attributes/${attribute.attributeId}/reification`);
+    appContext.tabManager.getActiveContext()?.setNote(noteId);
+    void appContext.triggerEvent("closePopupEditor", {});
 }

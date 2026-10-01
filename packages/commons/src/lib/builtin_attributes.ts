@@ -1,4 +1,19 @@
 import { type LabelType } from "./promoted_attribute_definition_parser.js";
+import {
+    REIFICATION_BINDING,
+    REIFICATION_GENERATED_TITLE,
+    REIFICATION_INSTANCE,
+    REIFICATION_KIND,
+    REIFICATION_LITERAL,
+    REIFICATION_OBJECT,
+    REIFICATION_OF,
+    REIFICATION_OF_PREDICATE,
+    REIFICATION_PATTERN,
+    REIFICATION_PREDICATE,
+    REIFICATION_SUBJECT,
+    SELF_REIFICATION_GENERATED_TITLE,
+    SELF_REIFICATION_OF
+} from "./reification.js";
 
 /**
  * Every attribute name Trilium itself gives a meaning to, as opposed to the ones a user invents.
@@ -379,7 +394,24 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "shareJs", isDangerous: true },
     { type: "relation", name: "shareHtml", isDangerous: true },
     { type: "relation", name: "shareTemplate", isDangerous: true },
-    { type: "relation", name: "shareFavicon" }
+    { type: "relation", name: "shareFavicon" },
+
+    // Written on the note that stands for one attribute row. The values repeat the row,
+    // so a dump keeps the names and drops the text.
+    { type: "label", name: REIFICATION_OF, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_KIND, valueType: "select", selectOptions: [ "relation", "label" ] },
+    { type: "label", name: REIFICATION_PREDICATE, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_LITERAL, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_GENERATED_TITLE, valueType: "text", hasUserValue: true },
+    { type: "relation", name: REIFICATION_SUBJECT },
+    { type: "relation", name: REIFICATION_OBJECT },
+    // The note this sits on is the relation name itself, the concept rather than one instance.
+    { type: "label", name: REIFICATION_OF_PREDICATE, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_PATTERN, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_INSTANCE, valueType: "text", hasUserValue: true },
+    { type: "label", name: REIFICATION_BINDING, valueType: "text", hasUserValue: true },
+    { type: "label", name: SELF_REIFICATION_OF, valueType: "text", hasUserValue: true },
+    { type: "label", name: SELF_REIFICATION_GENERATED_TITLE, valueType: "text", hasUserValue: true }
 ] as const satisfies readonly (BuiltinLabel | BuiltinRelation)[];
 
 /**
