@@ -1,7 +1,6 @@
 .calendar-event-popover {
-    /* Held to the window: Popper shifts a card too wide for the room into the viewport rather than
-       narrowing it, so an unclamped width would hang off the edge.
-       Must agree with `MAX_ANCHOR_WIDTH` in selection.ts. */
+    /* `Popover` shifts a card wider than the free space back into the viewport without narrowing
+       it, so the width is clamped here. Must agree with `MAX_ANCHOR_WIDTH` in selection.ts. */
     width: min(480px, calc(100vw - 4rem));
     /* As tall as the event needs; what it holds scrolls within it (see the body below). */
     max-height: min(640px, 85vh);

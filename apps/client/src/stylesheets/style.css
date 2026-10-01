@@ -456,15 +456,14 @@ button kbd {
     --bs-dropdown-link-active-bg: var(--active-item-background-color) !important;
 }
 
-/* A portaled menu (the Dropdown's `portalToBody`) stacks in the root context, so it has to clear a
-   modal (1055) and a stacked quick-edit popup (1100), and stay under the prompts (2000) it can
-   summon. */
-body > .tn-dropdown-portal > .dropdown-menu {
-    --bs-dropdown-zindex: 1200;
+/* Only carries the dropdown's classes to the menu, for the CSS scoped under them, so it takes no
+   part in the page's layout. */
+.tn-dropdown-portal {
+    display: contents;
 }
 
-/* Under the menu above, which is what it is drawn for; stated beside it so the two stay in step.
-   Dressed as a dialog's backdrop, a menu that dims the page being the same thing to the reader. */
+/* Just under its popup, whose z-index (1200) is set in `Popup.css`. Styled as a dialog's
+   backdrop. */
 body > .tn-dropdown-portal > .tn-dropdown-backdrop {
     position: fixed;
     inset: 0;
@@ -542,14 +541,15 @@ body.desktop .tabulator-popup-container,
 
 .dropdown-menu:not(#context-menu-container) .dropdown-item,
 body.desktop .dropdown-menu .dropdown-toggle,
-body #context-menu-container .dropdown-item > span,
-body.mobile .dropdown .dropdown-submenu > span {
+.dropdown-item > span:not([class]),
+body.mobile .dropdown-menu .dropdown-submenu > span {
     display: flex;
     align-items: center;
 }
 
 
-body.mobile .dropdown .dropdown-submenu {
+/* Scoped by the menu: a dropdown's menu stands in the page's body, outside its `.dropdown`. */
+body.mobile .dropdown-menu .dropdown-submenu {
     flex-wrap: wrap;
 
     & > span {
@@ -1730,46 +1730,13 @@ body.mobile .dropdown-submenu > .dropdown-menu {
     white-space: nowrap;
 }
 
-body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
-    display: block;
-}
-
 .dropdown-submenu {
     position: relative;
-}
-
-.dropdown-submenu > .dropdown-menu {
-    top: 0;
-    inset-inline-start: calc(100% - 2px); /* -2px, otherwise there's a small gap between menu and submenu where the hover can disappear */
-    margin-top: -10px;
-}
-
-/* to make submenu scrollable https://github.com/zadam/trilium/issues/3136 */
-.dropdown-submenu > .dropdown-menu:not(:has(.dropdown-submenu)) {
-    max-height: 600px;
-    overflow: auto;
-}
-
-/* Flipped upward (added by ContextMenu.repositionSubmenu) when the submenu would overflow the bottom of the viewport. */
-.dropdown-submenu > .dropdown-menu.submenu-flip-up {
-    top: auto;
-    bottom: 0;
-    margin-top: 0;
-    margin-bottom: -10px;
 }
 
 body.desktop .dropdown-submenu > .dropdown-menu {
     min-width: max-content;
     max-width: 300px;
-}
-
-/* Opened on the other side (`submenu-flip-start` added by ContextMenu.repositionSubmenu) when the
-   submenu would overflow the side it opens on. */
-.dropdown-submenu.dropstart > .dropdown-menu,
-.dropdown-submenu > .dropdown-menu.submenu-flip-start,
-body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
-    inset-inline-start: auto;
-    inset-inline-end: calc(100% - 2px);
 }
 
 .right-dropdown-widget {
@@ -2010,10 +1977,12 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 @media (max-width: 991px) {
-    body.mobile #launcher-pane .dropdown.global-menu > .dropdown-menu.show,
-    body.mobile #launcher-container .dropdown > .dropdown-menu.show,
+    /* The launcher bar's menus stand in the page's body, in a wrapper with their dropdown's class,
+       outside the bar whose `--launcher-pane-size` the theme sets, so its horizontal size is read
+       where the theme defines it. */
+    body.mobile .tn-dropdown-portal:is(.global-menu, .right-dropdown-widget) > .dropdown-menu.show,
     body.mobile .dropdown-menu.mobile-bottom-menu.show {
-        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-horiz-size, var(--launcher-pane-size)));
         position: fixed !important;
         bottom: var(--dropdown-bottom) !important;
         top: unset !important;
@@ -2024,7 +1993,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
         max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
     }
 
-    body.mobile #launcher-container .dropdown > .dropdown-menu.show {
+    body.mobile .tn-dropdown-portal.right-dropdown-widget > .dropdown-menu.show {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
     }

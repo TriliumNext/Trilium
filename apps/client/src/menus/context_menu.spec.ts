@@ -90,6 +90,23 @@ describe("contextMenu", () => {
         expect(onHide).toHaveBeenCalledTimes(1);
     });
 
+    it("shows only the last of two menus asked for while `Menu` still loads, and hides it", async () => {
+        buildPage();
+        const contextMenu = await buildContextMenu();
+
+        await Promise.all([
+            contextMenu.show({ x: 10, y: 20, items: [ { title: "First" } ], selectMenuItemHandler: () => {} }),
+            contextMenu.show({ x: 30, y: 40, items: [ { title: "Second" } ], selectMenuItemHandler: () => {} })
+        ]);
+
+        const menus = document.querySelectorAll("#context-menu-container");
+        expect(menus).toHaveLength(1);
+        expect(menus[0].textContent).toContain("Second");
+
+        await contextMenu.hide();
+        expect(document.body.innerHTML).toBe(`<div id="app"></div>`);
+    });
+
     describe("items", () => {
         it("lists the items and separators in order, without repeating a separator", async () => {
             buildPage();
@@ -151,9 +168,10 @@ describe("contextMenu", () => {
                 return icon?.className || icon?.textContent;
             });
             expect(slots).toEqual([
-                "bx bx-list-ul tn-icon use-note-color color-e64d4d",
+                "bx bx-list-ul use-note-color color-e64d4d tn-icon",
                 "bx bx-check tn-icon",
-                "\u00a0",
+                // A blank icon of an icon's width, which lines the title up with the others.
+                "bx bx-empty tn-icon",
                 ""
             ]);
             // Only the icon is tinted, so the title keeps the menu's own colour.
@@ -180,7 +198,7 @@ describe("contextMenu", () => {
                 `<span class="keyboard-shortcut"><kbd>Ctrl</kbd>+<kbd>C</kbd>,<kbd>Ctrl</kbd>+<kbd>Insert</kbd></span>`,
                 "<kbd>Ctrl+V</kbd>",
                 // An action with no shortcut assigned shows none: the row ends with its title.
-                "title Cut"
+                "<span>Cut</span>"
             ]);
         });
 
@@ -246,8 +264,9 @@ describe("contextMenu", () => {
             expect(rows.map(row => [ row.classList.contains("disabled"), row.getAttribute("aria-disabled") ]))
                 .toEqual([ [ true, "true" ], [ false, null ], [ false, null ] ]);
 
-            // The stylesheets keep the pointer off it; a press that still arrives does nothing.
+            // The stylesheets keep the pointer off it; a click that still arrives does nothing.
             rows[0].dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+            rows[0].dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
             expect(handler).not.toHaveBeenCalled();
             expect(selectMenuItemHandler).not.toHaveBeenCalled();
             expect(contextMenu.isShown).toBe(true);
@@ -415,12 +434,17 @@ describe("contextMenu", () => {
             expect(calls).toEqual([]);
             expect(contextMenu.isShown).toBe(true);
 
+            // The press does not move focus, so a text editor keeps its selection for the command,
+            // and runs nothing: the row runs on its release, as in a native menu.
             const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 });
             row.dispatchEvent(press);
+            expect(press.defaultPrevented).toBe(true);
+            expect(calls).toEqual([]);
+            expect(contextMenu.isShown).toBe(true);
+
+            row.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
             expect(calls).toEqual([ "handler", "select Copy" ]);
             expect(contextMenu.isShown).toBe(false);
-            // The press does not move focus, so a text editor keeps its selection for the command.
-            expect(press.defaultPrevented).toBe(true);
         });
     });
 
@@ -458,8 +482,11 @@ describe("contextMenu", () => {
         }
 
         const hover = (element: HTMLElement) => element.dispatchEvent(new PointerEvent("pointerenter"));
-        const press = (element: HTMLElement) =>
+        /** A press and its release, which runs a row. */
+        const press = (element: HTMLElement) => {
             element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+            element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+        };
 
         afterEach(() => {
             layout.onMobile = false;
@@ -897,6 +924,7 @@ describe("contextMenu", () => {
                 expect(parent).toBeTruthy();
 
                 parent?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 }));
+                parent?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
                 await vi.waitFor(() => expect(parent?.classList.contains("submenu-open")).toBe(false));
                 expect(activeRow()).toBe("Templates");
 

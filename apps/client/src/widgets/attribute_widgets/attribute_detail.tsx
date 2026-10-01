@@ -255,7 +255,7 @@ export function AttributeDetail({ opts, currentNoteId, onDismiss, onCancel, ...f
                 // Modals count as belonging to the popup: creating a note straight from the target
                 // note field opens the note type chooser, and dismissing on its clicks would tear
                 // the popup down before the created note could be filled in. The type menu belongs
-                // to it too: it is portaled to the body (see the dropdown's `portalToBody`), so a
+                // to it too: it is portaled to the body, as every dropdown is, so a
                 // press on one of its items lands outside the popup element.
                 || e.target.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .algolia-autocomplete, #context-menu-container, .modal, .modal-backdrop, .attr-input-label-type`)) {
                 return;
@@ -597,9 +597,6 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     <OptionsRow name="attr-label-type" label={t("attribute_detail.label_type")}>
                         <FormDropdownList
                             className="attr-input-label-type"
-                            // The popup is a scroll container, so an inline menu could only grow by
-                            // scrolling the form under itself — and the type list only gets longer.
-                            portalToBody
                             values={DEFINITION_TYPES}
                             keyProperty="value"
                             titleProperty="title"
@@ -1019,7 +1016,7 @@ function RelatedNotesBadge({ attribute, currentNoteId }: { attribute: Attribute;
             tooltip={t("attribute_detail.other_notes_with_name", { attributeType: type, attributeName: name })}
             // The menu stays nested in the popup: the badge places it with `position: fixed`, and the popup
             // sets `contain: none` and no transform, so it is not a containing block and does not clip it.
-            dropdownOptions={{ dropdownContainerClassName: "related-notes-menu" }}
+            dropdownProps={{ dropdownContainerClassName: "related-notes-menu" }}
         >
             {/* The icon comes from the item rather than from the link, so that the note entries and the
                 search entry below them line up on the same slot. */}

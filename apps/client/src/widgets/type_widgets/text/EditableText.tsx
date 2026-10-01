@@ -484,6 +484,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 }}
                 templates={templates}
                 onNotificationWarning={onNotificationWarning}
+                onNotificationInfo={onNotificationInfo}
                 onWatchdogStateChange={onWatchdogStateChange}
                 onChange={() => spacedUpdate.scheduleUpdate()}
                 onEditorInitialized={(editor) => {
@@ -642,3 +643,11 @@ export function onNotificationWarning(evt: NotificationEventInfo, data: Notifica
     evt.stop();
 }
 
+/**
+ * Shows a CKEditor info notification, such as the notice after sorting a table, as a Trilium toast.
+ *
+ * Exported for testing.
+ */
+export function onNotificationInfo(_evt: NotificationEventInfo, data: NotificationEventData) {
+    toast.showMessage(data.message);
+}

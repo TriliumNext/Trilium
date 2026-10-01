@@ -101,7 +101,6 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
         <>
             <Dropdown
                 className="board-group-by"
-                noDropdownListStyle
                 title={t("board_view.group-by")}
                 text={<>
                     <Icon icon="bx bx-category-alt" />&nbsp;

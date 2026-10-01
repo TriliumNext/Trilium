@@ -54,8 +54,6 @@ export default function CardTemplatePill({ offered, current, onSelect, onMore, o
             text={<span className="card-template-name">{current?.title ?? ""}</span>}
             title={t("board_view.card-template")}
             noSelectButtonStyle
-            noDropdownListStyle
-            portalToBody
             onShown={() => {
                 setIsShown(true);
                 onOpened?.();

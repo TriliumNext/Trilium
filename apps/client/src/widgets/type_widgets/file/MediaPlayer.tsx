@@ -16,6 +16,7 @@ import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
@@ -596,17 +597,14 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
             title={t("media.play-mode-title", { mode: t(MEDIA_PLAY_MODE_LABEL_KEYS[mode]) })}
         >
             {MEDIA_PLAY_MODES.map((candidate) => (
-                <li key={candidate}>
-                    <button
-                        type="button"
-                        class={`dropdown-item ${candidate === mode ? "active" : ""}`}
-                        onClick={() => onSelectMode(candidate)}
-                    >
-                        <Icon icon={MEDIA_PLAY_MODE_ICONS[candidate]} />
-                        <span class="play-mode-name">{t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}</span>
-                        {candidate === mode && <Icon icon="bx bx-check" className="play-mode-check" />}
-                    </button>
-                </li>
+                <FormListItem
+                    key={candidate}
+                    icon={MEDIA_PLAY_MODE_ICONS[candidate]}
+                    trailingIcon={candidate === mode ? "bx bx-check" : undefined}
+                    onClick={() => onSelectMode(candidate)}
+                >
+                    {t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}
+                </FormListItem>
             ))}
         </Dropdown>
     );
@@ -647,14 +645,14 @@ export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoEleme
             title={t("media.playback-speed")}
         >
             {PLAYBACK_SPEEDS.map((rate) => (
-                <li key={rate}>
-                    <button
-                        class={`dropdown-item ${rate === speed ? "active" : ""}`}
-                        onClick={() => selectSpeed(rate)}
-                    >
-                        {rate}x
-                    </button>
-                </li>
+                <FormListItem
+                    key={rate}
+                    checkable
+                    checked={rate === speed}
+                    onClick={() => selectSpeed(rate)}
+                >
+                    {rate}x
+                </FormListItem>
             ))}
         </Dropdown>
     );

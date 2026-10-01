@@ -56,7 +56,6 @@ const typeMappings: Record<ActiveContentInfo["type"], {
                 bindToLabel: "run",
                 label: t("active_content_badges.menu_run"),
                 icon: "bx bx-rss",
-                dropStart: true,
                 options: [
                     { value: null, label: t("active_content_badges.menu_run_disabled") },
                     { value: "backendStartup", label: t("active_content_badges.menu_run_backend_startup") },
@@ -86,7 +85,6 @@ const typeMappings: Record<ActiveContentInfo["type"], {
                 bindToLabel: "run",
                 label: t("active_content_badges.menu_run"),
                 icon: "bx bx-rss",
-                dropStart: true,
                 options: [
                     { value: null, label: t("active_content_badges.menu_run_disabled") },
                     { value: "frontendStartup", label: t("active_content_badges.menu_run_frontend_startup") },
@@ -143,7 +141,6 @@ const typeMappings: Record<ActiveContentInfo["type"], {
                 bindToLabel: "appThemeBase",
                 label: t("active_content_badges.menu_theme_base"),
                 icon: "bx bx-layer",
-                dropStart: true,
                 options: [
                     { label: t("theme.auto_theme"), value: null },
                     { type: "separator" },
@@ -175,10 +172,7 @@ function ActiveContentBadge({ info, note }: { note: FNote, info: ActiveContentIn
             className={clsx("active-content-badge", info.canToggleEnabled && !info.isEnabled && "disabled")}
             icon={icon}
             text={title}
-            dropdownOptions={{
-                dropdownContainerClassName: "mobile-bottom-menu",
-                mobileBackdrop: true
-            }}
+            dropdownProps={{ mobileBottomSheet: true }}
         >
             {additionalOptions?.length && (
                 <>

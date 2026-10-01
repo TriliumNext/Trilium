@@ -10,7 +10,7 @@ import Button from "../widgets/react/Button";
 import CKEditor from "../widgets/react/CKEditor";
 import Collapsible, { ExternallyControlledCollapsible } from "../widgets/react/Collapsible";
 import ColorPicker from "../widgets/react/ColorPicker";
-import Dropdown from "../widgets/react/Dropdown";
+import Dropdown, { DropdownPanel } from "../widgets/react/Dropdown";
 import FormCheckbox from "../widgets/react/FormCheckbox";
 import FormDropdownList from "../widgets/react/FormDropdownList";
 import { FormFileUploadActionButton, FormFileUploadButton } from "../widgets/react/FormFileUpload";
@@ -81,7 +81,7 @@ export const preactAPI = Object.freeze({
     CKEditor,
     Collapsible, ExternallyControlledCollapsible,
     ColorPicker,
-    Dropdown,
+    Dropdown, DropdownPanel,
     FormCheckbox,
     FormDropdownList,
     FormFileUploadButton, FormFileUploadActionButton,

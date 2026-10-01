@@ -476,9 +476,6 @@ function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string
     return (
         <Dropdown
             text={t(currentStyle.labelKey)} mobileBottomSheet
-            // The options card is a container, and so a backdrop root: left inside it the menu
-            // loses its blur and reads as a flat tint.
-            portalToBody
         >
             {HEADING_STYLES.map(({ value, labelKey }) => (
                 <FormListItem

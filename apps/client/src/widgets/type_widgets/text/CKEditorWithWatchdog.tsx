@@ -47,6 +47,7 @@ interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "cla
     watchdogRef: RefObject<EditorWatchdog>;
     watchdogConfig?: WatchdogConfig;
     onNotificationWarning?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
+    onNotificationInfo?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
     onWatchdogStateChange?: (watchdog: EditorWatchdog) => void;
     onChange: () => void;
     /** Called upon whenever a new CKEditor instance is initialized, whether it's the first initialization, after a crash or after a config change that requires it (e.g. content language). */
@@ -56,7 +57,7 @@ interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "cla
     containerRef?: RefObject<HTMLDivElement>;
 }
 
-export default function CKEditorWithWatchdog({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, watchdogRef: externalWatchdogRef, watchdogConfig, onNotificationWarning, onWatchdogStateChange, onChange, onEditorInitialized, editorApi, templates }: CKEditorWithWatchdogProps) {
+export default function CKEditorWithWatchdog({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, watchdogRef: externalWatchdogRef, watchdogConfig, onNotificationWarning, onNotificationInfo, onWatchdogStateChange, onChange, onEditorInitialized, editorApi, templates }: CKEditorWithWatchdogProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const watchdogRef = useRef<EditorWatchdog>(null);
     // Serializes editor build/teardown so overlapping effect runs never operate on the same
@@ -385,6 +386,13 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         notificationPlugin.on("show:warning", onNotificationWarning);
         return () => notificationPlugin.off("show:warning", onNotificationWarning);
     }, [ editor, onNotificationWarning ]);
+
+    useEffect(() => {
+        if (!onNotificationInfo || !editor) return;
+        const notificationPlugin = editor.plugins.get("Notification");
+        notificationPlugin.on("show:info", onNotificationInfo);
+        return () => notificationPlugin.off("show:info", onNotificationInfo);
+    }, [ editor, onNotificationInfo ]);
 
     // React to on change listener.
     useEffect(() => {

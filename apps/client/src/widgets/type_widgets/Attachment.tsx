@@ -429,14 +429,7 @@ function AttachmentActions({ attachment, copyAttachmentReferenceToClipboard, onS
                 text={<Icon icon="bx bx-dots-vertical-rounded" />}
                 buttonClassName="icon-action-always-border"
                 iconAction
-                dropdownContainerClassName="mobile-bottom-menu"
-                mobileBackdrop
-                // Doesn't scroll, so it keeps the working backdrop blur — see the prop's own docs.
-                noDropdownListStyle
-                // The card clips its overflow, to keep a picture inside its rounded corners, and a menu
-                // opening from the header is taller than the header has room for — so it is rendered
-                // into the body to stand clear of the card, as the highlights card's menu is.
-                portalToBody
+                mobileBottomSheet
             >
                 <FormListItem
                     icon="bx bx-file-find"

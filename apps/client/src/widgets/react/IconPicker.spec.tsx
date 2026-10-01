@@ -39,7 +39,7 @@ describe("IconPickerButton", () => {
         const desktop = renderButton(false);
 
         // The button stands where it was put; what it opens is a menu, which is neither built nor
-        // handed to the page until it is opened (see `portalToBody`).
+        // handed to the page until it is opened.
         expect(desktop.querySelector(".note-icon-widget button.note-icon")).toBeTruthy();
         expect(document.body.querySelector(".modal.icon-switcher")).toBeNull();
         expect(document.body.querySelector(".dropdown-menu")).toBeNull();

@@ -3522,7 +3522,31 @@
     "presentation-theme": "Theme"
   },
   "table_context_menu": {
-    "delete_row": "Delete row"
+    "delete_row": "Delete row",
+    "insert_rows_above": "Insert row above",
+    "insert_rows_below": "Insert row below",
+    "insert_columns_left": "Insert column to the left",
+    "insert_columns_right": "Insert column to the right",
+    "delete_rows": "Delete row",
+    "delete_columns": "Delete column",
+    "delete_table": "Delete table",
+    "distribute_columns": "Distribute columns evenly",
+    "merge_cells": "Merge cells",
+    "split_cells": "Split cell",
+    "split_vertically": "Vertically",
+    "split_horizontally": "Horizontally",
+    "split_reset": "Unmerge cells",
+    "sort": "Sort",
+    "sort_ascending": "Ascending",
+    "sort_descending": "Descending",
+    "select": "Select",
+    "select_row": "Row",
+    "select_column": "Column",
+    "select_table": "Table",
+    "set_header_row": "Set as header",
+    "set_header_up_to_row": "Set header up to this row",
+    "paste_rows_above": "Paste rows above",
+    "paste_rows_below": "Paste rows below"
   },
   "board_view": {
     "delete-note": "Delete note...",
@@ -4367,8 +4391,24 @@
       "flip-horizontally": "Flip horizontally",
       "flip-vertically": "Flip vertically",
       "change-icon": "Change icon",
+      "move-row-up": "Move row up",
+      "move-row-down": "Move row down",
+      "move-column-left": "Move column left",
+      "move-column-right": "Move column right",
+      "insert-table": "Insert table…",
+      "rows": "Rows",
+      "columns": "Columns",
+      "enter-a-whole-number-between-1-and-0": "Enter a whole number between 1 and %0.",
+      "the-table-is-too-large-max-0-cells": "The table is too large (max %0 cells).",
       "math": "Math",
-      "date-time": "Date/time"
+      "date-time": "Date/time",
+      "distribute-columns-evenly": "Distribute columns evenly",
+      "merge-selected-cells": "Merge selected cells",
+      "unmerge-cells": "Unmerge cells",
+      "sort": "Sort",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Some rows were sorted together because merged cells tie them to each other"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -4492,5 +4532,7 @@
     "specify": "Specify {{name}}",
     "places": "Specify places",
     "places_hint": "These places were left empty. Each one can stay empty."
+  "split_button": {
+    "more_actions": "More actions"
   }
 }

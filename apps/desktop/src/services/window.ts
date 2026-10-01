@@ -556,6 +556,15 @@ export function setupWindowing() {
     });
 
     electron.ipcMain.handle("read-clipboard-text", () => electron.clipboard.readText());
+    electron.ipcMain.handle("read-clipboard-html", async () => {
+        for (const item of await electron.clipboard.read()) {
+            if (item.types.includes("text/html")) {
+                const html = await item.getType("text/html");
+                return html instanceof Blob ? html.text() : "";
+            }
+        }
+        return "";
+    });
 
     electron.ipcMain.on("show-window", (event) => {
         const window = electron.BrowserWindow.fromWebContents(event.sender);

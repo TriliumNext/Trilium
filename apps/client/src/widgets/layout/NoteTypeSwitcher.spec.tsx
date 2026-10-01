@@ -117,10 +117,10 @@ describe("TemplateNoteTypes", () => {
         const dropdown = container.querySelector(".dropdown");
         expect(dropdown).not.toBeNull();
         await act(async () => {
-            if (dropdown) window.$(dropdown).trigger("show.bs.dropdown");
+            if (dropdown) window.$(dropdown).children("button:not([aria-expanded=true])").trigger("click");
         });
-        expect(container.textContent).toContain("Meeting Notes");
-        expect(container.textContent).not.toContain("[protected]");
+        expect(document.body.textContent).toContain("Meeting Notes");
+        expect(document.body.textContent).not.toContain("[protected]");
 
         serverGetSpy.mockRestore();
     });

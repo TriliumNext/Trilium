@@ -2498,7 +2498,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -2525,7 +2525,7 @@ describe("Board column rename", () => {
         // Picking closes the menu, as any dropdown item click does; open it again to read the tick.
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
         const reopened = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
@@ -2569,7 +2569,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             editor.dispatchEvent(new FocusEvent("blur"));
             editor.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
             await flush();
@@ -2581,7 +2581,7 @@ describe("Board column rename", () => {
 
         // Once the menu is done with, the field has the focus again.
         await act(async () => {
-            $(pill.closest(".dropdown") as HTMLElement).trigger("hide.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button[aria-expanded=true]").trigger("click");
             await flush();
         });
         expect(document.activeElement).toBe(editor);
@@ -2758,7 +2758,7 @@ describe("Board column rename", () => {
         if (!pill) throw new Error("expected the template pill");
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -2868,7 +2868,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -4530,11 +4530,11 @@ describe("Board properties from the note menu", () => {
         const options = cog?.closest(".dropdown");
         if (!options) throw new Error("expected a settings menu on the collection bar");
         await act(async () => {
-            $(options as HTMLElement).trigger("show.bs.dropdown");
+            $(options as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
-        const entry = [ ...options.querySelectorAll<HTMLElement>(".dropdown-item") ].at(-1);
+        const entry = [ ...document.querySelectorAll<HTMLElement>(".tn-popup .dropdown-item") ].at(-1);
         if (!entry) throw new Error("expected an entry in the settings menu");
         expect(entry.textContent).toContain("board_view.properties");
         expect(entry.previousElementSibling?.className).toContain("dropdown-divider");

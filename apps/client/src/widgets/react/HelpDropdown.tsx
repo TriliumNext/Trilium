@@ -3,7 +3,7 @@ import "./HelpDropdown.css";
 import { ComponentChildren } from "preact";
 
 import { t } from "../../services/i18n";
-import Dropdown from "./Dropdown";
+import { DropdownPanel } from "./Dropdown";
 import { openHelpPage } from "./HelpButton";
 import LinkButton from "./LinkButton";
 
@@ -32,7 +32,7 @@ interface HelpDropdownProps {
  */
 export default function HelpDropdown({ children, helpPage, openInPopup, className, onShown }: HelpDropdownProps) {
     return (
-        <Dropdown
+        <DropdownPanel
             onShown={onShown}
             className={`help-dropdown ${className ?? ""}`}
             buttonClassName="bx bx-help-circle"
@@ -41,11 +41,6 @@ export default function HelpDropdown({ children, helpPage, openInPopup, classNam
             iconAction
             hideToggleArrow
             noSelectButtonStyle
-            noDropdownListStyle
-            // Hosts like the ribbon establish their own stacking context (`.ribbon-container` sits at
-            // z-index 998), which would clamp the popup below the body-level widgets it overlaps —
-            // e.g. the attribute detail at 1000. Rendering into the body lets its z-index actually apply.
-            portalToBody
         >
             {children}
 
@@ -55,6 +50,6 @@ export default function HelpDropdown({ children, helpPage, openInPopup, classNam
                     onClick={() => openHelpPage(helpPage, !!openInPopup)}
                 />
             )}
-        </Dropdown>
+        </DropdownPanel>
     );
 }

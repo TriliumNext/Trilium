@@ -34,10 +34,6 @@
     display: inline-block !important;
 }
 
-.search-setting-table .button-column .dropdown-menu {
-    white-space: normal;
-}
-
 .search-setting-table .button-column > * {
     vertical-align: middle;
 }

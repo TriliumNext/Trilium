@@ -83,8 +83,6 @@ interface ChatInputBarProps {
     onExtendedThinkingChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
-    /** Rendered inside the narrow right sidebar — opens the model submenu leftwards so it doesn't overflow. */
-    inSidebar?: boolean;
 }
 
 export default function ChatInputBar({
@@ -95,8 +93,7 @@ export default function ChatInputBar({
     onWebSearchChange,
     onNoteToolsChange,
     onExtendedThinkingChange,
-    onModelChange,
-    inSidebar
+    onModelChange
 }: ChatInputBarProps) {
     // Provider add/edit modal. `modalProvider` undefined = adding; a config = editing.
     // The bumping token re-keys the modal so it re-initializes its wizard on each open.
@@ -436,12 +433,6 @@ export default function ChatInputBar({
                             titlePosition="top"
                             buttonClassName="llm-chat-model-select"
                             className="llm-chat-model-dropdown"
-                            // In the sidebar the menu lives inside `.sidebar-chat-container`'s
-                            // `overflow: hidden`, which clips the leftward-opening legacy submenu.
-                            // Portal it to the body (with a fixed popper) so it can extend past the
-                            // sidebar edge, matching the sidebar's other dropdowns.
-                            portalToBody={inSidebar}
-                            dropdownOptions={inSidebar ? { popperConfig: { strategy: "fixed" } } : undefined}
                         >
                             {chat.modelGroups.map(group => (
                                 <Fragment key={group.id}>
@@ -480,7 +471,6 @@ export default function ChatInputBar({
                                 value={chat.reasoningEffort}
                                 onChange={handleReasoningEffortChange}
                                 disabled={chat.isStreaming}
-                                inSidebar={inSidebar}
                             />
                         ) : null}
                     </div>

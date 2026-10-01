@@ -37,10 +37,8 @@ export type CalendarSelection =
  * length of a week — or a range dragged across one — is drawn as a piece as wide as the grid, and
  * the far edge of that is nowhere near the press that opened the popover: the card lands at the
  * other end of the month, which is how a popover comes to appear over the note tree. Where the grid
- * is as wide as the window, it lands nowhere at all — neither side has the room for a card, and
- * Popper keeps a popover within the viewport only along the axis it was placed on (the vertical
- * one, for a card standing to the left or the right; see Popover), so the card is put outside the
- * screen entirely and only its shadow is ever seen.
+ * is as wide as the window, neither side has room for the card, so `Popover` shifts it into the
+ * viewport on top of the event.
  *
  * So a piece wider than the card that stands beside it is narrowed to the press within it: the
  * popover appears where the eye already is, with the grid's own room on either side of it. Where

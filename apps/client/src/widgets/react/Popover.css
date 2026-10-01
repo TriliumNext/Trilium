@@ -12,8 +12,6 @@
 
     /* Above the note split's own layers; menus and dialogs stand higher still. */
     z-index: 998;
-    /* Popper writes this too, but gives it back as it is destroyed; without it here the panel
-       falls into the page's flow for a frame on the way back from being maximized. */
     position: fixed;
     display: flex;
     flex-direction: column;
@@ -26,10 +24,16 @@
     backdrop-filter: var(--dropdown-backdrop-filter, blur(10px));
 }
 
-/* The card let go of its anchor and grown to the window (see `maximized` in Popover.tsx). Popper
-   takes the placement attribute off as it is destroyed, so its absence is what says the inline
-   placement has been given back and the stylesheet may place the card itself. */
-.tn-popover.maximized:not([data-popper-placement]) {
+/* Hidden until `placeFloating()` sets its position. */
+.tn-popover:not(.maximized) {
+    top: 0;
+    left: 0;
+    visibility: hidden;
+}
+
+/* A maximized card (see `maximized` in Popover.tsx). `Popover` removes `data-placement` together
+   with the inline position, so these rules apply only once both are gone. */
+.tn-popover.maximized:not([data-placement]) {
     position: fixed;
     inset-block: 5vh;
     inset-inline: 0;
@@ -64,8 +68,9 @@
 }
 
 /*
- * The arrow: which side the popover is on says where it stands, and Popper slides it along that
- * side to sit over the anchor (see the arrow modifier in Popover.tsx).
+ * The arrow. `data-placement` gives the side of the anchor the card is on; these rules put the
+ * arrow on the facing edge, and `placeFloating()` sets its offset along that edge so it points at
+ * the anchor (see the `arrow` option in Popover.tsx).
  *
  * A window onto the square rather than the square itself. The panel's own background is
  * translucent (see `--menu-background-color`), so the half of the diamond that would lie inside the
@@ -99,62 +104,61 @@
  * outward side it is measured.
  */
 
-/* stylelint-disable property-layout-mappings -- The sides here are physical because Popper's
-   placements are: `data-popper-placement="right"` says the panel stands to the right of its anchor
-   whatever the text direction, so its arrow belongs on the panel's physical left edge. A
-   right-to-left app asks Popper for the other placement (see the callers) rather than having these
-   flipped underneath it, and `inset-inline-start` would do exactly that — putting the arrow on the
-   side the panel is anchored against. */
-.tn-popover[data-popper-placement^="right"] > .tn-popover-arrow {
+/* stylelint-disable property-layout-mappings -- The sides here are physical because Floating UI's
+   placements are: `data-placement="right"` means the card is right of its anchor in either text
+   direction, so the arrow goes on the card's physical left edge. The callers request the mirrored
+   placement in a right-to-left layout; `inset-inline-start` would flip the arrow a second time,
+   onto the wrong edge. */
+.tn-popover[data-placement^="right"] > .tn-popover-arrow {
     top: 0;
     left: calc(-1 * var(--tn-popover-arrow-depth));
     width: calc(var(--tn-popover-arrow-depth) + 1px);
     height: var(--tn-popover-arrow-base);
 }
 
-.tn-popover[data-popper-placement^="right"] > .tn-popover-arrow::before {
+.tn-popover[data-placement^="right"] > .tn-popover-arrow::before {
     left: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
     top: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
     border-left-color: var(--dropdown-border-color);
     border-bottom-color: var(--dropdown-border-color);
 }
 
-.tn-popover[data-popper-placement^="left"] > .tn-popover-arrow {
+.tn-popover[data-placement^="left"] > .tn-popover-arrow {
     top: 0;
     right: calc(-1 * var(--tn-popover-arrow-depth));
     width: calc(var(--tn-popover-arrow-depth) + 1px);
     height: var(--tn-popover-arrow-base);
 }
 
-.tn-popover[data-popper-placement^="left"] > .tn-popover-arrow::before {
+.tn-popover[data-placement^="left"] > .tn-popover-arrow::before {
     right: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
     top: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
     border-top-color: var(--dropdown-border-color);
     border-right-color: var(--dropdown-border-color);
 }
 
-.tn-popover[data-popper-placement^="bottom"] > .tn-popover-arrow {
+.tn-popover[data-placement^="bottom"] > .tn-popover-arrow {
     left: 0;
     top: calc(-1 * var(--tn-popover-arrow-depth));
     height: calc(var(--tn-popover-arrow-depth) + 1px);
     width: var(--tn-popover-arrow-base);
 }
 
-.tn-popover[data-popper-placement^="bottom"] > .tn-popover-arrow::before {
+.tn-popover[data-placement^="bottom"] > .tn-popover-arrow::before {
     top: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
     left: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
     border-top-color: var(--dropdown-border-color);
     border-left-color: var(--dropdown-border-color);
 }
 
-.tn-popover[data-popper-placement^="top"] > .tn-popover-arrow {
+.tn-popover[data-placement^="top"] > .tn-popover-arrow {
     left: 0;
     bottom: calc(-1 * var(--tn-popover-arrow-depth));
     height: calc(var(--tn-popover-arrow-depth) + 1px);
     width: var(--tn-popover-arrow-base);
 }
 
-.tn-popover[data-popper-placement^="top"] > .tn-popover-arrow::before {
+.tn-popover[data-placement^="top"] > .tn-popover-arrow::before {
     bottom: calc(var(--tn-popover-arrow-depth) - var(--tn-popover-arrow-square) / 2);
     left: calc((var(--tn-popover-arrow-base) - var(--tn-popover-arrow-square)) / 2);
     border-bottom-color: var(--dropdown-border-color);

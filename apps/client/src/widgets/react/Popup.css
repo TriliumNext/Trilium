@@ -1,0 +1,41 @@
+/*
+ * `body` outranks the position a class it is given sets, such as Bootstrap's `.dropdown-menu`.
+ * `placeFloating()` shows it once it has a position.
+ */
+body .tn-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* As a portaled dropdown menu: over a modal (1055) and a stacked quick-edit popup (1100), under
+       the prompts (2000) it can summon. */
+    z-index: 1200;
+    visibility: hidden;
+}
+
+/*
+ * A menu's or a scrollable panel's frame does not scroll, so the blur the theme puts on its
+ * `::before` covers it whatever its content scrolls to. The content scrolls inside, in the height
+ * `placeFloating()` caps the frame to.
+ */
+.dropdown-menu:has(> :is(.tn-menu-scroll, .tn-panel-scroll)) {
+    display: flex;
+    flex-direction: column;
+}
+
+.tn-menu-scroll,
+.tn-panel-scroll {
+    /* Matches the frame's own padding in the theme's `.dropdown-menu:not(.static)` rule. */
+    --tn-popup-padding: var(--padding, var(--menu-padding-size));
+    flex: 1 1 auto;
+    min-height: 0;
+    /*
+     * Spans the frame's padding, so the content scrolls up to its edge instead of being cut off
+     * inside it, and the separator and header lines, which the theme draws that far past a row,
+     * stay inside the scroller instead of scrolling it sideways. Without the theme's variables
+     * both fall back to 0, as that theme's menu has no padding.
+     */
+    margin: calc(0px - var(--tn-popup-padding));
+    padding: var(--tn-popup-padding);
+    border-radius: inherit;
+    overflow-y: auto;
+}

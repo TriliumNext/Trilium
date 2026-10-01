@@ -313,6 +313,22 @@ describe("CK config - HTML support", () => {
     });
 });
 
+describe("CK config - tables", () => {
+    it("offers the Sort dropdown just before the table properties", async () => {
+        const toolbar = (await buildConfig(baseOpts())).table?.contentToolbar ?? [];
+        expect(toolbar).toContain("tableSort");
+        expect(toolbar.indexOf("tableSort")).toBe(toolbar.indexOf("tableProperties") - 1);
+    });
+
+    it("hands the user's date format to table sorting", async () => {
+        expect((await buildConfig(baseOpts())).autoSort).toEqual({ dateFormats: [] });
+
+        optionsState.map.customDateTimeFormat = "DD.MM.YYYY HH:mm";
+        expect((await buildConfig(baseOpts())).autoSort)
+            .toEqual({ dateFormats: ["DD.MM.YYYY HH:mm"] });
+    });
+});
+
 describe("CK config - licensing", () => {
     it("always runs under the open-source license, with no premium plugins", async () => {
         // Every premium plugin Trilium used has an in-tree GPL replacement, so there is no

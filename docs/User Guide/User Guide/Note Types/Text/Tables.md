@@ -5,11 +5,50 @@ Tables are a powerful feature for <a class="reference-link" href="../Text.md">T
 
 To create a table, simply press the table button and select with the mouse the desired amount of columns and rows, as indicated in the adjacent figure.
 
+Since v0.107.0, the same menu starts with an _Insert table…_ item, for a table larger than the grid or to type its size instead:
+
+1.  Click the <span class="tn-icon cke cke-table"></span> button and select _Insert table…_. A small form opens at the cursor.
+2.  Enter the number of _Rows_ (up to 1000) and _Columns_ (up to 100). The table can have at most 5000 cells in total, for example 1000 rows of 5 columns.
+3.  Press _Insert_ or <kbd>Enter</kbd>.
+
+To close the form without inserting a table, press <kbd>Esc</kbd> or click outside it. From the keyboard, <kbd>Tab</kbd> moves between _Insert table…_ and the grid while the menu is open.
+
 ## Formatting toolbar
 
 When a table is selected, a special formatting toolbar will appear:
 
 <img src="3_Tables_image.png" width="384" height="100">
+
+## Context menu
+
+Since v0.106.0, right-clicking anywhere inside a table opens a context menu with the most common table operations:
+
+*   _Insert row above_ and _Insert row below_ insert a blank row next to the row of the current cell. When the selection spans multiple rows, the same number of rows is inserted.
+*   _Insert column to the left_ and _Insert column to the right_ work the same way for columns.
+*   Since v0.107.0, _Set as header_ or _Set header up to this row_, depending on the selection, turns rows into header rows, which always start at the top of the table:
+    *   _Set as header_ shows when the selection starts at the first row, and makes every selected row a header row.
+    *   _Set header up to this row_ shows when the selection is in a single row below the first, and makes that row and every row above it header rows.
+    *   Neither shows when the selection spans several rows below the first.
+    *   A check mark shows that the rows are already header rows. Choosing the item again turns them, and every header row below them, back into regular rows. For example, in a table with five header rows, choosing _Set header up to this row_ on the third row leaves only the first two as header rows.
+*   _Merge cells_ merges the selected cells into one. The selected cells must form a rectangle.
+*   _Split cell_ splits each selected cell in two, either _Vertically_ or _Horizontally_. _Unmerge cells_, in the same submenu, turns each merged cell in the selection back into the single cells it covers, keeping its content in the top-left one; cells that are not merged stay as they are.
+*   _Distribute columns evenly_ splits the combined width of the columns the selection touches equally between them. The other columns and the width of the table stay as they are. It needs a selection spanning at least two columns; a merged cell counts for every column it covers.
+*   _Cut_, _Copy_ and _Copy as Markdown_ act on the selected cells. Since v0.107.0, _Copy_ and _Paste_ open submenus with their variants, such as _Copy as Markdown_ and _Paste as plain text_; clicking _Copy_ or _Paste_ itself still copies or pastes:
+    *   Cutting or copying produces a smaller table holding just the selected cells. Pasting it over a cell selection replaces those cells; pasting elsewhere inserts it as a table of its own. Cutting clears the cells without removing rows or columns.
+    *   _Copy as Markdown_ converts the selected cells to a Markdown table. A selected header row becomes the Markdown header; without one, an empty header row is emitted, since Markdown tables require one.
+*   Since v0.107.0, _Paste rows above_ and _Paste rows below_, in the _Paste_ submenu, paste the clipboard as new rows next to the row of the current cell, instead of over the cells from the cursor on. They show only when the selection is in a single row, and, like _Paste_, only where the clipboard can be read:
+    *   A copied table becomes one new row for each of its rows, filled from the first column. When it has more columns than the table, the table gains columns, as with a regular paste. Other content goes in the first cell of a single new row.
+    *   The new rows are selected afterwards.
+    *   When merged cells join the row to others, the new rows go above or below that whole block of rows.
+*   _Sort_, below the clipboard section, sorts the rows by the column of the current cell, in _Ascending_ or _Descending_ order. See [Sorting rows](#sorting-rows).
+*   _Delete row_ and _Delete column_, below _Sort_, remove every row or column the selection touches, even when only some of their cells are selected.
+*   _Delete table_ removes the whole table and leaves an empty paragraph in its place. In a table nested inside another, only the inner table is removed.
+*   Since v0.107.0, _Select_, below _Delete table_, selects the cells of every row (_Row_) or column (_Column_) the selection touches, or every cell of the table (_Table_). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button, which selects the table as a whole, _Table_ selects its cells, so cell operations such as _Merge cells_ apply to all of them. In a table nested inside another, _Table_ selects only the cells of the inner table.
+
+Right-clicking a cell that is not part of the current selection moves the cursor there first, so the menu always applies to the cell under the pointer.
+
+> [!NOTE]
+> In the browser, Trilium's menu replaces the browser's own context menu inside tables. To reach the browser's menu (for example for its spell checking suggestions), hold <kbd>Shift</kbd> while right-clicking. The desktop application is unaffected, since its menu already includes the spelling suggestions. In the browser, the menu also offers _Paste_ only when the page can read the clipboard, which requires a secure (HTTPS) context and your permission; otherwise, paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
 ## Navigating a table
 
@@ -26,6 +65,7 @@ When a table is selected, a special formatting toolbar will appear:
 ## Resizing cells
 
 *   Columns can be resized by hovering the mouse over the border of two adjacent cells and dragging it.
+*   To give several columns the same width, select cells across them and choose _Distribute columns evenly_ from the <span class="tn-icon cke cke-table-column"></span> button of the formatting toolbar or from the [context menu](#context-menu).
 *   By default, the row height is not adjustable using the mouse, but it can be configured from the cell settings (see below).
 *   To adjust exactly the width (in pixels or percentages) of a cell, select the <span class="tn-icon cke cke-table-cell-properties"></span> button.
 
@@ -34,6 +74,56 @@ When a table is selected, a special formatting toolbar will appear:
 *   To insert a new column, click on a desired location, then press the <span class="tn-icon cke cke-table-column"></span> button from the formatting toolbar and select _Insert column left or right._
 *   To insert a new row, click on a desired location, then press the <span class="tn-icon cke cke-table-row"></span> button and select _Insert row above_ or _below_.
     *   A quicker alternative to creating a new row while at the end of the table is to press the <kbd>Tab</kbd> key.
+*   Both operations are also available in the [context menu](#context-menu), which inserts as many rows or columns as the selection spans.
+
+## Moving rows and columns
+
+Since v0.106.0, rows and columns can be reordered with the keyboard:
+
+*   <kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> move the rows touched by the selection up or down.
+*   <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> move the columns touched by the selection left or right.
+
+Merged cells are never split by a move. The rows or columns held together by a merged cell travel as one block, and moving toward such a block jumps over it entirely.
+
+When the table has a header row, a header row moved below the header area becomes a regular row, and a regular row moved into the header area becomes a header row. Header columns behave the same way.
+
+Outside of tables, <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> keep navigating the note history, and <kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> keep moving the current paragraph.
+
+## Sorting rows
+
+Since v0.107.0, the rows of a table can be sorted by the values of one column:
+
+*   To sort all the rows, place the cursor in any cell of the column to sort by, then select _Sort_ → _Ascending_ or _Descending_ from the [context menu](#context-menu). The same items are in the <span class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.
+*   To sort only some of the rows, select their cells in the column to sort by, then sort the same way. Sorting is not available while the selection spans more than one column.
+
+Header rows always stay at the top of the table and are never sorted. A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.
+
+### How values are compared
+
+Each cell is read as plain text, so formatting does not affect the order. Trilium then detects what kind of value the cell holds:
+
+| Kind | Examples | Compared by |
+| --- | --- | --- |
+| Time | `15:02`, `15:02:38`, `3:02 PM` | The time of day. |
+| Date | `2026-09-30`, `2026-09-30 15:02`, `30 September 2026`, `Wednesday, 30 September 2026`, `2026-09-30T15:02:38+03:00` | The date and time. |
+| Number | `12`, `-3.5`, `1,234.56`, `$ 12.04`, `21 RON`, `24.5m` | The numeric value. |
+| Text | Anything else. | Alphabetically, ignoring case, with numbers inside the text in numeric order (`Item 9` before `Item 10`). Accents count, so `a` and `á` differ. |
+| Empty | An empty cell, or one holding only spaces. | Not compared. Empty cells always go last. |
+
+Ascending order puts times first, then dates, numbers and text. Descending order reverses it. Empty cells go last in both directions.
+
+Numbers, dates and times with the same value are ordered by their text, so `5 apples` comes before `5 pears`. Rows whose cells hold the same text, ignoring case, keep their relative order.
+
+*   Dates are also recognized in the formats of the note's language, such as `30.09.2026` or `30. September 2026` for German, and in the format chosen in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Text Notes_ → _Editor_ → _Date/time format_ for [inserting the date and time](Insert%20buttons.md).
+*   A number can start with a currency symbol, such as `$`, `€` or `£`. Whatever follows the number, such as a unit, is ignored, so units are not converted: `1 km` sorts before `500 m`. A cell that starts with letters, such as `RON 21`, is text.
+*   The decimal separator follows the language of the note: `1.500` is one and a half in English, but one thousand five hundred in German. A comma or period that is not followed by exactly three digits is always read as a decimal separator, so `1,5` is one and a half in either language.
+*   The language of the note is the one set in its Basic Properties, or else the default content language. See <a class="reference-link" href="Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>.
+
+### Merged cells
+
+Rows joined by a merged cell are kept together and move as one block. The block is sorted by the value in its first row. When the block has more than one cell in the sorted column, the other cells do not affect the order, and a message says so: _Some rows were sorted together because merged cells tie them to each other_.
+
+When the selection covers only part of such a block, the whole block is sorted.
 
 ## Merging cells
 
@@ -42,7 +132,11 @@ To merge two or more cells together, simply select them via drag & drop and pres
 More options are available by pressing the arrow next to it:
 
 *   Click on a single cell and select Merge cell up/down/right/left to merge with an adjacent cell.
+*   Select _Merge selected cells_ to merge the selected cells, the same as pressing the button itself.
 *   Select _Split cell vertically_ or _horizontally_, to split a cell into multiple cells (can also be used to undo a merge).
+*   Select _Unmerge cells_ to turn each merged cell in the selection back into the single cells it covers, keeping its content in the top-left one.
+
+_Merge selected cells_ and _Unmerge cells_ are available since v0.107.0. Merging and splitting are also available by right-clicking the selected cells, via the [context menu](#context-menu), where _Unmerge cells_ is in the _Split cell_ submenu.
 
 ## Table properties
 

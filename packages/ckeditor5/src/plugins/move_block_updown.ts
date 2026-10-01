@@ -4,10 +4,17 @@
 
 import { Command, ModelDocumentSelection, ModelElement, ModelLiveRange, ModelNode, Plugin, _isMac, Editor } from 'ckeditor5';
 
-const keyMap = {
-    ArrowUp: 'moveBlockUp',
-    ArrowDown: 'moveBlockDown'
-};
+import { isSelectionInTable } from "./table_move/table_move_commands.js";
+
+interface MoveKeyCommands {
+    table: "moveTableRowUp" | "moveTableRowDown";
+    block: "moveBlockUp" | "moveBlockDown";
+}
+
+const keyMap = new Map<string, MoveKeyCommands>([
+    ["ArrowUp", { table: "moveTableRowUp", block: "moveBlockUp" }],
+    ["ArrowDown", { table: "moveTableRowDown", block: "moveBlockDown" }]
+]);
 
 export default class MoveBlockUpDownPlugin extends Plugin {
     init() {
@@ -22,38 +29,61 @@ export default class MoveBlockUpDownPlugin extends Plugin {
     }
 
 	bindMoveBlockShortcuts(editor: Editor) {
-		editor.editing.view.once('render', () => {
-			const domRoot = editor.editing.view.getDomRoot();
-			/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
-			if (!domRoot) return;
+		addEditingKeydownCapture(this, (e) => {
+			const commands = keyMap.get(e.key);
+			if (!commands || !hasMoveModifier(e)) {
+				return;
+			}
+			e.preventDefault();
+			e.stopImmediatePropagation();
 
-            const isMac = _isMac(navigator.userAgent.toLowerCase());
-			const handleKeydown = (e: KeyboardEvent) => {
-				const command = keyMap[e.key];
-                if (!command) return;
-                const isOnlyMeta = (!e.ctrlKey && !e.altKey && e.metaKey);
-                const isOnlyAlt = (!e.ctrlKey && e.altKey && !e.metaKey);
-
-				if ((!isMac && isOnlyMeta) || isOnlyAlt) {
-					e.preventDefault();
-					e.stopImmediatePropagation();
-					editor.execute(command);
+			// Inside a table the whole row moves; the block commands would only shuffle
+			// paragraphs inside one cell. The guard keeps block moves working in editor
+			// builds without the TableMove plugin.
+			const tableCommand = editor.commands.get(commands.table);
+			if (tableCommand && isSelectionInTable(editor.model.document.selection)) {
+				if (tableCommand.isEnabled) {
+					editor.execute(commands.table);
 				}
-			};
-
-			domRoot.addEventListener('keydown', handleKeydown, { capture: true });
-
-			// Remove the native listener when the editor is destroyed. The editing root is
-			// reused across editor recreations (e.g. switching the content language rebuilds
-			// the editor in the same container — see #10095). Without this cleanup the orphaned
-			// listener stays attached, captures the keystroke first and runs editor.execute()
-			// against the destroyed editor — silently swallowing the shortcut until a reload.
-			this.listenTo(editor, 'destroy', () => {
-				domRoot.removeEventListener('keydown', handleKeydown, { capture: true });
-			});
+				return;
+			}
+			editor.execute(commands.block);
 		});
 	}
 
+}
+
+/** True when the keydown carries the move-shortcut modifier: plain Alt, or plain Meta off macOS. */
+export function hasMoveModifier(e: KeyboardEvent): boolean {
+	const isMac = _isMac(navigator.userAgent.toLowerCase());
+	const isOnlyMeta = (!e.ctrlKey && !e.altKey && e.metaKey);
+	const isOnlyAlt = (!e.ctrlKey && e.altKey && !e.metaKey);
+	return (!isMac && isOnlyMeta) || isOnlyAlt;
+}
+
+/**
+ * Adds a capture-phase keydown listener on the editing DOM root once it renders. Native
+ * capturing intercepts the keystroke before plugin-level keystroke handling, which can fail
+ * when the selection is near an object, and before window-scoped application shortcuts.
+ *
+ * The listener is removed when the editor is destroyed. The editing root is reused across
+ * editor recreations (e.g. switching the content language rebuilds the editor in the same
+ * container — see #10095). Without this cleanup the orphaned listener stays attached, captures
+ * the keystroke first and runs editor.execute() against the destroyed editor — silently
+ * swallowing the shortcut until a reload.
+ */
+export function addEditingKeydownCapture(plugin: Plugin, handleKeydown: (e: KeyboardEvent) => void) {
+	const editor = plugin.editor;
+	editor.editing.view.once('render', () => {
+		const domRoot = editor.editing.view.getDomRoot();
+		/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
+		if (!domRoot) return;
+
+		domRoot.addEventListener('keydown', handleKeydown, { capture: true });
+		plugin.listenTo(editor, 'destroy', () => {
+			domRoot.removeEventListener('keydown', handleKeydown, { capture: true });
+		});
+	});
 }
 
 abstract class MoveBlockUpDownCommand extends Command {

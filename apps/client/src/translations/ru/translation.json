@@ -3781,7 +3781,9 @@
       "flip-vertically": "Отразить вертикально",
       "change-icon": "Изменить иконку",
       "insert-date-time-0": "Вставить дату/время: %0",
-      "insert-time-0": "Вставить время: %0"
+      "insert-time-0": "Вставить время: %0",
+      "date-time": "Дата/время",
+      "math": "Математика"
     },
     "task-state-dropped-title": "Недопустимые состояния задачи",
     "task-state-dropped-configure": "Настроить состояния задач",

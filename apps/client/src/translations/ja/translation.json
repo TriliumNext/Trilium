@@ -1960,7 +1960,23 @@
     "mathlive_description": "ビジュアルエディターを使用して数式を編集できます。"
   },
   "table_context_menu": {
-    "delete_row": "行を削除"
+    "delete_row": "行を削除",
+    "insert_rows_above": "行を上に挿入",
+    "insert_rows_below": "行を下に挿入",
+    "insert_columns_left": "列を左に挿入",
+    "insert_columns_right": "列を右に挿入",
+    "delete_rows": "行を削除",
+    "delete_columns": "列を削除",
+    "delete_table": "表を削除",
+    "distribute_columns": "列の幅を均等にする",
+    "merge_cells": "セルを結合",
+    "split_cells": "セルを分割",
+    "split_vertically": "垂直に",
+    "split_horizontally": "水平に",
+    "split_reset": "セルの結合を解除",
+    "sort": "並べ替え",
+    "sort_ascending": "昇順",
+    "sort_descending": "降順"
   },
   "content_renderer": {
     "open_externally": "外部で開く",
@@ -3687,7 +3703,25 @@
       "flip-vertically": "上下反転",
       "change-icon": "アイコンを変更",
       "insert-date-time-0": "日付/時刻を挿入: %0",
-      "insert-time-0": "時刻を挿入: %0"
+      "insert-time-0": "時刻を挿入: %0",
+      "math": "数式",
+      "date-time": "日付 / 時刻",
+      "move-row-up": "行を上に移動",
+      "move-row-down": "行を下に移動",
+      "move-column-left": "列を左に移動",
+      "move-column-right": "列を右に移動",
+      "insert-table": "表を挿入…",
+      "rows": "行",
+      "columns": "列",
+      "enter-a-whole-number-between-1-and-0": "1 から %0 までの整数を入力してください。",
+      "the-table-is-too-large-max-0-cells": "表が大きすぎます（最大 %0 セルまで）。",
+      "distribute-columns-evenly": "列の幅を均等にする",
+      "merge-selected-cells": "選択したセルを結合",
+      "unmerge-cells": "セルの結合を解除",
+      "sort": "並べ替え",
+      "ascending": "昇順",
+      "descending": "降順",
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "結合されたセルによって互いに関連付けられているため、一部の行はまとめて並べ替えられました"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",

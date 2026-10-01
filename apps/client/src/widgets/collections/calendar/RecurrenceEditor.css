@@ -1,4 +1,4 @@
-/* Carried by the in-place wrapper and by the portaled one alike (see portalToBody in Dropdown.tsx),
+/* Carried by the toggle's wrapper and by the popup's portal alike (see `portalClassName` in Dropdown.tsx),
    so the button is styled here and the menu there under the one class. */
 .calendar-recurrence-dropdown {
     flex: 1;

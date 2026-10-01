@@ -230,6 +230,12 @@ export interface ElectronClipboardApi {
      * grant the sensitive `clipboard-read` permission to the whole session.
      */
     readText(): Promise<string>;
+
+    /**
+     * Reads the HTML flavor of the system clipboard, the same way as {@link readText}. Empty when
+     * the clipboard has no HTML.
+     */
+    readHTML(): Promise<string>;
 }
 
 /**

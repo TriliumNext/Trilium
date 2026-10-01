@@ -170,14 +170,14 @@ describe("BoardGroupBy", () => {
 
         // Bootstrap does not open a menu under happy-dom, and the items are drawn only once it is.
         await act(async () => {
-            $(mountPoint.querySelector(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(mountPoint.querySelector(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
         });
 
         return { mountPoint, onSelect };
     }
 
     const items = (mountPoint: HTMLElement) =>
-        [ ...mountPoint.querySelectorAll(".dropdown-menu .dropdown-item") ];
+        [ ...document.querySelectorAll(".dropdown-menu .dropdown-item") ];
 
     it("offers making a grouping after the ones the board has, behind a divider", async () => {
         const { mountPoint } = await setup();
@@ -186,7 +186,8 @@ describe("BoardGroupBy", () => {
             "Status", "Priority", "promoted_attributes.create_attribute"
         ]);
         // Set apart from the groupings above it: the entry makes one rather than picking one.
-        const menu = [ ...(mountPoint.querySelector(".dropdown-menu")?.children ?? []) ];
+        // The rows scroll inside the menu, in its `.tn-menu-scroll`.
+        const menu = [ ...(document.querySelector(".dropdown-menu > .tn-menu-scroll")?.children ?? []) ];
         const divider = menu.findIndex(child => child.classList.contains("dropdown-divider"));
         const create = menu.findIndex(child => child.classList.contains("board-group-by-create"));
         expect(divider).toBeGreaterThan(0);
@@ -216,7 +217,7 @@ describe("BoardGroupBy", () => {
         const { mountPoint } = await setup();
 
         await act(async () => {
-            mountPoint.querySelector<HTMLElement>(".board-group-by-create")?.click();
+            document.querySelector<HTMLElement>(".board-group-by-create")?.click();
         });
 
         expect(mocks.detail.opts).toMatchObject({
@@ -240,7 +241,7 @@ describe("BoardGroupBy", () => {
         const { mountPoint, onSelect } = await setup();
 
         await act(async () => {
-            mountPoint.querySelector<HTMLElement>(".board-group-by-create")?.click();
+            document.querySelector<HTMLElement>(".board-group-by-create")?.click();
         });
 
         const made: Attribute = {
@@ -269,7 +270,7 @@ describe("BoardGroupBy", () => {
         const { mountPoint, onSelect } = await setup();
 
         await act(async () => {
-            mountPoint.querySelector<HTMLElement>(".board-group-by-create")?.click();
+            document.querySelector<HTMLElement>(".board-group-by-create")?.click();
         });
 
         await act(async () => {
@@ -294,7 +295,7 @@ describe("BoardGroupBy", () => {
         const { mountPoint, onSelect } = await setup();
 
         await act(async () => {
-            mountPoint.querySelector<HTMLElement>(".board-group-by-create")?.click();
+            document.querySelector<HTMLElement>(".board-group-by-create")?.click();
         });
 
         await act(async () => {

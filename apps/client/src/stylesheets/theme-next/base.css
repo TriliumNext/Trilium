@@ -161,14 +161,9 @@ body.backdrop-effects-disabled {
     white-space-collapse: discard;
 }
 
-.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon {
+/* The row's own icon is spaced by the `.tn-menu-gap` beside it. */
+.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon:not(.dropdown-item > span > :first-child) {
     margin-inline-end: 6px;
-}
-
-.dropdown-menu.tn-dropdown-menu-scrollable {
-    /* Note: scrollable dropdowns does not support submenus */
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 body.desktop .dropdown-menu::before,
@@ -248,8 +243,9 @@ body.desktop .dropdown-item.dropdown-submenu .dropdown-toggle,
     }
 }
 
-body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item:not(.dropdown-submenu),
-body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item.dropdown-submenu .dropdown-toggle {
+/* Each menu level holds its rows in its own `.tn-menu-scroll`; submenu layers are outside it. */
+body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item:not(.dropdown-submenu),
+body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item.dropdown-submenu .dropdown-toggle {
     padding-inline-end: var(--menu-item-start-padding) !important;
     padding-inline-start: var(--menu-item-end-padding) !important;
 }
@@ -368,8 +364,13 @@ body.desktop .dropdown-submenu.dropstart .dropdown-toggle::before {
     color: var(--menu-item-arrow-color) !important;
 }
 
-body[dir=rtl] .dropdown-menu:not([data-popper-placement="bottom-start"]) .dropdown-toggle::after {
+/* Right to left, the end side is the left, so both arrows point the other way. */
+body.desktop[dir=rtl] .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
     content: "\ea4d" !important;
+}
+
+body.desktop[dir=rtl] .dropdown-submenu.dropstart .dropdown-toggle::before {
+    content: "\ed3b" !important;
 }
 
 /* Menu item group heading */
@@ -431,7 +432,7 @@ body.mobile #context-menu-cover {
 }
 
 body.mobile .dropdown-menu.mobile-bottom-menu,
-body.mobile .dropdown.global-menu .dropdown-menu {
+body.mobile .tn-dropdown-portal.global-menu .dropdown-menu {
     border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
 }
 

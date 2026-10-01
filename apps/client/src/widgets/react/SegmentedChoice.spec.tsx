@@ -188,7 +188,7 @@ describe("SegmentedChoice", () => {
         act(() => render(vnode, container));
         const dropdown = container.querySelector(".dropdown");
         act(() => {
-            if (dropdown) $(dropdown).trigger("show.bs.dropdown");
+            if (dropdown) $(dropdown).children("button:not([aria-expanded=true])").trigger("click");
         });
     }
 

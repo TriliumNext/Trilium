@@ -663,6 +663,36 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    // The clipboard's "copy as markdown" never reimports, so it accepts the phantom header the
+    // note export refuses: a copied subset of body cells still comes out as a markdown table.
+    it("renders a headerless table under a blank header with headerlessTables: emptyHeader", () => {
+        const html = trimIndentation/*html*/`\
+            <figure class="table">
+                <table>
+                    <tbody>
+                        <tr><td>a1</td><td>b1</td></tr>
+                        <tr><td>a2</td><td>b2</td></tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = "|  |  |\n| --- | --- |\n| a1 | b1 |\n| a2 | b2 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
+        // The mode is per call, not sticky converter state.
+        expect(markdownExportService.toMarkdown(html)).toContain("<table>");
+    });
+
+    it("keeps a real heading row as the header under headerlessTables: emptyHeader", () => {
+        const html = "<table><thead><tr><th>h1</th><th>h2</th></tr></thead>"
+            + "<tbody><tr><td>a1</td><td>b1</td></tr></tbody></table>";
+        const expected = "| h1 | h2 |\n| --- | --- |\n| a1 | b1 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
+    });
+
     // Admonitions are block content, and GFM table cells can only hold inline
     // content. Flattening the admonition into a cell produces unrenderable
     // `> [!NOTE]<br>...` noise, so a table containing one is kept as raw HTML to

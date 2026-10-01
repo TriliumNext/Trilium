@@ -1,7 +1,6 @@
 import "./NoteActions.css";
 
 import { ConvertToAttachmentResponse } from "@triliumnext/commons";
-import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren, RefObject } from "preact";
 import { useContext, useEffect, useRef } from "preact/hooks";
 
@@ -24,7 +23,7 @@ import MovePaneButton from "../buttons/move_pane_button";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
-import Dropdown from "../react/Dropdown";
+import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
@@ -72,9 +71,9 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     noteContext?: NoteContext,
     itemsAtStart?: ComponentChildren;
     itemsNearNoteSettings?: ComponentChildren;
-    dropdownRef?: RefObject<BootstrapDropdown>;
+    dropdownRef?: RefObject<DropdownHandle>;
 }) {
-    const dropdownRef = useSyncedRef<BootstrapDropdown>(externalDropdownRef, null);
+    const dropdownRef = useSyncedRef<DropdownHandle>(externalDropdownRef, null);
     const parentComponent = useContext(ParentComponent);
     const noteType = useNoteProperty(note, "type") ?? "";
     const [viewType] = useNoteLabel(note, "viewType");
@@ -117,13 +116,11 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 dropdownRef={dropdownRef}
                 buttonClassName={ isNewLayout ? "bx bx-dots-horizontal-rounded" : "bx bx-dots-vertical-rounded" }
                 className="note-actions"
-                dropdownContainerClassName="mobile-bottom-menu"
+                mobileBottomSheet
                 hideToggleArrow
                 noSelectButtonStyle
-                noDropdownListStyle
                 iconAction
                 onHidden={() => itemToFocusRef.current = null }
-                mobileBackdrop
             >
                 {itemsAtStart}
 
@@ -192,7 +189,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 {isBoard && <CommandItem icon="bx bx-cog" text={t("board_view.properties")}
                     command={() => parentComponent?.triggerEvent("showBoardProperties", { ntxId: noteContext?.ntxId })} />}
 
-                <FormDropdownSubmenu icon="bx bx-wrench" title={t("note_actions.advanced")} dropStart>
+                <FormDropdownSubmenu icon="bx bx-wrench" title={t("note_actions.advanced")}>
                     <CommandItem command="openNoteExternally" icon="bx bx-file-find" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_externally")} title={t("note_actions.open_note_externally_title")} />
                     <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || isMac || !isElectron} text={t("note_actions.open_note_custom")} />
                     <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
@@ -227,7 +224,7 @@ function CodeProperties({ note }: { note: FNote }) {
 
     return (
         <>
-            <FormDropdownSubmenu title={t("note_actions.word_wrap")} icon="bx bx-align-justify" dropStart>
+            <FormDropdownSubmenu title={t("note_actions.word_wrap")} icon="bx bx-align-justify">
                 <FormListItem checked={wrapLines == null} onClick={() => setWrapLines(null)} description={t("note_actions.word_wrap_auto_description")}>
                     {t("note_actions.word_wrap_auto")}
                 </FormListItem>
@@ -313,7 +310,7 @@ function EditabilityDropdown({ note }: { note: FNote }) {
     }
 
     return (
-        <FormDropdownSubmenu title={t("basic_properties.editable")} icon="bx bx-edit-alt" dropStart>
+        <FormDropdownSubmenu title={t("basic_properties.editable")} icon="bx bx-edit-alt">
             <FormListItem checked={!readOnly && !autoReadOnlyDisabled} onClick={() => setState(false, false)} description={t("editability_select.note_is_editable")}>{t("editability_select.auto")}</FormListItem>
             <FormListItem checked={readOnly && !autoReadOnlyDisabled} onClick={() => setState(true, false)} description={t("editability_select.note_is_read_only")}>{t("editability_select.read_only")}</FormListItem>
             <FormListItem checked={!readOnly && autoReadOnlyDisabled} onClick={() => setState(false, true)} description={t("editability_select.note_is_always_editable")}>{t("editability_select.always_editable")}</FormListItem>
@@ -326,7 +323,7 @@ function NoteTypeDropdown({ note }: { note: FNote }) {
     const currentNoteMime = useNoteProperty(note, "mime");
 
     return (
-        <FormDropdownSubmenu title={t("basic_properties.note_type")} icon="bx bx-file" dropStart>
+        <FormDropdownSubmenu title={t("basic_properties.note_type")} icon="bx bx-file">
             <NoteTypeDropdownContent
                 currentNoteType={currentNoteType}
                 currentNoteMime={currentNoteMime}
@@ -362,11 +359,11 @@ function DevelopmentActions({ note, noteContext }: { note: FNote, noteContext?: 
 }
 
 export function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
+    const parentComponent = useContext(ParentComponent);
     return <FormListItem
         icon={icon}
         title={title}
-        triggerCommand={typeof command === "string" ? command : undefined}
-        onClick={typeof command === "function" ? command : undefined}
+        onClick={typeof command === "function" ? command : () => void parentComponent?.triggerCommand(command)}
         disabled={disabled}
     >{text}</FormListItem>;
 }
@@ -430,7 +427,6 @@ function ExportAsImage({ ntxId, parentComponent }: { ntxId: string | null | unde
         <FormDropdownSubmenu
             icon="bx bxs-file-image"
             title={t("note_actions.export_as_image")}
-            dropStart
         >
             <FormListItem
                 icon="bx bxs-file-png"

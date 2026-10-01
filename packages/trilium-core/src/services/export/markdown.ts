@@ -8,10 +8,22 @@ import Turnish, { type Rule } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
 
-let instance: Turnish | null = null;
+/** One converter per headerless-table mode, built lazily and reused across invocations. */
+const instances = new Map<HeaderlessTableMode, Turnish>();
 
 /** Task states for the current `toMarkdown` invocation, consulted by the list-item filter. */
 let currentTaskStates: TaskStateDef[] = [];
+
+/**
+ * How a table without a heading row renders: kept as raw HTML so notes round-trip ("keepHtml",
+ * the default), or under a synthesized blank header ("emptyHeader") for output that never
+ * reimports, such as the clipboard.
+ */
+export type HeaderlessTableMode = "keepHtml" | "emptyHeader";
+
+export interface ToMarkdownOptions {
+    headerlessTables?: HeaderlessTableMode;
+}
 
 export { ADMONITION_TYPE_MAPPINGS };
 
@@ -36,15 +48,18 @@ const fencedCodeBlockFilter: Rule = {
     }
 };
 
-function toMarkdown(content: string) {
+function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     currentTaskStates = getTaskStates();
 
-    if (instance === null) {
+    const headerlessTables = options.headerlessTables ?? "keepHtml";
+    let instance = instances.get(headerlessTables);
+    if (instance === undefined) {
         instance = new Turnish({
             headingStyle: "atx",
             bulletListMarker: "*",
             emDelimiter: "_",
             codeBlockStyle: "fenced",
+            headerlessTables,
             blankReplacement(_content, node) {
                 if (node.nodeName === "SECTION" && node.classList.contains("include-note")) {
                     return node.outerHTML;
@@ -76,6 +91,7 @@ function toMarkdown(content: string) {
         instance.addRule("li", buildListItemFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
+        instances.set(headerlessTables, instance);
     }
 
     return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(content)));

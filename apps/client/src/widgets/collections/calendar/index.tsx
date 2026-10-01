@@ -479,9 +479,7 @@ function CalendarViewSwitcher({ calendarRef, containerRef }: {
         <CollapseOnOverflow container={containerRef} alwaysCollapsed={isMobile()}>
             {(collapsed) => (collapsed
                 ? (
-                    // A handful of views, so the menu never scrolls and can be frosted the way that
-                    // survives being opened inside the note's own content (see noDropdownListStyle).
-                    <Dropdown text={currentViewTypeData?.name} noDropdownListStyle>
+                    <Dropdown text={currentViewTypeData?.name}>
                         {CALENDAR_VIEWS.map(viewData => (
                             <FormListItem
                                 key={viewData.type}

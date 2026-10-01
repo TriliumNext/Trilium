@@ -9,7 +9,6 @@ var rules: Record<string, Rule> = {}
 var alignMap: Record<string, string> = { left: ':---', right: '---:', center: ':---:' };
 
 let isCodeBlock_: ((node: Node) => boolean) | null = null;
-let options_: TurnishOptions | null = null;
 
 // We need to cache the result of tableShouldBeSkipped() as it is expensive.
 // Caching it means we went from about 9000 ms for rendering down to 90 ms.
@@ -82,10 +81,12 @@ rules.table = {
     return node.nodeName === 'TABLE';
   },
 
-  replacement: function (content: string, node) {
+  // The per-call `options` parameter, not a module-level copy: several Turnish instances with
+  // different options share this rules object.
+  replacement: function (content: string, node, options: TurnishOptions) {
     // Only convert tables that can result in valid Markdown
     // Other tables are kept as HTML using `keep` (see below).
-    if (tableShouldBeHtml(node, options_)) {
+    if (tableShouldBeHtml(node, options)) {
       return prettyPrintTable(node);
     } else {
       if (tableShouldBeSkipped(node)) return content;
@@ -93,13 +94,14 @@ rules.table = {
       // Ensure there are no blank lines
       content = content.replace(/\n+/g, '\n')
 
-      // A table reaching this branch always has a real heading row (otherwise
-      // `tableShouldBeHtml` would have kept it as HTML), so the rendered content
-      // already starts with a header + divider and no synthetic header is needed.
+      // A headerless table reaches this branch only under `headerlessTables:
+      // "emptyHeader"` (otherwise `tableShouldBeHtml` keeps it as HTML), and GFM
+      // requires a header, so a blank one is synthesized above the content.
+      const header = tableHasHeadingRow(node) ? '' : `${emptyHeader(node)}\n`;
       const captionContent = node.caption ? node.caption.textContent || '' : '';
       const caption = captionContent ? `${captionContent}\n\n` : '';
       const tableContent = content.trimStart();
-      return `\n\n${caption}${tableContent}\n\n`;
+      return `\n\n${caption}${header}${tableContent}\n\n`;
     }
   }
 }
@@ -222,7 +224,23 @@ const tableShouldBeHtml = (tableNode: any, options: TurnishOptions | null): bool
     // a phantom empty header, which reimports as a spurious blank row. Keep such
     // tables as raw HTML instead so they round-trip faithfully. Skippable tables
     // (e.g. a single cell) are rendered as paragraphs and are left untouched.
-    (!tableShouldBeSkipped(tableNode) && !tableHasHeadingRow(tableNode));
+    // `headerlessTables: "emptyHeader"` accepts the phantom header instead, for
+    // output that never reimports, such as the clipboard.
+    (!tableShouldBeSkipped(tableNode) && !tableHasHeadingRow(tableNode) &&
+      options?.headerlessTables !== 'emptyHeader');
+}
+
+// A blank header row plus its divider line, sized and aligned per column, for a
+// headerless table rendered under `headerlessTables: "emptyHeader"`.
+function emptyHeader(node: HTMLTableElement): string {
+  const colCount = tableColCount(node);
+  let headerCells = '';
+  let borderCells = '';
+  for (let i = 0; i < colCount; i++) {
+    headerCells += cell('', null, i);
+    borderCells += cell(getBorder(getColumnAlignment(node, i)), null, i);
+  }
+  return `${headerCells}\n${borderCells}`;
 }
 
 // A table has a heading row when its first row qualifies as a heading row (its
@@ -307,7 +325,6 @@ function prettyPrintTable(node: Element): string {
 
 export default function tables (turndownService: Turnish) {
   isCodeBlock_ = (turndownService as any).isCodeBlock ?? null;
-  options_ = turndownService.options;
 
   turndownService.keep(function (node) {
     if (node.nodeName === 'TABLE' && tableShouldBeHtml(node, turndownService.options)) return true;

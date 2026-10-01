@@ -167,6 +167,14 @@ const fakeNativeImage = {
 
 class FakeClipboardItem {
     constructor(readonly items: Record<string, unknown>) {}
+
+    get types() {
+        return Object.keys(this.items);
+    }
+
+    getType(type: string) {
+        return Promise.resolve(this.items[type]);
+    }
 }
 
 const fakeApp = {
@@ -183,7 +191,11 @@ const electronSurface = {
     shell: fakeShell,
     globalShortcut: fakeGlobalShortcut,
     nativeImage: fakeNativeImage,
-    clipboard: { write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()), readText: vi.fn(() => Promise.resolve("")) },
+    clipboard: {
+        write: vi.fn((_items: FakeClipboardItem[]) => Promise.resolve()),
+        readText: vi.fn(() => Promise.resolve("")),
+        read: vi.fn((): Promise<FakeClipboardItem[]> => Promise.resolve([]))
+    },
     ClipboardItem: FakeClipboardItem,
     nativeTheme: { themeSource: "system" },
     BrowserWindow: fakeBrowserWindowClass,
@@ -885,6 +897,21 @@ describe("window service", () => {
             state.nativeImageThrow = true;
             await fireOn("copy-image-to-clipboard", makeEvent(), new Uint8Array([1]));
             expect(state.log.error).toHaveBeenCalledWith(expect.stringContaining("failed"));
+        });
+
+        it("read-clipboard-text and read-clipboard-html return the clipboard flavors", async () => {
+            const html = new Blob(["<b>html</b>"], { type: "text/html" });
+            const text = new Blob(["text"], { type: "text/plain" });
+            electronSurface.clipboard.readText.mockReturnValueOnce(Promise.resolve("text"));
+            electronSurface.clipboard.read
+                .mockResolvedValueOnce([
+                    new FakeClipboardItem({ "text/plain": text, "text/html": html })
+                ])
+                .mockResolvedValueOnce([new FakeClipboardItem({ "text/plain": text })]);
+
+            expect(await fireHandle("read-clipboard-text", makeEvent())).toBe("text");
+            expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("<b>html</b>");
+            expect(await fireHandle("read-clipboard-html", makeEvent())).toBe("");
         });
 
         it("show-window shows the resolved window (and tolerates null)", () => {

@@ -10,12 +10,15 @@ import { describe, expect, it, vi } from "vitest";
 
 const showError = vi.hoisted(() => vi.fn());
 const showErrorTitleAndMessage = vi.hoisted(() => vi.fn());
-vi.mock("../../../services/toast", () => ({ default: { showError, showErrorTitleAndMessage } }));
+const showMessage = vi.hoisted(() => vi.fn());
+vi.mock("../../../services/toast", () => ({
+    default: { showError, showErrorTitleAndMessage, showMessage }
+}));
 
 // Imported by EditableText for editor types and content styles; irrelevant (and heavy) here.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
-const { onNotificationWarning } = await import("./EditableText");
+const { onNotificationInfo, onNotificationWarning } = await import("./EditableText");
 
 describe("onNotificationWarning", () => {
     /** The payload `Notification#_showNotification` builds, with the `EventInfo` before it. */
@@ -54,5 +57,16 @@ describe("onNotificationWarning", () => {
         expect(showError).not.toHaveBeenCalled();
         expect(showErrorTitleAndMessage).not.toHaveBeenCalled();
         expect(evt.stop).toHaveBeenCalledOnce();
+    });
+});
+
+describe("onNotificationInfo", () => {
+    it("shows the message as a toast and leaves the event running", () => {
+        vi.clearAllMocks();
+        const evt = { stop: vi.fn() };
+        onNotificationInfo(evt, { type: "info", message: "Rows sorted.", title: "" });
+
+        expect(showMessage).toHaveBeenCalledWith("Rows sorted.");
+        expect(evt.stop).not.toHaveBeenCalled();
     });
 });

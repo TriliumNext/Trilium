@@ -121,6 +121,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         readText() {
             return ipcRenderer.invoke("read-clipboard-text");
+        },
+        readHTML() {
+            return ipcRenderer.invoke("read-clipboard-html");
         }
     },
 

@@ -201,7 +201,7 @@ export default class App {
         const noteActionsButton = this.currentNoteSplit.locator(".note-actions");
         await noteActionsButton.click();
 
-        const dropdownMenu = noteActionsButton.locator(".dropdown-menu").first();
+        const dropdownMenu = this.page.locator(".tn-dropdown-portal.note-actions .dropdown-menu").first();
         await this.page.waitForTimeout(100);
         await expect(dropdownMenu).toBeVisible();
         dropdownMenu.getByText(itemToFind).click();

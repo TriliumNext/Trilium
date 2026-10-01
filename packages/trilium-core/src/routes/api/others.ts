@@ -18,12 +18,16 @@ function renderMarkdown(req: Request) {
 }
 
 function toMarkdown(req: Request) {
-    const { htmlContent } = req.body;
+    const { htmlContent, headerlessTables } = req.body;
     if (typeof htmlContent !== 'string') {
         throw new ValidationError('htmlContent parameter is required and must be a string');
     }
+    if (headerlessTables !== undefined && headerlessTables !== "keepHtml"
+            && headerlessTables !== "emptyHeader") {
+        throw new ValidationError('headerlessTables must be "keepHtml" or "emptyHeader"');
+    }
     return {
-        markdownContent: markdown.toMarkdown(htmlContent)
+        markdownContent: markdown.toMarkdown(htmlContent, { headerlessTables })
     } satisfies ToMarkdownResponse;
 }
 

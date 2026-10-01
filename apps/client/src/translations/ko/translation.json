@@ -3270,7 +3270,23 @@
     "vector_auto": "벡터(자동)"
   },
   "table_context_menu": {
-    "delete_row": "행 삭제"
+    "delete_row": "행 삭제",
+    "insert_rows_above": "위에 행 삽입",
+    "insert_rows_below": "아래에 행 삽입",
+    "insert_columns_left": "왼쪽에 열 삽입",
+    "insert_columns_right": "오른쪽에 열 삽입",
+    "delete_rows": "행 삭제",
+    "delete_columns": "열 삭제",
+    "delete_table": "표 삭제",
+    "distribute_columns": "열 너비 균등 분배",
+    "merge_cells": "셀 병합",
+    "split_cells": "셀 분할",
+    "split_vertically": "세로로",
+    "split_horizontally": "가로로",
+    "split_reset": "셀 병합 해제",
+    "sort": "정렬",
+    "sort_ascending": "오름차순",
+    "sort_descending": "내림차순"
   },
   "board_view": {
     "delete-note": "노트 삭제...",
@@ -4098,7 +4114,25 @@
       "flip-vertically": "수직으로 뒤집기",
       "change-icon": "아이콘 변경",
       "insert-date-time-0": "날짜/시간 삽입: %0",
-      "insert-time-0": "시간 삽입: %0"
+      "insert-time-0": "시간 삽입: %0",
+      "math": "수학",
+      "date-time": "날짜/시간",
+      "move-row-up": "행을 위로 이동",
+      "move-row-down": "행을 아래로 이동",
+      "move-column-left": "열을 왼쪽으로 이동",
+      "move-column-right": "열을 오른쪽으로 이동",
+      "insert-table": "표 삽입…",
+      "rows": "행",
+      "columns": "열",
+      "enter-a-whole-number-between-1-and-0": "1에서 %0 사이의 정수를 입력하세요.",
+      "the-table-is-too-large-max-0-cells": "표가 너무 큽니다(최대 %0개 셀).",
+      "distribute-columns-evenly": "열 너비 균등 분배",
+      "merge-selected-cells": "선택한 셀 병합",
+      "unmerge-cells": "셀 병합 해제",
+      "sort": "정렬",
+      "ascending": "오름차순",
+      "descending": "내림차순",
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "병합된 셀로 서로 연결되어 있어 일부 행이 함께 정렬되었습니다"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",

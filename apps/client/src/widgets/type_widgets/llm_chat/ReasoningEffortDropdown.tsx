@@ -12,13 +12,12 @@ import Icon from "../../react/Icon.js";
  * `reasoningEfforts`; such a model has no extended thinking switch. It stands
  * beside the model picker and shares its combobox styling.
  */
-export default function ReasoningEffortDropdown({ model, value, onChange, disabled, inSidebar }: {
+export default function ReasoningEffortDropdown({ model, value, onChange, disabled }: {
     model: LlmModelInfo;
     /** The chat's chosen level; undefined means the model's default. */
     value: LlmReasoningEffort | undefined;
     onChange: (effort: LlmReasoningEffort) => void;
     disabled?: boolean;
-    inSidebar?: boolean;
 }) {
     const effective = effectiveReasoningEffort(model, value);
     const label = t(`llm_chat.reasoning_effort_levels.${effective}`);
@@ -34,11 +33,6 @@ export default function ReasoningEffortDropdown({ model, value, onChange, disabl
             buttonClassName="llm-chat-model-select"
             className="llm-chat-reasoning-effort"
             disabled={disabled}
-            // A few items, so the menu never scrolls and keeps the working backdrop blur.
-            noDropdownListStyle
-            // Same reason as the model selector: the sidebar clips an unportaled menu.
-            portalToBody={inSidebar}
-            dropdownOptions={inSidebar ? { popperConfig: { strategy: "fixed" } } : undefined}
         >
             {(model.reasoningEfforts ?? []).map(level => (
                 <FormListItem key={level} checked={level === effective} onClick={() => onChange(level)}>

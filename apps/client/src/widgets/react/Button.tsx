@@ -5,8 +5,10 @@ import type { ComponentChildren, CSSProperties, JSX, RefObject } from "preact";
 import { useMemo, useRef } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
+import { t } from "../../services/i18n";
 import { isDesktop, isMobile } from "../../services/utils";
 import ActionButton from "./ActionButton";
+import Dropdown from "./Dropdown";
 import { useStaticTooltip } from "./hooks";
 import Icon from "./Icon";
 import { renderShortcutKbds } from "./shortcut_kbd";
@@ -126,27 +128,32 @@ export function ButtonGroup({ size, className, children }: { size?: "sm" | "lg";
     );
 }
 
+/** A button with the related actions in a menu beside it. */
 export function SplitButton({ text, icon, children, ...restProps }: {
     text: string;
+    /** The icon's full class, as `"bx bx-search"`. */
     icon?: string;
     title?: string;
     /** Click handler for the main button component (not the split). */
     onClick?: () => void;
-    /** The children inside the dropdown of the split. */
+    /** The menu's rows: `FormListItem`s and the other `FormList` rows. */
     children: ComponentChildren;
 }) {
     return (
         <ButtonGroup>
             <button type="button" class="btn btn-secondary" {...restProps}>
-                {icon && <Icon icon={`bx ${icon}`} />}
+                {icon && <Icon icon={icon} />}
                 {text}
             </button>
-            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="visually-hidden">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu">
+            <Dropdown
+                buttonClassName="btn-secondary dropdown-toggle-split"
+                buttonProps={{ "aria-label": t("split_button.more_actions") }}
+                noSelectButtonStyle
+                placement="bottom-end"
+                mobileBottomSheet
+            >
                 {children}
-            </ul>
+            </Dropdown>
         </ButtonGroup>
     );
 }

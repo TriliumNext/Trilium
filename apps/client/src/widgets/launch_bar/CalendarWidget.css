@@ -185,8 +185,3 @@
 .calendar-dropdown-widget .form-control {
     padding: 0;
 }
-
-.calendar-dropdown-widget .calendar-month-selector .dropdown-menu {
-    left: 50%;
-    transform: translateX(-50%);
-}

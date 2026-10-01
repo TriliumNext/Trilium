@@ -4,7 +4,6 @@ import { h, JSX, render } from "preact";
 
 import note_tooltip from "../services/note_tooltip.js";
 import utils from "../services/utils.js";
-import Menu from "../widgets/react/Menu";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
 
 export interface ContextMenuOptions<T> {
@@ -94,6 +93,8 @@ class ContextMenu {
      * Menu key or Shift+F10, as callers pass no event to tell by.
      */
     private lastInputWasKey = false;
+    /** Counts `show()` calls, so that only the latest one mounts a menu. */
+    private lastShowRequest = 0;
 
     constructor() {
         this.cover = utils.isMobile() ? document.getElementById("context-menu-cover") : null;
@@ -125,6 +126,13 @@ class ContextMenu {
         note_tooltip.dismissAllTooltips();
         hideShownTooltips();
 
+        const request = ++this.lastShowRequest;
+        // Loaded here rather than imported: the core services that import this module would
+        // otherwise reach the widget tree through the rows `Menu` draws, in a cycle.
+        const { default: Menu } = await import("../widgets/react/Menu");
+        // A later `show()` made during the import replaces this one.
+        if (request !== this.lastShowRequest) return;
+
         if (this.isShown) {
             // Unmount first so the menu opens fresh at the new location.
             await this.hide();
@@ -145,12 +153,13 @@ class ContextMenu {
             // The id and classes the stylesheets, themes and `floating_layers` know this menu by.
             id: "context-menu-container",
             className: "dropdown-menu-sm dropend",
-            x: options.x,
-            y: options.y,
-            orientation: options.orientation,
+            anchor: { x: options.x, y: options.y },
+            placement: options.orientation === "left" ? "left-start" : "right-start",
+            // Already where the screen shows it: see the host above.
+            container: this.host,
             bottomSheet: utils.isMobile() && !options.forcePositionOnMobile,
             // As a native menu opened from the keyboard, it starts at its first row.
-            startAtFirstRow: this.lastInputWasKey,
+            startAt: this.lastInputWasKey ? "first" : undefined,
             items: options.items,
             onSelect: (item, e) => {
                 // A submenu's row stays up to be opened, unless it runs something of its own.

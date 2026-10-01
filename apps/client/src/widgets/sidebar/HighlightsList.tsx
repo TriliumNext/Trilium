@@ -116,9 +116,6 @@ function HighlightsListMenu({ currentValue, onChange }: {
             iconAction
             hideToggleArrow
             noSelectButtonStyle
-            // The card establishes a stacking context of its own and clips its overflow, so the menu
-            // is rendered into the body to stand clear of it — as the card's help popup is.
-            portalToBody
         >
             {HIGHLIGHT_FORMATS.map(({ val, titleKey, icon }) => (
                 <FormListToggleableItem

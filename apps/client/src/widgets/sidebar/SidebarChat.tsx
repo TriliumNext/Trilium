@@ -1,7 +1,6 @@
 import "./SidebarChat.css";
 
 import type { SaveLlmChatResponse } from "@triliumnext/commons";
-import type { Dropdown as BootstrapDropdown } from "bootstrap";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context.js";
@@ -13,7 +12,7 @@ import { randomString } from "../../services/utils.js";
 import ws from "../../services/ws.js";
 import { formatDateTime } from "../../utils/formatters";
 import ActionButton from "../react/ActionButton.js";
-import Dropdown from "../react/Dropdown.js";
+import Dropdown, { type DropdownHandle } from "../react/Dropdown.js";
 import { FormDropdownDivider, FormListItem } from "../react/FormList.js";
 import { useActiveNoteContext, useNote, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../react/hooks.js";
 import { useChatContextMenu } from "../type_widgets/llm_chat/chat_context_menu.js";
@@ -38,7 +37,7 @@ import RightPanelWidget from "./RightPanelWidget.js";
 export default function SidebarChat() {
     const [chatNoteId, setChatNoteId] = useState<string | null>(null);
     const [recentChats, setRecentChats] = useState<RecentLlmChat[]>([]);
-    const historyDropdownRef = useRef<BootstrapDropdown | null>(null);
+    const historyDropdownRef = useRef<DropdownHandle | null>(null);
 
     // Get the current active note context
     const { noteId: activeNoteId, note: activeNote } = useActiveNoteContext();
@@ -315,11 +314,6 @@ export default function SidebarChat() {
                         title={t("sidebar_chat.history")}
                         iconAction
                         hideToggleArrow
-                        dropdownContainerClassName="tn-dropdown-menu-scrollable"
-                        dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
-                        // In peek mode #right-pane has a backdrop-filter, which becomes the containing
-                        // block for the fixed-positioned menu and offsets it — portal to body to escape it.
-                        portalToBody
                         dropdownRef={historyDropdownRef}
                         onShown={loadRecentChats}
                     >
@@ -369,10 +363,6 @@ export default function SidebarChat() {
                         title={t("sidebar_chat.more_actions")}
                         iconAction
                         hideToggleArrow
-                        dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
-                        // See the history dropdown above: portal to body so peek mode's backdrop-filter
-                        // containing block doesn't offset the fixed menu.
-                        portalToBody
                     >
                         <FormListItem
                             icon="bx bx-save"
@@ -414,7 +404,6 @@ export default function SidebarChat() {
                         activeNoteId={activeNoteId ?? undefined}
                         activeNoteTitle={activeNote?.title}
                         onSubmit={handleSubmit}
-                        inSidebar
                     />
                 )}
             </div>

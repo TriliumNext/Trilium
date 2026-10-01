@@ -1,7 +1,6 @@
 import "./shortcuts.css";
 
 import { ActionKeyboardShortcut, KeyboardShortcut, OptionNames } from "@triliumnext/commons";
-import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -17,7 +16,7 @@ import ActionButton from "../../react/ActionButton";
 import { Badge } from "../../react/Badge";
 import Button from "../../react/Button";
 import { Card, OptionCardSection } from "../../react/Card";
-import Dropdown from "../../react/Dropdown";
+import Dropdown, { type DropdownHandle } from "../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../react/FormList";
 import FormTextBox from "../../react/FormTextBox";
 import { useStaticTooltip, useTriliumEvent } from "../../react/hooks";
@@ -29,7 +28,7 @@ export default function ShortcutSettings() {
     const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);
     const [ filter, setFilter ] = useState<string>();
     const [ activeFilter, setActiveFilter ] = useState<ShortcutFilter>(null);
-    const filterDropdownRef = useRef<BootstrapDropdown>(null);
+    const filterDropdownRef = useRef<DropdownHandle>(null);
 
     const selectFilter = useCallback((value: ShortcutFilter) => {
         setActiveFilter(value);
@@ -135,14 +134,10 @@ export default function ShortcutSettings() {
                             buttonClassName={`bx bx-filter-alt ${activeFilter ? "active" : ""}`}
                             hideToggleArrow
                             noSelectButtonStyle
-                            noDropdownListStyle
                             iconAction
                             title={t("shortcuts.filter")}
                             dropdownRef={filterDropdownRef}
                             mobileBottomSheet
-                            // The row is a container, and so a backdrop root: left inside it the
-                            // menu loses its blur and reads as a flat tint.
-                            portalToBody
                         >
                             <FilterContent
                                 activeFilter={activeFilter}
