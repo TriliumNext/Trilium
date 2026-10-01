@@ -2,7 +2,15 @@ import { NoteMapPostResponse } from "@triliumnext/commons";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import server from "../../services/server";
-import { collapseRelations, dropUnlinkedNotes, expandReification, loadNotesAndRelations, NotesAndRelationsData } from "./data";
+import {
+    applyRelationBridges,
+    collapseRelations,
+    dropUnlinkedNotes,
+    expandReification,
+    loadNotesAndRelations,
+    NotesAndRelationsData,
+    presentRelations
+} from "./data";
 
 describe("loadNotesAndRelations", () => {
     afterEach(() => vi.restoreAllMocks());
@@ -113,8 +121,15 @@ describe("collapseRelations", () => {
 });
 
 describe("expandReification", () => {
-    it("puts the two notes back and drops relations that belonged to the fact", () => {
-        const data: NotesAndRelationsData = {
+    const ends = {
+        rootId: "fact",
+        predicate: "loves",
+        subject: { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+        object: { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+    };
+
+    function factMap(): NotesAndRelationsData {
+        return {
             nodes: [
                 { id: "fact", name: "loves(John, Mary)", type: "text", color: null, icon: "bx bx-git-commit" },
                 { id: "event", name: "Event X", type: "text", color: null, icon: "bx bx-file" }
@@ -125,18 +140,105 @@ describe("expandReification", () => {
             noteIdToSizeMap: { fact: 6, event: 4 },
             reificationLinks: []
         };
+    }
 
-        const view = expandReification(data, {
-            rootId: "fact",
-            predicate: "loves",
-            subject: { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-            object: { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
-        });
+    it("puts the two notes back and draws the fact's relations from the line between them", () => {
+        const data = factMap();
+        const view = expandReification(data, ends);
 
-        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "john", "mary" ]);
+        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "edge:john-mary", "event", "john", "mary" ]);
         expect(view.links).toEqual([
-            { id: "john-mary", source: "john", target: "mary", name: "loves" }
+            { id: "john-mary", source: "john", target: "mary", name: "loves" },
+            { id: "fact-event", source: "edge:john-mary", target: "event", name: "cause" }
         ]);
+        expect(view.nodes.find((node) => node.id === "edge:john-mary")).toMatchObject({
+            joint: true,
+            jointOf: [ "john", "mary" ]
+        });
+        // The canvas paints from this same map. A copy would leave the new notes without a size.
+        expect(view.noteIdToSizeMap).toBe(data.noteIdToSizeMap);
+        expect(data.noteIdToSizeMap.john).toBe(4);
+        expect(data.noteIdToSizeMap["edge:john-mary"]).toBe(1);
+    });
+
+    it("folds that line back into the fact and keeps the relation drawn from it", () => {
+        const folded = presentRelations(factMap(), new Set([ "john-mary" ]), ends);
+
+        expect(folded.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:john-mary" ]);
+        expect(folded.links).toEqual([
+            { id: "fact-event", source: "fold:john-mary", target: "event", name: "cause" }
+        ]);
+    });
+});
+
+describe("applyRelationBridges", () => {
+    it("draws a relation of a fact from the middle of that fact's edge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+            ],
+            noteIdToSizeMap: { john: 4, mary: 4 },
+            reificationLinks: [ {
+                linkId: "john-mary",
+                name: "cause",
+                outgoing: true,
+                note: [ "event", "Event X", "text", null, "bx bx-file" ]
+            } ]
+        };
+
+        const view = applyRelationBridges(data);
+
+        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "edge:john-mary", "event", "john", "mary" ]);
+        expect(view.links).toContainEqual({
+            id: "john-mary-cause-event",
+            source: "edge:john-mary",
+            target: "event",
+            name: "cause"
+        });
+        expect(data.noteIdToSizeMap.event).toBe(4);
+    });
+
+    it("draws a relation between two facts as a line between those edges", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+            ],
+            noteIdToSizeMap: { john: 4, mary: 4 },
+            reificationLinks: [ {
+                linkId: "john-mary",
+                name: "cause",
+                outgoing: true,
+                otherFact: {
+                    linkId: "mark-jealousy",
+                    predicate: "has",
+                    subject: [ "mark", "Mark", "text", null, "bx bx-file" ],
+                    object: [ "jealousy", "Jealousy", "text", null, "bx bx-file" ]
+                }
+            } ]
+        };
+
+        const view = applyRelationBridges(data);
+
+        expect(view.nodes.map((node) => node.id).sort()).toEqual([
+            "edge:john-mary", "edge:mark-jealousy", "jealousy", "john", "mark", "mary"
+        ]);
+        expect(view.links).toContainEqual({
+            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+        });
+        expect(view.links).toContainEqual({
+            id: "edge:john-mary-cause-edge:mark-jealousy",
+            source: "edge:john-mary",
+            target: "edge:mark-jealousy",
+            name: "cause"
+        });
     });
 });
 

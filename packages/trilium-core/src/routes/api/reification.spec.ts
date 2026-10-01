@@ -100,9 +100,27 @@ describe("Reification API (core)", () => {
         const mark = await createTextNote(api, { title: "Mark" });
         await api.put(`/api/notes/${target.noteId}/relations/loves/to/${mark.noteId}`);
 
+        const jealousy = await createTextNote(api, { title: "Jealousy" });
+        const has = await api.put<{ attributeId: string }>(
+            `/api/notes/${mark.noteId}/relations/has/to/${jealousy.noteId}`
+        );
+        const hasFact = await api.post<{ noteId: string }>(
+            `/api/attributes/${has.body.attributeId}/reification`
+        );
+        const caused = await api.put(
+            `/api/notes/${reified.body.noteId}/relations/cause/to/${hasFact.body.noteId}`
+        );
+        expect(caused.status).toBe(200);
+
         const linkMap = await api.post<{
             notes: NoteMapNote[];
-            reificationLinks: Array<{ linkId: string; name: string; outgoing: boolean; note: NoteMapNote }>;
+            reificationLinks: Array<{
+                linkId: string;
+                name: string;
+                outgoing: boolean;
+                note?: NoteMapNote;
+                otherFact?: { linkId: string; predicate: string };
+            }>;
         }>(`/api/note-map/${source.noteId}/link`, {
             body: {}
         });
@@ -114,6 +132,15 @@ describe("Reification API (core)", () => {
             outgoing: true,
             note: expect.arrayContaining([ outsider.noteId, "Note D" ])
         }));
+        expect(linkMap.body.reificationLinks).toContainEqual(expect.objectContaining({
+            linkId: `${source.noteId}-${target.noteId}`,
+            name: "cause",
+            outgoing: true,
+            otherFact: expect.objectContaining({
+                linkId: `${mark.noteId}-${jealousy.noteId}`,
+                predicate: "has"
+            })
+        }));
 
         const factMap = await api.post<{ notes: NoteMapNote[] }>(`/api/note-map/${reified.body.noteId}/link`, {
             body: {}
@@ -122,7 +149,9 @@ describe("Reification API (core)", () => {
         expect(factIds).toContain(reified.body.noteId);
         expect(factIds).toContain(outsider.noteId);
         expect(factIds).toContain(critic.noteId);
+        expect(factIds).toContain(hasFact.body.noteId);
         expect(factIds).not.toContain(source.noteId);
+        expect(factIds).not.toContain(jealousy.noteId);
         expect(factIds).not.toContain(target.noteId);
         expect(factIds).not.toContain(mark.noteId);
 

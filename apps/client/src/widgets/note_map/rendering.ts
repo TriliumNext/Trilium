@@ -238,13 +238,14 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
 
     function paintNode(node: NoteMapNodeObject, color: string, ctx: CanvasRenderingContext2D) {
         const { x, y } = node;
-        // A coordinate of exactly 0 is a position like any other, and a common one: d3 lays the
-        // first node out at an angle of 0, so its y is 0 — and in a one-node map nothing ever moves
-        // it off that axis, which used to leave the map permanently blank.
-        if (x === undefined || y === undefined) {
+        // A point held on an edge is where a relation of that edge is drawn from. It is not a note.
+        if (node.joint || x === undefined || y === undefined) {
             return;
         }
         const size = noteIdToSizeMap[node.id];
+        if (!Number.isFinite(size) || size <= 0) {
+            return;
+        }
 
         const radius = size * NODE_RADIUS_RATIO;
 
@@ -358,11 +359,15 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
      * inside the larger ones.
      */
     function paintArrow(link: NoteMapLinkObject, source: NoteMapNodeObject, target: NoteMapNodeObject, ctx: CanvasRenderingContext2D) {
+        const targetSize = target.joint ? 0 : noteIdToSizeMap[target.id];
+        if (!Number.isFinite(targetSize)) {
+            return;
+        }
         const length = getLabelFontSize(ARROW_LENGTH_PX, zoomLevel);
         const outline = getArrowOutline(
             { x: source.x ?? 0, y: source.y ?? 0 },
             { x: target.x ?? 0, y: target.y ?? 0 },
-            noteIdToSizeMap[target.id] * NODE_RADIUS_RATIO,
+            targetSize * NODE_RADIUS_RATIO,
             length
         );
 
@@ -451,15 +456,17 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
         })
         .onNodeHover((node) => setHoveredNode(node ?? null))
         .nodePointerAreaPaint((node, color, ctx) => {
-            if (!node.id) {
+            const size = noteIdToSizeMap[node.id];
+            if (
+                !node.id || node.joint || node.x === undefined || node.y === undefined
+                || !Number.isFinite(size) || size <= 0
+            ) {
                 return;
             }
 
             ctx.fillStyle = color;
             ctx.beginPath();
-            if (node.x !== undefined && node.y !== undefined) {
-                ctx.arc(node.x, node.y, noteIdToSizeMap[node.id], 0, 2 * Math.PI, false);
-            }
+            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
             ctx.fill();
         })
         .nodeLabel((node) => getTooltip(node))
@@ -710,6 +717,38 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
 }
 
 /**
+ * Holds each point that stands for an edge on the midpoint of the two notes that edge joins.
+ * The layout would otherwise treat it as a note of its own and pull it off the line.
+ */
+function pinEdgeJoints(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>) {
+    const nodes = graph.graphData().nodes;
+    const byId = new Map<string, NoteMapNodeObject>();
+    for (const node of nodes) {
+        byId.set(node.id, node);
+    }
+    for (const node of nodes) {
+        if (!node.joint || !node.jointOf) {
+            continue;
+        }
+        const [ subjectId, objectId ] = node.jointOf;
+        const subject = byId.get(subjectId);
+        const object = byId.get(objectId);
+        if (
+            subject?.x === undefined || subject.y === undefined
+            || object?.x === undefined || object.y === undefined
+        ) {
+            continue;
+        }
+        const x = (subject.x + object.x) / 2;
+        const y = (subject.y + object.y) / 2;
+        node.x = x;
+        node.y = y;
+        node.fx = x;
+        node.fy = y;
+    }
+}
+
+/**
  * Keeps the view framed on the interesting part of the graph — the subtree the current note belongs
  * to in the ribbon, the linked notes elsewhere — while the layout settles.
  *
@@ -742,6 +781,7 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
 
     let ticks = 0;
     graph.onEngineTick(() => {
+        pinEdgeJoints(graph);
         if (framing) {
             // Fitting is what centres the view on the note, whether or not its zoom is kept.
             graph.zoomToFit(0, padding, nodeFilter);
