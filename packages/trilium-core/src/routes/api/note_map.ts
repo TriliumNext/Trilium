@@ -1,7 +1,8 @@
 import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
 import becca from "../../becca/becca";
-import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote, NoteMapReificationLink } from "@triliumnext/commons";
+import { REIFICATION_OBJECT, REIFICATION_PREDICATE, REIFICATION_SUBJECT } from "@triliumnext/commons";
+import type { BacklinkCountResponse, BacklinksResponse, NoteMapFactEnds, NoteMapNote, NoteMapReificationLink } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
@@ -202,6 +203,27 @@ function getLinkMap(req: Request<{ noteId: string }>) {
     };
 }
 
+function noteTuple(note: BNote): NoteMapNote {
+    return [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ];
+}
+
+/** The notes a fact is about, so the map can draw that fact as an edge rather than as this note. */
+function factEnds(note: BNote): NoteMapFactEnds | null {
+    const subjectId = note.getOwnedRelation(REIFICATION_SUBJECT)?.value;
+    const subject = subjectId ? becca.getNote(subjectId) : null;
+    if (!subject || subject.isDeleted) {
+        return null;
+    }
+    const objectId = note.getOwnedRelation(REIFICATION_OBJECT)?.value;
+    const object = objectId ? becca.getNote(objectId) : null;
+    return {
+        linkId: object && !object.isDeleted ? `${subject.noteId}-${object.noteId}` : subject.noteId,
+        predicate: note.getOwnedLabelValue(REIFICATION_PREDICATE) ?? "",
+        subject: noteTuple(subject),
+        object: object && !object.isDeleted ? noteTuple(object) : null
+    };
+}
+
 function isIgnoredMapRelation(relation: BAttribute): boolean {
     return relation.name === "relationMapLink"
         || relation.name === "template"
@@ -229,7 +251,7 @@ function reificationLinksFor(attributes: BAttribute[]): NoteMapReificationLink[]
             const outgoing = relation.noteId === token.noteId;
             const otherId = outgoing ? relation.value : relation.noteId;
             const other = becca.getNote(otherId);
-            if (!other || other.isDeleted || isReificationNote(other) || other.isLabelTruthy("excludeFromNoteMap")) {
+            if (!other || other.isDeleted || other.isLabelTruthy("excludeFromNoteMap")) {
                 continue;
             }
             const key = `${attribute.noteId}-${attribute.value}:${relation.attributeId}`;
@@ -237,11 +259,13 @@ function reificationLinksFor(attributes: BAttribute[]): NoteMapReificationLink[]
                 continue;
             }
             seen.add(key);
+            const described = isReificationNote(other) ? factEnds(other) : null;
             links.push({
                 linkId: `${attribute.noteId}-${attribute.value}`,
                 name: relation.name,
                 outgoing,
-                note: [ other.noteId, other.getTitleOrProtected(), other.type, other.getLabelValue("color"), other.getIcon() ]
+                note: described ? undefined : noteTuple(other),
+                otherFact: described ?? undefined
             });
         }
     }

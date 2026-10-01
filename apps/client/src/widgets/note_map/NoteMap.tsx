@@ -27,7 +27,15 @@ import Button from "../react/Button";
 import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
-import { collapseRelations, expandReification, loadNotesAndRelations, NoteMapFold, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData, ReificationEnds } from "./data";
+import {
+    loadNotesAndRelations,
+    NoteMapFold,
+    NoteMapLinkObject,
+    NoteMapNodeObject,
+    NotesAndRelationsData,
+    presentRelations,
+    ReificationEnds
+} from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
@@ -139,20 +147,30 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
             // Interaction
             unfoldEndsRef.current = unfoldEnds;
-            const showView = () => {
+            const showView = (refit: boolean) => {
                 const base = notesAndRelationsRef.current;
                 if (!base) {
                     return;
                 }
-                const ends = unfoldEndsRef.current;
-                const expanded = unfoldedRef.current && ends ? expandReification(base, ends) : base;
-                graph.graphData(collapseRelations(expanded, collapsedRef.current));
+                graph.graphData(presentRelations(
+                    base,
+                    collapsedRef.current,
+                    unfoldedRef.current ? unfoldEndsRef.current : null
+                ));
                 graph.d3ReheatSimulation();
+                // The click that asked for this view also told the map to stop framing itself,
+                // so the notes just put back would otherwise land outside the picture.
+                if (refit) {
+                    graph.zoomToFit(400, 40);
+                }
             };
 
             graph
                 .linkHoverPrecision(10)
                 .onNodeClick((node) => {
+                    if (node.joint) {
+                        return;
+                    }
                     if (node.fold) {
                         void openFoldedRelation(node.fold);
                         return;
@@ -166,17 +184,20 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                     void appContext.triggerEvent("closePopupEditor", {});
                 })
                 .onNodeRightClick((node, event) => {
+                    if (node.joint) {
+                        return;
+                    }
                     if (node.fold) {
                         event.preventDefault();
                         collapsedRef.current.delete(node.fold.linkId);
-                        showView();
+                        showView(true);
                         return;
                     }
                     // The open note is the fact. Right-click puts its two notes back in this view.
                     if (node.id === mapRootId && unfoldEndsRef.current && !unfoldedRef.current) {
                         event.preventDefault();
                         unfoldedRef.current = true;
-                        showView();
+                        showView(true);
                         return;
                     }
                     if (!node.id) return;
@@ -192,13 +213,13 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                             return;
                         }
                         collapsedRef.current.add(link.id);
-                        showView();
+                        showView(false);
                     });
                 });
 
             // Set data
             notesAndRelationsRef.current = notesAndRelations;
-            showView();
+            showView(false);
         });
 
         return () => {
@@ -214,11 +235,11 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
-        const ends = unfoldEndsRef.current;
-        const expanded = unfoldedRef.current && ends
-            ? expandReification(notesAndRelationsRef.current, ends)
-            : notesAndRelationsRef.current;
-        graphRef.current.graphData(collapseRelations(expanded, collapsedRef.current));
+        graphRef.current.graphData(presentRelations(
+            notesAndRelationsRef.current,
+            collapsedRef.current,
+            unfoldedRef.current ? unfoldEndsRef.current : null
+        ));
     }, [ linkDistance, mapType ]);
 
     // React to container size

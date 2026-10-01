@@ -957,16 +957,22 @@ export interface NoteMapLink {
     name: string;
 }
 
-/**
- * A relation of the fact a visible edge stands for, such as
- * `cause(loves(John, Mary), Event X)`. The fact's note is not a circle on this map.
- * `linkId` is `${subjectNoteId}-${objectNoteId}` of the edge it hangs on.
- */
+/** The two notes of a fact, so a relation aimed at that fact can be drawn between the edges. */
+export interface NoteMapFactEnds {
+    linkId: string;
+    predicate: string;
+    subject: NoteMapNote;
+    object: NoteMapNote | null;
+}
+
 export interface NoteMapReificationLink {
     linkId: string;
     name: string;
     outgoing: boolean;
-    note: NoteMapNote;
+    /** The note the relation points at, when that note is not itself a fact. */
+    note?: NoteMapNote;
+    /** The fact the relation points at, when it joins one fact to another. */
+    otherFact?: NoteMapFactEnds;
 }
 
 /** A note of a map, kept as a tuple rather than an object: a map carries thousands of them. */
