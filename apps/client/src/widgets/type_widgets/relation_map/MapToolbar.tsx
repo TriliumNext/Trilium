@@ -56,6 +56,8 @@ interface EditToolbarProps {
     /** Asks for a title and leaves the note waiting for a place to be clicked (see `useNoteCreation`
      *  in RelationMap.tsx). */
     onAddNote: () => void;
+    /** Set while a note is the center of the map. Returns to the note that was open before it. */
+    onShowWholeMap?: () => void;
 }
 
 /**
@@ -81,9 +83,17 @@ interface EditToolbarProps {
  * finished by a click on the map, so it belongs beside the canvas that answers it — the toast that
  * follows says as much in words.
  */
-export function EditToolbar({ isReadOnly, onAddNote }: EditToolbarProps) {
+export function EditToolbar({ isReadOnly, onAddNote, onShowWholeMap }: EditToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-edit-toolbar" placement="bottom-center">
+            {onShowWholeMap && (
+                <OverlayControlButton
+                    title={t("relation_map.back")}
+                    icon="bx-arrow-back"
+                    text={t("relation_map.back")}
+                    onClick={onShowWholeMap}
+                />
+            )}
             <OverlayControlButton
                 title={t("relation_map_buttons.create_child_note_title")}
                 icon="bx-note"

@@ -81,6 +81,16 @@ describe("relation map EditToolbar", () => {
 
         expect(button()?.disabled).toBe(true);
     });
+
+    it("offers the way back to every note while one note is the center", () => {
+        const onShowWholeMap = vi.fn();
+        const { buttons } = renderEditToolbar({ onShowWholeMap });
+
+        const back = buttons().find((button) => button.textContent === "relation_map.back");
+        expect(back).toBeTruthy();
+        act(() => back?.click());
+        expect(onShowWholeMap).toHaveBeenCalledTimes(1);
+    });
 });
 
 const MIN_ZOOM = 0.3;
@@ -114,17 +124,18 @@ function renderToolbar({ withMap = true } = {}) {
 }
 
 /** Builds the editing group, which asks for nothing beyond what its one button is driven by. */
-function renderEditToolbar({ isReadOnly = false } = {}) {
+function renderEditToolbar({ isReadOnly = false, onShowWholeMap }: { isReadOnly?: boolean; onShowWholeMap?: () => void } = {}) {
     const onAddNote = vi.fn();
     let container: HTMLElement | undefined;
     act(() => {
-        container = renderInto(<EditToolbar isReadOnly={isReadOnly} onAddNote={onAddNote} />);
+        container = renderInto(<EditToolbar isReadOnly={isReadOnly} onAddNote={onAddNote} onShowWholeMap={onShowWholeMap} />);
     });
     if (!container) throw new Error("the toolbar was not rendered");
 
     return {
         onAddNote,
-        button: () => container?.querySelector<HTMLButtonElement>(".relation-map-edit-toolbar button") ?? null
+        button: () => container?.querySelector<HTMLButtonElement>(".relation-map-edit-toolbar button") ?? null,
+        buttons: () => [ ...container?.querySelectorAll<HTMLButtonElement>(".relation-map-edit-toolbar button") ?? [] ]
     };
 }
 

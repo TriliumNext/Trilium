@@ -857,7 +857,8 @@
     "system_hint": "System: this name has a built-in meaning",
     "add_attribute": "Add attribute",
     "creation_kind_label": "Label: press here, or type ~, to make it a relation",
-    "creation_kind_relation": "Relation: press here, or type #, to make it a label"
+    "creation_kind_relation": "Relation: press here, or type #, to make it a label",
+    "reify": "Turn this attribute into a note, so it can carry its own attributes and be the target of relations"
   },
   "attribute_names": {
     "system": "System",
@@ -1379,7 +1380,12 @@
     "link-distance": "Link distance",
     "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
     "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
-    "show-anyway": "Show map"
+    "show-anyway": "Show map",
+    "fold_as": "Fold as {{title}}",
+    "open_reification": "Open {{title}}",
+    "go_to_concept": "Go to {{name}}",
+    "create_concept": "Create {{name}} in inbox",
+    "connect_concept": "Connect {{name}} to a note"
   },
   "note_picker": {
     "title": "Choose a note",
@@ -1475,7 +1481,7 @@
     "highlights_what": "The passages this note picks out by their formatting. That is a wider net than it sounds: an ordinary bold or italic sentence counts, not only text you have highlighted.",
     "highlights_configure": "Which formats count is yours to set: bold, italic, underlined, colored text and text on a background color can each be listed or left out, from the gear in this card's header. Pressing an entry scrolls the note to it.",
     "note_map_what": "A map of what this note connects to. The link map draws the internal links and relations going in and out of it; the tree map draws where it sits in the note tree. The switcher in this header chooses between the two.",
-    "note_map_interaction": "Hovering a note brings its own connections forward and fades the rest. The expand button opens the same map at the size of the window.",
+    "note_map_interaction": "Hovering a note brings its own connections forward and fades the rest. Right-click a relation to fold the two notes and the line into one node, or to open a reification that already includes it. Right-click the folded node, or the reified note itself, to put the two notes back, then click either note to open it. Those notes stay off this map until you open one. The same menu can open the relation as its own concept, or create that concept in the inbox. The expand button opens the same map at the size of the window.",
     "note_paths_what": "A note can sit in more than one place in the note tree at once, and each of those places is listed here as a path.",
     "note_paths_cloning": "Adding a place is called cloning: nothing is copied, so an edit made under one path shows under all of them, and removing one path leaves the note under the others.",
     "backlinks_what": "The notes pointing at this one, either through a link in their text or through a relation naming it.",
@@ -1730,7 +1736,16 @@
     "note_already_in_diagram": "Note \"{{title}}\" is already in the diagram.",
     "enter_title_of_new_note": "Enter title of new note",
     "default_new_note_title": "new note",
-    "click_on_canvas_to_place_new_note": "Click on canvas to place new note"
+    "click_on_canvas_to_place_new_note": "Click on canvas to place new note",
+    "reify_relation": "Turn into note",
+    "open_reification": "Open reification",
+    "remove_reification": "Remove reification",
+    "confirm_remove_reification": "Remove the note that stands for this relation? The relation itself stays.",
+    "show_whole_map": "Show the whole map",
+    "go_to_relation": "Go to this relation",
+    "collapse_relation": "Collapse",
+    "expand_relation": "Expand",
+    "back": "Back"
   },
   "render": {
     "setup_title": "Display custom HTML or Preact JSX inside this note",

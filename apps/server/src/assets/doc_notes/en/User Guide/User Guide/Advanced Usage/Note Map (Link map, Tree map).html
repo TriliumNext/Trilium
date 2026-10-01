@@ -59,6 +59,21 @@
     </ul>
   </li>
   <li>When hovering over a node, the adjacent relations and nodes are highlighted.</li>
+  <li>On a link map, right-click a relation. <em>Fold as loves(John, Mary)</em> turns
+    the two notes and the line into that one node. The folded node shows relations
+    of that fact, such as <code>cause(loves(John, Mary), Event X)</code>, and
+    not the other relations of John or Mary. The same menu lists every reification
+    that already includes this relation, such as <code>cause(loves(John, Mary), has(Mark, Jealousy))</code>,
+    and opens that note. The reification note is not drawn as its own circle
+    on this map. Open it, and the map is about that note: the relations of
+    the fact are shown, including another reification one step away. Right-click
+    the folded node to put the two notes back. Click one of those notes to
+    open it. Click the folded node to create the note, if it does not exist
+    yet, and open it. On that note, right-click it in the map to put the two
+    notes back in the same view, and click either one to open it. The same
+    menu also reaches the relation itself, as a concept rather than one statement: <em>Go to loves</em> opens
+    that note when it exists, <em>Create loves in inbox</em> makes it, and <em>Connect loves to a note</em> uses
+    a note you already have.</li>
   <li>The distance between nodes can be adjusted via the slider in the bottom-left.
     Similarly, this value is not saved.</li>
   <li><a class="reference-link" href="#root/_help_MKmLg5x6xkor">Archived Notes</a>&nbsp;are

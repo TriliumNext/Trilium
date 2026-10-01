@@ -18,6 +18,14 @@ interface RelationMapResponse {
         name: string;
     }>;
     inverseRelations: Record<string, string>;
+    reifications: Array<{
+        noteId: string;
+        attributeId: string;
+        title: string;
+        kind: string;
+        subjectNoteId: string;
+        objectNoteId: string | null;
+    }>;
 }
 
 describe("Relation Map API (core)", () => {
@@ -33,6 +41,7 @@ describe("Relation Map API (core)", () => {
         expect(res.status).toBe(200);
         expect(res.body.noteTitles).toEqual({});
         expect(res.body.relations).toEqual([]);
+        expect(res.body.reifications).toEqual([]);
         expect(res.body.inverseRelations.internalLink).toBe("internalLink");
     });
 

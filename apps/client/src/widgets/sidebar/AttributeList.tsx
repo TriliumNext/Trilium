@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { ComponentChildren, createPortal } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import FAttribute from "../../entities/fattribute";
 import FNote from "../../entities/fnote";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
@@ -295,6 +296,14 @@ export default function AttributeList() {
         await save();
     }
 
+    async function reifyAttribute(attribute: Attribute) {
+        if (!attribute.attributeId) {
+            return;
+        }
+        const result = await server.post<{ noteId: string }>(`attributes/${attribute.attributeId}/reification`);
+        appContext.tabManager.openContextWithNote(result.noteId, { placement: "afterCurrent" });
+    }
+
     const sections = splitIntoSections(owned.current, inherited.current);
     const internalRows = internal.current.map((attribute) => toEntry(attribute, true));
     // Not built for an attribute the list no longer holds: a reload can rebuild the rows out from
@@ -341,7 +350,8 @@ export default function AttributeList() {
         valueEditor,
         onOpen: openDetail,
         onEditValue: startValueEdit,
-        onDelete: (attribute: Attribute) => void deleteAttribute(attribute)
+        onDelete: (attribute: Attribute) => void deleteAttribute(attribute),
+        onReify: (attribute: Attribute) => void reifyAttribute(attribute)
     };
     // The cards a section has nothing for are left out, so an ordinary note sees one or two of the four.
     const shownCards = 1
@@ -547,6 +557,7 @@ interface AttributeRowListProps {
     /** Asks for the in-place editor over the attribute's value; wired to editable labels alone. */
     onEditValue: (attribute: Attribute) => void;
     onDelete: (attribute: Attribute) => void;
+    onReify: (attribute: Attribute) => void;
 }
 
 /**
@@ -554,7 +565,7 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete, onReify }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
@@ -582,6 +593,7 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, 
                             ? () => onEditValue(attribute)
                             : undefined}
                         onDelete={isOwned && !readOnly ? () => onDelete(attribute) : undefined}
+                        onReify={!readOnly && !isSystem && attribute.attributeId ? () => onReify(attribute) : undefined}
                     />
                 ))}
             </ul>
@@ -618,9 +630,10 @@ interface AttributeRowProps {
     /** Starts the in-place edit of the value; absent for rows whose value is not edited in place. */
     onEditValue?: () => void;
     onDelete?: () => void;
+    onReify?: () => void;
 }
 
-function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete }: AttributeRowProps) {
+function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete, onReify }: AttributeRowProps) {
     const rowRef = useRef<HTMLLIElement>(null);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
@@ -659,8 +672,20 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
             {/* The row's actions float over its trailing end on hover rather than reserving room in
                 it (see the stylesheet), so the values keep the whole edge to themselves. Put away
                 while the row's editor is open, whose field already is the edit. */}
-            {(onDelete || (onEditValue && attrType === "relation")) && !valueEditor && (
+            {(onDelete || onReify || (onEditValue && attrType === "relation")) && !valueEditor && (
                 <span class="attribute-row-actions">
+                    {onReify && (
+                        <ActionButton
+                            className="attribute-reify-button"
+                            icon="bx bx-git-commit"
+                            text={t("attribute_list_panel.reify")}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onReify();
+                            }}
+                        />
+                    )}
+
                     {/* A relation's value is a link and stays one, so its edit has a way in of its own. */}
                     {onEditValue && attrType === "relation" && (
                         <ActionButton

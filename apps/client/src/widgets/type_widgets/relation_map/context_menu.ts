@@ -12,6 +12,13 @@ import server from "../../../services/server";
 import RelationMapApi from "./api";
 import type { AskRelationName } from "./RelationNamePopover";
 
+export interface RelationMenuActions {
+    isCollapsed(attributeId: string): boolean;
+    /** Reifies the relation when it is not a note yet, then centers the map on it. */
+    goTo(attributeId: string): Promise<void> | void;
+    toggleCollapse(attributeId: string): Promise<void> | void;
+}
+
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>) {
     return (e: MouseEvent) => {
         if (!note) return;
@@ -69,7 +76,12 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
     };
 }
 
-export function buildRelationContextMenuHandler(connection: Connection, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: AskRelationName) {
+export function buildRelationContextMenuHandler(
+    connection: Connection,
+    mapApiRef: RefObject<RelationMapApi | null>,
+    actions: RelationMenuActions,
+    askRelationName: AskRelationName
+) {
     return (_, event: MouseEvent) => {
         if (connection.getType().includes("link")) {
             // don't create context menu if it's a link since there's nothing to do with link from relation map
@@ -78,37 +90,67 @@ export function buildRelationContextMenuHandler(connection: Connection, mapApiRe
         } else {
             event.preventDefault();
             event.stopPropagation();
-
-            contextMenu.show({
-                x: event.pageX,
-                y: event.pageY,
-                items: [
-                    { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" },
-                    { kind: "separator" },
-                    { title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }
-                ],
-                selectMenuItemHandler: async ({ command }) => {
-                    if (command === "rename") {
-                        const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
-                        const newName = await askRelationName(connection, currentName);
-
-                        if (!newName?.trim() || newName === currentName) {
-                            return;
-                        }
-
-                        const result = await mapApiRef.current?.renameRelation(connection, newName);
-                        if (!result) {
-                            toast.showError(t("relation_map.connection_exists", { name: newName }));
-                        }
-                    } else if (command === "remove") {
-                        if (!(await dialog.confirm(t("relation_map.confirm_remove_relation")))) {
-                            return;
-                        }
-
-                        mapApiRef.current?.removeRelation(connection);
-                    }
-                }
-            });
+            showRelationMenu(event, connection.id, mapApiRef, actions, askRelationName, connection);
         }
     };
+}
+
+export function showRelationMenu(
+    event: MouseEvent,
+    attributeId: string,
+    mapApiRef: RefObject<RelationMapApi | null>,
+    actions: RelationMenuActions,
+    askRelationName: AskRelationName,
+    connection?: Connection
+) {
+    const reification = mapApiRef.current?.reificationFor(attributeId);
+    const collapsed = actions.isCollapsed(attributeId);
+
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items: [
+            { title: t("relation_map.go_to_relation"), command: "go", uiIcon: "bx bx-git-commit" },
+            collapsed
+                ? { title: t("relation_map.expand_relation"), command: "collapse", uiIcon: "bx bx-expand" }
+                : { title: t("relation_map.collapse_relation"), command: "collapse", uiIcon: "bx bx-collapse" },
+            ...(connection ? [
+                { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" }
+            ] : []),
+            ...(reification ? [
+                { title: t("relation_map.open_reification"), command: "open-note", uiIcon: "bx bx-link-external" }
+            ] : []),
+            ...(connection ? [
+                { kind: "separator" as const },
+                { title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }
+            ] : [])
+        ],
+        selectMenuItemHandler: async ({ command }) => {
+            if (command === "go") {
+                await actions.goTo(attributeId);
+            } else if (command === "collapse") {
+                actions.toggleCollapse(attributeId);
+            } else if (command === "open-note" && reification) {
+                appContext.tabManager.openContextWithNote(reification.noteId, { placement: "afterCurrent" });
+            } else if (command === "rename" && connection) {
+                const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
+                const newName = await askRelationName(connection, currentName);
+
+                if (!newName?.trim() || newName === currentName) {
+                    return;
+                }
+
+                const result = await mapApiRef.current?.renameRelation(connection, newName);
+                if (!result) {
+                    toast.showError(t("relation_map.connection_exists", { name: newName }));
+                }
+            } else if (command === "remove" && connection) {
+                if (!(await dialog.confirm(t("relation_map.confirm_remove_relation")))) {
+                    return;
+                }
+
+                mapApiRef.current?.removeRelation(connection);
+            }
+        }
+    });
 }
