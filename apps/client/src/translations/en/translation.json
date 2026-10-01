@@ -4532,6 +4532,7 @@
     "specify": "Specify {{name}}",
     "places": "Specify places",
     "places_hint": "These places were left empty. Each one can stay empty."
+  },
   "split_button": {
     "more_actions": "More actions"
   }
