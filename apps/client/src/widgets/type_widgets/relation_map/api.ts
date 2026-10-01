@@ -5,7 +5,7 @@ import { t } from "../../../services/i18n";
 import { deleteNoteOrBranch } from "../../../services/note_deletion";
 import server from "../../../services/server";
 import utils from "../../../services/utils";
-import { RelationMapRelation } from "@triliumnext/commons";
+import { RelationMapReification, RelationMapRelation } from "@triliumnext/commons";
 import toast from "../../../services/toast";
 
 export interface MapDataNoteEntry {
@@ -32,6 +32,7 @@ export default class RelationMapApi {
 
     private data: MapData;
     private relations: ClientRelation[];
+    private reifications: RelationMapReification[];
     private onDataChange: (refreshUi: boolean) => void;
     private mapNote: FNote;
 
@@ -39,6 +40,7 @@ export default class RelationMapApi {
         this.data = initialMapData;
         this.onDataChange = (refreshUi) => onDataChange({ ...this.data }, refreshUi);
         this.relations = [];
+        this.reifications = [];
         this.mapNote = note;
     }
 
@@ -57,6 +59,18 @@ export default class RelationMapApi {
 
     loadRelations(relations: ClientRelation[]) {
         this.relations = relations;
+    }
+
+    loadReifications(reifications: RelationMapReification[]) {
+        this.reifications = reifications;
+    }
+
+    reificationFor(attributeId: string) {
+        return this.reifications.find((item) => item.attributeId === attributeId);
+    }
+
+    isReificationNote(noteId: string) {
+        return this.reifications.some((item) => item.noteId === noteId && item.kind === "relation");
     }
 
     createItem(newNote: MapDataNoteEntry) {
@@ -110,10 +124,27 @@ export default class RelationMapApi {
         );
         if (exists) return false;
 
-        await server.put(`notes/${relation.sourceNoteId}/relations/${newName}/to/${relation.targetNoteId}`);
-        await server.remove(`notes/${relation.sourceNoteId}/relations/${relation.name}/to/${relation.targetNoteId}`);
+        // Updating the row clones it. The server retargets a reification onto the clone
+        // before the old row is deleted, so the note for this relation survives the rename.
+        await server.put(`notes/${relation.sourceNoteId}/attribute`, {
+            attributeId: relation.attributeId,
+            type: "relation",
+            name: newName,
+            value: relation.targetNoteId
+        });
         this.onDataChange(true);
         return true;
+    }
+
+    async reifyRelation(attributeId: string) {
+        const result = await server.post<{ noteId: string }>(`attributes/${attributeId}/reification`);
+        this.onDataChange(true);
+        return result.noteId;
+    }
+
+    async removeReification(attributeId: string) {
+        await server.remove(`attributes/${attributeId}/reification`);
+        this.onDataChange(true);
     }
 
     getRelationName(connection: Connection): string | undefined {

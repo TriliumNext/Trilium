@@ -14,6 +14,7 @@ import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
 import sqlRoute from "./api/sql";
 import attributesRoute from "./api/attributes";
+import reificationRoute from "./api/reification";
 import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
@@ -135,6 +136,12 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(DEL, "/api/notes/:noteId/relations/:name/to/:targetNoteId", attributesRoute.deleteRelation);
     apiRoute(DEL, "/api/notes/:noteId/attributes/:attributeId", attributesRoute.deleteNoteAttribute);
     apiRoute(GET, "/api/attribute-names/", attributesRoute.getAttributeNames);
+    apiRoute(GET, "/api/reification-concepts/:predicate", reificationRoute.getPredicateConcept);
+    apiRoute(PST, "/api/reification-concepts/:predicate", reificationRoute.savePredicateConcept);
+    apiRoute(GET, "/api/attributes/:attributeId/reifications", reificationRoute.listReifications);
+    apiRoute(GET, "/api/attributes/:attributeId/reification", reificationRoute.getReification);
+    apiRoute(PST, "/api/attributes/:attributeId/reification", reificationRoute.reifyAttribute);
+    apiRoute(DEL, "/api/attributes/:attributeId/reification", reificationRoute.deleteReification);
     apiRoute(GET, "/api/attribute-values/:attributeName", attributesRoute.getValuesForAttribute);
 
     apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);

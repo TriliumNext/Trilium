@@ -30,6 +30,7 @@ export * from "./lib/onenote.js";
 export * from "./lib/week_utils.js";
 export * from "./lib/board_columns.js";
 export * from "./lib/builtin_attributes.js";
+export * from "./lib/reification.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // The spreadsheet modules are deliberately not re-exported here: they pull in numfmt, and the
 // barrel is imported by virtually every client module. Import them via their subpath instead,

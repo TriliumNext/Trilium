@@ -170,7 +170,7 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
         }
 
         highlightColor = normalizeColor(getNodeColors(hoverNode, cssData).fill);
-        ({ neighbours, highlightLinks } = getHoveredNeighbourhood(hoverNode, notesAndRelations.links));
+        ({ neighbours, highlightLinks } = getHoveredNeighbourhood(hoverNode, graph.graphData().links));
     }
 
     /** Whether the note is the hovered one or one a relation runs between it and — all of them, while nothing is hovered. */

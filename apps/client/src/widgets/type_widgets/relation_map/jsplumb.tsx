@@ -63,7 +63,7 @@ export function JsPlumbItem({ x, y, children, draggable, sourceConfig, targetCon
     draggable?: DragOptions;
     sourceConfig?: object;
     targetConfig?: object;
-} & Pick<HTMLProps<HTMLDivElement>, "id" | "className" | "onContextMenu">) {
+} & Pick<HTMLProps<HTMLDivElement>, "id" | "className" | "onContextMenu" | "onClick" | "title">) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useContext(JsPlumbInstance);
 

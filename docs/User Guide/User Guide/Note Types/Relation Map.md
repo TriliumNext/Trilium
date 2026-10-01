@@ -16,6 +16,7 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   To open a note, either click on the note (opening it in the current view) or use the right click menu to open in a new tab.
 *   To edit the title of a note or to delete it (either from the map, or delete it completely), right click the note.
 *   To delete a relationship, right click it and select the corresponding option.
+*   Click a relationship. The two notes and the arrow become one circle, and a relationship of that circle can be clicked to fold it again. Right-click that circle to put the two notes back, then click either note to center the map on it. Click the circle and choose _Go to this relation_ to open that note; right-click it there to return to the two notes. _Back_ returns to the previous view. See <a class="reference-link" href="../Advanced%20Usage/Attributes/Relations.md">Relations</a>.
 
 ## Development process demo
 

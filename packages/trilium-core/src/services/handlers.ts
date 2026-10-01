@@ -12,6 +12,7 @@ import oneTimeTimer from "./one_time_timer.js";
 import type BNote from "../becca/entities/bnote.js";
 import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import { DefinitionObject } from "@triliumnext/commons";
+import "./reification.js";
 
 type Handler = (definition: DefinitionObject, note: BNote, targetNote: BNote) => void;
 

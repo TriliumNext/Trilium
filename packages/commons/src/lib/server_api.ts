@@ -897,10 +897,27 @@ export interface RelationMapRelation {
     targetNoteId: string;
 }
 
+/** A note that stands for one attribute row drawn on a relation map. */
+export interface RelationMapReification {
+    noteId: string;
+    attributeId: string;
+    title: string;
+    kind: "relation" | "label";
+    subjectNoteId: string;
+    objectNoteId: string | null;
+}
+
 export interface RelationMapPostResponse {
     noteTitles: Record<string, string>;
     relations: RelationMapRelation[];
     inverseRelations: Record<string, string>;
+    reifications: RelationMapReification[];
+}
+
+export interface ReificationResponse {
+    noteId: string;
+    title: string;
+    created: boolean;
 }
 
 export interface NoteMapLink {
@@ -910,6 +927,18 @@ export interface NoteMapLink {
     name: string;
 }
 
+/**
+ * A relation of the fact a visible edge stands for, such as
+ * `cause(loves(John, Mary), Event X)`. The fact's note is not a circle on this map.
+ * `linkId` is `${subjectNoteId}-${objectNoteId}` of the edge it hangs on.
+ */
+export interface NoteMapReificationLink {
+    linkId: string;
+    name: string;
+    outgoing: boolean;
+    note: NoteMapNote;
+}
+
 /** A note of a map, kept as a tuple rather than an object: a map carries thousands of them. */
 export type NoteMapNote = [ noteId: string, title: string, type: string, color: string | null, icon: string ];
 
@@ -917,6 +946,7 @@ export interface NoteMapPostResponse {
     notes: NoteMapNote[];
     links: NoteMapLink[];
     noteIdToDescendantCountMap: Record<string, number>;
+    reificationLinks?: NoteMapReificationLink[];
 }
 
 export interface UpdateAttributeResponse {

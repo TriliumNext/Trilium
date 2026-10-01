@@ -34,6 +34,22 @@ In the _Owned Attributes_ section in the <a class="reference-link" href="../../
     *   Alternatively copy a note from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and paste it after the `=` sign (without the `@` , in this case).
 *   To create an inheritable relation, follow the same steps as previously described but instead of `~myRelation` write `~myRelation(inheritable)`.
 
+## Reifying a relation
+
+A relation is one row: Note A `supports` Note B. Reifying it creates a note for that exact statement. The relation stays; the note is an extra token for it, created only when you ask.
+
+That note can carry its own attributes — a confidence, a quote, a counter-argument — and other relations can point at it. A label can be reified the same way. The note is filed under Hidden → Reifications, so it does not appear among the notes you keep.
+
+The title is the relation written as `R(A, B)`: `isChildOf(Prince Charles, Queen Elizabeth II)`. A label with a value takes the same shape (`confidence(Climate paper, 0.8)`); a label with no value has one argument (`reviewed(Climate paper)`). If you rename the note, that title is kept. Trilium rewrites it only while it is still the one it generated, including when you rename one of the notes the statement connects.
+
+The relation name is a different note. `loves(John, Mary)` is one statement. `loves` is the concept of that relation. On a link map, right-click the line. If the concept already exists, _Go to loves_ opens it. Otherwise _Create loves in inbox_ files a new note in the inbox, and _Connect loves to a note_ points the name at a note you already have. There is one concept per relation name.
+
+In the attributes list, hover a row and press the turn-into-note button. On a <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">relation map</a>, click a relation. The two notes and the arrow become one circle, and clicking a relation of that circle folds it again. Right-click the circle to put the two notes back, then click either note to center the map on it. Click the circle and choose _Go to this relation_ to open that note; right-click it there to return to the two notes. _Back_ returns to the previous view. A reified label is drawn above its note.
+
+That circle is the fact, so the map then shows relations of the fact. `loves(John, Mary)` does not love Mark, and Mary's other relations are not drawn on it. What is drawn is a relation of the fact itself, such as `cause(loves(John, Mary), Event X)`. Before the fact is opened, on the relation map, that cause is an arrow touching the loves arrow. Once the fact is what you are looking at, the cause is an arrow from that note.
+
+Removing the reification deletes that note. The original relation or label stays. Deleting the original relation or label deletes the reification note as well.
+
 ## Predefined relations
 
 These relations are supported and used internally by Trilium.
