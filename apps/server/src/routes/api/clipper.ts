@@ -84,7 +84,8 @@ async function getClipperInboxNote() {
 
     // Clipping a page is not a request for a journal, so a database without one keeps the
     // clipping at the top level rather than having a calendar built around it (#11034).
-    const calendarRoot = attributeService.getNoteWithLabel("calendarRoot");
+    // A hoisted workspace's own journal still counts, the same way asking for a day note does.
+    const calendarRoot = dateNoteService.findCalendarRoot();
     if (!calendarRoot) {
         return becca.getNoteOrThrow("root");
     }

@@ -46,9 +46,12 @@
 <p>The optional <code>~dailyInboxTemplate</code> relation on the calendar root
   is applied to each new daily Inbox, the same way <code>~dateTemplate</code> is
   applied to the day note.</p>
-<p>The Inbox is a direct child of the day note. A <a href="#root/_help_xWbu3jpNWapp">calendar</a> view
+<p>The Inbox is a direct child of the day note. Moving it into a folder under
+  that day leaves it where it is, and the next capture creates a new Inbox
+  as a direct child. A <a href="#root/_help_xWbu3jpNWapp">calendar</a> view
   of the journal leaves that child off the grid, so the captured notes do
-  not appear as events; the day's other children still do.</p>
+  not appear as events; the day's other children still do. A child that only
+  inherits <code>#dailyInbox</code> stays on the grid.</p>
 <h2>Week Note and Quarter Note</h2>
 <p>Week and quarter notes are disabled by default, since it might be too
   much for some people. To enable them, you need to set <code>#enableWeekNote</code> and <code>#enableQuarterNote</code> attributes

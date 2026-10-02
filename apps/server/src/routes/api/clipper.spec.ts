@@ -1,4 +1,4 @@
-import { attributes as attributeService, BBranch, becca, becca_easy_mocking, BNote, cls } from "@triliumnext/core";
+import { attributes as attributeService, BBranch, becca, becca_easy_mocking, BNote, cls, note_service as noteService } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -156,6 +156,56 @@ describe("clipper route handlers", () => {
         expect(inbox.title).toBe("Inbox");
         expect(inbox.getParentNotes()[0].hasLabel("dateNote")).toBe(true);
         calendarLookup.mockRestore();
+    });
+
+    it("clips into the hoisted workspace journal rather than the global one", async () => {
+        const { workspace, workspaceCalendar, globalJournal } = await cls.init(() => {
+            const globalJournal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Global journal",
+                content: "",
+                type: "text"
+            }).note;
+            globalJournal.setLabel("calendarRoot");
+            globalJournal.setLabel("enableDailyInbox");
+
+            const workspace = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Workspace",
+                content: "",
+                type: "text"
+            }).note;
+            workspace.setLabel("workspace");
+
+            const workspaceCalendar = noteService.createNewNote({
+                parentNoteId: workspace.noteId,
+                title: "Workspace journal",
+                content: "",
+                type: "text"
+            }).note;
+            workspaceCalendar.setLabel("workspaceCalendarRoot");
+            workspaceCalendar.setLabel("enableDailyInbox");
+
+            return { workspace, workspaceCalendar, globalJournal };
+        });
+
+        const result = await cls.init(() => {
+            cls.set("hoistedNoteId", workspace.noteId);
+            return clipperRoute.createNote({
+                body: {
+                    title: "Clipped into the workspace",
+                    content: "<p>x</p>",
+                    images: [],
+                    clipType: "note",
+                    pageUrl: "https://example.com/workspace-clip"
+                }
+            } as unknown as Request);
+        });
+
+        const clipped = becca.getNoteOrThrow(result.noteId);
+        expect(clipped.hasAncestor(workspaceCalendar.noteId)).toBe(true);
+        expect(clipped.hasAncestor(globalJournal.noteId)).toBe(false);
+        expect(clipped.getParentNotes()[0].getOwnedLabelValue("dailyInbox")).toBeTruthy();
     });
 
     it("returns a null noteId when no clipping matches the URL", async () => {

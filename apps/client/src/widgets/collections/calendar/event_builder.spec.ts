@@ -13,6 +13,8 @@ describe("Journal events", () => {
         const day = buildNote({
             title: "01 - Thursday",
             "#dateNote": "2026-10-01",
+            // Inherited by Meeting. Only the Inbox owns the label, so Meeting stays on the grid.
+            "#dailyInbox(inheritable)": "2026-10-01",
             children: [
                 { title: "Inbox", "#dailyInbox": "2026-10-01" },
                 { title: "Meeting" }

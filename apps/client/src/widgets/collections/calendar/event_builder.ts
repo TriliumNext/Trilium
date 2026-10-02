@@ -86,8 +86,8 @@ export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncInfo
     const childNoteIds = Object.keys(childNoteToDateMapping);
     const childNotes = await froca.getNotes(childNoteIds);
     for (const childNote of childNotes) {
-        // Captured notes live under this child, so the inbox itself is not an event on the grid.
-        if (childNote.hasLabel("dailyInbox")) {
+        // The inbox owns `#dailyInbox`. A child that only inherits the label is still an event.
+        if (childNote.hasOwnedLabel("dailyInbox")) {
             continue;
         }
 

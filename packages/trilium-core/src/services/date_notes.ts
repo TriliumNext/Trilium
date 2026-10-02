@@ -154,37 +154,48 @@ function createNote(parentNote: BNote, noteTitle: string) {
     }).note;
 }
 
-function getRootCalendarNote(): BNote {
-    let rootNote;
-
+/**
+ * The calendar `getRootCalendarNote()` would use, or null when the database has none.
+ * A hoisted workspace's `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
+ * This does not create a calendar.
+ */
+function findCalendarRoot(): BNote | null {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
 
     if (!workspaceNote || !workspaceNote.isRoot()) {
-        rootNote = searchService.findFirstNoteWithQuery(
+        const workspaceCalendar = searchService.findFirstNoteWithQuery(
             "#workspaceCalendarRoot", new searchContext({ ignoreHoistedNote: false })
         );
+        if (workspaceCalendar) {
+            return workspaceCalendar;
+        }
     }
 
-    if (!rootNote) {
-        rootNote = attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+    return attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+}
+
+function getRootCalendarNote(): BNote {
+    const existing = findCalendarRoot();
+    if (existing) {
+        return existing;
     }
 
-    if (!rootNote) {
-        getSql().transactional(() => {
-            rootNote = noteService.createNewNote({
-                parentNoteId: "root",
-                title: "Calendar",
-                target: "into",
-                isProtected: false,
-                type: "text",
-                content: ""
-            }).note;
+    let rootNote;
 
-            attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
-            attributeService.createLabel(rootNote.noteId, "sorted");
-            attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
-        });
-    }
+    getSql().transactional(() => {
+        rootNote = noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Calendar",
+            target: "into",
+            isProtected: false,
+            type: "text",
+            content: ""
+        }).note;
+
+        attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
+        attributeService.createLabel(rootNote.noteId, "sorted");
+        attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
+    });
 
     return rootNote as BNote;
 }
@@ -438,8 +449,8 @@ function getTodayNote(rootNote: BNote | null = null) {
 
 /**
  * The Inbox child of a day note. The first capture into that day creates it when the calendar
- * root has `#enableDailyInbox`; later captures that day reuse it. The day note itself stays
- * free for notes about the day.
+ * root has `#enableDailyInbox`; later captures that day reuse the direct child. An Inbox moved
+ * deeper under the day stays where it was, and the next capture creates a new one.
  */
 function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNote {
     const rootNote = _rootNote || getRootCalendarNote();
@@ -448,7 +459,7 @@ function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNo
 
     let inboxNote = searchService.findFirstNoteWithQuery(
         `#${DAILY_INBOX_LABEL}="${date}"`,
-        new searchContext({ ancestorNoteId: dayNote.noteId })
+        new searchContext({ ancestorNoteId: dayNote.noteId, ancestorDepth: "eq1" })
     );
 
     if (inboxNote) {
@@ -476,11 +487,12 @@ function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNo
  * that a deleted journal stays deleted.
  */
 function hasCalendarRoot() {
-    return !!attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+    return !!findCalendarRoot();
 }
 
 export default {
     getRootCalendarNote,
+    findCalendarRoot,
     hasCalendarRoot,
     getYearNote,
     getQuarterNote,

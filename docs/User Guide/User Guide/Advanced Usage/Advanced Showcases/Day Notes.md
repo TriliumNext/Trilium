@@ -27,7 +27,7 @@ Remove `#enableDailyInbox` to have those captures land directly in the day note.
 
 The optional `~dailyInboxTemplate` relation on the calendar root is applied to each new daily Inbox, the same way `~dateTemplate` is applied to the day note.
 
-The Inbox is a direct child of the day note. A [calendar](../../Collections/Calendar.md) view of the journal leaves that child off the grid, so the captured notes do not appear as events; the day's other children still do.
+The Inbox is a direct child of the day note. Moving it into a folder under that day leaves it where it is, and the next capture creates a new Inbox as a direct child. A [calendar](../../Collections/Calendar.md) view of the journal leaves that child off the grid, so the captured notes do not appear as events; the day's other children still do. A child that only inherits `#dailyInbox` stays on the grid.
 
 ## Week Note and Quarter Note
 

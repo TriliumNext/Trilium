@@ -263,7 +263,7 @@ Based on the `#calendarRoot` (or `#workspaceCalendarRoot`) attribute, the calend
 *   The calendar events are now rendered based on their `dateNote` attribute rather than `startDate`.
 *   Interactive editing such as dragging over an empty era or resizing an event is no longer possible.
 *   Clicking on the empty space on a date will automatically open that day's note or create it if it does not exist.
-*   Direct children of a day note will be displayed on the calendar despite not having a `dateNote` attribute. A child labelled `#dailyInbox` is left off the grid, and so are the captured notes inside it. Other children of the child notes will not be displayed.
+*   Direct children of a day note will be displayed on the calendar despite not having a `dateNote` attribute. A child that carries its own `#dailyInbox` label is left off the grid, and so are the captured notes inside it. A child that only inherits that label stays on the grid. Other children of the child notes will not be displayed.
 
 <img src="5_Calendar_image.png" width="1217" height="724">
 

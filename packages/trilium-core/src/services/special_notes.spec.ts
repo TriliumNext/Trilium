@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import attributeService from "./attributes.js";
+import branchService from "./branches.js";
 import { getContext } from "./context.js";
 import dateNotes from "./date_notes.js";
 import hoistedNoteService from "./hoisted_note.js";
@@ -279,6 +280,41 @@ describe("special_notes (core, real DB)", () => {
             const nextDay = getContext().init(() => specialNotes.getInboxNote("2026-10-02"));
             expect(nextDay.noteId).not.toBe(inbox.noteId);
             expect(nextDay.getOwnedLabelValue("dailyInbox")).toBe("2026-10-02");
+        });
+
+        it("creates a new direct Inbox when the labelled one has been moved under the day", () => {
+            const calendar = getContext().init(() => {
+                const calendar = noteService.createNewNote({
+                    parentNoteId: "root",
+                    title: "Journal for a moved inbox",
+                    content: "",
+                    type: "text"
+                }).note;
+                calendar.setLabel("calendarRoot");
+                calendar.setLabel("enableDailyInbox");
+                return calendar;
+            });
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? calendar : null);
+
+            const moved = getContext().init(() => {
+                const inbox = specialNotes.getInboxNote("2026-10-06");
+                const day = inbox.getParentNotes()[0];
+                const folder = noteService.createNewNote({
+                    parentNoteId: day.noteId,
+                    title: "Notes",
+                    content: "",
+                    type: "text"
+                }).note;
+                const branch = inbox.getParentBranches()[0];
+                branchService.moveBranchToNote(branch, folder.noteId);
+                return inbox;
+            });
+
+            const created = getContext().init(() => specialNotes.getInboxNote("2026-10-06"));
+            expect(created.noteId).not.toBe(moved.noteId);
+            expect(created.getParentNotes()[0].getOwnedLabelValue("dateNote")).toBe("2026-10-06");
+            expect(moved.getParentNotes()[0].title).toBe("Notes");
         });
 
         it("keeps a labelled inbox ahead of the daily inbox", () => {
