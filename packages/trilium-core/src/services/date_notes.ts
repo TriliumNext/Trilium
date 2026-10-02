@@ -154,6 +154,32 @@ function createNote(parentNote: BNote, noteTitle: string) {
     }).note;
 }
 
+function getRootCalendarNote(): BNote {
+    const existing = findCalendarRoot();
+    if (existing) {
+        return existing;
+    }
+
+    let rootNote;
+
+    getSql().transactional(() => {
+        rootNote = noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Calendar",
+            target: "into",
+            isProtected: false,
+            type: "text",
+            content: ""
+        }).note;
+
+        attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
+        attributeService.createLabel(rootNote.noteId, "sorted");
+        attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
+    });
+
+    return rootNote as BNote;
+}
+
 /**
  * The calendar `getRootCalendarNote()` would use, or null when the database has none.
  * A hoisted workspace's own `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
@@ -187,30 +213,31 @@ function findWorkspaceCalendar(workspace: BNote): BNote | null {
     return null;
 }
 
-function getRootCalendarNote(): BNote {
-    const existing = findCalendarRoot();
-    if (existing) {
-        return existing;
+/**
+ * Whether `note` sits in `workspace` without crossing into another workspace on the way.
+ * The workspace note itself counts. A note reached only through an inner `#workspace` does not.
+ */
+function calendarBelongsToWorkspace(note: BNote, workspace: BNote): boolean {
+    const seen = new Set<string>();
+
+    function reaches(current: BNote): boolean {
+        if (current.noteId === workspace.noteId) {
+            return true;
+        }
+        if (seen.has(current.noteId) || current.hasOwnedLabel("workspace")) {
+            return false;
+        }
+        seen.add(current.noteId);
+
+        for (const parent of current.parents) {
+            if (reaches(parent)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    let rootNote;
-
-    getSql().transactional(() => {
-        rootNote = noteService.createNewNote({
-            parentNoteId: "root",
-            title: "Calendar",
-            target: "into",
-            isProtected: false,
-            type: "text",
-            content: ""
-        }).note;
-
-        attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
-        attributeService.createLabel(rootNote.noteId, "sorted");
-        attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
-    });
-
-    return rootNote as BNote;
+    return reaches(note);
 }
 
 function getYearNote(dateStr: string, _rootNote: BNote | null = null): BNote {
@@ -501,33 +528,6 @@ function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNo
  */
 function hasCalendarRoot() {
     return !!findCalendarRoot();
-}
-
-/**
- * Whether `note` sits in `workspace` without crossing into another workspace on the way.
- * The workspace note itself counts. A note reached only through an inner `#workspace` does not.
- */
-function calendarBelongsToWorkspace(note: BNote, workspace: BNote): boolean {
-    const seen = new Set<string>();
-
-    function reaches(current: BNote): boolean {
-        if (current.noteId === workspace.noteId) {
-            return true;
-        }
-        if (seen.has(current.noteId) || current.hasOwnedLabel("workspace")) {
-            return false;
-        }
-        seen.add(current.noteId);
-
-        for (const parent of current.parents) {
-            if (reaches(parent)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    return reaches(note);
 }
 
 export default {

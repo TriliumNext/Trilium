@@ -1,4 +1,12 @@
-import { attributes as attributeService, BBranch, becca, becca_easy_mocking, BNote, cls, note_service as noteService } from "@triliumnext/core";
+import {
+    attributes as attributeService,
+    BBranch,
+    becca,
+    becca_easy_mocking,
+    BNote,
+    cls,
+    note_service as noteService
+} from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
