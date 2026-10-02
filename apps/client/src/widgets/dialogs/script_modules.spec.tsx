@@ -28,6 +28,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../services/server", () => ({ default: mocks }));
 
+// The real Modal schedules its transition after the test has ended, so only what raising a dialog
+// reaches is stubbed: the modal instance, and the tooltip class the shared hooks patch (hooks.tsx).
+vi.mock("bootstrap", () => ({
+    Modal: { getOrCreateInstance: () => ({ show: () => {}, hide: () => {}, dispose: () => {} }) },
+    Tooltip: class {
+        static getInstance() { return null; }
+        dispose() {}
+    },
+    Dropdown: class {}
+}));
+
 const CHEERIO = { name: "cheerio", version: "1.1.2", description: "Fast, flexible HTML parsing" };
 
 /** The dialog asks for the installed modules on opening; a search answers with whatever is given. */
