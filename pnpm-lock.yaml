@@ -54,7 +54,7 @@ overrides:
   fast-xml-parser@>=4.0.0-beta.3 <5.5.7: '>=5.5.7'
   path-to-regexp@<0.1.13: '>=0.1.13'
   path-to-regexp@>=8.0.0 <8.4.0: '>=8.4.0'
-  brace-expansion@<1.1.21: ^1.1.21
+  brace-expansion@<1.1.21: ^5.0.0
   brace-expansion@>=2.0.0 <2.1.7: ^2.1.7
   brace-expansion@>=4.0.0 <5.0.12: ^5.0.12
   picomatch@<2.3.2: '>=2.3.2'
