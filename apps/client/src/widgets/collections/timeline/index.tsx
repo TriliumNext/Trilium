@@ -20,10 +20,12 @@ import Button, { ButtonGroup } from "../../react/Button";
 import { useNoteLabel, useSpacedUpdate, useTriliumEvent, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { useLocale, useOnDatesSet } from "../calendar";
-import { changeEvent } from "../calendar/api";
+import { changeEvent, newEvent } from "../calendar/api";
 import Calendar from "../calendar/calendar";
 import { buildEvents } from "../calendar/event_builder";
 import EventPopover from "../calendar/EventPopover";
+import GhostPopover from "../calendar/GhostPopover";
+import { CalendarSelection } from "../calendar/selection";
 import { isAttributeChangeAffecting, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "../calendar/utils";
 import { ViewModeProps } from "../interface";
 import { buildResources } from "./resources";
@@ -44,6 +46,9 @@ const VIEW_OPTIONS = {
     resourceTimelineYear: { slotDuration: { weeks: 1 }, snapDuration: { days: 1 } }
 };
 
+/** The row at the bottom that stands for a note yet to be created; dragging across it creates one. */
+const NEW_ROW_ID = "_timeline_new";
+
 /** FullCalendar Premium is used under its AGPLv3 license, the same as Trilium's. */
 const SCHEDULER_LICENSE_KEY = "AGPL-My-Frontend-And-Backend-Are-Open-Source";
 
@@ -52,7 +57,7 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
     const componentId = parentComponent?.componentId;
     const containerRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<FullCalendar>(null);
-    const [ selection, setSelection ] = useState<{ noteId: string, anchor: { x: number, y: number } | null } | null>(null);
+    const [ selection, setSelection ] = useState<CalendarSelection | null>(null);
 
     const [ firstDayOfWeek ] = useTriliumOptionInt("firstDayOfWeek");
     const [ timelineView, setTimelineView ] = useNoteLabel(note, "timeline:view");
@@ -64,7 +69,10 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
 
     const resources = useMemo(() => async () => {
         await froca.getNotes([ note.noteId, ...noteIds ]);
-        return buildResources(note.noteId, noteIds, (noteId) => froca.getNoteFromCache(noteId));
+        return [
+            ...buildResources(note.noteId, noteIds, (noteId) => froca.getNoteFromCache(noteId)),
+            { id: NEW_ROW_ID, title: t("timeline.new_row"), order: Number.MAX_SAFE_INTEGER }
+        ];
     }, [ note, noteIds ]);
 
     const events = useMemo(() => async () => {
@@ -96,12 +104,36 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
     // A range selected on a row schedules that row's note, dated or not. No `componentId` is passed:
     // unlike a dragged bar, the new bar is not drawn yet, and the reload below is what draws it.
     const onSelect = useCallback(async (e: DateSelectInfo) => {
+        const { startDate, endDate } = parseStartEndDateFromEvent(e);
+        if (!startDate) return;
+
+        // On the new-note row the range stays selected, since the ghost is anchored to it.
+        if (e.resource?.id === NEW_ROW_ID) {
+            setSelection({
+                draft: { startDate, endDate },
+                anchor: e.jsEvent ? { x: e.jsEvent.clientX, y: e.jsEvent.clientY } : null
+            });
+            return;
+        }
+
         calendarRef.current?.unselect();
         const rowNote = e.resource && await froca.getNote(e.resource.id);
-        const { startDate, endDate } = parseStartEndDateFromEvent(e);
-        if (!rowNote || !startDate) return;
+        if (!rowNote) return;
 
         await changeEvent(rowNote, { startDate, endDate, startTime: null, endTime: null });
+    }, []);
+
+    const commitDraft = useCallback(async (title: string) => {
+        if (!selection || !("draft" in selection)) return;
+
+        await newEvent(note, { title: title.trim() || undefined, ...selection.draft });
+        calendarRef.current?.unselect();
+        setSelection(null);
+    }, [ selection, note ]);
+
+    const cancelDraft = useCallback(() => {
+        calendarRef.current?.unselect();
+        setSelection(null);
     }, []);
 
     const addNote = useCallback(async (parentNoteId: string, e: MouseEvent) => {
@@ -157,7 +189,14 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                         <ActionButton icon="bx bx-plus" text={t("timeline.add_note")} onClick={(e) => addNote(note.noteId, e)} />
                     </div>
                 )}
-                resourceCellContent={({ resource }: ResourceCellInfo) => resource && (
+                resourceCellContent={({ resource }: ResourceCellInfo) => resource?.id === NEW_ROW_ID ? (
+                    <div className="timeline-row timeline-new-row">
+                        <span className="timeline-row-title" onClick={(e) => addNote(note.noteId, e)}>
+                            <span className="calendar-event-icon bx bx-plus" />
+                            {resource.title}
+                        </span>
+                    </div>
+                ) : resource && (
                     <div className="timeline-row">
                         <span
                             className="timeline-row-title"
@@ -179,9 +218,12 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                 eventResourceEditable={false}
                 selectable
                 select={onSelect}
+                highlightClass="calendar-highlight"
+                unselectCancel=".calendar-ghost-popover, .calendar-ghost-sheet"
                 eventChange={onEventChange}
                 eventClick={onEventClick}
-                eventClass={(arg: EventDisplayInfo) => (selection?.noteId === arg.event.extendedProps.noteId
+                eventClass={(arg: EventDisplayInfo) => (selection && "noteId" in selection
+                    && selection.noteId === arg.event.extendedProps.noteId
                     ? "calendar-event calendar-event-selected no-tooltip-preview"
                     : "calendar-event")}
                 eventContent={(e: EventDisplayInfo) => (
@@ -201,7 +243,7 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                     }
                 }}
             />
-            {selection && (
+            {selection && "noteId" in selection && (
                 <EventPopover
                     noteId={selection.noteId}
                     anchor={selection.anchor}
@@ -210,6 +252,16 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                     isEditable
                     onClose={() => setSelection(null)}
                     onFollowLink={() => false}
+                />
+            )}
+            {selection && "draft" in selection && (
+                <GhostPopover
+                    draft={selection.draft}
+                    anchor={selection.anchor}
+                    container={containerRef.current}
+                    onCommit={commitDraft}
+                    onCancel={cancelDraft}
+                    onDismiss={() => setSelection(null)}
                 />
             )}
         </div>

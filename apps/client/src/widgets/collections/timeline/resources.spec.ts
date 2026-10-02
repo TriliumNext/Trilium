@@ -29,7 +29,8 @@ describe("buildResources", () => {
             { id: "orphan", parentId: undefined, order: 4 }
         ]);
         expect(resources[0]).toMatchObject({ title: "Title b", iconClass: "bx bx-b" });
-        for (const resource of resources.filter(r => r.id === "b" || r.id === "a" || r.id === "orphan")) {
+        const topLevel = resources.filter(r => [ "a", "b", "orphan" ].includes(String(r.id)));
+        for (const resource of topLevel) {
             expect(resource, resource.id).not.toHaveProperty("parentId");
         }
     });

@@ -21,3 +21,7 @@
         visibility: visible;
     }
 }
+
+.timeline-view .timeline-new-row {
+    color: var(--muted-text-color);
+}

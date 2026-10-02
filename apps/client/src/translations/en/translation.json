@@ -4533,6 +4533,7 @@
     "next": "Next",
     "title_column": "Note",
     "add_note": "Add a note",
-    "add_child_note": "Add a child note"
+    "add_child_note": "Add a child note",
+    "new_row": "New note"
   }
 }
