@@ -12,6 +12,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "p
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import note_create from "../../../services/note_create";
 import note_tooltip from "../../../services/note_tooltip";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
@@ -38,7 +39,9 @@ const DEFAULT_VIEW = "resourceTimelineMonth";
 const VIEW_OPTIONS = {
     resourceTimelineWeek: { slotDuration: { days: 1 } },
     resourceTimelineMonth: { slotDuration: { days: 1 } },
-    resourceTimelineYear: { slotDuration: { months: 1 }, snapDuration: { days: 1 } }
+    // A snap must divide the slot evenly, which days do not do to a month, so the year is laid out
+    // in weeks to keep dragging to the day.
+    resourceTimelineYear: { slotDuration: { weeks: 1 }, snapDuration: { days: 1 } }
 };
 
 /** FullCalendar Premium is used under its AGPLv3 license, the same as Trilium's. */
@@ -90,15 +93,31 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
         await changeEvent(eventNote, { startDate, endDate, startTime, endTime, componentId });
     }, [ componentId ]);
 
-    // A range selected on a row schedules that row's note, dated or not.
+    // A range selected on a row schedules that row's note, dated or not. No `componentId` is passed:
+    // unlike a dragged bar, the new bar is not drawn yet, and the reload below is what draws it.
     const onSelect = useCallback(async (e: DateSelectInfo) => {
         calendarRef.current?.unselect();
         const rowNote = e.resource && await froca.getNote(e.resource.id);
         const { startDate, endDate } = parseStartEndDateFromEvent(e);
         if (!rowNote || !startDate) return;
 
-        await changeEvent(rowNote, { startDate, endDate, startTime: null, endTime: null, componentId });
-    }, [ componentId ]);
+        await changeEvent(rowNote, { startDate, endDate, startTime: null, endTime: null });
+    }, []);
+
+    const addNote = useCallback(async (parentNoteId: string, e: MouseEvent) => {
+        e.stopPropagation();
+        const anchor = { x: e.clientX, y: e.clientY };
+        const parentNote = await froca.getNote(parentNoteId);
+        const { note: createdNote } = await note_create.createNote(parentNoteId, {
+            content: "",
+            type: "text",
+            isProtected: parentNote?.isProtected,
+            activate: false
+        });
+        if (createdNote) {
+            setSelection({ noteId: createdNote.noteId, anchor });
+        }
+    }, []);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const api = calendarRef.current;
@@ -132,15 +151,28 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                 resources={resources}
                 resourceOrder="order"
                 resourcesInitiallyExpanded
-                resourceColumnHeaderContent={t("timeline.title_column")}
-                resourceCellContent={(info: ResourceCellInfo) => info.resource && (
-                    <span
-                        className="timeline-row-title"
-                        onClick={(e) => info.resource && setSelection({ noteId: info.resource.id, anchor: { x: e.clientX, y: e.clientY } })}
-                    >
-                        <span className={`calendar-event-icon ${info.resource.extendedProps.iconClass}`} />
-                        {info.resource.title}
-                    </span>
+                resourceColumnHeaderContent={() => (
+                    <div className="timeline-row">
+                        <span className="timeline-row-title">{t("timeline.title_column")}</span>
+                        <ActionButton icon="bx bx-plus" text={t("timeline.add_note")} onClick={(e) => addNote(note.noteId, e)} />
+                    </div>
+                )}
+                resourceCellContent={({ resource }: ResourceCellInfo) => resource && (
+                    <div className="timeline-row">
+                        <span
+                            className="timeline-row-title"
+                            onClick={(e) => setSelection({ noteId: resource.id, anchor: { x: e.clientX, y: e.clientY } })}
+                        >
+                            <span className={`calendar-event-icon ${resource.extendedProps.iconClass}`} />
+                            {resource.title}
+                        </span>
+                        <ActionButton
+                            className="timeline-row-add"
+                            icon="bx bx-plus"
+                            text={t("timeline.add_child_note")}
+                            onClick={(e) => addNote(resource.id, e)}
+                        />
+                    </div>
                 )}
                 events={events}
                 editable

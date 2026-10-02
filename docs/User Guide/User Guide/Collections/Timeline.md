@@ -14,10 +14,11 @@ To turn an existing collection into a timeline, change its view type to _Timelin
 
 ## Interaction
 
+*   To add a note to the timeline, click the <span class="tn-icon bx bx-plus"></span> button in the header of the left column. To add a child note under a row, hover the row and click its <span class="tn-icon bx bx-plus"></span> button. The new note opens beside the button, where it can be named and dated.
 *   To schedule a note, drag across the days on its row. This sets its start and end dates, replacing any it already had.
 *   To move a bar, drag it along its row. To change its start or end date, drag one of its edges.
 *   To see or edit a note in place, click its bar or its title in the left column.
-*   To change the scale, use the _Week_, _Month_ and _Year_ buttons. The timeline remembers the last one used.
+*   To change the scale, use the _Week_, _Month_ and _Year_ buttons. The timeline remembers the last one used. Bars snap to whole days at every scale.
 *   To move through time, use the <span class="tn-icon bx bx-chevron-left"></span> and <span class="tn-icon bx bx-chevron-right"></span> buttons, or _Today_ to come back to the current date.
 
 ## Dates

@@ -4531,6 +4531,8 @@
   "timeline": {
     "previous": "Previous",
     "next": "Next",
-    "title_column": "Note"
+    "title_column": "Note",
+    "add_note": "Add a note",
+    "add_child_note": "Add a child note"
   }
 }
