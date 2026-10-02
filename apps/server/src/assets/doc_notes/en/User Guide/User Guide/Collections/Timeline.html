@@ -1,0 +1,72 @@
+<aside class="admonition important">
+  <p>The Timeline is a beta feature.</p>
+</aside>
+<p>The Timeline displays notes as bars on a horizontal time axis. Each note
+  in the collection gets a row of its own, and the rows are nested the same
+  way the notes are nested in the <a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.
+  A note with a start date and optionally an end date is drawn as a bar on
+  its row; a note without dates keeps an empty row.</p>
+<p>The Timeline reads the same dates as the&nbsp;<a class="reference-link"
+  href="#root/_help_xWbu3jpNWapp">Calendar</a>, so a collection can be switched
+  between the two views without changing its notes.</p>
+<h2>Creating a timeline</h2>
+<p>Right click on an existing note in the <a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+  select <em>Insert child note</em> and look for <em>Timeline</em>.</p>
+<p>To turn an existing collection into a timeline, change its view type to <em>Timeline</em> in
+  the&nbsp;<a class="reference-link" href="#root/_help_CssoWBu8I7jF">Collection Properties</a>.</p>
+<h2>Interaction</h2>
+<ul>
+  <li>To schedule a note, drag across the days on its row. This sets its start
+    and end dates, replacing any it already had.</li>
+  <li>To move a bar, drag it along its row. To change its start or end date,
+    drag one of its edges.</li>
+  <li>To see or edit a note in place, click its bar or its title in the left
+    column.</li>
+  <li>To change the scale, use the <em>Week</em>, <em>Month</em> and <em>Year</em> buttons.
+    The timeline remembers the last one used.</li>
+  <li>To move through time, use the <span class="tn-icon bx bx-chevron-left"></span> and <span
+    class="tn-icon bx bx-chevron-right"></span> buttons, or <em>Today</em> to
+    come back to the current date.</li>
+</ul>
+<h2>Dates</h2>
+<p>A note is placed on the timeline by the following labels:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>#startDate</code>
+        </td>
+        <td>The date the bar starts on, in <code>YYYY-MM-DD</code> format. Required
+          for the note to have a bar.</td>
+      </tr>
+      <tr>
+        <td><code>#endDate</code>
+        </td>
+        <td>The date the bar ends on, inclusive. Without it, the bar covers a single
+          day.</td>
+      </tr>
+      <tr>
+        <td><code>#startTime</code>, <code>#endTime</code>
+        </td>
+        <td>Optional times of day, as in the&nbsp;<a class="reference-link" href="#root/_help_xWbu3jpNWapp">Calendar</a>.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>The labels that hold the dates can be changed with <code>#calendar:startDate</code>, <code>#calendar:endDate</code>, <code>#calendar:startTime</code> and <code>#calendar:endTime</code>,
+  the same as in the Calendar.</p>
+<h2>Limitations</h2>
+<ul>
+  <li>Bars can only be moved along their own row; dragging a bar onto another
+    row is not possible.</li>
+  <li>Dependencies between notes and progress are not displayed.</li>
+</ul>
+<h2>Under the hood</h2>
+<p>The Timeline is built on the resource timeline of <a href="https://fullcalendar.io/">FullCalendar</a> Premium,
+  which Trilium uses under its AGPLv3 license.</p>

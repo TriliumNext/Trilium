@@ -49,6 +49,9 @@ const ViewComponents: Record<ViewTypeOptions, { normal: LazyLoadedComponent, pri
     calendar: {
         normal: lazy(() => import("./calendar/index.js"))
     },
+    timeline: {
+        normal: lazy(() => import("./timeline/index.js"))
+    },
     table: {
         normal: lazy(() => import("./table/index.js")),
         print: lazy(() => import("./table/TablePrintView.js"))

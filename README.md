@@ -263,3 +263,5 @@ Consider supporting the main developer ([eliandoran](https://github.com/eliandor
 Copyright 2017-2025 zadam, Elian Doran, and other contributors
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+The Timeline collection uses [FullCalendar Premium](https://fullcalendar.io/license) (`fullcalendar-scheduler`), which is tri-licensed; Trilium uses it under the AGPLv3 option. Its npm metadata reports the license only as `SEE LICENSE IN LICENSE.md`.
