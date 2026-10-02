@@ -208,6 +208,80 @@ describe("clipper route handlers", () => {
         expect(clipped.getParentNotes()[0].getOwnedLabelValue("dailyInbox")).toBeTruthy();
     });
 
+    it("does not clip into a journal that belongs to a nested workspace", async () => {
+        const { outer, nestedCalendar, globalJournal } = await cls.init(() => {
+            const globalJournal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Global journal beside a nested workspace",
+                content: "",
+                type: "text"
+            }).note;
+            globalJournal.setLabel("calendarRoot");
+
+            const outer = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Outer workspace",
+                content: "",
+                type: "text"
+            }).note;
+            outer.setLabel("workspace");
+
+            const inner = noteService.createNewNote({
+                parentNoteId: outer.noteId,
+                title: "Inner workspace",
+                content: "",
+                type: "text"
+            }).note;
+            inner.setLabel("workspace");
+
+            const nestedCalendar = noteService.createNewNote({
+                parentNoteId: inner.noteId,
+                title: "Inner journal",
+                content: "",
+                type: "text"
+            }).note;
+            nestedCalendar.setLabel("workspaceCalendarRoot");
+
+            return { outer, nestedCalendar, globalJournal };
+        });
+
+        const lookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "calendarRoot" ? globalJournal : null);
+
+        const intoGlobal = await cls.init(() => {
+            cls.set("hoistedNoteId", outer.noteId);
+            return clipperRoute.createNote({
+                body: {
+                    title: "Clipped past the nested journal",
+                    content: "<p>x</p>",
+                    images: [],
+                    clipType: "note",
+                    pageUrl: "https://example.com/nested-workspace-clip"
+                }
+            } as unknown as Request);
+        });
+
+        const clipped = becca.getNoteOrThrow(intoGlobal.noteId);
+        expect(clipped.hasAncestor(globalJournal.noteId)).toBe(true);
+        expect(clipped.hasAncestor(nestedCalendar.noteId)).toBe(false);
+
+        lookup.mockImplementation(() => null);
+        const atRoot = await cls.init(() => {
+            cls.set("hoistedNoteId", outer.noteId);
+            return clipperRoute.createNote({
+                body: {
+                    title: "Clipped with no journal at all",
+                    content: "<p>x</p>",
+                    images: [],
+                    clipType: "note",
+                    pageUrl: "https://example.com/nested-workspace-root"
+                }
+            } as unknown as Request);
+        });
+        expect(becca.getNoteOrThrow(atRoot.noteId).getParentNotes().map((parent) => parent.noteId)).toEqual([ "root" ]);
+        lookup.mockRestore();
+    });
+
     it("returns a null noteId when no clipping matches the URL", async () => {
         const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: "https://nope.example/none" } } as unknown as Request<{ noteUrl: string }>));
         expect(found.noteId).toBeNull();

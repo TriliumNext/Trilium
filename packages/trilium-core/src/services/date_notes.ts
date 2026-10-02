@@ -156,22 +156,35 @@ function createNote(parentNote: BNote, noteTitle: string) {
 
 /**
  * The calendar `getRootCalendarNote()` would use, or null when the database has none.
- * A hoisted workspace's `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
- * This does not create a calendar.
+ * A hoisted workspace's own `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
+ * A journal inside a nested workspace stays with that workspace. This does not create a calendar.
  */
 function findCalendarRoot(): BNote | null {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
 
-    if (!workspaceNote || !workspaceNote.isRoot()) {
-        const workspaceCalendar = searchService.findFirstNoteWithQuery(
-            "#workspaceCalendarRoot", new searchContext({ ignoreHoistedNote: false })
-        );
+    if (workspaceNote && !workspaceNote.isRoot()) {
+        const workspaceCalendar = findWorkspaceCalendar(workspaceNote);
         if (workspaceCalendar) {
             return workspaceCalendar;
         }
     }
 
     return attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+}
+
+/** The `#workspaceCalendarRoot` that belongs to `workspace`, ignoring journals of workspaces inside it. */
+function findWorkspaceCalendar(workspace: BNote): BNote | null {
+    const matches = searchService.searchNotes("#workspaceCalendarRoot", {
+        ancestorNoteId: workspace.noteId
+    });
+
+    for (const match of matches) {
+        if (match && calendarBelongsToWorkspace(match, workspace)) {
+            return match;
+        }
+    }
+
+    return null;
 }
 
 function getRootCalendarNote(): BNote {
@@ -490,9 +503,37 @@ function hasCalendarRoot() {
     return !!findCalendarRoot();
 }
 
+/**
+ * Whether `note` sits in `workspace` without crossing into another workspace on the way.
+ * The workspace note itself counts. A note reached only through an inner `#workspace` does not.
+ */
+function calendarBelongsToWorkspace(note: BNote, workspace: BNote): boolean {
+    const seen = new Set<string>();
+
+    function reaches(current: BNote): boolean {
+        if (current.noteId === workspace.noteId) {
+            return true;
+        }
+        if (seen.has(current.noteId) || current.hasOwnedLabel("workspace")) {
+            return false;
+        }
+        seen.add(current.noteId);
+
+        for (const parent of current.parents) {
+            if (reaches(parent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return reaches(note);
+}
+
 export default {
     getRootCalendarNote,
     findCalendarRoot,
+    findWorkspaceCalendar,
     hasCalendarRoot,
     getYearNote,
     getQuarterNote,

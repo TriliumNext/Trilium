@@ -223,6 +223,47 @@ describe("special_notes (core, real DB)", () => {
             });
         });
 
+        it("does not capture into a journal that belongs to a nested workspace", () => {
+            const { outer, nestedCalendar } = getContext().init(() => {
+                const outer = noteService.createNewNote({
+                    parentNoteId: "root",
+                    title: "outer-workspace-without-journal",
+                    content: "",
+                    type: "text"
+                }).note;
+                outer.setLabel("workspace");
+
+                const inner = noteService.createNewNote({
+                    parentNoteId: outer.noteId,
+                    title: "inner-workspace",
+                    content: "",
+                    type: "text"
+                }).note;
+                inner.setLabel("workspace");
+
+                const nestedCalendar = noteService.createNewNote({
+                    parentNoteId: inner.noteId,
+                    title: "inner-journal",
+                    content: "",
+                    type: "text"
+                }).note;
+                nestedCalendar.setLabel("workspaceCalendarRoot");
+                return { outer, nestedCalendar };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", outer.noteId);
+
+                expect(specialNotes.getInboxTarget()).toMatchObject({
+                    kind: "workspaceRoot",
+                    noteId: outer.noteId
+                });
+                const captured = specialNotes.getInboxNote("2026-10-07");
+                expect(captured.noteId).toBe(outer.noteId);
+                expect(captured.hasAncestor(nestedCalendar.noteId)).toBe(false);
+            });
+        });
+
         it("gives a calendar Trilium creates itself #enableDailyInbox", () => {
             vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
 
@@ -423,9 +464,8 @@ describe("special_notes (core, real DB)", () => {
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withNeither as any);
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "workspaceRoot", noteId: withNeither.noteId });
 
-            const withCalendar = makeWorkspaceStub({
-                "#workspaceCalendarRoot": becca.getNoteOrThrow("root").getChildNotes()[0]
-            });
+            const withCalendar = makeWorkspaceStub({});
+            vi.spyOn(dateNotes, "findWorkspaceCalendar").mockReturnValue(becca.getNoteOrThrow("root").getChildNotes()[0]);
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withCalendar as any);
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dayNote" });
         });

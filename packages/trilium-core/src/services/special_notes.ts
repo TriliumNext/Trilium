@@ -51,7 +51,7 @@ function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote; calendarRo
             return { kind: "inbox", note: inbox };
         }
 
-        const workspaceCalendar = workspaceNote.searchNoteInSubtree("#workspaceCalendarRoot");
+        const workspaceCalendar = dateNoteService.findWorkspaceCalendar(workspaceNote);
         if (workspaceCalendar) {
             return {
                 kind: kindForCalendarRoot(workspaceCalendar),

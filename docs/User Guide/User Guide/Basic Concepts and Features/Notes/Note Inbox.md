@@ -26,5 +26,5 @@ When a new note is created while hoisted in a workspace, the location is determi
 
 *   A note carrying the `#workspaceInbox` label in that workspace.
 *   A note carrying the `#inbox` within that workspace.
-*   Today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), if the workspace has a `#workspaceCalendarRoot`. With `#enableDailyInbox` on that root, the note goes into the day's Inbox child instead.
+*   Today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), if the workspace has a `#workspaceCalendarRoot` of its own. A journal that belongs to a workspace nested inside this one stays with that workspace. With `#enableDailyInbox` on that root, the note goes into the day's Inbox child instead.
 *   The workspace root note itself.
