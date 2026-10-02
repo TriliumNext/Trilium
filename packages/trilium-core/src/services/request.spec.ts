@@ -58,9 +58,11 @@ describe("request provider (core)", () => {
 });
 
 describe("readCappedResponse", () => {
-    it("reads a body whole and normalises what it came under", async () => {
+    it("reads a body whole, normalises what it came under, and keeps the headers", async () => {
         const read = await readCappedResponse(
-            new Response("hello", { headers: { "content-type": "Text/HTML; charset=UTF-8" } }),
+            new Response("hello", {
+                headers: { "content-type": "Text/HTML; charset=UTF-8", "X-TypeScript-Types": "/index.d.ts" }
+            }),
             1000
         );
 
@@ -68,6 +70,8 @@ describe("readCappedResponse", () => {
             status: 200,
             ok: true,
             contentType: "text/html",
+            // Names lower-cased, which is what a caller looking one up expects.
+            headers: { "content-type": "Text/HTML; charset=UTF-8", "x-typescript-types": "/index.d.ts" },
             bytes: new TextEncoder().encode("hello")
         });
     });

@@ -73,6 +73,7 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             className="note-actions-custom"
         >
             <RunActiveNoteButton {...innerProps } />
+            <ScriptModulesButton {...innerProps} />
             <SwitchSplitOrientationButton {...innerProps} />
             <DisplayModeSwitcher {...innerProps} />
             <SaveToNoteButton {...innerProps} />
@@ -278,6 +279,20 @@ function RunActiveNoteButton({ noteMime }: NoteActionsCustomInnerProps) {
         icon="bx bx-play"
         text={t("code_buttons.execute_button_title")}
         triggerCommand="runActiveNote"
+    />;
+}
+
+/**
+ * Opens the packages installed into Trilium. Carried by every note that can require one: a backend
+ * script, a frontend one, and a JSX note, whose imports become requires when it is built.
+ */
+function ScriptModulesButton({ noteMime, parentComponent }: NoteActionsCustomInnerProps) {
+    const isEnabled = noteMime.startsWith("application/javascript") || noteMime === "text/jsx";
+
+    return isEnabled && <NoteAction
+        icon="bx bx-cube"
+        text={t("script_modules.title")}
+        onClick={() => parentComponent.triggerCommand("showScriptModules")}
     />;
 }
 

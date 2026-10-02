@@ -86,6 +86,8 @@ Note: `#customResourceProvider` notes never execute a script — the note's cont
 - `api.xml2js` - XML parser
 - `api.htmlParser` - HTML parser (node-html-parser), use `api.htmlParser.parse(html)` to parse
 
+Anything beyond these comes from an npm package the user installs into Trilium — see "Module system" below. Prefer an installed package over hand-writing parsing, date or text-processing logic.
+
 ### HTTP Requests
 Use the native `fetch()` API for HTTP requests. Since `fetch()` is async and top-level `await` is not allowed (see "Async code" above), wrap it in an async IIFE:
 ```javascript
@@ -228,4 +230,34 @@ api.createTextNote(today.noteId, "Daily Summary", summary);
 
 ## Module system
 
+`require('name')` resolves a child note titled `name` first, then an npm package installed into Trilium, then a Node.js built-in.
+
+### Child notes as modules
+
 Child notes of a script act as modules. Export with `module.exports = ...` and import via function parameters matching the child note title, or use `require('noteName')`.
+
+### npm packages
+
+The user installs npm packages into Trilium from **Script modules** in a script note's actions menu. An installed package is stored in the database, so it syncs to the user's other instances and keeps working without network access. Require it by name:
+
+```javascript
+const cheerio = require('cheerio');
+```
+
+A package is read and evaluated the first time a script requires it, so an installed package the script does not use costs it nothing. Where two versions of one package are installed, the name alone no longer picks out a single package and the require fails — name a version as well: `require('cheerio@1.1.2')`.
+
+**Prefer an installed package over writing the logic yourself** whenever a well-known package does the job better: parsing HTML, CSV, YAML or iCal, date arithmetic beyond `api.dayjs`, diffing, templating, fuzzy matching, natural-language dates. A maintained package handles the cases a hand-rolled parser or regex misses, and the install is a one-time step for the user. Write the logic yourself only when it is small and specific to the user's data.
+
+**You cannot install packages, and you cannot see which packages are already installed.** When a script needs one:
+
+1. Write the script as if the package were installed.
+2. Tell the user the exact spec to install (`cheerio@1.1.2`), what the script uses it for, and where to go: open the script note, choose **Script modules** from the note actions menu, type the spec, press **Install**.
+3. Tell them the script fails with *"Could not find module 'cheerio'"* until they do.
+
+Do not quietly fall back to a worse hand-written implementation to avoid asking.
+
+### Node.js built-ins
+
+Built-in modules can be required, except those that hand a script the machine rather than a library: `child_process`, `cluster`, `dgram`, `dns`, `fs`, `inspector`, `module`, `net`, `os`, `path`, `process`, `repl`, `tls`, `v8`, `vm` and `worker_threads`. These are refused however they are spelled — `node:fs` and `fs/promises` are refused the same as `fs`.
+
+An npm package that needs one of those built-ins, or native bindings, works only if the user ticks **Node.js build** when installing it. Say so when the package needs it, and note that a Node.js build runs on the server and desktop app only, not in the browser or mobile builds.
