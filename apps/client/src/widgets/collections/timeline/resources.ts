@@ -26,7 +26,8 @@ export function buildResources(rootNoteId: string, noteIds: string[],
         visited.add(noteId);
         resources.push({
             id: noteId,
-            parentId,
+            // Left out rather than undefined: FullCalendar runs `String()` on any `parentId` key.
+            ...(parentId && { parentId }),
             title: note.title,
             order: resources.length,
             iconClass: note.getIcon()

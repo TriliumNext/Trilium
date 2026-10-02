@@ -29,6 +29,9 @@ describe("buildResources", () => {
             { id: "orphan", parentId: undefined, order: 4 }
         ]);
         expect(resources[0]).toMatchObject({ title: "Title b", iconClass: "bx bx-b" });
+        for (const resource of resources.filter(r => r.id === "b" || r.id === "a" || r.id === "orphan")) {
+            expect(resource, resource.id).not.toHaveProperty("parentId");
+        }
     });
 
     it("gives a cloned note one row, under the first parent reached", () => {
