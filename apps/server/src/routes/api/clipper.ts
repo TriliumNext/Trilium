@@ -84,11 +84,17 @@ async function getClipperInboxNote() {
 
     // Clipping a page is not a request for a journal, so a database without one keeps the
     // clipping at the top level rather than having a calendar built around it (#11034).
-    if (!dateNoteService.hasCalendarRoot()) {
+    const calendarRoot = attributeService.getNoteWithLabel("calendarRoot");
+    if (!calendarRoot) {
         return becca.getNoteOrThrow("root");
     }
 
-    return await dateNoteService.getDayNote(dateUtils.localNowDate());
+    const today = dateUtils.localNowDate();
+    if (calendarRoot.hasLabel("enableDailyInbox")) {
+        return dateNoteService.getDailyInboxNote(today, calendarRoot);
+    }
+
+    return dateNoteService.getDayNote(today, calendarRoot);
 }
 
 async function createNote(req: Request) {

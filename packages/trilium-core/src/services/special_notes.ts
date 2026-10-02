@@ -16,16 +16,25 @@ import {
 } from "@triliumnext/commons";
 
 function getInboxNote(date: string) {
-    const { note } = resolveInboxTarget();
+    const { kind, note, calendarRoot } = resolveInboxTarget();
 
-    return note ?? dateNoteService.getDayNote(date);
+    if (note) {
+        return note;
+    }
+
+    if (kind === "dailyInbox") {
+        return dateNoteService.getDailyInboxNote(date, calendarRoot);
+    }
+
+    return dateNoteService.getDayNote(date, calendarRoot);
 }
 
 /**
  * Decides where a quickly captured note goes. Creates nothing, unlike `getInboxNote()`, which
- * creates the day note it falls back to. Use this to name the destination without capturing.
+ * creates the day note or daily inbox it falls back to. Use this to name the destination
+ * without capturing.
  */
-function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote } {
+function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote; calendarRoot?: BNote } {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
     if (!workspaceNote) {
         throw new Error("Unable to find workspace note");
@@ -42,9 +51,12 @@ function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote } {
             return { kind: "inbox", note: inbox };
         }
 
-        // Capture into today's note when this workspace has its own journal.
-        if (workspaceNote.searchNoteInSubtree("#workspaceCalendarRoot")) {
-            return { kind: "dayNote" };
+        const workspaceCalendar = workspaceNote.searchNoteInSubtree("#workspaceCalendarRoot");
+        if (workspaceCalendar) {
+            return {
+                kind: kindForCalendarRoot(workspaceCalendar),
+                calendarRoot: workspaceCalendar
+            };
         }
 
         return { kind: "workspaceRoot", note: workspaceNote };
@@ -57,11 +69,17 @@ function resolveInboxTarget(): { kind: InboxTargetKind; note?: BNote } {
 
     // Capturing a note is not a request for a journal, so a database without one keeps the note
     // at the top level rather than having a calendar built around it (#11034).
-    if (dateNoteService.hasCalendarRoot()) {
-        return { kind: "dayNote" };
+    const calendarRoot = attributeService.getNoteWithLabel("calendarRoot");
+    if (calendarRoot) {
+        return { kind: kindForCalendarRoot(calendarRoot), calendarRoot };
     }
 
     return { kind: "root", note: workspaceNote };
+}
+
+/** `dayNote` puts the capture in the day note. `#enableDailyInbox` puts it in that day's inbox. */
+function kindForCalendarRoot(calendarRoot: BNote): InboxTargetKind {
+    return calendarRoot.hasLabel("enableDailyInbox") ? "dailyInbox" : "dayNote";
 }
 
 function getInboxTarget(): InboxTargetResponse {

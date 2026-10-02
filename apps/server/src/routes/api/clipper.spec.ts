@@ -1,4 +1,4 @@
-import { BBranch, becca, becca_easy_mocking, BNote, cls } from "@triliumnext/core";
+import { attributes as attributeService, BBranch, becca, becca_easy_mocking, BNote, cls } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -124,6 +124,38 @@ describe("clipper route handlers", () => {
 
         const clipped = becca.getNoteOrThrow(result.noteId);
         expect(clipped.getParentNotes().map((p) => p.noteId)).not.toEqual([ "root" ]);
+    });
+
+    it("clips into the day's inbox when the journal has #enableDailyInbox", async () => {
+        const journal = buildNote({
+            title: "Daily inbox journal",
+            "#calendarRoot": "",
+            "#enableDailyInbox": ""
+        });
+        new BBranch({
+            noteId: journal.noteId,
+            parentNoteId: "root",
+            branchId: `root_${journal.noteId}`
+        });
+        const calendarLookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "calendarRoot" ? journal : null);
+
+        const result = await cls.init(() => clipperRoute.createNote({
+            body: {
+                title: "Clipped into the day",
+                content: "<p>x</p>",
+                images: [],
+                clipType: "note",
+                pageUrl: "https://example.com/daily-inbox"
+            }
+        } as unknown as Request));
+
+        const clipped = becca.getNoteOrThrow(result.noteId);
+        const inbox = clipped.getParentNotes()[0];
+        expect(inbox.getOwnedLabelValue("dailyInbox")).toBeTruthy();
+        expect(inbox.title).toBe("Inbox");
+        expect(inbox.getParentNotes()[0].hasLabel("dateNote")).toBe(true);
+        calendarLookup.mockRestore();
     });
 
     it("returns a null noteId when no clipping matches the URL", async () => {

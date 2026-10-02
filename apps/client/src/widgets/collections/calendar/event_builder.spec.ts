@@ -1,9 +1,34 @@
+import type { EventSourceFuncInfo } from "fullcalendar";
 import { describe, expect, it, vi } from "vitest";
+
+import server from "../../../services/server.js";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
-import { buildEvent, buildEvents } from "./event_builder.js";
+import { buildEvent, buildEvents, buildEventsForCalendar } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
 import { isValidDuration, parseDurationSeconds } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
+
+describe("Journal events", () => {
+    it("leaves the daily inbox off the grid and keeps the day's other children", async () => {
+        const day = buildNote({
+            title: "01 - Thursday",
+            "#dateNote": "2026-10-01",
+            children: [
+                { title: "Inbox", "#dailyInbox": "2026-10-01" },
+                { title: "Meeting" }
+            ]
+        });
+        const get = vi.spyOn(server, "get").mockResolvedValue({ "2026-10-01": day.noteId });
+
+        const events = await buildEventsForCalendar(
+            buildNote({ title: "Calendar", "#calendarRoot": "" }),
+            { startStr: "2026-10-01", endStr: "2026-10-31" } as EventSourceFuncInfo
+        );
+
+        expect(events.map((event) => event.title)).toEqual([ "01 - Thursday", "Meeting" ]);
+        get.mockRestore();
+    });
+});
 
 describe("Building events", () => {
     it("supports start date", async () => {

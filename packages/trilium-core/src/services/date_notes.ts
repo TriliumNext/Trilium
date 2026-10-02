@@ -19,6 +19,7 @@ const QUARTER_LABEL = "quarterNote";
 const MONTH_LABEL = "monthNote";
 const WEEK_LABEL = "weekNote";
 const DATE_LABEL = "dateNote";
+const DAILY_INBOX_LABEL = "dailyInbox";
 
 const WEEKDAY_TRANSLATION_IDS = [
     "weekdays.sunday", "weekdays.monday", "weekdays.tuesday",
@@ -181,6 +182,7 @@ function getRootCalendarNote(): BNote {
 
             attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
             attributeService.createLabel(rootNote.noteId, "sorted");
+            attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
         });
     }
 
@@ -435,6 +437,40 @@ function getTodayNote(rootNote: BNote | null = null) {
 }
 
 /**
+ * The Inbox child of a day note. The first capture into that day creates it when the calendar
+ * root has `#enableDailyInbox`; later captures that day reuse it. The day note itself stays
+ * free for notes about the day.
+ */
+function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNote {
+    const rootNote = _rootNote || getRootCalendarNote();
+    const dayNote = getDayNote(dateStr, rootNote);
+    const date = dateStr.trim().substring(0, 10);
+
+    let inboxNote = searchService.findFirstNoteWithQuery(
+        `#${DAILY_INBOX_LABEL}="${date}"`,
+        new searchContext({ ancestorNoteId: dayNote.noteId })
+    );
+
+    if (inboxNote) {
+        return inboxNote;
+    }
+
+    getSql().transactional(() => {
+        inboxNote = createNote(dayNote, t("hidden-subtree.inbox-title"));
+
+        attributeService.createLabel(inboxNote.noteId, DAILY_INBOX_LABEL, date);
+        attributeService.createLabel(inboxNote.noteId, "iconClass", "bx bxs-inbox");
+
+        const templateAttr = rootNote.getOwnedAttribute("relation", "dailyInboxTemplate");
+        if (templateAttr) {
+            attributeService.createRelation(inboxNote.noteId, "template", templateAttr.value);
+        }
+    });
+
+    return inboxNote as unknown as BNote;
+}
+
+/**
  * Whether a journal exists. `getRootCalendarNote()` builds one when it finds none, which is
  * what asking for a day note means; callers that are only capturing a note check this first so
  * that a deleted journal stays deleted.
@@ -453,5 +489,6 @@ export default {
     getWeekFirstDayNote,
     getDayNote,
     getTodayNote,
+    getDailyInboxNote,
     getJournalNoteTitle
 };

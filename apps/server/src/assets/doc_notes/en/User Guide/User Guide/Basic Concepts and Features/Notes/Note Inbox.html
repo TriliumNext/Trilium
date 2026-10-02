@@ -18,9 +18,12 @@
   one will be used by the application.</p>
 <aside class="admonition note">
   <p>If there is no inbox note, Trilium will fall back to today's <a href="#root/_help_l0tKav7yLHGF">day note</a>,
-    creating it and its calendar ancestors as needed. If the journal has been
-    removed altogether, the note is created at the top level instead of a new
-    journal being built for it.</p>
+    creating it and its calendar ancestors as needed. When the calendar root
+    carries <code>#enableDailyInbox</code>, that fallback is an Inbox child
+    of the day note rather than the day note itself. The Journal in a new database
+    already carries that label. If the journal has been removed altogether,
+    the note is created at the top level instead of a new journal being built
+    for it.</p>
 </aside>
 <h2>Workspace inboxes</h2>
 <p>Each <a href="#root/_help_9sRHySam5fXb">workspace</a> can have its own inbox,
@@ -31,6 +34,7 @@
   <li>A note carrying the <code>#workspaceInbox</code> label in that workspace.</li>
   <li>A note carrying the <code>#inbox</code> within that workspace.</li>
   <li>Today's <a href="#root/_help_l0tKav7yLHGF">day note</a>, if the workspace
-    has a <code>#workspaceCalendarRoot</code>.</li>
+    has a <code>#workspaceCalendarRoot</code>. With <code>#enableDailyInbox</code> on
+    that root, the note goes into the day's Inbox child instead.</li>
   <li>The workspace root note itself.</li>
 </ul>
