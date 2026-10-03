@@ -551,15 +551,20 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef, relationActionsRef, ask
         // A click folds the two ends and this arrow into one circle. A right click
         // is where that circle can be opened, renamed, or removed.
         connection.bind("contextmenu", (_: unknown, event: MouseEvent) => {
-            buildRelationContextMenuHandler(connection, mapApiRef, relationActionsRef.current, askRelationName)(_, event);
+            const actions = relationActionsRef.current;
+            if (!actions) {
+                return;
+            }
+            buildRelationContextMenuHandler(connection, mapApiRef, actions, askRelationName)(_, event);
         });
         connection.bind("click", (_: unknown, event: MouseEvent) => {
-            if (connection.getType().includes("link")) {
+            const actions = relationActionsRef.current;
+            if (!actions || connection.getType().includes("link")) {
                 return;
             }
             event.preventDefault();
             event.stopPropagation();
-            relationActionsRef.current.toggleCollapse(connection.id);
+            actions.toggleCollapse(connection.id);
         });
 
         // if there's no event, then this has been triggered programmatically
