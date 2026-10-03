@@ -3,16 +3,19 @@ body.experimental-feature-new-layout .note-paths-widget {
         color: var(--muted-text-color);
     }
 
-    .note-path-list {
+    .note-path-list,
+    .note-path-inverse-tree {
         margin: 8px 0;
-        padding: 0;
         list-style: none;
 
         /* The room is for what the list is set between — the intro line, the clone link. Where it is
            all the widget holds, as in the sidebar's card, the card's own padding is the room. */
         &:first-child { margin-top: 0; }
         &:last-child { margin-bottom: 0; }
+    }
 
+    .note-path-list {
+        padding: 0;
         /* A path is framed already by what holds the list — a card, or the mobile note menu — so it
            carries no frame of its own: what tells one path from the next is the room around it, and
            the gutter each hangs its marks in. */
@@ -54,7 +57,21 @@ body.experimental-feature-new-layout .note-paths-widget {
                 color: var(--muted-text-color);
             }
         }
+    }
 
+    .note-path-inverse-tree {
+        font-size: .9em;
+
+        a {
+            padding-inline: 1px;
+            color: currentColor;
+            font-weight: normal;
+            text-decoration: none;
+
+            &.basename {
+                color: var(--muted-text-color);
+            }
+        }
     }
 }
 
@@ -64,18 +81,72 @@ body.experimental-feature-new-layout .note-paths-widget {
     overflow-y: auto;
 }
 
+.note-path-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .note-path-intro {
+        margin: 0;
+    }
+
+    .tn-segmented-choice {
+        margin-inline-start: auto;
+        flex-shrink: 0;
+    }
+}
+
 .note-path-list {
     margin-top: 10px;
 }
 
-.note-path-list .path-current a {
+.note-path-list .path-current a,
+.note-path-node.path-current > .note-path-row a,
+.note-path-node.path-on-active-branch > .note-path-row a {
     font-weight: bold;
 }
 
-.note-path-list .path-archived a {
+.note-path-list .path-archived a,
+.note-path-node.path-archived > .note-path-row a {
     color: var(--muted-text-color) !important;
 }
 
-.note-path-list .path-search a {
+.note-path-list .path-search a,
+.note-path-node.path-search > .note-path-row a {
     font-style: italic;
+}
+
+.note-path-inverse-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.note-path-node {
+    list-style: none;
+}
+
+.note-path-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding-block: 2px;
+}
+
+.note-path-expand,
+.note-path-switch {
+    --icon-button-size: 22px;
+    flex-shrink: 0;
+}
+
+.note-path-switch {
+    margin-inline-start: auto;
+}
+
+.note-path-tree-branches {
+    list-style: none;
+    margin: 0;
+    padding-inline-start: 16px;
 }
