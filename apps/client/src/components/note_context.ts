@@ -208,6 +208,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
                     value: undefined
                 });
             }
+            this.activateOpenedNote();
         }
 
         this.saveToRecentNotes(resolvedNotePath);
@@ -279,6 +280,15 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         } else {
             return this;
         }
+    }
+
+    activateOpenedNote() {
+        const noteId = this.noteId;
+        if (options.is("databaseReadonly") || !noteId || noteId.startsWith("_")) {
+            return;
+        }
+        // The request reports its own failure. Switching notes continues either way.
+        void server.post(`notes/${noteId}/reasoning-activate`).catch(() => undefined);
     }
 
     saveToRecentNotes(resolvedNotePath: string) {

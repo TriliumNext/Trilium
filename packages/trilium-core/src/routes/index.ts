@@ -14,6 +14,7 @@ import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
 import sqlRoute from "./api/sql";
 import attributesRoute from "./api/attributes";
+import reasoningRoute from "./api/reasoning";
 import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
@@ -136,6 +137,12 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(DEL, "/api/notes/:noteId/attributes/:attributeId", attributesRoute.deleteNoteAttribute);
     apiRoute(GET, "/api/attribute-names/", attributesRoute.getAttributeNames);
     apiRoute(GET, "/api/attribute-values/:attributeName", attributesRoute.getValuesForAttribute);
+
+    apiRoute(GET, "/api/reasoning", reasoningRoute.getReasoning);
+    asyncApiRoute(PST, "/api/reasoning/run", reasoningRoute.run);
+    apiRoute(GET, "/api/notes/:noteId/reasoning-attributes", reasoningRoute.getInferred);
+    apiRoute(PST, "/api/notes/:noteId/reasoning-activate", reasoningRoute.activate);
+    apiRoute(PST, "/api/notes/:noteId/reasoning-attributes/:attributeId/keep", reasoningRoute.keep);
 
     apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
     apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);

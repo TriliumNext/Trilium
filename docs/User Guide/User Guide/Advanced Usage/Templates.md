@@ -66,3 +66,7 @@ From a visual perspective, templates can define `#iconClass` and `#cssClass` att
 Explore the concept further in the <a class="reference-link" href="Database/Demo%20Notes.md">Demo Notes</a>, including examples like the <a class="reference-link" href="../Note%20Types/Relation%20Map.md">Relation Map</a>, <a class="reference-link" href="Advanced%20Showcases/Task%20Manager.md">Task Manager</a>, and <a class="reference-link" href="Advanced%20Showcases/Day%20Notes.md">Day Notes</a>.
 
 Additionally, see <a class="reference-link" href="Default%20Note%20Title.md">Default Note Title</a> for creating title templates. Note templates and title templates can be combined by creating a `#titleTemplate` for a template note.
+
+## Reasoning rules
+
+A _Reasoning rule_ child note inside a template runs for every instance of that template. In those rules, `?this` is the instance. A name with no path back to `?this` matches the workspace the template is in, or the whole database when the template is not in one. See <a class="reference-link" href="Reasoning%20rules.md">Reasoning rules</a>.

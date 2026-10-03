@@ -66,6 +66,8 @@ export default function AttributeList() {
     const internal = useRef<Attribute[]>([]);
     const [ , setRevision ] = useState(0);
     const rerender = () => setRevision((revision) => revision + 1);
+    // Attribute ids the reasoner still owns on this note. Absent until the list has asked.
+    const [ inferredIds, setInferredIds ] = useState<ReadonlySet<string>>(EMPTY_IDS);
 
     // The draft of the note being left, handed over by the check below for the effect to persist: the
     // note it belongs to is no longer the one the list is showing, so it cannot be saved from here.
@@ -93,6 +95,19 @@ export default function AttributeList() {
         internal.current = collectInternal(note);
     }
 
+    const inferredRequest = useRef(0);
+    function refreshInferred(noteId: string) {
+        const request = inferredRequest.current + 1;
+        inferredRequest.current = request;
+        void server.get<{ attributeIds?: string[] }>(`notes/${noteId}/reasoning-attributes`).then((result) => {
+            if (inferredRequest.current !== request) {
+                return;
+            }
+            const ids = result?.attributeIds ?? [];
+            setInferredIds((current) => sameIds(current, ids) ? current : new Set(ids));
+        });
+    }
+
     // Every editor works on one attribute of the note being left, so all of them close with the note.
     useEffect(() => {
         setDetail(null);
@@ -103,6 +118,11 @@ export default function AttributeList() {
         draftToFlush.current = null;
         if (draft) {
             void persist(draft.noteId, draft.attributes);
+        }
+        if (note) {
+            refreshInferred(note.noteId);
+        } else {
+            setInferredIds(EMPTY_IDS);
         }
     }, [ note ]);
 
@@ -127,6 +147,9 @@ export default function AttributeList() {
             }
 
             rerender();
+        }
+        if (note && (changed.some((attr) => attributes.isAffecting(attr, note)) || loadResults.isNoteContentReloaded(REASONING_PROVENANCE_NOTE_ID))) {
+            refreshInferred(note.noteId);
         }
     });
 
@@ -295,6 +318,23 @@ export default function AttributeList() {
         await save();
     }
 
+    /** Drops the attribute from the reasoner's care. The row itself stays, as a normal attribute. */
+    async function keepAttribute(attribute: Attribute) {
+        const attributeId = attribute.attributeId;
+        if (!note || !attributeId) {
+            return;
+        }
+        await server.post(`notes/${note.noteId}/reasoning-attributes/${attributeId}/keep`);
+        setInferredIds((current) => {
+            if (!current.has(attributeId)) {
+                return current;
+            }
+            const next = new Set(current);
+            next.delete(attributeId);
+            return next;
+        });
+    }
+
     const sections = splitIntoSections(owned.current, inherited.current);
     const internalRows = internal.current.map((attribute) => toEntry(attribute, true));
     // Not built for an attribute the list no longer holds: a reload can rebuild the rows out from
@@ -341,7 +381,9 @@ export default function AttributeList() {
         valueEditor,
         onOpen: openDetail,
         onEditValue: startValueEdit,
-        onDelete: (attribute: Attribute) => void deleteAttribute(attribute)
+        onDelete: (attribute: Attribute) => void deleteAttribute(attribute),
+        onKeep: (attribute: Attribute) => void keepAttribute(attribute),
+        inferredIds
     };
     // The cards a section has nothing for are left out, so an ordinary note sees one or two of the four.
     const shownCards = 1
@@ -547,6 +589,9 @@ interface AttributeRowListProps {
     /** Asks for the in-place editor over the attribute's value; wired to editable labels alone. */
     onEditValue: (attribute: Attribute) => void;
     onDelete: (attribute: Attribute) => void;
+    /** Asks the reasoner to stop owning this attribute. Wired to inferred rows alone. */
+    onKeep: (attribute: Attribute) => void;
+    inferredIds: ReadonlySet<string>;
 }
 
 /**
@@ -554,7 +599,7 @@ interface AttributeRowListProps {
  * Trilium reads for itself. What a row offers follows from whether the note owns its attribute rather
  * than from the card it is in: the definitions card holds the note's own alongside a template's.
  */
-function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete }: AttributeRowListProps) {
+function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, onOpen, onEditValue, onDelete, onKeep, inferredIds }: AttributeRowListProps) {
     function renderRows(group: AttributeEntry[]) {
         return (
             // The rows are menu items on a phone (see AttributeRow), and the theme dresses a menu item
@@ -582,6 +627,10 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, 
                             ? () => onEditValue(attribute)
                             : undefined}
                         onDelete={isOwned && !readOnly ? () => onDelete(attribute) : undefined}
+                        inferred={isOwned && !!attribute.attributeId && inferredIds.has(attribute.attributeId)}
+                        onKeep={isOwned && !readOnly && attribute.attributeId && inferredIds.has(attribute.attributeId)
+                            ? () => onKeep(attribute)
+                            : undefined}
                     />
                 ))}
             </ul>
@@ -618,9 +667,13 @@ interface AttributeRowProps {
     /** Starts the in-place edit of the value; absent for rows whose value is not edited in place. */
     onEditValue?: () => void;
     onDelete?: () => void;
+    /** The reasoner wrote this attribute and still owns it. */
+    inferred?: boolean;
+    /** Stops the reasoner owning the attribute. */
+    onKeep?: () => void;
 }
 
-function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete }: AttributeRowProps) {
+function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwner, onOpen, onEditValue, onDelete, inferred, onKeep }: AttributeRowProps) {
     const rowRef = useRef<HTMLLIElement>(null);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
@@ -645,6 +698,26 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
                     className="attribute-marker"
                     icon="bx bx-sitemap"
                     title={t("attribute_list_panel.inheritable")}
+                />
+            )}
+
+            {inferred && (
+                <Icon
+                    className="attribute-marker attribute-inferred"
+                    icon="bx bx-network-chart"
+                    title={t("attribute_list_panel.inferred")}
+                />
+            )}
+
+            {onKeep && (
+                <ActionButton
+                    className="attribute-keep-button"
+                    icon="bx bx-pin"
+                    text={t("attribute_list_panel.keep_inferred")}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onKeep();
+                    }}
                 />
             )}
 
@@ -1142,6 +1215,23 @@ export function listInternal(ownedAttributes: FAttribute[]): Attribute[] {
  * The rows and the detail popup work on plain attributes, which the popup is free to edit in place
  * without touching the cached entity behind them.
  */
+const EMPTY_IDS: ReadonlySet<string> = new Set();
+
+/** Hidden note whose content lists the attribute ids the reasoner still owns. */
+const REASONING_PROVENANCE_NOTE_ID = "_reasoningProvenance";
+
+function sameIds(current: ReadonlySet<string>, ids: readonly string[]): boolean {
+    if (current.size !== ids.length) {
+        return false;
+    }
+    for (const id of ids) {
+        if (!current.has(id)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function toPlainAttribute(attribute: FAttribute): Attribute {
     return {
         attributeId: attribute.attributeId,

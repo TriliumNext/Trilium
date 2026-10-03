@@ -89,6 +89,15 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 type: "doc"
             },
             {
+                // Inferred attributes are recorded here so a later run can retract them. Content is
+                // written by the reasoning engine; leaving it unset keeps that record across startups.
+                id: "_reasoningProvenance",
+                title: t("hidden-subtree.reasoning-provenance-title"),
+                type: "code",
+                mime: "application/json",
+                icon: "bx-network-chart"
+            },
+            {
                 id: "_taskStates",
                 title: t("hidden-subtree.task-states-title"),
                 type: "doc",

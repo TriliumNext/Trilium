@@ -1,0 +1,106 @@
+<p>A reasoning rule is a note whose content is a list of if-then rules. The
+  rules add <a href="#root/_help_zEY4DaJG4YT5">labels and relations</a> to
+  other notes. In a rule, <code>?this</code> is the parent of the rule note.
+  A name with no path back to <code>?this</code> matches the <a href="#root/_help_9sRHySam5fXb">workspace</a> the
+  rule note is in, or the whole database when the rule note is not inside
+  one.</p>
+<h2>Creating a rule note</h2>
+<p>To add rules to a note, right-click it in the&nbsp;<a class="reference-link"
+  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a> and select <em>Insert child note</em>,
+  then choose <em>Reasoning rule</em> (<span class="tn-icon bx bx-network-chart"></span>)
+  under <em>Built-in templates</em>.</p>
+<p>The new note is a code note. Its content starts as comments that show
+  the shape of a rule. Remove the <code>//</code> from a line to turn that
+  rule on, or replace the comments with your own rules. Any text or code
+  note with the <code>#reasoningRule</code> label is read the same way; the
+  template already carries that label.</p>
+<p>A rule note placed directly under the root uses itself as <code>?this</code>.
+  A rule that does not use <code>?this</code> still matches the whole database,
+  unless the rule note sits inside a workspace.</p>
+<h2>Rules on one note</h2>
+<p>Under a note called <em>The Lord of the Rings</em>, a rule note can say:</p><pre><code class="language-text-x-trilium-auto">#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").
+~listed(?citing, ?this) :- ~cites(?citing, ?this).</code></pre>
+<p>The first rule gives <code>#priority=high</code> to every direct child that
+  has <code>#status=todo</code>. The second gives <code>~listed</code>, pointing
+  back at the book, to every note that has <code>~cites</code> pointing at
+  the book. That citing note does not have to live under the book, or inside
+  the same workspace. A path that starts at <code>?this</code> can leave the
+  workspace.</p>
+<p>A name with no such path matches every note in the workspace, or every
+  note in the database when there is no workspace. <code>#mark(?task, "yes") :- #status(?task, "todo").</code> is
+  that kind of rule.</p>
+<h2>Rules on a template</h2>
+<p>Put the rule note inside a&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;note
+  (one that has the <code>#template</code> label). Then <code>?this</code> is
+  each instance of that template, and the same rules run for every instance.</p><pre><code class="language-text-x-trilium-auto">#priority(?task, "high") :- child(?this, ?task), #status(?task, "todo").
+#blocked(?this) :- descendant(?this, ?task), #status(?task, "blocked").</code></pre>
+<p>On a <em>Project</em> template, every instance marks its to-do children
+  with <code>#priority=high</code>, and marks itself <code>#blocked</code> when
+  any note under it has <code>#status=blocked</code>.</p>
+<h2>Rules in a workspace</h2>
+<p>Put the rule note inside a workspace and a free name matches that workspace
+  only.</p><pre><code class="language-text-x-trilium-auto">#authority(?person, "yes") :- #role(?person, "priest").</code></pre>
+<p>Under a workspace, that rule marks every note in the workspace that has <code>#role=priest</code>,
+  and leaves notes outside it alone. Add <code>#reasoningScope=global</code> on
+  the rule note itself (the label has to be owned there, not only inherited)
+  to match the whole database even inside a workspace.</p>
+<h2>Writing a rule</h2>
+<ul>
+  <li>One rule per clause, ending with a period. <code>//</code> starts a comment
+    that runs to the end of the line.</li>
+  <li><code>#name(?note)</code> matches a label with no value. <code>#name(?note, "value")</code> matches
+    a label with that value. A number is written without quotes, as in <code>#age(?person, ?years), ?years &gt; 18</code>.
+    A label whose value is a plain number is compared as a number; <code>"21"</code> in
+    quotes stays text.</li>
+  <li><code>~name(?source, ?target)</code> matches a relation from the source
+    note to the target note.</li>
+  <li><code>child(?parent, ?child)</code> is a direct child, and <code>parent(?child, ?parent)</code> is
+    the reverse. <code>descendant(?ancestor, ?note)</code> is a child, or a child
+    of a child, and so on. <code>title(?note, "Exact title")</code> and <code>type(?note, "text")</code> read
+    the title and the note type.</li>
+  <li><code>@"Exact title"</code> names the one note with that title. Zero matches,
+    or more than one, is an error.</li>
+  <li><code>not</code> in front of a condition excludes it, as in <code>not #status(?task, "done")</code>.
+    Comparisons are <code>=</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code> and <code>&gt;=</code>.</li>
+  <li>Every name in the conclusion, and every name used under <code>not</code> or
+    in a comparison, has to appear in an ordinary condition. <code>?this</code> already
+    counts when the rule uses it.</li>
+</ul>
+<h2>What the rules write</h2>
+<p>The conclusions are ordinary labels and relations, shown in the attributes
+  list with a <span class="tn-icon bx bx-network-chart"></span> mark. When
+  a rule no longer concludes one, it is removed. An attribute created by
+  hand, with the same name and value, is left in place.</p>
+<p>To keep an inferred attribute after the rule stops concluding it, press <span
+  class="tn-icon bx bx-pin"></span>  <em>Keep this attribute</em> on its row.
+  Changing the value does the same: the attribute becomes a normal one, and
+  the rule leaves it alone. Deleting it removes it, and the next run brings
+  it back while the rule still holds. If the rule later concludes a different
+  value, that value appears beside the one you kept.</p>
+<p>An edit rechecks the notes next to the change. Opening a note applies
+  the rules to that note, and then to notes that gained a conclusion. Opening
+  the database, or editing a rule note, rechecks the workspace or the whole
+  database. A problem in a rule is the <code>#reasoningError</code> label on
+  the rule note. Fix the rule and the label is cleared on the next run.</p>
+<p>Deleting the rule note removes its conclusions on the next run. Deleting
+  the note it describes deletes the child rule note with it.</p>
+<h2>Limitations</h2>
+<ul>
+  <li>Rules read attributes owned by a note. Inherited attributes are not seen,
+    apart from the <code>~template</code> relation that binds <code>?this</code> on
+    a template.</li>
+  <li>A rule does not see the attributes it wrote itself, so its own conclusion
+    cannot be one of its conditions. It does see attributes written by hand,
+    and the conclusions other rules derive in the same run. A stored conclusion
+    cannot keep itself true after the ordinary condition is gone.</li>
+  <li>The names <code>reasoningRule</code>, <code>reasoningError</code>, <code>reasoningScope</code>, <code>reasoningSchema</code>, <code>template</code> and <code>inherit</code> cannot
+    be conclusions.</li>
+  <li>The rule note is not treated as a child of its parent, so a rule about
+    every child does not match the rule note.</li>
+  <li>Hidden notes are not part of the rules.</li>
+  <li>A protected rule note is read only while the protected session is unlocked.</li>
+  <li><code>descendant</code> follows a cycle of clones. A note is not a descendant
+    of itself. A note that is also a direct child is still reached by <code>child</code>.</li>
+  <li>Opening or editing a note does not walk every descendant of a very large
+    tree. That check runs when the database opens or a rule note is edited.</li>
+</ul>

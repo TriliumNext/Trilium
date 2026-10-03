@@ -1463,6 +1463,9 @@ importers:
       color:
         specifier: 5.0.3
         version: 5.0.3
+      datascript:
+        specifier: 1.7.5
+        version: 1.7.5
       ejs:
         specifier: 6.0.1
         version: 6.0.1
@@ -6775,6 +6778,10 @@ packages:
   data-view-byte-offset@1.0.1:
     resolution: {integrity: sha512-BS8PfmtDGnrgYdOonGZQdLZslWIeCGFP9tpan0hi1Co2Zr2NKADsvGYA8XxuG/4UWgJ6Cjtv+YJnB6MM69QGlQ==}
     engines: {node: '>= 0.4'}
+
+  datascript@1.7.5:
+    resolution: {integrity: sha512-M8Hg6D5BTzN6vijJFRDaHX75FIQ3F+0bWDZth/t+b5bbAQmLD+Oip/+OJ65GKCDS4rvOrePzvH8jyeCI1lCykw==}
+    engines: {node: '>=0.8.22'}
 
   dayjs@1.11.23:
     resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
@@ -18449,6 +18456,8 @@ snapshots:
       call-bound: 1.0.4
       es-errors: 1.3.0
       is-data-view: 1.0.2
+
+  datascript@1.7.5: {}
 
   dayjs@1.11.23: {}
 
