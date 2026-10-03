@@ -26,6 +26,35 @@
   from <a href="#root/_help_xYjQUYhpbUEW">Task manager</a>).</p>
 <p>You can also notice how this day note has <a href="#root/_help_OFXdgB2nNk1F">promoted attribute</a> "weight"
   where you can track your daily weight. This data is then used in <a href="#root/_help_R7abl2fc6Mxi">Weight tracker</a>.</p>
+<h2>Daily inbox</h2>
+<p>A day note is also a place to write about the day. When no <a href="#root/_help_S0Fos78ZfcY7">inbox</a> is
+  set, notes captured with the <em>New note</em> button and the other inbox
+  entry points land in the day note, and a busy day then fills that note
+  with children.</p>
+<p>The Journal in a new database already carries <code>#enableDailyInbox</code>,
+  and so does a calendar Trilium creates when a database has none. The first
+  capture of a day creates an <em>Inbox</em> child of that day's note. The
+  day note points at it with the <code>~dailyInbox</code> relation, and further
+  captures that day follow the relation. The next day gets its own Inbox.
+  A day with no captures stays without one, so opening a day to write in
+  it does not add an empty Inbox.</p>
+<p>Remove <code>#enableDailyInbox</code> to have those captures land directly
+  in the day note. An existing <code>#inbox</code> or <code>#workspaceInbox</code> still
+  wins. A calendar you already have is left as it is; add the label to its
+  root (<code>#calendarRoot</code>, or <code>#workspaceCalendarRoot</code> inside
+  a workspace) to turn the daily inbox on. Notes already sitting in a day
+  note stay where they are.</p>
+<p>The optional <code>~dailyInboxTemplate</code> relation on the calendar root
+  is applied to each new daily Inbox, the same way <code>~dateTemplate</code> is
+  applied to the day note.</p>
+<p>Rename the Inbox, or move it anywhere in the tree, and captures still
+  go there, because the day note holds the relation. Delete the Inbox, or
+  remove <code>~dailyInbox</code>, and the next capture creates a new Inbox
+  under the day and points the relation at it. Point <code>~dailyInbox</code> at
+  some other note yourself and that note becomes the inbox. A <a href="#root/_help_xWbu3jpNWapp">calendar</a> view
+  of the journal leaves the Inbox off the grid while it is still a direct
+  child of the day, so the captured notes do not appear as events; the day's
+  other children still do.</p>
 <h2>Week Note and Quarter Note</h2>
 <p>Week and quarter notes are disabled by default, since it might be too
   much for some people. To enable them, you need to set <code>#enableWeekNote</code> and <code>#enableQuarterNote</code> attributes
@@ -44,6 +73,7 @@
   <li>monthTemplate</li>
   <li>weekTemplate (if <code>#enableWeekNote</code> is set)</li>
   <li>dateTemplate</li>
+  <li>dailyInboxTemplate (if <code>#enableDailyInbox</code> is set)</li>
 </ul>
 <p>All of these are relations. When Trilium creates a new note for year or
   month or date, it will take a look at the root and attach a corresponding <code>~template</code> relation

@@ -16,7 +16,7 @@ To create a note inbox, apply the `#inbox` [label](../../Advanced%20Usage/Attrib
 Only one note should carry this label. If there are multiple notes, only one will be used by the application.
 
 > [!NOTE]
-> If there is no inbox note, Trilium will fall back to today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), creating it and its calendar ancestors as needed. If the journal has been removed altogether, the note is created at the top level instead of a new journal being built for it.
+> If there is no inbox note, Trilium will fall back to today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), creating it and its calendar ancestors as needed. When the calendar root carries `#enableDailyInbox`, that fallback is the note the day note's `~dailyInbox` relation names, and the first capture of the day creates it. The Journal in a new database already carries that label. If the journal has been removed altogether, the note is created at the top level instead of a new journal being built for it.
 
 ## Workspace inboxes
 
@@ -26,5 +26,5 @@ When a new note is created while hoisted in a workspace, the location is determi
 
 *   A note carrying the `#workspaceInbox` label in that workspace.
 *   A note carrying the `#inbox` within that workspace.
-*   Today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), if the workspace has a `#workspaceCalendarRoot`.
+*   Today's [day note](../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md), if the workspace has a `#workspaceCalendarRoot` of its own. A journal that belongs to a workspace nested inside this one stays with that workspace. With `#enableDailyInbox` on that root, the note goes into the note that day's `~dailyInbox` relation names.
 *   The workspace root note itself.

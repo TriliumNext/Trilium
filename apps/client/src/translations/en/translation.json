@@ -817,7 +817,10 @@
     "hoisted_note": "The note to hoist to when a launcher opens its target.",
     "share_logo": "An image note used as the logo of the shared page. It has to sit inside the shared subtree.",
     "share_open_graph_image_relation": "An image note served as the <code>og:image</code> of the shared page. Set the label of the same name instead to point at an address.",
-    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree."
+    "share_html": "An HTML note injected into the shared page, where <code>#shareHtmlLocation</code> on that note says. It has to sit inside the shared subtree.",
+    "enable_daily_inbox": "Captured notes go into an Inbox child of the day note, so the day note itself stays free. Set on the calendar root. The Journal in a new database already has it.",
+    "daily_inbox": "On a day note, points at that day's Inbox. Captures for the day go into the note it names, and stay there when that note is renamed or moved.",
+    "daily_inbox_template": "Set on a calendar root: the note it points at is applied as <code>~template</code> to each daily Inbox."
   },
   "attribute_editor": {
     "help_text_body1": "To add label, just type e.g. <code>#rock</code> or if you want to add also value then e.g. <code>#year = 2020</code>",
@@ -3120,7 +3123,8 @@
       "past_week": "Past 7 days",
       "past_month": "Past 30 days",
       "older": "Older"
-    }
+    },
+    "create-note-into-daily-inbox": "Create note \"{{term}}\" in today's inbox"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",

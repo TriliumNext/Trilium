@@ -67,6 +67,13 @@
                             "value": "bRQvb9VCkc3t",
                             "isInheritable": false,
                             "position": 50
+                        },
+                        {
+                            "type": "label",
+                            "name": "enableDailyInbox",
+                            "value": "",
+                            "isInheritable": false,
+                            "position": 60
                         }
                     ],
                     "dataFileName": "Journal.dat",

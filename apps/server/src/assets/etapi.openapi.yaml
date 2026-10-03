@@ -811,8 +811,10 @@ paths:
         get:
             description: >
                 returns an "inbox" note, into which note can be created. Date will be used depending on whether the inbox
-                is a fixed note (identified with #inbox label) or a day note in a journal. A database with neither
-                returns the root note, and ignores the date, rather than creating a journal to hold a day note.
+                is a fixed note (identified with #inbox label) or a day note in a journal. When the calendar root has
+                #enableDailyInbox, the date selects the note that day's ~dailyInbox relation names, creating that
+                Inbox when the relation has no target. A database with neither an inbox nor a journal returns the
+                root note, and ignores the date, rather than creating a journal to hold a day note.
             operationId: getInboxNote
             parameters:
                 - name: date
