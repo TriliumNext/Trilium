@@ -3,7 +3,13 @@
  * theme's (recessed track, raised segment on show), as the pane's tab strip is; only its size is this
  * card's own business, the theme building it for a toolbar, where it stands taller than a header row.
  */
-#noteMap .card-header-buttons .map-type-switcher {
+/*
+ * The choice of map, offered in the card's header rather than over the map itself. The group is the
+ * theme's (recessed track, raised segment on show), as the pane's tab strip is; only its size is this
+ * card's own business, the theme building it for a toolbar, where it stands taller than a header row.
+ */
+#noteMap .card-header-buttons .map-type-switcher,
+#noteMap .card-header-buttons .clone-combine-switcher {
     gap: 2px;
     padding: 2px;
 

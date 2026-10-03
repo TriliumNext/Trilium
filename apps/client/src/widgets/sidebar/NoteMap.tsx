@@ -4,8 +4,8 @@ import "./NoteMap.css";
 
 import appContext from "../../components/app_context";
 import { t } from "../../services/i18n";
-import MapTypeSwitcher from "../note_map/MapTypeSwitcher";
-import { NOTE_MAP_TYPE_OPTION, toMapType } from "../note_map/utils";
+import MapTypeSwitcher, { CloneCombineSwitcher } from "../note_map/MapTypeSwitcher";
+import { NOTE_MAP_CLONE_COMBINE_OPTION, NOTE_MAP_TYPE_OPTION, showsCloneCombine, toCloneCombine, toMapType } from "../note_map/utils";
 import ActionButton from "../react/ActionButton";
 import { useActiveNoteContext, useTriliumOption } from "../react/hooks";
 import LazyComponent from "../react/LazyComponent";
@@ -28,9 +28,11 @@ import SidebarHelp from "./SidebarHelp";
  * read, which is true of none of the lists. Where it stops being squeezed is in NoteMap.css.
  */
 export default function NoteMap() {
-    const { notePath } = useActiveNoteContext();
+    const { notePath, note } = useActiveNoteContext();
     // The reader's own preference rather than the note's — see NOTE_MAP_TYPE_OPTION.
     const [ mapType, setMapType ] = useTriliumOption(NOTE_MAP_TYPE_OPTION);
+    const [ combine, setCombine ] = useTriliumOption(NOTE_MAP_CLONE_COMBINE_OPTION);
+    const chosenMapType = toMapType(mapType);
 
     return (
         <RightPanelWidget
@@ -38,7 +40,13 @@ export default function NoteMap() {
             title={t("note_map.title")}
             buttons={<>
                 <SidebarHelp section="noteMap" />
-                <MapTypeSwitcher mapType={toMapType(mapType)} setMapType={(type) => void setMapType(type)} />
+                <MapTypeSwitcher mapType={chosenMapType} setMapType={(type) => void setMapType(type)} />
+                {showsCloneCombine(chosenMapType, note?.type) && (
+                    <CloneCombineSwitcher
+                        combine={toCloneCombine(combine)}
+                        setCombine={(value) => void setCombine(value)}
+                    />
+                )}
                 {/* One rung of the same ladder the quick-edit popup already offers: a press here takes the
                     map from a card to the greater part of the window, and the popup's own expand takes it
                     on to a tab. What it opens is this card's own map — nothing else opens that view, so it
