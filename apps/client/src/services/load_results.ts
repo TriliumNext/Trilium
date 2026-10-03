@@ -132,16 +132,26 @@ export default class LoadResults {
         }
     }
 
-    addBranch(branchId: string, componentId: string) {
-        this.branchRows.push({ branchId, componentId });
+    addBranch(branchId: string, componentId: string, extras?: Pick<BranchRow, "noteId" | "parentNoteId" | "isDeleted">) {
+        this.branchRows.push({ branchId, componentId, ...extras });
     }
 
     getBranchRows() {
         return this.branchRows.map((row) => {
             const branch = this.getEntityRow("branches", row.branchId);
             if (branch) {
-                // Merge the componentId from the tracked row with the entity data
-                return { ...branch, componentId: row.componentId };
+                // Merge the componentId from the tracked row with the entity data.
+                // `row.isDeleted` wins when the entity POJO still reports the branch as live
+                // (BBranch.getPojo always sends isDeleted: false) but froca already dropped it.
+                return {
+                    ...row,
+                    ...branch,
+                    componentId: row.componentId,
+                    isDeleted: row.isDeleted || branch.isDeleted
+                };
+            }
+            if (row.noteId || row.parentNoteId || row.isDeleted) {
+                return row;
             }
             return null;
         }).filter((branch) => !!branch) as BranchRow[];
