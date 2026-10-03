@@ -442,6 +442,36 @@ describe("special_notes (core, real DB)", () => {
             expect(replacedToo.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(replacedToo.noteId);
             deleting.isBeingDeleted = false;
         });
+
+        it("finds a day's inbox only when that day and its inbox already exist", () => {
+            const calendar = getContext().init(() => {
+                const calendar = createPlainNote("root", "Journal for an inbox lookup");
+                calendar.setLabel("calendarRoot");
+                return calendar;
+            });
+
+            expect(dateNotes.findDailyInboxNote("2026-10-12", calendar)).toBeNull();
+
+            const day = getContext().init(() => dateNotes.getDayNote("2026-10-12", calendar));
+            expect(dateNotes.findDailyInboxNote("2026-10-12", calendar)).toBeNull();
+            expect(day.getOwnedRelationValue("dailyInbox")).toBeNull();
+
+            const inbox = getContext().init(() => dateNotes.getDailyInboxNote("2026-10-12", calendar));
+            expect(dateNotes.findDailyInboxNote("2026-10-12", calendar)?.noteId).toBe(inbox.noteId);
+        });
+
+        it("applies the calendar's ~dateTemplate when it creates a day note", () => {
+            const { calendar, template } = getContext().init(() => {
+                const template = createPlainNote("root", "Day template");
+                const calendar = createPlainNote("root", "Journal with a day template");
+                calendar.setLabel("calendarRoot");
+                calendar.setRelation("dateTemplate", template.noteId);
+                return { calendar, template };
+            });
+
+            const day = getContext().init(() => dateNotes.getDayNote("2026-10-14", calendar));
+            expect(day.getOwnedRelationValue("template")).toBe(template.noteId);
+        });
     });
 
     describe("findCalendarRoot", () => {
