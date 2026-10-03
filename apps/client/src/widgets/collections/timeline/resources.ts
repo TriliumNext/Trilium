@@ -1,4 +1,8 @@
 import type { ResourceInput } from "fullcalendar-scheduler";
+import type { AttributeDefinitionInformation } from "../table/columns";
+
+/** A FullCalendar resource standing for one note. */
+export type TimelineRow = ResourceInput & { id: string };
 
 /** The part of an `FNote` that a timeline row reads. */
 export interface ResourceSourceNote {
@@ -14,10 +18,10 @@ export interface ResourceSourceNote {
  * such as the results of a search collection, follow as top-level rows in `noteIds` order.
  */
 export function buildResources(rootNoteId: string, noteIds: string[],
-    getNote: (noteId: string) => ResourceSourceNote | null | undefined): ResourceInput[] {
+    getNote: (noteId: string) => ResourceSourceNote | null | undefined): TimelineRow[] {
     const included = new Set(noteIds);
     const visited = new Set<string>();
-    const resources: ResourceInput[] = [];
+    const resources: TimelineRow[] = [];
 
     function addRow(noteId: string, parentId: string | undefined) {
         const note = getNote(noteId);
@@ -55,4 +59,22 @@ export function buildResources(rootNoteId: string, noteIds: string[],
     }
 
     return resources;
+}
+
+/** The part of an `FNote` that a timeline column reads. */
+export interface ColumnSourceNote {
+    getLabels(name: string): { value: string }[];
+    getRelations(name: string): { value: string }[];
+}
+
+/**
+ * The values a note shows in a column, as text: a label's values as they are, a relation's targets
+ * by title (or by noteId while the target is not loaded). Empty values are left out.
+ */
+export function getColumnValues(note: ColumnSourceNote, column: AttributeDefinitionInformation,
+    getTitle: (noteId: string) => string | undefined): string[] {
+    if (column.type === "relation") {
+        return note.getRelations(column.name).map(({ value }) => getTitle(value) ?? value);
+    }
+    return note.getLabels(column.name).map(({ value }) => value).filter(Boolean);
 }

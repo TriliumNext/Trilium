@@ -22,6 +22,13 @@ To turn an existing collection into a timeline, change its view type to _Timelin
 *   To change the scale, use the _Week_, _Month_ and _Year_ buttons. The timeline remembers the last one used. Bars snap to whole days at every scale.
 *   To move through time, use the <span class="tn-icon bx bx-chevron-left"></span> and <span class="tn-icon bx bx-chevron-right"></span> buttons, or _Today_ to come back to the current date.
 
+## Columns
+
+Besides the title, the left side of the timeline shows a column for each <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> definition of the collection, the same columns the <a class="reference-link" href="Table.md">Table</a> shows. To add a column, add a promoted attribute definition to the collection, for example `#label:status(inheritable)="promoted,alias=Status,single,text"`.
+
+*   To edit a value, click its cell. The value is saved when you click elsewhere; <kbd>Esc</kbd> closes the field.
+*   Columns can be widened by dragging the edge of their header, but the width is not remembered.
+
 ## Dates
 
 A note is placed on the timeline by the following labels:

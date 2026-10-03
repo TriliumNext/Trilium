@@ -5,11 +5,12 @@ import "../calendar/index.css";
 import "./index.css";
 
 import { Calendar as FullCalendar, DateSelectInfo, EventChangeInfo, EventClickInfo, EventDisplayInfo, EventInput, MountInfo, PluginInput } from "fullcalendar";
-import type { ResourceCellInfo } from "fullcalendar-scheduler";
+import type { ColSpec, ResourceCellInfo } from "fullcalendar-scheduler";
 import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
+import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
@@ -28,7 +29,9 @@ import GhostPopover from "../calendar/GhostPopover";
 import { CalendarSelection } from "../calendar/selection";
 import { isAttributeChangeAffecting, parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "../calendar/utils";
 import { ViewModeProps } from "../interface";
-import { buildResources } from "./resources";
+import getAttributeDefinitionInformation from "../table/rows";
+import AttributeCell from "./attribute_cell";
+import { buildResources, getColumnValues } from "./resources";
 
 const TIMELINE_VIEWS = [
     { type: "resourceTimelineWeek", name: t("calendar.week") },
@@ -67,13 +70,28 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
     const plugins = usePlugins();
     const locale = useLocale();
 
+    // The collection's promoted attribute definitions, the same columns the table view shows.
+    const [ columns, setColumns ] = useState(() => getAttributeDefinitionInformation(note));
+    useEffect(() => setColumns(getAttributeDefinitionInformation(note)), [ note ]);
+
     const resources = useMemo(() => async () => {
         await froca.getNotes([ note.noteId, ...noteIds ]);
-        return [
-            ...buildResources(note.noteId, noteIds, (noteId) => froca.getNoteFromCache(noteId)),
-            { id: NEW_ROW_ID, title: t("timeline.new_row"), order: Number.MAX_SAFE_INTEGER }
-        ];
-    }, [ note, noteIds ]);
+        const rows = buildResources(note.noteId, noteIds, (noteId) => froca.getNoteFromCache(noteId));
+
+        const relationColumns = columns.filter(column => column.type === "relation");
+        const rowNotes = rows.map(row => froca.getNoteFromCache(row.id));
+        await froca.getNotes(rowNotes.flatMap(rowNote => relationColumns.flatMap(column =>
+            rowNote?.getRelations(column.name).map(relation => relation.value) ?? [])), true);
+
+        for (const [ index, row ] of rows.entries()) {
+            const rowNote = rowNotes[index];
+            row.values = Object.fromEntries(columns.map(column => [ column.name, rowNote
+                ? getColumnValues(rowNote, column, (noteId) => froca.getNoteFromCache(noteId)?.title)
+                : [] ]));
+        }
+
+        return [ ...rows, { id: NEW_ROW_ID, title: t("timeline.new_row"), order: Number.MAX_SAFE_INTEGER } ];
+    }, [ note, noteIds, columns ]);
 
     const events = useMemo(() => async () => {
         const events = await buildEvents(noteIds) as EventInput[];
@@ -155,6 +173,13 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
         const api = calendarRef.current;
         if (!api) return;
 
+        const isDefinitionChanged = loadResults.getAttributeRows().some(attr => attr.type === "label"
+            && (attr.name?.startsWith("label:") || attr.name?.startsWith("relation:"))
+            && attributes.isAffecting(attr, note));
+        if (isDefinitionChanged) {
+            setTimeout(() => setColumns(getAttributeDefinitionInformation(note)), 0);
+        }
+
         const isTitleChanged = loadResults.getNoteIds().some(noteId => noteIds.includes(noteId));
         if (isTitleChanged || isAttributeChangeAffecting(loadResults.getAttributeRows(componentId), noteIds)) {
             // Deferred so that froca holds the new data when the builders run.
@@ -164,6 +189,39 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
             }, 0);
         }
     });
+
+    const titleColumn: ColSpec = {
+        headerContent: () => (
+            <div className="timeline-row">
+                <span className="timeline-row-title">{t("timeline.title_column")}</span>
+                <ActionButton icon="bx bx-plus" text={t("timeline.add_note")} onClick={(e) => addNote(note.noteId, e)} />
+            </div>
+        ),
+        cellContent: ({ resource }: ResourceCellInfo) => resource?.id === NEW_ROW_ID ? (
+            <div className="timeline-row timeline-new-row">
+                <span className="timeline-row-title" onClick={(e) => addNote(note.noteId, e)}>
+                    <span className="calendar-event-icon bx bx-plus" />
+                    {resource.title}
+                </span>
+            </div>
+        ) : resource && (
+            <div className="timeline-row">
+                <span
+                    className="timeline-row-title"
+                    onClick={(e) => setSelection({ noteId: resource.id, anchor: { x: e.clientX, y: e.clientY } })}
+                >
+                    <span className={`calendar-event-icon ${resource.extendedProps.iconClass}`} />
+                    {resource.title}
+                </span>
+                <ActionButton
+                    className="timeline-row-add"
+                    icon="bx bx-plus"
+                    text={t("timeline.add_child_note")}
+                    onClick={(e) => addNote(resource.id, e)}
+                />
+            </div>
+        )
+    };
 
     return (plugins &&
         <div className="calendar-view timeline-view" ref={containerRef}>
@@ -183,36 +241,13 @@ export default function TimelineView({ note, noteIds }: ViewModeProps<object>) {
                 resources={resources}
                 resourceOrder="order"
                 resourcesInitiallyExpanded
-                resourceColumnHeaderContent={() => (
-                    <div className="timeline-row">
-                        <span className="timeline-row-title">{t("timeline.title_column")}</span>
-                        <ActionButton icon="bx bx-plus" text={t("timeline.add_note")} onClick={(e) => addNote(note.noteId, e)} />
-                    </div>
-                )}
-                resourceCellContent={({ resource }: ResourceCellInfo) => resource?.id === NEW_ROW_ID ? (
-                    <div className="timeline-row timeline-new-row">
-                        <span className="timeline-row-title" onClick={(e) => addNote(note.noteId, e)}>
-                            <span className="calendar-event-icon bx bx-plus" />
-                            {resource.title}
-                        </span>
-                    </div>
-                ) : resource && (
-                    <div className="timeline-row">
-                        <span
-                            className="timeline-row-title"
-                            onClick={(e) => setSelection({ noteId: resource.id, anchor: { x: e.clientX, y: e.clientY } })}
-                        >
-                            <span className={`calendar-event-icon ${resource.extendedProps.iconClass}`} />
-                            {resource.title}
-                        </span>
-                        <ActionButton
-                            className="timeline-row-add"
-                            icon="bx bx-plus"
-                            text={t("timeline.add_child_note")}
-                            onClick={(e) => addNote(resource.id, e)}
-                        />
-                    </div>
-                )}
+                resourceColumns={[ titleColumn, ...columns.map((column): ColSpec => ({
+                    headerContent: column.title ?? column.name,
+                    width: 120,
+                    cellContent: ({ resource }: ResourceCellInfo) => resource && resource.id !== NEW_ROW_ID && (
+                        <AttributeCell noteId={resource.id} column={column} values={resource.extendedProps.values?.[column.name] ?? []} />
+                    )
+                })) ]}
                 events={events}
                 editable
                 eventResourceEditable={false}

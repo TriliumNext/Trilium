@@ -25,3 +25,23 @@
 .timeline-view .timeline-new-row {
     color: var(--muted-text-color);
 }
+
+.timeline-view .timeline-attribute-cell {
+    min-height: 1.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.timeline-view .timeline-attribute-cell-editor {
+    /* The promoted-attribute editor names its field; the column header already does. */
+    label:not(.tn-checkbox) {
+        display: none;
+    }
+
+    .promoted-attribute-cell {
+        margin: 0;
+        padding: 0;
+    }
+}

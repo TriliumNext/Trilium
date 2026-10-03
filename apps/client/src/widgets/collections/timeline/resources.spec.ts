@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildResources, ResourceSourceNote } from "./resources";
+import { buildResources, getColumnValues, ResourceSourceNote } from "./resources";
 
 function tree(children: Record<string, string[]>) {
     return (noteId: string): ResourceSourceNote => ({
@@ -47,5 +47,23 @@ describe("buildResources", () => {
         expect(resources.filter(r => r.id === "clone")).toEqual([
             expect.objectContaining({ parentId: "x" })
         ]);
+    });
+});
+
+describe("getColumnValues", () => {
+    const labels: Record<string, string[]> = { tag: [ "a", "", "b" ] };
+    const relations: Record<string, string[]> = { owner: [ "n1", "n2" ] };
+    const note = {
+        getLabels: (name: string) => (labels[name] ?? []).map(value => ({ value })),
+        getRelations: (name: string) => (relations[name] ?? []).map(value => ({ value }))
+    };
+    const getTitle = (noteId: string) => (noteId === "n1" ? "Alice" : undefined);
+
+    it("reads labels as text and relations by their target's title", () => {
+        const valuesOf = (name: string, type: "text" | "relation") =>
+            getColumnValues(note, { name, type }, getTitle);
+        expect(valuesOf("tag", "text")).toEqual([ "a", "b" ]);
+        expect(valuesOf("owner", "relation")).toEqual([ "Alice", "n2" ]);
+        expect(valuesOf("missing", "text")).toEqual([]);
     });
 });
