@@ -1,18 +1,40 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --button-bg: #eee;
+  --button-border: #ccc;
+  --textarea-bg: #ffffff;
+  --textarea-text: #000000;
+}
+
+body.dark-mode {
+  --bg-color: #1e1e1e;
+  --text-color: #e0e0e0;
+  --button-bg: #333333;
+  --button-border: #555555;
+  --textarea-bg: #2d2d2d;
+  --textarea-text: #e0e0e0;
+}
+
 body {
-  width: 300px;
+  width: 335px;
   font-size: 12px;
   font-family: sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+
 }
 
 .button {
   margin: 3% auto;
   padding: 4px;
   text-align: center;
-  border: 1px solid #ccc;
+  border: 1px solid var(--button-border);
   border-radius: 3px;
-  background-color: #eee;
+  background-color: var(--button-bg);
   cursor: pointer;
-  color: black;
+  color: var(--text-color);
 }
 
 .wide {
@@ -30,6 +52,11 @@ body {
 
 #save-link-with-note-textarea {
   width: 100%;
+  background-color: var(--textarea-bg);
+  color: var(--textarea-text);
+  border: 1px solid var(--button-border);
+  padding: 4px;
+  border-radius: 3px;
 }
 
 #save-button {
