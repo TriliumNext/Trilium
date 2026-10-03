@@ -34,6 +34,11 @@ export interface SafeFetchPolicy {
      */
     allowPrivateNetwork?: boolean;
     /**
+     * IPv4 addresses or CIDRs from the operator's allowlist, honoured only where the operator
+     * chose the destination (`fetchApi`). Can allow only carrier-grade NAT addresses.
+     */
+    allowedAddresses?: string[];
+    /**
      * Deadline imposed when the caller passes no signal of its own. `null` for a request that
      * must not have one — a chat completion runs for as long as the model takes.
      */
@@ -51,14 +56,18 @@ export interface SafeFetchPolicy {
  * Checks whether an IP address is private/reserved using ipaddr.js.
  * Returns true if the IP should be blocked.
  */
-function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>): boolean {
+function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>, allowPrivateNetwork: boolean, allowlist: AllowlistEntry[]): boolean {
     try {
         let parsed = ipaddr.parse(ip);
         // For IPv4-mapped IPv6 addresses, extract and check the IPv4 part
         if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
             parsed = (parsed as ipaddr.IPv6).toIPv4Address();
         }
-        return !allowedRanges.has(parsed.range());
+        if (allowedRanges.has(parsed.range())) {
+            return false;
+        }
+        // The allowlist can open only carrier-grade NAT, and only on the relaxed path.
+        return !(allowPrivateNetwork && parsed.range() === "carrierGradeNat" && ipInAllowlist(ip, allowlist));
     } catch {
         return true; // unparseable → treat as blocked
     }
@@ -68,16 +77,18 @@ function isBlockedIP(ip: string, allowedRanges: ReadonlySet<string>): boolean {
  * Resolves the hostname to IP addresses and verifies none are private/reserved.
  * Returns the validated addresses so they can be pinned for the actual connection.
  */
-async function validateHostResolution(hostname: string, allowPrivateNetwork = false): Promise<dns.LookupAddress[]> {
+async function validateHostResolution(hostname: string, allowPrivateNetwork = false, allowedAddresses: string[] = []): Promise<dns.LookupAddress[]> {
     const allowedRanges = allowPrivateNetwork ? ALLOWED_IP_RANGES_INCLUDING_PRIVATE : ALLOWED_IP_RANGES;
     // `URL.hostname` hands back an IPv6 literal still wrapped in its brackets ("[::1]"), which is
     // not a form either net.isIP or ipaddr.js recognises. Left as-is, such an address would be
     // taken for a name and looked up as one instead of being checked as the address it is.
     const host = hostname.replace(/^\[|\]$/g, "");
+    // The allowlist applies only on the relaxed path; the strict path ignores it entirely.
+    const allowlist = allowPrivateNetwork ? parseAllowlist(allowedAddresses).entries : [];
 
     // If the hostname is already an IP literal, check it directly
     if (net.isIP(host)) {
-        if (isBlockedIP(host, allowedRanges)) {
+        if (isBlockedIP(host, allowedRanges, allowPrivateNetwork, allowlist)) {
             throw new ValidationError(blockedAddressMessage(allowPrivateNetwork));
         }
         return [{ address: host, family: net.isIP(host) as 4 | 6 }];
@@ -91,7 +102,7 @@ async function validateHostResolution(hostname: string, allowPrivateNetwork = fa
     }
 
     for (const addr of addresses) {
-        if (isBlockedIP(addr.address, allowedRanges)) {
+        if (isBlockedIP(addr.address, allowedRanges, allowPrivateNetwork, allowlist)) {
             throw new ValidationError(blockedAddressMessage(allowPrivateNetwork));
         }
     }
@@ -210,7 +221,7 @@ function withDispatcherCleanup(response: UndiciResponse, dispatcher: Agent): Res
  * an address out of note content. See {@link SafeFetchPolicy} for what a caller relaxes and why.
  */
 async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFetchPolicy = {}): Promise<Response> {
-    const { allowPrivateNetwork = false, timeoutMs = FETCH_TIMEOUT_MS, maxRedirects = MAX_REDIRECTS } = policy;
+    const { allowPrivateNetwork = false, allowedAddresses = [], timeoutMs = FETCH_TIMEOUT_MS, maxRedirects = MAX_REDIRECTS } = policy;
     let currentUrl = url;
 
     // Imported here rather than at module scope so undici lands in a lazy chunk:
@@ -226,7 +237,7 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
 
     for (let i = 0; i <= maxRedirects; i++) {
         const parsed = validateUrl(currentUrl);
-        const validatedAddresses = await validateHostResolution(parsed.hostname, allowPrivateNetwork);
+        const validatedAddresses = await validateHostResolution(parsed.hostname, allowPrivateNetwork, allowedAddresses);
 
         // Use a custom dispatcher that pins DNS to the validated IPs,
         // preventing a second DNS lookup from resolving to a different (private) IP.
@@ -266,6 +277,68 @@ async function safeFetch(url: string, options: RequestInit = {}, policy: SafeFet
     }
 
     throw new Error("Too many redirects");
+}
+
+/** An IPv4 network and prefix length parsed from one operator allowlist token. */
+type AllowlistEntry = {
+    network: ipaddr.IPv4;
+    mask: number;
+};
+
+/**
+ * Parses one allowlist token, accepting only canonical IPv4 addresses ("100.83.121.222") and
+ * CIDRs ("100.83.121.0/24"). ipaddr.js also accepts shorthand forms that name a different network
+ * than the operator typed ("100.64/10" is 100.0.0.64/10), and an IPv6 address can never match the
+ * carrier-grade NAT range the allowlist opens, so both are rejected.
+ */
+function parseAllowlistToken(value: string): AllowlistEntry {
+    if (value.includes("/")) {
+        const [network, mask] = ipaddr.parseCIDR(value);
+        if (network.kind() !== "ipv4" || `${network.toString()}/${mask}` !== value) {
+            throw new Error(`${value} is not a canonical IPv4 CIDR`);
+        }
+        return { network: network as ipaddr.IPv4, mask };
+    }
+    const network = ipaddr.parse(value);
+    if (network.kind() !== "ipv4" || network.toString() !== value) {
+        throw new Error(`${value} is not a canonical IPv4 address`);
+    }
+    return { network: network as ipaddr.IPv4, mask: 32 };
+}
+
+/**
+ * Resolves the operator's allowlist tokens to networks for matching. A token
+ * `parseAllowlistToken` rejects lands in `dropped`, so the operator can be told which entries are
+ * not in effect rather than left believing a typo was honored.
+ */
+export function parseAllowlist(raw: string[]): { entries: AllowlistEntry[]; dropped: string[] } {
+    const entries: AllowlistEntry[] = [];
+    const dropped: string[] = [];
+    for (const token of raw) {
+        const value = token.trim();
+        if (!value) {
+            continue;
+        }
+        try {
+            entries.push(parseAllowlistToken(value));
+        } catch {
+            dropped.push(value);
+        }
+    }
+    return { entries, dropped };
+}
+
+function ipInAllowlist(ip: string, entries: AllowlistEntry[]): boolean {
+    let parsed = ipaddr.parse(ip);
+    if (parsed.kind() === "ipv6" && (parsed as ipaddr.IPv6).isIPv4MappedAddress()) {
+        parsed = (parsed as ipaddr.IPv6).toIPv4Address();
+    }
+    for (const { network, mask } of entries) {
+        if (parsed.kind() === "ipv4" && (parsed as ipaddr.IPv4).match(network, mask)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 export { createPinnedLookup, safeFetch, validateHostResolution, validateUrl };

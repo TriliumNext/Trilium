@@ -4,7 +4,7 @@ import { type CookieJar, type ExecOpts, type FetchApiOpts, type FetchedResource,
 import { readCappedResponse } from "@triliumnext/core/src/services/request.js";
 import url from "url";
 
-import { createPinnedLookup, safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
+import { createPinnedLookup, parseAllowlist, safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
 
 // this service provides abstraction over node's HTTP/HTTPS modules.
 // Subclasses (e.g. apps/desktop's ElectronRequestProvider) can override
@@ -209,20 +209,17 @@ export default class NodeRequestProvider implements RequestProvider {
     }
 
     /**
-     * Calls a configured API endpoint, vetted the same way {@link fetchResource} is but under a
-     * policy that fits what is being called rather than what a note linked to.
-     *
-     * Three things differ, and each is the endpoint's nature rather than a relaxation for its own
-     * sake. A private address is allowed where the caller says the operator chose the destination,
-     * because a model server on this machine is the ordinary case and the ranges that stay refused
-     * are the ones nothing is served on. No deadline is imposed, because a completion runs for
-     * however long the model takes and the caller carries its own abort. And a redirect is refused
-     * outright: the hop would be re-vetted as an address, but the request's `Authorization` header
-     * would go with it, and an API key is not something to hand to whoever a base URL names.
+     * Calls a configured API endpoint under the relaxed policy: private addresses when the caller
+     * says the operator chose the destination, plus the operator's allowlist
+     * (`TRILIUM_SAFE_FETCH_ALLOWLIST`, which can open only carrier-grade NAT addresses — a tailnet
+     * node); no deadline, because the caller carries its own abort; and redirects refused, because
+     * the `Authorization` header would be re-sent to whatever the endpoint names.
      */
     async fetchApi(url: string, init: RequestInit, opts: FetchApiOpts): Promise<Response> {
+        warnDroppedAllowlistTokens();
         return await safeFetch(url, init, {
             allowPrivateNetwork: opts.allowPrivateNetwork,
+            allowedAddresses: apiAllowlistTokens,
             timeoutMs: null,
             maxRedirects: 0
         });
@@ -340,4 +337,29 @@ export function absorbSetCookies(cookieJar: CookieJar, setCookieValues: string |
     }
 
     cookieJar.header = [...cookies].map(([name, value]) => `${name}=${value}`).join("; ");
+}
+
+// Allowlist for `fetchApi` destinations, read once at module load; `parseAllowlist` defines the
+// token format and what the list can open.
+const apiAllowlistTokens: string[] = (process.env.TRILIUM_SAFE_FETCH_ALLOWLIST ?? "").split(",");
+
+let warnedDroppedAllowlistTokens = false;
+
+/**
+ * Logs the allowlist tokens `parseAllowlist` rejects, once per process. Runs on the first
+ * `fetchApi` call rather than at module load: `getLog()` throws until `initializeCore()` has
+ * initialized the log service, and main.ts imports this module before that.
+ */
+function warnDroppedAllowlistTokens() {
+    if (warnedDroppedAllowlistTokens) {
+        return;
+    }
+    warnedDroppedAllowlistTokens = true;
+    const { dropped } = parseAllowlist(apiAllowlistTokens);
+    if (dropped.length > 0) {
+        getLog().info(
+            `TRILIUM_SAFE_FETCH_ALLOWLIST: ignoring ${dropped.length} ${dropped.length === 1 ? "entry" : "entries"} ` +
+                `(${dropped.join(", ")}); only dotted-quad IPv4 addresses and CIDRs take effect.`
+        );
+    }
 }
