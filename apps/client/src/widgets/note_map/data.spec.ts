@@ -7,6 +7,7 @@ import {
     carryPositions,
     collapseRelations,
     dropUnlinkedNotes,
+    dropExpansion,
     expandReification,
     expandReifications,
     expandedLinkId,
@@ -72,96 +73,96 @@ describe("loadNotesAndRelations", () => {
 });
 
 describe("collapseRelations", () => {
-    const people = (): NotesAndRelationsData => ({
+    const notes = (): NotesAndRelationsData => ({
         nodes: [
-            { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file", x: 0, y: 0 },
-            { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file", x: 10, y: 0 },
-            { id: "mark", name: "Mark", type: "text", color: null, icon: "bx bx-file", x: 0, y: 10 }
+            { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file", x: 0, y: 0 },
+            { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file", x: 10, y: 0 },
+            { id: "gamma", name: "Gamma", type: "text", color: null, icon: "bx bx-file", x: 0, y: 10 }
         ],
         links: [
-            { id: "john-mary", source: "john", target: "mary", name: "loves" },
-            { id: "john-mark", source: "john", target: "mark", name: "knows" }
+            { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" },
+            { id: "alpha-gamma", source: "alpha", target: "gamma", name: "mentions" }
         ],
-        noteIdToSizeMap: { john: 4, mary: 4, mark: 4 },
+        noteIdToSizeMap: { alpha: 4, beta: 4, gamma: 4 },
         reificationLinks: []
     });
 
     it("folds the two notes and the relation into one node, then folds that node again", () => {
-        const data = people();
-        const loves = collapseRelations(data, new Set([ "john-mary" ]));
-        const folded = loves.nodes.find((node) => node.id === "fold:john-mary");
+        const data = notes();
+        const once = collapseRelations(data, new Set([ "alpha-beta" ]));
+        const folded = once.nodes.find((node) => node.id === "fold:alpha-beta");
 
-        // Mark was reached through John. The fact loves(John, Mary) does not know Mark.
-        expect(loves.nodes.map((node) => node.id)).toEqual([ "fold:john-mary" ]);
-        expect(loves.links).toEqual([]);
-        expect(folded).toMatchObject({ name: "loves(John, Mary)", x: 5, y: 0 });
+        // Gamma was reached through Alpha. cites(Alpha, Beta) does not mention Gamma.
+        expect(once.nodes.map((node) => node.id)).toEqual([ "fold:alpha-beta" ]);
+        expect(once.links).toEqual([]);
+        expect(folded).toMatchObject({ name: "cites(Alpha, Beta)", x: 5, y: 0 });
         expect(folded?.fold).toEqual({
-            linkId: "john-mary",
-            sourceNoteId: "john",
-            targetNoteId: "mary",
-            predicate: "loves",
-            predicates: [ "loves" ],
-            subject: { noteId: "john" },
-            object: { noteId: "mary" }
+            linkId: "alpha-beta",
+            sourceNoteId: "alpha",
+            targetNoteId: "beta",
+            predicate: "cites",
+            predicates: [ "cites" ],
+            subject: { noteId: "alpha" },
+            object: { noteId: "beta" }
         });
 
-        const both = collapseRelations(data, new Set([ "john-mary", "john-mark" ]));
-        expect(both.nodes.map((node) => node.id)).toEqual([ "fold:john-mark" ]);
-        expect(both.nodes[0].name).toBe("knows(loves(John, Mary), Mark)");
-        // John was drawn inside the loves fold. knows still belongs to John, not to that fact.
+        const both = collapseRelations(data, new Set([ "alpha-beta", "alpha-gamma" ]));
+        expect(both.nodes.map((node) => node.id)).toEqual([ "fold:alpha-gamma" ]);
+        expect(both.nodes[0].name).toBe("mentions(cites(Alpha, Beta), Gamma)");
+        // Alpha was drawn inside the cites fold. mentions still belongs to Alpha, not to that fact.
         expect(both.nodes[0].fold).toMatchObject({
-            predicate: "knows",
-            subject: { noteId: "john" },
-            object: { noteId: "mark" }
+            predicate: "mentions",
+            subject: { noteId: "alpha" },
+            object: { noteId: "gamma" }
         });
         expect(both.links).toEqual([]);
     });
 
     it("draws a relation of the fact from the folded node, and leaves the notes' own relations out", () => {
-        const data = people();
+        const data = notes();
         data.reificationLinks = [ {
-            linkId: "john-mary",
+            linkId: "alpha-beta",
             name: "cause",
             outgoing: true,
             note: [ "event", "Event X", "text", null, "bx bx-file" ]
         } ];
 
-        const loves = collapseRelations(data, new Set([ "john-mary" ]));
+        const once = collapseRelations(data, new Set([ "alpha-beta" ]));
 
-        expect(loves.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:john-mary" ]);
-        expect(loves.links).toEqual([
-            { id: "john-mary-cause-event", source: "fold:john-mary", target: "event", name: "cause" }
+        expect(once.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:alpha-beta" ]);
+        expect(once.links).toEqual([
+            { id: "alpha-beta-cause-event", source: "fold:alpha-beta", target: "event", name: "cause" }
         ]);
     });
 
     it("folds an edge drawn from another edge only after that one, and leaves that one folded on expand", () => {
-        const data = people();
+        const data = notes();
         data.reificationLinks = [ {
-            linkId: "john-mary",
+            linkId: "alpha-beta",
             name: "cause",
             outgoing: true,
             note: [ "event", "Event X", "text", null, "bx bx-file" ]
         } ];
         const open = applyRelationBridges(data);
         const cause = open.links.find((link) => link.name === "cause");
-        expect(cause?.id).toBe("john-mary-cause-event");
-        expect(foldOrder(open, "john-mary-cause-event")).toEqual([ "john-mary", "john-mary-cause-event" ]);
+        expect(cause?.id).toBe("alpha-beta-cause-event");
+        expect(foldOrder(open, "alpha-beta-cause-event")).toEqual([ "alpha-beta", "alpha-beta-cause-event" ]);
 
         // Asked for last, whichever way the set happens to list them.
-        const folded = collapseRelations(open, new Set([ "john-mary-cause-event", "john-mary" ]));
-        expect(folded.nodes.map((node) => node.id)).toEqual([ "fold:john-mary-cause-event" ]);
-        expect(folded.nodes[0].name).toBe("cause(loves(John, Mary), Event X)");
+        const folded = collapseRelations(open, new Set([ "alpha-beta-cause-event", "alpha-beta" ]));
+        expect(folded.nodes.map((node) => node.id)).toEqual([ "fold:alpha-beta-cause-event" ]);
+        expect(folded.nodes[0].name).toBe("cause(cites(Alpha, Beta), Event X)");
         expect(folded.nodes[0].fold).toMatchObject({
             predicate: "cause",
-            subject: { fact: { predicate: "loves", source: { noteId: "john" }, object: { noteId: "mary" } } },
+            subject: { fact: { predicate: "cites", source: { noteId: "alpha" }, object: { noteId: "beta" } } },
             object: { noteId: "event" }
         });
         expect(folded.links).toEqual([]);
 
-        const expanded = collapseRelations(open, new Set([ "john-mary" ]));
-        expect(expanded.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:john-mary" ]);
+        const expanded = collapseRelations(open, new Set([ "alpha-beta" ]));
+        expect(expanded.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:alpha-beta" ]);
         expect(expanded.links).toEqual([
-            { id: "john-mary-cause-event", source: "fold:john-mary", target: "event", name: "cause" }
+            { id: "alpha-beta-cause-event", source: "fold:alpha-beta", target: "event", name: "cause" }
         ]);
     });
 });
@@ -169,15 +170,15 @@ describe("collapseRelations", () => {
 describe("expandReification", () => {
     const ends = {
         rootId: "fact",
-        predicate: "loves",
-        subject: { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-        object: { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+        predicate: "cites",
+        subject: { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+        object: { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
     };
 
     function factMap(): NotesAndRelationsData {
         return {
             nodes: [
-                { id: "fact", name: "loves(John, Mary)", type: "text", color: null, icon: "bx bx-git-commit" },
+                { id: "fact", name: "cites(Alpha, Beta)", type: "text", color: null, icon: "bx bx-git-commit" },
                 { id: "event", name: "Event X", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
@@ -192,19 +193,19 @@ describe("expandReification", () => {
         const data = factMap();
         const view = expandReification(data, ends);
 
-        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "edge:john-mary", "event", "john", "mary" ]);
+        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "beta", "edge:alpha-beta", "event" ]);
         expect(view.links).toEqual([
-            { id: "expanded:fact", source: "john", target: "mary", name: "loves" },
-            { id: "fact-event", source: "edge:john-mary", target: "event", name: "cause" }
+            { id: "expanded:fact", source: "alpha", target: "beta", name: "cites" },
+            { id: "fact-event", source: "edge:alpha-beta", target: "event", name: "cause" }
         ]);
-        expect(view.nodes.find((node) => node.id === "edge:john-mary")).toMatchObject({
+        expect(view.nodes.find((node) => node.id === "edge:alpha-beta")).toMatchObject({
             joint: true,
-            jointOf: [ "john", "mary" ]
+            jointOf: [ "alpha", "beta" ]
         });
         // The canvas paints from this same map. A copy would leave the new notes without a size.
         expect(view.noteIdToSizeMap).toBe(data.noteIdToSizeMap);
-        expect(data.noteIdToSizeMap.john).toBe(4);
-        expect(data.noteIdToSizeMap["edge:john-mary"]).toBe(1);
+        expect(data.noteIdToSizeMap.alpha).toBe(4);
+        expect(data.noteIdToSizeMap["edge:alpha-beta"]).toBe(1);
     });
 
     it("folds that line back into the fact and keeps the relation drawn from it", () => {
@@ -219,31 +220,57 @@ describe("expandReification", () => {
     it("expands a fact that only appears once the fact it hangs on is expanded", () => {
         const inner = {
             rootId: "inner",
-            predicate: "knows",
-            subject: { id: "mark", name: "Mark", type: "text", color: null, icon: "bx bx-file" },
-            object: { id: "ann", name: "Ann", type: "text", color: null, icon: "bx bx-file" }
+            predicate: "mentions",
+            subject: { id: "gamma", name: "Gamma", type: "text", color: null, icon: "bx bx-file" },
+            object: { id: "delta", name: "Delta", type: "text", color: null, icon: "bx bx-file" }
         };
         const outer = {
             ...ends,
-            object: { id: "inner", name: "knows(Mark, Ann)", type: "text", color: null, icon: "bx bx-git-commit" }
+            object: { id: "inner", name: "mentions(Gamma, Delta)", type: "text", color: null, icon: "bx bx-git-commit" }
         };
         const data = factMap();
         data.nodes = [
-            { id: "fact", name: "loves(John, knows(Mark, Ann))", type: "text", color: null, icon: "bx bx-git-commit" }
+            { id: "fact", name: "cites(Alpha, mentions(Gamma, Delta))", type: "text", color: null, icon: "bx bx-git-commit" }
         ];
         data.links = [];
 
         const oneLevel = expandReifications(data, [ outer ]);
-        expect(oneLevel.nodes.map((node) => node.id).sort()).toEqual([ "edge:john-inner", "inner", "john" ]);
+        expect(oneLevel.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "edge:alpha-inner", "inner" ]);
 
         const both = expandReifications(data, [ outer, inner ]);
-        expect(both.nodes.map((node) => node.id).sort()).toEqual([ "ann", "edge:mark-ann", "john", "mark" ]);
+        expect(both.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "delta", "edge:gamma-delta", "gamma" ]);
         expect(both.links).toContainEqual({
             id: "expanded:fact",
-            source: "john",
-            target: "edge:mark-ann",
-            name: "loves"
+            source: "alpha",
+            target: "edge:gamma-delta",
+            name: "cites"
         });
+    });
+
+    it("forgets the layers inside a note that is shown as one note", () => {
+        const node = (id: string) => ({ id, name: id, type: "text", color: null, icon: "" });
+        const expanded = new Set([ "outer", "inner" ]);
+        const ends = new Map([
+            [ "outer", {
+                rootId: "outer",
+                predicate: "cites",
+                subject: node("alpha"),
+                object: node("inner")
+            } ],
+            [ "inner", {
+                rootId: "inner",
+                predicate: "mentions",
+                subject: node("gamma"),
+                object: node("delta")
+            } ]
+        ]);
+        const collapsed = new Set([ expandedLinkId("outer"), expandedLinkId("inner"), "kept" ]);
+
+        dropExpansion("outer", expanded, ends, collapsed);
+
+        expect([ ...expanded ]).toEqual([]);
+        expect([ ...ends.keys() ]).toEqual([]);
+        expect([ ...collapsed ]).toEqual([ "kept" ]);
     });
 });
 
@@ -265,13 +292,13 @@ describe("relationEndTitle", () => {
                 }
             ],
             links: [
-                { id: "a-b", source: "a", target: "b", name: "likes" },
+                { id: "a-b", source: "a", target: "b", name: "links" },
                 { id: "edge:a-b-leadsTo-chaos", source: "edge:a-b", target: "chaos", name: "leadsTo" }
             ]
         };
         const leadsTo = data.links[1];
 
-        expect(relationEndTitle(leadsTo.source, data)).toBe("likes(A, B)");
+        expect(relationEndTitle(leadsTo.source, data)).toBe("links(A, B)");
         expect(relationEndTitle(leadsTo.target, data)).toBe("Chaos");
     });
 });
@@ -281,37 +308,37 @@ describe("resolveFoldEnd", () => {
         const calls: string[] = [];
         const noteId = await resolveFoldEnd({
             fact: {
-                predicate: "likes",
+                predicate: "links",
                 source: { noteId: "a" },
                 object: { noteId: "b" }
             }
         }, async (source, predicate, target) => {
             calls.push(`${predicate}(${source}, ${target})`);
-            return predicate === "likes" ? "likes-note" : undefined;
+            return predicate === "links" ? "links-note" : undefined;
         });
 
-        expect(calls).toEqual([ "likes(a, b)" ]);
-        expect(noteId).toBe("likes-note");
+        expect(calls).toEqual([ "links(a, b)" ]);
+        expect(noteId).toBe("links-note");
     });
 });
 
 describe("carryPositions", () => {
     it("keeps a note where it was, and stands a new one where the note that left was", () => {
         const previous = [
-            { id: "fact", name: "loves(John, Mary)", type: "text", color: null, icon: "", x: 10, y: 20 },
+            { id: "fact", name: "cites(Alpha, Beta)", type: "text", color: null, icon: "", x: 10, y: 20 },
             { id: "event", name: "Event X", type: "text", color: null, icon: "", x: 80, y: 20 }
         ];
         const next = [
             { id: "event", name: "Event X", type: "text", color: null, icon: "" },
-            { id: "john", name: "John", type: "text", color: null, icon: "" },
-            { id: "mary", name: "Mary", type: "text", color: null, icon: "" }
+            { id: "alpha", name: "Alpha", type: "text", color: null, icon: "" },
+            { id: "beta", name: "Beta", type: "text", color: null, icon: "" }
         ];
 
         carryPositions(previous, next, "fact");
 
         expect(next.find((node) => node.id === "event")).toMatchObject({ x: 80, y: 20 });
-        expect(next.find((node) => node.id === "john")).toMatchObject({ x: 10, y: 20, vx: 0, vy: 0 });
-        expect(next.find((node) => node.id === "mary")).toMatchObject({ x: 50, y: 20, vx: 0, vy: 0 });
+        expect(next.find((node) => node.id === "alpha")).toMatchObject({ x: 10, y: 20, vx: 0, vy: 0 });
+        expect(next.find((node) => node.id === "beta")).toMatchObject({ x: 50, y: 20, vx: 0, vy: 0 });
     });
 });
 
@@ -319,15 +346,15 @@ describe("applyRelationBridges", () => {
     it("draws a relation of a fact from the middle of that fact's edge", () => {
         const data: NotesAndRelationsData = {
             nodes: [
-                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
-                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" }
             ],
-            noteIdToSizeMap: { john: 4, mary: 4 },
+            noteIdToSizeMap: { alpha: 4, beta: 4 },
             reificationLinks: [ {
-                linkId: "john-mary",
+                linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
                 note: [ "event", "Event X", "text", null, "bx bx-file" ]
@@ -336,10 +363,10 @@ describe("applyRelationBridges", () => {
 
         const view = applyRelationBridges(data);
 
-        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "edge:john-mary", "event", "john", "mary" ]);
+        expect(view.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "beta", "edge:alpha-beta", "event" ]);
         expect(view.links).toContainEqual({
-            id: "john-mary-cause-event",
-            source: "edge:john-mary",
+            id: "alpha-beta-cause-event",
+            source: "edge:alpha-beta",
             target: "event",
             name: "cause"
         });
@@ -349,22 +376,22 @@ describe("applyRelationBridges", () => {
     it("draws a relation between two facts as a line between those edges", () => {
         const data: NotesAndRelationsData = {
             nodes: [
-                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
-                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" }
             ],
-            noteIdToSizeMap: { john: 4, mary: 4 },
+            noteIdToSizeMap: { alpha: 4, beta: 4 },
             reificationLinks: [ {
-                linkId: "john-mary",
+                linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
                 otherFact: {
-                    linkId: "mark-jealousy",
-                    predicate: "has",
-                    subject: [ "mark", "Mark", "text", null, "bx bx-file" ],
-                    object: [ "jealousy", "Jealousy", "text", null, "bx bx-file" ]
+                    linkId: "gamma-item",
+                    predicate: "contains",
+                    subject: [ "gamma", "Gamma", "text", null, "bx bx-file" ],
+                    object: [ "item", "Item", "text", null, "bx bx-file" ]
                 }
             } ]
         };
@@ -372,78 +399,78 @@ describe("applyRelationBridges", () => {
         const view = applyRelationBridges(data);
 
         expect(view.nodes.map((node) => node.id).sort()).toEqual([
-            "edge:john-mary", "edge:mark-jealousy", "jealousy", "john", "mark", "mary"
+            "alpha", "beta", "edge:alpha-beta", "edge:gamma-item", "gamma", "item"
         ]);
         expect(view.links).toContainEqual({
-            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+            id: "gamma-item", source: "gamma", target: "item", name: "contains"
         });
         expect(view.links).toContainEqual({
-            id: "edge:john-mary-cause-edge:mark-jealousy",
-            source: "edge:john-mary",
-            target: "edge:mark-jealousy",
+            id: "edge:alpha-beta-cause-edge:gamma-item",
+            source: "edge:alpha-beta",
+            target: "edge:gamma-item",
             name: "cause"
         });
 
-        const bridgeId = "edge:john-mary-cause-edge:mark-jealousy";
-        expect(foldOrder(view, bridgeId)).toEqual([ "john-mary", "mark-jealousy", bridgeId ]);
+        const bridgeId = "edge:alpha-beta-cause-edge:gamma-item";
+        expect(foldOrder(view, bridgeId)).toEqual([ "alpha-beta", "gamma-item", bridgeId ]);
         const folded = collapseRelations(view, new Set(foldOrder(view, bridgeId)));
         expect(folded.nodes.map((node) => node.id)).toEqual([ `fold:${bridgeId}` ]);
-        expect(folded.nodes[0].name).toBe("cause(loves(John, Mary), has(Mark, Jealousy))");
+        expect(folded.nodes[0].name).toBe("cause(cites(Alpha, Beta), contains(Gamma, Item))");
         expect(folded.nodes[0].fold).toMatchObject({
             predicate: "cause",
-            subject: { fact: { predicate: "loves", source: { noteId: "john" }, object: { noteId: "mary" } } },
-            object: { fact: { predicate: "has", source: { noteId: "mark" }, object: { noteId: "jealousy" } } }
+            subject: { fact: { predicate: "cites", source: { noteId: "alpha" }, object: { noteId: "beta" } } },
+            object: { fact: { predicate: "contains", source: { noteId: "gamma" }, object: { noteId: "item" } } }
         });
 
-        const oneStep = collapseRelations(view, new Set([ "john-mary", "mark-jealousy" ]));
-        expect(oneStep.nodes.map((node) => node.id).sort()).toEqual([ "fold:john-mary", "fold:mark-jealousy" ]);
+        const oneStep = collapseRelations(view, new Set([ "alpha-beta", "gamma-item" ]));
+        expect(oneStep.nodes.map((node) => node.id).sort()).toEqual([ "fold:alpha-beta", "fold:gamma-item" ]);
         expect(oneStep.links).toEqual([
-            { id: bridgeId, source: "fold:john-mary", target: "fold:mark-jealousy", name: "cause" }
+            { id: bridgeId, source: "fold:alpha-beta", target: "fold:gamma-item", name: "cause" }
         ]);
     });
 
     it("keeps a fact-to-fact relation when only one fact is folded, including without a prior bridge", () => {
         const data: NotesAndRelationsData = {
             nodes: [
-                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
-                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" }
             ],
-            noteIdToSizeMap: { john: 4, mary: 4 },
+            noteIdToSizeMap: { alpha: 4, beta: 4 },
             reificationLinks: [ {
-                linkId: "john-mary",
+                linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
                 otherFact: {
-                    linkId: "mark-jealousy",
-                    predicate: "has",
-                    subject: [ "mark", "Mark", "text", null, "bx bx-file" ],
-                    object: [ "jealousy", "Jealousy", "text", null, "bx bx-file" ]
+                    linkId: "gamma-item",
+                    predicate: "contains",
+                    subject: [ "gamma", "Gamma", "text", null, "bx bx-file" ],
+                    object: [ "item", "Item", "text", null, "bx bx-file" ]
                 }
             } ]
         };
 
-        const folded = presentRelations(data, new Set([ "john-mary" ]));
+        const folded = presentRelations(data, new Set([ "alpha-beta" ]));
         expect(folded.links).toContainEqual({
-            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+            id: "gamma-item", source: "gamma", target: "item", name: "contains"
         });
         expect(folded.links).toContainEqual({
-            id: "edge:john-mary-cause-edge:mark-jealousy",
-            source: "fold:john-mary",
-            target: "edge:mark-jealousy",
+            id: "edge:alpha-beta-cause-edge:gamma-item",
+            source: "fold:alpha-beta",
+            target: "edge:gamma-item",
             name: "cause"
         });
 
-        const direct = collapseRelations(data, new Set([ "john-mary" ]));
+        const direct = collapseRelations(data, new Set([ "alpha-beta" ]));
         expect(direct.links).toContainEqual({
-            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+            id: "gamma-item", source: "gamma", target: "item", name: "contains"
         });
         expect(direct.links).toContainEqual({
-            id: "edge:john-mary-cause-edge:mark-jealousy",
-            source: "fold:john-mary",
-            target: "edge:mark-jealousy",
+            id: "edge:alpha-beta-cause-edge:gamma-item",
+            source: "fold:alpha-beta",
+            target: "edge:gamma-item",
             name: "cause"
         });
     });
@@ -451,25 +478,25 @@ describe("applyRelationBridges", () => {
     it("keeps the other fact's relation when only one fact is folded", () => {
         const data: NotesAndRelationsData = {
             nodes: [
-                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" },
-                { id: "ann", name: "Ann", type: "text", color: null, icon: "bx bx-file" },
-                { id: "bob", name: "Bob", type: "text", color: null, icon: "bx bx-file" }
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" },
+                { id: "delta", name: "Delta", type: "text", color: null, icon: "bx bx-file" },
+                { id: "epsilon", name: "Epsilon", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
-                { id: "john-mary", source: "john", target: "mary", name: "loves" },
-                { id: "ann-bob", source: "ann", target: "bob", name: "knows" }
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" },
+                { id: "delta-epsilon", source: "delta", target: "epsilon", name: "mentions" }
             ],
-            noteIdToSizeMap: { john: 4, mary: 4, ann: 4, bob: 4 },
+            noteIdToSizeMap: { alpha: 4, beta: 4, delta: 4, epsilon: 4 },
             reificationLinks: [
                 {
-                    linkId: "john-mary",
+                    linkId: "alpha-beta",
                     name: "cause",
                     outgoing: true,
                     note: [ "event", "Event X", "text", null, "bx bx-file" ]
                 },
                 {
-                    linkId: "ann-bob",
+                    linkId: "delta-epsilon",
                     name: "because",
                     outgoing: true,
                     note: [ "reason", "Reason", "text", null, "bx bx-file" ]
@@ -477,34 +504,34 @@ describe("applyRelationBridges", () => {
             ]
         };
 
-        const folded = presentRelations(data, new Set([ "john-mary" ]));
+        const folded = presentRelations(data, new Set([ "alpha-beta" ]));
         expect(folded.links).toContainEqual({
-            id: "john-mary-cause-event", source: "fold:john-mary", target: "event", name: "cause"
+            id: "alpha-beta-cause-event", source: "fold:alpha-beta", target: "event", name: "cause"
         });
         expect(folded.links).toContainEqual({
-            id: "ann-bob-because-reason", source: "edge:ann-bob", target: "reason", name: "because"
+            id: "delta-epsilon-because-reason", source: "edge:delta-epsilon", target: "reason", name: "because"
         });
         expect(folded.links).toContainEqual({
-            id: "ann-bob", source: "ann", target: "bob", name: "knows"
+            id: "delta-epsilon", source: "delta", target: "epsilon", name: "mentions"
         });
     });
 
     it("folds every predicate on a grouped edge", () => {
         const data: NotesAndRelationsData = {
             nodes: [
-                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
-                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
             ],
             links: [
-                { id: "john-mary", source: "john", target: "mary", name: "loves, knows" }
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, mentions" }
             ],
-            noteIdToSizeMap: { john: 4, mary: 4 }
+            noteIdToSizeMap: { alpha: 4, beta: 4 }
         };
 
-        const folded = collapseRelations(data, new Set([ "john-mary" ]));
-        expect(folded.nodes[0].name).toBe("loves(John, Mary), knows(John, Mary)");
-        expect(folded.nodes[0].fold?.predicates).toEqual([ "loves", "knows" ]);
-        expect(folded.nodes[0].fold?.predicate).toBe("loves");
+        const folded = collapseRelations(data, new Set([ "alpha-beta" ]));
+        expect(folded.nodes[0].name).toBe("cites(Alpha, Beta), mentions(Alpha, Beta)");
+        expect(folded.nodes[0].fold?.predicates).toEqual([ "cites", "mentions" ]);
+        expect(folded.nodes[0].fold?.predicate).toBe("cites");
     });
 });
 

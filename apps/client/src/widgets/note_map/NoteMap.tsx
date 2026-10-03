@@ -28,6 +28,7 @@ import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import {
     carryPositions,
+    dropExpansion,
     expandedNoteId,
     foldOrder,
     foldTitle,
@@ -247,8 +248,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                         if (!noteId) {
                             return;
                         }
-                        expandedIdsRef.current.delete(noteId);
-                        collapsedRef.current.delete(linkId);
+                        dropExpansion(noteId, expandedIdsRef.current, expandedEndsRef.current, collapsedRef.current);
                         showView(true);
                     });
                 });

@@ -500,6 +500,38 @@ export function expandedNoteId(linkId: string): string | null {
 }
 
 /**
+ * Removes `noteId` from the notes shown as edges, and the same for each end that was
+ * itself shown as an edge. The next expansion of `noteId` then opens one layer.
+ */
+export function dropExpansion(
+    noteId: string,
+    expandedIds: Set<string>,
+    endsById: Map<string, ReificationEnds>,
+    collapsed: Set<string>
+) {
+    const pending = [ noteId ];
+    const seen = new Set<string>();
+    while (pending.length > 0) {
+        const id = pending.pop();
+        if (!id || seen.has(id)) {
+            continue;
+        }
+        seen.add(id);
+        expandedIds.delete(id);
+        collapsed.delete(expandedLinkId(id));
+        const ends = endsById.get(id);
+        endsById.delete(id);
+        if (!ends) {
+            continue;
+        }
+        pending.push(ends.subject.id);
+        if (ends.object) {
+            pending.push(ends.object.id);
+        }
+    }
+}
+
+/**
  * Puts the two notes of a fact back, with the fact as the line between them.
  * A relation of the fact is drawn from the middle of that line. Either note can
  * then be opened on its own.

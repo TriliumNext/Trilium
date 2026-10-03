@@ -135,29 +135,29 @@ describe("reification", () => {
 
         clsInit(() => {
             const source = becca.getNoteOrThrow(sourceId);
-            source.title = "Prince Charles";
+            source.title = "Revised";
             source.save();
             noteService.triggerNoteTitleChanged(source);
         });
 
-        expect(becca.getNote(note.noteId)?.title).toBe("isChildOf(Prince Charles, Note B)");
+        expect(becca.getNote(note.noteId)?.title).toBe("isChildOf(Revised, Note B)");
     });
 
     it("lists the reification of a relation and the reifications that take it as an argument", () => {
-        const john = makeNote("John");
-        const mary = makeNote("Mary");
-        const mark = makeNote("Mark");
-        const loves = clsInit(() => attributeService.createRelation(john, "loves", mary));
-        const lovesNote = clsInit(() => reifyAttribute(loves.attributeId)).note;
-        const cause = clsInit(() => attributeService.createRelation(lovesNote.noteId, "cause", mark));
+        const alpha = makeNote("Alpha");
+        const beta = makeNote("Beta");
+        const gamma = makeNote("Gamma");
+        const cites = clsInit(() => attributeService.createRelation(alpha, "cites", beta));
+        const citesNote = clsInit(() => reifyAttribute(cites.attributeId)).note;
+        const cause = clsInit(() => attributeService.createRelation(citesNote.noteId, "cause", gamma));
         const causeNote = clsInit(() => reifyAttribute(cause.attributeId)).note;
 
-        const listed = listReificationsIncluding(loves.attributeId);
+        const listed = listReificationsIncluding(cites.attributeId);
         expect(listed.map((item) => item.title)).toEqual([
-            "loves(John, Mary)",
-            "cause(loves(John, Mary), Mark)"
+            "cites(Alpha, Beta)",
+            "cause(cites(Alpha, Beta), Gamma)"
         ]);
-        expect(listed[0]).toMatchObject({ noteId: lovesNote.noteId, direct: true });
+        expect(listed[0]).toMatchObject({ noteId: citesNote.noteId, direct: true });
         expect(listed[1]).toMatchObject({ noteId: causeNote.noteId, direct: false });
     });
 
@@ -197,7 +197,7 @@ describe("reification", () => {
                 type: "text",
                 isProtected: true
             }).note.noteId);
-            const relation = clsInit(() => attributeService.createRelation(plainId, "knows", hiddenId));
+            const relation = clsInit(() => attributeService.createRelation(plainId, "links", hiddenId));
             const token = clsInit(() => reifyAttribute(relation.attributeId)).note;
             expect(token.isProtected).toBe(true);
             const relationRow = getSql().getRow<{ title: string | null }>(
@@ -234,26 +234,26 @@ describe("reification", () => {
     });
 
     it("makes the relation name its own concept, apart from one instance of it", () => {
-        const created = clsInit(() => createPredicateConcept("loves"));
+        const created = clsInit(() => createPredicateConcept("cites"));
         expect(created.created).toBe(true);
-        expect(created.note.title).toBe("loves");
-        expect(created.note.getOwnedLabelValue("reificationOfPredicate")).toBe("loves");
+        expect(created.note.title).toBe("cites");
+        expect(created.note.getOwnedLabelValue("reificationOfPredicate")).toBe("cites");
         expect(created.note.getOwnedLabelValue("iconClass")).toBe("bx bx-cube");
         expect(created.note.getParentBranches().some((branch) => branch.parentNoteId === inboxNoteId())).toBe(true);
 
-        const again = clsInit(() => createPredicateConcept("loves"));
+        const again = clsInit(() => createPredicateConcept("cites"));
         expect(again.created).toBe(false);
         expect(again.note.noteId).toBe(created.note.noteId);
 
-        const kindness = makeNote("Kindness");
-        const connected = clsInit(() => connectPredicateConcept("hates", kindness));
+        const catalog = makeNote("Catalog");
+        const connected = clsInit(() => connectPredicateConcept("links", catalog));
         expect(connected.created).toBe(true);
-        expect(connected.note.noteId).toBe(kindness);
-        expect(connected.note.getOwnedLabelValue("reificationOfPredicate")).toBe("hates");
+        expect(connected.note.noteId).toBe(catalog);
+        expect(connected.note.getOwnedLabelValue("reificationOfPredicate")).toBe("links");
 
         const other = makeNote("Other");
-        const kept = clsInit(() => connectPredicateConcept("hates", other));
-        expect(kept.note.noteId).toBe(kindness);
-        expect(() => clsInit(() => connectPredicateConcept("adores", kindness))).toThrow(ValidationError);
+        const kept = clsInit(() => connectPredicateConcept("links", other));
+        expect(kept.note.noteId).toBe(catalog);
+        expect(() => clsInit(() => connectPredicateConcept("mentions", catalog))).toThrow(ValidationError);
     });
 });

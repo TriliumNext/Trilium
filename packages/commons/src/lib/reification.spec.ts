@@ -20,10 +20,10 @@ describe("buildReificationTitle", () => {
         })).toBe("supports(Note A, Note B)");
 
         expect(buildReificationTitle({
-            subjectTitle: "Prince Charles",
+            subjectTitle: "Alpha",
             predicate: "isChildOf",
-            objectTitle: "Queen Elizabeth II"
-        })).toBe("isChildOf(Prince Charles, Queen Elizabeth II)");
+            objectTitle: "Beta"
+        })).toBe("isChildOf(Alpha, Beta)");
 
         expect(buildReificationTitle({
             subjectTitle: "Climate paper",

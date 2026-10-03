@@ -121,72 +121,72 @@ describe("projectRelationMap", () => {
     });
 
     it("folds A, the relation and B into one circle, then folds that circle again", () => {
-        const people = [
-            { noteId: "john", x: 0, y: 0 },
-            { noteId: "mary", x: 200, y: 0 },
-            { noteId: "mark", x: 0, y: 200 },
-            { noteId: "jealousy", x: 200, y: 200 }
+        const notes = [
+            { noteId: "alpha", x: 0, y: 0 },
+            { noteId: "beta", x: 200, y: 0 },
+            { noteId: "gamma", x: 0, y: 200 },
+            { noteId: "item", x: 200, y: 200 }
         ];
         const edges = [
-            token({ noteId: "loves", kind: "relation", subjectNoteId: "john", objectNoteId: "mary", attributeId: "loves" }),
-            token({ noteId: "has", kind: "relation", subjectNoteId: "mark", objectNoteId: "jealousy", attributeId: "has" }),
-            token({ noteId: "cause", kind: "relation", subjectNoteId: "loves", objectNoteId: "has", attributeId: "cause" })
+            token({ noteId: "cites", kind: "relation", subjectNoteId: "alpha", objectNoteId: "beta", attributeId: "cites" }),
+            token({ noteId: "contains", kind: "relation", subjectNoteId: "gamma", objectNoteId: "item", attributeId: "contains" }),
+            token({ noteId: "cause", kind: "relation", subjectNoteId: "cites", objectNoteId: "contains", attributeId: "cause" })
         ];
         const links = [
-            { attributeId: "loves", sourceNoteId: "john", targetNoteId: "mary" },
-            { attributeId: "has", sourceNoteId: "mark", targetNoteId: "jealousy" },
-            { attributeId: "cause", sourceNoteId: "loves", targetNoteId: "has" }
+            { attributeId: "cites", sourceNoteId: "alpha", targetNoteId: "beta" },
+            { attributeId: "contains", sourceNoteId: "gamma", targetNoteId: "item" },
+            { attributeId: "cause", sourceNoteId: "cites", targetNoteId: "contains" }
         ];
 
-        const open = projectRelationMap(people, edges, links, "john");
-        expect(open.circles.map((note) => note.noteId).sort()).toEqual([ "jealousy", "john", "mark", "mary" ]);
-        expect(open.tokens.map((item) => item.noteId).sort()).toEqual([ "cause", "has", "loves" ]);
+        const open = projectRelationMap(notes, edges, links, "alpha");
+        expect(open.circles.map((note) => note.noteId).sort()).toEqual([ "alpha", "beta", "gamma", "item" ]);
+        expect(open.tokens.map((entry) => entry.noteId).sort()).toEqual([ "cause", "cites", "contains" ]);
 
-        const causeFolded = projectRelationMap(people, edges, links, "john", new Set([ "cause" ]));
+        const causeFolded = projectRelationMap(notes, edges, links, "alpha", new Set([ "cause" ]));
         expect(causeFolded.circles.map((note) => note.noteId)).toEqual([ "cause" ]);
-        expect(causeFolded.represent("john")).toBe("cause");
-        expect(causeFolded.represent("jealousy")).toBe("cause");
+        expect(causeFolded.represent("alpha")).toBe("cause");
+        expect(causeFolded.represent("item")).toBe("cause");
 
-        const lovesFolded = projectRelationMap(people, edges, links, "john", new Set([ "loves" ]));
-        expect(lovesFolded.circles.map((note) => note.noteId).sort()).toEqual([ "jealousy", "loves", "mark" ]);
-        expect(lovesFolded.circles.find((note) => note.noteId === "loves")).toMatchObject({ x: 100, y: 0 });
-        expect(lovesFolded.represent("john")).toBe("loves");
-        expect(lovesFolded.represent("mary")).toBe("loves");
+        const citesFolded = projectRelationMap(notes, edges, links, "alpha", new Set([ "cites" ]));
+        expect(citesFolded.circles.map((note) => note.noteId).sort()).toEqual([ "cites", "gamma", "item" ]);
+        expect(citesFolded.circles.find((note) => note.noteId === "cites")).toMatchObject({ x: 100, y: 0 });
+        expect(citesFolded.represent("alpha")).toBe("cites");
+        expect(citesFolded.represent("beta")).toBe("cites");
 
-        const bothFolded = projectRelationMap(people, edges, links, "john", new Set([ "loves", "has" ]));
-        expect(bothFolded.circles.map((note) => note.noteId).sort()).toEqual([ "has", "loves" ]);
+        const bothFolded = projectRelationMap(notes, edges, links, "alpha", new Set([ "cites", "contains" ]));
+        expect(bothFolded.circles.map((note) => note.noteId).sort()).toEqual([ "cites", "contains" ]);
         expect(bothFolded.represent("cause")).toBe("cause");
 
-        const allFolded = projectRelationMap(people, edges, links, "john", new Set([ "loves", "has", "cause" ]));
+        const allFolded = projectRelationMap(notes, edges, links, "alpha", new Set([ "cites", "contains", "cause" ]));
         expect(allFolded.circles.map((note) => note.noteId)).toEqual([ "cause" ]);
         expect(allFolded.circles[0]).toMatchObject({ x: 100, y: 100 });
         expect(allFolded.tokens).toEqual([]);
-        expect(allFolded.represent("john")).toBe("cause");
-        expect(allFolded.represent("mark")).toBe("cause");
+        expect(allFolded.represent("alpha")).toBe("cause");
+        expect(allFolded.represent("gamma")).toBe("cause");
     });
 
     it("drops the other relations of a folded fact's ends", () => {
-        const people = [
-            { noteId: "john", x: 0, y: 0 },
-            { noteId: "mary", x: 200, y: 0 },
-            { noteId: "mark", x: 400, y: 0 }
+        const notes = [
+            { noteId: "alpha", x: 0, y: 0 },
+            { noteId: "beta", x: 200, y: 0 },
+            { noteId: "gamma", x: 400, y: 0 }
         ];
         const edges = [
-            token({ noteId: "loves", kind: "relation", subjectNoteId: "john", objectNoteId: "mary", attributeId: "loves" })
+            token({ noteId: "cites", kind: "relation", subjectNoteId: "alpha", objectNoteId: "beta", attributeId: "cites" })
         ];
         const links = [
-            { attributeId: "loves", sourceNoteId: "john", targetNoteId: "mary" },
-            { attributeId: "lovesMark", sourceNoteId: "mary", targetNoteId: "mark" }
+            { attributeId: "cites", sourceNoteId: "alpha", targetNoteId: "beta" },
+            { attributeId: "citesGamma", sourceNoteId: "beta", targetNoteId: "gamma" }
         ];
 
-        const folded = projectRelationMap(people, edges, links, "john", new Set([ "loves" ]));
+        const folded = projectRelationMap(notes, edges, links, "alpha", new Set([ "cites" ]));
 
-        expect(folded.circles.map((note) => note.noteId)).toEqual([ "loves" ]);
+        expect(folded.circles.map((note) => note.noteId)).toEqual([ "cites" ]);
         expect(relationSurvivesFold(
             links[1],
             folded.represent,
-            new Set([ "loves" ]),
-            new Set([ "loves" ])
+            new Set([ "cites" ]),
+            new Set([ "cites" ])
         )).toBe(false);
     });
 });

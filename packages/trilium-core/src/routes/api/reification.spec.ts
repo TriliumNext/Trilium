@@ -97,18 +97,18 @@ describe("Reification API (core)", () => {
             direct: true
         });
 
-        const mark = await createTextNote(api, { title: "Mark" });
-        await api.put(`/api/notes/${target.noteId}/relations/loves/to/${mark.noteId}`);
+        const third = await createTextNote(api, { title: "Note E" });
+        await api.put(`/api/notes/${target.noteId}/relations/links/to/${third.noteId}`);
 
-        const jealousy = await createTextNote(api, { title: "Jealousy" });
-        const has = await api.put<{ attributeId: string }>(
-            `/api/notes/${mark.noteId}/relations/has/to/${jealousy.noteId}`
+        const item = await createTextNote(api, { title: "Note F" });
+        const contains = await api.put<{ attributeId: string }>(
+            `/api/notes/${third.noteId}/relations/contains/to/${item.noteId}`
         );
-        const hasFact = await api.post<{ noteId: string }>(
-            `/api/attributes/${has.body.attributeId}/reification`
+        const containsFact = await api.post<{ noteId: string }>(
+            `/api/attributes/${contains.body.attributeId}/reification`
         );
         const caused = await api.put(
-            `/api/notes/${reified.body.noteId}/relations/cause/to/${hasFact.body.noteId}`
+            `/api/notes/${reified.body.noteId}/relations/cause/to/${containsFact.body.noteId}`
         );
         expect(caused.status).toBe(200);
 
@@ -137,8 +137,8 @@ describe("Reification API (core)", () => {
             name: "cause",
             outgoing: true,
             otherFact: expect.objectContaining({
-                linkId: `${mark.noteId}-${jealousy.noteId}`,
-                predicate: "has"
+                linkId: `${third.noteId}-${item.noteId}`,
+                predicate: "contains"
             })
         }));
 
@@ -149,11 +149,11 @@ describe("Reification API (core)", () => {
         expect(factIds).toContain(reified.body.noteId);
         expect(factIds).toContain(outsider.noteId);
         expect(factIds).toContain(critic.noteId);
-        expect(factIds).toContain(hasFact.body.noteId);
+        expect(factIds).toContain(containsFact.body.noteId);
         expect(factIds).not.toContain(source.noteId);
-        expect(factIds).not.toContain(jealousy.noteId);
+        expect(factIds).not.toContain(item.noteId);
         expect(factIds).not.toContain(target.noteId);
-        expect(factIds).not.toContain(mark.noteId);
+        expect(factIds).not.toContain(third.noteId);
 
         const removed = await api.delete(`/api/attributes/${attributeId}/reification`);
         expect(removed.status).toBe(204);
