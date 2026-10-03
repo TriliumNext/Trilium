@@ -3,7 +3,9 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
 import attributeService from "./attributes.js";
+import branchService from "./branches.js";
 import { getContext } from "./context.js";
+import dateNotes from "./date_notes.js";
 import hoistedNoteService from "./hoisted_note.js";
 import noteService from "./notes.js";
 import specialNotes from "./special_notes.js";
@@ -220,6 +222,335 @@ describe("special_notes (core, real DB)", () => {
                     .toBe(false);
             });
         });
+
+        it("does not capture into a journal that belongs to a nested workspace", () => {
+            const { outer, nestedCalendar } = getContext().init(() => {
+                const outer = createPlainNote("root", "outer-workspace-without-journal");
+                outer.setLabel("workspace");
+
+                const inner = createPlainNote(outer.noteId, "inner-workspace");
+                inner.setLabel("workspace");
+
+                const nestedCalendar = createPlainNote(inner.noteId, "inner-journal");
+                nestedCalendar.setLabel("workspaceCalendarRoot");
+                return { outer, nestedCalendar };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", outer.noteId);
+
+                expect(specialNotes.getInboxTarget()).toMatchObject({
+                    kind: "workspaceRoot",
+                    noteId: outer.noteId
+                });
+                const captured = specialNotes.getInboxNote("2026-10-07");
+                expect(captured.noteId).toBe(outer.noteId);
+                expect(captured.hasAncestor(nestedCalendar.noteId)).toBe(false);
+            });
+        });
+
+        it("gives a calendar Trilium creates itself #enableDailyInbox", () => {
+            vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
+            vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(becca.getNoteOrThrow("root"));
+
+            const calendar = getContext().init(() => dateNotes.getRootCalendarNote());
+
+            expect(calendar.hasLabel("calendarRoot")).toBe(true);
+            expect(calendar.hasLabel("sorted")).toBe(true);
+            expect(calendar.hasLabel("enableDailyInbox")).toBe(true);
+        });
+
+        it("captures into the note the day note's ~dailyInbox relation names", () => {
+            const { calendar, template } = getContext().init(() => {
+                const template = createPlainNote("root", "Inbox template");
+                const calendar = createPlainNote("root", "Journal");
+                calendar.setLabel("calendarRoot");
+                calendar.setLabel("enableDailyInbox");
+                calendar.setRelation("dailyInboxTemplate", template.noteId);
+                return { calendar, template };
+            });
+
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? calendar : null);
+
+            const noteCountBefore = Object.keys(becca.notes).length;
+            expect(specialNotes.getInboxTarget()).toEqual({
+                kind: "dailyInbox",
+                noteId: undefined,
+                title: undefined
+            });
+            expect(Object.keys(becca.notes).length).toBe(noteCountBefore);
+
+            const inbox = getContext().init(() => specialNotes.getInboxNote("2026-10-01"));
+            expect(inbox.title).toBe("Inbox");
+            expect(inbox.getOwnedLabelValue("iconClass")).toBe("bx bxs-inbox");
+            expect(inbox.getRelationValue("template")).toBe(template.noteId);
+
+            const day = inbox.getParentNotes()[0];
+            expect(day.getOwnedLabelValue("dateNote")).toBe("2026-10-01");
+            expect(day.getOwnedRelationValue("dailyInbox")).toBe(inbox.noteId);
+            expect(day.hasAncestor(calendar.noteId)).toBe(true);
+
+            const again = getContext().init(() => specialNotes.getInboxNote("2026-10-01"));
+            expect(again.noteId).toBe(inbox.noteId);
+
+            const nextDay = getContext().init(() => specialNotes.getInboxNote("2026-10-02"));
+            expect(nextDay.noteId).not.toBe(inbox.noteId);
+            expect(nextDay.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(nextDay.noteId);
+        });
+
+        it("keeps a moved inbox, and creates another when that note is gone", () => {
+            const calendar = getContext().init(() => {
+                const calendar = createPlainNote("root", "Journal for a moved inbox");
+                calendar.setLabel("calendarRoot");
+                calendar.setLabel("enableDailyInbox");
+                return calendar;
+            });
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? calendar : null);
+
+            const moved = getContext().init(() => {
+                const inbox = specialNotes.getInboxNote("2026-10-06");
+                inbox.title = "Captures";
+                const day = inbox.getParentNotes()[0];
+                const folder = createPlainNote(day.noteId, "Notes");
+                const branch = inbox.getParentBranches()[0];
+                expect(branch).toBeDefined();
+                if (!branch) {
+                    return inbox;
+                }
+                branchService.moveBranchToNote(branch, folder.noteId);
+                return inbox;
+            });
+
+            const still = getContext().init(() => specialNotes.getInboxNote("2026-10-06"));
+            expect(still.noteId).toBe(moved.noteId);
+            expect(still.title).toBe("Captures");
+            expect(still.getParentNotes()[0].title).toBe("Notes");
+
+            getContext().init(() => {
+                moved.deleteNote();
+            });
+
+            const created = getContext().init(() => specialNotes.getInboxNote("2026-10-06"));
+            expect(created.noteId).not.toBe(moved.noteId);
+            expect(created.title).toBe("Inbox");
+            expect(created.getParentNotes()[0].getOwnedLabelValue("dateNote")).toBe("2026-10-06");
+            expect(created.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(created.noteId);
+        });
+
+        it("follows a ~dailyInbox relation the user pointed at some other note", () => {
+            const calendar = getContext().init(() => {
+                const calendar = createPlainNote("root", "Journal for a chosen inbox");
+                calendar.setLabel("calendarRoot");
+                calendar.setLabel("enableDailyInbox");
+                return calendar;
+            });
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? calendar : null);
+
+            const chosen = getContext().init(() => {
+                const day = dateNotes.getDayNote("2026-10-08", calendar);
+                const chosen = createPlainNote("root", "Somewhere else");
+                day.setRelation("dailyInbox", chosen.noteId);
+                return chosen;
+            });
+
+            const found = getContext().init(() => specialNotes.getInboxNote("2026-10-08"));
+            expect(found.noteId).toBe(chosen.noteId);
+            expect(found.getParentNotes()[0].noteId).toBe("root");
+        });
+
+        it("keeps a labelled inbox ahead of the daily inbox", () => {
+            const labelledInbox = becca.getNoteOrThrow("root").getChildNotes()[0];
+            const calendar = becca.getNoteOrThrow("root").getChildNotes()[1];
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) => {
+                if (name === "inbox") {
+                    return labelledInbox;
+                }
+                if (name === "calendarRoot") {
+                    return calendar;
+                }
+                return null;
+            });
+            vi.spyOn(calendar, "hasLabel").mockImplementation((name: string) => name === "enableDailyInbox");
+
+            expect(specialNotes.getInboxTarget()).toMatchObject({
+                kind: "inbox",
+                noteId: labelledInbox.noteId
+            });
+            expect(specialNotes.getInboxNote("2026-10-04").noteId).toBe(labelledInbox.noteId);
+        });
+
+        it("places a hoisted capture in the workspace calendar's daily inbox", () => {
+            const { workspace, calendar } = getContext().init(() => {
+                const workspace = createPlainNote("root", "workspace-for-daily-inbox");
+                workspace.setLabel("workspace");
+
+                const calendar = createPlainNote(workspace.noteId, "workspace-journal-inbox");
+                calendar.setLabel("workspaceCalendarRoot");
+                calendar.setLabel("enableDailyInbox");
+
+                return { workspace, calendar };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", workspace.noteId);
+
+                expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dailyInbox" });
+
+                const inbox = specialNotes.getInboxNote("2026-10-05");
+                expect(inbox.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(inbox.noteId);
+                expect(inbox.getParentNotes()[0].getOwnedLabelValue("dateNote")).toBe("2026-10-05");
+                expect(inbox.hasAncestor(calendar.noteId)).toBe(true);
+            });
+        });
+    });
+
+    describe("findCalendarRoot", () => {
+        it("uses the hoisted workspace journal and ignores a nested one", () => {
+            const { workspace, calendar, nestedCalendar, globalJournal } = getContext().init(() => {
+                const globalJournal = createPlainNote("root", "Global journal with a daily inbox");
+                globalJournal.setLabel("calendarRoot");
+                globalJournal.setLabel("enableDailyInbox");
+
+                const workspace = createPlainNote("root", "Workspace with its own journal");
+                workspace.setLabel("workspace");
+
+                const calendar = createPlainNote(workspace.noteId, "Workspace journal");
+                calendar.setLabel("workspaceCalendarRoot");
+                calendar.setLabel("enableDailyInbox");
+
+                const inner = createPlainNote(workspace.noteId, "Nested workspace");
+                inner.setLabel("workspace");
+
+                const nestedCalendar = createPlainNote(inner.noteId, "Nested journal");
+                nestedCalendar.setLabel("workspaceCalendarRoot");
+                nestedCalendar.setLabel("enableDailyInbox");
+
+                return { workspace, calendar, nestedCalendar, globalJournal };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", workspace.noteId);
+
+                const root = dateNotes.findCalendarRoot();
+                expect(root?.noteId).toBe(calendar.noteId);
+                expect(dateNotes.hasCalendarRoot()).toBe(true);
+                expect(dateNotes.getRootCalendarNote().noteId).toBe(calendar.noteId);
+
+                const inbox = dateNotes.getDailyInboxNote("2026-03-11");
+                expect(inbox.title).toBe("Inbox");
+                expect(inbox.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(inbox.noteId);
+                expect(inbox.hasAncestor(calendar.noteId)).toBe(true);
+                expect(inbox.hasAncestor(globalJournal.noteId)).toBe(false);
+                expect(inbox.hasAncestor(nestedCalendar.noteId)).toBe(false);
+
+                expect(dateNotes.getDailyInboxNote("2026-03-11").noteId).toBe(inbox.noteId);
+            });
+        });
+
+        it("keeps the day note when the hoisted workspace journal has no #enableDailyInbox", () => {
+            const { workspace, calendar, globalJournal } = getContext().init(() => {
+                const globalJournal = createPlainNote("root", "Global journal that would inbox");
+                globalJournal.setLabel("calendarRoot");
+                globalJournal.setLabel("enableDailyInbox");
+
+                const workspace = createPlainNote("root", "Workspace whose journal has no inbox");
+                workspace.setLabel("workspace");
+
+                const calendar = createPlainNote(workspace.noteId, "Workspace journal without inbox");
+                calendar.setLabel("workspaceCalendarRoot");
+
+                return { workspace, calendar, globalJournal };
+            });
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", workspace.noteId);
+
+                expect(dateNotes.findCalendarRoot()?.noteId).toBe(calendar.noteId);
+                expect(specialNotes.getInboxTarget()).toEqual({
+                    kind: "dayNote",
+                    noteId: undefined,
+                    title: undefined
+                });
+
+                const day = dateNotes.getDayNote("2026-03-12");
+                expect(day.getOwnedLabelValue("dateNote")).toBe("2026-03-12");
+                expect(day.getOwnedRelationValue("dailyInbox")).toBeNull();
+                expect(day.hasAncestor(calendar.noteId)).toBe(true);
+                expect(day.hasAncestor(globalJournal.noteId)).toBe(false);
+            });
+        });
+
+        it("falls back to the global journal when the workspace has only a nested one", () => {
+            const { outer, nestedCalendar, globalJournal } = getContext().init(() => {
+                const globalJournal = createPlainNote("root", "Global journal next to a nested one");
+                globalJournal.setLabel("calendarRoot");
+
+                const outer = createPlainNote("root", "Outer workspace without a journal");
+                outer.setLabel("workspace");
+
+                const inner = createPlainNote(outer.noteId, "Inner workspace with a journal");
+                inner.setLabel("workspace");
+
+                const nestedCalendar = createPlainNote(inner.noteId, "Inner journal");
+                nestedCalendar.setLabel("workspaceCalendarRoot");
+                nestedCalendar.setLabel("enableDailyInbox");
+
+                return { outer, nestedCalendar, globalJournal };
+            });
+
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? globalJournal : null);
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", outer.noteId);
+
+                expect(dateNotes.findCalendarRoot()?.noteId).toBe(globalJournal.noteId);
+
+                // Quick capture stays in the workspace. Day notes use the global journal.
+                expect(specialNotes.getInboxTarget()).toEqual({
+                    kind: "workspaceRoot",
+                    noteId: outer.noteId,
+                    title: outer.getTitleOrProtected()
+                });
+
+                const day = dateNotes.getDayNote("2026-03-13");
+                expect(day.getOwnedLabelValue("dateNote")).toBe("2026-03-13");
+                expect(day.hasAncestor(globalJournal.noteId)).toBe(true);
+                expect(day.hasAncestor(nestedCalendar.noteId)).toBe(false);
+            });
+        });
+
+        it("reports no calendar when the hoisted workspace and the database have none", () => {
+            const outer = getContext().init(() => {
+                const outer = createPlainNote("root", "Workspace with no journal at all");
+                outer.setLabel("workspace");
+
+                const inner = createPlainNote(outer.noteId, "Inner workspace");
+                inner.setLabel("workspace");
+                const nested = createPlainNote(inner.noteId, "Journal that must not be adopted");
+                nested.setLabel("workspaceCalendarRoot");
+                return outer;
+            });
+
+            vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
+            const noteCount = Object.keys(becca.notes).length;
+
+            getContext().init(() => {
+                getContext().set("hoistedNoteId", outer.noteId);
+
+                expect(dateNotes.findCalendarRoot()).toBeNull();
+                expect(dateNotes.hasCalendarRoot()).toBe(false);
+                expect(specialNotes.getInboxTarget()).toEqual({
+                    kind: "workspaceRoot",
+                    noteId: outer.noteId,
+                    title: outer.getTitleOrProtected()
+                });
+            });
+            expect(Object.keys(becca.notes).length).toBe(noteCount);
+        });
     });
 
     describe("getInboxTarget", () => {
@@ -272,9 +603,10 @@ describe("special_notes (core, real DB)", () => {
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withNeither as any);
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "workspaceRoot", noteId: withNeither.noteId });
 
-            const withCalendar = makeWorkspaceStub({
-                "#workspaceCalendarRoot": becca.getNoteOrThrow("root").getChildNotes()[0]
-            });
+            const withCalendar = makeWorkspaceStub({});
+            vi.spyOn(dateNotes, "findWorkspaceCalendar").mockReturnValue(
+                becca.getNoteOrThrow("root").getChildNotes()[0]
+            );
             vi.spyOn(hoistedNoteService, "getWorkspaceNote").mockReturnValue(withCalendar as any);
             expect(specialNotes.getInboxTarget()).toMatchObject({ kind: "dayNote" });
         });
@@ -582,6 +914,15 @@ describe("special_notes (core, real DB)", () => {
         });
     });
 });
+
+function createPlainNote(parentNoteId: string, title: string) {
+    return noteService.createNewNote({
+        parentNoteId,
+        title,
+        content: "",
+        type: "text"
+    }).note;
+}
 
 /**
  * Returns a workspace stub backed by a real, non-root note but with a

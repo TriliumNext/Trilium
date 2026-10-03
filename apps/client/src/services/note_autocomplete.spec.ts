@@ -118,7 +118,8 @@ describe("getNoteSuggestions", () => {
 
     it.each([
         { kind: "root", key: "note_autocomplete.create-note-into-root" },
-        { kind: "dayNote", key: "note_autocomplete.create-note-into-day-note" }
+        { kind: "dayNote", key: "note_autocomplete.create-note-into-day-note" },
+        { kind: "dailyInbox", key: "note_autocomplete.create-note-into-daily-inbox" }
     ])("labels the $kind destination without its title", async ({ kind, key }) => {
         getInboxTarget.mockResolvedValueOnce({ kind, noteId: "root", title: "root" });
 

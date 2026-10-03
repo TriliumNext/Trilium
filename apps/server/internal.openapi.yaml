@@ -3165,16 +3165,18 @@ paths:
                 properties:
                   kind:
                     type: string
-                    enum: [inbox, workspaceInbox, workspaceRoot, dayNote, root]
+                    enum: [inbox, workspaceInbox, workspaceRoot, dayNote, dailyInbox, root]
                     description: >
-                      Which rule decided the destination. `dayNote` names no note, because the
-                      day note is created when the capture happens.
+                      Which rule decided the destination. `dayNote` and `dailyInbox` name no note,
+                      because that note is created when the capture happens. `dailyInbox` applies
+                      when the calendar root carries `#enableDailyInbox`. The day note then points
+                      at the Inbox with `~dailyInbox`.
                   noteId:
                     type: string
-                    description: Absent for `dayNote`.
+                    description: Absent for `dayNote` and `dailyInbox`.
                   title:
                     type: string
-                    description: Absent for `dayNote`.
+                    description: Absent for `dayNote` and `dailyInbox`.
 
   /api/special-notes/days/{date}:
     get:

@@ -51,3 +51,5 @@ These relations are supported and used internally by Trilium.
 | `shareHtml` | HTML note which will be injected into the share page at locations specified by the `shareHtmlLocation` label. HTML note must be in the shared sub-tree as well. Consider using `shareHiddenFromTree`. |
 | `shareTemplate` | Embedded JavaScript note that will be used as the template for displaying the shared note. Falls back to the default template. Consider using `shareHiddenFromTree`. |
 | `shareFavicon` | Favicon note to be set in the shared page. Typically you want to set it to share root and make it inheritable. Favicon note must be in the shared sub-tree as well. Consider using `shareHiddenFromTree`. |
+| `dailyInbox` | On a day note, points at that day's Inbox. Captures for the day go into the note it names. Renaming or moving that note leaves the link in place. See <a class="reference-link" href="../Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. |
+| `dailyInboxTemplate` | Set on a calendar root. The note it points at is applied as `~template` to each daily Inbox. See <a class="reference-link" href="../Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. |

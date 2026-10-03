@@ -1,5 +1,6 @@
 import type BNote from "../becca/entities/bnote.js";
 
+import becca from "../becca/becca.js";
 import attributeService from "./attributes.js";
 import cloningService from "./cloning.js";
 import { dayjs, Dayjs, getFirstDayOfWeek1, getWeekInfo, WeekSettings } from "@triliumnext/commons";
@@ -19,6 +20,7 @@ const QUARTER_LABEL = "quarterNote";
 const MONTH_LABEL = "monthNote";
 const WEEK_LABEL = "weekNote";
 const DATE_LABEL = "dateNote";
+const DAILY_INBOX_RELATION = "dailyInbox";
 
 const WEEKDAY_TRANSLATION_IDS = [
     "weekdays.sunday", "weekdays.monday", "weekdays.tuesday",
@@ -154,37 +156,97 @@ function createNote(parentNote: BNote, noteTitle: string) {
 }
 
 function getRootCalendarNote(): BNote {
-    let rootNote;
+    const existing = findCalendarRoot();
+    if (existing) {
+        return existing;
+    }
 
+    let rootNote: BNote | undefined;
+
+    getSql().transactional(() => {
+        const created = noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Calendar",
+            target: "into",
+            isProtected: false,
+            type: "text",
+            content: ""
+        }).note;
+
+        attributeService.createLabel(created.noteId, CALENDAR_ROOT_LABEL);
+        attributeService.createLabel(created.noteId, "sorted");
+        attributeService.createLabel(created.noteId, "enableDailyInbox");
+        rootNote = created;
+    });
+
+    if (!rootNote) {
+        throw new Error("Unable to create a calendar root");
+    }
+
+    return rootNote;
+}
+
+/**
+ * The calendar day notes and capture use, or null when the database has none.
+ * A hoisted workspace's own `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
+ * A journal inside a nested workspace stays with that workspace. This does not create a calendar.
+ */
+function findCalendarRoot(): BNote | null {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
 
-    if (!workspaceNote || !workspaceNote.isRoot()) {
-        rootNote = searchService.findFirstNoteWithQuery(
-            "#workspaceCalendarRoot", new searchContext({ ignoreHoistedNote: false })
-        );
+    if (workspaceNote && !workspaceNote.isRoot()) {
+        const workspaceCalendar = findWorkspaceCalendar(workspaceNote);
+        if (workspaceCalendar) {
+            return workspaceCalendar;
+        }
     }
 
-    if (!rootNote) {
-        rootNote = attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+    return attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+}
+
+/**
+ * The `#workspaceCalendarRoot` that belongs to `workspace`.
+ * A journal of a workspace nested inside it does not.
+ */
+function findWorkspaceCalendar(workspace: BNote): BNote | null {
+    const matches = searchService.searchNotes("#workspaceCalendarRoot", {
+        ancestorNoteId: workspace.noteId
+    });
+
+    for (const match of matches) {
+        if (match && calendarBelongsToWorkspace(match, workspace)) {
+            return match;
+        }
     }
 
-    if (!rootNote) {
-        getSql().transactional(() => {
-            rootNote = noteService.createNewNote({
-                parentNoteId: "root",
-                title: "Calendar",
-                target: "into",
-                isProtected: false,
-                type: "text",
-                content: ""
-            }).note;
+    return null;
+}
 
-            attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
-            attributeService.createLabel(rootNote.noteId, "sorted");
-        });
+/**
+ * Whether `note` sits in `workspace` without an inner `#workspace` on the path.
+ * The workspace note itself counts.
+ */
+function calendarBelongsToWorkspace(note: BNote, workspace: BNote): boolean {
+    const seen = new Set<string>();
+
+    function reaches(current: BNote): boolean {
+        if (current.noteId === workspace.noteId) {
+            return true;
+        }
+        if (seen.has(current.noteId) || current.hasOwnedLabel("workspace")) {
+            return false;
+        }
+        seen.add(current.noteId);
+
+        for (const parent of current.parents) {
+            if (reaches(parent)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    return rootNote as BNote;
+    return reaches(note);
 }
 
 function getYearNote(dateStr: string, _rootNote: BNote | null = null): BNote {
@@ -435,16 +497,70 @@ function getTodayNote(rootNote: BNote | null = null) {
 }
 
 /**
+ * The note a day note's `~dailyInbox` relation names. The first capture into that day
+ * creates an Inbox child and points the relation at it. Later captures follow the relation,
+ * including after that note is renamed or moved. A missing target creates a new Inbox
+ * and points the relation at that one.
+ */
+function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNote {
+    const rootNote = _rootNote || getRootCalendarNote();
+    const dayNote = getDayNote(dateStr, rootNote);
+    const existing = findDailyInbox(dayNote);
+
+    if (existing) {
+        return existing;
+    }
+
+    let inboxNote: BNote | undefined;
+
+    getSql().transactional(() => {
+        const created = createNote(dayNote, t("hidden-subtree.inbox-title"));
+        attributeService.createLabel(created.noteId, "iconClass", "bx bxs-inbox");
+
+        const templateAttr = rootNote.getOwnedAttribute("relation", "dailyInboxTemplate");
+        if (templateAttr) {
+            attributeService.createRelation(created.noteId, "template", templateAttr.value);
+        }
+
+        dayNote.setRelation(DAILY_INBOX_RELATION, created.noteId);
+        inboxNote = created;
+    });
+
+    if (!inboxNote) {
+        throw new Error("Unable to create a daily inbox");
+    }
+
+    return inboxNote;
+}
+
+/** The note `dayNote`'s owned `~dailyInbox` relation names, when that note still exists. */
+function findDailyInbox(dayNote: BNote): BNote | null {
+    const inboxId = dayNote.getOwnedRelationValue(DAILY_INBOX_RELATION);
+    if (!inboxId) {
+        return null;
+    }
+
+    const inbox = becca.getNote(inboxId);
+    if (!inbox || inbox.isDeleted) {
+        return null;
+    }
+
+    return inbox;
+}
+
+/**
  * Whether a journal exists. `getRootCalendarNote()` builds one when it finds none, which is
  * what asking for a day note means; callers that are only capturing a note check this first so
  * that a deleted journal stays deleted.
  */
 function hasCalendarRoot() {
-    return !!attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+    return !!findCalendarRoot();
 }
 
 export default {
     getRootCalendarNote,
+    findCalendarRoot,
+    findWorkspaceCalendar,
     hasCalendarRoot,
     getYearNote,
     getQuarterNote,
@@ -453,5 +569,6 @@ export default {
     getWeekFirstDayNote,
     getDayNote,
     getTodayNote,
+    getDailyInboxNote,
     getJournalNoteTitle
 };

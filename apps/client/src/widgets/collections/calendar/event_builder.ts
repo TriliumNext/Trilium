@@ -75,8 +75,13 @@ export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncInfo
 
 
         if (dateNote.hasChildren()) {
+            // The day's `~dailyInbox` target holds captures, so it is not an event.
+            const dailyInboxId = dateNote.getOwnedRelationValue("dailyInbox");
             const childNoteIds = dateNote.getChildNoteIds();
             for (const childNoteId of childNoteIds) {
+                if (childNoteId === dailyInboxId) {
+                    continue;
+                }
                 childNoteToDateMapping[childNoteId] = startDate;
             }
         }
