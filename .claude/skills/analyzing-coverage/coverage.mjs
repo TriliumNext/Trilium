@@ -8,6 +8,8 @@
 //   summary  — list files below a coverage threshold + aggregate totals
 //   gaps     — print the uncovered line/branch numbers for matched files
 //              (so you know exactly what a new test must exercise)
+//   patch    — the uncovered lines a branch adds or changes (what Codecov's
+//              "patch coverage" counts), one copy-pasteable `path:lines` row each
 //
 // Supported inputs (auto-detected by content):
 //   - lcov.info               (default `lcov` reporter — always present)
@@ -23,6 +25,10 @@
 // Modes:
 //   summary        (default) files below threshold + aggregate
 //   gaps           uncovered line/branch numbers for matched files
+//   patch          uncovered lines among those `git diff <base>...HEAD` adds.
+//                  Accepts several coverage files (e.g. server + standalone
+//                  lcov); a line counts as covered when ANY of them covers it,
+//                  as Codecov merges uploads.
 //
 // Options:
 //   --filter <s>   only files whose normalized path contains <s>.
@@ -31,6 +37,7 @@
 //   --metric M     summary cutoff metric: lines|branches|functions|any
 //                  (default any — flag a file if ANY metric is below threshold).
 //   --top N        limit listed files to the N worst.
+//   --base <ref>   patch: the ref to diff against (default origin/main).
 //   --json         emit machine-readable JSON (for workflows / agents).
 //   -h, --help     this help.
 //
@@ -43,14 +50,19 @@
 //   node coverage.mjs apps/server/test-output/vitest/coverage/lcov.info gaps \
 //        --filter becca/entities/bnote.ts
 //
+//   # Which lines of this branch's diff does no server/standalone test reach?
+//   node coverage.mjs apps/server/test-output/vitest/coverage/lcov.info \
+//        apps/standalone/test-output/vitest/coverage/lcov.info patch
+//
 //   # Client entities/services summary as JSON for a workflow:
 //   node coverage.mjs apps/client/test-output/vitest/coverage/lcov.info \
 //        --filter src/services,src/entities --json
 
-import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 
 function parseArgs(argv) {
-    const opts = { file: null, mode: "summary", filters: [], threshold: 100, metric: "any", top: Infinity, json: false };
+    const opts = { file: null, files: [], base: "origin/main", mode: "summary", filters: [], threshold: 100, metric: "any", top: Infinity, json: false };
     const rest = [];
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
@@ -60,12 +72,16 @@ function parseArgs(argv) {
         else if (a === "--threshold") opts.threshold = Number(argv[++i]);
         else if (a === "--metric") opts.metric = argv[++i];
         else if (a === "--top") opts.top = Number(argv[++i]);
-        else if (a === "summary" || a === "gaps") opts.mode = a;
+        else if (a === "--base") opts.base = argv[++i];
+        else if (a === "summary" || a === "gaps" || a === "patch") opts.mode = a;
         else if (a.startsWith("-")) { console.error(`Unknown flag: ${a}`); process.exit(2); }
         else rest.push(a);
     }
-    // First positional is the coverage file; any extras are extra filters.
+    // First positional is the coverage file; any extras are extra filters, except that further
+    // existing coverage files are collected for patch mode.
     if (rest.length) opts.file = rest.shift();
+    opts.files = [opts.file, ...rest.filter((r) => /\.(info|json)$/.test(r) && existsSync(r))].filter(Boolean);
+    rest.splice(0, rest.length, ...rest.filter((r) => !opts.files.includes(r)));
     opts.filters.push(...rest);
     opts.filters = opts.filters.map((f) => f.split("\\").join("/")).filter(Boolean);
     return opts;
@@ -118,13 +134,15 @@ function parseLcov(text) {
         const sf = block.split("\n").find((l) => l.startsWith("SF:"));
         if (!sf) continue;
         const uncoveredLines = [];
+        const coveredLines = [];
         const uncoveredBranchLines = new Set();
         let lh = 0, lf = 0, fnh = 0, fnf = 0, brh = 0, brf = 0;
         for (const line of block.split("\n")) {
             if (line.startsWith("DA:")) {
                 const [ln, hits] = line.slice(3).split(",");
                 lf++;
-                if (Number(hits) === 0) uncoveredLines.push(Number(ln)); else lh++;
+                if (Number(hits) === 0) uncoveredLines.push(Number(ln));
+                else { coveredLines.push(Number(ln)); lh++; }
             } else if (line.startsWith("BRDA:")) {
                 const [ln, , , taken] = line.slice(5).split(",");
                 if (taken === "0" || taken === "-") uncoveredBranchLines.add(Number(ln));
@@ -141,6 +159,7 @@ function parseLcov(text) {
             branches: { covered: brh, total: brf, pct: pct(brh, brf) },
             functions: { covered: fnh, total: fnf, pct: pct(fnh, fnf) },
             uncoveredLines,
+            coveredLines,
             uncoveredBranchLines: [...uncoveredBranchLines]
         });
     }
@@ -211,6 +230,7 @@ function parseFinal(text) {
             branches: { covered: bCounts.filter((c) => c > 0).length, total: bCounts.length, pct: pct(bCounts.filter((c) => c > 0).length, bCounts.length) },
             functions: { covered: fIds.filter((c) => c > 0).length, total: fIds.length, pct: pct(fIds.filter((c) => c > 0).length, fIds.length) },
             uncoveredLines: [...uncovered],
+            coveredLines: [...lineHit].filter(([, c]) => c > 0).map(([l]) => l),
             uncoveredBranchLines: [...uncoveredBranchLines]
         });
     }
@@ -295,20 +315,86 @@ function runGaps(records, opts, fmt) {
     }
 }
 
+// Lines each file gains in `git diff <base>...HEAD`, keyed by repo-relative path.
+function addedLinesSince(base) {
+    let diff;
+    try {
+        diff = execFileSync("git", ["diff", "--unified=0", "--no-color", "--no-renames", `${base}...HEAD`], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+    } catch (e) {
+        console.error(`git diff ${base}...HEAD failed — fetch the base first (git fetch origin main) or pass --base <ref>.`);
+        process.exit(2);
+    }
+    const added = new Map();
+    let current = null;
+    for (const line of diff.split("\n")) {
+        if (line.startsWith("+++ ")) {
+            current = line === "+++ /dev/null" ? null : line.slice(6);
+            if (current && !added.has(current)) added.set(current, new Set());
+            continue;
+        }
+        const hunk = current && line.match(/^@@ -\S+ \+(\d+)(?:,(\d+))? @@/);
+        if (!hunk) continue;
+        const start = Number(hunk[1]);
+        const count = hunk[2] === undefined ? 1 : Number(hunk[2]);
+        for (let l = start; l < start + count; l++) added.get(current).add(l);
+    }
+    return added;
+}
+
+function runPatch(recordSets, opts) {
+    if (recordSets.some(({ fmt }) => fmt === "summary")) {
+        console.error("patch mode needs per-line detail, but coverage-summary.json has none.");
+        process.exit(2);
+    }
+    // A line is uncovered when some file reports it and none covers it.
+    const uncovered = new Map();
+    const covered = new Map();
+    for (const { records } of recordSets) {
+        for (const r of applyFilter(records, opts.filters)) {
+            if (!uncovered.has(r.path)) { uncovered.set(r.path, new Set()); covered.set(r.path, new Set()); }
+            for (const l of r.uncoveredLines) uncovered.get(r.path).add(l);
+            for (const l of r.coveredLines) covered.get(r.path).add(l);
+        }
+    }
+    const rows = [];
+    let totalAdded = 0;
+    let totalMissed = 0;
+    for (const [path, added] of addedLinesSince(opts.base)) {
+        if (!uncovered.has(path)) continue;
+        const executable = [...added].filter((l) => uncovered.get(path).has(l) || covered.get(path).has(l));
+        const missed = executable.filter((l) => !covered.get(path).has(l));
+        totalAdded += executable.length;
+        totalMissed += missed.length;
+        if (missed.length) rows.push({ path, executable: executable.length, missed: missed.length, lines: compressRanges(missed) });
+    }
+    if (opts.json) {
+        console.log(JSON.stringify({ base: opts.base, executableLines: totalAdded, uncoveredLines: totalMissed, patch: pct(totalAdded - totalMissed, totalAdded), files: rows }, null, 2));
+        return;
+    }
+    console.log(`Patch coverage vs ${opts.base}: ${pct(totalAdded - totalMissed, totalAdded)}% (${totalAdded - totalMissed}/${totalAdded} executable lines)`);
+    if (!rows.length) { console.log("  ✅ every executable line in the diff is covered"); return; }
+    console.log("Uncovered lines in the diff:");
+    for (const r of rows) console.log(`${r.path}:${r.lines.join(",")}`);
+}
+
 function main() {
     const opts = parseArgs(process.argv.slice(2));
     if (opts.help || !opts.file) {
         console.log(readFileSync(new URL(import.meta.url)).toString().split("\n").filter((l) => l.startsWith("//")).map((l) => l.slice(3)).join("\n"));
         process.exit(opts.help ? 0 : 2);
     }
-    let loaded;
-    try {
-        loaded = loadRecords(opts.file);
-    } catch (e) {
-        console.error(`Failed to read/parse ${opts.file}: ${e.message}`);
-        process.exit(1);
+    const recordSets = [];
+    for (const file of opts.files) {
+        try {
+            recordSets.push(loadRecords(file));
+        } catch (e) {
+            console.error(`Failed to read/parse ${file}: ${e.message}`);
+            process.exit(1);
+        }
     }
-    if (opts.mode === "gaps") runGaps(loaded.records, opts, loaded.fmt);
+    const loaded = recordSets[0];
+    if (opts.mode === "patch") runPatch(recordSets, opts);
+    else if (opts.mode === "gaps") runGaps(loaded.records, opts, loaded.fmt);
     else runSummary(loaded.records, opts, loaded.fmt);
 }
 

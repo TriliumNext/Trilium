@@ -13,7 +13,7 @@ There is **one** coverage analyzer — `coverage.mjs` in this skill folder. Don'
 > than running `pnpm coverage`. Generating repo-wide coverage is an explicit-request activity.
 
 ```
-node .claude/skills/analyzing-coverage/coverage.mjs <coverage-file> [summary|gaps] [options]
+node .claude/skills/analyzing-coverage/coverage.mjs <coverage-file>... [summary|gaps|patch] [options]
 ```
 
 It **auto-detects** the format, so point it at whatever Vitest produced:
@@ -21,7 +21,7 @@ It **auto-detects** the format, so point it at whatever Vitest produced:
 - `coverage-summary.json` — from `--coverage.reporter=json-summary`. **summary only** (no per-line detail).
 - `coverage-final.json` — from `--coverage.reporter=json`. Supports both modes.
 
-## Two modes
+## Three modes
 
 **summary** (default) — list files below a threshold, worst-first, plus aggregate totals over the matched set. This is the "where's the coverage debt?" view.
 
@@ -43,6 +43,19 @@ node .claude/skills/analyzing-coverage/coverage.mjs \
 #   uncovered lines:        163, 240-257, 266-267, ...
 #   uncovered branch lines: 245, 249, ...
 ```
+
+**patch** — the uncovered lines among those the current branch adds (`git diff <base>...HEAD`, base `origin/main` unless `--base <ref>`), one `path:lines` row per file. This is Codecov's "patch coverage" number with the line numbers its PR comment leaves out, so a red patch check can be pasted straight into a prompt. Pass several coverage files to merge them the way Codecov merges uploads — a line counts as covered when any suite covers it:
+
+```bash
+node .claude/skills/analyzing-coverage/coverage.mjs \
+    apps/server/test-output/vitest/coverage/lcov.info \
+    apps/standalone/test-output/vitest/coverage/lcov.info patch
+# Patch coverage vs origin/main: 63.64% (7/11 executable lines)
+# Uncovered lines in the diff:
+# packages/trilium-core/src/services/notes.ts:61,65,67-69
+```
+
+Lines no suite instruments (types, comments, files outside the lcov) don't count, as in Codecov. Fetch the base first in a shallow clone (`git fetch origin main`).
 
 `--filter` takes a path substring; repeat it or comma-separate to match any (`--filter src/services,src/entities`). `--json` on either mode emits machine-readable output for workflows.
 
