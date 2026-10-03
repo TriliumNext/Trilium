@@ -17,7 +17,7 @@ So far workspace consists of these features:
 | `workspace` | Marks this note as a workspace, button to enter the workspace is controlled by this |
 | `workspaceIconClass` | defines box icon CSS class which will be used in tab when hoisted to this note |
 | `workspaceTabBackgroundColor` | CSS color used in the note tab when hoisted to this note, use any CSS color format, e.g. "lightblue" or "#ddd". See [https://www.w3schools.com/cssref/css\_colors.asp](https://www.w3schools.com/cssref/css_colors.asp). |
-| `workspaceCalendarRoot` | Marking a note with this label will define a new per-workspace calendar for <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. If there's no such note, the global calendar will be used. |
+| `workspaceCalendarRoot` | Marking a note with this label will define a new per-workspace calendar for <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a>. The note has to sit in that workspace, not inside a workspace nested in it. If there's no such note, the global calendar will be used. |
 | `workspaceTemplate` | This note will appear in the selection of available template when creating new note, but only when hoisted into a workspace containing this template |
 | `workspaceSearchHome` | new search notes will be created as children of this note when hoisted to some ancestor of this workspace note |
 | `workspaceInbox` | Default inbox location for new notes when hoisted to some ancestor of this workspace note. See <a class="reference-link" href="../Notes/Note%20Inbox.md">Note Inbox</a> for more information. |

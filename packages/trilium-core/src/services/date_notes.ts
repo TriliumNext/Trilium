@@ -19,6 +19,7 @@ const QUARTER_LABEL = "quarterNote";
 const MONTH_LABEL = "monthNote";
 const WEEK_LABEL = "weekNote";
 const DATE_LABEL = "dateNote";
+const DAILY_INBOX_LABEL = "dailyInbox";
 
 const WEEKDAY_TRANSLATION_IDS = [
     "weekdays.sunday", "weekdays.monday", "weekdays.tuesday",
@@ -154,37 +155,89 @@ function createNote(parentNote: BNote, noteTitle: string) {
 }
 
 function getRootCalendarNote(): BNote {
+    const existing = findCalendarRoot();
+    if (existing) {
+        return existing;
+    }
+
     let rootNote;
 
-    const workspaceNote = hoistedNoteService.getWorkspaceNote();
+    getSql().transactional(() => {
+        rootNote = noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Calendar",
+            target: "into",
+            isProtected: false,
+            type: "text",
+            content: ""
+        }).note;
 
-    if (!workspaceNote || !workspaceNote.isRoot()) {
-        rootNote = searchService.findFirstNoteWithQuery(
-            "#workspaceCalendarRoot", new searchContext({ ignoreHoistedNote: false })
-        );
-    }
-
-    if (!rootNote) {
-        rootNote = attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
-    }
-
-    if (!rootNote) {
-        getSql().transactional(() => {
-            rootNote = noteService.createNewNote({
-                parentNoteId: "root",
-                title: "Calendar",
-                target: "into",
-                isProtected: false,
-                type: "text",
-                content: ""
-            }).note;
-
-            attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
-            attributeService.createLabel(rootNote.noteId, "sorted");
-        });
-    }
+        attributeService.createLabel(rootNote.noteId, CALENDAR_ROOT_LABEL);
+        attributeService.createLabel(rootNote.noteId, "sorted");
+        attributeService.createLabel(rootNote.noteId, "enableDailyInbox");
+    });
 
     return rootNote as BNote;
+}
+
+/**
+ * The calendar `getRootCalendarNote()` would use, or null when the database has none.
+ * A hoisted workspace's own `#workspaceCalendarRoot` wins over the global `#calendarRoot`.
+ * A journal inside a nested workspace stays with that workspace. This does not create a calendar.
+ */
+function findCalendarRoot(): BNote | null {
+    const workspaceNote = hoistedNoteService.getWorkspaceNote();
+
+    if (workspaceNote && !workspaceNote.isRoot()) {
+        const workspaceCalendar = findWorkspaceCalendar(workspaceNote);
+        if (workspaceCalendar) {
+            return workspaceCalendar;
+        }
+    }
+
+    return attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+}
+
+/** The `#workspaceCalendarRoot` that belongs to `workspace`, ignoring journals of workspaces inside it. */
+function findWorkspaceCalendar(workspace: BNote): BNote | null {
+    const matches = searchService.searchNotes("#workspaceCalendarRoot", {
+        ancestorNoteId: workspace.noteId
+    });
+
+    for (const match of matches) {
+        if (match && calendarBelongsToWorkspace(match, workspace)) {
+            return match;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Whether `note` sits in `workspace` without crossing into another workspace on the way.
+ * The workspace note itself counts. A note reached only through an inner `#workspace` does not.
+ */
+function calendarBelongsToWorkspace(note: BNote, workspace: BNote): boolean {
+    const seen = new Set<string>();
+
+    function reaches(current: BNote): boolean {
+        if (current.noteId === workspace.noteId) {
+            return true;
+        }
+        if (seen.has(current.noteId) || current.hasOwnedLabel("workspace")) {
+            return false;
+        }
+        seen.add(current.noteId);
+
+        for (const parent of current.parents) {
+            if (reaches(parent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return reaches(note);
 }
 
 function getYearNote(dateStr: string, _rootNote: BNote | null = null): BNote {
@@ -435,16 +488,52 @@ function getTodayNote(rootNote: BNote | null = null) {
 }
 
 /**
+ * The Inbox child of a day note. The first capture into that day creates it when the calendar
+ * root has `#enableDailyInbox`; later captures that day reuse the direct child. An Inbox moved
+ * deeper under the day stays where it was, and the next capture creates a new one.
+ */
+function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNote {
+    const rootNote = _rootNote || getRootCalendarNote();
+    const dayNote = getDayNote(dateStr, rootNote);
+    const date = dateStr.trim().substring(0, 10);
+
+    let inboxNote = searchService.findFirstNoteWithQuery(
+        `#${DAILY_INBOX_LABEL}="${date}"`,
+        new searchContext({ ancestorNoteId: dayNote.noteId, ancestorDepth: "eq1" })
+    );
+
+    if (inboxNote) {
+        return inboxNote;
+    }
+
+    getSql().transactional(() => {
+        inboxNote = createNote(dayNote, t("hidden-subtree.inbox-title"));
+
+        attributeService.createLabel(inboxNote.noteId, DAILY_INBOX_LABEL, date);
+        attributeService.createLabel(inboxNote.noteId, "iconClass", "bx bxs-inbox");
+
+        const templateAttr = rootNote.getOwnedAttribute("relation", "dailyInboxTemplate");
+        if (templateAttr) {
+            attributeService.createRelation(inboxNote.noteId, "template", templateAttr.value);
+        }
+    });
+
+    return inboxNote as unknown as BNote;
+}
+
+/**
  * Whether a journal exists. `getRootCalendarNote()` builds one when it finds none, which is
  * what asking for a day note means; callers that are only capturing a note check this first so
  * that a deleted journal stays deleted.
  */
 function hasCalendarRoot() {
-    return !!attributeService.getNoteWithLabel(CALENDAR_ROOT_LABEL);
+    return !!findCalendarRoot();
 }
 
 export default {
     getRootCalendarNote,
+    findCalendarRoot,
+    findWorkspaceCalendar,
     hasCalendarRoot,
     getYearNote,
     getQuarterNote,
@@ -453,5 +542,6 @@ export default {
     getWeekFirstDayNote,
     getDayNote,
     getTodayNote,
+    getDailyInboxNote,
     getJournalNoteTitle
 };

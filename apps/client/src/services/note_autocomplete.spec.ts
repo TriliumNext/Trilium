@@ -322,6 +322,18 @@ describe("autocompleteSource (via dataset)", () => {
         expect(translate).toHaveBeenCalledWith("note_autocomplete.create-note-into-day-note", { term: "New" });
     });
 
+    it("names today's inbox when the calendar keeps captures out of the day note", async () => {
+        getInboxTarget.mockResolvedValueOnce({ kind: "dailyInbox" });
+        server.get = vi.fn(async () => []) as typeof server.get;
+        const { dataset } = initAndGetSource({ allowCreatingNotes: true });
+        const rows = await runSource(dataset, "New");
+        expect(rows[0].highlightedNotePathTitle).toBe("note_autocomplete.create-note-into-daily-inbox");
+        expect(translate).toHaveBeenCalledWith(
+            "note_autocomplete.create-note-into-daily-inbox",
+            { term: "New" }
+        );
+    });
+
     it.each([
         { when: "the lookup fails", arrange: () => getInboxTarget.mockRejectedValueOnce(new Error("nope")) },
         { when: "the destination has no title", arrange: () => getInboxTarget.mockResolvedValueOnce({ kind: "inbox" }) }

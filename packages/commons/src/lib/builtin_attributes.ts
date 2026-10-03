@@ -122,8 +122,10 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "quarterPattern", valueType: "text" },
     { type: "label", name: "yearPattern", valueType: "text" },
     { type: "label", name: "enableQuarterNote", valueType: "boolean" },
+    { type: "label", name: "enableDailyInbox", valueType: "boolean" },
     // Stamped onto each generated journal note, holding the period it stands for.
     { type: "label", name: "dateNote", valueType: "date", hasUserValue: true },
+    { type: "label", name: "dailyInbox", valueType: "date", hasUserValue: true },
     { type: "label", name: "weekNote", valueType: "text", hasUserValue: true },
     { type: "label", name: "monthNote", valueType: "text", hasUserValue: true },
     { type: "label", name: "quarterNote", valueType: "text", hasUserValue: true },
@@ -360,6 +362,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "inherit" },
     // Set on a journal root, to be applied as `~template` on each note the period generates.
     { type: "relation", name: "dateTemplate" },
+    { type: "relation", name: "dailyInboxTemplate" },
     { type: "relation", name: "weekTemplate" },
     { type: "relation", name: "monthTemplate" },
     { type: "relation", name: "quarterTemplate" },

@@ -813,10 +813,11 @@ export type SimilarNoteResponse = SimilarNote[];
 export type SaveSearchNoteResponse = CloneResponse;
 
 /**
- * Which rule decided where a quickly captured note goes. `dayNote` carries no note ID, because
- * the day note is created at capture time.
+ * Which rule decided where a quickly captured note goes. `dayNote` and `dailyInbox` carry no
+ * note ID, because that note is created at capture time.
  */
-export type InboxTargetKind = "inbox" | "workspaceInbox" | "workspaceRoot" | "dayNote" | "root";
+export type InboxTargetKind =
+    "inbox" | "workspaceInbox" | "workspaceRoot" | "dayNote" | "dailyInbox" | "root";
 
 /** Where `POST /api/notes/:id/children` would put a note captured into the inbox. */
 export interface InboxTargetResponse {

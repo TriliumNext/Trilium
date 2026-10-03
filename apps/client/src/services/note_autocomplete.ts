@@ -104,6 +104,10 @@ function buildCreateNoteTitle(term: string, target: InboxTargetResponse | null) 
         return t("note_autocomplete.create-note-into-day-note", { term: escapeHtml(term) });
     }
 
+    if (target.kind === "dailyInbox") {
+        return t("note_autocomplete.create-note-into-daily-inbox", { term: escapeHtml(term) });
+    }
+
     // The root note's own title names nothing the user recognises in the tree.
     if (target.kind === "root") {
         return t("note_autocomplete.create-note-into-root", { term: escapeHtml(term) });

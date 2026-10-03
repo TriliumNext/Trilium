@@ -521,8 +521,10 @@ class="table">
   <li>Clicking on the empty space on a date will automatically open that day's
     note or create it if it does not exist.</li>
   <li>Direct children of a day note will be displayed on the calendar despite
-    not having a <code>dateNote</code> attribute. Children of the child notes
-    will not be displayed.</li>
+    not having a <code>dateNote</code> attribute. A child that carries its own <code>#dailyInbox</code> label
+    is left off the grid, and so are the captured notes inside it. A child
+    that only inherits that label stays on the grid. Other children of the
+    child notes will not be displayed.</li>
 </ul>
 <img src="5_Calendar_image.png" width="1217" height="724">
 <h3>Using a different attribute as event title</h3>

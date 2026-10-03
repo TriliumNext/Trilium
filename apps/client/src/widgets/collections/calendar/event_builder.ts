@@ -86,6 +86,11 @@ export async function buildEventsForCalendar(note: FNote, e: EventSourceFuncInfo
     const childNoteIds = Object.keys(childNoteToDateMapping);
     const childNotes = await froca.getNotes(childNoteIds);
     for (const childNote of childNotes) {
+        // The inbox owns `#dailyInbox`. A child that only inherits the label is still an event.
+        if (childNote.hasOwnedLabel("dailyInbox")) {
+            continue;
+        }
+
         const startDate = childNoteToDateMapping[childNote.noteId];
         const event = await buildEvent(childNote, { startDate });
         events.push(event);
