@@ -36,6 +36,9 @@ export interface DefinitionObject {
  * so a definition written by a newer version degrades to its recognized parts instead of being
  * lost.
  *
+ * The alias and the select options are stored escaped, see {@link encodeAlias} and
+ * {@link encodeOption}, and are decoded here.
+ *
  * @param value the raw attribute value of a `label:`/`relation:` definition attribute.
  */
 function parse(value: string): DefinitionObject {
@@ -60,7 +63,8 @@ function parse(value: string): DefinitionObject {
                 .filter((option) => option !== "")
                 .map(decodeOption);
         } else if (token.startsWith("alias")) {
-            defObj.promotedAlias = parameterValue(token);
+            const alias = parameterValue(token);
+            defObj.promotedAlias = alias === undefined ? undefined : decodeAlias(alias);
         } else if (token.startsWith("inverse")) {
             // An inverse relation is a relation name, so the same characters are dropped as when
             // one is written by `serialize`. Definitions reaching us from an import, ETAPI or a
@@ -81,6 +85,9 @@ function parse(value: string): DefinitionObject {
  * The multiplicity and the label type are always written out, falling back to the defaults their
  * consumers assume (`single` and `text`) rather than to the empty token {@link parse} would reject.
  *
+ * The alias and the select options are free text, so they are escaped to keep the token separator
+ * out of the stored value, see {@link encodeAlias} and {@link encodeOption}.
+ *
  * @param definition the definition to serialize.
  * @param valueType whether the definition describes a label or a relation, which decides between
  *                  writing a label type and writing an inverse relation.
@@ -95,7 +102,7 @@ function serialize(definition: DefinitionObject, valueType: "label" | "relation"
     // Not only the promoted field's label: the table view titles its columns with it and the attribute
     // list names its values by it, neither of which asks whether the attribute is promoted.
     if (definition.promotedAlias) {
-        props.push(`alias=${definition.promotedAlias}`);
+        props.push(`alias=${encodeAlias(definition.promotedAlias)}`);
     }
 
     props.push(definition.multiplicity ?? "single");
@@ -164,6 +171,21 @@ function encodeOption(option: string): string {
 /** The exact inverse of {@link encodeOption}: `%25` last, so a decoded `%` cannot start a triplet. */
 function decodeOption(option: string): string {
     return option.replace(/%2C/gi, ",").replace(/%3B/gi, ";").replace(/%25/gi, "%");
+}
+
+/**
+ * Escapes an alias for storage inside the `alias=` token, where a raw `,` would be cut by the
+ * definition tokenizer. Uses the same substitution as {@link encodeOption}, which explains the
+ * choice; `;` separates nothing in an alias, so it is stored verbatim.
+ */
+function encodeAlias(alias: string): string {
+    // `%` first, so the escape written below is not re-escaped.
+    return alias.replace(/%/g, "%25").replace(/,/g, "%2C");
+}
+
+/** The inverse of {@link encodeAlias}: `%25` last, so a decoded `%` cannot start a triplet. */
+function decodeAlias(alias: string): string {
+    return alias.replace(/%2C/gi, ",").replace(/%25/gi, "%");
 }
 
 function isLabelType(token: string): token is LabelType {
