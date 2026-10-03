@@ -1302,7 +1302,8 @@
     "open_all_in_tabs_tooltip": "Open all results in new tabs",
     "open_all_confirm_one": "This will open {{count}} note in new tabs. Continue?",
     "open_all_confirm_other": "This will open {{count}} notes in new tabs. Continue?",
-    "open_all_limit_exceeded": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
+    "open_all_limit_exceeded": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first.",
+    "timeline": "Timeline"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -4526,5 +4527,13 @@
   },
   "split_button": {
     "more_actions": "More actions"
+  },
+  "timeline": {
+    "previous": "Previous",
+    "next": "Next",
+    "title_column": "Note",
+    "add_note": "Add a note",
+    "add_child_note": "Add a child note",
+    "new_row": "New note"
   }
 }

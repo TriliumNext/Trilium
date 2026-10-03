@@ -7606,6 +7606,40 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "V46sRfVSIuwP",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "GTwFsgaA0lCt",
+                                "V46sRfVSIuwP"
+                            ],
+                            "title": "Timeline",
+                            "notePosition": 20,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "timeline",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-time-five",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Timeline.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "2FvYrpmOXm29",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -7613,7 +7647,7 @@
                                 "2FvYrpmOXm29"
                             ],
                             "title": "Table",
-                            "notePosition": 20,
+                            "notePosition": 30,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7656,7 +7690,7 @@
                                 "CtBQqbwXDx1w"
                             ],
                             "title": "Kanban Board",
-                            "notePosition": 30,
+                            "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7690,7 +7724,7 @@
                                 "81SGnPGMk7Xc"
                             ],
                             "title": "Geo Map",
-                            "notePosition": 40,
+                            "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7802,7 +7836,7 @@
                                 "zP3PMqaG71Ct"
                             ],
                             "title": "Presentation",
-                            "notePosition": 90,
+                            "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7853,7 +7887,7 @@
                                 "8QqnMzx393bx"
                             ],
                             "title": "Grid View",
-                            "notePosition": 100,
+                            "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7896,7 +7930,7 @@
                                 "mULW0Q3VojwY"
                             ],
                             "title": "List View",
-                            "notePosition": 110,
+                            "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7939,7 +7973,7 @@
                                 "CssoWBu8I7jF"
                             ],
                             "title": "Collection Properties",
-                            "notePosition": 120,
+                            "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -7982,7 +8016,7 @@
                                 "IF7Q6I9x7zuw"
                             ],
                             "title": "Dashboard",
-                            "notePosition": 130,
+                            "notePosition": 140,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",

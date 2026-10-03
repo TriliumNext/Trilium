@@ -486,7 +486,8 @@
     "presentation_slide_first": "First slide",
     "presentation_slide_second": "Second slide",
     "background": "Background",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "timeline": "Timeline"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",

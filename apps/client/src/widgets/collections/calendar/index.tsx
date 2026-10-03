@@ -532,7 +532,7 @@ function usePlugins(isEditable: boolean, isCalendarRoot: boolean) {
     return plugins;
 }
 
-function useLocale() {
+export function useLocale() {
     const [ locale ] = useTriliumOption("locale");
     const [ formattingLocale ] = useTriliumOption("formattingLocale");
     const [ calendarLocale, setCalendarLocale ] = useState<LocaleInput>();
@@ -778,7 +778,7 @@ export function eventInnerClass(e: EventDisplayInfo) {
         && "calendar-event-inner-wrapped");
 }
 
-function useOnDatesSet(calendarRef: RefObject<FullCalendar>) {
+export function useOnDatesSet(calendarRef: RefObject<FullCalendar>) {
     const [ title, setTitle ] = useState<string>();
     const [ viewType ,setViewType ] = useState<string>();
     useEffect(() => {

@@ -92,6 +92,7 @@
             "description": "Group FullCalendar packages because mixed core versions make plugins incompatible.",
             "matchPackageNames": [
                 "fullcalendar",
+                "fullcalendar-scheduler",
                 "@fullcalendar/**",
                 "@full-ui/**"
             ],

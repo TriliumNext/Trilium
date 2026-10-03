@@ -3,7 +3,7 @@ import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import FNote from "../../entities/fnote";
 import type { PrintReport } from "../../print";
 
-export const allViewTypes = ["list", "grid", "calendar", "table", "geoMap", "board", "presentation", "dashboard"] as const;
+export const allViewTypes = ["list", "grid", "calendar", "timeline", "table", "geoMap", "board", "presentation", "dashboard"] as const;
 export type ViewTypeOptions = typeof allViewTypes[number];
 
 export type ViewModeMedia = "screen" | "print";
