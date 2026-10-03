@@ -14,8 +14,13 @@ import {
     reifyAttribute,
     retarget
 } from "./reification.js";
+import protectedSessionService from "./protected_session.js";
 import specialNotesService from "./special_notes.js";
+import { getSql } from "./sql/index.js";
+import { encodeUtf8 } from "./utils/binary.js";
 import dateUtils from "./utils/date.js";
+
+const PROTECTED_KEY = encodeUtf8("0123456789abcdef");
 
 function inboxNoteId(): string {
     return clsInit(() => specialNotesService.getInboxNote(dateUtils.localNowDate()).noteId);
@@ -154,6 +159,78 @@ describe("reification", () => {
         ]);
         expect(listed[0]).toMatchObject({ noteId: lovesNote.noteId, direct: true });
         expect(listed[1]).toMatchObject({ noteId: causeNote.noteId, direct: false });
+    });
+
+    it("protects a reification of a protected note and does not copy the label value", () => {
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        try {
+            const sourceId = clsInit(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Secret source",
+                content: "",
+                type: "text",
+                isProtected: true
+            }).note.noteId);
+            const label = clsInit(() => attributeService.createLabel(sourceId, "confidence", "hidden-value"));
+            const { note } = clsInit(() => reifyAttribute(label.attributeId));
+
+            expect(note.isProtected).toBe(true);
+            expect(note.getOwnedLabel("reificationLiteral")).toBeNull();
+            const marker = note.getOwnedLabelValue("reificationGeneratedTitle");
+            expect(marker).toBeTruthy();
+            expect(marker).not.toContain("hidden-value");
+            expect(marker).not.toContain("Secret source");
+
+            const row = getSql().getRow<{ title: string | null; isProtected: number }>(
+                "SELECT title, isProtected FROM notes WHERE noteId = ?",
+                [ note.noteId ]
+            );
+            expect(row.isProtected).toBeTruthy();
+            expect(row.title ?? "").not.toContain("hidden-value");
+            expect(row.title ?? "").not.toContain("Secret source");
+
+            const plainId = makeNote("Plain");
+            const hiddenId = clsInit(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Hidden target",
+                content: "",
+                type: "text",
+                isProtected: true
+            }).note.noteId);
+            const relation = clsInit(() => attributeService.createRelation(plainId, "knows", hiddenId));
+            const token = clsInit(() => reifyAttribute(relation.attributeId)).note;
+            expect(token.isProtected).toBe(true);
+            const relationRow = getSql().getRow<{ title: string | null }>(
+                "SELECT title FROM notes WHERE noteId = ?",
+                [ token.noteId ]
+            );
+            expect(relationRow.title ?? "").not.toContain("Hidden target");
+
+            protectedSessionService.resetDataKey();
+            expect(becca.getNote(note.noteId)?.getTitleOrProtected()).toBe("[protected]");
+            expect(() => clsInit(() => reifyAttribute(label.attributeId))).not.toThrow();
+            expect(becca.getNote(note.noteId)?.getOwnedLabel("reificationLiteral")).toBeNull();
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
+    });
+
+    it("refuses to reify a protected note without a protected session", () => {
+        protectedSessionService.setDataKey(PROTECTED_KEY);
+        try {
+            const sourceId = clsInit(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Secret source",
+                content: "",
+                type: "text",
+                isProtected: true
+            }).note.noteId);
+            const label = clsInit(() => attributeService.createLabel(sourceId, "confidence", "hidden-value"));
+            protectedSessionService.resetDataKey();
+            expect(() => clsInit(() => reifyAttribute(label.attributeId))).toThrow(ValidationError);
+        } finally {
+            protectedSessionService.resetDataKey();
+        }
     });
 
     it("makes the relation name its own concept, apart from one instance of it", () => {

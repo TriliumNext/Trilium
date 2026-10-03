@@ -59,7 +59,9 @@
   an extra token for it, created only when you ask.</p>
 <p>That note can carry its own attributes — a confidence, a quote, a counter-argument
   — and other relations can point at it. A label can be reified the same
-  way. The note is created in the inbox.</p>
+  way. The note is created in the inbox. A reification of a protected note
+  is protected as well: its title is encrypted with that note, and a label
+  value is not copied onto it.</p>
 <p>The title is the relation written as <code>R(A, B)</code>: <code>isChildOf(Prince Charles, Queen Elizabeth II)</code>.
   A label with a value takes the same shape (<code>confidence(Climate paper, 0.8)</code>);
   a label with no value has one argument (<code>reviewed(Climate paper)</code>).
@@ -72,12 +74,13 @@
   it. Otherwise <em>Connect loves to a note</em> points the name at a note
   you pick, or at one you create there, the same way <code>@</code> does. There
   is one concept per relation name.</p>
-<p>In the attributes list, hover a row and press the turn-into-note button.
-  On a <a class="reference-link" href="#root/_help_iRwzGnHPzonm">relation map</a>,
-  click a relation. The two notes and the arrow become one circle, and clicking
-  a relation of that circle folds it again. Right-click the circle. <em>Expand</em> puts
-  the two notes back, and <em>Remove reification</em> removes the note for
-  that relation. The relation stays. Click the circle and choose <em>Go to this relation</em> to
+<p>In the attributes list, hover a row the note owns and press the turn-into-note
+  button. An inherited row does not offer it. On a <a class="reference-link"
+  href="#root/_help_iRwzGnHPzonm">relation map</a>, click a relation. The
+  two notes and the arrow become one circle, and clicking a relation of that
+  circle folds it again. Right-click the circle. <em>Expand</em> puts the two
+  notes back, and <em>Remove reification</em> removes the note for that relation.
+  The relation stays. Click the circle and choose <em>Go to this relation</em> to
   open that note. Right-click it there for the same choices, including <em>Back</em>. <em>Back</em> also
   returns to the previous view from the button on the map. A reified label
   is drawn above its note.</p>

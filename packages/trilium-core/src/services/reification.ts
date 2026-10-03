@@ -18,6 +18,7 @@ import type BNote from "../becca/entities/bnote.js";
 import { NotFoundError, ValidationError } from "../errors.js";
 import eventService from "./events.js";
 import noteService from "./notes.js";
+import protectedSessionService from "./protected_session.js";
 import specialNotesService from "./special_notes.js";
 import dateUtils from "./utils/date.js";
 
@@ -47,11 +48,16 @@ export function reifyAttribute(attributeId: string): { note: BNote; created: boo
         return { note: existing, created: false };
     }
 
+    const protect = endpointIsProtected(attribute);
+    if (protect && !protectedSessionService.isProtectedSessionAvailable()) {
+        throw new ValidationError("Reifying a protected note requires an active protected session.");
+    }
     const { note } = noteService.createNewNote({
         parentNoteId: specialNotesService.getInboxNote(dateUtils.localNowDate()).noteId,
         title: titleFor(attribute),
         type: "text",
-        content: ""
+        content: "",
+        isProtected: protect
     });
     applyProjection(note, attribute);
     return { note, created: true };
@@ -292,14 +298,52 @@ function titleFor(attribute: BAttribute): string {
     });
 }
 
+/** True when a title or label value copied onto the reification would otherwise stay readable. */
+function endpointIsProtected(attribute: BAttribute): boolean {
+    if (attribute.getNote().isProtected) {
+        return true;
+    }
+    return attribute.type === "relation" && attribute.getTargetNote()?.isProtected === true;
+}
+
+/**
+ * A short marker for the last generated title.
+ * The title itself is encrypted with the note. This label is not, so it cannot hold the sentence.
+ */
+function titleFingerprint(title: string): string {
+    let hash = 5381;
+    for (let i = 0; i < title.length; i++) {
+        hash = ((hash << 5) + hash) ^ title.charCodeAt(i);
+    }
+    return (hash >>> 0).toString(16);
+}
+
 /**
  * Writes the note's projection of `attribute`. A title the user has edited
  * (one that no longer equals the last generated title) is left alone.
  */
 function applyProjection(note: BNote, attribute: BAttribute) {
+    const protect = endpointIsProtected(attribute);
+    if (note.isProtected !== protect) {
+        if (!protectedSessionService.isProtectedSessionAvailable()) {
+            return;
+        }
+        const content = note.getContent();
+        note.isProtected = protect;
+        note.isDecrypted = true;
+        note.setContent(typeof content === "string" || content instanceof Uint8Array ? content : "", { forceSave: true });
+    }
+    // Outside a protected session the title in memory is ciphertext, or "[protected]".
+    if (!note.isContentAvailable()) {
+        return;
+    }
+
     const generated = titleFor(attribute);
     const previous = note.getOwnedLabelValue(REIFICATION_GENERATED_TITLE);
-    if ((previous === null || note.title === previous) && note.title !== generated) {
+    const stillGenerated = previous === null
+        || note.title === previous
+        || (note.isProtected && previous === titleFingerprint(note.title));
+    if (stillGenerated && note.title !== generated) {
         note.title = generated;
         note.save();
         // A token whose object is this note repeats the title, so it has to be written again.
@@ -309,7 +353,7 @@ function applyProjection(note: BNote, attribute: BAttribute) {
     setLabel(note, REIFICATION_OF, attribute.attributeId);
     setLabel(note, REIFICATION_KIND, attribute.type);
     setLabel(note, REIFICATION_PREDICATE, attribute.name);
-    setLabel(note, REIFICATION_GENERATED_TITLE, generated);
+    setLabel(note, REIFICATION_GENERATED_TITLE, note.isProtected ? titleFingerprint(generated) : generated);
     setRelation(note, REIFICATION_SUBJECT, attribute.noteId);
 
     if (attribute.type === "relation") {
@@ -317,6 +361,9 @@ function applyProjection(note: BNote, attribute: BAttribute) {
             setRelation(note, REIFICATION_OBJECT, attribute.value);
         }
         note.getOwnedLabel(REIFICATION_LITERAL)?.markAsDeleted();
+    } else if (note.isProtected) {
+        note.getOwnedLabel(REIFICATION_LITERAL)?.markAsDeleted();
+        note.getOwnedRelation(REIFICATION_OBJECT)?.markAsDeleted();
     } else {
         setLabel(note, REIFICATION_LITERAL, attribute.value);
         note.getOwnedRelation(REIFICATION_OBJECT)?.markAsDeleted();

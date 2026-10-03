@@ -593,7 +593,7 @@ function AttributeRowList({ rows, note, activeAttribute, valueEditor, readOnly, 
                             ? () => onEditValue(attribute)
                             : undefined}
                         onDelete={isOwned && !readOnly ? () => onDelete(attribute) : undefined}
-                        onReify={!readOnly && !isSystem && attribute.attributeId ? () => onReify(attribute) : undefined}
+                        onReify={isOwned && !readOnly && !isSystem && attribute.attributeId ? () => onReify(attribute) : undefined}
                     />
                 ))}
             </ul>

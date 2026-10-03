@@ -24,7 +24,7 @@ interface GroupedLink {
  */
 export type FoldEnd =
     | { noteId: string }
-    | { fact: { predicate: string; source: FoldEnd; object: FoldEnd } };
+    | { fact: { predicate: string; predicates?: string[]; source: FoldEnd; object: FoldEnd } };
 
 /** The relation a folded node stands for, so a click can create the note for that row. */
 export interface NoteMapFold {
@@ -32,6 +32,8 @@ export interface NoteMapFold {
     sourceNoteId: string;
     targetNoteId: string;
     predicate: string;
+    /** Every predicate on the grouped edge. `predicate` is the first of these. */
+    predicates: string[];
     /**
      * The notes this relation joins. An end drawn from a folded edge is that fact,
      * so the relation is read from the note that stands for it.
@@ -235,7 +237,14 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         if (absorbedId.startsWith("fold:")) {
             const inner = folds.get(absorbedId)?.fold;
             if (inner) {
-                return { fact: { predicate: inner.predicate, source: inner.subject, object: inner.object } };
+                return {
+                    fact: {
+                        predicate: inner.predicate,
+                        predicates: inner.predicates,
+                        source: inner.subject,
+                        object: inner.object
+                    }
+                };
             }
         }
         const jointId = rawId.startsWith("edge:") ? rawId : absorbedId.startsWith("edge:") ? absorbedId : "";
@@ -249,11 +258,12 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
                 return (source === subjectId && target === objectId)
                     || (source === objectId && target === subjectId);
             });
-            const hostPredicate = host?.name.split(",")[0]?.trim();
-            if (host && hostPredicate && subjectId && objectId) {
+            const hostPredicates = host ? predicatesIn(host.name) : [];
+            if (host && hostPredicates.length > 0 && subjectId && objectId) {
                 return {
                     fact: {
-                        predicate: hostPredicate,
+                        predicate: hostPredicates[0],
+                        predicates: hostPredicates,
                         source: relationEnd(endId(host.source), endId(host.source), seen),
                         object: relationEnd(endId(host.target), endId(host.target), seen)
                     }
@@ -265,7 +275,8 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
 
     for (const linkId of orderedFolds(data, collapsedLinkIds)) {
         const link = data.links.find((item) => item.id === linkId);
-        const predicate = link?.name.split(",")[0]?.trim();
+        const predicates = link ? predicatesIn(link.name) : [];
+        const predicate = predicates[0];
         if (!link || !predicate) {
             continue;
         }
@@ -280,11 +291,7 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         const foldId = `fold:${linkId}`;
         const fold: NoteMapNodeObject = {
             id: foldId,
-            name: buildReificationTitle({
-                subjectTitle: labelOf(sourceId),
-                predicate,
-                objectTitle: labelOf(targetId)
-            }),
+            name: foldTitle(predicates, labelOf(sourceId), labelOf(targetId)),
             type: "text",
             color: null,
             icon: "bx bx-git-commit",
@@ -295,6 +302,7 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
                 sourceNoteId: sourceId,
                 targetNoteId: targetId,
                 predicate,
+                predicates,
                 subject: relationEnd(rawSource, sourceId),
                 object: relationEnd(rawTarget, targetId)
             }
@@ -376,17 +384,27 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         keptEnds.add(target);
     }
 
+    // Relations of a fact are drawn again here. applyRelationBridges has already drawn
+    // the ones whose host edge is still open; this adds a host that this fold replaced,
+    // including a fact the relation points at (`otherFact`, which has no `note`).
     for (const attachment of data.reificationLinks ?? []) {
-        if (!collapsedLinkIds.has(attachment.linkId)) {
+        const host = data.links.find((item) => item.id === attachment.linkId);
+        if (!host) {
+            continue;
+        }
+        const hostJoint = edgeJointId(endId(host.source), endId(host.target));
+        const origin = collapsedLinkIds.has(attachment.linkId) ? find(`fold:${attachment.linkId}`) : hostJoint;
+        const fromId = find(origin);
+        if (attachment.otherFact) {
+            appendFactAttachment(attachment.otherFact, attachment.name, attachment.outgoing, hostJoint, fromId);
             continue;
         }
         if (!attachment.note) {
             continue;
         }
         const [ noteId, title, type, color, icon ] = attachment.note;
-        const foldId = find(`fold:${attachment.linkId}`);
         const otherId = find(noteId);
-        if (!otherId || foldId === otherId) {
+        if (!otherId || fromId === otherId) {
             continue;
         }
         if (!nodesById.has(noteId) && !nodes.some((node) => node.id === noteId)) {
@@ -401,18 +419,61 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             nodesById.set(noteId, added);
             data.noteIdToSizeMap[noteId] = FOLD_NODE_SIZE;
         }
-        const id = `${attachment.linkId}-${attachment.name}-${noteId}`;
-        if (links.some((item) => item.id === id)) {
-            continue;
+        pushKeptLink(
+            `${attachment.linkId}-${attachment.name}-${noteId}`,
+            attachment.outgoing ? fromId : otherId,
+            attachment.outgoing ? otherId : fromId,
+            attachment.name
+        );
+    }
+
+    function pushKeptLink(id: string, source: string, target: string, name: string) {
+        if (!source || !target || source === target) {
+            return;
         }
-        links.push({
-            id,
-            source: attachment.outgoing ? foldId : otherId,
-            target: attachment.outgoing ? otherId : foldId,
-            name: attachment.name
-        });
-        keptEnds.add(foldId);
-        keptEnds.add(otherId);
+        if (links.some((item) => item.id === id)) {
+            return;
+        }
+        links.push({ id, source, target, name });
+        keptEnds.add(source);
+        keptEnds.add(target);
+    }
+
+    function ensureMapNode(tuple: NoteMapNote) {
+        const id = tuple[0];
+        if (nodesById.has(id) || nodes.some((node) => node.id === id)) {
+            return;
+        }
+        const added = nodeFromTuple(tuple);
+        nodes.push(added);
+        nodesById.set(id, added);
+        data.noteIdToSizeMap[id] = FOLD_NODE_SIZE;
+    }
+
+    function appendFactAttachment(
+        fact: NoteMapFactEnds,
+        name: string,
+        outgoing: boolean,
+        hostJoint: string,
+        fromId: string
+    ) {
+        const otherJoint = fact.object ? edgeJointId(fact.subject[0], fact.object[0]) : fact.subject[0];
+        const otherEnd = collapsedLinkIds.has(fact.linkId) ? find(`fold:${fact.linkId}`) : find(otherJoint);
+        if (fact.object && !collapsedLinkIds.has(fact.linkId)) {
+            ensureMapNode(fact.subject);
+            ensureMapNode(fact.object);
+            pushKeptLink(fact.linkId, find(fact.subject[0]), find(fact.object[0]), fact.predicate);
+            if (!nodesById.has(otherJoint) && !nodes.some((node) => node.id === otherJoint)) {
+                const joint = jointNode(otherJoint, fact.subject[0], fact.object[0]);
+                nodes.push(joint);
+                nodesById.set(otherJoint, joint);
+            }
+        } else if (!fact.object) {
+            ensureMapNode(fact.subject);
+        }
+        const source = outgoing ? fromId : otherEnd;
+        const target = outgoing ? otherEnd : fromId;
+        pushKeptLink(`${hostJoint}-${name}-${otherJoint}`, source, target, name);
     }
 
     const visibleNodes = nodes.filter((node) => !droppedEnds.has(node.id) || keptEnds.has(node.id));
@@ -655,7 +716,13 @@ export async function resolveFoldEnd(
     if (!sourceId || !objectId) {
         return;
     }
-    return reificationNoteId(sourceId, end.fact.predicate, objectId);
+    const predicates = end.fact.predicates?.length ? end.fact.predicates : [ end.fact.predicate ];
+    for (const predicate of predicates) {
+        const noteId = await reificationNoteId(sourceId, predicate, objectId);
+        if (noteId) {
+            return noteId;
+        }
+    }
 }
 
 /** Collapsed edges in fold order: an edge after the edges it starts on. */
@@ -826,15 +893,36 @@ export function relationEndTitle(
         return (source === subjectId && target === objectId)
             || (source === objectId && target === subjectId);
     });
-    const predicate = host?.name.split(",")[0]?.trim();
-    if (!host || !predicate) {
+    const predicates = host ? predicatesIn(host.name) : [];
+    if (!host || predicates.length === 0) {
         return node.name;
     }
-    return buildReificationTitle({
-        subjectTitle: relationEndTitle(host.source, data, seen),
-        predicate,
-        objectTitle: relationEndTitle(host.target, data, seen)
-    });
+    return foldTitle(
+        predicates,
+        relationEndTitle(host.source, data, seen),
+        relationEndTitle(host.target, data, seen)
+    );
+}
+
+/** The predicates written on one grouped edge, such as `loves, knows`. */
+export function predicatesIn(names: string): string[] {
+    const predicates: string[] = [];
+    for (const part of names.split(",")) {
+        const predicate = part.trim();
+        if (predicate) {
+            predicates.push(predicate);
+        }
+    }
+    return predicates;
+}
+
+/** The fold title for every predicate on one edge, joined the same way the edge is. */
+export function foldTitle(predicates: readonly string[], subjectTitle: string, objectTitle: string): string {
+    const titles: string[] = [];
+    for (const predicate of predicates) {
+        titles.push(buildReificationTitle({ subjectTitle, predicate, objectTitle }));
+    }
+    return titles.join(", ");
 }
 
 /** The note id a graph link stores at an end, once the graph has replaced the id with the note. */

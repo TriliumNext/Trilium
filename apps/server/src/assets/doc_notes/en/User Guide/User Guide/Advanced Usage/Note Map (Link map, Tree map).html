@@ -60,8 +60,10 @@
   </li>
   <li>When hovering over a node, the adjacent relations and nodes are highlighted.</li>
   <li>On a link map, right-click a relation. <em>Fold as loves(John, Mary)</em> turns
-    the two notes and the line into that one node. An edge drawn from another
-    edge is named with that edge, such as <em>Fold as leadsTo(likes(A, B), Chaos)</em>.
+    the two notes and the line into that one node. An edge that names several
+    relations, such as loves, knows, is folded as <em>loves(John, Mary), knows(John, Mary)</em>.
+    Its menu opens each of them, and a click does not choose between them.
+    An edge drawn from another edge is named with that edge, such as <em>Fold as leadsTo(likes(A, B), Chaos)</em>.
     The folded node shows relations of that fact, such as <code>cause(loves(John, Mary), Event X)</code>,
     and not the other relations of John or Mary. The same menu lists every
     reification that already includes this relation, such as <code>cause(loves(John, Mary), has(Mark, Jealousy))</code>,

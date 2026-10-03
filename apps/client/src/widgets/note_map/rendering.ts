@@ -506,12 +506,21 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
             clearTimeout(fadeTimer);
             framing.stop();
         },
+        /** Sets `framing` and `fitWholeGraph` so `zoomToFit` follows the notes `showView` just put back. */
+        resumeFraming: framing.resume,
         /**
-         * Frames the notes on the map now, and keeps doing so while the layout settles.
-         * A press on the map stops the framing it was built with, and the notes that press
-         * asked to put back are not in the set that framing was watching.
+         * Points the hover fade at the nodes and links `graph.graphData` just installed.
+         * `restart` only snapshots the arrays `createFade` was built with.
          */
-        resumeFraming: framing.resume
+        setHoverGraph(nodes: NoteMapNodeObject[], links: NoteMapLinkObject[]) {
+            nodeFocus.replace(nodes);
+            linkFocus.replace(links);
+            if (!hoverNode) {
+                return;
+            }
+            const next = nodes.find((node) => node.id === hoverNode?.id) ?? null;
+            setHoveredNode(next);
+        }
     };
 }
 
@@ -701,6 +710,7 @@ export function traceRoundedPath(ctx: CanvasRenderingContext2D, points: [ number
  */
 export function createFade<T>(elements: T[], getTarget: (element: T) => number) {
     const startingPoints = new Map<T, number>();
+    let tracked = elements;
     let startedAt = 0;
 
     function get(element: T) {
@@ -715,11 +725,16 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
         get,
         /** Takes down where every value stands, for the fade the caller is about to bring about to start from. */
         restart() {
-            for (const element of elements) {
+            for (const element of tracked) {
                 startingPoints.set(element, get(element));
             }
 
             startedAt = performance.now();
+        },
+        /** `restart` reads this list. `graph.graphData` replaces the nodes and links, so the fade has to follow. */
+        replace(next: T[]) {
+            tracked = next;
+            startingPoints.clear();
         }
     };
 }
@@ -789,7 +804,7 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
     container.addEventListener("pointerdown", releaseFraming, listenerOptions);
 
     let ticks = 0;
-    // Set once the reader has asked for a different set of notes than the one the map was built on.
+    // showView sets this. zoomToFit then uses no node filter; planFraming's filter only covers the notes the map was built with.
     let fitWholeGraph = false;
     graph.onEngineTick(() => {
         pinEdgeJoints(graph);

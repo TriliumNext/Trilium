@@ -100,6 +100,7 @@ describe("collapseRelations", () => {
             sourceNoteId: "john",
             targetNoteId: "mary",
             predicate: "loves",
+            predicates: [ "loves" ],
             subject: { noteId: "john" },
             object: { noteId: "mary" }
         });
@@ -399,6 +400,111 @@ describe("applyRelationBridges", () => {
         expect(oneStep.links).toEqual([
             { id: bridgeId, source: "fold:john-mary", target: "fold:mark-jealousy", name: "cause" }
         ]);
+    });
+
+    it("keeps a fact-to-fact relation when only one fact is folded, including without a prior bridge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "john-mary", source: "john", target: "mary", name: "loves" }
+            ],
+            noteIdToSizeMap: { john: 4, mary: 4 },
+            reificationLinks: [ {
+                linkId: "john-mary",
+                name: "cause",
+                outgoing: true,
+                otherFact: {
+                    linkId: "mark-jealousy",
+                    predicate: "has",
+                    subject: [ "mark", "Mark", "text", null, "bx bx-file" ],
+                    object: [ "jealousy", "Jealousy", "text", null, "bx bx-file" ]
+                }
+            } ]
+        };
+
+        const folded = presentRelations(data, new Set([ "john-mary" ]));
+        expect(folded.links).toContainEqual({
+            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+        });
+        expect(folded.links).toContainEqual({
+            id: "edge:john-mary-cause-edge:mark-jealousy",
+            source: "fold:john-mary",
+            target: "edge:mark-jealousy",
+            name: "cause"
+        });
+
+        const direct = collapseRelations(data, new Set([ "john-mary" ]));
+        expect(direct.links).toContainEqual({
+            id: "mark-jealousy", source: "mark", target: "jealousy", name: "has"
+        });
+        expect(direct.links).toContainEqual({
+            id: "edge:john-mary-cause-edge:mark-jealousy",
+            source: "fold:john-mary",
+            target: "edge:mark-jealousy",
+            name: "cause"
+        });
+    });
+
+    it("keeps the other fact's relation when only one fact is folded", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" },
+                { id: "ann", name: "Ann", type: "text", color: null, icon: "bx bx-file" },
+                { id: "bob", name: "Bob", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "john-mary", source: "john", target: "mary", name: "loves" },
+                { id: "ann-bob", source: "ann", target: "bob", name: "knows" }
+            ],
+            noteIdToSizeMap: { john: 4, mary: 4, ann: 4, bob: 4 },
+            reificationLinks: [
+                {
+                    linkId: "john-mary",
+                    name: "cause",
+                    outgoing: true,
+                    note: [ "event", "Event X", "text", null, "bx bx-file" ]
+                },
+                {
+                    linkId: "ann-bob",
+                    name: "because",
+                    outgoing: true,
+                    note: [ "reason", "Reason", "text", null, "bx bx-file" ]
+                }
+            ]
+        };
+
+        const folded = presentRelations(data, new Set([ "john-mary" ]));
+        expect(folded.links).toContainEqual({
+            id: "john-mary-cause-event", source: "fold:john-mary", target: "event", name: "cause"
+        });
+        expect(folded.links).toContainEqual({
+            id: "ann-bob-because-reason", source: "edge:ann-bob", target: "reason", name: "because"
+        });
+        expect(folded.links).toContainEqual({
+            id: "ann-bob", source: "ann", target: "bob", name: "knows"
+        });
+    });
+
+    it("folds every predicate on a grouped edge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "john", name: "John", type: "text", color: null, icon: "bx bx-file" },
+                { id: "mary", name: "Mary", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "john-mary", source: "john", target: "mary", name: "loves, knows" }
+            ],
+            noteIdToSizeMap: { john: 4, mary: 4 }
+        };
+
+        const folded = collapseRelations(data, new Set([ "john-mary" ]));
+        expect(folded.nodes[0].name).toBe("loves(John, Mary), knows(John, Mary)");
+        expect(folded.nodes[0].fold?.predicates).toEqual([ "loves", "knows" ]);
+        expect(folded.nodes[0].fold?.predicate).toBe("loves");
     });
 });
 
