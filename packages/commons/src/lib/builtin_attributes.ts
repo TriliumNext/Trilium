@@ -289,6 +289,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "calendar:slotDuration", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:slotLabelInterval", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:title", valueType: "text", hasUserValue: true },
+    { type: "label", name: "calendar:titleTemplate", valueType: "text", hasUserValue: true },
     { type: "label", name: "calendar:displayedAttributes", valueType: "text", hasUserValue: true },
     // Each names the label an event reads a given field from, overriding the default listed after it.
     { type: "label", name: "calendar:startDate", valueType: "text", hasUserValue: true },

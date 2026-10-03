@@ -1,4 +1,4 @@
-import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons";
+import { ActionHandlers, BulkAction, BulkActionData, evaluateTemplate } from "@triliumnext/commons";
 import branchService from "./branches";
 import eraseService from "./erase.js";
 
@@ -7,7 +7,6 @@ import type BNote from "../becca/entities/bnote.js";
 import cloningService from "./cloning.js";
 import { getLog } from "./log";
 import noteFormatConversionService from "./note_format_conversion.js";
-import { evaluateTemplate } from "./safe_template.js";
 import { executeBundle } from "./script.js";
 import { assertScriptingEnabled } from "./scripting_guard.js";
 import { randomString } from "./utils/index.js";

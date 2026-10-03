@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
-import { buildEvent, buildEvents } from "./event_builder.js";
+import { buildEvent, buildEvents, buildOccurrenceTitle } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
 import { isValidDuration, parseDurationSeconds } from "./utils.js";
 import { LOCALES } from "@triliumnext/commons";
@@ -387,6 +387,70 @@ describe("Recurrence", () => {
             call[0].includes("has an invalid #recurrence string")
         );
         expect(calledWithInvalid).toBe(true);
+        consoleSpy.mockRestore();
+    });
+
+    it("carries the title template and the day the series starts on", async () => {
+        const noteIds = buildNotes([
+            {
+                title: "John Smith",
+                "#startDate": "1990-05-12",
+                "#startTime": "09:00",
+                "#recurrence": "RRULE:FREQ=YEARLY",
+                "#calendar:titleTemplate": "${title} (${age})"
+            }
+        ]);
+        const events = await buildEvents(noteIds);
+
+        expect(events[0]).toMatchObject({
+            title: "John Smith",
+            titleTemplate: "${title} (${age})",
+            // The date as the label holds it, the start time not yet worked into it.
+            seriesStart: "1990-05-12"
+        });
+    });
+});
+
+/**
+ * The title a chip is drawn under, which a repeating event names once per occurrence: the calendar
+ * asks for it as each chip is drawn (see eventContent in index.tsx), the occurrence's own date in
+ * hand.
+ */
+describe("buildOccurrenceTitle", () => {
+    /** An event as FullCalendar hands it to a chip, this occurrence falling on the given day. */
+    function occurrence(titleTemplate: string | null, start: Date, seriesStart = "1990-05-12") {
+        return { title: "John Smith", start, extendedProps: { titleTemplate, seriesStart } };
+    }
+
+    it("leaves an event with no template under its plain title", () => {
+        expect(buildOccurrenceTitle(occurrence(null, new Date(2026, 4, 12)))).toBe("John Smith");
+    });
+
+    it("counts the whole years from the start date to the occurrence", () => {
+        expect(buildOccurrenceTitle(occurrence("${title} (${age})", new Date(2026, 4, 12))))
+            .toBe("John Smith (36)");
+        expect(buildOccurrenceTitle(occurrence("${title} turns ${age}", new Date(2027, 4, 12))))
+            .toBe("John Smith turns 37");
+        // The day the series itself starts on, which is where the count starts.
+        expect(buildOccurrenceTitle(occurrence("${title} (${age})", new Date(1990, 4, 12))))
+            .toBe("John Smith (0)");
+    });
+
+    it("reads both the occurrence's date and the series'", () => {
+        const template =
+            "${title}, born ${startDate.format('YYYY')}, turns ${age} in ${date.format('YYYY')}";
+        expect(buildOccurrenceTitle(occurrence(template, new Date(2026, 4, 12))))
+            .toBe("John Smith, born 1990, turns 36 in 2026");
+    });
+
+    it("falls back to the plain title for a template the evaluator rejects, saying so once", () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const broken = occurrence("${nmae} (${age})", new Date(2026, 4, 12));
+
+        expect(buildOccurrenceTitle(broken)).toBe("John Smith");
+        expect(buildOccurrenceTitle(broken)).toBe("John Smith");
+        expect(consoleSpy).toHaveBeenCalledOnce();
+        expect(consoleSpy.mock.calls[0]?.[0]).toContain("#calendar:titleTemplate");
         consoleSpy.mockRestore();
     });
 });
