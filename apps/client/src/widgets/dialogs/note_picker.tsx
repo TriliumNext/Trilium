@@ -16,6 +16,11 @@ export interface NotePickerDialogOptions {
     message?: string;
     /** What accepting is called, for a caller that can name the act more plainly than "OK". */
     okLabel?: string;
+    /**
+     * Offers the same rows `@` does for making a note, besides picking one that exists.
+     * Picking one of those rows asks for the note type, as `@` does, and then the new note is the pick.
+     */
+    allowCreatingNotes?: boolean;
     callback?: (noteId: string | null) => void;
 }
 
@@ -78,7 +83,7 @@ export default function NotePickerDialog() {
                 <NoteAutocomplete
                     handleRef={autocompleteRef}
                     onChange={setSuggestion}
-                    opts={{ hideAllButtons: true }}
+                    opts={{ hideAllButtons: true, allowCreatingNotes: opts.current?.allowCreatingNotes }}
                 />
             </FormGroup>
         </Modal>

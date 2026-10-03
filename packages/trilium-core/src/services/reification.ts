@@ -8,18 +8,15 @@ import {
     REIFICATION_OF,
     REIFICATION_OF_PREDICATE,
     REIFICATION_PREDICATE,
-    REIFICATION_ROOT_ID,
     REIFICATION_SUBJECT
 } from "@triliumnext/commons";
 import type { RelationMapReification } from "@triliumnext/commons";
-import { t } from "i18next";
 
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import { NotFoundError, ValidationError } from "../errors.js";
 import eventService from "./events.js";
-import hiddenSubtreeService from "./hidden_subtree.js";
 import noteService from "./notes.js";
 import specialNotesService from "./special_notes.js";
 import dateUtils from "./utils/date.js";
@@ -28,9 +25,8 @@ import dateUtils from "./utils/date.js";
  * A reification is a note that stands for one attribute row.
  *
  * The attribute stays what it was. The note is created only when something asks
- * for it, and it is filed under `_reifications` so the notes a person keeps are
- * unchanged. Other relations target that note, which is how a relation points
- * at a relation.
+ * for it, and it is filed in the inbox. Other relations target that note, which
+ * is how a relation points at a relation.
  */
 
 const deleting = new Set<string>();
@@ -51,13 +47,11 @@ export function reifyAttribute(attributeId: string): { note: BNote; created: boo
         return { note: existing, created: false };
     }
 
-    const parent = ensureReificationRoot();
     const { note } = noteService.createNewNote({
-        parentNoteId: parent.noteId,
+        parentNoteId: specialNotesService.getInboxNote(dateUtils.localNowDate()).noteId,
         title: titleFor(attribute),
         type: "text",
-        content: "",
-        ignoreForbiddenParents: true
+        content: ""
     });
     applyProjection(note, attribute);
     return { note, created: true };
@@ -273,31 +267,6 @@ export function toRelationMapReification(note: BNote): RelationMapReification | 
 /** Subject and object links repeat the arrow the map already draws. */
 export function isMapSuppressedRelation(name: string): boolean {
     return name === REIFICATION_SUBJECT || name === REIFICATION_OBJECT;
-}
-
-function ensureReificationRoot(): BNote {
-    const existing = becca.getNote(REIFICATION_ROOT_ID);
-    if (existing && !existing.isDeleted) {
-        return existing;
-    }
-
-    if (!becca.getNote("_hidden")) {
-        hiddenSubtreeService.checkHiddenSubtree();
-        const created = becca.getNote(REIFICATION_ROOT_ID);
-        if (created && !created.isDeleted) {
-            return created;
-        }
-    }
-
-    const { note } = noteService.createNewNote({
-        noteId: REIFICATION_ROOT_ID,
-        parentNoteId: "_hidden",
-        title: t("hidden-subtree.reifications-title"),
-        type: "doc",
-        content: "",
-        ignoreForbiddenParents: true
-    });
-    return note;
 }
 
 function assertPredicateName(predicate: string) {

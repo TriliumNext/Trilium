@@ -5,8 +5,6 @@
  * relations can target the statement itself.
  */
 
-export const REIFICATION_ROOT_ID = "_reifications";
-
 export const REIFICATION_OF = "reificationOf";
 export const REIFICATION_KIND = "reificationKind";
 export const REIFICATION_PREDICATE = "reificationPredicate";

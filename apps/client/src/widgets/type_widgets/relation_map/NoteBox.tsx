@@ -30,11 +30,11 @@ interface NoteBoxProps extends MapDataNoteEntry {
     mapApiRef: RefObject<RelationMapApi | null>;
     /** Opens this note as the center of the map, or the menu of a collapsed relation. */
     onFocus: (noteId: string, event: MouseEvent) => void;
-    /** Right-click puts a folded fact back into its two notes. */
-    onUnfold?: () => void;
+    /** Right-click menu for a folded fact or the note the map is centered on. */
+    onOpenMenu?: (event: MouseEvent) => void;
 }
 
-export function NoteBox({ noteId, x, y, mapApiRef, onFocus, onUnfold }: NoteBoxProps) {
+export function NoteBox({ noteId, x, y, mapApiRef, onFocus, onOpenMenu }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
     useEffect(() => {
@@ -50,12 +50,13 @@ export function NoteBox({ noteId, x, y, mapApiRef, onFocus, onUnfold }: NoteBoxP
             id={noteIdToId(noteId)}
             className={`note-box ${note?.getCssClass()}`}
             onContextMenu={(event) => {
-                if (!onUnfold) {
+                if (!onOpenMenu) {
                     contextMenuHandler(event);
                     return;
                 }
                 event.preventDefault();
-                onUnfold();
+                event.stopPropagation();
+                onOpenMenu(event);
             }}
             x={x} y={y}
             onClick={(event) => {

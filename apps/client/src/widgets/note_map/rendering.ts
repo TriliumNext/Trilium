@@ -117,7 +117,7 @@ interface RenderData {
     iconGlyphs: Map<string, IconGlyph>;
 }
 
-/** @returns a teardown function to call when the graph is discarded. */
+/** @returns `stop` for when the graph is discarded, and `resumeFraming` for a view asked for after that. */
 export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs }: RenderData) {
     // What the map is showing of the note under the pointer: the note itself, the notes a relation
     // runs between it and, and those relations. Worked out once when the hover changes rather than
@@ -499,11 +499,19 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
     graph.d3Force("charge")?.strength(boundedCharge);
     graph.d3Force("charge")?.distanceMax(1000);
 
-    const stopFraming = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
+    const framing = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
 
-    return () => {
-        clearTimeout(fadeTimer);
-        stopFraming();
+    return {
+        stop() {
+            clearTimeout(fadeTimer);
+            framing.stop();
+        },
+        /**
+         * Frames the notes on the map now, and keeps doing so while the layout settles.
+         * A press on the map stops the framing it was built with, and the notes that press
+         * asked to put back are not in the set that framing was watching.
+         */
+        resumeFraming: framing.resume
     };
 }
 
@@ -757,7 +765,8 @@ function pinEdgeJoints(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>) 
  * force-graph's default zoom meanwhile (a few nodes around the origin, the rest already spread out
  * of sight) and then jumps to the real framing when it finally fires.
  *
- * @returns a teardown function to call when the graph is discarded.
+ * @returns `stop` for when the graph is discarded, and `resume` for a view the reader asked
+ *          for after a press had already stopped the framing.
  */
 function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, container: HTMLElement, { note, widgetMode, notesAndRelations, hopDistances }: Pick<RenderData, "note" | "widgetMode" | "notesAndRelations"> & { hopDistances: Map<string, number> }) {
     const { framedNoteIds, framesSubset, padding, fittedNoteCount } = planFraming({ widgetMode, noteType: note?.type, notesAndRelations, hopDistances });
@@ -780,14 +789,20 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
     container.addEventListener("pointerdown", releaseFraming, listenerOptions);
 
     let ticks = 0;
+    // Set once the reader has asked for a different set of notes than the one the map was built on.
+    let fitWholeGraph = false;
     graph.onEngineTick(() => {
         pinEdgeJoints(graph);
         if (framing) {
-            // Fitting is what centres the view on the note, whether or not its zoom is kept.
-            graph.zoomToFit(0, padding, nodeFilter);
+            if (fitWholeGraph) {
+                graph.zoomToFit(0, padding);
+            } else {
+                // Fitting is what centres the view on the note, whether or not its zoom is kept.
+                graph.zoomToFit(0, padding, nodeFilter);
 
-            if (fittedNoteCount <= 1) {
-                graph.zoom(LONE_NOTE_ZOOM, 0);
+                if (fittedNoteCount <= 1) {
+                    graph.zoom(LONE_NOTE_ZOOM, 0);
+                }
             }
         }
 
@@ -798,9 +813,15 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
         }
     });
 
-    return () => {
-        container.removeEventListener("wheel", releaseFraming, listenerOptions);
-        container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+    return {
+        stop() {
+            container.removeEventListener("wheel", releaseFraming, listenerOptions);
+            container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+        },
+        resume() {
+            framing = true;
+            fitWholeGraph = true;
+        }
     };
 }
 

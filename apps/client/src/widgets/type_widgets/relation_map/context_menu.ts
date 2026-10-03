@@ -17,6 +17,8 @@ export interface RelationMenuActions {
     /** Reifies the relation when it is not a note yet, then centers the map on it. */
     goTo(attributeId: string): Promise<void> | void;
     toggleCollapse(attributeId: string): Promise<void> | void;
+    /** Deletes the note for this relation. The relation stays. */
+    unreify(attributeId: string): Promise<void> | void;
 }
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>) {
@@ -118,7 +120,8 @@ export function showRelationMenu(
                 { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" }
             ] : []),
             ...(reification ? [
-                { title: t("relation_map.open_reification"), command: "open-note", uiIcon: "bx bx-link-external" }
+                { title: t("relation_map.open_reification"), command: "open-note", uiIcon: "bx bx-link-external" },
+                { title: t("relation_map.remove_reification"), command: "unreify", uiIcon: "bx bx-undo" }
             ] : []),
             ...(connection ? [
                 { kind: "separator" as const },
@@ -132,6 +135,8 @@ export function showRelationMenu(
                 actions.toggleCollapse(attributeId);
             } else if (command === "open-note" && reification) {
                 appContext.tabManager.openContextWithNote(reification.noteId, { placement: "afterCurrent" });
+            } else if (command === "unreify") {
+                await actions.unreify(attributeId);
             } else if (command === "rename" && connection) {
                 const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
                 const newName = await askRelationName(connection, currentName);

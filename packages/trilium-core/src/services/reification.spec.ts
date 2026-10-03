@@ -14,6 +14,12 @@ import {
     reifyAttribute,
     retarget
 } from "./reification.js";
+import specialNotesService from "./special_notes.js";
+import dateUtils from "./utils/date.js";
+
+function inboxNoteId(): string {
+    return clsInit(() => specialNotesService.getInboxNote(dateUtils.localNowDate()).noteId);
+}
 
 function makeNote(title: string): string {
     return clsInit(() =>
@@ -31,7 +37,7 @@ describe("reification", () => {
         // The in-memory fixture and initializeCore are booted by the host suite.
     });
 
-    it("creates one note per attribute row, under the reification root, and repeats the call in place", () => {
+    it("creates one note per attribute row, in the inbox, and repeats the call in place", () => {
         const sourceId = makeNote("Note A");
         const targetId = makeNote("Note B");
 
@@ -40,7 +46,7 @@ describe("reification", () => {
 
         expect(first.created).toBe(true);
         expect(first.note.title).toBe("supports(Note A, Note B)");
-        expect(first.note.getParentBranches().some((branch) => branch.parentNoteId === "_reifications")).toBe(true);
+        expect(first.note.getParentBranches().some((branch) => branch.parentNoteId === inboxNoteId())).toBe(true);
         expect(first.note.getOwnedLabelValue("reificationOf")).toBe(relation.attributeId);
         expect(first.note.getOwnedLabelValue("reificationKind")).toBe("relation");
         expect(first.note.getOwnedLabelValue("reificationPredicate")).toBe("supports");
@@ -156,7 +162,7 @@ describe("reification", () => {
         expect(created.note.title).toBe("loves");
         expect(created.note.getOwnedLabelValue("reificationOfPredicate")).toBe("loves");
         expect(created.note.getOwnedLabelValue("iconClass")).toBe("bx bx-cube");
-        expect(created.note.getParentBranches().some((branch) => branch.parentNoteId === "_reifications")).toBe(false);
+        expect(created.note.getParentBranches().some((branch) => branch.parentNoteId === inboxNoteId())).toBe(true);
 
         const again = clsInit(() => createPredicateConcept("loves"));
         expect(again.created).toBe(false);

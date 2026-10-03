@@ -1383,8 +1383,9 @@
     "show-anyway": "Show map",
     "fold_as": "Fold as {{title}}",
     "open_reification": "Open {{title}}",
+    "show_ends": "Show the two notes",
+    "show_as_note": "Show as one note",
     "go_to_concept": "Go to {{name}}",
-    "create_concept": "Create {{name}} in inbox",
     "connect_concept": "Connect {{name}} to a note"
   },
   "note_picker": {

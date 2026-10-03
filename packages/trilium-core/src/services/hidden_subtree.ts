@@ -1,4 +1,4 @@
-import { REIFICATION_ROOT_ID, type HiddenSubtreeItem } from "@triliumnext/commons";
+import type { HiddenSubtreeItem } from "@triliumnext/commons";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
@@ -162,13 +162,6 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 title: t("hidden-subtree.user-hidden-title"),
                 type: "doc",
                 attributes: [{ type: "label", name: "docName", value: "user_hidden" }]
-            },
-            {
-                // Notes created when an attribute row is reified.
-                id: REIFICATION_ROOT_ID,
-                title: t("hidden-subtree.reifications-title"),
-                type: "doc",
-                icon: "bx-git-commit"
             },
             {
                 id: LBTPL_ROOT,

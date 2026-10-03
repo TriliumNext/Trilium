@@ -1,6 +1,6 @@
 import "./RelationMap.css";
 
-import { CreateChildrenResponse, RelationMapPostResponse, RelationMapReification } from "@triliumnext/commons";
+import { CreateChildrenResponse, REIFICATION_OF, RelationMapPostResponse, RelationMapReification } from "@triliumnext/commons";
 import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
 // The library's own types rather than the hand-written `PanZoom` in types.d.ts, which stops at the
 // handful of calls the map made when it was written and knows nothing of the rest — the ends of the
@@ -10,7 +10,10 @@ import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
+import contextMenu from "../../../menus/context_menu";
+import link_context_menu from "../../../menus/link_context_menu";
 import dialog from "../../../services/dialog";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
@@ -142,10 +145,12 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const [ focusStack, setFocusStack ] = useState<string[]>([]);
     const [ collapsed, setCollapsed ] = useState<ReadonlySet<string>>(() => new Set());
     const focusNoteId = focusStack.at(-1) ?? null;
+    const reloadRelationsRef = useRef<() => void>(() => {});
     const relationActionsRef = useRef<RelationMenuActions>({
         isCollapsed: () => false,
         goTo: () => {},
-        toggleCollapse: () => {}
+        toggleCollapse: () => {},
+        unreify: () => {}
     });
     relationActionsRef.current = {
         isCollapsed(attributeId) {
@@ -180,6 +185,25 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 next.add(attributeId);
                 return next;
             });
+        },
+        async unreify(attributeId) {
+            if (!(await dialog.confirm(t("relation_map.confirm_remove_reification")))) {
+                return;
+            }
+            const tokenNoteId = mapApiRef.current?.reificationFor(attributeId)?.noteId;
+            await server.remove(`attributes/${attributeId}/reification`);
+            setCollapsed((current) => {
+                if (!current.has(attributeId)) {
+                    return current;
+                }
+                const next = new Set(current);
+                next.delete(attributeId);
+                return next;
+            });
+            if (tokenNoteId) {
+                setFocusStack((stack) => stack.filter((id) => id !== tokenNoteId));
+            }
+            reloadRelationsRef.current();
         }
     };
     const connectionCallback = useRelationCreation({
@@ -192,18 +216,51 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         setFocusStack([]);
         setCollapsed(new Set());
     }, [ note.noteId ]);
-    const { circles, tokens, folds } = useRelationData(note.noteId, data, mapApiRef, pbApiRef, focusNoteId, collapsed);
-    const unfoldFor = (noteId: string) => {
+    const { circles, tokens, folds, reload } = useRelationData(note.noteId, data, mapApiRef, pbApiRef, focusNoteId, collapsed);
+    reloadRelationsRef.current = reload;
+    const openMenuFor = (noteId: string) => {
         const fold = folds.find((item) => item.noteId === noteId);
         if (fold) {
-            return () => {
-                void relationActionsRef.current.toggleCollapse(fold.attributeId);
+            return (event: MouseEvent) => {
+                const actions = relationActionsRef.current;
+                if (!actions) {
+                    return;
+                }
+                showRelationMenu(event, fold.attributeId, mapApiRef, actions, relationNamePrompt.ask);
             };
         }
         if (focusNoteId === noteId && mapApiRef.current?.isReificationNote(noteId)) {
-            return () => setFocusStack((stack) => stack.slice(0, -1));
+            return (event: MouseEvent) => showFocusedFactMenu(event, noteId);
         }
         return undefined;
+    };
+    const showFocusedFactMenu = (event: MouseEvent, noteId: string) => {
+        const attributeId = froca.getNoteFromCache(noteId)?.getOwnedLabelValue(REIFICATION_OF) ?? "";
+        contextMenu.show({
+            x: event.pageX,
+            y: event.pageY,
+            items: [
+                {
+                    title: t("relation_map.back"),
+                    uiIcon: "bx bx-arrow-back",
+                    handler: () => setFocusStack((stack) => stack.slice(0, -1))
+                },
+                ...(attributeId ? [{
+                    title: t("relation_map.remove_reification"),
+                    uiIcon: "bx bx-undo",
+                    handler: () => {
+                        void relationActionsRef.current?.unreify(attributeId);
+                    }
+                }] : []),
+                { kind: "separator" as const },
+                ...link_context_menu.getItems(event)
+            ],
+            selectMenuItemHandler: ({ command }) => {
+                if (command) {
+                    link_context_menu.handleLinkContextMenuItem(command, event, noteId);
+                }
+            }
+        });
     };
 
     return (
@@ -238,7 +295,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                             }
                             setFocusStack((stack) => stack.at(-1) === noteId ? stack : [ ...stack, noteId ]);
                         }}
-                        onUnfold={unfoldFor(note.noteId)}
+                        onOpenMenu={openMenuFor(note.noteId)}
                     />
                 ))}
                 {tokens.map(token => (
@@ -455,7 +512,7 @@ function useRelationData(
         });
     }, [ relations, reifications, mapData, circles, tokens, collapsed, represent ]);
 
-    return { circles, tokens, folds };
+    return { circles, tokens, folds, reload: refresh };
 }
 
 function useNoteCreation({ ntxId, note, containerRef, mapApiRef }: {
@@ -559,7 +616,8 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef, relationActionsRef, ask
         });
         connection.bind("click", (_: unknown, event: MouseEvent) => {
             const actions = relationActionsRef.current;
-            if (!actions || connection.getType().includes("link")) {
+            // jsPlumb also delivers the right-click press here. That one opens the menu.
+            if (!actions || (event.button ?? 0) !== 0 || connection.getType().includes("link")) {
                 return;
             }
             event.preventDefault();

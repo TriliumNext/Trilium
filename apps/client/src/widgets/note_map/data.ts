@@ -18,12 +18,26 @@ interface GroupedLink {
     names: string[];
 }
 
+/**
+ * One side of a folded relation.
+ * A fact is the note that stands for that relation, found before the outer relation is read.
+ */
+export type FoldEnd =
+    | { noteId: string }
+    | { fact: { predicate: string; source: FoldEnd; object: FoldEnd } };
+
 /** The relation a folded node stands for, so a click can create the note for that row. */
 export interface NoteMapFold {
     linkId: string;
     sourceNoteId: string;
     targetNoteId: string;
     predicate: string;
+    /**
+     * The notes this relation joins. An end drawn from a folded edge is that fact,
+     * so the relation is read from the note that stands for it.
+     */
+    subject: FoldEnd;
+    object: FoldEnd;
 }
 
 export interface NoteMapNodeObject extends NodeObject {
@@ -202,14 +216,65 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         return { x: node?.x ?? 0, y: node?.y ?? 0 };
     };
 
-    for (const linkId of collapsedLinkIds) {
+    const absorbedEnd = (noteId: string) => {
+        const node = nodesById.get(noteId);
+        if (!node?.joint || !node.jointOf) {
+            return noteId;
+        }
+        const [ subjectId, objectId ] = node.jointOf;
+        const folded = find(subjectId);
+        if (folded === find(objectId) && folds.has(folded)) {
+            return folded;
+        }
+        return noteId;
+    };
+
+    // A relation drawn from a folded edge joins that fact. A relation of a note keeps the note,
+    // even when the note was drawn inside another fold.
+    const relationEnd = (rawId: string, absorbedId: string, seen = new Set<string>()): FoldEnd => {
+        if (absorbedId.startsWith("fold:")) {
+            const inner = folds.get(absorbedId)?.fold;
+            if (inner) {
+                return { fact: { predicate: inner.predicate, source: inner.subject, object: inner.object } };
+            }
+        }
+        const jointId = rawId.startsWith("edge:") ? rawId : absorbedId.startsWith("edge:") ? absorbedId : "";
+        if (jointId && !seen.has(jointId)) {
+            seen.add(jointId);
+            const joint = nodesById.get(jointId);
+            const [ subjectId, objectId ] = joint?.jointOf ?? [ "", "" ];
+            const host = data.links.find((link) => {
+                const source = endId(link.source);
+                const target = endId(link.target);
+                return (source === subjectId && target === objectId)
+                    || (source === objectId && target === subjectId);
+            });
+            const hostPredicate = host?.name.split(",")[0]?.trim();
+            if (host && hostPredicate && subjectId && objectId) {
+                return {
+                    fact: {
+                        predicate: hostPredicate,
+                        source: relationEnd(endId(host.source), endId(host.source), seen),
+                        object: relationEnd(endId(host.target), endId(host.target), seen)
+                    }
+                };
+            }
+        }
+        return { noteId: rawId || absorbedId };
+    };
+
+    for (const linkId of orderedFolds(data, collapsedLinkIds)) {
         const link = data.links.find((item) => item.id === linkId);
         const predicate = link?.name.split(",")[0]?.trim();
         if (!link || !predicate) {
             continue;
         }
-        const sourceId = endId(link.source);
-        const targetId = endId(link.target);
+        const rawSource = endId(link.source);
+        const rawTarget = endId(link.target);
+        // An end that is a point on an edge already folded is that fold, so this
+        // edge folds around it rather than around the point.
+        const sourceId = absorbedEnd(rawSource);
+        const targetId = absorbedEnd(rawTarget);
         const subject = positionOf(sourceId);
         const object = positionOf(targetId);
         const foldId = `fold:${linkId}`;
@@ -225,7 +290,14 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             icon: "bx bx-git-commit",
             x: (subject.x + object.x) / 2,
             y: (subject.y + object.y) / 2,
-            fold: { linkId, sourceNoteId: sourceId, targetNoteId: targetId, predicate }
+            fold: {
+                linkId,
+                sourceNoteId: sourceId,
+                targetNoteId: targetId,
+                predicate,
+                subject: relationEnd(rawSource, sourceId),
+                object: relationEnd(rawTarget, targetId)
+            }
         };
         folds.set(foldId, fold);
         data.noteIdToSizeMap[foldId] = FOLD_NODE_SIZE;
@@ -234,6 +306,12 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         }
         linkInto(sourceId, foldId);
         linkInto(targetId, foldId);
+        if (rawSource !== sourceId) {
+            linkInto(rawSource, foldId);
+        }
+        if (rawTarget !== targetId) {
+            linkInto(rawTarget, foldId);
+        }
     }
 
     // A point held on an edge belongs to the fold of that edge, so a relation drawn
@@ -323,8 +401,12 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             nodesById.set(noteId, added);
             data.noteIdToSizeMap[noteId] = FOLD_NODE_SIZE;
         }
+        const id = `${attachment.linkId}-${attachment.name}-${noteId}`;
+        if (links.some((item) => item.id === id)) {
+            continue;
+        }
         links.push({
-            id: `${attachment.linkId}-${attachment.name}-${noteId}`,
+            id,
             source: attachment.outgoing ? foldId : otherId,
             target: attachment.outgoing ? otherId : foldId,
             name: attachment.name
@@ -343,6 +425,17 @@ export interface ReificationEnds {
     predicate: string;
     subject: NoteMapNodeObject;
     object: NoteMapNodeObject | null;
+}
+
+/** The edge drawn when the reification note `rootId` is expanded into its two ends. */
+export function expandedLinkId(rootId: string) {
+    return `expanded:${rootId}`;
+}
+
+/** The reification note an expanded edge stands for, when the edge is one. */
+export function expandedNoteId(linkId: string): string | null {
+    const prefix = "expanded:";
+    return linkId.startsWith(prefix) ? linkId.slice(prefix.length) : null;
 }
 
 /**
@@ -367,7 +460,7 @@ export function expandReification(data: NotesAndRelationsData, ends: Reification
     if (jointId && ends.object) {
         rememberNode(nodes, noteIdToSizeMap, jointNode(jointId, ends.subject.id, ends.object.id));
         links.push({
-            id: `${ends.subject.id}-${ends.object.id}`,
+            id: expandedLinkId(ends.rootId),
             source: ends.subject.id,
             target: ends.object.id,
             name: ends.predicate
@@ -457,19 +550,160 @@ export function applyRelationBridges(data: NotesAndRelationsData): NotesAndRelat
 }
 
 /**
- * The graph the map shows: the fact opened back into its notes, or the edges
- * joined where a fact points at a fact.
+ * Expands each fact that is still a note on the map. One pass can reveal the
+ * next fact, so a fact that was not on the map yet is tried again after the
+ * others. A fact with no two ends is left as it is.
+ */
+export function expandReifications(data: NotesAndRelationsData, expanded: readonly ReificationEnds[]): NotesAndRelationsData {
+    let current = data;
+    let remaining = expanded.filter((ends) => ends.object);
+    for (let pass = 0; pass < expanded.length && remaining.length > 0; pass++) {
+        const pending: ReificationEnds[] = [];
+        for (const ends of remaining) {
+            if (current.nodes.some((node) => node.id === ends.rootId)) {
+                current = expandReification(current, ends);
+            } else {
+                pending.push(ends);
+            }
+        }
+        if (pending.length === remaining.length) {
+            break;
+        }
+        remaining = pending;
+    }
+    return current;
+}
+
+/**
+ * The graph the map shows: each expanded fact opened into its notes, or the
+ * edges joined where a fact points at a fact, then any edge the reader folded.
  */
 export function presentRelations(
     data: NotesAndRelationsData,
     collapsed: ReadonlySet<string>,
-    unfolded: ReificationEnds | null
+    expanded: readonly ReificationEnds[] = []
 ): NotesAndRelationsData {
-    const opened = unfolded ? expandReification(data, unfolded) : data;
+    const opened = applyRelationBridges(expandReifications(data, expanded));
     if (collapsed.size > 0) {
         return collapseRelations(opened, collapsed);
     }
-    return applyRelationBridges(opened);
+    return opened;
+}
+
+/**
+ * The edges to fold for `linkId`, the ones it starts on before it.
+ *
+ * An edge drawn from the middle of another edge cannot fold until that one has,
+ * and the same for the edge that one starts on. The edge asked for is last, so
+ * it is the node that remains. Expanding removes only that one.
+ */
+export function foldOrder(data: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] }, linkId: string): string[] {
+    const hosts = new Map<string, string>();
+    for (const node of data.nodes) {
+        if (!node.joint || !node.jointOf) {
+            continue;
+        }
+        const [ subjectId, objectId ] = node.jointOf;
+        const host = data.links.find((link) => {
+            const source = endKey(link.source);
+            const target = endKey(link.target);
+            return (source === subjectId && target === objectId)
+                || (source === objectId && target === subjectId);
+        });
+        if (host) {
+            hosts.set(node.id, host.id);
+        }
+    }
+
+    const ordered: string[] = [];
+    const visiting = new Set<string>();
+    const visit = (id: string) => {
+        if (ordered.includes(id) || visiting.has(id)) {
+            return;
+        }
+        const link = data.links.find((item) => item.id === id);
+        if (!link) {
+            return;
+        }
+        visiting.add(id);
+        for (const end of [ endKey(link.source), endKey(link.target) ]) {
+            const hostId = hosts.get(end);
+            if (hostId) {
+                visit(hostId);
+            }
+        }
+        visiting.delete(id);
+        ordered.push(id);
+    };
+    visit(linkId);
+    return ordered;
+}
+
+/**
+ * The note id an end of a fold stands for.
+ * A fact end is the note of that relation, so the caller can read the relation that hangs off it.
+ */
+export async function resolveFoldEnd(
+    end: FoldEnd,
+    reificationNoteId: (sourceNoteId: string, predicate: string, targetNoteId: string) => Promise<string | undefined>
+): Promise<string | undefined> {
+    if ("noteId" in end) {
+        return end.noteId;
+    }
+    const sourceId = await resolveFoldEnd(end.fact.source, reificationNoteId);
+    const objectId = await resolveFoldEnd(end.fact.object, reificationNoteId);
+    if (!sourceId || !objectId) {
+        return;
+    }
+    return reificationNoteId(sourceId, end.fact.predicate, objectId);
+}
+
+/** Collapsed edges in fold order: an edge after the edges it starts on. */
+function orderedFolds(data: NotesAndRelationsData, collapsedLinkIds: ReadonlySet<string>): string[] {
+    const ordered: string[] = [];
+    const seen = new Set<string>();
+    for (const linkId of collapsedLinkIds) {
+        for (const id of foldOrder(data, linkId)) {
+            if (!collapsedLinkIds.has(id) || seen.has(id)) {
+                continue;
+            }
+            seen.add(id);
+            ordered.push(id);
+        }
+    }
+    return ordered;
+}
+
+/**
+ * Gives every note of `next` a place on the map it is about to replace.
+ *
+ * A note that was already drawn keeps its place. One that is new takes the place of
+ * `anchorId` when that note is leaving, spaced along the link so the fit has an extent
+ * to frame. Without a place, the fit is taken over an empty box and the map goes blank.
+ */
+export function carryPositions(previous: NoteMapNodeObject[], next: NoteMapNodeObject[], anchorId: string) {
+    const previousById = new Map(previous.map((node) => [ node.id, node ]));
+    const anchor = previousById.get(anchorId);
+    const anchorX = anchor?.x;
+    const anchorY = anchor?.y;
+    let placed = 0;
+
+    for (const node of next) {
+        const prior = previousById.get(node.id);
+        if (prior?.x !== undefined && prior.y !== undefined) {
+            node.x = prior.x;
+            node.y = prior.y;
+            continue;
+        }
+        if (anchorX === undefined || anchorY === undefined) {
+            continue;
+        }
+        node.x = anchorX + placed * 40;
+        node.y = anchorY;
+        node.vx = 0;
+        node.vy = 0;
+        placed += 1;
+    }
 }
 
 function rememberNode(nodes: NoteMapNodeObject[], sizes: Record<string, number>, node: NoteMapNodeObject | null) {
@@ -567,6 +801,47 @@ function nodesKeptBy(
 }
 
 function endId(end: string | NoteMapNodeObject): string {
+    return typeof end === "string" ? end : end.id;
+}
+
+/** The name of one end of a relation. A point on an edge is the title of that edge. */
+export function relationEndTitle(
+    end: NoteMapLinkObject["source"],
+    data: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
+    seen = new Set<string>()
+): string {
+    const id = endKey(end);
+    const node = typeof end === "object" && end ? end : data.nodes.find((item) => item.id === id);
+    if (!node) {
+        return "";
+    }
+    if (!node.joint || !node.jointOf || seen.has(node.id)) {
+        return node.name;
+    }
+    seen.add(node.id);
+    const [ subjectId, objectId ] = node.jointOf;
+    const host = data.links.find((link) => {
+        const source = endKey(link.source);
+        const target = endKey(link.target);
+        return (source === subjectId && target === objectId)
+            || (source === objectId && target === subjectId);
+    });
+    const predicate = host?.name.split(",")[0]?.trim();
+    if (!host || !predicate) {
+        return node.name;
+    }
+    return buildReificationTitle({
+        subjectTitle: relationEndTitle(host.source, data, seen),
+        predicate,
+        objectTitle: relationEndTitle(host.target, data, seen)
+    });
+}
+
+/** The note id a graph link stores at an end, once the graph has replaced the id with the note. */
+function endKey(end: NoteMapLinkObject["source"]): string {
+    if (!end || typeof end === "number") {
+        return "";
+    }
     return typeof end === "string" ? end : end.id;
 }
 
