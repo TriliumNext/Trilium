@@ -164,6 +164,11 @@ describe("clipper route handlers", () => {
         expect(inbox.title).toBe("Inbox");
         expect(inbox.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(inbox.noteId);
         expect(inbox.getParentNotes()[0].hasLabel("dateNote")).toBe(true);
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "https://example.com/daily-inbox" }
+        } as unknown as Request<{ noteUrl: string }>));
+        expect(found.noteId).toBe(result.noteId);
         calendarLookup.mockRestore();
     });
 
@@ -296,6 +301,134 @@ describe("clipper route handlers", () => {
     it("returns a null noteId when no clipping matches the URL", async () => {
         const found = await cls.init(() => clipperRoute.findNotesByUrl({ params: { noteUrl: "https://nope.example/none" } } as unknown as Request<{ noteUrl: string }>));
         expect(found.noteId).toBeNull();
+    });
+
+    it("does not create an inbox when a URL lookup finds nothing", async () => {
+        const journal = await cls.init(() => {
+            const journal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Journal for a URL lookup",
+                content: "",
+                type: "text"
+            }).note;
+            journal.setLabel("calendarRoot");
+            journal.setLabel("enableDailyInbox");
+            return journal;
+        });
+        const calendarLookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "calendarRoot" ? journal : null);
+        const noteCount = Object.keys(becca.notes).length;
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "https://example.com/not-clipped-yet" }
+        } as unknown as Request<{ noteUrl: string }>));
+
+        expect(found.noteId).toBeNull();
+        expect(Object.keys(becca.notes).length).toBe(noteCount);
+        calendarLookup.mockRestore();
+    });
+
+    it("does not create a day note when a URL lookup finds nothing", async () => {
+        const journal = await cls.init(() => {
+            const journal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Journal without a daily inbox",
+                content: "",
+                type: "text"
+            }).note;
+            journal.setLabel("calendarRoot");
+            return journal;
+        });
+        const calendarLookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "calendarRoot" ? journal : null);
+        const noteCount = Object.keys(becca.notes).length;
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "https://example.com/not-in-the-day" }
+        } as unknown as Request<{ noteUrl: string }>));
+
+        expect(found.noteId).toBeNull();
+        expect(Object.keys(becca.notes).length).toBe(noteCount);
+        calendarLookup.mockRestore();
+    });
+
+    it("does not create an inbox when the looked-up URL is empty", async () => {
+        const journal = await cls.init(() => {
+            const journal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Journal for an empty URL lookup",
+                content: "",
+                type: "text"
+            }).note;
+            journal.setLabel("calendarRoot");
+            journal.setLabel("enableDailyInbox");
+            return journal;
+        });
+        const calendarLookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "calendarRoot" ? journal : null);
+        const noteCount = Object.keys(becca.notes).length;
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "" }
+        } as unknown as Request<{ noteUrl: string }>));
+
+        expect(found.noteId).toBeNull();
+        expect(Object.keys(becca.notes).length).toBe(noteCount);
+        calendarLookup.mockRestore();
+    });
+
+    it("looks up a URL in #clipperInbox without creating a daily inbox", async () => {
+        const { clipperInbox, clipped } = await cls.init(() => {
+            const journal = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Journal beside a clipper inbox",
+                content: "",
+                type: "text"
+            }).note;
+            journal.setLabel("calendarRoot");
+            journal.setLabel("enableDailyInbox");
+
+            const clipperInbox = noteService.createNewNote({
+                parentNoteId: "root",
+                title: "Clipper inbox",
+                content: "",
+                type: "text"
+            }).note;
+            clipperInbox.setLabel("clipperInbox");
+
+            const clipped = noteService.createNewNote({
+                parentNoteId: clipperInbox.noteId,
+                title: "Already clipped",
+                content: "",
+                type: "text"
+            }).note;
+            clipped.setLabel("pageUrl", "https://example.com/in-clipper-inbox");
+            return { clipperInbox, clipped };
+        });
+        const lookup = vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+            name === "clipperInbox" ? clipperInbox : null);
+        const noteCount = Object.keys(becca.notes).length;
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "https://example.com/in-clipper-inbox" }
+        } as unknown as Request<{ noteUrl: string }>));
+
+        expect(found.noteId).toBe(clipped.noteId);
+        expect(Object.keys(becca.notes).length).toBe(noteCount);
+        lookup.mockRestore();
+    });
+
+    it("looks up a URL at the top level when there is no journal", async () => {
+        const lookup = vi.spyOn(attributeService, "getNoteWithLabel").mockReturnValue(null);
+        const noteCount = Object.keys(becca.notes).length;
+
+        const found = await cls.init(() => clipperRoute.findNotesByUrl({
+            params: { noteUrl: "https://example.com/no-journal-lookup" }
+        } as unknown as Request<{ noteUrl: string }>));
+
+        expect(found.noteId).toBeNull();
+        expect(Object.keys(becca.notes).length).toBe(noteCount);
+        lookup.mockRestore();
     });
 
     it("returns a null noteId for an empty URL", async () => {

@@ -220,11 +220,38 @@ function handshake() {
 
 async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
-    const clipperInbox = await getClipperInboxNote();
+    const clipperInbox = findClipperSearchNote();
+    if (!clipperInbox) {
+        return { noteId: null };
+    }
+
     const foundPage = findClippingNote(clipperInbox, pageUrl, null);
     return {
         noteId: foundPage ? foundPage.noteId : null
     };
+}
+
+/**
+ * Where a URL lookup searches. The same places `getClipperInboxNote()` would clip into,
+ * except a day or Inbox that does not exist yet is a miss: checking a URL is not a capture.
+ */
+function findClipperSearchNote(): BNote | null {
+    const clipperInbox = attributeService.getNoteWithLabel("clipperInbox");
+    if (clipperInbox) {
+        return clipperInbox;
+    }
+
+    const calendarRoot = dateNoteService.findCalendarRoot();
+    if (!calendarRoot) {
+        return becca.getNoteOrThrow("root");
+    }
+
+    const today = dateUtils.localNowDate();
+    if (calendarRoot.hasLabel("enableDailyInbox")) {
+        return dateNoteService.findDailyInboxNote(today, calendarRoot);
+    }
+
+    return dateNoteService.findDayNote(today, calendarRoot);
 }
 
 export default {

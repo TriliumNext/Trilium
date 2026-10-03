@@ -179,6 +179,7 @@ function getRootCalendarNote(): BNote {
         rootNote = created;
     });
 
+    /* v8 ignore next 3 -- unreachable: the transaction always assigns rootNote */
     if (!rootNote) {
         throw new Error("Unable to create a calendar root");
     }
@@ -451,14 +452,30 @@ function getWeekNote(weekStr: string, _rootNote: BNote | null = null): BNote | n
     return weekNote as unknown as BNote;
 }
 
+/** The day note for `dateStr` under `rootNote`, or null when that day has not been created. */
+function findDayNote(dateStr: string, rootNote: BNote): BNote | null {
+    const date = dateStr.trim().substring(0, 10);
+    return searchService.findFirstNoteWithQuery(
+        `#${DATE_LABEL}="${date}"`, new searchContext({ ancestorNoteId: rootNote.noteId })
+    );
+}
+
+/** The day's `~dailyInbox` target, or null when the day or that note does not exist yet. */
+function findDailyInboxNote(dateStr: string, rootNote: BNote): BNote | null {
+    const dayNote = findDayNote(dateStr, rootNote);
+    if (!dayNote) {
+        return null;
+    }
+
+    return findDailyInbox(dayNote);
+}
+
 function getDayNote(dateStr: string, _rootNote: BNote | null = null): BNote {
     const rootNote = _rootNote || getRootCalendarNote();
 
     dateStr = dateStr.trim().substring(0, 10);
 
-    let dateNote = searchService.findFirstNoteWithQuery(
-        `#${DATE_LABEL}="${dateStr}"`, new searchContext({ ancestorNoteId: rootNote.noteId })
-    );
+    const dateNote = findDayNote(dateStr, rootNote);
 
     if (dateNote) {
         return dateNote;
@@ -477,19 +494,21 @@ function getDayNote(dateStr: string, _rootNote: BNote | null = null): BNote {
         rootNote, "day", dayjs(dateStr), parseInt(dayNumber)
     );
 
-    getSql().transactional(() => {
-        dateNote = createNote(dateParentNote as BNote, noteTitle);
+    let createdNote: BNote | undefined;
 
-        attributeService.createLabel(dateNote.noteId, DATE_LABEL, dateStr.substring(0, 10));
+    getSql().transactional(() => {
+        createdNote = createNote(dateParentNote as BNote, noteTitle);
+
+        attributeService.createLabel(createdNote.noteId, DATE_LABEL, dateStr.substring(0, 10));
 
         const dateTemplateAttr = rootNote.getOwnedAttribute("relation", "dateTemplate");
 
         if (dateTemplateAttr) {
-            attributeService.createRelation(dateNote.noteId, "template", dateTemplateAttr.value);
+            attributeService.createRelation(createdNote.noteId, "template", dateTemplateAttr.value);
         }
     });
 
-    return dateNote as unknown as BNote;
+    return createdNote as unknown as BNote;
 }
 
 function getTodayNote(rootNote: BNote | null = null) {
@@ -526,6 +545,7 @@ function getDailyInboxNote(dateStr: string, _rootNote: BNote | null = null): BNo
         inboxNote = created;
     });
 
+    /* v8 ignore next 3 -- unreachable: the transaction always assigns inboxNote */
     if (!inboxNote) {
         throw new Error("Unable to create a daily inbox");
     }
@@ -568,6 +588,8 @@ export default {
     getWeekNote,
     getWeekFirstDayNote,
     getDayNote,
+    findDayNote,
+    findDailyInboxNote,
     getTodayNote,
     getDailyInboxNote,
     getJournalNoteTitle

@@ -405,6 +405,43 @@ describe("special_notes (core, real DB)", () => {
                 expect(inbox.hasAncestor(calendar.noteId)).toBe(true);
             });
         });
+
+        it("creates a new inbox when ~dailyInbox names a missing or deleted note", () => {
+            const calendar = getContext().init(() => {
+                const calendar = createPlainNote("root", "Journal for a missing inbox");
+                calendar.setLabel("calendarRoot");
+                calendar.setLabel("enableDailyInbox");
+                return calendar;
+            });
+            vi.spyOn(attributeService, "getNoteWithLabel").mockImplementation((name: string) =>
+                name === "calendarRoot" ? calendar : null);
+
+            const missing = getContext().init(() => {
+                const day = dateNotes.getDayNote("2026-10-09", calendar);
+                const target = createPlainNote("root", "Missing inbox");
+                day.setRelation("dailyInbox", target.noteId);
+                delete becca.notes[target.noteId];
+                return target;
+            });
+
+            const replaced = getContext().init(() => specialNotes.getInboxNote("2026-10-09"));
+            becca.notes[missing.noteId] = missing;
+            expect(replaced.noteId).not.toBe(missing.noteId);
+            expect(replaced.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(replaced.noteId);
+
+            const deleting = getContext().init(() => {
+                const day = dateNotes.getDayNote("2026-10-10", calendar);
+                const target = createPlainNote("root", "Deleting inbox");
+                day.setRelation("dailyInbox", target.noteId);
+                target.isBeingDeleted = true;
+                return target;
+            });
+
+            const replacedToo = getContext().init(() => specialNotes.getInboxNote("2026-10-10"));
+            expect(replacedToo.noteId).not.toBe(deleting.noteId);
+            expect(replacedToo.getParentNotes()[0].getOwnedRelationValue("dailyInbox")).toBe(replacedToo.noteId);
+            deleting.isBeingDeleted = false;
+        });
     });
 
     describe("findCalendarRoot", () => {

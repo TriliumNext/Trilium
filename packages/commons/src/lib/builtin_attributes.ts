@@ -361,7 +361,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "inherit" },
     // Set on a journal root, to be applied as `~template` on each note the period generates.
     { type: "relation", name: "dateTemplate" },
-    // On a day note: the note captures for that day go into.
+    // On a day note, `~dailyInbox` points to the note that receives captures for that day.
     { type: "relation", name: "dailyInbox" },
     { type: "relation", name: "dailyInboxTemplate" },
     { type: "relation", name: "weekTemplate" },
