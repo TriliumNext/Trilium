@@ -74,6 +74,12 @@ export interface NotesAndRelationsData {
         source: string | NoteMapNodeObject;
         target: string | NoteMapNodeObject;
         name: string;
+        /**
+         * Set when this line is a relation of one statement on a grouped edge.
+         * `hostEndId` is that edge's joint. The fold of this line is that statement.
+         */
+        hostPredicate?: string;
+        hostEndId?: string;
     }[];
     noteIdToSizeMap: Record<string, number>;
     /** Relations of a folded fact. Absent from the drawn graph until that fact is a node. */
@@ -273,6 +279,33 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         return { noteId: rawId || absorbedId };
     };
 
+    /**
+     * The title of one end. A joint this relation hangs on is that one statement.
+     * The two notes keep their own titles: `labelOf` would name the fold this edge just became.
+     */
+    const labelForHost = (rawId: string, absorbedId: string, hostPredicate?: string, hostEndId?: string) => {
+        if (!hostPredicate || !hostEndId || rawId !== hostEndId) {
+            return labelOf(absorbedId);
+        }
+        const joint = nodesById.get(hostEndId);
+        const [ subjectId, objectId ] = joint?.jointOf ?? [ "", "" ];
+        if (!subjectId || !objectId) {
+            return labelOf(absorbedId);
+        }
+        return foldTitle([ hostPredicate ], endName(subjectId), endName(objectId));
+    };
+
+    const endName = (noteId: string) => {
+        const node = nodesById.get(noteId);
+        if (node?.joint) {
+            const folded = absorbedEnd(noteId);
+            if (folded !== noteId) {
+                return folds.get(folded)?.name ?? node.name;
+            }
+        }
+        return node?.name ?? "";
+    };
+
     for (const linkId of orderedFolds(data, collapsedLinkIds)) {
         const link = data.links.find((item) => item.id === linkId);
         const predicates = link ? predicatesIn(link.name) : [];
@@ -291,7 +324,11 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         const foldId = `fold:${linkId}`;
         const fold: NoteMapNodeObject = {
             id: foldId,
-            name: foldTitle(predicates, labelOf(sourceId), labelOf(targetId)),
+            name: foldTitle(
+                predicates,
+                labelForHost(rawSource, sourceId, link.hostPredicate, link.hostEndId),
+                labelForHost(rawTarget, targetId, link.hostPredicate, link.hostEndId)
+            ),
             type: "text",
             color: null,
             icon: "bx bx-git-commit",
@@ -303,8 +340,8 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
                 targetNoteId: targetId,
                 predicate,
                 predicates,
-                subject: relationEnd(rawSource, sourceId),
-                object: relationEnd(rawTarget, targetId)
+                subject: pinHost(relationEnd(rawSource, sourceId), rawSource, link.hostEndId, link.hostPredicate),
+                object: pinHost(relationEnd(rawTarget, targetId), rawTarget, link.hostEndId, link.hostPredicate)
             }
         };
         folds.set(foldId, fold);
@@ -622,7 +659,8 @@ export function applyRelationBridges(data: NotesAndRelationsData): NotesAndRelat
         if (attachment.otherFact) {
             bridgeToFact(
                 nodes, links, linkIds, data.noteIdToSizeMap,
-                jointId, attachment.name, attachment.outgoing, attachment.otherFact
+                jointId, attachment.name, attachment.outgoing, attachment.otherFact,
+                attachment.hostPredicate
             );
             continue;
         }
@@ -631,12 +669,14 @@ export function applyRelationBridges(data: NotesAndRelationsData): NotesAndRelat
         }
         const otherId = attachment.note[0];
         rememberNode(nodes, data.noteIdToSizeMap, nodeFromTuple(attachment.note));
-        pushLink(links, linkIds, {
-            id: `${attachment.linkId}-${attachment.name}-${otherId}`,
-            source: attachment.outgoing ? jointId : otherId,
-            target: attachment.outgoing ? otherId : jointId,
-            name: attachment.name
-        });
+        pushLink(links, linkIds, hostLink(
+            `${attachment.linkId}-${attachment.name}-${otherId}`,
+            attachment.outgoing ? jointId : otherId,
+            attachment.outgoing ? otherId : jointId,
+            attachment.name,
+            attachment.hostPredicate,
+            jointId
+        ));
     }
 
     return { ...data, nodes, links };
@@ -749,11 +789,16 @@ export async function resolveFoldEnd(
         return;
     }
     const predicates = end.fact.predicates?.length ? end.fact.predicates : [ end.fact.predicate ];
+    const matches: string[] = [];
     for (const predicate of predicates) {
         const noteId = await reificationNoteId(sourceId, predicate, objectId);
-        if (noteId) {
-            return noteId;
+        if (noteId && !matches.includes(noteId)) {
+            matches.push(noteId);
         }
+    }
+    // Several statements on one edge can each have a note. The caller names the one this relation hangs on.
+    if (matches.length === 1) {
+        return matches[0];
     }
 }
 
@@ -856,17 +901,20 @@ function bridgeToFact(
     jointId: string,
     name: string,
     outgoing: boolean,
-    fact: NoteMapFactEnds
+    fact: NoteMapFactEnds,
+    hostPredicate: string
 ) {
     rememberNode(nodes, sizes, nodeFromTuple(fact.subject));
     if (!fact.object) {
         const otherId = fact.subject[0];
-        pushLink(links, linkIds, {
-            id: `${jointId}-${name}-${otherId}`,
-            source: outgoing ? jointId : otherId,
-            target: outgoing ? otherId : jointId,
-            name
-        });
+        pushLink(links, linkIds, hostLink(
+            `${jointId}-${name}-${otherId}`,
+            outgoing ? jointId : otherId,
+            outgoing ? otherId : jointId,
+            name,
+            hostPredicate,
+            jointId
+        ));
         return;
     }
     rememberNode(nodes, sizes, nodeFromTuple(fact.object));
@@ -878,12 +926,69 @@ function bridgeToFact(
     });
     const otherJointId = edgeJointId(fact.subject[0], fact.object[0]);
     rememberNode(nodes, sizes, jointNode(otherJointId, fact.subject[0], fact.object[0]));
-    pushLink(links, linkIds, {
-        id: `${jointId}-${name}-${otherJointId}`,
-        source: outgoing ? jointId : otherJointId,
-        target: outgoing ? otherJointId : jointId,
-        name
-    });
+    pushLink(links, linkIds, hostLink(
+        `${jointId}-${name}-${otherJointId}`,
+        outgoing ? jointId : otherJointId,
+        outgoing ? otherJointId : jointId,
+        name,
+        hostPredicate,
+        jointId
+    ));
+}
+
+/** A bridge line. `hostPredicate` is set only when the payload names the statement this relation hangs on. */
+function hostLink(
+    id: string,
+    source: string,
+    target: string,
+    name: string,
+    hostPredicate: string | undefined,
+    hostEndId: string
+): NotesAndRelationsData["links"][number] {
+    const link: NotesAndRelationsData["links"][number] = { id, source, target, name };
+    if (hostPredicate) {
+        link.hostPredicate = hostPredicate;
+        link.hostEndId = hostEndId;
+    }
+    return link;
+}
+
+/** Keeps `hostPredicate` as the only name of a fact end that is the joint this relation hangs on. */
+function pinHost(end: FoldEnd, rawId: string, hostEndId?: string, hostPredicate?: string): FoldEnd {
+    if (!hostPredicate || !hostEndId || rawId !== hostEndId || !("fact" in end)) {
+        return end;
+    }
+    return {
+        fact: {
+            predicate: hostPredicate,
+            predicates: [ hostPredicate ],
+            source: end.fact.source,
+            object: end.fact.object
+        }
+    };
+}
+
+/** Splits a grouped fold title on commas that sit between statements, not inside one. */
+export function splitFoldTitle(title: string): string[] {
+    const parts: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < title.length; i++) {
+        const ch = title[i];
+        if (ch === "(") {
+            depth++;
+        } else if (ch === ")" && depth > 0) {
+            depth--;
+        } else if (ch === "," && depth === 0 && title[i + 1] === " ") {
+            parts.push(title.slice(start, i));
+            start = i + 2;
+        }
+    }
+    const last = title.slice(start);
+    if (last) {
+        parts.push(last);
+    }
+    return parts;
 }
 
 function nodesKeptBy(

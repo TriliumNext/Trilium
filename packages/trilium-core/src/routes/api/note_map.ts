@@ -264,6 +264,8 @@ function reificationLinksFor(attributes: BAttribute[]): NoteMapReificationLink[]
                 linkId: `${attribute.noteId}-${attribute.value}`,
                 name: relation.name,
                 outgoing,
+                attributeId: attribute.attributeId,
+                hostPredicate: attribute.name,
                 note: described ? undefined : noteTuple(other),
                 otherFact: described ?? undefined
             });

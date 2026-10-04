@@ -16,7 +16,8 @@ import {
     NotesAndRelationsData,
     presentRelations,
     relationEndTitle,
-    resolveFoldEnd
+    resolveFoldEnd,
+    splitFoldTitle
 } from "./data";
 
 describe("loadNotesAndRelations", () => {
@@ -124,6 +125,8 @@ describe("collapseRelations", () => {
             linkId: "alpha-beta",
             name: "cause",
             outgoing: true,
+            attributeId: "cause-row",
+            hostPredicate: "cites",
             note: [ "event", "Event X", "text", null, "bx bx-file" ]
         } ];
 
@@ -141,6 +144,8 @@ describe("collapseRelations", () => {
             linkId: "alpha-beta",
             name: "cause",
             outgoing: true,
+            attributeId: "cause-row",
+            hostPredicate: "cites",
             note: [ "event", "Event X", "text", null, "bx bx-file" ]
         } ];
         const open = applyRelationBridges(data);
@@ -320,6 +325,19 @@ describe("resolveFoldEnd", () => {
         expect(calls).toEqual([ "links(a, b)" ]);
         expect(noteId).toBe("links-note");
     });
+
+    it("does not pick a statement when several on the same edge have notes", async () => {
+        const noteId = await resolveFoldEnd({
+            fact: {
+                predicate: "cites",
+                predicates: [ "cites", "mentions" ],
+                source: { noteId: "alpha" },
+                object: { noteId: "beta" }
+            }
+        }, async (_source, predicate) => `${predicate}-note`);
+
+        expect(noteId).toBeUndefined();
+    });
 });
 
 describe("carryPositions", () => {
@@ -357,6 +375,8 @@ describe("applyRelationBridges", () => {
                 linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "cites",
                 note: [ "event", "Event X", "text", null, "bx bx-file" ]
             } ]
         };
@@ -368,7 +388,9 @@ describe("applyRelationBridges", () => {
             id: "alpha-beta-cause-event",
             source: "edge:alpha-beta",
             target: "event",
-            name: "cause"
+            name: "cause",
+            hostPredicate: "cites",
+            hostEndId: "edge:alpha-beta"
         });
         expect(data.noteIdToSizeMap.event).toBe(4);
     });
@@ -387,6 +409,8 @@ describe("applyRelationBridges", () => {
                 linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "cites",
                 otherFact: {
                     linkId: "gamma-item",
                     predicate: "contains",
@@ -408,7 +432,9 @@ describe("applyRelationBridges", () => {
             id: "edge:alpha-beta-cause-edge:gamma-item",
             source: "edge:alpha-beta",
             target: "edge:gamma-item",
-            name: "cause"
+            name: "cause",
+            hostPredicate: "cites",
+            hostEndId: "edge:alpha-beta"
         });
 
         const bridgeId = "edge:alpha-beta-cause-edge:gamma-item";
@@ -443,6 +469,8 @@ describe("applyRelationBridges", () => {
                 linkId: "alpha-beta",
                 name: "cause",
                 outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "cites",
                 otherFact: {
                     linkId: "gamma-item",
                     predicate: "contains",
@@ -493,12 +521,16 @@ describe("applyRelationBridges", () => {
                     linkId: "alpha-beta",
                     name: "cause",
                     outgoing: true,
+                    attributeId: "cause-row",
+                    hostPredicate: "cites",
                     note: [ "event", "Event X", "text", null, "bx bx-file" ]
                 },
                 {
                     linkId: "delta-epsilon",
                     name: "because",
                     outgoing: true,
+                    attributeId: "because-row",
+                    hostPredicate: "mentions",
                     note: [ "reason", "Reason", "text", null, "bx bx-file" ]
                 }
             ]
@@ -532,6 +564,47 @@ describe("applyRelationBridges", () => {
         expect(folded.nodes[0].name).toBe("cites(Alpha, Beta), mentions(Alpha, Beta)");
         expect(folded.nodes[0].fold?.predicates).toEqual([ "cites", "mentions" ]);
         expect(folded.nodes[0].fold?.predicate).toBe("cites");
+    });
+
+    it("folds a relation of one statement on a grouped edge as that statement", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, mentions" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4 },
+            reificationLinks: [ {
+                linkId: "alpha-beta",
+                name: "cause",
+                outgoing: true,
+                attributeId: "mentions-row",
+                hostPredicate: "mentions",
+                note: [ "event", "Event", "text", null, "bx bx-file" ]
+            } ]
+        };
+
+        const open = applyRelationBridges(data);
+        const bridgeId = "alpha-beta-cause-event";
+        const folded = collapseRelations(open, new Set(foldOrder(open, bridgeId)));
+
+        expect(folded.nodes.map((node) => node.id)).toEqual([ `fold:${bridgeId}` ]);
+        expect(folded.nodes[0].name).toBe("cause(mentions(Alpha, Beta), Event)");
+        expect(folded.nodes[0].fold?.subject).toMatchObject({
+            fact: { predicate: "mentions", predicates: [ "mentions" ] }
+        });
+    });
+
+    it("splits a grouped fold title between statements", () => {
+        expect(splitFoldTitle("cites(Alpha, Beta), mentions(Alpha, Beta)")).toEqual([
+            "cites(Alpha, Beta)",
+            "mentions(Alpha, Beta)"
+        ]);
+        expect(splitFoldTitle("cause(mentions(Alpha, Beta), Event)")).toEqual([
+            "cause(mentions(Alpha, Beta), Event)"
+        ]);
     });
 });
 

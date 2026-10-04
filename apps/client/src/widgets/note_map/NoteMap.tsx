@@ -15,7 +15,7 @@ import appContext, { type CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import contextMenu, { type MenuItem } from "../../menus/context_menu";
 import link_context_menu from "../../menus/link_context_menu";
-import dialog, { chooseNote } from "../../services/dialog";
+import dialog, { chooseNote, pickSingleItem } from "../../services/dialog";
 import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
@@ -41,7 +41,8 @@ import {
     presentRelations,
     ReificationEnds,
     relationEndTitle,
-    resolveFoldEnd
+    resolveFoldEnd,
+    splitFoldTitle
 } from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
@@ -199,6 +200,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                             : [ node.fold.predicate ];
                         if (predicates.length === 1) {
                             void openFoldedRelation(node.fold, predicates[0]);
+                        } else {
+                            void chooseFoldedStatement(node.fold, node.name);
                         }
                         return;
                     }
@@ -733,6 +736,7 @@ async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: s
     const items: MenuItem<string>[] = [
         { title: t("relation_map.expand_relation"), command: "expand", uiIcon: "bx bx-expand" }
     ];
+    const captions = splitFoldTitle(title);
     if (predicates.length === 1) {
         const row = rows[0];
         if (row?.attributeId && row.noteId) {
@@ -745,8 +749,9 @@ async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: s
         }
     } else {
         for (const [ index, row ] of rows.entries()) {
+            const caption = captions.length === predicates.length ? captions[index] : row.predicate;
             items.push({
-                title: t("note_map.open_reification", { title: row.predicate }),
+                title: t("note_map.open_reification", { title: caption }),
                 command: `open:${index}`,
                 uiIcon: "bx bx-git-commit"
             });
@@ -831,6 +836,25 @@ async function reificationOfRelation(sourceNoteId: string, predicate: string, ta
     if (lookedUp && typeof lookedUp === "object" && lookedUp.noteId) {
         return lookedUp.noteId;
     }
+}
+
+/** Asks which statement on a grouped edge to open, then opens or creates that note. */
+async function chooseFoldedStatement(fold: NoteMapFold, title: string) {
+    const predicates = fold.predicates.length > 0 ? fold.predicates : [ fold.predicate ];
+    const captions = splitFoldTitle(title);
+    const picked = await pickSingleItem({
+        title: t("note_map.choose_statement"),
+        placeholder: t("note_map.choose_statement_search"),
+        items: predicates.map((predicate, index) => ({
+            key: predicate,
+            caption: captions.length === predicates.length ? captions[index] : predicate,
+            icon: "bx bx-git-commit"
+        }))
+    });
+    if (!picked) {
+        return;
+    }
+    await openFoldedRelation(fold, picked.key);
 }
 
 /** Creates the note for a folded relation, if it does not exist yet, and opens it. */

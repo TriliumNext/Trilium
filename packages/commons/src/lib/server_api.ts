@@ -969,6 +969,13 @@ export interface NoteMapReificationLink {
     linkId: string;
     name: string;
     outgoing: boolean;
+    /**
+     * The attribute this relation is attached to.
+     * `linkId` is the edge between the two notes, and several predicates can share it.
+     */
+    attributeId: string;
+    /** `attributeId`'s name. A fold of this relation is that statement. */
+    hostPredicate: string;
     /** The note the relation points at, when that note is not itself a fact. */
     note?: NoteMapNote;
     /** The fact the relation points at, when it joins one fact to another. */

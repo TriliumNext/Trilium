@@ -1386,7 +1386,9 @@
     "show_ends": "Show the two notes",
     "show_as_note": "Show as one note",
     "go_to_concept": "Go to {{name}}",
-    "connect_concept": "Connect {{name}} to a note"
+    "connect_concept": "Connect {{name}} to a note",
+    "choose_statement": "Choose a statement",
+    "choose_statement_search": "Search statements"
   },
   "note_picker": {
     "title": "Choose a note",
