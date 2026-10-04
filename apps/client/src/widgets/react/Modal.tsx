@@ -2,7 +2,7 @@ import "./Modal.css";
 
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
-import { ComponentChildren, CSSProperties, RefObject } from "preact";
+import { ComponentChildren, createPortal, CSSProperties, RefObject } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
@@ -105,6 +105,11 @@ export interface ModalProps {
      * announced as nothing but "dialog".
      */
     ariaLabel?: string;
+}
+
+/** Mounts a modal opened by a script alongside Bootstrap's body-level backdrop. */
+export function ScriptModal(props: ModalProps) {
+    return createPortal(<Modal {...props} />, document.body);
 }
 
 export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus, sidebar, hideSidebarHeader, isFullPageOnMobile, ariaLabel }: ModalProps) {

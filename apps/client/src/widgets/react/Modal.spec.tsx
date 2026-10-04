@@ -1,5 +1,5 @@
-import { render } from "preact";
-import { useState } from "preact/hooks";
+import { createContext, render } from "preact";
+import { useContext, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,7 @@ vi.mock("./modal_focustrap", () => ({
     suspendModalFocusTraps: mocks.suspendModalFocusTraps
 }));
 
-import Modal from "./Modal";
+import Modal, { ScriptModal } from "./Modal";
 
 let container: HTMLDivElement;
 
@@ -80,6 +80,39 @@ function DialogWithTypedInto({ show, onHidden }: { show: boolean; onHidden(): vo
 }
 
 describe("Modal", () => {
+    it("mounts a script modal above a contained render note while preserving context and cleanup", async () => {
+        const Context = createContext("missing");
+        const onClick = vi.fn();
+
+        function Content() {
+            return <button onClick={onClick}>{useContext(Context)}</button>;
+        }
+
+        container.style.contain = "size";
+        container.style.overflow = "auto";
+        await act(async () => {
+            render(<Context.Provider value="from render note">
+                <ScriptModal className="script-dialog" size="md" show onHidden={() => {}}>
+                    <Content />
+                </ScriptModal>
+            </Context.Provider>, container);
+        });
+
+        const dialog = document.querySelector<HTMLElement>(".script-dialog");
+        expect(dialog?.parentElement).toBe(document.body);
+        expect(container.contains(dialog)).toBe(false);
+        expect(mocks.openDialog).toHaveBeenCalledWith(expect.anything(), true, { focus: true }, undefined);
+
+        const button = dialog?.querySelector<HTMLButtonElement>(".modal-body button");
+        expect(button?.textContent).toBe("from render note");
+        await act(async () => button?.click());
+        expect(onClick).toHaveBeenCalledOnce();
+
+        await act(async () => render(null, container));
+        expect(document.querySelector(".script-dialog")).toBeNull();
+        expect(mocks.hide).toHaveBeenCalled();
+    });
+
     /**
      * The bug this pins: `modalRef.current` stood among the effect's dependencies, and a ref holds
      * nothing while the render that names them runs and the element by the time the effect does —

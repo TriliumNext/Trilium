@@ -9,8 +9,10 @@ vi.mock("./bundle.js", () => ({
 
 // Spy on the actual JSX rendering so we don't depend on Preact mounting.
 const renderAtElementMock = vi.fn();
+const disposeMock = vi.fn();
 vi.mock("../widgets/react/react_utils.jsx", () => ({
-    renderReactWidgetAtElement: (...args: unknown[]) => renderAtElementMock(...args)
+    renderReactWidgetAtElement: (...args: unknown[]) => renderAtElementMock(...args),
+    disposeReactWidget: (...args: unknown[]) => disposeMock(...args)
 }));
 
 import FAttribute from "../entities/fattribute.js";
@@ -72,6 +74,7 @@ describe("render", () => {
 
         expect(result).toBe(false);
         expect($el.children().length).toBe(0);
+        expect(disposeMock).toHaveBeenCalledWith($el[0]);
         expect($el.css("display")).toBe("none");
         expect(server.postWithSilentInternalServerError).not.toHaveBeenCalled();
     });
@@ -260,6 +263,24 @@ describe("render", () => {
         expect(renderAtElementMock).toHaveBeenCalledOnce();
         expect(renderAtElementMock.mock.calls[0][0]).toBe(closest);
         expect(renderAtElementMock.mock.calls[0][2]).toBe($el[0]);
+    });
+
+    it("does not mount a script modal after its render note was cancelled", async () => {
+        const target = buildNote({ title: "Target", type: "code" });
+        target.mime = "text/jsx";
+        const note = buildNote({ title: "Host", "~renderNote": target.noteId });
+        let finishExecution: ((value: unknown) => void) | undefined;
+        executeMock.mockReturnValue(new Promise(resolve => { finishExecution = resolve; }));
+        const controller = new AbortController();
+        const $el = $("<div class='component'>");
+        Object.assign(glob, { getComponentByEl: vi.fn(() => ({ fake: "component" })) });
+
+        await render(note, $el, vi.fn(), controller.signal);
+        controller.abort();
+        finishExecution?.(() => null);
+        await flush();
+
+        expect(renderAtElementMock).not.toHaveBeenCalled();
     });
 });
 
