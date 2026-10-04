@@ -174,7 +174,7 @@ export async function buildTreeContextMenuItems(ctx: TreeContextMenuContext): Pr
             title: t("tree-context-menu.insert-child-note"),
             command: "insertChildNote",
             keyboardShortcut: "createNoteInto",
-            uiIcon: "bx bx-plus",
+            uiIcon: "bx bx-subdirectory-right",
             items: insertChildNoteItems,
             enabled: notSearch && noSelectedNotes && notOptionsOrHelp && !hasSubtreeHidden && !isSpotlighted,
             columns: 2

@@ -275,6 +275,20 @@ describe("extractChatHeadings", () => {
             ]);
         });
 
+        it("skips headings inside a reply's thoughts", () => {
+            const headings = extractChatHeadings([
+                userMessage("u1", "Q"),
+                assistantMessage("a1", "Answer")
+            ], containerWith(
+                messageWrapper("u1"),
+                messageWrapper("a1", `<div class="llm-chat-thinking">${markdownContent("<h1>Thought</h1>")}</div>${markdownContent("<h1>Real</h1>")}`)
+            ));
+            expect(headings).toMatchObject([
+                { id: "u1", level: 1 },
+                { id: "a1:0", level: 2, text: "Real" }
+            ]);
+        });
+
         it("skips error and thinking messages entirely", () => {
             const headings = extractChatHeadings([
                 userMessage("u1", "Q"),

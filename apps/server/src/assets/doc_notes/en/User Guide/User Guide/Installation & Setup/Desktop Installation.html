@@ -8,6 +8,31 @@
   <li><strong>Run the Application</strong>: Launch Trilium by executing the <code>trilium</code> executable
     found within the unzipped folder.</li>
 </ol>
+<h2>Installing from Flathub</h2>
+<p>On Linux, Trilium is also available on <a href="https://flathub.org/en/apps/org.triliumnotes.Trilium">Flathub</a>,
+  for both x86_64 and ARM (aarch64). Install it from your software center
+  (e.g. GNOME Software or KDE Discover), or from a terminal:</p><pre><code class="language-text-x-sh">flatpak install flathub org.triliumnotes.Trilium</code></pre>
+<p>Updates arrive through the software center or <code>flatpak update</code>,
+  like any other Flatpak.</p>
+<p>The Flathub version runs in a sandbox and keeps its <a href="#root/_help_tAassRL4RSQL">data directory</a> in <code>~/.var/app/org.triliumnotes.Trilium/data/trilium-data</code>.
+  It cannot see the data directory of a <code>.deb</code>, <code>.rpm</code>,
+  AppImage or <code>.zip</code> installation (<code>~/.local/share/trilium-data</code>),
+  so it starts with an empty database. To bring existing notes over:</p>
+<ol>
+  <li>
+    <p>Close Trilium, in both the old installation and the Flatpak.</p>
+  </li>
+  <li>
+    <p>Copy the old data directory into the sandbox:</p><pre><code class="language-text-x-sh">mkdir -p ~/.var/app/org.triliumnotes.Trilium/data
+cp -a ~/.local/share/trilium-data ~/.var/app/org.triliumnotes.Trilium/data/</code></pre>
+  </li>
+  <li>
+    <p>Start the Flatpak version.</p>
+  </li>
+</ol>
+<p>If <code>~/.var/app/org.triliumnotes.Trilium/data/trilium-data</code> already
+  exists because the Flatpak version was started before, remove or rename
+  it first.</p>
 <h2>Startup Scripts</h2>
 <p>Trilium offers various startup scripts to customize your experience:</p>
 <ul>

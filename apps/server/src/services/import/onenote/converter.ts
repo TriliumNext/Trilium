@@ -43,7 +43,7 @@ const LIST_STYLE_MAP = new Map<string, string>([["lower-alpha", "lower-latin"], 
  * OneNote's checkbox-style note tags — the ones it renders with a tick box and that carry a
  * `:completed` status (see https://learn.microsoft.com/en-us/graph/onenote-note-tags). Each becomes a
  * CKEditor task-list item, checked when its status is `completed`. The ones that mean more than a bare
- * to-do (priorities, discussions, meetings, requests) also keep an inner emoji from TAG_EMOJI.
+ * to-do (priorities, discussions, meetings, requests) also keep an inner glyph from {@link tagGlyph}.
  */
 const CHECKBOX_TAGS = new Set<string>([
     "to-do",
@@ -58,41 +58,49 @@ const CHECKBOX_TAGS = new Set<string>([
 ]);
 
 /**
- * OneNote's note tags mapped to a representative emoji, keyed on the tag *shape* (the part before any
- * `:status`). Decorative tags render as the emoji alone; checkbox tags (CHECKBOX_TAGS) render as a task
- * item with the emoji prefixed inside it — except plain `to-do`, which is a bare checkbox with no
- * emoji. A shape not listed here (e.g. a user's custom tag) simply renders with no prefix.
+ * OneNote's note tags mapped to a Boxicons name, keyed on the tag *shape* (the part before any
+ * `:status`). Every name here is in `icon_pack_boxicons-v2.json`, the one icon pack Trilium builds
+ * in — a class from an installable pack would draw nothing on a fresh install.
+ */
+const TAG_ICON = new Map<string, string>([
+    ["important", "bx-star"],
+    ["critical", "bx-error-circle"],
+    ["question", "bx-help-circle"],
+    ["highlight", "bx-highlight"],
+    // Graph returns a Definition tag as `remember-for-later`, so this shape never reaches us.
+    ["definition", "bx-book-open"],
+    ["remember-for-later", "bx-pin"],
+    ["remember-for-blog", "bx-edit"],
+    ["idea", "bx-bulb"],
+    ["password", "bx-key"],
+    ["contact", "bx-user"],
+    ["address", "bx-home"],
+    ["phone-number", "bx-phone"],
+    ["web-site-to-visit", "bx-globe"],
+    ["source-for-article", "bx-news"],
+    ["send-in-email", "bx-envelope"],
+    ["movie-to-see", "bx-movie"],
+    ["book-to-read", "bx-book"],
+    ["music-to-listen-to", "bx-music"],
+    // Checkbox tags that carry meaning beyond a bare to-do; `to-do` itself stays glyph-less.
+    ["discuss-with-person-a", "bx-message-rounded"],
+    ["discuss-with-person-b", "bx-message-rounded"],
+    ["discuss-with-manager", "bx-conversation"],
+    ["schedule-meeting", "bx-calendar"],
+    ["call-back", "bx-phone-call"],
+    ["client-request", "bx-clipboard"]
+]);
+
+/**
+ * The tags whose glyph is a character rather than a picture. Boxicons carries no alphabet and no
+ * numerals, so an icon could not tell A from B, and these keep the boxed-character emoji OneNote
+ * itself draws. The cost is that they are not findable by name the way an icon is.
  */
 const TAG_EMOJI = new Map<string, string>([
-    ["important", "⭐"],
-    ["critical", "❗"],
-    ["question", "❓"],
-    ["highlight", "🖍️"],
-    ["definition", "📖"],
-    ["remember-for-later", "📌"],
-    ["remember-for-blog", "✍️"],
-    ["idea", "💡"],
-    ["password", "🔑"],
-    ["contact", "👤"],
-    ["address", "🏠"],
-    ["phone-number", "📞"],
-    ["web-site-to-visit", "🌐"],
-    ["source-for-article", "📰"],
-    ["send-in-email", "📧"],
-    ["movie-to-see", "🎬"],
-    ["book-to-read", "📚"],
-    ["music-to-listen-to", "🎵"],
     ["project-a", "🅰️"],
     ["project-b", "🅱️"],
-    // Checkbox tags that carry meaning beyond a bare to-do; `to-do` itself stays emoji-less.
     ["to-do-priority-1", "1️⃣"],
-    ["to-do-priority-2", "2️⃣"],
-    ["discuss-with-person-a", "💬"],
-    ["discuss-with-person-b", "💬"],
-    ["discuss-with-manager", "🗣️"],
-    ["schedule-meeting", "📅"],
-    ["call-back", "📲"],
-    ["client-request", "📋"]
+    ["to-do-priority-2", "2️⃣"]
 ]);
 
 /** OneNote's highlight/font palette uses the 16 basic CSS color names; map them to hex (see below). */
@@ -268,16 +276,17 @@ function takeTrailingCaption(img: HTMLElement): string | null {
  *
  * Checkbox-style tags (CHECKBOX_TAGS — `to-do` and its priority/discussion/meeting siblings) become a
  * CKEditor task list, checked when their status is `completed`; runs of consecutive ones collapse into
- * one list, matching the structure Trilium's TodoList plugin produces. The emoji prefix (TAG_EMOJI) is
- * orthogonal: it applies to decorative tags and to the meaningful checkbox tags alike, so e.g. a
- * `discuss-with-manager` paragraph becomes a task item reading "🗣️ …" while bare `to-do` stays a plain
- * checkbox. A paragraph can carry several comma-separated tags (e.g. `to-do,important`), in which case
- * its emojis stack and a single checkbox tag still turns it into a task item.
+ * one list, matching the structure Trilium's TodoList plugin produces. The glyph prefix ({@link
+ * tagGlyph}) is orthogonal: it applies to decorative tags and to the meaningful checkbox tags alike,
+ * so e.g. a `discuss-with-manager` paragraph becomes a task item led by a `bx-conversation` icon while
+ * bare `to-do` stays a plain checkbox. A paragraph can carry several comma-separated tags (e.g.
+ * `to-do,important`), in which case its glyphs stack and a single checkbox tag still turns it into a
+ * task item.
  */
 function convertTags(scope: HTMLElement) {
     const tagged = scope.querySelectorAll("p[data-tag]");
 
-    // Prefix each tagged paragraph's emoji in place, and record whether it is a checkbox paragraph
+    // Prefix each tagged paragraph's glyph in place, and record whether it is a checkbox paragraph
     // (and if so, whether it's completed) so adjacent ones can be grouped.
     const completedByCheckbox = new Map<HTMLElement, boolean>();
     for (const p of tagged) {
@@ -287,9 +296,9 @@ function convertTags(scope: HTMLElement) {
         });
         p.removeAttribute("data-tag");
 
-        const emojis = tags.map((tag) => TAG_EMOJI.get(tag.shape)).filter((emoji): emoji is string => Boolean(emoji));
-        if (emojis.length > 0) {
-            p.set_content(`${emojis.join("")} ${p.innerHTML}`);
+        const glyphs = tags.map((tag) => tagGlyph(tag.shape)).filter((glyph): glyph is string => Boolean(glyph));
+        if (glyphs.length > 0) {
+            p.set_content(`${glyphs.join("")} ${p.innerHTML}`);
         }
 
         const checkbox = tags.find((tag) => CHECKBOX_TAGS.has(tag.shape));
@@ -320,6 +329,17 @@ function convertTags(scope: HTMLElement) {
         run[0].insertAdjacentHTML("beforebegin", `<ul class="todo-list">${items.join("")}</ul>`);
         run.forEach((p) => p.remove());
     }
+}
+
+/**
+ * What one tag shape is drawn as: an inline icon in the form the text editor and the share theme
+ * both read, or the emoji from {@link TAG_EMOJI}. Returns undefined for plain `to-do`, which is a
+ * bare tick box, and for a shape neither map lists.
+ */
+function tagGlyph(shape: string) {
+    const icon = TAG_ICON.get(shape);
+
+    return icon ? `<span class="tn-icon bx ${icon}"></span>` : TAG_EMOJI.get(shape);
 }
 
 /**

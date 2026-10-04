@@ -26,7 +26,9 @@ import toast from "../../../services/toast";
 import ws from "../../../services/ws";
 import { escapeHtml, isMobile } from "../../../services/utils";
 import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/note_types";
-import { type PromotedAttributeSetting, resolvePromotedAttributes } from "../promoted_attributes";
+import {
+    type PromotedAttributeSetting, resolvePromotedAttributes, visiblePromotedAttributeNames
+} from "../promoted_attributes";
 import type { SortContext } from "../sorting";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import { FormListItem } from "../../react/FormList";
@@ -72,8 +74,9 @@ import { useBoardReference } from "./reference";
 import { openBoardContextMenu, openCreateColumnMenu } from "./context_menu";
 import { useBoardSort } from "./sort";
 import {
-    affectsSortOrder, applyCardMoves, ColumnMap, filterColumnMap, getBoardData, resolveColumnSorts,
-    resolveSortWatch, sortColumnMap, unfilteredCardIndex
+    affectsCardDefinitions, affectsSortOrder, applyCardMoves, cardNotes, ColumnMap,
+    definitionSources, filterColumnMap, getBoardData, resolveColumnSorts, resolveSortWatch,
+    sortColumnMap, unfilteredCardIndex
 } from "./data";
 import { useBoardKeyboard } from "./keyboard";
 
@@ -311,6 +314,7 @@ const BOARD_HINTS: ShortcutHintDefinition = [
                 labelKey: "board_view.hints.insert_column"
             },
             { keys: [ "Space" ], labelKey: "board_view.hints.open_item" },
+            { keys: [ "Space" ], labelKey: "board_view.hints.toggle_column" },
             { keys: [ "F2" ], labelKey: "board_view.hints.rename" },
             { keys: [ "Delete" ], labelKey: "board_view.hints.remove_item" },
             { keys: [ "Shift+Delete" ], labelKey: "board_view.hints.delete_item" },
@@ -340,6 +344,11 @@ const BOARD_HINTS: ShortcutHintDefinition = [
     {
         titleKey: "board_view.hints.selection",
         hints: [
+            { keys: [ "Ctrl+Space" ], labelKey: "board_view.hints.toggle_selection" },
+            {
+                keys: [ "Shift+Down", "Shift+Up" ],
+                labelKey: "board_view.hints.extend_selection"
+            },
             { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
             { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
         ]
@@ -374,7 +383,7 @@ export default function BoardView({
         () => adoptLegacyColumns(storedConfig, openedOnGroupBy), [ storedConfig, openedOnGroupBy ]);
     let viewConfig = adoptedConfig ?? storedConfig;
     const [ includeArchived ] = useNoteLabelBoolean(parentNote, "includeArchived");
-    const [ inboxEnabled ] = useNoteLabelBoolean(parentNote, "enableInboxColumn");
+    const [ inboxEnabled ] = useNoteLabelBoolean(parentNote, "board:showInbox");
     // Read undefaulted: a board naming no width wears no class, so `--board-column-width` keeps
     // whatever it inherits.
     const [ storedColumnWidth ] = useNoteLabel(parentNote, COLUMN_WIDTH_LABEL);
@@ -522,12 +531,16 @@ export default function BoardView({
         collectionNoteIds: noteIds
     });
     const statusAttribute = groupBy.replace(/^[~#]/, "");
-    // Every promoted attribute the board defines, hidden ones included: a column can sort by a
-    // field its cards do not draw.
+    // Includes the definitions from the cards, and hidden attributes, because a column can sort by
+    // an attribute the cards do not show.
+    const cards = useMemo(() => cardNotes(allByColumn), [ allByColumn ]);
+    // Read again after a definition change, since a card can have gained a template.
+    const cardDefinitionSources = useMemo(
+        () => definitionSources(cards), [ cards, definitionRevision ]);
     const promotedAttributes = useMemo(
         () => resolvePromotedAttributes(
-            parentNote, viewConfig?.promotedAttributes, [ statusAttribute ]),
-        [ parentNote, viewConfig, statusAttribute, definitionRevision ]);
+            parentNote, viewConfig?.promotedAttributes, [ statusAttribute ], cards),
+        [ parentNote, viewConfig, statusAttribute, cards, definitionRevision ]);
     // Keyed on the label rather than on the committed grouping, so the button names what the reader
     // just picked while the columns below are still being read.
     const groupingChoices = useMemo(
@@ -637,7 +650,7 @@ export default function BoardView({
 
     // Held while the names are the same, since a new array would redraw every card on every render.
     const shownAttributesRef = useRef<string[]>([]);
-    const resolvedAttributes = api.getVisiblePromotedAttributeNames();
+    const resolvedAttributes = visiblePromotedAttributeNames(promotedAttributes);
     if (resolvedAttributes.join(",") !== shownAttributesRef.current.join(",")) {
         shownAttributesRef.current = resolvedAttributes;
     }
@@ -1333,9 +1346,11 @@ export default function BoardView({
         // The column list is read off the definition, which may be edited from the attribute panel,
         // another split, or a synced instance. Re-reading it re-runs the refresh through the effect.
         // Any definition the board carries, not only the grouping's: the others are what it offers
-        // to group by instead.
+        // to group by instead. A definition that reaches a card, directly or through `~template`
+        // or `~inherit`, also changes `promotedAttributes`.
         if (loadResults.getAttributeRows().some(attr =>
-                attr.name?.startsWith("label:") && attributes.isAffecting(attr, parentNote))) {
+                attr.name?.startsWith("label:") && attributes.isAffecting(attr, parentNote))
+                || affectsCardDefinitions(loadResults, cardDefinitionSources)) {
             setDefinitionRevision(revision => revision + 1);
         }
 
@@ -1399,6 +1414,8 @@ export default function BoardView({
                             }
                         }}
                         onReset={stopSelecting}
+                        onCollapseAll={collapseAllColumns}
+                        onExpandAll={expandAllColumns}
                     >
                         <BoardGroupBy
                             note={parentNote}
@@ -1484,7 +1501,7 @@ export default function BoardView({
                                         : 0}
                                     cardTemplates={cardTemplates}
                                     nested={storedColumns.get(column)?.nested}
-                                    limit={storedColumns.get(column)?.limit}
+                                    limit={api.getColumnLimit(column)}
                                     columnIndex={index}
                                     columns={shownColumns}
                                     onMoveColumn={handleColumnDrop}
@@ -1869,6 +1886,16 @@ export function TitleEditor({
      * that would have ended the edit being spent.
      */
     const isHoldingOpen = useRef(false);
+    /** The box holding the field and the picker. `iconFocusOut` tests `relatedTarget` against it. */
+    const fieldRef = useRef<HTMLDivElement>(null);
+    const iconRef = useRef<HTMLSpanElement>(null);
+    /**
+     * Whether the icon picker holds focus, which Shift+Tab hands to it.
+     *
+     * Set before focus moves rather than when the picker receives it: the field blurs first, and
+     * that blur is what would close the editor.
+     */
+    const isIconFocused = useRef(false);
     const holdOpen = useMemo<HoldOpen>(() => ({
         onOpened: () => { isHoldingOpen.current = true; },
         onClosed: () => {
@@ -1912,6 +1939,17 @@ export function TitleEditor({
         // CJK conversion does not also save the title with unconfirmed text.
         if (isIMEComposing(e)) {
             return;
+        }
+
+        if (e.key === "Tab" && e.shiftKey && icon) {
+            const button = iconRef.current?.querySelector("button");
+            if (button) {
+                e.preventDefault();
+                e.stopPropagation();
+                isIconFocused.current = true;
+                button.focus();
+                return;
+            }
         }
 
         if (e.key === "Enter" && saveAndContinue) {
@@ -2032,7 +2070,7 @@ export function TitleEditor({
     }
 
     const onBlur = (newValue: string) => {
-        if (isHoldingOpen.current) {
+        if (isHoldingOpen.current || isIconFocused.current) {
             return;
         }
 
@@ -2054,6 +2092,41 @@ export function TitleEditor({
             dismiss();
         }
     };
+
+    /**
+     * Ends the edit when focus moves outside `fieldRef`. A `relatedTarget` inside it is the field
+     * itself; `isHoldingOpen` covers the picker's menu, which is drawn outside `fieldRef`.
+     */
+    function iconFocusOut(e: JSX.TargetedFocusEvent<HTMLSpanElement>) {
+        isIconFocused.current = false;
+
+        const next = e.relatedTarget;
+        if (isHoldingOpen.current || (next instanceof Node && fieldRef.current?.contains(next))) {
+            return;
+        }
+
+        onBlur(inputRef.current?.value ?? "");
+    }
+
+    /** Leaves the editor from the picker, which Escape does from the field itself. */
+    function iconKeyDown(e: JSX.TargetedKeyboardEvent<HTMLSpanElement>) {
+        if (e.key !== "Escape" || isHoldingOpen.current) {
+            return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        shouldDismiss.current = true;
+
+        const target = returnFocusTo?.current ?? focusElRef.current;
+        if (target instanceof HTMLElement) {
+            target.focus();
+            return;
+        }
+
+        isIconFocused.current = false;
+        dismiss();
+    }
 
     /**
      * Saves what was typed and reports whether `save` accepted it.
@@ -2113,7 +2186,7 @@ export function TitleEditor({
             };
 
         return (
-            <div className={clsx("title-editor-field", {
+            <div ref={fieldRef} className={clsx("title-editor-field", {
                 "with-submit": saveAndContinue,
                 "with-footer": !!footer
             })}>
@@ -2121,7 +2194,12 @@ export function TitleEditor({
                     blur arrives before the picker reports itself open, and losing focus is what
                     closes the editor. */}
                 {icon && (
-                    <span onMouseDown={(e) => e.preventDefault()}>
+                    <span
+                        ref={iconRef}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onFocusOut={iconFocusOut}
+                        onKeyDown={iconKeyDown}
+                    >
                         <IconPickerButton
                             className="title-editor-icon"
                             icon={icon.current}

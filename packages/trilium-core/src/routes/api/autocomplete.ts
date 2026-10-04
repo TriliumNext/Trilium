@@ -1,3 +1,5 @@
+import type { AutocompleteResult } from "@triliumnext/commons";
+
 import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
@@ -8,23 +10,27 @@ import { escapeHtml } from "../../services/utils/index.js";
 import { ValidationError } from "../../errors.js";
 import becca_service from "../../becca/becca_service.js";
 
-function getAutocomplete(req: Request) {
+/** The most recent notes an empty query lists. */
+const RECENT_NOTES_LIMIT = 200;
+
+function getAutocomplete(req: Request): AutocompleteResult[] {
     if (typeof req.query.query !== "string") {
         throw new ValidationError("Invalid query data type.");
     }
     const query = (req.query.query || "").trim();
     const fastSearch = String(req.query.fastSearch).toLowerCase() !== "false";
+    const limit = parseLimit(req.query.limit);
 
     const activeNoteId = req.query.activeNoteId || "none";
 
-    let results;
+    let results: AutocompleteResult[];
 
     const timestampStarted = Date.now();
 
     if (query.length === 0 && typeof activeNoteId === "string") {
-        results = getRecentNotes(activeNoteId);
+        results = getRecentNotes(activeNoteId, limit);
     } else {
-        results = searchService.searchNotesForAutocomplete(query, fastSearch);
+        results = searchService.searchNotesForAutocomplete(query, fastSearch, limit);
     }
 
     const msTaken = Date.now() - timestampStarted;
@@ -36,7 +42,7 @@ function getAutocomplete(req: Request) {
     return results;
 }
 
-function getRecentNotes(activeNoteId: string) {
+function getRecentNotes(activeNoteId: string, limit = RECENT_NOTES_LIMIT): AutocompleteResult[] {
     let extraCondition = "";
     const params = [activeNoteId];
 
@@ -59,7 +65,7 @@ function getRecentNotes(activeNoteId: string) {
         ${extraCondition}
     ORDER BY
         utcDateCreated DESC
-    LIMIT 200`,
+    LIMIT ${Math.min(limit, RECENT_NOTES_LIMIT)}`,
         params
     );
 
@@ -67,16 +73,37 @@ function getRecentNotes(activeNoteId: string) {
         const notePathArray = rn.notePath.split("/");
 
         const { title, icon } = becca_service.getNoteTitleAndIcon(notePathArray[notePathArray.length - 1]);
-        const notePathTitle = becca_service.getNoteTitleForPath(notePathArray);
+        const pathTitles = becca_service.getNoteTitleArrayForPath(notePathArray);
+        const notePathTitle = pathTitles.join(" › ");
 
         return {
             notePath: rn.notePath,
             noteTitle: title,
             notePathTitle,
             highlightedNotePathTitle: escapeHtml(notePathTitle || title),
-            icon: icon ?? "bx bx-note"
+            highlightedNoteTitle: escapeHtml(pathTitles.at(-1) ?? title),
+            highlightedParentPathTitle: escapeHtml(pathTitles.slice(0, -1).join(" › ")),
+            icon: icon ?? "bx bx-note",
+            utcDateVisited: rn.utcDateCreated
         };
     });
+}
+
+/**
+ * The `limit` query parameter: how many notes a caller shows, which the server then stops at
+ * rather than building rows that are thrown away. Left out, the server's own caps apply; it can
+ * lower them, never raise them.
+ */
+function parseLimit(limit: unknown): number | undefined {
+    if (limit === undefined) {
+        return undefined;
+    }
+
+    const parsed = typeof limit === "string" ? Number(limit) : NaN;
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        throw new ValidationError("Invalid limit.");
+    }
+    return parsed;
 }
 
 export default {

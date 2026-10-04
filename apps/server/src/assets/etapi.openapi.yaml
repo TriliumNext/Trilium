@@ -236,21 +236,29 @@ paths:
             operationId: getNoteContent
             responses:
                 "200":
-                    description: note content response
+                    description: note content, served with the note's MIME type as `Content-Type`
                     content:
-                        text/html:
+                        "*/*":
                             schema:
                                 type: string
+                                format: binary
         put:
             description: Updates note content identified by its ID
             operationId: putNoteContentById
             requestBody:
-                description: html content of note
+                description: >
+                    New content of the note. Send text (such as the HTML of a text note) as
+                    `text/plain` and binary data (such as the file of an image or file note) as
+                    `application/octet-stream`; other content types are not accepted.
                 required: true
                 content:
                     text/plain:
                         schema:
                             type: string
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "204":
                     description: note content updated
@@ -671,21 +679,29 @@ paths:
             operationId: getAttachmentContent
             responses:
                 "200":
-                    description: attachment content response
+                    description: attachment content, served with the attachment's MIME type as `Content-Type`
                     content:
-                        text/html:
+                        "*/*":
                             schema:
                                 type: string
+                                format: binary
         put:
             description: Updates attachment content identified by its ID
             operationId: putAttachmentContentById
             requestBody:
-                description: html content of attachment
+                description: >
+                    New content of the attachment. Send text as `text/plain` and binary data
+                    (such as an image or a PDF) as `application/octet-stream`; other content
+                    types are not accepted.
                 required: true
                 content:
                     text/plain:
                         schema:
                             type: string
+                    application/octet-stream:
+                        schema:
+                            type: string
+                            format: binary
             responses:
                 "204":
                     description: attachment content updated
@@ -1150,6 +1166,12 @@ components:
                 utcDateCreated:
                     $ref: "#/components/schemas/UtcDateTime"
                     description: UTC timestap of the note creation. Specify only if you want to override the default (current datetime).
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: >
+                        UTC timestamp of the note's last modification, e.g. to keep the date of a note being migrated
+                        from another application. The local dateModified is derived from it. Specify only if you want
+                        to override the default (current datetime).
         Note:
             type: object
             properties:
@@ -1213,7 +1235,9 @@ components:
                     $ref: "#/components/schemas/UtcDateTime"
                 utcDateModified:
                     $ref: "#/components/schemas/UtcDateTime"
-                    readOnly: true
+                    description: >
+                        Writable through PATCH, e.g. to restore a migrated note's date after its content was rewritten.
+                        The local dateModified is derived from it.
         Branch:
             type: object
             description: Branch places the note into the tree, it represents the relationship between a parent note and child note
@@ -1296,6 +1320,10 @@ components:
                     type: string
                 content:
                     type: string
+                    description: >
+                        Text content of the attachment, stored as-is. To store binary content,
+                        create the attachment without it, then upload the data with
+                        `PUT /attachments/{attachmentId}/content`.
                 position:
                     type: integer
                     format: int32

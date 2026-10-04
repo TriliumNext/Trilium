@@ -15,7 +15,7 @@ class FakeShare {
 
 vi.mock("@triliumnext/core/src/services/export/zip/html.js", () => ({ default: FakeHtml }));
 vi.mock("@triliumnext/core/src/services/export/zip/markdown.js", () => ({ default: FakeMarkdown }));
-vi.mock("./share_theme.js", () => ({ default: FakeShare }));
+vi.mock("./share_theme.js", () => ({ createShareThemeExportProvider: (data: any) => new FakeShare(data) }));
 
 const data = { branch: {} } as any;
 
@@ -28,7 +28,7 @@ async function importFactory(dev: boolean) {
     vi.resetModules();
     vi.doMock("@triliumnext/core/src/services/export/zip/html.js", () => ({ default: FakeHtml }));
     vi.doMock("@triliumnext/core/src/services/export/zip/markdown.js", () => ({ default: FakeMarkdown }));
-    vi.doMock("./share_theme.js", () => ({ default: FakeShare }));
+    vi.doMock("./share_theme.js", () => ({ createShareThemeExportProvider: (data: any) => new FakeShare(data) }));
     if (dev) {
         vi.stubEnv("TRILIUM_ENV", "dev");
     } else {

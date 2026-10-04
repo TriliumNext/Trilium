@@ -154,7 +154,8 @@ keep in sync. `src/index.ts` imports `ckeditor5/ckeditor5.css` and the Trilium t
 `apps/client/src/widgets/type_widgets/text/`:
 
 - `config.ts` builds the `EditorConfig` (toolbar from `toolbar.ts`, language, feature config such as
-  `syntaxHighlighting`, `moveBlockUp/Down`, mention feeds, etc.).
+  `syntaxHighlighting`, `moveBlockUp/Down`, the `mention.hostedFeeds` whose lists
+  `mention_list_view.tsx` draws, etc.).
 - `CKEditorWithWatchdog.tsx` wraps editor creation in the **custom `EditorWatchdog`**
   (`packages/ckeditor5/src/custom_watchdog.ts`, re-exported from `@triliumnext/ckeditor5`), which
   recreates the editor on a crash while preserving data.

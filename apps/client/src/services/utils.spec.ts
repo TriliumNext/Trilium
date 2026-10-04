@@ -217,9 +217,11 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<p>  </p>")).toBe(true);
     });
 
-    it("detects content via img / section / link-mention", () => {
+    it("detects content via img / section / include / link-mention", () => {
         expect(isHtmlEmpty("<IMG src='x'>")).toBe(false);
         expect(isHtmlEmpty("<SECTION></section>")).toBe(false);
+        expect(isHtmlEmpty("<figure class=\"include-note\" data-note-id=\"n1\">&nbsp;</figure>"))
+            .toBe(false);
         expect(isHtmlEmpty("<span class='link-mention'></span>")).toBe(false);
     });
 

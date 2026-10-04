@@ -15,7 +15,7 @@ import sqlInit from "./sql_init.js";
 import syncMutexService from "./sync_mutex.js";
 import syncOptions from "./sync_options.js";
 import syncUpdateService from "./sync_update.js";
-import { isLinux, isMac, isWindows, randomString, timeLimit } from "./utils/index.js";
+import { isStandalone, randomString, timeLimit } from "./utils/index.js";
 import ws from "./ws.js";
 import getInstanceId from "./instance_id.js";
 import request, { CookieJar, ExecOpts } from "./request.js";
@@ -406,6 +406,13 @@ async function pullChanges(syncContext: SyncContext) {
         });
 
         if (batch.length > 0) {
+            if (totalPullCount) {
+                ws.syncPullInProgress({
+                    pulled: Math.max(0, totalPullCount - outstandingPullCount),
+                    total: totalPullCount
+                });
+            }
+
             log.info(
                 `Sync: pulled ${batch.length} chunk(s) (${batchChanges} changes, ~${Math.round(batchBytes / 1_048_576)} MB) in ${applyStart - fetchStart}ms and applied them in ${Date.now() - applyStart}ms, ${outstandingPullCount} outstanding pulls`
             );
@@ -438,14 +445,11 @@ async function fetchChangesChunk(syncContext: SyncContext, cursor: number, maxBl
  * Maximum accumulated content size (in bytes) to buffer across pulled chunks before applying them
  * in a single transaction during {@link pullChanges}. Larger batches mean fewer commits (each of
  * which carries a large fixed overhead) at the cost of higher peak memory while the batch is held
- * in memory. The standalone/browser build runs SQLite (sql.js) fully in memory, so it uses a much
- * smaller budget than native desktop/server builds.
+ * in memory. The standalone build holds that batch in a browser worker, whose renderer heap is far
+ * smaller than a Node process's, so it uses a smaller budget than native desktop/server builds.
  */
 function getMaxPullBatchBytes() {
-    // Standalone/browser is the only platform reporting none of mac/windows/linux.
-    const isBrowser = !isMac() && !isWindows() && !isLinux();
-
-    if (!isBrowser) {
+    if (!isStandalone()) {
         return 32 * 1024 * 1024; // desktop
     }
 

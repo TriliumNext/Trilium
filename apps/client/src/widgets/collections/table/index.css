@@ -15,14 +15,6 @@
     height: 100%;
 }
 
-.search-result-widget-content .table-view {
-    position: absolute;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
-}
-
 .tabulator-cell .autocomplete {
     position: absolute;
     top: 50%;

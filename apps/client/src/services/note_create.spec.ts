@@ -133,6 +133,17 @@ describe("createNote", () => {
         expect(triggerEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
     });
 
+    it("focuses an AI chat's input rather than its title, which the first reply names", async () => {
+        setActiveContext(true);
+        await noteCreateService.createNote("root", { type: "llmChat" });
+        expect(triggerEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: "ntx-1" });
+        expect(triggerEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
+
+        triggerEvent.mockClear();
+        await noteCreateService.createNote("root", { type: "llmChat", focus: "title" });
+        expect(triggerEvent).toHaveBeenCalledWith("focusAndSelectTitle", { isNewNote: true, ntxId: "ntx-1" });
+    });
+
     it("activates without firing a focus event when focus is neither title nor content", async () => {
         const setNote = setActiveContext(true);
         // an out-of-range focus value still activates the note but triggers no focus event

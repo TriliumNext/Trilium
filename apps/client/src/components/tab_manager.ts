@@ -539,12 +539,6 @@ export default class TabManager extends Component {
                 }
             }
 
-            // close dangling autocompletes after closing the tab
-            const $autocompleteEl = $(".aa-input");
-            if ("autocomplete" in $autocompleteEl) {
-                $autocompleteEl.autocomplete("close");
-            }
-
             // close dangling tooltips
             $("body > div.tooltip").remove();
 

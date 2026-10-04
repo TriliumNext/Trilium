@@ -4,8 +4,10 @@
  */
 
 import { BootstrapDefinition } from '@triliumnext/commons';
-import { checkIntegrity, consistency_checks, entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, type Request, type Response, routes, sql_init } from '@triliumnext/core';
+import { checkIntegrity, consistency_checks, entity_changes, getContext, getPlatform, getSharedBootstrapItems, getSql, isScriptingEnabled, type Request, type Response, routes, sql_init } from '@triliumnext/core';
 import llmRoute from '@triliumnext/core/src/routes/api/llm.js';
+import type { ShareReply } from '@triliumnext/core/src/share/handlers.js';
+import { SHARE_ROUTE_PATHS, type ShareRoutePath } from '@triliumnext/core/src/share/route_paths.js';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest, BrowserRouter } from './browser_router';
@@ -108,12 +110,7 @@ function createRoute(router: BrowserRouter) {
                 // If the handler used the mock response (e.g. image routes that call res.send()),
                 // return it as a raw response so BrowserRouter doesn't JSON-serialize it.
                 if (mockRes._used) {
-                    return {
-                        [RAW_RESPONSE]: true as const,
-                        status: mockRes._status,
-                        headers: mockRes._headers,
-                        body: mockRes._body
-                    };
+                    return toRawResponse(mockRes);
                 }
 
                 if (resultHandler) {
@@ -150,12 +147,7 @@ function createAsyncRoute(router: BrowserRouter, { transactional = true } = {}) 
                 // If the handler used the mock response (e.g. image routes that call res.send()),
                 // return it as a raw response so BrowserRouter doesn't JSON-serialize it.
                 if (mockRes._used) {
-                    return {
-                        [RAW_RESPONSE]: true as const,
-                        status: mockRes._status,
-                        headers: mockRes._headers,
-                        body: mockRes._body
-                    };
+                    return toRawResponse(mockRes);
                 }
 
                 if (resultHandler) {
@@ -200,8 +192,29 @@ function createMockResponse() {
         },
         send(body: unknown) {
             res._used = true;
+            // Express routes an object, a number or a boolean through res.json(), leaving only
+            // strings and bytes to go out as they are. The User Guide's handler example answers
+            // `api.res.send(400)`, which reaches BrowserRouter as an unencodable body otherwise.
+            if (body !== null && isJsonSent(body)) {
+                return res.json(body);
+            }
             res._body = body;
             return res;
+        },
+        json(body: unknown) {
+            res._used = true;
+            // Express fills in the type only when the handler has not chosen one, so a handler
+            // answering `application/problem+json` keeps it.
+            if (!hasHeader(res._headers, "Content-Type")) {
+                res._headers["Content-Type"] = "application/json; charset=utf-8";
+            }
+            res._body = JSON.stringify(body);
+            return res;
+        },
+        redirect(url: string) {
+            res._used = true;
+            res._status = 302;
+            res._headers["Location"] = url;
         },
         sendStatus(code: number) {
             res._used = true;
@@ -219,6 +232,20 @@ function createMockResponse() {
         }
     };
     return res;
+}
+
+/** Whether Express would hand this body to `res.json()` rather than write it out as it stands. */
+function isJsonSent(body: unknown): boolean {
+    if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+        return false;
+    }
+
+    return typeof body === "object" || typeof body === "number" || typeof body === "boolean";
+}
+
+/** Header names are case-insensitive, while the record a handler writes them into is not. */
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+    return Object.keys(headers).some((key) => key.toLowerCase() === name.toLowerCase());
 }
 
 /**
@@ -332,6 +359,20 @@ export function registerRoutes(router: BrowserRouter): void {
         apiResultHandler
     );
 
+    // Shared notes, served from the same database the app reads. Nobody outside this browser can
+    // reach them — there is no server listening — but a published note renders at its real /share
+    // URL, which is what makes the feature testable here at all. Registered by path alone and
+    // loaded on the first request, so EJS, the share theme and the syntax highlighter stay out of
+    // the worker's startup bundle.
+    for (const path of SHARE_ROUTE_PATHS) {
+        router.get(path, (req) => dispatchShare(path, req));
+    }
+    // The share root is addressed as `/share/`; `/share` answers with the redirect that adds the
+    // slash, which the pattern above cannot match because a parameter needs a segment to fill it.
+    router.get("/share", (req) => dispatchShare("/share/", req));
+
+    registerCustomRoute(router);
+
     // Dummy routes for compatibility.
     apiRoute("get", "/api/script/widgets", () => []);
     apiRoute("get", "/api/script/startup", () => []);
@@ -378,6 +419,99 @@ function bootstrapRoute(req: { query: Record<string, string | undefined> }): Boo
         csrfToken: "dummy-csrf-token",
         baseApiUrl: "../api/",
         platform: "web",
+    };
+}
+
+/** Answers one share request, loading the share subsystem the first time one arrives. */
+async function dispatchShare(path: ShareRoutePath, req: BrowserRequest) {
+    const [ share, { registerShareProvider } ] = await Promise.all([
+        import("@triliumnext/core/src/share/index.js"),
+        import("./share_provider.js")
+    ]);
+
+    registerShareProvider();
+    if (share.SHARE_PAGE_PATHS.has(path)) {
+        await share.ensureShareHighlighting();
+    }
+
+    /* v8 ignore next -- @preserve: BrowserRouter.dispatch always sets req.headers, so the ?? fallback is unreachable. */
+    const headers = req.headers ?? {};
+    const shareRequest = {
+        path: req.path,
+        params: req.params,
+        query: req.query,
+        // `fetch` lower-cases the header names it sends, which is the form BrowserRouter stores them in.
+        getHeader: (name: string) => headers[name.toLowerCase()]
+    };
+
+    // Shared, and without a transaction: the share routes only read. The imports above are awaited
+    // before the lock is taken, so nothing is held open across them.
+    return dbLock.runShared(() => getContext().init(() => {
+        const reply = share.handleShareRequest(share.getShareRoute(path), shareRequest);
+
+        return toRawShareResponse(reply);
+    }));
+}
+
+/** Marks a share reply as already formatted, so {@link BrowserRouter} sends it rather than re-wrapping it. */
+function toRawShareResponse(reply: ShareReply) {
+    return {
+        [RAW_RESPONSE]: true as const,
+        status: reply.status,
+        headers: reply.redirect ? { ...reply.headers, location: reply.redirect } : reply.headers,
+        body: reply.body
+    };
+}
+
+/**
+ * Every method a handler script can answer. The server registers its route as an Express `all`,
+ * which covers HEAD and OPTIONS too, so both are registered here to match — `BrowserRouter` matches
+ * on the method, and one left out answers the router's own 404 rather than reaching the handler.
+ */
+const CUSTOM_HANDLER_METHODS = ["get", "head", "post", "put", "patch", "delete", "options"];
+
+/**
+ * Serves `/custom/`: the notes labelled `#customRequestHandler` and `#customResourceProvider`.
+ *
+ * Registered here rather than in the shared table because the server answers it from a route of its
+ * own, ahead of the API router and without CSRF, and because it takes any method rather than one.
+ */
+function registerCustomRoute(router: BrowserRouter) {
+    for (const method of CUSTOM_HANDLER_METHODS) {
+        router.register(method, "/custom/*path", (req: BrowserRequest) => dbLock.runShared(
+            () => getContext().init(async () => {
+                setContextFromHeaders(req);
+                const path = req.params.path;
+                const res = createMockResponse();
+
+                // Handler scripts can await, and a transaction held across that wait would block
+                // every other request on the worker's single SQLite connection.
+                //
+                // Awaited because this runtime sends the response as soon as the handler is done,
+                // where Express holds the connection open past it. A script that answers after an
+                // `await` returns its promise, which has to settle before the body goes out.
+                await routes.handleCustomRequest(path, toCoreRequest(req), res, isScriptingEnabled);
+
+                if (!res._used) {
+                    res.setHeader("Content-Type", "text/plain").status(500)
+                        .send(`Custom handler for '${path}' did not send a response.`);
+                }
+
+                // A HEAD response carries the status and headers of the GET it stands in for, and
+                // nothing else. Express strips the body itself.
+                return toRawResponse(res, req.method === "HEAD");
+            }) as Promise<unknown>
+        ));
+    }
+}
+
+/** Wraps what a handler wrote to its mock response so {@link BrowserRouter} sends it verbatim. */
+function toRawResponse(res: ReturnType<typeof createMockResponse>, omitBody = false) {
+    return {
+        [RAW_RESPONSE]: true as const,
+        status: res._status,
+        headers: res._headers,
+        body: omitBody ? null : res._body
     };
 }
 

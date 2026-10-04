@@ -13,11 +13,12 @@ import { isShare } from "./utils.js";
 let highlightingLoaded = false;
 
 function getEffectiveCodeBlockTheme(): string {
-    if (options.get("codeBlockThemeMatchesApp") === "true") {
-        const style = getEffectiveThemeStyle();
-        return String(options.get(style === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight"));
-    }
-    return String(options.get("codeBlockTheme"));
+    const theme = options.get("codeBlockThemeMatchesApp") === "true"
+        ? options.get(getEffectiveThemeStyle() === "dark" ? "codeBlockThemeDark" : "codeBlockThemeLight")
+        : options.get("codeBlockTheme");
+    // `options.get()` answers undefined until the options have loaded. String() would turn that
+    // into the truthy "undefined", which `isSyntaxHighlightEnabled()` reads as a theme.
+    return String(theme ?? "");
 }
 
 // Re-apply the highlight.js theme when the effective color scheme changes, so that

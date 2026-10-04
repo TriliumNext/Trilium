@@ -8,7 +8,7 @@ async function loadBootstrap() {
     }
 }
 
-// Polyfill removed jQuery methods for autocomplete.js compatibility
+// Polyfills the jQuery methods jQuery 4 removed, which Fancytree still calls.
 ($ as any).isArray = Array.isArray;
 ($ as any).isFunction = function(obj: any) { return typeof obj === 'function'; };
 ($ as any).isPlainObject = function(obj: any) {

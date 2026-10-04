@@ -6,7 +6,7 @@ import {
 
 import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
-import BoardApi, { CARD_REDIRECT_RELATION } from "./api";
+import BoardApi, { CARD_REDIRECT_RELATION, CARD_REDIRECT_RELATION_LEGACY } from "./api";
 import {
     BoardActionsContext, BoardHighlightTokensContext, BoardKeptCardsContext,
     BoardOverlayHostContext, BoardPromotedAttributesContext, BoardSelectionModeContext, TitleEditor
@@ -87,8 +87,9 @@ function Card({
     const [ isArchived ] = useNoteLabelBoolean(note, "archived");
     const [ iconClass, setIconClass ] = useNoteLabel(note, "iconClass");
     // Only whether the card redirects, which is what draws its title as a link. Where it goes is
-    // read when the card is opened.
+    // read when the card is opened. Both names are watched, as `openCard` reads both.
     const [ redirectTo ] = useNoteRelation(note, CARD_REDIRECT_RELATION);
+    const [ legacyRedirectTo ] = useNoteRelation(note, CARD_REDIRECT_RELATION_LEGACY);
     // The card stays the one just made until another is, so what has already been shown is
     // remembered here rather than played again by every redraw of the column.
     const [ isRevealed, setIsRevealed ] = useState(false);
@@ -298,7 +299,7 @@ function Card({
         <div
             ref={cardRef}
             className={clsx("board-note", colorClass, {
-                shortcut: !!redirectTo,
+                shortcut: !!(redirectTo ?? legacyRedirectTo),
                 dragging: isDragging,
                 editing: isEditing,
                 archived: isArchived,
@@ -331,7 +332,7 @@ function Card({
                     {/* On mobile the rail offers the rename, and a hover-revealed icon has no
                         hover to be revealed by. */}
                     {!isMobile() && <span
-                        className="edit-icon icon bx bx-edit"
+                        className="edit-icon icon bx bx-rename"
                         title={t("board_view.edit-note-title")}
                         onClick={handleEdit}
                     />}

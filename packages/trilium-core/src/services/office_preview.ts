@@ -56,13 +56,15 @@ export async function convertOfficeToHtml(content: string | Uint8Array, mime: st
     const { OfficeConverter } = await import("officeparser");
     const { value } = await OfficeConverter.convert(buffer, "html", {
         // Pass the explicit fileType only when auto-detection is unreliable (RTF/EPUB).
-        // Embedded images need no extra config: the parser always emits them as data: URIs,
-        // which the client-side sanitizer permits on <img>.
         parseConfig: fileType ? { fileType } : undefined,
         generatorConfig: {
             // Charts would be emitted as a Chart.js <script> (loaded from a CDN) that the
             // client-side sanitizer strips anyway, so don't bother generating them.
             includeCharts: false,
+            // Inline every embedded image as a data: URI, which the client-side sanitizer permits
+            // on <img>. Above the default cap a fragment emits `<img src="<attachment name>">`,
+            // which resolves against the note's URL and 404s.
+            maxInlineImageBytes: Infinity,
             // Emit an embeddable fragment instead of a full standalone <html> document.
             htmlConfig: { standalone: false }
         }

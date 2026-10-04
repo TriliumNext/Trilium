@@ -33,6 +33,10 @@ async function bootstrap() {
     initThemeChangeNotifier();
     loadIcons();
     setBodyAttributes();
+    const debugSafeAreaInsets = import.meta.env.VITE_DEBUG_SAFE_AREA_INSETS;
+    if (debugSafeAreaInsets) {
+        (await import("./services/debug_safe_area")).default(debugSafeAreaInsets);
+    }
     reportSplashPhase("application");
     await loadScripts();
     hideSplash();
@@ -43,7 +47,7 @@ async function initJQuery() {
     window.$ = $;
     window.jQuery = $;
 
-    // Polyfill removed jQuery methods for autocomplete.js compatibility
+    // Polyfills the jQuery methods jQuery 4 removed, which Fancytree still calls.
     ($ as any).isArray = Array.isArray;
     ($ as any).isFunction = function(obj: any) { return typeof obj === 'function'; };
     ($ as any).isPlainObject = function(obj: any) {

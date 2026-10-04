@@ -430,7 +430,6 @@
     "no_providers_configured": "Henüz yapılandırılmış sağlayıcı yok.",
     "provider_name": "Ad",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Trilium'u çalıştıran makinede Claude Code gerektirir.",
     "actions": "Eylemler",
     "delete_provider": "Sil",
     "delete_provider_confirmation": "\"{{name}}\" sağlayıcısını silmek istediğinizden emin misiniz?",
@@ -497,7 +496,6 @@
       "insert-a-page-break-for-printing": "Sayfa sonu ekle (yazdırma için)",
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Tıklandığında içeriği gizleyen/gösteren, açılıp kapanabilir bir bölüm ekleyin.",
       "insert-an-anchor-for-internal-linking": "Dahili linkleme için bir bağlantı metni ekleyin",
-      "insert-the-current-date-and-time": "Geçerli tarih ve saati girin",
       "justify-text-alignment": "Metni iki yana hizala",
       "admonition": "İkaz",
       "anchor": "Bağlantı noktası",
@@ -550,8 +548,6 @@
       "insert-an-empty-mermaid-diagram": "Boş bir Mermaid diyagramı ekle",
       "insert-date-time": "Tarih/saat ekle",
       "insert-footnote-0": "%0 dipnotunu ekle",
-      "insert-math": "Matematik ekle",
-      "insert-mermaid-diagram": "Mermaid diyagramı ekle",
       "insert-mermaid-source-code": "Mermaid kaynak kodu ekle",
       "insert-paragraph-after-code-block": "Kod bloğundan sonra paragraf ekle",
       "insert-paragraph-before-code-block": "Kod bloğundan önce paragraf ekle",
@@ -628,8 +624,7 @@
     "button_include": "Not ekle"
   },
   "jump_to_note": {
-    "search_placeholder": "Notu adına veya türüne göre ara > komutlar için...",
-    "search_button": "Tüm metinde ara"
+    "search_placeholder": "Notu adına veya türüne göre ara > komutlar için..."
   },
   "markdown_editor": {
     "image_upload_failed": "\"{{name}}\" görseli yüklenemiyor."
@@ -1792,7 +1787,6 @@
     "label_rock_or_pop": "etiketlerden yalnızca biri bulunmalıdır",
     "label_year_comparison": "sayısal karşılaştırma (ayrıca >, >=, <).",
     "label_date_created": "geçen ay oluşturulan notlar",
-    "error": "Arama hatası: {{error}}",
     "search_prefix": "Ara:"
   },
   "attachment_detail": {
@@ -2717,7 +2711,6 @@
     "thought_process": "Düşünme süreci",
     "tool_calls": "{{count}} araç çağrısı",
     "input": "Girdi",
-    "input_streaming": "Girdi (akış halinde…)",
     "edit_index": "{{total}} içinden {{index}}. düzenleme",
     "result": "Sonuç",
     "error": "Hata",
@@ -2822,7 +2815,6 @@
     "placeholder": "Hızlı arama",
     "searching": "Aranıyor...",
     "no-results": "Sonuç bulunamadı",
-    "more-results": "... ve {{number}} sonuç daha.",
     "show-in-full-search": "Tam aramada göster"
   },
   "mobile_note_navigator": {
@@ -3046,12 +3038,9 @@
     "zoom-factor": "Yakınlaştırma oranı"
   },
   "note_autocomplete": {
-    "search-for": "\"{{term}}\" için ara",
     "create-note": "\"{{term}}\" alt notunu oluştur ve bağlantı ver",
     "insert-external-link": "\"{{term}}\" için harici bağlantı ekle",
-    "clear-text-field": "Metin alanını temizle",
-    "show-recent-notes": "Son notları göster",
-    "full-text-search": "Tam metin arama"
+    "clear-text-field": "Metin alanını temizle"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Not silindi.",
@@ -3697,7 +3686,6 @@
     "page_size": "Sayfa boyutu",
     "scale": "Ölçek",
     "margins": "Kenar boşlukları",
-    "render_error": "Geçerli ayarlarla PDF oluşturulamıyor. Lütfen kenar boşluklarını ve ölçeği kontrol edin.",
     "margins_default": "Varsayılan",
     "margins_none": "Yok",
     "margins_minimum": "En Az",

@@ -101,7 +101,7 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
 }
 
 /**
- * Background colour for highlights: CKEditor's stock palette yellow (`==…==` carries no colour
+ * Background colour for highlights: the text editor's palette Yellow (`==…==` carries no colour
  * of its own). Matches the `<span style="background-color:…">` markup CKEditor's Font
  * Background Color feature emits, so a highlight rendered into a text note round-trips as an
  * editable highlight. Deliberately not `<mark>`, which General HTML Support does keep but
@@ -112,7 +112,11 @@ export function createTransclusionExtension(options: TransclusionOptions = {}): 
  * `==…==` and which have to keep their colour as inline HTML, so the two directions must agree
  * on the exact value.
  */
-export const HIGHLIGHT_BACKGROUND = "hsl(60, 75%, 60%)";
+export const HIGHLIGHT_BACKGROUND = "#e5e64d";
+
+/** The style of a highlight as the text editor saves it, with the theme-adaptive variable. */
+export const HIGHLIGHT_STYLE =
+    `background-color:${HIGHLIGHT_BACKGROUND};--tn-background:${HIGHLIGHT_BACKGROUND};`;
 
 /**
  * Creates an extension for highlights: `==text==` → a background-coloured `<span>`.
@@ -146,7 +150,8 @@ export function createHighlightExtension(): TokenizerAndRendererExtension {
         },
 
         renderer(token) {
-            return `<span style="background-color:${HIGHLIGHT_BACKGROUND};">${this.parser.parseInline(token.tokens as Token[])}</span>`;
+            const content = this.parser.parseInline(token.tokens as Token[]);
+            return `<span style="${HIGHLIGHT_STYLE}">${content}</span>`;
         }
     };
 }

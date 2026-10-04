@@ -221,11 +221,13 @@
   "notes": {
     "new-note": "新建笔记",
     "duplicate-note-suffix": "(重复)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "删除笔记失败：{{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "后端日志文件 '{{ fileName }}' 暂不存在。",
-    "reading-log-failed": "读取后端日志文件 '{{ fileName }}' 失败。"
+    "reading-log-failed": "读取后端日志文件 '{{ fileName }}' 失败。",
+    "log-file-unavailable": "无法打开日志文件，因此仅显示保留在内存中的最新条目。Trilium 会持续尝试打开该文件，并在成功后将这些条目写入其中。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "此笔记类型无法显示。",
@@ -236,7 +238,8 @@
     "unable-to-export-message": "当前笔记无法被导出为 PDF。",
     "unable-to-export-title": "无法导出为 PDF",
     "unable-to-save-message": "所选文件不能被写入。重试或选择另一个目的地。",
-    "unable-to-print": "无法打印笔记"
+    "unable-to-print": "无法打印笔记",
+    "render-timeout": "笔记未能在 {{seconds}} 秒内完成渲染。"
   },
   "tray": {
     "tooltip": "TriliumNext 笔记",

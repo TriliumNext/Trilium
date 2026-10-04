@@ -232,7 +232,11 @@ export function restoreExistingData(newDefs: ColumnDefinition[], oldDefs: Column
         .filter(item => (item.field && newItemsByField.has(item.field!)) || item.title === "#")
         .map(oldItem => {
             const data = newItemsByField.get(oldItem.field!)!;
-            if (oldItem.resizable !== false && oldItem.width !== undefined) {
+            // Whether a column can be resized is read from the new definition: Tabulator persists
+            // only `title`, `width` and `visible`, so the stored one never carries the flag. The "#"
+            // column sizes itself to the row count's digits and must keep that width rather than the
+            // one stored when the table held fewer rows.
+            if (data.resizable !== false && oldItem.width !== undefined) {
                 data.width = oldItem.width;
             }
             if (oldItem.visible !== undefined) {

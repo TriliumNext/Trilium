@@ -182,8 +182,7 @@ content = content.replaceAll(headingRe, (...match) => {
 
                     <ul>
                         <%
-                        const action = note.type === "book" ? "getChildNotes" : "getVisibleChildNotes";
-                        for (const childNote of note[action]()) {
+                        for (const childNote of note.getVisibleChildNotes()) {
                             const externalHref = childNote
                                 .getLabelValue("shareExternalLink")?.trim()
                                 || childNote.getLabelValue("shareExternal")?.trim();
@@ -249,6 +248,7 @@ content = content.replaceAll(headingRe, (...match) => {
         <% } %>
     </div>
 </div>
+<div id="mobile-backdrop"></div>
 <%- renderSnippets("body:end") %>
 </body>
 </html>

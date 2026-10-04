@@ -19,3 +19,7 @@ To embed a note:
 *   Manually, by choosing _More tools_ → _Web Embed_ and pasting the link to the note (e.g. `root/MujWAc9fQ1nj`).
 
 Embedding notes in the canvas follows the same rules as <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>: some notes are rendered as images (e.g. <a class="reference-link" href="Mind%20Map.md">Mind Map</a>), whereas some render fully interactive such as <a class="reference-link" href="../Collections.md">Collections</a>.
+
+## Drawing in a text note
+
+To draw inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert a drawing canvas with <span class="tn-icon bx bx-pen"></span> _Drawing canvas_ in the <span class="tn-icon cke cke-plus"></span> _Insert_ menu. See _Drawing canvases_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.

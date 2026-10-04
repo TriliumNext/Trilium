@@ -15,6 +15,19 @@ const ATTACHMENT_PREVIEW_MAX_LENGTH = 200;
 /** Skip expensive content loading/conversion for notes larger than this. */
 const CONTENT_PREVIEW_SIZE_THRESHOLD = 10_000;
 
+/**
+ * Note types the LLM can create or change a note to; each one stores string content. An `image` must
+ * be an SVG ({@link getSvgImageError}).
+ */
+export const LLM_NOTE_TYPES = [
+    "text", "code", "render", "book", "mermaid", "canvas", "webView", "relationMap", "search", "mindMap", "image"
+] as const;
+
+export const SVG_MIME = "image/svg+xml";
+
+/** An optional XML prolog, doctype and comments, then an `<svg>` root element through to `</svg>`. */
+const SVG_SOURCE_RE = /^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:(?:<!--(?:(?!-->)[\s\S])*-->|<!DOCTYPE[^>]*>)\s*)*<svg[\s>/][\s\S]*<\/svg>\s*$/i;
+
 /** Note IDs that must not be deleted, moved, or cloned by the LLM. */
 export const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lbRoot", "_globalNoteMap"]);
 
@@ -89,6 +102,20 @@ export function setNoteContentFromLlm(note: BNote, content: string) {
     } else {
         note.setContent(content);
     }
+}
+
+/**
+ * Why the LLM cannot write `content` into an image note of `mime`, or `undefined` if it can. The LLM
+ * writes only SVG images, and a truncated reply must not leave a broken image behind.
+ */
+export function getSvgImageError(mime: string, content: string): string | undefined {
+    if (mime !== SVG_MIME) {
+        return `Only SVG images are supported; use mime '${SVG_MIME}'`;
+    }
+    if (!SVG_SOURCE_RE.test(content)) {
+        return "Image content must be complete SVG source: an <svg> root element and its closing </svg>";
+    }
+    return undefined;
 }
 
 /** A single find-and-replace edit applied to note content. */

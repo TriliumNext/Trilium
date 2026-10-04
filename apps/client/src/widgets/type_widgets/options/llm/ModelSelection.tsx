@@ -13,6 +13,8 @@ import NoItems from "../../../react/NoItems";
 interface ModelSelectionProps {
     /** Credentials describing the provider whose models should be listed. */
     query: ProviderModelsQuery;
+    /** How long the fetch can take, when the provider needs longer than the default. */
+    timeoutMs?: number;
     /** Currently selected models (full metadata), controlled by the parent. */
     selected: LlmModelInfo[];
     onChange: (selected: LlmModelInfo[]) => void;
@@ -34,7 +36,7 @@ interface ModelSelectionProps {
  * keep. The picked set (with full metadata) is what the chat picker later shows,
  * so no live fetch is needed during normal chatting.
  */
-export default function ModelSelection({ query, selected, onChange, autoSelectDefaults, troubleshooting }: ModelSelectionProps) {
+export default function ModelSelection({ query, timeoutMs, selected, onChange, autoSelectDefaults, troubleshooting }: ModelSelectionProps) {
     const [models, setModels] = useState<LlmModelInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | undefined>();
@@ -46,13 +48,18 @@ export default function ModelSelection({ query, selected, onChange, autoSelectDe
         let active = true;
         setLoading(true);
         setError(undefined);
-        fetchProviderModels(query)
+        fetchProviderModels(query, timeoutMs)
             .then(fetched => {
                 if (!active) return;
                 setModels(fetched);
                 setLoading(false);
                 if (autoSelectDefaults && selected.length === 0 && fetched.length > 0) {
                     onChange(defaultSelectedModels(fetched));
+                    return;
+                }
+                const refreshed = refreshSelectedModels(selected, fetched);
+                if (refreshed) {
+                    onChange(refreshed);
                 }
             })
             .catch(err => {
@@ -78,7 +85,8 @@ export default function ModelSelection({ query, selected, onChange, autoSelectDe
     }
     if (error) {
         return (
-            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error })}>
+            // JSX escapes the text itself, so i18next must not escape the message as well.
+            <NoItems icon="bx bx-error-circle" text={t("llm.models_load_failed", { error, interpolation: { escapeValue: false } })}>
                 {troubleshooting}
             </NoItems>
         );
@@ -124,6 +132,17 @@ export default function ModelSelection({ query, selected, onChange, autoSelectDe
  */
 function defaultSelectedModels(models: LlmModelInfo[]): LlmModelInfo[] {
     return models.filter(model => model.recommended);
+}
+
+/**
+ * The selection with each stored model replaced by its listed entry, so saving the provider picks
+ * up new metadata such as `reasoningEfforts` or a changed price. A model the listing no longer
+ * carries stays as stored. Returns undefined when nothing changed.
+ */
+function refreshSelectedModels(selected: LlmModelInfo[], fetched: LlmModelInfo[]): LlmModelInfo[] | undefined {
+    const listed = new Map(fetched.map(model => [model.id, model]));
+    const refreshed = selected.map(model => listed.get(model.id) ?? model);
+    return JSON.stringify(refreshed) === JSON.stringify(selected) ? undefined : refreshed;
 }
 
 /** Row label: model name plus a cost hint (per-Mtok price / subscription) when known. */

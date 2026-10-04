@@ -395,3 +395,71 @@ async function recursiveGroupBy(
         seenNoteIds.add(note.noteId);
     }
 }
+
+/**
+ * The notes whose attributes can reach a card, split the way `attributes.isAffecting()` checks
+ * them: `own` holds each card and its `~template` and `~inherit` targets, and `ancestors` also
+ * holds every note above those, following templates, which only an inheritable attribute reaches
+ * from.
+ */
+export interface DefinitionSources {
+    own: Set<string>;
+    ancestors: Set<string>;
+}
+
+/** Collects the {@link DefinitionSources} of `cards`, visiting each note once. */
+export function definitionSources(cards: Iterable<FNote>): DefinitionSources {
+    const own = new Set<string>();
+    const ancestors = new Set<string>();
+    const pending: FNote[] = [];
+
+    for (const card of cards) {
+        own.add(card.noteId);
+        pending.push(card);
+        for (const source of card.getNotesToInheritAttributesFrom()) {
+            if (source) {
+                own.add(source.noteId);
+            }
+        }
+    }
+
+    for (let note = pending.pop(); note; note = pending.pop()) {
+        if (ancestors.has(note.noteId)) {
+            continue;
+        }
+        ancestors.add(note.noteId);
+        pending.push(...note.getNotesToInheritAttributesFrom().filter(Boolean),
+            ...note.getParentNotes());
+    }
+
+    return { own, ancestors };
+}
+
+/**
+ * Whether a change can alter the definitions that reach a card: a definition, or a `~template` or
+ * `~inherit` relation, on a note in `sources`. Equivalent to `attributes.isAffecting()` against
+ * every card, at the cost of one lookup per changed attribute.
+ */
+export function affectsCardDefinitions(loadResults: LoadResults, sources: DefinitionSources) {
+    return loadResults.getAttributeRows().some((attr) => isDefinitionSource(attr.name)
+        && !!attr.noteId
+        && (sources.own.has(attr.noteId)
+            || (!!attr.isInheritable && sources.ancestors.has(attr.noteId))));
+}
+
+/** Returns whether an attribute with this name can change a note's `getAttributeDefinitions()`. */
+function isDefinitionSource(name: string | undefined) {
+    return !!name && (name.startsWith("label:") || name.startsWith("relation:")
+        || name === "template" || name === "inherit");
+}
+
+/** Returns the note of every card in `byColumn`, once per note. */
+export function cardNotes(byColumn: ColumnMap | undefined): Set<FNote> {
+    const notes = new Set<FNote>();
+    for (const items of byColumn?.values() ?? []) {
+        for (const { note } of items) {
+            notes.add(note);
+        }
+    }
+    return notes;
+}

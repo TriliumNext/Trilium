@@ -1,7 +1,8 @@
 import "./attribute_detail.css";
-import "./attribute_name_suggestion.css";
+import "./attribute_kind.css";
 
 import { type DefinitionObject, type LabelType, promotedAttributeDefinitionParser } from "@triliumnext/commons";
+import clsx from "clsx";
 import { ComponentChildren, ComponentProps } from "preact";
 import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -26,13 +27,14 @@ import FormDropdownList from "../react/FormDropdownList.jsx";
 import { FormDropdownDivider, FormListItem } from "../react/FormList.jsx";
 import FormTextBox, { FormTextBoxWithUnit } from "../react/FormTextBox.jsx";
 import HelpTooltipButton from "../react/HelpTooltipButton.jsx";
+import Icon from "../react/Icon.jsx";
 import { suspendModalFocusTraps } from "../react/modal_focustrap.js";
-import NoteAutocomplete from "../react/NoteAutocomplete.jsx";
+import NoteAutocomplete, { HighlightedText } from "../react/NoteAutocomplete.jsx";
 import NoteLink, { NewNoteLink } from "../react/NoteLink.jsx";
 import { disposeReactWidget, ParentComponent, renderReactWidgetAtElement } from "../react/react_utils.jsx";
 import OptionsRow, { OptionsRowWithToggle } from "../type_widgets/options/components/OptionsRow.jsx";
 import { ATTR_HELP, AttrHelpEntry } from "./attr_help.js";
-import { DEFINITION_TYPE_ICONS, RELATION_DEFINITION_TYPE } from "./attribute_types.js";
+import { attributeKindIcon, DEFINITION_TYPE_ICONS, RELATION_DEFINITION_TYPE } from "./attribute_types.js";
 import LabelValueInput, { getTypedInputForLabel, useLabelValueSuggestions } from "./label_value_input.js";
 import ValuesInput from "./values_input.jsx";
 
@@ -255,9 +257,9 @@ export function AttributeDetail({ opts, currentNoteId, onDismiss, onCancel, ...f
                 // Modals count as belonging to the popup: creating a note straight from the target
                 // note field opens the note type chooser, and dismissing on its clicks would tear
                 // the popup down before the created note could be filled in. The type menu belongs
-                // to it too: it is portaled to the body (see the dropdown's `portalToBody`), so a
+                // to it too: it is portaled to the body, as every dropdown is, so a
                 // press on one of its items lands outside the popup element.
-                || e.target.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .algolia-autocomplete, #context-menu-container, .modal, .modal-backdrop, .attr-input-label-type`)) {
+                || e.target.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .note-autocomplete-menu, #context-menu-container, .modal, .modal-backdrop, .attr-input-label-type`)) {
                 return;
             }
             onDismiss();
@@ -386,11 +388,11 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
         ? fetchDefinitionNames(nameType, query)
         : fetchAttributeNames(nameType, query), [ nameType, isDefinitionType ]);
     const renderNameSuggestion = useCallback(
-        (suggestion: string) => <AttributeNameSuggestion type={nameType} name={suggestion} />, [ nameType ]);
+        (suggestion: string, query: string) => <AttributeNameSuggestion type={nameType} name={suggestion} query={query} />, [ nameType ]);
     // Whatever a relation is the inverse of is itself a relation.
     const suggestRelationNames = useCallback((query: string) => fetchAttributeNames("relation", query), []);
     const renderRelationSuggestion = useCallback(
-        (suggestion: string) => <AttributeNameSuggestion type="relation" name={suggestion} />, []);
+        (suggestion: string, query: string) => <AttributeNameSuggestion type="relation" name={suggestion} query={query} />, []);
     const [ name, setName ] = useState(() => stripDefinitionPrefix(attribute.name, attrType));
     const [ value, setValue ] = useState(attribute.value ?? "");
     const [ isInheritable, setIsInheritable ] = useState(!!attribute.isInheritable);
@@ -597,9 +599,6 @@ export function AttributeForm({ opts, attrType: initialAttrType, currentNoteId, 
                     <OptionsRow name="attr-label-type" label={t("attribute_detail.label_type")}>
                         <FormDropdownList
                             className="attr-input-label-type"
-                            // The popup is a scroll container, so an inline menu could only grow by
-                            // scrolling the form under itself — and the type list only gets longer.
-                            portalToBody
                             values={DEFINITION_TYPES}
                             keyProperty="value"
                             titleProperty="title"
@@ -782,18 +781,30 @@ function AttributeNameField({ help, ...autocompleteProps }: { help?: AttrHelpEnt
 }
 
 /**
- * One row of an attribute name completion, marking the names Trilium itself attaches a meaning to.
- * The mark answers what a list of bare names cannot: whether picking one buys behaviour, or is only
- * a name. The inline editor's `#`/`~` completion lists the same names and marks them the same way.
+ * One row of an attribute name completion: the name behind the kind icon the attributes panel gives
+ * it, with the cog that panel marks the names Trilium itself attaches a meaning to. The mark answers
+ * what a list of bare names cannot: whether picking one buys behaviour, or is only a name.
  *
  * Exported, with {@link fetchAttributeNames}, for whatever else completes an attribute name — the
  * attribute panel's in-row creation — so every name box offers the same list the same way.
  */
-export function AttributeNameSuggestion({ type, name }: { type: "label" | "relation"; name: string }) {
+export function AttributeNameSuggestion({ type, name, query = "" }: {
+    type: "label" | "relation";
+    name: string;
+    /** The text typed, set in bold where the name holds it. */
+    query?: string;
+}) {
+    const isSystem = isBuiltinAttribute(type, name);
+
     return (
         <span class="attr-name-suggestion">
-            <span class="attr-name-suggestion-name">{name}</span>
-            {isBuiltinAttribute(type, name) && <Badge outline text={t("attribute_names.system")} />}
+            <span
+                class={clsx("attribute-kind", isSystem && "marker-system")}
+                title={isSystem ? t("attribute_list_panel.system_hint") : undefined}
+            >
+                <Icon icon={attributeKindIcon(type, name, "")} />
+            </span>
+            <span class="attr-name-suggestion-name"><HighlightedText text={name} query={query} /></span>
         </span>
     );
 }
@@ -1019,7 +1030,7 @@ function RelatedNotesBadge({ attribute, currentNoteId }: { attribute: Attribute;
             tooltip={t("attribute_detail.other_notes_with_name", { attributeType: type, attributeName: name })}
             // The menu stays nested in the popup: the badge places it with `position: fixed`, and the popup
             // sets `contain: none` and no transform, so it is not a containing block and does not clip it.
-            dropdownOptions={{ dropdownContainerClassName: "related-notes-menu" }}
+            dropdownProps={{ dropdownContainerClassName: "related-notes-menu" }}
         >
             {/* The icon comes from the item rather than from the link, so that the note entries and the
                 search entry below them line up on the same slot. */}

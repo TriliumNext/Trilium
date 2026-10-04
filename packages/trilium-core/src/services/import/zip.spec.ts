@@ -225,6 +225,43 @@ describe("processNoteContent", () => {
         expect(content).not.toContain("mapPicture1");
     });
 
+    it("points an imported embed at its attachment as it was recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "embedNote1",
+                title: "Report",
+                type: "text",
+                mime: "text/html",
+                dataFileName: "Report.html",
+                attachments: [{
+                    attachmentId: "embeddedPdf1",
+                    title: "report.pdf",
+                    role: "file",
+                    mime: "application/pdf",
+                    position: 10,
+                    dataFileName: "Report_report.pdf"
+                }]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Report.html": `<section class="include-note" data-attachment-id="embeddedPdf1">`
+                + "</section>",
+            "Report_report.pdf": Buffer.from("%PDF-1.4")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ pdf ] = importedNote.getAttachments();
+        const content = importedNote.getContent() as string;
+
+        expect(pdf.attachmentId).not.toBe("embeddedPdf1");
+        expect(content).toContain(`data-attachment-id="${pdf.attachmentId}"`);
+        expect(content).not.toContain("embeddedPdf1");
+    });
+
     it("restores an embedded mermaid diagram as a note reference, not as a raw attachment", async () => {
         // The export points the <img> at the mermaid note's generated `mermaid-export.svg`.
         // On the way back in that has to resolve to `api/images/<noteId>` — which re-renders the

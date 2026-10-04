@@ -20,6 +20,10 @@ function getOptionValue(name: string): string | null {
 /** Forces the stored `syncServerHost` option, leaving every other option reading from the fixture. */
 function mockSyncServerHost(syncServerHost: string) {
     const originalGetOption = optionService.getOption.bind(optionService);
+    const originalGetOptionOrNull = optionService.getOptionOrNull.bind(optionService);
+    vi.spyOn(optionService, "getOptionOrNull").mockImplementation((name) =>
+        name === "syncServerHost" ? syncServerHost : originalGetOptionOrNull(name)
+    );
     return vi.spyOn(optionService, "getOption").mockImplementation((name) =>
         name === "syncServerHost" ? syncServerHost : originalGetOption(name)
     );

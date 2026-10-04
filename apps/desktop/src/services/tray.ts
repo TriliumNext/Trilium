@@ -113,8 +113,7 @@ function updateTrayMenu() {
     function ensureVisible(win: BrowserWindow) {
         /* v8 ignore next -- defensive: always called with a truthy window (focused window or null-checked checkbox window) */
         if (win) {
-            win.show();
-            win.focus();
+            windowService.showAndFocusWindow(win);
         }
     }
 
@@ -290,8 +289,7 @@ function changeVisibility() {
     if (windowVisibilityMap[targetWindow.id]) {
         targetWindow.hide();
     } else {
-        targetWindow.show();
-        targetWindow.focus();
+        windowService.showAndFocusWindow(targetWindow);
     }
 }
 

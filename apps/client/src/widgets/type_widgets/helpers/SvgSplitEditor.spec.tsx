@@ -78,8 +78,9 @@ describe("SvgSplitEditor", () => {
 
         const svgEl = container.querySelector(".svg-preview-viewport .render-container svg");
         expect(svgEl).not.toBeNull();
-        // The fit comes from the viewBox rather than from a measured scale, so nothing may strip it
-        // — svg-pan-zoom used to, which shrank gantt charts to invisibility on a re-fit (#9749).
+        // The fit comes from the viewBox rather than from a measured scale, so it must not be
+        // stripped — svg-pan-zoom used to, which shrank gantt charts to invisibility on a re-fit
+        // (#9749).
         expect(svgEl?.getAttribute("viewBox")).toBe(ORIGINAL_VIEW_BOX);
 
         expect(transformWrapperSpy).toHaveBeenCalledWith(

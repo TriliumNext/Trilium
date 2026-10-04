@@ -13,7 +13,7 @@ In addition, it's possible to change the number of characters at which the autom
 
 A note's read-only behavior can be changed via:
 
-*   On the New layout, <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ on the new layout
+*   On the [New layout](../UI%20Elements/New%20Layout.md), <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ on the new layout
 *   For the old layout via the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>, by going to the _Basic Properties_ tab and looking for the _Editable_ selection.
 
 The following options are possible:
@@ -39,7 +39,7 @@ Apart from using the ribbon as previously mentioned, it's also possible to use [
 When accessing a read-only note, it's possible to temporarily edit it by:
 
 *   Pressing the _Read-only_ badge on the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
-*   Or pressing the ![](Read-Only%20Notes_image.png) button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+*   Or pressing the <span class="tn-icon bx bx-pencil"></span> button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
 
 When pressed, the note will become editable but will become read-only again after navigating to a different note.
 

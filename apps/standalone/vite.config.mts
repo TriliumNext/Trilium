@@ -6,11 +6,42 @@ import prefresh from "@prefresh/vite";
 import { defineConfig, type Plugin } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
-import { stripUniverHyphenation } from "../client/vite-plugins.mjs";
+import { shareMermaidManifest, stripUniverEmojiData, stripUniverHyphenation } from "../client/vite-plugins.mjs";
 
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
+
+// Next to the share theme's own files, where `scripts.js` looks for it.
+const SHARE_MERMAID_MANIFEST = "share/assets/client/share_mermaid.json";
+
+// The share pages resolve built-in assets against `assets/v<version>`, the same prefix the server
+// serves them under. Read from trilium-core because that is the version `assetUrlFragment` is
+// built from; `chore:update-version` keeps every package.json in step.
+const coreVersion = JSON.parse(
+    fs.readFileSync(join(__dirname, "../../packages/trilium-core/package.json"), "utf-8")
+).version;
+
+// Lists the share theme's built files as `virtual:share-theme-assets`, so the share-theme export
+// can fetch each one from `share/assets`, where the static copy below places them.
+const shareThemeAssetListPlugin = (): Plugin => {
+    const moduleId = "virtual:share-theme-assets";
+    const resolvedId = `\0${moduleId}`;
+
+    return {
+        name: "share-theme-asset-list",
+        resolveId: (id) => (id === moduleId ? resolvedId : undefined),
+        load(id) {
+            if (id !== resolvedId) {
+                return;
+            }
+
+            const distDir = join(__dirname, "../../packages/share-theme/dist");
+            const files = fs.existsSync(distDir) ? fs.readdirSync(distDir) : [];
+            return `export default ${JSON.stringify(files)};`;
+        }
+    };
+};
 
 // Watch client files and trigger reload in development
 const clientWatchPlugin = () => ({
@@ -27,6 +58,19 @@ const clientWatchPlugin = () => ({
                 }
             });
         }
+    }
+});
+
+// Points the share pages at the client's mermaid entry, which the build lists in its manifest.
+const shareMermaidDevPlugin = (): Plugin => ({
+    name: "share-mermaid-dev",
+    configureServer(server) {
+        const entry = join(__dirname, "../client/src/share_mermaid.ts").replace(/\\/g, "/");
+
+        server.middlewares.use(`/${SHARE_MERMAID_MANIFEST}`, (_req, res) => {
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ entry: `/@fs/${entry.replace(/^\//, "")}`, files: [] }));
+        });
     }
 });
 
@@ -114,8 +158,10 @@ const sqliteWasmPlugin = viteStaticCopy({
 
 let plugins: any = [
     stripUniverHyphenation(),
+    stripUniverEmojiData(),
     sqliteWasmDedupePlugin(),
     sqliteWasmPlugin,
+    shareThemeAssetListPlugin(),
     viteStaticCopy({
         targets: clientAssets.map((asset) => ({
             src: `../../client/src/${asset}/**/*`,
@@ -142,6 +188,29 @@ let plugins: any = [
             }
         ]
     }),
+    // What the share theme's own pages load: its bundle (stylesheets, scripts, KaTeX fonts), the
+    // icon-pack fonts the client ships, and the logo, each at the path content_renderer.ts writes
+    // into the page. The server answers these from express.static routes it registers in
+    // routes/assets.ts; here they are copied into the build instead.
+    viteStaticCopy({
+        targets: [
+            {
+                src: "../../../packages/share-theme/dist/**/*",
+                dest: "share/assets",
+                rename: { stripBase: 3 }
+            },
+            {
+                src: "../../client/src/fonts/**/*",
+                dest: "share/assets/fonts",
+                rename: { stripBase: 3 }
+            },
+            {
+                src: "../../server/src/assets/images/**/*",
+                dest: `assets/v${coreVersion}/images`,
+                rename: { stripBase: 4 }
+            }
+        ]
+    }),
     // PDF.js viewer for PDF preview support
     // stripBase: 4 removes packages/pdfjs-viewer/dist/web (or /build)
     viteStaticCopy({
@@ -162,8 +231,11 @@ let plugins: any = [
     ...(isDev ? [
         prefresh(),
         clientWatchPlugin(),
-        pdfjsServePlugin()
-    ] : [])
+        pdfjsServePlugin(),
+        shareMermaidDevPlugin()
+    ] : [
+        shareMermaidManifest(SHARE_MERMAID_MANIFEST)
+    ])
 ];
 
 if (!isDev) {
@@ -273,6 +345,13 @@ export default defineConfig(() => ({
             {
                 find: /^puppeteer$/,
                 replacement: join(__dirname, "src/stubs/empty.ts")
+            },
+            // EJS renders the share pages. Its ESM entry imports `node:fs` and `node:path` for the
+            // file-loading it only reaches without an `includer`; the share renderer always passes
+            // one, so the package's own browser build serves it and resolves in this bundle.
+            {
+                find: /^ejs$/,
+                replacement: join(__dirname, "../../node_modules/ejs/ejs.min.js")
             }
         ],
         dedupe: [
@@ -324,7 +403,8 @@ export default defineConfig(() => ({
         include: ['officeparser']
     },
     worker: {
-        format: "es" as const
+        format: "es" as const,
+        plugins: () => [ shareThemeAssetListPlugin() ]
     },
     commonjsOptions: {
         transformMixedEsModules: true,

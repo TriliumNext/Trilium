@@ -1,7 +1,20 @@
+import { useEffect } from "preact/hooks";
+import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
+import Component from "../../components/component";
 import FAttachment from "../../entities/fattachment";
+import froca from "../../services/froca";
+import LoadResults from "../../services/load_results";
 import { renderInto } from "../../test/render";
+import { ParentComponent } from "../react/react_utils";
+
+const CANVAS_MIME = "application/vnd.excalidraw+json";
+const { getRenderedContent, drawingMounts, drawingProps } = vi.hoisted(() => ({
+    getRenderedContent: vi.fn(async () => ({ $renderedContent: [] })),
+    drawingMounts: vi.fn(),
+    drawingProps: vi.fn()
+}));
 
 // Nothing initialises i18next in a unit test, and an uninitialised one answers every lookup with an
 // empty string — which would make the two placeholder messages indistinguishable. Answering with the
@@ -15,8 +28,17 @@ vi.mock("i18next", () => {
 // were built at all.
 vi.mock("../../services/content_renderer", () => ({
     default: {
-        getRenderedContent: async () => ({ $renderedContent: [] }),
+        getRenderedContent,
         disposeInteractiveContent: () => {}
+    },
+    hasRenderedPreview: (attachment: FAttachment) => attachment.mime === CANVAS_MIME
+}));
+// Counts the mounts of the drawing editor, which loads a change saved elsewhere in place.
+vi.mock("./canvas/CanvasDrawing", () => ({
+    CanvasDrawingDetail: (props: { revision?: number }) => {
+        drawingProps(props);
+        useEffect(() => drawingMounts(), []);
+        return <div className="drawing-detail-stub" />;
     }
 }));
 // Bootstrap's dropdown and the note link both reach well past this widget; the compression dialog only
@@ -25,7 +47,7 @@ vi.mock("../react/Dropdown", () => ({ default: () => <div class="dropdown-stub" 
 vi.mock("../react/NoteLink", () => ({ default: () => <span class="note-link-stub" /> }));
 vi.mock("../dialogs/image_compression/image_compression_dialog", () => ({ showImageCompressionDialog: vi.fn() }));
 
-const { AttachmentList } = await import("./Attachment");
+const { AttachmentDetail, AttachmentList } = await import("./Attachment");
 
 describe("AttachmentList", () => {
     it("lists what the reader placed, with nothing to unfold where the app has made nothing", async () => {
@@ -61,6 +83,17 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".attachment-system-group .collapsible-title")?.getAttribute("aria-expanded")).toBe("false");
     });
 
+    it("previews a file as text only where the renderer draws nothing of it", async () => {
+        const drawingBlob = vi.fn(async () => ({ content: "{}" }));
+        const drawing = { ...role("file"), mime: CANVAS_MIME, getBlob: drawingBlob };
+        const text = { ...role("file"), mime: "text/plain", getBlob: async () => ({ content: "hi" }) };
+        const container = await mount([ drawing, text ] as FAttachment[]);
+
+        await vi.waitFor(() => expect(container.querySelector(".file-preview-content")).not.toBeNull());
+        expect(container.querySelectorAll(".file-preview-content")).toHaveLength(1);
+        expect(drawingBlob).not.toHaveBeenCalled();
+    });
+
     it("says plainly that there is nothing where a note carries nothing at all", async () => {
         const container = await mount([]);
 
@@ -71,6 +104,52 @@ describe("AttachmentList", () => {
         expect(container.querySelector(".no-items-small, .beside-folded-away")).toBeNull();
     });
 });
+
+describe("AttachmentDetail", () => {
+    it("edits a canvas drawing, loading again only what another component saved", async () => {
+        const getRevision = () =>
+            (drawingProps.mock.lastCall?.[0] as { revision?: number }).revision;
+        const drawing = { ...role("file"), mime: CANVAS_MIME } as FAttachment;
+        vi.spyOn(froca, "getAttachment").mockResolvedValue(drawing);
+        getRenderedContent.mockClear();
+        drawingMounts.mockClear();
+
+        const component = new Component();
+        const props = {
+            note: { noteId: "note1" },
+            viewScope: { viewMode: "attachments", attachmentId: drawing.attachmentId }
+        } as unknown as Parameters<typeof AttachmentDetail>[0];
+        const container = renderInto(
+            <ParentComponent.Provider value={component}>
+                <AttachmentDetail {...props} />
+            </ParentComponent.Provider>
+        );
+
+        await vi.waitFor(() => expect(drawingMounts).toHaveBeenCalledOnce());
+        expect(container.querySelector(".attachment-canvas-drawing .drawing-detail-stub")).not.toBeNull();
+        expect(getRenderedContent).not.toHaveBeenCalled();
+
+        // Its own save, and a change to another attachment, keep the editor as it is.
+        await reloadAttachment(component, drawing.attachmentId, component.componentId);
+        await reloadAttachment(component, "otherAttachment", "otherComponent");
+        expect(drawingMounts).toHaveBeenCalledOnce();
+        expect(getRevision()).toBe(0);
+
+        // The detail stays mounted, so that its unsaved changes carry over to the drawing.
+        await reloadAttachment(component, drawing.attachmentId, "otherComponent");
+        await vi.waitFor(() => expect(getRevision()).toBe(1));
+        expect(drawingMounts).toHaveBeenCalledOnce();
+    });
+});
+
+/** Reports a saved change to an attachment, as the server does after a save from `componentId`. */
+async function reloadAttachment(component: Component, attachmentId: string, componentId: string) {
+    const loadResults = new LoadResults([]);
+    loadResults.addAttachmentRow({ attachmentId, ownerId: "note1" } as never, componentId);
+    await act(async () => {
+        await component.handleEvent("entitiesReloaded", { loadResults });
+    });
+}
 
 function role(role: string) {
     return {

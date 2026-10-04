@@ -1,4 +1,6 @@
 @import "./stylesheets/boxicons-compat.css";
+/* No dark theme class is set when printing, so colors get the light theme's shades. */
+@import "./stylesheets/adaptive-colors.css";
 
 :root {
     --print-font-size: 11pt;

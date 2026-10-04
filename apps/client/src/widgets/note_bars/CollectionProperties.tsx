@@ -138,7 +138,6 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
     return (
         <Dropdown
             dropdownContainerRef={dropdownContainerRef}
-            noDropdownListStyle
             text={<>
                 <Icon icon={ICON_MAPPINGS[viewType]} />&nbsp;
                 {VIEW_TYPE_MAPPINGS[viewType]}
@@ -169,9 +168,7 @@ function ViewOptions({ note, viewType, optionsChildren }: {
         <Dropdown
             buttonClassName="bx bx-cog icon-action"
             hideToggleArrow
-            dropdownContainerClassName="mobile-bottom-menu"
-            noDropdownListStyle
-            mobileBackdrop
+            mobileBottomSheet
         >
             {properties.map((property, index) => (
                 <ViewProperty key={index} note={note} property={property} />

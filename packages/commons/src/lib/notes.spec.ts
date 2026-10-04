@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle, getMimeIcon, getNoteIcon,
+    CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle,
+    getMimeIcon, getNoteIcon,
     NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
 } from "./notes.js";
 import { NoteType } from "./rows.js";
@@ -243,6 +244,7 @@ describe("getMimeIcon", () => {
         expect(getMimeIcon("application/gpx+xml")).toBe("bx bx-trip");
         expect(getMimeIcon("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).toBe("bx bx-spreadsheet");
         expect(getMimeIcon("text/csv")).toBe("bx bx-spreadsheet");
+        expect(getMimeIcon(CANVAS_ATTACHMENT_MIME)).toBe(NOTE_TYPE_ICONS.canvas);
         expect(getMimeIcon("text/plain")).toBe("bx bx-file");
     });
 

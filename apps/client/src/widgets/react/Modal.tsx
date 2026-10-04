@@ -172,6 +172,18 @@ export default function Modal({ children, className, size, title, customTitleBar
         };
     }, [ onShown, onHidden ]);
 
+    // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
+    // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
+    // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
+    // Options dialog gets no cursor). Suspend the other modals' traps here and restore them on close.
+    //
+    // Must run before the effect that opens the dialog: `openDialog` focuses the new backdrop, and
+    // a trap still active at that point pulls focus into the modal underneath.
+    useEffect(() => {
+        if (!show || !modalRef.current) return;
+        return suspendModalFocusTraps(modalRef.current);
+    }, [ show ]);
+
     useEffect(() => {
         if (show && modalRef.current) {
             elementToFocus.current = document.activeElement;
@@ -236,15 +248,6 @@ export default function Modal({ children, className, size, title, customTitleBar
     useEffect(() => () => {
         modalInstanceRef.current?.hide();
     }, []);
-
-    // While this modal is shown, ensure it is the only modal trapping focus. Bootstrap has no stacked
-    // modal support: every underlying modal keeps its own focus-trap active and steals focus from inputs
-    // in the modal on top (e.g. the custom-dictionary editor in the quick-edit popup that opens over the
-    // Options dialog gets no cursor). Suspend the other modals' traps here and restore them on close.
-    useEffect(() => {
-        if (!show || !modalRef.current) return;
-        return suspendModalFocusTraps(modalRef.current);
-    }, [ show ]);
 
     // Memoize styles to prevent recreation on every render
     const dialogStyle = useMemo<CSSProperties>(() => {

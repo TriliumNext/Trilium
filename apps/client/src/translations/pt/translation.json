@@ -2,7 +2,17 @@
   "about": {
     "data_directory": "Diretório de dados:",
     "version_label": "Versão:",
-    "contributors_label": "Contribuidores:"
+    "contributors_label": "Contribuidores:",
+    "contributor_roles": {
+      "original-dev": "desenvolvedor original",
+      "lead-dev": "desenvolvedor principal"
+    },
+    "role_brief_history": {
+      "lead-dev": "Elian Doran fundou TrilliumNext em 2024, uma bifurcação (fork) criado desde que Zadam se afastou do projeto. Zadam depois transferious o repositório original para o time TrilliumNext, juntando ambos projetos em apenas um novamente."
+    },
+    "license_tooltip": "Ver licença",
+    "donate": "Doar",
+    "donate_tooltip": "Doe para apoiar esse projeto"
   },
   "toast": {
     "critical-error": {
@@ -199,8 +209,7 @@
     "copy_to_clipboard": "Copiar para a área de transferência"
   },
   "jump_to_note": {
-    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos...",
-    "search_button": "Pesquisar no texto completo"
+    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos..."
   },
   "markdown_import": {
     "dialog_title": "Importar Markdown",
@@ -933,7 +942,6 @@
     "label_rock_or_pop": "apenas uma das etiquetas deve estar presente",
     "label_year_comparison": "comparação numérica (também >, >=, <).",
     "label_date_created": "notas criadas no último mês",
-    "error": "Erro na pesquisa: {{error}}",
     "search_prefix": "Pesquisa:"
   },
   "attachment_detail": {
@@ -1481,7 +1489,6 @@
     "placeholder": "Pesquisa rápida",
     "searching": "A pesquisar...",
     "no-results": "Nenhum resultado encontrado",
-    "more-results": "... e mais {{number}} resultados.",
     "show-in-full-search": "Exibir na pesquisa completa"
   },
   "note_tree": {
@@ -1685,12 +1692,9 @@
     "background-effects-description": "O Mica adiciona um desfoque, fundo estiloso as janelas da aplicação, criando uma profundidade e aspecto moderno. \"Barra de titulo nativa\" deve estar inactiva."
   },
   "note_autocomplete": {
-    "search-for": "Pesquisar por \"{{term}}\"",
     "create-note": "Criar conectar nota filha \"{{term}}\"",
     "insert-external-link": "Inserir ligação externa para \"{{term}}\"",
-    "clear-text-field": "Limpar campo de texto",
-    "show-recent-notes": "Exibir notas recentes",
-    "full-text-search": "Pesquisa por texto completo"
+    "clear-text-field": "Limpar campo de texto"
   },
   "note_tooltip": {
     "note-has-been-deleted": "A nota foi apagada.",

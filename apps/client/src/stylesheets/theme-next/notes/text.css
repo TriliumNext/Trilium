@@ -239,11 +239,6 @@ body.background-effects .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__pane
     color: var(--menu-item-icon-color);
 }
 
-/* Slash commands */
-.ck.ck-slash-command-button__text-part .ck.ck-button__label {
-    font-weight: bold;
-}
-
 /* Separator */
 :root .ck .ck-list__separator {
     flex-shrink: 0;
@@ -548,20 +543,6 @@ div.ck-template-form .ck-search__info span:nth-child(2) {
     margin-top: var(--ck-input-label-height);
 }
 
-/* Mention list (the autocompletion list for emojis, labels and relations)  */
-
-:root .ck-mentions {
-    --ck-color-list-button-on-background: var(--hover-item-background-color);
-    --ck-color-list-button-on-text: var(--hover-item-text-color);
-    --ck-color-list-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
-    --ck-focus-ring: 1px solid transparent;
-}
-
-/* "Keep on typing to see the emoji" placeholder */
-#mention-list-item-id\:__EMOJI_HINT {
-    background: transparent;
-}
-
 /*
  * FORMS
  */
@@ -727,10 +708,15 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     margin-top: 1px !important;
 }
 
-/* Round the player, not the card: clipping the card would crop the insert-paragraph buttons. 7px = 8px radius - 1px border. */
-.include-note-content.type-video .video-preview-wrapper {
-    border-radius: 0 0 7px 7px;
+/* Round the player, not the card: clipping the card would crop the insert-paragraph buttons. */
+.include-note-content.type-video .video-preview-wrapper:not(:fullscreen) {
+    border-radius: 0 0 var(--_include-note-bottom-border-radius, 8px)
+                   var(--_include-note-bottom-border-radius, 8px);
     overflow: hidden;
+}
+
+.include-note:has(> figcaption) .include-note-content.type-video .video-preview-wrapper {
+    border-radius: 0;
 }
 
 .ck.ck-editor__editable pre[data-language]::after {
@@ -792,12 +778,8 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     inset-inline-end: 0.35em;
 }
 
-.ck-content h1,
-.ck-content h2,
-.ck-content h3,
-.ck-content h4,
-.ck-content h5,
-.ck-content h6 {
+/* `:where(:not(.excalidraw *))` leaves out the UI of an embedded canvas drawing. */
+.ck-content :is(h1, h2, h3, h4, h5, h6):where(:not(.excalidraw *)) {
     font-weight: 300;
 }
 
@@ -805,7 +787,8 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
     font-weight: 600;
 }
 
-:root .ck-content hr {
+/* `:where(:not(.excalidraw *))` leaves out the menus of an embedded canvas drawing. */
+:root .ck-content hr:where(:not(.excalidraw *)) {
     margin-block: 5px;
     height: 0;
     border: thin solid var(--main-border-color);

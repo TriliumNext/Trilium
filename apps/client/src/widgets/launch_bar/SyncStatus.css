@@ -24,3 +24,28 @@
     background-color: var(--hover-item-background-color);
     cursor: pointer;
 }
+
+.sync-status-widget {
+    position: relative;
+    overflow: hidden;
+}
+
+.sync-status-widget .sync-status-progress {
+    position: absolute;
+    bottom: 2px;
+    inset-inline: 7px;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 3px;
+    background-color: var(--hover-item-background-color);
+    pointer-events: none;
+
+    &::after {
+        content: "";
+        display: block;
+        width: var(--sync-progress);
+        height: 100%;
+        background-color: var(--main-text-color);
+        transition: width 200ms ease-out;
+    }
+}

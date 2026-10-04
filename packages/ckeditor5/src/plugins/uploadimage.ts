@@ -1,4 +1,11 @@
-import { FileRepository, Plugin, type FileLoader, type LocaleTranslate, type UploadAdapter } from "ckeditor5";
+import {
+	FileRepository,
+	Plugin,
+	type Editor,
+	type FileLoader,
+	type LocaleTranslate,
+	type UploadAdapter
+} from "ckeditor5";
 
 export default class UploadimagePlugin extends Plugin {
 	static get requires() {
@@ -10,25 +17,39 @@ export default class UploadimagePlugin extends Plugin {
 	}
 
 	init() {
-		const t = this.editor.t;
-		this.editor.plugins.get('FileRepository').createUploadAdapter = loader => new Adapter(loader, t);
+		const editor = this.editor;
+		const fileRepository = editor.plugins.get('FileRepository');
+		fileRepository.createUploadAdapter = loader => new Adapter(loader, editor);
 	}
+}
+
+const linkLoaders = new WeakSet<FileLoader>();
+
+/** Makes the upload answer with a link to the attachment, and store a picture as uploaded. */
+export function uploadAsLink(loader: FileLoader) {
+	linkLoaders.add(loader);
+}
+
+export function isUploadAsLink(loader: FileLoader) {
+	return linkLoaders.has(loader);
 }
 
 class Adapter implements UploadAdapter {
     private loader: FileLoader;
+    private editor: Editor;
     private t: LocaleTranslate;
     private xhr?: XMLHttpRequest;
 
 	/**
 	 * Creates a new adapter instance.
 	 */
-	constructor(loader: FileLoader, t: LocaleTranslate) {
+	constructor(loader: FileLoader, editor: Editor) {
 		/**
 		 * FileLoader instance to use during the upload.
 		 */
 		this.loader = loader;
-		this.t = t;
+		this.editor = editor;
+		this.t = editor.t;
 	}
 
 	/**
@@ -64,13 +85,20 @@ class Adapter implements UploadAdapter {
 	 * @private
 	 */
 	_initRequest() {
-		return glob.getHeaders().then(headers => {
+		const domRoot = this.editor.editing.view.getDomRoot();
+		const component = glob.getComponentByEl<EditorComponent>( domRoot );
+
+		// Sent as a change of the host, which then does not redraw the links and embeds it shows.
+		return glob.getHeaders({ "trilium-component-id": component?.componentId }).then(headers => {
 			const xhr = this.xhr = new XMLHttpRequest();
 
-			const {noteId} = glob.getActiveContextNote();
+			// The note the editor holds, which is not the active tab's in a split or the quick edit
+			// popup. A host that does not say falls back to the active tab's.
+			const noteId = component?.getNoteId?.() ?? glob.getActiveContextNote().noteId;
+			const query = isUploadAsLink(this.loader) ? "?link=true" : "";
 
 			// this must be a relative path
-			const url = `api/notes/${noteId}/attachments/upload`;
+			const url = `api/notes/${noteId}/attachments/upload${query}`;
 
 			xhr.open('POST', url, true);
 			xhr.responseType = 'json';

@@ -1,14 +1,17 @@
 // Side-effect import: declares the `math` key on EditorConfig used by the editor configs below.
 import './math.js';
 
+import { type DISPLAYABLE_LOCALE_IDS, LOCALES } from '@triliumnext/commons';
 import { Locale } from 'ckeditor5';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import getCkLocale from '../../i18n.js';
 import MathInputView, { LatexTextAreaView, MathFieldFocusableView } from './math_input_view.js';
 
 interface MathField extends HTMLElement {
 	value: string;
 	readOnly: boolean;
+	inlineShortcuts?: Record<string, string | { value: string; after?: string }>;
 	setValue?: ( value: string, options?: { silenceNotifications?: boolean } ) => void;
 }
 
@@ -16,8 +19,8 @@ describe( 'MathInputView', () => {
 	let view: MathInputView;
 
 	/** Render the view into the document and wait for MathLive to mount its <math-field>. */
-	async function renderAndWait(): Promise<MathField> {
-		view = new MathInputView( new Locale() );
+	async function renderAndWait( locale = new Locale() ): Promise<MathField> {
+		view = new MathInputView( locale );
 		view.render();
 		document.body.appendChild( view.element as HTMLElement );
 
@@ -49,6 +52,92 @@ describe( 'MathInputView', () => {
 
 		expect( mathfield.tagName.toLowerCase() ).toBe( 'math-field' );
 		expect( mathfield.getAttribute( 'tabindex' ) ).toBe( '0' );
+	} );
+
+	it( 'localizes MathLive in the editor UI language rather than the browser one', async () => {
+		const mathFieldClass = () => customElements.get( 'math-field' ) as unknown as { locale: string };
+
+		await renderAndWait( new Locale( { uiLanguage: 'de' } ) );
+		expect( mathFieldClass().locale ).toBe( 'de' );
+		view.element?.remove();
+		view.destroy();
+
+		await renderAndWait( new Locale( { uiLanguage: 'zh' } ) );
+		expect( mathFieldClass().locale ).toBe( 'zh-cn' );
+		view.element?.remove();
+		view.destroy();
+
+		await renderAndWait();
+		expect( mathFieldClass().locale ).toBe( 'en' );
+	} );
+
+	describe( 'in every UI language', () => {
+		const localeIds = LOCALES
+			.filter( locale => !locale.contentOnly )
+			.map( locale => locale.id as DISPLAYABLE_LOCALE_IDS );
+		const errors: unknown[] = [];
+		const onError = ( event: ErrorEvent ) => errors.push( event.error ?? event.message );
+		const onRejection = ( event: PromiseRejectionEvent ) => errors.push( event.reason );
+
+		// Vitest runs the spec in an iframe, where `window.mathVirtualKeyboard` is a proxy that shows
+		// the keyboard in the top window. Mounting it here makes it render in this document.
+		beforeAll( async () => {
+			const { initVirtualKeyboardInCurrentBrowsingContext } = await import( 'mathlive' );
+			initVirtualKeyboardInCurrentBrowsingContext();
+		} );
+
+		beforeEach( () => {
+			errors.length = 0;
+			window.addEventListener( 'error', onError );
+			window.addEventListener( 'unhandledrejection', onRejection );
+		} );
+
+		afterEach( () => {
+			window.mathVirtualKeyboard?.hide();
+			window.removeEventListener( 'error', onError );
+			window.removeEventListener( 'unhandledrejection', onRejection );
+		} );
+
+		it.each( localeIds )( 'mounts the math field and shows the keyboard in %s', async localeId => {
+			// The same language code the text editor is configured with for this locale.
+			const { language } = await getCkLocale( localeId );
+			const uiLanguage = typeof language === 'string' ? language : 'en';
+			const mathfield = await renderAndWait( new Locale( { uiLanguage } ) );
+			mathfield.focus();
+			window.mathVirtualKeyboard?.show();
+
+			// MathLive applies a locale change to the DOM in a `setTimeout`.
+			await new Promise( resolve => setTimeout( resolve, 0 ) );
+			await new Promise( resolve => requestAnimationFrame( resolve ) );
+
+			const menuToggle = mathfield.shadowRoot?.querySelector( '[data-l10n-tooltip="tooltip.menu"]' );
+			expect( menuToggle?.getAttribute( 'data-tooltip' ) ).toBeTruthy();
+			const keyboard = document.querySelector( 'body > .ML__keyboard' );
+			expect( keyboard ).not.toBeNull();
+			expect( keyboard?.querySelector( '[data-tooltip]' ) ).not.toBeNull();
+			expect( errors ).toEqual( [] );
+		} );
+	} );
+
+	it( 'renders only the LaTeX textarea when MathLive is disabled', () => {
+		view = new MathInputView( new Locale(), false );
+		view.render();
+		document.body.appendChild( view.element as HTMLElement );
+
+		expect( view.element?.querySelector( '.ck-mathlive-container' ) ).toBeNull();
+		expect( view.mathfield ).toBeNull();
+		expect( textarea().tagName ).toBe( 'TEXTAREA' );
+	} );
+
+	it( 'accepts custom MathLive inline shortcuts from a document event', async () => {
+		const addShortcut = ( event: Event ) => {
+			( event as CustomEvent<Record<string, string>> ).detail.sq = '\\sqrt{#?}';
+		};
+		document.addEventListener( 'mathlive:custom-shortcuts', addShortcut, { once: true } );
+
+		const mathfield = await renderAndWait();
+
+		expect( mathfield.inlineShortcuts?.sq ).toBe( '\\sqrt{#?}' );
 	} );
 
 	describe( 'syncing', () => {
@@ -298,6 +387,16 @@ describe( 'MathInputView', () => {
 			const focus = vi.spyOn( textarea(), 'focus' );
 
 			view.latexTextAreaView.focus();
+
+			expect( focus ).toHaveBeenCalled();
+		} );
+
+		it( 'focuses the textarea when MathLive is disabled', () => {
+			view = new MathInputView( new Locale(), false );
+			view.render();
+			const focus = vi.spyOn( view.latexTextAreaView, 'focus' );
+
+			view.focus();
 
 			expect( focus ).toHaveBeenCalled();
 		} );

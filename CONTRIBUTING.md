@@ -94,9 +94,11 @@ users.
 - Add or update tests for the behavior you change. See the
   [Testing guide](./docs/Developer%20Guide/Developer%20Guide/Testing.md).
 - Include a screenshot or short recording when the user interface changes.
-- When behavior changes, update the User Guide with
-  `pnpm edit-docs:edit-docs`; do not edit those Markdown files directly.
-  The Developer Guide can be edited directly.
+- When behavior changes, update the User Guide (`docs/User Guide`) in the
+  same pull request — in the editor (`pnpm edit-docs:edit-docs`) or by editing
+  the Markdown and running `pnpm edit-docs:sync-docs`, which regenerates the
+  in-app help from it. Never edit the generated files under
+  `apps/server/src/assets/doc_notes`. The Developer Guide can be edited directly.
 - Every pull request is manually tested and reviewed by a maintainer.
   Review can take time, especially for large changes. Update the branch
   when it conflicts with `main` or when a maintainer asks.

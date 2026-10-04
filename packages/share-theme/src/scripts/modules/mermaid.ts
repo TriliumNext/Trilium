@@ -4,7 +4,7 @@ export default async function setupMermaid() {
         return;
     }
 
-    const mermaid = (await import("mermaid")).default;
+    const mermaid = await loadMermaid();
 
     for (const codeBlock of mermaidEls) {
         const parentPre = codeBlock.parentElement;
@@ -23,4 +23,25 @@ export default async function setupMermaid() {
     // it does in the app; front matter still overrides them per diagram.
     mermaid.initialize({ theme: "default", layout: "dagre", look: "classic" });
     mermaid.init();
+}
+
+interface Mermaid {
+    initialize(config: Record<string, unknown>): void;
+    init(): void;
+}
+
+/**
+ * Imports the client's mermaid, which the server, the standalone build and the share-theme export
+ * each place at `client/` next to this script, described by `share_mermaid.json`.
+ */
+export async function loadMermaid(): Promise<Mermaid> {
+    const manifestUrl = new URL("client/share_mermaid.json", import.meta.url);
+    const response = await fetch(manifestUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to load ${manifestUrl.href}: HTTP ${response.status}.`);
+    }
+
+    const { entry } = await response.json() as { entry: string };
+    const module = await import(new URL(entry, manifestUrl).href) as { default: Mermaid };
+    return module.default;
 }

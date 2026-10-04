@@ -12,10 +12,10 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   To create a relationship, hold the mouse on the box on the right of a note and then:
     *   Drag it over another note to create a relationship pointing from the first note to the second one.
     *   Drag over the same note to create a self-referencing relationship (represented as a loop).
-    *   Once dragged, enter the name of the relationship to create. To cancel, simply dismiss the dialog or press <kbd>Esc</kbd>.
+    *   Once dragged, a popover next to the relationship asks for its name. Type a new name and press <kbd>Enter</kbd>, or pick a relation name already in use from the suggestions. To cancel, press <kbd>Esc</kbd>, close the popover or click elsewhere on the map.
 *   To open a note, either click on the note (opening it in the current view) or use the right click menu to open in a new tab.
 *   To edit the title of a note or to delete it (either from the map, or delete it completely), right click the note.
-*   To delete a relationship, right click it and select the corresponding option.
+*   To rename or delete a relationship, right click it and select the corresponding option.
 
 ## Development process demo
 

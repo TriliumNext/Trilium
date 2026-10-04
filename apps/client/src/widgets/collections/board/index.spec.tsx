@@ -386,11 +386,14 @@ describe("Collapsed board columns", () => {
 
         expect(header()?.getAttribute("role")).toBe("button");
         expect(header()?.getAttribute("aria-expanded")).toBe("false");
+        // The key is announced in both states.
+        expect(header()?.getAttribute("aria-keyshortcuts")).toBe("Space");
 
-        // Open, it is a heading again: Space does nothing there, so no button is promised.
+        // Open, it is a heading again: Space is a board shortcut there, not a button press.
         await select(mountPoint, 0);
         expect(header()?.getAttribute("role")).toBeNull();
         expect(header()?.getAttribute("aria-expanded")).toBeNull();
+        expect(header()?.getAttribute("aria-keyshortcuts")).toBe("Space");
 
         // A column that was never collapsed says nothing either way.
         expect(columnAt(mountPoint, 1).querySelector("h3")?.getAttribute("role")).toBeNull();
@@ -737,6 +740,25 @@ describe("Collapsed board columns", () => {
      * The menu is opened from the column, so that column is the open one. Storing the flag alone
      * would change nothing on screen and leave the reader with no sign the entry did anything.
      */
+    it("collapses the column when Space is pressed on its heading", async () => {
+        const { mountPoint } = await setup();
+        const header = columnAt(mountPoint, 1).querySelector<HTMLElement>("h3");
+        expect(header).not.toBeNull();
+        header?.focus();
+
+        await act(async () => {
+            header?.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+            await flush();
+        });
+
+        expect(isCollapsed(mountPoint, 1)).toBe(true);
+        expect(saved.at(-1)?.columns?.[1]).toEqual({ value: "Done", collapsed: true });
+        // The strip's header keeps the focus, so Space opens the column again.
+        const strip = columnAt(mountPoint, 1).querySelector("h3");
+        expect(document.activeElement).toBe(strip);
+        expect(strip?.getAttribute("aria-expanded")).toBe("false");
+    });
+
     it("closes the column as soon as the menu entry collapses it", async () => {
         const { mountPoint } = await setup();
         const column = columnAt(mountPoint, 1);
@@ -1258,6 +1280,7 @@ describe("Board column rename", () => {
                 labelKey: "board_view.hints.insert_column"
             },
             { keys: [ "Space" ], labelKey: "board_view.hints.open_item" },
+            { keys: [ "Space" ], labelKey: "board_view.hints.toggle_column" },
             { keys: [ "F2" ], labelKey: "board_view.hints.rename" },
             { keys: [ "Delete" ], labelKey: "board_view.hints.remove_item" },
             { keys: [ "Shift+Delete" ], labelKey: "board_view.hints.delete_item" },
@@ -1276,6 +1299,11 @@ describe("Board column rename", () => {
             {
                 keys: [ "Ctrl+Alt+Home", "Ctrl+Alt+End" ],
                 labelKey: "board_view.hints.move_column_to_edge"
+            },
+            { keys: [ "Ctrl+Space" ], labelKey: "board_view.hints.toggle_selection" },
+            {
+                keys: [ "Shift+Down", "Shift+Up" ],
+                labelKey: "board_view.hints.extend_selection"
             },
             { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
             { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
@@ -1694,6 +1722,31 @@ describe("Board column rename", () => {
         show.mockRestore();
     });
 
+    /** The column menu's `onSelectAll` calls `selection.selectAll` for the same cards as Ctrl+A. */
+    it("picks out every card in the column from the menu", async () => {
+        const { container } = await setup();
+        const column = container.querySelectorAll<HTMLElement>(".board-column")[1];
+        const picked = () => [ ...container.querySelectorAll(".board-note.selected") ]
+            .map(element => element.getAttribute("data-note-id"));
+        expect(picked()).toEqual([]);
+
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+        column.querySelector("h3")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+
+        const entry = (show.mock.calls.at(-1)?.[0].items ?? [])
+            .find(item => item && "uiIcon" in item && item.uiIcon === "bx bx-selection");
+        if (!entry || !("handler" in entry)) throw new Error("expected a select-all entry");
+
+        await act(async () => {
+            entry.handler?.(entry, {} as never);
+            await flush();
+        });
+        expect(picked()).toEqual(
+            [ ...column.querySelectorAll(".board-note") ].map(e => e.getAttribute("data-note-id")));
+
+        show.mockRestore();
+    });
+
     it("keeps the new-item slot out of the column's scrolling body", async () => {
         const { container } = await setup();
         const column = container.querySelectorAll<HTMLElement>(".board-column")[1];
@@ -2048,6 +2101,44 @@ describe("Board column rename", () => {
         expect(middle.classList.contains("appearing")).toBe(true);
         expect(scrolled).toHaveBeenCalled();
         expect(content?.scrollTop).toBe(0);
+    });
+
+    /**
+     * A heading has no card to insert beside, so Enter and Shift+Enter reach the ends of the
+     * column instead.
+     */
+    it("opens the field at the head of the column for Enter on its heading", async () => {
+        const { container } = await setup();
+        const column = container.querySelectorAll<HTMLElement>(".board-column")[1];
+        const header = column.querySelector<HTMLElement>("h3");
+        const content = column.querySelector<HTMLElement>(".board-column-content");
+        if (!header || !content) throw new Error("expected a column with a heading");
+
+        await act(async () => {
+            header.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await flush();
+        });
+
+        const drawn = [ ...content.querySelectorAll(".board-note, .board-new-item") ];
+        expect(drawn[0]?.classList.contains("board-new-item")).toBe(true);
+        expect(drawn[1]?.classList.contains("board-note")).toBe(true);
+    });
+
+    it("opens the field at the foot of the column for Shift+Enter on its heading", async () => {
+        const { container } = await setup();
+        const column = container.querySelectorAll<HTMLElement>(".board-column")[1];
+        const header = column.querySelector<HTMLElement>("h3");
+        if (!header) throw new Error("expected a column with a heading");
+
+        await act(async () => {
+            header.dispatchEvent(new KeyboardEvent(
+                "keydown", { key: "Enter", shiftKey: true, bubbles: true }));
+            await flush();
+        });
+
+        // The footer's own field, drawn outside the cards rather than among them.
+        expect(column.querySelector(".board-column-content .board-new-item")).toBeNull();
+        expect(column.querySelector(".board-new-item.editing")).toBeTruthy();
     });
 
     /**
@@ -2407,7 +2498,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -2434,7 +2525,7 @@ describe("Board column rename", () => {
         // Picking closes the menu, as any dropdown item click does; open it again to read the tick.
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
         const reopened = [ ...document.querySelectorAll<HTMLElement>(".card-template-pill") ].at(-1);
@@ -2478,7 +2569,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             editor.dispatchEvent(new FocusEvent("blur"));
             editor.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
             await flush();
@@ -2490,7 +2581,7 @@ describe("Board column rename", () => {
 
         // Once the menu is done with, the field has the focus again.
         await act(async () => {
-            $(pill.closest(".dropdown") as HTMLElement).trigger("hide.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button[aria-expanded=true]").trigger("click");
             await flush();
         });
         expect(document.activeElement).toBe(editor);
@@ -2667,7 +2758,7 @@ describe("Board column rename", () => {
         if (!pill) throw new Error("expected the template pill");
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -2777,7 +2868,7 @@ describe("Board column rename", () => {
 
         await act(async () => {
             pill.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-            $(pill.closest(".dropdown") as HTMLElement).trigger("show.bs.dropdown");
+            $(pill.closest(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
@@ -4145,8 +4236,8 @@ describe("a column that sorts its cards", () => {
             "#viewType": "board",
             ...(boardSort
                 ? {
-                    "#sortColumns": boardSort.orderBy,
-                    ...(boardSort.isDescending ? { "#sortColumnsDescending": "" } : {})
+                    "#board:sortColumns": boardSort.orderBy,
+                    ...(boardSort.isDescending ? { "#board:sortColumnsDescending": "" } : {})
                 }
                 : {}),
             ...(promoted
@@ -4439,11 +4530,11 @@ describe("Board properties from the note menu", () => {
         const options = cog?.closest(".dropdown");
         if (!options) throw new Error("expected a settings menu on the collection bar");
         await act(async () => {
-            $(options as HTMLElement).trigger("show.bs.dropdown");
+            $(options as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
             await flush();
         });
 
-        const entry = [ ...options.querySelectorAll<HTMLElement>(".dropdown-item") ].at(-1);
+        const entry = [ ...document.querySelectorAll<HTMLElement>(".tn-popup .dropdown-item") ].at(-1);
         if (!entry) throw new Error("expected an entry in the settings menu");
         expect(entry.textContent).toContain("board_view.properties");
         expect(entry.previousElementSibling?.className).toContain("dropdown-divider");
@@ -4640,7 +4731,7 @@ describe("how wide the board draws its columns", () => {
             title: "Board",
             "#collection": "",
             "#viewType": "board",
-            ...(width ? { "#boardCardWidth": width } : {}),
+            ...(width ? { "#board:columnWidth": width } : {}),
             children: [ { title: "First", "#status": "To Do" } ]
         });
 
@@ -4834,7 +4925,7 @@ describe("Card toolbar on mobile", () => {
             title: "Board",
             "#collection": "",
             "#viewType": "board",
-            ...(withInbox ? { "#enableInboxColumn": "true" } : {}),
+            ...(withInbox ? { "#board:showInbox": "true" } : {}),
             children: [
                 { id: "tool1", title: "First", "#status": "To Do" },
                 { id: "tool2", title: "Second", "#status": "To Do" },
@@ -5224,6 +5315,28 @@ describe("Selection mode on mobile", () => {
         await setup();
 
         expect(container.querySelector(".board-selection-toggle")).toBeNull();
+        // Off mobile they are drawn in `OverlayControlGroup`, outside `.board-header-tools`.
+        expect(container.querySelector(".board-header-tools button.bx-collapse-alt")).toBeNull();
+        expect(container.querySelector(".board-header-tools button.bx-expand-alt")).toBeNull();
+    });
+
+    /** `onCollapseAll` and `onExpandAll`, which only the header carries on mobile. */
+    it("closes and opens every column from the header", async () => {
+        await setup();
+        const columns = () => [ ...container.querySelectorAll(".board-column") ];
+        expect(columns().some(column => column.classList.contains("collapsed"))).toBe(false);
+
+        await act(async () => {
+            headerButton("bx-collapse-alt").click();
+            await flush();
+        });
+        expect(columns().every(column => column.classList.contains("collapsed"))).toBe(true);
+
+        await act(async () => {
+            headerButton("bx-expand-alt").click();
+            await flush();
+        });
+        expect(columns().some(column => column.classList.contains("collapsed"))).toBe(false);
     });
 
     /**
@@ -5433,6 +5546,24 @@ describe("Column toolbar on mobile", () => {
         await act(async () => { button("bx-expand-horizontal").click(); });
         expect(column(0).classList.contains("collapsed")).toBe(false);
         expect(buttons()).toEqual([ "bx-edit-alt", "bx-collapse-horizontal", "bx-sort-alt-2" ]);
+    });
+
+    /**
+     * A tap lands on a strip on the way to the rail standing over it, so it brings the rail up and
+     * leaves the column as it is. Only the rail's own button opens it.
+     */
+    it("leaves a strip collapsed when it is tapped, and opens it from the rail", async () => {
+        await setup();
+        await act(async () => { heading(0).focus(); });
+        await act(async () => { button("bx-collapse-horizontal").click(); });
+        expect(column(0).classList.contains("collapsed")).toBe(true);
+
+        await act(async () => { column(0).dispatchEvent(new Event("click", { bubbles: true })); });
+        expect(column(0).classList.contains("collapsed")).toBe(true);
+        expect(buttons()).toEqual([ "bx-expand-horizontal" ]);
+
+        await act(async () => { button("bx-expand-horizontal").click(); });
+        expect(column(0).classList.contains("collapsed")).toBe(false);
     });
 
     it("opens the sort menu and the title editor", async () => {

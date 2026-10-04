@@ -1,29 +1,50 @@
 import "./EditableText.css";
 import "./LinkEmbed.css";
 
-import { CKTextEditor, EditorWatchdog, SnippetDefinition } from "@triliumnext/ckeditor5";
+import {
+    type AttachmentLinkChange,
+    CKTextEditor,
+    EditorWatchdog,
+    type FileUploadData,
+    type FileUploadEvent,
+    SnippetDefinition
+} from "@triliumnext/ckeditor5";
 import { deferred } from "@triliumnext/commons";
+import { createPortal } from "preact/compat";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import { consumeBookmark } from "../../../services/bookmark_jump";
-import dateNoteService from "../../../services/date_notes";
+import { getUploadBoxSize } from "../../../services/content_renderer";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
+import type LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
+import type { IconPickerOpts } from "../../dialogs/icon_picker";
 import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import IconPicker from "../../react/IconPicker";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
+import AttachmentSaves from "./attachment_saves";
 import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditorWithWatchdog";
+import { getContentEmbedTools } from "./content_embed_tools";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
 import { usesClassicToolbar } from "./toolbar";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import {
+    getAttachmentHref,
+    loadEmbeddedAttachment,
+    loadEmbeddedNote,
+    openContentEmbedMenu,
+    refreshEmbeddedNote,
+    setupImageOpening,
+    watchContentEmbeds
+} from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -36,8 +57,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const contentRef = useRef<string>("");
     /** The note `contentRef` holds the content of, so a restarted editor can be marked as holding it. */
     const contentNoteIdRef = useRef<string>();
+    const pendingAttachmentChangesRef = useRef<PendingAttachmentChanges>();
+    /** The attachment whose embed takes the focus when it renders next. */
+    const focusedAttachmentIdRef = useRef<string>();
     const watchdogRef = useRef<EditorWatchdog>(null);
+    const stopWatchingEmbedsRef = useRef<() => void>();
     const editorApiRef = useRef<CKEditorApi>(null);
+    /** The open icon picker request and its balloon container, or `null` when none is open. */
+    const [ iconPickerRequest, setIconPickerRequest ] = useState<IconPickerOpts & { container: HTMLElement } | null>(null);
     const [ language ] = useNoteLabel(note, "language");
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
@@ -48,6 +75,8 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         textNoteEditorType
     });
     const initialized = useRef(deferred<void>());
+    const [ attachmentSaves ] = useState(() =>
+        new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
@@ -60,14 +89,17 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             }
 
             const content = editor.getData() ?? "";
+            const attachments = attachmentSaves.collect();
 
             // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
             // this is important when setting a new note to code
             return {
-                content: utils.isHtmlEmpty(content) ? "" : content
+                content: utils.isHtmlEmpty(content) ? "" : content,
+                ...(attachments.length ? { attachments } : {})
             };
         },
         onContentChange(newContent) {
+            attachmentSaves.setNoteId(note?.noteId);
             contentRef.current = newContent;
             contentNoteIdRef.current = note?.noteId;
             const editor = watchdogRef.current?.editor;
@@ -75,9 +107,13 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 setEditorNoteId(editor, note.noteId);
             }
             editor?.setData(newContent);
+            if (editor && note) {
+                const textEditor = editor as CKTextEditor;
+                applyPendingAttachmentChanges(textEditor, note.noteId, pendingAttachmentChangesRef);
+            }
 
             // Jump to the first search match when navigated from search results.
-            consumeSearchTerms(noteContext, ntxId);
+            consumeSearchTerms(noteContext, ntxId, initialized.current);
 
             // Scroll to bookmark anchor if navigated with ?bookmark=...
             const viewScope = noteContext?.viewScope;
@@ -91,6 +127,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
             contentRef.current = savedData.content;
             contentNoteIdRef.current = note?.noteId;
+            attachmentSaves.markSaved(savedData.attachments);
         }
     });
     const templates = useTemplates();
@@ -138,22 +175,53 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
-        insertDateTimeToTextCommand() {
-            if (!editorApiRef.current) return;
-            const date = new Date();
-            const customDateTimeFormat = options.get("customDateTimeFormat");
-            const dateString = utils.formatDateTime(date, customDateTimeFormat);
+        // CKEditor creates and positions the balloon; `IconPicker` renders into its container.
+        // On mobile, `showIconPickerDialog` opens the picker in a modal instead.
+        showIconPicker(request: IconPickerOpts & { container: HTMLElement }) {
+            if (isMobile()) {
+                parentComponent?.triggerCommand("showIconPickerDialog", { onSelect: request.onSelect });
+                return null;
+            }
 
-            addTextToEditor(dateString);
+            setIconPickerRequest(request);
+            return () => setIconPickerRequest(null);
+        },
+        formatDateTime(date: Date, format?: string) {
+            return utils.formatDateTime(date, format ?? options.get("customDateTimeFormat"));
+        },
+        // Keyboard shortcut
+        async insertDateTimeToTextCommand() {
+            const editor = await waitForEditor();
+            editor?.execute("insertDateTimeToText");
         },
         // Include note functionality note
         addIncludeNoteToTextCommand() {
             if (!editorApiRef.current) return;
-            parentComponent?.triggerCommand("showIncludeNoteDialog", {
+            parentComponent?.triggerCommand("showContentEmbedDialog", {
                 editorApi: editorApiRef.current,
             });
         },
-        loadIncludedNote,
+        loadEmbeddedNote,
+        loadEmbeddedAttachment(attachmentId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
+            const isFocused = focusedAttachmentIdRef.current === attachmentId;
+            if (isFocused) {
+                focusedAttachmentIdRef.current = undefined;
+            }
+            return loadEmbeddedAttachment(attachmentId, $el, boxSize, {
+                attachmentEditor: attachmentSaves,
+                isFocused
+            });
+        },
+        focusContentEmbed(attachmentId: string) {
+            focusedAttachmentIdRef.current = attachmentId;
+        },
+        getAttachmentHref,
+        getNoteId() {
+            return note.noteId;
+        },
+        getEmbedBoxSize: getUploadBoxSize,
+        openContentEmbedMenu,
+        getContentEmbedTools,
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.
         async fetchLinkMetadata(url: string) {
@@ -167,19 +235,6 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         },
         renderLinkMention(container, metadata, editable) {
             linkEmbedService.renderMentionPreview(container, metadata, editable);
-        },
-        // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string, intoInbox: boolean) {
-            const notePath = intoInbox ? await dateNoteService.getInboxNotePath() : noteContext?.notePath;
-            if (!notePath) return;
-
-            const resp = await note_create.createNoteWithTypePrompt(notePath, {
-                activate: false,
-                title
-            });
-
-            if (!resp || !resp.note) return;
-            return resp.note.getBestNotePathString();
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -241,9 +296,24 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         }
     });
 
-    useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
+    useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
-        refreshIncludedNote(containerRef.current, noteId);
+        refreshEmbeddedNote(containerRef.current, noteId);
+    });
+
+    useEffect(() => () => stopWatchingEmbedsRef.current?.(), []);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const editor = watchdogRef.current?.editor as CKTextEditor | null | undefined;
+        if (editor && note) {
+            notifyAttachmentChanges(
+                editor,
+                loadResults,
+                note.noteId,
+                parentComponent?.componentId,
+                pendingAttachmentChangesRef
+            );
+        }
     });
 
     useTriliumEvent("executeWithTextEditor", async ({ callback, resolve, ntxId: eventNtxId }) => {
@@ -468,12 +538,21 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 }}
                 templates={templates}
                 onNotificationWarning={onNotificationWarning}
+                onNotificationInfo={onNotificationInfo}
                 onWatchdogStateChange={onWatchdogStateChange}
                 onChange={() => spacedUpdate.scheduleUpdate()}
                 onEditorInitialized={(editor) => {
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
+                        stopWatchingEmbedsRef.current?.();
+                        stopWatchingEmbedsRef.current = watchContentEmbeds(
+                            containerRef.current,
+                            editor
+                        );
                     }
+
+                    editor.plugins.get("FileUploadEditing")
+                        .on<FileUploadEvent>("upload", showFileUploadProgress);
 
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.
@@ -486,9 +565,21 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
                 }}
             />}
+
+            {iconPickerRequest && createPortal(
+                <IconPicker
+                    columnCount={ICON_PICKER_COLUMNS}
+                    compact
+                    onSelect={iconPickerRequest.onSelect}
+                />,
+                iconPickerRequest.container
+            )}
         </>
     );
 }
+
+/** The number of icons per row of the picker in the editor's balloon. */
+const ICON_PICKER_COLUMNS = 9;
 
 /**
  * Inserts an empty paragraph at the very top of the document and places the cursor in it, giving the
@@ -614,3 +705,94 @@ export function onNotificationWarning(evt: NotificationEventInfo, data: Notifica
     evt.stop();
 }
 
+/**
+ * Shows a CKEditor info notification, such as the notice after sorting a table, as a Trilium toast.
+ *
+ * Exported for testing.
+ */
+export function onNotificationInfo(_evt: NotificationEventInfo, data: NotificationEventData) {
+    toast.showMessage(data.message);
+}
+
+interface PendingAttachmentChanges {
+    noteId: string;
+    changes: AttachmentLinkChange[];
+}
+
+/**
+ * Passes the attachments changed in `loadResults` to the editor's reference links, so a link shows
+ * the new title of its attachment or goes away with it. Changes that this editor saved, such as a
+ * canvas drawing, are skipped: redrawing an embed remounts what it shows.
+ *
+ * When `loadResults` also reloads the note's content, the changes wait in `pending` until
+ * `applyPendingAttachmentChanges()` runs on the reloaded content.
+ *
+ * Exported for testing.
+ */
+export function notifyAttachmentChanges(
+    editor: CKTextEditor,
+    loadResults: LoadResults,
+    noteId: string,
+    componentId: string | undefined,
+    pending: { current: PendingAttachmentChanges | undefined }
+) {
+    const rows = loadResults.getAttachmentRows(componentId);
+    const changes = rows.flatMap(({ attachmentId, isDeleted }) =>
+        attachmentId ? [ { attachmentId, isDeleted: !!isDeleted } ] : []
+    );
+    if (!changes.length) {
+        return;
+    }
+
+    // `useNoteBlob()` reloads the content under the same condition, and `setData()` would discard
+    // the updated links.
+    if (loadResults.isNoteContentReloaded(noteId, componentId)) {
+        const held = pending.current?.noteId === noteId ? pending.current.changes : [];
+        pending.current = { noteId, changes: [ ...held, ...changes ] };
+        return;
+    }
+
+    editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks(changes);
+}
+
+/**
+ * Applies the changes `notifyAttachmentChanges()` held for `noteId`, once the editor holds its
+ * reloaded content. Changes held for another note are dropped.
+ *
+ * Exported for testing.
+ */
+export function applyPendingAttachmentChanges(
+    editor: CKTextEditor,
+    noteId: string,
+    pending: { current: PendingAttachmentChanges | undefined }
+) {
+    const held = pending.current;
+    pending.current = undefined;
+    if (held?.noteId === noteId) {
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks(held.changes);
+    }
+}
+
+/**
+ * Shows the progress of a file attachment upload in a toast until the upload ends.
+ *
+ * Exported for testing.
+ */
+export function showFileUploadProgress(_evt: unknown, { fileName, loader, done }: FileUploadData) {
+    const id = `file-upload-${loader.id}`;
+    const showProgress = () => toast.showPersistent({
+        id,
+        icon: "bx bx-paperclip",
+        title: t("editable_text.uploading_attachment"),
+        message: fileName,
+        progress: loader.uploadedPercent / 100,
+        dismissible: false
+    });
+
+    showProgress();
+    loader.on("change:uploadedPercent", showProgress);
+    void done.then(() => {
+        loader.off("change:uploadedPercent", showProgress);
+        toast.closePersistent(id);
+    });
+}

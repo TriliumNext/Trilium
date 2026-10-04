@@ -1,42 +1,7 @@
 import type { ModelPosition } from "@triliumnext/ckeditor5";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import server from "../../../services/server";
-import { fetchAttributeNames, getClickIndex, getPreprocessedData, renderAttributeName } from "./AttributeEditor";
-
-describe("fetchAttributeNames", () => {
-    it("prefixes each name with the marker that inserts it, and asks for the names by an escaped query", async () => {
-        const get = vi.fn(async () => [ "author", "priority" ]);
-        server.get = get as unknown as typeof server.get;
-
-        expect(await fetchAttributeNames("relation", "a b")).toEqual([
-            { id: "~author", name: "author" },
-            { id: "~priority", name: "priority" }
-        ]);
-        expect(get).toHaveBeenCalledExactlyOnceWith("attribute-names/?type=relation&query=a%20b");
-
-        expect((await fetchAttributeNames("label", "")).map((item) => item.id)).toEqual([ "#author", "#priority" ]);
-    });
-});
-
-describe("renderAttributeName", () => {
-    it("marks a name Trilium reads for itself, and leaves an invented one as bare text", () => {
-        const builtin = renderAttributeName("label", "archived");
-
-        // `ck-button_with-text` keeps the label visible, and the reset opt-out keeps the badge styled.
-        expect(builtin.classList.contains("ck-button_with-text")).toBe(true);
-        expect(builtin.querySelector(".attr-name-suggestion")?.classList.contains("ck-reset_all-excluded")).toBe(true);
-        expect(builtin.querySelector(".attr-name-suggestion-name")?.textContent).toBe("archived");
-        expect(builtin.querySelector(".ext-badge.outline")).not.toBeNull();
-
-        const invented = renderAttributeName("label", "myOwnLabel");
-        expect(invented.querySelector(".attr-name-suggestion-name")?.textContent).toBe("myOwnLabel");
-        expect(invented.querySelector(".ext-badge")).toBeNull();
-
-        // A name that is a built-in of the other type is not one here.
-        expect(renderAttributeName("relation", "archived").querySelector(".ext-badge")).toBeNull();
-    });
-});
+import { getClickIndex, getPreprocessedData } from "./AttributeEditor";
 
 describe("getPreprocessedData", () => {
     it("reduces a reference link back to the note path it stands for, and resolves the entities around it", () => {

@@ -2,35 +2,29 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// The real box is an Algolia autocomplete bound to jQuery, which is not loaded here; the mock hands
-// the test the props instead, `noteIdChanged` being the one the field's behaviour hangs off. The ref
-// is forwarded to the box it builds, as the real field forwards it to the box the plugin builds.
-const autocomplete = vi.hoisted(() => ({ current: null as Record<string, unknown> | null }));
+// The mock hands the test the props of the box, `noteIdChanged` being the one the field's behavior
+// hangs off, and the field a handle whose `clear` it can watch.
+const { autocomplete, clear } = vi.hoisted(() => ({
+    autocomplete: { current: null as Record<string, unknown> | null },
+    clear: vi.fn()
+}));
 vi.mock("../react/NoteAutocomplete", async () => {
     const { h } = await import("preact");
     return {
         default: (props: Record<string, unknown>) => {
             autocomplete.current = props;
+            const handleRef = props.handleRef as { current: unknown } | undefined;
+            if (handleRef) handleRef.current = { clear };
             return h("input", {
                 id: props.id as string | undefined,
-                tabIndex: props.tabIndex as number | undefined,
-                ref: props.inputRef
+                tabIndex: props.tabIndex as number | undefined
             });
         }
     };
 });
 
-import $ from "jquery";
-
 import { buildNote } from "../../test/easy-froca";
 import RelationValuesInput, { RelationValueChips } from "./relation_values_input";
-
-// Taking a pick clears the box through the plugin, which holds text of its own; the plugin is not
-// loaded here, so its two calls are stubbed where jQuery keeps them.
-const setSelectedNotePath = vi.fn();
-type PluggedIn = { autocomplete(...args: unknown[]): PluggedIn; setSelectedNotePath(path: string): void };
-($.fn as unknown as PluggedIn).autocomplete = function (this: PluggedIn) { return this; };
-($.fn as unknown as PluggedIn).setSelectedNotePath = setSelectedNotePath;
 
 describe("RelationValuesInput", () => {
     let container: HTMLElement;
@@ -82,9 +76,8 @@ describe("RelationValuesInput", () => {
 
         await act(async () => pick(gamma.noteId));
         expect(onCommit).toHaveBeenCalledWith([ alpha.noteId, gamma.noteId ]);
-        // What was in the box is spent on the choice made: the plugin is told to let its text go,
-        // or it would write the picked title right back over the cleared box.
-        expect(setSelectedNotePath).toHaveBeenCalledWith("");
+        // What was in the box is spent on the choice made.
+        expect(clear).toHaveBeenCalled();
 
         // A target already held would come out as a second chip there is no telling apart — and
         // clearing the box reports an empty pick, which is not a target at all.

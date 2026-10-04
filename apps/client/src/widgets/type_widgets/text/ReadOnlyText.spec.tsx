@@ -33,6 +33,15 @@ import ReadOnlyText from "./ReadOnlyText";
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
+const { watchContentEmbeds, stopWatchingEmbeds } = vi.hoisted(() => {
+    const stop = vi.fn();
+    return { watchContentEmbeds: vi.fn(() => stop), stopWatchingEmbeds: stop };
+});
+vi.mock("./utils", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./utils")>(),
+    watchContentEmbeds
+}));
+
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
 
@@ -268,5 +277,24 @@ describe("ReadOnlyText text direction", () => {
     it("marks the content left-to-right otherwise", async () => {
         expect((await mountWithLanguage("en"))?.getAttribute("dir")).toBe("ltr");
         expect((await mountWithLanguage(undefined))?.getAttribute("dir")).toBe("ltr");
+    });
+});
+
+describe("ReadOnlyText embedded notes", () => {
+    it("watches its content for embed boxes until it unmounts", async () => {
+        watchContentEmbeds.mockClear();
+        stopWatchingEmbeds.mockClear();
+        const harness = setupHarness({ isVisible: true });
+
+        await harness.mount();
+
+        const content = harness.container.querySelector(".note-detail-readonly-text-content");
+        expect(content).not.toBeNull();
+        expect(watchContentEmbeds.mock.calls).toEqual([ [ content ] ]);
+        expect(stopWatchingEmbeds).not.toHaveBeenCalled();
+
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+        expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
     });
 });

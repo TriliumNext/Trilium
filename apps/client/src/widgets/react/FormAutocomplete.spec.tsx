@@ -1,35 +1,9 @@
-/**
- * Where the suggestion list is placed and how wide it is drawn. Everything the placement reads is
- * measured from the layout, which a headless DOM has none of, so the field and the viewport are
- * given the measurements a browser would have taken.
- */
-import { afterEach, describe, expect, it } from "vitest";
+import { useState } from "preact/hooks";
+import { act } from "preact/test-utils";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { computeDropdownPosition, stepOver } from "./FormAutocomplete";
-
-/** The room the placement keeps between the list and the edge of the screen. */
-const MARGIN = 8;
-
-function fieldAt({ left = 20, top = 100, width = 240, height = 30 } = {}) {
-    const element = document.createElement("div");
-    element.getBoundingClientRect = () => ({
-        left, top, width, height, right: left + width, bottom: top + height,
-        x: left, y: top, toJSON: () => ({})
-    });
-    return element;
-}
-
-function setViewport(width: number, height: number) {
-    for (const [ name, value ] of [ [ "clientWidth", width ], [ "clientHeight", height ] ] as const) {
-        Object.defineProperty(document.documentElement, name, { value, configurable: true });
-    }
-}
-
-afterEach(() => {
-    for (const name of [ "clientWidth", "clientHeight" ]) {
-        Reflect.deleteProperty(document.documentElement, name);
-    }
-});
+import { renderInto } from "../../test/render";
+import FormAutocomplete, { stepOver } from "./FormAutocomplete";
 
 describe("stepping through a list with headings in it", () => {
     const items = [ "Nearby", "a", "b", "Far away", "c" ];
@@ -46,52 +20,151 @@ describe("stepping through a list with headings in it", () => {
         expect(stepOver(items, 1, -1, isHeading)).toBe(4);
     });
 
+    it("goes up to the last entry from a list with nothing highlighted", () => {
+        expect(stepOver(items, -1, -1, isHeading)).toBe(4);
+        expect(stepOver([ "a", "b", "c" ], -1, -1)).toBe(2);
+    });
+
     it("highlights nothing in a list that is headings alone", () => {
         expect(stepOver([ "Nearby" ], -1, 1, isHeading)).toBe(-1);
     });
 });
 
-describe("computeDropdownPosition", () => {
-    it("hangs the list under the field, at the field's own width", () => {
-        setViewport(1200, 800);
-
-        expect(computeDropdownPosition(fieldAt())).toMatchObject({
-            left: "20px",
-            top: "130px",
-            width: "240px"
-        });
+describe("the dropdown", () => {
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
-    it("draws the list wider where the caller asks for more than the field", () => {
-        setViewport(1200, 800);
+    async function open(dropdownMinWidth?: number) {
+        vi.useFakeTimers();
+        const container = renderInto(<FormAutocomplete currentValue="" onChange={() => {}} openOnFocus
+            source={async () => [ "a", "b" ]} dropdownMinWidth={dropdownMinWidth} />);
+        const input = container.querySelector("input");
+        if (!input) throw new Error("no input rendered");
+        input.getBoundingClientRect = () => DOMRect.fromRect({ x: 20, y: 100, width: 240, height: 30 });
 
-        expect(computeDropdownPosition(fieldAt({ width: 240 }), 440)).toMatchObject({ width: "440px" });
-        // The field is the floor: a minimum under it asks for nothing.
-        expect(computeDropdownPosition(fieldAt({ width: 240 }), 100)).toMatchObject({ width: "240px" });
+        await act(async () => { input.focus(); });
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+        const dropdowns = document.querySelectorAll<HTMLElement>(".tn-popup.form-autocomplete-dropdown");
+        return dropdowns[dropdowns.length - 1];
+    }
+
+    it("is a popup under the field, as wide as the field or as the minimum asked for where that is more", async () => {
+        const atField = await open();
+        expect(atField.querySelectorAll(".form-autocomplete-list > .form-autocomplete-item")).toHaveLength(2);
+        expect(atField.style.width).toBe("240px");
+
+        expect((await open(440)).style.width).toBe("440px");
+        expect((await open(100)).style.width).toBe("240px");
     });
+});
 
-    it("keeps a wider list on the screen rather than running it off the far edge", () => {
-        setViewport(600, 800);
+describe("Enter pressed before the newer query's suggestions", () => {
+    it("reaches the host where the newer list will open with nothing highlighted", async () => {
+        vi.useFakeTimers();
+        const onPick = vi.fn();
+        const reachedDocument = vi.fn();
+        function Field() {
+            const [ value, setValue ] = useState("");
+            return <FormAutocomplete currentValue={value} onChange={setValue} onPick={onPick}
+                source={async (query) => [ `${query}!` ]} />;
+        }
+        const found = renderInto(<Field />).querySelector("input");
+        if (!found) throw new Error("no input rendered");
+        const input: HTMLInputElement = found;
 
-        // Asked for more than there is room for, it takes the room there is.
-        expect(computeDropdownPosition(fieldAt({ left: 20 }), 2000)).toMatchObject({
-            left: `${MARGIN}px`,
-            width: `${600 - 2 * MARGIN}px`
+        await act(async () => {
+            input.value = "a";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
         });
-
-        // Wide enough to fit, but not where the field stands, so it is pulled back to fit.
-        expect(computeDropdownPosition(fieldAt({ left: 400 }), 440)).toMatchObject({
-            left: `${600 - MARGIN - 440}px`,
-            width: "440px"
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+        await act(async () => {
+            input.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
         });
+        expect(document.querySelector(".form-autocomplete-item.active")?.textContent).toBe("a!");
+
+        await act(async () => {
+            input.value = "ab";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        const enter = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+        document.addEventListener("keydown", reachedDocument);
+        await act(async () => { input.dispatchEvent(enter); });
+        document.removeEventListener("keydown", reachedDocument);
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+
+        expect(enter.defaultPrevented).toBe(false);
+        expect(reachedDocument).toHaveBeenCalledWith(enter);
+        expect(onPick).not.toHaveBeenCalled();
+        vi.useRealTimers();
     });
+});
 
-    it("flips above the field only where the room below is too little to be useful", () => {
-        setViewport(1200, 800);
-        expect(computeDropdownPosition(fieldAt({ top: 100 }))).toMatchObject({ top: "130px" });
+describe("Enter pressed between typing and the render it causes", () => {
+    it("is held for the text just typed, and picks among its suggestions", async () => {
+        vi.useFakeTimers();
+        const onPick = vi.fn();
+        function Field() {
+            const [ value, setValue ] = useState("");
+            return <FormAutocomplete currentValue={value} onChange={setValue} onPick={onPick} autoActivate
+                source={async (query) => [ `${query}!` ]} />;
+        }
+        const found = renderInto(<Field />).querySelector("input");
+        if (!found) throw new Error("no input rendered");
+        const input: HTMLInputElement = found;
 
-        // Near the foot of the screen, where what is under the field would show barely an entry.
-        setViewport(1200, 200);
-        expect(computeDropdownPosition(fieldAt({ top: 150 })).top).not.toBe("180px");
+        await act(async () => {
+            input.value = "a";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+
+        // Outside `act`, the render for "ab" comes after the Enter.
+        input.value = "ab";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+        // The first flushes the render and its effects, the second the lookup they debounce.
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+
+        expect(onPick).toHaveBeenCalledExactlyOnceWith("ab!");
+        vi.useRealTimers();
+    });
+});
+
+describe("an input method composing in the field", () => {
+    it("looks up what the input method commits, not what it is composing, and passes the events on", async () => {
+        vi.useFakeTimers();
+        const source = vi.fn(async (query: string) => [ `${query}!` ]);
+        const onCompositionStart = vi.fn();
+        const onCompositionEnd = vi.fn();
+        function Field() {
+            const [ value, setValue ] = useState("");
+            return <FormAutocomplete currentValue={value} onChange={setValue} source={source}
+                onCompositionStart={onCompositionStart} onCompositionEnd={onCompositionEnd} />;
+        }
+        const found = renderInto(<Field />).querySelector("input");
+        if (!found) throw new Error("no input rendered");
+        const input: HTMLInputElement = found;
+
+        async function type(text: string) {
+            await act(async () => {
+                input.value = text;
+                input.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+        }
+
+        await act(async () => { input.dispatchEvent(new Event("compositionstart", { bubbles: true })); });
+        await type("n");
+        await type("ni");
+        expect(source).not.toHaveBeenCalled();
+
+        await act(async () => { input.dispatchEvent(new Event("compositionend", { bubbles: true })); });
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+        expect(source.mock.calls).toEqual([ [ "ni" ] ]);
+        expect(onCompositionStart).toHaveBeenCalledOnce();
+        expect(onCompositionEnd).toHaveBeenCalledOnce();
+        vi.useRealTimers();
     });
 });

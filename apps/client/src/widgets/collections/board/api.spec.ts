@@ -58,7 +58,13 @@ vi.mock("../../../services/note_create", () => ({
 }));
 
 vi.mock("../../../services/dialog", () => ({
-    default: { confirm: vi.fn(async () => true) }
+    default: {
+        confirm: vi.fn(async () => true),
+        confirmWithNoteDeletion: vi.fn(async () => ({
+            confirmed: true,
+            isDeleteNoteChecked: false
+        }))
+    }
 }));
 
 vi.mock("../../../services/i18n", () => ({
@@ -97,15 +103,15 @@ function createApi(
     return { api, board, saved, editing, pendingRenames: pending.renames };
 }
 
-describe("BoardApi filtering", () => {
-    /** Cards named by their note id, which is all the operations under test read them for. */
-    function cards(columns: Record<string, string[]>): ColumnMap {
-        return new Map(Object.entries(columns).map(([ column, ids ]) => [
-            column,
-            ids.map((noteId) => ({ note: { noteId }, branch: { branchId: `b_${noteId}` } }))
-        ])) as unknown as ColumnMap;
-    }
+/** Cards named by their note id, which is all the operations under test read them for. */
+function cards(columns: Record<string, string[]>): ColumnMap {
+    return new Map(Object.entries(columns).map(([ column, ids ]) => [
+        column,
+        ids.map((noteId) => ({ note: { noteId }, branch: { branchId: `b_${noteId}` } }))
+    ])) as unknown as ColumnMap;
+}
 
+describe("BoardApi filtering", () => {
     it("stores a submitted filter query and clears it for an empty one", () => {
         const { api, saved } = createApi({ filterQuery: undefined }, []);
 
@@ -587,12 +593,28 @@ describe("BoardApi card operations", () => {
                 "openInPopup", { noteIdOrPath: items[0].note.noteId });
         });
 
+        /**
+         * `openCard` reads both names. Written as literals rather than as the constants, so the
+         * test pins the attribute names users type.
+         */
+        it.each([ "board:cardRedirectTo", "boardCardRedirectTo" ])(
+            "redirects through the %s relation", (relation) => {
+                const { api, items } = createBoardWithCards();
+                const setNote = vi.fn();
+                api.noteContext = { setNote } as never;
+
+                addRedirect(items[0].note, "targetNote", relation);
+                api.openCard(items[0].note);
+
+                expect(setNote).toHaveBeenCalledWith("targetNote");
+            });
+
         /** Files the relation straight into froca, which is all `openCard` reads. */
-        function addRedirect(note: FNote, target: string) {
-            const attributeId = `redirect-${note.noteId}`;
+        function addRedirect(note: FNote, target: string, name = "board:cardRedirectTo") {
+            const attributeId = `redirect-${name}-${note.noteId}`;
             froca.attributes[attributeId] = new FAttribute(froca, {
                 noteId: note.noteId, attributeId, type: "relation",
-                name: "boardCardRedirectTo", value: target, position: 0, isInheritable: false
+                name, value: target, position: 0, isInheritable: false
             });
             note.attributes.push(attributeId);
             // Cleared rather than emptied: the cache is rebuilt only for a note it has no entry for.
@@ -1530,14 +1552,15 @@ describe("removing a column with the question put first", () => {
             { columns: [ { value: "To Do" }, { value: "Done" } ] },
             [ "To Do", "Done" ]
         );
-        const confirm = vi.spyOn(dialog, "confirm").mockResolvedValue(false);
+        const confirm = vi.spyOn(dialog, "confirmWithNoteDeletion").mockResolvedValue(false);
         const error = vi.spyOn(toast, "showError").mockReturnValue(undefined);
 
         expect(await api.confirmAndRemoveColumn("Done")).toBe(false);
-        expect(confirm).toHaveBeenCalled();
+        // The box is about notes to delete, and an empty column has none.
+        expect(confirm).toHaveBeenCalledWith("board_view.delete-column-confirmation", undefined);
         expect(saved).toEqual([]);
 
-        confirm.mockResolvedValue(true);
+        confirm.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
         expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
         expect(saved.at(-1)?.columns?.map(column => column.value)).toEqual([ "To Do" ]);
         expect(error).not.toHaveBeenCalled();
@@ -1546,6 +1569,40 @@ describe("removing a column with the question put first", () => {
         vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
         expect(await api.confirmAndRemoveColumn("To Do")).toBe(false);
         expect(error).toHaveBeenCalledWith("board_view.save-error");
+    });
+
+    /**
+     * Taking the offer deletes the column's cards, rather than stripping the grouping value and
+     * leaving them on the board.
+     */
+    it("deletes the notes in the column when the offer is taken", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "To Do" }, { value: "Done" } ] },
+            [ "To Do", "Done" ], undefined, "status", cards({ Done: [ "one", "two" ] }));
+        const confirm = vi.spyOn(dialog, "confirmWithNoteDeletion")
+            .mockResolvedValue({ confirmed: true, isDeleteNoteChecked: true });
+
+        expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
+
+        expect(confirm).toHaveBeenCalledWith(
+            "board_view.delete-column-confirmation", "board_view.delete-column-notes");
+        expect(executeBulkActions).toHaveBeenCalledWith(
+            [ "one", "two" ], [ { name: "deleteNote" } ], { silent: true });
+        expect(saved.at(-1)?.columns?.map(column => column.value)).toEqual([ "To Do" ]);
+    });
+
+    /** Left untaken, the cards stay on the board without the value that put them in the column. */
+    it("strips the grouping value when the offer is left untaken", async () => {
+        const { api } = createApi(
+            { columns: [ { value: "Done" } ] },
+            [ "Done" ], undefined, "status", cards({ Done: [ "one" ] }));
+        vi.spyOn(dialog, "confirmWithNoteDeletion")
+            .mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
+
+        expect(await api.confirmAndRemoveColumn("Done")).toBe(true);
+
+        expect(executeBulkActions).toHaveBeenCalledWith(
+            [ "one" ], [ { name: "deleteLabel", labelName: "status" } ], { silent: true });
     });
 });
 
@@ -2006,6 +2063,25 @@ describe("filing a card under the inbox", () => {
     });
 });
 
+describe("the limit set on a column", () => {
+    /**
+     * The inbox takes every card without a grouping value, however many that is. A limit stored
+     * for it by an older board is read as none.
+     */
+    it("reads no limit for the inbox and writes none to it", async () => {
+        const { api, saved } = createApi(
+            { columns: [ { value: "", limit: 2 }, { value: "To Do", limit: 3 } ] },
+            [ "", "To Do" ]);
+
+        expect(api.getColumnLimit("")).toBeUndefined();
+        expect(api.getColumnLimit("To Do")).toBe(3);
+
+        await api.setColumnLimit("", 5);
+
+        expect(saved).toHaveLength(0);
+    });
+});
+
 describe("the promoted attributes a card shows", () => {
     /** A board defining two promoted labels, which is what the cards can show. */
     function boardWithAttributes() {
@@ -2051,6 +2127,32 @@ describe("the promoted attributes a card shows", () => {
         expect(api.getStoredPromotedAttributes()).toBe(stored);
     });
 
+    /** A card shows attributes defined by its template, so `getPromotedAttributes()` lists them. */
+    it("lists what the cards define through another note, after the board's own", () => {
+        buildNote({
+            id: "projectTemplate",
+            title: "Project",
+            "#label:project(inheritable)": "promoted,single,color",
+            "#label:owner(inheritable)": "promoted,single,relation"
+        });
+        const task = buildNote({ title: "Task", "~template": "projectTemplate" });
+        // `buildNote()` caches only the owned attributes. Deleting the entry makes
+        // `getAttributes()` rebuild it, including the template's attributes.
+        delete noteAttributeCache.attributes[task.noteId];
+        const plain = buildNote({ title: "Plain" });
+        const byColumn: ColumnMap = new Map([ [ "To Do", [
+            { note: task, branch: { branchId: "b_task" } as FBranch },
+            { note: plain, branch: { branchId: "b_plain" } as FBranch }
+        ] ] ]);
+        const { api } = createApi({}, [ "To Do" ], boardWithAttributes(), "status", byColumn);
+
+        expect(api.getVisiblePromotedAttributeNames()).toEqual([ "dueDate", "owner", "project" ]);
+        const [ , owner, project ] = api.getPromotedAttributes();
+        // The board and the template both define `owner`; the board's definition wins.
+        expect(owner).toMatchObject({ labelType: "text", isDefinedByItems: false });
+        expect(project).toMatchObject({ labelType: "color", isDefinedByItems: true });
+    });
+
     it("stores the whole list, an attribute the board has dropped along with it", async () => {
         const { api, saved } = createApi(
             { promotedAttributes: [ { name: "gone" } ] }, [], boardWithAttributes());
@@ -2076,7 +2178,7 @@ describe("how a column orders its cards", () => {
         const { api } = createApi(
             { columns: [ { value: "To Do", orderBy: "manual" } ] },
             [ "To Do" ],
-            buildNote({ title: "Board", "#sortColumns": "title" }));
+            buildNote({ title: "Board", "#board:sortColumns": "title" }));
 
         expect(api.getColumnSort("To Do").orderBy).toBeUndefined();
         expect(api.getEffectiveColumnSort("To Do").orderBy).toBeUndefined();
@@ -2150,7 +2252,7 @@ describe("a column that takes the board's order", () => {
     /** A board holding an order of its own, which a column can be stored as taking. */
     function boardSorting() {
         return buildNote({
-            title: "Board", "#sortColumns": "attr:dueDate", "#sortColumnsDescending": ""
+            title: "Board", "#board:sortColumns": "attr:dueDate", "#board:sortColumnsDescending": ""
         });
     }
 
@@ -2202,8 +2304,8 @@ describe("the order the board offers its columns", () => {
 
         const { api } = createApi({}, [], buildNote({
             title: "Board",
-            "#sortColumns": "attr:dueDate",
-            "#sortColumnsDescending": ""
+            "#board:sortColumns": "attr:dueDate",
+            "#board:sortColumnsDescending": ""
         }));
         expect(api.getDefaultSort()).toEqual({ orderBy: "attr:dueDate", isDescending: true });
     });
@@ -2211,7 +2313,7 @@ describe("the order the board offers its columns", () => {
     // A key written by hand, or by a newer version, leaves the board offering the manual order.
     it("reads a key it does not know as the manual order", () => {
         const { api } = createApi({}, [], buildNote({
-            title: "Board", "#sortColumns": "dateModified"
+            title: "Board", "#board:sortColumns": "dateModified"
         }));
 
         expect(api.getDefaultSort().orderBy).toBeUndefined();
@@ -2226,13 +2328,13 @@ describe("the order the board offers its columns", () => {
             const { api, board } = createApi({}, []);
 
             await api.setDefaultSort("title");
-            expect(setAttribute).toHaveBeenCalledWith(board, "label", "sortColumns", "title");
+            expect(setAttribute).toHaveBeenCalledWith(board, "label", "board:sortColumns", "title");
 
             await api.setDefaultSort(undefined);
-            expect(setAttribute).toHaveBeenLastCalledWith(board, "label", "sortColumns", null);
+            expect(setAttribute).toHaveBeenLastCalledWith(board, "label", "board:sortColumns", null);
 
             await api.setDefaultSortDirection(true);
-            expect(setBoolean).toHaveBeenCalledWith(board, "sortColumnsDescending", true);
+            expect(setBoolean).toHaveBeenCalledWith(board, "board:sortColumnsDescending", true);
         });
 
     it("puts every column back to the board's order, keeping what else each one holds", async () => {
@@ -2473,7 +2575,7 @@ describe("how wide the board draws its columns", () => {
 
     it("reads the label, falling back to the default for a width it does not offer", () => {
         const width = (label?: string) => createApi(
-            {}, [], buildNote(label ? { title: "Board", "#boardCardWidth": label }
+            {}, [], buildNote(label ? { title: "Board", "#board:columnWidth": label }
                 : { title: "Board" })).api.columnWidth;
 
         expect(width()).toBe("narrow");
@@ -2489,12 +2591,12 @@ describe("how wide the board draws its columns", () => {
 
         await api.setColumnWidth("wide");
 
-        expect(setLabel).toHaveBeenCalledWith(board.noteId, "boardCardWidth", "wide");
+        expect(setLabel).toHaveBeenCalledWith(board.noteId, "board:columnWidth", "wide");
     });
 
     /** Kept tidy: a board drawn at the default width carries no label for it at all. */
     it("takes the label off for the default width", async () => {
-        const board = buildNote({ title: "Board", "#boardCardWidth": "wide" });
+        const board = buildNote({ title: "Board", "#board:columnWidth": "wide" });
         const setLabel = vi.spyOn(attributes, "setLabel").mockResolvedValue(undefined);
         const removeLabel = vi.spyOn(attributes, "removeOwnedLabelByName")
             .mockResolvedValue(true);
@@ -2502,7 +2604,7 @@ describe("how wide the board draws its columns", () => {
 
         await api.setColumnWidth("narrow");
 
-        expect(removeLabel).toHaveBeenCalledWith(board, "boardCardWidth");
+        expect(removeLabel).toHaveBeenCalledWith(board, "board:columnWidth");
         expect(setLabel).not.toHaveBeenCalled();
     });
 
@@ -2510,7 +2612,7 @@ describe("how wide the board draws its columns", () => {
     it("writes the default out where the board inherits another width", async () => {
         const parent = buildNote({
             title: "Parent",
-            "#boardCardWidth(inheritable)": "wide",
+            "#board:columnWidth(inheritable)": "wide",
             children: [ { title: "Board" } ]
         });
         const board = froca.getNoteFromCache(parent.getChildNoteIds()[0]);
@@ -2524,7 +2626,7 @@ describe("how wide the board draws its columns", () => {
 
         await api.setColumnWidth("narrow");
 
-        expect(setLabel).toHaveBeenCalledWith(board.noteId, "boardCardWidth", "narrow");
+        expect(setLabel).toHaveBeenCalledWith(board.noteId, "board:columnWidth", "narrow");
         expect(removeLabel).not.toHaveBeenCalled();
     });
 });

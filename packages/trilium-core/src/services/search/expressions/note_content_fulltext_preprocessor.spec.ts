@@ -124,6 +124,64 @@ describe("Reference-link & link-preview searchability", () => {
     });
 });
 
+describe("Inline icon searchability", () => {
+    const type: NoteType = "text";
+    const mime = "text/html";
+
+    it("makes an icon findable by its class and by the name inside it", () => {
+        // dataDowncast markup from inline_icon_editing.ts: an element with nothing inside it, so
+        // stripping the markup would otherwise leave no trace of the icon at all.
+        const html = `<p>Press <span class="tn-icon bx bx-error-circle"></span> to stop.</p>`;
+
+        const result = preprocessContent(html, type, mime);
+
+        expect(result).toContain("press");
+        expect(result).toContain("bx-error-circle");
+        expect(result).toContain("error-circle");
+    });
+
+    it("leaves out the marker class and the pack's bare prefix, which name no icon", () => {
+        const html = `<p><span class="tn-icon bx bx-star"></span></p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words).toEqual([ "bx-star", "star" ]);
+    });
+
+    it("names an icon by its pack's class, not by another class the tag carries", () => {
+        // The editor keeps every class an imported icon wears, so a tag can carry a class from
+        // somewhere else entirely. Only a class whose prefix the tag also wears bare names an icon,
+        // and the snippet builder takes the first of them.
+        const html = `<p><span class="tn-icon text-big bx bx-star"></span></p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words).toEqual([ "bx-star", "star" ]);
+    });
+
+    it("names an icon once however often the note carries it", () => {
+        const icon = `<span class="tn-icon bx bx-star"></span>`;
+        const html = `<p>${icon} one ${icon} two ${icon}</p>`;
+
+        const words = preprocessContent(html, type, mime).split(/\s+/).filter(Boolean);
+
+        expect(words.filter((word) => word === "star")).toHaveLength(1);
+    });
+
+    it("reads the icon out of a colour wrapper, and out of single-quoted markup", () => {
+        const html = `<p><span style="color:red;">`
+            + `<span class='tn-icon bx bx-bulb'></span></span></p>`;
+
+        expect(preprocessContent(html, type, mime)).toContain("bulb");
+    });
+
+    it("leaves content carrying no icon as it was", () => {
+        const html = "<p>Nothing to see here.</p>";
+
+        expect(preprocessContent(html, type, mime).trim()).toBe("nothing to see here.");
+    });
+});
+
 describe("Spreadsheet preprocessing", () => {
     const type: NoteType = "spreadsheet";
     const mime = "application/json";
@@ -158,9 +216,28 @@ describe("Text (HTML) preprocessing", () => {
         expect(result).toContain("a 1984 science fiction film.");
     });
 
+    it("makes the searchable body the text the editor displays", () => {
+        // `extractContentSnippet()` decodes the same set to render a hit, so the spelling on screen
+        // is what a query has to be able to reach.
+        const ampersand = "<p>AT&amp;T reported earnings.</p>";
+        const entities = "<p>if a &lt; b &amp;&amp; b &gt; c, then&nbsp;done</p>";
+        const href = `<p>see <a href="https://example.com/?a=1&amp;b=2">docs</a></p>`;
+        const shown = "<p>use &amp;amp; to write one</p>";
+
+        expect(preprocessContent(ampersand, type, mime)).toEqual("at&t reported earnings.");
+        expect(preprocessContent(entities, type, mime)).toEqual("if a < b && b > c, then done");
+        expect(preprocessContent(href, type, mime)).toContain("https://example.com/?a=1&b=2");
+        // Decoded once: this body shows "&amp;", where a second pass would leave a bare "&".
+        expect(preprocessContent(shown, type, mime)).toContain("use &amp; to write one");
+    });
+
     it("keeps the markup but still unescapes entities when raw is requested", () => {
-        const result = preprocessContent("<p>Hello&nbsp;world</p>", type, mime, true);
-        expect(result).toEqual("<p>hello world</p>");
+        const spacing = preprocessContent("<p>Hello&nbsp;world</p>", type, mime, true);
+        // `note.rawContent` searches the stored markup, so the basic entities stay encoded there.
+        const markup = preprocessContent("<p>AT&amp;T</p>", type, mime, true);
+
+        expect(spacing).toEqual("<p>hello world</p>");
+        expect(markup).toEqual("<p>at&amp;t</p>");
     });
 });
 

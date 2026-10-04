@@ -7,7 +7,7 @@ import type FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import FormSelect from "../../react/FormSelect";
-import { useTriliumOptionInt } from "../../react/hooks";
+import { useTriliumEvent, useTriliumOptionInt } from "../../react/hooks";
 import { ViewModeMedia } from "../interface";
 import { useNoteIds } from "../NoteList";
 import { Pager, usePagination } from "../Pagination";
@@ -55,6 +55,13 @@ function SearchResultsListInner({ note, ntxId, highlightedTokens }: SearchResult
         return noteIds.slice(start, start + pagination.pageSize);
     }, [ noteIds, pagination.page, pagination.pageSize ]);
     const { detailsByNoteId, loading } = useSearchResultDetails(note, pageNoteIds, ntxId);
+
+    // A new search starts on the first page of its results.
+    useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId === ntxId) {
+            pagination.setPage(1);
+        }
+    });
 
     return (
         <div className="search-results-list">

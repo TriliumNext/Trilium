@@ -9,7 +9,7 @@
 }
 
 /* Expandable section — collapsible details within a card */
-.expandable-section + .expandable-section {
+.expandable-card .expandable-section + .expandable-section {
     border-top: 1px solid var(--main-border-color);
 }
 
@@ -54,4 +54,54 @@
 
 .expandable-section-body {
     padding: 0;
+}
+
+/* Disclosure line — a bare muted section. `.expandable-line-header` and `.expandable-line-body`
+   give the same shape to a line that does not fold, such as the thought being streamed. */
+.expandable-line {
+    font-size: 0.85rem;
+    color: var(--muted-text-color);
+}
+
+/* Top alignment with a shared line height keeps the icons on the first line of the label,
+   whether it wraps or not. */
+.expandable-line > .expandable-section-summary,
+.expandable-line-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.15rem 0;
+    font-weight: normal;
+    line-height: 1.4rem;
+
+    > .bx {
+        font-size: 0.9rem;
+        line-height: inherit;
+        margin-right: 0;
+    }
+
+    > .expandable-section-chevron {
+        font-size: 1rem;
+        margin-left: 0;
+    }
+
+    /* Smaller text in the label, such as a tool call's query, sits on the label's baseline. */
+    > .expandable-section-label {
+        align-items: baseline;
+    }
+}
+
+/* `:where()` keeps the hover below a variant's own color, such as an errored tool call's. */
+.expandable-line > .expandable-section-summary:where(:hover) {
+    color: var(--main-text-color);
+}
+
+/* The left margin centers the rule under the 0.9rem icon of the line above. */
+.expandable-line > .expandable-section-body,
+.expandable-line-body {
+    margin: 0.15rem 0 0.25rem 0.45rem;
+    padding-left: 0.85rem;
+    border-left: 2px solid var(--main-border-color);
 }

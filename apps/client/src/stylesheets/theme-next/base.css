@@ -22,6 +22,13 @@
 :root {
     color-scheme: var(--theme-style);
 
+    --suggestion-active-text-color: var(--hover-item-text-color);
+    --suggestion-active-background-color: var(--hover-item-background-color);
+    /* Match `ul.ck.ck-list button.ck-button` and `--ck-editor-popup-padding` in `notes/text.css`. */
+    --suggestion-item-padding-block: 2px;
+    --suggestion-item-padding-inline: 16px;
+    --suggestion-list-padding: 4px;
+
     --main-font-family: "Inter", sans-serif;
 
     --main-font-size: normal;
@@ -155,20 +162,19 @@ body.backdrop-effects-disabled {
     font-size: 0.9rem !important;
 }
 
+.dropdown-menu.note-autocomplete-menu {
+    --padding: var(--suggestion-list-padding);
+}
+
 /* Use this class for non-legacy menus */
 .dropdown-menu.tn-dropdown-menu {
     --menu-item-icon-vert-offset: 0;
     white-space-collapse: discard;
 }
 
-.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon {
+/* The row's own icon is spaced by the `.tn-menu-gap` beside it. */
+.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon:not(.dropdown-item > span > :first-child) {
     margin-inline-end: 6px;
-}
-
-.dropdown-menu.tn-dropdown-menu-scrollable {
-    /* Note: scrollable dropdowns does not support submenus */
-    max-height: 90vh;
-    overflow-y: auto;
 }
 
 body.desktop .dropdown-menu::before,
@@ -248,8 +254,9 @@ body.desktop .dropdown-item.dropdown-submenu .dropdown-toggle,
     }
 }
 
-body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item:not(.dropdown-submenu),
-body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item.dropdown-submenu .dropdown-toggle {
+/* Each menu level holds its rows in its own `.tn-menu-scroll`; submenu layers are outside it. */
+body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item:not(.dropdown-submenu),
+body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item.dropdown-submenu .dropdown-toggle {
     padding-inline-end: var(--menu-item-start-padding) !important;
     padding-inline-start: var(--menu-item-end-padding) !important;
 }
@@ -268,7 +275,7 @@ body.mobile .dropdown-submenu {
     padding: 0 !important;
 }
 
-body.mobile .dropdown-item:not(:last-of-type) {
+body.mobile .dropdown-item:not(:last-of-type):where(:not(.note-autocomplete-menu .dropdown-item)) {
     margin-bottom: 0.5em;
 }
 
@@ -325,8 +332,8 @@ html body .dropdown-item[disabled] {
     position: absolute;
     content: "";
     top: -1px;
-    inset-inline-start: calc(0px - var(--menu-padding-size));
-    inset-inline-end: calc(0px - var(--menu-padding-size));
+    inset-inline-start: calc(0px - var(--padding, var(--menu-padding-size)));
+    inset-inline-end: calc(0px - var(--padding, var(--menu-padding-size)));
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
@@ -368,8 +375,13 @@ body.desktop .dropdown-submenu.dropstart .dropdown-toggle::before {
     color: var(--menu-item-arrow-color) !important;
 }
 
-body[dir=rtl] .dropdown-menu:not([data-popper-placement="bottom-start"]) .dropdown-toggle::after {
+/* Right to left, the end side is the left, so both arrows point the other way. */
+body.desktop[dir=rtl] .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
     content: "\ea4d" !important;
+}
+
+body.desktop[dir=rtl] .dropdown-submenu.dropstart .dropdown-toggle::before {
+    content: "\ed3b" !important;
 }
 
 /* Menu item group heading */
@@ -418,7 +430,13 @@ body.mobile #context-menu-cover {
     transition: background-color 150ms ease-in;
 
     &.show {
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.32);
+
+        /* A tablet's menus open beside what opened them, undimmed; the cover only takes the tap
+           that closes them. */
+        @media (min-width: 992px) {
+            background: transparent;
+        }
     }
 
     &.global-menu-cover {
@@ -430,12 +448,46 @@ body.mobile #context-menu-cover {
     }
 }
 
-body.mobile .dropdown-menu.mobile-bottom-menu,
-body.mobile .dropdown.global-menu .dropdown-menu {
+body.mobile .dropdown-menu.mobile-bottom-menu {
     border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
 }
 
-body.mobile .dropdown-menu {
+/* A list of suggestions keeps its desktop look, in place of the context menu's cards. */
+body.mobile .dropdown-menu.note-autocomplete-menu {
+    /* Matches `body.desktop .dropdown-menu` in style.css. */
+    border: 1px solid var(--dropdown-border-color);
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    --padding: 6px;
+    font-size: 0.95rem !important;
+
+    .dropdown-item {
+        --menu-item-vertical-padding: 7px;
+        --menu-item-start-padding: 12px;
+        --menu-item-end-padding: 12px;
+    }
+}
+
+/* Pinned to the bottom like a sheet only in the phone layout; see style.css. */
+@media (max-width: 991px) {
+    body.mobile .tn-dropdown-portal.global-menu .dropdown-menu {
+        border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+    }
+}
+
+/* Beside its toggle in a tablet's wider mobile layout, wide enough for its rows to be tapped. */
+@media (min-width: 992px) {
+    body.mobile .tn-popup.tn-menu {
+        min-width: 260px;
+    }
+
+    /* Matches `body.desktop .dropdown-menu` in style.css. */
+    body.mobile .tn-popup.dropdown-menu {
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+    }
+}
+
+body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;
     --hover-item-background-color: var(--card-background-color);
@@ -758,31 +810,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     font-family: boxicons;
     opacity: 0.75;
     transform: translateY(4%);
-}
-
-/*
- * NOTE SEARCH SUGGESTIONS
- */
-
-/* List body */
-.jump-to-note-dialog .jump-to-note-results .aa-suggestions,
-.note-detail-empty .aa-suggestions {
-    padding: 0;
-}
-
-/* List item */
-.jump-to-note-dialog .aa-suggestion,
-.note-detail-empty .aa-suggestion {
-    border-radius: 6px;
-    color: var(--menu-text-color);
-    cursor: default;
-}
-
-/* Selected list item */
-.jump-to-note-dialog .aa-suggestions div.aa-cursor,
-.note-detail-empty .aa-suggestions div.aa-cursor {
-    background: var(--hover-item-background-color);
-    color: var(--hover-item-text-color);
 }
 
 /*

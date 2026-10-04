@@ -12,7 +12,7 @@ vi.mock("fs", () => ({ existsSync: existsSyncMock }));
 
 vi.mock("@triliumnext/core", () => ({ getLog: () => ({ info: vi.fn(), error: vi.fn() }) }));
 
-const { extractPathFromShellEnv, findOnPath, resetLoginShellPathCache } = await import("./binary_lookup.js");
+const { extractPathFromShellEnv, findOnPath, needsShell, resetLoginShellPathCache } = await import("./binary_lookup.js");
 
 const NVM_BIN = path.join("/home/user", ".nvm", "versions", "node", "v24.19.0", "bin");
 const CLAUDE = path.join(NVM_BIN, "claude");
@@ -146,5 +146,15 @@ describe("extractPathFromShellEnv", () => {
         expect(extractPathFromShellEnv("__TRILIUM_SHELL_ENV__PATH=__TRILIUM_SHELL_ENV__")).toBeUndefined();
         // A PATH printed outside the delimiters is rc-file output, not the env.
         expect(extractPathFromShellEnv("PATH=/spoofed")).toBeUndefined();
+    });
+});
+
+describe("needsShell", () => {
+    it("is true only for .cmd/.bat shims", () => {
+        expect(needsShell("C:\\npm\\copilot.cmd")).toBe(true);
+        expect(needsShell("C:\\npm\\copilot.bat")).toBe(true);
+        expect(needsShell("C:\\npm\\copilot.CMD")).toBe(true);
+        expect(needsShell("/usr/bin/copilot")).toBe(false);
+        expect(needsShell("C:\\npm\\copilot.exe")).toBe(false);
     });
 });

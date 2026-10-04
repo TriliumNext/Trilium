@@ -6,7 +6,7 @@ import { ComponentChildren } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { isMobile } from "../../services/utils";
+import { handleRightToLeftPlacement } from "../../services/utils";
 import Debouncer from "../../utils/debouncer";
 
 /** Curated default preset palette, using Trilium note-color-friendly CSS colors. */
@@ -48,13 +48,23 @@ export interface ColorPickerProps {
 export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_COLOR_PALETTE, indeterminate, disabled, className, tooltips }: ColorPickerProps) {
     const normalizedValue = normalizeColor(currentValue);
     const isCustomColor = !indeterminate && normalizedValue !== null && presets.indexOf(normalizedValue) === -1;
+    const isResetSelected = !indeterminate && normalizedValue === null;
+    const isPresetSelected = !indeterminate && normalizedValue !== null && !isCustomColor;
+    // The one cell Tab and a menu's keys enter at: the selected one, or with none the first.
+    const isResetTabStop = !disabled && (isResetSelected || (!isPresetSelected && !isCustomColor));
 
-    return <div className={clsx("color-picker", className)}>
+    return <div
+        className={clsx("color-picker", className)}
+        role="listbox"
+        aria-orientation="horizontal"
+        onKeyDown={onColorPickerKeyDown}
+    >
 
         <ColorCell className="color-cell-reset"
             tooltip={tooltips?.clear ?? t("color-picker.clear-color")}
             color={null}
-            isSelected={(!indeterminate && normalizedValue === null)}
+            isSelected={isResetSelected}
+            isTabStop={isResetTabStop}
             isDisabled={disabled}
             onSelect={onChange}>
 
@@ -70,6 +80,7 @@ export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_
                 tooltip={tooltips?.set ?? t("color-picker.set-color")}
                 color={color}
                 isSelected={(!indeterminate && color === normalizedValue)}
+                isTabStop={!disabled && !indeterminate && color === normalizedValue}
                 isDisabled={disabled}
                 onSelect={onChange} />
         ))}
@@ -77,9 +88,39 @@ export default function ColorPicker({ currentValue, onChange, presets = DEFAULT_
         <CustomColorCell tooltip={tooltips?.setCustom ?? t("color-picker.set-custom-color")}
             color={normalizedValue}
             isSelected={isCustomColor}
+            isTabStop={!disabled && isCustomColor}
             isDisabled={disabled}
             onSelect={onChange} />
     </div>;
+}
+
+/**
+ * Moves focus between the cells with the arrows (towards the reading direction) and Home and End,
+ * without picking: picking writes the color, so it waits for Enter or Space, which click the
+ * focused cell as the pointer does.
+ */
+function onColorPickerKeyDown(e: KeyboardEvent) {
+    const cells = [ ...(e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>(".color-cell") ];
+    const index = cells.indexOf(e.target as HTMLElement);
+    if (index < 0) return;
+
+    const forward = handleRightToLeftPlacement("right") === "right" ? "ArrowRight" : "ArrowLeft";
+    const backward = forward === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
+    let target: number;
+    switch (e.key) {
+        case forward: target = Math.min(index + 1, cells.length - 1); break;
+        case backward: target = Math.max(index - 1, 0); break;
+        case "Home": target = 0; break;
+        case "End": target = cells.length - 1; break;
+        case "Enter":
+        case " ":
+            e.preventDefault();
+            cells[index]?.click();
+            return;
+        default: return;
+    }
+    e.preventDefault();
+    cells[target]?.focus();
 }
 
 interface ColorCellProps {
@@ -88,6 +129,8 @@ interface ColorCellProps {
     tooltip?: string,
     color: string | null,
     isSelected: boolean,
+    /** Whether Tab, and a menu's keys, enter the picker at this cell. */
+    isTabStop?: boolean,
     isDisabled?: boolean,
     onSelect?: (color: string | null) => void
 }
@@ -98,6 +141,10 @@ function ColorCell(props: ColorCellProps) {
         "selected": props.isSelected,
         "disabled-color-cell": props.isDisabled
     })}
+    role="option"
+    aria-selected={props.isSelected}
+    aria-disabled={props.isDisabled || undefined}
+    tabIndex={props.isTabStop ? 0 : -1}
     style={`${(props.color !== null) ? `--color: ${props.color}` : ""}`}
     title={props.tooltip}
     onClick={() => !props.isDisabled && props.onSelect?.(props.color)}>
@@ -141,11 +188,11 @@ function CustomColorCell(props: ColorCellProps) {
     }, [pickedColor]);
 
     return <div style={`--foreground: ${getForegroundColor(props.color)};`}
-        onClick={isMobile() ? (e) => {
-            // The color picker dropdown will close on some browser if the parent context menu is
-            // dismissed, so stop the click propagation to prevent dismissing the menu.
+        onClick={(e) => {
+            // A menu the click reached would close and unmount this cell, and with it the input
+            // whose picker is still open, so the color picked there would be lost.
             e.stopPropagation();
-        } : undefined}>
+        }}>
         <ColorCell {...props}
             color={pickedColor}
             className={clsx("custom-color-cell", {
@@ -155,6 +202,8 @@ function CustomColorCell(props: ColorCellProps) {
 
             <input ref={colorInput}
                 type="color"
+                // Reached through its cell, so not a stop of its own.
+                tabIndex={-1}
                 disabled={props.isDisabled}
                 value={pickedColor ?? props.color ?? "#40bfbf"}
                 onChange={() => {colorInputDebouncer.current?.updateValue(colorInput.current?.value ?? null);}}

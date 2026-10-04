@@ -7,8 +7,8 @@
     "better-sqlite3": "13.0.3",
     "mime-types": "3.0.2",
     "sanitize-filename": "1.6.4",
-    "tsx": "4.23.13",
-    "yargs": "18.1.0"
+    "tsx": "4.23.15",
+    "yargs": "18.2.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "9.6.0",

@@ -11,7 +11,6 @@ import appContext, { type CommandListenerData, type EventData } from "../compone
 import type { SetNoteOpts } from "../components/note_context.js";
 import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
@@ -489,12 +488,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 return true;
             },
             activate: async (event, data) => {
-                // click event won't propagate so let's close context menu manually
-                contextMenu.hide();
-
-                // hide all dropdowns, fix calendar widget dropdown doesn't close when click on a note
-                $('.dropdown-menu').parent('.dropdown').find('[data-bs-toggle="dropdown"]').dropdown('hide');
-
                 this.clearSelectedNodes();
 
                 const notePath = treeService.getNotePath(data.node);

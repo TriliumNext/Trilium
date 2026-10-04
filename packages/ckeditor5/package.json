@@ -9,14 +9,15 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@vitest/browser": "5.0.1",
-    "vitest": "5.0.1"
+    "@vitest/browser": "5.0.3",
+    "vitest": "5.0.3"
   },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
-    "@ckeditor/ckeditor5-icons": "48.5.0",
-    "ckeditor5": "48.5.0",
-    "mathlive": "0.110.0"
+    "@ckeditor/ckeditor5-icons": "48.5.2",
+    "boxicons": "2.1.4",
+    "ckeditor5": "48.5.2",
+    "mathlive": "0.111.0"
   },
   "peerDependencies": {
     "bootstrap": "^5.3.0"

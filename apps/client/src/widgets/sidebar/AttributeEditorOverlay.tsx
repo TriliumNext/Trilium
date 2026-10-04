@@ -49,7 +49,7 @@ export default function AttributeEditorOverlay({ overlayRef, className, children
             // is appended to the body, and creating a note from it opens the note type chooser — the
             // same company the detail popup keeps itself open over.
             if (e.relatedTarget instanceof Element
-                && e.relatedTarget.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .algolia-autocomplete, .modal, .modal-backdrop`)) {
+                && e.relatedTarget.closest(`${AUTOCOMPLETE_DROPDOWN_SELECTOR}, .note-autocomplete-menu, .modal, .modal-backdrop`)) {
                 return;
             }
 

@@ -13,7 +13,7 @@ The note type widget must be created according to <a class="reference-link" hre
 *   Add to note type selector
 *   Add the note to server allowed note types
 *   Update demo document to include this new note type
-*   Increase server sync version (see <a class="reference-link" href="#root/XPSyrTI07rbd/DrIXfwu9CVJP">Mindmap gets turned as file</a>).
+*   Increase server sync version (otherwise an older instance turns notes of the new type into file notes on sync).
 
 ## Validation checklist
 

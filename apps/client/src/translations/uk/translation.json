@@ -325,8 +325,7 @@
     "copy_to_clipboard": "Копіювати в буфер обміну"
   },
   "jump_to_note": {
-    "search_placeholder": "Пошук нотатки за її назвою або типом > для команд...",
-    "search_button": "Повнотекстовий Пошук"
+    "search_placeholder": "Пошук нотатки за її назвою або типом > для команд..."
   },
   "markdown_import": {
     "dialog_title": "Імпорт з Markdown",
@@ -1024,7 +1023,6 @@
     "label_rock_or_pop": "має бути лише одна з міток",
     "label_year_comparison": "числове порівняння (також >, >=, <).",
     "label_date_created": "нотатки, створені за останній місяць",
-    "error": "Помилка пошуку: {{error}}",
     "search_prefix": "Пошук:"
   },
   "attachment_detail": {
@@ -1398,7 +1396,6 @@
   },
   "quick-search": {
     "no-results": "Результатів не знайдено",
-    "more-results": "... та ще {{number}} результатів.",
     "show-in-full-search": "Показати в повному пошуку",
     "placeholder": "Швидкий пошук",
     "searching": "Пошук..."
@@ -1525,12 +1522,9 @@
     "zoom-factor": "Коефіцієнт масштабування"
   },
   "note_autocomplete": {
-    "search-for": "Пошук для \"{{term}}\"",
     "create-note": "Створити та зв'язати дочірню нотатку \"{{term}}\"",
     "insert-external-link": "Вставити зовнішнє посилання у \"{{term}}\"",
-    "clear-text-field": "Очистити текстове поле",
-    "show-recent-notes": "Показати останні нотатки",
-    "full-text-search": "Повнотекстовий пошук"
+    "clear-text-field": "Очистити текстове поле"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Нотатку видалено.",

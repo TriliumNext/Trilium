@@ -54,3 +54,23 @@ curl "$SERVER/etapi/notes/$NOTE_ID/content" -H "Authorization: $TOKEN" </code></
   the script with:</p><pre><code class="language-text-x-trilium-auto">curl -H "Authorization: $TOKEN" \
 	-X GET "$SERVER/etapi/notes/$NOTE_ID/export" \
     --output "out/$NOTE_ID.zip"</code></pre>
+<h2>Uploading binary content</h2>
+<p>A JSON request body can only carry text, so the <code>content</code> field
+  of <code>POST /etapi/attachments</code> stores exactly the string it receives.
+  To upload an image, a PDF or any other binary file, send the raw bytes
+  to the content endpoint with the <code>application/octet-stream</code> content
+  type. The same applies to the content of a note (<code>PUT /etapi/notes/{noteId}/content</code>).</p>
+<p>To attach a file to a note, create the attachment without content, then
+  upload the file to it:</p><pre><code class="language-text-x-trilium-auto">ATTACHMENT_ID=$(curl -s -X POST "$SERVER/etapi/attachments" \
+    -H "Authorization: $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"ownerId\": \"$NOTE_ID\", \"role\": \"file\", \"mime\": \"application/pdf\", \"title\": \"report.pdf\", \"position\": 10}" \
+    | jq -r .attachmentId)
+
+curl -X PUT "$SERVER/etapi/attachments/$ATTACHMENT_ID/content" \
+    -H "Authorization: $TOKEN" \
+    -H "Content-Type: application/octet-stream" \
+    --data-binary @report.pdf</code></pre>
+<p>Use <code>--data-binary</code> rather than <code>-d</code>, which strips
+  line breaks from the file. For an image, set <code>role</code> to <code>image</code> and <code>mime</code> to
+  the image's type, such as <code>image/png</code>.</p>

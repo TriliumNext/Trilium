@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import LabelValueInput from "../../attribute_widgets/label_value_input";
-import Dropdown from "../../react/Dropdown";
+import { DropdownPanel } from "../../react/Dropdown";
 import FormSelect from "../../react/FormSelect";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useUniqueName } from "../../react/hooks";
@@ -59,19 +59,17 @@ export default function RecurrenceEditor({ note }: { note: FNote }) {
     // trips. Portaled to the body because the popover clips what overflows it (see EventPopover.css).
     return (
         <EventField name={t("calendar.recurrence.repeats")}>
-            <Dropdown
+            <DropdownPanel
                 className="calendar-recurrence-dropdown"
                 text={modelTitle(model)}
-                noDropdownListStyle
-                portalToBody
-                dropdownOptions={{ autoClose: "outside" }}
+                autoClose="outside"
             >
                 <EventFieldList>
                     <FrequencyField model={model} commit={commit} />
                     {model.kind === "simple" && <SimpleRuleFields rule={model.rule} commit={commit} />}
                     {model.kind === "custom" && <CustomRuleField value={model.value} commit={commit} />}
                 </EventFieldList>
-            </Dropdown>
+            </DropdownPanel>
         </EventField>
     );
 }

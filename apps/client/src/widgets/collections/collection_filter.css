@@ -58,7 +58,7 @@
         border-color: var(--collection-filter-active-border-color);
     }
 
-    > input.form-control {
+    > .collection-filter-input {
         width: 100%;
         box-shadow: none;
         border: 0;
@@ -69,12 +69,17 @@
         color: inherit;
         font-size: inherit;
 
-        &::placeholder {
+        .cm-placeholder {
             color: var(--collection-filter-color);
+        }
+
+        /* One line, laid out like the input it replaced: a long query scrolls sideways. */
+        .cm-line {
+            white-space: pre;
         }
     }
 
-    &:has(.collection-filter-clear) > input.form-control {
+    &:has(.collection-filter-clear) > .collection-filter-input {
         padding-inline-end: calc(
             2 * var(--collection-filter-button-size) + 2 * var(--collection-filter-button-inset)
             + var(--collection-filter-button-gap));

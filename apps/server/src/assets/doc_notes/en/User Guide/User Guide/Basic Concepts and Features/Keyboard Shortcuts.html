@@ -8,6 +8,18 @@
   it's also possible to make shortcuts global by pressing on the globe icon
   near the key combination, which makes the shortcut work even without Trilium
   being in focus.</p>
+<h3>Keyboard layouts</h3>
+<p>Shortcuts follow the characters printed on the keys of the active keyboard
+  layout. On a French AZERTY keyboard, for example, <kbd>Ctrl</kbd>+<kbd>Z</kbd> is
+  the key labeled Z.</p>
+<p>On a layout that doesn't type Latin letters, such as Russian, Greek or
+  Hebrew, a key that types a letter of that alphabet counts as the key at
+  the same position on a US QWERTY keyboard. <kbd>Ctrl</kbd>+<kbd>J</kbd> is
+  then the key that types <code>о</code> on a Russian keyboard, so shortcuts
+  keep working without switching the layout first.</p>
+<p>Keys that type punctuation still follow their own character. On a Russian
+  keyboard, the key that types <code>.</code> triggers <kbd>Ctrl</kbd>+<kbd>.</kbd>,
+  not the shortcut of the US key at its position.</p>
 <h2>Shortcut reference</h2>
 <aside class="admonition note">
   <p>All these shortcuts indicate the default key-bindings which can be changed
@@ -60,6 +72,25 @@
 <p>All these keyboard shortcuts do not have a default set, go to&nbsp;<a
   class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Shortcuts</em> and
   look for the <em>Split View</em> category.</p>
+<h3>Context menus</h3>
+<p>Every context menu can be operated from the keyboard, however it was opened,
+  for example with the <kbd>Menu</kbd> key in a text note to reach the spelling
+  suggestions. These keys are fixed and cannot be changed in the options.</p>
+<ul>
+  <li><kbd>↑</kbd>, <kbd>↓</kbd> – move to the previous / next item, skipping
+    disabled ones and wrapping around at either end</li>
+  <li><kbd>Home</kbd>, <kbd>End</kbd> – move to the first / last item</li>
+  <li><kbd>→</kbd> – open the submenu of the current item, or move to the next
+    column in a submenu laid out in columns</li>
+  <li><kbd>←</kbd> – move to the previous column, or close the submenu and go
+    back to its item</li>
+  <li><kbd>Enter</kbd> or <kbd>Space</kbd> – run the current item, or open its
+    submenu</li>
+  <li><kbd>Esc</kbd> – close the innermost submenu, then the menu itself</li>
+  <li>typing the first letters of an item – jump to the next item whose title
+    starts with them</li>
+</ul>
+<p>With a right-to-left language, <kbd>←</kbd> and <kbd>→</kbd> swap roles.</p>
 <h3>Creating notes</h3>
 <ul>
   <li><kbd>Ctrl</kbd>+<kbd>O</kbd> – creates new note after the current note</li>

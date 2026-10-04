@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { h, render } from "preact";
+import { act } from "preact/test-utils";
+import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import { describe, expect, it, vi } from "vitest";
 
-import { clampPan, wheelTargetScale, zoomStep, zoomToPointPosition } from "./zoom_pan";
+import {
+    clampPan, useZoomPanWheel, wheelTargetScale, zoomStep, zoomToPointPosition
+} from "./zoom_pan";
 
 describe("zoomStep", () => {
     it("is the increment react-zoom-pan-pinch needs for a ×1.2 step, at any scale", () => {
@@ -113,5 +118,69 @@ describe("zoomToPointPosition", () => {
         const { x, y } = zoomToPointPosition(scale0, posX0, posY0, scale1, cursorX, cursorY);
         expect((cursorX - x) / scale1).toBeCloseTo((cursorX - posX0) / scale0);
         expect((cursorY - y) / scale1).toBeCloseTo((cursorY - posY0) / scale0);
+    });
+});
+
+describe("useZoomPanWheel", () => {
+    function mountWheel(isFocusRequired: boolean) {
+        const element = document.createElement("div");
+        element.tabIndex = 0;
+        document.body.appendChild(element);
+        const api = {
+            instance: { state: { scale: 1, positionX: 0, positionY: 0 }, wrapperComponent: null },
+            zoomIn: vi.fn(),
+            zoomOut: vi.fn(),
+            setTransform: vi.fn()
+        };
+        const apiRef = { current: api as unknown as ReactZoomPanPinchRef };
+        const host = document.createElement("div");
+        function Harness() {
+            useZoomPanWheel(apiRef, element, isFocusRequired);
+            return null;
+        }
+        act(() => render(h(Harness, null), host));
+
+        const unmount = () => {
+            render(null, host);
+            element.remove();
+        };
+        return { element, api, unmount };
+    }
+
+    function wheel(element: HTMLElement) {
+        const event = new WheelEvent("wheel", { deltaY: -100, cancelable: true });
+        element.dispatchEvent(event);
+        return event;
+    }
+
+    it("zooms on the wheel without focus by default", () => {
+        const { element, api, unmount } = mountWheel(false);
+        expect(wheel(element).defaultPrevented).toBe(true);
+        expect(api.zoomIn).toHaveBeenCalledOnce();
+        unmount();
+    });
+
+    it("leaves the wheel to the page until the element has focus or is fullscreen", () => {
+        const { element, api, unmount } = mountWheel(true);
+        expect(wheel(element).defaultPrevented).toBe(false);
+        expect(api.zoomIn).not.toHaveBeenCalled();
+
+        element.focus();
+        expect(wheel(element).defaultPrevented).toBe(true);
+        expect(api.zoomIn).toHaveBeenCalledOnce();
+
+        // happy-dom has no fullscreenElement.
+        element.blur();
+        Object.defineProperty(document, "fullscreenElement", {
+            configurable: true,
+            get: () => document.body
+        });
+        try {
+            expect(wheel(element).defaultPrevented).toBe(true);
+            expect(api.zoomIn).toHaveBeenCalledTimes(2);
+        } finally {
+            Reflect.deleteProperty(document, "fullscreenElement");
+            unmount();
+        }
     });
 });

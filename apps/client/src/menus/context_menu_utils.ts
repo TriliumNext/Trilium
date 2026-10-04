@@ -1,5 +1,5 @@
 import type FNote from "../entities/fnote"
-import type { MenuItem } from "./context_menu"
+import type { MenuCommandItem, MenuItem } from "./context_menu"
 import { t } from "../services/i18n"
 import { setArchivedOnNotes, shared } from "../services/note_set"
 import { escapeHtml } from "../services/utils"
@@ -37,4 +37,32 @@ export function getArchiveMenuItems<T>(notes: FNote[]): MenuItem<T>[] {
  */
 export function menuName(name: string) {
     return `<span class="tn-menu-name">${escapeHtml(name)}</span>`
+}
+
+/** A row that opens `items` as a submenu, enabled while any of their commands is. */
+export function submenuItem<T>(
+    row: Pick<MenuCommandItem<T>, "title" | "uiIcon">,
+    items: MenuItem<T>[]
+): MenuCommandItem<T> {
+    return { ...row, enabled: items.some(isEnabledCommand), items }
+}
+
+/**
+ * A row that runs `primary` on click and shows its shortcut. Its submenu lists `primary`, then
+ * `variants`: a tap on a touch device only opens a submenu row.
+ */
+export function splitMenuItem<T>(
+    primary: MenuCommandItem<T>,
+    variants: MenuItem<T>[]
+): MenuCommandItem<T> {
+    return {
+        ...submenuItem({ title: primary.title, uiIcon: primary.uiIcon }, [ primary, ...variants ]),
+        shortcut: primary.shortcut,
+        keyboardShortcut: primary.keyboardShortcut,
+        handler: primary.enabled === false ? undefined : primary.handler
+    }
+}
+
+function isEnabledCommand<T>(item: MenuItem<T>) {
+    return !("kind" in item) && item.enabled !== false
 }

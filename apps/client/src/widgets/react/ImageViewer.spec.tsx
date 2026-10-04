@@ -114,6 +114,31 @@ describe("ImageViewer", () => {
         expect(props.wheel).toEqual({ disabled: true });
     });
 
+    it("pans at any scale standalone, but only once zoomed in when embedded in a note", () => {
+        renderViewer({ src: "x" });
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+
+        // At the fitted size a drag scrolls the note.
+        renderViewer({ src: "x", environment: "embedded" });
+        const props = transformWrapperSpy.mock.lastCall?.[0];
+        expect(props.panning).toEqual({ disabled: true });
+        act(() => props.onTransform(null, { scale: 2 }));
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+    });
+
+    it("keeps the zoom controls but drops the shortcut-hints button when embedded", async () => {
+        const standalone = renderViewer({ src: "x" });
+        await vi.waitFor(() => {
+            expect(standalone.querySelector(".shortcut-hint-button-group")).not.toBeNull();
+        });
+
+        const embedded = renderViewer({ src: "x", environment: "embedded" });
+        await vi.waitFor(() => {
+            expect(embedded.querySelector(".image-viewer-controls")).not.toBeNull();
+        });
+        expect(embedded.querySelector(".shortcut-hint-button-group")).toBeNull();
+    });
+
     it("lets minScale and maxScale be overridden", () => {
         renderViewer({ src: "x", minScale: 1, maxScale: 8 });
         const props = transformWrapperSpy.mock.calls[0][0];

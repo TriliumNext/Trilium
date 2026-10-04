@@ -1,4 +1,4 @@
-import { trimIndentation } from "@triliumnext/commons";
+import { HIGHLIGHT_STYLE, trimIndentation } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import { getContext } from "./context.js";
@@ -55,13 +55,13 @@ describe("note format conversion", () => {
         const original = "Some ==highlighted== text.";
 
         const { content: html } = convertNoteContent("markdown", original, "title");
-        expect(html).toContain('<span style="background-color:hsl(60, 75%, 60%);">highlighted</span>');
+        expect(html).toContain(`<span style="${HIGHLIGHT_STYLE}">highlighted</span>`);
 
         expect(convertNoteContent("html", html, "title").content).toBe(original);
     });
 
     it("preserves a default-yellow highlight applied in the editor across an HTML -> Markdown -> HTML round-trip", () => {
-        const original = '<p>Some <span style="background-color:hsl(60, 75%, 60%);">highlighted</span> text.</p>';
+        const original = `<p>Some <span style="${HIGHLIGHT_STYLE}">highlighted</span> text.</p>`;
 
         const { content: markdown } = convertNoteContent("html", original, "title");
         expect(markdown).toBe("Some ==highlighted== text.");

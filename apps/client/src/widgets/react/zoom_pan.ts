@@ -60,8 +60,14 @@ export function useZoomPanPinch({ minScale, maxScale, resetOn, onScaleChange }: 
  * `zoomIn`/`zoomOut` take the increment up to that target, so the library still clamps to
  * `minScale`/`maxScale` and recomputes its bounds. It zooms toward the middle of the view, so the
  * `setTransform` that follows re-anchors the content under the pointer.
+ *
+ * With `isFocusRequired`, the wheel scrolls the page until `element` has focus or is fullscreen.
  */
-export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element: HTMLElement | null) {
+export function useZoomPanWheel(
+    apiRef: RefObject<ReactZoomPanPinchRef>,
+    element: HTMLElement | null,
+    isFocusRequired = false
+) {
     useEffect(() => {
         if (!element) return;
 
@@ -69,6 +75,9 @@ export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element
             const api = apiRef.current;
             // A purely horizontal wheel means no zoom; leave the event for anything else to use.
             if (!api || event.deltaY === 0) return;
+            const isActive = element.contains(document.activeElement)
+                || !!document.fullscreenElement?.contains(element);
+            if (isFocusRequired && !isActive) return;
             event.preventDefault();
 
             const { scale, positionX, positionY } = api.instance.state;
@@ -91,7 +100,7 @@ export function useZoomPanWheel(apiRef: RefObject<ReactZoomPanPinchRef>, element
 
         element.addEventListener("wheel", onWheel, { passive: false });
         return () => element.removeEventListener("wheel", onWheel);
-    }, [ apiRef, element ]);
+    }, [ apiRef, element, isFocusRequired ]);
 }
 
 /** What one press of a zoom step multiplies the scale by. */

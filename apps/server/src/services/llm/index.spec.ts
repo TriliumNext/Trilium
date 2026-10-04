@@ -23,7 +23,9 @@ vi.mock("@triliumnext/core/src/services/llm/tools/registration.js", () => ({
 }));
 
 import { registerServerLlmExtensions } from "./index.js";
+import { AntigravityAgentProvider } from "./providers/antigravity_agent.js";
 import { ClaudeAgentProvider } from "./providers/claude_agent.js";
+import { CodexAgentProvider } from "./providers/codex_agent.js";
 import { CopilotAgentProvider } from "./providers/copilot_agent.js";
 import { helpTools } from "./tools/help_tools.js";
 
@@ -32,12 +34,15 @@ describe("registerServerLlmExtensions", () => {
         registerServerLlmExtensions();
 
         // The subscription providers, which shell out to the Claude Code and Copilot
-        // CLIs, under the types core knows them by. Registered as async factories
-        // that import their module on first use, so neither the provider nor its
-        // agent SDK loads until a chat asks for it.
-        expect(registrations.hostProviders.map(p => p.type)).toEqual(["claude-agent", "copilot-agent"]);
+        // CLIs, Google's Antigravity ACP server and the Codex ACP adapter, under the
+        // types core knows them by. Registered as async factories that import their
+        // module on first use, so neither the provider nor its agent SDK loads until
+        // a chat asks for it.
+        expect(registrations.hostProviders.map(p => p.type)).toEqual(["claude-agent", "copilot-agent", "antigravity-agent", "codex-agent"]);
         expect(await registrations.hostProviders[0].factory()).toBeInstanceOf(ClaudeAgentProvider);
         expect(await registrations.hostProviders[1].factory()).toBeInstanceOf(CopilotAgentProvider);
+        expect(await registrations.hostProviders[2].factory()).toBeInstanceOf(AntigravityAgentProvider);
+        expect(await registrations.hostProviders[3].factory()).toBeInstanceOf(CodexAgentProvider);
         // The User Guide reader, which core's note-content helper calls for doc notes.
         expect(registrations.docNoteReader).toBeTypeOf("function");
         // The skill sheets: core owns the catalog and the tool, the server only

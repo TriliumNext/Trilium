@@ -50,6 +50,7 @@ export default function BoardProperties({ api, note, shown, onClose }: {
                 note={note}
                 settings={api.getStoredPromotedAttributes()}
                 drawnByCollection={[ api.statusAttribute ]}
+                itemNotes={api.getCardNotes()}
                 onChange={storeAttributes}
             />
 
@@ -67,7 +68,7 @@ export default function BoardProperties({ api, note, shown, onClose }: {
 
 /** What the board draws besides its own cards: the inbox column and what is filed as archived. */
 function General({ api, note }: { api: BoardApi, note: FNote }) {
-    const [ inboxShown ] = useNoteLabelBoolean(note, "enableInboxColumn");
+    const [ inboxShown ] = useNoteLabelBoolean(note, "board:showInbox");
     const [ archivedShown ] = useNoteLabelBoolean(note, "includeArchived");
     const [ columnWidth ] =
         useNoteLabelWithDefault(note, COLUMN_WIDTH_LABEL, DEFAULT_COLUMN_WIDTH);

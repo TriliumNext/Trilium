@@ -301,6 +301,97 @@ describe("Board card", () => {
         expect(openInPopup).not.toHaveBeenCalled();
     });
 
+    it("hands the icon picker focus on Shift+Tab, leaving the editor standing", async () => {
+        const { first } = await renderBoard();
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+        // Held on to: the editor takes the place of the title the lookup goes by.
+        const element = card(first);
+
+        await act(async () => { press(element, "F2"); });
+        const editor = element.querySelector<HTMLTextAreaElement>("textarea");
+        if (!editor) throw new Error("expected the title editor");
+        const picker = element.querySelector<HTMLButtonElement>(".title-editor-icon button");
+        if (!picker) throw new Error("expected the icon picker");
+
+        await act(async () => {
+            editor.focus();
+            press(editor, "Tab", { shiftKey: true });
+        });
+
+        expect(document.activeElement).toBe(picker);
+        // The blur the move costs neither closes the editor nor writes the title.
+        expect(element.querySelector("textarea")).toBeTruthy();
+        expect(put).not.toHaveBeenCalled();
+
+        // Space opens the picker, and the board must not read it as the one that opens the card.
+        const openInPopup = vi.spyOn(appContext, "triggerCommand").mockReturnValue(undefined);
+        await act(async () => { press(picker, " "); });
+        expect(openInPopup).not.toHaveBeenCalled();
+        expect(element.querySelector("textarea")).toBeTruthy();
+
+        // Tabbing back puts a `relatedTarget` inside `fieldRef`, which is not the editor losing focus.
+        await act(async () => {
+            picker.dispatchEvent(
+                new FocusEvent("focusout", { bubbles: true, relatedTarget: editor }));
+        });
+        expect(element.querySelector("textarea")).toBeTruthy();
+        expect(put).not.toHaveBeenCalled();
+
+        // A mouse press on the picker takes no focus off the field, which would close the editor
+        // before the click that opens the picker arrived.
+        const pressed = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        await act(async () => { picker.dispatchEvent(pressed); });
+        expect(pressed.defaultPrevented).toBe(true);
+    });
+
+    it("closes the editor on Escape while the icon picker holds focus", async () => {
+        const { first } = await renderBoard();
+        const put = vi.spyOn(server, "put").mockResolvedValue(undefined);
+        // Held on to: the editor takes the place of the title the lookup goes by.
+        const element = card(first);
+
+        await act(async () => { press(element, "F2"); });
+        const editor = element.querySelector<HTMLTextAreaElement>("textarea");
+        if (!editor) throw new Error("expected the title editor");
+        await act(async () => {
+            editor.value = "Typed but not saved";
+            editor.focus();
+            press(editor, "Tab", { shiftKey: true });
+        });
+        const picker = element.querySelector<HTMLButtonElement>(".title-editor-icon button");
+        if (!picker) throw new Error("expected the icon picker");
+        expect(document.activeElement).toBe(picker);
+
+        await act(async () => { press(picker, "Escape"); });
+
+        expect(element.querySelector("textarea")).toBeFalsy();
+        // Escape discards, so nothing is written on the way out.
+        expect(put).not.toHaveBeenCalled();
+    });
+
+    it("ends the edit once the picker hands focus outside the field", async () => {
+        const { first } = await renderBoard();
+        // Held on to: the editor takes the place of the title the lookup goes by.
+        const element = card(first);
+
+        await act(async () => { press(element, "F2"); });
+        const editor = element.querySelector<HTMLTextAreaElement>("textarea");
+        if (!editor) throw new Error("expected the title editor");
+
+        await act(async () => {
+            editor.focus();
+            press(editor, "Tab", { shiftKey: true });
+        });
+        expect(element.querySelector("textarea")).toBeTruthy();
+
+        const picker = element.querySelector<HTMLButtonElement>(".title-editor-icon button");
+        await act(async () => {
+            picker?.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+        });
+
+        expect(element.querySelector("textarea")).toBeFalsy();
+    });
+
     describe("picking several cards out", () => {
         it("marks a card on Ctrl and click, and lets go of it on the next one", async () => {
             const { first, second } = await renderBoard();

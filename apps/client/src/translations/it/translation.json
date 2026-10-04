@@ -221,12 +221,9 @@
     "restart-app-button": "Riavviare l'applicazione per visualizzare le modifiche"
   },
   "note_autocomplete": {
-    "search-for": "Cerca \"{{term}}\"",
     "create-note": "Crea la nota “{{term}}”",
     "insert-external-link": "Inserisci il collegamento esterno a \"{{term}}\"",
     "clear-text-field": "Pulisci il campo di testo",
-    "show-recent-notes": "Mostra le note recenti",
-    "full-text-search": "Ricerca full text",
     "create-note-into": "Crea nota \"{{term}}\" in {{parentTitle}}",
     "create-note-into-day-note": "Crea nota \"{{term}}\" nella nota di oggi",
     "create-note-into-root": "Crea una nota \"{{term}}\" al livello superiore",
@@ -234,7 +231,8 @@
   },
   "note_tooltip": {
     "note-has-been-deleted": "La nota è stata eliminata.",
-    "quick-edit": "Modifica veloce"
+    "quick-edit": "Modifica veloce",
+    "attachment-info": "Allegato • {{size}}"
   },
   "geo-map": {
     "create-child-note-title": "Crea una nota figlia e aggiungila alla mappa",
@@ -348,7 +346,9 @@
     "auto_link_previews_enabled": "Generazione automatica delle anteprime dei link",
     "auto_link_previews_description": "Trasforma automaticamente un link rilevato in un'anteprima che mostra il titolo, la descrizione e l'immagine della pagina web. L'inserimento di un'anteprima dalla barra degli strumenti funziona sempre, indipendentemente da questa impostazione.",
     "html_support_enabled": "Conserva i tag HTML non supportati",
-    "html_support_description": "Conserva i tag HTML per i quali l'editor non dispone di una funzione specifica, come elencati in Opzioni → Altro → Tag di importazione HTML. Questi tag appaiono come blocchi che non possono essere modificati direttamente e un tag non riconosciuto potrebbe non essere visibile affatto durante la modifica. Se questa opzione è disattivata, tali tag vengono eliminati da una nota la prima volta che questa viene modificata e salvata; l'importazione non subisce alcuna modifica in entrambi i casi."
+    "html_support_description": "Conserva i tag HTML per i quali l'editor non dispone di una funzione specifica, come elencati in Opzioni → Altro → Tag di importazione HTML. Questi tag appaiono come blocchi che non possono essere modificati direttamente e un tag non riconosciuto potrebbe non essere visibile affatto durante la modifica. Se questa opzione è disattivata, tali tag vengono eliminati da una nota la prima volta che questa viene modificata e salvata; l'importazione non subisce alcuna modifica in entrambi i casi.",
+    "mathlive_enabled": "Editor visuale di MathLive",
+    "mathlive_description": "Le equazioni matematiche possono essere modificate utilizzando un editor visuale."
   },
   "table_view": {
     "new-row": "Nuova riga",
@@ -518,7 +518,7 @@
   "search_string": {
     "search_prefix": "Cerca:",
     "title_column": "Stringa di ricerca:",
-    "placeholder": "parole chiave a testo completo, #tag = valore...",
+    "placeholder": "Ctrl+Spazio per i suggerimenti, @ per inserire una nota, Maiusc+Invio per iniziare una nuova riga, Invio per effettuare una ricerca",
     "search_syntax": "Sintassi di ricerca",
     "also_see": "vedi anche",
     "complete_help": "aiuto completo sulla sintassi di ricerca",
@@ -529,7 +529,13 @@
     "label_rock_or_pop": "deve essere presente solo una delle etichette",
     "label_year_comparison": "confronto numerico (anche >, >=, <).",
     "label_date_created": "note create nell'ultimo mese",
-    "error": "Errore di ricerca: {{error}}"
+    "error_title": "Errore di ricerca",
+    "hints": {
+      "title": "Stringa di ricerca",
+      "completions": "Mostra suggerimenti",
+      "new_line": "Nuova linea",
+      "run_search": "Esegui la ricerca"
+    }
   },
   "attachment_detail": {
     "open_help_page": "Apri la pagina di aiuto sugli allegati",
@@ -573,29 +579,29 @@
     "delete-column": "Elimina la colonna...",
     "delete-column-confirmation": "Sei sicuro di vole eliminare questa colonna? Il corrispondente attributo sarà eliminato anche nelle note sotto questa colonna.",
     "delete-note": "Elimina nota...",
-    "remove-from-board": "Rimuovi dalla bacheca",
+    "remove-from-board": "Rimuovere dalla colonna",
     "archive-note": "Nota d'archivio",
     "unarchive-note": "Decomprimi nota",
     "insert-above": "Inserire il nuovo sopra",
-    "new-item": "Nuovo articolo",
-    "new-item-placeholder": "Inserisci il titolo della nota...",
+    "new-item": "Nuova carta",
+    "new-item-placeholder": "Inserisci il titolo della carta...",
     "add-column": "Aggiungi colonna",
     "add-column-placeholder": "Inserisci il nome della colonna...",
-    "edit-note-title": "Fare clic per modificare il titolo della nota",
+    "edit-note-title": "Fai clic per modificare il titolo della scheda",
     "column-already-exists": "Questa colonna esiste già nella bacheca.",
     "column-definition-save-error": "Le colonne sono state salvate sulla lavagna, ma non è stato possibile salvarle nell'attributo di stato.",
     "status-alias": "Stato",
     "status-header": "Stato",
     "duplicate-item": "Duplica",
-    "card-count_one": "{{count}} oggetto",
-    "card-count_many": "{{count}} oggetti",
-    "card-count_other": "{{count}} oggetti",
-    "add-new-item": "Aggiungi una nuova nota",
-    "add-existing-item": "Aggiungi una nota esistente...",
+    "card-count_one": "{{count}} carta",
+    "card-count_many": "{{count}} carte",
+    "card-count_other": "{{count}} carte",
+    "add-new-item": "Aggiungi una nuova scheda",
+    "add-existing-item": "Aggiungi una nota esistente come scheda...",
     "add-existing-item-title": "Aggiungi una nota esistente alla lavagna",
     "add-existing-item-ok": "Aggiungi alla colonna",
     "add-new-column": "Aggiungi nuova colonna",
-    "create-new-note": "Crea nota",
+    "create-new-note": "Crea carta",
     "create-new-column": "Crea colonna",
     "create-hold-hint": "Tasto destro o tieni premuto per più opzioni.",
     "add-column-before": "Prima",
@@ -605,7 +611,7 @@
     "general": "Generale",
     "set-limit": "Imposta limite...",
     "set-limit-ok": "Imposta limite",
-    "limit-count": "Massimo numero di note nella colonna",
+    "limit-count": "Numero massimo di carte nella colonna",
     "move-column": "Muovi colonna",
     "move-column-after": "Dopo {{column}}",
     "change-column-icon": "Cambia l'icona della colonna",
@@ -614,18 +620,18 @@
     "save-error": "Il cambiamento non è potuto essere stato salvato.",
     "hints": {
       "navigation": "Navigazione",
-      "navigate_items": "Naviga tra oggetti",
+      "navigate_items": "Navigare tra le schede",
       "navigate_columns": "Naviga tra colonne",
-      "first_last_item": "Primo / ultimo oggetto della colonna",
+      "first_last_item": "Prima/ultima carta della colonna",
       "editing": "Modificando",
-      "insert_item": "Inserire oggetto sotto / sopra",
+      "insert_item": "Inserire la carta sotto / sopra",
       "insert_column": "Inserire colonna dopo / prima",
-      "open_item": "Apri oggetto",
-      "rename": "Rinomina oggetto o colonna",
-      "remove_item": "Rimuovi oggetto dalla lavagna",
+      "open_item": "Carta aperta",
+      "rename": "Rinominare la scheda o la colonna",
+      "remove_item": "Rimuovere la carta dal tabellone",
       "delete_item": "Elimina la nota",
       "moving": "Muovendo",
-      "move_item": "Muovi oggetto su / giù",
+      "move_item": "Sposta la carta verso l'alto/il basso",
       "move_across": "Muovi alla colonna precedente / successiva",
       "move_to_end_column": "Muovi alla prima / ultima colonna",
       "move_column": "Muovi alla colonna di sinistra / destra",
@@ -633,8 +639,11 @@
       "remove_column": "Elimina colonna (sull'intestazione della colonna selezionata)",
       "move_within": "Vai all'inizio / alla fine della colonna",
       "selection": "Selezione",
-      "select_column": "Seleziona tutti gli elementi della colonna",
-      "clear_selection": "Deseleziona tutto"
+      "select_column": "Seleziona tutte le carte della colonna",
+      "clear_selection": "Deseleziona tutto",
+      "toggle_column": "Comprimi/espandi la colonna (sull'intestazione di colonna)",
+      "extend_selection": "Estendi la selezione verso il basso/verso l'alto",
+      "toggle_selection": "Prendi la carta o rimettila a posto"
     },
     "filter-placeholder": "Filtra lavagna...",
     "sort-manually": "Manualmente",
@@ -649,10 +658,10 @@
     "inherited-column": "Questa scheda riprende la colonna da un modello o da una nota principale, dove è possibile modificarla.",
     "inbox-nested": "Includi le note annidate",
     "inbox-remove": "Rimuovi la colonna \"Posta in arrivo\"",
-    "card-count-with-archived_one": "{{count}} elemento attivo, {{archived}} archiviato",
-    "card-count-with-archived_many": "{{count}} elementi attivi, {{archived}} archiviati",
-    "card-count-with-archived_other": "{{count}} elementi attivi, {{archived}} archiviati",
-    "card-count-over-limit": "Il limite di note impostato per questa colonna è stato superato!",
+    "card-count-with-archived_one": "{{count}} scheda attiva, {{archived}} scheda archiviata",
+    "card-count-with-archived_many": "{{count}} schede attive, {{archived}} archiviate",
+    "card-count-with-archived_other": "{{count}} schede attive, {{archived}} archiviate",
+    "card-count-over-limit": "Il limite di carte impostato per questa colonna è stato superato!",
     "create-at-top": "Crea in alto",
     "create-at-bottom": "Crea in fondo alla pagina",
     "create-column-at-start": "Crea una colonna all'inizio",
@@ -674,7 +683,7 @@
     "new-template-name": "Nuovo modello di scheda",
     "more-templates": "Altri modelli…",
     "card-template": "Seleziona un modello di scheda",
-    "collapse-hint": "Fai doppio clic per nascondere",
+    "collapse-hint": "Fai doppio clic o premi la barra spaziatrice per comprimere",
     "limit-capacity": "Avviso in caso di superamento della capacità della colonna",
     "move-column-first": "Come prima colonna",
     "group-by": "Ordina le schede per",
@@ -689,17 +698,29 @@
     "sorted-no-reorder": "Non è possibile riordinare le schede, poiché si tratta di una colonna ordinata.",
     "copy-reference": "Riferimento alla copia",
     "reference-column-missing": "Quella rubrica non è più presente su questo forum.",
-    "reference-archived": "Quell'elemento è stato archiviato, quindi la bacheca non lo mostra.",
-    "reference-missing": "Quell'elemento non è più presente in questa bacheca.",
+    "reference-archived": "Quella scheda è archiviata, quindi non viene visualizzata sulla bacheca.",
+    "reference-missing": "Quella carta non è più presente su questa scacchiera.",
     "column-name-taken": "La colonna denominata “{{- column}}” esiste già.",
     "columns-title": "Colonne",
     "columns-empty": "Questa bacheca non ha ancora colonne.",
-    "drop-as-first-item": "Aggiungi come primo elemento",
-    "drop-as-last-item": "Aggiungi come ultimo articolo",
+    "drop-as-first-item": "Rilascia come prima carta",
+    "drop-as-last-item": "Rilascia come ultima carta",
     "column-width-narrow": "Stretto (impostazione predefinita)",
     "column-width-medium": "Medio",
     "column-width-wide": "Ampio",
-    "column-width": "Larghezza della colonna"
+    "column-width": "Larghezza della colonna",
+    "delete-column-notes_one": "Elimina anche la nota in questa colonna",
+    "delete-column-notes_many": "Elimina anche le {{count}} note in questa colonna",
+    "delete-column-notes_other": "Elimina anche le {{count}} note in questa colonna",
+    "more-actions": "Altre azioni",
+    "selection-mode": "Seleziona le carte",
+    "cards-selected_one": "{{count}} carta selezionata",
+    "cards-selected_many": "{{count}} carte selezionate",
+    "cards-selected_other": "{{count}} carte selezionate",
+    "select-column-cards": "Seleziona tutte le carte nella colonna",
+    "reset-selection": "Reimposta la selezione",
+    "expand-column": "Espandi colonna",
+    "select-all-cards": "Seleziona tutte le carte"
   },
   "backup": {
     "enable_weekly_backup": "Backup settimanale",
@@ -800,7 +821,10 @@
     "handshake_failed": "Handshake del server di sincronizzazione non riuscito, errore: {{message}}",
     "timeout_description": "Tempo di attesa prima di rinunciare su una connessione lenta.",
     "server_address_description": "URL del server Trilium con cui effettuare la sincronizzazione.",
-    "proxy_description": "Lasciare vuoto per utilizzare il proxy di sistema (solo versione desktop). Utilizzare \"noproxy\" per bypassare tutti i proxy."
+    "proxy_description": "Lasciare vuoto per utilizzare il proxy di sistema (solo versione desktop). Utilizzare \"noproxy\" per bypassare tutti i proxy.",
+    "effective_server": "Server in uso",
+    "effective_server_description": "Impostabile tramite il file config.ini o variabili d'ambiente, che hanno la priorità rispetto all'indirizzo del server indicato sopra.",
+    "effective_server_disabled": "La sincronizzazione è disattivata."
   },
   "search_engine": {
     "save_button": "Salva",
@@ -886,8 +910,13 @@
     "placeholder": "Ricerca rapida",
     "searching": "Ricerca in corso...",
     "no-results": "Nessun risultato trovato",
-    "more-results": "... e altri {{number}} risultati.",
-    "show-in-full-search": "Mostra nella ricerca completa"
+    "show-in-full-search": "Mostra nella ricerca completa",
+    "hints": {
+      "title": "Risultati della ricerca rapida",
+      "to_results": "Vai ai risultati",
+      "page": "Scorri la pagina dei risultati",
+      "close": "Chiudi i risultati"
+    }
   },
   "help": {
     "goUpDown": "su/giù nella lista delle note",
@@ -1016,11 +1045,11 @@
     "box_size_medium": "media (~ 30 righe)",
     "box_size_full": "completa (la casella mostra il testo completo)",
     "button_include": "Includi nota",
-    "box_size_expandable": "espandibile (nascosto per impostazione predefinita)"
+    "box_size_expandable": "espandibile (nascosto per impostazione predefinita)",
+    "box_size_tiny": "piccolo (una sola riga con il titolo e le azioni)"
   },
   "jump_to_note": {
-    "search_placeholder": "Cerca una nota per nome oppure digita > per i comandi...",
-    "search_button": "Cerca nel testo completo"
+    "search_placeholder": "Cerca una nota per nome oppure digita > per i comandi..."
   },
   "markdown_import": {
     "dialog_title": "Importazione Markdown",
@@ -1070,17 +1099,25 @@
   "sort_child_notes": {
     "sort_children_by": "Ordina i bambini per...",
     "sorting_criteria": "Criteri di ordinamento",
-    "title": "titolo",
-    "date_created": "data di creazione",
-    "date_modified": "data di modifica",
-    "ascending": "ascendente",
-    "descending": "discendente",
-    "sort_folders_at_top": "ordina le cartelle in alto",
-    "natural_sort": "Ordinamento naturale",
-    "sort_with_respect_to_different_character_sorting": "ordinare in base alle diverse regole di ordinamento e collazione dei caratteri nelle diverse lingue o regioni.",
+    "title": "Titolo",
+    "date_created": "Data di creazione",
+    "date_modified": "Data di modifica",
+    "ascending": "Ascendente",
+    "descending": "Discendente",
+    "sort_folders_at_top": "Ordina le cartelle in alto",
+    "natural_sort": "Selezione naturale",
+    "sort_with_respect_to_different_character_sorting": "Ordina in base a diverse regole di ordinamento e collazione dei caratteri in diverse lingue o regioni.",
     "natural_sort_language": "Linguaggio di ordinamento naturale",
     "the_language_code_for_natural_sort": "Il codice lingua per l'ordinamento naturale, ad esempio \"zh-CN\" per il cinese.",
-    "sort": "Ordina"
+    "sort": "Ordina",
+    "sorting_criteria_description": "Le note vengono ordinate dal primo livello; il livello successivo decide solo tra le note che i precedenti hanno lasciato uguali.",
+    "label": "Etichetta",
+    "label_name": "Nome dell'etichetta",
+    "add_level": "Livello aggiuntivo",
+    "remove_level": "Rimuovere il livello",
+    "move_level_up": "Sposta il livello in alto",
+    "move_level_down": "Sposta il livello in basso",
+    "folders_follow_first_level": "In basso invece quando il primo livello è in discesa."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Carica allegati alla nota",
@@ -1120,7 +1157,7 @@
     "label_type": "Tipo",
     "text": "Testo",
     "number": "Numero",
-    "boolean": "Booleano",
+    "boolean": "Casella di controllo",
     "date": "Data",
     "date_time": "Data e Ora",
     "time": "Ora",
@@ -1145,8 +1182,8 @@
     "run": "Definisce su quali eventi deve essere eseguito lo script. I valori possibili sono:\n<ul>\n<li>frontendStartup - quando il frontend Trilium viene avviato (o aggiornato), ma non su dispositivi mobili.</li>\n<li>mobileStartup - quando il frontend Trilium viene avviato (o aggiornato) su dispositivi mobili.</li>\n<li>backendStartup - quando viene avviato il backend Trilium.</li>\n<li>hourly - eseguire una volta all'ora. È possibile utilizzare l'etichetta aggiuntiva <code>runAtHour</code> per specificare a che ora.</li>\n<li>daily - eseguire una volta al giorno.</li>\n</ul>",
     "run_at_hour": "A che ora deve essere eseguito. Deve essere utilizzato insieme a <code>#run=hourly</code>. Può essere definito più volte per più esecuzioni durante il giorno.",
     "disable_inclusion": "Gli script con questa etichetta non saranno inclusi nell'esecuzione dello script principale.",
-    "sorted": "Mantiene le note figlie ordinate alfabeticamente per titolo.",
-    "sort_direction": "L'opzione <code>#sorted</code> ordina le note figlie in ordine: <code>desc</code> per l'ordinamento decrescente, qualsiasi altra opzione per l'ordinamento crescente. Viene ignorata a meno che non sia impostata l'opzione <code>#sorted</code>.",
+    "sorted": "Mantiene le note figlie ordinate in ordine alfabetico per titolo. Un valore ordina invece in base ad altri criteri: livelli separati da virgole di <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> o un nome di etichetta, ciascuno seguito facoltativamente da <code>asc</code> o <code>desc</code>, ad esempio <code>priorità desc, dataScadenza</code>.",
+    "sort_direction": "L'opzione <code>#sorted</code> ordina le note figlie in ordine: <code>desc</code> per l'ordinamento decrescente, qualsiasi altra opzione per quello crescente. Se un livello è seguito dal proprio <code>asc</code> o <code>desc</code>, quest'ultimo viene ignorato. Viene ignorato a meno che non sia impostato <code>#sorted</code>.",
     "sort_folders_first": "Le cartelle (note con figlie) devono essere ordinate in cima.",
     "top": "Mantieni la nota in cima al suo genitore (si applica solo ai genitori ordinati).",
     "hide_promoted_attributes": "Nascondi gli attributi promossi in questa nota.",
@@ -1360,12 +1397,12 @@
     "template_new_note_default_parent": "Nota relativa all'utilizzo di un modello: le note create a partire dal modello (ad esempio tramite il completamento con @) vengono inserite sotto la nota di destinazione, a meno che non venga esplicitamente scelta un'altra posizione.",
     "ai_quick_action": "Propone questa nota come istruzione nel menu dell'assistente AI dell'editor di testo. Il titolo indica l'azione, il contenuto è il prompt.",
     "custom_font": "Segna i file dei caratteri che sono offerti nel selettore di caratteri nelle opzioni di Trilium, sotto il titolo degli appunti.",
-    "enable_inbox_column": "Per le raccolte delle bacheche, mostra la colonna \"Posta in arrivo\", che elenca tutte le note secondarie non assegnate a una colonna della bacheca.",
     "board_card_redirect_to": "Su una scheda del tabellone, aprendo la scheda si passa direttamente alla nota a cui questa rimanda, invece di aprire la scheda stessa.",
-    "sort_columns": "Per le collezioni di bacheche, l'ordine in cui le colonne ordinano le schede; tale ordine viene seguito da una colonna a meno che non le venga assegnato un ordine specifico. Contiene <code>titolo</code>, <code>data di creazione</code> o <code>attr:</code> seguito dal nome di un attributo promosso.",
-    "sort_columns_descending": "Per le raccolte di schede, esegue l'ordine in <code>#sortColumns</code> in ordine inverso.",
-    "board_card_width": "Per le raccolte di schede, la larghezza con cui vengono visualizzate le colonne: <code>narrow</code>, <code>medium</code> o <code>wide</code>. Questa impostazione viene ignorata sui dispositivi mobili, che le visualizzano con una larghezza predefinita.",
-    "geo_shape": "Una forma come quella tracciata su una mappa geografica: il tipo di forma, seguito dalla latitudine e dalla longitudine di ciascun punto, ad esempio <code>line:48.85,2.29 48.86,2.35</code> - oppure un cerchio con il centro e il raggio in metri, <code>circle:48.85,2.29 500</code>."
+    "geo_shape": "Una forma come quella tracciata su una mappa geografica: il tipo di forma, seguito dalla latitudine e dalla longitudine di ciascun punto, ad esempio <code>line:48.85,2.29 48.86,2.35</code> - oppure un cerchio con il centro e il raggio in metri, <code>circle:48.85,2.29 500</code>.",
+    "board_column_width": "Per le raccolte di dashboard, la larghezza delle colonne: <code>narrow</code>, <code>medium</code> o <code>wide</code>. Ignorato sui dispositivi mobili, che le disegnano con una larghezza predefinita.",
+    "board_show_inbox": "Per le raccolte della bacheca, viene visualizzata la colonna Posta in arrivo, che elenca tutte le note secondarie non assegnate a una colonna della bacheca.",
+    "board_sort_columns": "Per le raccolte di schede, l'ordine in cui le colonne ordinano le loro schede, che una colonna segue a meno che non le venga assegnato un ordine proprio. Contiene <code>title</code>, <code>creationDate</code> o <code>attr:</code> seguito dal nome di un attributo promosso.",
+    "board_sort_columns_descending": "Per le raccolte di schede, esegue l'ordine in <code>#board:sortColumns</code> al contrario."
   },
   "attribute_editor": {
     "help_text_body1": "Per aggiungere un'etichetta, basta digitare ad esempio <code>#rock</code> oppure, se si desidera aggiungere anche un valore, ad esempio <code>#year = 2020</code>",
@@ -1724,7 +1761,8 @@
     "filter-none": "Tutte le icone",
     "filter-default": "Icone predefinite",
     "icon_tooltip": "{{name}}\nPacchetto icone: {{iconPack}}",
-    "no_results": "Nessuna icona trovata."
+    "no_results": "Nessuna icona trovata.",
+    "insert_icon": "Inserisci icona"
   },
   "basic_properties": {
     "note_type": "Tipo di nota",
@@ -1860,7 +1898,11 @@
     "delete_attribute": "Elimina questo attributo",
     "delete_confirmation": "Eliminare <strong>{{name}}</strong> e i suoi valori da tutte le note in questa collezione? Quest'operazione non può essere annullata.",
     "label_name": "Etichetta: {{name}}",
-    "relation_name": "Relazione: {{name}}"
+    "relation_name": "Relazione: {{name}}",
+    "drawn_by_collection": "La collezione è organizzata in questo modo, in modo che i suoi elementi non si ripetano",
+    "display_on_items": "Visualizza l'attributo sugli elementi della collezione",
+    "conflicting": "Definizioni multiple",
+    "conflicting_tooltip": "Gli elementi definiscono questo attributo in più di un modo, quindi viene ordinato come testo e non può essere impostato dal menu dell'elemento."
   },
   "script_executor": {
     "query": "Domanda",
@@ -1939,7 +1981,8 @@
     "editor_crashed_details_button": "Visualizza ulteriori dettagli...",
     "editor_crashed_details_intro": "Se questo errore si verifica più volte, valuta la possibilità di segnalarlo su GitHub incollando le informazioni riportate di seguito.",
     "editor_crashed_details_title": "Informazioni tecniche",
-    "nothing_selected_to_cut": "Seleziona prima del testo per estrarlo in una nota secondaria."
+    "nothing_selected_to_cut": "Seleziona prima del testo per estrarlo in una nota secondaria.",
+    "uploading_attachment": "Caricamento allegati"
   },
   "empty": {
     "open_note_instruction": "Apri una nota digitandone il titolo nel campo sottostante oppure scegli una nota nell'albero.",
@@ -2021,7 +2064,7 @@
     "search_placeholder": "Cerca caratteri",
     "no_fonts_found": "Nessun carattere corrisponde a cosa stai cercando.",
     "custom_fonts_description": "Sostituisce i caratteri del tema. Un carattere caricato su Trilium può essere aggiunto dalla relativa nota.",
-    "document_preview_heading": "Talee di Purple Heart",
+    "document_preview_heading": "talee di cuore viola",
     "document_preview_body": "Ho tagliato 4 steli sotto un nodo e li ho messi in acqua sul davanzale; le prime radici sono spuntate dopo <strong>9 giorni</strong>. Mantiene il suo colore in <em>pieno sole</em> e sbiadisce diventando verde all’ombra."
   },
   "max_content_width": {
@@ -2352,7 +2395,9 @@
   "shared_info": {
     "shared_publicly": "Questa nota è condivisa pubblicamente su {{- link}}.",
     "shared_locally": "Questa nota è condivisa localmente su {{- link}}.",
-    "help_link": "Per assistenza visita <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "Per assistenza visita <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
+    "shared_preview": "Questa nota è condivisa su {{- link}}, ma solo questo browser può aprire quella pagina e solo mentre Trilium è aperto al suo interno. Per pubblicarla per altri è necessario un server Trilium.",
+    "shared_export_only": "Questa nota è condivisa, ma l'app mobile non può aprire le pagine condivise. Per pubblicarla, esporta il sottostruttura come \"{{format}}\" e ospita i file su un qualsiasi server web oppure utilizza un server Trilium."
   },
   "note_types": {
     "text": "Testo",
@@ -2517,7 +2562,9 @@
     "delete-notes-in-progress": "Eliminazione note in corso: {{count}}",
     "delete-finished-successfully": "Eliminazione completata con successo.",
     "undeleting-notes-in-progress": "Ripristino delle note in corso: {{count}}",
-    "undeleting-notes-finished-successfully": "Recupero note completato con successo."
+    "undeleting-notes-finished-successfully": "Recupero note completato con successo.",
+    "delete-notes-in-progress-with-total": "Eliminate {{progress}} note su {{total}}",
+    "erasing-notes": "Cancellare le note…"
   },
   "frontend_script_api": {
     "async_warning": "Stai passando una funzione asincrona a `api.runOnBackend()` che probabilmente non funzionerà come previsto.\\nRendi la funzione sincrona (rimuovendo la parola chiave `async`) oppure usa `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2582,7 +2629,13 @@
     "open_note_in_new_window": "Apri la nota in una nuova finestra",
     "open_note_in_popup": "Modifica rapida",
     "open_note_in_other_split": "Apri nota nell'altra divisione",
-    "open_note": "Nota aperta"
+    "open_note": "Nota aperta",
+    "convert_link_to_embed": "Converti il link in un elemento incorporato",
+    "convert_link_to_included_note": "Converti il collegamento in una nota inclusa",
+    "convert_embed_to_link": "Converti in collegamento",
+    "include_size": "Misurare",
+    "show_title": "Mostra il titolo",
+    "show_caption": "Mostra didascalia"
   },
   "help-button": {
     "title": "Apri la pagina di aiuto pertinente"
@@ -2641,7 +2694,8 @@
   },
   "svg": {
     "export_to_png": "Non è stato possibile esportare il diagramma in formato PNG.",
-    "export_to_svg": "Il diagramma non può essere esportato in formato SVG."
+    "export_to_svg": "Il diagramma non può essere esportato in formato SVG.",
+    "preview": "Anteprima del diagramma"
   },
   "code_theme": {
     "title": "Aspetto",
@@ -2670,7 +2724,31 @@
     "vector_auto": "Vector (Auto)"
   },
   "table_context_menu": {
-    "delete_row": "Elimina riga"
+    "delete_row": "Elimina riga",
+    "insert_rows_above": "Inserisci la riga sopra",
+    "insert_rows_below": "Inserire la riga sottostante",
+    "insert_columns_left": "Inserire la colonna a sinistra",
+    "insert_columns_right": "Inserire la colonna a destra",
+    "delete_rows": "Elimina riga",
+    "delete_columns": "Elimina colonna",
+    "delete_table": "Elimina tabella",
+    "distribute_columns": "Distribuisci le colonne in modo uniforme",
+    "merge_cells": "Unire le cellule",
+    "split_cells": "cellula divisa",
+    "split_vertically": "Verticalmente",
+    "split_horizontally": "Orizzontalmente",
+    "split_reset": "Separare le celle",
+    "sort": "Ordinare",
+    "sort_ascending": "Ascendente",
+    "sort_descending": "Discendente",
+    "select": "Selezionare",
+    "select_row": "Riga",
+    "select_column": "Colonna",
+    "select_table": "Tavolo",
+    "set_header_row": "Imposta come intestazione",
+    "set_header_up_to_row": "Imposta l'intestazione fino a questa riga",
+    "paste_rows_above": "Incolla le righe sopra",
+    "paste_rows_below": "Incolla le righe seguenti"
   },
   "presentation_view": {
     "edit-slide": "Modifica questa diapositiva",
@@ -2821,7 +2899,11 @@
     "doc_url": "Documentazione online",
     "doc_url_description": "Clicca qui per visualizzare questa pagina sul sito web della documentazione online.",
     "office_preview": "Anteprima",
-    "office_preview_description": "Questo documento viene visualizzato come anteprima in sola lettura, pertanto non è possibile modificarlo qui.\n\nPer modificarlo, scarica il file, modificalo in un'applicazione esterna e ricaricalo come nuova revisione."
+    "office_preview_description": "Questo documento viene visualizzato come anteprima in sola lettura, pertanto non è possibile modificarlo qui.\n\nPer modificarlo, scarica il file, modificalo in un'applicazione esterna e ricaricalo come nuova revisione.",
+    "shared_preview": "Anteprima di condivisione",
+    "shared_preview_description": "Solo questo browser può aprire la pagina condivisa, e solo se Trilium è aperto al suo interno. Per pubblicarla, esporta la sottostruttura come \"{{- format}}\" e ospita i file su un qualsiasi server web, oppure utilizza un server Trilium.",
+    "shared_export_only": "Non pubblicato",
+    "shared_export_only_description": "L'app mobile non può aprire pagine condivise. Per pubblicare questa nota, esporta il sottostruttura come \"{{- format}}\" e ospita i file su un qualsiasi server web oppure utilizza un server Trilium."
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
@@ -3074,7 +3156,6 @@
     "edit_index": "Modifica {{index}} di {{total}}",
     "retry": "Riprova",
     "web_search_unavailable_gemini": "Non disponibile sui modelli Gemini quando l'accesso alle note è attivo: l'API di Google non consente di combinare entrambe le funzioni. Disattiva l'accesso alle note o passa a un altro provider per utilizzare la ricerca sul web.",
-    "input_streaming": "Input (in streaming…)",
     "attach_file": "Allega un'immagine, un PDF o un file di testo",
     "remove_attachment": "Rimuovi allegato",
     "attachment_upload_failed": "Caricamento non riuscito \"{{name}}\".",
@@ -3107,7 +3188,67 @@
     "save_note_failed": "Impossibile creare una nota dal messaggio.",
     "regenerate": "Rigenerare",
     "delete_message": "Elimina messaggio",
-    "delete_message_confirm": "Eliminare questo messaggio? Questa operazione non può essere annullata."
+    "delete_message_confirm": "Eliminare questo messaggio? Questa operazione non può essere annullata.",
+    "reasoning_effort_title": "Sforzo di ragionamento: {{level}}",
+    "reasoning_effort_levels": {
+      "none": "Nessuno",
+      "minimal": "Minimo",
+      "low": "Basso",
+      "medium": "Mezzo",
+      "high": "Alto",
+      "xhigh": "Extra alto",
+      "max": "Massimo"
+    },
+    "stream_status": {
+      "starting_agent": "Avvio dell'agente. Questa operazione potrebbe richiedere del tempo.",
+      "waiting_for_reply": "In attesa della risposta…",
+      "still_working": "Continuo a lavorare…"
+    },
+    "show_tool_call_details": "Mostra input e output",
+    "tool_call_no_result": "Nessun risultato ancora.",
+    "search_notes_count_one": "({{count}} nota)",
+    "search_notes_count_many": "({{count}} note)",
+    "search_notes_count_other": "({{count}} note)",
+    "search_notes_limited_one": "{{count}} risultato totale, limitato a {{limit}}",
+    "search_notes_limited_many": "{{count}} risultati totali, limitati a {{limit}}",
+    "search_notes_limited_other": "{{count}} risultati totali, limitati a {{limit}}",
+    "search_notes_scope": "Cercato in <Note/>",
+    "child_notes_count_one": "({{count}} figlio)",
+    "child_notes_count_many": "({{count}} bambini)",
+    "child_notes_count_other": "({{count}} bambini)",
+    "child_count_one": "{{count}} figlio",
+    "child_count_many": "{{count}} bambini",
+    "child_count_other": "{{count}} bambini",
+    "search_help_count_one": "({{count}} pagina)",
+    "search_help_count_many": "({{count}} pagine)",
+    "search_help_count_other": "({{count}} pagine)",
+    "subtree_more_one": "+{{count}} altro",
+    "subtree_more_many": "+{{count}} altri",
+    "subtree_more_other": "+{{count}} altri",
+    "attachment_count_one": "{{count}} allegato",
+    "attachment_count_many": "{{count}} allegati",
+    "attachment_count_other": "{{count}} allegati",
+    "attribute_count_one": "(attributo {{count}})",
+    "attribute_count_many": "({{count}} attributi)",
+    "attribute_count_other": "({{count}} attributi)",
+    "search_icons_count_one": "(icona {{count}})",
+    "search_icons_count_many": "({{count}} icone)",
+    "search_icons_count_other": "({{count}} icone)",
+    "attachment_size": "({{size}})",
+    "attachment_ocr": "Testo riconosciuto dal file",
+    "skills": {
+      "search_syntax": "Sintassi di ricerca",
+      "backend_scripting": "Scripting di backend",
+      "frontend_scripting": "Scripting frontend",
+      "dashboards": "Cruscotti"
+    },
+    "web_sources_count_one": "({{count}} fonte)",
+    "web_sources_count_many": "({{count}} fonti)",
+    "web_sources_count_other": "({{count}} fonti)",
+    "attachment_model_cannot_read_image": "{{- model}} non è in grado di leggere le immagini.",
+    "attachment_model_cannot_read_file": "{{- model}} non è in grado di leggere i PDF.",
+    "attachment_refused": "\"{{name}}\" non è stato collegato. {{- reason}}",
+    "remove_unreadable_attachments": "Rimuovi gli allegati {{- model}} non può essere letto"
   },
   "sidebar_chat": {
     "title": "Chat AI",
@@ -3170,7 +3311,11 @@
       "edit_note_content": "Nota dell'editore",
       "search_icons": "Icone di ricerca",
       "search_help": "Guida utente alla ricerca",
-      "get_help_toc": "Ottieni il contenuto della Guida per l'utente"
+      "get_help_toc": "Ottieni il contenuto della Guida per l'utente",
+      "read_web_page": "Leggi la pagina web",
+      "note_moved_from": "<Note/> da <From/> a <To/>",
+      "note_moved": "<Note/> a <To/>",
+      "attachment_in_note": "<Title/> in <Note/>"
     },
     "base_url": "URL di base",
     "base_url_description": "Facoltativo. Consente di accedere alla stessa API tramite un proxy o un gateway. Per eseguire autonomamente un modello, aggiungere invece un provider Ollama o LM Studio.",
@@ -3191,14 +3336,13 @@
     "provider_model_count_many": "{{count}} modelli",
     "provider_model_count_other": "{{count}} modelli",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Richiede Claude Code sul computer su cui è in esecuzione Trilium.",
     "provider_unavailable_standalone": "Non disponibile nella versione browser: questo provider funziona eseguendo un programma separato sulla macchina, e qui non è presente una macchina su cui eseguirlo.",
     "claude_agent_description": "Utilizza il tuo abbonamento Claude Pro/Max tramite Claude Code, quindi non è necessaria alcuna chiave API. Claude Code deve essere installato sulla macchina su cui è in esecuzione Trilium (il server in caso di hosting autonomo, oppure questo computer se si utilizza un computer fisso); accedi una sola volta eseguendo il comando \"claude /login\" su tale computer.",
     "add_provider_title_named": "Aggiungi {{- name}}",
     "provider_group_cloud": "Fornitori di servizi cloud",
     "provider_group_cloud_description": "Il pagamento avviene in base all'utilizzo tramite una chiave API, con fatturazione separata da qualsiasi abbonamento già attivo. Le tue note vengono inviate ai server del fornitore.",
     "provider_group_subscription": "Sottoscrizione",
-    "provider_group_subscription_description": "Riutilizza un abbonamento che già paghi, senza costi aggiuntivi. Le tue note vengono inviate ai server del fornitore.",
+    "provider_group_subscription_description": "Utilizza un account già in tuo possesso anziché una chiave API, senza costi aggiuntivi: Claude Pro/Max, GitHub Copilot o un account Google. Il programma del fornitore deve essere installato sul dispositivo su cui è in esecuzione Trilium e le tue note vengono inviate ai server del fornitore.",
     "provider_group_local": "Locale / autogestito",
     "provider_group_local_description": "Nessuna chiave API, nessun costo di utilizzo. Le tue note saranno visibili solo al computer su cui è in esecuzione il modello.",
     "provider_group_custom": "Endpoint personalizzato",
@@ -3223,8 +3367,13 @@
     "mcp_config_warning": "Un token garantisce l'accesso completo in lettura e scrittura a tutte le tue note, quindi trattalo come una password. Se ti connetti da un altro dispositivo, è preferibile utilizzare HTTPS: un token inviato tramite HTTP non crittografato può essere intercettato.",
     "enabled": "Funzionalità di intelligenza artificiale",
     "enabled_description": "Aggiunge la barra laterale della chat con IA e le note della chat LLM, utilizzando i provider configurati di seguito.",
-    "provider_desc_copilot_agent": "È necessaria la CLI di GitHub Copilot sul computer su cui è in esecuzione Trilium.",
-    "copilot_agent_description": "Utilizza l'abbonamento a GitHub Copilot tramite la CLI di GitHub Copilot, quindi non è necessaria alcuna chiave API. La CLI di Copilot deve essere installata sul computer su cui è in esecuzione Trilium (il server in caso di self-hosting, oppure questo computer in ambiente desktop); effettuare l'accesso una sola volta eseguendo il comando \"copilot login\" su quel computer: l'accesso a Copilot già esistente da un altro editor verrà riutilizzato automaticamente."
+    "copilot_agent_description": "Utilizza l'abbonamento a GitHub Copilot tramite la CLI di GitHub Copilot, quindi non è necessaria alcuna chiave API. La CLI di Copilot deve essere installata sul computer su cui è in esecuzione Trilium (il server in caso di self-hosting, oppure questo computer in ambiente desktop); effettuare l'accesso una sola volta eseguendo il comando \"copilot login\" su quel computer: l'accesso a Copilot già esistente da un altro editor verrà riutilizzato automaticamente.",
+    "antigravity_agent_description": "Utilizza la quota Gemini del tuo account Google (gratuito, Google AI Pro o Ultra) tramite Google Antigravity, quindi non è necessaria alcuna chiave API.\n\nIl server ACP di Google Antigravity deve essere scaricato sul dispositivo su cui è in esecuzione Trilium: il server in caso di hosting autonomo, oppure questo computer se si utilizza un computer desktop. Se non è ancora installato, il passaggio successivo mostra come installarlo.\n\nLa prima volta che i modelli vengono elencati, la pagina di accesso di Google si apre in un browser su quel dispositivo.",
+    "codex_agent_description": "Utilizza l'abbonamento Codex del tuo piano ChatGPT (Free, Go, Plus, Pro o Business) tramite OpenAI Codex, quindi non è necessaria alcuna chiave API.\n\nLa CLI di Codex deve essere installata sul dispositivo su cui è in esecuzione Trilium: il server in caso di hosting autonomo, oppure questo computer desktop, ad esempio eseguendo il comando \"npm install -g @openai/codex\".\n\nLa prima volta che vengono visualizzati i modelli, la pagina di accesso a ChatGPT si apre in un browser su quel dispositivo.",
+    "antigravity_setup_download": "Sul dispositivo su cui è in esecuzione Trilium, scarica l'archivio relativo alla tua piattaforma dalla voce del <Link>registro ACP</Link> di Google e decomprimilo in una cartella in cui possa rimanere.",
+    "antigravity_setup_archive": "Scarica <Link>l'archivio per il dispositivo su cui è installato Trilium</Link> e decomprimilo in una cartella in cui possa rimanere.",
+    "antigravity_setup_path": "Aggiungi quella cartella a <Code>PATH</Code> oppure imposta la variabile d'ambiente <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> su <Code>agy_acp_server.par</Code> al suo interno (<Code>agy_acp_server.exe</Code> su Windows), quindi riavvia Trilium.",
+    "antigravity_setup_sign_in": "Torna a questo passaggio. La prima volta, la pagina di accesso a Google si apre in un browser su quel dispositivo."
   },
   "ocr": {
     "extracted_text": "Testo estratto (OCR)",
@@ -3397,7 +3546,12 @@
     "start_over_description": "Passa a un nuovo database vuoto, ricomincia la sincronizzazione con un nuovo server oppure ripristina un backup. Ti verrà richiesto di eseguire un backup dei tuoi dati prima di eliminare quelli esistenti.",
     "start_over_confirm": "Trilium tornerà alla schermata di configurazione, dove potrai creare una nuova knowledge base, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo. Ti verrà prima proposto un backup dei tuoi dati attuali e nulla verrà eliminato finché non sceglierai una di queste opzioni. Vuoi continuare?",
     "start_over_pending": "La schermata di configurazione apparirà al prossimo riavvio del server. Riavvia il server quando sei pronto, oppure annulla qui sotto per lasciare tutto com'è.",
-    "start_over_cancel": "Annulla e ricomincia"
+    "start_over_cancel": "Annulla e ricomincia",
+    "info_persistence": "Persistenza",
+    "info_persistence_persistent": "Persistente",
+    "info_persistence_best_effort": "massimo sforzo",
+    "info_persistence_persistent_description": "Il browser si impegna a conservare questo database finché non lo eliminerai.",
+    "info_persistence_best_effort_description": "Il browser può rimuovere questo database per recuperare spazio.\nInstallare Trilium come app o aggiungerlo alla schermata iniziale solitamente garantisce la persistenza."
   },
   "revisions_snapshot": {
     "title": "Note sulle revisioni"
@@ -3437,7 +3591,6 @@
     "page_size": "Dimensione della pagina",
     "scale": "Scala",
     "margins": "Margini",
-    "render_error": "Impossibile generare il PDF con le impostazioni attuali. Controlla i margini e la scala.",
     "margins_default": "Predefinito",
     "margins_none": "Nessuno",
     "margins_minimum": "Minimo",
@@ -3449,13 +3602,17 @@
     "page_ranges": "Pagine",
     "page_ranges_hint": "Lasciare vuoto per stampare tutte le pagine.",
     "page_ranges_invalid": "Formato non valido. Utilizza ad esempio: 1-5, 8, 11-13.",
-    "page_ranges_placeholder": "ad es. 1-5, 8, 11-13"
+    "page_ranges_placeholder": "ad es. 1-5, 8, 11-13",
+    "render_error_title": "Impossibile generare il PDF con le impostazioni attuali",
+    "render_error_description": "Si prega di controllare i margini e la scala."
   },
   "common": {
     "save": "Salva",
     "cancel": "Annulla",
     "fullscreen": "A schermo intero",
-    "exit_fullscreen": "Esci dalla modalità a schermo intero"
+    "exit_fullscreen": "Esci dalla modalità a schermo intero",
+    "open_in_new_tab": "Apri in una nuova scheda",
+    "more_actions": "Altre azioni"
   },
   "spreadsheet": {
     "read-only": "Questa nota è di sola lettura.",
@@ -3533,7 +3690,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Inserisci una sezione attivabile che nasconda/mostri il contenuto al clic.",
       "insert-an-anchor-for-internal-linking": "Inserisci un collegamento per i link interni",
       "insert-an-empty-mermaid-diagram": "Inserisci un diagramma Mermaid vuoto",
-      "insert-the-current-date-and-time": "Inserisci la data e l'ora attuale",
       "justify-text-alignment": "Allineamento del testo a sinistra",
       "right-click-or-press-0-to-change-state": "Fai clic con il tasto destro del mouse oppure premi %0 per modificare lo stato.",
       "select-collapsible-block": "Seleziona il blocco a scomparsa",
@@ -3583,8 +3739,6 @@
       "insert-a-table": "Inserisci una tabella.",
       "insert-date-time": "Inserire data/ora",
       "insert-footnote-0": "Inserire nota a piè di pagina %0",
-      "insert-math": "Inserisci matematica",
-      "insert-mermaid-diagram": "Inserire il diagramma Mermaid",
       "insert-mermaid-source-code": "Inserisci il codice sorgente di Mermaid",
       "insert-paragraph-after-code-block": "Inserire il paragrafo dopo il blocco di codice",
       "insert-paragraph-before-code-block": "Inserire il paragrafo prima del blocco di codice",
@@ -3648,7 +3802,51 @@
       "the-server-responded-with-http-0": "Il server ha risposto con HTTP %0.",
       "tokens": "tokens",
       "try-again": "Prova ancora",
-      "working": "In corso…"
+      "working": "In corso…",
+      "attach-and-embed-file": "Allega e incorpora il file",
+      "attach-file": "Allega il file",
+      "attach-file-as-a-link": "Allega il file come collegamento",
+      "caption-for-the-included-note": "Didascalia per la nota inclusa",
+      "convert-to-link": "Converti in collegamento",
+      "enter-caption": "Inserisci la didascalia",
+      "insert-date-time-0": "Inserisci data/ora: %0",
+      "insert-time-0": "Tempo di inserimento: %0",
+      "upload-an-image-from-your-device": "Carica un'immagine dal tuo dispositivo.",
+      "upload-files-as-attachments-and-insert-embeds": "Carica i file come allegati e inserisci i contenuti incorporati.",
+      "upload-files-as-attachments-and-insert-links": "Carica i file come allegati e inserisci i link.",
+      "upload-image": "Carica immagine",
+      "icon": "Icona",
+      "insert-an-icon-from-an-installed-icon-pack": "Inserisci un'icona da un pacchetto di icone installato",
+      "transform-icon": "Trasforma icona",
+      "icon-toolbar": "barra degli strumenti delle icone",
+      "no-transform": "Nessuna trasformazione",
+      "rotate-90": "Ruotare di 90°",
+      "rotate-180": "Ruota di 180°",
+      "rotate-270": "Ruotare di 270°",
+      "flip-horizontally": "Capovolgi orizzontalmente",
+      "flip-vertically": "Capovolgi verticalmente",
+      "change-icon": "Cambia icona",
+      "move-row-up": "Spostare la riga in alto",
+      "move-row-down": "Sposta la riga in basso",
+      "move-column-left": "Sposta la colonna a sinistra",
+      "move-column-right": "Sposta la colonna a destra",
+      "insert-table": "Inserisci la tabella…",
+      "rows": "file",
+      "columns": "Colonne",
+      "enter-a-whole-number-between-1-and-0": "Inserisci un numero intero compreso tra 1 e %0.",
+      "the-table-is-too-large-max-0-cells": "La tabella è troppo grande (max %0 celle).",
+      "math": "Matematica",
+      "date-time": "Data/ora",
+      "distribute-columns-evenly": "Distribuisci le colonne in modo uniforme",
+      "merge-selected-cells": "Unisci le celle selezionate",
+      "unmerge-cells": "Separare le celle",
+      "sort": "Ordinare",
+      "ascending": "Ascendente",
+      "descending": "Discendente",
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Alcune righe sono state raggruppate perché le celle unite le collegano tra loro",
+      "tiny": "Minuscolo",
+      "show-title": "Mostra il titolo",
+      "more-actions": "Altre azioni"
     },
     "task-state-dropped-title": "Stati di attività non validi",
     "task-state-dropped-message_one": "La definizione dello stato di un'attività personalizzata non è valida ed è stata ignorata.",
@@ -3660,6 +3858,9 @@
       "text-formatting": "Formattazione del testo",
       "insert": "Inserire",
       "alignment": "Allineamento"
+    },
+    "colors": {
+      "pink": "Rosa"
     }
   },
   "security": {
@@ -3679,7 +3880,17 @@
     "lan_access_title": "Accesso alla rete",
     "lan_access_section_description": "Per impostazione predefinita, l'app desktop è autonoma: l'app e le note condivise non vengono rese disponibili in rete e solo le integrazioni locali (Web Clipper, MCP, ETAPI) possono accedervi da questo computer. Abilita questa opzione per aprire l'app e le note condivise in un browser e per consentire ad altri dispositivi di connettersi, ad esempio per la sincronizzazione. Abilita questa opzione solo su reti di cui ti fidi.",
     "lan_access_label": "Consenti l'accesso a Internet e alla rete",
-    "lan_access_description": "Fornisce l'app, le note condivise e gli aggiornamenti in tempo reale tramite HTTP — accessibili da un browser su questo computer e da altri dispositivi presenti nella rete. Quando è disattivato, rimangono accessibili solo le integrazioni locali (Web Clipper, MCP, ETAPI)."
+    "lan_access_description": "Fornisce l'app, le note condivise e gli aggiornamenti in tempo reale tramite HTTP — accessibili da un browser su questo computer e da altri dispositivi presenti nella rete. Quando è disattivato, rimangono accessibili solo le integrazioni locali (Web Clipper, MCP, ETAPI).",
+    "standalone": {
+      "backend_scripting_section_description": "Gli script di backend vengono eseguiti all'interno di questo browser, con pieno accesso alle tue note, alle tue impostazioni e alle tue credenziali di sincronizzazione. Possono essere attivati tramite sincronizzazione, importazione o qualsiasi contenuto che includa attributi eseguibili, senza che tu debba aprire la nota. Gli script di frontend sono sempre abilitati e non possono accedere a risorse esterne all'app stessa.",
+      "reload_required": "È necessario ricaricare il computer affinché la modifica abbia effetto.",
+      "reload_now": "Ricarica la pagina ora",
+      "other_tab_hint": "Queste impostazioni vengono modificate dalla scheda che gestisce il database, che di solito è la prima scheda di Trilium che hai aperto. Chiudi le altre schede e ricarica questa pagina per modificarle qui.",
+      "confirm_enable": "Abilita {{- setting}}?\n\n{{- warning}} Un script presente nei tuoi appunti può richiedere questa operazione, quindi procedi solo se sei stato tu stesso a richiederla.",
+      "confirm_disable": "Disabilitare {{- setting}}?",
+      "confirm_backend_scripting_warning": "Gli script di backend hanno pieno accesso alle tue note, impostazioni e credenziali di sincronizzazione.",
+      "confirm_sql_console_warning": "La console SQL può leggere le credenziali di sincronizzazione e l'hash della password, nonché modificare o eliminare qualsiasi nota."
+    }
   },
   "snippet_badge": {
     "label": "Snippet {{type}}",
@@ -3699,7 +3910,8 @@
       "previous_image": "Immagine precedente",
       "first_image": "Prima immagine",
       "last_image": "Ultima immagine"
-    }
+    },
+    "viewport": "Vista dell'immagine"
   },
   "options": {
     "title": "Opzioni",
@@ -3927,7 +4139,8 @@
     "mismatch": "Le password non corrispondono."
   },
   "open": {
-    "directory_failed": "Impossibile aprire {{- directory}}: {{- reason}}"
+    "directory_failed": "Impossibile aprire {{- directory}}: {{- reason}}",
+    "download_failed": "Impossibile salvare il download: {{- reason}}"
   },
   "keyboard_shortcut_keys": {
     "ctrl": "Ctrl",
@@ -4307,5 +4520,83 @@
     "creation-date": "Data & ora di creazione",
     "ascending": "In ordine crescente",
     "descending": "In ordine discendente"
+  },
+  "lightbox": {
+    "image": "Immagine",
+    "pdf": "PDF",
+    "open_original": "Apri l'originale in una nuova scheda"
+  },
+  "zoom_controls": {
+    "zoom_out": "Riduci lo zoom",
+    "reset": "Ripristina lo zoom",
+    "zoom_in": "Ingrandisci",
+    "hints": {
+      "zoom": "Zoom",
+      "zoom_in": "Ingrandisci",
+      "zoom_out": "Riduci lo zoom",
+      "reset_zoom": "Ripristina lo zoom",
+      "pan": "Padella",
+      "pan_up": "Su",
+      "pan_down": "Giù",
+      "pan_left": "Sinistra",
+      "pan_right": "Giusto",
+      "pan_fast": "Panoramica più veloce"
+    }
+  },
+  "search_lint": {
+    "relation_needs_property": "Le relazioni puntano a una nota, quindi non è possibile verificarne l'uguaglianza. Utilizzare il punto (.) al suo posto per accedere alle sue proprietà.",
+    "text_needs_contains": "note.text cerca sia il titolo che il contenuto, quindi può essere abbinato solo con *=*.",
+    "content_not_ordered": "Nota: il contenuto è testo, quindi non può essere ordinato. Utilizza *=* per trovare la corrispondenza.",
+    "compare_the_title": "Confronta il titolo",
+    "use_operator": "Utilizzare {{operator}}"
+  },
+  "search_completion": {
+    "note": "Titolo della nota, proprietà e note correlate",
+    "operator_equal": "Equivale all'intero valore",
+    "operator_not_equal": "Non è uguale all'intero valore",
+    "operator_contains": "Contiene",
+    "operator_starts_with": "Inizia con",
+    "operator_ends_with": "Termina con",
+    "operator_greater_than": "Maggiore di",
+    "operator_greater_or_equal": "Maggiore o uguale a",
+    "operator_less_than": "Meno di",
+    "operator_less_or_equal": "Minore o uguale a",
+    "operator_regex": "Corrisponde a un'espressione regolare",
+    "operator_fuzzy_equal": "Uguale, tollera gli errori di battitura",
+    "operator_fuzzy_contains": "Contiene, tollera errori di battitura",
+    "property_content": "Il corpo del testo della nota",
+    "property_raw_content": "Il corpo del testo della nota, prima che la formattazione venga rimossa",
+    "property_text": "Il titolo o il corpo del testo",
+    "property_parents": "Continua sui genitori della nota",
+    "property_children": "Continua sui figli della nota",
+    "property_ancestors": "Continua sulla tradizione della nota",
+    "property_labels": "Seguito da un nome di etichetta",
+    "property_relations": "Seguito dal nome di una relazione, quindi dalle proprietà di quella nota",
+    "property_attribute_count": "Numero di etichette e relazioni, comprese quelle ereditate",
+    "property_label_count": "Numero di etichette, comprese quelle ereditate",
+    "property_relation_count": "Numero di parenti, inclusi quelli ereditari",
+    "property_relation_count_including_links": "Numero di relazioni, contando anche quelle create tramite link",
+    "property_owned_relation_count_including_links": "Numero delle relazioni proprie della nota, comprese quelle create dai link",
+    "property_target_relation_count_including_links": "Numero di relazioni che puntano alla nota, contando quelle effettuate tramite link",
+    "keyword_and": "Entrambe le condizioni devono corrispondere",
+    "keyword_or": "Una delle due condizioni deve corrispondere",
+    "keyword_not": "Esclude le note la condizione tra parentesi corrisponde",
+    "keyword_order_by": "Ordina i risultati in base a una proprietà o a un'etichetta",
+    "keyword_limit": "Conserva solo i primi risultati",
+    "date_now": "La data e l'ora attuali",
+    "date_today": "Data odierna",
+    "date_month": "Il mese corrente",
+    "date_year": "L'anno corrente",
+    "date_now_offset": "Un qualsiasi numero di secondi prima di adesso",
+    "date_today_offset": "Un qualsiasi numero di giorni prima di oggi",
+    "date_month_offset": "Un qualsiasi numero di mesi prima di questo",
+    "date_year_offset": "Un qualsiasi numero di anni prima di questo",
+    "label_marker": "Si riferisce a un'etichetta. Premere Invio per visualizzare l'elenco delle etichette",
+    "label_marker_negated": "Esclude un'etichetta. Premere Invio per visualizzare l'elenco delle etichette",
+    "relation_marker": "Si riferisce a una relazione. Premere Invio per visualizzare l'elenco delle relazioni",
+    "relation_marker_negated": "Esclude una relazione. Premi Invio per visualizzare l'elenco delle relazioni"
+  },
+  "split_button": {
+    "more_actions": "Altre azioni"
   }
 }

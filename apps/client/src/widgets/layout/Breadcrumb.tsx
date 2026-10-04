@@ -202,8 +202,8 @@ function BreadcrumbSeparator(props: BreadcrumbSeparatorProps) {
             noSelectButtonStyle
             buttonClassName="icon-action breadcrumb-separator"
             hideToggleArrow
-            dropdownContainerClassName="tn-dropdown-menu-scrollable breadcrumb-child-list"
-            dropdownOptions={{  popperConfig: { strategy: "fixed", placement: "top" } }}
+            dropdownContainerClassName="breadcrumb-child-list"
+            placement="top"
         >
             <BreadcrumbSeparatorDropdownContent {...props} />
         </Dropdown>
@@ -255,7 +255,6 @@ function BreadcrumbCollapsed({ items, noteContext }: {
             buttonClassName="icon-action"
             dropdownContainerClassName="breadcrumb-child-list"
             hideToggleArrow
-            dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
         >
             {items.map((notePath) => {
                 const notePathComponents = notePath.split("/");

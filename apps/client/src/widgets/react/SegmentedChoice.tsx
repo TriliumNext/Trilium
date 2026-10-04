@@ -117,8 +117,6 @@ function CollapsedChoice<T extends string>({ options, currentValue, onChange, cl
             currentValue={currentValue}
             onChange={(newValue) => onChange(newValue as T)}
             disabled={disabled}
-            // A handful of options, so the menu never scrolls — see the prop's own note.
-            noDropdownListStyle
             // This only ever renders on a phone, where a menu is a sheet from the bottom of the
             // screen rather than a box beside the control it belongs to.
             mobileBottomSheet

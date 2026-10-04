@@ -5,7 +5,7 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { stripUniverHyphenation } from './vite-plugins.mjs';
+import { shareMermaidManifest, stripUniverEmojiData, stripUniverHyphenation } from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
@@ -18,11 +18,14 @@ if (isDev) {
         // a view with thousands of instances of one component slows to a stop. Set TRILIUM_NO_HMR to
         // work on such a view; components then reload with the page instead of in place.
         ...(process.env.TRILIUM_NO_HMR ? [] : [ prefresh() ]),
-        stripUniverHyphenation()
+        stripUniverHyphenation(),
+        stripUniverEmojiData()
     ];
 } else {
     plugins = [
         stripUniverHyphenation(),
+        stripUniverEmojiData(),
+        shareMermaidManifest("src/share_mermaid.json"),
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,

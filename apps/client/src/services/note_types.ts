@@ -51,7 +51,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), icon: "bxs-network-chart" },
 
     // Misc note types
-    { type: "llmChat", mime: "application/json", title: t("note_types.llm-chat"), icon: "bx-message-square-dots", isBeta: true },
+    { type: "llmChat", mime: "application/json", title: t("note_types.llm-chat"), icon: "bx-message-square-dots" },
     { type: "render", mime: "", title: t("note_types.render-note"), icon: "bx-extension" },
     { type: "search", title: t("note_types.saved-search"), icon: "bx-file-find", static: true },
     { type: "webView", mime: "", title: t("note_types.web-view"), icon: "bx-globe-alt" },

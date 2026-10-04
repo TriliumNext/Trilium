@@ -50,9 +50,11 @@ interface ConvertOpts {
 }
 
 /** A note's title in the two forms scoring needs, cached together since both derive from it. */
-interface SearchableTitle {
+export interface SearchableTitle {
     normalized: string;
     words: string[];
+    /** The title lowercased with its diacritics kept, or `null` when it has none. */
+    accented: string | null;
 }
 
 /**
@@ -827,7 +829,12 @@ class BNote extends AbstractBeccaEntity<BNote> {
     getSearchableTitle(): SearchableTitle {
         if (!this.__searchableTitleCache) {
             const normalized = normalizeSearchText(this.title);
-            this.__searchableTitleCache = { normalized, words: tokenizeNormalizedText(normalized) };
+            const lowercased = this.title.toLowerCase();
+            this.__searchableTitleCache = {
+                normalized,
+                words: tokenizeNormalizedText(normalized),
+                accented: lowercased === normalized ? null : lowercased
+            };
         }
 
         return this.__searchableTitleCache;

@@ -32,7 +32,9 @@ export interface AttributeMenuOptions {
  *
  * Lists the attributes the items draw, in the order they are drawn, and only the two types a menu
  * can hold: `boolean`, which the entry marks and toggles, and `select`, whose options open in a
- * submenu. The other types need a field to type into and stay in the attribute editor.
+ * submenu. The other types need a field to type into and stay in the attribute editor. An
+ * attribute the items define in different ways is left out, since one item's options might not
+ * apply to another.
  *
  * Returns an empty array when no attribute qualifies, so a caller can spread the result without
  * checking for an empty section.
@@ -41,7 +43,7 @@ export function buildAttributeMenuItems<T>({
     notes, attributes, title
 }: AttributeMenuOptions): MenuItem<T>[] {
     const items = attributes.flatMap<MenuItem<T>>((attribute) => {
-        if (attribute.hidden || attribute.type !== "label") {
+        if (attribute.hidden || attribute.type !== "label" || attribute.isConflicting) {
             return [];
         }
 

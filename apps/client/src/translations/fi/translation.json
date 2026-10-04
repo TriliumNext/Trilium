@@ -125,9 +125,6 @@
     "closeButton": "Sulje",
     "okButton": "OK"
   },
-  "jump_to_note": {
-    "search_button": "Etsi koko tekstistä"
-  },
   "call_to_action": {
     "dismiss": "Hylkää"
   }

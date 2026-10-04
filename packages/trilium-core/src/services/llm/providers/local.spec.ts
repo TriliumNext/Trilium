@@ -16,6 +16,15 @@ vi.mock("@ai-sdk/openai", () => ({
     }
 }));
 
+const { generateTextMock } = vi.hoisted(() => ({
+    generateTextMock: vi.fn(async (..._args: unknown[]) => ({ text: "A title", finishReason: "stop", usage: {} }) as any)
+}));
+
+vi.mock("ai", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("ai")>();
+    return { ...actual, generateText: generateTextMock };
+});
+
 import { LocalProvider } from "./local.js";
 import { installGlobalFetchAsApiTransport } from "../../../test/request_provider.js";
 import { llmFetch } from "./fetch.js";
@@ -463,6 +472,16 @@ describe("LocalProvider", () => {
             await provider.generateTitle("Hello again");
             expect(fetchMock.mock.calls.length).toBe(probes);
             generateTitle.mockRestore();
+        });
+
+        it("leaves the title call's reasoning to the server", async () => {
+            // Servers disagree on `reasoning_effort: "none"`, so a thinking model gets the larger retry instead.
+            fetchMock.mockImplementation(routes({ "/api/tags": ollamaTags([{ name: "tiny", parameter_size: "1B" }]) }));
+            generateTextMock.mockClear();
+
+            await expect(new LocalProvider("ollama").generateTitle("Hello")).resolves.toBe("A title");
+            expect(generateTextMock).toHaveBeenCalledOnce();
+            expect(generateTextMock.mock.calls[0][0]).not.toHaveProperty("reasoning");
         });
     });
 });

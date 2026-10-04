@@ -187,11 +187,13 @@
   "notes": {
     "new-note": "Nuova nota",
     "duplicate-note-suffix": "(dup)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Impossibile eliminare le note: {{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "Il file di log del backend '{{ fileName }}' non esiste (ancora).",
-    "reading-log-failed": "La lettura del file di log del backend '{{ fileName }}' è fallita."
+    "reading-log-failed": "La lettura del file di log del backend '{{ fileName }}' è fallita.",
+    "log-file-unavailable": "Non è stato possibile aprire il file di log, pertanto vengono visualizzate solo le voci più recenti conservate in memoria. Trilium continua a tentare di aprirlo e, non appena ci riuscirà, scriverà queste voci al suo interno."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "Questo tipo di nota non può essere visualizzato.",
@@ -202,7 +204,8 @@
     "unable-to-export-message": "La nota corrente non può essere esportata come PDF.",
     "unable-to-export-title": "Impossibile esportare come PDF",
     "unable-to-save-message": "Il file selezionato non può essere salvato. Prova di nuovo o seleziona un'altra destinazione.",
-    "unable-to-print": "Impossibile stampare la nota"
+    "unable-to-print": "Impossibile stampare la nota",
+    "render-timeout": "Il rendering della nota non è stato completato entro {{seconds}} secondi."
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -320,7 +323,7 @@
   "login": {
     "title": "Accedi",
     "heading": "Trilium",
-    "incorrect-totp": "Il codice TOTP è errato. Per favore riprova.",
+    "incorrect-totp": "La password one-time non è corretta. Per favore riprova.",
     "incorrect-password": "La password non è corretta. Riprova.",
     "password": "Password",
     "remember-me": "Ricordami",

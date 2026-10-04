@@ -96,10 +96,11 @@ export class GoogleProvider extends BaseProvider {
 
         const systemPrompt = this.buildSystemPrompt(messages, config);
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
-        const coreMessages = this.buildMessages(chatMessages);
+        const modelId = config.model || this.defaultModel;
+        const coreMessages = this.buildMessages(chatMessages, modelId);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
-            model: this.createModel(config.model || this.defaultModel),
+            model: this.createModel(modelId),
             system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: config.maxTokens || 8096,

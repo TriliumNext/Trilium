@@ -1,19 +1,27 @@
 import "./jump_to_note.css";
 
-import { useRef, useState } from "preact/hooks";
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
+import type FNote from "../../entities/fnote";
 import commandRegistry from "../../services/command_registry";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
-import shortcutService from "../../services/shortcuts";
-import Button from "../react/Button";
-import { useTriliumEvent } from "../react/hooks";
+import type { Suggestion } from "../../services/note_autocomplete";
+import { isMobile } from "../../services/utils";
+import { NoteAttributes, NoteContent } from "../collections/legacy/ListOrGridView";
+import { useMediaQuery, useTriliumEvent } from "../react/hooks";
+import Icon from "../react/Icon";
 import Modal from "../react/Modal";
-import NoteAutocomplete from "../react/NoteAutocomplete";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { refToJQuerySelector } from "../react/react_utils";
 
 const KEEP_LAST_SEARCH_FOR_X_SECONDS = 120;
+/** How long the highlight rests on a row before the preview renders it, so arrowing past skips it. */
+export const PREVIEW_DELAY_MS = 150;
+/** Wide enough for the results and the preview side by side. */
+const PREVIEW_MEDIA_QUERY = "(min-width: 1100px)";
 
 type Mode = "last-search" | "recent-notes" | "commands";
 
@@ -22,10 +30,17 @@ export default function JumpToNoteDialogComponent() {
     const [ lastOpenedTs, setLastOpenedTs ] = useState<number>(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const autocompleteRef = useRef<HTMLInputElement>(null);
-    const [ isCommandMode, setIsCommandMode ] = useState(mode === "commands");
-    const [ initialText, setInitialText ] = useState(isCommandMode ? "> " : "");
+    const handleRef = useRef<NoteAutocompleteHandle>(null);
+    const [ initialText, setInitialText ] = useState("");
     const actualText = useRef<string>(initialText);
     const [ shown, setShown ] = useState(false);
+    const [ highlighted, setHighlighted ] = useState<Suggestion>();
+    // The command palette lists commands, which have no content to preview.
+    const [ isCommandQuery, setCommandQuery ] = useState(false);
+    // The dialog keeps the preview's width while the command palette leaves it out, so it does not
+    // resize as `>` is typed and erased.
+    const isWide = useMediaQuery(PREVIEW_MEDIA_QUERY) && !isMobile();
+    const showsPreview = isWide && !isCommandQuery;
 
     async function openDialog(commandMode: boolean) {
         let newMode: Mode;
@@ -48,10 +63,6 @@ export default function JumpToNoteDialogComponent() {
         if (mode !== newMode) {
             setMode(newMode);
         }
-
-        // `showInFullSearch` reads this ref, so it has to follow the text about to be displayed
-        // rather than keep the previous session's query.
-        actualText.current = initialText;
 
         setInitialText(initialText);
         setShown(true);
@@ -80,10 +91,10 @@ export default function JumpToNoteDialogComponent() {
             case "last-search":
                 break;
             case "recent-notes":
-                note_autocomplete.showRecentNotes($autoComplete);
+                handleRef.current?.showRecentNotes();
                 break;
             case "commands":
-                note_autocomplete.showAllCommands($autoComplete);
+                handleRef.current?.showAllCommands();
                 break;
         }
 
@@ -100,61 +111,99 @@ export default function JumpToNoteDialogComponent() {
         } else {
             $autoComplete.trigger("select");
         }
-
-        // Add keyboard shortcut for full search
-        shortcutService.bindElShortcut($autoComplete, "ctrl+return", () => {
-            if (!isCommandMode) {
-                showInFullSearch();
-            }
-        });
-    }
-
-    async function showInFullSearch() {
-        try {
-            setShown(false);
-            const searchString = actualText.current?.trim();
-            if (searchString && !searchString.startsWith(">")) {
-                await appContext.triggerCommand("searchNotes", {
-                    searchString
-                });
-            }
-        } catch (error) {
-            console.error("Failed to trigger full search:", error);
-        }
     }
 
     return (
         <Modal
-            className="jump-to-note-dialog"
+            className={clsx("jump-to-note-dialog", isWide && "wide", showsPreview && "with-preview")}
             size="lg"
-            title={<NoteAutocomplete
-                placeholder={t("jump_to_note.search_placeholder")}
-                inputRef={autocompleteRef}
-                container={containerRef}
-                text={initialText}
-                opts={{
-                    allowCreatingNotes: true,
-                    hideGoToSelectedNoteButton: true,
-                    allowJumpToSearchNotes: true,
-                    isCommandPalette: true
-                }}
-                onTextChange={(text) => {
-                    actualText.current = text;
-                    setIsCommandMode(text.startsWith(">"));
-                }}
-                onChange={onItemSelected}
-            />}
+            title={<>
+                {!isMobile() && <Icon icon="bx bx-search" className="jump-to-note-search-icon" />}
+                <NoteAutocomplete
+                    placeholder={t("jump_to_note.search_placeholder")}
+                    inputRef={autocompleteRef}
+                    handleRef={handleRef}
+                    container={containerRef}
+                    text={initialText}
+                    opts={{
+                        allowCreatingNotes: true,
+                        hideGoToSelectedNoteButton: true,
+                        allowJumpToSearchNotes: true,
+                        isCommandPalette: true
+                    }}
+                    onTextChange={(text) => {
+                        actualText.current = text;
+                        setCommandQuery(text.startsWith(">"));
+                    }}
+                    onChange={onItemSelected}
+                    searchFooter
+                    onHighlight={showsPreview ? setHighlighted : undefined}
+                />
+            </>}
             onShown={onShown}
             onHidden={() => setShown(false)}
-            footer={!isCommandMode && <Button
-                className="show-in-full-text-button"
-                text={t("jump_to_note.search_button")}
-                keyboardShortcut="Ctrl+Enter"
-                onClick={showInFullSearch}
-            />}
             show={shown}
         >
-            <div className="algolia-autocomplete-container jump-to-note-results" ref={containerRef} />
+            <div className="jump-to-note-results" ref={containerRef} />
+            {showsPreview && <JumpToNotePreview suggestion={shown ? highlighted : undefined} />}
         </Modal>
     );
+}
+
+/**
+ * The note a row of the results stands for, previewed beside them: its path, title, attributes and
+ * the start of its content. A row that is no note, such as a command or a creation row, leaves it
+ * empty, so the layout keeps still.
+ */
+export function JumpToNotePreview({ suggestion }: { suggestion: Suggestion | undefined }) {
+    // The path is kept with the note it was loaded for, so the card never pairs one note's content
+    // with the next one's path while that one loads.
+    const [ previewed, setPreviewed ] = useState<{ note: FNote; parentPath: string } | null>(null);
+    const notePath = !suggestion?.action ? suggestion?.notePath : undefined;
+    // The path the row shows, as the server spelled it out: branch prefixes included, and ancestors
+    // that froca has not loaded.
+    const parentPathHtml = suggestion?.highlightedParentPathTitle ?? "";
+
+    useEffect(() => {
+        if (!notePath) {
+            setPreviewed(null);
+            return;
+        }
+
+        let cancelled = false;
+        const timeout = setTimeout(async () => {
+            const note = await froca.getNote(notePath.split("/").at(-1) ?? "", true);
+            if (!cancelled) setPreviewed(note ? { note, parentPath: htmlToText(parentPathHtml) } : null);
+        }, PREVIEW_DELAY_MS);
+        return () => {
+            cancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [ notePath, parentPathHtml ]);
+
+    const { note, parentPath } = previewed ?? {};
+
+    return (
+        <div className="jump-to-note-preview">
+            {note && <div key={note.noteId} className="jump-to-note-preview-card">
+                {parentPath && <div className="jump-to-note-preview-path">{parentPath}</div>}
+                <h4 className="jump-to-note-preview-title">
+                    <Icon icon={note.getIcon()} />
+                    <span>{note.title}</span>
+                </h4>
+                <NoteAttributes note={note} />
+                <NoteContent note={note} trim highlightedTokens={null} includeArchivedNotes={false} />
+            </div>}
+        </div>
+    );
+}
+
+/**
+ * The text of a highlighted path from the server, its `<b>` marks and entities resolved. Parsed in
+ * a `<template>`, whose content runs no script and loads nothing.
+ */
+function htmlToText(html: string) {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    return template.content.textContent ?? "";
 }

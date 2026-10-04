@@ -64,7 +64,7 @@ describe("A collection property's explanation", () => {
             label: "Inbox column",
             icon: "bx bx-inbox",
             helpTooltip: "Shows the notes with no column yet.",
-            bindToLabel: "enableInboxColumn"
+            bindToLabel: "board:showInbox"
         });
 
         expect(element.textContent).toContain("Inbox column");

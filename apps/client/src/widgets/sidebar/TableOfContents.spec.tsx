@@ -13,6 +13,14 @@ import { setEditorNoteId } from "../react/NoteStore";
 import { ParentComponent } from "../react/react_utils";
 import TableOfContents, { useActiveHeading } from "./TableOfContents";
 
+// `TableOfContents` loads `attributeChangeAffectsHeading` through a lazy `import()`. Pulling the
+// real module in loads the whole editor package from source, which takes longer than these tests
+// run and leaves the load in flight once happy-dom is torn down. Every change the fake editor
+// below reports is an insert, which the widget acts on without consulting the helper.
+vi.mock("@triliumnext/ckeditor5", () => ({
+    attributeChangeAffectsHeading: () => false
+}));
+
 const HEADINGS = [
     { id: "first", level: 1, text: "First" },
     { id: "second", level: 2, text: "Second" }
@@ -143,11 +151,11 @@ describe("TableOfContents while an auto-read-only note is temporarily editable",
         expect(toc.headings()).toEqual([ "Current" ]);
     });
 
-    it("picks up a heading typed into the editor before the CKEditor helper import resolves", async () => {
+    it("picks up a heading typed into the editor before the effects have settled", async () => {
         // The attribute-change check is loaded lazily, but the change listener itself is attached
-        // synchronously: a `setData()` in between must not go unseen.
+        // synchronously with the unlock: a `setData()` in between must not go unseen.
         const toc = await setupUnlockScenario();
-        await toc.unlock({ settleImports: false });
+        await toc.unlock({ rounds: 1 });
 
         await toc.editor.loadNote(toc.noteId, [ [ 2, "Typed while loading" ] ]);
 
@@ -197,19 +205,18 @@ async function setupUnlockScenario() {
         noteId: note.noteId,
         editor,
         headings: () => [ ...container.querySelectorAll(".toc .item-content") ].map((el) => el.textContent),
-        async unlock({ settleImports = true } = {}) {
+        async unlock({ rounds }: { rounds?: number } = {}) {
             await act(async () => {
                 if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
                 await appContext.triggerEvent("readOnlyTemporarilyDisabled", { noteContext });
             });
-            await settle({ settleImports });
+            await settle(rounds);
         }
     };
 }
 
-/** Lets the effects, the lazy `import()` behind them and the extraction's animation frame run. */
-async function settle({ settleImports = true } = {}) {
-    const rounds = settleImports ? 5 : 1;
+/** Lets the effects, the content element they await and the extraction's animation frame run. */
+async function settle(rounds = 5) {
     for (let i = 0; i < rounds; i++) {
         await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
     }

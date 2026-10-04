@@ -36,11 +36,13 @@ The following features are supported by Trilium's Markdown format and will show 
 *   <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> (no built-in Markdown syntax, but HTML syntax works just fine):
     
     ```html
-    <section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
-        &nbsp;
-    </section>
+    <figure class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable">
+        <figcaption>An optional caption, with <strong>HTML</strong> formatting</figcaption>
+    </figure>
     ```
     
+    *   The caption is optional. Markdown is not processed inside the HTML block, so format the caption with HTML tags.
+    *   Includes written as `<section class="include-note">`, the syntax of earlier versions, still work.
     *   These can also be quickly created via the `/include` command or via a dedicated keyboard shortcut (not assigned by default).
 *   <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> via its HTML syntax, or through a _Wikilinks_\-like format (only <a class="reference-link" href="../Advanced%20Usage/Note%20ID.md">Note ID</a>):
     
@@ -88,7 +90,7 @@ The following features are supported by Trilium's Markdown format and will show 
     
     ```
     ==highlighted==
-    <span style="background-color:hsl(0,0%,100%);">Highlighted</span>
+    <span style="background-color:#e5e64d;--tn-background:#e5e64d;">Highlighted</span>
     ```
 
 ### Links
@@ -124,7 +126,7 @@ The Markdown notes share some of the keyboard shortcuts from <a class="referenc
 
 *   _Cut to note_ (<kbd>Ctrl</kbd>+<kbd>X</kbd>) which cuts the selection into a new child note.
 *   _Add link_ (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog to create external or reference links.
-*   _Insert date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
+*   _Date/time_ (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same formatting as text notes.
 *   _Include note_ (not assigned by default), which triggers the same dialog to insert notes as the one for text notes.
 
 In addition, the following formatting keyboard shortcuts are available:
@@ -169,7 +171,21 @@ Just like <a class="reference-link" href="Text.md">Text</a> notes, Markdown no
 *   Inserting task items (`/todo:<state>`, e.g. `/todo:done`), one per configured task state.
 *   Inserting code snippets (`/snippet:<name>`) from your Markdown/plain-text snippet notes.
 
+The list shows each command by its title, as in Text notes. Typing a command's title, its keyword (as listed above) or a related word such as `latex` or `grid` finds it.
+
 Note that slash commands only work outside of code blocks and inline code.
+
+#### Linking notes with `@` or `[[`
+
+As in <a class="reference-link" href="Text.md">Text</a> notes, typing `@` at the start of a line or after a space opens the note search. Picking a note replaces what was typed with a link to it in the Wikilinks-like format (`[[noteId]]`), which the preview shows as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">internal link</a> with the note's title.
+
+The search runs on everything typed after the `@`, spaces included, so a title such as `@My meeting notes` can be typed out; press <kbd>Esc</kbd> to close the list and go on writing. If no note fits, the list offers to create one, as a child of the Markdown note or in the inbox; the link is inserted once the note is created.
+
+You can also start typing the link directly: `[[` opens the same list, and closing the brackets yourself dismisses it. To change where an existing link points, place the cursor inside it and pick another note.
+
+Like slash commands, `@` and `[[` do nothing inside code blocks and inline code.
+
+In the editor, a `[[noteId]]` link shows as the note's icon and title, so you can tell which note it points to without looking up its ID. Clicking it, or moving the cursor next to it, shows the link as written so it can be edited. Links inside code blocks and inline code are left as they are.
 
 #### Code block language auto-completion
 

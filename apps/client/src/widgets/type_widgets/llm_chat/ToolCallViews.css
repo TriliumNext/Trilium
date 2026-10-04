@@ -1,0 +1,181 @@
+/* The notes a `search_notes` call found. */
+.llm-chat-note-results {
+    ul {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+}
+
+.llm-chat-note-result {
+    padding: 0.3rem 0.5rem;
+}
+
+.llm-chat-note-result-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    min-width: 0;
+    white-space: nowrap;
+
+    > a {
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.llm-chat-note-result-parent,
+.llm-chat-note-result-detail {
+    flex-shrink: 10;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.75rem;
+
+    > .bx {
+        margin-right: 0.2rem;
+        vertical-align: -0.1em;
+    }
+}
+
+.llm-chat-note-result-preview {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 0.1rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.llm-chat-note-results-more {
+    padding: 0.2rem 0.5rem 0;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.llm-chat-note-results-scope {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.78rem;
+
+    > .bx {
+        align-self: center;
+    }
+}
+
+/* The notes of a `get_subtree` call, one indent and guide line per level. */
+.llm-chat-subtree {
+    max-height: 300px;
+    overflow: auto;
+
+    ul {
+        gap: 0;
+    }
+
+    .llm-chat-note-result {
+        padding-block: 0.1rem;
+    }
+
+    .llm-chat-note-result > ul {
+        margin: 0.1rem 0 0 0.35rem;
+        padding-left: 0.5rem;
+        border-left: 1px solid var(--main-border-color);
+    }
+
+    .llm-chat-note-result:has(> ul) {
+        padding-bottom: 0;
+    }
+}
+
+/* What a `get_note` call learned about a note. */
+.llm-chat-note-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.2rem 0;
+    font-size: 0.78rem;
+}
+
+.llm-chat-note-card-attributes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem;
+
+    > .llm-chat-note-results-more {
+        padding: 0;
+    }
+}
+
+.llm-chat-attribute {
+    padding: 0 0.35rem;
+    border-radius: 4px;
+    background: var(--accented-background-color);
+    color: var(--main-text-color);
+    overflow-wrap: anywhere;
+}
+
+/* The content a writing tool put into a note. */
+.llm-chat-written {
+    max-height: 300px;
+    overflow: auto;
+    font-size: 0.85rem;
+
+    > .code-block {
+        margin: 0;
+    }
+}
+
+/* Appended content is new at the end of the note. The green matches `.llm-diff-block-add` in
+   EditNoteContentDiff.css. */
+.llm-chat-written-appended {
+    padding-left: 0.5rem;
+    border-left: 2px solid rgb(60, 160, 60);
+}
+
+.llm-chat-written-svg {
+    display: block;
+    max-width: 100%;
+    max-height: 280px;
+}
+
+.llm-chat-attribute-deleted {
+    color: var(--muted-text-color);
+    text-decoration: line-through;
+}
+
+/* An attribute pill on a summary line sits at the size of the line's other details. */
+.expandable-section-label > .llm-chat-attribute {
+    font-size: 0.75rem;
+}
+
+/* The icons a `search_icons` call found. */
+.llm-chat-icon-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.2rem 0;
+
+    > .tn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 6px;
+        font-size: 1.3rem;
+        color: var(--main-text-color);
+
+        &:hover {
+            background: var(--hover-item-background-color);
+        }
+    }
+}

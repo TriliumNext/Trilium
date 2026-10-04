@@ -26,7 +26,7 @@ export default defineConfig(() => ({
             // mock value is still what the code receives, so the value is never used.
             ELECTRON_OVERRIDE_DIST_PATH: "/nonexistent/electron-dist-test-override"
         },
-        include: ["src/**/*.spec.ts"],
+        include: ["src/**/*.spec.ts", "electron-forge/**/*.spec.ts"],
         reporters: [
             "verbose",
             ["junit", { outputFile: "./test-output/vitest/junit.xml", addFileAttribute: true }]

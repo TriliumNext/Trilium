@@ -99,11 +99,13 @@ export function useSpacedUpdate(callback: () => void | Promise<void>, interval =
 export interface SavedData {
     content: string;
     attachments?: {
+        /** The attachment to update. Without it, the attachment is matched by its title. */
+        attachmentId?: string;
         role: string;
         title: string;
         mime: string;
         content: string;
-        position: number;
+        position?: number;
         encoding?: "base64";
     }[];
 }
@@ -183,26 +185,34 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
         spacedUpdate.setUpdateInterval(updateInterval);
     }, [ updateInterval ]);
 
-    // Save if needed upon switching tabs.
+    useSaveBeforeLeaving(spacedUpdate, noteContext);
+
+    return spacedUpdate;
+}
+
+/**
+ * Saves the pending changes of `spacedUpdate` before the note of `noteContext` switches, before
+ * its tab closes and before the window closes.
+ */
+export function useSaveBeforeLeaving<T>(
+    spacedUpdate: SpacedUpdate<T>,
+    noteContext: NoteContext | null | undefined
+) {
     useTriliumEvent("beforeNoteSwitch", async ({ noteContext: eventNoteContext }) => {
         if (eventNoteContext.ntxId !== noteContext?.ntxId) return;
         await spacedUpdate.updateNowIfNecessary();
     });
 
-    // Save if needed upon tab closing.
     useTriliumEvent("beforeNoteContextRemove", async ({ ntxIds }) => {
         if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
         await spacedUpdate.updateNowIfNecessary();
     });
 
-    // Save if needed upon window/browser closing.
     useEffect(() => {
         const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();
         appContext.addBeforeUnloadListener(listener);
         return () => appContext.removeBeforeUnloadListener(listener);
-    }, []);
-
-    return spacedUpdate;
+    }, [ spacedUpdate ]);
 }
 
 export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, replaceWithoutRevision }: {
@@ -276,24 +286,7 @@ export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData
         spacedUpdate.setUpdateInterval(updateInterval);
     }, [ updateInterval ]);
 
-    // Save if needed upon switching tabs.
-    useTriliumEvent("beforeNoteSwitch", async ({ noteContext: eventNoteContext }) => {
-        if (eventNoteContext.ntxId !== noteContext?.ntxId) return;
-        await spacedUpdate.updateNowIfNecessary();
-    });
-
-    // Save if needed upon tab closing.
-    useTriliumEvent("beforeNoteContextRemove", async ({ ntxIds }) => {
-        if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
-        await spacedUpdate.updateNowIfNecessary();
-    });
-
-    // Save if needed upon window/browser closing.
-    useEffect(() => {
-        const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();
-        appContext.addBeforeUnloadListener(listener);
-        return () => appContext.removeBeforeUnloadListener(listener);
-    }, []);
+    useSaveBeforeLeaving(spacedUpdate, noteContext);
 
     return spacedUpdate;
 }
@@ -1020,6 +1013,43 @@ export function useIsOnScreen(ref: RefObject<Element>, enabled: boolean) {
 }
 
 /**
+ * Whether the focus is in the element, including in an `<iframe>` or a `<webview>` inside it,
+ * which the document reports as its `activeElement`. Switching to another window keeps the value.
+ */
+export function useFocusWithin(ref: RefObject<HTMLElement>) {
+    const [ isFocusWithin, setIsFocusWithin ] = useState(false);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+
+        let timer: number | undefined;
+        const update = () => setIsFocusWithin(element.contains(document.activeElement));
+        // Reads the focus once it has moved: during `focusout`, the active element is the body.
+        const updateLater = () => {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(update);
+        };
+
+        update();
+        element.addEventListener("focusin", update);
+        element.addEventListener("focusout", updateLater);
+        // A frame taking or returning the focus fires no focus event inside the document.
+        window.addEventListener("blur", updateLater);
+        window.addEventListener("focus", updateLater);
+        return () => {
+            window.clearTimeout(timer);
+            element.removeEventListener("focusin", update);
+            element.removeEventListener("focusout", updateLater);
+            window.removeEventListener("blur", updateLater);
+            window.removeEventListener("focus", updateLater);
+        };
+    }, [ ref ]);
+
+    return isFocusWithin;
+}
+
+/**
  * `value`, held at true for `ms` after it turns false, for something that leaves the page with an
  * animation: what draws it keeps drawing it that long, and tells it that it is leaving.
  */
@@ -1394,6 +1424,21 @@ export function useLegacyComponentElement(elRef: RefObject<HTMLElement>) {
 }
 
 type ComponentElement = HTMLElement & { component?: Component };
+
+/** Whether the CSS media `query` matches, following it as the window changes. */
+export function useMediaQuery(query: string) {
+    const [ matches, setMatches ] = useState(() => window.matchMedia(query).matches);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(query);
+        const update = () => setMatches(mediaQuery.matches);
+        update();
+        mediaQuery.addEventListener("change", update);
+        return () => mediaQuery.removeEventListener("change", update);
+    }, [ query ]);
+
+    return matches;
+}
 
 /**
  * Registers this widget's contextual shortcut hints on its host component. When the user requests

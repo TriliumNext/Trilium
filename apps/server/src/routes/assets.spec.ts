@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getClientDir, getPdfjsAssetDir, getShareThemeAssetDir } from "./assets.js";
+import path from "path";
+
+import { getClientBuildDir, getClientDir, getPdfjsAssetDir, getShareThemeAssetDir } from "./assets.js";
 
 // The test runner sets NODE_ENV=development, which exercises the dev branch of
 // these path helpers. Toggle to production to cover the resource-dir branch too.
@@ -13,6 +15,7 @@ describe("assets path helpers", () => {
         expect(getShareThemeAssetDir()).toContain("share-theme");
         expect(getPdfjsAssetDir()).toContain("pdfjs-viewer");
         expect(getClientDir()).toContain("client");
+        expect(getClientBuildDir()).toBe(path.join(getClientDir(), "..", "dist"));
     });
 
     it("resolves resource-dir paths under production", () => {
@@ -20,5 +23,6 @@ describe("assets path helpers", () => {
         expect(getShareThemeAssetDir()).toContain("share-theme");
         expect(getPdfjsAssetDir()).toContain("pdfjs-viewer");
         expect(typeof getClientDir()).toBe("string");
+        expect(getClientBuildDir()).toBe(getClientDir());
     });
 });

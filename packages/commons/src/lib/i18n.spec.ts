@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { getEnglishName, getTesseractCode, isDisplayableLocale, LOCALES } from "./i18n.js";
+import {
+    getEnglishName,
+    getTesseractCode,
+    isDisplayableLocale,
+    LOCALES,
+    normalizeLocale
+} from "./i18n.js";
 
 describe("getTesseractCode", () => {
     it("returns the Tesseract code for a mapped locale", () => {
@@ -93,5 +99,15 @@ describe("getEnglishName", () => {
         expect(getEnglishName("zz", silent)).toBeNull();
         // The same formatter still names what it does know, so this is not just a broken one.
         expect(getEnglishName("ro", silent)).toBe("Romanian");
+    });
+});
+
+describe("normalizeLocale", () => {
+    it("turns Trilium locale ids into BCP 47 tags", () => {
+        expect(normalizeLocale("zh_CN")).toBe("zh-CN");
+        expect(normalizeLocale("cn")).toBe("zh-CN");
+        expect(normalizeLocale("tw")).toBe("zh-TW");
+        expect(normalizeLocale("pt_br")).toBe("pt-br");
+        expect(normalizeLocale("en")).toBe("en");
     });
 });

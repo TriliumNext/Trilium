@@ -288,7 +288,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
                 note.attachments = note.attachments.filter((att) => att.attachmentId !== attachment.attachmentId);
             }
 
-            loadResults.addAttachmentRow(attachmentEntity);
+            loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
 
             delete froca.attachments[ec.entityId];
         }
@@ -309,7 +309,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
         }
     }
 
-    loadResults.addAttachmentRow(attachmentEntity);
+    loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
 }
 
 export default {

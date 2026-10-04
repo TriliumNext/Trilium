@@ -1,5 +1,6 @@
 import becca from "../../becca/becca.js";
 import becca_service, { type SegmentTitleCache } from "../../becca/becca_service.js";
+import type { SearchableTitle } from "../../becca/entities/bnote.js";
 import type { ContentMatchQuality } from "./match_quality.js";
 import {
     calculateOptimizedEditDistance,
@@ -17,6 +18,10 @@ const SCORE_WEIGHTS = {
     TITLE_EXACT_MATCH: 2000,
     TITLE_PREFIX_MATCH: 500,
     TITLE_WORD_MATCH: 300,
+    // Added to a title match that also holds with the query's diacritics, so "ktorý" outranks
+    // "ktory" for the query "ktorý" and the other way round. Well below the gaps between the title
+    // tiers, so it only orders titles that differ in their diacritics.
+    TITLE_DIACRITIC_EXACT_BONUS: 50,
     TOKEN_EXACT_MATCH: 4,
     TOKEN_PREFIX_MATCH: 2,
     TOKEN_CONTAINS_MATCH: 1,
@@ -51,6 +56,10 @@ export interface ScoringTerms {
     normalizedQuery: string;
     queryWords: string[];
     normalizedTokens: string[];
+    /** The query with its diacritics kept, or `null` when it has none. */
+    accentedQuery: string | null;
+    /** The words of {@link accentedQuery}, empty when it is `null`. */
+    accentedQueryWords: string[];
     /**
      * Words per path segment title. Results under the same ancestors repeat those titles, so one
      * search tokenizes each distinct segment once instead of once per result.
@@ -60,10 +69,15 @@ export interface ScoringTerms {
 
 export function precomputeScoringTerms(fulltextQuery: string, tokens: string[]): ScoringTerms {
     const normalizedQuery = normalizeSearchText(fulltextQuery);
+    // `lex()` already lowercased the query, so it differs from its normalized form only in its
+    // diacritics.
+    const accentedQuery = fulltextQuery === normalizedQuery ? null : fulltextQuery;
 
     return {
         normalizedQuery,
         queryWords: tokenizeNormalizedText(normalizedQuery),
+        accentedQuery,
+        accentedQueryWords: accentedQuery ? tokenizeNormalizedText(accentedQuery) : [],
         normalizedTokens: tokens.map((token) => stripWordPunctuation(normalizeSearchText(token))),
         pathSegmentWords: new Map()
     };
@@ -76,10 +90,13 @@ class SearchResult {
     private __pathTitleSegments?: string[];
     private __notePathTitle?: string;
     highlightedNotePathTitle?: string;
+    highlightedNoteTitle?: string;
+    highlightedParentPathTitle?: string;
     contentSnippet?: string;
     highlightedContentSnippet?: string;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
+    matchedTerms?: string[];
     private fuzzyScore: number; // Track fuzzy score separately
 
     constructor(notePathArray: string[], segmentTitles?: SegmentTitleCache) {
@@ -109,6 +126,16 @@ class SearchResult {
         return this.__notePathTitle;
     }
 
+    /** The note's own segment of {@link notePathTitle}. */
+    get noteTitleSegment(): string {
+        return this.pathTitleSegments.at(-1) ?? "";
+    }
+
+    /** The segments of {@link notePathTitle} before the note's own, empty for a top-level note. */
+    get parentPathTitle(): string {
+        return this.pathTitleSegments.slice(0, -1).join(" › ");
+    }
+
     get notePath() {
         return this.notePathArray.join("/");
     }
@@ -122,9 +149,11 @@ class SearchResult {
         this.fuzzyScore = 0; // Reset fuzzy score tracking
 
         const note = becca.notes[this.noteId];
-        const { normalizedQuery, queryWords, normalizedTokens, pathSegmentWords } = terms ?? precomputeScoringTerms(fulltextQuery, tokens);
+        const scoringTerms = terms ?? precomputeScoringTerms(fulltextQuery, tokens);
+        const { normalizedQuery, queryWords, normalizedTokens, pathSegmentWords } = scoringTerms;
         // normalizeSearchText already lowercases — no need for .toLowerCase() first
-        const { normalized: normalizedTitle, words: titleWords } = note.getSearchableTitle();
+        const searchableTitle = note.getSearchableTitle();
+        const { normalized: normalizedTitle, words: titleWords } = searchableTitle;
 
         // Note ID exact match, much higher score
         if (note.noteId.toLowerCase() === fulltextQuery) {
@@ -132,17 +161,25 @@ class SearchResult {
         }
 
         // Title matching scores with fuzzy matching support
+        let titleTier: TitleTier | undefined;
         if (normalizedTitle === normalizedQuery) {
             this.score += SCORE_WEIGHTS.TITLE_EXACT_MATCH;
+            titleTier = "exact";
         } else if (normalizedTitle.startsWith(normalizedQuery)) {
             this.score += SCORE_WEIGHTS.TITLE_PREFIX_MATCH;
+            titleTier = "prefix";
         } else if (wordsContainPhrase(titleWords, queryWords)) {
             this.score += SCORE_WEIGHTS.TITLE_WORD_MATCH;
+            titleTier = "words";
         } else if (enableFuzzyMatching) {
             // Try fuzzy matching for typos only if enabled
             const fuzzyScore = this.calculateFuzzyTitleScore(normalizedTitle, normalizedQuery);
             this.score += fuzzyScore;
             this.fuzzyScore += fuzzyScore; // Track fuzzy score contributions
+        }
+
+        if (titleTier && normalizedQuery && matchesWithDiacritics(titleTier, searchableTitle, scoringTerms)) {
+            this.score += SCORE_WEIGHTS.TITLE_DIACRITIC_EXACT_BONUS;
         }
 
         // Add scores for token matches
@@ -311,3 +348,30 @@ class SearchResult {
 }
 
 export default SearchResult;
+
+type TitleTier = "exact" | "prefix" | "words";
+
+/**
+ * Whether a title that reached `tier` after normalization still reaches it with the diacritics of
+ * both sides kept. Without any on either side the two comparisons are the same one, so only an
+ * accented title or query pays for the second.
+ */
+function matchesWithDiacritics(tier: TitleTier, title: SearchableTitle, terms: ScoringTerms) {
+    if (title.accented === null && terms.accentedQuery === null) {
+        return true;
+    }
+
+    const titleText = title.accented ?? title.normalized;
+    const queryText = terms.accentedQuery ?? terms.normalizedQuery;
+    switch (tier) {
+        case "exact":
+            return titleText === queryText;
+        case "prefix":
+            return titleText.startsWith(queryText);
+        case "words":
+            return wordsContainPhrase(
+                title.accented === null ? title.words : tokenizeNormalizedText(title.accented),
+                terms.accentedQuery === null ? terms.queryWords : terms.accentedQueryWords
+            );
+    }
+}

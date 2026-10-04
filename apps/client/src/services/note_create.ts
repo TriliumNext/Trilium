@@ -59,7 +59,8 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
     options = Object.assign(
         {
             activate: true,
-            focus: "title",
+            // An AI chat takes its title from the first reply, so the input is what to type into.
+            focus: options.type === "llmChat" ? "content" : "title",
             target: "into"
         },
         options

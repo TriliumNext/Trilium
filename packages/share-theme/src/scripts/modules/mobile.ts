@@ -1,25 +1,10 @@
-
 export default function setupMobileMenu() {
-    function closeMobileMenus() {
-        document.body.classList.remove("menu-open");
-        document.body.classList.remove("toc-open");
-    }
+    // A listener on the backdrop itself, not on `window`: iOS Safari dispatches no `click` for a
+    // tap on an element it does not consider clickable, and `window` listeners do not count.
+    document.getElementById("mobile-backdrop")?.addEventListener("click", closeMobileMenus);
+}
 
-    window.addEventListener("click", e => {
-        const isMenuOpen = document.body.classList.contains("menu-open");
-        const isTocOpen = document.body.classList.contains("toc-open");
-        if (!isMenuOpen && !isTocOpen) return;
-
-        const target = e.target as HTMLElement;
-
-        // If the click was anywhere in the mobile nav or TOC, don't close
-        if (target.closest("#left-pane")) return;
-        if (target.closest("#toc-pane")) return;
-
-        // If the click was on one of the toggle buttons, the button's own listener will handle it
-        if (target.closest(".header-button")) return;
-
-        return closeMobileMenus();
-    });
-
+export function closeMobileMenus() {
+    document.body.classList.remove("menu-open");
+    document.body.classList.remove("toc-open");
 }

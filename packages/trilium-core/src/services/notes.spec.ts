@@ -622,6 +622,32 @@ describe("notes service (real DB)", () => {
                 /not available for change/
             );
         });
+
+        it("updates an attachment of the note by its ID and skips any other attachment ID", () => {
+            const note = createNote("root", { title: "spec-update-att", content: "<p>x</p>" }).note;
+            const other = createNote("root", { title: "spec-update-att-other" }).note;
+            const attachment = { role: "file", mime: "application/json", title: "canvas.json" };
+            const save = (owner: BNote, content: string) =>
+                getContext().init(() => owner.saveAttachment({ ...attachment, content }));
+            const own = save(note, "old");
+            const foreign = save(other, "theirs");
+            const row = (attachmentId: string | undefined, content: string) =>
+                ({ ...attachment, attachmentId, ownerId: note.noteId, content });
+            // `becca.getAttachment()` reads the row again, with its current blob.
+            const contentOf = (attachmentId: string | undefined) =>
+                attachmentId ? becca.getAttachment(attachmentId)?.getContent() : undefined;
+
+            getContext().init(() => noteService.updateNoteData(note.noteId, "<p>x</p>", [
+                row(own.attachmentId, "new"),
+                row(foreign.attachmentId, "mine"),
+                row("deletedAttachment99", "gone")
+            ]));
+
+            expect(contentOf(own.attachmentId)).toBe("new");
+            expect(contentOf(foreign.attachmentId)).toBe("theirs");
+            expect(note.getAttachments().map((a) => a.attachmentId))
+                .toStrictEqual([ own.attachmentId ]);
+        });
     });
 
     describe("duplicateSubtree", () => {

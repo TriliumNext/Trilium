@@ -286,6 +286,12 @@ $$`;
             <pre><code class="language-text-x-trilium-auto">$$a+b$$</code></pre>`);
     });
 
+    it("imports dollar amounts as literal text (#5682)", () => {
+        const input = `Assembled Item A has an Avg cost of $15. A Raw Material has an Avg cost of $6.`;
+        const expected = /*html*/`<p>Assembled Item A has an Avg cost of $15. A Raw Material has an Avg cost of $6.</p>`;
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
     it("converts specific inline math expression into Mathtex format", () => {
         const input = `This is a formula: $\\mathcal{L}_{task} + \\mathcal{L}_{od}$ inside a sentence.`;
         const expected = /*html*/`<p>This is a formula: <span class="math-tex">\\(\\mathcal{L}_{task} + \\mathcal{L}_{od}\\)</span> inside a sentence.</p>`;
@@ -442,6 +448,24 @@ $$`;
         expect(markdownService.renderToHtml(markdownExportService.toMarkdown(original), "Title")).toStrictEqual(original);
     });
 
+    it("round-trips a list nested under a multi-digit ordered item through the Markdown exporter", () => {
+        for (const position of [ 9, 10, 100 ]) {
+            const siblings = Array.from({ length: position - 1 }, (_, index) => `<li>Item ${index + 1}</li>`).join("");
+            const original = `<ol>${siblings}<li>Parent<ol><li>First</li><li>Second</li></ol></li></ol>`;
+            expect(markdownService.renderToHtml(markdownExportService.toMarkdown(original), "Title"), `item ${position}`)
+                .toStrictEqual(original);
+        }
+    });
+
+    it("keeps the starting number of an ordered list, including through the Markdown exporter", () => {
+        const input = trimIndentation`\
+            3.  Third
+            4.  Fourth`;
+        const expected = `<ol start="3"><li>Third</li><li>Fourth</li></ol>`;
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+        expect(markdownService.renderToHtml(markdownExportService.toMarkdown(expected), "Title")).toStrictEqual(expected);
+    });
+
     it("imports todo list multistate markers as data-trilium-task-state and titles the <li> with the state's human name", () => {
         // The `title` attribute mirrors what the CKEditor data downcast emits — it's
         // the hover tooltip viewers of the shared page, the read-only preview and
@@ -503,6 +527,23 @@ $$`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
         // Sanitization drops an empty attribute, so nothing comes back holding `style=";"`.
         expect(markdownService.renderToHtml(`<p style="">Empty</p>`, "Title")).toStrictEqual(`<p>Empty</p>`);
+    });
+
+    it("brings an exported icon back in the form it left", () => {
+        // The User Guide is kept as Markdown and read back from it, so an icon the exporter gives
+        // up on is gone from the note as well on the next pass through `edit-docs`.
+        const cog = `<span class="tn-icon bx bx-cog"></span>`;
+
+        for (const html of [
+            `<p>Press ${cog} to open it.</p>`,
+            `<p>${cog}</p>`,
+            `<p>a<span style="color:rgb(255,0,0);">${cog}</span>b</p>`,
+            `<ul><li>In a list ${cog} here</li></ul>`
+        ]) {
+            const markdown = markdownExportService.toMarkdown(html);
+
+            expect(markdownService.renderToHtml(markdown, "Title")).toStrictEqual(html);
+        }
     });
 
     describe("collapsible blocks", () => {

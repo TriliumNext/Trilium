@@ -48,10 +48,7 @@ function ContentItemMenu({ note, categories }: { note: FNote, categories: Conten
         <Dropdown
             className="active-content-item-menu"
             buttonClassName="note-book-item-menu bx bx-dots-vertical-rounded"
-            hideToggleArrow noSelectButtonStyle noDropdownListStyle iconAction
-            // Out of the row and into the body: nested, the open menu would still count as hovering
-            // the row, leaving it highlighted while the cursor is over the menu.
-            portalToBody
+            hideToggleArrow noSelectButtonStyle iconAction
             // Asked for as a sheet rather than dressed as one: the prop brings the cover over the
             // rest of the screen with it, which the class alone does not.
             mobileBottomSheet
@@ -536,7 +533,7 @@ function SortOrderMenu({ currentValue, onChange }: { currentValue: string, onCha
     return (
         <Dropdown
             buttonClassName="bx bx-sort"
-            hideToggleArrow noSelectButtonStyle noDropdownListStyle iconAction
+            hideToggleArrow noSelectButtonStyle iconAction
             title={t("content_manager.sort_order")}
             mobileBottomSheet
         >

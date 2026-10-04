@@ -83,7 +83,6 @@ export interface ComboBoxProperty {
      */
     defaultValue?: string;
     options: (ComboBoxItem | Separator | ComboBoxGroup)[];
-    dropStart?: boolean;
 }
 
 export interface SubmenuProperty {
@@ -266,7 +265,6 @@ function ComboBoxPropertyView({ note, property }: { note: FNote, property: Combo
         <FormDropdownSubmenu
             title={<PropertyLabel property={property} />}
             icon={property.icon ?? "bx bx-empty"}
-            dropStart={property.dropStart}
         >
             {(property.options).map((option, index) => {
                 if ("items" in option) {

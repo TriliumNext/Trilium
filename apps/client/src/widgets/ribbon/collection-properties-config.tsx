@@ -160,7 +160,7 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 type: "checkbox",
                 icon: "bx bx-inbox",
                 helpTooltip: t("book_properties_config.board-inbox-column-help"),
-                bindToLabel: "enableInboxColumn"
+                bindToLabel: "board:showInbox"
             }
         ]
     },

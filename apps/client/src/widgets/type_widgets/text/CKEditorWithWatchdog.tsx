@@ -10,7 +10,7 @@ import type { AiNoteLocation } from "./ai_assistant_stream";
 import { useAiMenuFooter, useAiQuickActions } from "./ai_quick_actions";
 import { buildConfig, BuildEditorOptions } from "./config";
 
-export type BoxSize = "small" | "medium" | "full" | "expandable";
+export type BoxSize = "tiny" | "small" | "medium" | "full" | "expandable";
 
 export interface CKEditorApi {
     /** returns true if user selected some text, false if there's no selection */
@@ -19,7 +19,7 @@ export interface CKEditorApi {
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): void;
     addLinkToEditor(linkHref: string, linkTitle: string): void;
     addHtmlToEditor(html: string): void;
-    addIncludeNote(noteId: string, boxSize?: BoxSize): void;
+    addContentEmbed(noteId: string, boxSize?: BoxSize): void;
     addImage(noteId: string): Promise<void>;
 }
 
@@ -47,6 +47,7 @@ interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "cla
     watchdogRef: RefObject<EditorWatchdog>;
     watchdogConfig?: WatchdogConfig;
     onNotificationWarning?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
+    onNotificationInfo?: (evt: NotificationEventInfo, data: NotificationEventData) => void;
     onWatchdogStateChange?: (watchdog: EditorWatchdog) => void;
     onChange: () => void;
     /** Called upon whenever a new CKEditor instance is initialized, whether it's the first initialization, after a crash or after a config change that requires it (e.g. content language). */
@@ -56,7 +57,7 @@ interface CKEditorWithWatchdogProps extends Pick<HTMLProps<HTMLDivElement>, "cla
     containerRef?: RefObject<HTMLDivElement>;
 }
 
-export default function CKEditorWithWatchdog({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, watchdogRef: externalWatchdogRef, watchdogConfig, onNotificationWarning, onWatchdogStateChange, onChange, onEditorInitialized, editorApi, templates }: CKEditorWithWatchdogProps) {
+export default function CKEditorWithWatchdog({ containerRef: externalContainerRef, contentLanguage, className, tabIndex, isClassicEditor, watchdogRef: externalWatchdogRef, watchdogConfig, onNotificationWarning, onNotificationInfo, onWatchdogStateChange, onChange, onEditorInitialized, editorApi, templates }: CKEditorWithWatchdogProps) {
     const containerRef = useSyncedRef<HTMLDivElement>(externalContainerRef, null);
     const watchdogRef = useRef<EditorWatchdog>(null);
     // Serializes editor build/teardown so overlapping effect runs never operate on the same
@@ -71,9 +72,10 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     const templatesRef = useRef(templates);
     templatesRef.current = templates;
     const [ uiLanguage ] = useTriliumOption("locale");
-    // Read purely as a rebuild trigger: the value is consumed by buildToolbarConfig() via options.get() at
-    // editor-creation time, so the editor must be recreated when it changes.
+    // Read purely as rebuild triggers: config builders consume the values through options.get() at
+    // editor-creation time, so the editor must be recreated when either changes.
     const [ multilineToolbar ] = useTriliumOptionBool("textNoteEditorMultilineToolbar");
+    const [ mathFieldEnabled ] = useTriliumOptionBool("mathFieldEnabled");
     // Rebuild triggers for the same reason, and there is no cheaper option for these: CKEditor bakes
     // the transformation list at plugin init — `normalizeTransformations` runs once inside
     // `_enableTransformationWatchers` — so unlike the settings read through a getter (link previews,
@@ -168,15 +170,15 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 }
             });
         },
-        addIncludeNote(noteId, boxSize) {
+        addContentEmbed(noteId, boxSize) {
             const editor = watchdogRef.current?.editor;
             if (!editor) return;
 
             editor?.model.change((writer) => {
-                // Insert <includeNote>*</includeNote> at the current selection position
+                // Insert <contentEmbed>*</contentEmbed> at the current selection position
                 // in a way that will result in creating a valid model structure
                 editor?.model.insertContent(
-                    writer.createElement("includeNote", {
+                    writer.createElement("contentEmbed", {
                         noteId,
                         boxSize
                     })
@@ -343,7 +345,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         // makes them apply to an already-open note; it costs the cursor position and undo history,
         // which is acceptable for a change made deliberately over in the settings.
     }, [
-        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar,
+        contentLanguage, uiLanguage, isClassicEditor, multilineToolbar, mathFieldEnabled,
         doubleQuoteStyle, singleQuoteStyle, punctuationReplacements, mathReplacements, symbolReplacements,
         customReplacements, defaultContentLanguage, htmlSupportEnabled, allowedHtmlTags,
         aiEnabled, llmProviders
@@ -384,6 +386,13 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         notificationPlugin.on("show:warning", onNotificationWarning);
         return () => notificationPlugin.off("show:warning", onNotificationWarning);
     }, [ editor, onNotificationWarning ]);
+
+    useEffect(() => {
+        if (!onNotificationInfo || !editor) return;
+        const notificationPlugin = editor.plugins.get("Notification");
+        notificationPlugin.on("show:info", onNotificationInfo);
+        return () => notificationPlugin.off("show:info", onNotificationInfo);
+    }, [ editor, onNotificationInfo ]);
 
     // React to on change listener.
     useEffect(() => {

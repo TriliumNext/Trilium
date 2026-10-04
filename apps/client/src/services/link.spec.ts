@@ -156,6 +156,47 @@ describe("parseNavigationStateFromUrl", () => {
         // hash present at index 0, but the path is too short to be a valid note id
         expect(parseNavigationStateFromUrl("#ab")).toStrictEqual({});
     });
+
+    it("parses the app's own address with a query or a slash-less sub-path before the hash", () => {
+        const note = { notePath: "root/WWaBNf3SSA1b", noteId: "WWaBNf3SSA1b" };
+        const desktop = new URL("https://host/?desktop");
+        const mobile = new URL("https://host/?mobile");
+        const subPath = new URL("https://host/trilium");
+
+        expect(parseNavigationStateFromUrl("https://host/?desktop#root/WWaBNf3SSA1b", desktop))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/?mobile#root/WWaBNf3SSA1b", mobile))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/trilium#root/WWaBNf3SSA1b", subPath))
+            .toMatchObject(note);
+        expect(parseNavigationStateFromUrl("https://host/?desktop#?searchString=hello", desktop))
+            .toMatchObject({ searchString: "hello" });
+
+        // Another origin or another pathname is an external document, whatever its hash holds.
+        expect(parseNavigationStateFromUrl("https://other/?desktop#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+        expect(parseNavigationStateFromUrl("https://host/wiki/Page?x=1#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+
+        // A different query string, such as the `?print` entry point, is an external document too.
+        expect(parseNavigationStateFromUrl("https://host/?print#root/WWaBNf3SSA1b", new URL("https://host/")))
+            .toStrictEqual({});
+        expect(parseNavigationStateFromUrl("https://host/?print#root/WWaBNf3SSA1b", desktop))
+            .toStrictEqual({});
+    });
+
+    it("compares against window.location by default", () => {
+        const { happyDOM } = window as unknown as { happyDOM: { setURL(url: string): void } };
+        const previousUrl = window.location.href;
+        happyDOM.setURL("https://host/?desktop");
+
+        try {
+            expect(parseNavigationStateFromUrl("https://host/?desktop#root/WWaBNf3SSA1b"))
+                .toMatchObject({ notePath: "root/WWaBNf3SSA1b" });
+        } finally {
+            happyDOM.setURL(previousUrl);
+        }
+    });
 });
 
 describe("calculateHash", () => {
@@ -736,6 +777,22 @@ describe("goToLinkExt", () => {
         expect(triggerCommand).not.toHaveBeenCalled();
     });
 
+    it("opens nothing on a right click on a target=_blank link, leaving it to the context menu", () => {
+        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+        // Browsers fire auxclick for the right button as well as the middle one.
+        const rightClick = () => ({ type: "auxclick", which: 3, preventDefault: vi.fn(), stopPropagation: vi.fn() }) as any;
+
+        goToLinkExt(rightClick(), "https://example.com", $("<a>").attr({ href: "https://example.com", target: "_blank" }));
+        goToLinkExt(rightClick(), "#root/aaaaaaaaaaaa", $("<a>").attr({ href: "#root/aaaaaaaaaaaa", target: "_blank" }));
+        expect(openSpy).not.toHaveBeenCalled();
+        expect(openTabWithNoteWithHoisting).not.toHaveBeenCalled();
+
+        // A left click on the same link still opens it in a new tab.
+        goToLinkExt(leftClick(), "#root/aaaaaaaaaaaa", $("<a>").attr({ href: "#root/aaaaaaaaaaaa", target: "_blank" }));
+        expect(openTabWithNoteWithHoisting).toHaveBeenCalledWith("root/aaaaaaaaaaaa", expect.objectContaining({ activate: true }));
+        openSpy.mockRestore();
+    });
+
     it("does not handle a non-root hash anchor that does not resolve to an element", () => {
         const $link = $("<a>").attr("href", "#missing-anchor");
         // no .ck-content ancestor containing #missing-anchor => handleAnchor returns false
@@ -769,18 +826,27 @@ describe("getReferenceLinkTitle / getReferenceLinkTitleSync", () => {
         expect(await linkService.getReferenceLinkTitle(`#root/${note.noteId}`)).toBe("Referenced");
     });
 
-    it("getReferenceLinkTitle resolves attachment titles", async () => {
+    it("getReferenceLinkTitle resolves an attachment among those of the linked note", async () => {
         const note = buildNote({ title: "WithAtt" });
-        note.getAttachmentById = vi.fn(async () => ({ title: "Att" }) as any);
-        const title = await linkService.getReferenceLinkTitle(`#root/${note.noteId}?viewMode=attachments&attachmentId=a1`);
+        note.attachments = [];
+        const getAttachmentOfNote = vi.spyOn(froca, "getAttachmentOfNote")
+            .mockResolvedValue({ title: "Att" } as any);
+        const title = await linkService.getReferenceLinkTitle(
+            `#root/${note.noteId}?viewMode=attachments&attachmentId=a1`
+        );
         expect(title).toBe("Att");
+        expect(getAttachmentOfNote).toHaveBeenCalledWith(note.noteId, "a1");
+        getAttachmentOfNote.mockRestore();
     });
 
     it("getReferenceLinkTitle returns [missing attachment] when attachment not found", async () => {
         const note = buildNote({ title: "WithAtt2" });
-        note.getAttachmentById = vi.fn(async () => null as any);
-        const title = await linkService.getReferenceLinkTitle(`#root/${note.noteId}?viewMode=attachments&attachmentId=a2`);
+        const getAttachmentOfNote = vi.spyOn(froca, "getAttachmentOfNote").mockResolvedValue(null);
+        const title = await linkService.getReferenceLinkTitle(
+            `#root/${note.noteId}?viewMode=attachments&attachmentId=a2`
+        );
         expect(title).toBe("[missing attachment]");
+        getAttachmentOfNote.mockRestore();
     });
 
     it("getReferenceLinkTitleSync covers missing note, attachments and bookmark variants", () => {

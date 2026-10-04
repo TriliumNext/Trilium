@@ -48,8 +48,18 @@ export function readIconFontMetrics(fontPath: string): IconPackManifest["metrics
         return undefined;
     }
 
+    return measureFont(font);
+}
+
+/**
+ * The metrics of an icon font already parsed or built by `opentype.js`.
+ *
+ * @param font the font to measure.
+ * @returns the metrics, or `undefined` where the font says too little to correct.
+ */
+export function measureFont(font: opentype.Font): IconPackManifest["metrics"] {
     const inkCentres: number[] = [];
-    for (const glyph of Object.values(font.glyphs.glyphs)) {
+    for (const glyph of Object.values(font.glyphs.glyphs) as opentype.Glyph[]) {
         if (!glyph.unicode) continue;
 
         const box = glyph.getBoundingBox();

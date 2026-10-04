@@ -82,11 +82,13 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                         recommended: true,
                         name: t("download_helper_desktop_linux.download_rpm")
                     },
+                    flathub: {
+                        recommended: true,
+                        name: t("download_helper_desktop_linux.download_flathub"),
+                        url: "https://flathub.org/en/apps/org.triliumnotes.Trilium"
+                    },
                     AppImage: {
                         name: t("download_helper_desktop_linux.download_appimage")
-                    },
-                    flatpak: {
-                        name: t("download_helper_desktop_linux.download_flatpak")
                     },
                     zip: {
                         name: t("download_helper_desktop_linux.download_zip")

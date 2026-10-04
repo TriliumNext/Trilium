@@ -332,7 +332,14 @@ function isExtraWindowUrl(url: string, hashIdx: number) {
     return /[?&]extraWindow(?:[=&]|$)/.test(url.slice(0, hashIdx));
 }
 
-export function parseNavigationStateFromUrl(url: string | undefined) {
+/**
+ * Parses the navigation state in the hash of `url`. A full URL is internal when it addresses the
+ * document at `location` or has an accepted internal form. Any other URL is external: `{}`.
+ */
+export function parseNavigationStateFromUrl(
+    url: string | undefined,
+    location: UrlParts = window.location
+) {
     if (!url) {
         return {};
     }
@@ -346,7 +353,13 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
     const isExtraWindow = isExtraWindowUrl(url, hashIdx);
 
     // Exclude external links that contain #
-    if (hashIdx !== 0 && !url.includes("/#root") && !url.includes("/#?searchString") && !isExtraWindow) {
+    if (
+        hashIdx !== 0
+        && !url.includes("/#root")
+        && !url.includes("/#?searchString")
+        && !isExtraWindow
+        && !isSameDocumentUrl(url, hashIdx, location)
+    ) {
         return {};
     }
 
@@ -424,6 +437,14 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
         splits,
         activeSplit
     };
+}
+
+/** Whether `url` addresses the document at `location`, query string included, hash ignored. */
+function isSameDocumentUrl(url: string, hashIdx: number, location: UrlParts) {
+    const documentUrl = url.slice(0, hashIdx);
+
+    const { protocol, host, pathname, search } = location;
+    return documentUrl === `${protocol}//${host}${pathname}${search}`;
 }
 
 /** Iterates the `name=value` pairs of a hash's parameter string, decoding both sides. */
@@ -531,7 +552,7 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
     const isMiddleClick = evt && "which" in evt && evt.which === 2;
     const targetIsBlank = ($link?.attr("target") === "_blank");
     const isDoubleClick = isLeftClick && evt?.type === "dblclick";
-    const openInNewTab = (isLeftClick && ctrlKey) || isDoubleClick || isMiddleClick || targetIsBlank;
+    const openInNewTab = (isLeftClick && (ctrlKey || targetIsBlank)) || isDoubleClick || isMiddleClick;
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
 
@@ -697,7 +718,8 @@ async function getReferenceLinkTitle(href: string) {
     }
 
     if (viewScope?.viewMode === "attachments" && viewScope?.attachmentId) {
-        const attachment = await note.getAttachmentById(viewScope.attachmentId);
+        // `froca.getAttachmentOfNote()` reloads the attachments when the cached list lacks it.
+        const attachment = await froca.getAttachmentOfNote(noteId, viewScope.attachmentId);
 
         return attachment ? attachment.title : "[missing attachment]";
     }

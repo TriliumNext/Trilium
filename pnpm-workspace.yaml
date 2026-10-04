@@ -23,22 +23,25 @@ overrides:
   # facets to work. A partial bump leaves two copies in the tree, which breaks
   # both typechecking (nominal type clashes) and runtime (lint markers, etc.).
   # Keep every core singleton pinned here so the whole tree resolves to one copy.
-  "@codemirror/view": "6.43.12"
-  "@codemirror/state": "6.7.5"
+  "@codemirror/view": "6.43.13"
+  "@codemirror/state": "6.7.6"
   "@codemirror/language": "6.12.4"
   "@codemirror/commands": "6.11.1"
   "@codemirror/autocomplete": "6.20.3"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
-  "@lezer/common": "1.5.2"
-  "@lezer/highlight": "1.2.3"
+  "@lezer/common": "1.5.3"
+  "@lezer/highlight": "1.2.5"
   "@lezer/lr": "1.4.10"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in
   # step: `ai` and the OpenAI/Google providers ask for one, the Anthropic provider for another. Two
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
   # built by one provider stops being assignable to the ToolSet `ai` expects (TS2322 on the Anthropic
   # web-search tool). Pin the version `ai` itself is built against, and raise it with the next bump.
-  "@ai-sdk/provider-utils": "5.0.41"
+  "@ai-sdk/provider-utils": "5.0.53"
+  # The Codex provider runs the adapter against the user's own `codex` (CODEX_PATH), so the
+  # 300-400 MB native Codex build the adapter depends on is never used.
+  "@agentclientprotocol/codex-acp>@openai/codex": "-"
   "zod": "4.6.5"
   "mermaid": "12.0.0"
   "preact": "10.29.8"
@@ -75,9 +78,9 @@ overrides:
   "fast-xml-parser@>=4.0.0-beta.3 <5.5.7": ">=5.5.7"
   "path-to-regexp@<0.1.13": ">=0.1.13"
   "path-to-regexp@>=8.0.0 <8.4.0": ">=8.4.0"
-  "brace-expansion@<1.1.13": ">=1.1.13"
-  "brace-expansion@>=2.0.0 <2.0.3": ">=2.0.3"
-  "brace-expansion@>=4.0.0 <5.0.5": ">=5.0.5"
+  "brace-expansion@<1.1.21": "^1.1.21"
+  "brace-expansion@>=2.0.0 <2.1.7": "^2.1.7"
+  "brace-expansion@>=4.0.0 <5.0.12": "^5.0.12"
   "picomatch@<2.3.2": ">=2.3.2"
   "picomatch@>=4.0.0 <4.0.4": ">=4.0.4"
   "yaml@>=1.0.0 <1.10.3": ">=1.10.3"
@@ -93,7 +96,7 @@ overrides:
   "handlebars@<4.7.9": ">=4.7.9"
   "qs@<6.14.2": ">=6.14.2"
   "minimatch@<3.1.4": "^3.1.4"
-  "minimatch@3>brace-expansion": "^1.1.13"
+  "minimatch@3>brace-expansion": "^1.1.21"
   "serialize-javascript@<7.0.5": ">=7.0.5"
   "webpack@<5.104.1": ">=5.104.1"
   "file-type@>=13.0.0 <21.3.1": ">=21.3.1"
@@ -124,6 +127,7 @@ ignoredOptionalDependencies:
 patchedDependencies:
   '@excalidraw/excalidraw@0.18.1': patches/@excalidraw__excalidraw@0.18.1.patch
   html@1.0.0: patches/html@1.0.0.patch
+  react-zoom-pan-pinch@4.2.0: patches/react-zoom-pan-pinch@4.2.0.patch
 
 allowBuilds:
   "@parcel/watcher": false
@@ -141,3 +145,4 @@ allowBuilds:
   spawn-sync: true
   sqlite3: false
   tesseract.js: true
+  ttf2woff2: false

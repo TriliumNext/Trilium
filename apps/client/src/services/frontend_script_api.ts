@@ -776,7 +776,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
 
     this.waitUntilSynced = ws.waitForMaxKnownEntityChangeId;
 
-    this.refreshIncludedNote = (includedNoteId) => appContext.triggerEvent("refreshIncludedNote", { noteId: includedNoteId });
+    this.refreshIncludedNote = (includedNoteId) => appContext.triggerEvent("refreshEmbeddedNote", { noteId: includedNoteId });
 
     this.randomString = utils.randomString;
     this.formatSize = utils.formatSize;

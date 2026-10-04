@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import { installGlobMock } from "../../test/globals-test-kit.js";
-import UploadimagePlugin from "./uploadimage.js";
+import UploadimagePlugin, {
+    isUploadAsLink,
+    uploadAsLink
+} from "./uploadimage.js";
 
 /**
  * A fake XMLHttpRequest that records the calls the adapter makes and lets the
@@ -95,7 +98,9 @@ describe("UploadimagePlugin", () => {
         getHeaders = vi.fn(async () => ({ Authorization: "Bearer token", "x-csrf": "abc" }));
         installGlobMock({
             getHeaders,
-            getActiveContextNote: () => ({ noteId: "noteAbc" })
+            getActiveContextNote: () => ({ noteId: "noteAbc" }),
+            // A host whose editor does not name its note, such as the chat input.
+            getComponentByEl: () => ({})
         });
 
         originalXHR = window.XMLHttpRequest;
@@ -156,6 +161,34 @@ describe("UploadimagePlugin", () => {
         xhr.fireLoad();
 
         await expect(uploadPromise).resolves.toEqual({ default: "http://example.com/pic.png" });
+    });
+
+    it("uploads to the note its editor holds, rather than to the active tab's", async () => {
+        installGlobMock({
+            getHeaders,
+            getActiveContextNote: () => ({ noteId: "noteAbc" }),
+            getComponentByEl: () => ({ componentId: "editor1", getNoteId: () => "editorNote" })
+        });
+
+        void createAdapter(new File(["content"], "pic.png", { type: "image/png" })).upload();
+
+        expect((await awaitSentXhr()).url).toBe("api/notes/editorNote/attachments/upload");
+        // As a change of the editor, which then does not redraw the embed it completes.
+        expect(getHeaders).toHaveBeenCalledWith({ "trilium-component-id": "editor1" });
+    });
+
+    it("asks for a link only for a loader marked to upload as one", async () => {
+        const fileRepository = editor.plugins.get(FileRepository);
+        const marked = createFakeLoader(new File(["content"], "pic.png", { type: "image/png" }));
+        uploadAsLink(marked);
+        expect(isUploadAsLink(marked)).toBe(true);
+
+        void fileRepository.createUploadAdapter?.(marked).upload();
+        expect((await awaitSentXhr()).url).toBe("api/notes/noteAbc/attachments/upload?link=true");
+
+        FakeXHR.last = undefined;
+        void createAdapter(new File(["content"], "pic.png", { type: "image/png" })).upload();
+        expect((await awaitSentXhr()).url).toBe("api/notes/noteAbc/attachments/upload");
     });
 
     it("rejects with the server error message when the response carries one", async () => {

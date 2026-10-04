@@ -30,13 +30,6 @@ declare module "draggabilly" {
     }
 }
 
-declare module "katex/contrib/auto-render" {
-    var renderMathInElement: (element: HTMLElement, options: {
-        trust: boolean;
-    }) => void;
-    export default renderMathInElement;
-}
-
 declare global {
     /** Geometry of the title bar area left free by the native window controls, and changes to it. */
     interface WindowControlsOverlay extends EventTarget {

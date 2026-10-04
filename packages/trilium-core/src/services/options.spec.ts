@@ -51,6 +51,28 @@ describe("options service (real DB)", () => {
             }
         });
 
+        it("does not query the options table while becca is not loaded and the table does not exist", () => {
+            // A query against a missing table fails and sql.ts logs it, even though the caller expects it.
+            const sql = getSql();
+            const originalGetValue = sql.getValue.bind(sql);
+            const getValueSpy = vi.spyOn(sql, "getValue").mockImplementation((query, params) =>
+                query.includes("sqlite_master") ? null : originalGetValue(query, params)
+            );
+            const getRowSpy = vi.spyOn(sql, "getRow");
+            const wasLoaded = becca.loaded;
+            becca.loaded = false;
+
+            try {
+                expect(optionService.getOptionOrNull("mainFontSize" as any)).toBeNull();
+                expect(getValueSpy).toHaveBeenCalledWith(expect.stringContaining("sqlite_master"));
+                expect(getRowSpy).not.toHaveBeenCalled();
+            } finally {
+                becca.loaded = wasLoaded;
+                getValueSpy.mockRestore();
+                getRowSpy.mockRestore();
+            }
+        });
+
         it("throws from getOption for a non-existent option", () => {
             expect(() => optionService.getOption("doesNotExistOption" as any)).toThrow(
                 /doesn't exist/

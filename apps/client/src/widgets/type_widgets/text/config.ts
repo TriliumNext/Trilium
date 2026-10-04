@@ -8,16 +8,17 @@ import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
 import { getMermaidConfig } from "../../../services/mermaid.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
-import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { isMac } from "../../../services/utils.js";
+import { isMac, openInAppHelpFromUrl } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
 import diffAiResponse from "./ai_diff.js";
+import { buildFontColorConfig, buildTableColorConfig } from "./color_palette.js";
+import { createEmojiList, createNoteMentionList, createSlashCommandList } from "./mention_list_view.js";
 import { buildQuoteTransformation, resolveQuoteSetting } from "./quotes.js";
 import { buildCustomTransformations, parseCustomReplacements } from "./replacements.js";
 import { buildToolbarConfig } from "./toolbar.js";
@@ -34,7 +35,8 @@ export interface BuildEditorOptions {
     contentLanguage: string | null;
     templates: SnippetDefinition[];
     /**
-     * Names the note the editor is open on, for the AI assistant to say where a run is writing.
+     * Names the note the editor is open on, for the AI assistant to say where a run is writing and
+     * for the `@` list to create a child note under.
      * A getter rather than the note itself: switching notes reuses the editor, so anything captured
      * here would name the note that happened to be open when it was built.
      */
@@ -61,12 +63,14 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             enablePreview: true, // Enable preview view
             // Map MathLive-only commands (e.g. \differentialD) onto KaTeX equivalents so
             // formulas produced by the visual editor render instead of erroring out (#9523).
-            katexRenderOptions: { macros: KATEX_MACROS }
+            katexRenderOptions: { macros: KATEX_MACROS },
+            enableMathField: options.get("mathFieldEnabled") !== "false"
         },
         mermaid: {
             lazyLoad: async () => (await import("mermaid")).default, // FIXME
             config: getMermaidConfig(),
-            samples: SAMPLE_DIAGRAMS
+            samples: SAMPLE_DIAGRAMS,
+            openHelp: () => openInAppHelpFromUrl("s1aBHPd79XYj")
         },
         image: {
             styles: {
@@ -144,7 +148,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             ]
         },
         table: {
-            contentToolbar: ["tableColumn", "tableRow", "mergeTableCells", "tableProperties", "tableCellProperties", "toggleTableCaption"]
+            contentToolbar: [
+                "tableColumn", "tableRow", "mergeTableCells", "tableSort", "tableProperties",
+                "tableCellProperties", "toggleTableCaption"
+            ],
+            ...buildTableColorConfig()
         },
         list: {
             properties: {
@@ -156,6 +164,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         alignment: {
             options: [ "left", "right", "center", "justify"]
         },
+        ...buildFontColorConfig(),
         link: {
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS,
@@ -175,7 +184,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         emoji: {
             definitionsUrl: window.glob.isDev
                 ? new URL(import.meta.url).origin + emojiDefinitionsUrl
-                : emojiDefinitionsUrl
+                : emojiDefinitionsUrl,
+            list: createEmojiList
         },
         syntaxHighlighting: {
             loadHighlightJs: async () => {
@@ -195,7 +205,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             // Mermaid one (generic icon) and the list ones (Title Case titles, normalized to
             // sentence case).
             removeCommands: ["insertMermaidCommand", "bulletedList", "numberedList"],
-            dropdownLimit: Number.MAX_SAFE_INTEGER
+            list: createSlashCommandList
         },
         snippets: {
             definitions: opts.templates
@@ -267,6 +277,10 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         embedImage: (src: string) => imageService.embedReferenceImageAsDataUrl(src)
     };
 
+    // Table sorting reads dates inserted in the user's own format.
+    const customDateTimeFormat = options.get("customDateTimeFormat");
+    config.autoSort = { dateFormats: customDateTimeFormat ? [customDateTimeFormat] : [] };
+
     // The language this note is written in, which governs both its text direction and which
     // typographic quotes typing produces.
     //
@@ -290,45 +304,21 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
 
     config.typing = { transformations: buildTransformationsConfig(contentLanguage) };
 
-    // Mention customisation.
-    if (options.get("textNoteCompletionEnabled") === "true") {
-        config.mention = {
-            feeds: [
-                {
-                    marker: "@",
-                    feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText),
-                    itemRenderer: (item) => {
-                        const suggestion = item as Suggestion;
-                        const itemElement = document.createElement("button");
-                        itemElement.className = "note-mention-suggestion";
-
-                        const iconElement = document.createElement("span");
-                        // Choose appropriate icon based on action
-                        let iconClass = suggestion.icon ?? "bx bx-note";
-                        if (suggestion.action === "create-note") {
-                            iconClass = "bx bx-plus";
-                        } else if (suggestion.action === "create-child-note") {
-                            iconClass = "bx bx-subdirectory-right";
-                        }
-                        iconElement.className = iconClass;
-
-                        // The title keeps a wrapper of its own rather than being spread into the
-                        // button: the row lays the icon out against the title as a whole (see the
-                        // `note-mention-suggestion` rule), which it cannot do over loose text nodes.
-                        const titleContainer = document.createElement("span");
-                        titleContainer.className = "note-mention-suggestion-title";
-                        titleContainer.innerHTML = suggestion.highlightedNotePathTitle ?? "";
-                        itemElement.append(iconElement, titleContainer);
-
-                        return itemElement;
-                    },
-                    minimumCharacters: 0,
-                    // Note titles contain spaces, so the query must be allowed to as well.
-                    allowSpaces: true
-                }
-            ],
-        };
-    }
+    config.mention = {
+        feeds: [],
+        hostedFeeds: options.get("textNoteCompletionEnabled") === "true" ? [
+            {
+                marker: "@",
+                minimumCharacters: 0,
+                // Note titles contain spaces, so the query must be allowed to as well.
+                allowSpaces: true,
+                list: () => createNoteMentionList({
+                    allowCreatingNotes: true,
+                    getParentNotePath: () => opts.getNoteLocation?.()?.notePath
+                })
+            }
+        ] : []
+    };
 
     return {
         ...config,

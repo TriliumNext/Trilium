@@ -278,7 +278,6 @@
     "copy_to_clipboard": "複製到剪貼簿"
   },
   "jump_to_note": {
-    "search_button": "全文搜尋",
     "search_placeholder": "依名稱或類型查詢筆記或按 > 查看命令…"
   },
   "markdown_import": {
@@ -1061,7 +1060,6 @@
     "label_rock_or_pop": "只需一個標籤存在即可",
     "label_year_comparison": "數字比較（也包括>，>=，<）。",
     "label_date_created": "上個月新增的筆記",
-    "error": "搜尋錯誤：{{error}}",
     "search_prefix": "搜尋："
   },
   "attachment_detail": {
@@ -1651,7 +1649,6 @@
     "placeholder": "快速搜尋",
     "searching": "正在搜尋…",
     "no-results": "未找到結果",
-    "more-results": "…以及另外 {{number}} 個結果。",
     "show-in-full-search": "在完整的搜尋界面中顯示"
   },
   "note_tree": {
@@ -1971,12 +1968,9 @@
     "zoom-factor": "縮放係數"
   },
   "note_autocomplete": {
-    "search-for": "搜尋 \"{{term}}\"",
     "create-note": "建立並連接子筆記 \"{{term}}\"",
     "insert-external-link": "插入至 \"{{term}}\" 的外部連結",
-    "clear-text-field": "清空文字欄位",
-    "show-recent-notes": "顯示最近的筆記",
-    "full-text-search": "全文搜尋"
+    "clear-text-field": "清空文字欄位"
   },
   "note_tooltip": {
     "note-has-been-deleted": "筆記已被刪除。",
@@ -2636,7 +2630,6 @@
     "page_size": "頁面大小",
     "scale": "比例",
     "margins": "邊界",
-    "render_error": "無法使用目前設定渲染 PDF。請檢查邊界及縮放比例。",
     "margins_default": "預設",
     "margins_none": "無",
     "margins_minimum": "最小",
@@ -2830,7 +2823,6 @@
       "insert-a-page-break-for-printing": "插入分頁符號（用於列印）",
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "插入一個可折疊的區塊，點擊後可隱藏或顯示內容。",
       "insert-an-anchor-for-internal-linking": "插入一個錨點以建立內部連結",
-      "insert-the-current-date-and-time": "插入目前日期和時間",
       "justify-text-alignment": "將文字左右對齊"
     }
   }

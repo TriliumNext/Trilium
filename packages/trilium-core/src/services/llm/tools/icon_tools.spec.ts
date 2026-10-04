@@ -41,6 +41,13 @@ describe("icon_tools", () => {
             expect(result.results[0].iconClass).toMatch(/building/);
         });
 
+        it("offers no icon of an internal pack", () => {
+            const result = getTool("search_icons")
+                .execute({ query: "pilcrow table merge" }) as SearchResult;
+            expect(result.totalResults).toBeGreaterThan(0);
+            expect(result.results.filter((r) => r.iconClass.startsWith("cke "))).toEqual([]);
+        });
+
         it("returns no results for an unmatched keyword", () => {
             const result = getTool("search_icons").execute({ query: "xyzzyplugh" }) as SearchResult;
             expect(result).toEqual({ totalResults: 0, results: [] });

@@ -12,6 +12,7 @@ import { copyReferenceWithToast } from "../../../services/clipboard_ext";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import { shared } from "../../../services/note_set";
+import { escapeHtml } from "../../../services/utils";
 import ColorPicker from "../../react/ColorPicker";
 import { buildAttributeMenuItems } from "../attribute_menu";
 import { buildSortMenuItems, type SortMenuOptions } from "../sort_menu";
@@ -53,6 +54,8 @@ interface ColumnMenuTarget {
     onCollapse: (collapsed: boolean) => void;
     /** Sets whether the column collapses again once it has been opened. */
     onKeepCollapsed: (keepCollapsed: boolean) => void;
+    /** Picks out every card the column draws, as Ctrl+A does. */
+    onSelectAll: () => void;
 }
 
 export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column: ColumnMenuTarget) {
@@ -144,11 +147,11 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
                 uiIcon: "bx bx-sort-alt-2",
                 items: buildSortMenuItems<string>(sortMenuOptions(api, column.value))
             },
-            {
+            ...(isInbox ? [] : [ {
                 title: t("board_view.set-limit"),
                 uiIcon: "bx bx-tachometer",
                 handler: column.onSetLimit
-            },
+            } ]),
             { kind: "separator" },
             // The inbox leads the board and `moveColumn` refuses to move it, so it is not offered.
             ...(isInbox ? [] : [ {
@@ -181,6 +184,14 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
                     shortcut: "Delete",
                     handler: () => api.confirmAndRemoveColumn(column.value)
                 },
+            { kind: "separator" },
+            {
+                title: t("board_view.select-all-cards"),
+                uiIcon: "bx bx-selection",
+                shortcut: "Ctrl+A",
+                enabled: api.getColumnNoteIds(column.value).length > 0,
+                handler: column.onSelectAll
+            },
             { kind: "separator" },
             {
                 kind: "custom",
@@ -357,9 +368,9 @@ function buildMoveColumnItems(api: Api, column: ColumnMenuTarget): MenuItem<stri
         const title = api.getColumnTitle(name);
 
         return [ {
-            // `t()` escapes what it interpolates, so the sentence it builds is boxed as it stands.
+            // `Menu` renders the title as HTML, and a column title is user text.
             title: `<span class="tn-menu-name">`
-                + `${t("board_view.move-column-after", { column: title })}</span>`,
+                + `${t("board_view.move-column-after", { column: escapeHtml(title) })}</span>`,
             uiIcon: api.getColumnIcon(name),
             iconColorClass: api.getColumnColorClass(name),
             badges: api.isColumnArchived(name)

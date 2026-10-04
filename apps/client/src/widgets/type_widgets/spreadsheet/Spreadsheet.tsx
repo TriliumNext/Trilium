@@ -30,6 +30,7 @@ import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
 import { useColorScheme, useEffectiveReadOnly, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
+import useStripPastedFontFamily from "./clipboard";
 import useSpreadsheetExport from "./export";
 import { loadUniverLocale, UniverLocale } from "./locales";
 import useClampEdgeNavigation from "./navigation";
@@ -96,6 +97,7 @@ function SpreadsheetEditor({ note, noteContext, readOnly, locale }: TypeWidgetPr
     useReleaseFillShortcuts(apiRef);
     useClampEdgeNavigation(apiRef);
     useAnchorCellEditorOnScroll(apiRef);
+    useStripPastedFontFamily(apiRef);
     useDarkMode(apiRef);
     const spacedUpdate = usePersistence(note, noteContext, apiRef, containerRef);
     useSpreadsheetExport(apiRef, note, noteContext, spacedUpdate);

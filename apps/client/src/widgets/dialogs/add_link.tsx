@@ -2,11 +2,11 @@ import { t } from "../../services/i18n";
 import Modal from "../react/Modal";
 import Button from "../react/Button";
 import FormRadioGroup from "../react/FormRadioGroup";
-import NoteAutocomplete from "../react/NoteAutocomplete";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import { useRef, useState, useEffect } from "preact/hooks";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
-import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
+import type { Suggestion } from "../../services/note_autocomplete";
 import { logError } from "../../services/ws";
 import FormGroup from "../react/FormGroup.js";
 import { refToJQuerySelector } from "../react/react_utils";
@@ -161,15 +161,10 @@ export default function AddLinkDialog() {
             || opts?.text;
 
         if (!text) {
-            note_autocomplete.showRecentNotes($autocompleteEl);
+            handleRef.current?.showRecentNotes();
         } else {
-            note_autocomplete.setText($autocompleteEl, text);
-
-            // What `setText` fills the field with is something being typed, which has nothing picked
-            // behind it; the note the dialog opens on is picked already.
-            if (currentNotePath) {
-                $autocompleteEl.setSelectedNotePath(currentNotePath);
-            }
+            // The note the dialog opens on is picked already, so the field selects it.
+            handleRef.current?.setText(text, currentNotePath);
         }
 
         // to be able to quickly remove entered text
@@ -190,6 +185,7 @@ export default function AddLinkDialog() {
     }
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
+    const handleRef = useRef<NoteAutocompleteHandle>(null);
 
     return (
         <Modal
@@ -229,6 +225,7 @@ export default function AddLinkDialog() {
             <FormGroup label={t("add_link.note")} name="note">
                 <NoteAutocomplete
                     inputRef={autocompleteRef}
+                    handleRef={handleRef}
                     onChange={setSuggestion}
                     opts={{
                         allowExternalLinks: true,

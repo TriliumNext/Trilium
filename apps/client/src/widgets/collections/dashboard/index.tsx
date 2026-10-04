@@ -200,7 +200,7 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
             column: GRID_COLUMNS,
             cellHeight: CELL_HEIGHT,
             margin: GRID_MARGIN,
-            float: true,
+            mode: "float",
             handle: ".dashboard-widget-header",
             columnOpts: {
                 // Collapse to a vertical stack when the dashboard itself gets narrow,

@@ -1,5 +1,6 @@
 import type { BulkAction } from "@triliumnext/commons";
 
+import type FAttribute from "../../entities/fattribute";
 import type FNote from "../../entities/fnote";
 import { executeBulkActions } from "../../services/bulk_action";
 import { t } from "../../services/i18n";
@@ -43,6 +44,17 @@ export interface PromotedAttribute {
     /** Whether the note that defines it is the collection itself rather than an ancestor. */
     isOwned: boolean;
     /**
+     * Whether only the items define it, through a template or another parent, and the collection
+     * note does not. `PromotedAttributesCard` shows no edit or delete button for it.
+     */
+    isDefinedByItems: boolean;
+    /**
+     * Whether an item defines it with another type or other select options than the listed
+     * definition. Sorting then compares its values as text, and `buildAttributeMenuItems()` leaves
+     * it out.
+     */
+    isConflicting: boolean;
+    /**
      * Whether the definition passes to the notes below. Always true for a resolved attribute, and
      * held so that the editor is handed the definition as it stands.
      */
@@ -60,25 +72,43 @@ export interface PromotedAttribute {
  * not promoted is still drawn on an item, only without an alias, and a note carrying
  * `#hidePromotedAttributes` (which a board is usually given) reports no promoted ones at all.
  *
- * Only the inheritable definitions are listed. One that is not describes the collection note alone
- * and never reaches the items, so there is nothing about it for the reader to arrange.
+ * Only the inheritable definitions of `note` are listed, because a non-inheritable one applies to
+ * the collection note alone.
+ *
+ * The definitions of `items` are appended after those of `note`, inheritable or not, because
+ * `UserAttributesDisplay` shows every definition an item has.
  */
 export function resolvePromotedAttributes(
     note: FNote | null | undefined,
     settings: PromotedAttributeSetting[] | undefined,
     /** Names the collection draws itself, such as the label a board groups by. */
-    drawnByCollection: string[] = []
+    drawnByCollection: string[] = [],
+    /** The notes the collection shows, such as the cards of a board. */
+    items: Iterable<FNote> = []
 ): PromotedAttribute[] {
     const defined = new Map<string, PromotedAttribute>();
 
-    for (const definition of note?.getAttributeDefinitions() ?? []) {
+    const add = (definition: FAttribute, isDefinedByItems: boolean) => {
         const [ type, name ] = definition.name.split(":", 2);
-        if ((type !== "label" && type !== "relation") || !name || defined.has(name)
-                || !definition.isInheritable) {
-            continue;
+        if ((type !== "label" && type !== "relation") || !name
+                || (!isDefinedByItems && !definition.isInheritable)) {
+            return;
         }
 
         const parsed = definition.getDefinition();
+        const existing = defined.get(name);
+        if (existing) {
+            // An item inheriting the collection's definition reads the same one back; only an item
+            // that defines the name itself, or through a template, can differ.
+            if (isDefinedByItems
+                    && (existing.type !== type
+                        || (existing.labelType ?? "text") !== (parsed?.labelType ?? "text")
+                        || !sameOptions(existing.selectOptions, parsed?.selectOptions))) {
+                existing.isConflicting = true;
+            }
+            return;
+        }
+
         defined.set(name, {
             name,
             definitionName: definition.name,
@@ -91,8 +121,20 @@ export function resolvePromotedAttributes(
             drawnByCollection: drawnByCollection.includes(name),
             definitionValue: definition.value,
             isOwned: definition.noteId === note?.noteId,
+            isDefinedByItems,
+            isConflicting: false,
             isInheritable: definition.isInheritable
         });
+    };
+
+    for (const definition of note?.getAttributeDefinitions() ?? []) {
+        add(definition, false);
+    }
+
+    for (const item of items) {
+        for (const definition of item.getAttributeDefinitions()) {
+            add(definition, true);
+        }
     }
 
     const ordered: PromotedAttribute[] = [];
@@ -111,6 +153,13 @@ export function resolvePromotedAttributes(
     }
 
     return ordered;
+}
+
+/** Returns whether two select definitions offer the same options in the same order. */
+function sameOptions(a: string[] | undefined, b: string[] | undefined) {
+    const left = a ?? [];
+    const right = b ?? [];
+    return left.length === right.length && left.every((option, index) => option === right[index]);
 }
 
 /**

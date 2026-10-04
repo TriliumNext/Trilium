@@ -20,10 +20,12 @@ vi.mock("../../../services/i18n", () => ({
 }));
 
 import Component from "../../../components/component";
-import { buildNote } from "../../../test/easy-froca";
+import { calculateHash } from "../../../services/link";
+import server from "../../../services/server";
+import { buildNote, buildNotes } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import SearchResultCard, { getBreadcrumbTitle, toPlainSearchTerms } from "./SearchResultCard";
-import { SearchResultsToolbar } from "./SearchResultsList";
+import SearchResultsList, { SearchResultsToolbar } from "./SearchResultsList";
 
 function makeDetails(overrides: Partial<SearchResultDetails> = {}): SearchResultDetails {
     return {
@@ -54,6 +56,15 @@ afterEach(() => {
     render(null, container);
     container.remove();
 });
+
+/** Lets the pending loads (`useNoteIds`, `froca.getNotes()`, the details fetch) commit. */
+async function settle() {
+    for (let pass = 0; pass < 3; pass++) {
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+    }
+}
 
 async function mount(element: preact.VNode) {
     await act(async () => {
@@ -89,6 +100,20 @@ describe("SearchResultCard", () => {
         expect(badges[0].querySelector("b")?.textContent).toBe("open");
     });
 
+    it("links with the words the note matched, falling back to the search tokens (#11787)", async () => {
+        const note = buildNote({ id: "note1", title: "Slovak", type: "text" });
+        await mount(
+            <SearchResultCard noteId={note.noteId} details={makeDetails({ matchedTerms: [ "Ktorý" ] })} loading={false} highlightedTokens={[ "ktory" ]} />
+        );
+        expect(container.querySelector("a.search-result-card")?.getAttribute("href"))
+            .toBe(calculateHash({ notePath: note.noteId, viewScope: { searchTerms: [ "Ktorý" ] } }));
+
+        await mount(
+            <SearchResultCard noteId={note.noteId} details={makeDetails({ matchedTerms: [] })} loading={false} highlightedTokens={[ "ktory" ]} />
+        );
+        expect(container.querySelector("a.search-result-card")?.getAttribute("href")).toBe(`#${note.noteId}?searchTerms=ktory`);
+    });
+
     it("shows a snippet skeleton while the page's details are still loading", async () => {
         const note = buildNote({ id: "note1", title: "Meeting notes", type: "text" });
         await mount(
@@ -117,6 +142,46 @@ describe("SearchResultCard", () => {
         expect(container.querySelector(".search-result-card-snippet.skeleton")).toBeNull();
         expect(container.querySelector(".search-result-card-badges")).toBeNull();
     });
+});
+
+describe("SearchResultsList", () => {
+    it("goes back to the first page when the search runs again", async () => {
+        vi.spyOn(server, "post").mockResolvedValue({ results: [] });
+        // 25 results make two pages at the default page size of 20.
+        const firstResults = buildNotes(Array.from({ length: 25 }, (_, i) => ({ id: `first-${i}`, title: `First ${i}` })));
+        const secondResults = buildNotes(Array.from({ length: 25 }, (_, i) => ({ id: `second-${i}`, title: `Second ${i}` })));
+        const note = buildNote({ id: "search", title: "Search", type: "search" });
+        note.children = firstResults;
+
+        await mount(<SearchResultsList note={note} notePath="search" ntxId="ntx1" media="screen" />);
+        await settle();
+        const secondPageButton = [ ...container.querySelectorAll(".note-list-pager-page-button") ]
+            .find((button) => button.textContent?.trim() === "2");
+        expect(secondPageButton).toBeDefined();
+        await act(async () => {
+            secondPageButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        });
+        await settle();
+        expect(currentPage()).toBe("2");
+        expect(cardHrefs()[0]).toBe("#first-20");
+
+        // What `froca.loadSearchNote()` does when the search runs with a new query.
+        note.children = secondResults;
+        await act(async () => {
+            await parent.handleEvent("searchRefreshed", { ntxId: "ntx1" });
+        });
+        await settle();
+        expect(currentPage()).toBe("1");
+        expect(cardHrefs()[0]).toBe("#second-0");
+    });
+
+    function currentPage() {
+        return container.querySelector(".note-list-pager-page-button-current")?.textContent?.trim();
+    }
+
+    function cardHrefs() {
+        return [ ...container.querySelectorAll("a.search-result-card") ].map((card) => card.getAttribute("href"));
+    }
 });
 
 describe("SearchResultsToolbar", () => {

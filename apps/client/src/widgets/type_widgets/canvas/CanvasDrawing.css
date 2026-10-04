@@ -1,0 +1,173 @@
+:where(:root) {
+    --canvas-drawing-background-color: var(--main-background-color);
+}
+
+/* The font size of the note detail in pixels. Excalidraw in a canvas note inherits this size. */
+@property --canvas-drawing-font-size {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 16px;
+}
+
+.note-detail {
+    --canvas-drawing-font-size: 1em;
+}
+
+.canvas-drawing {
+    height: var(--include-note-height, 20em);
+    background-color: var(--canvas-drawing-background-color);
+
+    /* Resets the typography inherited from the text note. */
+    > .canvas-drawing-editor {
+        height: 100%;
+        font-size: var(--canvas-drawing-font-size);
+        line-height: var(--bs-body-line-height);
+        text-align: start;
+        overflow-wrap: normal;
+
+        > .canvas-render {
+            height: 100%;
+            transition: opacity 150ms ease-out;
+        }
+
+        /* Hidden while `useRecenteringOnFullscreen()` centers the drawing in its new size. */
+        &.recentering > .canvas-render {
+            opacity: 0;
+            transition: none;
+        }
+    }
+
+    /* Resets CKEditor's content style for `hr`, which matches the menu separators. */
+    .excalidraw hr {
+        display: block;
+        vertical-align: baseline;
+        background: none;
+    }
+
+    /* The main menu offers the library and help. */
+    .excalidraw :is(.sidebar-trigger, .help-icon) {
+        display: none;
+    }
+
+    /* The properties panel spans the height of the canvas. */
+    .Island.App-menu__left {
+        top: 0;
+        bottom: 0;
+        /* Overrides the height limit that Excalidraw sets inline. */
+        max-height: none !important;
+    }
+
+    /* Below the toolbar, which is `--lg-button-size` tall plus its padding. */
+    .toolbar-over-panel .Island.App-menu__left {
+        top: calc(var(--lg-button-size) + 1rem);
+    }
+
+    /* Matches the 1rem of the icons of Excalidraw's own menu items. */
+    .dropdown-menu-item__icon > .tn-icon {
+        display: block;
+        font-size: 1rem;
+    }
+}
+
+/* Excalidraw's toolbars, menus, panels and selection show only while the drawing has the focus.
+   `opacity` hides the footer too, which sets `visibility` of its own. */
+.include-note-body:not(.active) .canvas-drawing :is(
+    .layer-ui__wrapper, .excalidraw > .FixedSideContainer, .excalidraw > .App-bottom-bar,
+    canvas.interactive
+) {
+    opacity: 0;
+}
+
+/* The library and the properties panel beside the drawing, in the top layer, placed by
+   `useSidePanels()`. Resets the user agent style of a popover and Excalidraw's own placement. */
+.canvas-drawing-editor .excalidraw .Island[data-side-panel][popover] {
+    position: fixed;
+    inset: var(--side-panel-top) auto auto var(--side-panel-left);
+    margin: 0;
+    border: none;
+    height: var(--side-panel-height, fit-content);
+    /* Overrides the height limit that Excalidraw sets inline on the properties panel. */
+    max-height: var(--side-panel-max-height) !important;
+    color: inherit;
+
+    &.default-sidebar {
+        border: 1px solid var(--sidebar-border-color);
+        border-radius: var(--border-radius-lg);
+    }
+}
+
+/* Excalidraw's context menu in the top layer, placed by `useTopLayerContextMenu()`. */
+.canvas-drawing-editor .excalidraw .popover[popover] {
+    position: fixed;
+}
+
+/* Resets the user agent style of a popover below the themes, which style the menu. */
+:where(.canvas-drawing-editor .popover[popover]) {
+    inset: auto;
+    margin: 0;
+    overflow: visible;
+    color: inherit;
+}
+
+/* Excalidraw narrows its controls for a docked library, which is beside the drawing instead. */
+.canvas-drawing-editor:has(.default-sidebar[data-side-panel]) .layer-ui__wrapper {
+    width: 100% !important;
+}
+
+/* While `CanvasEmbedTools` sets `data-embed-tools`, the tools, undo and redo, and zoom are buttons
+   of the embed's toolbar, which fullscreen hides. `CanvasTools` clicks the hidden undo and redo
+   buttons. */
+.include-note-content:not(:fullscreen) .canvas-drawing-editor[data-embed-tools] .excalidraw {
+    .App-toolbar-container > .App-toolbar,
+    .mobile-misc-tools-container > label:has(
+        [data-testid="toolbar-lock"], [data-testid="toolbar-hand"]
+    ),
+    .layer-ui__wrapper__footer-left :is(.zoom-actions, .undo-redo-buttons),
+    .App-toolbar-content > div:has(> [data-testid="button-undo"]) {
+        display: none;
+    }
+}
+
+.include-note {
+    /* The corners of the embed box that the drawing touches. */
+    --_canvas-drawing-top-radius: 0;
+    --_canvas-drawing-bottom-radius: var(--_include-note-bottom-border-radius, 8px);
+
+    &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
+        --_canvas-drawing-top-radius: var(--_include-note-top-border-radius, 8px);
+    }
+
+    &:has(> figcaption) {
+        --_canvas-drawing-bottom-radius: 0;
+    }
+
+    &[data-box-size="small"] .canvas-drawing {
+        height: var(--include-note-height, 10em);
+    }
+
+    &[data-box-size="full"] .canvas-drawing {
+        height: 50em;
+    }
+}
+
+/* Excalidraw hides its overflow, so its rounded container clips what it draws. */
+.include-note-content:not(:fullscreen) .canvas-drawing {
+    &, .excalidraw-container {
+        border-radius: var(--_canvas-drawing-top-radius) var(--_canvas-drawing-top-radius)
+                       var(--_canvas-drawing-bottom-radius) var(--_canvas-drawing-bottom-radius);
+    }
+}
+
+.include-note-content:fullscreen .canvas-drawing {
+    height: 100%;
+
+    /* Below the toolbar, clear of the "Exit fullscreen" button of the embed. */
+    .Island.App-menu__left {
+        top: calc(var(--lg-button-size) + 1rem);
+    }
+}
+
+.canvas-drawing-picture {
+    max-width: 100%;
+    height: auto;
+}

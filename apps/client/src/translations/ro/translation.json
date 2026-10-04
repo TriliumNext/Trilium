@@ -1123,7 +1123,6 @@
     "none": "niciunul"
   },
   "jump_to_note": {
-    "search_button": "Caută în întregul conținut",
     "search_placeholder": "Căutați notițe după nume sau tastați > pentru comenzi..."
   },
   "left_pane_toggle": {
@@ -1531,7 +1530,6 @@
   "search_string": {
     "also_see": "vedeți și",
     "complete_help": "informații complete despre sintaxa de căutare",
-    "error": "Eroare la căutare: {{error}}",
     "full_text_search": "Introduceți orice text pentru a căuta în conținutul notițelor",
     "label_abc": "reîntoarce notițele cu eticheta „abc”",
     "label_date_created": "notițe create în ultima lună",
@@ -1927,7 +1925,6 @@
     "unknown": "<p>Starea sincronizării va fi cunoscută după o încercare de sincronizare.</p><p>Clic pentru a rula sincronizarea acum.</p>"
   },
   "quick-search": {
-    "more-results": "... și încă {{number}} rezultate.",
     "no-results": "Niciun rezultat găsit",
     "placeholder": "Căutare rapidă",
     "searching": "Se caută...",
@@ -2174,10 +2171,7 @@
   "note_autocomplete": {
     "clear-text-field": "Șterge conținutul casetei",
     "create-note": "Crează și inserează legătură către „{{term}}”",
-    "full-text-search": "Căutare în întregimea textului",
-    "insert-external-link": "Inserează legătură extern către „{{term}}”",
-    "search-for": "Caută „{{term}}”",
-    "show-recent-notes": "Afișează notițele recente"
+    "insert-external-link": "Inserează legătură extern către „{{term}}”"
   },
   "electron_integration": {
     "background-effects": "Activează efectele de fundal",
@@ -2918,7 +2912,6 @@
     "thought_process": "Procesul de gândire",
     "tool_calls": "{{count}} apel(uri) de unelte",
     "input": "Intrare",
-    "input_streaming": "Intrare (streaming…)",
     "edit_index": "Editarea {{index}} din {{total}}",
     "result": "Rezultat",
     "error": "Eroare",
@@ -3046,7 +3039,6 @@
     "page_size": "Dimensiunea paginii",
     "scale": "Scară",
     "margins": "Margini",
-    "render_error": "Nu se poate randa PDF-ul cu setările curente. Vă rugăm să verificați marginile și scara.",
     "margins_default": "Implicite",
     "margins_none": "Fără",
     "margins_minimum": "Minime",
@@ -3251,8 +3243,6 @@
     "provider_model_count_few": "{{count}} modele",
     "provider_model_count_other": "{{count}} de modele",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Necesită Claude Code pe calculatorul pe care rulează Trilium.",
-    "provider_desc_copilot_agent": "Necesită GitHub Copilot CLI pe calculatorul pe care rulează Trilium.",
     "provider_unavailable_standalone": "Indisponibil în versiunea din browser: acest furnizor funcționează rulând un program separat pe calculator, iar aici nu există un calculator pe care să îl ruleze.",
     "claude_agent_description": "Folosește abonamentul dumneavoastră Claude Pro/Max prin Claude Code, așa că nu este nevoie de o cheie API. Claude Code trebuie instalat pe calculatorul pe care rulează Trilium (serverul, în cazul găzduirii proprii, sau acest calculator, în varianta desktop); autentificați-vă o singură dată rulând acolo „claude /login”.",
     "copilot_agent_description": "Folosește abonamentul dumneavoastră GitHub Copilot prin GitHub Copilot CLI, așa că nu este nevoie de o cheie API. Copilot CLI trebuie instalat pe calculatorul pe care rulează Trilium (serverul, în cazul găzduirii proprii, sau acest calculator, în varianta desktop); autentificați-vă o singură dată rulând acolo „copilot login” — o autentificare Copilot existentă din alt editor este refolosită automat.",
@@ -3362,13 +3352,10 @@
       "insert-an-empty-mermaid-diagram": "Inserează o diagramă Mermaid goală",
       "insert-date-time": "Inserează data/ora",
       "insert-footnote-0": "Inserează nota de subsol %0",
-      "insert-math": "Inserează o formulă matematică",
-      "insert-mermaid-diagram": "Inserează o diagramă Mermaid",
       "insert-mermaid-source-code": "Inserează codul sursă Mermaid",
       "insert-paragraph-after-code-block": "Inserează un paragraf după blocul de cod",
       "insert-paragraph-before-code-block": "Inserează un paragraf înainte de blocul de cod",
       "insert-text-snippet": "Inserează fragment de text",
-      "insert-the-current-date-and-time": "Inserează data și ora curentă",
       "internal-link": "Legătură internă",
       "justify-text-alignment": "Aliniază textul stânga-dreapta",
       "keyboard-shortcut": "Scurtătură de la tastatură",

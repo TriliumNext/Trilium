@@ -317,8 +317,7 @@
     "copy_to_clipboard": "Cóipeáil chuig an ghearrthaisce"
   },
   "jump_to_note": {
-    "search_placeholder": "Cuardaigh nóta de réir a ainm nó a chineáil > le haghaidh orduithe...",
-    "search_button": "Cuardaigh sa téacs iomlán"
+    "search_placeholder": "Cuardaigh nóta de réir a ainm nó a chineáil > le haghaidh orduithe..."
   },
   "markdown_import": {
     "dialog_title": "Allmhairiú marcála síos",
@@ -381,17 +380,25 @@
   "sort_child_notes": {
     "sort_children_by": "Sórtáil páistí de réir...",
     "sorting_criteria": "Critéir sórtála",
-    "title": "teideal",
-    "date_created": "dáta cruthaithe",
-    "date_modified": "dáta modhnaithe",
-    "ascending": "ag dul suas",
-    "descending": "ag dul síos",
-    "sort_folders_at_top": "sórtáil fillteáin ag an mbarr",
-    "natural_sort": "Sórtáil Nádúrtha",
-    "sort_with_respect_to_different_character_sorting": "sórtáil i ndáil le rialacha éagsúla sórtála agus cóimheasa carachtar i dteangacha nó i réigiúin éagsúla.",
+    "title": "Teideal",
+    "date_created": "Dáta cruthaithe",
+    "date_modified": "Dáta modhnaithe",
+    "ascending": "Ag dul in airde",
+    "descending": "Ag dul síos",
+    "sort_folders_at_top": "Sórtáil fillteáin ag an mbarr",
+    "natural_sort": "Sórtáil nádúrtha",
+    "sort_with_respect_to_different_character_sorting": "Déan sórtáil de réir rialacha éagsúla maidir le sórtáil agus comhthiomsú carachtar i dteangacha nó i réigiúin éagsúla.",
     "natural_sort_language": "Teanga sórtála nádúrtha",
     "the_language_code_for_natural_sort": "An cód teanga le haghaidh sórtáil nádúrtha, e.g. \"zh-CN\" don tSínis.",
-    "sort": "Sórtáil"
+    "sort": "Sórtáil",
+    "sorting_criteria_description": "Déantar nótaí a shórtáil de réir na chéad leibhéil; ní dhéanann an chéad leibhéal eile ach idirdhealú a dhéanamh idir nótaí a d’fhág na leibhéil roimhe sin ar comhchéim.",
+    "label": "Lipéad",
+    "label_name": "Ainm an lipéid",
+    "add_level": "Cuir leibhéal leis",
+    "remove_level": "Bain an leibhéal",
+    "move_level_up": "Bog suas leibhéal amháin",
+    "move_level_down": "Bog an leibhéal síos",
+    "folders_follow_first_level": "Ag an mbun, áfach, nuair atá an chéad leibhéal ag dul síos."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Uaslódáil ceangaltáin chuig nóta",
@@ -443,8 +450,8 @@
     "run_on_instance": "Sainmhínigh cén sampla de Trilium ba chóir é seo a rith air. Réamhshocrú do gach sampla.",
     "run_at_hour": "Cén uair ar cheart é seo a rith? Ba cheart é a úsáid i dteannta <code>#run=hourly</code>. Is féidir é seo a shainiú arís agus arís eile le haghaidh níos mó ritheanna i rith an lae.",
     "disable_inclusion": "Ní chuirfear scripteanna leis an lipéad seo san áireamh i bhforghníomhú an scripte tuismitheora.",
-    "sorted": "Coinníonn sé nótaí leanaí sórtáilte de réir teidil in ord aibítre.",
-    "sort_direction": "Ordaíonn an treo <code>#sorted</code> na nótaí linbh sa tslí seo a leanas: <code>desc</code> le haghaidh ord íslitheach, aon rud eile le haghaidh ord ardaitheach. Ní thugtar aird air mura bhfuil <code>#sorted</code> socraithe.",
+    "sorted": "Déantar nótaí fo-leibhéil a shórtáil de réir teidil in ord aibítreach. Is féidir luach a úsáid chun iad a shórtáil de réir critéar eile ina ionad sin: leibhéil scartha le camóga de <code>title</code>, <code>dateCreated</code>, <code>dateModified</code> nó ainm lipéid, agus <code>asc</code> nó <code>desc</code> ag gabháil le gach ceann acu más mian, m.sh. <code>priority desc, dueDate</code>.",
+    "sort_direction": "Socraíonn an treoir <code>#sorted</code> ord na nótaí fo-leibhéil: <code>desc</code> le haghaidh ord íslitheach, agus aon rud eile le haghaidh ord ardaitheach. Má bhíonn leibhéal agus an treoir <code>asc</code> nó <code>desc</code> ag gabháil leis, déantar neamhaird den treoir sin. Déantar neamhaird den treoir mura bhfuil <code>#sorted</code> socraithe.",
     "sort_folders_first": "Ba chóir fillteáin (nótaí le páistí) a shórtáil ar a bharr.",
     "top": "Coinnigh an nóta tugtha ag barr a thuismitheora (baineann sé seo le tuismitheoirí sórtáilte amháin).",
     "hide_promoted_attributes": "Folaigh tréithe cur chun cinn ar an nóta seo.",
@@ -673,11 +680,7 @@
     "ai_quick_action": "Cuireann sé an nóta seo ar fáil mar threoir i roghchlár cúntóra AI an eagarthóra téacs. Ainmníonn an teideal an gníomh, is é an t-ábhar an leid.",
     "template_new_note_default_parent": "Socraithe ar nóta teimpléid: cuirtear nótaí a cruthaíodh ón teimpléad (e.g. trí @-completion) faoin nóta sprice, mura roghnaítear suíomh eile go sainráite.",
     "custom_font": "Marcáileann sé comhaid clónna atá ar fáil sa roghnóir clónna i roghanna Trilium, faoi theideal an nóta féin.",
-    "enable_inbox_column": "I gcás bailiúcháin boird, taispeántar an colún bosca isteach, ina liostaítear na nótaí linbh go léir nach bhfuil sannta do cholún boird.",
-    "board_card_width": "Maidir le bailiúcháin boird, an leithead a úsáidtear do na colúin: <code>narrow</code> (caol), <code>medium</code> (meánach) nó <code>wide</code> (leathan). Déantar neamhaird de seo ar ghléasanna móibíleacha, áit a socraítear a leithead féin dóibh.",
     "board_card_redirect_to": "Ar chárta boird, má osclaítear an cárta, léimtear chuig an nóta a bhfuil an cárta ag tagairt dó, seachas an cárta féin a oscailt.",
-    "sort_columns": "I gcás bailiúcháin boird, is é seo an t-ord a úsáideann na colúin chun a gcuid cártaí a shórtáil — ord a leanann colún mura bhfuil ord dá chuid féin socraithe dó. Glacann sé le <code>title</code>, <code>creationDate</code> nó <code>attr:</code> agus ainm tréithe curtha chun cinn ina dhiaidh sin.",
-    "sort_columns_descending": "I gcás bailiúcháin boird, ritheann sé an t-ordú i <code>#sortColumns</code> droim ar ais.",
     "geo_shape": "Cruth a úsáidtear chun an nóta a tharraingt ar léarscáil gheografach: an cineál crutha, agus ansin domhanleithead agus domhanfhad gach pointe, m.sh. <code>line:48.85,2.29 48.86,2.35</code> — nó ciorcal, bunaithe ar a lárphointe agus a raon i méadair, <code>circle:48.85,2.29 500</code>."
   },
   "attribute_editor": {
@@ -1039,7 +1042,8 @@
     "filter-none": "Gach deilbhín",
     "filter-default": "Deilbhíní réamhshocraithe",
     "icon_tooltip": "{{name}}\nPacáiste deilbhín: {{iconPack}}",
-    "no_results": "Níor aimsíodh aon deilbhíní."
+    "no_results": "Níor aimsíodh aon deilbhíní.",
+    "insert_icon": "Cuir isteach deilbhín"
   },
   "basic_properties": {
     "note_type": "Cineál nóta",
@@ -1280,7 +1284,7 @@
   },
   "search_string": {
     "title_column": "Teaghrán cuardaigh:",
-    "placeholder": "eochairfhocail lántéacs, #tag = luach...",
+    "placeholder": "Ctrl+Space le haghaidh moltaí, @ le haghaidh nóta, Shift+Enter le haghaidh líne nua, Enter chun cuardach a dhéanamh",
     "search_syntax": "Comhréir cuardaigh",
     "also_see": "féach freisin",
     "complete_help": "cabhair iomlán ar chomhréir chuardaigh",
@@ -1291,8 +1295,13 @@
     "label_rock_or_pop": "ní mór ach ceann amháin de na lipéid a bheith i láthair",
     "label_year_comparison": "comparáid uimhriúil (chomh maith >, >=, <).",
     "label_date_created": "nótaí a cruthaíodh sa mhí seo caite",
-    "error": "Earráid chuardaigh: {{error}}",
-    "search_prefix": "Cuardaigh:"
+    "search_prefix": "Cuardaigh:",
+    "hints": {
+      "title": "Teaghrán cuardaigh",
+      "completions": "Taispeáin moltaí",
+      "new_line": "Líne nua",
+      "run_search": "Rith an cuardach"
+    }
   },
   "attachment_detail": {
     "open_help_page": "Oscail leathanach cabhrach ar cheangaltáin",
@@ -2046,7 +2055,9 @@
   "shared_info": {
     "shared_publicly": "Tá an nóta seo roinnte go poiblí ar {{- link}}.",
     "shared_locally": "Tá an nóta seo roinnte go háitiúil ar {{- link}}.",
-    "help_link": "Chun cabhair a fháil, tabhair cuairt ar <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "Chun cabhair a fháil, tabhair cuairt ar <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
+    "shared_preview": "Tá an nóta seo á roinnt ag {{- link}}, ach ní féidir an leathanach sin a oscailt ach leis an mbrabhsálaí seo, agus gan ach Trilium a bheith ar oscailt ann. Teastaíonn freastalaí Trilium chun é a fhoilsiú do dhaoine eile.",
+    "shared_export_only": "Tá an nóta seo á roinnt, ach ní féidir leis an aip mhóibíleach leathanaigh roinnte a oscailt. Chun é a fhoilsiú, easpórtáil an fho-chrann mar \"{{format}}\" agus óstaigh na comhaid ar fhreastalaí gréasáin ar bith, nó bain úsáid as freastalaí Trilium."
   },
   "read-only-info": {
     "read-only-note": "Ag féachaint ar nóta inléite amháin faoi láthair.",
@@ -2125,7 +2136,6 @@
     "placeholder": "Cuardach tapa",
     "searching": "Ag cuardach...",
     "no-results": "Níor aimsíodh aon torthaí",
-    "more-results": "... agus {{number}} torthaí eile.",
     "show-in-full-search": "Taispeáin sa chuardach iomlán"
   },
   "note_tree": {
@@ -2270,7 +2280,9 @@
     "delete-notes-in-progress": "Scrios nótaí atá ar siúl: {{count}}",
     "delete-finished-successfully": "Scriosadh críochnaithe go rathúil.",
     "undeleting-notes-in-progress": "Nótaí á n-athscriosadh ar siúl: {{count}}",
-    "undeleting-notes-finished-successfully": "Críochnaíodh athscriosadh na nótaí go rathúil."
+    "undeleting-notes-finished-successfully": "Críochnaíodh athscriosadh na nótaí go rathúil.",
+    "delete-notes-in-progress-with-total": "Scriosta {{progress}} nóta as {{total}}",
+    "erasing-notes": "Ag scriosadh nótaí…"
   },
   "frontend_script_api": {
     "async_warning": "Tá feidhm neamhshioncrónach á cur agat chuig `api.runOnBackend()` agus is dócha nach n-oibreoidh sé mar a bhí beartaithe agat.\\nDéan an fheidhm sioncrónach (trí an eochairfhocal `async` a bhaint), nó bain úsáid as `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2373,12 +2385,9 @@
     "zoom-factor": "Fachtóir súmála"
   },
   "note_autocomplete": {
-    "search-for": "Cuardaigh \"{{term}}\"",
     "create-note": "Cruthaigh nóta \"{{term}}\"",
     "insert-external-link": "Cuir nasc seachtrach chuig \"{{term}}\" isteach",
     "clear-text-field": "Glan réimse téacs",
-    "show-recent-notes": "Taispeáin nótaí le déanaí",
-    "full-text-search": "Cuardach téacs iomlán",
     "create-note-into": "Cruthaigh nóta \"{{term}}\" i {{parentTitle}}",
     "create-note-into-day-note": "Cruthaigh an nóta \"{{term}}\" i nóta an lae inniu",
     "create-note-into-root": "Cruthaigh an nóta \"{{term}}\" ag an leibhéal uachtarach",
@@ -2509,7 +2518,8 @@
   },
   "svg": {
     "export_to_png": "Níorbh fhéidir an léaráid a easpórtáil go PNG.",
-    "export_to_svg": "Níorbh fhéidir an léaráid a easpórtáil chuig SVG."
+    "export_to_svg": "Níorbh fhéidir an léaráid a easpórtáil chuig SVG.",
+    "preview": "Réamhamharc ar an léaráid"
   },
   "code_theme": {
     "title": "Dealramh",
@@ -2664,7 +2674,8 @@
       "move_column_to_edge": "Bog an colún go dtí an taobh clé / deas i bhfad",
       "selection": "Roghnú",
       "select_column": "Roghnaigh gach cárta sa cholún",
-      "clear_selection": "Glan an roghnú"
+      "clear_selection": "Glan an roghnú",
+      "toggle_column": "Laghdaigh / leathnaigh an colún (ar cheanntásc colúin)"
     },
     "edit-title": "Cuir an teideal agus an deilbhín in eagar",
     "insert-new": "Cuir isteach ceann nua",
@@ -2693,7 +2704,7 @@
     "new-template-name": "Teimpléad cárta nua",
     "more-templates": "Tuilleadh teimpléad…",
     "card-template": "Roghnaigh teimpléad cárta",
-    "collapse-hint": "Cliceáil faoi dhó chun titim isteach",
+    "collapse-hint": "Cliceáil faoi dhó nó brúigh an spás-eochair chun titim isteach",
     "change-note-icon": "Athraigh an deilbhín",
     "column-name-taken": "Tá an colún dar teideal “{{- column}}” ann cheana féin.",
     "filter-placeholder": "Clár scagaire...",
@@ -2729,7 +2740,12 @@
     "cards-selected_other": "{{count}} cárta roghnaithe",
     "select-column-cards": "Roghnaigh gach cárta sa cholún",
     "reset-selection": "Athshocraigh an roghnú",
-    "expand-column": "Leathnaigh an colún"
+    "expand-column": "Leathnaigh an colún",
+    "delete-column-notes_one": "Scrios an nóta sa cholún seo freisin",
+    "delete-column-notes_two": "Scrios chomh maith na {{count}} nóta sa cholún seo",
+    "delete-column-notes_few": "Scrios chomh maith na {{count}} nóta sa cholún seo",
+    "delete-column-notes_many": "Scrios chomh maith na {{count}} nóta sa cholún seo",
+    "delete-column-notes_other": "Scrios chomh maith na {{count}} nóta sa cholún seo"
   },
   "presentation_view": {
     "edit-slide": "Cuir an sleamhnán seo in eagar",
@@ -2886,7 +2902,11 @@
     "doc_url": "Doiciméid ar líne",
     "doc_url_description": "Cliceáil chun an leathanach seo a fheiceáil ar shuíomh Gréasáin na ndoiciméad ar líne.",
     "office_preview": "Réamhamharc",
-    "office_preview_description": "Taispeántar an doiciméad seo mar réamhamharc léite amháin, mar sin ní féidir é a chur in eagar anseo.\n\nChun é a athrú, íoslódáil an comhad, cuir in eagar é in feidhmchlár seachtrach agus uaslódáil ar ais é mar athbhreithniú nua."
+    "office_preview_description": "Taispeántar an doiciméad seo mar réamhamharc léite amháin, mar sin ní féidir é a chur in eagar anseo.\n\nChun é a athrú, íoslódáil an comhad, cuir in eagar é in feidhmchlár seachtrach agus uaslódáil ar ais é mar athbhreithniú nua.",
+    "shared_preview": "Comhroinn réamhamharc",
+    "shared_preview_description": "Ní féidir an leathanach comhroinnte a oscailt ach leis an mbrabhsálaí seo, agus gan ach nuair atá Trilium ar oscailt ann. Chun é a fhoilsiú, easpórtáil an fho-chrann mar \"{{- format}}\" agus óstaigh na comhaid ar fhreastalaí gréasáin ar bith, nó bain úsáid as freastalaí Trilium.",
+    "shared_export_only": "Gan a bheith foilsithe",
+    "shared_export_only_description": "Ní féidir leis an aip shoghluaiste leathanaigh roinnte a oscailt. Chun an nóta seo a fhoilsiú, easpórtáil an fho-chrann mar \"{{- format}}\" agus óstáil na comhaid ar fhfreastalaí gréasáin ar bith, nó bain úsáid as freastalaí Trilium."
   },
   "status_bar": {
     "language_title": "Athraigh teanga an ábhair",
@@ -3155,7 +3175,6 @@
     "edit_index": "Cuir in eagar {{index}} de {{total}}",
     "retry": "Déan iarracht eile",
     "web_search_unavailable_gemini": "Ní bheidh sé ar fáil ar mhúnlaí Gemini agus rochtain nótaí ar siúl — ní cheadaíonn API Google an dá rud a chomhcheangal. Díchumasaigh rochtain nótaí nó aistrigh chuig soláthraí difriúil chun cuardach gréasáin a úsáid.",
-    "input_streaming": "Ionchur (sruthú…)",
     "attach_file": "Ceangail íomhá, PDF, nó comhad téacs",
     "remove_attachment": "Bain an ceangaltán",
     "attachment_upload_failed": "Theip ar \"{{name}}\" a uaslódáil.",
@@ -3188,7 +3207,21 @@
     "context_usage_label": "Úsáid fuinneoige comhthéacs",
     "context_tooltip": "Úsáideadh {{used}} de {{total}} comharthaí ({{percentage}}%)",
     "context_nearly_full": "Comhthéacs beagnach lán. Smaoinigh ar chomhrá nua a thosú.",
-    "free": "Saor in aisce"
+    "free": "Saor in aisce",
+    "reasoning_effort_title": "Iarracht réasúnaithe: {{level}}",
+    "reasoning_effort_levels": {
+      "none": "Aon cheann",
+      "minimal": "Íosta",
+      "low": "Íseal",
+      "medium": "Meánach",
+      "high": "Ard",
+      "xhigh": "An-ard",
+      "max": "Uasmhéid"
+    },
+    "stream_status": {
+      "starting_agent": "Ag tosú an ghníomhaire. D’fhéadfadh sé seo tamall a thógáil.",
+      "waiting_for_reply": "Ag fanacht leis an bhfreagra…"
+    }
   },
   "sidebar_chat": {
     "title": "Comhrá AI",
@@ -3312,7 +3345,8 @@
       "edit_note_content": "Cuir nóta in eagar",
       "search_icons": "Deilbhíní cuardaigh",
       "search_help": "Treoir Úsáideora Cuardaigh",
-      "get_help_toc": "Faigh ábhar an Treorach Úsáideora"
+      "get_help_toc": "Faigh ábhar an Treorach Úsáideora",
+      "read_web_page": "Léigh an leathanach gréasáin"
     },
     "base_url": "Bun-URL",
     "base_url_description": "Roghnach. Sroicheann sé an API céanna trí sheachfhreastalaí nó geata. Chun samhail a rith tú féin, cuir soláthraí Ollama nó LM Studio leis ina ionad.",
@@ -3335,13 +3369,12 @@
     "provider_model_count_many": "{{count}} samhlacha",
     "provider_model_count_other": "{{count}} samhlacha",
     "beta": "Béite",
-    "provider_desc_claude_agent": "Éilíonn Claude Code ar an meaisín a bhfuil Trilium ag rith air.",
     "claude_agent_description": "Úsáideann sé do shíntiús Claude Pro/Max trí Claude Code, mar sin níl aon eochair API ag teastáil. Ní mór Claude Code a shuiteáil ar an meaisín ina bhfuil Trilium ag rith (an freastalaí nuair a dhéantar féinóstáil, nó an ríomhaire seo ar dheasc); sínigh isteach uair amháin trí \"claude /login\" a rith ansin.",
     "add_provider_title_named": "Cuir {{- name}} leis",
     "provider_group_cloud": "Soláthraithe scamall",
     "provider_group_cloud_description": "Íoc in aghaidh úsáide le heochair API, a ghearrtar ar leithligh ó aon síntiús atá agat cheana féin. Seoltar do nótaí chuig freastalaithe an tsoláthraí.",
     "provider_group_subscription": "Síntiús",
-    "provider_group_subscription_description": "Athúsáideann sé síntiús a bhfuil tú ag íoc as cheana féin, gan aon chostas breise. Seoltar do nótaí chuig freastalaithe an tsoláthraí.",
+    "provider_group_subscription_description": "Úsáidtear cuntas atá agat cheana féin in áit eochair API, gan aon chostas breise: Claude Pro/Max, GitHub Copilot nó cuntas Google. Caithfear clár an tsoláthraí a shuiteáil ar an bhfeiste a bhfuil Trilium á rith uirthi, agus seoltar do chuid nótaí chuig freastalaithe an tsoláthraí.",
     "provider_group_local": "Áitiúil / féinóstáilte",
     "provider_group_local_description": "Gan eochair API, gan aon chostas úsáide. Ní shroicheann do nótaí ach an meaisín ina bhfuil an tsamhail á rith.",
     "provider_group_custom": "Críochphointe saincheaptha",
@@ -3367,8 +3400,12 @@
     "mcp_unavailable_standalone": "Gan a bheith ar fáil sa leagan brabhsálaí: cheanglódh cúntóirí le Trilium thar an líonra, ach níl aon seoladh ag an tógáil seo le tabhairt dóibh, ós rud é go ritheann sé go hiomlán laistigh den leathanach seo.",
     "enabled": "Gnéithe AI",
     "enabled_description": "Cuireann sé an taobhbharra comhrá AI agus nótaí comhrá LLM leis, ag baint úsáide as na soláthraithe atá cumraithe thíos.",
-    "provider_desc_copilot_agent": "Éilíonn sé GitHub Copilot CLI ar an meaisín a bhfuil Trilium ag rith air.",
-    "copilot_agent_description": "Úsáideann sé do shíntiús GitHub Copilot tríd an GitHub Copilot CLI, mar sin níl aon eochair API ag teastáil. Ní mór an Copilot CLI a shuiteáil ar an meaisín ina bhfuil Trilium ag rith (an freastalaí nuair a dhéantar féinóstáil, nó an ríomhaire seo ar dheasc); sínigh isteach uair amháin trí \"login copilot\" a rith ansin — athúsáidtear logáil isteach Copilot atá ann cheana féin ó eagarthóir eile go huathoibríoch."
+    "copilot_agent_description": "Úsáideann sé do shíntiús GitHub Copilot tríd an GitHub Copilot CLI, mar sin níl aon eochair API ag teastáil. Ní mór an Copilot CLI a shuiteáil ar an meaisín ina bhfuil Trilium ag rith (an freastalaí nuair a dhéantar féinóstáil, nó an ríomhaire seo ar dheasc); sínigh isteach uair amháin trí \"login copilot\" a rith ansin — athúsáidtear logáil isteach Copilot atá ann cheana féin ó eagarthóir eile go huathoibríoch.",
+    "antigravity_agent_description": "Baintear úsáid as cuóta Gemini do chuntas Google (saor in aisce, Google AI Pro nó Ultra) trí Google Antigravity, mar sin níl gá le heochair API.\n\nCaithfear freastalaí Antigravity ACP de chuid Google a íoslódáil chuig an bhfeiste a bhfuil Trilium á rith uirthi: an freastalaí i gcás féin-óstála, nó an ríomhaire seo i gcás deisce. Mura bhfuil sé suiteáilte go fóill, léirítear sa chéad chéim eile conas é a shuiteáil.\n\nAn chéad uair a liostaítear na samhlacha, osclaítear leathanach logáil isteach Google i mbrabhsálaí ar an bhfeiste sin.",
+    "antigravity_setup_download": "Ar an ngléas a bhfuil Trilium á rith air, íoslódáil an chartlann do d’ardán ó <Link>iontráil chlárúcháin ACP</Link> Google agus dí-chomhbhrúigh í i bhfillteán inar féidir léi fanacht.",
+    "antigravity_setup_archive": "Íoslódáil <Link>an chartlann don fheiste a ritheann Trilium</Link> agus dí-chomhbhrúigh í ansin, i bhfillteán inar féidir léi fanacht.",
+    "antigravity_setup_path": "Cuir an fillteán sin le <Code>PATH</Code>, nó socraigh an athróg timpeallachta <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> go dtí <Code>agy_acp_server.par</Code> ann (<Code>agy_acp_server.exe</Code> ar Windows), agus ansin athsheol Trilium.",
+    "antigravity_setup_sign_in": "Fill ar an gcéim seo. An chéad uair, osclaítear leathanach logáil isteach Google i mbrabhsálaí ar an ngléas sin."
   },
   "ocr": {
     "extracted_text": "Téacs Bainte (OCR)",
@@ -3457,7 +3494,6 @@
     "page_size": "Méid leathanaigh",
     "scale": "Scála",
     "margins": "Imill",
-    "render_error": "Ní féidir PDF a rindreáil leis na socruithe reatha. Seiceáil na corrlaigh agus an scála le do thoil.",
     "margins_default": "Réamhshocrú",
     "margins_none": "Dada",
     "margins_minimum": "Íosmhéid",
@@ -3627,7 +3663,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Cuir isteach cuid is féidir a athrú agus a cheilt/a thaispeánann ábhar nuair a chliceálann tú.",
       "insert-an-anchor-for-internal-linking": "Cuir ancaire isteach le haghaidh nascadh inmheánach",
       "insert-an-empty-mermaid-diagram": "Cuir léaráid fholamh Maighdean Mhara isteach",
-      "insert-the-current-date-and-time": "Cuir isteach an dáta agus an t-am reatha",
       "justify-text-alignment": "Comhfhírinnigh ailíniú téacs",
       "missing-definition": "(sainmhíniú ar iarraidh)",
       "right-click-or-press-0-to-change-state": "Cliceáil ar dheis nó brúigh %0 chun an stát a athrú.",
@@ -3679,8 +3714,6 @@
       "insert-a-table": "Cuir tábla isteach.",
       "insert-date-time": "Cuir isteach dáta/am",
       "insert-footnote-0": "Cuir nóta coise %0 isteach",
-      "insert-math": "Cuir matamaitic isteach",
-      "insert-mermaid-diagram": "Cuir isteach léaráid Maighdeann Mhara",
       "insert-mermaid-source-code": "Cuir isteach cód foinse Mermaid",
       "insert-paragraph-after-code-block": "Cuir mír isteach i ndiaidh bhloc cóid",
       "insert-paragraph-before-code-block": "Cuir mír isteach roimh bhloc cóid",
@@ -3744,7 +3777,18 @@
       "try-again": "Déan iarracht arís",
       "working": "Ag obair…",
       "upload-an-image-from-your-device": "Uaslódáil íomhá ó do ghléas.",
-      "upload-image": "Uaslódáil íomhá"
+      "upload-image": "Uaslódáil íomhá",
+      "icon": "Deilbhín",
+      "insert-an-icon-from-an-installed-icon-pack": "Cuir isteach deilbhín ó phacáiste deilbhíní atá suiteáilte",
+      "transform-icon": "Deilbhín claochlaithe",
+      "icon-toolbar": "Barra uirlisí deilbhíní",
+      "no-transform": "Gan claochlú",
+      "rotate-90": "Rothlaigh 90°",
+      "rotate-180": "Rothlaigh 180°",
+      "rotate-270": "Rothlaigh 270°",
+      "flip-horizontally": "Smeach go cothrománach",
+      "flip-vertically": "Smeach go hingearach",
+      "change-icon": "Athraigh an deilbhín"
     },
     "task-state-dropped-title": "Stádas tascanna neamhbhailí",
     "task-state-dropped-message_one": "Tá sainmhíniú stádais tasc saincheaptha neamhbhailí agus níor tugadh aird air.",
@@ -3801,7 +3845,8 @@
       "previous_image": "Íomhá roimhe seo",
       "first_image": "An chéad íomhá",
       "last_image": "Íomhá dheireanach"
-    }
+    },
+    "viewport": "Amharc ar an íomhá"
   },
   "snippet_badge": {
     "label": "sleachta {{type}}",
@@ -4468,5 +4513,75 @@
     "creation-date": "Dáta agus am cruthaithe",
     "ascending": "Ag dul in airde",
     "descending": "Ag dul síos"
+  },
+  "zoom_controls": {
+    "zoom_out": "Zúmáil amach",
+    "reset": "Athshocraigh an súmáil",
+    "zoom_in": "Zúmáil isteach",
+    "hints": {
+      "zoom": "Zúmáil",
+      "zoom_in": "Zúmáil isteach",
+      "zoom_out": "Zúmáil amach",
+      "reset_zoom": "Athshocraigh an súmáil",
+      "pan": "Peanáil",
+      "pan_up": "Suas",
+      "pan_down": "Síos",
+      "pan_left": "Ar chlé",
+      "pan_right": "Ar dheis",
+      "pan_fast": "Panáil níos tapúla"
+    }
+  },
+  "search_lint": {
+    "relation_needs_property": "Tagraíonn caidrimh do nód, mar sin ní féidir iad a sheiceáil le haghaidh comhionannais. Bain úsáid as . ina ionad sin chun rochtain a fháil ar a chuid airíonna.",
+    "text_needs_contains": "Déanann note.text cuardach ar an teideal agus ar an ábhar le chéile, mar sin ní féidir é a mheaitseáil ach le *=*.",
+    "content_not_ordered": "Is téacs é ábhar an nóta, mar sin ní féidir é a shórtáil. Bain úsáid as *=* ina ionad sin chun é a mheaitseáil.",
+    "compare_the_title": "Déan comparáid idir an teideal",
+    "use_operator": "Úsáid {{operator}}"
+  },
+  "search_completion": {
+    "note": "Tabhair faoi deara an teideal, na hairíonna agus na nótaí gaolmhara",
+    "operator_equal": "Is ionann é agus an luach iomlán",
+    "operator_not_equal": "Ní hionann é agus an luach iomlán",
+    "operator_contains": "Tá",
+    "operator_starts_with": "Tosaíonn le",
+    "operator_ends_with": "Críochnaíonn le",
+    "operator_greater_than": "Níos mó ná",
+    "operator_greater_or_equal": "Níos mó ná nó cothrom le",
+    "operator_less_than": "Níos lú ná",
+    "operator_less_or_equal": "Níos lú ná nó cothrom le",
+    "operator_regex": "Meaitseálann sé slonn rialta",
+    "operator_fuzzy_equal": "Comhionann le, agus botúin chló á gcur san áireamh",
+    "operator_fuzzy_contains": "Cuimsíonn, agus glacann le cló-earráidí",
+    "property_content": "Príomh-théacs an nóta",
+    "property_raw_content": "Príomhchuid téacs an nóta, sula mbaintear an fhormáidiú de",
+    "property_text": "An teideal nó príomhchuid an téacs",
+    "property_parents": "Leanann sé ar aghaidh le tuismitheoirí an nóta",
+    "property_children": "Leanann sé ar aghaidh le leanaí an nóta",
+    "property_ancestors": "Leanann sé ar aghaidh le sinsear an nóta",
+    "property_labels": "Agus ainm an lipéid ina dhiaidh sin",
+    "property_relations": "Agus ainm an ghaoil ina dhiaidh sin, agus ansin airíonna an nóta sin féin",
+    "property_attribute_count": "Líon na lipéad agus na gcaidreamh, lena n-áirítear na cinn oidhreachta",
+    "property_label_count": "Líon na lipéad, lena n-áirítear na cinn oidhreachta",
+    "property_relation_count": "Líon na gcaidreamh, lena n-áirítear cinn oidhreachta",
+    "property_relation_count_including_links": "Líon na gcaidreamh, agus iad siúd a chruthaítear le naisc san áireamh",
+    "property_owned_relation_count_including_links": "Líon na ngaolta atá ag an nóta féin, agus na cinn a chruthaítear trí naisc á n-áireamh",
+    "property_target_relation_count_including_links": "Líon na gcaidreamh a dhíríonn ar an nóta, agus iad siúd a cruthaíodh trí naisc á n-áireamh",
+    "keyword_and": "Ní mór don dá choinníoll a bheith comhoiriúnach",
+    "keyword_or": "Ní mór ceachtar coinníoll a bheith comhoiriúnach",
+    "keyword_not": "Eisiamh na nótaí a chomhlíonann an coinníoll idir lúibíní",
+    "keyword_order_by": "Sórtálann sé na torthaí de réir airí nó lipéid",
+    "keyword_limit": "Ní choinnítear ach na chéad torthaí",
+    "date_now": "An dáta agus an t-am reatha",
+    "date_today": "Dáta an lae inniu",
+    "date_month": "An mhí reatha",
+    "date_year": "An bhliain reatha",
+    "date_now_offset": "Aon líon soicindí roimh an nóiméad seo",
+    "date_today_offset": "Aon líon laethanta roimh an lá inniu",
+    "date_month_offset": "Aon líon míonna roimh an mí seo",
+    "date_year_offset": "Aon líon blianta roimh an mbliain seo",
+    "label_marker": "Tagraíonn sé do lipéad. Brúigh Enter chun liosta na lipéad a fheiceáil",
+    "label_marker_negated": "Eisíonn sé lipéad. Brúigh Enter chun liosta na lipéad a fheiceáil",
+    "relation_marker": "Tagraíonn sé do chaidreamh. Brúigh Enter chun liosta na gcaidreamh a fheiceáil",
+    "relation_marker_negated": "Eisíonn sé gaol. Brúigh Enter chun an liosta de na gaolta a fheiceáil"
   }
 }

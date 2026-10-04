@@ -61,10 +61,14 @@
   </li>
   <li>
     <p><a class="reference-link" href="#root/_help_nBAXQFj20hS1">Include Note</a>&nbsp;(no
-      built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-html">&lt;section class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
-    &amp;nbsp;
-&lt;/section&gt;</code></pre>
+      built-in Markdown syntax, but HTML syntax works just fine):</p><pre><code class="language-text-html">&lt;figure class="include-note" data-note-id="vJDjQm0VK8Na" data-box-size="expandable"&gt;
+    &lt;figcaption&gt;An optional caption, with &lt;strong&gt;HTML&lt;/strong&gt; formatting&lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
     <ul>
+      <li>The caption is optional. Markdown is not processed inside the HTML block,
+        so format the caption with HTML tags.</li>
+      <li>Includes written as <code>&lt;section class="include-note"&gt;</code>,
+        the syntax of earlier versions, still work.</li>
       <li>These can also be quickly created via the <code>/include</code> command
         or via a dedicated keyboard shortcut (not assigned by default).</li>
     </ul>
@@ -123,7 +127,7 @@
   <li>
     <p>Highlights (background color) are supported both via the <code>==</code> Markdown
       syntax, as well as the canonical HTML representation in Trilium:</p><pre><code class="language-text-x-trilium-auto">==highlighted==
-&lt;span style="background-color:hsl(0,0%,100%);"&gt;Highlighted&lt;/span&gt;</code></pre>
+&lt;span style="background-color:#e5e64d;--tn-background:#e5e64d;"&gt;Highlighted&lt;/span&gt;</code></pre>
   </li>
 </ul>
 <h3>Links</h3>
@@ -159,8 +163,8 @@
     into a new child note.</li>
   <li><em>Add link</em> (<kbd>Ctrl</kbd>+<kbd>L</kbd>) which shows the dialog
     to create external or reference links.</li>
-  <li><em>Insert date/time</em> (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects
-    the same formatting as text notes.</li>
+  <li><em>Date/time</em> (<kbd>Alt</kbd>+<kbd>T</kbd>) which respects the same
+    formatting as text notes.</li>
   <li><em>Include note</em> (not assigned by default), which triggers the same
     dialog to insert notes as the one for text notes.</li>
 </ul>
@@ -203,7 +207,32 @@
   <li>Inserting code snippets (<code>/snippet:&lt;name&gt;</code>) from your
     Markdown/plain-text snippet notes.</li>
 </ul>
+<p>The list shows each command by its title, as in Text notes. Typing a command's
+  title, its keyword (as listed above) or a related word such as <code>latex</code> or <code>grid</code> finds
+  it.</p>
 <p>Note that slash commands only work outside of code blocks and inline code.</p>
+<h4>Linking notes with <code>@</code> or <code>[[</code></h4>
+<p>As in <a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a> notes,
+  typing <code>@</code> at the start of a line or after a space opens the note
+  search. Picking a note replaces what was typed with a link to it in the
+  Wikilinks-like format (<code>[[noteId]]</code>), which the preview shows
+  as an <a class="reference-link" href="#root/_help_hrZ1D00cLbal">internal link</a> with
+  the note's title.</p>
+<p>The search runs on everything typed after the <code>@</code>, spaces included,
+  so a title such as <code>@My meeting notes</code> can be typed out; press <kbd>Esc</kbd> to
+  close the list and go on writing. If no note fits, the list offers to create
+  one, as a child of the Markdown note or in the inbox; the link is inserted
+  once the note is created.</p>
+<p>You can also start typing the link directly: <code>[[</code> opens the same
+  list, and closing the brackets yourself dismisses it. To change where an
+  existing link points, place the cursor inside it and pick another note.</p>
+<p>Like slash commands, <code>@</code> and <code>[[</code> do nothing inside
+  code blocks and inline code.</p>
+<p>In the editor, a <code>[[noteId]]</code> link shows as the note's icon and
+  title, so you can tell which note it points to without looking up its ID.
+  Clicking it, or moving the cursor next to it, shows the link as written
+  so it can be edited. Links inside code blocks and inline code are left
+  as they are.</p>
 <h4>Code block language auto-completion</h4>
 <p>Starting with v0.104.0, typing ``` to insert a code block will automatically
   open a list of suggested language types which have syntax highlighting.</p>

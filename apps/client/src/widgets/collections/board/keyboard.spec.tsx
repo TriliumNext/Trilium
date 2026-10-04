@@ -503,15 +503,100 @@ describe("Board keyboard", () => {
             expect(focusedName(board)).toBe("Third");
         });
 
-        it("leaves Space and Enter alone on a column that is not collapsed", async () => {
+        /** This harness never reads the write back, so `index.spec.tsx` covers the strip. */
+        it("collapses an open column with Space instead of walking on", async () => {
             const board = await renderBoard();
             focusHeader(board, 1);
 
             press(board, " ");
-            press(board, "Enter");
+            await act(async () => { await flush(); });
 
-            expect(document.activeElement).toBe(columnAt(board, 1).querySelector("h3"));
+            expect(saved.at(-1)?.columns?.find(col => col.value === "Doing")?.collapsed)
+                .toBe(true);
+        });
+
+        /** The column keeps its cards: only a collapsed heading answers Enter with an expand. */
+        it("makes a card instead of expanding a column that is not collapsed", async () => {
+            const board = await renderBoard();
+            focusHeader(board, 1);
+
+            press(board, "Enter");
+            await act(async () => { await flush(); });
+
+            expect(saved).toHaveLength(0);
+            expect(columnAt(board, 1).querySelector(".board-new-item.inserting")).toBeTruthy();
             expect(columnAt(board, 1).querySelectorAll(".board-note")).toHaveLength(1);
+        });
+    });
+
+    describe("picking cards out with the keyboard", () => {
+        it("grows the range on its way down the column and shrinks it on the way back", async () => {
+            const board = await renderBoard(undefined, undefined, [ "To Do" ]);
+            focusCard(board, 0, 0);
+
+            expect(press(board, "ArrowDown", { shiftKey: true })).toBe("Second");
+            expect(pickedNames(board)).toEqual([ "First", "Second" ]);
+
+            expect(press(board, "ArrowDown", { shiftKey: true })).toBe("Fourth");
+            expect(pickedNames(board)).toEqual([ "First", "Second", "Fourth" ]);
+
+            // The button under the cards holds none, so the press stops on the last of them.
+            expect(press(board, "ArrowDown", { shiftKey: true })).toBe("Fourth");
+            expect(pickedNames(board)).toEqual([ "First", "Second", "Fourth" ]);
+
+            // The anchor stays on the card the range began at, so the way back shrinks that same
+            // range rather than opening a new one downwards.
+            expect(press(board, "ArrowUp", { shiftKey: true })).toBe("Second");
+            expect(pickedNames(board)).toEqual([ "First", "Second" ]);
+
+            expect(press(board, "ArrowUp", { shiftKey: true })).toBe("First");
+            expect(pickedNames(board)).toEqual([ "First" ]);
+
+            // As does the header above them.
+            expect(press(board, "ArrowUp", { shiftKey: true })).toBe("First");
+            expect(pickedNames(board)).toEqual([ "First" ]);
+        });
+
+        it("picks the focused card out with Ctrl and Space, and steps onto the next", async () => {
+            const board = await renderBoard(undefined, undefined, [ "To Do" ]);
+            focusCard(board, 0, 0);
+
+            expect(press(board, " ", { ctrlKey: true })).toBe("Second");
+            expect(pickedNames(board)).toEqual([ "First" ]);
+
+            expect(press(board, " ", { ctrlKey: true })).toBe("Fourth");
+            expect(pickedNames(board)).toEqual([ "First", "Second" ]);
+
+            // The last card of the column keeps focus: the button under it holds no card.
+            expect(press(board, " ", { ctrlKey: true })).toBe("Fourth");
+            expect(pickedNames(board)).toEqual([ "First", "Second", "Fourth" ]);
+
+            // A second press on the same card puts it back.
+            expect(press(board, " ", { ctrlKey: true })).toBe("Fourth");
+            expect(pickedNames(board)).toEqual([ "First", "Second" ]);
+        });
+
+        /** A range runs through cards, so a header is not a place one can start from. */
+        it("leaves Shift and an arrow on a header unanswered", async () => {
+            const board = await renderBoard(undefined, undefined, [ "To Do" ]);
+            focusHeader(board, 0);
+
+            press(board, "ArrowDown", { shiftKey: true });
+
+            expect(pickedNames(board)).toEqual([]);
+        });
+
+        /**
+         * A range is measured against one column, so an anchor left in another names no place in
+         * the list the press is counted against.
+         */
+        it("begins a range at the focused card when the one picked out stands elsewhere", async () => {
+            const board = await renderBoard();
+            pick(board, 1, 0);
+            focusCard(board, 0, 0);
+
+            expect(press(board, "ArrowDown", { shiftKey: true })).toBe("Second");
+            expect(pickedNames(board)).toEqual([ "First", "Second" ]);
         });
     });
 
@@ -544,6 +629,20 @@ describe("Board keyboard", () => {
             // The card that moved is what focus rests on, as for any other cross-column move.
             expect(columnOf(board, "First")).toBe(1);
             expect(focusedName(board)).toBe("First");
+        });
+
+        /** The inbox is named by the empty string, which is a column like any other to move to. */
+        it("sends a card into the inbox column beside it", async () => {
+            const board = await renderBoard(undefined, undefined, [], true);
+            const strip = vi.spyOn(attributes, "removeOwnedLabelByName").mockReturnValue(true);
+            // The inbox is seeded at the front, so the first card is in the column after it.
+            focusCard(board, 1, 0);
+
+            press(board, "ArrowLeft", { ctrlKey: true });
+            await settleWrites();
+
+            expect(strip).toHaveBeenCalled();
+            expect(namesIn(board, 0)).toEqual([ "First" ]);
         });
 
         it("sends every picked-out card to the next column, and leaves them picked out", async () => {
@@ -1223,7 +1322,7 @@ describe("Board keyboard", () => {
             title: "Board",
             "#collection": "",
             "#viewType": "board",
-            ...(inbox ? { "#enableInboxColumn": "true" } : {}),
+            ...(inbox ? { "#board:showInbox": "true" } : {}),
             children: [
                 {
                     title: "First",

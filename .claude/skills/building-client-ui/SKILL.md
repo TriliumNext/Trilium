@@ -1,6 +1,6 @@
 ---
 name: building-client-ui
-description: Use when building or changing any UI in the Trilium client (`apps/client`) — a dialog, a settings pane, a form, a toolbar, a badge, a link, a dropdown menu, a type widget, a control floating over a note's content (map, mind map, image, diagram, presentation), or any component that reads/writes a note's title, label, relation, blob or option. Catalogues the froca-reactive hooks (useNoteProperty / useNoteLabel / useNoteBlob / useChildNotes / useTriliumOption / useNoteContext) and which `loadResults` filter each already wires, the reusable Preact components under `apps/client/src/widgets/react/` (which one to reach for instead of a hand-rolled `<input>`/`<button>`/`<a>`/pill), the `Dropdown` backdrop-blur rules (`noDropdownListStyle` / `portalToBody`), the `OverlayControlGroup` / `OverlayToolbar` contract for controls over a canvas, the event-summoned Modal/LazyDialog wiring, and how to boot a login-free fixture instance to inspect real computed styles when a style, placement or stacking bug cannot be read off the stylesheets. The home for client UI guidance that outgrows CLAUDE.md.
+description: Use when building or changing any UI in the Trilium client (`apps/client`) — a dialog, a settings pane, a form, a toolbar, a badge, a link, a dropdown menu, a type widget, a control floating over a note's content (map, mind map, image, diagram, presentation), or any component that reads/writes a note's title, label, relation, blob or option. Catalogues the froca-reactive hooks (useNoteProperty / useNoteLabel / useNoteBlob / useChildNotes / useTriliumOption / useNoteContext) and which `loadResults` filter each already wires, the reusable Preact components under `apps/client/src/widgets/react/` (which one to reach for instead of a hand-rolled `<input>`/`<button>`/`<a>`/pill), when a dropdown is a `Dropdown` menu and when a `DropdownPanel`, the `OverlayControlGroup` / `OverlayToolbar` contract for controls over a canvas, the event-summoned Modal/LazyDialog wiring, and how to boot a login-free fixture instance to inspect real computed styles when a style, placement or stacking bug cannot be read off the stylesheets. The home for client UI guidance that outgrows CLAUDE.md.
 ---
 
 # Building client UI
@@ -61,16 +61,16 @@ Form controls:
 - `FormSelect` — dropdown/combobox taking an object array as data. `FormDropdownList` for a list of items with icons; `FormAutocomplete` / `NoteAutocomplete` for typeahead (the latter searches notes).
 - `FormCheckbox`, `FormToggle`, `FormRadioGroup` / `FormInlineRadioGroup` — boolean and exclusive choices. `SegmentedChoice` is a row of buttons acting as one exclusive choice (use where a dropdown would hide the alternatives).
 - `Slider` — range slider with label.
-- `ColorPicker` — preset swatches plus the browser's native `<input type="color">`; value is a CSS color string, `onChange(null)` clears. It is a controlled, flat swatch row: wrap it in a `Dropdown` for a popover or use it inline; don't hand-roll a palette. `NoteColorPicker` is the note-bound variant that reads/writes the note's `color` label.
+- `ColorPicker` — preset swatches plus the browser's native `<input type="color">`; value is a CSS color string, `onChange(null)` clears. It is a controlled, flat swatch row: wrap it in a `DropdownPanel` for a popover or use it inline; don't hand-roll a palette. `NoteColorPicker` is the note-bound variant that reads/writes the note's `color` label.
 - `IconPicker` — boxicons picker.
 - `FormGroup` — label + control + hint row for settings panes; `PropertySheet` for a whole sheet of them.
 - `FormFileUpload`, `FileDropZone` — file input and drag-and-drop target.
 
 Buttons and links:
 
-- `Button` — the general button (also carries the tooltip for a *disabled* control via a wrapper, since a disabled `<button>` emits no pointer events). `ActionButton` — icon button with consistent styling.
+- `Button` — the general button (also carries the tooltip for a *disabled* control via a wrapper, since a disabled `<button>` emits no pointer events). `ActionButton` — icon button with consistent styling. `SplitButton` — a button with its related actions in a `Dropdown` menu on a toggle beside it; its rows are `FormListItem`s.
 - `HelpButton`, `HelpTooltipButton`, `HelpDropdown` — open in-app help pages; don't invent a new "?" affordance.
-- `KeyboardShortcut` — renders a shortcut as keycaps.
+- A menu row's shortcut is `FormListItem`'s `keyboardShortcut` (an action's configured keys) or `shortcut` (literal text); never put keycaps into its label by hand.
 
 **Never hand-roll `<a className="tn-link">`.** Which link component to reach for depends on what the link *is*:
 
@@ -93,7 +93,7 @@ Display and layout:
 - `Alert`, `InfoBar`, `Admonition`, `ContentErrorMessage`, `RenderErrorCard` — inline notices and error surfaces of increasing weight.
 - `Card` — a titled group of sections (filter-aware under `FilterProvider`). `Collapsible` — animated, theme-styled expandable section with self-managed `initiallyExpanded`; `ExternallyControlledCollapsible` is the controlled variant (caller owns `expanded`/`setExpanded`).
 - `TabStrip` — a row of icon-only tabs named by tooltips, heading a panel divided into groups.
-- `Modal`, `WizardModal` — dialogs; `Popover` — a small surface anchored beside something (portaled to the body, so no scroll container clips it).
+- `Modal`, `WizardModal` — dialogs; `Popover` — a card anchored beside something, with an arrow pointing at it, as the calendar's event card (portaled to the body and placed by `placeFloating()`, so no scroll container clips it).
 - `LoadingSpinner`, `LazyComponent`, `Icon`, `MaskedIcon`, `NoteList`, `SiblingNavigator`, `ImageViewer`, `CodeBlock`, `charts/DonutChart`, `charts/Treemap`.
 
 Data grids and calendars (outside `widgets/react/`, but equally generic):
@@ -108,27 +108,29 @@ Two rules that apply to all of them:
 - **Do not use Bootstrap utility classes** (`form-control-sm`, `form-select-sm`, `input-group`, …) on these components — they manage their own styling. Adjust sizing or layout through the component's props or its CSS custom properties, not Bootstrap overrides.
 - Before adding a prop or a variant, read the component's own doc comment; most already have the variant (outline badge, controlled collapsible, popover-wrapped picker).
 
-## Dropdown menus and the backdrop blur
+## Dropdowns: menus and panels
 
-`Dropdown` is the Bootstrap dropdown wrapper (toggle button + menu, with `FormListItem` / `FormDropdownDivider` as items). The Next theme frosts every `.dropdown-menu` with `backdrop-filter`, along **two different paths**, and only one is reliable:
+Both kinds of dropdown share a toggle and open in a `Popup` portaled onto `<body>`, placed by Floating UI, so an ancestor's `overflow`, `transform` or `filter` never clips, displaces or flattens them. Which one to use depends on what opens:
 
-- **`::before` layer** (default for a menu *without* `tn-dropdown-list`) — the blur lives on a background-less pseudo-element at `z-index: -1`. Works everywhere.
-- **Element-level filter** (what the `tn-dropdown-list` class switches to) — the blur sits on the menu element itself, which also paints a translucent background. It exists only because a **scrollable** menu can't use the pseudo (it would scroll away with the content). Opened inside the note's scrolling content area, this filter silently does nothing and the menu degrades to its bare ~85 %-alpha background — see-through over anything dark. `body.background-effects` already forces such menus to an opaque fallback for the same reason (see the comment in `theme-next/base.css`).
+- **`Dropdown`** opens a **menu** (`Menu`). Its rows are `FormListItem`, `FormDropdownSubmenu`, `FormListHeader`, `FormDropdownDivider` and `FormListCustomItem`; the menu takes focus and moves between them with the arrow keys, Home/End and typeahead, and tells assistive technology it is a menu. It caps its height to the viewport and scrolls in `.tn-menu-scroll`, while its backdrop blur stays on the frame's `::before`, so it is frosted everywhere.
+- **`DropdownPanel`** opens anything else: a picker, a form, a list of links, help text. Its fields keep their keys; Up and Down only move between `.dropdown-item`s. Its blur, like a menu's, is on its `::before`, so its own frame must never scroll: for content that can outgrow the screen, pass **`scrollable`**, which caps the panel to the room it has and scrolls the content inside it.
 
-`Dropdown` adds `tn-dropdown-list` **by default**, so a new menu opts into the fragile path unless told otherwise:
+A wrong pick fails quietly: a form in a `Dropdown` loses Up, Down, Tab and Escape to the menu, and a list of rows in a `DropdownPanel` gets none of the menu's keys. On a phone, pass `mobileBottomSheet` to open either as a sheet from the bottom of the screen over a dimmed page.
 
-- Pass **`noDropdownListStyle`** on any menu that doesn't scroll — nearly every action/`[…]` menu. `NoteActions`, the global menu, the note-icon picker and `HelpDropdown` all do.
-- Pass **`portalToBody`** instead when the menu is fine but an *ancestor* establishes a containment/backdrop root (`container-type`, `transform`, `filter` — e.g. the peeked right pane), which flattens the blur into a flat tint.
-- If a menu looks transparent rather than frosted, check these two before reaching for CSS overrides.
+Rules for both:
 
-### A transformed ancestor also breaks placement and stacking
+- **Placement and closing are props of their own**: `placement` takes Floating UI's names (`"top"`, `"bottom-end"`, …) and flips near the viewport's edge; `autoClose` is `true`, `"inside"`, `"outside"` or `false`. There is no Bootstrap or Popper config to pass.
+- **A bottom sheet is only ever `mobileBottomSheet`.** Never put `mobile-bottom-menu` in `dropdownContainerClassName`: the stylesheet then pins the popup to the bottom while Floating UI still places it beside its toggle, and Floating UI's inline `max-height` caps the sheet to the room the toggle had. `mobileBottomSheet` also dims the page, so it needs no `mobileBackdrop`.
+- **`dropdownRef` holds a `DropdownHandle`** (`show`, `hide`, `toggle`), exported from `Dropdown.tsx`. Type the ref with it, never with Bootstrap's `Dropdown`, which compiles but promises methods the handle doesn't have.
+- **Submenus**: `FormDropdownSubmenu` opens a submenu only inside a `Dropdown` menu (elsewhere, its title is rendered as a header above its rows). Which side a submenu opens on, and which way its row's arrow points, is detected from the room around the menu; there is no prop for it.
+- **Style a popup by its own classes.** It lives in `<body>`, inside a `.tn-dropdown-portal` wrapper that carries the dropdown's `className`, so a rule scoped under the toggle's ancestors (`.status-bar .dropdown-menu`) never matches it. Use `dropdownContainerClassName` with top-level rules. Its z-index (1200, over dialogs) is set in `Popup.css`; `--bs-dropdown-zindex` doesn't reach it.
 
-`portalToBody` has a second, unrelated reason to exist. `body.mobile .dropdown-menu` forces `position: fixed`, and the settings dialog's `.modal-dialog` carries a `transform` (the mobile master-detail slide between the page list and the page). A transformed ancestor is both:
+Other floating surfaces:
 
-1. the **containing block** for `position: fixed`, so a menu left to place itself lands adrift — measured at 160×160 at x=209, mid-page, on a Pixel 7 viewport; and
-2. a **stacking context**, so the menu's `z-index: 3000` is confined inside the modal's own `z-index: 1055`. `#context-menu-cover` (the `mobileBackdrop`) is a `<body>` child at `z-index: 2500`, so it paints above the *whole* modal — dimming the menu along with the page behind it.
-
-Both symptoms read as CSS bugs rather than containing-block ones. A mobile menu inside a modal wants `portalToBody` **plus** `dropdownContainerClassName="mobile-bottom-menu"` — see `CollapsedChoice` in `apps/client/src/widgets/react/SegmentedChoice.tsx`. Diagnose by walking the menu's ancestors for `transform` / `filter` / `container-type` in the running app rather than reasoning about the stylesheets.
+- **Position with `placeFloating()`** from `Popup.tsx`, under Floating UI's `autoUpdate()`, as `Popup`, submenu layers and `Popover` do. Its `arrow` option places a pointer element. Don't bring back Popper (`createPopper`): the client no longer uses it directly, and it stays installed only as Bootstrap's peer dependency.
+- **A cover or backdrop that disappears with its popup lets the dismissing tap's click through.** The press closes the popup and hides the cover before the browser sends the click, which then lands on whatever was under the cover. `Popup` drops that click (`swallowStrayClick`); a custom surface with a cover needs the same.
+- **Any element with `.dropdown-menu` that isn't a Bootstrap dropdown must capture Up, Down and Escape on `window`.** Bootstrap's handler captures them on `document` for every `.dropdown-menu` and throws when no `data-bs-toggle` is next to it. `Popup`, `Menu` and `FormList` do this; a new surface that reuses the class for its styling needs it too.
+- **`FormList`**, the always-open list in the note type chooser, revisions and font pickers, moves focus with Up and Down through `focusListItem()`, as `DropdownPanel` does, not with the menu's keyboard model.
 
 ## Controls floating over a note's content
 

@@ -1,0 +1,7 @@
+/* The zoom level keeps the width of "3000%", the largest zoom, in a CKEditor text button. */
+.ck.ck-toolbar .ck.ck-button.canvas-drawing-zoom-level {
+    justify-content: center;
+    padding-inline: var(--ck-spacing-small);
+    width: calc(6ch + 2 * var(--ck-spacing-small) + 2px);
+    font-variant-numeric: tabular-nums;
+}

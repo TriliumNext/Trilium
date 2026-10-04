@@ -355,12 +355,22 @@ class FrocaImpl implements Froca {
         }
 
         const attachments = this.processAttachmentRows(attachmentRows);
-
-        if (attachments.length) {
-            attachments[0].getNote().attachments = attachments;
+        const owner = attachments.length ? attachments[0].getNote() : undefined;
+        if (owner) {
+            owner.attachments = attachments;
         }
 
         return this.attachments[attachmentId];
+    }
+
+    /** The attachment if `noteId` owns it, otherwise `null`. Loads the note first. */
+    async getAttachmentOfNote(noteId: string, attachmentId: string) {
+        if (!await this.getNote(noteId, true)) {
+            return null;
+        }
+
+        const attachment = await this.getAttachment(attachmentId, true);
+        return attachment?.ownerId === noteId ? attachment : null;
     }
 
     async getAttachmentsForNote(noteId: string) {

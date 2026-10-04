@@ -33,7 +33,7 @@ export const INBOX_COLUMN = "";
 export const INBOX_COLUMN_ICON = "bx bxs-inbox";
 
 /** The label naming how wide the board draws its columns. */
-export const COLUMN_WIDTH_LABEL = "boardCardWidth";
+export const COLUMN_WIDTH_LABEL = "board:columnWidth";
 
 /** The widths the board offers, in the order the properties dialog lists them. */
 export const COLUMN_WIDTHS = [ "narrow", "medium", "wide" ] as const;

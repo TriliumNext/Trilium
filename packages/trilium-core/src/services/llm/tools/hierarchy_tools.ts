@@ -131,6 +131,7 @@ export const hierarchyTools = defineTools({
                 return { error: "Note has no parent branches" };
             }
 
+            const oldParentNoteId = branches[0].parentNoteId;
             const result = branchService.moveBranchToNote(branches[0], newParentNoteId);
             if (Array.isArray(result)) {
                 // Validation error: [statusCode, { success: false, message }]
@@ -148,7 +149,8 @@ export const hierarchyTools = defineTools({
                 noteId: note.noteId,
                 title: note.getTitleOrProtected(),
                 newParentNoteId,
-                newParentTitle: targetParent.getTitleOrProtected()
+                newParentTitle: targetParent.getTitleOrProtected(),
+                oldParentNoteId
             };
         }
     },

@@ -1,0 +1,90 @@
+.search-string-editor {
+    .cm-editor {
+        background: transparent;
+        max-height: 12em;
+    }
+
+    .cm-editor.cm-focused {
+        outline: none;
+    }
+
+    .cm-scroller {
+        /* Outweighs the global `.cm-scroller` rule, which puts code notes in the monospace font. */
+        font-family: var(--main-font-family) !important;
+        font-size: inherit;
+        line-height: inherit;
+        /* The max-height above only scrolls against an overflow here. */
+        overflow: auto;
+    }
+
+    .cm-content {
+        padding: 0;
+        caret-color: var(--input-text-color);
+    }
+
+    .cm-line {
+        padding: 0;
+        /* `.search-setting-table div` sets nowrap on every descendant. */
+        white-space: pre-wrap;
+    }
+
+    /* Over a `Popup` (1200, Popup.css): the quick search's results hang off this field, and the
+       lint tooltips have to cover them. */
+    .cm-editor .cm-tooltip {
+        z-index: 1210;
+    }
+
+    .cm-editor .cm-tooltip.cm-tooltip-hover {
+        --search-lint-tooltip-background: var(--tooltip-background-color, transparent);
+
+        max-width: 500px;
+        border: 0;
+        border-radius: var(--tooltip-border-radius, 5px);
+        background:
+            linear-gradient(
+                var(--search-lint-tooltip-background),
+                var(--search-lint-tooltip-background)
+            ),
+            var(--main-background-color);
+        color: var(--tooltip-foreground-color, var(--main-text-color));
+        box-shadow: var(--tooltip-box-shadow, 0 5px 10px rgba(0, 0, 0, 0.2));
+        font-size: var(--tooltip-font-size, 0.9em);
+        overflow: hidden;
+    }
+
+    .cm-editor .cm-diagnostic {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5em;
+        margin: 0;
+        padding: var(--tooltip-padding, 4px 8px);
+        padding-inline-start: 10px;
+        border: 0;
+        border-inline-start: 3px solid transparent;
+    }
+
+    .cm-editor .cm-diagnostic-error {
+        border-inline-start-color: var(--admonition-caution-accent-color);
+    }
+
+    .cm-editor .cm-diagnosticAction {
+        margin: 0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        background: color-mix(in srgb, currentColor 15%, transparent);
+        color: inherit;
+
+        &:hover {
+            background: color-mix(in srgb, currentColor 25%, transparent);
+        }
+    }
+
+    .cm-placeholder {
+        /* The hint names several keys, and the field is one line tall. */
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

@@ -83,12 +83,14 @@ describe("PromotedAttributesCard", () => {
     let stored: PromotedAttribute[][];
     let settings: PromotedAttributeSetting[] | undefined;
     let drawnByCollection: string[] | undefined;
+    let itemNotes: FNote[] | undefined;
 
     beforeEach(() => {
         vi.clearAllMocks();
         stored = [];
         settings = undefined;
         drawnByCollection = undefined;
+        itemNotes = undefined;
         defined = [ definition("label:dueDate", { alias: "Due" }), definition("label:owner") ];
         mocks.detail.opts = null;
         mocks.confirm.mockResolvedValue(true);
@@ -173,6 +175,66 @@ describe("PromotedAttributesCard", () => {
 
         expect(names()).toEqual([ unnamed("owner"), "Due" ]);
         expect(shown()).toEqual([ false, true ]);
+    });
+
+    /**
+     * A definition from an item's template is listed but has no edit or delete button, because
+     * `save()` and `erase()` write to the collection note rather than to the template.
+     */
+    it("lists what only the items define, without offering to edit or delete it", () => {
+        itemNotes = [ {
+            noteId: "task1",
+            getAttributeDefinitions: () => [
+                { ...definition("label:project", { alias: "Project" }), noteId: "template1" }
+            ]
+        } as unknown as FNote ];
+        draw();
+
+        expect(names()).toEqual([ "Due", unnamed("owner"), "Project" ]);
+        expect(shown()).toEqual([ true, true, true ]);
+        expect(segments().map((segment) => !!segment.querySelector(".promoted-attribute-edit")))
+            .toEqual([ true, true, false ]);
+        expect(segments().map((segment) => !!segment.querySelector(".promoted-attribute-delete")))
+            .toEqual([ true, true, false ]);
+
+        toggle(2);
+        expect(stored.at(-1)?.[2]).toMatchObject({ name: "project", hidden: true });
+    });
+
+    it("flags what the items define in different ways", () => {
+        const item = (noteId: string, labelType: string) => ({
+            noteId,
+            getAttributeDefinitions: () => [
+                { ...definition("label:priority", { labelType }), noteId: `tpl_${noteId}` }
+            ]
+        }) as unknown as FNote;
+        itemNotes = [ item("task1", "select"), item("task2", "number") ];
+        draw();
+
+        expect(segments().map((segment) =>
+            segment.querySelector(".promoted-attribute-conflict")?.textContent))
+            .toEqual([ undefined, undefined, "promoted_attributes.conflicting" ]);
+    });
+
+    /**
+     * A card that joins the board through a branch change, such as a sync, brings no attribute row,
+     * so the new `itemNotes` alone must add its definitions.
+     */
+    it("lists what a newly shown item defines, keeping the order and what is hidden", () => {
+        settings = [ { name: "owner" }, { name: "dueDate", hidden: true } ];
+        itemNotes = [];
+        draw();
+
+        itemNotes = [ {
+            noteId: "task1",
+            getAttributeDefinitions: () => [
+                { ...definition("label:project", { alias: "Project" }), noteId: "template1" }
+            ]
+        } as unknown as FNote ];
+        draw();
+
+        expect(names()).toEqual([ unnamed("owner"), "Due", "Project" ]);
+        expect(shown()).toEqual([ true, false, true ]);
     });
 
     it("reports the whole list in its new order", () => {
@@ -407,6 +469,7 @@ describe("PromotedAttributesCard", () => {
                         note={NOTE}
                         settings={settings}
                         drawnByCollection={drawnByCollection}
+                        itemNotes={itemNotes}
                         onChange={(attributes) => stored.push(attributes)}
                     />
                 </ParentComponent.Provider>,

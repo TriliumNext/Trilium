@@ -60,9 +60,65 @@ class ReferenceLinkCommand extends Command {
 	}
 }
 
-class ReferenceLinkEditing extends Plugin {
+/** An attachment that changed, as `ReferenceLinkEditing#updateAttachmentLinks` takes it. */
+export interface AttachmentLinkChange {
+	attachmentId: string;
+	isDeleted: boolean;
+}
+
+export class ReferenceLinkEditing extends Plugin {
 	static get requires() {
 		return [ Widget, LinkEditing ];
+	}
+
+	static get pluginName() {
+		return 'ReferenceLinkEditing' as const;
+	}
+
+	/**
+	 * Redraws the links and embeds of changed attachments, so they show the current state, and
+	 * removes those of deleted ones.
+	 */
+	updateAttachmentLinks( changes: AttachmentLinkChange[] ) {
+		const editor = this.editor;
+		const isDeletedById = new Map(
+			changes.map( change => [ change.attachmentId, change.isDeleted ] )
+		);
+		const changedLinks: ModelElement[] = [];
+		const deletedLinks: ModelElement[] = [];
+
+		for ( const root of editor.model.document.getRoots() ) {
+			for ( const { item } of editor.model.createRangeIn( root ) ) {
+				let attachmentId: unknown;
+				if ( item.is( 'element', 'reference' ) ) {
+					attachmentId = getAttachmentId( item.getAttribute( 'href' ) );
+				} else if ( item.is( 'element', 'contentEmbed' ) ) {
+					attachmentId = item.getAttribute( 'attachmentId' );
+				} else {
+					continue;
+				}
+
+				const isDeleted = typeof attachmentId === 'string'
+					? isDeletedById.get( attachmentId )
+					: undefined;
+				if ( isDeleted !== undefined ) {
+					( isDeleted ? deletedLinks : changedLinks ).push( item );
+				}
+			}
+		}
+
+		for ( const link of changedLinks ) {
+			editor.editing.reconvertItem( link );
+		}
+
+		if ( deletedLinks.length ) {
+			// The attachment changed outside this editor, so undo does not bring its link back.
+			editor.model.enqueueChange( { isUndoable: false }, writer => {
+				for ( const link of deletedLinks ) {
+					writer.remove( link );
+				}
+			} );
+		}
 	}
 
 	init() {
@@ -96,7 +152,7 @@ class ReferenceLinkEditing extends Plugin {
 			// The inline widget is self-contained, so it cannot be split by the caret, and it can be selected:
 			isObject: true,
 
-			allowAttributes: [ 'href', 'uploadId', 'uploadStatus' ]
+			allowAttributes: [ 'href', 'uploadId', 'uploadStatus', 'uploadFileName' ]
 		} );
 	}
 
@@ -117,9 +173,11 @@ class ReferenceLinkEditing extends Plugin {
 		} );
 
 		conversion.for( 'editingDowncast' ).elementToElement( {
-			model: 'reference',
+			// Redraws a placeholder when its upload sets `href` and clears `uploadFileName`.
+			model: { name: 'reference', attributes: [ 'href', 'uploadFileName' ] },
 			view: ( modelItem, { writer: viewWriter } ) => {
 				const href = modelItem.getAttribute('href') as string;
+				const uploadFileName = String(modelItem.getAttribute('uploadFileName') ?? '');
 
 				const referenceLinkView = viewWriter.createContainerElement( 'a', {
 						href,
@@ -131,6 +189,13 @@ class ReferenceLinkEditing extends Plugin {
 
 				const noteTitleView = viewWriter.createUIElement('span', {}, function( domDocument ) {
 					const domElement = this.toDomElement( domDocument );
+
+					if (uploadFileName) {
+						const spinner = domDocument.createElement("span");
+						spinner.className = "bx bx-loader-alt bx-spin";
+						domElement.append(spinner, uploadFileName);
+						return domElement;
+					}
 
 					const editorEl = editor.editing.view.getDomRoot();
 					const component = glob.getComponentByEl<EditorComponent>(editorEl);
@@ -165,5 +230,26 @@ class ReferenceLinkEditing extends Plugin {
 				return referenceLinkView;
 			}
 		} );
+	}
+}
+
+/** The attachment a reference link points to, or `null` for a link to a note. */
+export function getAttachmentId( href: unknown ) {
+	const query = typeof href === 'string' ? href.split( '?' )[ 1 ] : undefined;
+	return query ? new URLSearchParams( query ).get( 'attachmentId' ) : null;
+}
+
+/**
+ * The note a reference link points to, the last segment of its note path. For a link to an
+ * attachment, the note that owns it.
+ */
+export function getNoteId( href: unknown ) {
+	const notePath = typeof href === 'string' ? href.split( '?' )[ 0 ].replace( /^#/, '' ) : '';
+	return notePath.split( '/' ).at( -1 ) || null;
+}
+
+declare module "ckeditor5" {
+	interface PluginsMap {
+		[ReferenceLinkEditing.pluginName]: ReferenceLinkEditing;
 	}
 }

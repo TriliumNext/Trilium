@@ -1,3 +1,6 @@
+// @vitest-environment jsdom
+// The dialog sanitizes a string message with DOMPurify, which needs browser-faithful DOM
+// traversal (NodeIterator); happy-dom mishandles it and leaves the markup as it found it.
 /**
  * The confirmation that offers to delete the note as well as take it off whatever is showing it.
  *
@@ -128,6 +131,24 @@ describe("ConfirmDialog", () => {
         expect(outcome()).toBe("");
     });
 
+    /**
+     * The questions this dialog asks name notes, attributes and tokens, whose text the reader did not
+     * write as markup — and a string message is rendered as HTML so a translated `<strong>` reads as
+     * emphasis rather than as angle brackets.
+     */
+    it("renders a message's markup but strips what could execute", async () => {
+        await act(async () => {
+            void host.handleEventInChildren("showConfirmDialog", {
+                message: `Delete <strong>a note</strong><img src=x onerror="alert(1)">?`,
+                callback: () => {}
+            });
+        });
+
+        const body = container.querySelector(".modal-body");
+        expect(body?.querySelector("strong")?.textContent).toBe("a note");
+        expect(body?.querySelector("img")?.getAttribute("onerror")).toBeNull();
+    });
+
     it("offers nothing to tick when it is only being asked to confirm", async () => {
         await act(async () => {
             void host.handleEventInChildren("showConfirmDialog", {
@@ -138,5 +159,30 @@ describe("ConfirmDialog", () => {
 
         expect(checkbox()).toBeNull();
         expect(container.querySelector(".confirm-delete-note-outcome")).toBeNull();
+    });
+
+    /**
+     * A caller removing something of its own, a board column say, words the offer itself. It
+     * counts the notes too, so the dialog adds no verdict line of its own.
+     */
+    it("offers the caller's own box, and answers with what was done to it", async () => {
+        const answers: { confirmed: boolean, isDeleteNoteChecked: boolean }[] = [];
+        await act(async () => {
+            void host.handleEventInChildren("showConfirmDialog", {
+                message: "Delete the column?",
+                checkboxLabel: "Also delete the 2 notes in it",
+                callback: (answer) => answer && answers.push(answer)
+            });
+        });
+
+        expect(checkbox()?.parentElement?.textContent).toContain("Also delete the 2 notes in it");
+        expect(container.querySelector(".confirm-delete-note-outcome")).toBeNull();
+
+        await tick(true);
+        await act(async () => {
+            container.querySelectorAll<HTMLButtonElement>(".modal-footer button")[1]?.click();
+        });
+
+        expect(answers.at(-1)).toEqual({ confirmed: true, isDeleteNoteChecked: true });
     });
 });

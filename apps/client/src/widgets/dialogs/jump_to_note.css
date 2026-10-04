@@ -11,90 +11,151 @@
     align-items: center;
 }
 
+.jump-to-note-search-icon {
+    flex: none;
+    margin-inline-end: 8px;
+    font-size: 1.25rem;
+    color: var(--muted-text-color);
+}
+
 .jump-to-note-dialog .modal-body {
     padding: 0;
     min-height: 200px;
 }
 
-.jump-to-note-results .aa-dropdown-menu {
+.jump-to-note-results .note-suggestion-list {
     max-height: calc(80vh - 200px);
     width: 100%;
-    max-width: none;
     overflow-y: auto;
     overflow-x: hidden;
-    text-overflow: ellipsis;
-    box-shadow: none;
 }
 
 .jump-to-note-results {
     width: 100%;
 }
 
-.jump-to-note-results .aa-suggestions {
-    padding: 0;
-    width: 100%;
-}
-
-/* Command palette styling */
-.jump-to-note-dialog .command-suggestion {
+/*
+ * A fixed height, so the dialog keeps its size as the results change: the list's cap above plus
+ * room for the footer, which stays at the bottom. On mobile the dialog fills the screen instead.
+ */
+body.desktop .jump-to-note-results {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9em;
+    flex-direction: column;
+    height: calc(80vh - 150px);
+
+    .note-suggestion-list {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+    }
+
+    .note-suggestion-footer {
+        flex: none;
+    }
 }
 
-.jump-to-note-dialog .aa-suggestion .command-suggestion,
-.jump-to-note-dialog .aa-suggestion .command-suggestion div {
-    padding: 0;
+/*
+ * Where the window has room for a preview (`wide`, set by jump_to_note.tsx), the dialog takes its
+ * width whether or not the preview shows, and lays its body out as a grid: the results, the preview
+ * beside them while `with-preview` is set, and the footer across the full width. The results'
+ * container steps aside (`display: contents`), so its list and footer take the grid's cells.
+ */
+body.desktop .jump-to-note-dialog.wide {
+    .modal-dialog {
+        max-width: 1200px;
+    }
+
+    .modal-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) auto;
+        column-gap: 16px;
+        height: calc(80vh - 150px);
+    }
+
+    .jump-to-note-results {
+        display: contents;
+    }
+
+    .jump-to-note-results .note-suggestion-list {
+        grid-area: 1 / 1;
+        margin-inline-end: 0;
+    }
+
+    .jump-to-note-results .note-suggestion-footer {
+        grid-row: 2;
+        grid-column: 1 / -1;
+    }
+
+    .jump-to-note-preview {
+        grid-area: 1 / 2;
+        min-height: 0;
+        padding-block: 8px;
+    }
+
+    &.with-preview .modal-body {
+        grid-template-columns: minmax(0, 1fr) 400px;
+    }
 }
 
-.jump-to-note-dialog .aa-cursor .command-suggestion,
-.jump-to-note-dialog .aa-suggestion:hover .command-suggestion {
-    background-color: transparent;
+.jump-to-note-preview-card {
+    height: 100%;
+    overflow: hidden;
+    padding: 20px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    background: var(--card-background-color, var(--main-background-color));
+    /* The content is cut off at the card's foot, fading out rather than ending on a sliced line. */
+    mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent);
+
+    .jump-to-note-preview-path {
+        margin-bottom: 4px;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+
+    .jump-to-note-preview-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 1.4em;
+        overflow-wrap: anywhere;
+    }
+
+    .note-list-attributes {
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .note-book-content {
+        overflow: hidden;
+    }
 }
 
-.jump-to-note-dialog .show-in-full-search,
-.jump-to-note-results .show-in-full-search {
-    border-top: 1px solid var(--main-border-color);
-    padding-top: 12px;
-    margin-top: 12px;
-}
+@media (max-width: 991px) {
+    body.mobile .jump-to-note-dialog {
+        .modal-header {
+            padding-bottom: 0.75rem !important;
+        }
 
-.jump-to-note-results .aa-suggestion .search-notes-action {
-    border-top: 1px solid var(--main-border-color);
-    margin-top: 8px;
-    padding-top: 8px;
-}
+        .modal-content {
+            padding-bottom: 0 !important;
+        }
 
-.jump-to-note-results .aa-suggestion:has(.search-notes-action)::after {
-    display: none;
-}
+        .modal-body {
+            overflow-y: auto;
+        }
 
-.jump-to-note-dialog .command-icon {
-    color: var(--muted-text-color);
-    font-size: 1.125rem;
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-}
+        .note-suggestion-list {
+            max-height: unset;
+            overflow: auto;
+        }
 
-.jump-to-note-dialog .command-content {
-    flex-grow: 1;
-    min-width: 0;
-}
-
-.jump-to-note-dialog .command-name {
-    font-weight: bold;
-}
-
-.jump-to-note-dialog .command-description {
-    font-size: 0.8em;
-    line-height: 1.3;
-    opacity: 0.75;
-}
-
-.jump-to-note-dialog kbd.command-shortcut {
-    background-color: transparent;
-    color: inherit;
-    opacity: 0.75;
-    font-family: inherit !important;
+        .note-suggestion-list > .dropdown-item {
+            --menu-item-start-padding: 0px;
+            --menu-item-end-padding: 0px;
+            padding-inline: 0;
+        }
+    }
 }

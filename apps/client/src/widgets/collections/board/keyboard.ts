@@ -21,6 +21,9 @@ const ITEM_MOVE_KEYS = [ "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Hom
 /** With Ctrl and Alt, these carry the column focus is in, from wherever inside it focus sits. */
 const COLUMN_MOVE_KEYS = [ "ArrowLeft", "ArrowRight", "Home", "End" ];
 
+/** With Shift, these take a range of cards along a column. */
+const RANGE_KEYS = [ "ArrowUp", "ArrowDown" ];
+
 /**
  * A place on the board that can hold focus.
  *
@@ -196,8 +199,9 @@ export function useBoardKeyboard({
         // direction, the harder form, or the further reach of something the board already does.
         if (e.shiftKey && !shiftIsOurs(e)) return;
 
-        // An editor is open on the thing that is focused, and every key belongs to it.
-        if (target?.closest("input, textarea")) return;
+        // An editor is open on the thing that is focused, and every key belongs to it — the icon
+        // picker and the buttons beside the field included, which Shift+Tab reaches.
+        if (target?.closest("input, textarea, .title-editor-field")) return;
 
         // Alt on its own is how a reader goes back and forward through notes, which is expected to
         // work over a board as over anything else.
@@ -216,6 +220,21 @@ export function useBoardKeyboard({
             if (e.key === "a" && !e.altKey && !e.shiftKey && spot.kind !== "add-column") {
                 take(e);
                 selection.selectAll(api.getColumnNoteIds(columns[spot.column]));
+                return;
+            }
+
+            // The focused card, picked out or put back, with focus going on to the card below it
+            // so a run of presses picks out several without an arrow between them.
+            if (e.key === " " && !e.altKey && spot.kind === "item") {
+                take(e);
+
+                const noteId = itemAt(columns, byColumn, spot)?.note.noteId;
+                if (noteId === undefined) return;
+
+                selection.toggle(noteId);
+                if (nextCard(container, spot, "ArrowDown")) {
+                    lastSpot.current = walk(container, spot, "ArrowDown") ?? spot;
+                }
                 return;
             }
 
@@ -281,6 +300,24 @@ export function useBoardKeyboard({
         // focus: it would otherwise pull it back out of whatever the key opened.
         pendingFocus.current = null;
 
+        // Shift with the arrows takes the selection one card further along the column, or one card
+        // back towards where the range began, and carries focus with it.
+        if (e.shiftKey && RANGE_KEYS.includes(e.key)) {
+            // A header and the button under a column hold no card, so a range starts at neither.
+            // The key is left to the browser there.
+            if (spot.kind !== "item") return;
+
+            // Taken whether or not it leads anywhere: a card at the end of its column is no reason
+            // to let the key scroll the board instead.
+            take(e);
+            const next = nextCard(container, spot, e.key);
+            if (!next) return;
+
+            extendSelection(spot, next, { columns, api, selection });
+            lastSpot.current = walk(container, spot, e.key) ?? spot;
+            return;
+        }
+
         if (NAVIGATION_KEYS.includes(e.key)) {
             // The plain arrows would otherwise scroll the page past the end of a column.
             take(e);
@@ -289,6 +326,7 @@ export function useBoardKeyboard({
         }
 
         // Both keys, the collapsed header answering for a button and being announced as one.
+        // `column.tsx` handles Space on an open column, where the collapse is drawn faster.
         if ((e.key === " " || e.key === "Enter") && spot.kind === "header") {
             const column = columns[spot.column];
             if (!columnsOf(container)[spot.column]?.classList.contains("collapsed")) return;
@@ -334,12 +372,11 @@ export function useBoardKeyboard({
         if (e.key === "Delete" && spot.kind === "header" && !e.shiftKey) {
             take(e);
 
-            // Where focus goes once the column is gone, taken up only if it does go. Shift is left
-            // unanswered here: escalating a column would take every note in it, which nothing else
-            // on the board offers.
+            // Where focus goes once the column is gone, taken up only if it does go. Shift is
+            // left unanswered here: the confirmation asks about the notes in the column.
             const neighbour = columns[spot.column + 1] ?? columns[spot.column - 1];
             api.confirmAndRemoveColumn(columns[spot.column]).then((removed) => {
-                if (removed && neighbour) {
+                if (removed && neighbour !== undefined) {
                     pendingFocus.current = { intent: { column: neighbour, part: "header" } };
                 }
             });
@@ -429,6 +466,11 @@ function shiftIsOurs(e: KeyboardEvent) {
         return true;
     }
 
+    // Shift with the up and down arrows takes a range of cards along a column.
+    if (!e.ctrlKey && !e.altKey && RANGE_KEYS.includes(e.key)) {
+        return true;
+    }
+
     return e.ctrlKey && CARD_END_KEYS.includes(e.key);
 }
 
@@ -454,6 +496,40 @@ function spotOf(container: HTMLElement, element: Element | null): Spot | null {
     if (!card) return null;
 
     return { kind: "item", column, item: indexOfCard(card as HTMLElement, columnElement) };
+}
+
+/**
+ * The card one step along the column, or null where the step reaches the header above the cards or
+ * the button below them. Neither holds a card, so a selection key stops there rather than carrying
+ * focus off the cards.
+ */
+function nextCard(container: HTMLElement, spot: Extract<Spot, { kind: "item" }>, key: string) {
+    const next = destination(container, spot, key);
+    return next?.kind === "item" ? next : null;
+}
+
+/**
+ * Takes the selection from the card focus is on to the card a step along the column.
+ *
+ * The anchor stays where the range began, so a press the other way shrinks the same range rather
+ * than starting a new one. A range that is not already running through this column begins at the
+ * focused card, which the press then takes along with the card it steps onto.
+ */
+function extendSelection(
+    spot: Extract<Spot, { kind: "item" }>,
+    next: Extract<Spot, { kind: "item" }>,
+    { columns, api, selection }: Pick<BoardKeyboardOptions, "columns" | "api" | "selection">
+) {
+    const ordered = api.getColumnNoteIds(columns[spot.column]);
+    const from = ordered[spot.item];
+    const to = ordered[next.item];
+    if (from === undefined || to === undefined) return;
+
+    if (selection.anchor === null || !ordered.includes(selection.anchor)) {
+        selection.selectOnly(from);
+    }
+
+    selection.selectRange(ordered, to);
 }
 
 /**
@@ -580,7 +656,7 @@ function move(
             ? columns[key === "ArrowRight" ? columns.length - 1 : 0]
             : columns[spot.column + (key === "ArrowRight" ? 1 : -1)];
         // Only the whole way can ask for the column a card already stands in.
-        if (!target || target === column) return false;
+        if (target === undefined || target === column) return false;
 
         // A selection standing in several columns is left alone: each card has a neighbour of its
         // own, and sending them all to one column is not what the key means anywhere else.

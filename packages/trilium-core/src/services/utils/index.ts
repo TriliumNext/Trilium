@@ -1,4 +1,5 @@
 import { isFontMimeType } from "@triliumnext/commons/src/lib/font_mimes.js";
+import { CANVAS_ATTACHMENT_MIME } from "@triliumnext/commons/src/lib/notes.js";
 
 import { getCrypto } from "../encryption/crypto";
 import { getPlatform } from "../platform";
@@ -11,13 +12,17 @@ import { NoteMeta } from "../../meta";
 
 export function isDev() { return getPlatform().getEnv("TRILIUM_ENV") === "dev"; }
 export function isElectron() { return getPlatform().isElectron; }
+export function isStandalone() { return getPlatform().isStandalone; }
 export function isMac() { return getPlatform().isMac; }
 export function isWindows() { return getPlatform().isWindows; }
 export function isLinux() { return getPlatform().isLinux; }
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
-const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml", "application/inkml+xml"]);
+const STRING_MIME_TYPES = new Set([
+    "application/javascript", "application/x-javascript", "application/json", "application/x-sql",
+    "image/svg+xml", "application/inkml+xml", CANVAS_ATTACHMENT_MIME
+]);
 
 export function hash(text: string) {
     return encodeBase64(getCrypto().createHash("sha1", text.normalize()));

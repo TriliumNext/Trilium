@@ -130,8 +130,11 @@
 
 /* Main menu */
 
-/* Hide separators - no longer needed as the menu group headers feature a delimiter line */
-.excalidraw .Island.dropdown-menu-container>div:not(:has(>*)) {
+/* Hides a separator before a group header or the canvas background label, which have a delimiter
+   line of their own. */
+.excalidraw .Island.dropdown-menu-container > div:not(:has(> *)):has(
+    + .dropdown-menu-group, + div > [data-testid="canvas-background-label"]
+) {
     display: none;
 }
 

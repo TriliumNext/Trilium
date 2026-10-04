@@ -558,148 +558,41 @@ div.bookmark-folder-widget .note-link .tn-icon {
  * QUICK SEARCH BOX
  */
 
-div.quick-search {
-    --padding-top: 8px;
-    --padding-inline-start: 8px;
-    --padding-inline-end: 8px;
-    --padding-bottom: 8px;
-
-    position: relative;
-    flex-direction: row-reverse;
-    align-items: center;
-    height: unset;
-    contain: unset;
-    padding: var(--padding-top) var(--padding-inline-end) var(--padding-bottom) var(--padding-inline-start);
-}
-
-div.quick-search,
-div.quick-search:hover,
-div.quick-search:focus-within {
-    /* Prevent changes to background and outline when the state of the input group changes */
-    background: transparent;
-    outline: none;
-}
-
-div.quick-search::before {
-    /* The background rectangle of the search box */
-    position: absolute;
-    content: "";
-    top: var(--padding-top);
-    inset-inline-start: var(--padding-inline-start);
-    bottom: var(--padding-bottom);
-    inset-inline-end: var(--padding-inline-end);
-    z-index: 0;
-    border: 2px solid transparent;
-    border-radius: 6px;
-    background: var(--quick-search-background);
-    transition: background-color 200ms ease-in;
-}
-
-div.quick-search:hover:before {
-    /* Hovered search box background rectangle */
-    background: var(--quick-search-hover-background);
-    transition: background-color 75ms ease-out;
-}
-
-div.quick-search:focus-within:before {
-    /* Focused search box background rectangle */
-    border-color: var(--quick-search-focus-border);
-    background: var(--quick-search-focus-background);
-    transition: background-color 100ms ease-out;
-}
-
-div.quick-search input {
-    padding-inline-start: 15px !important;
-    box-shadow: unset !important;
-    background: transparent !important;
-}
-
-div.quick-search input::placeholder {
-    color: var(--quick-search-color);
-}
-
-div.quick-search:focus-within input {
-    color: var(--quick-search-focus-color) !important;
-}
-
-div.quick-search .search-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 25px;
-    height: 25px;
-    margin-inline-end: 8px;
-    border-radius: 50%;
-    padding: 0;
-    color: var(--quick-search-color) !important;
-    transition: background-color 200ms ease-in !important;
-}
-
-div.quick-search .search-button:active {
-    transform: scale(0.85);
-}
-
-div.quick-search:focus-within:has(input:not(:placeholder-shown)) .search-button {
-    /* Matches when the input has a value and the focus is inside the search box */
-    background: var(--left-pane-item-action-button-background) !important;
-    color: var(--left-pane-item-action-button-color) !important;
-    transition: background-color 500ms ease-out !important;
-}
-
-html body .quick-search:focus-within .search-button:hover,
-div.quick-search .search-button.show {
-    /* Hover state */
-    background: var(--left-pane-item-action-button-hover-background) !important;
-    color: var(--left-pane-item-action-button-color) !important;
-    transition: background-color 100ms ease-out !important;
-}
-
-div.quick-search .dropdown-menu {
+/* The results popup is portaled to `<body>`, outside `div.quick-search`. `:root` outranks the
+   popup's own rules in quick_search.css. */
+:root .dropdown-menu.quick-search-menu {
     --quick-search-item-delimiter-color: transparent;
     --menu-item-icon-vert-offset: -.065em;
-}
 
-/* Item */
-.quick-search .dropdown-menu *.dropdown-item {
-    padding: 8px 12px !important;
-}
+    /* Item */
+    .dropdown-item {
+        padding: 8px 12px !important;
+    }
 
-:root .quick-search .dropdown-item:not(.disabled):hover,
-:root .quick-search .dropdown-item:not(.disabled):focus,
-:root .quick-search .dropdown-item:not(.disabled):focus-visible {
-    outline: none !important;
-    background: var(--hover-item-background-color);
-    color: var(--hover-item-text-color);
-}
+    .dropdown-item:not(.disabled):hover,
+    .dropdown-item:not(.disabled):focus,
+    .dropdown-item:not(.disabled):focus-visible {
+        outline: none !important;
+        background: var(--hover-item-background-color);
+        color: var(--hover-item-text-color);
+    }
 
-.quick-search .quick-search-item-icon {
-    vertical-align: text-bottom;
-}
+    .quick-search-item-icon {
+        vertical-align: text-bottom;
+    }
 
-/* Note path */
-.quick-search .dropdown-menu small {
-    display: block;
-    opacity: 0.5;
-    font-size: 0.75em;
-    overflow: hidden;
-}
+    /* Note content snippet */
+    .search-result-content {
+        background-color: var(--quick-search-result-content-background);
+        border-radius: 4px;
+    }
 
-/* Note content snippet */
-:root .quick-search .search-result-content {
-    background-color: var(--quick-search-result-content-background);
-    border-radius: 4px;
-}
-
-/* Highlighted search terms */
-:root .quick-search .search-result-title b,
-:root .quick-search .search-result-content b,
-:root .quick-search .search-result-attributes b {
-    color: var(--quick-search-result-highlight-color);
-    font-weight: 600;
-}
-
-.quick-search div.dropdown-divider {
-    margin: 8px 0;
+    /* Highlighted search terms */
+    :is(.search-result-title, .search-result-content, .search-result-attributes)
+        b:not(.search-fuzzy-match) {
+        color: var(--quick-search-result-highlight-color);
+        font-weight: 600;
+    }
 }
 
 /*

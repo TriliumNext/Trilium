@@ -1,10 +1,13 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import becca from "../../../becca/becca.js";
 import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { getContext } from "../../context.js";
 import noteService from "../../notes.js";
+import protectedSessionService from "../../protected_session.js";
+import { getSql } from "../../sql/index.js";
+import { decodeBase64, encodeBase64, encodeUtf8 } from "../../utils/binary.js";
 import NoteSet from "../note_set.js";
 import SearchContext from "../search_context.js";
 import { NoteBuilder } from "../../../test/becca_mocking.js";
@@ -117,5 +120,46 @@ describe("fuzzy fallback for note body content (A4)", () => {
         exp.execute(new NoteSet([note]), {}, searchContext);
 
         expect(searchContext.contentMatches.get(note.noteId)?.tier).toBe("fuzzy");
+    });
+});
+
+describe("protected note content", () => {
+    beforeEach(() => {
+        becca.reset();
+        new NoteBuilder(new BNote({ noteId: "root", title: "root", type: "text" }));
+        new BBranch({ branchId: "none_root", noteId: "root", parentNoteId: "none", notePosition: 10 });
+        protectedSessionService.setDataKey(encodeUtf8("0123456789abcdef"));
+    });
+
+    afterEach(() => protectedSessionService.resetDataKey());
+
+    function findsNote(note: BNote, token: string) {
+        const exp = new NoteContentFulltextExp("*=*", { tokens: [token] });
+        return exp.execute(new NoteSet([note]), {}, new SearchContext()).hasNote(note);
+    }
+
+    it("matches a protected note whose content arrived by sync (#8491)", () => {
+        const note = getContext().init(() => noteService.createNewNote({
+            parentNoteId: "root",
+            title: "Protected",
+            content: "<p>an artist under constant critique</p>",
+            type: "text",
+            isProtected: true
+        }).note);
+        expect(findsNote(note, "critique")).toBe(true);
+
+        // Sync sends a blob's stored content as base64 and `sync_update` writes it back as bytes,
+        // so the ciphertext a local save stores as text lands in the database as a BLOB.
+        const { blobId } = note;
+        const ciphertext = getSql().getValue<string>("SELECT content FROM blobs WHERE blobId = ?", [blobId]);
+        expect(typeof ciphertext).toBe("string");
+        getSql().execute("UPDATE blobs SET content = ? WHERE blobId = ?", [
+            decodeBase64(encodeBase64(encodeUtf8(ciphertext))),
+            blobId
+        ]);
+        expect(getSql().getValue("SELECT typeof(content) FROM blobs WHERE blobId = ?", [blobId])).toBe("blob");
+        expect(getContext().init(() => note.getContent())).toBe("<p>an artist under constant critique</p>");
+
+        expect(findsNote(note, "critique")).toBe(true);
     });
 });

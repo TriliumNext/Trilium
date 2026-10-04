@@ -181,8 +181,7 @@
     "okButton": "U redu"
   },
   "jump_to_note": {
-    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande...",
-    "search_button": "Pretraga u punom tekstu <kbd>Ctrl+Enter</kbd>"
+    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande..."
   },
   "markdown_import": {
     "dialog_title": "Uvoz za Markdown",

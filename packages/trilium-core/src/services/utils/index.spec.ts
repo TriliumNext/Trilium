@@ -303,6 +303,11 @@ describe("#isStringNote", () => {
             "w/ 'undefined' note type and the InkML mime type, it should return true",
             [ undefined, "application/inkml+xml" ],
             true
+        ],
+        [
+            "w/ 'undefined' note type and the mime type of a canvas drawing, it should return true",
+            [ undefined, "application/vnd.excalidraw+json" ],
+            true
         ]
     ];
 

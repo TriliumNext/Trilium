@@ -58,3 +58,18 @@
     </ul>
   </li>
 </ul>
+<h3>Linux: custom launch command for packagers</h3>
+<p>On Linux, <em>Launch on startup</em> writes a <code>trilium.desktop</code> entry
+  to the user's autostart directory (<code>$XDG_CONFIG_HOME/autostart</code>,
+  usually <code>~/.config/autostart</code>). Its <code>Exec</code> line points
+  to the AppImage when running from one, or to the running executable otherwise.</p>
+<p>Distribution packages that run Trilium on a system-wide Electron (for
+  example <code>electron /usr/lib/trilium/app.asar</code>) cannot rely on
+  the running executable, since it is the bare Electron binary, which starts
+  without Trilium. Such packages can set the <code>TRILIUM_LAUNCH_EXEC</code> environment
+  variable, typically in their wrapper script, to the full command that starts
+  Trilium:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_LAUNCH_EXEC='electron "/usr/lib/trilium/app.asar"'</code></pre>
+<p>The value is written to the <code>Exec</code> line as-is, so any paths containing
+  spaces must already be quoted. When <em>Start minimized to tray</em> is enabled, <code>--start-hidden</code> is
+  appended to it. <code>TRILIUM_LAUNCH_EXEC</code> takes precedence over both
+  the AppImage path and the running executable.</p>

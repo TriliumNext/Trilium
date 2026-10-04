@@ -130,34 +130,58 @@ div.tn-tool-dialog {
 
  .jump-to-note-dialog .modal-dialog {
     --modal-background-color: var(--menu-background-color);
-    --modal-footer-background: transparent;
     --bs-modal-header-border-width: 0;
-    --bs-modal-footer-border-width: 0;
-    --bs-modal-footer-gap: 0;
 
     backdrop-filter: var(--dropdown-backdrop-filter);
 }
 
 .jump-to-note-dialog .modal-content {
     --bs-modal-header-padding-x: 0;
+    --jump-to-note-padding: 20px;
+    --jump-to-note-fade: 20px;
 
     box-shadow: 0 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
     border: 1px solid var(--dropdown-border-color);
-    padding: 20px;
+    /* The results end the dialog, holding its bottom padding themselves. */
+    padding: var(--jump-to-note-padding) var(--jump-to-note-padding) 0;
     border-radius: 8px;
 }
 
 .jump-to-note-dialog .modal-header {
     padding: unset !important;
-    padding-bottom: 26px !important;
+    padding-bottom: calc(26px - var(--jump-to-note-fade)) !important;
 }
 
 .jump-to-note-dialog .modal-body {
     padding: 0 !important;
 }
 
-.jump-to-note-dialog .modal-footer {
-    padding-top: 26px;
+.jump-to-note-dialog .jump-to-note-results .note-suggestion-list {
+    /* Auto, as a fixed width would shift with the negative margin rather than grow by it. */
+    width: auto;
+    margin-inline-end: calc(0px - var(--jump-to-note-padding));
+    padding-inline-end: var(--jump-to-note-padding);
+    --scroll-fade-top: var(--jump-to-note-fade);
+    padding-top: var(--jump-to-note-fade);
+    padding-bottom: var(--jump-to-note-padding);
+    scroll-padding-bottom: var(--jump-to-note-padding);
+    scroll-padding-top: var(--jump-to-note-fade);
+}
+
+/* Above the footer, the results fade out as they do under the search field. */
+.jump-to-note-dialog .jump-to-note-results .note-suggestion-list:has(+ .note-suggestion-footer) {
+    --scroll-fade-bottom: var(--jump-to-note-fade);
+    padding-bottom: var(--jump-to-note-fade);
+    scroll-padding-bottom: var(--jump-to-note-fade);
+}
+
+/*
+ * Within the dialog's padding, so its ends line up with the search box and the close button. Its
+ * top padding leaves a clear gap between the fade above and the controls.
+ */
+.jump-to-note-dialog .jump-to-note-results .note-suggestion-footer {
+    padding: 12px 0 var(--jump-to-note-padding);
+    border-top: 0;
 }
 
 /* Search box wrapper */
@@ -178,6 +202,31 @@ div.tn-tool-dialog {
 
 .jump-to-note-dialog .input-clearer-button {
     background: transparent !important;
+}
+
+/*
+ * On the desktop the field is the dialog's heading, framed by the dialog itself: it holds the focus
+ * for as long as the dialog is open, so a box and a focus ring around it say nothing. On mobile the
+ * box stays, as the cue to tap.
+ */
+body.desktop .jump-to-note-dialog .input-group {
+    &,
+    &:hover,
+    &:focus-within {
+        background: transparent;
+        border-color: transparent;
+        outline: none;
+    }
+
+    .note-autocomplete-input {
+        padding-inline-start: 0;
+        font-size: 1.1rem;
+    }
+
+    /* Only while there is text to clear; hidden in place, so the field keeps its width. */
+    .note-autocomplete-input:placeholder-shown ~ .input-clearer-button {
+        visibility: hidden;
+    }
 }
 
 /*
@@ -380,9 +429,10 @@ div.tn-tool-dialog {
     margin-top: 0.4em;
 }
 
-/* Keyboard shortcut. Tooltips have their own palette — see the TOOLTIPS section in base.css. */
+/* Keyboard shortcut. Tooltips have their own palette — see the TOOLTIPS section in base.css.
+   `:where(:not(.excalidraw *))` leaves out the menus of an embedded canvas drawing. */
 .help-dialog .help-cards kbd,
-.ck-content kbd {
+.ck-content kbd:where(:not(.excalidraw *)) {
     display: inline-block;
     margin: 0 2px 2px !important;
     border: 1px solid var(--help-kbd-shortcut-border);

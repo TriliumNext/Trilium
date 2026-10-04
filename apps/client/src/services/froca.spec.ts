@@ -494,6 +494,33 @@ describe("getAttachment / getAttachmentsForNote / processAttachmentRows", () => 
         expect(owner.attachments?.map((a) => a.attachmentId)).toContain("loaded-att");
     });
 
+    it("loads an attachment whose owner note the cache has not loaded", async () => {
+        const rows = [ attRow("orphan-att", "uncached-owner") ];
+        server.getWithSilentNotFound = vi.fn(async () => rows) as
+            typeof server.getWithSilentNotFound;
+
+        expect((await froca.getAttachment("orphan-att"))?.attachmentId).toBe("orphan-att");
+    });
+
+    it("finds an attachment only among the note's own, loading the note first", async () => {
+        const owner = buildNote({ id: "scope-owner", title: "Owner" });
+        const getNote = vi.spyOn(froca, "getNote");
+        froca.attachments["owned-att"] = {
+            attachmentId: "owned-att",
+            ownerId: owner.noteId
+        } as any;
+        froca.attachments["foreign-att"] = { attachmentId: "foreign-att", ownerId: "other" } as any;
+
+        expect(await froca.getAttachmentOfNote(owner.noteId, "owned-att"))
+            .toBe(froca.attachments["owned-att"]);
+        expect(getNote).toHaveBeenCalledWith(owner.noteId, true);
+        expect(await froca.getAttachmentOfNote(owner.noteId, "foreign-att")).toBeNull();
+
+        getNote.mockResolvedValueOnce(null);
+        expect(await froca.getAttachmentOfNote("gone-note", "owned-att")).toBeNull();
+        getNote.mockRestore();
+    });
+
     it("does not link attachments when the load returns nothing", async () => {
         server.getWithSilentNotFound = vi.fn(async () => []) as typeof server.getWithSilentNotFound;
         const att = await froca.getAttachment("empty-load-att");

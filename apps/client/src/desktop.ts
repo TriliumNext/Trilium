@@ -1,5 +1,3 @@
-import "autocomplete.js/index_jquery.js";
-
 import type { ElectronWindowApi } from "@triliumnext/commons";
 
 import appContext, { type CommandNames } from "./components/app_context.js";
@@ -10,7 +8,6 @@ import { setupClipboardImageEmbed } from "./services/clipboard_image_embed.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
 import { syncNativeWindowWithTheme } from "./services/native_window.js";
-import noteAutocompleteService from "./services/note_autocomplete.js";
 import noteTooltipService from "./services/note_tooltip.js";
 import { onEffectiveThemeStyleChange, setBackgroundEffectsSuspended } from "./services/theme.js";
 import toastService from "./services/toast.js";
@@ -53,8 +50,6 @@ if (utils.isElectron()) {
 }
 
 noteTooltipService.setupGlobalTooltip();
-
-noteAutocompleteService.init();
 
 setupClipboardImageEmbed();
 

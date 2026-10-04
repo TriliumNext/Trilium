@@ -216,6 +216,15 @@ describe("ajax error handling", () => {
         expect((window as any).logError).not.toHaveBeenCalled();
     });
 
+    it("stays silent on 400 when silentBadRequest is set, still rejecting with the body", async () => {
+        (window as any).$.ajax = (opts: AjaxOptions) => {
+            opts.error({ status: 400, responseText: JSON.stringify({ message: "CLI not found" }) });
+        };
+        await expect(server.postWithTimeout("url", 1000, {}, undefined, { silentBadRequest: true }))
+            .rejects.toBe(JSON.stringify({ message: "CLI not found" }));
+        expect(toastMock.showError).not.toHaveBeenCalled();
+    });
+
     it("reports validation errors (400) and still rejects when reportError throws", async () => {
         (window as any).$.ajax = (opts: AjaxOptions) => {
             opts.error({ status: 400, responseText: JSON.stringify({ message: "Bad input" }) });

@@ -19,14 +19,6 @@
     }
 }
 
-.search-result-widget-content .calendar-view {
-    position: absolute;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
-}
-
 .calendar-container {
     height: 100%;
 }

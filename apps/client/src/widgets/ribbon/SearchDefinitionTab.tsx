@@ -98,7 +98,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                                             <Dropdown
                                                 buttonClassName="action-add-toggle btn btn-sm"
                                                 text={<><Icon icon="bx bx-plus" />{" "}{t("search_definition.option")}</>}
-                                                dropdownContainerClassName="mobile-bottom-menu" mobileBackdrop
+                                                mobileBottomSheet
                                                 noSelectButtonStyle
                                             >
                                                 {searchOptions?.availableOptions.map(({ icon, label, tooltip, attributeName, attributeType, defaultValue }) => (
@@ -220,9 +220,10 @@ function AddBulkActionButton({ note }: { note: FNote }) {
     return (
         <Dropdown
             buttonClassName="action-add-toggle btn btn-sm"
+            dropdownContainerClassName="action-add-menu"
             text={<><Icon icon="bx bxs-zap" />{" "}{t("search_definition.action")}</>}
             noSelectButtonStyle
-            dropdownContainerClassName="mobile-bottom-menu" mobileBackdrop
+            mobileBottomSheet
         >
             {ACTION_GROUPS.map(({ actions, title }, index) => (
                 <Fragment key={index}>

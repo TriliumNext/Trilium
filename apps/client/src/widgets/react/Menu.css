@@ -1,0 +1,89 @@
+/* The look comes from `.dropdown-menu`; this only places it. */
+.dropdown-menu.tn-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    /* `placeFloating()` shows the menu once it has a position. */
+    visibility: hidden;
+}
+
+/*
+ * The lists that hold the rows take none of the browser's list styling. `:where()` keeps this
+ * below `.tn-menu-scroll`, whose padding it must not undo.
+ */
+:where(.tn-menu) menu {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* A submenu is placed by `placeFloating()`, not beside a parent it is nested in. */
+.dropdown-submenu > .dropdown-menu.tn-menu {
+    inset: 0 auto auto 0;
+    margin: 0;
+}
+
+/*
+ * The theme blurs a nested submenu on the element itself, which over a transparent window (background
+ * effects) composites with the menu's translucent background into a see-through layer with no blur.
+ * A layer is not nested in another menu, so it takes the top level's blur on `::before` instead.
+ */
+body.desktop .dropdown-submenu > .dropdown-menu.tn-menu {
+    backdrop-filter: none;
+
+    &::before {
+        content: "";
+    }
+}
+
+/*
+ * The theme's opening delay holds a submenu's opacity with `animation-fill-mode: forwards`, which
+ * leaves the layer a backdrop root once it is shown, so its `::before` would blur only the layer's
+ * own inside. `backwards` keeps the layer hidden through the delay and then releases it.
+ */
+body.desktop:not(.motion-disabled) .dropdown-submenu > .dropdown-menu.tn-menu {
+    opacity: 1;
+    animation-fill-mode: backwards;
+}
+
+/* A submenu that replaces an open one, or that a key or a press opened, shows at once. */
+body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
+    animation: none;
+}
+
+/* The menu holds focus for its keys; the row they act on shows where they are instead. */
+.dropdown-menu.tn-menu:focus {
+    outline: none;
+}
+
+/*
+ * The pointer leaves the row for its submenu, so the row stays marked while the submenu is open.
+ * The row the keyboard acts on is marked the same way.
+ */
+body.desktop .dropdown-item.dropdown-submenu.submenu-open,
+.dropdown-item.tn-menu-active:not(.disabled) {
+    color: var(--hover-item-text-color);
+    background-color: var(--hover-item-background-color);
+}
+
+/*
+ * Once the keys move the active row, a pointer at rest still hovers the row it left, which would
+ * mark a second row until the pointer moves. The row looks unhovered meanwhile, as in the resting
+ * `.dropdown-item` rule. `!important` and the extra classes outrank the theme's `:hover` rule in
+ * style.css, whose values these undo. A popup whose rows take focus themselves, such as the quick
+ * search's results, sets the class too; its focused row is the keys' row.
+ */
+.tn-menu-keyboard .dropdown-item:hover:not(.disabled, .active, .dropdown-container-item, .tn-menu-active, .submenu-open, :focus) {
+    color: var(--menu-text-color) !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+}
+
+/*
+ * The theme draws the line between columns with the menu's `column-rule`, which is not inherited,
+ * so the scroller hands it on to the columns inside it.
+ */
+.tn-menu-scroll,
+.tn-menu-columns {
+    column-rule: inherit;
+}

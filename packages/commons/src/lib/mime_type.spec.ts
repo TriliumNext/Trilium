@@ -33,6 +33,28 @@ describe("getMimeTypeFromMarkdownName", () => {
         expect(result?.mime).toBe("text/javascript");
     });
 
+    it("prefers the entry that lists the tag as an alias over earlier variants", () => {
+        expect(getMimeTypeFromMarkdownName("java")?.mime).toBe("text/x-java");
+        expect(getMimeTypeFromMarkdownName("json")?.mime).toBe("application/json");
+        expect(getMimeTypeFromMarkdownName("sql")?.mime).toBe("text/x-sql");
+    });
+
+    it("resolves the alternative names used by Markdown fences, PrismJS and VS Code", () => {
+        expect(getMimeTypeFromMarkdownName("bash")?.mime).toBe("text/x-sh");
+        expect(getMimeTypeFromMarkdownName("shellscript")?.mime).toBe("text/x-sh");
+        expect(getMimeTypeFromMarkdownName("ts")?.mime).toBe("application/typescript");
+        expect(getMimeTypeFromMarkdownName("typescriptreact")?.mime).toBe("text/typescript-jsx");
+        expect(getMimeTypeFromMarkdownName("jsonc")?.mime).toBe("application/json");
+        expect(getMimeTypeFromMarkdownName("yml")?.mime).toBe("text/x-yaml");
+        expect(getMimeTypeFromMarkdownName("php")?.mime).toBe("text/x-php");
+        expect(getMimeTypeFromMarkdownName("clike")?.mime).toBe("text/x-csrc");
+    });
+
+    it("lists each alias on one entry only", () => {
+        const aliases = MIME_TYPES_DICT.flatMap((mimeType) => mimeType.aliases ?? []);
+        expect(new Set(aliases).size).toBe(aliases.length);
+    });
+
     it("returns undefined for an unknown language tag", () => {
         expect(getMimeTypeFromMarkdownName("definitely-not-a-language")).toBeUndefined();
     });

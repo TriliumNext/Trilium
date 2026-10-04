@@ -157,3 +157,78 @@ body.electron:not(.native-titlebar) {
 <p>This will affect the behavior of the Electron application by informing
   the operating system of the color preference (e.g. background effects will
   appear correct on Windows).</p>
+<h2>Adaptive text and table colors</h2>
+<p>Colors applied in a text note, from the font color and background color
+  buttons (see&nbsp;<a class="reference-link" href="#root/_help_Gr6xFaF6ioJ5">General formatting</a>)
+  or from the table and cell properties (see&nbsp;<a class="reference-link"
+  href="#root/_help_NdowYOC1GFKS">Tables</a>), are shown in a shade that
+  suits the theme: the hue stays, while the lightness and the saturation
+  are kept within limits. A theme can change these limits, for example if
+  its page background is much darker or lighter than the one of the built-in
+  themes:</p><pre><code class="language-text-css">:root {
+    --adaptive-text-light-max-lightness: 35;
+    --adaptive-text-dark-min-lightness: 80;
+}</code></pre>
+<p>Each variable is named <code>--adaptive-&lt;role&gt;-&lt;light|dark&gt;-&lt;limit&gt;</code>:</p>
+<ul>
+  <li>The role is <code>text</code> (font color), <code>background</code> (font
+    background color), <code>table-border</code> or <code>table-background</code> (tables
+    and cells).</li>
+  <li><code>light</code> or <code>dark</code> is the kind of theme the limit applies
+    to, as declared by <code>--theme-style</code>.</li>
+  <li>The limit is <code>min-lightness</code> or <code>max-lightness</code> (the
+    CIELAB lightness, from 0 for black to 100 for white), or <code>max-chroma</code> (how
+    saturated the color can be; <code>150</code> sets no practical limit). Each
+    value must be a plain number, otherwise the colors lose their adaptation.</li>
+</ul>
+<p>The defaults are:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Light themes</th>
+        <th>Dark themes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>text</code>
+        </td>
+        <td><code>max-lightness: 40</code>, <code>max-chroma: 150</code>
+        </td>
+        <td><code>min-lightness: 75</code>, <code>max-chroma: 55</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>background</code>
+        </td>
+        <td><code>min-lightness: 90</code>, <code>max-chroma: 20</code>
+        </td>
+        <td><code>max-lightness: 30</code>, <code>max-chroma: 30</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>table-border</code>
+        </td>
+        <td><code>max-lightness: 60</code>, <code>max-chroma: 150</code>
+        </td>
+        <td><code>min-lightness: 47</code>, <code>max-chroma: 150</code>
+        </td>
+      </tr>
+      <tr>
+        <td><code>table-background</code>
+        </td>
+        <td><code>min-lightness: 90</code>, <code>max-chroma: 20</code>
+        </td>
+        <td><code>max-lightness: 30</code>, <code>max-chroma: 30</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>The limits apply while a note is displayed, so a change to them affects
+  every note at once. The note itself keeps each color as it was picked,
+  in its <code>color</code>, <code>background-color</code> or <code>border-color</code> style,
+  and a second time in a <code>--tn-color</code>, <code>--tn-background</code> or <code>--tn-border-color</code> variable,
+  which the adaptation reads.</p>

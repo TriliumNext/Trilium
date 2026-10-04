@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
@@ -9,7 +9,7 @@ import toast from "../../services/toast";
 import { getErrorMessage, isMobile } from "../../services/utils";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
-import QuickSearchWidget from "../quick_search";
+import QuickSearch from "../quick_search";
 import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
@@ -96,14 +96,13 @@ export function TodayLauncher({ launcherNote }: LauncherNoteProps) {
 
 export function QuickSearchLauncherWidget({ launcherNote }: LauncherNoteProps) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
-    const widget = useMemo(() => new QuickSearchWidget(), []);
     const parentComponent = useContext(ParentComponent) as BasicWidget | null;
     const isEnabled = isHorizontalLayout && !isMobile();
     parentComponent?.contentSized();
 
     return (
         <div onContextMenu={launcherContextMenuHandler(launcherNote)}>
-            {isEnabled && <LegacyWidgetRenderer widget={widget} />}
+            {isEnabled && <QuickSearch />}
         </div>
     );
 }

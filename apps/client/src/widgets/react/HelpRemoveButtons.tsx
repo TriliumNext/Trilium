@@ -1,6 +1,6 @@
 import type { ComponentChildren } from "preact";
 import ActionButton from "./ActionButton";
-import Dropdown from "./Dropdown";
+import { DropdownPanel } from "./Dropdown";
 
 interface HelpRemoveButtonsProps {
     help?: ComponentChildren;
@@ -12,11 +12,11 @@ export default function HelpRemoveButtons({ help, removeText, onRemove }: HelpRe
     return (
         <td className="button-column">
             {help && <>
-                <Dropdown
+                <DropdownPanel
                     className="help-dropdown"
                     buttonClassName="bx bx-help-circle icon-action"
                     hideToggleArrow
-                >{help}</Dropdown>
+                >{help}</DropdownPanel>
                 {" "}
             </>}
             <ActionButton

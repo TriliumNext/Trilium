@@ -18,6 +18,9 @@ interface BoardHeaderToolsProps {
     onSelectColumn: () => void;
     /** Drops the selection and ends selection mode, the bar covering the button that started it. */
     onReset: () => void;
+    /** Collapses every column. Off mobile `index.tsx` draws the same pair in `OverlayControlGroup`. */
+    onCollapseAll: () => void;
+    onExpandAll: () => void;
 }
 
 /**
@@ -26,11 +29,24 @@ interface BoardHeaderToolsProps {
  * lasts a bar stands over all of it, with the count and what can be done with the selection.
  */
 export default function BoardHeaderTools({
-    children, isSelecting, onToggleSelecting, count, canSelectColumn, onSelectColumn, onReset
+    children, isSelecting, onToggleSelecting, count, canSelectColumn, onSelectColumn, onReset,
+    onCollapseAll, onExpandAll
 }: BoardHeaderToolsProps) {
     return (
         <div className="board-header-tools">
-            {isMobile() && (
+            {isMobile() && (<>
+                <ActionButton
+                    icon="bx bx-collapse-alt"
+                    text={t("board_view.collapse-all-columns")}
+                    noTooltipOnTouch
+                    onClick={onCollapseAll}
+                />
+                <ActionButton
+                    icon="bx bx-expand-alt"
+                    text={t("board_view.expand-all-columns")}
+                    noTooltipOnTouch
+                    onClick={onExpandAll}
+                />
                 <ActionButton
                     className="board-selection-toggle"
                     icon="bx bx-select-multiple"
@@ -39,7 +55,7 @@ export default function BoardHeaderTools({
                     noTooltipOnTouch
                     onClick={onToggleSelecting}
                 />
-            )}
+            </>)}
             {children}
             {isMobile() && isSelecting && (
                 <div className="board-selection-bar" role="toolbar">

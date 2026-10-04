@@ -143,11 +143,21 @@ export function getEnglishName(
     }
 }
 
+/** Turns a Trilium locale id (`pt_br`, `cn`) into the BCP 47 tag `Intl` expects. */
+export function normalizeLocale(locale: string) {
+    locale = locale.replaceAll("_", "-");
+    switch (locale) {
+        case "cn": return "zh-CN";
+        case "tw": return "zh-TW";
+        default: return locale;
+    }
+}
+
 /**
  * Locale ids that are not BCP-47 tags, mapped to one.
  *
  * The Chinese pair deliberately resolves through the script subtags rather than the regions
- * `normalizeLocale` (in the client's `utils/formatters`) maps them to: `zh-Hans` reads as
+ * `normalizeLocale` maps them to: `zh-Hans` reads as
  * "Simplified Chinese", whereas `zh-CN` would say "Chinese (China)" — the wrong distinction for
  * entries differing by script.
  */

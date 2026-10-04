@@ -2,6 +2,7 @@ import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEdit
 
 import type { CommandNames } from "../components/app_context.js";
 import appContext from "../components/app_context.js";
+import type NoteContext from "../components/note_context.js";
 import { t } from "../services/i18n.js";
 import type { MenuItem } from "./context_menu.js";
 
@@ -139,16 +140,30 @@ function buildQuickActionItems(
  * happily report its own stale model selection for it.
  */
 export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
-    if (appContext.tabManager.getActiveContextNote()?.type !== "text") {
+    return getTextEditorContaining(window.getSelection()?.anchorNode);
+}
+
+/**
+ * Returns the text editor whose editable contains `node`, or `null` when no text editor does.
+ * Takes the right-click target instead of the DOM selection, because a right-click does not move
+ * the selection in every browser.
+ *
+ * Looks up the editor in the split pane that contains `node`, because a right-click does not
+ * activate that pane.
+ */
+export async function getTextEditorContaining(
+    node: Node | null | undefined
+): Promise<CKTextEditor | null> {
+    const noteContext = node ? getNoteContextContaining(node) : null;
+    if (!node || noteContext?.note?.type !== "text") {
         return null;
     }
 
     try {
-        const editor = await appContext.tabManager.getActiveContext()?.getTextEditor();
+        const editor = await noteContext.getTextEditor();
         const domRoot = editor?.editing.view.getDomRoot();
-        const anchorNode = window.getSelection()?.anchorNode;
 
-        if (editor && domRoot && anchorNode && domRoot.contains(anchorNode)) {
+        if (editor && domRoot && domRoot.contains(node)) {
             return editor;
         }
     } catch (error) {
@@ -157,4 +172,19 @@ export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
     }
 
     return null;
+}
+
+/**
+ * Returns the note context whose `ntxId` matches the `data-ntx-id` of the split pane that contains
+ * `node`, or the active note context when `node` is outside every pane, e.g. in a dialog.
+ */
+function getNoteContextContaining(node: Node): NoteContext | null {
+    const { tabManager } = appContext;
+    const element = node instanceof Element ? node : node.parentElement;
+    const ntxId = element?.closest<HTMLElement>("[data-ntx-id]")?.dataset.ntxId;
+    if (!ntxId) {
+        return tabManager.getActiveContext();
+    }
+
+    return tabManager.getNoteContexts().find((noteContext) => noteContext.ntxId === ntxId) ?? null;
 }

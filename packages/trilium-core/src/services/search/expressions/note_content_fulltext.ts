@@ -226,7 +226,7 @@ class NoteContentFulltextExp extends Expression {
         }
 
         if (isProtected) {
-            if (!protectedSessionService.isProtectedSessionAvailable() || !content || typeof content !== "string") {
+            if (!protectedSessionService.isProtectedSessionAvailable() || !content) {
                 return;
             }
 

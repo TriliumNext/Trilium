@@ -1,0 +1,99 @@
+/*
+ * Theme-adaptive text and table colors. The text editor saves each color again as `--tn-color`,
+ * `--tn-background` or `--tn-border-color`; these rules keep its hue, move its CIELAB lightness
+ * into the role's range and cap its chroma. Greys (chroma below 1.5) spread over the range.
+ * Keep in step with `packages/share-theme/src/styles/adaptive-colors.css`.
+ */
+
+/* Zero specificity, so that a theme's :root wins although themes load before this file. */
+:where(:root) {
+    /* Adaptive font color limits */
+    --adaptive-text-light-max-lightness: 40;
+    --adaptive-text-light-max-chroma: 150;
+    --adaptive-text-dark-min-lightness: 75;
+    --adaptive-text-dark-max-chroma: 55;
+
+    /* Adaptive font background color limits */
+    --adaptive-background-light-min-lightness: 90;
+    --adaptive-background-light-max-chroma: 20;
+    --adaptive-background-dark-max-lightness: 30;
+    --adaptive-background-dark-max-chroma: 30;
+
+    /* Adaptive table border color limits */
+    --adaptive-table-border-light-max-lightness: 60;
+    --adaptive-table-border-light-max-chroma: 150;
+    --adaptive-table-border-dark-min-lightness: 47;
+    --adaptive-table-border-dark-max-chroma: 150;
+
+    /* Adaptive table background color limits */
+    --adaptive-table-background-light-min-lightness: 90;
+    --adaptive-table-background-light-max-chroma: 20;
+    --adaptive-table-background-dark-max-lightness: 30;
+    --adaptive-table-background-dark-max-chroma: 30;
+}
+
+:root {
+    --_adaptive-text-min: 0;
+    --_adaptive-text-max: var(--adaptive-text-light-max-lightness);
+    --_adaptive-text-chroma: var(--adaptive-text-light-max-chroma);
+    --_adaptive-background-min: var(--adaptive-background-light-min-lightness);
+    --_adaptive-background-max: 100;
+    --_adaptive-background-chroma: var(--adaptive-background-light-max-chroma);
+    --_adaptive-table-border-min: 0;
+    --_adaptive-table-border-max: var(--adaptive-table-border-light-max-lightness);
+    --_adaptive-table-border-chroma: var(--adaptive-table-border-light-max-chroma);
+    --_adaptive-table-background-min: var(--adaptive-table-background-light-min-lightness);
+    --_adaptive-table-background-max: 100;
+    --_adaptive-table-background-chroma: var(--adaptive-table-background-light-max-chroma);
+}
+
+body.dark-theme {
+    --_adaptive-text-min: var(--adaptive-text-dark-min-lightness);
+    --_adaptive-text-max: 100;
+    --_adaptive-text-chroma: var(--adaptive-text-dark-max-chroma);
+    --_adaptive-background-min: 0;
+    --_adaptive-background-max: var(--adaptive-background-dark-max-lightness);
+    --_adaptive-background-chroma: var(--adaptive-background-dark-max-chroma);
+    --_adaptive-table-border-min: var(--adaptive-table-border-dark-min-lightness);
+    --_adaptive-table-border-max: 100;
+    --_adaptive-table-border-chroma: var(--adaptive-table-border-dark-max-chroma);
+    --_adaptive-table-background-min: 0;
+    --_adaptive-table-background-max: var(--adaptive-table-background-dark-max-lightness);
+    --_adaptive-table-background-chroma: var(--adaptive-table-background-dark-max-chroma);
+}
+
+/* `!important` beats the inline color, which browsers without relative colors keep showing. */
+[style*="--tn-color"] {
+    color: lch(from var(--tn-color)
+        calc(min(1, c / 1.5) * clamp(var(--_adaptive-text-min), l, var(--_adaptive-text-max))
+            + (1 - min(1, c / 1.5)) * (var(--_adaptive-text-min)
+                + l / 100 * (var(--_adaptive-text-max) - var(--_adaptive-text-min))))
+        min(c, var(--_adaptive-text-chroma)) h) !important;
+}
+
+[style*="--tn-background"] {
+    background-color: lch(from var(--tn-background)
+        calc(min(1, c / 1.5)
+                * clamp(var(--_adaptive-background-min), l, var(--_adaptive-background-max))
+            + (1 - min(1, c / 1.5)) * (var(--_adaptive-background-min)
+                + l / 100 * (var(--_adaptive-background-max) - var(--_adaptive-background-min))))
+        min(c, var(--_adaptive-background-chroma)) h) !important;
+}
+
+:is(table, td, th)[style*="--tn-border-color"] {
+    border-color: lch(from var(--tn-border-color)
+        calc(min(1, c / 1.5)
+                * clamp(var(--_adaptive-table-border-min), l, var(--_adaptive-table-border-max))
+            + (1 - min(1, c / 1.5)) * (var(--_adaptive-table-border-min) + l / 100
+                * (var(--_adaptive-table-border-max) - var(--_adaptive-table-border-min))))
+        min(c, var(--_adaptive-table-border-chroma)) h) !important;
+}
+
+:is(table, td, th)[style*="--tn-background"] {
+    background-color: lch(from var(--tn-background)
+        calc(min(1, c / 1.5) * clamp(var(--_adaptive-table-background-min), l,
+                var(--_adaptive-table-background-max))
+            + (1 - min(1, c / 1.5)) * (var(--_adaptive-table-background-min) + l / 100
+                * (var(--_adaptive-table-background-max) - var(--_adaptive-table-background-min))))
+        min(c, var(--_adaptive-table-background-chroma)) h) !important;
+}

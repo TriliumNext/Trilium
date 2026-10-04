@@ -8,8 +8,8 @@ Slash commands is a feature of <a class="reference-link" href="../Text.md">Text
 *   As the name suggests, to trigger the slash commands simply press the / key to trigger it. Note that this can be anywhere in a paragraph as long as it's not part of the word, if it doesn't show up simply press a space and press the / key again.
 *   Use ↑ and ↓ keys to navigate between options.
 *   By default, the full list of commands is displayed.
-*   To search by title or description, simply start typing for an action.
-*   To trigger an action, press the Enter key.
+*   To search, simply start typing: commands are found by their title or by other names they go by (for example `h2` for _Heading 2_).
+*   To trigger the highlighted action, press Enter or Tab.
 
 ## Integration with other features
 

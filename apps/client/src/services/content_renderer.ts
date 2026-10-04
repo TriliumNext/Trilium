@@ -1,6 +1,14 @@
 import "./content_renderer.css";
 
-import { isImageAttachmentRole, isOfficeMimeType, normalizeMimeTypeForCKEditor, type TextRepresentationResponse } from "@triliumnext/commons";
+import {
+    attachmentIcon,
+    CANVAS_ATTACHMENT_MIME,
+    isAcceptedImageMime,
+    isImageAttachmentRole,
+    isOfficeMimeType,
+    normalizeMimeTypeForCKEditor,
+    type TextRepresentationResponse
+} from "@triliumnext/commons";
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
@@ -10,6 +18,7 @@ import imageContextMenuService from "../menus/image_context_menu.js";
 import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
+import type { BoxSize } from "../widgets/type_widgets/text/CKEditorWithWatchdog.js";
 import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
@@ -30,21 +39,21 @@ export interface RenderOptions {
     trim?: boolean;
     /** If enabled, it will prevent the default behavior in which an empty note would display a list of children. */
     noChildrenList?: boolean;
-    /** If enabled, it will prevent rendering of included notes. */
-    noIncludedNotes?: boolean;
+    /** If enabled, it will prevent rendering of embedded notes. */
+    noContentEmbeds?: boolean;
     /**
-     * Keep expanding include-note sections recursively at every depth. Used for printing/export,
+     * Keep expanding embeds recursively at every depth. Used for printing/export,
      * which preserves full nesting. When false (the default for on-screen display), only the first
-     * level of inclusion is rendered and deeper include-note sections are replaced with a reference
-     * link (see {@link includesAsReferenceLinks}).
+     * level of embedding is rendered and deeper embeds are replaced with a reference
+     * link (see {@link embedsAsReferenceLinks}).
      */
-    expandNestedIncludes?: boolean;
+    expandNestedEmbeds?: boolean;
     /**
-     * Internal: render this note's own include-note sections as reference links instead of expanding
-     * them. Set when rendering a note that is itself already an included note in display mode, so that
-     * inclusion stops after the first level.
+     * Internal: render this note's own embeds as reference links instead of expanding
+     * them. Set when rendering a note that is itself already an embedded note in display mode, so that
+     * embedding stops after the first level.
      */
-    includesAsReferenceLinks?: boolean;
+    embedsAsReferenceLinks?: boolean;
     /** If enabled, it will include archived notes when rendering children list. */
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
@@ -63,6 +72,8 @@ export interface RenderOptions {
      * the player, for the callers that serialize the rendered content into an HTML string or into a separate
      * document (presentation, printing) — a mounted player would be dead markup there.
      *
+     * For images, `embedded` mounts the zoom/pan image viewer and the others a plain `<img>`.
+     *
      * A full-size player has no entry here: it needs the tab it lives in (for sibling navigation and the OS
      * media session), which the renderer has no access to, so its hosts mount {@link MediaPreview} themselves.
      */
@@ -73,9 +84,36 @@ export interface RenderOptions {
      * the attachment full-detail view opts in. The viewer remains read-only either way.
      */
     pdfToolbar?: boolean;
+    /**
+     * Saves the changes that interactive content makes to an attachment, such as a canvas drawing.
+     * Without it, that content is read-only.
+     */
+    attachmentEditor?: AttachmentEditor;
+}
+
+/** Saves the changes that rendered content makes to attachments of the note that shows it. */
+export interface AttachmentEditor {
+    /** Whether the rendered content can change `attachment`. */
+    canEdit(attachment: FAttachment): boolean;
+    /** The content of the attachment that is not saved yet, or `undefined`. */
+    getUnsavedContent(attachmentId: string): string | undefined;
+    /** Schedules a save of `attachment`. The save reads the content from `getContent`. */
+    scheduleSave(attachment: FAttachment, getContent: () => string): void;
+    /** Reads the unsaved content of the attachment now, before its editor unmounts. */
+    release(attachmentId: string): void;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
+
+/**
+ * The content types that an interactive `getRenderedContent()` previews; it shows any other as an
+ * icon, or as the actions of a file. Keep in step with the branches there.
+ */
+const PREVIEWED_TYPES = new Set([
+    "book", "search", "text", "markdown", "code", "iconPack", "image", "canvas", "canvasDrawing",
+    "mindMap", "spreadsheet", "office", "pdf", "audio", "video", "mermaid", "render", "doc",
+    "llmChat"
+]);
 
 export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
 
@@ -105,6 +143,10 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         await renderCode(entity, $renderedContent);
     } else if (type === "iconPack" && !options.tooltip && entity instanceof FNote) {
         await renderIconPack(entity, $renderedContent, options);
+    } else if (type === "canvasDrawing") {
+        await renderCanvasDrawing(entity, $renderedContent, options);
+    } else if (type === "image" && options.mediaEnvironment === "embedded") {
+        await renderImageViewer(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
         await renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && type === "office") {
@@ -132,13 +174,16 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         await renderWebView(entity, $renderedContent);
     } else if (type === "llmChat" && entity instanceof FNote) {
         await renderLlmChat(entity, $renderedContent, options);
-    } else if (entity instanceof FNote) {
+    } else if (entity instanceof FNote || entity instanceof FAttachment) {
+        const icon = entity instanceof FNote
+            ? entity.getIcon()
+            : attachmentIcon(entity.role, entity.mime);
         $renderedContent.addClass("no-preview");
         $renderedContent.append(
-            $("<div>").append($("<span>").addClass(entity.getIcon()))
+            $("<div>").append($("<span>").addClass(icon))
         );
 
-        if (entity.type === "webView" && entity.hasLabel("webViewSrc")) {
+        if (entity instanceof FNote && entity.type === "webView" && entity.hasLabel("webViewSrc")) {
             const $footer = $("<footer>")
                 .addClass("webview-footer");
             const $openButton = $(`
@@ -174,7 +219,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
 /**
  * Renders a markdown note by converting its source to CKEditor-compatible HTML,
- * then running the same post-render pipeline as text notes (included notes,
+ * then running the same post-render pipeline as text notes (embedded notes,
  * math, reference links, Mermaid, code highlight) so the preview matches what
  * the user sees in the Markdown note type's preview pane.
  */
@@ -248,16 +293,6 @@ async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HT
 }
 
 async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
-    const encodedTitle = encodeURIComponent(entity.title);
-
-    let url;
-
-    if (entity instanceof FNote) {
-        url = `api/images/${entity.noteId}/${encodedTitle}?${Math.random()}`;
-    } else if (entity instanceof FAttachment) {
-        url = `api/attachments/${entity.attachmentId}/image/${encodedTitle}?${entity.utcDateModified}`;
-    }
-
     $renderedContent // styles needed for the zoom to work well
         .css("display", "flex")
         .css("align-items", "center")
@@ -265,7 +300,7 @@ async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery
         .css("flex-direction", "column");   // OCR text is displayed below the image.
 
     const $img = $("<img>")
-        .attr("src", url || "")
+        .attr("src", getImageUrl(entity))
         .attr("id", `attachment-image-${idCounter++}`)
         .css("max-width", "100%");
 
@@ -276,6 +311,76 @@ async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery
     if (entity instanceof FNote && options.showTextRepresentation) {
         await addOCRTextIfAvailable(entity, $renderedContent);
     }
+}
+
+/**
+ * Mounts the zoom/pan {@link ImageViewer} for an image note or attachment. As with the media
+ * player, the embedding caller must tear it down via {@link disposeInteractiveContent}.
+ */
+async function renderImageViewer(
+    entity: FNote | FAttachment,
+    $renderedContent: JQuery<HTMLElement>
+) {
+    const ImageViewer = (await import("../widgets/react/ImageViewer")).default;
+    const $container = $('<div class="rendered-image-viewer">');
+    const container = $container.get(0);
+    if (container) {
+        await mountInteractiveWidget(h(ImageViewer, {
+            src: getImageUrl(entity),
+            alt: entity.title,
+            environment: "embedded"
+        }), container);
+        // The viewer's <img> takes no pointer events, so the menu goes on its container.
+        imageContextMenuService.setupContextMenu($container);
+    }
+    $renderedContent.append($container);
+}
+
+/**
+ * Renders a canvas drawing kept in a file or an attachment. Interactive content of an attachment
+ * mounts the Excalidraw editor; anything else shows a picture of the drawing.
+ */
+async function renderCanvasDrawing(
+    entity: FNote | FAttachment,
+    $renderedContent: JQuery<HTMLElement>,
+    options: RenderOptions
+) {
+    const { default: CanvasDrawing, renderCanvasDrawingPicture } =
+        await import("../widgets/type_widgets/canvas/CanvasDrawing");
+
+    if (options.interactive && entity instanceof FAttachment) {
+        const $container = $('<div class="canvas-drawing">');
+        const container = $container.get(0);
+        if (container) {
+            await mountInteractiveWidget(h(CanvasDrawing, {
+                attachment: entity,
+                editor: options.attachmentEditor
+            }), container);
+        }
+        $renderedContent.append($container);
+        return;
+    }
+
+    const picture = await renderCanvasDrawingPicture(entity);
+    if (picture) {
+        $renderedContent.append(picture);
+    } else {
+        $renderedContent.addClass("no-preview");
+        const $icon = $("<span>").addClass(attachmentIcon("file", entity.mime));
+        $renderedContent.append($("<div>").append($icon));
+    }
+}
+
+function getImageUrl(entity: FNote | FAttachment) {
+    const encodedTitle = encodeURIComponent(entity.title);
+
+    if (entity instanceof FNote) {
+        return `api/images/${entity.noteId}/${encodedTitle}?${Math.random()}`;
+    } else if (entity instanceof FAttachment) {
+        const { attachmentId, utcDateModified } = entity;
+        return `api/attachments/${attachmentId}/image/${encodedTitle}?${utcDateModified}`;
+    }
+    return "";
 }
 
 async function addOCRTextIfAvailable(note: FNote, $content: JQuery<HTMLElement>) {
@@ -567,7 +672,7 @@ const INTERACTIVE_MOUNT_ATTR = "data-interactive-mount";
  * `useTriliumEvent` subscriptions actually receive events — a bare standalone Preact root has no
  * parent component in context, so otherwise e.g. an embedded collection never reacts to new notes.
  */
-async function mountInteractiveWidget(vnode: JSX.Element, container: HTMLElement) {
+export async function mountInteractiveWidget(vnode: JSX.Element, container: HTMLElement) {
     const [ { renderReactWidgetAtElement }, { default: appContext } ] = await Promise.all([
         import("../widgets/react/react_utils"),
         import("../components/app_context")
@@ -605,7 +710,7 @@ export function disposeInteractiveContent($renderedContent: JQuery<HTMLElement>)
 /**
  * Mounts a collection — a book or a saved search — as the live {@link EmbeddedNoteList}, the same
  * results widget used in the note detail (grid/list/table/board/calendar/map/presentation). Used by
- * interactive contexts (e.g. the dashboard and included notes) that opt in via
+ * interactive contexts (e.g. the dashboard and embedded notes) that opt in via
  * {@link RenderOptions.interactive}; every other context keeps the static fallback. Loaded lazily so
  * the collection views (and their dependencies) are only pulled in when a collection is embedded.
  */
@@ -651,56 +756,94 @@ async function showRenderError($content: JQuery<HTMLElement>, error: unknown, no
     }
 }
 
+/**
+ * The box size a new embed of `entity` starts with: `tiny` when the embed shows no preview of
+ * it, `small` for audio, `full` for code and `medium` for the rest.
+ */
+export function getEmbedBoxSize(entity: FNote | FAttachment): BoxSize {
+    return getBoxSize(getContentType(entity), hasRenderedPreview(entity));
+}
+
+/**
+ * Whether an interactive `getRenderedContent()` shows a preview of `entity`, rather than an icon
+ * or the actions of a file.
+ */
+export function hasRenderedPreview(entity: FNote | FAttachment) {
+    const type = getContentType(entity);
+    return type === "webView"
+        ? entity instanceof FNote && entity.hasLabel("webViewSrc")
+        : PREVIEWED_TYPES.has(type);
+}
+
+/** The box size of a new embed of a file being uploaded, from the attachment it becomes. */
+export function getUploadBoxSize(mime: string): BoxSize {
+    const type = isAcceptedImageMime(mime) ? "image" : getFileContentType("file", mime);
+    return getBoxSize(type, PREVIEWED_TYPES.has(type));
+}
+
+function getBoxSize(type: string, hasPreview: boolean): BoxSize {
+    if (!hasPreview) return "tiny";
+    if (type === "audio") return "small";
+    if (type === "code") return "full";
+    return "medium";
+}
+
 function getRenderingType(entity: FNote | FAttachment) {
-    let type: string = "";
-    if ("type" in entity) {
-        type = entity.type;
-    } else if ("role" in entity) {
-        type = entity.role;
-        // "importSource" attachments (e.g. the OneNote debug source HTML/InkML) are plain files kept
-        // for reference; render them exactly like a "file" role.
-        if (type === "importSource") {
-            type = "file";
-        } else if (isImageAttachmentRole(type)) {
-            // A link preview's "favicon" is a picture like any other as far as showing it goes; the
-            // role only says where it came from. Without this it would fall through to the unknown
-            // type and list as a file with no preview.
-            type = "image";
-        }
+    const type = getContentType(entity);
+    if (!entity.isProtected) {
+        return type;
     }
 
-    const mime = "mime" in entity && entity.mime;
-    const isIconPack = entity instanceof FNote && entity.isIconPack();
+    if (protectedSessionHolder.isProtectedSessionAvailable()) {
+        protectedSessionHolder.touchProtectedSession();
+        return type;
+    }
+    return "protectedSession";
+}
 
-    if (isIconPack) {
+/** The kind of content `entity` holds, from its note type or attachment role and its media type. */
+function getContentType(entity: FNote | FAttachment) {
+    if (entity instanceof FNote && entity.isIconPack()) {
         // Icon packs (JSON `code`/`file` notes with #iconPack) render as their glyph grid, not as raw JSON.
-        type = "iconPack";
-    } else if (type === "file" && mime === "application/pdf") {
-        type = "pdf";
-    } else if (type === "code" && entity instanceof FNote && entity.isMarkdown()) {
-        type = "markdown";
-    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime)) {
-        type = "code";
-    } else if (type === "file" && mime && mime.startsWith("audio/")) {
-        type = "audio";
-    } else if (type === "file" && mime && mime.startsWith("video/")) {
-        type = "video";
-    } else if (type === "file" && mime && isOfficeMimeType(mime)) {
-        type = "office";
+        return "iconPack";
+    }
+    if (entity instanceof FNote && entity.isMarkdown()) {
+        return "markdown";
+    }
+    if ("type" in entity) {
+        return getFileContentType(entity.type, entity.mime);
+    }
+    if (!("role" in entity)) {
+        return "";
     }
 
-    if (entity.isProtected) {
-        if (protectedSessionHolder.isProtectedSessionAvailable()) {
-            protectedSessionHolder.touchProtectedSession();
-        } else {
-            type = "protectedSession";
-        }
+    // "importSource" attachments (e.g. the OneNote debug source HTML/InkML) are plain files kept
+    // for reference; render them exactly like a "file" role.
+    if (entity.role === "importSource") {
+        return getFileContentType("file", entity.mime);
     }
+    // A link preview's "favicon" is a picture like any other as far as showing it goes; the
+    // role only says where it came from. Without this it would fall through to the unknown
+    // type and list as a file with no preview.
+    if (isImageAttachmentRole(entity.role)) {
+        return "image";
+    }
+    return getFileContentType(entity.role, entity.mime);
+}
 
+/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
+function getFileContentType(type: string, mime: string) {
+    if (type === "file" && mime === "application/pdf") return "pdf";
+    if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
+    if ((type === "file" || type === "viewConfig") && CODE_MIME_TYPES.has(mime)) return "code";
+    if (type === "file" && mime.startsWith("audio/")) return "audio";
+    if (type === "file" && mime.startsWith("video/")) return "video";
+    if (type === "file" && isOfficeMimeType(mime)) return "office";
     return type;
 }
 
 export default {
     getRenderedContent,
-    disposeInteractiveContent
+    disposeInteractiveContent,
+    mountInteractiveWidget
 };

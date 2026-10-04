@@ -6,14 +6,20 @@ import "./theme/blockquote.css";
 import "./theme/code_block_toolbar.css";
 import "./theme/link_embed_form.css";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
+import type { PasteTarget } from "./plugins/cuttonote.js";
 import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 export { default as EditorWatchdog } from "./custom_watchdog";
 export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
 export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, TextTransformationConfig, TextTypingTransformationDescription, WatchdogConfig, WatchdogState } from "ckeditor5";
 export type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
-export type { SlashCommandConfig, SlashCommandDefinition } from "./plugins/mention/slash_commands.js";
-export type { TriliumMentionFeed } from "./plugins/mention/types.js";
+export type { FileUploadData, FileUploadEvent } from "./plugins/file_upload/fileuploadediting.js";
+export type { PasteTarget } from "./plugins/cuttonote.js";
+export type { ContentEmbedState } from "./plugins/content_embed/content_embed.js";
+export type { AttachmentLinkChange } from "./plugins/referencelink.js";
+export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
+export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
+export type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./plugins/mention/types.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";
@@ -23,8 +29,13 @@ export { MESSAGE_KEY_PREFIX, MESSAGE_OVERRIDES, slugify } from "./messages.js";
 export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
+import "./plugins/file_upload/uploadfileplugin.js";
+import "./plugins/content_embed/content_embed.js";
 import "./plugins/math/math.js";
 import "./plugins/mermaid/mermaid.js";
+import "./plugins/referencelink.js";
+import "./plugins/table_context_menu.js";
+import "./plugins/table_paste_rows.js";
 
 window[Symbol.for("cke distribution")] = "trilium";
 
@@ -34,6 +45,9 @@ window[Symbol.for("cke distribution")] = "trilium";
  */
 export type CKTextEditor = (ClassicEditor | PopupEditor) & {
     getSelectedHtml(): string;
+    getSelectedPlainText(): string;
+    pasteContent(html: string, text: string): void;
+    capturePasteTarget(): PasteTarget;
     removeSelection(): Promise<void>;
 };
 
@@ -71,6 +85,9 @@ export class PopupEditor extends BalloonEditor {
 declare module "ckeditor5" {
     interface Editor {
         getSelectedHtml(): string;
+        getSelectedPlainText(): string;
+        pasteContent(html: string, text: string): void;
+        capturePasteTarget(): PasteTarget;
         removeSelection(): Promise<void>;
     }
 
@@ -97,6 +114,10 @@ declare module "ckeditor5" {
              */
             copyHtml?(html: string, plainText: string): void;
         },
-        clipboardImageEmbed?: ClipboardImageEmbedConfig
+        clipboardImageEmbed?: ClipboardImageEmbedConfig,
+        autoSort?: {
+            /** More date formats for table sorting to recognize, in Day.js syntax. */
+            dateFormats?: string[];
+        }
     }
 }

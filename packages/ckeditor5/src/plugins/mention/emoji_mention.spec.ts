@@ -1,21 +1,20 @@
 import {
     type ClassicEditor,
+    type Editor,
     EmojiPicker,
     EmojiRepository,
     Essentials,
     _getModelData as getModelData,
-    keyCodes,
     MentionEditing,
-    type MentionFeedObjectItem,
     Paragraph,
     _setModelData as setModelData
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import TriliumEmojiMention from "./emoji_mention.js";
+import TriliumEmojiMention, { type EmojiSuggestion } from "./emoji_mention.js";
 import TriliumMentionUI from "./trilium_mention_ui.js";
-import type { TriliumMentionFeed } from "./types.js";
+import type { MentionHostedFeed, MentionHostedList } from "./types.js";
 
 /** Longer than the mention UI's 100 ms feed debounce. */
 const AFTER_DEBOUNCE = 160;
@@ -31,6 +30,46 @@ const DEFINITIONS = [
         skins: [ { emoji: "👋🏽", tone: 3, version: 1 } ] }
 ];
 
+/** The query the stub list last showed the emoji for, or `null` while it is hidden. */
+let shownQuery: string | null = null;
+
+/**
+ * A host's list for `emoji.list`, as the client's behaves for these tests: it lists the emoji for the
+ * query as it is shown, opens on the first, moves on ArrowDown and commits on Enter.
+ */
+function createStubList(editor: Editor): MentionHostedList {
+    let commit: ((item: EmojiSuggestion) => void) | null = null;
+    let entries: EmojiSuggestion[] = [];
+    let index = 0;
+
+    return {
+        show(state) {
+            shownQuery = state.query;
+            commit = state.commit;
+            entries = editor.plugins.get(TriliumEmojiMention).search(state.query);
+            index = 0;
+        },
+        hide() {
+            shownQuery = null;
+            commit = null;
+            entries = [];
+        },
+        handleKeyDown(event) {
+            if (event.key === "ArrowDown") {
+                index = (index + 1) % entries.length;
+                return true;
+            }
+            const entry = entries[index];
+            if (event.key !== "Enter" || !commit || !entry) {
+                return false;
+            }
+            commit(entry);
+            return true;
+        },
+        element: null
+    };
+}
+
 describe("TriliumEmojiMention", () => {
     let editor: ClassicEditor;
     let definitionsUrl: string;
@@ -41,7 +80,7 @@ describe("TriliumEmojiMention", () => {
         editor = await createTestEditor(withPicker ? [ ...plugins, EmojiPicker ] : plugins, {
             // `definitionsUrl` must survive every override, or the repository silently falls back to
             // the real CDN and the spec starts asserting against the production emoji database.
-            emoji: { ...emojiConfig, definitionsUrl }
+            emoji: { list: createStubList, ...emojiConfig, definitionsUrl }
         });
 
         await editor.plugins.get(EmojiRepository).isReady();
@@ -49,25 +88,12 @@ describe("TriliumEmojiMention", () => {
     }
 
     /** The `:` feed the plugin registered, as the mention UI sees it. */
-    function emojiFeed(): TriliumMentionFeed {
-        const feeds = (editor.config.get("mention.feeds") ?? []) as TriliumMentionFeed[];
-        const feed = feeds.find((candidate) => candidate.marker === ":");
-
-        if (!feed) {
-            throw new Error("the plugin did not register a `:` feed");
-        }
-
-        return feed;
+    function emojiFeed(): MentionHostedFeed | undefined {
+        return editor.config.get("mention.hostedFeeds")?.find((candidate) => candidate.marker === ":");
     }
 
-    async function query(text: string): Promise<MentionFeedObjectItem[]> {
-        const feed = emojiFeed().feed;
-
-        if (typeof feed !== "function") {
-            throw new Error("the `:` feed should be a callback");
-        }
-
-        return await feed.call(editor, text) as MentionFeedObjectItem[];
+    function query(text: string): EmojiSuggestion[] {
+        return editor.plugins.get(TriliumEmojiMention).search(text);
     }
 
     function type(text: string) {
@@ -76,9 +102,10 @@ describe("TriliumEmojiMention", () => {
         });
     }
 
-    function pressKey(keyCode: number) {
+    function pressKey(key: "ArrowDown" | "Enter") {
         editor.editing.view.document.fire("keydown", {
-            keyCode,
+            keyCode: 0,
+            domEvent: new KeyboardEvent("keydown", { key }),
             preventDefault: () => {},
             stopPropagation: () => {},
             domTarget: editor.editing.view.getDomRoot()
@@ -90,6 +117,7 @@ describe("TriliumEmojiMention", () => {
     }
 
     beforeEach(async () => {
+        shownQuery = null;
         definitionsUrl = URL.createObjectURL(new Blob([ JSON.stringify(DEFINITIONS) ], { type: "application/json" }));
         await createEditor();
     });
@@ -98,26 +126,42 @@ describe("TriliumEmojiMention", () => {
         URL.revokeObjectURL(definitionsUrl);
     });
 
-    it("registers itself and a `:` feed that needs two characters before opening", () => {
+    it("registers itself and a `:` feed in the host's list, which needs two characters before opening", async () => {
         expect(TriliumEmojiMention.pluginName).toBe("TriliumEmojiMention");
         expect(TriliumEmojiMention.requires).toContain(EmojiRepository);
-        expect(emojiFeed().minimumCharacters).toBe(2);
+        expect(emojiFeed()?.minimumCharacters).toBe(2);
+        expect(emojiFeed()?.list).toBe(createStubList);
+
+        type(":g");
+        await settle();
+        expect(shownQuery).toBeNull();
+
+        type("r");
+        await settle();
+        expect(shownQuery).toBe("gr");
     });
 
-    describe("querying", () => {
-        it("returns matching emoji as `:annotation:` items carrying the character as their text", async () => {
-            expect(await query("grinning")).toEqual([
-                { id: ":grinning face:", text: "😀" },
-                { id: ":grinning face with big eyes:", text: "😃" }
+    it("registers no feed for a host that gives it no list", async () => {
+        editor = await createTestEditor([ Essentials, Paragraph, MentionEditing, TriliumMentionUI, TriliumEmojiMention ], {
+            emoji: { definitionsUrl }
+        });
+        expect(emojiFeed()).toBeUndefined();
+    });
+
+    describe("searching", () => {
+        it("lists matching emoji under their `:annotation:`, carrying the character as their text", () => {
+            expect(query("grinning")).toEqual([
+                { id: ":grinning face:", title: ":grinning face:", text: "😀" },
+                { id: ":grinning face with big eyes:", title: ":grinning face with big eyes:", text: "😃" }
             ]);
         });
 
-        it("returns nothing before the repository has loaded", async () => {
+        it("lists nothing before the repository has loaded", () => {
             const repository = editor.plugins.get(EmojiRepository);
             const wasReady = repository.isRepositoryReady;
             repository.isRepositoryReady = false;
 
-            expect(await query("grinning")).toEqual([]);
+            expect(query("grinning")).toEqual([]);
 
             repository.isRepositoryReady = wasReady;
         });
@@ -125,11 +169,15 @@ describe("TriliumEmojiMention", () => {
         it("honours the configured skin tone, falling back to the default variant", async () => {
             await createEditor(false, { skinTone: "medium" });
 
-            const items = await query("waving");
-            expect(items[0].text).toBe("👋🏽");
-
+            expect(query("waving")[0].text).toBe("👋🏽");
             // "grinning face" has no toned variant, so the default is used.
-            expect((await query("grinning face"))[0].text).toBe("😀");
+            expect(query("grinning face")[0].text).toBe("😀");
+        });
+
+        it("lists at most the dropdown limit", async () => {
+            await createEditor(false, { dropdownLimit: 1 });
+
+            expect(query("grinning").map((emoji) => emoji.text)).toEqual([ "😀" ]);
         });
     });
 
@@ -138,7 +186,7 @@ describe("TriliumEmojiMention", () => {
             type(":grin");
             await settle();
 
-            pressKey(keyCodes.enter);
+            pressKey("Enter");
 
             const data = getModelData(editor.model, { withoutSelection: true });
             expect(data).toBe("<paragraph>😀</paragraph>");
@@ -153,59 +201,33 @@ describe("TriliumEmojiMention", () => {
             await createEditor(true);
         });
 
-        it("gives the last slot to a hand-off entry, keeping the list at the dropdown limit", async () => {
+        it("gives the last slot to an entry opening the picker, keeping the list at the dropdown limit", async () => {
             await createEditor(true, { dropdownLimit: 2 });
 
-            const items = await query("grinning");
+            const items = query("grinning");
             expect(items).toHaveLength(2);
             expect(items[0].text).toBe("😀");
-            expect(items[1].id).toContain("show_all");
+            expect(items[1]).toEqual({
+                id: expect.stringContaining("show_all"), title: "Show all emoji...", text: "grinning", opensPicker: true,
+                icon: expect.stringContaining("<svg")
+            });
         });
 
         it("hands the query over to the picker instead of inserting anything", async () => {
             const picker = editor.plugins.get(EmojiPicker);
             const showUI = vi.spyOn(picker, "showUI").mockImplementation(() => {});
 
-            const items = await query("grinning");
-            expect(items[items.length - 1].id).toContain("show_all");
-
             type(":grinning");
             await settle();
 
-            // The first item is pre-selected, so arrow down onto the hand-off entry at the end.
-            for (let i = 0; i < items.length - 1; i++) {
-                pressKey(keyCodes.arrowdown);
+            // The list opens on the first entry, so arrow down onto the picker's entry at the end.
+            for (let i = 0; i < query("grinning").length - 1; i++) {
+                pressKey("ArrowDown");
             }
-            pressKey(keyCodes.enter);
+            pressKey("Enter");
 
             expect(showUI).toHaveBeenCalledExactlyOnceWith("grinning");
             expect(getModelData(editor.model, { withoutSelection: true })).toBe("<paragraph></paragraph>");
-        });
-    });
-
-    describe("row rendering", () => {
-        function render(item: MentionFeedObjectItem): HTMLElement {
-            const renderer = emojiFeed().itemRenderer;
-
-            if (!renderer) {
-                throw new Error("the `:` feed should provide an itemRenderer");
-            }
-
-            return renderer(item) as HTMLElement;
-        }
-
-        it("labels an emoji row with the character and its shortcode", () => {
-            const row = render({ id: ":grinning face:", text: "😀" });
-
-            expect(row.querySelector(".ck-button__label")?.textContent).toBe("😀 :grinning face:");
-        });
-
-        it("labels the hand-off row with its own caption", async () => {
-            await createEditor(true);
-            const items = await query("grinning");
-            const row = render(items[items.length - 1]);
-
-            expect(row.querySelector(".ck-button__label")?.textContent).toBe("Show all emoji...");
         });
     });
 });

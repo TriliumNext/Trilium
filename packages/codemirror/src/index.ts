@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
+import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, tooltips, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import { Compartment, EditorSelection, EditorState, StateEffect, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
@@ -131,6 +131,7 @@ export default class CodeMirror extends EditorView {
             keyboardSuggestionsCompartment.of(config.allowKeyboardSuggestions ? proseKeyboardAttributes : noKeyboardSuggestions),
             searchMatchHighlightTheme,
             lintTooltipTheme,
+            tooltips({ parent: getTooltipHost() }),
             searchHighlightCompartment.of([]),
             typeCompletionCompartment.of([]),
             completionSourceCompartment.of([]),
@@ -474,4 +475,20 @@ export default class CodeMirror extends EditorView {
             )
         });
     }
+}
+
+/**
+ * Returns the body-level element CodeMirror renders tooltips into, outside `.cm-editor`, whose
+ * `overflow: hidden` clips an absolutely positioned tooltip (Safari, iOS).
+ */
+function getTooltipHost() {
+    const existing = document.body.querySelector(".cm-tooltip-host");
+    if (existing instanceof HTMLElement) {
+        return existing;
+    }
+
+    const host = document.createElement("div");
+    host.className = "cm-tooltip-host";
+    document.body.appendChild(host);
+    return host;
 }

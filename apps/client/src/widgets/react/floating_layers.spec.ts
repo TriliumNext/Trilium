@@ -20,7 +20,7 @@ describe("isWithinFloatingLayer", () => {
         // One of each family named in the selector: a menu, a modal, an editor balloon, a picker,
         // the context menu (matched by id rather than class), and an autocomplete.
         for (const className of [ "dropdown-menu", "modal", "modal-backdrop", "popover", "tooltip", "gutter",
-            "ck-balloon-panel", "ck-body", "flatpickr-calendar", "attr-detail", "form-autocomplete-dropdown", "aa-dropdown-menu" ]) {
+            "ck-balloon-panel", "ck-body", "flatpickr-calendar", "attr-detail", "form-autocomplete-dropdown" ]) {
             expect(isWithinFloatingLayer(elementIn(className)), className).toBe(true);
         }
     });

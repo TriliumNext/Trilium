@@ -340,7 +340,8 @@
     "box_size_medium": "medium (~ 30 lines)",
     "box_size_full": "full (box shows complete text)",
     "box_size_expandable": "expandable (collapsed by default)",
-    "button_include": "Include note"
+    "button_include": "Include note",
+    "box_size_tiny": "tiny (a single row with the title and the actions)"
   },
   "info": {
     "modalTitle": "Info message",
@@ -349,8 +350,7 @@
     "copy_to_clipboard": "Copy to clipboard"
   },
   "jump_to_note": {
-    "search_placeholder": "Search for note by its name or type > for commands...",
-    "search_button": "Search in full text"
+    "search_placeholder": "Search for note by its name or type > for commands..."
   },
   "markdown_editor": {
     "image_upload_failed": "Cannot upload image \"{{name}}\"."
@@ -376,6 +376,25 @@
     "admonition": "Insert {{type}} admonition",
     "todo": "Insert a \"{{title}}\" task item",
     "todo_nonstandard": "Insert a \"{{title}}\" task item (non-standard)",
+    "titles": {
+      "date": "Insert date/time",
+      "include": "Include note",
+      "image": "Upload image",
+      "link": "Internal link",
+      "math": "Math equation",
+      "footnote": "Footnote",
+      "mermaid": "Mermaid diagram",
+      "mermaid_template": "Mermaid diagram: {{name}}",
+      "collapsible": "Collapsible block",
+      "page_break": "Page break",
+      "table": "Table",
+      "note": "Note",
+      "tip": "Tip",
+      "important": "Important",
+      "caution": "Caution",
+      "warning": "Warning",
+      "todo": "Task: {{title}}"
+    },
     "placeholders": {
       "math": "equation",
       "collapsible_summary": "Summary",
@@ -542,7 +561,7 @@
     "text": "Text",
     "textarea": "Multi-line Text",
     "number": "Number",
-    "boolean": "Boolean",
+    "boolean": "Checkbox",
     "date": "Date",
     "date_time": "Date & Time",
     "time": "Time",
@@ -745,11 +764,11 @@
     "is_hidden": "Keeps a task state out of the pickers, without deleting it or the notes already in it.",
     "max_nesting_depth": "How many levels of children a table shows. Notes cannot be reordered while it is set.",
     "include_archived": "Includes archived notes in this collection, which are otherwise left out.",
-    "board_card_width": "For board collections, how wide the columns are drawn: <code>narrow</code>, <code>medium</code> or <code>wide</code>. Ignored on mobile, which draws them at a width of its own.",
-    "enable_inbox_column": "For board collections, shows the inbox column, which lists all child notes that are not assigned to a board column.",
+    "board_column_width": "For board collections, how wide the columns are drawn: <code>narrow</code>, <code>medium</code> or <code>wide</code>. Ignored on mobile, which draws them at a width of its own.",
+    "board_show_inbox": "For board collections, shows the inbox column, which lists all child notes that are not assigned to a board column.",
     "board_card_redirect_to": "On a board card, opening the card jumps to the note this points at instead of opening the card itself.",
-    "sort_columns": "For board collections, the order the columns sort their cards in, which a column follows unless it is given an order of its own. Holds <code>title</code>, <code>creationDate</code> or <code>attr:</code> followed by a promoted attribute's name.",
-    "sort_columns_descending": "For board collections, runs the order in <code>#sortColumns</code> backwards.",
+    "board_sort_columns": "For board collections, the order the columns sort their cards in, which a column follows unless it is given an order of its own. Holds <code>title</code>, <code>creationDate</code> or <code>attr:</code> followed by a promoted attribute's name.",
+    "board_sort_columns_descending": "For board collections, runs the order in <code>#board:sortColumns</code> backwards.",
     "calendar_view": "Which view a calendar opens in: <code>timeGridDay</code>, <code>timeGridWeek</code>, <code>dayGridMonth</code>, <code>multiMonthYear</code> or <code>listMonth</code>.",
     "calendar_initial_date": "The date a calendar opens on. Opens on today when unset.",
     "calendar_hide_weekends": "Hides Saturday and Sunday from the calendar. Applies whatever its value.",
@@ -1231,6 +1250,11 @@
     },
     "viewport": "Image view"
   },
+  "lightbox": {
+    "image": "Image",
+    "pdf": "PDF",
+    "open_original": "Open the original in a new tab"
+  },
   "shortcut_hints": {
     "show_button": "Show shortcut hints",
     "esc_hint": "to close"
@@ -1261,7 +1285,8 @@
     "filter-none": "All icons",
     "filter-default": "Default icons",
     "icon_tooltip": "{{name}}\nIcon pack: {{iconPack}}",
-    "no_results": "No icons found."
+    "no_results": "No icons found.",
+    "insert_icon": "Insert icon"
   },
   "basic_properties": {
     "note_type": "Note type",
@@ -1401,7 +1426,9 @@
     "values_placeholder": "Type a value and press Enter",
     "add_value": "Add this value",
     "drawn_by_collection": "The collection is arranged by this, so its items do not repeat it",
-    "display_on_items": "Display the attribute on the collection items"
+    "display_on_items": "Display the attribute on the collection items",
+    "conflicting": "Multiple definitions",
+    "conflicting_tooltip": "The items define this attribute in more than one way, so it is sorted as text and cannot be set from the item menu."
   },
   "script_executor": {
     "query": "Query",
@@ -1514,7 +1541,7 @@
   },
   "search_string": {
     "title_column": "Search string:",
-    "placeholder": "fulltext keywords, #tag = value...",
+    "placeholder": "Ctrl+Space for suggestions, @ for a note, Shift+Enter for a new line, Enter to search",
     "search_syntax": "Search syntax",
     "also_see": "also see",
     "complete_help": "complete help on search syntax",
@@ -1525,8 +1552,14 @@
     "label_rock_or_pop": "only one of the labels must be present",
     "label_year_comparison": "numerical comparison (also >, >=, <).",
     "label_date_created": "notes created in the last month",
-    "error": "Search error: {{error}}",
-    "search_prefix": "Search:"
+    "error_title": "Search error",
+    "search_prefix": "Search:",
+    "hints": {
+      "title": "Search string",
+      "completions": "Show suggestions",
+      "new_line": "New line",
+      "run_search": "Run the search"
+    }
   },
   "attachment_detail": {
     "open_help_page": "Open help page on attachments",
@@ -1575,7 +1608,8 @@
     "editor_crashed_details_title": "Technical information",
     "auto-detect-language": "Auto-detected",
     "keeps-crashing": "Editing component keeps crashing. Please try restarting Trilium. If problem persists, consider creating a bug report.",
-    "nothing_selected_to_cut": "Select some text first to cut it into a sub-note."
+    "nothing_selected_to_cut": "Select some text first to cut it into a sub-note.",
+    "uploading_attachment": "Uploading attachment"
   },
   "empty": {
     "open_note_instruction": "Open a note by typing the note's title into the input below or choose a note in the tree.",
@@ -1682,6 +1716,10 @@
     "rename_note": "Rename note",
     "enter_new_title": "Enter new note title:",
     "rename_relation": "Rename relation",
+    "rename": "Rename",
+    "new_relation": "New relation",
+    "create_relation": "Create relation",
+    "relation_name_placeholder": "Relation name",
     "remove_relation": "Remove relation",
     "confirm_remove_relation": "Are you sure you want to remove the relation?",
     "specify_new_relation_name": "Specify new relation name (allowed characters: alphanumeric, colon and underscore):",
@@ -2506,7 +2544,9 @@
   "shared_info": {
     "shared_publicly": "This note is shared publicly on {{- link}}.",
     "shared_locally": "This note is shared locally on {{- link}}.",
-    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
+    "shared_preview": "This note is shared on {{- link}}, but only this browser can open that page, and only while Trilium is open in it. Publishing it for others needs a Trilium server.",
+    "shared_export_only": "This note is shared, but the mobile app cannot open shared pages. To publish it, export the subtree as \"{{format}}\" and host the files on any web server, or use a Trilium server."
   },
   "read-only-info": {
     "read-only-note": "Currently viewing a read-only note.",
@@ -2577,6 +2617,16 @@
     "sources": "Sources",
     "sources_summary": "{{count}} sources from {{sites}} sites",
     "extended_thinking": "Extended thinking",
+    "reasoning_effort_title": "Reasoning effort: {{level}}",
+    "reasoning_effort_levels": {
+      "none": "None",
+      "minimal": "Minimal",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Extra high",
+      "max": "Maximum"
+    },
     "model_cost_included": "Subscription",
     "no_models_selected": "No models selected — click the pencil to choose",
     "no_model_selected": "Select a model",
@@ -2585,7 +2635,6 @@
     "thought_process": "Thought process",
     "tool_calls": "{{count}} tool call(s)",
     "input": "Input",
-    "input_streaming": "Input (streaming…)",
     "edit_index": "Edit {{index}} of {{total}}",
     "result": "Result",
     "error": "Error",
@@ -2631,7 +2680,47 @@
     "attach_file": "Attach image, PDF, or text file",
     "remove_attachment": "Remove attachment",
     "attachment_upload_failed": "Failed to upload \"{{name}}\".",
-    "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file."
+    "attachment_unsupported_type": "\"{{name}}\" isn't a supported attachment type. Use an image (PNG, JPEG, GIF, WebP), a PDF, or a text/source file.",
+    "stream_status": {
+      "starting_agent": "Starting the agent. This can take a while.",
+      "waiting_for_reply": "Waiting for the reply…",
+      "still_working": "Still working…"
+    },
+    "show_tool_call_details": "Show input and output",
+    "tool_call_no_result": "No result yet.",
+    "search_notes_count_one": "({{count}} note)",
+    "search_notes_count_other": "({{count}} notes)",
+    "search_notes_limited_one": "{{count}} total result, limited to {{limit}}",
+    "search_notes_limited_other": "{{count}} total results, limited to {{limit}}",
+    "search_notes_scope": "Searched in <Note/>",
+    "child_notes_count_one": "({{count}} child)",
+    "child_notes_count_other": "({{count}} children)",
+    "child_count_one": "{{count}} child",
+    "child_count_other": "{{count}} children",
+    "search_help_count_one": "({{count}} page)",
+    "search_help_count_other": "({{count}} pages)",
+    "subtree_more_one": "+{{count}} more",
+    "subtree_more_other": "+{{count}} more",
+    "attachment_count_one": "{{count}} attachment",
+    "attachment_count_other": "{{count}} attachments",
+    "attribute_count_one": "({{count}} attribute)",
+    "attribute_count_other": "({{count}} attributes)",
+    "search_icons_count_one": "({{count}} icon)",
+    "search_icons_count_other": "({{count}} icons)",
+    "attachment_size": "({{size}})",
+    "attachment_ocr": "Text recognized from the file",
+    "skills": {
+      "search_syntax": "Search syntax",
+      "backend_scripting": "Backend scripting",
+      "frontend_scripting": "Frontend scripting",
+      "dashboards": "Dashboards"
+    },
+    "web_sources_count_one": "({{count}} source)",
+    "web_sources_count_other": "({{count}} sources)",
+    "attachment_model_cannot_read_image": "{{- model}} can't read images.",
+    "attachment_model_cannot_read_file": "{{- model}} can't read PDFs.",
+    "attachment_refused": "\"{{name}}\" wasn't attached. {{- reason}}",
+    "remove_unreadable_attachments": "Remove the attachments {{- model}} can't read"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -2690,8 +2779,13 @@
     "placeholder": "Quick search",
     "searching": "Searching...",
     "no-results": "No results found",
-    "more-results": "... and {{number}} more results.",
-    "show-in-full-search": "Show in full search"
+    "show-in-full-search": "Show in full search",
+    "hints": {
+      "title": "Quick search results",
+      "to_results": "Move to the results",
+      "page": "Move a page through the results",
+      "close": "Close the results"
+    }
   },
   "note_tree": {
     "collapse-title": "Collapse note tree",
@@ -2835,7 +2929,9 @@
     "delete-notes-in-progress": "Delete notes in progress: {{count}}",
     "delete-finished-successfully": "Delete finished successfully.",
     "undeleting-notes-in-progress": "Undeleting notes in progress: {{count}}",
-    "undeleting-notes-finished-successfully": "Undeleting notes finished successfully."
+    "undeleting-notes-finished-successfully": "Undeleting notes finished successfully.",
+    "delete-notes-in-progress-with-total": "Deleted {{progress}} notes out of {{total}}",
+    "erasing-notes": "Erasing notes…"
   },
   "frontend_script_api": {
     "async_warning": "You're passing an async function to `api.runOnBackend()` which will likely not work as you intended.\\nEither make the function synchronous (by removing `async` keyword), or use `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2984,7 +3080,14 @@
     "open_note_in_new_split": "Open note in a new split",
     "open_note_in_other_split": "Open note in the other split",
     "open_note_in_new_window": "Open note in a new window",
-    "open_note_in_popup": "Quick edit"
+    "open_note_in_popup": "Quick edit",
+    "convert_link_to_embed": "Convert link to an embed",
+    "convert_link_to_included_note": "Convert link to an included note",
+    "convert_embed_to_link": "Convert to link",
+    "include_size": "Size",
+    "show_title": "Show title",
+    "show_caption": "Show caption",
+    "editable": "Editable"
   },
   "electron_integration": {
     "desktop-application": "Desktop Application",
@@ -2996,7 +3099,7 @@
     "zoom-factor": "Zoom factor"
   },
   "note_autocomplete": {
-    "search-for": "Search for \"{{term}}\"",
+    "show-in-full-search": "Show all results for \"{{term}}\" in full search",
     "create-note": "Create note \"{{term}}\"",
     "create-note-into": "Create note \"{{term}}\" in {{parentTitle}}",
     "create-note-into-day-note": "Create note \"{{term}}\" in today's day note",
@@ -3004,12 +3107,25 @@
     "create-child-note": "Create child note \"{{term}}\"",
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
-    "show-recent-notes": "Show recent notes",
-    "full-text-search": "Full text search"
+    "include-note-contents": "Include note contents in the results for \"{{term}}\"",
+    "include-contents": "Include note contents",
+    "hints": {
+      "title": "Note search results",
+      "move": "Move through the results",
+      "open": "Open the highlighted result"
+    },
+    "recent": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "past_week": "Past 7 days",
+      "past_month": "Past 30 days",
+      "older": "Older"
+    }
   },
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",
-    "quick-edit": "Quick edit"
+    "quick-edit": "Quick edit",
+    "attachment-info": "Attachment • {{size}}"
   },
   "geo-map": {
     "expand-details": "Expand the note to fill the map",
@@ -3383,6 +3499,8 @@
   },
   "editorfeatures": {
     "title": "Features",
+    "mathlive_enabled": "MathLive visual editor",
+    "mathlive_description": "Math equations can be edited using a visual editor.",
     "emoji_completion_enabled": "Emoji auto-completion",
     "emoji_completion_description": "Emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
     "note_completion_enabled": "Note auto-completion",
@@ -3433,11 +3551,35 @@
     "presentation-theme": "Theme"
   },
   "table_context_menu": {
-    "delete_row": "Delete row"
+    "delete_row": "Delete row",
+    "insert_rows_above": "Insert row above",
+    "insert_rows_below": "Insert row below",
+    "insert_columns_left": "Insert column to the left",
+    "insert_columns_right": "Insert column to the right",
+    "delete_rows": "Delete row",
+    "delete_columns": "Delete column",
+    "delete_table": "Delete table",
+    "distribute_columns": "Distribute columns evenly",
+    "merge_cells": "Merge cells",
+    "split_cells": "Split cell",
+    "split_vertically": "Vertically",
+    "split_horizontally": "Horizontally",
+    "split_reset": "Unmerge cells",
+    "sort": "Sort",
+    "sort_ascending": "Ascending",
+    "sort_descending": "Descending",
+    "select": "Select",
+    "select_row": "Row",
+    "select_column": "Column",
+    "select_table": "Table",
+    "set_header_row": "Set as header",
+    "set_header_up_to_row": "Set header up to this row",
+    "paste_rows_above": "Paste rows above",
+    "paste_rows_below": "Paste rows below"
   },
   "board_view": {
     "delete-note": "Delete note...",
-    "remove-from-board": "Remove from board",
+    "remove-from-board": "Remove from column",
     "archive-note": "Archive note",
     "unarchive-note": "Unarchive note",
     "status-header": "Status",
@@ -3462,6 +3604,8 @@
     "card-count-with-archived_other": "{{count}} active cards, {{archived}} archived",
     "card-count-over-limit": "The card limit set for this column is exceeded!",
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
+    "delete-column-notes_one": "Also delete the note in this column",
+    "delete-column-notes_other": "Also delete the {{count}} notes in this column",
     "new-item": "New card",
     "new-item-placeholder": "Enter card title...",
     "add-new-item": "Add new card",
@@ -3505,7 +3649,7 @@
     "new-template-name": "New card template",
     "more-templates": "More templates…",
     "card-template": "Select a card template",
-    "collapse-hint": "Double click to collapse",
+    "collapse-hint": "Double click or press Space to collapse",
     "set-limit": "Set limit...",
     "set-limit-ok": "Set limit",
     "limit-capacity": "Warn for exceeding the column capacity",
@@ -3529,6 +3673,7 @@
       "insert_item": "Insert card below / above",
       "insert_column": "Insert column after / before",
       "open_item": "Open card",
+      "toggle_column": "Collapse / expand the column (on a column header)",
       "rename": "Rename card or column",
       "remove_item": "Remove card from the board",
       "delete_item": "Delete the note",
@@ -3542,7 +3687,9 @@
       "move_column_to_edge": "Move the column to the far left / right",
       "selection": "Selection",
       "select_column": "Select every card of the column",
-      "clear_selection": "Clear the selection"
+      "clear_selection": "Clear the selection",
+      "extend_selection": "Extend the selection down / up",
+      "toggle_selection": "Pick the card out or put it back"
     },
     "status-alias": "Status",
     "filter-placeholder": "Filter board...",
@@ -3571,7 +3718,8 @@
     "cards-selected_other": "{{count}} cards selected",
     "select-column-cards": "Select every card in the column",
     "reset-selection": "Reset the selection",
-    "expand-column": "Expand column"
+    "expand-column": "Expand column",
+    "select-all-cards": "Select all cards"
   },
   "dashboard_view": {
     "refresh-widget": "Refresh",
@@ -3755,7 +3903,11 @@
     "save_status_error": "Save failed",
     "save_status_saving_tooltip": "Changes are being saved.",
     "save_status_unsaved_tooltip": "There are unsaved changes. They will be saved automatically in a moment.",
-    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application."
+    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application.",
+    "shared_preview": "Share preview",
+    "shared_preview_description": "Only this browser can open the shared page, and only while Trilium is open in it. To publish it, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server.",
+    "shared_export_only": "Not published",
+    "shared_export_only_description": "The mobile app cannot open shared pages. To publish this note, export the subtree as \"{{- format}}\" and host the files on any web server, or use a Trilium server."
   },
   "status_bar": {
     "language_title": "Change content language",
@@ -3826,7 +3978,6 @@
     "page_size": "Page size",
     "scale": "Scale",
     "margins": "Margins",
-    "render_error": "Unable to render PDF with the current settings. Please check the margins and scale.",
     "margins_default": "Default",
     "margins_none": "None",
     "margins_minimum": "Minimum",
@@ -3838,7 +3989,9 @@
     "page_ranges": "Pages",
     "page_ranges_hint": "Leave empty to print all pages.",
     "page_ranges_invalid": "Invalid format. Use e.g. 1-5, 8, 11-13.",
-    "page_ranges_placeholder": "e.g. 1-5, 8, 11-13"
+    "page_ranges_placeholder": "e.g. 1-5, 8, 11-13",
+    "render_error_title": "Unable to render PDF with the current settings",
+    "render_error_description": "Please check the margins and scale."
   },
   "pdf": {
     "attachments_one": "{{count}} attachment",
@@ -4019,8 +4172,6 @@
     "no_providers_configured": "No providers configured yet.",
     "provider_name": "Name",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Requires Claude Code on the machine running Trilium.",
-    "provider_desc_copilot_agent": "Requires the GitHub Copilot CLI on the machine running Trilium.",
     "provider_unavailable_standalone": "Unavailable in the browser version: this provider works by running a separate program on the machine, and there is no machine here to run it on.",
     "actions": "Actions",
     "delete_provider": "Delete",
@@ -4032,11 +4183,17 @@
     "base_url_invalid": "Base URL must be a valid http:// or https:// URL",
     "claude_agent_description": "Uses your Claude Pro/Max subscription through Claude Code, so no API key is needed. Claude Code must be installed on the machine running Trilium (the server when self-hosting, or this computer on desktop); sign in once by running \"claude /login\" there.",
     "copilot_agent_description": "Uses your GitHub Copilot subscription through the GitHub Copilot CLI, so no API key is needed. The Copilot CLI must be installed on the machine running Trilium (the server when self-hosting, or this computer on desktop); sign in once by running \"copilot login\" there — an existing Copilot login from another editor is reused automatically.",
+    "antigravity_agent_description": "Uses the Gemini quota of your Google account (free, Google AI Pro or Ultra) through Google Antigravity, so no API key is needed.\n\nGoogle's Antigravity ACP server must be downloaded to the device running Trilium: the server when self-hosting, or this computer on desktop. If it isn't installed yet, the next step shows how to install it.\n\nThe first time the models are listed, the Google sign-in page opens in a browser on that device.",
+    "codex_agent_description": "Uses the Codex usage of your ChatGPT plan (Free, Go, Plus, Pro or Business) through OpenAI Codex, so no API key is needed.\n\nThe Codex CLI must be installed on the device running Trilium: the server when self-hosting, or this computer on desktop, for example by running \"npm install -g @openai/codex\" there.\n\nThe first time the models are listed, the ChatGPT sign-in page opens in a browser on that device.",
+    "antigravity_setup_download": "On the device running Trilium, download the archive for your platform from Google's <Link>ACP registry entry</Link> and unzip it into a folder it can stay in.",
+    "antigravity_setup_archive": "Download <Link>the archive for the device running Trilium</Link> and unzip it there, into a folder it can stay in.",
+    "antigravity_setup_path": "Add that folder to <Code>PATH</Code>, or set the <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> environment variable to <Code>agy_acp_server.par</Code> in it (<Code>agy_acp_server.exe</Code> on Windows), then restart Trilium.",
+    "antigravity_setup_sign_in": "Come back to this step. The first time, the Google sign-in page opens in a browser on that device.",
     "add_provider_title_named": "Add {{- name}}",
     "provider_group_cloud": "Cloud providers",
     "provider_group_cloud_description": "Pay per use with an API key, billed separately from any subscription you already have. Your notes are sent to the provider's servers.",
     "provider_group_subscription": "Subscription",
-    "provider_group_subscription_description": "Reuses a subscription you already pay for, at no extra cost. Your notes are sent to the provider's servers.",
+    "provider_group_subscription_description": "Uses an account you already have instead of an API key, at no extra cost: Claude Pro/Max, GitHub Copilot or a Google account. The provider's program must be installed on the device running Trilium, and your notes are sent to the provider's servers.",
     "provider_group_local": "Local / self-hosted",
     "provider_group_local_description": "No API key, no usage cost. Your notes only reach the machine running the model.",
     "provider_group_custom": "Custom endpoint",
@@ -4090,14 +4247,20 @@
       "clone_note": "Clone note",
       "search_icons": "Search icons",
       "search_help": "Search User Guide",
-      "get_help_toc": "Get User Guide contents"
+      "get_help_toc": "Get User Guide contents",
+      "read_web_page": "Read web page",
+      "note_moved_from": "<Note/> from <From/> to <To/>",
+      "note_moved": "<Note/> to <To/>",
+      "attachment_in_note": "<Title/> in <Note/>"
     }
   },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
     "fullscreen": "Fullscreen",
-    "exit_fullscreen": "Exit fullscreen"
+    "exit_fullscreen": "Exit fullscreen",
+    "open_in_new_tab": "Open in new tab",
+    "more_actions": "More actions"
   },
   "spreadsheet": {
     "read-only": "This note is read-only.",
@@ -4126,13 +4289,18 @@
       "ask-ai": "Ask AI…",
       "ask-ai-to": "Ask AI to…",
       "ask-ai-to-rewrite-the-selection-or-generate-new-content": "Ask AI to rewrite the selection or generate new content.",
+      "attach-and-embed-file": "Attach and embed file",
+      "attach-file": "Attach file",
+      "attach-file-as-a-link": "Attach file as a link",
       "box-size": "Box size",
       "bulleted-list": "Bulleted list",
+      "caption-for-the-included-note": "Caption for the included note",
       "card": "Card",
       "caution": "Caution",
       "changes": "Changes",
       "click-on-the-arrow-or-press-0-to-collapse-expand": "Click on the arrow or press %0 to collapse/expand.",
       "collapsible-block": "Collapsible block",
+      "convert-to-link": "Convert to link",
       "copy-anchor-reference-link": "Copy anchor reference link",
       "copy-formatting": "Copy formatting",
       "copy-image-to-clipboard": "Copy image to clipboard",
@@ -4154,6 +4322,7 @@
       "edit-task-states": "Edit task states",
       "edit-title": "Edit title",
       "embed": "Embed",
+      "enter-caption": "Enter caption",
       "enter-the-anchor-name-without-spaces": "Enter the anchor name without spaces.",
       "equation-preview": "Equation preview",
       "error-rendering-equation": "Error rendering equation",
@@ -4181,14 +4350,13 @@
       "insert-an-empty-mermaid-diagram": "Insert an empty Mermaid diagram",
       "insert-below": "Insert below",
       "insert-date-time": "Insert date/time",
+      "insert-date-time-0": "Insert date/time: %0",
       "insert-footnote-0": "Insert footnote %0",
-      "insert-math": "Insert math",
-      "insert-mermaid-diagram": "Insert Mermaid diagram",
       "insert-mermaid-source-code": "Insert Mermaid source code",
       "insert-paragraph-after-code-block": "Insert paragraph after code block",
       "insert-paragraph-before-code-block": "Insert paragraph before code block",
       "insert-text-snippet": "Insert text snippet",
-      "insert-the-current-date-and-time": "Insert the current date and time",
+      "insert-time-0": "Insert time: %0",
       "internal-link": "Internal link",
       "justify-text-alignment": "Justify text alignment",
       "keyboard-shortcut": "Keyboard shortcut",
@@ -4246,9 +4414,46 @@
       "undefined-custom-task-state": "Undefined custom task state",
       "url": "URL",
       "upload-an-image-from-your-device": "Upload an image from your device.",
+      "upload-files-as-attachments-and-insert-embeds": "Upload files as attachments and insert embeds.",
+      "upload-files-as-attachments-and-insert-links": "Upload files as attachments and insert links.",
       "upload-image": "Upload image",
       "warning": "Warning",
-      "working": "Working…"
+      "working": "Working…",
+      "icon": "Icon",
+      "insert-an-icon-from-an-installed-icon-pack": "Insert an icon from an installed icon pack",
+      "transform-icon": "Transform icon",
+      "icon-toolbar": "Icon toolbar",
+      "no-transform": "No transform",
+      "rotate-90": "Rotate 90°",
+      "rotate-180": "Rotate 180°",
+      "rotate-270": "Rotate 270°",
+      "flip-horizontally": "Flip horizontally",
+      "flip-vertically": "Flip vertically",
+      "change-icon": "Change icon",
+      "move-row-up": "Move row up",
+      "move-row-down": "Move row down",
+      "move-column-left": "Move column left",
+      "move-column-right": "Move column right",
+      "insert-table": "Insert table…",
+      "rows": "Rows",
+      "columns": "Columns",
+      "enter-a-whole-number-between-1-and-0": "Enter a whole number between 1 and %0.",
+      "the-table-is-too-large-max-0-cells": "The table is too large (max %0 cells).",
+      "math": "Math",
+      "date-time": "Date/time",
+      "distribute-columns-evenly": "Distribute columns evenly",
+      "merge-selected-cells": "Merge selected cells",
+      "unmerge-cells": "Unmerge cells",
+      "sort": "Sort",
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Some rows were sorted together because merged cells tie them to each other",
+      "tiny": "Tiny",
+      "show-title": "Show title",
+      "more-actions": "More actions",
+      "drawing-canvas": "Drawing canvas",
+      "editable": "Editable",
+      "insert-a-canvas-to-draw-on": "Insert a canvas to draw on."
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -4268,6 +4473,9 @@
       "missing-icon": "missing icon",
       "invalid-symbol": "the markdown symbol should be one character, excepting \"[\", \" \", \"X\", and \"]\"",
       "duplicate-symbol": "duplicate markdown symbol"
+    },
+    "colors": {
+      "pink": "Pink"
     }
   },
   "collection_filter": {
@@ -4300,5 +4508,61 @@
       "pan_right": "Right",
       "pan_fast": "Faster panning"
     }
+  },
+  "search_lint": {
+    "relation_needs_property": "Relations point to a note, so they cannot be checked for equality. Use . instead to access its properties.",
+    "text_needs_contains": "note.text searches the title and content together, so it can only be matched with *=*.",
+    "content_not_ordered": "Note content is text, so it cannot be ordered. Use *=* to match it instead.",
+    "compare_the_title": "Compare the title",
+    "use_operator": "Use {{operator}}"
+  },
+  "search_completion": {
+    "note": "Note title, properties and related notes",
+    "operator_equal": "Equals the whole value",
+    "operator_not_equal": "Does not equal the whole value",
+    "operator_contains": "Contains",
+    "operator_starts_with": "Starts with",
+    "operator_ends_with": "Ends with",
+    "operator_greater_than": "Greater than",
+    "operator_greater_or_equal": "Greater than or equal to",
+    "operator_less_than": "Less than",
+    "operator_less_or_equal": "Less than or equal to",
+    "operator_regex": "Matches a regular expression",
+    "operator_fuzzy_equal": "Equals, tolerating typos",
+    "operator_fuzzy_contains": "Contains, tolerating typos",
+    "property_content": "The note's body text",
+    "property_raw_content": "The note's body text, before its formatting is stripped",
+    "property_text": "The title or the body text",
+    "property_parents": "Continues on the note's parents",
+    "property_children": "Continues on the note's children",
+    "property_ancestors": "Continues on the note's ancestors",
+    "property_labels": "Followed by a label name",
+    "property_relations": "Followed by a relation name, then that note's own properties",
+    "property_attribute_count": "Number of labels and relations, including inherited ones",
+    "property_label_count": "Number of labels, including inherited ones",
+    "property_relation_count": "Number of relations, including inherited ones",
+    "property_relation_count_including_links": "Number of relations, counting the ones made by links",
+    "property_owned_relation_count_including_links": "Number of the note's own relations, counting the ones made by links",
+    "property_target_relation_count_including_links": "Number of relations targeting the note, counting the ones made by links",
+    "keyword_and": "Both conditions must match",
+    "keyword_or": "Either condition must match",
+    "keyword_not": "Excludes the notes the condition in parentheses matches",
+    "keyword_order_by": "Sorts the results by a property or label",
+    "keyword_limit": "Keeps only the first results",
+    "date_now": "The current date and time",
+    "date_today": "Today's date",
+    "date_month": "The current month",
+    "date_year": "The current year",
+    "date_now_offset": "Any number of seconds before now",
+    "date_today_offset": "Any number of days before today",
+    "date_month_offset": "Any number of months before this one",
+    "date_year_offset": "Any number of years before this one",
+    "label_marker": "Refers to a label. Press Enter to see the list of labels",
+    "label_marker_negated": "Excludes a label. Press Enter to see the list of labels",
+    "relation_marker": "Refers to a relation. Press Enter to see the list of relations",
+    "relation_marker_negated": "Excludes a relation. Press Enter to see the list of relations"
+  },
+  "split_button": {
+    "more_actions": "More actions"
   }
 }

@@ -20,6 +20,7 @@ async function main() {
     // The image compression worker, which lives in the server it embeds. Built here too so the
     // desktop app can compress off-thread rather than falling back to doing it in the main process.
     await build.buildBackend([ "../server/src/services/image_worker.ts" ]);
+    await build.buildTesseractWorker("../server/src/services/ocr/tesseract_worker.ts");
 
     // Copy assets.
     build.copy("src/assets", "assets/");
@@ -28,6 +29,9 @@ async function main() {
     // The LLM skill sheets moved to core with the rest of the stack, but the
     // Node hosts still read them from RESOURCE_DIR. See server core_assets.ts.
     build.copy("/packages/trilium-core/src/assets/llm/skills", "assets/llm/skills/");
+    // The Codex ACP adapter runs as a script of its own in a worker thread. See the server's
+    // codex_binary.ts.
+    build.copy("/node_modules/@agentclientprotocol/codex-acp/dist/index.js", "assets/codex-acp.mjs");
     build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/", "dist");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 

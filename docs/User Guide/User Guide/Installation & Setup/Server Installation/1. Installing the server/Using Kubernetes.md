@@ -5,12 +5,19 @@ The recommended way is to use a Helm chart.
 
 ## Root privileges
 
-> [!NOTE]
-> The Trilium container at this time needs to be run with root privileges. It will swap to UID and GID `1000:1000` to run the `node` process after execution though, so the main process doesn't run with root privileges.
+By default, the Trilium container starts as root, gives the data directory to UID and GID `1000:1000` and then runs Trilium with those reduced privileges, so no init container is needed to fix the permissions. To use a different UID and GID, set the `USER_UID` and `USER_GID` environment variables.
 
-The Trilium docker container needs to be run with root privileges. The node process inside the container will be started with reduced privileges (uid:gid 1000:1000) after some initialization logic. Please make sure that you don't use a security context (PodSecurityContext) which changes the user ID. To use a different uid:gid for file storage and the application, please use the `USER_UID` & `USER_GID` environment variables.
+Starting with v0.107.0, the container can also run without root, which a `restricted` Pod Security Standard requires. Set the user in the pod's security context, and `fsGroup` so that Kubernetes gives the volume to that group:
 
-The docker image will also fix the permissions of `/home/node` so you don't have to use an init container.
+```yaml
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+```
+
+In that mode `USER_UID` and `USER_GID` are ignored. See the section on running as a non-root user in <a class="reference-link" href="Using%20Docker.md">Using Docker</a> for what the data directory needs.
 
 ## Helm Charts
 

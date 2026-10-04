@@ -91,13 +91,14 @@ describe("Board properties", () => {
             getCardTemplateIds: () => [ "type:text:text/html" ],
             setCardTemplateIds: async (ids: string[]) => { stored.push(ids); },
             getStoredPromotedAttributes: () => [ { name: "dueDate" }, { name: "owner" } ],
+            getCardNotes: () => new Set(),
             setPromotedAttributes: async (attributes: PromotedAttribute[]) => {
                 storedAttributes.push(attributes);
             },
             getPromotedAttributes: () => [ { name: "dueDate", title: "Due" } ],
             getDefaultSort: () => ({
-                orderBy: labels.sortColumns as SortKey | undefined,
-                isDescending: !!labels.sortColumnsDescending
+                orderBy: labels["board:sortColumns"] as SortKey | undefined,
+                isDescending: !!labels["board:sortColumnsDescending"]
             }),
             setDefaultSort: async (orderBy: SortKey | undefined) => {
                 sorting.push(`sort:${orderBy ?? "none"}`);
@@ -182,7 +183,7 @@ describe("Board properties", () => {
         });
 
         it("names the attribute as the board names it, and turns the arrow over", () => {
-            labels = { sortColumns: "attr:dueDate", sortColumnsDescending: "true" };
+            labels = { "board:sortColumns": "attr:dueDate", "board:sortColumnsDescending": "true" };
             // Drawn afresh: the labels are read as the card mounts, and a redraw of the same card
             // would keep what it read the first time.
             act(() => { render(null, container); });

@@ -148,6 +148,36 @@ describe("buildSearchResultDetails", () => {
         expect(details.highlightedAttributeSnippet).toContain("<b>phoenix</b>");
     });
 
+    it("leaves the help notes' docName and docUrl out of the attribute snippet", () => {
+        const child = note("Hidden Notes")
+            .label("docName", "User Guide/Hidden Notes")
+            .label("docUrl", "https://docs.triliumnotes.org/hidden-notes")
+            .label("topic", "hidden");
+        rootNote.child(child);
+        const result = new SearchResult(["root", child.note.noteId]);
+
+        const searchContext = new SearchContext();
+        searchContext.highlightedTokens.push("hidden");
+
+        const [details] = searchService.buildSearchResultDetails([result], searchContext);
+
+        expect(details.attributeSnippet).toBe(`#topic="hidden"`);
+    });
+
+    it("keeps a multi-line value on its attribute's line, the lines standing for attributes", () => {
+        const child = note("Recipe").label("steps", "chop the onions\r\nfry them\n\nserve").label("course", "main");
+        rootNote.child(child);
+        const result = new SearchResult(["root", child.note.noteId]);
+
+        const searchContext = new SearchContext();
+        searchContext.highlightedTokens.push("onions", "main");
+
+        const [details] = searchService.buildSearchResultDetails([result], searchContext);
+
+        expect(details.attributeSnippet).toBe(`#steps="chop the onions fry them serve"\n#course="main"`);
+        expect(details.highlightedAttributeSnippet?.split("<br>")).toHaveLength(2);
+    });
+
     it("matches attribute values with a regex token from getHighlightedTokenInfos", () => {
         const child = note("Server config").label("env", "production");
         rootNote.child(child);

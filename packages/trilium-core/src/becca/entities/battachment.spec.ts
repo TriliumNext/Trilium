@@ -321,6 +321,27 @@ describe("BAttachment (real DB)", () => {
             expect(unwrapStringOrBuffer(note.getContent())).toBe(parentContent);
         });
 
+        it("turns an embed of the attachment into an include of the new note", () => {
+            const note = createNote({ content: "<p>placeholder</p>" });
+            const att = getContext().init(() =>
+                note.saveAttachment({
+                    role: "file",
+                    mime: "text/plain",
+                    title: "embedconv-" + counter,
+                    content: "file body"
+                })
+            );
+            const section = (attribute: string) =>
+                `<section class="include-note" ${attribute}></section>`;
+            const embed = section(`data-attachment-id="${att.attachmentId}"`);
+            getContext().init(() => note.setContent(embed));
+
+            const { note: created } = getContext().init(() => att.convertToNote());
+
+            expect(unwrapStringOrBuffer(note.getContent()))
+                .toBe(section(`data-note-id="${created.noteId}"`));
+        });
+
         it("converts an 'image' attachment and rewrites the embedded attachment URL in the parent", () => {
             const note = createNote({ content: "<p>placeholder</p>" });
             const att = getContext().init(() =>

@@ -273,7 +273,7 @@ function GridNoteCard(props: GridNoteCardProps) {
     );
 }
 
-function NoteAttributes({ note }: { note: FNote }) {
+export function NoteAttributes({ note }: { note: FNote }) {
     const ref = useRef<HTMLSpanElement>(null);
     useEffect(() => {
         attribute_renderer.renderNormalAttributes(note).then(({$renderedAttributes}) => {
@@ -324,8 +324,8 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
         content_renderer.getRenderedContent(note, {
             trim,
             noChildrenList,
-            // The note list is a lightweight preview: don't render included notes at all.
-            noIncludedNotes: true,
+            // The note list is a lightweight preview: don't render embedded notes at all.
+            noContentEmbeds: true,
             includeArchivedNotes,
             showTextRepresentation,
             interactive

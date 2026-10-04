@@ -30,7 +30,8 @@ span.fancytree-node.fancytree-hide {
 .fancytree-node {
     display: flex;
     align-items: center;
-    height: 2.4em;
+    /* The line box follows the tree font; the space around it stays fixed. */
+    height: calc(1lh + 14px);
     padding: 4px;
     border: 1px solid transparent;
     border-radius: 5px;

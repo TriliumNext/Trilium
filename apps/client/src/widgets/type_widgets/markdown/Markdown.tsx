@@ -2,6 +2,7 @@ import "./Markdown.css";
 import "./MarkdownCommons.css";
 
 import VanillaCodeMirror from "@triliumnext/codemirror";
+import { findWikilinkNoteIds, triliumNoteChips } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
 import { createLiteralTildeExtension } from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
@@ -20,11 +21,12 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
+import { resolveNoteChip } from "../../search_field_editor";
 import { extractHighlightsFromStaticHtml, type RawHighlight } from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
-import { useSlashCommands } from "./completions";
+import { useMarkdownCompletions } from "./completions";
 import { insertText, replaceSelection, uploadImageAndInsert } from "./editor_utils";
 
 const marked = new Marked({ breaks: true, gfm: true });
@@ -103,7 +105,8 @@ export default function Markdown(props: TypeWidgetProps) {
     usePublishHighlights(props.noteContext, editorView, highlights, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(props.parentComponent, editorView);
-    useSlashCommands(props.parentComponent, editorView, props.note);
+    useNoteLinkChips(editorView);
+    useMarkdownCompletions(props.parentComponent, editorView, props.note, () => props.noteContext?.notePath);
     useMarkdownKeymap(editorView);
 
     const ctx = useMemo<MarkdownContextValue>(
@@ -276,7 +279,7 @@ function useSyncedScrolling(view: VanillaCodeMirror | null, preview: HTMLDivElem
  *
  * The marker is painted as the preview's background (see `Markdown.css`), so its geometry has to
  * be measured here. Every block is observed for resize, since a block that grows after render —
- * a mermaid diagram, an image, an included note — shifts everything below it.
+ * a mermaid diagram, an image, an embedded note — shifts everything below it.
  */
 function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElement | null, html: string) {
     useEffect(() => {
@@ -374,10 +377,10 @@ function useTextCommands(parentComponent: TypeWidgetProps["parentComponent"], ed
         addIncludeNoteToTextCommand() {
             if (!editorView) return;
 
-            parentComponent?.triggerCommand("showIncludeNoteDialog", {
+            parentComponent?.triggerCommand("showContentEmbedDialog", {
                 editorApi: {
-                    addIncludeNote(noteId: string, boxSize?: string) {
-                        insertText(editorView, `<section class="include-note" data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"></section>\n`);
+                    addContentEmbed(noteId: string, boxSize?: string) {
+                        insertText(editorView, `<figure class="include-note" data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"></figure>\n`);
                         editorView.focus();
                     },
                     async addImage(noteId: string) {
@@ -433,6 +436,22 @@ function useTextCommands(parentComponent: TypeWidgetProps["parentComponent"], ed
  * Adds markdown-specific formatting shortcuts (bold, italic, strikethrough, math).
  * Toggles the wrapper around the selection, or inserts it at the cursor.
  */
+/**
+ * Draws the `[[noteId]]` links as chips with the note's icon and title, as the search field draws
+ * its note ids, showing a link's text while the selection touches it so it stays editable.
+ */
+function useNoteLinkChips(editorView: VanillaCodeMirror | null) {
+    useEffect(() => {
+        if (!editorView) return;
+
+        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveNoteChip, {
+            find: findWikilinkNoteIds,
+            revealAtSelection: true
+        }));
+        return () => editorView.setNamedExtension("noteLinkChips", []);
+    }, [editorView]);
+}
+
 function useMarkdownKeymap(editorView: VanillaCodeMirror | null) {
     useEffect(() => {
         if (!editorView) return;

@@ -318,11 +318,13 @@
   "notes": {
     "new-note": "新しいノート",
     "duplicate-note-suffix": "(複製)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "ノートの削除に失敗しました: {{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "バックエンドのログファイル '{{ fileName }}' は（まだ）存在しません。",
-    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。"
+    "reading-log-failed": "バックエンドのログファイル '{{ fileName }}' の読み込みに失敗しました。",
+    "log-file-unavailable": "ログファイルを開けなかったため、メモリ上に保持されている最新の記録のみを表示しています。Trilium は引き続きファイルを開こうと試み、開くことができ次第、これらの記録を書き込みます。"
   },
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
@@ -333,7 +335,8 @@
     "unable-to-export-message": "現在のノートをPDFとしてエクスポートできませんでした。",
     "unable-to-export-title": "PDFとしてエクスポートできません",
     "unable-to-save-message": "選択されたファイルに書き込めませんでした。もう一度試すか、別の保存先を選択してください。",
-    "unable-to-print": "ノートを印刷できません"
+    "unable-to-print": "ノートを印刷できません",
+    "render-timeout": "ノートのレンダリングが {{seconds}} 秒以内に完了しませんでした。"
   },
   "tray": {
     "tooltip": "Trilium Notes",

@@ -134,9 +134,6 @@ function UserInterface() {
                         {currentFamilyLabel}
                     </>}
                     mobileBottomSheet
-                    // The card is a container, and so a backdrop root: left inside it the menu
-                    // loses its blur and reads as a flat tint.
-                    portalToBody
                 >
                     {THEME_FAMILIES.map(family => (
                         <FormListItem

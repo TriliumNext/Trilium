@@ -960,6 +960,25 @@ describe("Search", () => {
             expect(titledRank).toBeLessThan(bodyRank);
         });
 
+        it("ranks the title spelled with the query's diacritics first (#11787)", () => {
+            // Without the accent sorting first, the alphabetical tie-break settles this in favour
+            // of "ktory" both ways, as "y" sorts before "ý".
+            const accented = contentNote("ktorý", "");
+            const plain = contentNote("ktory", "");
+            const accentedPhrase = contentNote("ktorý je", "");
+            const plainPhrase = contentNote("ktory je", "");
+
+            const accentedSearch = searchService.findResultsWithQuery("ktorý", new SearchContext());
+            expect(rank(accentedSearch, accented.noteId)).toBeGreaterThanOrEqual(0);
+            expect(rank(accentedSearch, accented.noteId)).toBeLessThan(rank(accentedSearch, plain.noteId));
+            expect(rank(accentedSearch, accentedPhrase.noteId)).toBeLessThan(rank(accentedSearch, plainPhrase.noteId));
+
+            const plainSearch = searchService.findResultsWithQuery("ktory", new SearchContext());
+            expect(rank(plainSearch, plain.noteId)).toBeGreaterThanOrEqual(0);
+            expect(rank(plainSearch, plain.noteId)).toBeLessThan(rank(plainSearch, accented.noteId));
+            expect(rank(plainSearch, plainPhrase.noteId)).toBeLessThan(rank(plainSearch, accentedPhrase.noteId));
+        });
+
         it("finds a body typo via phase-2 fuzzy fallback, ranked below exact matches (combinef -> combined)", () => {
             const exact = contentNote("ExactNote", "the combinef marker is set");
             const fuzzy = contentNote("FuzzyNote", "the values were combined together");
@@ -1056,6 +1075,29 @@ describe("Search", () => {
             return searchService.buildSearchResultDetails(results, searchContext);
         }
 
+        it("names the icon a note was found by, and highlights it", () => {
+            // An icon is an empty element. Striptags leaves no trace of it, so a note found by the
+            // icon's name had nothing in its snippet to centre on or to mark.
+            const icons = contentNote("Icons", `<p>${"padding ".repeat(60)}`
+                + `Press <span class="tn-icon bx bx-star"></span> to favourite.</p>`);
+
+            const detail = detailsFor("star").find((d) => d.noteId === icons.noteId);
+
+            expect(detail?.contentSnippet).toContain("[star]");
+            expect(detail?.highlightedContentSnippet).toContain("<b>star</b>");
+        });
+
+        it("reports the words the snippet matched, spelled as the note has them (#11787)", () => {
+            const slovak = contentNote("Slovak", "<p>Ktorý deň je dnes?</p>");
+            for (const query of [ "ktorý", "ktory" ]) {
+                expect(detailsFor(query).find((d) => d.noteId === slovak.noteId)?.matchedTerms).toEqual([ "Ktorý" ]);
+            }
+
+            // A fuzzy match reports the word that is in the note rather than the one typed.
+            const asimov = contentNote("Asimov", "<p>by American writer Isaac Asimov</p>");
+            expect(detailsFor("orbiter").find((d) => d.noteId === asimov.noteId)?.matchedTerms).toEqual([ "writer" ]);
+        });
+
         it("highlights the word a fuzzy body match actually matched", () => {
             // "writer" is two edits from "orbiter", which AUTO allows for a 7-character token, so
             // this note is a result even though the word the user typed appears nowhere in it.
@@ -1113,22 +1155,43 @@ describe("Search", () => {
 
         // ...which the quick-search route (extractContentSnippet -> highlightSearchResults)
         // turns into <br> tags in the HTML the dropdown renders.
-        const result: any = { notePathTitle: "Collapsible note", contentSnippet: snippet, attributeSnippet: "" };
+        const result: any = {
+            notePathTitle: "Collapsible note", noteTitleSegment: "Collapsible note", parentPathTitle: "",
+            contentSnippet: snippet, attributeSnippet: ""
+        };
         searchService.highlightSearchResults([ result ], [ "body" ]);
         expect(result.highlightedContentSnippet).toBe("Summary Title<br><b>Body</b> text here<br>After the block");
+    });
+
+    it("keeps soft line breaks and paragraphs apart in the snippet (#11787)", () => {
+        // Shift+Enter in the text editor inserts a <br> rather than starting a new paragraph.
+        const noteBuilder = note("Soft breaks note");
+        noteBuilder.note.getContent = () => "<p>First line<br>second line<br/>third line</p><p>Next paragraph</p>";
+        rootNote.child(noteBuilder);
+
+        const snippet = searchService.extractContentSnippet(noteBuilder.note.noteId, [ "second" ]);
+        expect(snippet.split("\n")).toEqual([ "First line", "second line", "third line", "Next paragraph" ]);
     });
 
     it("escapes angle brackets in the note title instead of dropping them", () => {
         // The title is interpolated into the autocomplete dropdown as raw HTML, so a title
         // containing markup-like text must come back escaped. Stripping only "<" would render
         // "Issues caused by <div>" as "Issues caused by div>".
-        const result: any = { notePathTitle: "Issues caused by <div>", contentSnippet: "", attributeSnippet: "" };
+        const result: any = {
+            notePathTitle: "Bugs › Issues caused by <div>", noteTitleSegment: "Issues caused by <div>",
+            parentPathTitle: "Bugs", contentSnippet: "", attributeSnippet: ""
+        };
         searchService.highlightSearchResults([ result ], [ "caused" ]);
-        expect(result.highlightedNotePathTitle).toBe("Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedNotePathTitle).toBe("Bugs › Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedNoteTitle).toBe("Issues <b>caused</b> by &lt;div&gt;");
+        expect(result.highlightedParentPathTitle).toBe("Bugs");
 
         // Escaping happens after highlighting, so a token that looks like part of an entity
         // ("lt" in "&lt;") cannot cut the entity in half and produce "&<b>lt</b>;".
-        const entityResult: any = { notePathTitle: "a < b", contentSnippet: "x < y", attributeSnippet: "#lt=1 < 2" };
+        const entityResult: any = {
+            notePathTitle: "a < b", noteTitleSegment: "a < b", parentPathTitle: "",
+            contentSnippet: "x < y", attributeSnippet: "#lt=1 < 2"
+        };
         searchService.highlightSearchResults([ entityResult ], [ "lt" ]);
         expect(entityResult.highlightedNotePathTitle).toBe("a &lt; b");
         expect(entityResult.highlightedContentSnippet).toBe("x &lt; y");
@@ -1183,6 +1246,36 @@ describe("Search", () => {
         rootNote.child(noteBuilder);
 
         expect(searchService.extractContentSnippet(noteBuilder.note.noteId, [ "secret" ])).toBe("");
+    });
+
+    describe("body text held in HTML entities", () => {
+        function bodyNote(title: string, content: string) {
+            return getContext().init(() => noteService.createNewNote({
+                parentNoteId: "root",
+                title,
+                content,
+                type: "text"
+            }).note);
+        }
+
+        function finds(query: string, noteId: string) {
+            const results = searchService.findResultsWithQuery(query, new SearchContext());
+
+            return results.some((result) => result.noteId === noteId);
+        }
+
+        it("finds a body by the text the editor shows for it", () => {
+            // The first body reads "AT&T and R&D, where a<b." on screen; the second displays
+            // "&amp;" and "&lt;", which a second decode would turn into "&" and "<".
+            const telco = bodyNote("Telco", "<p>AT&amp;T and R&amp;D, where a&lt;b.</p>");
+            const literal = bodyNote("Literal", "<p>write &amp;amp;t rather than &amp;lt;</p>");
+
+            expect(finds("AT&T", telco.noteId)).toBe(true);
+            expect(finds("R&D", telco.noteId)).toBe(true);
+            expect(finds("a<b", telco.noteId)).toBe(true);
+            expect(finds("&lt;", literal.noteId)).toBe(true);
+            expect(finds("at<t", literal.noteId)).toBe(false);
+        });
     });
 
     // FIXME: test what happens when we order without any filter criteria

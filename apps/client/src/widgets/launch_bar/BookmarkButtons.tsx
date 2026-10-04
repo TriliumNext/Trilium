@@ -97,6 +97,7 @@ function BookmarkFolder({ note }: { note: FNote }) {
 
     return (
         <LaunchBarDropdownButton
+            panel
             launcherNote={note}
             icon={icon}
             title={title}

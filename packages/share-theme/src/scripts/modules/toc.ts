@@ -1,3 +1,5 @@
+import { closeMobileMenus } from "./mobile.js";
+
 /**
  * The ToC is now generated in the page template so
  * it even exists for users without client-side js
@@ -26,6 +28,7 @@ export default function setupToC() {
             e.stopPropagation();
 
             target.scrollIntoView({behavior: "smooth"});
+            closeMobileMenus();
         });
     }
 

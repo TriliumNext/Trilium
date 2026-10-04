@@ -23,7 +23,8 @@ import { JsPlumb } from "./jsplumb";
 import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { NoteBox } from "./NoteBox";
 import setupOverlays, { uniDirectionalOverlays } from "./overlays";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId, promptForRelationName } from "./utils";
+import RelationNamePopover, { type AskRelationName, useRelationNamePrompt } from "./RelationNamePopover";
+import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
 
 interface Clipboard {
     noteId: string;
@@ -118,7 +119,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef });
 
-    const connectionCallback = useRelationCreation({ mapApiRef, jsPlumbApiRef: pbApiRef });
+    const relationNamePrompt = useRelationNamePrompt();
+    const connectionCallback = useRelationCreation({ mapApiRef, jsPlumbApiRef: pbApiRef, askRelationName: relationNamePrompt.ask });
 
     const panZoom = usePanZoom({
         ntxId,
@@ -176,6 +178,15 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 panZoom={panZoom}
                 onCommand={(command) => parentComponent?.triggerEvent(command, { ntxId })}
             />
+
+            {relationNamePrompt.request && (
+                <RelationNamePopover
+                    key={relationNamePrompt.request.id}
+                    connection={relationNamePrompt.request.connection}
+                    defaultValue={relationNamePrompt.request.defaultValue}
+                    onAnswer={relationNamePrompt.answer}
+                />
+            )}
         </div>
     );
 }
@@ -403,18 +414,22 @@ function useNoteDragging({ containerRef, mapApiRef }: {
     return dragProps;
 }
 
-function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObject<RelationMapApi>, jsPlumbApiRef: RefObject<jsPlumbInstance> }) {
+function useRelationCreation({ mapApiRef, jsPlumbApiRef, askRelationName }: {
+    mapApiRef: RefObject<RelationMapApi>,
+    jsPlumbApiRef: RefObject<jsPlumbInstance>,
+    askRelationName: AskRelationName
+}) {
     const connectionCallback = useCallback(async (info: OnConnectionBindInfo, originalEvent: Event) => {
         const connection = info.connection;
 
         // Called whenever a connection is created, either initially or manually when added by the user.
-        const handler = buildRelationContextMenuHandler(connection, mapApiRef);
+        const handler = buildRelationContextMenuHandler(connection, mapApiRef, askRelationName);
         connection.bind("contextmenu", handler);
 
         // if there's no event, then this has been triggered programmatically
         if (!originalEvent || !mapApiRef.current) return;
 
-        const name = await promptForRelationName();
+        const name = await askRelationName(connection);
 
         // Delete the newly created connection if the dialog was dismissed.
         if (!name || !name.trim()) {
@@ -429,7 +444,7 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
             toast.showError(t("relation_map.connection_exists", { name }));
             jsPlumbApiRef.current?.deleteConnection(connection);
         }
-    }, []);
+    }, [ askRelationName ]);
 
     return connectionCallback;
 }

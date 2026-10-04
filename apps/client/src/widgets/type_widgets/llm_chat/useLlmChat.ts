@@ -1,9 +1,9 @@
-import type { LlmCitation, LlmMessage, LlmMessagePart, LlmModelInfo, LlmUsage } from "@triliumnext/commons";
+import { LLM_REASONING_EFFORTS, type LlmCitation, type LlmMessage, type LlmMessagePart, type LlmModelInfo, type LlmReasoningEffort, type LlmStreamStatus, type LlmUsage } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { streamChatCompletion } from "../../../services/llm_chat.js";
-import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel } from "../../../services/llm_providers.js";
+import { type ModelOption, type ModelProviderGroup, readSelectedModels, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
 import { randomString } from "../../../services/utils.js";
 import { useTriliumEvent } from "../../react/hooks.js";
 import { estimateTokens, quantizeDraftTokens } from "./chat_context_usage.js";
@@ -18,6 +18,7 @@ export type AttachmentBlock = ImageBlock | FileBlock | TextFileBlock;
 /** The subset of the reply-input editor API the chat needs to write into it imperatively. */
 export interface InputEditorApi {
     appendBlockQuote(markdown: string): void;
+    focus(): void;
 }
 
 /** Distance (px) past the content bottom edge within which the timeline counts as "at bottom". */
@@ -40,7 +41,7 @@ function getLastUserMessageEl(container: HTMLElement): HTMLElement | null {
 /**
  * Flatten a stored message's content into the wire format the server expects.
  * Plain string content stays as-is; block-shaped content (with images) becomes
- * an ordered array of text/image parts, with tool-call blocks stripped.
+ * an ordered array of text/image parts, with tool-call and thinking blocks stripped.
  */
 function flattenToApiContent(content: string | ContentBlock[]): string | LlmMessagePart[] {
     if (typeof content === "string") {
@@ -59,7 +60,8 @@ function flattenToApiContent(content: string | ContentBlock[]): string | LlmMess
         }
         // tool_call blocks belong to assistant history rendering only — they
         // are reconstructed from the model's own tool-use turns and must not
-        // be re-sent as user/assistant content.
+        // be re-sent as user/assistant content. thinking blocks are the model's
+        // reasoning, which it must not read back as something it said.
     }
     // Collapse to a string if there is no multimodal content — keeps backwards
     // compatibility with providers/paths that haven't been touched.
@@ -94,7 +96,8 @@ export interface UseLlmChatReturn {
     hasInputText: boolean;
     isStreaming: boolean;
     streamingBlocks: ContentBlock[];
-    streamingThinking: string;
+    /** What the streaming turn waits on before its reply starts, if the server said. */
+    streamingStatus: LlmStreamStatus | null;
     pendingCitations: LlmCitation[];
     /** Images or files the user has attached but not yet sent. */
     pendingAttachments: AttachmentBlock[];
@@ -109,6 +112,8 @@ export interface UseLlmChatReturn {
     enableWebSearch: boolean;
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
+    /** The effort chosen for a model with levels; undefined means the model's default. */
+    reasoningEffort: LlmReasoningEffort | undefined;
     contextNoteId: string | undefined;
     /** The chat note's ID — used as the upload target for attachments. */
     chatNoteId: string | undefined;
@@ -134,6 +139,8 @@ export interface UseLlmChatReturn {
     registerInputEditor: (api: InputEditorApi | undefined) => void;
     /** Append a preformatted block (e.g. a Markdown quote) to the reply input and focus it. */
     appendToInput: (text: string) => void;
+    /** Focus the reply input, or, while its editor is still loading, as soon as it registers. */
+    focusInput: () => void;
 
     /** Read the current reply-input draft text (kept in a ref, not state — see {@link hasInputText}). */
     getInput: () => string;
@@ -145,6 +152,7 @@ export interface UseLlmChatReturn {
     setEnableWebSearch: (value: boolean) => void;
     setEnableNoteTools: (value: boolean) => void;
     setEnableExtendedThinking: (value: boolean) => void;
+    setReasoningEffort: (value: LlmReasoningEffort | undefined) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
     /** Append a freshly uploaded image or file to the pending-attachments list. */
@@ -196,7 +204,7 @@ export function useLlmChat(
     // displayed `streamingBlocks` is derived from this with the trailing text
     // block smoothed via useSmoothStreaming for a steady reveal cadence.
     const [targetBlocks, setTargetBlocks] = useState<ContentBlock[]>([]);
-    const [streamingThinking, setStreamingThinking] = useState("");
+    const [streamingStatus, setStreamingStatus] = useState<LlmStreamStatus | null>(null);
     const { displayedText: smoothedTailText, append: smoothAppend, drain: smoothDrain, reset: smoothReset } = useSmoothStreaming();
     const [pendingCitations, setPendingCitations] = useState<LlmCitation[]>([]);
     const [pendingAttachments, setPendingAttachments] = useState<AttachmentBlock[]>([]);
@@ -208,6 +216,7 @@ export function useLlmChat(
     const [enableWebSearch, setEnableWebSearch] = useState(true);
     const [enableNoteTools, setEnableNoteTools] = useState(defaultEnableNoteTools);
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
+    const [reasoningEffort, setReasoningEffort] = useState<LlmReasoningEffort | undefined>(undefined);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
@@ -249,6 +258,8 @@ export function useLlmChat(
     enableNoteToolsRef.current = enableNoteTools;
     const enableExtendedThinkingRef = useRef(enableExtendedThinking);
     enableExtendedThinkingRef.current = enableExtendedThinking;
+    const reasoningEffortRef = useRef(reasoningEffort);
+    reasoningEffortRef.current = reasoningEffort;
     const chatNoteIdRef = useRef(chatNoteId);
     chatNoteIdRef.current = chatNoteId;
     const setChatNoteId = useCallback((noteId: string | undefined) => {
@@ -260,11 +271,24 @@ export function useLlmChat(
     const pendingAttachmentsRef = useRef(pendingAttachments);
     pendingAttachmentsRef.current = pendingAttachments;
 
-    // The reply-input editor, registered by ChatInputBar once mounted. Held in a ref so timeline
-    // actions (e.g. quoting a selection) can write into it without a render-order dependency.
+    // The reply-input editor, registered by ChatInputBar once its CKEditor has initialized. Held in a
+    // ref so timeline actions (e.g. quoting a selection) can write into it without a render-order
+    // dependency.
     const inputEditorRef = useRef<InputEditorApi | undefined>();
+    const isInputFocusPendingRef = useRef(false);
     const registerInputEditor = useCallback((api: InputEditorApi | undefined) => {
         inputEditorRef.current = api;
+        if (api && isInputFocusPendingRef.current) {
+            isInputFocusPendingRef.current = false;
+            api.focus();
+        }
+    }, []);
+    const focusInput = useCallback(() => {
+        if (inputEditorRef.current) {
+            inputEditorRef.current.focus();
+        } else {
+            isInputFocusPendingRef.current = true;
+        }
     }, []);
     const appendToInput = useCallback((text: string) => {
         inputEditorRef.current?.appendBlockQuote(text);
@@ -506,6 +530,7 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        setReasoningEffort(LLM_REASONING_EFFORTS.find(level => level === content.reasoningEffort));
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -526,6 +551,9 @@ export function useLlmChat(
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
         }
+        if (reasoningEffortRef.current) {
+            content.reasoningEffort = reasoningEffortRef.current;
+        }
         return content;
     }, [supportsExtendedThinking]);
 
@@ -544,10 +572,9 @@ export function useLlmChat(
         setMessagesInternal(conversation);
         setIsStreaming(true);
         setTargetBlocks([]);
-        setStreamingThinking("");
+        setStreamingStatus(null);
         smoothReset();
 
-        let thinkingContent = "";
         const contentBlocks: ContentBlock[] = [];
         const citations: LlmCitation[] = [];
         let usage: LlmUsage | undefined;
@@ -563,7 +590,7 @@ export function useLlmChat(
             return block as ContentBlock & { type: "text" };
         }
 
-        const apiMessages: LlmMessage[] = trimToFirstUserMessage(conversation).map(m => ({
+        const apiMessages: LlmMessage[] = trimToFirstUserMessage(conversation.filter(m => m.type !== "thinking")).map(m => ({
             role: m.role,
             content: stripQuoteSourcesFromApiContent(flattenToApiContent(m.content))
         }));
@@ -589,6 +616,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
+        }
+        if (reasoningEffort && matchedModel?.reasoningEfforts?.length) {
+            streamOptions.reasoningEffort = reasoningEffort;
         }
 
         const abortController = new AbortController();
@@ -617,36 +647,20 @@ export function useLlmChat(
                 }
             }
 
-            const finalNewMessages: StoredMessage[] = [];
-
-            if (thinkingContent) {
-                finalNewMessages.push({
-                    id: randomString(),
-                    role: "assistant",
-                    content: thinkingContent,
-                    createdAt: new Date().toISOString(),
-                    type: "thinking"
-                });
-            }
-
             if (contentBlocks.length > 0) {
-                finalNewMessages.push({
+                setMessages([...conversation, {
                     id: randomString(),
                     role: "assistant",
                     content: contentBlocks,
                     createdAt: new Date().toISOString(),
                     citations: citations.length > 0 ? citations : undefined,
                     usage
-                });
-            }
-
-            if (finalNewMessages.length > 0) {
-                setMessages([...conversation, ...finalNewMessages]);
+                }]);
             }
 
             setTargetBlocks([]);
-            setStreamingThinking("");
             setPendingCitations([]);
+            setStreamingStatus(null);
             setIsStreaming(false);
             abortControllerRef.current = null;
         }
@@ -655,6 +669,7 @@ export function useLlmChat(
             apiMessages,
             streamOptions,
             {
+                onStatus: setStreamingStatus,
                 onChunk: (text) => {
                     // A new text block begins whenever the previous tail is
                     // anything other than text (or there's nothing yet). In
@@ -670,8 +685,16 @@ export function useLlmChat(
                     setTargetBlocks([...contentBlocks]);
                 },
                 onThinking: (text) => {
-                    thinkingContent += text;
-                    setStreamingThinking(thinkingContent);
+                    const last = contentBlocks[contentBlocks.length - 1];
+                    if (last?.type === "thinking") {
+                        contentBlocks[contentBlocks.length - 1] = { type: "thinking", content: last.content + text };
+                    } else {
+                        // The smoother animates only a trailing text block, so reveal the
+                        // text before this thought in full.
+                        smoothDrain();
+                        contentBlocks.push({ type: "thinking", content: text });
+                    }
+                    setTargetBlocks([...contentBlocks]);
                 },
                 onToolInputStart: (toolCallId, toolName) => {
                     // Snap any pending smoothed text to its full value before
@@ -757,8 +780,8 @@ export function useLlmChat(
                 },
                 onUsage: (u) => {
                     usage = u;
-                    setLastPromptTokens(u.promptTokens);
-                    setLastCompletionTokens(u.completionTokens);
+                    setLastPromptTokens(u.promptTokens ?? 0);
+                    setLastCompletionTokens(u.completionTokens ?? 0);
                 },
                 onError: (errorMsg, errorDetails) => {
                     console.error("Chat error:", errorMsg, errorDetails);
@@ -774,7 +797,7 @@ export function useLlmChat(
                     setMessages(finalMessages);
                     smoothReset();
                     setTargetBlocks([]);
-                    setStreamingThinking("");
+                    setStreamingStatus(null);
                     setIsStreaming(false);
                 },
                 onDone: () => {
@@ -802,11 +825,11 @@ export function useLlmChat(
             }]);
             smoothReset();
             setTargetBlocks([]);
-            setStreamingThinking("");
+            setStreamingStatus(null);
             setIsStreaming(false);
             abortControllerRef.current = null;
         });
-    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
+    }, [selectedModel, selectedProvider, selectedProviderId, availableModels, enableWebSearch, enableNoteTools, enableExtendedThinking, reasoningEffort, contextNoteId, supportsExtendedThinking, setMessages, smoothAppend, smoothDrain, smoothReset]);
 
     const handleSubmit = useCallback(async (e: Event) => {
         e.preventDefault();
@@ -816,12 +839,15 @@ export function useLlmChat(
         // restore a model ID that has since been deselected (so it's absent from
         // availableModels). Sending it anyway would let the server silently fall
         // back to some default, so block until an available model is chosen.
-        if (!resolveSelectedModel(availableModelsRef.current, selectedModelRef.current, selectedProviderRef.current, selectedProviderIdRef.current)) {
+        const model = resolveSelectedModel(availableModelsRef.current, selectedModelRef.current, selectedProviderRef.current, selectedProviderIdRef.current);
+        if (!model) {
             return;
         }
         const trimmedInput = inputRef.current.trim();
         const attachments = pendingAttachmentsRef.current;
         if (!trimmedInput && attachments.length === 0) return;
+        // An attachment the model can't read would reach it as a placeholder only; the input bar says why Send is blocked.
+        if (unreadableAttachments(model, attachments).length > 0) return;
 
         // If there are attachments, build a block-shaped content array so the
         // images travel alongside the text. Otherwise stay with the simple
@@ -907,7 +933,7 @@ export function useLlmChat(
         hasInputText,
         isStreaming,
         streamingBlocks,
-        streamingThinking,
+        streamingStatus,
         pendingCitations,
         pendingAttachments,
         availableModels,
@@ -918,6 +944,7 @@ export function useLlmChat(
         enableWebSearch,
         enableNoteTools,
         enableExtendedThinking,
+        reasoningEffort,
         contextNoteId,
         chatNoteId,
         lastPromptTokens,
@@ -933,6 +960,7 @@ export function useLlmChat(
 
         registerInputEditor,
         appendToInput,
+        focusInput,
         getInput,
 
         // Setters
@@ -942,6 +970,7 @@ export function useLlmChat(
         setEnableWebSearch,
         setEnableNoteTools,
         setEnableExtendedThinking,
+        setReasoningEffort,
         setContextNoteId,
         setChatNoteId,
         addPendingAttachment,

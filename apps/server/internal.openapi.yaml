@@ -1405,6 +1405,13 @@ paths:
       operationId: uploadAttachment
       parameters:
         - $ref: '#/components/parameters/noteId'
+        - name: link
+          in: query
+          description: >-
+            `true` answers with a link to the attachment instead of an image URL, and stores a
+            picture as uploaded, without compressing it or shortening its name.
+          schema:
+            type: boolean
       requestBody:
         required: true
         content:

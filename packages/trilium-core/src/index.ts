@@ -128,6 +128,7 @@ export { type SearchParams } from "./services/search/services/types";
 export { checkImageAttachments, collectCanvasImageFileIds, default as note_service, findBookmarks, findLlmChatLinks, findMindMapLinks, saveLinks } from "./services/notes";
 export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
+export { assertScriptingEnabled, assertSqlConsoleEnabled, isScriptingEnabled } from "./services/scripting_guard";
 export * as routes from "./routes";
 export { default as ws } from "./services/ws";
 export { default as request } from "./services/request";

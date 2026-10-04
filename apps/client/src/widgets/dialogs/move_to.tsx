@@ -2,10 +2,10 @@ import Modal from "../react/Modal";
 import { t } from "../../services/i18n";
 import NoteList from "../react/NoteList";
 import FormGroup from "../react/FormGroup";
-import NoteAutocomplete from "../react/NoteAutocomplete";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import Button from "../react/Button";
 import { useRef, useState } from "preact/hooks";
-import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
+import { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
 import branches from "../../services/branches";
@@ -16,7 +16,7 @@ export default function MoveToDialog() {
     const [ movedBranchIds, setMovedBranchIds ] = useState<string[]>();
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ shown, setShown ] = useState(false);
-    const autoCompleteRef = useRef<HTMLInputElement>(null);
+    const autocompleteRef = useRef<NoteAutocompleteHandle>(null);
 
     useTriliumEvent("moveBranchIdsTo", ({ branchIds }) => {
         setMovedBranchIds(branchIds);
@@ -52,7 +52,7 @@ export default function MoveToDialog() {
                 <Button text={t("move_to.move_button")} keyboardShortcut="Enter" />
             </>}
             onSubmit={onSubmit}
-            onShown={() => triggerRecentNotes(autoCompleteRef.current)}
+            onShown={() => autocompleteRef.current?.showRecentNotes()}
             onHidden={() => setShown(false)}
             show={shown}
         >
@@ -62,7 +62,7 @@ export default function MoveToDialog() {
             <FormGroup name="parent-note" label={t("move_to.target_parent_note")}>
                 <NoteAutocomplete
                     onChange={setSuggestion}
-                    inputRef={autoCompleteRef}
+                    handleRef={autocompleteRef}
                 />
             </FormGroup>
         </Modal>

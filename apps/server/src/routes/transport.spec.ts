@@ -46,6 +46,13 @@ describe("Route transport & middleware", () => {
             expect(res.body.isMainWindow).toBe(false);
         });
 
+        it("includes the server's platform and CPU architecture in the payload", async () => {
+            // The client picks the Antigravity ACP server download for the machine running Trilium.
+            const res = await supertest(app).get("/bootstrap").expect(200);
+            expect(res.body.platform).toBe(process.platform);
+            expect(res.body.arch).toBe(process.arch);
+        });
+
         it("includes platform in the setup (uninitialized DB) payload", async () => {
             // The setup window relies on `glob.platform` to apply the
             // platform-darwin drag-region CSS on macOS.

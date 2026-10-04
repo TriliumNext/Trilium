@@ -1,6 +1,6 @@
 import "./SyncStatus.css";
 
-import { WebSocketMessage } from "@triliumnext/commons";
+import { SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -51,7 +51,7 @@ const STATE_MAPPINGS: Record<SyncState, StateMapping> = {
 };
 
 export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
-    const syncState = useSyncStatus();
+    const { syncState, pullProgress } = useSyncStatus();
     const { title, icon, hasChanges } = STATE_MAPPINGS[syncState];
     const spanRef = useRef<HTMLSpanElement>(null);
     const [ storedSyncServerHost ] = useTriliumOption("syncServerHost");
@@ -90,12 +90,29 @@ export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
                     )}
                 </span>
             </div>
+            {pullProgress && <SyncPullProgressBar {...pullProgress} />}
         </div>
+    );
+}
+
+function SyncPullProgressBar({ pulled, total }: SyncPullProgress) {
+    const percent = Math.min(100, Math.round(pulled / total * 100));
+
+    return (
+        <div
+            class="sync-status-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent}
+            style={{ "--sync-progress": `${percent}%` }}
+        />
     );
 }
 
 function useSyncStatus() {
     const [ syncState, setSyncState ] = useState<SyncState>("unknown");
+    const [ pullProgress, setPullProgress ] = useState<SyncPullProgress>();
 
     useEffect(() => {
         let lastSyncedPush: number;
@@ -113,14 +130,22 @@ function useSyncStatus() {
 
             switch (message.type) {
                 case "sync-pull-in-progress":
+                    setSyncState("in-progress");
+                    if (message.progress && message.progress.total > 0) {
+                        setPullProgress(message.progress);
+                    }
+                    break;
                 case "sync-push-in-progress":
                     setSyncState("in-progress");
+                    setPullProgress(undefined);
                     break;
                 case "sync-finished":
                     setSyncState(allChangesPushed ? "connected-no-changes" : "connected-with-changes");
+                    setPullProgress(undefined);
                     break;
                 case "sync-failed":
                     setSyncState(allChangesPushed ? "disconnected-no-changes" : "disconnected-with-changes");
+                    setPullProgress(undefined);
                     break;
                 case "frontend-update":
                     lastSyncedPush = message.data.lastSyncedPush;
@@ -132,5 +157,5 @@ function useSyncStatus() {
         return () => unsubscribeToMessage(onMessage);
     }, []);
 
-    return syncState;
+    return { syncState, pullProgress };
 }

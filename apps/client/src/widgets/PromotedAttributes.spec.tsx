@@ -4,8 +4,8 @@ import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// A relation's target is picked in an Algolia autocomplete bound to jQuery, which is not loaded
-// here; a plain input in its place keeps the cell around it assertable.
+// `NoteAutocomplete` has a spec of its own and reaches the server for its suggestions; a plain
+// input in its place keeps the cell around it assertable.
 vi.mock("./react/NoteAutocomplete", () => ({
     default: ({ id, noteId, tabIndex }: { id?: string; noteId?: string; tabIndex?: number }) =>
         <input id={id} tabIndex={tabIndex} className="note-autocomplete-stub" value={noteId} />
@@ -54,8 +54,6 @@ vi.mock("../services/ws", async (importOriginal) => {
     };
 });
 
-import $ from "jquery";
-
 import type Component from "../components/component";
 import FAttribute from "../entities/fattribute";
 import type FNote from "../entities/fnote";
@@ -68,12 +66,6 @@ import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import { ParentComponent } from "./react/react_utils";
 import PromotedAttributes, { buildPromotedCells, PromotedAttributesContent, usePromotedAttributeData } from "./PromotedAttributes";
-
-// A text field offers the values other notes hold under its name through the Algolia plugin, which
-// is not loaded here; a stub that chains like jQuery does keeps the field's setup on its feet.
-type PluggedIn = { autocomplete(...args: unknown[]): PluggedIn };
-const autocompleteMock = vi.fn(function (this: PluggedIn) { return this; });
-($.fn as unknown as PluggedIn).autocomplete = autocompleteMock;
 
 // The fields reach the server through these three; every suite stands them down, and the ones
 // asserting on what was written reach for these same handles.
@@ -573,27 +565,44 @@ describe("PromotedAttributesContent rendering", () => {
         );
     });
 
-    it("fetches suggestion values only for text attributes", async () => {
-        await renderCells(note, [ buildCell(note, { name: "tags", definition: { labelType: "text" } }) ]);
-        expect(serverGetMock).toHaveBeenCalledWith("attribute-values/tags");
+    it("offers the values a text label's name holds, committing a pick once the field is left", async () => {
+        serverGetMock.mockResolvedValue([ "alpha", "beta" ]);
+        const container = await renderCells(note, [
+            buildCell(note, { name: "tags", definition: { labelType: "text" } })
+        ]);
 
-        serverGetMock.mockClear();
-        await renderCells(note, [ buildCell(note, { definition: { labelType: "number" }, uniqueId: "num" }) ]);
-        expect(serverGetMock).not.toHaveBeenCalled();
+        const input = container.querySelector<HTMLInputElement>("input.promoted-attribute-input");
+        expect(input).not.toBeNull();
+        await act(async () => input?.focus());
+        const items = await settleDropdown();
+        expect(serverGetMock).toHaveBeenCalledWith("attribute-values/tags");
+        expect(items.map((item) => item.textContent)).toEqual([ "alpha", "beta" ]);
+
+        await act(async () => (items[1] as HTMLElement | undefined)?.click());
+        expect(input?.value).toBe("beta");
+        expect(serverPutMock).not.toHaveBeenCalled();
+
+        await act(async () => {
+            input?.dispatchEvent(new Event("focusout", { bubbles: true }));
+        });
+        expect(serverPutMock).toHaveBeenCalledWith(
+            `notes/${note.noteId}/attribute`,
+            expect.objectContaining({ name: "tags", value: "beta" }),
+            "test-component"
+        );
     });
 
-    it("binds the suggestion list only where there is something to suggest", async () => {
-        serverGetMock.mockResolvedValueOnce([ "one", "two" ]);
-        await renderCells(note, [ buildCell(note, { name: "tags", definition: { labelType: "text" } }) ]);
-        expect(autocompleteMock).toHaveBeenCalled();
+    it("offers no values in a field of another type", async () => {
+        serverGetMock.mockResolvedValue([ "1", "2" ]);
+        const container = await renderCells(note, [
+            buildCell(note, { name: "size", definition: { labelType: "number" } })
+        ]);
 
-        autocompleteMock.mockClear();
-        await renderCells(note, [ buildCell(note, { name: "flag", definition: { labelType: "boolean" }, uniqueId: "flag" }) ]);
-        expect(autocompleteMock).not.toHaveBeenCalled();
-
-        // A text field whose name nothing else holds a value under is bound no more than a flag is.
-        await renderCells(note, [ buildCell(note, { name: "fresh", definition: { labelType: "text" }, uniqueId: "fresh" }) ]);
-        expect(autocompleteMock).not.toHaveBeenCalled();
+        const input = container.querySelector<HTMLInputElement>("input.promoted-attribute-input");
+        expect(input).not.toBeNull();
+        await act(async () => input?.focus());
+        expect(await settleDropdown()).toEqual([]);
+        expect(serverGetMock).not.toHaveBeenCalled();
     });
 
     it("hands a multi text field the values the name holds, and the other kinds none", async () => {
@@ -764,6 +773,14 @@ async function renderCells(note: FNote, cells: CellLike[], setCells = vi.fn()) {
     });
     if (!container) throw new Error("render produced no container");
     return container;
+}
+
+/** Lets the debounced lookup run, then returns the rows of the list portaled to the body. */
+async function settleDropdown() {
+    await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+    });
+    return [ ...document.querySelectorAll(".form-autocomplete-dropdown li") ];
 }
 
 /** Runs the hook against a real note and returns the cells it derived. */

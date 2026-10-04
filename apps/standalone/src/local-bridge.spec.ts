@@ -458,11 +458,23 @@ describe("localFetch", () => {
 describe("isLocalApiRequest", () => {
     it("matches only the local API prefixes", async () => {
         const bridge = await freshBridge();
-        for (const path of ["/bootstrap", "/api/notes", "/sync/changed", "/search/q"]) {
+        // `/custom/` carries custom request handlers and resource providers, which a frontend
+        // script reaches with a plain fetch rather than through `server.ts`.
+        for (const path of ["/bootstrap", "/api/notes", "/sync/changed", "/search/q", "/custom/my-handler"]) {
             expect(bridge.isLocalApiRequest(new URL(`http://x${path}`))).toBe(true);
         }
         expect(bridge.isLocalApiRequest(new URL("http://x/app.js"))).toBe(false);
         expect(bridge.isLocalApiRequest(new URL("http://x/"))).toBe(false);
+    });
+
+    it("claims the shared-note pages but not the share theme's own assets", async () => {
+        const bridge = await freshBridge();
+        for (const path of ["/share", "/share/", "/share/my-alias", "/share/api/notes/abc123"]) {
+            expect(bridge.isLocalApiRequest(new URL(`http://x${path}`)), path).toBe(true);
+        }
+        for (const path of ["/share/assets/styles.css", "/share/assets/fonts/boxicons.woff2", "/shared-drafts"]) {
+            expect(bridge.isLocalApiRequest(new URL(`http://x${path}`)), path).toBe(false);
+        }
     });
 });
 

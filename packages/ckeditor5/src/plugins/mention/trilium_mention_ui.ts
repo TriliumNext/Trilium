@@ -1,17 +1,11 @@
 import {
-    ButtonView,
     clickOutsideHandler,
-    Collection,
-    ContextualBalloon,
-    type DomOptimalPositionOptions,
-    type Editor,
+    DomEmitterMixin,
     keyCodes,
     type Marker,
-    MentionDomWrapperView,
     type MentionFeedObjectItem,
-    MentionListItemView,
-    MentionsView,
     ModelLivePosition,
+    ModelLiveRange,
     type ModelPosition,
     Plugin,
     Rect,
@@ -20,50 +14,50 @@ import {
 } from "ckeditor5";
 
 import { createMarkerPattern, findMarkerMatch, type MarkerMatch } from "./marker_pattern.js";
-import type { TriliumMentionFeed } from "./types.js";
+import type { MentionHostedFeed, MentionHostedList } from "./types.js";
 
-const VERTICAL_SPACING = 3;
 const MARKER_NAME = "mention";
-const FEED_DEBOUNCE_MS = 100;
-const DEFAULT_DROPDOWN_LIMIT = 10;
 
-/** A configured feed with its compiled trigger pattern. */
-type Pattern = TriliumMentionFeed & { pattern: RegExp };
+/** A marker of `mention.hostedFeeds` with its compiled trigger pattern and the host's list. */
+type Pattern = MentionHostedFeed & { pattern: RegExp; hostedList: MentionHostedList };
 
 /**
- * A drop-in replacement for CKEditor's `MentionUI` that fixes three behaviours we can neither
- * configure nor subclass around, since every interesting member of `MentionUI` is `private`:
+ * A replacement for CKEditor's `MentionUI` that finds the markers typed in the editor and runs the
+ * host's list for each: it reports the query, forwards the keys while the list is open and commits
+ * what the list picks. What a list shows and how it draws it are the host's (`mention.hostedFeeds`).
+ *
+ * It also fixes three behaviours of upstream's, which we can neither configure nor subclass around,
+ * since every interesting member of `MentionUI` is `private`:
  *
  * 1. **Escape actually dismisses.** Upstream's Escape handler only removes the model marker, but its
  *    `TextWatcher` re-evaluates the text on the very next keystroke, the pattern still matches, and
- *    the panel reopens. Trilium worked around that by *inserting a ` ` en-space* into the document
+ *    the list reopens. Trilium worked around that by *inserting a ` ` en-space* into the document
  *    so the (also patched) pattern could no longer match — which corrupts data: the attribute lexer
  *    treats only U+0020 as a separator, so `#foo<en-space> #bar` fails to parse and the attribute
  *    list becomes unsaveable. Here dismissal is state ({@link #_dismissedAt}), not a document edit.
- * 2. **The panel opens on typing only.** `TextWatcher` fires `matched:selection` on any direct caret
+ * 2. **The list opens on typing only.** `TextWatcher` fires `matched:selection` on any direct caret
  *    move, and upstream listens to plain `matched`, so merely *clicking* into an existing `#myLabel`
- *    reopens the panel — and since it also pre-selects the first item, the Enter meant to save the
+ *    reopens the list — and since it also pre-selects the first item, the Enter meant to save the
  *    attributes commits a suggestion instead.
- * 3. **A stale query closes the panel.** See {@link createMarkerPattern}.
+ * 3. **A stale query closes the list.** See {@link createMarkerPattern}.
  *
- * Everything else — the balloon, the list views, the `mention` model attribute and its post-fixers,
- * the `mention` command — is reused from upstream unchanged. This plugin replaces `MentionUI` only;
- * pair it with `MentionEditing` rather than the `Mention` façade, which pulls in `MentionUI` too.
+ * The `mention` model attribute, its post-fixers and the `mention` command are reused from upstream
+ * unchanged. Pair this plugin with `MentionEditing` rather than the `Mention` façade, which pulls in
+ * `MentionUI` too.
  */
 export default class TriliumMentionUI extends Plugin {
 
-    private readonly _view: MentionsView;
-    private readonly _items = new Collection<{ item: MentionFeedObjectItem; marker: string }>();
-    private _patterns: Pattern[] = [];
-
-    private _balloon?: ContextualBalloon;
-    private _feedTimer?: ReturnType<typeof setTimeout>;
-
-    /** Monotonic id of the most recently *started* feed request; see {@link _requestFeed}. */
-    private _requestId = 0;
+    /** The markers whose list the host runs, from `mention.hostedFeeds`. */
+    private _feeds: Pattern[] = [];
+    /** The marker whose list is open, or `null`. */
+    private _open: Pattern | null = null;
+    /** The id the editable's `aria-activedescendant` holds, or `null` while it holds none. */
+    private _activeDescendant: string | null = null;
+    /** Listens for presses outside the open list, which close it. */
+    private readonly _domEmitter = new (DomEmitterMixin())();
 
     /**
-     * Where the marker of the panel the user dismissed with Escape sits, or `null` when nothing is
+     * Where the marker of the list the user dismissed with Escape sits, or `null` when nothing is
      * dismissed. Live, so it follows edits and lands in the graveyard if the marker is deleted.
      */
     private _dismissedAt: ModelLivePosition | null = null;
@@ -72,37 +66,30 @@ export default class TriliumMentionUI extends Plugin {
         return "TriliumMentionUI" as const;
     }
 
-    static get requires() {
-        return [ ContextualBalloon ];
-    }
-
-    constructor(editor: Editor) {
-        super(editor);
-
-        this._view = this._createView();
-        editor.config.define("mention", { feeds: [] });
-    }
-
     init() {
         const editor = this.editor;
-        this._balloon = editor.plugins.get(ContextualBalloon);
 
-        /* v8 ignore next -- the constructor defines `mention.feeds` as `[]`, so `get()` never returns undefined; the fallback only satisfies the optional return type */
-        const feeds = (editor.config.get("mention.feeds") ?? []) as TriliumMentionFeed[];
-        this._patterns = feeds.map((feed) => ({ ...feed, pattern: createMarkerPattern(feed.marker, feed) }));
+        this._feeds = (editor.config.get("mention.hostedFeeds") ?? []).map((feed) => ({
+            ...feed,
+            pattern: createMarkerPattern(feed.marker, feed),
+            hostedList: feed.list(editor)
+        }));
 
         editor.editing.view.document.on<ViewDocumentKeyDownEvent>("keydown", (evt, data) => {
-            if (this._isVisible && this._handleKeyDown(data.keyCode)) {
+            if (this._open && this._handleKeyDown(this._open.hostedList, data.keyCode, data.domEvent)) {
                 data.preventDefault();
                 evt.stop(); // Required to override the Enter key.
             }
         }, { priority: "highest" });
 
         clickOutsideHandler({
-            emitter: this._view,
-            activator: () => this._isVisible,
-            /* v8 ignore next -- `clickOutsideHandler` only calls `contextElements()` once the activator reported the panel visible, and a visible balloon is a rendered one, so its element is never null */
-            contextElements: () => (this._balloon?.view.element ? [ this._balloon.view.element ] : []),
+            emitter: this._domEmitter,
+            activator: () => !!this._open?.hostedList.element,
+            /* v8 ignore next -- `clickOutsideHandler` only calls `contextElements()` once the activator reported the list showing, so its element is never null */
+            contextElements: () => {
+                const element = this._open?.hostedList.element;
+                return element ? [ element ] : [];
+            },
             callback: () => this._hide()
         });
 
@@ -113,55 +100,32 @@ export default class TriliumMentionUI extends Plugin {
     override destroy() {
         super.destroy();
 
-        clearTimeout(this._feedTimer);
         this._clearDismissal();
-        // Balloon views are not destroyed automatically — see ckeditor5#1341.
-        this._view.destroy();
-    }
-
-    private get _isVisible() {
-        return this._balloon?.visibleView === this._view;
-    }
-
-    private _isCurrentRequest(requestId: number) {
-        return this._requestId === requestId;
+        this._domEmitter.stopListening();
+        for (const { hostedList } of this._feeds) {
+            hostedList.destroy?.();
+        }
     }
 
     /**
-     * Returns whether the key was consumed. Commit keys are deliberately *not* consumed when nothing
-     * is selected, so that in the attribute editor — where `preselectFirstItem` is off — Enter still
-     * saves instead of being swallowed by an open panel.
+     * Hands a key to the open list, and returns whether it took it. Escape is handled here whatever
+     * the host does, so that the dismissal is remembered.
      */
-    private _handleKeyDown(keyCode: number): boolean {
-        if (keyCode === keyCodes.arrowdown) {
-            this._view.selectNext();
-            return true;
+    private _handleKeyDown(list: MentionHostedList, keyCode: number, event: KeyboardEvent): boolean {
+        if (keyCode !== keyCodes.esc) {
+            return list.handleKeyDown(event);
         }
 
-        if (keyCode === keyCodes.arrowup) {
-            this._view.selectPrevious();
-            return true;
+        if (!list.element) {
+            return false;
         }
 
-        if (keyCode === keyCodes.esc) {
-            this._dismiss();
-            return true;
-        }
-
-        if (keyCode === keyCodes.enter || keyCode === keyCodes.tab) {
-            if (!this._view.selected) {
-                return false;
-            }
-
-            this._view.executeSelected();
-            return true;
-        }
-
-        return false;
+        this._dismiss();
+        return true;
     }
 
     /**
-     * Hides the panel and remembers that the user rejected *this* marker, so it does not immediately
+     * Hides the list and remembers that the user rejected *this* marker, so it does not immediately
      * reopen on the next keystroke. No document mutation is involved.
      */
     private _dismiss() {
@@ -169,7 +133,7 @@ export default class TriliumMentionUI extends Plugin {
 
         this._hide();
 
-        /* v8 ignore next -- Escape only reaches here while the panel is visible, and the panel and the marker always come and go together, so there is always a start */
+        /* v8 ignore next -- Escape only reaches here while the list is open, and the list and the marker always come and go together, so there is always a start */
         if (start) {
             this._clearDismissal();
             this._dismissedAt = ModelLivePosition.fromPosition(start, "toPrevious");
@@ -184,7 +148,7 @@ export default class TriliumMentionUI extends Plugin {
     /**
      * Whether `markerStart` is the marker the user already dismissed. A dismissal whose text has
      * since been deleted (its live position landed in the graveyard) is discarded, so retyping the
-     * same marker opens the panel again.
+     * same marker opens the list again.
      */
     private _isDismissed(markerStart: ModelPosition): boolean {
         if (!this._dismissedAt) {
@@ -204,12 +168,12 @@ export default class TriliumMentionUI extends Plugin {
 
         // Returning the match object makes `TextWatcher` merge it into the event data, so the
         // handler does not have to re-derive the block text and re-run the patterns.
-        const watcher = new TextWatcher(editor.model, (text) => findMarkerMatch(this._patterns, text) ?? false);
+        const watcher = new TextWatcher(editor.model, (text) => findMarkerMatch(this._feeds, text) ?? false);
 
-        // Only typing opens the panel. `matched:selection` fires on any direct caret move — a click
+        // Only typing opens the list. `matched:selection` fires on any direct caret move — a click
         // or an arrow key — and reopening there is the "clicking always triggers an autocomplete"
-        // bug; a caret move should close the panel, whose balloon is anchored to a marker the user
-        // has just navigated away from.
+        // bug; a caret move closes the list, which is anchored to a marker the user has just
+        // navigated away from.
         watcher.on<TriliumMatchedEvent>("matched:data", (evt, data) => this._onTyped(data));
         watcher.on("matched:selection", () => this._hide());
         watcher.on("unmatched", () => {
@@ -256,202 +220,145 @@ export default class TriliumMentionUI extends Plugin {
             }
         });
 
-        const requestId = ++this._requestId;
-        clearTimeout(this._feedTimer);
-        this._feedTimer = setTimeout(() => void this._requestFeed(feed, query, requestId), FEED_DEBOUNCE_MS);
+        this._show(feed, query);
     }
 
-    private async _requestFeed(feed: TriliumMentionFeed, query: string, requestId: number) {
-        let items: Array<MentionFeedObjectItem | string>;
-
-        try {
-            items = typeof feed.feed === "function"
-                ? await feed.feed.call(this.editor, query)
-                : feed.feed.filter((item) => String(typeof item === "object" ? item.id : item).toLowerCase().includes(query.toLowerCase()));
-        } catch {
-            // Only the request still in flight may act on a failure. Debouncing bounds how many
-            // requests are *started*, not how many are outstanding, so an earlier one rejecting
-            // must not tear down the panel a later one has since populated.
-            if (this._isCurrentRequest(requestId)) {
-                this._hide();
-            }
-            return;
-        }
-
-        // Drop out-of-order responses, and responses that arrived after the panel was dismissed or
-        // the marker went away. Correlating on the request rather than the query text matters when
-        // the same text is retyped, or typed under a different marker: `#al` and `~al` produce equal
-        // queries but different feeds, and the stale one would otherwise fill the panel with the
-        // wrong suggestions.
-        if (!this._isCurrentRequest(requestId) || !this.editor.model.markers.has(MARKER_NAME)) {
-            return;
-        }
-
-        const limit = feed.dropdownLimit ?? this.editor.config.get("mention.dropdownLimit") ?? DEFAULT_DROPDOWN_LIMIT;
-
-        this._items.clear();
-        for (const item of items.slice(0, limit as number)) {
-            this._items.add({ item: typeof item === "object" ? item : { id: item, text: item }, marker: feed.marker });
-        }
-
-        if (!this._items.length) {
-            this._hide();
-            return;
-        }
-
-        this._show(feed);
-    }
-
-    private _show(feed: TriliumMentionFeed) {
+    /** Shows the host's list of `feed` for `query`, in place of any other list. */
+    private _show(feed: Pattern, query: string) {
         const marker = this.editor.model.markers.get(MARKER_NAME);
 
-        /* v8 ignore next 3 -- `_requestFeed()` already returned unless the marker is still registered, and `_balloon` is assigned in `init()`; the guard only narrows both types */
-        if (!marker || !this._balloon) {
+        /* v8 ignore next 3 -- `_onTyped()` sets the marker just before calling this; the guard only narrows its type */
+        if (!marker) {
             return;
         }
 
-        // The add/update decision keys off *membership*, not visibility: `ContextualBalloon.add()`
-        // throws `contextualballoon-add-view-exist` for a view that is already registered in any
-        // stack, visible or not. Upstream's `MentionUI` branches on visibility here and so crashes
-        // as soon as another plugin's balloon (added with `singleViewMode`) buries the panel.
-        if (!this._balloon.hasView(this._view)) {
-            this._balloon.add({
-                view: this._view,
-                position: this._positionData(marker),
-                singleViewMode: true,
-                balloonClassName: "ck-mention-balloon"
-            });
-        } else if (this._isVisible) {
-            this._balloon.updatePosition(this._positionData(marker));
+        if (this._open !== feed) {
+            this._hideList();
         }
 
-        this._view.position = this._balloon.view.position;
-
-        // Pre-selecting the first item makes Enter always commit *something*. That is right for the
-        // note editor, but wrong in the attribute editor, where Enter means "save".
-        if (feed.preselectFirstItem ?? true) {
-            this._view.selectFirst();
-        } else {
-            this._view.selected?.removeHighlight();
-            this._view.selected = undefined;
-        }
+        this._open = feed;
+        feed.hostedList.show({
+            query,
+            caretRect: () => {
+                const { left, top, width, height } = this._caretRect(marker);
+                return new DOMRect(left, top, width, height);
+            },
+            /* v8 ignore next -- a live editor's editing view always has its DOM root, so the `?? null` arm never runs */
+            editable: this.editor.editing.view.getDomRoot() ?? null,
+            commit: (item) => this._commit(feed, item),
+            setActiveDescendant: (id) => {
+                if (this._open === feed) {
+                    this._setActiveDescendant(id);
+                }
+            }
+        });
     }
 
     private _hide() {
-        clearTimeout(this._feedTimer);
-
-        if (this._balloon?.hasView(this._view)) {
-            this._balloon.remove(this._view);
-        }
+        this._hideList();
 
         if (this.editor.model.markers.has(MARKER_NAME)) {
             this.editor.model.change((writer) => writer.removeMarker(MARKER_NAME));
         }
-
-        this._view.position = undefined;
     }
 
-    private _createView(): MentionsView {
-        const locale = this.editor.locale;
-        const view = new MentionsView(locale);
-
-        view.items.bindTo(this._items).using(({ item, marker }) => {
-            const listItem = new MentionListItemView(locale);
-            const child = this._renderItem(item, marker);
-
-            child.delegate("execute").to(listItem);
-            listItem.children.add(child);
-            listItem.item = item;
-            listItem.marker = marker;
-            listItem.on("execute", () => view.fire("execute", { item, marker }));
-
-            return listItem;
-        });
-
-        view.on("execute", (evt, data) => {
-            const editor = this.editor;
-            const model = editor.model;
-            const marker = model.markers.get(MARKER_NAME);
-            const focus = model.document.selection.focus;
-
-            /* v8 ignore next 3 -- the list only fires "execute" while the panel is visible, which means the marker is registered, and a live selection always has a focus */
-            if (!marker || !focus) {
-                return;
-            }
-
-            // Replace everything from the marker up to the caret, not just the marker itself.
-            const range = model.createRange(model.createPositionAt(marker.getStart()), model.createPositionAt(focus));
-            const feed = this._patterns.find((pattern) => pattern.marker === data.marker);
-
-            this._hide();
-            this._clearDismissal();
-
-            // Bail before deleting anything if the item went stale while it sat in the open panel —
-            // a `/` command that lost `isEnabled` as the selection settled. Committing it would drop
-            // the trigger text and then no-op, eating what the user typed.
-            if (feed?.canCommit && !feed.canCommit(editor, data.item)) {
-                return;
-            }
-
-            if (feed?.commit) {
-                // Drop the trigger text first so the callback sees a collapsed selection where the
-                // query used to be, and run it outside the change block — some callbacks open a
-                // balloon (`/math`, `/anchor`) rather than touching the model, which needs a settled
-                // view. Focus is restored *before* the callback for the same reason: one that opens
-                // a UI takes focus itself, and must do so last.
-                model.change((writer) => model.deleteContent(writer.createSelection(range)));
-                editor.editing.view.focus();
-                feed.commit(editor, data.item);
-            } else {
-                editor.execute("mention", { mention: data.item, text: data.item.text, marker: data.marker, range });
-                editor.editing.view.focus();
-            }
-        });
-
-        return view;
+    /** Hides the open list, and leaves the marker. */
+    private _hideList() {
+        const open = this._open;
+        this._open = null;
+        this._setActiveDescendant(null);
+        open?.hostedList.hide();
     }
 
-    private _renderItem(item: MentionFeedObjectItem, marker: string): MentionDomWrapperView | ButtonView {
-        const rendered = this._patterns.find((feed) => feed.marker === marker)?.itemRenderer?.(item);
-
-        if (rendered && typeof rendered !== "string") {
-            return new MentionDomWrapperView(this.editor.locale, rendered);
+    /** Sets the root editable's `aria-activedescendant` through the view, whose renderer owns its attributes. */
+    private _setActiveDescendant(id: string | null) {
+        if (id === this._activeDescendant) {
+            return;
         }
 
-        const button = new ButtonView(this.editor.locale);
-        button.label = rendered ?? item.id;
-        button.withText = true;
+        const view = this.editor.editing.view;
+        const root = view.document.getRoot();
 
-        return button;
+        /* v8 ignore next 3 -- a live editor's editing view always has its root, so the guard only narrows its type */
+        if (!root) {
+            return;
+        }
+
+        this._activeDescendant = id;
+        view.change((writer) => {
+            if (id) {
+                writer.setAttribute("aria-activedescendant", id, root);
+            } else {
+                writer.removeAttribute("aria-activedescendant", root);
+            }
+        });
     }
 
-    private _positionData(marker: Marker): Partial<DomOptimalPositionOptions> {
-        const editing = this.editor.editing;
+    /**
+     * Replaces the trigger text with a mention of `item`, or hands `item` to the feed's `commit`.
+     * For a promise, the text stays where it is, followed by a live range, until it settles.
+     */
+    private _commit(feed: Pattern, item: MentionFeedObjectItem | Promise<MentionFeedObjectItem | undefined>) {
+        const editor = this.editor;
+        const model = editor.model;
+        const marker = model.markers.get(MARKER_NAME);
+        const focus = model.document.selection.focus;
 
-        return {
-            target: () => {
-                let range = marker.getRange();
+        // A pick arriving after the list closed, such as a click racing a caret move.
+        if (!marker || !focus) {
+            return;
+        }
 
-                // The marker may already be gone; fall back to the selection so ContextualBalloon
-                // can still place a panel here.
-                if (range.start.root.rootName === "$graveyard") {
-                    /* v8 ignore next -- the document selection always holds at least one range, so the `?? range` arm never runs */
-                    range = this.editor.model.document.selection.getFirstRange() ?? range;
+        // Everything from the marker up to the caret, not just the marker itself.
+        const range = ModelLiveRange.fromRange(model.createRange(marker.getStart(), focus));
+        this._hide();
+        this._clearDismissal();
+
+        const insert = (mention: MentionFeedObjectItem | undefined) => {
+            // The text can have been deleted while a promise was pending. An item gone stale while
+            // the list was open, such as a `/` command that lost `isEnabled`, keeps the text, which
+            // committing it would delete for nothing.
+            if (mention && range.root.rootName !== "$graveyard" && (feed.canCommit?.(editor, mention) ?? true)) {
+                if (feed.commit) {
+                    // The text goes first, so the callback sees a collapsed selection where the query
+                    // was, and the callback runs outside the change block, as some open a balloon
+                    // (`/math`, `/anchor`) that needs a settled view. The focus returns before the
+                    // callback, which can open a UI that takes it.
+                    const target = range.toRange();
+                    model.change((writer) => model.deleteContent(writer.createSelection(target)));
+                    editor.editing.view.focus();
+                    feed.commit(editor, mention);
+                } else {
+                    editor.execute("mention", { mention, text: mention.text, marker: feed.marker, range: range.toRange() });
+                    editor.editing.view.focus();
                 }
-
-                const viewRange = editing.mapper.toViewRange(range);
-                const rects = Rect.getDomRangeRects(editing.view.domConverter.viewRangeToDom(viewRange));
-
-                return rects[rects.length - 1];
-            },
-            limiter: () => {
-                const editable = editing.view.document.selection.editableElement;
-
-                /* v8 ignore next -- the editing view selection is inside the root editable whenever the panel is positioned, so the `null` arm only satisfies the limiter's return type */
-                return editable ? editing.view.domConverter.mapViewToDom(editable.root) as HTMLElement : null;
-            },
-            positions: balloonPositions(this._view.position, this.editor.locale.uiLanguageDirection)
+            }
+            range.detach();
         };
+
+        if (item instanceof Promise) {
+            void item.then(insert, () => range.detach());
+        } else {
+            insert(item);
+        }
+    }
+
+    /** The rect the list is placed against: the end of the marker, or of the selection once it is gone. */
+    private _caretRect(marker: Marker): Rect {
+        const editing = this.editor.editing;
+        let range = marker.getRange();
+
+        // The marker can already be gone; fall back to the selection, so the list can still be
+        // placed here.
+        if (range.start.root.rootName === "$graveyard") {
+            /* v8 ignore next -- the document selection always holds at least one range, so the `?? range` arm never runs */
+            range = this.editor.model.document.selection.getFirstRange() ?? range;
+        }
+
+        const viewRange = editing.mapper.toViewRange(range);
+        const rects = Rect.getDomRangeRects(editing.view.domConverter.viewRangeToDom(viewRange));
+
+        return rects[rects.length - 1];
     }
 }
 
@@ -474,46 +381,4 @@ function isInExistingMention(position: ModelPosition): boolean {
 function isBeforeExistingMention(markerPosition: ModelPosition): boolean {
     const after = markerPosition.nodeAfter;
     return !!after && after.is("$text") && after.hasAttribute("mention");
-}
-
-/**
- * Balloon placement callbacks, anchored to the caret. Lifted from upstream's
- * `getBalloonPanelPositions()`, which is module-private.
- */
-function balloonPositions(preferred: string | undefined, uiLanguageDirection: string): DomOptimalPositionOptions["positions"] {
-    const positions: Record<string, DomOptimalPositionOptions["positions"][0]> = {
-        caret_se: (target) => ({
-            top: target.bottom + VERTICAL_SPACING,
-            left: target.right,
-            name: "caret_se",
-            config: { withArrow: false }
-        }),
-        caret_ne: (target, balloon) => ({
-            top: target.top - balloon.height - VERTICAL_SPACING,
-            left: target.right,
-            name: "caret_ne",
-            config: { withArrow: false }
-        }),
-        caret_sw: (target, balloon) => ({
-            top: target.bottom + VERTICAL_SPACING,
-            left: target.right - balloon.width,
-            name: "caret_sw",
-            config: { withArrow: false }
-        }),
-        caret_nw: (target, balloon) => ({
-            top: target.top - balloon.height - VERTICAL_SPACING,
-            left: target.right - balloon.width,
-            name: "caret_nw",
-            config: { withArrow: false }
-        })
-    };
-
-    // Stick to the position that already matched, so the panel does not jump as the list grows.
-    if (preferred && preferred in positions) {
-        return [ positions[preferred] ];
-    }
-
-    return uiLanguageDirection !== "rtl"
-        ? [ positions.caret_se, positions.caret_sw, positions.caret_ne, positions.caret_nw ]
-        : [ positions.caret_sw, positions.caret_se, positions.caret_nw, positions.caret_ne ];
 }

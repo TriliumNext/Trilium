@@ -248,8 +248,7 @@
     "copy_to_clipboard": "Kopírovat do schránky"
   },
   "jump_to_note": {
-    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy...",
-    "search_button": "Hledat v celém textu"
+    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy..."
   },
   "markdown_import": {
     "dialog_title": "Markdown import",
@@ -982,7 +981,6 @@
     "label_rock_or_pop": "stačí, aby byl přítomen jeden ze štítků",
     "label_year_comparison": "numerické porovnání (také >, >=, <).",
     "label_date_created": "poznámky vytvořené za poslední měsíc",
-    "error": "Chyba vyhledávání: {{error}}",
     "search_prefix": "Hledání:"
   },
   "attachment_detail": {
@@ -1634,7 +1632,6 @@
     "placeholder": "Rychlé hledání",
     "searching": "Hledání...",
     "no-results": "Nebyla nalezena žádná výsledná",
-    "more-results": "... a dalších {{number}} výsledků.",
     "show-in-full-search": "Zobrazit v úplném vyhledávání"
   },
   "note_tree": {
@@ -1845,12 +1842,9 @@
     "zoom-factor": "Míra přiblížení"
   },
   "note_autocomplete": {
-    "search-for": "Hledat \"{{term}}\"",
     "create-note": "Vytvořit a propojit dceřinnou poznámku \"{{term}}\"",
     "insert-external-link": "Vložit externí odkaz na \"{{term}}\"",
-    "clear-text-field": "Vymazat textové pole",
-    "show-recent-notes": "Zobrazit nedávné poznámky",
-    "full-text-search": "Vyhledávání v celém textu"
+    "clear-text-field": "Vymazat textové pole"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Poznámka byla smazána.",

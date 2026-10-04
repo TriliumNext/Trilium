@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { loadsEagerly, playerRootClasses, preloadFor, showsFileActions, showsViewportControls, usesCompactControls } from "./media_environment";
+import {
+    isInScrollingDocument, loadsEagerly, playerRootClasses, preloadFor, showsFileActions,
+    showsViewportControls, usesCompactControls
+} from "./media_environment";
 
 describe("media environment", () => {
     it("only a preview is lazy — it must not create a media element until the user asks for one", () => {
@@ -37,5 +40,11 @@ describe("media environment", () => {
         expect(showsFileActions("embedded")).toBe(true);
         expect(showsFileActions("preview")).toBe(false);
         expect(showsFileActions("standalone")).toBe(false);
+    });
+
+    it("places everything but the note detail inside a scrolling document", () => {
+        expect(isInScrollingDocument("embedded")).toBe(true);
+        expect(isInScrollingDocument("preview")).toBe(true);
+        expect(isInScrollingDocument("standalone")).toBe(false);
     });
 });

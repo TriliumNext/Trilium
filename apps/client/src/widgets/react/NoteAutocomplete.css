@@ -1,0 +1,298 @@
+/*
+ * This file has no fixed place in the load order against Bootstrap and the theme, so specificity
+ * settles each conflict: a rule that must win carries a class more than its rival, and a rule the
+ * next theme overrides keeps to one class.
+ */
+
+.input-group > .note-autocomplete-input {
+    /* Lets the buttons after the input join it seamlessly. */
+    border-inline-end: 0;
+}
+
+/* One class, so the next theme's input-group rules override these. */
+:is(.go-to-selected-note-button, .input-clearer-button) {
+    cursor: pointer;
+}
+
+.input-clearer-button {
+    background: inherit !important;
+}
+
+.input-group > .go-to-selected-note-button,
+.note-autocomplete ~ .input-clearer-button {
+    font-size: 1.3em;
+    padding-inline: 5px;
+}
+
+.input-group > .go-to-selected-note-button {
+    padding-inline: 4px 3px;
+
+    &.disabled,
+    &.disabled:hover {
+        cursor: inherit;
+        color: var(--button-disabled-text-color) !important;
+        background-color: var(--button-disabled-background-color) !important;
+        text-decoration: none;
+    }
+}
+
+/*
+ * A line of a suggestion row's text, measured on the row: registered as a length, so `1lh` resolves
+ * where it is set and an icon at a larger font size inherits it as it is.
+ */
+@property --note-suggestion-line {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+}
+
+/* Twice `VIEWPORT_PADDING` in Popup.tsx, whose `shift()` then keeps the list on screen. */
+.note-autocomplete-menu {
+    max-width: calc(100vw - 10px);
+}
+
+/*
+ * The list after an `@` has no field to take its width from, so it grows with its rows. Past this,
+ * a long path or a row of attributes wraps.
+ */
+.note-autocomplete-menu.note-mention-menu {
+    max-width: min(600px, calc(100vw - 10px));
+}
+
+.note-autocomplete-menu .dropdown-item {
+    /* Outranks Bootstrap's `nowrap`, so a long note path wraps within the list's width. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    /* Lets a badge too long for the row shrink to its width and end in an ellipsis. */
+    .note-suggestion-text {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    /*
+     * The icon stands beside the title's first line, not in the middle of a row its badges make
+     * taller: the row aligns its parts to the top, and the icon centers its glyph in a box one line
+     * tall, as the title's line is.
+     */
+    > span:not([class]) {
+        --note-suggestion-line: 1lh;
+        align-items: flex-start;
+
+        > .tn-icon {
+            display: inline-flex;
+            align-items: center;
+            height: var(--note-suggestion-line);
+            translate: none;
+        }
+    }
+
+    /*
+     * The title, then the path to the note at the end of the same line, as the search results' cards
+     * set them. The title takes the room it needs and the path what is left, cut short; the title
+     * wraps only where it would leave the path less than its minimum.
+     */
+    .note-suggestion-header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+    }
+
+    .search-result-title {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .note-suggestion-path {
+        flex: 1 0 0;
+        min-width: min(25%, 8em);
+        text-align: end;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.85em;
+        color: var(--muted-text-color);
+    }
+
+    /*
+     * Cut at its start rather than its end, so the parents nearest the note stay in view: laid out
+     * right to left, the overflow and its ellipsis fall on the left, while the isolated text inside
+     * keeps its own order. Right-to-left interfaces keep the cut at the end.
+     */
+    body:not([dir=rtl]) & .note-suggestion-path {
+        direction: rtl;
+        /* At the line's end, which in the box's own direction is its start. */
+        text-align: right;
+
+        > span {
+            direction: ltr;
+            unicode-bidi: isolate;
+        }
+    }
+
+    .note-suggestion-description {
+        display: block;
+        font-size: small;
+        color: var(--muted-text-color);
+    }
+
+    /* A character drawn as the icon, such as an emoji, at a glyph's size. */
+    .note-suggestion-text-icon {
+        justify-content: center;
+        width: 1em;
+    }
+
+    /* An icon drawn as SVG markup, sized and coloured as a font icon's glyph. */
+    .note-suggestion-svg-icon > svg {
+        width: 1em;
+        height: 1em;
+
+        & *:not([fill]) {
+            fill: currentColor;
+        }
+    }
+
+    .note-suggestion-attributes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-block: 2px;
+
+        .ext-badge {
+            --color: var(--muted-text-color);
+        }
+    }
+
+    /* The search's matches, in the colors quick_search.css gives them, at the row's own weight. */
+    :is(.search-result-title, .note-suggestion-path, .note-suggestion-attributes) b {
+        background: var(--note-list-view-search-result-highlight-background, transparent);
+        color:
+            var(--note-list-view-search-result-highlight-color, var(--admonition-warning-accent-color));
+        font-weight: inherit;
+        text-decoration: underline;
+
+        &.search-fuzzy-match {
+            color: var(--quick-search-result-fuzzy-highlight-color, #e47b19);
+            text-decoration: underline dotted;
+        }
+    }
+}
+
+/*
+ * The headings over the recent notes, by when they were visited, at the start of the rows. The
+ * `!important` outranks the menu text color that style.css forces on `.dropdown-header`.
+ */
+.note-autocomplete-menu li > .dropdown-header {
+    margin: 0;
+    padding: 10px 8px 2px;
+    font-size: 0.8em;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--muted-text-color) !important;
+
+    /*
+     * The Next theme's `.dropdown-menu h6` draws a line under a group heading, placed for its own
+     * padding and reaching `--menu-padding-size` past the row, wider than this list's frame. The
+     * groups need no line, and its overhang would scroll the list sideways.
+     */
+    &::before {
+        content: none;
+    }
+}
+
+.note-autocomplete-menu li:first-child > .dropdown-header {
+    padding-top: 2px;
+}
+
+/*
+ * The lists in a host's container, such as the Empty tab's and Jump to Note's: the popup's rows,
+ * outside a `.dropdown-menu`, which defines Bootstrap's item and divider variables.
+ */
+:where(menu.note-suggestion-list) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.note-suggestion-list {
+    /* The theme draws a divider's line this far past each side of its row. */
+    --padding: 0px;
+
+    > .dropdown-item {
+        --menu-item-vertical-padding: 6px;
+        --menu-item-start-padding: 16px;
+        --menu-item-end-padding: 16px;
+        padding: 6px 16px;
+    }
+
+    > .dropdown-divider {
+        margin-block: 8px;
+        border-top: 1px solid var(--main-border-color);
+    }
+
+    > li > .dropdown-header {
+        padding-inline: 16px;
+    }
+}
+
+/* Under a host's list, outside its scroller, so it stays in view as the list scrolls. */
+.note-suggestion-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    border-top: 1px solid var(--main-border-color);
+
+    .show-in-full-search {
+        margin-inline-start: auto;
+    }
+
+    /* Hidden in place, so the footer keeps its height with only the shortcut hints button left. */
+    &.nothing-to-search :is(.switch-widget, .show-in-full-search) {
+        visibility: hidden;
+    }
+}
+
+/*
+ * The keys of a search row, at the end of its title line. One line tall, as the title is, so the row
+ * keeps the height of the others.
+ */
+.note-suggestion-shortcut {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+    padding-inline-start: 12px;
+    white-space: nowrap;
+    color: var(--muted-text-color);
+}
+
+/*
+ * Each key drawn as the Next theme draws a button's (`button.btn kbd` in forms.css), plainly in the
+ * themes without its variables. The `!important`s outrank the Next theme's `.dropdown-item kbd`.
+ */
+.dropdown-item .note-suggestion-shortcut > kbd {
+    padding: 0.1875rem 0.375rem;
+    border: 0;
+    box-shadow: none;
+    vertical-align: middle;
+    line-height: 1;
+    font-family: var(--monospace-font-family) !important;
+    font-size: 0.6em !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    background: var(--cmd-button-keyboard-shortcut-background, transparent);
+    color: var(--cmd-button-keyboard-shortcut-color, inherit) !important;
+}
+
+/*
+ * The `/` list of the text and Markdown editors, at a width that fits all but the longest
+ * descriptions, and given more height than a list usually is: it is long, and the query only
+ * narrows it.
+ */
+.note-autocomplete-menu.slash-command-menu {
+    width: 350px;
+    max-width: calc(100vw - 10px);
+
+    > .tn-menu-scroll {
+        max-height: var(--ck-mention-list-max-height);
+    }
+}

@@ -1,25 +1,129 @@
 <p>Tables are a powerful feature for&nbsp;<a class="reference-link" href="#root/_help_iPIMuisry3hd">Text</a>&nbsp;notes,
   since editing them is generally easy.</p>
 <figure class="image image-style-align-right">
-  <img style="aspect-ratio:176/204;" src="6_Tables_image.png" width="176"
+  <img style="aspect-ratio:176/204;" src="2_Tables_image.png" width="176"
   height="204">
 </figure>
 <p>To create a table, simply press the table button and select with the mouse
   the desired amount of columns and rows, as indicated in the adjacent figure.</p>
+<p>Since v0.107.0, the same menu starts with an <em>Insert table…</em> item,
+  for a table larger than the grid or to type its size instead:</p>
+<ol>
+  <li>Click the <span class="tn-icon cke cke-table"></span> button and select <em>Insert table…</em>.
+    A small form opens at the cursor.</li>
+  <li>Enter the number of <em>Rows</em> (up to 1000) and <em>Columns</em> (up to
+    100). The table can have at most 5000 cells in total, for example 1000
+    rows of 5 columns.</li>
+  <li>Press <em>Insert</em> or <kbd>Enter</kbd>.</li>
+</ol>
+<p>To close the form without inserting a table, press <kbd>Esc</kbd> or click
+  outside it. From the keyboard, <kbd>Tab</kbd> moves between <em>Insert table…</em> and
+  the grid while the menu is open.</p>
 <h2>Formatting toolbar</h2>
 <p>When a table is selected, a special formatting toolbar will appear:</p>
 <img
-src="10_Tables_image.png" width="384" height="100">
+src="3_Tables_image.png" width="384" height="100">
+<h2>Context menu</h2>
+<p>Since v0.106.0, right-clicking anywhere inside a table opens a context
+  menu with the most common table operations:</p>
+<ul>
+  <li><em>Insert row above</em> and <em>Insert row below</em> insert a blank row
+    next to the row of the current cell. When the selection spans multiple
+    rows, the same number of rows is inserted.</li>
+  <li><em>Insert column to the left</em> and <em>Insert column to the right</em> work
+    the same way for columns.</li>
+  <li>Since v0.107.0, <em>Set as header</em> or <em>Set header up to this row</em>,
+    depending on the selection, turns rows into header rows, which always start
+    at the top of the table:
+    <ul>
+      <li><em>Set as header</em> shows when the selection starts at the first row,
+        and makes every selected row a header row.</li>
+      <li><em>Set header up to this row</em> shows when the selection is in a single
+        row below the first, and makes that row and every row above it header rows.</li>
+      <li>Neither shows when the selection spans several rows below the first.</li>
+      <li>A check mark shows that the rows are already header rows. Choosing the
+        item again turns them, and every header row below them, back into regular
+        rows. For example, in a table with five header rows, choosing <em>Set header up to this row</em> on
+        the third row leaves only the first two as header rows.</li>
+    </ul>
+  </li>
+  <li><em>Merge cells</em> merges the selected cells into one. The selected cells
+    must form a rectangle.</li>
+  <li><em>Split cell</em> splits each selected cell in two, either <em>Vertically</em> or <em>Horizontally</em>. <em>Unmerge cells</em>,
+    in the same submenu, turns each merged cell in the selection back into
+    the single cells it covers, keeping its content in the top-left one; cells
+    that are not merged stay as they are.</li>
+  <li><em>Distribute columns evenly</em> splits the combined width of the columns
+    the selection touches equally between them. The other columns and the width
+    of the table stay as they are. It needs a selection spanning at least two
+    columns; a merged cell counts for every column it covers.</li>
+  <li><em>Cut</em>, <em>Copy</em> and <em>Copy as Markdown</em> act on the selected
+    cells. Since v0.107.0, <em>Copy</em> and <em>Paste</em> open submenus with
+    their variants, such as <em>Copy as Markdown</em> and <em>Paste as plain text</em>;
+    clicking <em>Copy</em> or <em>Paste</em> itself still copies or pastes:
+    <ul>
+      <li>Cutting or copying produces a smaller table holding just the selected
+        cells. Pasting it over a cell selection replaces those cells; pasting elsewhere
+        inserts it as a table of its own. Cutting clears the cells without removing
+        rows or columns.</li>
+      <li><em>Copy as Markdown</em> converts the selected cells to a Markdown table.
+        A selected header row becomes the Markdown header; without one, an empty
+        header row is emitted, since Markdown tables require one.</li>
+    </ul>
+  </li>
+  <li>Since v0.107.0, <em>Paste rows above</em> and <em>Paste rows below</em>,
+    in the <em>Paste</em> submenu, paste the clipboard as new rows next to the
+    row of the current cell, instead of over the cells from the cursor on.
+    They show only when the selection is in a single row, and, like <em>Paste</em>,
+    only where the clipboard can be read:
+    <ul>
+      <li>A copied table becomes one new row for each of its rows, filled from the
+        first column. When it has more columns than the table, the table gains
+        columns, as with a regular paste. Other content goes in the first cell
+        of a single new row.</li>
+      <li>The new rows are selected afterwards.</li>
+      <li>When merged cells join the row to others, the new rows go above or below
+        that whole block of rows.</li>
+    </ul>
+  </li>
+  <li><em>Sort</em>, below the clipboard section, sorts the rows by the column
+    of the current cell, in <em>Ascending</em> or <em>Descending</em> order. See <a
+    href="#sorting-rows">Sorting rows</a>.</li>
+  <li><em>Delete row</em> and <em>Delete column</em>, below <em>Sort</em>, remove
+    every row or column the selection touches, even when only some of their
+    cells are selected.</li>
+  <li><em>Delete table</em> removes the whole table and leaves an empty paragraph
+    in its place. In a table nested inside another, only the inner table is
+    removed.</li>
+  <li>Since v0.107.0, <em>Select</em>, below <em>Delete table</em>, selects the
+    cells of every row (<em>Row</em>) or column (<em>Column</em>) the selection
+    touches, or every cell of the table (<em>Table</em>). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button,
+    which selects the table as a whole, <em>Table</em> selects its cells, so
+    cell operations such as <em>Merge cells</em> apply to all of them. In a table
+    nested inside another, <em>Table</em> selects only the cells of the inner
+    table.</li>
+</ul>
+<p>Right-clicking a cell that is not part of the current selection moves
+  the cursor there first, so the menu always applies to the cell under the
+  pointer.</p>
+<aside class="admonition note">
+  <p>In the browser, Trilium's menu replaces the browser's own context menu
+    inside tables. To reach the browser's menu (for example for its spell checking
+    suggestions), hold <kbd>Shift</kbd> while right-clicking. The desktop application
+    is unaffected, since its menu already includes the spelling suggestions.
+    In the browser, the menu also offers <em>Paste</em> only when the page can
+    read the clipboard, which requires a secure (HTTPS) context and your permission;
+    otherwise, paste with <kbd>Ctrl</kbd>+<kbd>V</kbd>.</p>
+</aside>
 <h2>Navigating a table</h2>
 <ul>
   <li>Using the mouse:
     <ul>
       <li>Click on a cell to focus it.</li>
-      <li>Click the
-        <img src="11_Tables_image.png" width="28" height="27">button at the top or the bottom of a table to insert an empty paragraph
-        near it.</li>
-      <li>Click the
-        <img src="5_Tables_image.png" width="24" height="26">button at the top-left of the table to select it entirely (for easy copy-pasting
+      <li>Click the&nbsp;<span class="tn-icon cke cke-return-arrow"></span> button
+        at the top or the bottom of a table to insert an empty paragraph near it.</li>
+      <li>Click the&nbsp;<span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
+        at the top-left of the table to select it entirely (for easy copy-pasting
         or cutting) or drag and drop it to relocate the table.</li>
     </ul>
   </li>
@@ -38,46 +142,161 @@ src="10_Tables_image.png" width="384" height="100">
 <ul>
   <li>Columns can be resized by hovering the mouse over the border of two adjacent
     cells and dragging it.</li>
+  <li>To give several columns the same width, select cells across them and choose <em>Distribute columns evenly</em> from
+    the <span class="tn-icon cke cke-table-column"></span> button of the formatting
+    toolbar or from the <a href="#context-menu">context menu</a>.</li>
   <li>By default, the row height is not adjustable using the mouse, but it can
     be configured from the cell settings (see below).</li>
   <li>To adjust exactly the width (in pixels or percentages) of a cell, select
-    the
-    <img src="8_Tables_image.png" width="19" height="19">button.</li>
+    the&nbsp;<span class="tn-icon cke cke-table-cell-properties"></span> button.</li>
 </ul>
 <h2>Inserting new rows and new columns</h2>
 <ul>
-  <li>To insert a new column, click on a desired location, then press the
-    <img
-    src="Tables_image.png" width="18" height="20">button from the formatting toolbar and select <em>Insert column left or right.</em>
+  <li>To insert a new column, click on a desired location, then press the&nbsp;<span
+    class="tn-icon cke cke-table-column"></span> button from the formatting
+    toolbar and select <em>Insert column left or right.</em>
   </li>
-  <li>To insert a new row, click on a desired location, then press the
-    <img src="7_Tables_image.png"
-    width="20" height="18">button and select <em>Insert row above</em> or <em>below</em>.
+  <li>To insert a new row, click on a desired location, then press the&nbsp;<span
+    class="tn-icon cke cke-table-row"></span> button and select <em>Insert row above</em> or <em>below</em>.
     <ul>
       <li>A quicker alternative to creating a new row while at the end of the table
         is to press the <kbd>Tab</kbd> key.</li>
     </ul>
   </li>
+  <li>Both operations are also available in the <a href="#context-menu">context menu</a>,
+    which inserts as many rows or columns as the selection spans.</li>
 </ul>
+<h2>Moving rows and columns</h2>
+<p>Since v0.106.0, rows and columns can be reordered with the keyboard:</p>
+<ul>
+  <li><kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> move the
+    rows touched by the selection up or down.</li>
+  <li><kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> move the
+    columns touched by the selection left or right.</li>
+</ul>
+<p>Merged cells are never split by a move. The rows or columns held together
+  by a merged cell travel as one block, and moving toward such a block jumps
+  over it entirely.</p>
+<p>When the table has a header row, a header row moved below the header area
+  becomes a regular row, and a regular row moved into the header area becomes
+  a header row. Header columns behave the same way.</p>
+<p>Outside of tables, <kbd>Alt</kbd>+<kbd>Left</kbd> and <kbd>Alt</kbd>+<kbd>Right</kbd> keep
+  navigating the note history, and <kbd>Alt</kbd>+<kbd>Up</kbd> and <kbd>Alt</kbd>+<kbd>Down</kbd> keep
+  moving the current paragraph.</p>
+<h2>Sorting rows</h2>
+<p>Since v0.107.0, the rows of a table can be sorted by the values of one
+  column:</p>
+<ul>
+  <li>To sort all the rows, place the cursor in any cell of the column to sort
+    by, then select <em>Sort</em> → <em>Ascending</em> or <em>Descending</em> from
+    the <a href="#context-menu">context menu</a>. The same items are in the <span
+    class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.</li>
+  <li>To sort only some of the rows, select their cells in the column to sort
+    by, then sort the same way. Sorting is not available while the selection
+    spans more than one column.</li>
+</ul>
+<p>Header rows always stay at the top of the table and are never sorted.
+  A sort can be undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</p>
+<h3>How values are compared</h3>
+<p>Each cell is read as plain text, so formatting does not affect the order.
+  Trilium then detects what kind of value the cell holds:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Kind</th>
+        <th>Examples</th>
+        <th>Compared by</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Time</td>
+        <td><code>15:02</code>, <code>15:02:38</code>, <code>3:02 PM</code>
+        </td>
+        <td>The time of day.</td>
+      </tr>
+      <tr>
+        <td>Date</td>
+        <td><code>2026-09-30</code>, <code>2026-09-30 15:02</code>, <code>30 September 2026</code>, <code>Wednesday, 30 September 2026</code>, <code>2026-09-30T15:02:38+03:00</code>
+        </td>
+        <td>The date and time.</td>
+      </tr>
+      <tr>
+        <td>Number</td>
+        <td><code>12</code>, <code>-3.5</code>, <code>1,234.56</code>, <code>$ 12.04</code>, <code>21 RON</code>, <code>24.5m</code>
+        </td>
+        <td>The numeric value.</td>
+      </tr>
+      <tr>
+        <td>Text</td>
+        <td>Anything else.</td>
+        <td>Alphabetically, ignoring case, with numbers inside the text in numeric
+          order (<code>Item 9</code> before <code>Item 10</code>). Accents count, so <code>a</code> and <code>á</code> differ.</td>
+      </tr>
+      <tr>
+        <td>Empty</td>
+        <td>An empty cell, or one holding only spaces.</td>
+        <td>Not compared. Empty cells always go last.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>Ascending order puts times first, then dates, numbers and text. Descending
+  order reverses it. Empty cells go last in both directions.</p>
+<p>Numbers, dates and times with the same value are ordered by their text,
+  so <code>5 apples</code> comes before <code>5 pears</code>. Rows whose cells
+  hold the same text, ignoring case, keep their relative order.</p>
+<ul>
+  <li>Dates are also recognized in the formats of the note's language, such
+    as <code>30.09.2026</code> or <code>30. September 2026</code> for German, and
+    in the format chosen in <a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a> → <em>Text Notes</em> → <em>Editor</em> → <em>Date/time format</em> for <a
+    href="#root/_help_CohkqWQC1iBv">inserting the date and time</a>.</li>
+  <li>A number can start with a currency symbol, such as <code>$</code>, <code>€</code> or <code>£</code>.
+    Whatever follows the number, such as a unit, is ignored, so units are not
+    converted: <code>1 km</code> sorts before <code>500 m</code>. A cell that
+    starts with letters, such as <code>RON 21</code>, is text.</li>
+  <li>The decimal separator follows the language of the note: <code>1.500</code> is
+    one and a half in English, but one thousand five hundred in German. A comma
+    or period that is not followed by exactly three digits is always read as
+    a decimal separator, so <code>1,5</code> is one and a half in either language.</li>
+  <li>The language of the note is the one set in its Basic Properties, or else
+    the default content language. See&nbsp;<a class="reference-link" href="#root/_help_veGu4faJErEM">Content language &amp; Right-to-left support</a>.</li>
+</ul>
+<h3>Merged cells</h3>
+<p>Rows joined by a merged cell are kept together and move as one block.
+  The block is sorted by the value in its first row. When the block has more
+  than one cell in the sorted column, the other cells do not affect the order,
+  and a message says so: <em>Some rows were sorted together because merged cells tie them to each other</em>.</p>
+<p>When the selection covers only part of such a block, the whole block is
+  sorted.</p>
 <h2>Merging cells</h2>
 <p>To merge two or more cells together, simply select them via drag &amp;
-  drop and press the
-  <img src="1_Tables_image.png" width="19" height="19">button from the formatting toolbar.</p>
+  drop and press the&nbsp;<span class="tn-icon cke cke-table-merge-cell"></span> button
+  from the formatting toolbar.</p>
 <p>More options are available by pressing the arrow next to it:</p>
 <ul>
   <li>Click on a single cell and select Merge cell up/down/right/left to merge
     with an adjacent cell.</li>
+  <li>Select <em>Merge selected cells</em> to merge the selected cells, the same
+    as pressing the button itself.</li>
   <li>Select <em>Split cell vertically</em> or <em>horizontally</em>, to split
     a cell into multiple cells (can also be used to undo a merge).</li>
+  <li>Select <em>Unmerge cells</em> to turn each merged cell in the selection
+    back into the single cells it covers, keeping its content in the top-left
+    one.</li>
 </ul>
+<p><em>Merge selected cells</em> and <em>Unmerge cells</em> are available since
+  v0.107.0. Merging and splitting are also available by right-clicking the
+  selected cells, via the <a href="#context-menu">context menu</a>, where <em>Unmerge cells</em> is
+  in the <em>Split cell</em> submenu.</p>
 <h2>Table properties</h2>
 <figure class="image image-style-align-right">
-  <img style="aspect-ratio:312/311;" src="2_Tables_image.png" width="312"
+  <img style="aspect-ratio:312/311;" src="Tables_image.png" width="312"
   height="311">
 </figure>
-<p>The table properties can be accessed via the
-  <img src="13_Tables_image.png"
-  width="19" height="19">button and allows for the following adjustments:</p>
+<p>The table properties can be accessed via the&nbsp;<span class="tn-icon cke cke-table-properties"></span> button
+  and allows for the following adjustments:</p>
 <ul>
   <li>Border (not the border of the cells, but the outer rim of the table),
     which includes the style (single, double), color and width.</li>
@@ -96,13 +315,12 @@ src="10_Tables_image.png" width="384" height="100">
   must be pressed for the changes to persist.</p>
 <h2>Cell properties</h2>
 <figure class="image image-style-align-right">
-  <img style="aspect-ratio:320/386;" src="3_Tables_image.png" width="320"
+  <img style="aspect-ratio:320/386;" src="1_Tables_image.png" width="320"
   height="386">
 </figure>
-<p>Similarly to table properties, the
-  <img src="12_Tables_image.png" width="19"
-  height="19">button opens a popup which adjusts the styling of one or more cells (based
-  on the user's selection).</p>
+<p>Similarly to table properties, the&nbsp;<span class="tn-icon cke cke-table-cell-properties"></span> button
+  opens a popup which adjusts the styling of one or more cells (based on
+  the user's selection).</p>
 <p>The following options can be adjusted:</p>
 <ul>
   <li>The border style, color and width (same as table properties), but applying
@@ -116,18 +334,28 @@ src="10_Tables_image.png" width="384" height="100">
 </ul>
 <p>The cell will immediately update to reflect the changes, but the <em>Save</em> button
   must be pressed for the changes to persist.</p>
+<h2>Border and background colors</h2>
+<p>The border and background colors of tables and cells adapt to the <a href="#root/_help_Wy267RK4M69c">theme</a>,
+  the same way as <a href="#root/_help_Gr6xFaF6ioJ5">text colors</a> do. A
+  color picked from the palette, chosen with the color picker or typed in
+  is shown in a lighter or darker shade that suits the current theme, so
+  borders stay visible and text stays readable on the background. The hue
+  stays the same, and the table keeps the color as it was picked.</p>
+<p>Colors applied with older versions of Trilium are shown exactly as they
+  were picked, until the note is next edited.</p>
+<p>Older browsers that can't adapt colors show them exactly as they were
+  picked.</p>
 <h2>Caption</h2>
-<p>Press the
-  <img src="4_Tables_image.png" width="18" height="17">button to insert a caption or a text description of the table, which is
-  going to be displayed above the table.</p>
+<p>Press the&nbsp;<span class="tn-icon cke cke-caption"></span> button to
+  insert a caption or a text description of the table, which is going to
+  be displayed above the table.</p>
 <h2>Table borders</h2>
 <p>By default, tables will come with a predefined gray border.</p>
 <p>To adjust the borders, follow these steps:</p>
 <ol>
   <li>Select the table.</li>
-  <li>In the floating panel, select the <em>Table properties</em> option (
-    <img
-    src="14_Tables_image.png" width="21" height="21">).
+  <li>In the floating panel, select the <em>Table properties</em> option (<span
+    class="tn-icon cke cke-table-properties"></span>).
     <ol>
       <li>Look for the <em>Border</em> section at the top of the newly opened panel.</li>
       <li>This will control the outer borders of the table.</li>
@@ -138,8 +366,7 @@ src="10_Tables_image.png" width="384" height="100">
     </ol>
   </li>
   <li>Select all the cells of the table and then press the <em>Cell properties</em> option
-    (
-    <img src="9_Tables_image.png" width="21" height="21">).
+    (<span class="tn-icon cke cke-table-cell-properties"></span>).
     <ol>
       <li>This will control the inner borders of the table, at cell level.</li>
       <li>Note that it's possible to change the borders individually by selecting
@@ -171,9 +398,9 @@ src="10_Tables_image.png" width="384" height="100">
 <p>Since v0.104.1, tables can be indented as a block (the whole table moves,
   rather than just the content of a cell).</p>
 <ol>
-  <li>Click the
-    <img src="5_Tables_image.png" width="24" height="26">button to select the entire table. Otherwise, the indentation applies
-    only to the current cell's content.</li>
+  <li>Click the&nbsp;<span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
+    to select the entire table. Otherwise, the indentation applies only to
+    the current cell's content.</li>
   <li>Press <kbd>Tab</kbd> to increase the indent, or <kbd>Shift</kbd>+<kbd>Tab</kbd> to
     decrease it. Alternatively, use the indentation buttons in the formatting
     toolbar.</li>

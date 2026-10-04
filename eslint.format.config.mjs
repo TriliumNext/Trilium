@@ -16,7 +16,6 @@ export const stylisticRules = {
     "@stylistic/quote-props": ["error", "consistent-as-needed"],
     "@stylistic/max-len": ["error", { code: 100 }],
     "@stylistic/comma-dangle": ["error", "never"],
-    "@stylistic/linebreak-style": ["error", "unix"],
     "@stylistic/array-bracket-spacing": ["error", "always"],
     "@stylistic/object-curly-spacing": ["error", "always"],
     "@stylistic/padded-blocks": ["error", { classes: "always" }]

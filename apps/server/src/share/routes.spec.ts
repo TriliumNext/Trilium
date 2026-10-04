@@ -33,6 +33,20 @@ describe("Share API test", () => {
         cannotSetHeadersCount = 0;
     });
 
+    it("registers the highlighter's languages only for the routes that render a page", async () => {
+        const getOption = vi.spyOn(options, "getOptionOrNull");
+        const readsMimeTypes = () => getOption.mock.calls.some(([ name ]) => name === "codeNotesMimeTypes");
+        try {
+            await supertest(app).get("/share/api/images/missingNote/image.png");
+            expect(readsMimeTypes()).toBe(false);
+
+            await supertest(app).get("/share/").expect(200);
+            expect(readsMimeTypes()).toBe(true);
+        } finally {
+            getOption.mockRestore();
+        }
+    });
+
     it("requests password for password-protected share", async () => {
         await supertest(app)
             .get("/share/YjlPRj2E9fOV")
@@ -140,7 +154,7 @@ describe("Share API test", () => {
         // A note cloned both under the share tree and elsewhere can surface with a
         // best note path that never passes through the requested ancestor — such a
         // result must be treated as not visible.
-        const { isVisibleInShareTree } = await import("./routes.js");
+        const { isVisibleInShareTree } = await import("@triliumnext/core/src/share/index.js");
         expect(isVisibleInShareTree(SHARE_ROOT_ID, ["root", "someUnsharedNote"])).toBe(false);
     });
 

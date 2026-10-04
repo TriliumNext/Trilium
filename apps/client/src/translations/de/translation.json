@@ -278,7 +278,6 @@
     "copy_to_clipboard": "In Zwischenablage kopieren"
   },
   "jump_to_note": {
-    "search_button": "Suche im Volltext",
     "search_placeholder": "Notiz anhand ihres Titels suchen oder > für Befehle eingeben..."
   },
   "markdown_import": {
@@ -352,7 +351,8 @@
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
     "natural_sort_language": "Natürliche Sortiersprache",
     "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"zh-CN\" für Chinesisch.",
-    "sort": "Sortieren"
+    "sort": "Sortieren",
+    "sorting_criteria_description": "Notizen sind nach der ersten Ebene sortiert; die nächste Ebene dient nur zur Entscheidung zw. Notizen, die auf der vorherigen Ebene gleichwertig waren."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Anhänge zur Notiz hochladen",
@@ -1249,7 +1249,6 @@
     "label_rock_or_pop": "Es darf nur eines der Labels vorhanden sein",
     "label_year_comparison": "numerischer Vergleich (auch >, >=, <).",
     "label_date_created": "Notizen, die im letzten Monat erstellt wurden",
-    "error": "Suchfehler: {{error}}",
     "search_prefix": "Suche:"
   },
   "attachment_detail": {
@@ -1881,7 +1880,6 @@
     "placeholder": "Schnellsuche",
     "searching": "Suche läuft...",
     "no-results": "Keine Ergebnisse gefunden",
-    "more-results": "... und {{number}} weitere Ergebnisse.",
     "show-in-full-search": "In der vollständigen Suche anzeigen"
   },
   "note_tree": {
@@ -2112,12 +2110,9 @@
     "zoom-factor": "Zoomfaktor"
   },
   "note_autocomplete": {
-    "search-for": "Suche nach „{{term}}“",
     "create-note": "Untergeordnete Notiz „{{term}}“ erstellen und verlinken",
     "insert-external-link": "Externen Link zu „{{term}}“ einfügen",
-    "clear-text-field": "Textfeldinhalt löschen",
-    "show-recent-notes": "Aktuelle Notizen anzeigen",
-    "full-text-search": "Volltextsuche"
+    "clear-text-field": "Textfeldinhalt löschen"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Notiz wurde gelöscht.",
@@ -2765,7 +2760,6 @@
     "edit_index": "Bearbeitung {{index}} von {{total}}",
     "retry": "Erneut versuchen",
     "web_search_unavailable_gemini": "Bei Gemini-Modellen nicht verfügbar solange der Notizzugriff aktiv ist — Googles API erlaubt keine Kombination beider Funktionen. Notizzugriff deaktivieren oder einen anderen Anbieter wählen um die Websuche zu nutzen.",
-    "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
     "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",
@@ -2876,7 +2870,6 @@
     "provider_model_count_one": "{{count}} Modell",
     "provider_model_count_other": "{{count}} Modelle",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Erfordert Claude Code auf dem Computer, auf dem Trilium ausgeführt wird.",
     "claude_agent_description": "Verwendet Ihr Claude-Pro-/Max-Abonnement über Claude Code, daher ist kein API-Schlüssel erforderlich. Claude Code muss auf dem Computer installiert sein, auf dem Trilium ausgeführt wird (beim Self-Hosting der Server, bei der Desktop-App dieser Computer). Melden Sie sich dort einmalig mit „claude /login“ an.",
     "add_provider_title_named": "{{- name}} hinzufügen",
     "provider_group_cloud": "Cloud-Anbieter",
@@ -3071,7 +3064,6 @@
     "page_size": "Seitengröße",
     "scale": "Skalierung",
     "margins": "Seitenränder",
-    "render_error": "PDF kann mit den aktuellen Einstellungen nicht gerendert werden. Bitte prüfen Sie Seitenränder und Skalierung.",
     "margins_default": "Standard",
     "margins_none": "Keine",
     "margins_minimum": "Minimum",
@@ -3129,7 +3121,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Einen ein-/ausklappbaren Abschnitt einfügen, der Inhalt per Klick verbirgt oder anzeigt.",
       "insert-an-anchor-for-internal-linking": "Anker für interne Verlinkung einfügen",
       "insert-an-empty-mermaid-diagram": "Leeres Mermaid-Diagramm einfügen",
-      "insert-the-current-date-and-time": "Aktuelles Datum und Uhrzeit einfügen",
       "justify-text-alignment": "Blocksatz",
       "link-preview": "Linkvorschau",
       "missing-definition": "(fehlende Definition)",

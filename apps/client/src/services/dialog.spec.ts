@@ -177,34 +177,6 @@ describe("dialog service", () => {
 
             expect(document.activeElement).toBe(input);
         });
-
-        it("closes the autocomplete dropdown on hide", async () => {
-            const $dialog = makeDialog();
-            await openDialog($dialog, false);
-
-            // `"autocomplete" in $autocompleteEl` is true for a jQuery object only if the
-            // autocomplete plugin is registered. Register a stub on the jQuery prototype so
-            // the branch is taken and the plugin is invoked.
-            const autocomplete = vi.fn();
-            ($.fn as any).autocomplete = autocomplete;
-
-            $dialog.trigger("hidden.bs.modal");
-
-            expect(autocomplete).toHaveBeenCalledWith("close");
-
-            delete ($.fn as any).autocomplete;
-        });
-
-        it("skips closing autocomplete when the plugin is not registered", async () => {
-            const $dialog = makeDialog();
-            await openDialog($dialog, false);
-
-            // Ensure no autocomplete plugin is present so the `in` check is false.
-            delete ($.fn as any).autocomplete;
-
-            // Should not throw.
-            expect(() => $dialog.trigger("hidden.bs.modal")).not.toThrow();
-        });
     });
 
     describe("lifting a dialog above what is already open", () => {
@@ -547,6 +519,19 @@ describe("dialog service", () => {
             // Falsy result (dialog dismissed) -> x && x.confirmed short-circuits to the falsy value
             triggerCommand.mockImplementationOnce((_name, d: any) => d.callback(false));
             await expect(dialogService.confirm("sure?")).resolves.toBe(false);
+        });
+
+        it("confirmWithNoteDeletion carries the caller's box and answers with the whole result", async () => {
+            const callbackResult = { confirmed: true, isDeleteNoteChecked: true };
+            triggerCommand.mockImplementation((_name, data: any) => data.callback(callbackResult));
+
+            await expect(dialogService.confirmWithNoteDeletion("Delete it?", "Also delete 2 notes"))
+                .resolves.toBe(callbackResult);
+
+            const [name, data] = triggerCommand.mock.calls[0];
+            expect(name).toBe("showConfirmDialog");
+            expect(data.message).toBe("Delete it?");
+            expect(data.checkboxLabel).toBe("Also delete 2 notes");
         });
 
         it("confirmDeleteNoteBoxWithNote triggers the delete-box command and resolves with the callback value", async () => {

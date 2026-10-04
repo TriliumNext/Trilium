@@ -1,0 +1,4 @@
+/* The gap is a margin rather than a space, so the link's hover underline does not run under it. */
+.tn-link > .note-link-icon {
+    margin-inline-end: 0.25em;
+}

@@ -116,18 +116,22 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 if (note.type === "text") {
                     await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
                 }
-                // Printing preserves full include-note nesting (see expandNestedIncludes).
-                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true, expandNestedIncludes: true, mediaEnvironment: "native" });
+                // Printing preserves full embed nesting (see expandNestedEmbeds).
+                const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true, expandNestedEmbeds: true, mediaEnvironment: "native" });
                 container.replaceChildren(...$renderedContent);
 
                 // Note types rendered as a mounted component (an AI chat) start their transform
-                // passes — mermaid, syntax highlighting, included notes — in a layout effect that
+                // passes — mermaid, syntax highlighting, embedded notes — in a layout effect that
                 // getRenderedContent does not await. Printing snapshots the page, so wait for those
                 // to settle first; otherwise they land after the capture and are missing from the PDF.
                 await waitForPendingRenders(container);
 
-                // Wait for all images to load.
+                // Wait for all images to load. A lazy image, such as a link embed's favicon, never
+                // scrolls into the print window's viewport, so it would fire neither `load` nor `error`.
                 const images = Array.from(container.querySelectorAll("img"));
+                for (const img of images) {
+                    img.loading = "eager";
+                }
                 await Promise.all(
                     images.map(img => {
                         if (img.complete) return Promise.resolve();
@@ -204,6 +208,10 @@ export async function loadCustomCss(note: FNote) {
         const promise = $.Deferred();
         loadPromises.push(promise.promise());
         linkEl.onload = () => promise.resolve();
+        linkEl.onerror = () => {
+            console.warn(`Unable to load the print stylesheet ${printCssNote.noteId}; printing without it.`);
+            promise.resolve();
+        };
 
         document.head.appendChild(linkEl);
     }

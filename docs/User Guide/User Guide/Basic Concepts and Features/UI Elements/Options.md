@@ -8,7 +8,7 @@ The Options section allows the configuration of the TriliumNext client and serve
 The Options can be accessed via:
 
 *   The [Global menu](Global%20menu.md), by selecting the _Options_ item.
-*   The ![](1_Options_image.png) button in the [Launch Bar](Launch%20Bar.md) which can optionally be hidden if not desirable.
+*   The <span class="tn-icon bx bx-cog"></span> button in the [Launch Bar](Launch%20Bar.md) which can optionally be hidden if not desirable.
 *   Optionally, a keyboard shortcut can be defined, but it is not assigned by default.
 *   By clicking on this link: <a class="reference-link" href="#root/_hidden/_options">Options</a>.
 

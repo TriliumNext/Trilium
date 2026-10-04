@@ -1,0 +1,10 @@
+/* Every row is named, so the icons are sized against the label rather than against the toolbar. */
+.ck.ck-toolbar__nested-toolbar-dropdown > .ck-dropdown__panel > .ck-dropdown-menu-list,
+.ck.ck-dropdown-menu__nested-menu__panel.ck-toolbar-group-menu__panel {
+    --ck-icon-size: 1.1em;
+}
+
+/* A control mounted into a row, panel and all, fills the row as the rows beside it do. */
+.ck.ck-dropdown-menu-list__nested-menu__item > .ck.ck-dropdown > .ck-button.ck-dropdown__button {
+    width: 100%;
+}

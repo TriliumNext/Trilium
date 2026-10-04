@@ -10,7 +10,7 @@ import toast from "../../../services/toast";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import RelationMapApi from "./api";
-import { promptForRelationName } from "./utils";
+import type { AskRelationName } from "./RelationNamePopover";
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi>) {
     return (e: MouseEvent) => {
@@ -69,7 +69,7 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
     };
 }
 
-export function buildRelationContextMenuHandler(connection: Connection, mapApiRef: RefObject<RelationMapApi>) {
+export function buildRelationContextMenuHandler(connection: Connection, mapApiRef: RefObject<RelationMapApi>, askRelationName: AskRelationName) {
     return (_, event: MouseEvent) => {
         if (connection.getType().includes("link")) {
             // don't create context menu if it's a link since there's nothing to do with link from relation map
@@ -90,7 +90,7 @@ export function buildRelationContextMenuHandler(connection: Connection, mapApiRe
                 selectMenuItemHandler: async ({ command }) => {
                     if (command === "rename") {
                         const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
-                        const newName = await promptForRelationName(currentName);
+                        const newName = await askRelationName(connection, currentName);
 
                         if (!newName?.trim() || newName === currentName) {
                             return;

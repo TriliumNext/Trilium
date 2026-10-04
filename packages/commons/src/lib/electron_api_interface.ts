@@ -230,6 +230,12 @@ export interface ElectronClipboardApi {
      * grant the sensitive `clipboard-read` permission to the whole session.
      */
     readText(): Promise<string>;
+
+    /**
+     * Reads the HTML flavor of the system clipboard, the same way as {@link readText}. Empty when
+     * the clipboard has no HTML.
+     */
+    readHTML(): Promise<string>;
 }
 
 /**
@@ -413,7 +419,7 @@ export interface ElectronPrintingApi {
     exportAsPdfPreview(opts: Record<string, unknown>): void;
 
     /** Subscribes to the result of an {@link exportAsPdfPreview} call. */
-    onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string }) => void): void;
+    onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string; requestId?: number }) => void): void;
 
     /** Removes the listener registered via {@link onExportAsPdfPreviewResult}. */
     removeExportAsPdfPreviewResultListener(): void;

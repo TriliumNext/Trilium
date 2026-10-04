@@ -36,7 +36,21 @@ export function sanitizeHtml(dirtyHtml: string) {
     }
 
     const colorRegex = [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/, /^hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)$/];
+    const borderColorRegex = [ ...colorRegex, /^\s*transparent\s*$/ ];
     const sizeRegex = [/^\d+\.?\d*(?:px|em|%)$/];
+    // The border styles CKEditor writes for tables and cells: the shorthand for a border with a
+    // custom width, separate properties otherwise.
+    const tableBorderStyles = {
+        "border": [
+            /^\s*\d+\.?\d*(?:px|em|%)\s*(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)\s*(#(0x)?[0-9a-fA-F]+|rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)|hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\))\s*$/
+        ],
+        "border-color": borderColorRegex,
+        "--tn-border-color": borderColorRegex,
+        "border-style": [
+            /^\s*(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)\s*$/
+        ],
+        "border-width": sizeRegex
+    };
 
     // to minimize document changes, compress H
     return sanitizeHtmlCustom(dirtyHtml, {
@@ -46,6 +60,7 @@ export function sanitizeHtml(dirtyHtml: string) {
             a: ["id"],
             h2: ["id"],
             li: ["id"],
+            ol: ["start", "reversed"],
             // Collapsible blocks: keep the native open/closed state (e.g. preserved from a Notion import)
             // so the published/share view, which renders this HTML directly, reflects it.
             details: ["open"],
@@ -58,6 +73,9 @@ export function sanitizeHtml(dirtyHtml: string) {
             "*": {
                 color: colorRegex,
                 "background-color": colorRegex,
+                // Copies of the colors that the app's and the share theme's stylesheets adapt.
+                "--tn-color": colorRegex,
+                "--tn-background": colorRegex,
                 "margin-left": sizeRegex,
                 "padding-left": sizeRegex,
                 "text-align": [/^\s*(left|center|right|justify)\s*$/],
@@ -66,7 +84,10 @@ export function sanitizeHtml(dirtyHtml: string) {
             figure: {
                 float: [/^\s*(left|right|none)\s*$/],
                 width: sizeRegex,
-                height: sizeRegex
+                height: sizeRegex,
+                // The size of a resized embed.
+                "--include-note-width": sizeRegex,
+                "--include-note-height": sizeRegex
             },
             img: {
                 // Allow fractional ratios too (e.g. OneNote reports 577.5×277.5 screen clippings).
@@ -74,19 +95,9 @@ export function sanitizeHtml(dirtyHtml: string) {
                 width: sizeRegex,
                 height: sizeRegex
             },
-            table: {
-                "border-color": [...colorRegex, /^\s*transparent\s*$/],
-                "border-style": [/^\s*(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)\s*$/]
-            },
-            td: {
-                "border-color": [...colorRegex, /^\s*transparent\s*$/],
-                border: [
-                    /^\s*\d+(?:px|em|%)\s*(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)\s*(#(0x)?[0-9a-fA-F]+|rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)|hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\))\s*$/
-                ]
-            },
-            th: {
-                "border-color": [...colorRegex, /^\s*transparent\s*$/]
-            },
+            table: tableBorderStyles,
+            td: tableBorderStyles,
+            th: tableBorderStyles,
             col: {
                 width: sizeRegex
             }

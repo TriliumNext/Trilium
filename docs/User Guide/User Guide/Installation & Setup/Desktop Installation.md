@@ -5,6 +5,29 @@ To install Trilium on your desktop, follow these steps:
 2.  **Extract the Package**: Unzip the downloaded package to a location of your choice.
 3.  **Run the Application**: Launch Trilium by executing the `trilium` executable found within the unzipped folder.
 
+## Installing from Flathub
+
+On Linux, Trilium is also available on [Flathub](https://flathub.org/en/apps/org.triliumnotes.Trilium), for both x86\_64 and ARM (aarch64). Install it from your software center (e.g. GNOME Software or KDE Discover), or from a terminal:
+
+```sh
+flatpak install flathub org.triliumnotes.Trilium
+```
+
+Updates arrive through the software center or `flatpak update`, like any other Flatpak.
+
+The Flathub version runs in a sandbox and keeps its [data directory](Data%20directory.md) in `~/.var/app/org.triliumnotes.Trilium/data/trilium-data`. It cannot see the data directory of a `.deb`, `.rpm`, AppImage or `.zip` installation (`~/.local/share/trilium-data`), so it starts with an empty database. To bring existing notes over:
+
+1.  Close Trilium, in both the old installation and the Flatpak.
+2.  Copy the old data directory into the sandbox:
+    
+    ```sh
+    mkdir -p ~/.var/app/org.triliumnotes.Trilium/data
+    cp -a ~/.local/share/trilium-data ~/.var/app/org.triliumnotes.Trilium/data/
+    ```
+3.  Start the Flatpak version.
+
+If `~/.var/app/org.triliumnotes.Trilium/data/trilium-data` already exists because the Flatpak version was started before, remove or rename it first.
+
 ## Startup Scripts
 
 Trilium offers various startup scripts to customize your experience:

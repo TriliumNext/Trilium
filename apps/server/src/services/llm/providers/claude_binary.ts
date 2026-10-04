@@ -20,30 +20,20 @@ import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { promisify } from "util";
 
-import { findOnPath } from "./binary_lookup.js";
+import { cachedProbe, findOnPath } from "./binary_lookup.js";
 
 const execFileAsync = promisify(execFile);
 
-/**
- * The in-flight/successful resolution. Caching the promise lets concurrent
- * first calls share one probe; a failed probe clears it so a later install is
- * picked up without a restart.
- */
-let cachedResolution: Promise<string> | undefined;
+/** The probed binary, shared by concurrent first calls (see {@link cachedProbe}). */
+const probed = cachedProbe(probeBinary);
 
 export function resolveClaudeBinaryPath(): Promise<string> {
-    if (!cachedResolution) {
-        cachedResolution = probeBinary().catch((err: unknown) => {
-            cachedResolution = undefined;
-            throw err;
-        });
-    }
-    return cachedResolution;
+    return probed.resolve();
 }
 
 /** For tests: forget the probed binary so the next call re-resolves. */
 export function resetClaudeBinaryCache(): void {
-    cachedResolution = undefined;
+    probed.reset();
 }
 
 async function probeBinary(): Promise<string> {

@@ -2,6 +2,8 @@ import { ClassicEditor, Essentials, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
+import FileUploadUI from "./file_upload_ui.js";
+import FileUploadEditing from "./fileuploadediting.js";
 import Uploadfileplugin from "./uploadfileplugin.js";
 
 describe("Uploadfileplugin", () => {
@@ -19,10 +21,9 @@ describe("Uploadfileplugin", () => {
         expect(Uploadfileplugin.pluginName).toBe("fileUploadPlugin");
     });
 
-    it("declares FileUploadEditing as a required plugin", () => {
-        const requires = Uploadfileplugin.requires;
-        expect(requires).toHaveLength(1);
-        const FileUploadEditing = requires[0];
-        expect(editor.plugins.has(FileUploadEditing as never)).toBe(true);
+    it("loads the editing and the UI plugins", () => {
+        expect(Uploadfileplugin.requires).toEqual([ FileUploadEditing, FileUploadUI ]);
+        expect(editor.plugins.has(FileUploadEditing)).toBe(true);
+        expect(editor.plugins.has(FileUploadUI)).toBe(true);
     });
 });

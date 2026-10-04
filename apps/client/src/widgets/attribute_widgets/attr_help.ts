@@ -156,10 +156,10 @@ export const ATTR_HELP: AttrHelpMap = {
         isHidden: t("attribute_detail.is_hidden"),
         maxNestingDepth: t("attribute_detail.max_nesting_depth"),
         includeArchived: t("attribute_detail.include_archived"),
-        enableInboxColumn: t("attribute_detail.enable_inbox_column"),
-        boardCardWidth: t("attribute_detail.board_card_width"),
-        sortColumns: t("attribute_detail.sort_columns"),
-        sortColumnsDescending: t("attribute_detail.sort_columns_descending"),
+        "board:showInbox": t("attribute_detail.board_show_inbox"),
+        "board:columnWidth": t("attribute_detail.board_column_width"),
+        "board:sortColumns": t("attribute_detail.board_sort_columns"),
+        "board:sortColumnsDescending": t("attribute_detail.board_sort_columns_descending"),
         "calendar:view": t("attribute_detail.calendar_view"),
         "calendar:initialDate": t("attribute_detail.calendar_initial_date"),
         "calendar:hideWeekends": t("attribute_detail.calendar_hide_weekends"),
@@ -194,6 +194,7 @@ export const ATTR_HELP: AttrHelpMap = {
         internalBookmark: t("attribute_detail.internal_bookmark")
     },
     relation: {
+        "board:cardRedirectTo": t("attribute_detail.board_card_redirect_to"),
         boardCardRedirectTo: t("attribute_detail.board_card_redirect_to"),
         runOnNoteCreation: t("attribute_detail.run_on_note_creation"),
         runOnChildNoteCreation: t("attribute_detail.run_on_child_note_creation"),

@@ -134,12 +134,13 @@
         "existing-data-skip-warning": "Non è stato ancora cancellato nulla. La tua knowledge base verrà sostituita solo quando deciderai di crearne una nuova, ripristinare un backup o eseguire la sincronizzazione da un altro dispositivo.",
         "unlock-refused": "Questi dati non sono stati accettati. Si prega di riprovare.",
         "keep-existing": "Torna all'app",
-        "keep-existing-description": "Continua a utilizzare la tua base di conoscenze esistente e torna all'app."
+        "keep-existing-description": "Continua a utilizzare la tua base di conoscenze esistente e torna all'app.",
+        "backup-saved-to": "Il backup è stato salvato in {{- location}}. Premere \"Fine\" per tornare all'applicazione."
     },
     "login": {
         "password": "Password",
         "remember-me": "Ricordami",
-        "incorrect-totp": "La password one-time non è corretta. Per favore riprova.",
+        "incorrect-totp": "La password monouso non è corretta. Riprova.",
         "heading": "Accedi a Trilium Notes",
         "totp-token": "Password monouso o codice di recupero",
         "button": "Login",

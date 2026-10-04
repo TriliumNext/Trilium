@@ -10,6 +10,10 @@
   --board-item-hover-background-saturation: 100%;
   --board-item-hover-background-lightness: 98.5%;
 
+  /* The background of a card being edited. Set to the hover lightness so the colour does not
+     change when the pointer leaves the card. */
+  --board-item-editing-background-lightness: var(--board-item-hover-background-lightness);
+
   /* The inbox's own surfaces. It holds what has not been sorted yet, so it stands on the board
      itself rather than in a column of its own, and its cards take the surface the app's cards
      stand on. The theme's name first, then the one every theme has. */
@@ -19,6 +23,7 @@
   --board-inbox-item-background: var(--card-background-color, var(--accented-background-color));
   --board-inbox-item-hover-background:
     var(--card-background-hover-color, var(--more-accented-background-color));
+  --board-inbox-item-editing-background: var(--board-inbox-item-hover-background);
 
   --board-limit-exceeded-background: #c62828;
   /* Half opacity: the badge is the main warning, the outline supports it. */
@@ -52,6 +57,10 @@
   --board-drag-stack-offset: 4px;
   /* The ring a carried card wears, which the stack behind it starts clear of. */
   --board-drag-ring-width: 3px;
+  /* The gap a carried card or column would drop into. Both are drawn at 0.6 opacity, so these
+     carry less weight than the values alone suggest. */
+  --board-drop-placeholder-background: rgba(0, 0, 0, 0.15);
+  --board-column-drop-placeholder-background: rgba(0, 0, 0, 0.1);
   /* The ring a picked-out card carries. */
   --board-selected-ring-color: var(--link-color);
   /* The wedge in a card's foot corner while cards are being selected, until the card is. */
@@ -166,7 +175,7 @@ body.mobile .board-view-container.board-dragging {
   cursor: grabbing !important;
 }
 
-/* Set from `#boardCardWidth`, and only while the board carries it: without one of these classes
+/* Set from `#board:columnWidth`, and only while the board carries it: without one of these classes
    `--board-column-width` keeps the value it inherits, which a theme can set. The columns and
    everything measured against them read the width off that one variable. */
 .board-view.board-narrow-columns {
@@ -238,6 +247,10 @@ body.mobile .board-view-container .board-add-column {
   background-color: var(--board-inbox-item-hover-background);
 }
 
+.board-view-container .board-column-inbox:not(.with-hue) .board-note:not(.with-hue).editing {
+  background-color: var(--board-inbox-item-editing-background);
+}
+
 /* The rename button masks the title it sits over, so it has to be opaque. The theme's card colour
    is a translucent overlay, and `inherit` lays it over the card a second time, which darkens the
    patch and leaves the title showing through; the button is painted the way the card itself is,
@@ -263,7 +276,6 @@ body.mobile .board-view-container .board-add-column {
      the badge and that button are not drawn, and the heading would otherwise close up around the
      field by the difference between them. */
   min-height: calc(var(--icon-button-size, 32px) + 1em + 1px);
-  border-bottom: 1px solid var(--main-border-color);
   cursor: grab;
   position: relative;
   transition: background-color 0.2s ease, border-radius 0.2s ease;
@@ -478,6 +490,16 @@ body.mobile .board-view-container .board-add-column {
   );
 }
 
+/* Stated after the rule above, which it shares a specificity with, so a card being edited keeps
+   this background whether or not the pointer is on it. */
+.board-view-container .board-note.editing {
+  background-color: hsl(
+    var(--board-item-hue),
+    var(--board-item-hover-saturation),
+    var(--board-item-editing-background-lightness)
+  );
+}
+
 /* The text, the icons and the outline of whatever is focused, each taking the hue of the nearest
    thing that has one: the column for its heading and for what stands in it, the card for itself
    and what it holds. */
@@ -563,16 +585,15 @@ body.mobile .board-view-container .board-add-column {
  * `--card-icon-inset` from the card's edge, the title at `--card-title-inset` with the lines below
  * it kept off the icon, as the field's own padding keeps them.
  *
- * A hanging indent rather than two boxes beside each other: the icon shares the first line's box,
- * so it and the title rest on one baseline and rasterise on the same pixel row. Laid out as boxes
- * of their own they round to the grid apart, which put the icon a pixel off on some cards.
+ * The icon is positioned in a box of its own instead of sitting in the first line, using the same
+ * values and the same whole-pixel size as `.title-editor-icon`. Both have to round to the same
+ * pixel row, or the icon moves when the editor opens.
  *
- * The card's padding is already in front of both, so each is drawn back by it.
+ * The card's padding is already in front of the title, so it is drawn back by it.
  */
 .board-view-container .board-note > .title {
   display: block;
   padding-inline-start: calc(var(--card-title-inset) - var(--card-padding));
-  text-indent: calc(var(--card-icon-inset) - var(--card-title-inset));
 
   /* The spans mark.js wraps a filter's matched tokens in. Matches the search result cards. */
   .ck-find-result {
@@ -589,16 +610,23 @@ body.mobile .board-view-container .board-add-column {
   text-decoration: underline;
 }
 
-/* Inline, so the glyph sits on the title's own baseline. The trailing space assumes the pack draws
-   its icons on a `--card-icon-size` advance, as the layout above already did. */
+/* Centred on the first line, in a box the size of the glyph. The size is rounded to whole pixels,
+   as `note_icon.css` rounds the picker's glyph. */
 .board-view-container .board-note > .title > .icon {
-  display: inline;
-  margin-inline-end: calc(
-    var(--card-title-inset) - var(--card-icon-inset) - var(--card-icon-size));
-  /* A pack centres its ink on the em box, which sits above the middle of the title's capitals. In
-     whole pixels, so the glyph keeps a fixed relation to the row the line is drawn on. */
-  vertical-align: -1px;
-  vertical-align: round(-0.0555em, 1px);
+  position: absolute;
+  inset-inline-start: var(--card-icon-inset);
+  inset-block-start: calc(
+    var(--card-padding) + (var(--card-line-height) * 1em - var(--card-icon-size)) / 2);
+  inset-block-start: calc(
+    var(--card-padding) + (var(--card-line-height) * 1em - round(var(--card-icon-size), 1px)) / 2);
+  width: round(var(--card-icon-size), 1px);
+  height: round(var(--card-icon-size), 1px);
+  line-height: 1;
+
+  &::before {
+    font-size: var(--card-icon-size);
+    font-size: round(var(--card-icon-size), 1px);
+  }
 }
 
 .board-view-container .board-note > .edit-icon {
@@ -1051,7 +1079,9 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
  * worked out where it is used, and both sit in the card's own font.
  */
 .board-view-container .title-editor-field .title-editor-icon {
-  --note-icon-size: var(--card-icon-size);
+  /* Rounded here, not in `note_icon.css`: that file rounds the glyph but not the box, and the
+     insets below are computed from the box. */
+  --note-icon-size: round(var(--card-icon-size), 1px);
   --note-icon-container-padding-size: 4px;
   --title-editor-icon-inset: var(--card-icon-inset);
   /* No disc behind it, and the colour the line itself is written in: it stands in the text being
@@ -1177,7 +1207,7 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
   /* The gap below is the card's `margin-block`, which the card reads at `--card-font-size`. */
   margin-block: 0 calc(0.65 * var(--card-font-size));
   border-radius: 5px;
-  background-color: rgba(0, 0, 0, 0.15);
+  background-color: var(--board-drop-placeholder-background);
   opacity: 0;
   /* Opacity only: the height is the carried card's, so any change in it is a mismatch to see
      rather than a movement to smooth over, and it slides to follow the pointer rather than easing
@@ -1222,7 +1252,7 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
   flex-shrink: 0;
   height: 200px;
   border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--board-column-drop-placeholder-background);
   opacity: 0;
   /* Carried to where the column would land, the same way the columns it passes step aside. */
   transition: opacity 0.15s ease, transform 0.2s ease;

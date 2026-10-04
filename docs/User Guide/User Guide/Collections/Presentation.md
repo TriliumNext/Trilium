@@ -11,7 +11,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 *   Each slide is a child note of the collection.
 *   The order of the child notes determines the order of the slides.
-*   Unlike traditional presentation software, slides can be laid out both horizontally and vertically (see belwo for more information).
+*   Unlike traditional presentation software, slides can be laid out both horizontally and vertically (see below for more information).
 *   Direct children will be laid out horizontally and the children of those will be laid out vertically. Children deeper than two levels of nesting are ignored.
 
 ## Interaction and navigation

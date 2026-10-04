@@ -244,8 +244,7 @@ function RevisionsMenu({ note, onRevisionSaved, onAllDeleted, hasRevisions }: {
             buttonClassName="custom-title-bar-button"
             noSelectButtonStyle
             buttonProps={{ title: t("revisions.menu_tooltip") }}
-            dropdownContainerClassName="mobile-bottom-menu"
-            dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
+            mobileBottomSheet
         >
             <FormListItem
                 icon="bx bx-save"

@@ -195,13 +195,6 @@ describe("Special notes API (core)", () => {
             expect(recent.body?.noteId).toBe(created.body.noteId);
         });
 
-        it("get-or-create returns the existing chat rather than a new one", async () => {
-            const existing = await api.get<NotePojo>("/api/special-notes/most-recent-llm-chat");
-            const res = await api.get<NotePojo>("/api/special-notes/get-or-create-llm-chat");
-            expect(res.status).toBe(200);
-            expect(res.body.noteId).toBe(existing.body.noteId);
-        });
-
         it("lists recent chats, honouring the limit and defaulting it when absent", async () => {
             await api.post<NotePojo>("/api/special-notes/llm-chat");
 

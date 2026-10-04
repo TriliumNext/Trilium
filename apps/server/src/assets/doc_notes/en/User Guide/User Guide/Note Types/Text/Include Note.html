@@ -4,13 +4,130 @@
   scripts &amp; "render HTML" note) or other more advanced use cases.</p>
 <h2>Including a note</h2>
 <p>In the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>,
-  look for the
-  <img src="Include Note_image.png">button. There is also a keyboard shortcut defined for it but it is not
-  allocated by default.</p>
+  look for the&nbsp;<span class="tn-icon cke cke-trilium-note"></span> button.
+  There is also a keyboard shortcut defined for it but it is not allocated
+  by default.</p>
+<p>To include a note that is already linked, right-click a reference link
+  to it in a text note being edited and select <em>Convert link to an included note</em>,
+  at the end of the menu. The include gets the box size that suits the note,
+  as one added from the button does.</p>
+<p>An <a href="#root/_help_0vhv7lsOLy82">attachment</a> can be included the
+  same way, from the context menu of a link to it (see <em>Embedding an attachment</em> there).</p>
+<h2>Box sizes</h2>
+<p>The box size sets how much of the included note is shown.</p>
+<ul>
+  <li><em>Tiny</em> shows a single row instead of the content: the note's icon,
+    its title with the path to the note above it, and buttons to act on the
+    note. The included note is never rendered, so wherever the note is shown
+    outside the editor, such as in print, in a tooltip or on a shared page,
+    a <em>Tiny</em> include appears as a link to the included note.</li>
+  <li><em>Small</em> and <em>Medium</em> show the content in a box of limited height.
+    Text scrolls inside the box, while a picture, a diagram or a video is scaled
+    down to fit it.</li>
+  <li><em>Full</em> shows the whole content.</li>
+  <li><em>Expandable</em> shows only the title until its <span class="tn-icon bx bx-chevron-right"></span> arrow
+    is pressed.</li>
+</ul>
+<p>A new include gets the size that suits what it shows:</p>
+<ul>
+  <li><em>Tiny</em> for a note or an attachment that has no preview, such as
+    a relation map or an archive.</li>
+  <li><em>Small</em> for audio.</li>
+  <li><em>Full</em> for a code note.</li>
+  <li><em>Medium</em> for anything else.</li>
+</ul>
+<p>The dialog that includes a note selects that size once the note is picked,
+  and you can choose another one there. To change the size later, select
+  the include and use the <em>Box size</em> menu in its toolbar, or the <em>Size</em> submenu
+  of its <em>More actions</em> menu.</p>
+<h2>Resizing</h2>
+<p>A <em>Small</em>, <em>Medium</em> or <em>Expandable</em> include can be resized
+  to any width and height. A <em>Tiny</em> or <em>Full</em> include always fits
+  its content.</p>
+<ul>
+  <li>To resize an include, select it and drag the handle in its bottom-right
+    corner. To change only the width or only the height, drag the middle of
+    its right or bottom edge instead, where a touch screen shows a handle too.
+    In right-to-left text, the handle is in the bottom-left corner and the
+    width changes from the left edge.</li>
+  <li>Resizing works with a mouse, a pen or a finger.</li>
+  <li>While the height changes, moving the handle near the top or the bottom
+    of the note scrolls the note.</li>
+  <li>An include narrower than the note is centered, so changing its width moves
+    both of its sides. Making it as wide as the note returns it to the full
+    width.</li>
+  <li>To cancel a resize, press <kbd>Esc</kbd> before releasing the handle.</li>
+  <li>To reset the size, double-click the corner handle, or double-tap it on
+    a touch screen. Double-clicking the right or bottom edge resets only the
+    width or the height.</li>
+  <li>Choosing a box size resets the height. Choosing <em>Tiny</em> or <em>Full</em> resets
+    the width too.</li>
+  <li>While an <em>Expandable</em> include is collapsed, only its width can be
+    changed.</li>
+</ul>
+<h2>Caption</h2>
+<p>An include can have a caption, shown centered at the bottom of its box.
+  The caption is part of the text note, so it can be formatted like the rest
+  of the text, for example in bold or with a link.</p>
+<ul>
+  <li>To add a caption, select the include, press the <span class="tn-icon cke cke-caption"></span>  <em>Toggle caption on</em> button
+    in its toolbar and type the caption.</li>
+  <li>To remove the caption, press the same button again. Pressing it once more
+    brings back the text it had, as long as the note stays open.</li>
+  <li>A <em>Tiny</em> include has no caption. Switching an include to <em>Tiny</em> removes
+    its caption, and switching it back to a larger size restores the caption,
+    as long as the note stays open.</li>
+  <li>An <em>Expandable</em> include shows its caption under the title while the
+    content is collapsed, and under the content once it is expanded.</li>
+</ul>
+<h2>Title</h2>
+<p>The title row of an include links to the included note and holds its buttons.
+  To show only the content, select the include and press the <span class="tn-icon bx bx-window-alt"></span>  <em>Show title</em> button
+  in its toolbar. Pressing it again shows the title.</p>
+<ul>
+  <li>While the title is hidden, the <span class="tn-icon cke cke-three-vertical-dots"></span>  <em>More actions</em> button
+    in the toolbar of the include opens the menu of the included note.</li>
+  <li>A <em>Tiny</em> or <em>Expandable</em> include always shows its title, and
+    its toolbar has no <em>Show title</em> button.</li>
+</ul>
+<h2>Opening an included note</h2>
+<p>To open an included note in a new tab, press the <span class="tn-icon bx bx-link-external"></span>  <em>Open in new tab</em> button
+  at the end of its title. An embedded attachment has the same button.</p>
+<p>The <span class="tn-icon bx bx-dots-vertical-rounded"></span>  <em>More actions</em> button
+  at the end of the title row opens the same menu as right-clicking anywhere
+  on the title row: the other places to open the note in and, for an embedded
+  attachment, the actions on the attachment.</p>
+<p>In a note being edited, the menu also has the commands of the include's
+  toolbar: the <em>Size</em> submenu, <em>Show title</em> and <em>Show caption</em>,
+  each checked while it is in effect, and <em>Convert to link</em> at the end.
+  A drawing canvas also has <em>Editable</em>, above <em>Size</em>. For an
+  embedded attachment they follow its first group of actions; for an included
+  note they end the menu.</p>
+<p>To show an include of size <em>Medium</em> or <em>Full</em> on the whole screen,
+  press the <span class="tn-icon bx bx-fullscreen"></span>  <em>Fullscreen</em> button
+  at the end of its title. To return, press <span class="tn-icon bx bx-exit"></span>  <em>Exit fullscreen</em> in
+  the top-right corner, or <kbd>Esc</kbd>.</p>
+<p>A <em>Tiny</em> include has these buttons instead, followed by the same <em>More actions</em> button:</p>
+<ul>
+  <li>For a note, <span class="tn-icon bx bx-edit"></span>  <em>Quick edit</em> opens
+    the note in&nbsp;<a class="reference-link" href="#root/_help_ZjLYv08Rp3qC">Quick edit</a>,
+    and <span class="tn-icon bx bx-link-external"></span>  <em>Open in new tab</em> opens
+    it in a new tab.</li>
+  <li>For an embedded attachment, <span class="tn-icon bx bx-file-find"></span>  <em>Open externally</em> opens
+    the file in another application, and <span class="tn-icon bx bx-download"></span>  <em>Download</em> downloads
+    it. The size of the file is shown under its title.</li>
+</ul>
+<h2>Converting an include to a link</h2>
+<p>To replace an include with a link to the included note, select it and
+  press the <span class="tn-icon cke cke-link"></span>  <em>Convert to link</em> button
+  in its toolbar, or choose <em>Convert to link</em> at the end of its <em>More actions</em> menu.
+  An embedded attachment turns into a link to the attachment the same way.</p>
 <h2>Included notes in the share functionality</h2>
 <p>If a <a href="#root/_help_R9pX4DGra2Vt">shared note</a> contains one or
   more included notes, they will be displayed in the content of the note
-  as if they were part of the note itself.</p>
+  as if they were part of the note itself. The caption of an include is shown
+  under the included content. A <em>Tiny</em> include is shown as a link to
+  the included note instead.</p>
 <p>For this to work, the included notes must also be shared, otherwise they
   will not be shown. However, the included notes can still be hidden from
   the note tree via <code>#shareHiddenFromTree</code>.</p>
@@ -25,4 +142,69 @@
     also display the results.</li>
   <li><a class="reference-link" href="#root/_help_1vHRoWCEjj0L">Web View</a>&nbsp;provides
     an interactive preview of the website.</li>
+</ul>
+<h2>Included images</h2>
+<p>An included image, whether an image note or an image attachment, is shown
+  in the image viewer, which zooms and pans it:</p>
+<ul>
+  <li>To zoom, press the <span class="tn-icon bx bx-plus-circle"></span>  <em>Zoom in</em> and <span
+    class="tn-icon bx bx-minus-circle"></span>  <em>Zoom out</em> buttons in the
+    bottom-right corner of the image, or pinch on a touch screen. The percentage
+    between them resets the zoom.</li>
+  <li>To zoom with the mouse wheel, click the image first. Until then, the mouse
+    wheel scrolls the note.</li>
+  <li>To pan an image that is zoomed in, drag it. At its fitted size, dragging
+    the image on a touch screen scrolls the note.</li>
+  <li>To return to the fitted size, double-click the image.</li>
+</ul>
+<p>In a <em>Small</em> or <em>Medium</em> box, the image is scaled down to fit
+  the height of the box. In fullscreen, it fits the screen.</p>
+<h2>Drawing canvases</h2>
+<p>A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-link"
+  href="#root/_help_grjYqerjn243">Canvas</a> note, drawn directly in the text
+  note. It is not a note of its own: the drawing is kept in a <code>Canvas.excalidraw</code>  <a
+  href="#root/_help_0vhv7lsOLy82">attachment</a> of the text note and is saved
+  together with the text.</p>
+<ul>
+  <li>To insert a drawing canvas, open the <span class="tn-icon cke cke-plus"></span>  <em>Insert</em> menu
+    of the <a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a> and
+    choose <span class="tn-icon bx bx-pen"></span>  <em>Drawing canvas</em>, above <em>Mermaid diagram</em>.
+    It is also available as <em>Drawing canvas</em> in the <a class="reference-link"
+    href="#root/_help_ZlN4nump6EbW">Slash Commands</a>. The canvas is added
+    empty and editable, in a <em>Medium</em> box with its title hidden, and takes
+    the focus, ready for drawing.</li>
+  <li>To draw on a canvas that does not have the focus, click it first. Until
+    then, the mouse wheel and touch gestures scroll the note. The canvas then
+    has the tools, menus and keyboard shortcuts of a Canvas note. The toolbars,
+    the menus and the properties of the selected shapes show only while the
+    canvas has the focus, so elsewhere the drawing reads like a picture in
+    the text.</li>
+  <li>A new drawing has the background color of the note. A background chosen
+    from the Excalidraw menu replaces it.</li>
+  <li>To protect a finished drawing from accidental changes, select it and turn
+    off the <span class="tn-icon bx bx-edit-alt"></span>  <em>Editable</em> button
+    at the start of its toolbar, or uncheck <em>Editable</em> in its <span class="tn-icon cke cke-three-vertical-dots"></span>  <em>More actions</em> menu.
+    The drawing can then be panned and zoomed but not changed, and its toolbar
+    holds only the zoom buttons. To draw again, turn <em>Editable</em> back on.</li>
+  <li>The box sizes, resizing, the caption and the title work as for an included
+    note, but the toolbar of a drawing leaves the box size, <em>Show title</em> and <em>Convert to link</em> to
+    its <em>More actions</em> menu.</li>
+  <li>In the desktop layout, Excalidraw keeps its desktop interface however
+    small the box is. In the mobile layout, a narrow or short box switches
+    it to a compact interface. For more room, choose <em>Full</em>, or show
+    the title and press <span class="tn-icon bx bx-fullscreen"></span>  <em>Fullscreen</em>.</li>
+  <li>Pictures added to the drawing are stored in the same attachment.</li>
+  <li>In a <a href="#root/_help_CoFPLs3dRlXc">read-only note</a>, the drawing
+    can be viewed but not changed.</li>
+</ul>
+<h3>Limitations</h3>
+<ul>
+  <li>The Excalidraw shape library is not saved for a drawing canvas.</li>
+  <li>Outside the editor, for example in a tooltip, when printing or in the
+    list of attachments, the drawing is shown as a picture. On a <a href="#root/_help_R9pX4DGra2Vt">shared page</a>,
+    it appears as a link to download <code>Canvas.excalidraw</code>.</li>
+  <li>A copy of a drawing canvas pasted in the same note shares the drawing
+    with the original, so a change to one shows in the other only after the
+    note is opened again. A copy pasted in another note gets a drawing of its
+    own.</li>
 </ul>

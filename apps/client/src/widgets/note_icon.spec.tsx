@@ -8,35 +8,7 @@ import attributes from "../services/attributes";
 import { renderInto } from "../test/render";
 import { ReactWrappedWidget } from "./basic_widget";
 
-const { dropdownInstances, getOrCreateInstance } = vi.hoisted(() => {
-    const dropdownInstances: Array<{
-        show: ReturnType<typeof vi.fn>;
-        hide: ReturnType<typeof vi.fn>;
-        update: ReturnType<typeof vi.fn>;
-        dispose: ReturnType<typeof vi.fn>;
-        _menu: HTMLElement | null;
-    }> = [];
-    const instancesByToggle = new Map<HTMLElement, typeof dropdownInstances[number]>();
-    const getOrCreateInstance = vi.fn((toggle: HTMLElement) => {
-        let instance = instancesByToggle.get(toggle);
-        if (!instance) {
-            instance = {
-                show: vi.fn(),
-                hide: vi.fn(),
-                update: vi.fn(),
-                dispose: vi.fn(),
-                _menu: null
-            };
-            instancesByToggle.set(toggle, instance);
-            dropdownInstances.push(instance);
-        }
-        return instance;
-    });
-    return { dropdownInstances, getOrCreateInstance };
-});
-
 vi.mock("bootstrap", () => ({
-    Dropdown: { getOrCreateInstance },
     Tooltip: class {}
 }));
 
@@ -156,14 +128,8 @@ describe("NoteIcon", () => {
         const dropdown = container.querySelector<HTMLElement>(".dropdown");
         expect(toggle).not.toBeNull();
         expect(dropdown).not.toBeNull();
-        const pickerDropdown = dropdownInstances.at(-1);
-        expect(pickerDropdown).toBeTruthy();
-
         void act(() => {
-            toggle?.dispatchEvent(new Event("pointerdown", { bubbles: true }));
-        });
-        void act(() => {
-            $(dropdown as HTMLElement).trigger("show.bs.dropdown");
+            $(dropdown as HTMLElement).children("button:not([aria-expanded=true])").trigger("click");
         });
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
 
@@ -173,14 +139,12 @@ describe("NoteIcon", () => {
         expect(toggle?.classList.contains("bx-updated")).toBe(true);
         expect(toggle?.classList.contains("show")).toBe(true);
         expect(toggle?.getAttribute("aria-expanded")).toBe("true");
-        expect(pickerDropdown?.dispose).not.toHaveBeenCalled();
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).not.toBeNull();
 
         void act(() => noteContext.setNote?.(buildNote("note-b")));
 
         expect(container.querySelector("button")?.classList.contains("bx-note-b")).toBe(true);
         expect(container.querySelector("button")).not.toBe(toggle);
-        expect(pickerDropdown?.dispose).toHaveBeenCalledTimes(1);
         expect(document.body.querySelector(".tn-dropdown-portal .icon-picker")).toBeNull();
     });
 });

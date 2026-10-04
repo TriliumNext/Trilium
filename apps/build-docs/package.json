@@ -14,13 +14,13 @@
   "keywords": [],
   "author": "Elian Doran <contact@eliandoran.me>",
   "license": "AGPL-3.0-only",
-  "packageManager": "pnpm@12.4.2",
+  "packageManager": "pnpm@12.8.2",
   "dependencies": {
     "@triliumnext/core": "workspace:*",
     "@triliumnext/server": "workspace:*"
   },
   "devDependencies": {
-    "@redocly/cli": "2.53.2",
+    "@redocly/cli": "2.57.0",
     "archiver": "8.0.0",
     "js-yaml": "5.4.2",
     "typedoc": "0.28.20",

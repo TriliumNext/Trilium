@@ -290,8 +290,7 @@
     "copy_to_clipboard": "Copiar para a área de transferência"
   },
   "jump_to_note": {
-    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos...",
-    "search_button": "Pesquisar em texto completo"
+    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos..."
   },
   "markdown_import": {
     "dialog_title": "Importar Markdown",
@@ -364,7 +363,15 @@
     "sort_with_respect_to_different_character_sorting": "classificar de acordo com diferentes regras de ordenação de caracteres e colação em diferentes idiomas ou regiões.",
     "natural_sort_language": "Linguagem da ordenação natural",
     "the_language_code_for_natural_sort": "O código do idioma para ordenação natural, por exemplo, \"zh-CN\" para chinês.",
-    "sort": "Ordenar"
+    "sort": "Ordenar",
+    "sorting_criteria_description": "Anotações são organizadas pelo primeiro nível; o próximo nível apenas decide entre as anotações as últimas deixadas iguais.",
+    "label": "Rótulo",
+    "label_name": "Nome do rótulo",
+    "add_level": "Adicionar nível",
+    "remove_level": "Remover nível",
+    "move_level_up": "Mover nível para cima",
+    "move_level_down": "Mover nível para baixo",
+    "folders_follow_first_level": "No final ao invés de quando o primeiro nível está descendo"
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Enviar anexos para a nota",
@@ -1357,10 +1364,14 @@
     "label_rock_or_pop": "apenas uma das etiquetas deve estar presente",
     "label_year_comparison": "comparação numérica (também >, >=, <).",
     "label_date_created": "notas criadas no último mês",
-    "error": "Erro na busca: {{error}}",
     "search_prefix": "Busca:",
     "placeholder": "palavras-chave fulltext, #tag = valor...",
-    "complete_help": "ajuda completa da sintaxe de busca"
+    "complete_help": "ajuda completa da sintaxe de busca",
+    "hints": {
+      "completions": "Mostrar sugestões",
+      "new_line": "Nova linha",
+      "run_search": "Inicializar a pesquisa"
+    }
   },
   "attachment_list": {
     "open_help_page": "Abrir página de ajuda nos anexos",
@@ -1881,7 +1892,6 @@
     "placeholder": "Busca rápida",
     "searching": "Buscando...",
     "no-results": "Nenhum resultado encontrado",
-    "more-results": "... e mais {{number}} resultados.",
     "show-in-full-search": "Exibir na busca completa"
   },
   "note_tree": {
@@ -2014,7 +2024,9 @@
     "delete-notes-in-progress": "Exclusão de notas em andamento: {{count}}",
     "delete-finished-successfully": "Exclusão concluída com sucesso.",
     "undeleting-notes-in-progress": "Restauração de notas em andamento: {{count}}",
-    "undeleting-notes-finished-successfully": "Restauração de notas concluída com sucesso."
+    "undeleting-notes-finished-successfully": "Restauração de notas concluída com sucesso.",
+    "delete-notes-in-progress-with-total": "{{progress}} apagado de {{total}} anotações",
+    "erasing-notes": "Apagando anotações…"
   },
   "frontend_script_api": {
     "async_warning": "Você está passando uma função assíncrona para `api.runOnBackend()`, o que provavelmente não irá funcionar como esperado.\\nTorne a função síncrona (removendo a palavra-chave `async`), ou use `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2104,12 +2116,9 @@
     "zoom-factor": "Fator de Zoom"
   },
   "note_autocomplete": {
-    "search-for": "Buscar por \"{{term}}\"",
     "create-note": "Criar conectar nota filha \"{{term}}\"",
     "insert-external-link": "Inserir link externo para \"{{term}}\"",
-    "clear-text-field": "Limpar campo de texto",
-    "show-recent-notes": "Exibir notas recentes",
-    "full-text-search": "Busca por texto completo"
+    "clear-text-field": "Limpar campo de texto"
   },
   "note_tooltip": {
     "note-has-been-deleted": "A nota foi excluída.",
@@ -2802,7 +2811,6 @@
     "thought_process": "Processo de raciocínio",
     "tool_calls": "{{count}} chamada(s) de ferramenta",
     "input": "Entrada",
-    "input_streaming": "Entrada (transmitindo…)",
     "edit_index": "Editar {{index}} de {{total}}",
     "error_api": "Erro de API (HTTP {{status}})",
     "error_show_details": "Mostrar detalhes",
@@ -2906,7 +2914,6 @@
     "configured_providers": "Provedores configurados",
     "no_providers_configured": "Nenhum provedor configurado ainda.",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Requer o Claude Code na máquina que executa o Trilium.",
     "provider_unavailable_standalone": "Indisponível na versão de navegador: este provedor funciona executando o Claude Code como um programa separado, e não há máquina aqui para executá-lo.",
     "base_url": "URL base",
     "base_url_description": "Opcional. Alcança a mesma API por meio de um proxy ou gateway. Para executar um modelo você mesmo, adicione um provedor Ollama ou LM Studio em vez disso.",
@@ -3053,7 +3060,6 @@
     "page_ranges_placeholder": "ex. 1-5, 8, 11-13",
     "page_ranges_invalid": "Formato invalido. Use p. ex. 1-5, 8, 11-13.",
     "margins_none": "Nenhum",
-    "render_error": "Não foi possível gerar o PDF com as configurações atuais. Verifique as margens e a escala.",
     "page_size": "Tamanho da página",
     "destination_printers": "Impressoras",
     "destination_pdf": "Salvar como PDF",
@@ -3865,13 +3871,10 @@
       "insert-an-empty-mermaid-diagram": "Inserir um diagrama Mermaid vazio",
       "insert-date-time": "Inserir data/hora",
       "insert-footnote-0": "Inserir nota de rodapé %0",
-      "insert-math": "Inserir matemática",
-      "insert-mermaid-diagram": "Inserir diagrama Mermaid",
       "insert-mermaid-source-code": "Inserir código-fonte Mermaid",
       "insert-paragraph-after-code-block": "Inserir parágrafo após o bloco de código",
       "insert-paragraph-before-code-block": "Inserir parágrafo antes do bloco de código",
       "insert-text-snippet": "Inserir trecho de texto",
-      "insert-the-current-date-and-time": "Inserir a data e a hora atuais",
       "internal-link": "Link interno",
       "justify-text-alignment": "Justificar o alinhamento do texto",
       "keyboard-shortcut": "Atalho de teclado",
@@ -3946,5 +3949,27 @@
   "note_picker": {
     "label": "Nota",
     "ok": "Escolha"
+  },
+  "search_lint": {
+    "relation_needs_property": "Relações apontam para uma anotação, então elas não podem ser checadas para igualdade. Use . ao invés para acessar suas propiedades.",
+    "text_needs_contains": "anotação.texto pesquisa o texto e o conteúdo junto, então ela só pode ser combinada com *=*.",
+    "compare_the_title": "Comparar o título",
+    "use_operator": "Use {{operator}}"
+  },
+  "search_completion": {
+    "note": "Título da anotação, propriedades e anotações relacionadas",
+    "operator_equal": "Igual ao valor todo",
+    "operator_not_equal": "Não é igual ao valor todo",
+    "operator_contains": "Contém",
+    "operator_starts_with": "Começa com",
+    "operator_ends_with": "Termina com",
+    "operator_greater_than": "Maior que",
+    "operator_greater_or_equal": "Maior que ou igual a",
+    "operator_less_than": "Menor que",
+    "operator_less_or_equal": "Menor que ou igual a",
+    "operator_regex": "Combina com uma expressão regular",
+    "operator_fuzzy_equal": "Igual, tolerando erros de digitação",
+    "operator_fuzzy_contains": "Contém, tolerando erros de digitação",
+    "property_content": "A estrutura da anotação do texto"
   }
 }

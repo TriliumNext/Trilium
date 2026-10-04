@@ -158,12 +158,14 @@ describe("SingleNoteRenderer", () => {
         expect(emptyContainer.querySelector("main")?.innerHTML).toContain("Unable to parse spreadsheet data");
     });
 
-    it("renders a text note and waits for every image (complete, load, error)", async () => {
+    it("renders a text note and waits for every image (complete, load, error, lazy)", async () => {
         const note = buildNote({ id: "rich", title: "Rich", type: "text" });
         const completeImg = makeImage(true);
         const loadImg = makeImage(false);
         const errorImg = makeImage(false);
-        h.getRenderedContent.mockResolvedValueOnce({ $renderedContent: [completeImg, loadImg, errorImg] });
+        const lazyImg = makeImage(false);
+        lazyImg.setAttribute("loading", "lazy");
+        h.getRenderedContent.mockResolvedValueOnce({ $renderedContent: [completeImg, loadImg, errorImg, lazyImg] });
         const onReady = vi.fn();
         renderInto(<SingleNoteRenderer note={note} onReady={onReady} onProgressChanged={() => {}} />);
 
@@ -171,10 +173,12 @@ describe("SingleNoteRenderer", () => {
             // Re-firing once the listeners are attached resolves the pending image promises.
             loadImg.dispatchEvent(new Event("load"));
             errorImg.dispatchEvent(new Event("error"));
+            lazyImg.dispatchEvent(new Event("load"));
             expect(onReady).toHaveBeenCalledWith({ type: "single-note" });
         });
-        // Printing preserves full include-note nesting via expandNestedIncludes.
-        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedIncludes: true, mediaEnvironment: "native" });
+        expect(lazyImg.getAttribute("loading")).toBe("eager");
+        // Printing preserves full embed nesting via expandNestedEmbeds.
+        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedEmbeds: true, mediaEnvironment: "native" });
     });
 
     it("renders a non-text, non-spreadsheet note via the content renderer", async () => {
@@ -183,19 +187,22 @@ describe("SingleNoteRenderer", () => {
         renderInto(<SingleNoteRenderer note={note} onReady={onReady} onProgressChanged={() => {}} />);
 
         await vi.waitFor(() => expect(onReady).toHaveBeenCalledWith({ type: "single-note" }));
-        // Printing preserves full include-note nesting via expandNestedIncludes.
-        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedIncludes: true, mediaEnvironment: "native" });
+        // Printing preserves full embed nesting via expandNestedEmbeds.
+        expect(h.getRenderedContent).toHaveBeenCalledWith(note, { noChildrenList: true, expandNestedEmbeds: true, mediaEnvironment: "native" });
     });
 });
 
 describe("loadCustomCss", () => {
-    it("links code/css targets, skips others and tolerates missing targets", async () => {
+    it("links code/css targets, skips others and tolerates missing or failing targets", async () => {
         const codeNote = buildNote({ id: "css-code", title: "Code CSS", type: "code" });
         const cssMimeNote = buildNote({ id: "css-mime", title: "Mime CSS", type: "image" });
         cssMimeNote.mime = "text/css";
         const textNote = buildNote({ id: "css-text", title: "Not CSS", type: "text" });
         const note = buildNote({ id: "host", title: "Host" });
         note.getRelationTargets = async () => [null, codeNote, cssMimeNote, textNote];
+        // Let happy-dom fail the stylesheet loads it blocks, as a missing download would.
+        (window as any).happyDOM.settings.handleDisabledFileLoadingAsSuccess = false;
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         const promise = loadCustomCss(note);
 
@@ -204,14 +211,13 @@ describe("loadCustomCss", () => {
             expect(link).toBeTruthy();
             return link;
         });
-        // Fire onload so the deferred resolves and loadCustomCss can settle.
-        document.head
-            .querySelectorAll<HTMLLinkElement>('link[href^="/api/notes/"]')
-            .forEach((link) => link.onload?.(new Event("load")));
+        expect(document.head.querySelector('link[href="/api/notes/css-mime/download"]')).toBeTruthy();
         await promise;
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-code"));
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining("css-mime"));
+        warn.mockRestore();
 
         expect(codeLink?.rel).toBe("stylesheet");
-        expect(document.head.querySelector('link[href="/api/notes/css-mime/download"]')).toBeTruthy();
         expect(document.head.querySelector('link[href="/api/notes/css-text/download"]')).toBeNull();
     });
 });

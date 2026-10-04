@@ -51,8 +51,20 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="0.106.0" date="2026-09-25">
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.106.0</url>
+    </release>
     <release version="0.105.0" date="2026-08-19">
       <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.105.0</url>
+    </release>
+    <release version="0.104.1" date="2026-07-25">
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.104.1</url>
+    </release>
+    <release version="0.104.0" date="2026-07-18">
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.104.0</url>
+    </release>
+    <release version="0.103.0" date="2026-05-13">
+      <url type="details">https://github.com/TriliumNext/Trilium/releases/tag/v0.103.0</url>
     </release>
   </releases>
   <provides>

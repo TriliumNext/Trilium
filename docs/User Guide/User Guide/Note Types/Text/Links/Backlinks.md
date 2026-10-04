@@ -11,7 +11,7 @@ Any r<a class="reference-link" href="Internal%20(reference)%20links.md">Interna
     *   The most common is `internalLink`, created whenever a note refers to another one through <a class="reference-link" href="Internal%20(reference)%20links.md">Internal (reference) links</a> in its text.
     *   Embedded images (`imageLink`), relation map connections (`relationMapLink`) and note inclusions (`includeNoteLink`) work the same way.
 *   Relations you define yourself.
-    *   If another note carries `~author` pointing at the current note, that note is listed here as well.
+    *   If another note has `~author` pointing at the current note, that note is listed here as well.
 
 Relations coming from a <a class="reference-link" href="../../Saved%20Search.md">Saved Search</a> are excluded, since a search stores an `ancestor` relation that would otherwise list every one of its results as a backlink.
 

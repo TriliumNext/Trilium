@@ -45,6 +45,26 @@ describe("BrowserRouter routing", () => {
         expect(captured?.query).toEqual({ expand: "true", depth: "2" });
     });
 
+    // What `/custom/*path` needs: a splat spans slashes, where a `:param` stops at one. The two
+    // are captured in one pass so `paramNames` stays in step with the capture groups whichever
+    // order they appear in.
+    it("captures a *splat across segments, alongside a :param", async () => {
+        const router = new BrowserRouter();
+        let captured: Record<string, string> | undefined;
+        router.get("/u/:userId/files/*filePath", (req) => {
+            captured = req.params;
+            return {};
+        });
+
+        await router.dispatch("GET", "http://localhost/u/u1/files/deep/nested/report.txt");
+        expect(captured).toEqual({ userId: "u1", filePath: "deep/nested/report.txt" });
+
+        // A splat also matches nothing, so `/custom/` itself reaches the handler.
+        router.get("/custom/*path", (req) => ({ path: req.params.path }));
+        expect(decodeBody((await router.dispatch("GET", "http://localhost/custom/")).body))
+            .toBe(JSON.stringify({ path: "" }));
+    });
+
     it("returns 404 text for an unmatched route", async () => {
         const router = new BrowserRouter();
         const res = await router.dispatch("GET", "http://localhost/missing");

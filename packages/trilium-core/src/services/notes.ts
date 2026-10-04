@@ -529,7 +529,9 @@ export function checkImageAttachments(note: BNote, content: string) {
                 // data-favicon="api/attachments/{id}/image/...">
                 { pattern: /data-(?:image|favicon)="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image/g, previewPicture: true },
                 // <a href="...attachmentId={id}">
-                { pattern: /href="[^"]+attachmentId=([a-zA-Z0-9_]+)/g }
+                { pattern: /href="[^"]+attachmentId=([a-zA-Z0-9_]+)/g },
+                // <figure class="include-note" data-attachment-id="{id}">
+                { pattern: /data-attachment-id="([a-zA-Z0-9_]+)"/g }
             ];
 
         for (const { pattern, previewPicture } of patterns) {
@@ -641,6 +643,12 @@ export function checkImageAttachments(note: BNote, content: string) {
         content = content.replace(
             new RegExp(`href="[^"]+attachmentId=${unknownAttachment.attachmentId}[^"]*"`, "g"),
             `href="#root/${localAttachment.ownerId}?viewMode=attachments&amp;attachmentId=${localAttachment.attachmentId}"`
+        );
+        // replace embeds
+        content = replaceAll(
+            content,
+            `data-attachment-id="${unknownAttachment.attachmentId}"`,
+            `data-attachment-id="${localAttachment.attachmentId}"`
         );
     }
 
@@ -843,7 +851,8 @@ export function findLlmChatLinks(content: string, foundLinks: FoundLink[]) {
 }
 
 function findIncludeNoteLinks(content: string, foundLinks: FoundLink[]) {
-    const re = /<section class="include-note[^>]+data-note-id="([a-zA-Z0-9_]+)"[^>]*>/g;
+    // Includes saved before captions existed are `<section>` elements.
+    const re = /<(?:figure|section) class="include-note[^>]+data-note-id="([a-zA-Z0-9_]+)"[^>]*>/g;
     let match;
 
     while ((match = re.exec(content))) {
@@ -1096,6 +1105,14 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
         const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
         for (const { attachmentId, role, mime, title, position, content, encoding } of attachments) {
+            // An attachment deleted since the client read it, or one of another note, is not saved.
+            if (attachmentId && becca.getAttachment(attachmentId)?.ownerId !== noteId) {
+                getLog().info(
+                    `Skipped attachment '${attachmentId}', which note '${noteId}' does not own.`
+                );
+                continue;
+            }
+
             const decodedContent = encoding === "base64" && typeof content === "string"
                 ? decodeBase64(content) : content;
 

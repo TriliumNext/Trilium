@@ -87,9 +87,9 @@ The search prefers the area you are viewing. Places inside the current view are 
 
 If you type or paste coordinates into the search bar, a _Go to_ row is offered above all the other results. Selecting it moves the map to that exact spot and marks it. You can then keep it as a marker, in the same way you keep a place found by searching.
 
-A point has no name of its own. It only has the coordinates you typed. The note is therefore given the same name as any other new note, which is the name you also get from the _Add marker_ button and from the + button in the note tree. The note opens with that name selected, so you can type over it. If the map has a <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">[missing note]</a> label, the marker is named by that template instead.
+Points are untitled by default; the corresponding note opens with the default name selected so it can be easily replaced. If the map has a <a class="reference-link" href="../Advanced%20Usage/Default%20Note%20Title.md">Default Note Title</a> label, the marker is named by that template instead.
 
-The forms understood are:
+The supported forms are:
 
 *   A plain pair, such as `45.9432, 24.9668`. This is what Google Maps and OpenStreetMap both give you when you ask for the coordinates of a place, and it is also what the `#geolocation` attribute holds.
 *   The `geo:` link that the map itself offers for a place, through the _Open location_ action.
@@ -111,7 +111,7 @@ The headings only appear when at least two of the three groups contain something
 
 Selecting a note already on the map moves to its marker and opens the note beside the map, as clicking the marker would.
 
-Selecting a place found online moves the map to it and marks it with a temporary pin. The pin has a different colour from the map's own markers. The map is fitted to the area that the place covers, so a country fills the view, while a house is shown at street level. Some places have a boundary, such as a country, a county or a park. When the service reports one, that boundary is outlined under the pin.
+Selecting a place found online moves the map to it and marks it with a temporary pin. The pin has a different color from the map's own markers. The map is fitted to the area that the place covers, so a country fills the view, while a house is shown at street level. Some places have a boundary, such as a country, a county or a park. When the service reports one, that boundary is outlined under the pin.
 
 A panel then opens with the place's full address and its coordinates: in the top-right corner on desktop, and at the bottom of the map on mobile, where the top is kept for the search bar and the result counter. Pressing the coordinates copies them to the clipboard.
 
@@ -169,7 +169,7 @@ This works for:
 
 When a vector map style is used, the map itself draws the shops, cafés, museums and other places around the area being viewed. Once the map is zoomed in far enough for these to be drawn, they can be clicked:
 
-1.  Look for the places drawn in orange. This is the same colour used for a place found by searching. These are the places you can click. They are drawn almost solid, while the other places on the map stay a faint grey.
+1.  Look for the places drawn in orange. This is the same color used for a place found by searching. These are the places you can click. They are drawn almost solid, while the other places on the map stay a faint grey.
 2.  Rest the mouse on one of them. Its name appears above it, and the mouse cursor changes to a pointer. The map draws these places as icons without names, so you read a name by hovering over it. If all the names were shown at once, they would crowd out the titles of your own markers.
 3.  Click it. The same panel used for a place found by searching appears. It shows the name of the place and its coordinates, and a pin is placed on the map.
 4.  Press _Add as marker_ to keep it. The note is created with the name of the place as its title, and with the icon that matches the kind of place it is.
@@ -203,7 +203,7 @@ After clicking the button to move the marker, click at the desired position on t
 
 ## Interaction with the markers, tracks or shapes
 
-*   Hovering over a marker will display a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tooltip.md">[missing note]</a> with the content of the note it belongs to.
+*   Hovering over a marker will display a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tooltip.md">Note Tooltip</a> with the content of the note it belongs to.
     *   Clicking on the note title in the tooltip will navigate to the note in the current view.
 *   Right-clicking the marker will open a contextual menu (as described below).
 *   Clicking a marker will focus on the marker and display a dedicated popup with the details. This works regardless of whether the map is editable or not.
@@ -292,7 +292,7 @@ Similarly to the Google Maps approach:
 
 ## Drawing shapes on the map
 
-See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">[missing note]</a> page.
+See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Drawing shapes</a> page.
 
 ## Adding GPS tracks (.gpx)
 
@@ -328,7 +328,7 @@ When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%2
 *   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
 *   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
 
-To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">[missing note]</a> → _Editable_ → _Read-only_ (on the new layout, or in Basic Properties on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> for the old layout).
+To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ → _Read-only_ (on the new layout, or in Basic Properties on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> for the old layout).
 
 ## Configuration
 

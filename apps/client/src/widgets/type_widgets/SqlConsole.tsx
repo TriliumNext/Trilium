@@ -8,7 +8,7 @@ import { t } from "../../services/i18n";
 import server from "../../services/server";
 import Tabulator from "../collections/table/tabulator";
 import Button from "../react/Button";
-import Dropdown from "../react/Dropdown";
+import { DropdownPanel } from "../react/Dropdown";
 import { useTriliumEvent } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import SplitEditor from "./helpers/SplitEditor";
@@ -157,7 +157,7 @@ export function SqlTableSchemas({ note }: TypeWidgetProps) {
 
                     <span class="sql-table-schemas">
                         {schemas.map(({ name, columns }) => (
-                            <Dropdown key={name} text={name} noSelectButtonStyle hideToggleArrow>
+                            <DropdownPanel key={name} text={name} noSelectButtonStyle hideToggleArrow>
                                 <table className="table-schema">
                                     {columns.map(column => (
                                         <tr key={column.name}>
@@ -166,7 +166,7 @@ export function SqlTableSchemas({ note }: TypeWidgetProps) {
                                         </tr>
                                     ))}
                                 </table>
-                            </Dropdown>
+                            </DropdownPanel>
                         ))}
                     </span>
                 </>

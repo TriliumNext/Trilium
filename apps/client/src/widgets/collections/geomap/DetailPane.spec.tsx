@@ -1,4 +1,3 @@
-import $ from "jquery";
 import { render } from "preact";
 import { useState } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -71,10 +70,7 @@ vi.mock("../../../services/clipboard_ext", async (importOriginal) => ({
     copyTextWithToast: (...args: unknown[]) => copied(...args)
 }));
 
-// A promoted text field suggests what other notes hold under its name, asked for through the Algolia
-// jQuery plugin and answered by the server. Neither is loaded here.
-type PluggedIn = { autocomplete(...args: unknown[]): PluggedIn };
-($.fn as unknown as PluggedIn).autocomplete = function (this: PluggedIn) { return this; };
+// A promoted text field asks the server for the values other notes hold under its name.
 server.get = (async () => []) as unknown as typeof server.get;
 
 /** What a marker click hands the handler, and what the pane reads the note out of. */

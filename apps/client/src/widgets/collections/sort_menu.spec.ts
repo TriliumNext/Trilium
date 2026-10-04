@@ -232,6 +232,8 @@ function attribute(fields: Partial<PromotedAttribute> & { name: string }): Promo
         drawnByCollection: false,
         definitionValue: "",
         isOwned: true,
+        isDefinedByItems: false,
+        isConflicting: false,
         isInheritable: true,
         ...fields
     };

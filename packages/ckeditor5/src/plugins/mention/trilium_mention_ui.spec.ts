@@ -1,48 +1,63 @@
 import {
     type ClassicEditor,
-    ContextualBalloon,
     Essentials,
     _getModelData as getModelData,
     keyCodes,
     MentionEditing,
     type MentionFeedObjectItem,
     Paragraph,
-    _setModelData as setModelData,
-    View
+    _setModelData as setModelData
 } from "ckeditor5";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import type { TriliumMentionFeed } from "./types.js";
 import TriliumMentionUI from "./trilium_mention_ui.js";
+import type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./types.js";
 
-/** Longer than the plugin's 100 ms feed debounce. */
-const AFTER_DEBOUNCE = 160;
+/** A host's list as the plugin sees it, recording what it is shown. */
+interface StubList extends MentionHostedList {
+    state: MentionHostedListState | null;
+    show: Mock<(state: MentionHostedListState) => void>;
+    hide: Mock<() => void>;
+    handleKeyDown: Mock<(event: KeyboardEvent) => boolean>;
+    destroy: Mock<() => void>;
+}
+
+/** A list whose element is there while it is shown, as a list showing entries has one. */
+function createStubList(): StubList {
+    const element = document.createElement("div");
+    document.body.append(element);
+
+    const list: StubList = {
+        state: null,
+        show: vi.fn<(state: MentionHostedListState) => void>((state) => { list.state = state; }),
+        hide: vi.fn<() => void>(() => { list.state = null; }),
+        handleKeyDown: vi.fn<(event: KeyboardEvent) => boolean>(() => true),
+        destroy: vi.fn<() => void>(),
+        get element() { return list.state ? element : null; }
+    };
+    return list;
+}
 
 describe("TriliumMentionUI", () => {
     let editor: ClassicEditor;
-    let labelFeed: ReturnType<typeof vi.fn>;
+    let labels: StubList;
+    let notes: StubList;
 
-    async function createEditor(overrides: Partial<TriliumMentionFeed> = {}, extraConfig: Record<string, unknown> = {}) {
-        labelFeed = vi.fn(async (query: string) => (
-            [ "alpha", "beta", "gamma" ]
-                .filter((name) => name.startsWith(query))
-                .map((name) => ({ id: `#${name}`, text: `#${name}` }))
-        ));
+    async function createEditor(feeds: Partial<Record<"#" | "@", Partial<MentionHostedFeed>>> = {}, plugins = [ Essentials, Paragraph, MentionEditing, TriliumMentionUI ]) {
+        labels = createStubList();
+        notes = createStubList();
 
-        editor = await createTestEditor([ Essentials, Paragraph, MentionEditing, TriliumMentionUI ], {
+        editor = await createTestEditor(plugins, {
             mention: {
-                feeds: [ { marker: "#", feed: labelFeed as unknown as TriliumMentionFeed["feed"], minimumCharacters: 0, ...overrides } ]
-            },
-            ...extraConfig
+                feeds: [],
+                hostedFeeds: [
+                    { marker: "#", minimumCharacters: 0, list: () => labels, ...feeds["#"] },
+                    { marker: "@", minimumCharacters: 0, allowSpaces: true, list: () => notes, ...feeds["@"] }
+                ]
+            }
         });
-    }
-
-    /** Whether the autocomplete balloon is currently on screen. */
-    function isPanelVisible() {
-        const balloon = editor.plugins.get(ContextualBalloon);
-
-        return balloon.visibleView?.element?.classList.contains("ck-mentions") ?? false;
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
     }
 
     /** Types `text` at the caret, producing the `change:data` the text watcher reacts to. */
@@ -63,148 +78,81 @@ describe("TriliumMentionUI", () => {
         });
     }
 
-    function pressKey(keyCode: number) {
+    /** Presses a key in the editor, and returns whether the plugin kept it from the editor. */
+    function press(keyCode: number) {
+        const domEvent = new KeyboardEvent("keydown");
+        const preventDefault = vi.fn();
         editor.editing.view.document.fire("keydown", {
             keyCode,
-            preventDefault: () => {},
+            domEvent,
+            preventDefault,
             stopPropagation: () => {},
             domTarget: editor.editing.view.getDomRoot()
         });
+        return { domEvent, consumed: preventDefault.mock.calls.length > 0 };
     }
 
-    async function settle() {
-        await new Promise((resolve) => setTimeout(resolve, AFTER_DEBOUNCE));
+    const text = () => getModelData(editor.model, { withoutSelection: true });
+
+    /** Commits `#alpha` from the open label list, as a pick from it does. */
+    function commitAlpha() {
+        labels.state?.commit({ id: "#alpha", text: "#alpha" });
     }
 
     beforeEach(async () => {
         await createEditor();
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
     });
 
-    it("registers itself and requires the contextual balloon", () => {
+    it("shows a marker's list the query typed after it, the caret and the editable", () => {
         expect(TriliumMentionUI.pluginName).toBe("TriliumMentionUI");
-        expect(TriliumMentionUI.requires).toContain(ContextualBalloon);
-        expect(editor.plugins.get(TriliumMentionUI)).toBeInstanceOf(TriliumMentionUI);
+
+        type("@my no");
+        expect(notes.state?.query).toBe("my no");
+        expect(notes.state?.caretRect().height).toBeGreaterThan(0);
+        expect(notes.state?.editable).toBe(editor.editing.view.getDomRoot());
+        type("te");
+        expect(notes.state?.query).toBe("my note");
+        expect(labels.show).not.toHaveBeenCalled();
     });
 
-    it("opens the panel while typing and queries the feed with the text after the marker", async () => {
-        type("#al");
-        await settle();
+    it("closes one marker's list when another marker is typed", () => {
+        type("@al");
+        type(" #be");
 
-        expect(labelFeed).toHaveBeenCalledWith("al");
-        expect(isPanelVisible()).toBe(true);
+        expect(notes.hide).toHaveBeenCalled();
+        expect(notes.state).toBe(null);
+        expect(labels.state?.query).toBe("be");
     });
 
-    it("hides the panel when the feed returns nothing", async () => {
-        type("#zzz");
-        await settle();
-
-        expect(isPanelVisible()).toBe(false);
-    });
-
-    it("keeps the panel open, and anchored where it opened, while the query is refined", async () => {
-        type("#a");
-        await settle();
-        expect(isPanelVisible()).toBe(true);
-
-        const position = editor.plugins.get(ContextualBalloon).view.position;
-
-        type("l");
-        await settle();
-
-        expect(labelFeed).toHaveBeenLastCalledWith("al");
-        expect(isPanelVisible()).toBe(true);
-        // Re-showing reuses the position that already matched, so the panel does not jump.
-        expect(editor.plugins.get(ContextualBalloon).view.position).toBe(position);
-    });
-
-    it("survives another plugin's balloon burying the panel", async () => {
-        const balloon = editor.plugins.get(ContextualBalloon);
-        const errors: unknown[] = [];
-        const onRejection = (event: PromiseRejectionEvent) => errors.push(event.reason);
-        window.addEventListener("unhandledrejection", onRejection);
+    it("waits for a feed's minimum characters", async () => {
+        await createEditor({ "#": { minimumCharacters: 2 } });
 
         type("#a");
-        await settle();
-        expect(isPanelVisible()).toBe(true);
-
-        // `singleViewMode` hides every other stack, so the mention panel is still registered with
-        // the balloon but is no longer the visible view.
-        const other = new View(editor.locale);
-        other.setTemplate({ tag: "div" });
-        other.render();
-        balloon.add({ view: other, position: { target: document.body }, singleViewMode: true });
-        expect(isPanelVisible()).toBe(false);
-
-        // Refining the query must not try to add the panel a second time: `ContextualBalloon.add()`
-        // rejects an already-registered view outright, which is the `contextualballoon-add-view-exist`
-        // crash upstream's visibility-based guard walks into.
+        expect(labels.state).toBe(null);
         type("l");
-        await settle();
-
-        window.removeEventListener("unhandledrejection", onRejection);
-        expect(errors).toEqual([]);
-        expect(balloon.hasView(other)).toBe(true);
-    });
-
-    it("hides the panel on a click outside it", async () => {
-        type("#al");
-        await settle();
-        expect(isPanelVisible()).toBe(true);
-
-        document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-
-        expect(isPanelVisible()).toBe(false);
-    });
-
-    it("keeps the panel open when the click lands inside the balloon", async () => {
-        type("#al");
-        await settle();
-
-        const balloonElement = editor.plugins.get(ContextualBalloon).view.element;
-        balloonElement?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-
-        expect(isPanelVisible()).toBe(true);
-    });
-
-    it("positions the panel from the right in a right-to-left UI", async () => {
-        await createEditor({}, { language: { ui: "ar" } });
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
-        expect(editor.locale.uiLanguageDirection).toBe("rtl");
-
-        type("#al");
-        await settle();
-
-        expect(isPanelVisible()).toBe(true);
-        expect(editor.plugins.get(ContextualBalloon).view.position).toMatch(/^caret_/);
+        expect(labels.state?.query).toBe("al");
     });
 
     describe("Escape dismisses without touching the document", () => {
-        it("stays hidden across the next keystroke and inserts no sentinel character", async () => {
+        it("stays hidden across the next keystroke and inserts no sentinel character", () => {
             type("#al");
-            await settle();
-            expect(isPanelVisible()).toBe(true);
-
-            pressKey(keyCodes.esc);
-            expect(isPanelVisible()).toBe(false);
+            expect(press(keyCodes.esc).consumed).toBe(true);
+            expect(labels.state).toBe(null);
 
             // The regression the removed pnpm patch caused: dismissing used to insert a U+2002
             // en-space, which the attribute lexer then folded into the attribute name.
-            const data = getModelData(editor.model, { withoutSelection: true });
-            expect(data).not.toContain(" ");
-            expect(data).toContain("#al");
+            expect(text()).not.toContain(" ");
+            expect(text()).toContain("#al");
 
             // Upstream reopens here, because its text watcher re-evaluates and the pattern still matches.
             type("p");
-            await settle();
-            expect(isPanelVisible()).toBe(false);
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#alp");
+            expect(labels.state).toBe(null);
+            expect(text()).toContain("#alp");
         });
 
-        it("reopens once the dismissed marker itself is retyped", async () => {
+        it("reopens once the dismissed marker itself is retyped", () => {
             type("#al");
-            await settle();
-            pressKey(keyCodes.esc);
+            press(keyCodes.esc);
 
             // Delete the whole marker, which sends the dismissal's live position to the graveyard.
             editor.model.change((writer) => {
@@ -212,17 +160,14 @@ describe("TriliumMentionUI", () => {
             });
 
             type("#be");
-            await settle();
-
-            expect(isPanelVisible()).toBe(true);
+            expect(labels.state?.query).toBe("be");
         });
 
-        it("reopens once the block holding the dismissal is replaced wholesale", async () => {
+        it("reopens once the block holding the dismissal is replaced wholesale", () => {
             setModelData(editor.model, "<paragraph></paragraph><paragraph>[]</paragraph>");
 
             type("#al");
-            await settle();
-            pressKey(keyCodes.esc);
+            press(keyCodes.esc);
 
             // One edit drops the dismissed paragraph — sending the dismissal's live position to the
             // graveyard — and leaves a fresh marker matching in the block the caret ends up in. The
@@ -238,328 +183,203 @@ describe("TriliumMentionUI", () => {
                     writer.setSelection(writer.createPositionAt(first, "end"));
                 }
             });
-            await settle();
 
-            expect(isPanelVisible()).toBe(true);
+            expect(labels.state?.query).toBe("be");
         });
 
-        it("reopens for a different marker typed after the dismissed one", async () => {
+        it("reopens for a different marker typed after the dismissed one", () => {
             type("#al");
-            await settle();
-            pressKey(keyCodes.esc);
+            press(keyCodes.esc);
 
             type(" #be");
-            await settle();
+            expect(labels.state?.query).toBe("be");
+        });
 
-            expect(isPanelVisible()).toBe(true);
+        it("leaves Escape to the editor while the list shows nothing", () => {
+            Object.defineProperty(labels, "element", { get: () => null });
+            type("#al");
+
+            expect(press(keyCodes.esc).consumed).toBe(false);
+            expect(labels.handleKeyDown).not.toHaveBeenCalled();
         });
     });
 
-    describe("caret moves do not open the panel", () => {
-        it("stays closed when the caret is placed inside existing matching text", async () => {
-            setModelData(editor.model, "<paragraph>#alpha[]</paragraph>");
+    describe("caret moves do not open the list", () => {
+        it("stays closed when the caret is placed inside existing matching text", () => {
+            setModelData(editor.model, "<paragraph>#alpha</paragraph><paragraph>[]</paragraph>");
+            labels.show.mockClear();
 
             moveCaretTo(3);
-            await settle();
-
-            expect(isPanelVisible()).toBe(false);
-            expect(labelFeed).not.toHaveBeenCalled();
+            expect(labels.show).not.toHaveBeenCalled();
+            expect(labels.state).toBe(null);
         });
 
-        it("closes an open panel when the caret moves", async () => {
+        it("closes an open list when the caret moves", () => {
             type("#al");
-            await settle();
-            expect(isPanelVisible()).toBe(true);
-
             moveCaretTo(1);
-            await settle();
 
-            expect(isPanelVisible()).toBe(false);
+            expect(labels.hide).toHaveBeenCalled();
+            expect(labels.state).toBe(null);
         });
     });
 
-    describe("commit keys", () => {
-        it("commits the pre-selected item on Enter by default", async () => {
-            type("#al");
-            await settle();
-
-            pressKey(keyCodes.enter);
-
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#alpha");
-        });
-
-        it("leaves Enter alone when preselectFirstItem is off and nothing is selected", async () => {
-            await createEditor({ preselectFirstItem: false });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#al");
-            await settle();
-            expect(isPanelVisible()).toBe(true);
-
-            pressKey(keyCodes.enter);
-
-            // Still just the typed text — no suggestion was committed behind the user's back.
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#al<");
-        });
-
-        it("commits after the user arrows onto an item even when nothing was pre-selected", async () => {
-            await createEditor({ preselectFirstItem: false });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#");
-            await settle();
-
-            pressKey(keyCodes.arrowdown);
-            pressKey(keyCodes.enter);
-
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#alpha");
-        });
-
-        it("navigates the list with the arrow keys", async () => {
-            type("#");
-            await settle();
-
-            pressKey(keyCodes.arrowdown);
-            pressKey(keyCodes.arrowup);
-            pressKey(keyCodes.enter);
-
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#alpha");
-        });
-
-        it("ignores unrelated keys while the panel is open", async () => {
-            type("#al");
-            await settle();
-
-            pressKey(keyCodes.a);
-
-            expect(isPanelVisible()).toBe(true);
-        });
-    });
-
-    describe("feed handling", () => {
-        it("hides the panel when the feed rejects", async () => {
-            await createEditor({ feed: vi.fn(async () => { throw new Error("boom"); }) as unknown as TriliumMentionFeed["feed"] });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#al");
-            await settle();
-
-            expect(isPanelVisible()).toBe(false);
-        });
-
-        it("filters a static array feed case-insensitively", async () => {
-            await createEditor({ feed: [ "#Alpha", "#beta" ] });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#al");
-            await settle();
-
-            expect(isPanelVisible()).toBe(true);
-            pressKey(keyCodes.enter);
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#Alpha");
-        });
-
-        it("honours dropdownLimit", async () => {
-            await createEditor({ dropdownLimit: 1 });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#");
-            await settle();
-
-            const items = editor.plugins.get(ContextualBalloon).visibleView?.element?.querySelectorAll("li");
-            expect(items?.length).toBe(1);
-        });
-
-        it("filters a static array feed of objects by id", async () => {
-            await createEditor({ feed: [ { id: "#Alpha", text: "#Alpha" }, { id: "#beta", text: "#beta" } ] });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#al");
-            await settle();
-
-            expect(isPanelVisible()).toBe(true);
-            pressKey(keyCodes.enter);
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#Alpha");
-        });
-
-        it("anchors the panel to the caret when the marked text was undone away mid-request", async () => {
-            const resolvers: Array<(items: MentionFeedObjectItem[]) => void> = [];
-            await createEditor({
-                feed: (() => new Promise((resolve) => resolvers.push(resolve))) as unknown as TriliumMentionFeed["feed"]
-            });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            // The undos are invisible to the text watcher, so the in-flight request still resolves
-            // against a marker whose range has meanwhile been moved to the graveyard.
-            editor.execute("enter");
-            type("#al");
-            await settle();
-            editor.execute("undo");
-            editor.execute("undo");
-
-            resolvers[0]?.([ { id: "#alpha", text: "#alpha" } ]);
-            await settle();
-
-            expect(isPanelVisible()).toBe(true);
-        });
-
-        it("discards an out-of-order response", async () => {
-            const resolvers: Array<(items: MentionFeedObjectItem[]) => void> = [];
-            await createEditor({
-                feed: (() => new Promise((resolve) => resolvers.push(resolve))) as unknown as TriliumMentionFeed["feed"]
-            });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#a");
-            await settle();
-            type("l");
-            await settle();
-
-            // Answer the *first* request last; it must not repopulate the panel.
-            resolvers[1]?.([ { id: "#alpha", text: "#alpha" } ]);
-            resolvers[0]?.([ { id: "#stale", text: "#stale" } ]);
-            await settle();
-
-            pressKey(keyCodes.enter);
-            expect(getModelData(editor.model, { withoutSelection: true })).toContain("#alpha");
-        });
-
-        it("discards a stale response even when the newer request has the same query text", async () => {
-            const resolvers: Array<(items: MentionFeedObjectItem[]) => void> = [];
-            await createEditor({
-                feed: (() => new Promise((resolve) => resolvers.push(resolve))) as unknown as TriliumMentionFeed["feed"]
-            });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            // Same query typed twice, so correlating on the text alone cannot tell them apart.
-            type("#al");
-            await settle();
-            editor.model.change((writer) => writer.remove(editor.model.createRangeIn(editor.model.document.getRoot()?.getChild(0) as never)));
-            type("#al");
-            await settle();
-
-            resolvers[1]?.([ { id: "#fresh", text: "#fresh" } ]);
-            resolvers[0]?.([ { id: "#stale", text: "#stale" } ]);
-            await settle();
-
-            pressKey(keyCodes.enter);
-            const data = getModelData(editor.model, { withoutSelection: true });
-            expect(data).toContain("#fresh");
-            expect(data).not.toContain("#stale");
-        });
-
-        it("does not let an earlier request's rejection close the panel a later one opened", async () => {
-            let rejectFirst: (reason: Error) => void = () => {};
-            let call = 0;
-            await createEditor({
-                feed: (() => {
-                    if (call++ === 0) {
-                        return new Promise((_resolve, reject) => { rejectFirst = reject; });
-                    }
-                    return Promise.resolve([ { id: "#alpha", text: "#alpha" } ]);
-                }) as unknown as TriliumMentionFeed["feed"]
-            });
-            setModelData(editor.model, "<paragraph>[]</paragraph>");
-
-            type("#a");
-            await settle();
-            type("l");
-            await settle();
-            expect(isPanelVisible()).toBe(true);
-
-            rejectFirst(new Error("boom"));
-            await settle();
-
-            expect(isPanelVisible()).toBe(true);
-        });
-    });
-
-    it("does not re-trigger inside an existing mention", async () => {
+    it("forwards the keys while the list is open, keeping from the editor those it takes", () => {
         type("#al");
-        await settle();
-        pressKey(keyCodes.enter);
-        await settle();
+        const arrow = press(keyCodes.arrowdown);
+        expect(labels.handleKeyDown).toHaveBeenCalledWith(arrow.domEvent);
+        expect(arrow.consumed).toBe(true);
 
-        // The caret now sits right after a committed mention.
-        expect(isPanelVisible()).toBe(false);
+        // Enter with nothing highlighted, say, which the attribute editor saves on.
+        labels.handleKeyDown.mockReturnValue(false);
+        expect(press(keyCodes.enter).consumed).toBe(false);
+
+        // Closed, the list is handed nothing.
+        moveCaretTo(0);
+        labels.handleKeyDown.mockClear();
+        press(keyCodes.arrowdown);
+        expect(labels.handleKeyDown).not.toHaveBeenCalled();
     });
 
-    it("does not open the panel for a caret parked inside an existing mention", async () => {
-        setModelData(editor.model, "<paragraph>[]</paragraph><paragraph></paragraph>");
-
+    it("closes on a press outside the list's element, and not on one inside it", () => {
         type("#al");
-        await settle();
-        pressKey(keyCodes.enter);
-        await settle();
-        labelFeed.mockClear();
-
-        // Inside the committed "#alpha", where the text before the caret still reads "#al".
-        moveCaretTo(3);
-        await settle();
-
-        // An edit elsewhere re-evaluates that text, which must not be treated as a fresh query.
-        editor.model.change((writer) => {
-            const second = editor.model.document.getRoot()?.getChild(1);
-
-            if (second?.is("element")) {
-                writer.insertText("x", writer.createPositionAt(second, 0));
-            }
-        });
-        await settle();
-
-        expect(isPanelVisible()).toBe(false);
-        expect(labelFeed).not.toHaveBeenCalled();
+        labels.element?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        expect(labels.state).not.toBe(null);
+        document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        expect(labels.state).toBe(null);
     });
 
-    it("tolerates being initialised before MentionEditing registers the mention command", async () => {
-        const feed = vi.fn(async () => [ { id: "#alpha", text: "#alpha" } ]);
-        editor = await createTestEditor([ Essentials, Paragraph, TriliumMentionUI, MentionEditing ], {
-            mention: { feeds: [ { marker: "#", feed: feed as unknown as TriliumMentionFeed["feed"], minimumCharacters: 0 } ] }
-        });
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
-
+    it("points the editable at the entry the open list highlights, and at none once it closes", () => {
+        const root = editor.editing.view.getDomRoot();
         type("#al");
-        await settle();
+        const open = labels.state;
 
-        expect(isPanelVisible()).toBe(true);
+        open?.setActiveDescendant("row-1");
+        expect(root?.getAttribute("aria-activedescendant")).toBe("row-1");
+        open?.setActiveDescendant(null);
+        expect(root?.hasAttribute("aria-activedescendant")).toBe(false);
+
+        open?.setActiveDescendant("row-2");
+        document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        expect(root?.hasAttribute("aria-activedescendant")).toBe(false);
+        // A list that has closed points at nothing.
+        open?.setActiveDescendant("row-3");
+        expect(root?.hasAttribute("aria-activedescendant")).toBe(false);
     });
 
-    it("hides the panel when the editor becomes read-only", async () => {
+    it("hides the list when the editor becomes read-only", () => {
         type("#al");
-        await settle();
-        expect(isPanelVisible()).toBe(true);
-
         editor.enableReadOnlyMode("test");
-        expect(isPanelVisible()).toBe(false);
-
+        expect(labels.state).toBe(null);
         editor.disableReadOnlyMode("test");
     });
 
-    it("renders a custom itemRenderer result", async () => {
-        await createEditor({
-            itemRenderer: (item) => {
-                const element = document.createElement("button");
-                element.classList.add("custom-mention-item");
-                element.textContent = String(item.id);
+    describe("committing", () => {
+        it("replaces the trigger text with what the list commits, at once or once a promise settles", async () => {
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("@al");
+            notes.state?.commit({ id: "@alpha", text: "@alpha" });
+            expect(text()).toContain("x <$text");
+            expect(text()).toContain(">@alpha</$text>");
+            expect(notes.state).toBe(null);
 
-                return element;
-            }
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("@be");
+            let resolveCommit: (item: MentionFeedObjectItem | undefined) => void = () => {};
+            notes.state?.commit(new Promise((resolve) => { resolveCommit = resolve; }));
+            // The text stays while the promise is pending, and the list is closed.
+            expect(text()).toBe("<paragraph>x @be</paragraph>");
+            expect(notes.state).toBe(null);
+            resolveCommit({ id: "@beta", text: "@beta" });
+            await Promise.resolve();
+            expect(text()).toContain("@beta</$text>");
+            expect(text()).not.toContain("@be<");
+
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("@ga");
+            notes.state?.commit(Promise.resolve(undefined));
+            await Promise.resolve();
+            expect(text()).toBe("<paragraph>x @ga</paragraph>");
         });
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
 
-        type("#al");
-        await settle();
+        it("leaves the text as it is for a pick arriving after the list closed, or a commit that fails", async () => {
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("#al");
+            const commit = labels.state?.commit;
+            moveCaretTo(0);
+            commit?.({ id: "#alpha", text: "#alpha" });
+            expect(text()).toBe("<paragraph>x #al</paragraph>");
 
-        expect(editor.plugins.get(ContextualBalloon).visibleView?.element?.querySelector(".custom-mention-item")).toBeTruthy();
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("#be");
+            labels.state?.commit(Promise.reject(new Error("canceled")));
+            await Promise.resolve();
+            await Promise.resolve();
+            expect(text()).toBe("<paragraph>x #be</paragraph>");
+        });
+
+        it("hands the item to the feed's commit with the trigger text gone, unless it went stale", async () => {
+            const commit = vi.fn();
+            const canCommit = vi.fn(() => true);
+            await createEditor({ "#": { commit, canCommit } });
+
+            setModelData(editor.model, "<paragraph>x []</paragraph>");
+            type("#al");
+            commitAlpha();
+            expect(commit).toHaveBeenCalledExactlyOnceWith(editor, { id: "#alpha", text: "#alpha" });
+            expect(text()).toBe("<paragraph>x </paragraph>");
+
+            commit.mockClear();
+            canCommit.mockReturnValue(false);
+            type("#be");
+            commitAlpha();
+            expect(commit).not.toHaveBeenCalled();
+            expect(text()).toBe("<paragraph>x #be</paragraph>");
+        });
+
+        it("does not reopen the list right after a committed mention, nor inside one", () => {
+            setModelData(editor.model, "<paragraph>[]</paragraph><paragraph></paragraph>");
+            type("#al");
+            commitAlpha();
+            labels.show.mockClear();
+
+            // Inside the committed "#alpha", where the text before the caret still reads "#al".
+            moveCaretTo(3);
+            // An edit elsewhere re-evaluates that text, which must not be treated as a fresh query.
+            editor.model.change((writer) => {
+                const second = editor.model.document.getRoot()?.getChild(1);
+
+                if (second?.is("element")) {
+                    writer.insertText("x", writer.createPositionAt(second, 0));
+                }
+            });
+
+            expect(labels.show).not.toHaveBeenCalled();
+        });
     });
 
-    it("renders a string itemRenderer result as a button label", async () => {
-        await createEditor({ itemRenderer: (item) => `label:${item.id}` });
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
+    it("places the list at the caret once the marked text was undone away", () => {
+        // The undos are invisible to the text watcher, so the list stays open on a marker whose range
+        // has meanwhile been moved to the graveyard.
+        editor.execute("enter");
+        type("#al");
+        const caretRect = labels.state?.caretRect;
+        editor.execute("undo");
+        editor.execute("undo");
+
+        expect(editor.model.markers.get("mention")?.getRange().root.rootName).toBe("$graveyard");
+        expect(caretRect?.().height).toBeGreaterThan(0);
+    });
+
+    it("tolerates being initialised before MentionEditing registers the mention command", async () => {
+        await createEditor({}, [ Essentials, Paragraph, TriliumMentionUI, MentionEditing ]);
 
         type("#al");
-        await settle();
+        expect(labels.state?.query).toBe("al");
+    });
 
-        expect(editor.plugins.get(ContextualBalloon).visibleView?.element?.textContent).toContain("label:#alpha");
+    it("destroys the lists with the editor", async () => {
+        await editor.destroy();
+        expect(labels.destroy).toHaveBeenCalled();
+        expect(notes.destroy).toHaveBeenCalled();
     });
 });

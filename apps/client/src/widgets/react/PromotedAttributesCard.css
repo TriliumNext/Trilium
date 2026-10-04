@@ -14,6 +14,13 @@
         font-size: 0.8em;
     }
 
+    /* Shaped like `.shortcut-conflicts-badge`, in the warning color `MfaStatusBadge` uses. */
+    .promoted-attribute-conflict {
+        flex-shrink: 0;
+        --color: var(--admonition-warning-accent-color, #e0a800);
+        font-size: 0.8em;
+    }
+
     .promoted-attribute-edit,
     .promoted-attribute-delete {
         flex-shrink: 0;

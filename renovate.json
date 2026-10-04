@@ -63,8 +63,19 @@
             "allowedVersions": "<12"
         },
         {
+            "description": "brace-expansion is pinned per major in the pnpm-workspace.yaml overrides. v5 exports { expand } instead of a function, so minimatch below 10 throws at the first brace pattern; on minimatch@3 that breaks @electron/asar@3 and every electron-forge make, which only the nightly runs",
+            "matchPackageNames": ["brace-expansion"],
+            "matchUpdateTypes": ["major"],
+            "enabled": false
+        },
+        {
             "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
+        },
+        {
+            "description": "The CodeMirror and Lezer runtimes are pinned together in the pnpm-workspace.yaml overrides, and a partial bump leaves two copies of a singleton in the tree",
+            "matchPackageNames": ["@codemirror/**", "@lezer/**"],
+            "groupName": "codemirror"
         },
         {
             "matchPackageNames": "**-config-ckeditor5",

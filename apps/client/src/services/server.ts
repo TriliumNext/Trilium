@@ -74,9 +74,12 @@ async function getWithTimeout<T>(url: string, timeoutMs: number, componentId?: s
     return await call<T>("GET", url, componentId, { timeoutMs });
 }
 
-/** The POST counterpart of {@link getWithTimeout}. */
-async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown, componentId?: string) {
-    return await call<T>("POST", url, componentId, { data, timeoutMs });
+/**
+ * The POST counterpart of {@link getWithTimeout}. `silence` suppresses the error toast for a
+ * caller that shows the failure itself.
+ */
+async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown, componentId?: string, silence?: Pick<CallOptions, "silentBadRequest">) {
+    return await call<T>("POST", url, componentId, { data, timeoutMs, ...silence });
 }
 
 async function put<T>(url: string, data?: unknown, componentId?: string) {
@@ -167,6 +170,8 @@ interface CallOptions {
     data?: unknown;
     silentNotFound?: boolean;
     silentInternalServerError?: boolean;
+    /** Suppresses the error toast for a 400, for callers that show the server's message themselves. */
+    silentBadRequest?: boolean;
     /** Suppresses the generic error toast for a 401, for callers that present the failure themselves
      *  (e.g. the OneNote import dialog showing an expired connection inline, with the server's reason). */
     silentUnauthorized?: boolean;
@@ -283,6 +288,8 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                     // report nothing
                 } else if (opts.silentUnauthorized && jqXhr.status === 401) {
                     // report nothing
+                } else if (opts.silentBadRequest && jqXhr.status === 400) {
+                    // report nothing
                 } else {
                     try {
                         await reportError(method, url, jqXhr.status, jqXhr.responseText);
@@ -378,7 +385,8 @@ async function localAjax(
 
         const silenced = (opts.silentNotFound && resp.status === 404)
             || (opts.silentInternalServerError && resp.status === 500)
-            || (opts.silentUnauthorized && resp.status === 401);
+            || (opts.silentUnauthorized && resp.status === 401)
+            || (opts.silentBadRequest && resp.status === 400);
 
         if (!silenced) {
             try {

@@ -55,6 +55,21 @@ export function getImageAttachmentTitle(type: NoteType | null | undefined): stri
     return (NOTE_TYPE_IMAGE_ATTACHMENTS as Partial<Record<NoteType, string>>)[type];
 }
 
+/** The media type of a canvas drawing saved in an attachment, such as one in a text note. */
+export const CANVAS_ATTACHMENT_MIME = "application/vnd.excalidraw+json";
+
+/** The title of the attachment a new canvas drawing is saved in. */
+export const CANVAS_ATTACHMENT_TITLE = "Canvas.excalidraw";
+
+/** The content of a new, empty canvas drawing. */
+export const EMPTY_CANVAS_CONTENT = JSON.stringify({
+    type: "excalidraw",
+    version: 2,
+    elements: [],
+    files: {},
+    appState: {}
+});
+
 /**
  * The note a mind map node's link points at, or `null` where it points somewhere else entirely.
  *
@@ -89,6 +104,7 @@ const FILE_MIME_MAPPINGS: Record<string, string> = {
     "application/vnd.oasis.opendocument.spreadsheet": "bx bx-spreadsheet",
     "application/vnd.ms-excel": "bx bx-spreadsheet",
     "text/csv": "bx bx-spreadsheet",
+    [CANVAS_ATTACHMENT_MIME]: NOTE_TYPE_ICONS.canvas
 };
 
 const IMAGE_MIME_MAPPINGS: Record<string, string> = {

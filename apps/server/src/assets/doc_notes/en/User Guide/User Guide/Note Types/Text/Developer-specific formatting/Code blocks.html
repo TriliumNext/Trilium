@@ -1,5 +1,5 @@
 <p>
-  <img src="1_Code blocks_image.png">
+  <img src="Code blocks_image.png">
 </p>
 <p>The code blocks feature allows entering pieces of code in text notes.</p>
 <p>Note that this feature is meant for generally small snippets of code.
@@ -8,8 +8,7 @@
 <h2>Inserting a code block</h2>
 <ul>
   <li>Via the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>,
-    look for the
-    <img src="Code blocks_image.png">button.
+    look for the&nbsp;<span class="tn-icon cke cke-code-block"></span> button.
     <ul>
       <li>Pressing directly on the icon will insert a code block with the language
         that was selected most recently. If this is the first time a code block
@@ -22,6 +21,16 @@
     <ul>
       <li>Note that it's not possible to specify the language, as it will default
         to the last selected language.</li>
+    </ul>
+  </li>
+  <li>Paste several lines of code copied from Visual Studio Code.
+    <ul>
+      <li>The code block uses the language of the file in Visual Studio Code.</li>
+      <li>If that language is not in the list of languages, the code block uses <em>Auto-detected</em>.</li>
+      <li>The colors of the Visual Studio Code theme are removed.</li>
+      <li>A single line becomes inline code instead of a code block.</li>
+      <li>In Firefox, the code block always uses <em>Auto-detected</em>. Firefox
+        can't read the language from Visual Studio Code.</li>
     </ul>
   </li>
 </ul>
@@ -47,8 +56,10 @@
 <ul>
   <li>When the language is set to <em>Auto-detected</em> (by default), Trilium
     will try to identify the programming language (or similar) that corresponds
-    to the given snippet of text and highlight it. If this is problematic,
-    consider changing the language of the code block manually.</li>
+    to the given snippet of text and highlight it. Only the languages enabled
+    in <a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a> → <em>Code Notes</em> → <em>Available MIME types in the dropdown</em> are
+    considered. If this is problematic, consider changing the language of the
+    code block manually.</li>
   <li>When the language is set to <em>Plain text</em>, there will be no syntax
     highlighting.</li>
 </ul>
@@ -92,7 +103,7 @@
 <p>Simply click anywhere inside the code block and press again the code block
   button in the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>:
   <br>
-  <img src="2_Code blocks_image.png">
+  <img src="1_Code blocks_image.png">
 </p>
 <h2>Adjusting the list of languages</h2>
 <p>The code blocks feature shares the list of languages with the&nbsp;<a

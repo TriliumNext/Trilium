@@ -73,6 +73,20 @@ describe("publishing the healthcheck target", () => {
         expect(readTarget().socket).toBeUndefined();
     });
 
+    it("replaces files it cannot write, as when an earlier run as another user left them", () => {
+        for (const name of [ HEALTHCHECK_URL_FILE, HEALTHCHECK_SOCKET_FILE ]) {
+            fs.writeFileSync(path.join(dataDir, name), "stale");
+            fs.chmodSync(path.join(dataDir, name), 0o444);
+        }
+
+        publishHealthcheckTarget(dataDir, "/run/trilium.sock", false);
+
+        expect(readTarget()).toEqual({
+            url: "http://localhost/api/health-check",
+            socket: "/run/trilium.sock"
+        });
+    });
+
     it("writes nothing when the server reports no address", () => {
         publishHealthcheckTarget(dataDir, null, false);
 

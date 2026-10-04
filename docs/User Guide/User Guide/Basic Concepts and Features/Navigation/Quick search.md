@@ -22,13 +22,13 @@ Quick search includes the following features:
 
 Search results now display a 200-character preview of the note content below the note title. This preview shows the context where your search terms appear, making it easier to identify the right note without opening it.
 
-### Infinite Scrolling
+### All results in one list
 
-Results are loaded progressively as you scroll:
+Quick search lists up to 200 matching notes in a single scrollable list, so the scrollbar shows how many results there are and how far through them you are.
 
-*   Initial display shows 15 results
-*   Scrolling near the bottom automatically loads 10 more results
-*   Continue scrolling to load all matching notes
+### Continuing in the full search
+
+To refine a query with the options of the full <a class="reference-link" href="Search.md">Search</a>, click _Show in full search_ below the results, or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> in the search field. The full search opens in a new tab with the same query. The button stays below the list, however far the results are scrolled.
 
 ### Visual Features
 
@@ -56,17 +56,21 @@ To search the whole database while hoisted, use the full <a class="reference-li
 
 ### Keyboard Navigation
 
-*   Press `Enter` to open the first result
-*   Use arrow keys to navigate through results
-*   Press `Escape` to close the quick search
+*   Press <kbd>Enter</kbd> in the search field to search, or to refresh the results already shown.
+*   Press <kbd>Down</kbd> in the search field to move to the first result, then <kbd>Up</kbd> and <kbd>Down</kbd> to move between results. <kbd>Up</kbd> on the first result returns to the search field.
+*   Press <kbd>Page Down</kbd> and <kbd>Page Up</kbd> to move through the results a page at a time.
+*   Press <kbd>Enter</kbd> on a result to open it.
+*   Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to open the query in the full search.
+*   Press <kbd>Escape</kbd> to close the results.
+
+To see these shortcuts on screen, click the <kbd>?</kbd> button below the results, or press <kbd>Alt</kbd>+<kbd>F1</kbd> while the search field is focused.
 
 ## Using Quick Search
 
 1.  **Typo tolerance**: Search finds results despite minor typos
 2.  **Content previews**: 200-character snippets show match context
-3.  **Infinite scrolling**: Additional results load on scroll
-4.  **Specific terms**: Specific search terms return more focused results
-5.  **Match locations**: Bold text indicates where matches occur
+3.  **Specific terms**: Specific search terms return more focused results
+4.  **Match locations**: Bold text indicates where matches occur
 
 ## Quick Search - Exact Match Operator
 

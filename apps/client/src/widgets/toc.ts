@@ -425,7 +425,8 @@ export default class TocWidget extends RightPanelWidget {
             }
         }
 
-        const headingElement = $container?.find(":header:not(section.include-note :header)")?.[headingIndex];
+        const headingElement = $container
+            ?.find(":header:not(.include-note :header)")?.[headingIndex];
         headingElement?.scrollIntoView({ behavior: "smooth" });
     }
 

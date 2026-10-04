@@ -467,6 +467,11 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
 
         });
 
+        content = content.replace(
+            /data-attachment-id="([a-zA-Z0-9_]+)"/g,
+            (_match, id: string) => `data-attachment-id="${getNewAttachmentId(id)}"`
+        );
+
         if (noteMeta) {
             const includeNoteLinks = (noteMeta.attributes || []).filter((attr) => attr.type === "relation" && attr.name === "includeNoteLink");
 

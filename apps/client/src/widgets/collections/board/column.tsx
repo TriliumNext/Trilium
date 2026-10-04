@@ -22,6 +22,7 @@ import { IconPickerButton } from "../../react/IconPicker";
 import { useIsOnScreen, useLingeringTrue, useStaticTooltip } from "../../react/hooks";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
+import { useSelection } from "../../react/selection";
 
 /** How long a field waits for the card it made, after which it is taken down regardless. */
 const HAND_OVER_MS = 2000;
@@ -213,6 +214,8 @@ export default function Column({
         useContext(BoardActionsContext);
     const { branchIdToEdit, columnNameToEdit, draggedCard, draggedColumn } =
         useContext(BoardDragStateContext);
+    // Read for the `Select all cards` menu entry, which calls `selection.selectAll`.
+    const selection = useSelection();
     // Every card on the move. The one under the pointer is taken out of the flow by the gesture
     // itself; the rest of a carried selection stay where they are drawn and are dimmed instead.
     const carriedNoteIds = draggedCard
@@ -400,7 +403,7 @@ export default function Column({
     // Reported on the way in only. A column opened by being selected closes when another one is
     // selected, so nothing here watches for focus leaving: the menu, the icon picker and the limit
     // dialog all render outside the column, and each would otherwise close it as it opened.
-    const select = useCallback(() => {
+    const expand = useCallback(() => {
         setActiveColumn(column);
 
         // Opening the strip by hand opens the column for good, unless `keepCollapsed` says it
@@ -410,6 +413,20 @@ export default function Column({
             api.setColumnCollapsed(column, false);
         }
     }, [ api, column, isCollapsed, keepCollapsed, setActiveColumn ]);
+
+    /**
+     * What a press on the column does. On a touch screen a collapsed strip only takes the focus,
+     * which brings its rail up: the rail carries the button that opens it, so a tap aimed at the
+     * rail cannot open the column on the way.
+     */
+    const select = useCallback(() => {
+        if (isMobile() && isCollapsed) {
+            headerRef.current?.focus();
+            return;
+        }
+
+        expand();
+    }, [ expand, isCollapsed ]);
 
     /**
      * Whether the collapse now being drawn is one the reader asked for, which runs faster than a
@@ -483,6 +500,7 @@ export default function Column({
                 setColumnNameToEdit(await api.insertColumn(column, direction));
             },
             onSetLimit: () => setColumnLimitToEdit(column),
+            onSelectAll: () => selection.selectAll(api.getColumnNoteIds(column)),
             onCollapse: collapse,
             onKeepCollapsed: (keep) => {
                 setIsCollapsingByHand(keep);
@@ -502,7 +520,7 @@ export default function Column({
         });
     }, [
         api, column, color, archived, collapsed, keepCollapsed, isCollapseVolatile, collapse,
-        isCollapsed, nested,
+        isCollapsed, nested, selection,
         columns, columnIndex, setColumnNameToEdit, setColumnLimitToEdit, setActiveColumn,
         onMoveColumn, onFocusColumn
     ]);
@@ -517,7 +535,29 @@ export default function Column({
         if (e.key === "F2" && !isCollapsed) {
             setColumnNameToEdit(column);
         }
-    }, [ column, isCollapsed ]);
+
+        // Space collapses the column; `keyboard.ts` handles it on a strip. The target check
+        // excludes the heading's buttons, which activate on Space themselves.
+        if (e.key === " " && !isCollapsed && e.target === e.currentTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+            collapse();
+        }
+
+        // Enter makes a card at the head of the column, Shift+Enter one at its foot.
+        // `keyboard.ts` takes Ctrl+Enter for a column, and Enter on a strip.
+        if (e.key === "Enter" && !e.ctrlKey && !isCollapsed && e.target === e.currentTarget) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // A sorted column places its own cards, so the field opens at the foot either way.
+            if (e.shiftKey || isSorted) {
+                beginNewItem();
+            } else {
+                beginInsert(0);
+            }
+        }
+    }, [ beginInsert, beginNewItem, collapse, column, isCollapsed, isSorted ]);
 
     const overlayHost = useContext(BoardOverlayHostContext);
     /** Whether the heading holds the focus, which on mobile floats the column's rail. */
@@ -684,11 +724,11 @@ export default function Column({
             <h3
                 ref={headerRef}
                 className={`${isEditing ? "editing" : ""}`}
-                // While collapsed the header is what opens the column, so it says so and answers
-                // for the keys a button answers for. Open, it is a heading again and Space does
-                // nothing, so neither is claimed.
+                // A collapsed header opens the column, so it is announced as a button. Open, it
+                // is a heading, and Space collapses it as a board shortcut like F2.
                 role={isCollapsed ? "button" : undefined}
                 aria-expanded={isCollapsed ? false : undefined}
+                aria-keyshortcuts="Space"
                 onContextMenu={openMenu}
                 onMouseDown={(e) => {
                     if (e.detail <= 1) {
@@ -832,7 +872,7 @@ export default function Column({
                     isLeaving={!isRailShown}
                     isCollapsed={isCollapsed}
                     onRename={() => setColumnNameToEdit(column)}
-                    onToggleCollapse={isCollapsed ? select : collapse}
+                    onToggleCollapse={isCollapsed ? expand : collapse}
                     onSort={(e) => openColumnSortMenu(api, e.pageX, e.pageY, column)}
                     onFocusOut={handleHeaderFocusOut}
                 />

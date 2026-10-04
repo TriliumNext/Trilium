@@ -79,7 +79,7 @@ export default class LoadResults {
     private noteReorderings: string[];
     private contentNoteIdToComponentId: ContentNoteIdToComponentIdRow[];
     private optionNames: OptionNames[];
-    private attachmentRows: AttachmentRow[];
+    private attachmentRows: { attachment: AttachmentRow; componentId?: string | null }[];
     public hasEtapiTokenChanges: boolean = false;
 
     constructor(entityChanges: EntityChange[]) {
@@ -218,12 +218,15 @@ export default class LoadResults {
         return this.optionNames;
     }
 
-    addAttachmentRow(attachment: AttachmentRow) {
-        this.attachmentRows.push(attachment);
+    addAttachmentRow(attachment: AttachmentRow, componentId?: string | null) {
+        this.attachmentRows.push({ attachment, componentId });
     }
 
-    getAttachmentRows() {
-        return this.attachmentRows;
+    /** The changed attachments, without the ones that the component `componentId` changed. */
+    getAttachmentRows(componentId?: string) {
+        return this.attachmentRows
+            .filter((row) => !componentId || row.componentId !== componentId)
+            .map((row) => row.attachment);
     }
 
     /**

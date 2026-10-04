@@ -333,7 +333,8 @@
   "notes": {
     "new-note": "새 노트",
     "duplicate-note-suffix": "(복제본)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "노트 삭제 실패: {{- message}}"
   },
   "note_conversion": {
     "revision_before_markdown": "Markdown으로 변환하기 전",
@@ -341,7 +342,8 @@
   },
   "backend_log": {
     "log-does-not-exist": "백엔드 로그 파일 '{{ fileName }}'은 아직 존재하지 않습니다.",
-    "reading-log-failed": "백엔드 로그 파일 '{{ fileName }}'을(를) 읽지 못했습니다."
+    "reading-log-failed": "백엔드 로그 파일 '{{ fileName }}'을(를) 읽지 못했습니다.",
+    "log-file-unavailable": "로그 파일을 열 수 없어 메모리에 보관된 가장 최근 항목만 표시됩니다. Trilium은 계속 로그 파일 열기를 시도하며, 열 수 있게 되면 이 항목들을 파일에 기록합니다."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다.",
@@ -404,7 +406,8 @@
     "unable-to-export-message": "현재 노트를 PDF로 내보내지 못했습니다.",
     "unable-to-export-title": "PDF로 내보낼 수 없음",
     "unable-to-save-message": "선택한 파일에 쓸 수 없습니다. 다시 시도하거나 다른 저장 위치를 선택하세요.",
-    "unable-to-print": "노트를 인쇄할 수 없음"
+    "unable-to-print": "노트를 인쇄할 수 없음",
+    "render-timeout": "노트가 {{seconds}}초 이내에 렌더링을 완료하지 못했습니다."
   },
   "tray": {
     "tooltip": "Trilium Notes",

@@ -1,5 +1,6 @@
 import "./collection_filter.css";
 
+import type { FieldEditor } from "@triliumnext/codemirror/src/field_editor";
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -9,8 +10,8 @@ import { t } from "../../services/i18n";
 import type LoadResults from "../../services/load_results";
 import searchService from "../../services/search";
 import ActionButton from "../react/ActionButton";
-import FormTextBox from "../react/FormTextBox";
 import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import SearchStringEditor from "../ribbon/SearchStringEditor";
 
 /** How long to wait after a change before re-running the active filter. */
 const RERUN_DEBOUNCE_MS = 300;
@@ -193,7 +194,7 @@ export function CollectionFilterInput({ filter, placeholder }: {
     placeholder?: string;
 }) {
     const [ typed, setTyped ] = useState(filter.query);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const editorRef = useRef<FieldEditor>();
     const { noteContext } = useNoteContext();
 
     // Adopt a query submitted elsewhere, or the stored one arriving on mount.
@@ -206,31 +207,43 @@ export function CollectionFilterInput({ filter, placeholder }: {
             return;
         }
 
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const editor = editorRef.current;
+        editor?.focus();
+        editor?.dispatch({ selection: { anchor: 0, head: editor.state.doc.length } });
     });
 
     const isActive = !!filter.query;
+    const label = placeholder ?? t("collection_filter.placeholder");
+
+    /** Puts a query in the box, which a focused editor does not otherwise adopt. */
+    function show(query: string) {
+        const editor = editorRef.current;
+
+        setTyped(query);
+        editor?.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: query } });
+    }
 
     return (
         <div className={clsx("collection-filter", { active: isActive })}>
-            <FormTextBox
-                inputRef={inputRef}
+            <SearchStringEditor
+                className="collection-filter-input"
+                noteId={noteContext?.note?.noteId ?? ""}
                 currentValue={typed}
-                placeholder={placeholder ?? t("collection_filter.placeholder")}
-                // A placeholder names the box only until something is typed into it.
-                aria-label={placeholder ?? t("collection_filter.placeholder")}
+                placeholder={label}
+                ariaLabel={label}
+                singleLine
+                editorRef={editorRef}
                 onChange={setTyped}
-                onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        filter.setQuery(typed);
-                    } else if (e.key === "Escape" && typed !== filter.query) {
-                        // Drops what was typed and keeps the submitted query. A second Escape
-                        // reaches the view, which handles it as usual.
-                        e.stopPropagation();
-                        setTyped(filter.query);
+                onEnter={() => filter.setQuery(typed)}
+                onEscape={() => {
+                    // Drops what was typed and keeps the submitted query. With nothing to drop the
+                    // key goes on to the view, which handles it as usual.
+                    if (typed === filter.query) {
+                        return false;
                     }
+
+                    show(filter.query);
+                    return true;
                 }}
             />
             <div className="collection-filter-buttons">
@@ -241,9 +254,9 @@ export function CollectionFilterInput({ filter, placeholder }: {
                         icon="bx bx-x"
                         text={t("collection_filter.clear")}
                         onClick={() => {
-                            setTyped("");
+                            show("");
                             filter.setQuery("");
-                            inputRef.current?.focus();
+                            editorRef.current?.focus();
                         }}
                     />
                 )}

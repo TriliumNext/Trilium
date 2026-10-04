@@ -142,6 +142,15 @@ describe("syntax_highlight", () => {
             expect(mod.isSyntaxHighlightEnabled()).toBe(false);
         });
 
+        it("is disabled while the options have not loaded yet, under either theme source", async () => {
+            const mod = await freshModule();
+            setOptions({});
+            expect(mod.isSyntaxHighlightEnabled()).toBe(false);
+
+            setOptions({ codeBlockThemeMatchesApp: "true" });
+            expect(mod.isSyntaxHighlightEnabled()).toBe(false);
+        });
+
         it("uses the dark/light theme option when matching the app appearance", async () => {
             const mod = await freshModule();
             setOptions({

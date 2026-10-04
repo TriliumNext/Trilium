@@ -2,6 +2,7 @@
 // DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
+import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
 import { describe, expect, it } from "vitest";
 
 import { findActiveBlock, renderWithSourceLines } from "./Markdown.js";
@@ -247,7 +248,7 @@ describe("renderWithSourceLines", () => {
     });
 
     it("renders ==text== as a highlight, surviving sanitization", () => {
-        expect(html("==hi==")).toBe('<p><span style="background-color:hsl(60, 75%, 60%);">hi</span></p>');
+        expect(html("==hi==")).toBe(`<p><span style="${HIGHLIGHT_STYLE}">hi</span></p>`);
         expect(html("a == b")).toBe("<p>a == b</p>");
     });
 

@@ -1,13 +1,13 @@
 import { useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
+import { Suggestion } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import Button from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
-import NoteAutocomplete from "../react/NoteAutocomplete";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 
 export interface NotePickerDialogOptions {
     /** Names what the note is wanted for; the stock title only asks for one. */
@@ -29,7 +29,7 @@ export interface NotePickerDialogOptions {
  */
 export default function NotePickerDialog() {
     const opts = useRef<NotePickerDialogOptions>();
-    const inputRef = useRef<HTMLInputElement>(null);
+    const autocompleteRef = useRef<NoteAutocompleteHandle>(null);
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ shown, setShown ] = useState(false);
     // Held apart from the suggestion because the answer is reported once the modal is out of the
@@ -48,7 +48,7 @@ export default function NotePickerDialog() {
             title={opts.current?.title ?? t("note_picker.title")}
             size="lg"
             zIndex={2000}
-            onShown={() => triggerRecentNotes(inputRef.current)}
+            onShown={() => autocompleteRef.current?.showRecentNotes()}
             onSubmit={() => {
                 pickedNoteId.current = tree.getNoteIdFromUrl(suggestion?.notePath);
                 setShown(false);
@@ -76,7 +76,7 @@ export default function NotePickerDialog() {
                 label={opts.current?.message ?? t("note_picker.label")}
             >
                 <NoteAutocomplete
-                    inputRef={inputRef}
+                    handleRef={autocompleteRef}
                     onChange={setSuggestion}
                     opts={{ hideAllButtons: true }}
                 />

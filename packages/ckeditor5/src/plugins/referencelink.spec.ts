@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import { installGlobMock } from "../../test/globals-test-kit.js";
-import ReferenceLink from "./referencelink.js";
+import ReferenceLink, { getAttachmentId, getNoteId } from "./referencelink.js";
 
 describe("ReferenceLink", () => {
     let editor: ClassicEditor;
@@ -183,6 +183,92 @@ describe("ReferenceLink", () => {
         expect(anchor).not.toBeNull();
         expect(loadReferenceLinkTitle).toHaveBeenCalledTimes(1);
         expect(loadReferenceLinkTitle.mock.calls[0]?.[1]).toBe("#root/noteAbc");
+    });
+
+    it("shows a placeholder's file name, then redraws it as a titled link once uploaded", () => {
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+        const reference = editor.model.change((writer) => {
+            const element = writer.createElement("reference", {
+                href: "",
+                uploadId: "u1",
+                uploadFileName: "report.pdf"
+            });
+            editor.model.insertContent(element);
+            return element;
+        });
+        const findAnchor = () =>
+            editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
+
+        expect(findAnchor()?.textContent).toBe("report.pdf");
+        expect(findAnchor()?.querySelector(".bx-spin")).not.toBeNull();
+        expect(loadReferenceLinkTitle).not.toHaveBeenCalled();
+
+        editor.model.change((writer) => {
+            writer.setAttribute("href", "#root/abc", reference);
+            writer.removeAttribute("uploadFileName", reference);
+        });
+
+        expect(findAnchor()?.getAttribute("href")).toBe("#root/abc");
+        expect(findAnchor()?.querySelector(".bx-spin")).toBeNull();
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc");
+    });
+
+    it("redraws the links to a changed attachment and removes those to a deleted one", () => {
+        const attachmentHref = (id: string) =>
+            `#root/owner?viewMode=attachments&amp;attachmentId=${id}`;
+        editor.setData(
+            `<p><a class="reference-link" href="${attachmentHref("renamed")}">a</a></p>` +
+            `<p><a class="reference-link" href="${attachmentHref("deleted")}">b</a></p>` +
+            "<p><a class=\"reference-link\" href=\"#root/noteAbc\">c</a></p>"
+        );
+        loadReferenceLinkTitle.mockClear();
+
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks([
+            { attachmentId: "renamed", isDeleted: false },
+            { attachmentId: "deleted", isDeleted: true }
+        ]);
+
+        const redrawnHrefs = new Set(loadReferenceLinkTitle.mock.calls.map(([ , href ]) => href));
+        const renamedHref = "#root/owner?viewMode=attachments&attachmentId=renamed";
+        expect([ ...redrawnHrefs ]).toEqual([ renamedHref ]);
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+            `<paragraph><reference href="${renamedHref}"></reference></paragraph>` +
+            "<paragraph></paragraph>" +
+            "<paragraph><reference href=\"#root/noteAbc\"></reference></paragraph>"
+        );
+        // The removal records a change made elsewhere, so undo cannot bring the link back.
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+    });
+
+    it("redraws the links to a renamed attachment without changing the document", () => {
+        const href = "#root/owner?viewMode=attachments&attachmentId=renamed";
+        editor.setData(
+            "<p><a class=\"reference-link\" "
+            + "href=\"#root/owner?viewMode=attachments&amp;attachmentId=renamed\">a</a></p>"
+        );
+        const before = getModelData(editor.model);
+        loadReferenceLinkTitle.mockClear();
+
+        editor.plugins.get("ReferenceLinkEditing").updateAttachmentLinks([
+            { attachmentId: "renamed", isDeleted: false }
+        ]);
+
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href);
+        expect(getModelData(editor.model)).toBe(before);
+    });
+
+    it("reads the attachment a link points to, and none from a note link or a missing href", () => {
+        expect(getAttachmentId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("att1");
+        expect(getAttachmentId("#root/noteAbc")).toBeNull();
+        expect(getAttachmentId(undefined)).toBeNull();
+    });
+
+    it("reads the note a link points to, or the attachment's owner, from its note path", () => {
+        expect(getNoteId("#root/parentAbc/noteAbc")).toBe("noteAbc");
+        expect(getNoteId("#root/owner?viewMode=attachments&attachmentId=att1")).toBe("owner");
+        expect(getNoteId("#root")).toBe("root");
+        expect(getNoteId("")).toBeNull();
+        expect(getNoteId(undefined)).toBeNull();
     });
 
     it("dataDowncasts a reference back to an anchor, resolving the title synchronously", () => {

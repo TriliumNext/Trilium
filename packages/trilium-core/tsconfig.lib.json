@@ -16,7 +16,11 @@
     "src/**/*.ts",
     "src/**/*.json"
   ],
-  "references": [],
+  "references": [
+    {
+      "path": "../highlightjs/tsconfig.lib.json"
+    }
+  ],
   "exclude": [
     "vite.config.ts",
     "vite.config.mts",

@@ -37,6 +37,16 @@
     height: 100%;
 }
 
+/* Fills a host of fixed height, such as a fullscreen embed; elsewhere the image sets the height. */
+.rendered-content .rendered-image-viewer {
+    height: 100%;
+
+    /* A failed image has no size, so the error message needs a floor. */
+    .image-viewer-root:has(.img-loading-error) {
+        min-height: 8rem;
+    }
+}
+
 /* The mounted media player (placeholder or full) takes the space its host gives it, above the file footer,
    down to a floor that keeps it usable in a short host such as a collection tile. */
 .rendered-content .rendered-media {

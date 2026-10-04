@@ -30,7 +30,7 @@ import {
     parseColumnWidth
 } from "./columns";
 import { readColumns, writeColumns } from "./column_storage";
-import { ColumnItem, ColumnMap } from "./data";
+import { cardNotes, ColumnItem, ColumnMap } from "./data";
 import {
     cardReference, ColumnReferenceLabel, columnReference, newColumnId, readColumnId
 } from "./reference";
@@ -40,7 +40,10 @@ import { SORT_DESCENDING_LABEL, SORT_LABEL } from "./sort";
 export type CardPlacement = "top" | "bottom";
 
 /** The relation a card carries to stand in for another note rather than open an editor of its own. */
-export const CARD_REDIRECT_RELATION = "boardCardRedirectTo";
+export const CARD_REDIRECT_RELATION = "board:cardRedirectTo";
+
+/** The previous name of the relation above. `openCard` falls back to it. */
+export const CARD_REDIRECT_RELATION_LEGACY = "boardCardRedirectTo";
 
 /** One write's claim on a column, held until that write lands or is taken back. */
 interface ColumnClaim {
@@ -499,19 +502,24 @@ export default class BoardApi {
     }
 
     /**
-     * Asks before taking a column off the board, the grouping label going from every card in it.
+     * Asks before taking a column off the board, offering to delete its cards as well.
      * Both the menu and the Delete key come through here, so the question is put once and the same
      * way, and a refusal from the server is reported rather than passing for a deletion.
      *
      * @returns whether the column went, for a caller with something to do afterwards.
      */
     async confirmAndRemoveColumn(column: string) {
-        if (!await dialog.confirm(t("board_view.delete-column-confirmation"))) {
+        // Count from the unfiltered map, which is the one `removeColumn` deletes from.
+        const cards = (this.allByColumn ?? this.byColumn)?.get(column)?.length ?? 0;
+        const answer = await dialog.confirmWithNoteDeletion(
+            t("board_view.delete-column-confirmation"),
+            cards ? t("board_view.delete-column-notes", { count: cards }) : undefined);
+        if (!answer || !answer.confirmed) {
             return false;
         }
 
         try {
-            await this.removeColumn(column);
+            await this.removeColumn(column, answer.isDeleteNoteChecked);
             return true;
         } catch (e) {
             console.error("Failed to delete the board column:", e);
@@ -520,15 +528,22 @@ export default class BoardApi {
         }
     }
 
-    async removeColumn(column: string) {
-        // Remove the value from the notes. Read off the unfiltered map where there is one, so the
-        // value also comes off the cards an active filter is not showing.
+    /**
+     * Takes a column off the board.
+     *
+     * @param deleteNotes deletes the column's cards instead of removing the grouping value from
+     *                    them.
+     */
+    async removeColumn(column: string, deleteNotes = false) {
+        // `allByColumn` covers the cards an active filter is not showing.
         const items = (this.allByColumn ?? this.byColumn)?.get(column);
         const noteIds = items?.map(item => item.note.noteId) || [];
 
-        const action: BulkAction = this.isRelationMode
-            ? { name: "deleteRelation", relationName: this.statusAttribute }
-            : { name: "deleteLabel", labelName: this.statusAttribute };
+        const action: BulkAction = deleteNotes
+            ? { name: "deleteNote" }
+            : this.isRelationMode
+                ? { name: "deleteRelation", relationName: this.statusAttribute }
+                : { name: "deleteLabel", labelName: this.statusAttribute };
         await this.retiredWhile(column, undefined,
             () => executeBulkActions(noteIds, [ action ], { silent: true }));
 
@@ -699,7 +714,7 @@ export default class BoardApi {
      */
     async setInboxEnabled(enabled: boolean) {
         await attributes.setBooleanWithInheritance(
-            this.parentNote, "enableInboxColumn", enabled);
+            this.parentNote, "board:showInbox", enabled);
     }
 
     /** Hides the inbox column, which is what its own menu offers. */
@@ -739,13 +754,21 @@ export default class BoardApi {
         await attributes.setLabel(note.noteId, COLUMN_WIDTH_LABEL, width);
     }
 
-    /** The note limit set for a column, absent if disabled. */
+    /** The note limit set for a column, absent if disabled or for the inbox. */
     getColumnLimit(column: string) {
+        if (column === INBOX_COLUMN) {
+            return undefined;
+        }
+
         return this.storedColumns.find(col => col.value === column)?.limit;
     }
 
     /** Sets a column's note limit. Pass `undefined` to disable it. */
     async setColumnLimit(column: string, limit: number | undefined) {
+        if (column === INBOX_COLUMN) {
+            return;
+        }
+
         await this.updateColumn(column, { limit });
     }
 
@@ -793,7 +816,7 @@ export default class BoardApi {
     }
 
     /**
-     * Reads `#sortColumns` and `#sortColumnsDescending` off the board note, which is where the
+     * Reads `#board:sortColumns` and `#board:sortColumnsDescending` off the board note, which is where the
      * order the columns default to is stored rather than in `board.json`.
      */
     getDefaultSort() {
@@ -953,13 +976,19 @@ export default class BoardApi {
     }
 
     /**
-     * Every promoted attribute the board defines, in the order the reader put them, the one it
-     * groups by included: the properties dialog lists that one so it keeps its place among the
-     * others for whenever the board is grouped by something else.
+     * Returns the promoted attributes defined by the board note or its cards, in the stored order.
+     * Includes the grouping attribute, so that Board Properties keeps its position for when the
+     * board is grouped by another attribute.
      */
     getAllPromotedAttributes() {
         return resolvePromotedAttributes(
-            this.parentNote, this.viewConfig?.promotedAttributes, [ this.statusAttribute ]);
+            this.parentNote, this.viewConfig?.promotedAttributes, [ this.statusAttribute ],
+            this.getCardNotes());
+    }
+
+    /** Returns the note of every card, including the cards the filter hides. */
+    getCardNotes() {
+        return cardNotes(this.allByColumn ?? this.byColumn);
     }
 
     /** Those a card can show or a column sort by, which the columns themselves stand for. */
@@ -1430,12 +1459,13 @@ export default class BoardApi {
     /**
      * Answers the card's own open gesture, a click or Space.
      *
-     * A card carrying `boardCardRedirectTo` stands in for the note that relation points at, so it
+     * A card carrying `board:cardRedirectTo` stands in for the note that relation points at, so it
      * navigates there instead of opening an editor of its own. Quick edit calls `openNote` and
      * still opens the card's own editor.
      */
     openCard(note: FNote) {
-        const target = note.getRelationValue(CARD_REDIRECT_RELATION);
+        const target = note.getRelationValue(CARD_REDIRECT_RELATION)
+            ?? note.getRelationValue(CARD_REDIRECT_RELATION_LEGACY);
         if (target) {
             const context = this.noteContext ?? appContext.tabManager?.getActiveContext();
             void context?.setNote(target);
@@ -1488,7 +1518,7 @@ export default class BoardApi {
      * the board, and one already there does not move at all.
      */
     get isInboxEnabled() {
-        return !!this.parentNote?.isLabelTruthy("enableInboxColumn");
+        return !!this.parentNote?.isLabelTruthy("board:showInbox");
     }
 
     /**

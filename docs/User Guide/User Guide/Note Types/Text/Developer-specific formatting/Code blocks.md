@@ -1,5 +1,5 @@
 # Code blocks
-![](1_Code%20blocks_image.png)
+![](Code%20blocks_image.png)
 
 The code blocks feature allows entering pieces of code in text notes.
 
@@ -7,11 +7,17 @@ Note that this feature is meant for generally small snippets of code. For larger
 
 ## Inserting a code block
 
-*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, look for the ![](Code%20blocks_image.png) button.
+*   Via the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>, look for the <span class="tn-icon cke cke-code-block"></span> button.
     *   Pressing directly on the icon will insert a code block with the language that was selected most recently. If this is the first time a code block is inserted, the language will be “Auto-detected” by default.
     *   Pressing the arrow next to the icon, which will show a popup with the available languages.
 *   Type ` ``` ` (as in Markdown).
     *   Note that it's not possible to specify the language, as it will default to the last selected language.
+*   Paste several lines of code copied from Visual Studio Code.
+    *   The code block uses the language of the file in Visual Studio Code.
+    *   If that language is not in the list of languages, the code block uses _Auto-detected_.
+    *   The colors of the Visual Studio Code theme are removed.
+    *   A single line becomes inline code instead of a code block.
+    *   In Firefox, the code block always uses _Auto-detected_. Firefox can't read the language from Visual Studio Code.
 
 ## Exiting out of the code block
 
@@ -27,7 +33,7 @@ Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting to the
 
 Interaction:
 
-*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. If this is problematic, consider changing the language of the code block manually.
+*   When the language is set to _Auto-detected_ (by default), Trilium will try to identify the programming language (or similar) that corresponds to the given snippet of text and highlight it. Only the languages enabled in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Code Notes_ → _Available MIME types in the dropdown_ are considered. If this is problematic, consider changing the language of the code block manually.
 *   When the language is set to _Plain text_, there will be no syntax highlighting.
 
 Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). This value is currently not configurable. For <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, this limitation is not applied.
@@ -54,7 +60,7 @@ Should you encounter any issues after the migration, try running Trilium in safe
 ## Changing the language of a code block
 
 Simply click anywhere inside the code block and press again the code block button in the <a class="reference-link" href="../Formatting%20toolbar.md">Formatting toolbar</a>:  
-![](2_Code%20blocks_image.png)
+![](1_Code%20blocks_image.png)
 
 ## Adjusting the list of languages
 

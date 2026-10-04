@@ -268,15 +268,17 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "isHidden", valueType: "boolean" },
     { type: "label", name: "maxNestingDepth", valueType: "number", hasUserValue: true },
     { type: "label", name: "includeArchived", valueType: "boolean", hasUserValue: true },
-    { type: "label", name: "enableInboxColumn", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "board:showInbox", valueType: "boolean", hasUserValue: true },
     // Carried by a card that stands in for another note: opening it navigates there instead.
+    { type: "relation", name: "board:cardRedirectTo" },
+    // The previous name of the relation above. Still read, so existing boards keep redirecting.
     { type: "relation", name: "boardCardRedirectTo" },
     // How wide the board draws its columns. Absent for the narrow default.
-    { type: "label", name: "boardCardWidth", valueType: "select", hasUserValue: true,
+    { type: "label", name: "board:columnWidth", valueType: "select", hasUserValue: true,
         selectOptions: [ "narrow", "medium", "wide" ] },
     // The order a board offers for its columns, which its properties apply to every column at once.
-    { type: "label", name: "sortColumns", valueType: "text", hasUserValue: true },
-    { type: "label", name: "sortColumnsDescending", valueType: "boolean", hasUserValue: true },
+    { type: "label", name: "board:sortColumns", valueType: "text", hasUserValue: true },
+    { type: "label", name: "board:sortColumnsDescending", valueType: "boolean", hasUserValue: true },
     // FullCalendar's own view names, which is what the calendar hands back when the view is switched.
     { type: "label", name: "calendar:view", valueType: "select", hasUserValue: true, selectOptions: [
         "timeGridDay", "timeGridWeek", "dayGridMonth", "multiMonthYear", "listMonth"

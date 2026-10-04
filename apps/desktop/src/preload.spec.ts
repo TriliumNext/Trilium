@@ -279,6 +279,11 @@ describe("preload script", () => {
             await clip().readText();
             expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-text", args: [] });
         });
+
+        it("readHTML invokes correct IPC channel", async () => {
+            await clip().readHTML();
+            expect(ipcRendererInvoked).toContainEqual({ channel: "read-clipboard-html", args: [] });
+        });
     });
 
     describe("shell", () => {

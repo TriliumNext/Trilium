@@ -2,8 +2,9 @@ import "./search_result.css";
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import clsx from "clsx";
-import { useEffect, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 
+import type FNote from "../entities/fnote";
 import { t } from "../services/i18n";
 import { SearchNoteList, useNoteViewType } from "./collections/NoteList";
 import SearchResultsList from "./collections/search/SearchResultsList";
@@ -20,23 +21,15 @@ enum SearchResultState {
 export default function SearchResult() {
     const { note, notePath, ntxId } = useNoteContext();
     const viewType = useNoteViewType(note);
-    const [ state, setState ] = useState<SearchResultState>();
-    const [ highlightedTokens, setHighlightedTokens ] = useState<(string | HighlightedTokenInfo)[]>();
+    const [ , setRefreshCount ] = useState(0);
+    const state = getSearchResultState(note);
+    const highlightedTokens = note?.highlightedTokenInfos ?? note?.highlightedTokens;
 
+    // The search note is updated in place, so a re-render picks up the new results.
     function refresh() {
-        if (note?.type !== "search") {
-            setState(undefined);
-        } else if (!note?.searchResultsLoaded) {
-            setState(SearchResultState.NOT_EXECUTED);
-        } else if (note.getChildNoteIds().length === 0) {
-            setState(SearchResultState.NO_RESULTS);
-        } else {
-            setState(SearchResultState.GOT_RESULTS);
-            setHighlightedTokens(note.highlightedTokenInfos ?? note.highlightedTokens);
-        }
+        setRefreshCount((count) => count + 1);
     }
 
-    useEffect(() => refresh(), [ note ]);
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
         if (eventNtxId === ntxId) {
             refresh();
@@ -83,4 +76,19 @@ export default function SearchResult() {
             )}
         </div>
     );
+}
+
+/**
+ * Derives the state from the note being rendered rather than from an effect, so the results never
+ * render for a note that is not a search note, not even for the render that switches to one.
+ */
+function getSearchResultState(note: FNote | null | undefined) {
+    if (note?.type !== "search") {
+        return undefined;
+    } else if (!note.searchResultsLoaded) {
+        return SearchResultState.NOT_EXECUTED;
+    } else if (note.getChildNoteIds().length === 0) {
+        return SearchResultState.NO_RESULTS;
+    }
+    return SearchResultState.GOT_RESULTS;
 }

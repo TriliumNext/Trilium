@@ -50,6 +50,11 @@ export interface PromotedAttributesCardProps {
      * arranged with the rest, but their switch is held off: they are already on the screen.
      */
     drawnByCollection?: string[];
+    /**
+     * The notes the collection shows. Their definitions are listed after those of `note`, and the
+     * ones only these notes define have no edit or delete button.
+     */
+    itemNotes?: Iterable<FNote>;
     /** Called with the whole list after every change, for the caller to store. */
     onChange: (attributes: PromotedAttribute[]) => void;
 }
@@ -62,10 +67,10 @@ export interface PromotedAttributesCardProps {
  * reports the order and what is hidden, which the caller stores.
  */
 export default function PromotedAttributesCard({
-    heading, instruction, note, settings, drawnByCollection, onChange
+    heading, instruction, note, settings, drawnByCollection, itemNotes, onChange
 }: PromotedAttributesCardProps) {
     const [ shown, setShown ] =
-        useState(() => resolvePromotedAttributes(note, settings, drawnByCollection));
+        useState(() => resolvePromotedAttributes(note, settings, drawnByCollection, itemNotes));
     // What the collection draws can change while the card stands, a board being regrouped from
     // its header. The rows are marked again where they are, keeping their order and what is
     // hidden; the marks are not stored, so nothing is written back for them.
@@ -78,6 +83,15 @@ export default function PromotedAttributesCard({
             drawnByCollection: drawnByCollection?.includes(attribute.name) ?? false
         })));
     }
+    // A card that joins through a branch change brings no attribute row for `entitiesReloaded`, so
+    // the list is resolved again when the definition names of `itemNotes` change.
+    const itemDefinitions = definitionNames(itemNotes);
+    const [ lastItemDefinitions, setLastItemDefinitions ] = useState(itemDefinitions);
+    if (lastItemDefinitions !== itemDefinitions) {
+        setLastItemDefinitions(itemDefinitions);
+        setShown((was) => resolvePromotedAttributes(
+            note, storedPromotedAttributes(was), drawnByCollection, itemNotes));
+    }
     const [ detail, setDetail ] = useState<AttributeDetailOpts | null>(null);
     /** The definition the editor last reported, which `save` writes. */
     const edited = useRef<Attribute>();
@@ -87,11 +101,12 @@ export default function PromotedAttributesCard({
     // A definition created, renamed or deleted here arrives as an attribute change. Resolving
     // against the current list is what keeps the order of the rest.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        const affects = loadResults.getAttributeRows()
-            .some((attribute) => attributes.isAffecting(attribute, note));
+        const notes = [ note, ...itemNotes ?? [] ];
+        const affects = loadResults.getAttributeRows().some((attribute) =>
+            notes.some((affected) => attributes.isAffecting(attribute, affected)));
         if (affects) {
-            setShown((was) =>
-                resolvePromotedAttributes(note, storedPromotedAttributes(was), drawnByCollection));
+            setShown((was) => resolvePromotedAttributes(
+                note, storedPromotedAttributes(was), drawnByCollection, itemNotes));
         }
     });
 
@@ -229,25 +244,37 @@ export default function PromotedAttributesCard({
                                 outline
                             />
 
-                            <ActionButton
-                                className="promoted-attribute-edit"
-                                icon="bx bx-edit"
-                                text={t("promoted_attributes.edit_attribute")}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    openEditor(event, attribute);
-                                }}
-                            />
+                            {attribute.isConflicting && (
+                                <Badge
+                                    className="promoted-attribute-conflict"
+                                    icon="bx bx-error-circle"
+                                    text={t("promoted_attributes.conflicting")}
+                                    tooltip={t("promoted_attributes.conflicting_tooltip")}
+                                    outline
+                                />
+                            )}
 
-                            <ActionButton
-                                className="promoted-attribute-delete"
-                                icon="bx bx-trash"
-                                text={t("promoted_attributes.delete_attribute")}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    confirmErase(attribute);
-                                }}
-                            />
+                            {!attribute.isDefinedByItems && <>
+                                <ActionButton
+                                    className="promoted-attribute-edit"
+                                    icon="bx bx-edit"
+                                    text={t("promoted_attributes.edit_attribute")}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        openEditor(event, attribute);
+                                    }}
+                                />
+
+                                <ActionButton
+                                    className="promoted-attribute-delete"
+                                    icon="bx bx-trash"
+                                    text={t("promoted_attributes.delete_attribute")}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        confirmErase(attribute);
+                                    }}
+                                />
+                            </>}
 
                             <FormToggle
                                 currentValue={!attribute.hidden && !attribute.drawnByCollection}
@@ -289,6 +316,17 @@ export default function PromotedAttributesCard({
                 document.body)}
         </>
     );
+}
+
+/** Returns the definition names of `notes`, sorted and joined, for comparing between renders. */
+function definitionNames(notes: Iterable<FNote> | undefined) {
+    const names = new Set<string>();
+    for (const note of notes ?? []) {
+        for (const definition of note.getAttributeDefinitions()) {
+            names.add(definition.name);
+        }
+    }
+    return [ ...names ].sort().join(",");
 }
 
 /** The kind entry for an attribute: its `labelType`, or the relation kind for a relation. */

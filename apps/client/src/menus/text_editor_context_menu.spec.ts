@@ -2,11 +2,18 @@ import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup } from "@tr
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => {
+    interface FakeContext {
+        ntxId?: string;
+        note?: { type: string } | null;
+        getTextEditor: () => Promise<unknown>;
+    }
     const tabManager = {
         activeNote: null as { type: string } | null,
-        activeContext: null as { getTextEditor: () => Promise<unknown> } | null,
-        getActiveContextNote: () => tabManager.activeNote,
+        activeContext: null as FakeContext | null,
+        contexts: [] as FakeContext[],
         getActiveContext: () => tabManager.activeContext
+            && { note: tabManager.activeNote, ...tabManager.activeContext },
+        getNoteContexts: () => tabManager.contexts
     };
     return { tabManager };
 });
@@ -95,6 +102,7 @@ describe("getTextEditorAtSelection", () => {
         vi.restoreAllMocks();
         tabManager.activeNote = null;
         tabManager.activeContext = null;
+        tabManager.contexts = [];
     });
 
     it("returns the editor only when the selection is inside its DOM root", async () => {
@@ -120,6 +128,34 @@ describe("getTextEditorAtSelection", () => {
 
         tabManager.activeNote = { type: "text" };
         vi.spyOn(console, "error").mockImplementation(() => {});
+        expect(await getTextEditorAtSelection()).toBeNull();
+    });
+
+    it("looks the editor up in the split pane holding the node, active or not", async () => {
+        const pane = document.createElement("div");
+        pane.dataset.ntxId = "ntx-right";
+        const root = document.createElement("div");
+        const inside = document.createTextNode("cell");
+        root.appendChild(inside);
+        pane.appendChild(root);
+
+        const editor = { editing: { view: { getDomRoot: () => root } } };
+        tabManager.activeNote = { type: "code" };
+        tabManager.activeContext = { ntxId: "ntx-left", getTextEditor: () => Promise.reject() };
+        tabManager.contexts = [
+            { ntxId: "ntx-left", note: { type: "code" }, getTextEditor: () => Promise.reject() },
+            { ntxId: "ntx-right", note: { type: "text" }, getTextEditor: async () => editor }
+        ];
+
+        setSelection(inside);
+        expect(await getTextEditorAtSelection()).toBe(editor);
+
+        // A pane whose note context is gone, or holds another note type.
+        tabManager.contexts = [];
+        expect(await getTextEditorAtSelection()).toBeNull();
+        tabManager.contexts = [
+            { ntxId: "ntx-right", note: { type: "code" }, getTextEditor: async () => editor }
+        ];
         expect(await getTextEditorAtSelection()).toBeNull();
     });
 });

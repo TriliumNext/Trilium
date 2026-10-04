@@ -38,50 +38,6 @@
     z-index: 10;
 }
 
-/*
- * The kind of the attribute, as the icon of what it is (a label or a relation). It is the only thing
- * saying so, the row carrying neither the `#`/`~` prefix nor the type as a word.
- */
-.attribute-list-panel .attribute-kind {
-    position: relative;
-    display: flex;
-    flex-shrink: 0;
-    color: var(--muted-text-color);
-}
-
-/*
- * A badge on the corner of the icon: a cog for the names Trilium reads for itself (settings of the note
- * rather than a word for it), a chevron for a definition of a promoted field (one lifted out of the
- * attributes and into the note's own ribbon). A second glyph rather than an icon of its own, so
- * `cssClass` still reads as the label it is, and a promoted date field as the date field it defines.
- */
-.attribute-list-panel .attribute-kind.marker-system::after,
-.attribute-list-panel .attribute-kind.marker-promoted::after {
-    position: absolute;
-    inset-inline-end: -3px;
-    bottom: -2px;
-    font-family: boxicons;
-    font-size: 0.62em;
-    font-weight: normal;
-    line-height: 1;
-    /* Punched out of the icon it sits on, so the two glyphs stay legible where they overlap. */
-    text-shadow:
-        0 0 2px var(--card-background-color, var(--main-background-color)),
-        0 0 2px var(--card-background-color, var(--main-background-color));
-}
-
-.attribute-list-panel .attribute-kind.marker-system::after {
-    content: "\ea6e"; /* lookup code for "cog" in boxicons.css */
-}
-
-.attribute-list-panel .attribute-kind.marker-promoted::after {
-    content: "\ea57"; /* lookup code for "chevron-up" in boxicons.css */
-    /* A single stroke where the cog is a whole shape, so it is drawn a size up to weigh the same. */
-    font-size: 0.8em;
-    inset-inline-end: -4px;
-    bottom: -4px;
-}
-
 /* What separates the note's own vocabulary from the names Trilium reads for itself. Quiet: the sort is
    what carries the split, the rule only marks where it falls. */
 .attribute-list-panel .attribute-rows-divider {

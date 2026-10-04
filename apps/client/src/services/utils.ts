@@ -309,6 +309,24 @@ export function isMobile() {
 }
 
 /**
+ * Whether the viewport is as narrow as a phone's. In the mobile layout, a menu is a bottom sheet
+ * only then; a tablet's wider layout places it beside what opened it. Must match the media query
+ * around the `.mobile-bottom-menu` rules in style.css.
+ */
+export function isNarrowLayout() {
+    return window.matchMedia(NARROW_LAYOUT).matches;
+}
+
+/** Calls `onChange` whenever {@link isNarrowLayout} changes, until the returned function runs. */
+export function onNarrowLayoutChange(onChange: () => void) {
+    const query = window.matchMedia(NARROW_LAYOUT);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
+
+const NARROW_LAYOUT = "(max-width: 991px)";
+
+/**
  * Returns true if the client device is an Apple iOS one (iPad, iPhone, iPod).
  * Does not check if the user requested the mobile or desktop layout, use {@link isMobile} for that.
  *
@@ -379,6 +397,7 @@ export function isHtmlEmpty(html: string) {
     return (
         !html.includes("<img") &&
         !html.includes("<section") &&
+        !html.includes("include-note") &&
         !html.includes("link-mention") &&
         // the line below will actually attempt to load images so better to check for images first
         $("<div>").html(html).text().trim().length === 0
@@ -980,6 +999,8 @@ export default {
     toObject,
     randomString,
     isMobile,
+    isNarrowLayout,
+    onNarrowLayoutChange,
     isDesktop,
     setCookie,
     getNoteTypeClass,

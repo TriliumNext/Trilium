@@ -5,6 +5,7 @@ import {
     Essentials,
     Paragraph,
     Plugin,
+    Table,
 } from "ckeditor5";
 import type { ModelElement, ModelText } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +13,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestEditor } from "../../test/editor-kit.js";
 import { TestBoxPlugin } from "../../test/fixture-plugins.js";
 import MoveBlockUpDownPlugin from "./move_block_updown.js";
+import TableMove from "./table_move/table_move.js";
 
 /** Returns the text data of the Nth block in the editor root (0-indexed). */
 function getBlockText(editor: ClassicEditor, index: number): string {
@@ -516,5 +518,107 @@ describe("MoveBlockUpDownPlugin with collapsible summary element", () => {
         // After dedup, the details block moves as one unit before the paragraph
         const c0 = root.getChild(0);
         expect(c0?.is("element") && (c0 as ModelElement).name).toBe("details");
+    });
+});
+
+describe("MoveBlockUpDownPlugin inside tables", () => {
+    async function fireAltArrow(editor: ClassicEditor, key: "ArrowUp" | "ArrowDown") {
+        await new Promise<void>((resolve) => {
+            editor.editing.view.once("render", () => resolve());
+            editor.editing.view.forceRender();
+        });
+        const domRoot = editor.editing.view.getDomRoot();
+        if (!domRoot) { throw new Error("No editing DOM root"); }
+
+        const event = new KeyboardEvent("keydown", {
+            key,
+            altKey: true,
+            bubbles: true,
+            cancelable: true
+        });
+        domRoot.dispatchEvent(event);
+        return event;
+    }
+
+    const twoRowTable =
+        "<table>" +
+        "<tableRow><tableCell><paragraph>a[]</paragraph></tableCell></tableRow>" +
+        "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+        "</table>";
+
+    describe("with the TableMove plugin", () => {
+        let editor: ClassicEditor;
+
+        beforeEach(async () => {
+            editor = await createTestEditor(
+                [Essentials, Paragraph, Table, MoveBlockUpDownPlugin, TableMove]
+            );
+        });
+
+        it("moves the table row instead of the block", async () => {
+            setModelData(editor.model, twoRowTable);
+
+            await fireAltArrow(editor, "ArrowDown");
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table>" +
+                "<tableRow><tableCell><paragraph>b</paragraph></tableCell></tableRow>" +
+                "<tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow>" +
+                "</table>"
+            );
+        });
+
+        it("does not fall back to a block move at the table edge", async () => {
+            // The cell holds two paragraphs; a block-move fallback would swap them.
+            setModelData(editor.model,
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y[]</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+
+            const event = await fireAltArrow(editor, "ArrowUp");
+
+            expect(event.defaultPrevented).toBe(true);
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+        });
+
+        it("still moves a selected table widget as a block", async () => {
+            setModelData(editor.model,
+                "<paragraph>First</paragraph>" +
+                "[<table><tableRow><tableCell><paragraph>a</paragraph></tableCell></tableRow></table>]"
+            );
+
+            await fireAltArrow(editor, "ArrowUp");
+
+            const root = editor.model.document.getRoot();
+            if (!root) { throw new Error("No root"); }
+            const c0 = root.getChild(0);
+            expect(c0?.is("element") && (c0 as ModelElement).name).toBe("table");
+        });
+    });
+
+    describe("without the TableMove plugin", () => {
+        it("keeps moving blocks inside a table cell", async () => {
+            const editor = await createTestEditor(
+                [Essentials, Paragraph, Table, MoveBlockUpDownPlugin]
+            );
+            setModelData(editor.model,
+                "<table><tableRow><tableCell>" +
+                "<paragraph>x</paragraph><paragraph>y[]</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+
+            await fireAltArrow(editor, "ArrowUp");
+
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(
+                "<table><tableRow><tableCell>" +
+                "<paragraph>y</paragraph><paragraph>x</paragraph>" +
+                "</tableCell></tableRow></table>"
+            );
+        });
     });
 });

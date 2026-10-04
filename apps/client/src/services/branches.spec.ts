@@ -69,6 +69,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     // Reset commonly-overridden collaborators back to safe defaults.
     server.put = vi.fn(async () => ({ success: true, message: "" })) as typeof server.put;
+    server.post = vi.fn(async () => ({})) as typeof server.post;
     server.remove = vi.fn(async () => ({})) as typeof server.remove;
     toastService.showError = vi.fn();
     toastService.showPersistent = vi.fn();
@@ -227,24 +228,30 @@ describe("deleteNotes", () => {
             getActiveContext: () => ({ notePathArray: ["root", note.noteId], setNote })
         } as any;
         appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            data.callback({ proceed: true, deleteAllClones: false, eraseNotes: false });
+            data.callback({
+                proceed: true, deleteAllClones: false, eraseNotes: false, noteCountToDelete: 7
+            });
         }) as any;
 
-        // Two branches -> first iteration has last=false, second has last=true.
+        // Two branches, one request: the backend deletes the selection in a single transaction.
         const result = await branches.deleteNotes(["delBranch2", "delBranch2b"]);
         expect(result).toBe(true);
-        expect(server.remove).toHaveBeenCalledTimes(2);
-        const firstArg = (server.remove as any).mock.calls[0][0] as string;
-        const secondArg = (server.remove as any).mock.calls[1][0] as string;
-        expect(firstArg.startsWith(`branches/delBranch2?taskId=`)).toBe(true);
-        expect(firstArg).toContain("eraseNotes=false");
-        expect(firstArg).toContain("last=false");
-        expect(secondArg).toContain("last=true");
+        expect(server.post).toHaveBeenCalledTimes(1);
+        const [url, body] = (server.post as any).mock.calls[0];
+        expect(url).toBe("delete-notes");
+        expect(body).toMatchObject({
+            branchIdsToDelete: ["delBranch2", "delBranch2b"],
+            deleteAllClones: false,
+            eraseNotes: false,
+            // The dialog's own preview count, so the toast counts towards the number it showed.
+            totalCount: 7,
+            taskId: expect.any(String)
+        });
         // root has no children registered here, so the parent path ("root") is the fallback
         expect(setNote).toHaveBeenCalledWith("root");
     });
 
-    it("deletes all clones (note endpoint), erases & reloads, and tolerates navigation errors", async () => {
+    it("asks for all clones, erases & reloads, and tolerates navigation errors", async () => {
         const note = buildNote({ title: "Del3" });
         makeBranch("delBranch3", note.noteId, "root");
 
@@ -261,10 +268,9 @@ describe("deleteNotes", () => {
 
         const result = await branches.deleteNotes(["delBranch3"], false, true, "comp-9");
         expect(result).toBe(true);
-        // deleteAllClones -> notes/<noteId> endpoint
-        const removeArg = (server.remove as any).mock.calls[0][0] as string;
-        expect(removeArg.startsWith(`notes/${note.noteId}?taskId=`)).toBe(true);
-        expect(removeArg).toContain("eraseNotes=true");
+        const [, body, componentId] = (server.post as any).mock.calls[0];
+        expect(body).toMatchObject({ deleteAllClones: true, eraseNotes: true });
+        expect(componentId).toBe("comp-9");
         expect(reloadSpy).toHaveBeenCalledTimes(1);
         expect(errSpy).toHaveBeenCalled();
         reloadSpy.mockRestore();
@@ -287,24 +293,6 @@ describe("deleteNotes", () => {
         expect(getActiveContext).not.toHaveBeenCalled();
     });
 
-    it("handles a deleteAllClones request where the branch is no longer in froca", async () => {
-        // filterRootNote keeps non-root ids even if the branch is gone? No: filterRootNote drops
-        // unknown branches. So to exercise the `deleteAllClones && !branch` fallback we keep a real
-        // branch through filtering, then remove it from froca before the delete loop runs.
-        const note = buildNote({ title: "Del5" });
-        makeBranch("delBranch5", note.noteId, "root");
-        appContext.triggerCommand = vi.fn((_name: any, data: any) => {
-            // remove the branch right when the dialog "resolves", before the delete loop reads it
-            delete froca.branches["delBranch5"];
-            data.callback({ proceed: true, deleteAllClones: true, eraseNotes: false });
-        }) as any;
-
-        const result = await branches.deleteNotes(["delBranch5"], false, false);
-        expect(result).toBe(true);
-        // branch missing -> falls back to deleting the branch id endpoint
-        const removeArg = (server.remove as any).mock.calls[0][0] as string;
-        expect(removeArg.startsWith("branches/delBranch5?taskId=")).toBe(true);
-    });
 });
 
 describe("activateNeighbouringNotePath (via deleteNotes navigation)", () => {
@@ -544,6 +532,42 @@ describe("ws task-message subscribers", () => {
         expect(succeededToast.id).toBe("s1");
         expect(succeededToast.timeout).toBe(5000);
         expect(succeededToast.icon).toBe("trash");
+        // The finished toast replaces the in-progress one by id, and showPersistent merges fields.
+        expect(succeededToast.progress).toBeUndefined();
+        expect(succeededToast.dismissible).toBe(true);
+    });
+
+    it("shows a delete progress bar only with a total, and drops it while erasing", async () => {
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b1", progressCount: 3, totalCount: 12
+        });
+        const withTotal = (toastService.showPersistent as any).mock.calls[0][0];
+        expect(withTotal.progress).toBeCloseTo(3 / 12);
+        expect(withTotal.dismissible).toBe(false);
+
+        // The count walks branches while the total counts notes, so a surviving clone can push the
+        // count past the total. The bar must not overflow.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b2", progressCount: 20, totalCount: 12
+        });
+        expect((toastService.showPersistent as any).mock.calls[1][0].progress).toBe(1);
+
+        // No total (a caller that never opened the dialog) -> a running count, no bar.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount", taskId: "b3", progressCount: 4
+        });
+        expect((toastService.showPersistent as any).mock.calls[2][0].progress).toBeUndefined();
+
+        // Erasing is bulk SQL with nothing to count, so the bar goes even though a total is known.
+        await dispatchWs({
+            taskType: "deleteNotes", type: "taskProgressCount",
+            taskId: "b4", progressCount: 12, totalCount: 12, phase: "erasing"
+        });
+        const erasing = (toastService.showPersistent as any).mock.calls[3][0];
+        expect(erasing.progress).toBeUndefined();
+        expect(erasing.dismissible).toBe(false);
     });
 
     it("undeleteNotes subscriber reacts to error/progress/success and ignores other task types", async () => {
