@@ -22,7 +22,8 @@ import {
     presentRelations,
     relationEndTitle,
     resolveFoldEnd,
-    splitFoldTitle
+    splitFoldTitle,
+    statementsBetween
 } from "./data";
 
 describe("loadNotesAndRelations", () => {
@@ -759,6 +760,50 @@ describe("applyRelationBridges", () => {
             .toBe("cause(cites(Alpha, Beta), knows(Gamma, Item))");
     });
 
+    it("folds the edge a relation hangs on and leaves the reverse edge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" },
+                { id: "event", name: "Event", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "beta-alpha", source: "beta", target: "alpha", name: "mentions, contains" },
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, likes" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4, event: 4 },
+            reificationLinks: [ {
+                linkId: "alpha-beta",
+                name: "cause",
+                outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "likes",
+                note: [ "event", "Event", "text", null, "bx bx-file" ]
+            } ]
+        };
+        const open = applyRelationBridges(data);
+        const bridgeId = "alpha-beta-cause-event";
+        const order = foldOrder(open, bridgeId);
+        const keys = collapseKeys(
+            order,
+            bridgeId,
+            "cause",
+            (id) => predicatesIn(open.links.find((link) => link.id === id)?.name ?? ""),
+            (edgeId) => predicateForEdge(edgeId, order, open)
+        );
+
+        expect(keys).toEqual([ predicateCollapseKey("alpha-beta", "likes"), bridgeId ]);
+
+        const folded = collapseRelations(open, new Set(keys));
+
+        expect(folded.links).toContainEqual({
+            id: "beta-alpha", source: "beta", target: "alpha", name: "mentions, contains"
+        });
+        expect(folded.links).toContainEqual({
+            id: "alpha-beta", source: "alpha", target: "beta", name: "cites"
+        });
+    });
+
     it("folds the statement that was left on the line as its own note", () => {
         const data: NotesAndRelationsData = {
             nodes: [
@@ -820,6 +865,29 @@ describe("applyRelationBridges", () => {
         ]);
         expect(splitFoldTitle("cause(mentions(Alpha, Beta), Event)")).toEqual([
             "cause(mentions(Alpha, Beta), Event)"
+        ]);
+    });
+});
+
+describe("statementsBetween", () => {
+    const links = [
+        { id: "beta-alpha", source: "beta", target: "alpha", name: "mentions, contains" },
+        { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, likes" },
+        { id: "edge:alpha-beta-cause-event", source: "edge:alpha-beta", target: "event", name: "cause" }
+    ];
+
+    it("lists both directions between two notes, and a line off an edge as itself", () => {
+        expect(statementsBetween("alpha-beta", links)).toEqual([
+            { linkId: "alpha-beta", predicate: "cites", sourceId: "alpha", targetId: "beta" },
+            { linkId: "alpha-beta", predicate: "likes", sourceId: "alpha", targetId: "beta" },
+            { linkId: "beta-alpha", predicate: "mentions", sourceId: "beta", targetId: "alpha" },
+            { linkId: "beta-alpha", predicate: "contains", sourceId: "beta", targetId: "alpha" }
+        ]);
+        expect(statementsBetween("beta-alpha", links).map((item) => item.predicate)).toEqual([
+            "mentions", "contains", "cites", "likes"
+        ]);
+        expect(statementsBetween("edge:alpha-beta-cause-event", links)).toEqual([
+            { linkId: "edge:alpha-beta-cause-event", predicate: "cause", sourceId: "edge:alpha-beta", targetId: "event" }
         ]);
     });
 });

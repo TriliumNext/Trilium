@@ -275,12 +275,7 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             seen.add(jointId);
             const joint = nodesById.get(jointId);
             const [ subjectId, objectId ] = joint?.jointOf ?? [ "", "" ];
-            const host = data.links.find((link) => {
-                const source = endId(link.source);
-                const target = endId(link.target);
-                return (source === subjectId && target === objectId)
-                    || (source === objectId && target === subjectId);
-            });
+            const host = linkInJointDirection(data.links, subjectId, objectId, endId);
             const hostPredicates = host ? predicatesIn(host.name) : [];
             if (host && hostPredicates.length > 0 && subjectId && objectId) {
                 return {
@@ -374,12 +369,7 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             return;
         }
         const [ subjectId, objectId ] = joint.jointOf;
-        const host = data.links.find((item) => {
-            const source = endId(item.source);
-            const target = endId(item.target);
-            return (source === subjectId && target === objectId)
-                || (source === objectId && target === subjectId);
-        });
+        const host = linkInJointDirection(data.links, subjectId, objectId, endId);
         if (!host || collapsedLinkIds.has(host.id)) {
             return;
         }
@@ -889,12 +879,7 @@ export function foldOrder(data: { nodes: NoteMapNodeObject[]; links: NoteMapLink
             continue;
         }
         const [ subjectId, objectId ] = node.jointOf;
-        const host = data.links.find((link) => {
-            const source = endKey(link.source);
-            const target = endKey(link.target);
-            return (source === subjectId && target === objectId)
-                || (source === objectId && target === subjectId);
-        });
+        const host = linkInJointDirection(data.links, subjectId, objectId, endKey);
         if (host) {
             hosts.set(node.id, host.id);
         }
@@ -1028,12 +1013,7 @@ function edgeOfJoint(
         return;
     }
     const [ subjectId, objectId ] = joint.jointOf;
-    return shown.links.find((link) => {
-        const source = endKey(link.source);
-        const target = endKey(link.target);
-        return (source === subjectId && target === objectId)
-            || (source === objectId && target === subjectId);
-    })?.id;
+    return linkInJointDirection(shown.links, subjectId, objectId, endKey)?.id;
 }
 
 /** One predicate of `linkId`, so that statement can fold while the edge's other names stay. */
@@ -1303,12 +1283,7 @@ export function relationEndTitle(
     }
     seen.add(node.id);
     const [ subjectId, objectId ] = node.jointOf;
-    const host = data.links.find((link) => {
-        const source = endKey(link.source);
-        const target = endKey(link.target);
-        return (source === subjectId && target === objectId)
-            || (source === objectId && target === subjectId);
-    });
+    const host = linkInJointDirection(data.links, subjectId, objectId, endKey);
     const predicates = host ? predicatesIn(host.name) : [];
     if (!host || predicates.length === 0) {
         return node.name;
@@ -1319,6 +1294,61 @@ export function relationEndTitle(
         relationEndTitle(host.source, data, seen),
         relationEndTitle(host.target, data, seen)
     );
+}
+
+export interface StatementChoice {
+    linkId: string;
+    predicate: string;
+    sourceId: string;
+    targetId: string;
+}
+
+/**
+ * The statements a right-click can fold between the same two notes as `linkId`, either way.
+ * The clicked line's statements come first. A line that starts on a point of an edge stays that line.
+ */
+export function statementsBetween(
+    linkId: string,
+    links: readonly Pick<NoteMapLinkObject, "id" | "name" | "source" | "target">[]
+): StatementChoice[] {
+    const clicked = links.find((item) => item.id === linkId);
+    if (!clicked) {
+        return [];
+    }
+    const sourceId = endKey(clicked.source);
+    const targetId = endKey(clicked.target);
+    if (!isNoteEnd(sourceId) || !isNoteEnd(targetId)) {
+        return statementChoices(clicked);
+    }
+    const sameWay: StatementChoice[] = [];
+    const otherWay: StatementChoice[] = [];
+    for (const item of links) {
+        const source = endKey(item.source);
+        const target = endKey(item.target);
+        if (!isNoteEnd(source) || !isNoteEnd(target)) {
+            continue;
+        }
+        if (source === sourceId && target === targetId) {
+            sameWay.push(...statementChoices(item));
+        } else if (sourceId !== targetId && source === targetId && target === sourceId) {
+            otherWay.push(...statementChoices(item));
+        }
+    }
+    return [ ...sameWay, ...otherWay ];
+}
+
+function isNoteEnd(id: string) {
+    return id.length > 0 && !id.startsWith("edge:") && !id.startsWith("fold:");
+}
+
+function statementChoices(link: Pick<NoteMapLinkObject, "id" | "name" | "source" | "target">): StatementChoice[] {
+    const sourceId = endKey(link.source);
+    const targetId = endKey(link.target);
+    const choices: StatementChoice[] = [];
+    for (const predicate of predicatesIn(link.name)) {
+        choices.push({ linkId: link.id, predicate, sourceId, targetId });
+    }
+    return choices;
 }
 
 /** The predicates written on one grouped edge, such as `loves, knows`. */
@@ -1340,6 +1370,19 @@ export function foldTitle(predicates: readonly string[], subjectTitle: string, o
         titles.push(buildReificationTitle({ subjectTitle, predicate, objectTitle }));
     }
     return titles.join(", ");
+}
+
+/**
+ * The link `jointOf` names, running from its subject to its object.
+ * A link the other way between the same notes is a different edge.
+ */
+function linkInJointDirection<T extends { source?: NoteMapLinkObject["source"]; target?: NoteMapLinkObject["source"] }>(
+    links: readonly T[],
+    subjectId: string,
+    objectId: string,
+    keyOf: (end: T["source"]) => string
+): T | undefined {
+    return links.find((link) => keyOf(link.source) === subjectId && keyOf(link.target) === objectId);
 }
 
 /** The note id a graph link stores at an end, once the graph has replaced the id with the note. */

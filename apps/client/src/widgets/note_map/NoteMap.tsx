@@ -44,7 +44,8 @@ import {
     ReificationEnds,
     relationEndTitle,
     resolveFoldEnd,
-    splitFoldTitle
+    splitFoldTitle,
+    statementsBetween
 } from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
@@ -241,16 +242,15 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                         return;
                     }
                     event.preventDefault();
-                    const linkId = link.id;
-                    void showRelationMenu(link, event, graph.graphData(), (predicate) => {
+                    void showRelationMenu(link, event, graph.graphData(), (chosenLinkId, predicate) => {
                         // The edges this one starts on fold first. Expand puts back only this one.
                         // A host edge folds only the statement this line hangs on.
                         const shown = graph.graphData();
                         const base = notesAndRelationsRef.current;
-                        const order = foldOrder(shown, linkId);
+                        const order = foldOrder(shown, chosenLinkId);
                         for (const key of collapseKeys(
                             order,
-                            linkId,
+                            chosenLinkId,
                             predicate,
                             (id) => {
                                 const stored = base?.links.find((item) => item.id === id);
@@ -262,8 +262,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                             collapsedRef.current.add(key);
                         }
                         showView(false);
-                    }, () => {
-                        const noteId = expandedNoteId(linkId);
+                    }, (chosenLinkId) => {
+                        const noteId = expandedNoteId(chosenLinkId);
                         if (!noteId) {
                             return;
                         }
@@ -471,35 +471,45 @@ interface PredicateConcept {
 }
 
 /**
- * Right-click on a relation: fold that instance, open a reification that already
- * includes it, or open the concept of the relation name itself.
+ * Right-click on a relation. When several statements run between the same two notes,
+ * either way, a search asks which one. The menu is then that statement's: fold it,
+ * open a reification that already includes it, or open the concept of its name.
  */
 async function showRelationMenu(
     link: NoteMapLinkObject,
     event: MouseEvent,
     graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
-    fold: (predicate?: string) => void,
-    unexpand?: () => void
+    fold: (linkId: string, predicate: string) => void,
+    unexpand?: (linkId: string) => void
 ) {
-    const sourceId = linkEndId(link.source);
-    const targetId = linkEndId(link.target);
-    const predicates = predicatesIn(link.name);
-    const subjectTitle = await titledEnd(link.source, graph, predicateAt(link, link.source));
-    const objectTitle = await titledEnd(link.target, graph, predicateAt(link, link.target));
-    const chosen = await chooseRelation(predicates, subjectTitle, objectTitle);
-    if (!chosen) {
+    const choices = statementsBetween(link.id, graph.links);
+    const options: { key: string; caption: string; linkId: string; predicate: string; sourceId: string; targetId: string }[] = [];
+    for (const choice of choices) {
+        const subjectTitle = await titledEnd(choice.sourceId, graph);
+        const objectTitle = await titledEnd(choice.targetId, graph);
+        options.push({
+            key: `${choice.linkId}\u001f${choice.predicate}`,
+            caption: foldTitle([ choice.predicate ], subjectTitle, objectTitle),
+            linkId: choice.linkId,
+            predicate: choice.predicate,
+            sourceId: choice.sourceId,
+            targetId: choice.targetId
+        });
+    }
+    const pickedKey = await chooseStatement(options);
+    const picked = options.find((item) => item.key === pickedKey);
+    if (!picked) {
         return;
     }
-    const title = foldTitle([ chosen ], subjectTitle, objectTitle);
     const items: MenuItem<string>[] = [];
-    if (unexpand && link.id && expandedNoteId(link.id)) {
+    if (unexpand && expandedNoteId(picked.linkId)) {
         items.push({ title: t("note_map.show_as_note"), command: "unexpand", uiIcon: "bx bx-collapse" });
     }
-    items.push({ title: t("note_map.fold_as", { title }), command: "fold", uiIcon: "bx bx-collapse" });
+    items.push({ title: t("note_map.fold_as", { title: picked.caption }), command: "fold", uiIcon: "bx bx-collapse" });
 
     const seen = new Set<string>();
     const listed: ReificationListItem[] = [];
-    for (const attributeId of await relationAttributeIds(sourceId, targetId, chosen)) {
+    for (const attributeId of await relationAttributeIds(picked.sourceId, picked.targetId, picked.predicate)) {
         try {
             const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${attributeId}/reifications`);
             for (const item of response.items) {
@@ -536,7 +546,7 @@ async function showRelationMenu(
     }
 
     items.push({ kind: "separator" });
-    for (const name of [ chosen ]) {
+    for (const name of [ picked.predicate ]) {
         const concept = await loadPredicateConcept(name);
         if (concept?.noteId) {
             items.push({
@@ -559,10 +569,10 @@ async function showRelationMenu(
         items,
         selectMenuItemHandler: ({ command }) => {
             if (command === "unexpand") {
-                unexpand?.();
+                unexpand?.(picked.linkId);
                 return;
             }
-            void applyRelationCommand(command, () => fold(chosen));
+            void applyRelationCommand(command, () => fold(picked.linkId, picked.predicate));
         }
     });
 }
@@ -805,14 +815,6 @@ async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: s
             }
         }
     });
-}
-
-/** The statement a grouped edge's menu is about. One name skips the search. */
-async function chooseRelation(predicates: string[], subjectTitle: string, objectTitle: string) {
-    return chooseStatement(predicates.map((predicate) => ({
-        key: predicate,
-        caption: foldTitle([ predicate ], subjectTitle, objectTitle)
-    })));
 }
 
 async function chooseStatement(items: { key: string; caption: string }[]) {
