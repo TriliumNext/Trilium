@@ -101,3 +101,9 @@ This is a list of labels that Trilium natively supports.
 | `similarNotesWidgetDisabled` | Disables the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Similar%20Notes.md">Similar Notes</a> ribbon tab (old layout only) |
 | `docName` , `docUrl` | Used internally for the in-app help. |
 | `aiQuickAction` | Defines a custom prompt to be used for the <a class="reference-link" href="../../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a>'s quick actions. |
+| `reificationOf` | The attribute this note stands for. Written when a relation or label is turned into a note. See <a class="reference-link" href="Relations.md">Relations</a>. |
+| `reificationKind` | Whether the statement this note stands for is a relation or a label. |
+| `reificationPredicate` | The name of the relation or label this note stands for. |
+| `reificationLiteral` | The text of the label this note stands for. A protected note does not copy it. |
+| `reificationGeneratedTitle` | The title Trilium last wrote for this statement. A title you change is kept. |
+| `reificationOfPredicate` | Marks this note as the concept of a relation name. One statement that uses the name is a separate note. |

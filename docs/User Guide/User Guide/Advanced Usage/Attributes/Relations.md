@@ -67,3 +67,5 @@ These relations are supported and used internally by Trilium.
 | `shareHtml` | HTML note which will be injected into the share page at locations specified by the `shareHtmlLocation` label. HTML note must be in the shared sub-tree as well. Consider using `shareHiddenFromTree`. |
 | `shareTemplate` | Embedded JavaScript note that will be used as the template for displaying the shared note. Falls back to the default template. Consider using `shareHiddenFromTree`. |
 | `shareFavicon` | Favicon note to be set in the shared page. Typically you want to set it to share root and make it inheritable. Favicon note must be in the shared sub-tree as well. Consider using `shareHiddenFromTree`. |
+| `reificationSubject` | The note that owns the relation or label this note stands for. |
+| `reificationObject` | The note the relation this note stands for points at. |
