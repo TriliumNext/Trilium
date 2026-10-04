@@ -45,6 +45,7 @@ import {
     relationEndTitle,
     resolveFoldEnd,
     splitFoldTitle,
+    statementCaption,
     statementsBetween
 } from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
@@ -485,11 +486,21 @@ async function showRelationMenu(
     const choices = statementsBetween(link.id, graph.links);
     const options: { key: string; caption: string; linkId: string; predicate: string; sourceId: string; targetId: string }[] = [];
     for (const choice of choices) {
-        const subjectTitle = await titledEnd(choice.sourceId, graph);
-        const objectTitle = await titledEnd(choice.targetId, graph);
+        const line = graph.links.find((item) => item.id === choice.linkId);
+        const subjectPredicate = line ? predicateAt(line, choice.sourceId) : undefined;
+        const objectPredicate = line ? predicateAt(line, choice.targetId) : undefined;
+        const subjectOnGraph = relationEndTitle(choice.sourceId, graph, new Set(), subjectPredicate);
+        const objectOnGraph = relationEndTitle(choice.targetId, graph, new Set(), objectPredicate);
+        const caption = subjectOnGraph && objectOnGraph
+            ? statementCaption(choice, line, graph)
+            : foldTitle(
+                [ choice.predicate ],
+                subjectOnGraph || await titledEnd(choice.sourceId, graph, subjectPredicate),
+                objectOnGraph || await titledEnd(choice.targetId, graph, objectPredicate)
+            );
         options.push({
             key: `${choice.linkId}\u001f${choice.predicate}`,
-            caption: foldTitle([ choice.predicate ], subjectTitle, objectTitle),
+            caption,
             linkId: choice.linkId,
             predicate: choice.predicate,
             sourceId: choice.sourceId,

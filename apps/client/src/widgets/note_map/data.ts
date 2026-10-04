@@ -1337,6 +1337,37 @@ export function statementsBetween(
     return [ ...sameWay, ...otherWay ];
 }
 
+/**
+ * The fold title of one statement.
+ * An end that is a point on a grouped edge is named as the one statement this line hangs on.
+ */
+export function statementCaption(
+    choice: StatementChoice,
+    line: Pick<NoteMapLinkObject, "hostEndId" | "hostPredicate" | "farEndId" | "farPredicate"> | undefined,
+    graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] }
+): string {
+    return foldTitle(
+        [ choice.predicate ],
+        relationEndTitle(choice.sourceId, graph, new Set(), predicateForEnd(line, choice.sourceId)),
+        relationEndTitle(choice.targetId, graph, new Set(), predicateForEnd(line, choice.targetId))
+    );
+}
+
+function predicateForEnd(
+    line: Pick<NoteMapLinkObject, "hostEndId" | "hostPredicate" | "farEndId" | "farPredicate"> | undefined,
+    endId: string
+) {
+    if (!line || !endId) {
+        return;
+    }
+    if (endId === line.hostEndId) {
+        return line.hostPredicate;
+    }
+    if (endId === line.farEndId) {
+        return line.farPredicate;
+    }
+}
+
 function isNoteEnd(id: string) {
     return id.length > 0 && !id.startsWith("edge:") && !id.startsWith("fold:");
 }

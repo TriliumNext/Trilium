@@ -23,6 +23,7 @@ import {
     relationEndTitle,
     resolveFoldEnd,
     splitFoldTitle,
+    statementCaption,
     statementsBetween
 } from "./data";
 
@@ -356,6 +357,11 @@ describe("relationEndTitle", () => {
             [ "leadsTo" ],
             relationEndTitle(leadsTo.source, data, new Set(), leadsTo.hostPredicate),
             relationEndTitle(leadsTo.target, data)
+        )).toBe("leadsTo(likes(A, B), Chaos)");
+        expect(statementCaption(
+            { linkId: leadsTo.id, predicate: "leadsTo", sourceId: "edge:a-b", targetId: "chaos" },
+            leadsTo,
+            data
         )).toBe("leadsTo(likes(A, B), Chaos)");
     });
 });
