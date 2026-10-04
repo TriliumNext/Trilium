@@ -972,28 +972,68 @@ function orderedFolds(data: NotesAndRelationsData, collapsedLinkIds: ReadonlySet
 
 /**
  * The collapse keys for folding `linkId`.
- * A host edge contributes only the statement the next line hangs on, so the other names stay.
+ * An edge this line starts on contributes only the statement it hangs on.
+ * `predicateFor` is that statement for each edge, including the far end of a fact-to-fact line.
  */
 export function collapseKeys(
     order: string[],
     linkId: string,
     predicate: string | undefined,
     linkNames: (id: string) => string[],
-    hostPredicate: (id: string) => string | undefined
+    predicateFor: (edgeId: string) => string | undefined
 ): string[] {
     const keys: string[] = [];
     const sequence = order.includes(linkId) ? order : [ ...order, linkId ];
-    for (const [ index, id ] of sequence.entries()) {
+    for (const id of sequence) {
         const names = linkNames(id);
-        const childId = sequence[index + 1];
-        const pinned = childId ? hostPredicate(childId) : predicate;
-        if (pinned && names.length > 1) {
+        const pinned = id === linkId ? predicate : predicateFor(id);
+        if (pinned && names.length > 1 && names.includes(pinned)) {
             keys.push(predicateCollapseKey(id, pinned));
         } else {
             keys.push(id);
         }
     }
     return keys;
+}
+
+/** The statement `edgeId` contributes when a line in `order` hangs on it, at either end. */
+export function predicateForEdge(
+    edgeId: string,
+    order: readonly string[],
+    shown: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] }
+) {
+    for (const id of order) {
+        const link = shown.links.find((item) => item.id === id);
+        if (!link) {
+            continue;
+        }
+        if (edgeOfJoint(link.hostEndId, shown) === edgeId) {
+            return link.hostPredicate;
+        }
+        if (edgeOfJoint(link.farEndId, shown) === edgeId) {
+            return link.farPredicate;
+        }
+    }
+}
+
+function edgeOfJoint(
+    jointId: string | undefined,
+    shown: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] }
+) {
+    if (!jointId) {
+        return;
+    }
+    const joint = shown.nodes.find((node) => node.id === jointId);
+    if (!joint?.jointOf) {
+        return;
+    }
+    const [ subjectId, objectId ] = joint.jointOf;
+    return shown.links.find((link) => {
+        const source = endKey(link.source);
+        const target = endKey(link.target);
+        return (source === subjectId && target === objectId)
+            || (source === objectId && target === subjectId);
+    })?.id;
 }
 
 /** One predicate of `linkId`, so that statement can fold while the edge's other names stay. */

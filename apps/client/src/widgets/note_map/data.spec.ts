@@ -17,6 +17,7 @@ import {
     loadNotesAndRelations,
     NotesAndRelationsData,
     predicateCollapseKey,
+    predicateForEdge,
     predicatesIn,
     presentRelations,
     relationEndTitle,
@@ -685,12 +686,13 @@ describe("applyRelationBridges", () => {
         };
         const open = applyRelationBridges(data);
         const bridgeId = "alpha-beta-cause-event";
+        const order = foldOrder(open, bridgeId);
         const keys = collapseKeys(
-            foldOrder(open, bridgeId),
+            order,
             bridgeId,
             "cause",
             (id) => predicatesIn(open.links.find((link) => link.id === id)?.name ?? ""),
-            (id) => open.links.find((link) => link.id === id)?.hostPredicate
+            (edgeId) => predicateForEdge(edgeId, order, open)
         );
 
         expect(keys).toEqual([ predicateCollapseKey("alpha-beta", "mentions"), bridgeId ]);
@@ -702,6 +704,59 @@ describe("applyRelationBridges", () => {
         expect(folded.links).toContainEqual({
             id: "alpha-beta", source: "alpha", target: "beta", name: "cites"
         });
+    });
+
+    it("folds the far fact's statement and leaves the other name on that edge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" },
+                { id: "gamma", name: "Gamma", type: "text", color: null, icon: "bx bx-file" },
+                { id: "item", name: "Item", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites" },
+                { id: "gamma-item", source: "gamma", target: "item", name: "likes, knows" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4, gamma: 4, item: 4 },
+            reificationLinks: [ {
+                linkId: "alpha-beta",
+                name: "cause",
+                outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "cites",
+                otherFact: {
+                    linkId: "gamma-item",
+                    predicate: "knows",
+                    subject: [ "gamma", "Gamma", "text", null, "bx bx-file" ],
+                    object: [ "item", "Item", "text", null, "bx bx-file" ]
+                }
+            } ]
+        };
+        const open = applyRelationBridges(data);
+        const bridgeId = "edge:alpha-beta-cause-edge:gamma-item";
+        const order = foldOrder(open, bridgeId);
+        const keys = collapseKeys(
+            order,
+            bridgeId,
+            "cause",
+            (id) => predicatesIn(open.links.find((link) => link.id === id)?.name ?? ""),
+            (edgeId) => predicateForEdge(edgeId, order, open)
+        );
+
+        expect(keys).toEqual([
+            "alpha-beta",
+            predicateCollapseKey("gamma-item", "knows"),
+            bridgeId
+        ]);
+
+        const folded = collapseRelations(open, new Set(keys));
+
+        expect(folded.links).toContainEqual({
+            id: "gamma-item", source: "gamma", target: "item", name: "likes"
+        });
+        expect(folded.nodes.find((node) => node.id === `fold:${bridgeId}`)?.name)
+            .toBe("cause(cites(Alpha, Beta), knows(Gamma, Item))");
     });
 
     it("folds the statement that was left on the line as its own note", () => {

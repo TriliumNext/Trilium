@@ -38,6 +38,7 @@ import {
     NoteMapLinkObject,
     NoteMapNodeObject,
     NotesAndRelationsData,
+    predicateForEdge,
     predicatesIn,
     presentRelations,
     ReificationEnds,
@@ -246,8 +247,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                         // A host edge folds only the statement this line hangs on.
                         const shown = graph.graphData();
                         const base = notesAndRelationsRef.current;
+                        const order = foldOrder(shown, linkId);
                         for (const key of collapseKeys(
-                            foldOrder(shown, linkId),
+                            order,
                             linkId,
                             predicate,
                             (id) => {
@@ -255,7 +257,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                                 const current = shown.links.find((item) => item.id === id);
                                 return predicatesIn(stored?.name ?? current?.name ?? "");
                             },
-                            (id) => shown.links.find((item) => item.id === id)?.hostPredicate
+                            (edgeId) => predicateForEdge(edgeId, order, shown)
                         )) {
                             collapsedRef.current.add(key);
                         }
