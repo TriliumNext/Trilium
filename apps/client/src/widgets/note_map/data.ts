@@ -35,6 +35,11 @@ export interface NoteMapFold {
     /** Every predicate on the grouped edge. `predicate` is the first of these. */
     predicates: string[];
     /**
+     * The key removed to put this statement back.
+     * Set when one predicate of a grouped edge was folded and the others stayed on the line.
+     */
+    collapseKey?: string;
+    /**
      * The notes this relation joins. An end drawn from a folded edge is that fact,
      * so the relation is read from the note that stands for it.
      */
@@ -53,6 +58,11 @@ export interface NoteMapNodeObject extends NodeObject {
     /** Set when this circle is a relation folded out of the two notes it joined. */
     fold?: NoteMapFold;
     /**
+     * A folded statement with no relation of its own. It stays where it was placed:
+     * a line back to the two notes would be a relation that is not there.
+     */
+    pinnedFold?: boolean;
+    /**
      * A point on an edge, not a note. A relation aimed at that edge is drawn from here,
      * so two facts stay connected while both are still edges.
      */
@@ -65,6 +75,10 @@ export interface NoteMapLinkObject extends LinkObject<NoteMapNodeObject> {
     name: string;
     x?: number;
     y?: number;
+    hostPredicate?: string;
+    hostEndId?: string;
+    farPredicate?: string;
+    farEndId?: string;
 }
 
 export interface NotesAndRelationsData {
@@ -80,6 +94,9 @@ export interface NotesAndRelationsData {
          */
         hostPredicate?: string;
         hostEndId?: string;
+        /** The other end, when this line joins two facts. A fold of that statement is that node. */
+        farPredicate?: string;
+        farEndId?: string;
     }[];
     noteIdToSizeMap: Record<string, number>;
     /** Relations of a folded fact. Absent from the drawn graph until that fact is a node. */
@@ -306,19 +323,110 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         return node?.name ?? "";
     };
 
+    const partialFolds: { foldId: string; source: string; target: string }[] = [];
+    const addPartialFold = (
+        link: NotesAndRelationsData["links"][number],
+        foldedPredicate: string
+    ) => {
+        const rawSource = endId(link.source);
+        const rawTarget = endId(link.target);
+        const sourceId = absorbedEnd(rawSource);
+        const targetId = absorbedEnd(rawTarget);
+        const subject = positionOf(sourceId);
+        const object = positionOf(targetId);
+        const beside = besideEdge(subject, object);
+        const collapseKey = predicateCollapseKey(link.id, foldedPredicate);
+        const foldId = `fold:${collapseKey}`;
+        const fold: NoteMapNodeObject = {
+            id: foldId,
+            name: foldTitle([ foldedPredicate ], labelOf(sourceId), labelOf(targetId)),
+            type: "text",
+            color: null,
+            icon: "bx bx-git-commit",
+            x: beside.x,
+            y: beside.y,
+            fold: {
+                linkId: link.id,
+                collapseKey,
+                sourceNoteId: sourceId,
+                targetNoteId: targetId,
+                predicate: foldedPredicate,
+                predicates: [ foldedPredicate ],
+                subject: relationEnd(rawSource, sourceId),
+                object: relationEnd(rawTarget, targetId)
+            }
+        };
+        folds.set(foldId, fold);
+        data.noteIdToSizeMap[foldId] = FOLD_NODE_SIZE;
+        if (!parent.has(foldId)) {
+            parent.set(foldId, foldId);
+        }
+        partialFolds.push({ foldId, source: sourceId, target: targetId });
+    };
+
+    /** The fold of one statement, when this line hangs on that statement and the rest of the edge is still open. */
+    const partialFoldAt = (hostEndId?: string, hostPredicate?: string) => {
+        if (!hostEndId || !hostPredicate) {
+            return;
+        }
+        const joint = nodesById.get(hostEndId);
+        if (!joint?.jointOf) {
+            return;
+        }
+        const [ subjectId, objectId ] = joint.jointOf;
+        const host = data.links.find((item) => {
+            const source = endId(item.source);
+            const target = endId(item.target);
+            return (source === subjectId && target === objectId)
+                || (source === objectId && target === subjectId);
+        });
+        if (!host || collapsedLinkIds.has(host.id)) {
+            return;
+        }
+        const key = predicateCollapseKey(host.id, hostPredicate);
+        if (!collapsedLinkIds.has(key)) {
+            return;
+        }
+        return `fold:${key}`;
+    };
+
+    const statementFold = (link: NotesAndRelationsData["links"][number], rawId: string) => {
+        if (rawId === link.hostEndId) {
+            return partialFoldAt(link.hostEndId, link.hostPredicate);
+        }
+        if (rawId === link.farEndId) {
+            return partialFoldAt(link.farEndId, link.farPredicate);
+        }
+    };
+
+    const retargetEnd = (link: NotesAndRelationsData["links"][number], rawId: string, found: string) =>
+        statementFold(link, rawId) ?? found;
+
     for (const linkId of orderedFolds(data, collapsedLinkIds)) {
         const link = data.links.find((item) => item.id === linkId);
         const predicates = link ? predicatesIn(link.name) : [];
-        const predicate = predicates[0];
+        const folding = link ? predicatesBeingFolded(link.id, predicates, collapsedLinkIds) : [];
+        const predicate = folding[0];
         if (!link || !predicate) {
+            continue;
+        }
+        // One statement of a grouped edge folds on its own. The other names stay on the line,
+        // so the two notes are not pulled into this node.
+        if (!collapsedLinkIds.has(link.id)) {
+            for (const name of folding) {
+                addPartialFold(link, name);
+            }
             continue;
         }
         const rawSource = endId(link.source);
         const rawTarget = endId(link.target);
         // An end that is a point on an edge already folded is that fold, so this
-        // edge folds around it rather than around the point.
-        const sourceId = absorbedEnd(rawSource);
-        const targetId = absorbedEnd(rawTarget);
+        // edge folds around it rather than around the point. A single statement
+        // folded off a shared edge is that statement's node, not the whole edge.
+        const sourceStatement = statementFold(link, rawSource);
+        const targetStatement = statementFold(link, rawTarget);
+        const sourceId = sourceStatement ?? absorbedEnd(rawSource);
+        const targetId = targetStatement ?? absorbedEnd(rawTarget);
         const subject = positionOf(sourceId);
         const object = positionOf(targetId);
         const foldId = `fold:${linkId}`;
@@ -351,10 +459,10 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         }
         linkInto(sourceId, foldId);
         linkInto(targetId, foldId);
-        if (rawSource !== sourceId) {
+        if (!sourceStatement && rawSource !== sourceId) {
             linkInto(rawSource, foldId);
         }
-        if (rawTarget !== targetId) {
+        if (!targetStatement && rawTarget !== targetId) {
             linkInto(rawTarget, foldId);
         }
     }
@@ -397,6 +505,12 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         if (collapsedLinkIds.has(link.id)) {
             continue;
         }
+        const names = predicatesIn(link.name);
+        const folding = predicatesBeingFolded(link.id, names, collapsedLinkIds);
+        const remaining = names.filter((name) => !folding.includes(name));
+        if (names.length > 0 && remaining.length === 0) {
+            continue;
+        }
         const source = find(rawSource);
         const target = find(rawTarget);
         const fromJoint = nodesById.get(rawSource)?.joint === true
@@ -416,9 +530,17 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         if (source === target) {
             continue;
         }
-        links.push({ id: link.id, source, target, name: link.name });
-        keptEnds.add(source);
-        keptEnds.add(target);
+        const from = retargetEnd(link, rawSource, source);
+        const to = retargetEnd(link, rawTarget, target);
+        links.push({
+            id: link.id,
+            source: from,
+            target: to,
+            name: folding.length === 0 ? link.name : remaining.join(", "),
+            ...statementEnds(link)
+        });
+        keptEnds.add(from);
+        keptEnds.add(to);
     }
 
     // Relations of a fact are drawn again here. applyRelationBridges has already drawn
@@ -430,7 +552,14 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
             continue;
         }
         const hostJoint = edgeJointId(endId(host.source), endId(host.target));
-        const origin = collapsedLinkIds.has(attachment.linkId) ? find(`fold:${attachment.linkId}`) : hostJoint;
+        const predicateKey = attachment.hostPredicate
+            ? predicateCollapseKey(attachment.linkId, attachment.hostPredicate)
+            : "";
+        const origin = collapsedLinkIds.has(attachment.linkId)
+            ? find(`fold:${attachment.linkId}`)
+            : predicateKey && collapsedLinkIds.has(predicateKey)
+                ? `fold:${predicateKey}`
+                : hostJoint;
         const fromId = find(origin);
         if (attachment.otherFact) {
             appendFactAttachment(attachment.otherFact, attachment.name, attachment.outgoing, hostJoint, fromId);
@@ -495,7 +624,12 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         fromId: string
     ) {
         const otherJoint = fact.object ? edgeJointId(fact.subject[0], fact.object[0]) : fact.subject[0];
-        const otherEnd = collapsedLinkIds.has(fact.linkId) ? find(`fold:${fact.linkId}`) : find(otherJoint);
+        const partialKey = predicateCollapseKey(fact.linkId, fact.predicate);
+        const otherEnd = collapsedLinkIds.has(fact.linkId)
+            ? find(`fold:${fact.linkId}`)
+            : collapsedLinkIds.has(partialKey)
+                ? `fold:${partialKey}`
+                : find(otherJoint);
         if (fact.object && !collapsedLinkIds.has(fact.linkId)) {
             ensureMapNode(fact.subject);
             ensureMapNode(fact.object);
@@ -513,7 +647,25 @@ export function collapseRelations(data: NotesAndRelationsData, collapsedLinkIds:
         pushKeptLink(`${hostJoint}-${name}-${otherJoint}`, source, target, name);
     }
 
-    const visibleNodes = nodes.filter((node) => !droppedEnds.has(node.id) || keptEnds.has(node.id));
+    for (const placed of partialFolds) {
+        if (keptEnds.has(placed.foldId)) {
+            continue;
+        }
+        const fold = folds.get(placed.foldId);
+        if (!fold) {
+            continue;
+        }
+        fold.fx = fold.x;
+        fold.fy = fold.y;
+        fold.pinnedFold = true;
+    }
+
+    const visibleNodes = nodes.filter((node) => {
+        if (node.joint && !keptEnds.has(node.id)) {
+            return false;
+        }
+        return !droppedEnds.has(node.id) || keptEnds.has(node.id);
+    });
 
     return { noteIdToSizeMap: data.noteIdToSizeMap, nodes: visibleNodes, links, reificationLinks: data.reificationLinks };
 }
@@ -806,9 +958,9 @@ export async function resolveFoldEnd(
 function orderedFolds(data: NotesAndRelationsData, collapsedLinkIds: ReadonlySet<string>): string[] {
     const ordered: string[] = [];
     const seen = new Set<string>();
-    for (const linkId of collapsedLinkIds) {
-        for (const id of foldOrder(data, linkId)) {
-            if (!collapsedLinkIds.has(id) || seen.has(id)) {
+    for (const key of collapsedLinkIds) {
+        for (const id of foldOrder(data, linkIdOfCollapseKey(key))) {
+            if (!isLinkCollapsed(data, id, collapsedLinkIds) || seen.has(id)) {
                 continue;
             }
             seen.add(id);
@@ -816,6 +968,68 @@ function orderedFolds(data: NotesAndRelationsData, collapsedLinkIds: ReadonlySet
         }
     }
     return ordered;
+}
+
+/**
+ * The collapse keys for folding `linkId`.
+ * A host edge contributes only the statement the next line hangs on, so the other names stay.
+ */
+export function collapseKeys(
+    order: string[],
+    linkId: string,
+    predicate: string | undefined,
+    linkNames: (id: string) => string[],
+    hostPredicate: (id: string) => string | undefined
+): string[] {
+    const keys: string[] = [];
+    const sequence = order.includes(linkId) ? order : [ ...order, linkId ];
+    for (const [ index, id ] of sequence.entries()) {
+        const names = linkNames(id);
+        const childId = sequence[index + 1];
+        const pinned = childId ? hostPredicate(childId) : predicate;
+        if (pinned && names.length > 1) {
+            keys.push(predicateCollapseKey(id, pinned));
+        } else {
+            keys.push(id);
+        }
+    }
+    return keys;
+}
+
+/** One predicate of `linkId`, so that statement can fold while the edge's other names stay. */
+export function predicateCollapseKey(linkId: string, predicate: string) {
+    return `${linkId}${PREDICATE_FOLD_SEPARATOR}${predicate}`;
+}
+
+const PREDICATE_FOLD_SEPARATOR = "\u001f";
+
+function linkIdOfCollapseKey(key: string) {
+    const split = key.indexOf(PREDICATE_FOLD_SEPARATOR);
+    return split < 0 ? key : key.slice(0, split);
+}
+
+function predicatesBeingFolded(linkId: string, names: string[], collapsed: ReadonlySet<string>): string[] {
+    if (collapsed.has(linkId)) {
+        return names;
+    }
+    const chosen: string[] = [];
+    for (const name of names) {
+        if (collapsed.has(predicateCollapseKey(linkId, name))) {
+            chosen.push(name);
+        }
+    }
+    return chosen;
+}
+
+function isLinkCollapsed(data: NotesAndRelationsData, linkId: string, collapsed: ReadonlySet<string>) {
+    if (collapsed.has(linkId)) {
+        return true;
+    }
+    const link = data.links.find((item) => item.id === linkId);
+    if (!link) {
+        return false;
+    }
+    return predicatesBeingFolded(linkId, predicatesIn(link.name), collapsed).length > 0;
 }
 
 /**
@@ -876,6 +1090,24 @@ function edgeJointId(subjectId: string, objectId: string) {
     return `edge:${subjectId}-${objectId}`;
 }
 
+/** A spot just off the middle of an edge, so a folded statement is not drawn on top of the line it left. */
+function besideEdge(subject: { x: number; y: number }, object: { x: number; y: number }) {
+    const dx = object.x - subject.x;
+    const dy = object.y - subject.y;
+    const length = Math.hypot(dx, dy) || 1;
+    return {
+        x: (subject.x + object.x) / 2 + (-dy / length) * 36,
+        y: (subject.y + object.y) / 2 + (dx / length) * 36
+    };
+}
+
+function statementEnds(link: NotesAndRelationsData["links"][number]) {
+    return {
+        ...(link.hostPredicate ? { hostPredicate: link.hostPredicate, hostEndId: link.hostEndId } : {}),
+        ...(link.farPredicate ? { farPredicate: link.farPredicate, farEndId: link.farEndId } : {})
+    };
+}
+
 function nodeFromTuple(note: NoteMapNote): NoteMapNodeObject {
     const [ id, name, type, color, icon ] = note;
     return { id, name, type, color, icon };
@@ -926,14 +1158,17 @@ function bridgeToFact(
     });
     const otherJointId = edgeJointId(fact.subject[0], fact.object[0]);
     rememberNode(nodes, sizes, jointNode(otherJointId, fact.subject[0], fact.object[0]));
-    pushLink(links, linkIds, hostLink(
+    const bridge = hostLink(
         `${jointId}-${name}-${otherJointId}`,
         outgoing ? jointId : otherJointId,
         outgoing ? otherJointId : jointId,
         name,
         hostPredicate,
         jointId
-    ));
+    );
+    bridge.farPredicate = fact.predicate;
+    bridge.farEndId = otherJointId;
+    pushLink(links, linkIds, bridge);
 }
 
 /** A bridge line. `hostPredicate` is set only when the payload names the statement this relation hangs on. */
@@ -1008,11 +1243,15 @@ function endId(end: string | NoteMapNodeObject): string {
     return typeof end === "string" ? end : end.id;
 }
 
-/** The name of one end of a relation. A point on an edge is the title of that edge. */
+/**
+ * The name of one end of a relation. A point on an edge is the title of that edge.
+ * `predicate` keeps one statement when several share the edge and this line hangs on that one.
+ */
 export function relationEndTitle(
     end: NoteMapLinkObject["source"],
     data: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
-    seen = new Set<string>()
+    seen = new Set<string>(),
+    predicate?: string
 ): string {
     const id = endKey(end);
     const node = typeof end === "object" && end ? end : data.nodes.find((item) => item.id === id);
@@ -1034,8 +1273,9 @@ export function relationEndTitle(
     if (!host || predicates.length === 0) {
         return node.name;
     }
+    const named = predicate && predicates.includes(predicate) ? [ predicate ] : predicates;
     return foldTitle(
-        predicates,
+        named,
         relationEndTitle(host.source, data, seen),
         relationEndTitle(host.target, data, seen)
     );

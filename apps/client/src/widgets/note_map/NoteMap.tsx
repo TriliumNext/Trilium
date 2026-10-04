@@ -30,6 +30,7 @@ import {
     carryPositions,
     dropExpansion,
     expandedNoteId,
+    collapseKeys,
     foldOrder,
     foldTitle,
     loadNotesAndRelations,
@@ -221,7 +222,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                         event.preventDefault();
                         const fold = node.fold;
                         void showFoldedNodeMenu(event, fold, node.name, () => {
-                            collapsedRef.current.delete(fold.linkId);
+                            collapsedRef.current.delete(fold.collapseKey ?? fold.linkId);
                             showView(true);
                         });
                         return;
@@ -240,10 +241,23 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                     }
                     event.preventDefault();
                     const linkId = link.id;
-                    void showRelationMenu(link, event, graph.graphData(), () => {
+                    void showRelationMenu(link, event, graph.graphData(), (predicate) => {
                         // The edges this one starts on fold first. Expand puts back only this one.
-                        for (const id of foldOrder(graph.graphData(), linkId)) {
-                            collapsedRef.current.add(id);
+                        // A host edge folds only the statement this line hangs on.
+                        const shown = graph.graphData();
+                        const base = notesAndRelationsRef.current;
+                        for (const key of collapseKeys(
+                            foldOrder(shown, linkId),
+                            linkId,
+                            predicate,
+                            (id) => {
+                                const stored = base?.links.find((item) => item.id === id);
+                                const current = shown.links.find((item) => item.id === id);
+                                return predicatesIn(stored?.name ?? current?.name ?? "");
+                            },
+                            (id) => shown.links.find((item) => item.id === id)?.hostPredicate
+                        )) {
+                            collapsedRef.current.add(key);
                         }
                         showView(false);
                     }, () => {
@@ -297,7 +311,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     // Fixing nodes when dragged.
     useEffect(() => {
         graphRef.current?.onNodeDragEnd((node) => {
-            if (fixNodes) {
+            if (fixNodes || node.pinnedFold) {
                 node.fx = node.x;
                 node.fy = node.y;
             } else {
@@ -462,17 +476,19 @@ async function showRelationMenu(
     link: NoteMapLinkObject,
     event: MouseEvent,
     graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
-    fold: () => void,
+    fold: (predicate?: string) => void,
     unexpand?: () => void
 ) {
     const sourceId = linkEndId(link.source);
     const targetId = linkEndId(link.target);
     const predicates = predicatesIn(link.name);
-    const title = foldTitle(
-        predicates,
-        await titledEnd(link.source, graph),
-        await titledEnd(link.target, graph)
-    );
+    const subjectTitle = await titledEnd(link.source, graph, predicateAt(link, link.source));
+    const objectTitle = await titledEnd(link.target, graph, predicateAt(link, link.target));
+    const chosen = await chooseRelation(predicates, subjectTitle, objectTitle);
+    if (!chosen) {
+        return;
+    }
+    const title = foldTitle([ chosen ], subjectTitle, objectTitle);
     const items: MenuItem<string>[] = [];
     if (unexpand && link.id && expandedNoteId(link.id)) {
         items.push({ title: t("note_map.show_as_note"), command: "unexpand", uiIcon: "bx bx-collapse" });
@@ -481,7 +497,7 @@ async function showRelationMenu(
 
     const seen = new Set<string>();
     const listed: ReificationListItem[] = [];
-    for (const attributeId of await relationAttributeIds(sourceId, targetId, link.name)) {
+    for (const attributeId of await relationAttributeIds(sourceId, targetId, chosen)) {
         try {
             const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${attributeId}/reifications`);
             for (const item of response.items) {
@@ -517,10 +533,8 @@ async function showRelationMenu(
         }
     }
 
-    if (predicates.length > 0) {
-        items.push({ kind: "separator" });
-    }
-    for (const name of predicates) {
+    items.push({ kind: "separator" });
+    for (const name of [ chosen ]) {
         const concept = await loadPredicateConcept(name);
         if (concept?.noteId) {
             items.push({
@@ -546,7 +560,7 @@ async function showRelationMenu(
                 unexpand?.();
                 return;
             }
-            void applyRelationCommand(command, fold);
+            void applyRelationCommand(command, () => fold(chosen));
         }
     });
 }
@@ -619,12 +633,24 @@ function linkEndId(end: NoteMapLinkObject["source"]): string {
     return String(end ?? "");
 }
 
+/** Which statement of a shared edge this end hangs on, when the line says. */
+function predicateAt(link: NoteMapLinkObject, end: NoteMapLinkObject["source"]) {
+    const id = linkEndId(end);
+    if (id && id === link.hostEndId) {
+        return link.hostPredicate;
+    }
+    if (id && id === link.farEndId) {
+        return link.farPredicate;
+    }
+}
+
 /** A note's title, or the fact a point on an edge stands for. */
 async function titledEnd(
     end: NoteMapLinkObject["source"],
-    graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] }
+    graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
+    predicate?: string
 ) {
-    const titled = relationEndTitle(end, graph);
+    const titled = relationEndTitle(end, graph, new Set(), predicate);
     if (titled) {
         return titled;
     }
@@ -721,48 +747,34 @@ function showReifiedNodeMenu(
 /** Right-click on a folded relation: put the two notes back, or drop the note for that row. */
 async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: string, expand: () => void) {
     const predicates = fold.predicates.length > 0 ? fold.predicates : [ fold.predicate ];
-    const rows: { predicate: string; attributeId?: string; noteId?: string }[] = [];
-    for (const predicate of predicates) {
-        const attribute = await attributeOfFold(fold, predicate);
-        let noteId: string | undefined;
-        if (attribute) {
-            const lookedUp = await server.get<{ noteId?: string } | null>(`attributes/${attribute.attributeId}/reification`);
-            if (lookedUp && typeof lookedUp === "object" && lookedUp.noteId) {
-                noteId = lookedUp.noteId;
-            }
+    const captions = splitFoldTitle(title);
+    const chosen = await chooseStatement(predicates.map((predicate, index) => ({
+        key: predicate,
+        caption: captions.length === predicates.length ? captions[index] : predicate
+    })));
+    if (!chosen) {
+        return;
+    }
+    const captionIndex = predicates.indexOf(chosen);
+    const caption = captions.length === predicates.length && captionIndex >= 0 ? captions[captionIndex] : title;
+    const attribute = await attributeOfFold(fold, chosen);
+    let noteId: string | undefined;
+    if (attribute) {
+        const lookedUp = await server.get<{ noteId?: string } | null>(`attributes/${attribute.attributeId}/reification`);
+        if (lookedUp && typeof lookedUp === "object" && lookedUp.noteId) {
+            noteId = lookedUp.noteId;
         }
-        rows.push({ predicate, attributeId: attribute?.attributeId, noteId });
     }
     const items: MenuItem<string>[] = [
         { title: t("relation_map.expand_relation"), command: "expand", uiIcon: "bx bx-expand" }
     ];
-    const captions = splitFoldTitle(title);
-    if (predicates.length === 1) {
-        const row = rows[0];
-        if (row?.attributeId && row.noteId) {
-            items.push({
-                title: t("note_map.open_reification", { title }),
-                command: "open:0",
-                uiIcon: "bx bx-git-commit"
-            });
-            items.push({ title: t("relation_map.remove_reification"), command: "unreify:0", uiIcon: "bx bx-undo" });
-        }
-    } else {
-        for (const [ index, row ] of rows.entries()) {
-            const caption = captions.length === predicates.length ? captions[index] : row.predicate;
-            items.push({
-                title: t("note_map.open_reification", { title: caption }),
-                command: `open:${index}`,
-                uiIcon: "bx bx-git-commit"
-            });
-            if (row.attributeId && row.noteId) {
-                items.push({
-                    title: t("relation_map.remove_reification"),
-                    command: `unreify:${index}`,
-                    uiIcon: "bx bx-undo"
-                });
-            }
-        }
+    if (attribute?.attributeId && noteId) {
+        items.push({
+            title: t("note_map.open_reification", { title: caption }),
+            command: "open",
+            uiIcon: "bx bx-git-commit"
+        });
+        items.push({ title: t("relation_map.remove_reification"), command: "unreify", uiIcon: "bx bx-undo" });
     }
     contextMenu.show({
         x: event.pageX,
@@ -773,31 +785,51 @@ async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: s
                 expand();
                 return;
             }
-            const openIndex = command?.startsWith("open:") ? Number(command.slice("open:".length)) : -1;
-            const dropIndex = command?.startsWith("unreify:") ? Number(command.slice("unreify:".length)) : -1;
-            const index = openIndex >= 0 ? openIndex : dropIndex;
-            const row = rows[index];
-            if (!row) {
-                return;
-            }
-            if (openIndex >= 0) {
-                if (row.noteId) {
-                    openNote(row.noteId);
+            if (command === "open") {
+                if (noteId) {
+                    openNote(noteId);
                     return;
                 }
-                await openFoldedRelation(fold, row.predicate);
+                await openFoldedRelation(fold, chosen);
                 return;
             }
-            if (dropIndex >= 0 && row.attributeId && row.noteId) {
+            if (command === "unreify" && attribute?.attributeId && noteId) {
                 if (!(await dialog.confirm(t("relation_map.confirm_remove_reification")))) {
                     return;
                 }
                 const fallbackNoteId = await resolveFoldEnd(fold.subject, reificationOfRelation);
-                await removeReification(row.attributeId, row.noteId, fallbackNoteId);
+                await removeReification(attribute.attributeId, noteId, fallbackNoteId);
                 expand();
             }
         }
     });
+}
+
+/** The statement a grouped edge's menu is about. One name skips the search. */
+async function chooseRelation(predicates: string[], subjectTitle: string, objectTitle: string) {
+    return chooseStatement(predicates.map((predicate) => ({
+        key: predicate,
+        caption: foldTitle([ predicate ], subjectTitle, objectTitle)
+    })));
+}
+
+async function chooseStatement(items: { key: string; caption: string }[]) {
+    if (items.length === 0) {
+        return null;
+    }
+    if (items.length === 1) {
+        return items[0].key;
+    }
+    const picked = await pickSingleItem({
+        title: t("note_map.choose_statement"),
+        placeholder: t("note_map.choose_statement_search"),
+        items: items.map((item) => ({
+            key: item.key,
+            caption: item.caption,
+            icon: "bx bx-link"
+        }))
+    });
+    return picked?.key ?? null;
 }
 
 /** Deletes the note for one attribute row. The relation stays. A view of that note moves to `fallbackNoteId`. */
@@ -842,19 +874,14 @@ async function reificationOfRelation(sourceNoteId: string, predicate: string, ta
 async function chooseFoldedStatement(fold: NoteMapFold, title: string) {
     const predicates = fold.predicates.length > 0 ? fold.predicates : [ fold.predicate ];
     const captions = splitFoldTitle(title);
-    const picked = await pickSingleItem({
-        title: t("note_map.choose_statement"),
-        placeholder: t("note_map.choose_statement_search"),
-        items: predicates.map((predicate, index) => ({
-            key: predicate,
-            caption: captions.length === predicates.length ? captions[index] : predicate,
-            icon: "bx bx-git-commit"
-        }))
-    });
-    if (!picked) {
+    const chosen = await chooseStatement(predicates.map((predicate, index) => ({
+        key: predicate,
+        caption: captions.length === predicates.length ? captions[index] : predicate
+    })));
+    if (!chosen) {
         return;
     }
-    await openFoldedRelation(fold, picked.key);
+    await openFoldedRelation(fold, chosen);
 }
 
 /** Creates the note for a folded relation, if it does not exist yet, and opens it. */

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import server from "../../services/server";
 import {
     applyRelationBridges,
+    collapseKeys,
     carryPositions,
     collapseRelations,
     dropUnlinkedNotes,
@@ -12,8 +13,11 @@ import {
     expandReifications,
     expandedLinkId,
     foldOrder,
+    foldTitle,
     loadNotesAndRelations,
     NotesAndRelationsData,
+    predicateCollapseKey,
+    predicatesIn,
     presentRelations,
     relationEndTitle,
     resolveFoldEnd,
@@ -167,7 +171,14 @@ describe("collapseRelations", () => {
         const expanded = collapseRelations(open, new Set([ "alpha-beta" ]));
         expect(expanded.nodes.map((node) => node.id).sort()).toEqual([ "event", "fold:alpha-beta" ]);
         expect(expanded.links).toEqual([
-            { id: "alpha-beta-cause-event", source: "fold:alpha-beta", target: "event", name: "cause" }
+            {
+                id: "alpha-beta-cause-event",
+                source: "fold:alpha-beta",
+                target: "event",
+                name: "cause",
+                hostPredicate: "cites",
+                hostEndId: "edge:alpha-beta"
+            }
         ]);
     });
 });
@@ -306,6 +317,45 @@ describe("relationEndTitle", () => {
         expect(relationEndTitle(leadsTo.source, data)).toBe("links(A, B)");
         expect(relationEndTitle(leadsTo.target, data)).toBe("Chaos");
     });
+
+    it("names a point on a grouped edge as the statement the line hangs on", () => {
+        const data = {
+            nodes: [
+                { id: "a", name: "A", type: "text", color: null, icon: "" },
+                { id: "b", name: "B", type: "text", color: null, icon: "" },
+                { id: "chaos", name: "Chaos", type: "text", color: null, icon: "" },
+                {
+                    id: "edge:a-b",
+                    name: "",
+                    type: "text",
+                    color: null,
+                    icon: "",
+                    joint: true,
+                    jointOf: [ "a", "b" ] as [ string, string ]
+                }
+            ],
+            links: [
+                { id: "a-b", source: "a", target: "b", name: "likes, hates" },
+                {
+                    id: "edge:a-b-leadsTo-chaos",
+                    source: "edge:a-b",
+                    target: "chaos",
+                    name: "leadsTo",
+                    hostPredicate: "likes",
+                    hostEndId: "edge:a-b"
+                }
+            ]
+        };
+        const leadsTo = data.links[1];
+
+        expect(relationEndTitle(leadsTo.source, data, new Set(), "likes")).toBe("likes(A, B)");
+        expect(relationEndTitle(leadsTo.source, data)).toBe("likes(A, B), hates(A, B)");
+        expect(foldTitle(
+            [ "leadsTo" ],
+            relationEndTitle(leadsTo.source, data, new Set(), leadsTo.hostPredicate),
+            relationEndTitle(leadsTo.target, data)
+        )).toBe("leadsTo(likes(A, B), Chaos)");
+    });
 });
 
 describe("resolveFoldEnd", () => {
@@ -434,7 +484,9 @@ describe("applyRelationBridges", () => {
             target: "edge:gamma-item",
             name: "cause",
             hostPredicate: "cites",
-            hostEndId: "edge:alpha-beta"
+            hostEndId: "edge:alpha-beta",
+            farPredicate: "contains",
+            farEndId: "edge:gamma-item"
         });
 
         const bridgeId = "edge:alpha-beta-cause-edge:gamma-item";
@@ -451,7 +503,16 @@ describe("applyRelationBridges", () => {
         const oneStep = collapseRelations(view, new Set([ "alpha-beta", "gamma-item" ]));
         expect(oneStep.nodes.map((node) => node.id).sort()).toEqual([ "fold:alpha-beta", "fold:gamma-item" ]);
         expect(oneStep.links).toEqual([
-            { id: bridgeId, source: "fold:alpha-beta", target: "fold:gamma-item", name: "cause" }
+            {
+                id: bridgeId,
+                source: "fold:alpha-beta",
+                target: "fold:gamma-item",
+                name: "cause",
+                hostPredicate: "cites",
+                hostEndId: "edge:alpha-beta",
+                farPredicate: "contains",
+                farEndId: "edge:gamma-item"
+            }
         ]);
     });
 
@@ -488,7 +549,11 @@ describe("applyRelationBridges", () => {
             id: "edge:alpha-beta-cause-edge:gamma-item",
             source: "fold:alpha-beta",
             target: "edge:gamma-item",
-            name: "cause"
+            name: "cause",
+            hostPredicate: "cites",
+            hostEndId: "edge:alpha-beta",
+            farPredicate: "contains",
+            farEndId: "edge:gamma-item"
         });
 
         const direct = collapseRelations(data, new Set([ "alpha-beta" ]));
@@ -538,10 +603,20 @@ describe("applyRelationBridges", () => {
 
         const folded = presentRelations(data, new Set([ "alpha-beta" ]));
         expect(folded.links).toContainEqual({
-            id: "alpha-beta-cause-event", source: "fold:alpha-beta", target: "event", name: "cause"
+            id: "alpha-beta-cause-event",
+            source: "fold:alpha-beta",
+            target: "event",
+            name: "cause",
+            hostPredicate: "cites",
+            hostEndId: "edge:alpha-beta"
         });
         expect(folded.links).toContainEqual({
-            id: "delta-epsilon-because-reason", source: "edge:delta-epsilon", target: "reason", name: "because"
+            id: "delta-epsilon-because-reason",
+            source: "edge:delta-epsilon",
+            target: "reason",
+            name: "because",
+            hostPredicate: "mentions",
+            hostEndId: "edge:delta-epsilon"
         });
         expect(folded.links).toContainEqual({
             id: "delta-epsilon", source: "delta", target: "epsilon", name: "mentions"
@@ -564,6 +639,92 @@ describe("applyRelationBridges", () => {
         expect(folded.nodes[0].name).toBe("cites(Alpha, Beta), mentions(Alpha, Beta)");
         expect(folded.nodes[0].fold?.predicates).toEqual([ "cites", "mentions" ]);
         expect(folded.nodes[0].fold?.predicate).toBe("cites");
+    });
+
+    it("folds one statement of a grouped edge and leaves the other on the line", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, mentions" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4 }
+        };
+        const foldId = `fold:${predicateCollapseKey("alpha-beta", "mentions")}`;
+
+        const folded = collapseRelations(data, new Set([ predicateCollapseKey("alpha-beta", "mentions") ]));
+
+        expect(folded.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "beta", foldId ].sort());
+        expect(folded.nodes.find((node) => node.id === foldId)?.name).toBe("mentions(Alpha, Beta)");
+        expect(folded.links).toContainEqual({
+            id: "alpha-beta", source: "alpha", target: "beta", name: "cites"
+        });
+        expect(folded.links.some((link) => link.source === foldId || link.target === foldId)).toBe(false);
+    });
+
+    it("folds a relation of one statement without folding the other name on that edge", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, mentions" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4 },
+            reificationLinks: [ {
+                linkId: "alpha-beta",
+                name: "cause",
+                outgoing: true,
+                attributeId: "cause-row",
+                hostPredicate: "mentions",
+                note: [ "event", "Event", "text", null, "bx bx-file" ]
+            } ]
+        };
+        const open = applyRelationBridges(data);
+        const bridgeId = "alpha-beta-cause-event";
+        const keys = collapseKeys(
+            foldOrder(open, bridgeId),
+            bridgeId,
+            "cause",
+            (id) => predicatesIn(open.links.find((link) => link.id === id)?.name ?? ""),
+            (id) => open.links.find((link) => link.id === id)?.hostPredicate
+        );
+
+        expect(keys).toEqual([ predicateCollapseKey("alpha-beta", "mentions"), bridgeId ]);
+
+        const folded = collapseRelations(open, new Set(keys));
+
+        expect(folded.nodes.map((node) => node.id).sort()).toEqual([ "alpha", "beta", `fold:${bridgeId}` ]);
+        expect(folded.nodes.find((node) => node.id === `fold:${bridgeId}`)?.name).toBe("cause(mentions(Alpha, Beta), Event)");
+        expect(folded.links).toContainEqual({
+            id: "alpha-beta", source: "alpha", target: "beta", name: "cites"
+        });
+    });
+
+    it("folds the statement that was left on the line as its own note", () => {
+        const data: NotesAndRelationsData = {
+            nodes: [
+                { id: "alpha", name: "Alpha", type: "text", color: null, icon: "bx bx-file" },
+                { id: "beta", name: "Beta", type: "text", color: null, icon: "bx bx-file" }
+            ],
+            links: [
+                { id: "alpha-beta", source: "alpha", target: "beta", name: "cites, mentions" }
+            ],
+            noteIdToSizeMap: { alpha: 4, beta: 4 }
+        };
+
+        const folded = collapseRelations(data, new Set([
+            predicateCollapseKey("alpha-beta", "cites"),
+            predicateCollapseKey("alpha-beta", "mentions")
+        ]));
+
+        expect(folded.nodes.map((node) => node.name).sort()).toEqual([
+            "Alpha", "Beta", "cites(Alpha, Beta)", "mentions(Alpha, Beta)"
+        ]);
+        expect(folded.links.some((link) => link.id === "alpha-beta")).toBe(false);
     });
 
     it("folds a relation of one statement on a grouped edge as that statement", () => {
