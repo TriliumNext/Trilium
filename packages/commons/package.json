@@ -23,6 +23,6 @@
     "numfmt": "3.2.6"
   },
   "devDependencies": {
-    "preact": "10.29.8"
+    "preact": "11.0.0"
   }
 }
