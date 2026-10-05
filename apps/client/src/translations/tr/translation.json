@@ -314,7 +314,6 @@
     "desc": "Azalan"
   },
   "tree-context-menu": {
-    "copy-clone": "Kopyala / klonla",
     "clone-to": "Şuraya klonla...",
     "open-in-a-new-tab": "Yeni sekmede aç",
     "open-in-a-new-split": "Yeni bölmede aç",
@@ -650,7 +649,21 @@
       "table_column": "Sütun {{number}}"
     },
     "page_break": "Bir sayfa sonu ekle (yazdırma için)",
-    "table": "Bir tablo ekle"
+    "table": "Bir tablo ekle",
+    "titles": {
+      "date": "Tarih/saat ekle",
+      "image": "Resim yükle",
+      "page_break": "Sayfa sonu",
+      "include": "Notu dahil et",
+      "link": "Dahili bağlantı",
+      "math": "Matematik denklemi",
+      "footnote": "Dipnot",
+      "collapsible": "Katlanabilir blok",
+      "table": "Masa",
+      "note": "Not",
+      "tip": "İpucu",
+      "important": "Önemli"
+    }
   },
   "move_to": {
     "dialog_title": "Notları ... konumuna taşı.",
@@ -666,8 +679,7 @@
     "search_placeholder": "İsimle arama yolu (boşsa varsayılan değer)",
     "modal_title": "Not türünü seçin",
     "modal_body": "Yeni notun not türünü / şablonunu seçin:",
-    "templates": "Şablonlar",
-    "builtin_templates": "Yerleşik Şablonlar"
+    "templates": "Şablonlar"
   },
   "password_not_set": {
     "title": "Parola Belirlenmedi",
@@ -2677,7 +2689,6 @@
     "llm-chat": "Yapay Zeka Sohbeti",
     "task-list": "Görev Listesi",
     "new-feature": "Yeni",
-    "collections": "Koleksiyonlar",
     "spreadsheet": "E-tablo"
   },
   "protect_note": {
@@ -2844,7 +2855,6 @@
     "created_on": "<Value /> tarihinde oluşturuldu",
     "last_modified": "<Value /> tarihinde değiştirildi",
     "note_type_switcher_label": "{{type}} türünden şuna geç:",
-    "note_type_switcher_others": "Diğer not türü",
     "note_type_switcher_templates": "Şablon",
     "note_type_switcher_collection": "Koleksiyon",
     "edited_notes": "Bu gün düzenlenen notlar",

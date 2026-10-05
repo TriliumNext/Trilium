@@ -442,8 +442,7 @@
     "modal_body": "Выберите тип / шаблон новой заметки:",
     "templates": "Шаблоны",
     "change_path_prompt": "Изменить место создания новой заметки:",
-    "search_placeholder": "поиск пути по имени (по умолчанию, если пусто)",
-    "builtin_templates": "Встроенные шаблоны"
+    "search_placeholder": "поиск пути по имени (по умолчанию, если пусто)"
   },
   "password_not_set": {
     "title": "Пароль не установлен",
@@ -1312,7 +1311,6 @@
     "toggle-on-hint": "Сделать заметку шаблоном"
   },
   "note_types": {
-    "collections": "Коллекции",
     "new-feature": "Новое",
     "beta-feature": "Бета",
     "widget": "Виджет",
@@ -1354,7 +1352,6 @@
     "hoist-note": "Фокус на заметке",
     "protect-subtree": "Защитить поддерево",
     "unprotect-subtree": "Снять защиту с поддерева",
-    "copy-clone": "Скопировать / клонировать",
     "clone-to": "Клонировать в...",
     "paste-after": "Вставить после",
     "paste-into": "Вставить в",
@@ -2710,7 +2707,6 @@
     "edited_notes": "Измененные в этот день заметки",
     "note_type_switcher_collection": "Коллекция",
     "note_type_switcher_templates": "Шаблон",
-    "note_type_switcher_others": "Другой тип заметки",
     "note_type_switcher_label": "Переключить с {{type}} на:",
     "last_modified": "Изменена <Value />",
     "created_on": "Создана в <Value />",
@@ -3018,7 +3014,10 @@
     "annotation_highlight": "Акцент на странице {{pageNumber}}",
     "annotation_drawing": "Рисунок на странице {{pageNumber}}",
     "annotation_note": "Заметка на странице {{pageNumber}}",
-    "annotation_text_box": "Текстовое поле на странице {{pageNumber}}"
+    "annotation_text_box": "Текстовое поле на странице {{pageNumber}}",
+    "copy_reference": "Копировать ссылку",
+    "page_reference": "Страница {{pageNumber}}",
+    "annotation_reference": "Аннотация на странице {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Доступно для {{platform}}"
@@ -3164,7 +3163,7 @@
     "highlights_empty": "Пока нет акцентов. Выделите текст в сообщении и нажмите \"Акцент\".",
     "model_cost_included": "Подписка",
     "no_model_selected": "Выберите модель",
-    "no_models_selected": "Модель не выбрана — нажмите на карандаш, чтобы выбрать",
+    "no_models_selected": "Модели не выбраны — нажмите на карандаш, чтобы выбрать",
     "quoted_from": "Цитата из",
     "quote_selection": "Цитировать выделенное",
     "read_only_notice": "Ответить невозможно, так как этот чат с ИИ доступен только для чтения.",
@@ -3174,7 +3173,7 @@
     "scroll_to_bottom": "Перейти к последнему",
     "show_quote_source": "Показать источник цитаты",
     "toc_file": "Файл: {{name}}",
-    "web_search_unavailable_gemini": "Недоступно в моделях Gemini при включенном доступе к заметкам — API Google не позволяет совмещать эти функции. Отключите доступ к заметкам или переключитесь на другого провайдера, чтобы использовать веб-поиск.",
+    "web_search_unavailable_gemini": "Gemini не может совмещать встроенный поиск с доступом к заметкам. Отключите доступ к заметкам или выберите другого поставщика поиска.",
     "reasoning_effort_title": "Усилие рассуждения: {{level}}",
     "reasoning_effort_levels": {
       "none": "Отсутствует",
@@ -3234,7 +3233,15 @@
     "attachment_model_cannot_read_image": "{{- model}} не может читать изображения.",
     "attachment_model_cannot_read_file": "{{- model}} не может читать PDF-файлы.",
     "attachment_refused": "\"{{name}}\" не был вложен. {{- reason}}",
-    "remove_unreadable_attachments": "Удалите вложения, которые {{- model}} не может читать"
+    "remove_unreadable_attachments": "Удалите вложения, которые {{- model}} не может читать",
+    "tools": "Инструменты",
+    "note_tools_description": "Поиск, чтение и редактирование ваших заметок",
+    "web_search_disabled": "Отключен",
+    "web_search_builtin": "Использовать встроенный поиск модели",
+    "manage_search_providers": "Управление поставщиками поиска…",
+    "web_search_builtin_unsupported": "В этой модели нет встроенного веб-поиска. Вместо него выберите поставщика поиска.",
+    "web_search_provider_unsupported": "Поставщик этой модели выполняет поиск в сети с помощью собственных инструментов.",
+    "searched_with": "Поиск выполнен с помощью {{name}}"
   },
   "sidebar_chat": {
     "title": "Чат с ИИ",
@@ -3447,7 +3454,21 @@
     "antigravity_setup_archive": "Скачайте <Link>архив для устройства с Trilium</Link> и распакуйте его в папку, в которой он может храниться.",
     "antigravity_setup_path": "Добавьте эту папку в <Code>PATH</Code> или установите для переменной среды <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> значение <Code>agy_acp_server.par</Code> (в Windows — <Code>agy_acp_server.exe</Code>), затем перезапустите Trilium.",
     "antigravity_setup_sign_in": "Вернитесь к этому шагу. В первый раз в браузере на устройстве откроется страница входа в Google.",
-    "codex_agent_description": "Использует Codex вашего тарифного плана ChatGPT (Free, Go, Plus, Pro или Business) через OpenAI Codex, поэтому ключ API не требуется.\n\nCodex CLI должен быть установлен на устройстве, на котором запущен Trilium: на сервер при самостоятельном хостинге или на этот компьютер для настольной версии, например, с помощью команды «npm install -g @openai/codex».\n\nПри первом отображении списка моделей, в браузере на том устройстве откроется страница входа в ChatGPT."
+    "codex_agent_description": "Использует Codex вашего тарифного плана ChatGPT (Free, Go, Plus, Pro или Business) через OpenAI Codex, поэтому ключ API не требуется.\n\nCodex CLI должен быть установлен на устройстве, на котором запущен Trilium: на сервер при самостоятельном хостинге или на этот компьютер для настольной версии, например, с помощью команды «npm install -g @openai/codex».\n\nПри первом отображении списка моделей, в браузере на том устройстве откроется страница входа в ChatGPT.",
+    "search_providers": "Поставщики поиска",
+    "no_search_providers_configured": "Поставщики поиска пока не настроены.",
+    "add_search_provider": "Добавить поставщика поиска",
+    "search_provider_group_cloud": "API поиска",
+    "search_provider_group_cloud_description": "Использует ключ API с бесплатным ежемесячным лимитом или оплатой за каждый поиск в зависимости от сервиса. Ваши поисковые запросы отправляются на серверы поставщика.",
+    "search_provider_group_local": "Cамостоятельный хостинг",
+    "search_provider_group_local_description": "Ваш собственный экземпляр метапоиска. Поиск осуществляется только в этом экземпляре и поисковых системах, к которым он обращается.",
+    "setup_hint_searxng": "Адрес вашего экземпляра SearXNG. В его файле <Code>settings.yml</Code> в разделе <Code>search.formats</Code> должен быть указан <Code>json</Code>.",
+    "search_base_url_description": "Необязательно. Доступ к тому же API через прокси или шлюз.",
+    "model_providers": "Поставщики моделей",
+    "add_model_provider": "Добавить поставщика моделей",
+    "no_model_providers_configured": "Поставщики моделей пока не настроены.",
+    "provider_no_models": "Модели не выбраны, поэтому он не предлагается в чате.",
+    "search_provider_unavailable_standalone": "Недоступно в браузерной версии: этот сервис отклоняет запросы, поступающие с веб-страницы, поэтому его можно использовать только в настольной или серверной версии."
   },
   "database": {
     "title": "База данных",

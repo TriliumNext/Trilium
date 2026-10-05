@@ -280,8 +280,7 @@
     "search_placeholder": "नाम के द्वारा पाथ सर्च करें (खाली होने पर डिफ़ॉल्ट)",
     "modal_title": "नोट टाइप चुनें",
     "modal_body": "नए नोट का टाइप / टेम्पलेट चुनें:",
-    "templates": "टेम्पलेट्स",
-    "builtin_templates": "इन-बिल्ट टेम्पलेट्स"
+    "templates": "टेम्पलेट्स"
   },
   "password_not_set": {
     "title": "पासवर्ड सेट नहीं है",
@@ -1661,7 +1660,6 @@
     "copy-note-path-to-clipboard": "नोट का पाथ (Path) कॉपी करें",
     "protect-subtree": "सब-ट्री को सुरक्षित (Protect) करें",
     "unprotect-subtree": "सुरक्षा हटाएं (Unprotect)",
-    "copy-clone": "कॉपी / क्लोन (Clone)",
     "clone-to": "इसमें क्लोन करें..।",
     "cut": "कट (Cut)",
     "move-to": "इसमें ले जाएं (Move)..।",
@@ -1709,7 +1707,6 @@
     "ai-chat": "AI चैट",
     "task-list": "काम की लिस्ट (Task List)",
     "new-feature": "नया",
-    "collections": "कलेक्शन्स",
     "markdown": "Markdown",
     "llm-chat": "AI चैट",
     "spreadsheet": "स्प्रेडशीट (Spreadsheet)"
@@ -1804,7 +1801,6 @@
     "created_on": "<Value /> को बना",
     "last_modified": "<Value /> को बदला गया",
     "note_type_switcher_label": "{{type}} से इसमें बदलें:",
-    "note_type_switcher_others": "अन्य नोट टाइप",
     "note_type_switcher_templates": "टेम्पलेट (Template)",
     "note_type_switcher_collection": "कलेक्शन (Collection)",
     "edited_notes": "आज बदले गए नोट्स",

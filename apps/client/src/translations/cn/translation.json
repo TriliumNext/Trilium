@@ -299,8 +299,7 @@
     "modal_body": "选择新笔记的类型或模板：",
     "templates": "模板",
     "change_path_prompt": "更改创建新笔记的位置：",
-    "search_placeholder": "按名称搜索路径（默认为空）",
-    "builtin_templates": "内置模板"
+    "search_placeholder": "按名称搜索路径（默认为空）"
   },
   "password_not_set": {
     "title": "密码未设置",
@@ -1961,7 +1960,6 @@
     "copy-note-path-to-clipboard": "复制笔记路径到剪贴板",
     "protect-subtree": "保护子树",
     "unprotect-subtree": "取消保护子树",
-    "copy-clone": "复制 / 克隆",
     "clone-to": "克隆到...",
     "cut": "剪切",
     "move-to": "移动到...",
@@ -2008,7 +2006,6 @@
     "beta-feature": "Beta",
     "task-list": "任务列表",
     "new-feature": "New",
-    "collections": "集合",
     "book": "集合",
     "ai-chat": "AI对话",
     "spreadsheet": "电子表格",
@@ -2106,7 +2103,6 @@
     "created_on": "建立于 <Value />",
     "last_modified": "修改于 <Value />",
     "note_type_switcher_label": "从 {{type}} 切换到:",
-    "note_type_switcher_others": "其他笔记类型",
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
     "edited_notes": "今天编辑过的笔记",

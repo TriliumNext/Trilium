@@ -770,7 +770,6 @@
     "modal_title": "Wybierz typ notatki",
     "modal_body": "Wybierz typ notatki / szablon nowej notatki:",
     "templates": "Szablony",
-    "builtin_templates": "Wbudowane szablony",
     "change_path_prompt": "Zmień miejsce utworzenia nowej notatki:",
     "search_placeholder": "szukaj ścieżki po nazwie (domyślna, jeśli puste)"
   },
@@ -1658,7 +1657,6 @@
     "copy-note-path-to-clipboard": "Kopiuj ścieżkę notatki do schowka",
     "protect-subtree": "Chroń poddrzewo",
     "unprotect-subtree": "Zdejmij ochronę z poddrzewa",
-    "copy-clone": "Kopiuj / klonuj",
     "clone-to": "Sklonuj do...",
     "cut": "Wytnij",
     "move-to": "Przenieś do...",
@@ -1705,7 +1703,6 @@
     "ai-chat": "Czat AI",
     "task-list": "Lista zadań",
     "new-feature": "Nowość",
-    "collections": "Kolekcje",
     "spreadsheet": "Arkusz"
   },
   "protect_note": {
@@ -1798,7 +1795,6 @@
     "created_on": "Utworzono <Value />",
     "last_modified": "Zmodyfikowano: <Value />",
     "note_type_switcher_label": "Zmień z {{type}} na:",
-    "note_type_switcher_others": "Inny typ notatki",
     "note_type_switcher_templates": "Szablon",
     "note_type_switcher_collection": "Kolekcja",
     "edited_notes": "Notatki edytowane dzisiaj",
