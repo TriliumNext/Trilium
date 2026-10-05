@@ -1817,7 +1817,8 @@
     "search_now": "今すぐ検索",
     "result_count_other": "{{count}} 件の結果",
     "page_size": "1 ページあたりの表示数",
-    "snippet_unavailable": "プレビューは利用できません。"
+    "snippet_unavailable": "プレビューは利用できません。",
+    "searching": "検索中..."
   },
   "sql_result": {
     "no_rows": "このクエリでは行が返されませんでした",
@@ -2940,7 +2941,10 @@
     "annotation_drawing": "{{pageNumber}} ページの描画",
     "annotation_highlight": "{{pageNumber}} ページのハイライト",
     "annotation_note": "{{pageNumber}} ページのノート",
-    "annotation_text_box": "{{pageNumber}} のテキストボックス"
+    "annotation_text_box": "{{pageNumber}} のテキストボックス",
+    "copy_reference": "参照をコピー",
+    "page_reference": "{{pageNumber}} ページ",
+    "annotation_reference": "{{pageNumber}} ページの注釈"
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
@@ -3103,7 +3107,7 @@
     "stop": "停止",
     "edit_index": "{{total}} 件中 {{index}} 件目を編集",
     "retry": "再試行",
-    "web_search_unavailable_gemini": "ノートへのアクセスが有効になっている場合は Gemini モデルは利用できません — Google の API では、両方を同時に使用できないためです。ウェブ検索を使用するには、ノートへのアクセスを無効にするか、別のプロバイダに切り替えてください。",
+    "web_search_unavailable_gemini": "Gemini では、組み込みの検索機能とノートへのアクセスを併用することはできません。ノートへのアクセスを無効にするか、代わりに検索プロバイダーを選択してください。",
     "attach_file": "画像、PDF、またはテキストファイルを添付",
     "remove_attachment": "添付ファイルを削除",
     "attachment_upload_failed": "\"{{name}}\" のアップロードに失敗しました。",
@@ -3176,7 +3180,15 @@
     "attachment_model_cannot_read_image": "{{- model}} は画像を読み込めません。",
     "attachment_model_cannot_read_file": "{{- model}} はPDFを読み込めません。",
     "attachment_refused": "\"{{name}}\" は添付されませんでした。{{- reason}}",
-    "remove_unreadable_attachments": "{{- model}} が読み込めない添付ファイルを削除"
+    "remove_unreadable_attachments": "{{- model}} が読み込めない添付ファイルを削除",
+    "tools": "ツール",
+    "note_tools_description": "ノートの検索、閲覧、編集",
+    "web_search_disabled": "無効",
+    "web_search_builtin": "モデルに組み込まれた検索機能を使用",
+    "manage_search_providers": "検索プロバイダーの管理…",
+    "web_search_builtin_unsupported": "このモデルには組み込みのウェブ検索機能がありません。代わりに検索プロバイダーを選択してください。",
+    "web_search_provider_unsupported": "このモデルのプロバイダーは、独自のツールを使用してウェブ検索を行います。",
+    "searched_with": "{{name}} で検索しました"
   },
   "sidebar_chat": {
     "title": "AI チャット",
@@ -3356,7 +3368,21 @@
     "antigravity_setup_archive": "<Link>Trilium を実行するデバイス用のアーカイブ</Link> をダウンロードし、そのデバイス上で、そのまま配置しておけるフォルダに解凍してください。",
     "antigravity_setup_path": "そのフォルダを <Code>PATH</Code> に追加するか、環境変数 <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> にそのフォルダ内の <Code>agy_acp_server.par</Code> （Windows の場合は <Code>agy_acp_server.exe</Code>）へのパスを設定し、Trilium を再起動してください。",
     "antigravity_setup_sign_in": "設定が終わったら、この手順に戻ってきてください。初回実行時に、そのデバイス上のブラウザで Google のサインインページが開きます。",
-    "codex_agent_description": "OpenAI Codex を通じて、ご利用中の ChatGPT プラン（Free、Go、Plus、Pro、または Business）の Codex 利用枠を使用するため、APIキーは不要です。\n\nTrilium を実行しているデバイスに、セルフホストの場合はサーバー、デスクトップアプリの場合はそのコンピューターに、Codex CLI をインストールする必要があります-。インストールは、例えばそのデバイス上で \"npm install -g @openai/codex\" を実行することで行えます。\n\nモデルの一覧を最初に表示する際、そのデバイスのブラウザで ChatGPT のサインインページが開きます。"
+    "codex_agent_description": "OpenAI Codex を通じて、ご利用中の ChatGPT プラン（Free、Go、Plus、Pro、または Business）の Codex 利用枠を使用するため、APIキーは不要です。\n\nTrilium を実行しているデバイスに、セルフホストの場合はサーバー、デスクトップアプリの場合はそのコンピューターに、Codex CLI をインストールする必要があります-。インストールは、例えばそのデバイス上で \"npm install -g @openai/codex\" を実行することで行えます。\n\nモデルの一覧を最初に表示する際、そのデバイスのブラウザで ChatGPT のサインインページが開きます。",
+    "search_providers": "検索プロバイダー",
+    "no_search_providers_configured": "検索プロバイダーはまだ設定されていません。",
+    "add_search_provider": "検索プロバイダーを追加",
+    "search_provider_group_cloud": "検索 API",
+    "search_provider_group_cloud_description": "API キーを使用します。サービスによっては、月ごとの無料枠が適用されるか、検索ごとに課金されます。検索リクエストはプロバイダーのサーバーに送信されます。",
+    "search_provider_group_local": "セルフホスト",
+    "search_provider_group_local_description": "独自のメタ検索インスタンスです。検索リクエストは、そのインスタンスと、そのインスタンスがクエリを送信する検索エンジンのみに送信されます。",
+    "setup_hint_searxng": "SearXNG インスタンスのアドレスです。その <Code>settings.yml</Code> ファイルの <Code>search.formats</Code> に <Code>json</Code> が記載されている必要があります。",
+    "search_base_url_description": "オプション。プロキシやゲートウェイ経由で同じ API に接続します。",
+    "model_providers": "モデルプロバイダー",
+    "add_model_provider": "モデルプロバイダーを追加",
+    "no_model_providers_configured": "モデルプロバイダーはまだ設定されていません。",
+    "provider_no_models": "モデルが選択されていないため、チャットでは利用できません。",
+    "search_provider_unavailable_standalone": "ブラウザ版では利用不可: このサービスはウェブページからのリクエストを拒否するため、デスクトップ版またはサーバー版からのみ使用可能です。"
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",
@@ -4473,7 +4499,9 @@
     "label_marker": "ラベルを指定。Enter キーを押すと一覧を表示",
     "label_marker_negated": "ラベルを除外。Enter キーを押すと一覧を表示",
     "relation_marker": "リレーションを指定。Enter キーを押すと一覧を表示",
-    "relation_marker_negated": "リレーションを除外。Enter キーを押すと一覧を表示"
+    "relation_marker_negated": "リレーションを除外。Enter キーを押すと一覧を表示",
+    "property_links": "このノートがリンクしているノート",
+    "property_backlinks": "このノートにリンクしているノート"
   },
   "lightbox": {
     "image": "画像",
