@@ -650,7 +650,21 @@
       "table_column": "Sütun {{number}}"
     },
     "page_break": "Bir sayfa sonu ekle (yazdırma için)",
-    "table": "Bir tablo ekle"
+    "table": "Bir tablo ekle",
+    "titles": {
+      "date": "Tarih/saat ekle",
+      "image": "Resim yükle",
+      "page_break": "Sayfa sonu",
+      "include": "Notu dahil et",
+      "link": "Dahili bağlantı",
+      "math": "Matematik denklemi",
+      "footnote": "Dipnot",
+      "collapsible": "Katlanabilir blok",
+      "table": "Masa",
+      "note": "Not",
+      "tip": "İpucu",
+      "important": "Önemli"
+    }
   },
   "move_to": {
     "dialog_title": "Notları ... konumuna taşı.",
