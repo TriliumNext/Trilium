@@ -214,9 +214,8 @@ describe("streamChatCompletion", () => {
         expect(cb.onChunk).toHaveBeenCalledWith("hi");
     });
 
-    it("does not invoke onDone when the stream ends without an explicit done event", async () => {
-        // onDone() fires only for a `{type:"done"}` SSE event (source 126-128), NOT when the
-        // reader simply returns {done:true}. Lock in that a clean stream end leaves onDone uncalled.
+    it("reports an interruption when the body ends without a done or error event (#10883)", async () => {
+        // A proxy can close the response cleanly, so the reader's end is not the server's.
         const chunks = [`data: ${JSON.stringify({ type: "text", content: "only" })}\n`];
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
 
@@ -225,6 +224,19 @@ describe("streamChatCompletion", () => {
 
         expect(cb.onChunk).toHaveBeenCalledWith("only");
         expect(cb.onDone).not.toHaveBeenCalled();
+        expect(cb.onError.mock.calls).toEqual([[
+            "The LLM stream ended before the response was complete. The connection was probably interrupted."
+        ]]);
+    });
+
+    it("reports nothing more once the stream has completed or failed", async () => {
+        for (const terminal of [{ type: "done" }, { type: "error", error: "model failed" }]) {
+            vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse([`data: ${JSON.stringify(terminal)}\n`])));
+
+            const cb = makeCallbacks();
+            await streamChatCompletion(messages, config, cb);
+            expect(cb.onDone.mock.calls.length + cb.onError.mock.calls.length).toBe(1);
+        }
     });
 
     it("ignores citation/usage events that carry no payload", async () => {
@@ -264,7 +276,8 @@ describe("streamChatCompletion", () => {
             { type: "tool_use", toolCallId: "c1", toolName: "search", toolInput: { q: "x" } },
             { type: "tool_result", toolCallId: "c1", toolName: "search", result: "res" },
             { type: "citation", citation: { id: "cit1" } },
-            { type: "usage", usage: { totalTokens: 1 } }
+            { type: "usage", usage: { totalTokens: 1 } },
+            { type: "done" }
         ];
         const chunks = events.map((e) => `data: ${JSON.stringify(e)}\n`);
         vi.stubGlobal("fetch", vi.fn(async () => makeStreamResponse(chunks)));
@@ -305,7 +318,7 @@ describe("streamChatCompletion", () => {
 
         const cb = makeCallbacks();
         await streamChatCompletion(messages, config, cb);
-        expect(cb.onError).toHaveBeenCalledWith("LLM stream interrupted: read failed");
+        expect(cb.onError.mock.calls).toEqual([["LLM stream interrupted: read failed"]]);
         expect(reader.releaseLock).toHaveBeenCalledTimes(1);
     });
 

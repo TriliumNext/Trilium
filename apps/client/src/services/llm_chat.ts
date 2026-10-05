@@ -76,16 +76,39 @@ export interface StreamCallbacks {
  * {@link StreamCallbacks} and the promise settles when it is over, rejecting with
  * an `AbortError` if `abortSignal` fired. Which transport is used depends on what
  * the backend can be reached over — see {@link streamChatOverMessages}.
+ *
+ * Unless the stream is aborted, `onDone` or `onError` is called before the
+ * promise settles: a transport that ends without a `done` or `error` chunk
+ * reports the stream as interrupted.
  */
-export function streamChatCompletion(
+export async function streamChatCompletion(
     messages: LlmMessage[],
     config: LlmChatConfig,
     callbacks: StreamCallbacks,
     abortSignal?: AbortSignal
 ): Promise<void> {
-    return isStandalone
-        ? streamChatOverMessages(messages, config, callbacks, abortSignal)
-        : streamChatOverSse(messages, config, callbacks, abortSignal);
+    let completed = false;
+    const tracked: StreamCallbacks = {
+        ...callbacks,
+        onError: (error, details) => {
+            completed = true;
+            callbacks.onError(error, details);
+        },
+        onDone: () => {
+            completed = true;
+            callbacks.onDone();
+        }
+    };
+
+    await (isStandalone
+        ? streamChatOverMessages(messages, config, tracked, abortSignal)
+        : streamChatOverSse(messages, config, tracked, abortSignal));
+
+    if (!completed) {
+        callbacks.onError(
+            "The LLM stream ended before the response was complete. The connection was probably interrupted."
+        );
+    }
 }
 
 /**

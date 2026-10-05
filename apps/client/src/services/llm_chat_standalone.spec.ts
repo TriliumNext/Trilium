@@ -109,6 +109,21 @@ describe("streamChatCompletion in standalone", () => {
         expect(cb.onToolUse.mock.invocationCallOrder[0]).toBeLessThan(cb.onChunk.mock.invocationCallOrder[0]);
     });
 
+    it("reports an interruption when the stream ends without a done or error chunk", async () => {
+        const cb = makeCallbacks();
+        const streaming = streamChatCompletion(messages, config, cb);
+        await Promise.resolve();
+
+        broadcast(chunk({ type: "text", content: "partial" }));
+        broadcast(end);
+
+        await streaming;
+        expect(cb.onDone).not.toHaveBeenCalled();
+        expect(cb.onError.mock.calls).toEqual([[
+            "The LLM stream ended before the response was complete. The connection was probably interrupted."
+        ]]);
+    });
+
     it("reports a failure to start the completion, and does not wait for a stream that never began", async () => {
         server.post = vi.fn(async () => { throw JSON.stringify({ message: "No LLM providers configured." }); }) as typeof server.post;
 
