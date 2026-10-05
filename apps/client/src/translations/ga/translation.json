@@ -339,8 +339,7 @@
     "search_placeholder": "cuardaigh cosán de réir ainm (réamhshocraithe má tá sé folamh)",
     "modal_title": "Roghnaigh cineál nóta",
     "modal_body": "Roghnaigh cineál nóta / teimpléad don nóta nua:",
-    "templates": "Teimpléid",
-    "builtin_templates": "Teimpléid Tógtha isteach"
+    "templates": "Teimpléid"
   },
   "password_not_set": {
     "title": "Níl an focal faire socraithe",
@@ -2034,7 +2033,6 @@
     "copy-note-path-to-clipboard": "Cóipeáil cosán an nóta chuig an ghearrthaisce",
     "protect-subtree": "Fo-chrann a chosaint",
     "unprotect-subtree": "Díchosaint fochrann",
-    "copy-clone": "Cóipeáil / clónáil",
     "clone-to": "Clónáil go...",
     "cut": "Gearr",
     "move-to": "Bog go...",
@@ -2087,7 +2085,6 @@
     "ai-chat": "Comhrá AI",
     "task-list": "Liosta Tascanna",
     "new-feature": "Nua",
-    "collections": "Bailiúcháin",
     "spreadsheet": "Scarbhileog",
     "llm-chat": "Comhrá AI",
     "markdown": "Markdown",
@@ -2195,7 +2192,6 @@
     "created_on": "Cruthaithe ar <Value />",
     "last_modified": "Modhnaithe ar <Value />",
     "note_type_switcher_label": "Athraigh ó {{type}} go:",
-    "note_type_switcher_others": "Cineál nóta eile",
     "note_type_switcher_templates": "Teimpléad",
     "note_type_switcher_collection": "Bailiúchán",
     "edited_notes": "Nótaí curtha in eagar ar an lá seo",

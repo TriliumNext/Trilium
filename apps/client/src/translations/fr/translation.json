@@ -284,8 +284,7 @@
     "modal_body": "Choisissez le type de note/le modèle de la nouvelle note :",
     "templates": "Modèles",
     "change_path_prompt": "Modifier l’emplacement de création de la nouvelle note :",
-    "search_placeholder": "Rechercher le chemin par nom (par défaut si vide)",
-    "builtin_templates": "Modèles intégrés"
+    "search_placeholder": "Rechercher le chemin par nom (par défaut si vide)"
   },
   "password_not_set": {
     "title": "Le mot de passe n'est pas défini",
@@ -1557,7 +1556,6 @@
     "copy-note-path-to-clipboard": "Copier le chemin de la note dans le presse-papiers",
     "protect-subtree": "Protéger le sous-arbre",
     "unprotect-subtree": "Ne plus protéger le sous-arbre",
-    "copy-clone": "Copier/cloner",
     "clone-to": "Cloner vers...",
     "cut": "Couper",
     "move-to": "Déplacer vers...",
@@ -1605,7 +1603,6 @@
     "task-list": "Liste de tâches",
     "book": "Collection",
     "new-feature": "Nouveau",
-    "collections": "Collections",
     "ai-chat": "Chat IA",
     "llm-chat": "Chat AI",
     "spreadsheet": "Feuille de calcul",
@@ -1706,7 +1703,6 @@
     "created_on": "Créée le <Value />",
     "last_modified": "Modifiée le <Value />",
     "note_type_switcher_label": "Basculer de {{type}} à :",
-    "note_type_switcher_others": "Autre type de note",
     "note_type_switcher_templates": "Modèle",
     "note_type_switcher_collection": "Collection",
     "edited_notes": "Notes éditées ce jour",

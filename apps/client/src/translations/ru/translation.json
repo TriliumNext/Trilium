@@ -442,8 +442,7 @@
     "modal_body": "Выберите тип / шаблон новой заметки:",
     "templates": "Шаблоны",
     "change_path_prompt": "Изменить место создания новой заметки:",
-    "search_placeholder": "поиск пути по имени (по умолчанию, если пусто)",
-    "builtin_templates": "Встроенные шаблоны"
+    "search_placeholder": "поиск пути по имени (по умолчанию, если пусто)"
   },
   "password_not_set": {
     "title": "Пароль не установлен",
@@ -1312,7 +1311,6 @@
     "toggle-on-hint": "Сделать заметку шаблоном"
   },
   "note_types": {
-    "collections": "Коллекции",
     "new-feature": "Новое",
     "beta-feature": "Бета",
     "widget": "Виджет",
@@ -1354,7 +1352,6 @@
     "hoist-note": "Фокус на заметке",
     "protect-subtree": "Защитить поддерево",
     "unprotect-subtree": "Снять защиту с поддерева",
-    "copy-clone": "Скопировать / клонировать",
     "clone-to": "Клонировать в...",
     "paste-after": "Вставить после",
     "paste-into": "Вставить в",
@@ -2710,7 +2707,6 @@
     "edited_notes": "Измененные в этот день заметки",
     "note_type_switcher_collection": "Коллекция",
     "note_type_switcher_templates": "Шаблон",
-    "note_type_switcher_others": "Другой тип заметки",
     "note_type_switcher_label": "Переключить с {{type}} на:",
     "last_modified": "Изменена <Value />",
     "created_on": "Создана в <Value />",

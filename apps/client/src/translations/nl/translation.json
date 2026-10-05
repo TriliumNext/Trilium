@@ -444,7 +444,6 @@
     "search_placeholder": "zoek pad op naam (standaard als dit veld leeg is)",
     "modal_title": "Kies notitietype",
     "modal_body": "Kies het notitietype / de sjabloon voor de nieuwe notitie:",
-    "builtin_templates": "Ingebouwde sjablonen",
     "templates": "Sjablonen"
   },
   "password_not_set": {

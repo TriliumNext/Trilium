@@ -300,8 +300,7 @@
     "modal_body": "選擇新筆記的類型或模板：",
     "templates": "模板",
     "change_path_prompt": "變更建立新筆記的位置：",
-    "search_placeholder": "依名稱搜尋路徑（若為空則預設）",
-    "builtin_templates": "內建模板"
+    "search_placeholder": "依名稱搜尋路徑（若為空則預設）"
   },
   "password_not_set": {
     "title": "密碼未設定",
@@ -1557,7 +1556,6 @@
     "copy-note-path-to-clipboard": "複製筆記路徑至剪貼簿",
     "protect-subtree": "保護子階層",
     "unprotect-subtree": "取消保護子階層",
-    "copy-clone": "複製 / 克隆",
     "clone-to": "克隆至...",
     "cut": "剪下",
     "move-to": "移動至...",
@@ -1604,7 +1602,6 @@
     "beta-feature": "Beta",
     "task-list": "任務列表",
     "new-feature": "新增",
-    "collections": "集合",
     "ai-chat": "AI 聊天",
     "spreadsheet": "試算表",
     "llm-chat": "AI 對話",
@@ -1697,7 +1694,6 @@
     "created_on": "建立於 <Value />",
     "last_modified": "修改於 <Value />",
     "note_type_switcher_label": "從 {{type}} 切換至：",
-    "note_type_switcher_others": "其他筆記類型",
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
     "edited_notes": "今天編輯過的筆記",

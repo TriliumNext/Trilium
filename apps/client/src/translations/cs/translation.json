@@ -270,8 +270,7 @@
     "search_placeholder": "Hledat cestu podle názvu (výchozí, pokud je prázdná)",
     "modal_title": "Vybrat typ poznámky",
     "modal_body": "Vybrat typ poznámky / šablonu nové poznámky:",
-    "templates": "Šablony",
-    "builtin_templates": "Vestavěné šablony"
+    "templates": "Šablony"
   },
   "password_not_set": {
     "title": "Heslo není nastaveno",
@@ -1499,7 +1498,6 @@
     "copy-note-path-to-clipboard": "Kopírovat cestu poznámky do schránky",
     "protect-subtree": "Chránit podstrom",
     "unprotect-subtree": "Zrušit ochranu podstromu",
-    "copy-clone": "Kopírovat / klonovat",
     "clone-to": "Klonovat do...",
     "cut": "Vyjmout",
     "move-to": "Přesunout do...",
@@ -1549,7 +1547,6 @@
     "llm-chat": "AI Chat",
     "task-list": "Seznam úkolů",
     "new-feature": "Nový",
-    "collections": "Kolekce",
     "spreadsheet": "Tabulka"
   },
   "protect_note": {
@@ -1682,7 +1679,6 @@
     "created_on": "Vytvořeno dne <Value />",
     "last_modified": "Upraveno dne <Value />",
     "note_type_switcher_label": "Přepnout z {{type}} na:",
-    "note_type_switcher_others": "Jiný typ poznámky",
     "note_type_switcher_templates": "Šablona",
     "note_type_switcher_collection": "Kolekce",
     "edited_notes": "Poznámky upravené v tento den",

@@ -1286,8 +1286,7 @@
     "modal_title": "Selectați tipul notiței",
     "templates": "Șabloane",
     "change_path_prompt": "Selectați locul unde să se creeze noua notiță:",
-    "search_placeholder": "căutare cale notiță după nume (cea implicită dacă este necompletat)",
-    "builtin_templates": "Șabloane predefinite"
+    "search_placeholder": "căutare cale notiță după nume (cea implicită dacă este necompletat)"
   },
   "onclick_button": {
     "no_click_handler": "Butonul „{{componentId}}” nu are nicio acțiune la clic definită"
@@ -1793,7 +1792,6 @@
     "clone-to": "Clonare în...",
     "collapse-subtree": "Minimizează subnotițele",
     "convert-to-attachment": "Convertește în atașament",
-    "copy-clone": "Copiază/clonează",
     "copy-note-path-to-clipboard": "Copiază calea notiței în clipboard",
     "cut": "Decupează",
     "delete": "Șterge",
@@ -1854,7 +1852,6 @@
     "beta-feature": "Beta",
     "task-list": "Listă de sarcini",
     "new-feature": "Nou",
-    "collections": "Colecții",
     "markdown": "Markdown",
     "ai-chat": "Chat AI",
     "llm-chat": "Chat AI",
@@ -1983,7 +1980,6 @@
     "created_on": "Creată la <Value />",
     "last_modified": "Modificată la <Value />",
     "note_type_switcher_label": "Schimbă din {{type}} la:",
-    "note_type_switcher_others": "Mai multe tipuri de notițe",
     "note_type_switcher_templates": "Șablon",
     "note_type_switcher_collection": "Colecție",
     "edited_notes": "Notițe editate în această zi",

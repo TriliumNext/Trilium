@@ -252,8 +252,7 @@
     "change_path_prompt": "يېڭى خاتىرە قۇرۇش ئورنىنى ئۆزگەرتىش：",
     "search_placeholder": "يولنى نامى بويىچە ئىزدەش (ئەسلى ھالىتى بېكىتىلمىگەن)",
     "modal_title": "خاتىرە تۈرىنى تاللاش",
-    "modal_body": "يېڭى خاتىرە تۈرى ياكى template تاللاش：",
-    "builtin_templates": "ئىچكى Templates"
+    "modal_body": "يېڭى خاتىرە تۈرى ياكى template تاللاش："
   },
   "password_not_set": {
     "title": "مەخپىي نومۇر بېكىتىلمىگەن",

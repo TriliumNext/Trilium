@@ -725,7 +725,6 @@
   },
   "note_type_chooser": {
     "templates": "قوالب",
-    "builtin_templates": "القوالب المدمجة",
     "modal_title": "اختر نوع الملاحظة",
     "search_placeholder": "البحث في المسار حسب الاسم (الافتراضي إذا كان فارغًا)",
     "modal_body": "اختر نوع الملاحظة / قالب الملاحظة الجديدة:",
@@ -1128,7 +1127,6 @@
     "open-in-popup": "تحرير سريع",
     "hoist-note": "ابراز الملاحظة",
     "unhoist-note": "الغاء ابراز الملاحظة",
-    "copy-clone": "نسخ / استنساخ",
     "import-into-note": "استيراد الى الملاحظة",
     "insert-note-after": "ادراج ملاحظة بعد",
     "insert-child-note": "ادراج ملاحظة فرعية",
@@ -1162,7 +1160,6 @@
     "doc": "مستند",
     "widget": "عنصر واجهة",
     "new-feature": "جديد",
-    "collections": "مجاميع",
     "beta-feature": "اصدار تجريبي",
     "saved-search": "بحث محفوظ",
     "relation-map": "خريطة العلاقة",
@@ -1963,7 +1960,6 @@
     "created_on": "تم الإنشاء في <Value />",
     "last_modified": "تم التعديل في <Value />",
     "note_type_switcher_label": "التبديل من {{type}} إلى:",
-    "note_type_switcher_others": "نوع ملاحظة آخر",
     "edited_notes": "الملاحظات التي تم تعديلها في هذا اليوم"
   },
   "image_context_menu": {

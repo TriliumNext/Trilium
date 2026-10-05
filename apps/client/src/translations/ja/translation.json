@@ -562,7 +562,6 @@
     "copy-note-path-to-clipboard": "ノートのパスをクリップボードにコピー",
     "protect-subtree": "サブツリーを保護",
     "unprotect-subtree": "サブツリーの保護を解除",
-    "copy-clone": "コピー/クローン",
     "clone-to": "クローン...",
     "cut": "切り取り",
     "move-to": "移動...",
@@ -880,7 +879,6 @@
     "beta-feature": "Beta",
     "task-list": "タスクリスト",
     "new-feature": "New",
-    "collections": "コレクション",
     "ai-chat": "AI チャット",
     "spreadsheet": "スプレッドシート",
     "llm-chat": "AI チャット",
@@ -1805,7 +1803,6 @@
     "created_on": "<Value /> に作成",
     "last_modified": "<Value /> に変更",
     "note_type_switcher_label": "{{type}} から切り替え:",
-    "note_type_switcher_others": "その他のノートタイプ",
     "note_type_switcher_templates": "テンプレート",
     "note_type_switcher_collection": "コレクション",
     "edited_notes": "この日に編集されたノート",
@@ -2258,8 +2255,7 @@
     "search_placeholder": "名前によるパスの検索 （空の場合はデフォルト）",
     "modal_title": "ノートタイプを選択",
     "modal_body": "新しいノートのノートタイプ / テンプレートを選択してください:",
-    "templates": "テンプレート",
-    "builtin_templates": "組み込みテンプレート"
+    "templates": "テンプレート"
   },
   "prompt": {
     "title": "プロンプト",

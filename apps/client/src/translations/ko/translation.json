@@ -437,8 +437,7 @@
     "search_placeholder": "이름으로 경로 검색(비워 두면 기본 경로)",
     "modal_title": "노트 유형 선택",
     "modal_body": "새 노트의 노트 유형/템플릿 선택:",
-    "templates": "템플릿",
-    "builtin_templates": "내장 템플릿"
+    "templates": "템플릿"
   },
   "password_not_set": {
     "title": "비밀번호가 설정되지 않았습니다",
@@ -2421,7 +2420,6 @@
     "copy-note-path-to-clipboard": "노트 경로를 클립보드에 복사",
     "protect-subtree": "하위 트리 보호",
     "unprotect-subtree": "하위 트리 보호 해제",
-    "copy-clone": "복사 / 복제",
     "clone-to": "다음 위치로 복제...",
     "cut": "잘라내기",
     "move-to": "다음 위치로 이동...",
@@ -2472,7 +2470,6 @@
     "llm-chat": "AI 채팅",
     "task-list": "작업 목록",
     "new-feature": "신규",
-    "collections": "컬렉션",
     "spreadsheet": "스프레드시트",
     "note-types": "노트 유형",
     "built-in-templates": "기본 제공 템플릿"
@@ -2717,7 +2714,6 @@
     "created_on": "생성일 <Value />",
     "last_modified": "수정됨 <Value />",
     "note_type_switcher_label": "{{type}}에서 다음으로 전환하세요:",
-    "note_type_switcher_others": "기타 노트 유형",
     "note_type_switcher_templates": "템플릿",
     "note_type_switcher_collection": "컬렉션",
     "edited_notes": "이 날 편집된 노트",

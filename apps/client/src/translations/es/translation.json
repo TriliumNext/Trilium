@@ -302,8 +302,7 @@
     "search_placeholder": "ruta de búsqueda por nombre (por defecto si está vacío)",
     "modal_title": "Elija el tipo de nota",
     "modal_body": "Elija el tipo de nota/plantilla de la nueva nota:",
-    "templates": "Plantillas",
-    "builtin_templates": "Plantillas incluidas"
+    "templates": "Plantillas"
   },
   "password_not_set": {
     "title": "La contraseña no está establecida",
@@ -1989,7 +1988,6 @@
     "copy-note-path-to-clipboard": "Copiar ruta de nota al portapapeles",
     "protect-subtree": "Proteger subárbol",
     "unprotect-subtree": "Desproteger subárbol",
-    "copy-clone": "Copiar / clonar",
     "clone-to": "Clonar en...",
     "cut": "Cortar",
     "move-to": "Mover a...",
@@ -2040,7 +2038,6 @@
     "task-list": "Lista de tareas",
     "book": "Colección",
     "new-feature": "Nuevo",
-    "collections": "Colecciones",
     "spreadsheet": "Hoja de cálculo",
     "markdown": "Markdown",
     "llm-chat": "Chat de IA",
@@ -2142,7 +2139,6 @@
     "created_on": "Creado en <Value />",
     "last_modified": "Modificado en <Value />",
     "note_type_switcher_label": "Cambiar de {{type}} a:",
-    "note_type_switcher_others": "Otro tipo de nota",
     "note_type_switcher_templates": "Plantilla",
     "note_type_switcher_collection": "Colección",
     "edited_notes": "Notas editadas en este día",
