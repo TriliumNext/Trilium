@@ -24,6 +24,49 @@ function getBranchRow(branchId: string): BranchRow | null {
     );
 }
 
+function setExpanded(branchIds: string[], isExpanded: number) {
+    for (const branchId of branchIds) {
+        getSql().execute(
+            "UPDATE branches SET isExpanded = ? WHERE branchId = ?",
+            [ isExpanded, branchId ]
+        );
+    }
+}
+
+/**
+ * Builds `root → { child → grandchild → leaf, left → shared, right → shared }`, where
+ * `shared` is one note cloned under two parents and has a child of its own.
+ */
+async function createSubtreeWithClone() {
+    const create = (title: string, parentNoteId?: string) =>
+        createTextNote(api, { parentNoteId, title });
+    const root = await create("Subtree root");
+    const child = await create("Subtree child", root.noteId);
+    const grandchild = await create("Subtree grandchild", child.noteId);
+    const leaf = await create("Subtree leaf", grandchild.noteId);
+    const left = await create("Subtree left", root.noteId);
+    const right = await create("Subtree right", root.noteId);
+    const shared = await create("Subtree shared", left.noteId);
+    const sharedChild = await create("Subtree shared child", shared.noteId);
+
+    const clone = await api.put<{ success: boolean; branchId: string }>(
+        `/api/notes/${shared.noteId}/clone-to-note/${right.noteId}`,
+        { body: {} }
+    );
+    expect(clone.body.success).toBe(true);
+
+    const collapsed = [
+        root.branchId, grandchild.branchId, leaf.branchId, left.branchId, right.branchId,
+        shared.branchId, clone.body.branchId, sharedChild.branchId
+    ];
+    return {
+        root: root.branchId,
+        expandedChild: child.branchId,
+        collapsed,
+        all: [ ...collapsed, child.branchId ]
+    };
+}
+
 function noteExists(noteId: string): boolean {
     return getSql().getRowOrNull("SELECT noteId FROM notes WHERE noteId = ?", [ noteId ]) !== null;
 }
@@ -213,16 +256,36 @@ describe("Branches API (core)", () => {
             expect(getBranchRow(branchId)?.isExpanded).toBe(0);
         });
 
-        it("expands a subtree and returns the affected branch ids", async () => {
-            const parent = await createTextNote(api, { title: "Subtree root" });
-            await createTextNote(api, { parentNoteId: parent.noteId, title: "Subtree child" });
+        it("expands every descendant of a subtree, once per branch", async () => {
+            const tree = await createSubtreeWithClone();
+            setExpanded(tree.collapsed, 0);
+            setExpanded([ tree.expandedChild ], 1);
 
             const res = await api.put<{ branchIds: string[] }>(
-                `/api/branches/${parent.branchId}/expanded-subtree/1`
+                `/api/branches/${tree.root}/expanded-subtree/1`
             );
             expect(res.status).toBe(200);
-            expect(Array.isArray(res.body.branchIds)).toBe(true);
-            expect(res.body.branchIds).toContain(parent.branchId);
+            expect(res.body.branchIds).toHaveLength(tree.collapsed.length);
+            expect(new Set(res.body.branchIds)).toEqual(new Set(tree.collapsed));
+            for (const branchId of tree.all) {
+                expect(getBranchRow(branchId)?.isExpanded).toBe(1);
+            }
+        });
+
+        it("collapses every descendant of a subtree, also below a collapsed note", async () => {
+            const tree = await createSubtreeWithClone();
+            setExpanded(tree.all, 1);
+            setExpanded([ tree.expandedChild ], 0);
+
+            const res = await api.put<{ branchIds: string[] }>(
+                `/api/branches/${tree.root}/expanded-subtree/0`
+            );
+            expect(res.status).toBe(200);
+            expect(res.body.branchIds).toHaveLength(tree.all.length - 1);
+            expect(res.body.branchIds).not.toContain(tree.expandedChild);
+            for (const branchId of tree.all) {
+                expect(getBranchRow(branchId)?.isExpanded).toBe(0);
+            }
         });
     });
 
