@@ -108,9 +108,7 @@ An included code note, or an embedded code file such as a `.js`, `.py` or `.txt`
 
 *   To edit the code, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or check _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. The highlighted code is replaced by the code editor, which follows the theme, indentation and line wrapping settings of code notes. Turn _Editable_ off to return to the highlighted view.
 *   The changes are saved as you type, to the included note or to the attachment, as they would be in its own tab.
-*   A new include starts with _Editable_ off.
 *   Editing is not available in a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), for an included note marked `#readOnly`, or for an attachment of another note.
-*   A change saved elsewhere, for example in the note's own tab, is shown in the include unless the include has changes of its own still being saved.
 
 ## Drawing canvases
 
