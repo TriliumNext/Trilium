@@ -1872,11 +1872,6 @@ body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
     top: 0;
 }
 
-#right-pane .toc-widget,
-#right-pane .highlights-list-widget {
-    padding: 0 0 0 10px;
-}
-
 #right-pane .toc li,
 #right-pane .highlights-list li {
     padding-top: 2px;

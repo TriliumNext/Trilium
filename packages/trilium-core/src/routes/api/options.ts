@@ -104,7 +104,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "centerContent",
     "compressImages",
     "downloadImagesAutomatically",
-    "minTocHeadings",
     "highlightsList",
     "checkForUpdates",
     "disableTray",

@@ -5,17 +5,14 @@ import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
 import { formatDateTime, toggleBodyClass } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
-import FormGroup from "../../react/FormGroup";
 import { FormListItem } from "../../react/FormList";
 import FormSelect, { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
-import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useColorScheme, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
@@ -29,8 +26,6 @@ import ThemeModeSelector from "./components/ThemeModeSelector";
 import { HighlightsListOptions } from "./highlights_list_options";
 import HelpButton from "../../react/HelpButton";
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
-
 export default function TextNoteSettings() {
     return (
         <>
@@ -41,7 +36,6 @@ export default function TextNoteSettings() {
             <AutomaticReplacements />
             <Editor />
             <CodeBlockStyle />
-            <TableOfContent />
             <HighlightsList />
             <RelatedSettings items={[
                 {
@@ -674,50 +668,12 @@ interface ThemeData {
     title: string;
 }
 
-function TableOfContent() {
-    const [ minTocHeadings, setMinTocHeadings ] = useTriliumOption("minTocHeadings");
-
-    return (!isNewLayout &&
-        <Card className="text-notes-toc"
-            heading={t("table_of_contents.title")}
-            description={t("table_of_contents.description")}
-        >
-            <CardSection>
-                <FormGroup name="min-toc-headings">
-                    <FormTextBoxWithUnit
-                        type="number"
-                        min={0} max={999999999999999} step={1}
-                        unit={t("table_of_contents.unit")}
-                        currentValue={minTocHeadings} onChange={setMinTocHeadings}
-                    />
-                </FormGroup>
-
-                <FormText>{t("table_of_contents.disable_info")}</FormText>
-                <FormText>{t("table_of_contents.shortcut_info")}</FormText>
-            </CardSection>
-        </Card>
-    );
-}
-
 function HighlightsList() {
     return (
-        <>
-            <Card heading={t("highlights_list.title")}>
-                <CardSection>
-                    <HighlightsListOptions />
-                </CardSection>
-            </Card>
-
-            {/* Its own card rather than a heading inside the one above: what the list is made of and
-                where it is shown are two subjects, and a card heading is what tells them apart. */}
-            {!isNewLayout && (
-                <Card heading={t("highlights_list.visibility_title")}>
-                    <CardSection>
-                        <FormText>{t("highlights_list.visibility_description")}</FormText>
-                        <FormText>{t("highlights_list.shortcut_info")}</FormText>
-                    </CardSection>
-                </Card>
-            )}
-        </>
+        <Card heading={t("highlights_list.title")}>
+            <CardSection>
+                <HighlightsListOptions />
+            </CardSection>
+        </Card>
     );
 }

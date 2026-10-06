@@ -15,7 +15,6 @@ import NoteList from "../widgets/collections/NoteList.jsx";
 import ContentHeader from "../widgets/containers/content_header.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
-import RightPaneContainer from "../widgets/containers/right_pane_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
@@ -24,7 +23,6 @@ import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
 import FloatingButtons from "../widgets/FloatingButtons.jsx";
 import { DESKTOP_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
-import HighlightsListWidget from "../widgets/highlights_list.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
@@ -48,7 +46,6 @@ import SharedInfo from "../widgets/shared_info.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
-import TocWidget from "../widgets/toc.js";
 import WatchedFileUpdateStatusWidget from "../widgets/watched_file_update_status.js";
 import { applyModals } from "./layout_commons.js";
 
@@ -169,12 +166,6 @@ export default class DesktopLayout {
                                             )
                                             .child(...this.customWidgets.get("center-pane"))
 
-                                    )
-                                    .optChild(!isNewLayout,
-                                        new RightPaneContainer()
-                                            .child(new TocWidget())
-                                            .child(new HighlightsListWidget())
-                                            .child(...this.customWidgets.get("right-pane"))
                                     )
                                     .optChild(isNewLayout, <RightPanelContainer widgetsByParent={this.customWidgets} />)
                             )

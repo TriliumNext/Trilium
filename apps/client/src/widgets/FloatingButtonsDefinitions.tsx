@@ -55,8 +55,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
     SwitchSplitOrientationButton,
     DisplayModeSwitcher,
     EditButton,
-    ShowTocWidgetButton,
-    ShowHighlightsListWidgetButton,
     RunActiveNoteButton,
     OpenTriliumApiDocsButton,
     OpenElectronApiDocsButton,
@@ -163,42 +161,6 @@ function EditButton({ note, noteContext }: FloatingButtonContext) {
         icon="bx bx-pencil"
         className={animationClass}
         onClick={() => enableEditing()}
-    />;
-}
-
-function ShowTocWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const [ isEnabled, setIsEnabled ] = useState(false);
-    useTriliumEvent("reEvaluateTocWidgetVisibility", () => {
-        setIsEnabled(note.type === "text" && isDefaultViewMode && !!noteContext.viewScope?.tocTemporarilyHidden);
-    });
-
-    return isEnabled && <FloatingButton
-        text={t("show_toc_widget_button.show_toc")}
-        icon="bx bx-spreadsheet bx-rotate-180"
-        onClick={() => {
-            if (noteContext?.viewScope && noteContext.noteId) {
-                noteContext.viewScope.tocTemporarilyHidden = false;
-                appContext.triggerEvent("showTocWidget", { noteId: noteContext.noteId });
-            }
-        }}
-    />;
-}
-
-function ShowHighlightsListWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const [ isEnabled, setIsEnabled ] = useState(false);
-    useTriliumEvent("reEvaluateHighlightsListWidgetVisibility", () => {
-        setIsEnabled(note.type === "text" && isDefaultViewMode && !!noteContext.viewScope?.highlightsListTemporarilyHidden);
-    });
-
-    return isEnabled && <FloatingButton
-        text={t("show_highlights_list_widget_button.show_highlights_list")}
-        icon="bx bx-bookmarks"
-        onClick={() => {
-            if (noteContext?.viewScope && noteContext.noteId) {
-                noteContext.viewScope.highlightsListTemporarilyHidden = false;
-                appContext.triggerEvent("showHighlightsListWidget", { noteId: noteContext.noteId });
-            }
-        }}
     />;
 }
 

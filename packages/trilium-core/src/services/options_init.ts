@@ -221,7 +221,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "centerContent", value: "false", isSynced: false },
     { name: "compressImages", value: "true", isSynced: true },
     { name: "downloadImagesAutomatically", value: "true", isSynced: true },
-    { name: "minTocHeadings", value: "5", isSynced: true },
     { name: "highlightsList", value: '["underline","color","bgColor"]', isSynced: true },
     { name: "checkForUpdates", value: "true", isSynced: true },
     { name: "disableTray", value: "false", isSynced: false },

@@ -10,11 +10,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
-// The new layout drops the right pane's own settings; this file's page is the old-layout one.
-vi.mock("../../../services/experimental_features", () => ({
-    isExperimentalFeatureEnabled: () => false
-}));
-
 vi.mock("../../../services/syntax_highlight", () => ({
     ensureMimeTypesForHighlighting: async () => {},
     loadHighlightingTheme: vi.fn()
@@ -84,15 +79,6 @@ describe("the page's shape", () => {
         ]);
         // A pair of pictures, given a card that stands back behind them.
         expect(host.querySelector(".thumbnail-selector-option-card .radio-with-illustration")).not.toBeNull();
-    });
-
-    it("tells what the highlights list is made of apart from where it is shown", () => {
-        open();
-
-        expect(cardHeadings()).toEqual(expect.arrayContaining([
-            "highlights_list.title",
-            "highlights_list.visibility_title"
-        ]));
     });
 });
 

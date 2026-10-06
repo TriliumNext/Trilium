@@ -314,7 +314,6 @@ export type CommandMappings = {
         zoomFactor: string;
     };
 
-    reEvaluateRightPaneVisibility: CommandData;
     runActiveNote: CommandData;
     scrollContainerTo: CommandData & {
         position: number;
@@ -521,18 +520,6 @@ type EventMappings = {
     noteSwitchedAndActivated: NoteSwitchedContext;
     setNoteContext: {
         noteContext: NoteContext;
-    };
-    reEvaluateHighlightsListWidgetVisibility: {
-        noteId: string | undefined;
-    };
-    reEvaluateTocWidgetVisibility: {
-        noteId: string | undefined;
-    };
-    showHighlightsListWidget: {
-        noteId: string;
-    };
-    showTocWidget: {
-        noteId: string;
     };
     showSearchError: {
         error: string;

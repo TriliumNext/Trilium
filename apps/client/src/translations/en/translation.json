@@ -637,7 +637,6 @@
     "hide_relations": "Comma delimited names of relations which should be hidden. All other ones will be displayed.",
     "title_template": "Default title of notes created as children of this note. The value is evaluated as JavaScript string \n                        and thus can be enriched with dynamic content via the injected <code>now</code> and <code>parentNote</code> variables. Examples:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        See <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki with details</a>, API docs for <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> and <a href=\"https://day.js.org/docs/en/display/format\">now</a> for details.",
     "template": "This note will appear in the selection of available template when creating new note.",
-    "toc": "<code>#toc</code> or <code>#toc=show</code> will force the Table of Contents to be shown, <code>#toc=hide</code> will force hiding it. If the label doesn't exist, the global setting is observed.",
     "color": "Defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f.",
     "keyboard_shortcut": "Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect.",
     "keep_current_hoisting": "Opening this link won't change hoisting even if the note is not displayable in the current hoisted subtree.",
@@ -645,7 +644,6 @@
     "execute_description": "Longer description of the current code note displayed together with the execute button.",
     "exclude_from_note_map": "Notes with this label will be hidden from the Note Map.",
     "new_notes_on_top": "New notes will be created at the top of the parent note, not on the bottom.",
-    "hide_highlight_widget": "Hides the Highlights List for this note, leaving it shown on every other.",
     "run_on_note_creation": "Executes when note is created on backend. Use this relation if you want to run the script for all notes created under a specific subtree. In that case, create it on the subtree root note and make it inheritable. A new note created within the subtree (any depth) will trigger the script.",
     "run_on_child_note_creation": "Executes when new note is created under the note where this relation is defined.",
     "run_on_note_title_change": "Executes when note title is changed (includes note creation as well).",
@@ -1085,12 +1083,6 @@
   },
   "edit_button": {
     "edit_this_note": "Edit this note"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Show Table of Contents"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Show Highlights List"
   },
   "options": {
     "title": "Options",
@@ -2108,17 +2100,7 @@
     "italic": "Italic text",
     "underline": "Underlined text",
     "color": "Colored text",
-    "bg_color": "Text with background color",
-    "visibility_title": "Highlights List visibility",
-    "visibility_description": "You can hide the highlights widget per-note by adding a #hideHighlightWidget label.",
-    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including Highlights) in the Options -> Shortcuts (name 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Table of Contents",
-    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customize this number:",
-    "unit": "headings",
-    "disable_info": "You can also use this option to effectively disable TOC by setting a very high number.",
-    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including TOC) in the Options -> Shortcuts (name 'toggleRightPane')."
+    "bg_color": "Text with background color"
   },
   "text_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
@@ -2779,10 +2761,8 @@
     "replace_all": "Replace all"
   },
   "highlights_list_2": {
-    "title": "Highlights List",
     "title_with_count_one": "{{count}} highlight",
     "title_with_count_other": "{{count}} highlights",
-    "options": "Options",
     "menu_configure": "Configure highlights list...",
     "no_highlights": "No highlights found."
   },
@@ -2901,7 +2881,6 @@
   },
   "toc": {
     "table_of_contents": "Table of Contents",
-    "options": "Options",
     "no_headings": "No headings."
   },
   "watched_file_update_status": {

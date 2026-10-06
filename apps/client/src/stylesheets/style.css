@@ -2804,41 +2804,6 @@ footer.webview-footer button {
     100% { opacity: 0.3; }
 }
 
-/* Right Pane Tab Styles */
-#right-pane-tab-container {
-    display: flex;
-    gap: 10px;
-}
-
-.right-pane-tab {
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: background-color 0.2s ease;
-}
-
-.right-pane-tab:hover {
-    background-color: var(--hover-item-background-color);
-}
-
-.right-pane-tab.active {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.right-pane-tab .tab-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.right-pane-tab .tab-title .tn-icon {
-    font-size: 1.1em;
-}
-
 .admonition {
     --accent-color: var(--card-border-color);
     background: color-mix(in srgb, var(--accent-color) 15%, transparent);
