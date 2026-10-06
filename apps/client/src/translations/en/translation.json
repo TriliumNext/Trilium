@@ -1342,7 +1342,6 @@
   },
   "inherited_attribute_list": {
     "title": "Inherited Attributes",
-    "no_inherited_attributes": "No inherited attributes.",
     "none": "none"
   },
   "note_info_widget": {
@@ -1387,9 +1386,6 @@
   "note_properties": {
     "this_note_was_originally_taken_from": "This note was originally taken from:",
     "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Owned Attributes"
   },
   "promoted_attributes": {
     "promoted_attributes": "Promoted Attributes",

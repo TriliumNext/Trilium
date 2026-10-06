@@ -3,12 +3,10 @@ import options from "../../services/options";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
-import InheritedAttributesTab from "./InheritedAttributesTab";
 import NoteInfoTab from "./NoteInfoTab";
 import NoteMapTab from "./NoteMapTab";
 import NotePathsTab from "./NotePathsTab";
 import NotePropertiesTab from "./NotePropertiesTab";
-import OwnedAttributesTab from "./OwnedAttributesTab";
 import { TabConfiguration } from "./ribbon-interface";
 import ScriptTab from "./ScriptTab";
 import SearchDefinitionTab from "./SearchDefinitionTab";
@@ -60,21 +58,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         show: ({ note }) => note?.type === "image",
         toggleCommand: "toggleRibbonTabImageProperties",
         activate: true,
-    },
-    {
-        title: t("owned_attribute_list.owned_attributes"),
-        icon: "bx bx-list-check",
-        content: OwnedAttributesTab,
-        show: ({note}) => !note?.isLaunchBarConfig(),
-        toggleCommand: "toggleRibbonTabOwnedAttributes",
-        stayInDom: true
-    },
-    {
-        title: t("inherited_attribute_list.title"),
-        icon: "bx bx-list-plus",
-        content: InheritedAttributesTab,
-        show: ({note}) => !note?.isLaunchBarConfig(),
-        toggleCommand: "toggleRibbonTabInheritedAttributes"
     },
     {
         title: t("note_paths.title"),

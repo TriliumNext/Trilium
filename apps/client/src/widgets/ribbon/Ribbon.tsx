@@ -95,7 +95,7 @@ export default function Ribbon() {
             <div className="ribbon-body-container">
                 {computedTabs && computedTabs.map(tab => {
                     const isActive = tab.index === activeTabIndex;
-                    if (!isActive && !tab.stayInDom) {
+                    if (!isActive) {
                         return;
                     }
 

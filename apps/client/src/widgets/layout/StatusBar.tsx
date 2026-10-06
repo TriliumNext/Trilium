@@ -16,6 +16,9 @@ import { NOTE_TYPES } from "../../services/note_types";
 import server from "../../services/server";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
+import AttributeEditor, { AttributeEditorImperativeHandlers } from "../attribute_widgets/AttributeEditor";
+import AttributeHelp from "../attribute_widgets/AttributeHelp";
+import InheritedAttributes from "../attribute_widgets/InheritedAttributes";
 import { ContentLanguagesModal, useLanguageSwitcher } from "../dialogs/content_languages";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "../react/Dropdown";
@@ -25,9 +28,6 @@ import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNot
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import { ParentComponent } from "../react/react_utils";
-import AttributeEditor, { AttributeEditorImperativeHandlers } from "../ribbon/components/AttributeEditor";
-import AttributeHelp from "../ribbon/components/AttributeHelp";
-import InheritedAttributesTab from "../ribbon/InheritedAttributesTab";
 import { NoteSizeWidget, useNoteMetadata } from "../ribbon/NoteInfoTab";
 import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
 import SimilarNotesTab from "../ribbon/SimilarNotesTab";
@@ -453,7 +453,7 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
             helpContent={<AttributeHelp />}>
 
             <span class="attributes-panel-label">{t("inherited_attribute_list.title")}</span>
-            <InheritedAttributesTab {...context} emptyListString="inherited_attribute_list.none" />
+            <InheritedAttributes {...context} />
 
             {editorMounted && <AttributeEditor
                 {...context}

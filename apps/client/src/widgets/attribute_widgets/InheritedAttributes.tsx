@@ -1,23 +1,24 @@
-import "./InheritedAttributesTab.css";
+import "./InheritedAttributes.css";
 
 import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import FAttribute from "../../entities/fattribute";
+import FNote from "../../entities/fnote";
 import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import { AttributeDetail, AttributeDetailOpts } from "../attribute_widgets/attribute_detail";
 import { useTriliumEvent } from "../react/hooks";
 import RawHtml from "../react/RawHtml";
 import { joinElements } from "../react/react_utils";
-import { TabContext } from "./ribbon-interface";
+import { AttributeDetail, AttributeDetailOpts } from "./attribute_detail";
 
-type InheritedAttributesTabArgs = Pick<TabContext, "note" | "componentId"> & {
-    emptyListString?: string;
-};
+interface InheritedAttributesProps {
+    note: FNote | null | undefined;
+    componentId: string;
+}
 
-export default function InheritedAttributesTab({ note, componentId, emptyListString }: InheritedAttributesTabArgs) {
+export default function InheritedAttributes({ note, componentId }: InheritedAttributesProps) {
     const [ inheritedAttributes, setInheritedAttributes ] = useState<FAttribute[]>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [ detailOpts, setDetailOpts ] = useState<AttributeDetailOpts | null>(null);
@@ -84,7 +85,7 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
                         />
                     )), " ")
                 ) : (
-                    <>{t(emptyListString ?? "inherited_attribute_list.no_inherited_attributes")}</>
+                    <>{t("inherited_attribute_list.none")}</>
                 )}
             </div>
 

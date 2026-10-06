@@ -18,7 +18,7 @@ vi.mock("../react/hooks", async (importOriginal) => ({
 
 // The attributes panel builds its editor on CKEditor, which is a legacy widget wanting a real parent
 // component to be a child of. What the panel is here is a panel that is up or is not.
-vi.mock("../ribbon/components/AttributeEditor", async () => {
+vi.mock("../attribute_widgets/AttributeEditor", async () => {
     const { h } = await import("preact");
 
     return { default: () => h("div", { class: "attribute-editor-stub" }) };

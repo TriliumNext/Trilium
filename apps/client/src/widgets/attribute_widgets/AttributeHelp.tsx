@@ -1,7 +1,7 @@
 import "./AttributeHelp.css";
 
-import { t } from "../../../services/i18n";
-import { RawHtmlBlock } from "../../react/RawHtml";
+import { t } from "../../services/i18n";
+import { RawHtmlBlock } from "../react/RawHtml";
 
 /**
  * Quick reference on how to type attributes into the attribute editor. Rendered inside a
