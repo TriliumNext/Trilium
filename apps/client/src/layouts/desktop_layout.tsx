@@ -169,10 +169,10 @@ export default class DesktopLayout {
                                     )
                                     .child(<RightPanelContainer widgetsByParent={this.customWidgets} />)
                             )
-                            .optChild(!launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
+                            .optChild(!launcherPaneIsHorizontal, <StatusBar />)
                     )
             )
-            .optChild(launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
+            .optChild(launcherPaneIsHorizontal, <StatusBar />)
             .child(<CloseZenModeButton />)
 
             // Desktop-specific dialogs.

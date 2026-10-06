@@ -153,14 +153,8 @@ body.desktop {
         }
     }
 
-    &.experimental-feature-new-layout #root-widget.horizontal-layout {
+    #root-widget.horizontal-layout {
         >.status-bar {
-            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
-        }
-    }
-
-    &:not(.experimental-feature-new-layout) #root-widget.horizontal-layout {
-        #horizontal-main-container {
             padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }

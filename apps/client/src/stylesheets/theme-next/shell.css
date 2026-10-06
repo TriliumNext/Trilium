@@ -128,7 +128,7 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 }
 
 /* Matches when a status bar panel is open */
-body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+#horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
     --note-split-bottom-border-radius: 0;
 }
 
@@ -1247,7 +1247,7 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
  */
 
  /* Note split */
- body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+ body.desktop .vertical-layout #center-pane .note-split {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 
@@ -1255,7 +1255,7 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-start-start-radius: var(--note-split-top-border-radius);
 
-    body.desktop.experimental-feature-new-layout & {
+    body.desktop & {
         border-end-start-radius: var(--note-split-bottom-border-radius);
 
         > .scrolling-container {
@@ -1846,7 +1846,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 }
 
 /* New layout: status bar delimiter */
-body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+body.desktop .vertical-layout #right-pane {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 

@@ -137,7 +137,7 @@
     }
 }
 
-body.experimental-feature-new-layout .note-info-content {
+.note-info-content {
     ul {
                 --row-block-margin: .2em;
 
