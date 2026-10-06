@@ -82,11 +82,19 @@ describe("TextEmbed", () => {
         expect(stub && appContext.getComponentByEl(stub)).toBe(props.parentComponent);
         expect(figure.querySelector(".editable-embed-preview")).toBeNull();
 
+        // The title row of the embed shows how the saving of the note goes.
+        act(() => props.noteContext?.setContextData("saveState", { state: "error" }));
+        await vi.waitFor(() => {
+            expect(figure.querySelector(".include-note-badges > .save-status-badge.error"))
+                .not.toBeNull();
+        });
+
         await act(async () => {
             delete figure.dataset.editable;
             await Promise.resolve();
         });
         expect(editorAskedToSave).toHaveBeenCalledWith({ ntxIds: [ props.ntxId ] });
+        expect(figure.querySelector(".save-status-badge")).toBeNull();
         expect(figure.querySelector(".editable-text-stub")).toBeNull();
         expect(figure.querySelector(".editable-embed-preview")).not.toBeNull();
     });
@@ -104,9 +112,15 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
     if (options.isEditable) {
         figure.dataset.editable = "true";
     }
-    const box = document.createElement("div");
-    box.className = "include-note-content";
-    figure.append(box);
+    // The markup of `ContentEmbed`, with the slot for the badges in its title row.
+    const wrapper = document.createElement("div");
+    wrapper.className = "include-note-wrapper";
+    wrapper.innerHTML = `<div class="include-note-title-row">`
+        + `<div class="note-badges include-note-badges"></div></div>`
+        + `<div class="include-note-body"><div class="include-note-content"></div></div>`;
+    const box = wrapper.querySelector(".include-note-content");
+    if (!box) throw new Error("Expected the content box.");
+    figure.append(wrapper);
     document.body.append(figure);
     figures.push(figure);
 

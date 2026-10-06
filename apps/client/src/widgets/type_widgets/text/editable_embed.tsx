@@ -163,6 +163,23 @@ export function useNestedEditor(ntxId: string | null | undefined) {
     return editor;
 }
 
+/**
+ * The element in the title row of the embed around `rootRef` that holds the badges of its content,
+ * such as the save status of an included note, or `null`.
+ */
+export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>) {
+    const [ slot, setSlot ] = useState<HTMLElement | null>(null);
+
+    useEffect(() => {
+        const wrapper = rootRef.current?.closest(".include-note-wrapper");
+        setSlot(wrapper?.querySelector<HTMLElement>(
+            ":scope > .include-note-title-row > .include-note-badges"
+        ) ?? null);
+    }, [ rootRef ]);
+
+    return slot;
+}
+
 /** The editable root of a text editor, which CKEditor gives a reference to the editor. */
 type EditorRootElement = HTMLElement & { ckeditorInstance?: CKTextEditor };
 

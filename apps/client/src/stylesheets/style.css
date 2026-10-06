@@ -1512,6 +1512,10 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
     flex-shrink: 0;
 }
 
+.include-note-title-row > .include-note-badges:empty {
+    display: none;
+}
+
 .include-note-toggle {
     transition: transform 0.2s ease;
 }

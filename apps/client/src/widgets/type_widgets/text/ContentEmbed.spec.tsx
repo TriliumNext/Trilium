@@ -168,14 +168,14 @@ function click(target: HTMLElement) {
 
 describe("ContentEmbed", () => {
     it("lays out the title row for each box size", () => {
-        const plain = [ "title", "open", "menu" ];
-        const withFullscreen = [ "title", "open", "fullscreen", "menu" ];
+        const plain = [ "title", "badges", "open", "menu" ];
+        const withFullscreen = [ "title", "badges", "open", "fullscreen", "menu" ];
         const layouts: [ string | undefined, string[] ][] = [
             [ undefined, plain ],
             [ "small", plain ],
             [ "medium", withFullscreen ],
             [ "full", withFullscreen ],
-            [ "expandable", [ "toggle", "title", "open", "menu" ] ]
+            [ "expandable", [ "toggle", "title", "badges", "open", "menu" ] ]
         ];
 
         for (const [ boxSize, expected ] of layouts) {

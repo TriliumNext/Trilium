@@ -1,5 +1,6 @@
 import "./TextEmbedEditor.css";
 
+import { createPortal } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
@@ -7,9 +8,10 @@ import { randomString } from "../../../services/utils";
 import {
     announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext
 } from "../../EmbeddedNotePane";
+import { SaveStatusBadge } from "../../layout/NoteBadges";
 import { useLegacyComponentElement, useNoteContext } from "../../react/hooks";
 import EditableText from "./EditableText";
-import { NestedEmbedContext } from "./editable_embed";
+import { NestedEmbedContext, useEmbedBadgeSlot } from "./editable_embed";
 
 /**
  * The text editor of a text note in an embed. It has a note context and a component of its own,
@@ -41,6 +43,7 @@ function ScopedEditor({ note }: { note: FNote }) {
     const { note: contextNote, noteContext, ntxId, parentComponent } = useNoteContext();
     // The plugins of the editor find their host by the element of its component.
     useLegacyComponentElement(rootRef);
+    const badgeSlot = useEmbedBadgeSlot(rootRef);
 
     return (
         <div ref={rootRef} className="text-embed-editor">
@@ -53,6 +56,7 @@ function ScopedEditor({ note }: { note: FNote }) {
                     viewScope={noteContext.viewScope}
                 />
             )}
+            {badgeSlot && createPortal(<SaveStatusBadge />, badgeSlot)}
         </div>
     );
 }

@@ -98,6 +98,8 @@ export default function ContentEmbed({
                     />
                 )}
                 <ContentEmbedTitle title={title} />
+                {/* The content of the embed puts badges here, such as its save status. */}
+                <div className="note-badges include-note-badges" />
                 <ContentEmbedActionButton
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
