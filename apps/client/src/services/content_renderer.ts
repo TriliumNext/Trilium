@@ -3,6 +3,7 @@ import "./content_renderer.css";
 import {
     attachmentIcon,
     CANVAS_ATTACHMENT_MIME,
+    getMimeTypeFromFileName,
     isAcceptedImageMime,
     isImageAttachmentRole,
     isOfficeMimeType,
@@ -307,7 +308,8 @@ async function renderCode(
 ) {
     const editor = options.interactive ? getContentEditor(entity, options) : undefined;
     const content = editor?.getUnsavedContent() ?? (await entity.getBlob())?.content ?? "";
-    const preview = await renderCodePreview(content, entity.mime);
+    const mime = getCodeMime(entity);
+    const preview = await renderCodePreview(content, mime);
 
     if (!editor) {
         $renderedContent.append(preview);
@@ -318,7 +320,10 @@ async function renderCode(
     const $container = $('<div class="code-embed">');
     const container = $container.get(0);
     if (container) {
-        await mountInteractiveWidget(h(CodeEmbed, { entity, editor, content, preview }), container);
+        await mountInteractiveWidget(
+            h(CodeEmbed, { entity, editor, content, mime, preview }),
+            container
+        );
     }
     $renderedContent.append($container);
 }
@@ -338,6 +343,16 @@ export async function renderCodePreview(content: string, mime: string) {
     const $pre = $("<pre>").append($codeBlock);
     await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(mime));
     return $pre[0];
+}
+
+/**
+ * The MIME type that highlights the code of `entity`. An attachment keeps the type the browser
+ * uploaded it with, often a generic one such as `text/plain`, so its file name decides first.
+ */
+function getCodeMime(entity: FNote | FAttachment) {
+    return entity instanceof FAttachment
+        ? getMimeTypeFromFileName(entity.title) ?? entity.mime
+        : entity.mime;
 }
 
 /** Saves the changes that rendered content makes to one note or attachment. */

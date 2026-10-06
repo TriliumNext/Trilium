@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, MIME_TYPES_DICT, normalizeMimeTypeForCKEditor } from "./mime_type.js";
+import {
+    getMimeTypeFromFileName, getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, MIME_TYPES_DICT,
+    normalizeMimeTypeForCKEditor
+} from "./mime_type.js";
 
 describe("normalizeMimeTypeForCKEditor", () => {
     it("collapses non-word characters and underscores into single dashes", () => {
@@ -75,5 +78,23 @@ describe("exports", () => {
         expect(Array.isArray(MIME_TYPES_DICT)).toBe(true);
         expect(MIME_TYPES_DICT.length).toBeGreaterThan(0);
         expect(Object.isFrozen(MIME_TYPES_DICT)).toBe(true);
+    });
+});
+
+describe("getMimeTypeFromFileName", () => {
+    it("names the language of a file by its extension, in any case", () => {
+        expect([
+            "app.js", "app.MJS", "types.ts", "script.py", "main.rb", "lib.rs", "Main.kt",
+            "Program.cs", "header.h", "README.md", "page.htm", "build.ps1", "Dockerfile"
+        ].map(getMimeTypeFromFileName)).toEqual([
+            "text/javascript", "text/javascript", "application/typescript", "text/x-python",
+            "text/x-ruby", "text/x-rustsrc", "text/x-kotlin", "text/x-csharp", "text/x-csrc",
+            "text/x-gfm", "text/html", "application/x-powershell", "text/x-dockerfile"
+        ]);
+    });
+
+    it("has no type for a file without a known language", () => {
+        expect([ "notes.txt", "server.log", "archive", ".", "data.unknown" ]
+            .map(getMimeTypeFromFileName)).toEqual(Array(5).fill(undefined));
     });
 });

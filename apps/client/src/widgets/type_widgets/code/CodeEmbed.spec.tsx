@@ -2,17 +2,22 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
+import froca from "../../../services/froca";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { getContentEmbedTools } from "../text/content_embed_tools";
 import CodeEmbed from "./CodeEmbed";
 
-vi.mock("../../../services/content_renderer", () => ({
-    renderCodePreview: async (content: string) => buildPreview(content)
+const renderCodePreview = vi.hoisted(() => vi.fn(async (content: string, _mime: string) => {
+    const pre = document.createElement("pre");
+    pre.textContent = content;
+    return pre;
 }));
+vi.mock("../../../services/content_renderer", () => ({ renderCodePreview }));
 
 // `CodeEditor` reads the theme as a string.
 options.set("codeNoteTheme", "");
@@ -80,6 +85,35 @@ describe("CodeEmbed", () => {
         expect(figure.querySelector(".cm-editor")).toBeNull();
     });
 
+    it("highlights an attachment with the MIME type it is given", async () => {
+        const attachment = new FAttachment(froca, {
+            attachmentId: "script1",
+            ownerId: "owner",
+            role: "file",
+            mime: "text/plain",
+            title: "script.py",
+            dateModified: "",
+            utcDateModified: "",
+            utcDateScheduledForErasureSince: "",
+            contentLength: 0
+        } as never);
+        const { figure } = await mount(attachment, buildEditor(), {
+            content: "a",
+            mime: "text/x-python",
+            isEditable: true
+        });
+        const view = await findView(figure);
+        act(() => view.dispatch({ changes: { from: 1, insert: "b" } }));
+
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await vi.waitFor(() => {
+            expect(renderCodePreview).toHaveBeenLastCalledWith("ab", "text/x-python");
+        });
+    });
+
     it("loads the note as saved elsewhere, unless it has unsaved changes", async () => {
         const { figure } = await mount(buildCodeNote("saved"), buildEditor(), {
             content: "stale",
@@ -103,12 +137,17 @@ describe("CodeEmbed", () => {
 
 interface MountOptions {
     content?: string;
+    mime?: string;
     preview?: HTMLElement;
     isEditable?: boolean;
 }
 
 /** Renders `CodeEmbed` in the markup of an embed, as the host does. */
-async function mount(note: FNote, editor: ContentEditor, options: MountOptions = {}) {
+async function mount(
+    entity: FNote | FAttachment,
+    editor: ContentEditor,
+    options: MountOptions = {}
+) {
     const content = options.content ?? "";
     const figure = document.createElement("figure");
     figure.className = "include-note";
@@ -125,9 +164,10 @@ async function mount(note: FNote, editor: ContentEditor, options: MountOptions =
         render(
             <ParentComponent.Provider value={parent}>
                 <CodeEmbed
-                    entity={note}
+                    entity={entity}
                     editor={editor}
-                    content={options.content ?? (await note.getBlob())?.content ?? content}
+                    content={options.content ?? (await entity.getBlob())?.content ?? content}
+                    mime={options.mime ?? entity.mime}
                     preview={options.preview ?? buildPreview(content)}
                 />
             </ParentComponent.Provider>,

@@ -343,13 +343,26 @@ describe("getRenderedContent editable code", () => {
         };
     }
 
-    it("renders an attached code file as code", async () => {
-        const att = buildAttachment({ role: "file", mime: "text/x-python" });
+    it("renders an attached code file as code, highlighted by the language of its name", async () => {
+        const att = buildAttachment({ role: "file", mime: "text/x-python", title: "a.py" });
         att.getBlob = (async () => ({ content: "print(1)" })) as any;
 
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("code");
         expect($renderedContent.find("pre > code").text()).toBe("print(1)");
+
+        const generic = [
+            buildAttachment({ role: "file", mime: "application/x-javascript", title: "app.js" }),
+            buildAttachment({ role: "file", mime: "text/plain", title: "types.ts" }),
+            buildAttachment({ role: "file", mime: "text/plain", title: "notes.txt" })
+        ];
+        for (const attachment of generic) {
+            attachment.getBlob = (async () => ({ content: "" })) as any;
+            await getRenderedContent(attachment);
+        }
+        expect(applySingleBlockSyntaxHighlight.mock.calls.map(([ , mime ]) => mime)).toEqual([
+            "text-x-python", "text-javascript", "application-typescript", "text-plain"
+        ]);
     });
 
     it("mounts CodeEmbed for an interactive code note, saved by `noteEditor`", async () => {
@@ -370,6 +383,7 @@ describe("getRenderedContent editable code", () => {
         const props = codeEmbedComponent.mock.calls[0][0];
         expect(props.entity).toBe(note);
         expect(props.content).toBe("unsaved");
+        expect(props.mime).toBe("text/javascript");
         expect(props.preview.textContent).toBe("unsaved");
 
         const getContent = () => "edited";
@@ -393,6 +407,7 @@ describe("getRenderedContent editable code", () => {
         const props = codeEmbedComponent.mock.calls[0][0];
         expect(props.entity).toBe(att);
         expect(props.content).toBe("{}");
+        expect(props.mime).toBe("application/json");
         props.editor.scheduleSave(() => "[]");
         props.editor.release();
         expect(attachmentEditor.getUnsavedContent).toHaveBeenCalledWith(att.attachmentId);

@@ -21,6 +21,8 @@ interface CodeEmbedProps {
     editor: ContentEditor;
     /** The content shown first. */
     content: string;
+    /** The MIME type that highlights the content. A note follows its own `mime` instead. */
+    mime: string;
     /** The highlighted `content`. */
     preview: HTMLElement;
 }
@@ -30,7 +32,7 @@ interface CodeEmbedProps {
  * Editable toggle of its embed is on.
  */
 export default function CodeEmbed({
-    entity, editor, content: initialContent, preview
+    entity, editor, content: initialContent, mime: initialMime, preview
 }: CodeEmbedProps) {
     const rootRef = useRef<HTMLDivElement>(null);
     const note = entity instanceof FNote ? entity : null;
@@ -39,12 +41,12 @@ export default function CodeEmbed({
     const isEmbedEditable = useIsContentEmbedEditable(rootRef);
     const isEditing = canEdit && isEmbedEditable;
     const [ content, setContent ] = useState(initialContent);
-    const mime = useNoteProperty(note, "mime") ?? entity.mime;
+    const mime = useNoteProperty(note, "mime") ?? initialMime;
     useEditableFlag(rootRef, canEdit);
     useChangesFromElsewhere(note, editor, setContent);
     useFocusFromEmbedBox(rootRef, isEditing);
 
-    const isInitial = content === initialContent && mime === entity.mime;
+    const isInitial = content === initialContent && mime === initialMime;
     const previewView = (
         <CodePreview
             content={content}
