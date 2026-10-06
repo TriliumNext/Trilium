@@ -2178,10 +2178,6 @@ body.desktop .dropdown-submenu > .dropdown-menu {
     position: static;
 }
 
-#right-pane {
-    overflow: auto;
-}
-
 #right-pane .card {
     border: 0;
     display: flex;
@@ -2433,7 +2429,7 @@ body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
 }
 
-body.experimental-feature-new-layout.zen #vertical-main-container {
+body.zen #vertical-main-container {
     /* Remove the placeholder for the right pane peek button */
     --right-pane-peek-button-gutter: 0 !important;
 }
