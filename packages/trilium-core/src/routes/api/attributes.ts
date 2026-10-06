@@ -4,6 +4,7 @@ import type { Request } from "../../http_interface";
 import becca from "../../becca/becca.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import attributeService from "../../services/attributes.js";
+import reificationService from "../../services/reification.js";
 import { getLog } from "../../services/log.js";
 import { getSql } from "../../services/sql/index.js";
 import { ValidationError } from "../../errors.js";
@@ -32,6 +33,8 @@ function updateNoteAttribute(req: Request<{ noteId: string }>) {
             if (body.type !== "relation" || !!body.value.trim()) {
                 newAttribute = attribute.createClone(body.type, body.name, body.value);
                 newAttribute.save();
+                // The old row is about to disappear. Keep a reification attached to the row that replaces it.
+                reificationService.retarget(attribute, newAttribute);
             }
 
             attribute.markAsDeleted();

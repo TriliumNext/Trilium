@@ -228,6 +228,24 @@ describe("createFade", () => {
         atTime(160);
         expect(fade.get("other")).toBeCloseTo(-0.25);
     });
+
+    it("follows a replaced list and drops the positions of the list it replaced", () => {
+        atTime(0);
+        let hovered = false;
+        const fade = createFade([ "other" ], () => (hovered ? -1 : 0));
+        fade.restart();
+        hovered = true;
+        atTime(80);
+        expect(fade.get("other")).toBeCloseTo(-0.5);
+
+        fade.replace([ "fresh" ]);
+        expect(fade.get("fresh")).toBe(-1);
+
+        fade.restart();
+        hovered = false;
+        atTime(160);
+        expect(fade.get("fresh")).toBeCloseTo(-0.5);
+    });
 });
 
 describe("planFraming", () => {

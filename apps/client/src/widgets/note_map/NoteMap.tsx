@@ -1,21 +1,53 @@
 import "./NoteMap.css";
 
+import {
+    REIFICATION_OBJECT,
+    REIFICATION_OF,
+    REIFICATION_PREDICATE,
+    REIFICATION_SUBJECT,
+    ReificationResponse
+} from "@triliumnext/commons";
 import ForceGraph from "force-graph";
 import { RefObject } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import appContext from "../../components/app_context";
+import appContext, { type CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote";
+import contextMenu, { type MenuItem } from "../../menus/context_menu";
 import link_context_menu from "../../menus/link_context_menu";
+import dialog, { chooseNote, pickSingleItem } from "../../services/dialog";
+import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
 import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
-import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
+import {
+    carryPositions,
+    dropExpansion,
+    expandedNoteId,
+    collapseKeys,
+    foldOrder,
+    foldTitle,
+    loadNotesAndRelations,
+    NoteMapFold,
+    NoteMapLinkObject,
+    NoteMapNodeObject,
+    NotesAndRelationsData,
+    predicateForEdge,
+    predicatesIn,
+    presentRelations,
+    ReificationEnds,
+    relationEndTitle,
+    resolveFoldEnd,
+    splitFoldTitle,
+    statementCaption,
+    statementsBetween
+} from "./data";
 import MapTypeSwitcher from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
@@ -48,6 +80,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
     const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData | undefined>(undefined);
+    const collapsedRef = useRef(new Set<string>());
+    const expandedIdsRef = useRef(new Set<string>());
+    const expandedEndsRef = useRef(new Map<string, ReificationEnds>());
 
     const mapRootId = useMemo(() => {
         if (note.noteId && isRootedAtCurrentNote(widgetMode)) {
@@ -78,6 +113,10 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph.width(size.width).height(size.height);
         }
 
+        // A fold belongs to the map that was open when it was made.
+        collapsedRef.current = new Set();
+        expandedIdsRef.current = new Set();
+        expandedEndsRef.current = new Map();
         // Navigating away mid-load must not let the outgoing note's data land on the new graph.
         let disposed = false;
         let teardownRendering: (() => void) | undefined;
@@ -105,7 +144,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             const iconGlyphs = resolveIconGlyphs(notesAndRelations.nodes.map((node) => node.icon), containerRef.current);
 
             // Configure rendering properties.
-            teardownRendering = setupRendering(graph, {
+            const rendering = setupRendering(graph, {
                 note,
                 mapRootId,
                 noteIdToSizeMap: notesAndRelations.noteIdToSizeMap,
@@ -116,10 +155,60 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 container,
                 iconGlyphs
             });
+            teardownRendering = rendering.stop;
 
             // Interaction
+            const expandedEnds = () => {
+                const ends: ReificationEnds[] = [];
+                for (const id of expandedIdsRef.current) {
+                    const item = expandedEndsRef.current.get(id);
+                    if (item) {
+                        ends.push(item);
+                    }
+                }
+                return ends;
+            };
+            const showView = (refit: boolean) => {
+                const base = notesAndRelationsRef.current;
+                if (!base) {
+                    return;
+                }
+                const next = presentRelations(
+                    base,
+                    collapsedRef.current,
+                    expandedEnds()
+                );
+                // setupFraming sets framing to false on pointerdown. carryPositions copies
+                // coordinates onto next, and resumeFraming sets fitWholeGraph so zoomToFit
+                // follows those notes instead of planFraming's original filter.
+                if (refit) {
+                    carryPositions(graph.graphData().nodes, next.nodes, mapRootId);
+                }
+                graph.graphData(next);
+                rendering.setHoverGraph(next.nodes, next.links);
+                graph.d3ReheatSimulation();
+                if (refit) {
+                    rendering.resumeFraming();
+                }
+            };
+
             graph
+                .linkHoverPrecision(10)
                 .onNodeClick((node) => {
+                    if (node.joint) {
+                        return;
+                    }
+                    if (node.fold) {
+                        const predicates = node.fold.predicates.length > 0
+                            ? node.fold.predicates
+                            : [ node.fold.predicate ];
+                        if (predicates.length === 1) {
+                            void openFoldedRelation(node.fold, predicates[0]);
+                        } else {
+                            void chooseFoldedStatement(node.fold, node.name);
+                        }
+                        return;
+                    }
                     if (!node.id) return;
                     appContext.tabManager.getActiveContext()?.setNote(node.id);
                     // The map always sends the reader to the pane behind it, never to its own host — so a
@@ -128,14 +217,65 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                     // popup's backdrop while that is open, and so cannot be the one being pressed.
                     void appContext.triggerEvent("closePopupEditor", {});
                 })
-                .onNodeRightClick((node, e) => {
+                .onNodeRightClick((node, event) => {
+                    if (node.joint) {
+                        return;
+                    }
+                    if (node.fold) {
+                        event.preventDefault();
+                        const fold = node.fold;
+                        void showFoldedNodeMenu(event, fold, node.name, () => {
+                            collapsedRef.current.delete(fold.collapseKey ?? fold.linkId);
+                            showView(true);
+                        });
+                        return;
+                    }
                     if (!node.id) return;
-                    link_context_menu.openContextMenu(node.id, e);
+                    event.preventDefault();
+                    void openReificationNodeMenu(node.id, event, (ends) => {
+                        expandedEndsRef.current.set(ends.rootId, ends);
+                        expandedIdsRef.current.add(ends.rootId);
+                        showView(true);
+                    });
+                })
+                .onLinkRightClick((link, event) => {
+                    if (mapType !== "link" || !link.name || !link.id) {
+                        return;
+                    }
+                    event.preventDefault();
+                    void showRelationMenu(link, event, graph.graphData(), (chosenLinkId, predicate) => {
+                        // The edges this one starts on fold first. Expand puts back only this one.
+                        // A host edge folds only the statement this line hangs on.
+                        const shown = graph.graphData();
+                        const base = notesAndRelationsRef.current;
+                        const order = foldOrder(shown, chosenLinkId);
+                        for (const key of collapseKeys(
+                            order,
+                            chosenLinkId,
+                            predicate,
+                            (id) => {
+                                const stored = base?.links.find((item) => item.id === id);
+                                const current = shown.links.find((item) => item.id === id);
+                                return predicatesIn(stored?.name ?? current?.name ?? "");
+                            },
+                            (edgeId) => predicateForEdge(edgeId, order, shown)
+                        )) {
+                            collapsedRef.current.add(key);
+                        }
+                        showView(false);
+                    }, (chosenLinkId) => {
+                        const noteId = expandedNoteId(chosenLinkId);
+                        if (!noteId) {
+                            return;
+                        }
+                        dropExpansion(noteId, expandedIdsRef.current, expandedEndsRef.current, collapsedRef.current);
+                        showView(true);
+                    });
                 });
 
             // Set data
-            graph.graphData(notesAndRelations);
             notesAndRelationsRef.current = notesAndRelations;
+            showView(false);
         });
 
         return () => {
@@ -151,7 +291,18 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
-        graphRef.current.graphData(notesAndRelationsRef.current);
+        const expanded: ReificationEnds[] = [];
+        for (const id of expandedIdsRef.current) {
+            const item = expandedEndsRef.current.get(id);
+            if (item) {
+                expanded.push(item);
+            }
+        }
+        graphRef.current.graphData(presentRelations(
+            notesAndRelationsRef.current,
+            collapsedRef.current,
+            expanded
+        ));
     }, [ linkDistance, mapType ]);
 
     // React to container size
@@ -163,7 +314,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     // Fixing nodes when dragged.
     useEffect(() => {
         graphRef.current?.onNodeDragEnd((node) => {
-            if (fixNodes) {
+            if (fixNodes || node.pinnedFold) {
                 node.fx = node.x;
                 node.fy = node.y;
             } else {
@@ -258,6 +409,39 @@ function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (map
  * What the map is drawn in, asked of the theme through elements wearing the colours it is after: a
  * canvas knows nothing of a stylesheet, and a theme is free to have its own idea of any of them.
  */
+async function reificationEnds(note: FNote): Promise<ReificationEnds | null> {
+    if (!note.getOwnedLabelValue(REIFICATION_OF)) {
+        return null;
+    }
+    const subjectId = note.getOwnedRelation(REIFICATION_SUBJECT)?.value;
+    const predicate = note.getOwnedLabelValue(REIFICATION_PREDICATE) ?? "";
+    if (!subjectId) {
+        return null;
+    }
+    const subject = await froca.getNote(subjectId);
+    if (!subject) {
+        return null;
+    }
+    const objectId = note.getOwnedRelation(REIFICATION_OBJECT)?.value;
+    const object = objectId ? await froca.getNote(objectId) : null;
+    return {
+        rootId: note.noteId,
+        predicate,
+        subject: nodeFrom(subject),
+        object: object ? nodeFrom(object) : null
+    };
+}
+
+function nodeFrom(note: FNote): NoteMapNodeObject {
+    return {
+        id: note.noteId,
+        name: note.title,
+        type: note.type,
+        color: note.getLabelValue("color"),
+        icon: note.getIcon()
+    };
+}
+
 function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData {
     const containerStyle = window.getComputedStyle(container);
     const colorOf = (selector: string) => {
@@ -273,4 +457,455 @@ function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData
         anchorColor: colorOf(".style-resolver-anchor"),
         anchorIconColor: colorOf(".style-resolver-anchor-icon")
     };
+}
+
+interface ReificationListItem {
+    noteId: string;
+    title: string;
+    attributeId: string;
+    direct: boolean;
+}
+
+interface PredicateConcept {
+    noteId: string | null;
+    title: string | null;
+}
+
+/**
+ * Right-click on a relation. When several statements run between the same two notes,
+ * either way, a search asks which one. The menu is then that statement's: fold it,
+ * open a reification that already includes it, or open the concept of its name.
+ */
+async function showRelationMenu(
+    link: NoteMapLinkObject,
+    event: MouseEvent,
+    graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
+    fold: (linkId: string, predicate: string) => void,
+    unexpand?: (linkId: string) => void
+) {
+    const choices = statementsBetween(link.id, graph.links);
+    const options: { key: string; caption: string; linkId: string; predicate: string; sourceId: string; targetId: string }[] = [];
+    for (const choice of choices) {
+        const line = graph.links.find((item) => item.id === choice.linkId);
+        const subjectPredicate = line ? predicateAt(line, choice.sourceId) : undefined;
+        const objectPredicate = line ? predicateAt(line, choice.targetId) : undefined;
+        const subjectOnGraph = relationEndTitle(choice.sourceId, graph, new Set(), subjectPredicate);
+        const objectOnGraph = relationEndTitle(choice.targetId, graph, new Set(), objectPredicate);
+        const caption = subjectOnGraph && objectOnGraph
+            ? statementCaption(choice, line, graph)
+            : foldTitle(
+                [ choice.predicate ],
+                subjectOnGraph || await titledEnd(choice.sourceId, graph, subjectPredicate),
+                objectOnGraph || await titledEnd(choice.targetId, graph, objectPredicate)
+            );
+        options.push({
+            key: `${choice.linkId}\u001f${choice.predicate}`,
+            caption,
+            linkId: choice.linkId,
+            predicate: choice.predicate,
+            sourceId: choice.sourceId,
+            targetId: choice.targetId
+        });
+    }
+    const pickedKey = await chooseStatement(options);
+    const picked = options.find((item) => item.key === pickedKey);
+    if (!picked) {
+        return;
+    }
+    const items: MenuItem<string>[] = [];
+    if (unexpand && expandedNoteId(picked.linkId)) {
+        items.push({ title: t("note_map.show_as_note"), command: "unexpand", uiIcon: "bx bx-collapse" });
+    }
+    items.push({ title: t("note_map.fold_as", { title: picked.caption }), command: "fold", uiIcon: "bx bx-collapse" });
+
+    const seen = new Set<string>();
+    const listed: ReificationListItem[] = [];
+    for (const attributeId of await relationAttributeIds(picked.sourceId, picked.targetId, picked.predicate)) {
+        try {
+            const response = await server.get<{ items: ReificationListItem[] }>(`attributes/${attributeId}/reifications`);
+            for (const item of response.items) {
+                if (seen.has(item.noteId)) {
+                    continue;
+                }
+                seen.add(item.noteId);
+                listed.push(item);
+            }
+        } catch {
+            // The row can disappear between the click and the lookup. Folding still works.
+        }
+    }
+
+    const direct = listed.find((item) => item.direct);
+    const rest = listed.filter((item) => !item.direct);
+    if (direct) {
+        items.push({
+            title: t("note_map.open_reification", { title: direct.title }),
+            command: `open:${direct.noteId}`,
+            uiIcon: "bx bx-git-commit"
+        });
+        items.push({
+            title: t("relation_map.remove_reification"),
+            command: `unreify:${direct.attributeId}:${direct.noteId}`,
+            uiIcon: "bx bx-undo"
+        });
+    }
+    if (rest.length > 0) {
+        items.push({ kind: "separator" });
+        for (const item of rest) {
+            items.push({ title: item.title, command: `open:${item.noteId}`, uiIcon: "bx bx-git-commit" });
+        }
+    }
+
+    items.push({ kind: "separator" });
+    for (const name of [ picked.predicate ]) {
+        const concept = await loadPredicateConcept(name);
+        if (concept?.noteId) {
+            items.push({
+                title: t("note_map.go_to_concept", { name }),
+                command: `concept-open:${concept.noteId}`,
+                uiIcon: "bx bx-cube"
+            });
+            continue;
+        }
+        items.push({
+            title: t("note_map.connect_concept", { name }),
+            command: `concept-connect:${name}`,
+            uiIcon: "bx bx-link"
+        });
+    }
+
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items,
+        selectMenuItemHandler: ({ command }) => {
+            if (command === "unexpand") {
+                unexpand?.(picked.linkId);
+                return;
+            }
+            void applyRelationCommand(command, () => fold(picked.linkId, picked.predicate));
+        }
+    });
+}
+
+async function applyRelationCommand(command: string | undefined, fold: () => void) {
+    if (!command) {
+        return;
+    }
+    if (command === "fold") {
+        fold();
+        return;
+    }
+    if (command.startsWith("open:") || command.startsWith("concept-open:")) {
+        const noteId = command.startsWith("concept-open:")
+            ? command.slice("concept-open:".length)
+            : command.slice("open:".length);
+        openNote(noteId);
+        return;
+    }
+    if (command.startsWith("unreify:")) {
+        const rest = command.slice("unreify:".length);
+        const splitAt = rest.indexOf(":");
+        if (splitAt < 1) {
+            return;
+        }
+        const attributeId = rest.slice(0, splitAt);
+        const noteId = rest.slice(splitAt + 1);
+        if (!(await dialog.confirm(t("relation_map.confirm_remove_reification")))) {
+            return;
+        }
+        await removeReification(attributeId, noteId);
+        return;
+    }
+    if (command.startsWith("concept-connect:")) {
+        const predicate = command.slice("concept-connect:".length);
+        const chosen = await chooseNote({
+            title: t("note_map.connect_concept", { name: predicate }),
+            allowCreatingNotes: true
+        });
+        if (!chosen) {
+            return;
+        }
+        const saved = await server.post<PredicateConcept>(
+            `reification-concepts/${encodeURIComponent(predicate)}`,
+            { noteId: chosen }
+        );
+        if (saved.noteId) {
+            openNote(saved.noteId);
+        }
+    }
+}
+
+async function loadPredicateConcept(predicate: string): Promise<PredicateConcept | null> {
+    try {
+        return await server.get<PredicateConcept>(`reification-concepts/${encodeURIComponent(predicate)}`);
+    } catch {
+        return null;
+    }
+}
+
+function openNote(noteId: string) {
+    appContext.tabManager.getActiveContext()?.setNote(noteId);
+    void appContext.triggerEvent("closePopupEditor", {});
+}
+
+function linkEndId(end: NoteMapLinkObject["source"]): string {
+    if (typeof end === "object" && end) {
+        return end.id;
+    }
+    return String(end ?? "");
+}
+
+/** Which statement of a shared edge this end hangs on, when the line says. */
+function predicateAt(link: NoteMapLinkObject, end: NoteMapLinkObject["source"]) {
+    const id = linkEndId(end);
+    if (id && id === link.hostEndId) {
+        return link.hostPredicate;
+    }
+    if (id && id === link.farEndId) {
+        return link.farPredicate;
+    }
+}
+
+/** A note's title, or the fact a point on an edge stands for. */
+async function titledEnd(
+    end: NoteMapLinkObject["source"],
+    graph: { nodes: NoteMapNodeObject[]; links: NoteMapLinkObject[] },
+    predicate?: string
+) {
+    const titled = relationEndTitle(end, graph, new Set(), predicate);
+    if (titled) {
+        return titled;
+    }
+    const id = linkEndId(end);
+    if (!id || id.startsWith("edge:") || id.startsWith("fold:")) {
+        return "";
+    }
+    const note = await froca.getNote(id);
+    return note?.title ?? "";
+}
+
+async function relationAttributeIds(sourceNoteId: string, targetNoteId: string, names: string): Promise<string[]> {
+    const source = await froca.getNote(sourceNoteId);
+    if (!source) {
+        return [];
+    }
+    const ids: string[] = [];
+    for (const name of names.split(",")) {
+        const predicate = name.trim();
+        if (!predicate) {
+            continue;
+        }
+        const attributes = [
+            ...source.getOwnedRelations(predicate),
+            ...source.getRelations(predicate)
+        ];
+        for (const attribute of attributes) {
+            if (attribute.value !== targetNoteId || ids.includes(attribute.attributeId)) {
+                continue;
+            }
+            ids.push(attribute.attributeId);
+        }
+    }
+    return ids;
+}
+
+/**
+ * Right-click on a note. A reification with two ends can be opened into those
+ * ends; any other note keeps the menu a note has everywhere else.
+ */
+async function openReificationNodeMenu(noteId: string, event: MouseEvent, expand: (ends: ReificationEnds) => void) {
+    const loaded = await froca.getNote(noteId);
+    const ends = loaded ? await reificationEnds(loaded) : null;
+    if (!loaded || !ends?.object) {
+        link_context_menu.openContextMenu(noteId, event);
+        return;
+    }
+    showReifiedNodeMenu(event, noteId, loaded.getOwnedLabelValue(REIFICATION_OF) ?? "", ends.subject.id, () => expand(ends));
+}
+
+/**
+ * Right-click on a reification. Putting the two notes back and dropping the
+ * note are choices, so the fact stays until one of them is picked.
+ */
+function showReifiedNodeMenu(
+    event: MouseEvent,
+    noteId: string,
+    attributeId: string,
+    subjectNoteId: string,
+    showEnds: () => void
+) {
+    async function dropReification() {
+        if (!(await dialog.confirm(t("relation_map.confirm_remove_reification")))) {
+            return;
+        }
+        await removeReification(attributeId, noteId, subjectNoteId);
+    }
+
+    const items: MenuItem<CommandNames>[] = [
+        { title: t("note_map.show_ends"), uiIcon: "bx bx-expand", handler: () => showEnds() }
+    ];
+    if (attributeId) {
+        items.push({
+            title: t("relation_map.remove_reification"),
+            uiIcon: "bx bx-undo",
+            handler: () => {
+                void dropReification();
+            }
+        });
+    }
+    items.push({ kind: "separator" }, ...link_context_menu.getItems(event));
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items,
+        selectMenuItemHandler: ({ command }) => {
+            if (command) {
+                link_context_menu.handleLinkContextMenuItem(command, event, noteId);
+            }
+        }
+    });
+}
+
+/** Right-click on a folded relation: put the two notes back, or drop the note for that row. */
+async function showFoldedNodeMenu(event: MouseEvent, fold: NoteMapFold, title: string, expand: () => void) {
+    const predicates = fold.predicates.length > 0 ? fold.predicates : [ fold.predicate ];
+    const captions = splitFoldTitle(title);
+    const chosen = await chooseStatement(predicates.map((predicate, index) => ({
+        key: predicate,
+        caption: captions.length === predicates.length ? captions[index] : predicate
+    })));
+    if (!chosen) {
+        return;
+    }
+    const captionIndex = predicates.indexOf(chosen);
+    const caption = captions.length === predicates.length && captionIndex >= 0 ? captions[captionIndex] : title;
+    const attribute = await attributeOfFold(fold, chosen);
+    let noteId: string | undefined;
+    if (attribute) {
+        const lookedUp = await server.get<{ noteId?: string } | null>(`attributes/${attribute.attributeId}/reification`);
+        if (lookedUp && typeof lookedUp === "object" && lookedUp.noteId) {
+            noteId = lookedUp.noteId;
+        }
+    }
+    const items: MenuItem<string>[] = [
+        { title: t("relation_map.expand_relation"), command: "expand", uiIcon: "bx bx-expand" }
+    ];
+    if (attribute?.attributeId && noteId) {
+        items.push({
+            title: t("note_map.open_reification", { title: caption }),
+            command: "open",
+            uiIcon: "bx bx-git-commit"
+        });
+        items.push({ title: t("relation_map.remove_reification"), command: "unreify", uiIcon: "bx bx-undo" });
+    }
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items,
+        selectMenuItemHandler: async ({ command }) => {
+            if (command === "expand") {
+                expand();
+                return;
+            }
+            if (command === "open") {
+                if (noteId) {
+                    openNote(noteId);
+                    return;
+                }
+                await openFoldedRelation(fold, chosen);
+                return;
+            }
+            if (command === "unreify" && attribute?.attributeId && noteId) {
+                if (!(await dialog.confirm(t("relation_map.confirm_remove_reification")))) {
+                    return;
+                }
+                const fallbackNoteId = await resolveFoldEnd(fold.subject, reificationOfRelation);
+                await removeReification(attribute.attributeId, noteId, fallbackNoteId);
+                expand();
+            }
+        }
+    });
+}
+
+async function chooseStatement(items: { key: string; caption: string }[]) {
+    if (items.length === 0) {
+        return null;
+    }
+    if (items.length === 1) {
+        return items[0].key;
+    }
+    const picked = await pickSingleItem({
+        title: t("note_map.choose_statement"),
+        placeholder: t("note_map.choose_statement_search"),
+        items: items.map((item) => ({
+            key: item.key,
+            caption: item.caption,
+            icon: "bx bx-link"
+        }))
+    });
+    return picked?.key ?? null;
+}
+
+/** Deletes the note for one attribute row. The relation stays. A view of that note moves to `fallbackNoteId`. */
+async function removeReification(attributeId: string, reificationNoteId: string, fallbackNoteId?: string) {
+    await server.remove(`attributes/${attributeId}/reification`);
+    const active = appContext.tabManager.getActiveContext();
+    if (fallbackNoteId && active?.note?.noteId === reificationNoteId) {
+        active.setNote(fallbackNoteId);
+    }
+}
+
+async function findRelationAttribute(sourceNoteId: string, predicate: string, targetNoteId: string) {
+    const source = await froca.getNote(sourceNoteId);
+    const owned = source?.getOwnedRelations(predicate) ?? [];
+    return owned.find((item) => item.value === targetNoteId)
+        ?? source?.getRelations(predicate).find((item) => item.value === targetNoteId);
+}
+
+/** The attribute row a fold stands for, including when an end of it is itself a folded relation. */
+async function attributeOfFold(fold: NoteMapFold, predicate = fold.predicate) {
+    const sourceId = await resolveFoldEnd(fold.subject, reificationOfRelation);
+    const objectId = await resolveFoldEnd(fold.object, reificationOfRelation);
+    if (!sourceId || !objectId) {
+        return;
+    }
+    return findRelationAttribute(sourceId, predicate, objectId);
+}
+
+/** The note that already stands for one relation, when the fold's other end is that relation. */
+async function reificationOfRelation(sourceNoteId: string, predicate: string, targetNoteId: string) {
+    const attribute = await findRelationAttribute(sourceNoteId, predicate, targetNoteId);
+    if (!attribute) {
+        return;
+    }
+    const lookedUp = await server.get<{ noteId?: string } | null>(`attributes/${attribute.attributeId}/reification`);
+    if (lookedUp && typeof lookedUp === "object" && lookedUp.noteId) {
+        return lookedUp.noteId;
+    }
+}
+
+/** Asks which statement on a grouped edge to open, then opens or creates that note. */
+async function chooseFoldedStatement(fold: NoteMapFold, title: string) {
+    const predicates = fold.predicates.length > 0 ? fold.predicates : [ fold.predicate ];
+    const captions = splitFoldTitle(title);
+    const chosen = await chooseStatement(predicates.map((predicate, index) => ({
+        key: predicate,
+        caption: captions.length === predicates.length ? captions[index] : predicate
+    })));
+    if (!chosen) {
+        return;
+    }
+    await openFoldedRelation(fold, chosen);
+}
+
+/** Creates the note for a folded relation, if it does not exist yet, and opens it. */
+async function openFoldedRelation(fold: NoteMapFold, predicate = fold.predicate) {
+    const attribute = await attributeOfFold(fold, predicate);
+    if (!attribute) {
+        return;
+    }
+    const { noteId } = await server.post<ReificationResponse>(`attributes/${attribute.attributeId}/reification`);
+    appContext.tabManager.getActiveContext()?.setNote(noteId);
+    void appContext.triggerEvent("closePopupEditor", {});
 }

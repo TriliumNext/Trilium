@@ -934,10 +934,27 @@ export interface RelationMapRelation {
     targetNoteId: string;
 }
 
+/** A note that stands for one attribute row drawn on a relation map. */
+export interface RelationMapReification {
+    noteId: string;
+    attributeId: string;
+    title: string;
+    kind: "relation" | "label";
+    subjectNoteId: string;
+    objectNoteId: string | null;
+}
+
 export interface RelationMapPostResponse {
     noteTitles: Record<string, string>;
     relations: RelationMapRelation[];
     inverseRelations: Record<string, string>;
+    reifications: RelationMapReification[];
+}
+
+export interface ReificationResponse {
+    noteId: string;
+    title: string;
+    created: boolean;
 }
 
 export interface NoteMapLink {
@@ -947,6 +964,31 @@ export interface NoteMapLink {
     name: string;
 }
 
+/** The two notes of a fact, so a relation aimed at that fact can be drawn between the edges. */
+export interface NoteMapFactEnds {
+    linkId: string;
+    predicate: string;
+    subject: NoteMapNote;
+    object: NoteMapNote | null;
+}
+
+export interface NoteMapReificationLink {
+    linkId: string;
+    name: string;
+    outgoing: boolean;
+    /**
+     * The attribute this relation is attached to.
+     * `linkId` is the edge between the two notes, and several predicates can share it.
+     */
+    attributeId: string;
+    /** `attributeId`'s name. A fold of this relation is that statement. */
+    hostPredicate: string;
+    /** The note the relation points at, when that note is not itself a fact. */
+    note?: NoteMapNote;
+    /** The fact the relation points at, when it joins one fact to another. */
+    otherFact?: NoteMapFactEnds;
+}
+
 /** A note of a map, kept as a tuple rather than an object: a map carries thousands of them. */
 export type NoteMapNote = [ noteId: string, title: string, type: string, color: string | null, icon: string ];
 
@@ -954,6 +996,7 @@ export interface NoteMapPostResponse {
     notes: NoteMapNote[];
     links: NoteMapLink[];
     noteIdToDescendantCountMap: Record<string, number>;
+    reificationLinks?: NoteMapReificationLink[];
 }
 
 export interface UpdateAttributeResponse {

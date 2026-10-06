@@ -19,6 +19,8 @@ The map can also be expanded by pressing the button in the top-right of the sect
 
 The note map view inside the sidebar is deliberately more compact in order to fit the space: the link map would also show notes that don't have a link to the current note from the hierarchy (creating a cloud of dots) but this is only shown while the map is expanded. Similarly, the link strength and pin configuration buttons are not displayed here.
 
+Right-click a relation on the link map. Folding turns the two notes and the line into one node, named `loves(John, Mary)`. An edge drawn from another edge keeps that edge in the name, such as `leadsTo(likes(A, B), Chaos)`. That node shows relations of the fact, not the other relations of the two notes. The menu also lists reifications that already include that relation, and opens them. _Remove reification_ removes the note for this relation. The relation stays. Those notes are not drawn as extra circles here. It can also open the relation as its own concept, or connect that name to a note, including one created there. Right-click the folded node, or the reified note itself, for the same choice. Clicking the folded node opens that relation when the edge names one, including when the fold contains another fold. An edge that names several relations, or a relation running the other way between the same two notes, first asks which one, in a search, and the menu is then that relation's. Folding it leaves the other relations on the line. The folded statement is its own node, and only a relation of that statement is drawn from it.
+
 See also:
 
 *   The <a class="reference-link" href="../../../Note%20Types/Note%20Map.md">Note Map</a> note type

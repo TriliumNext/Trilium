@@ -1,10 +1,12 @@
 import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
 import becca from "../../becca/becca";
-import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@triliumnext/commons";
+import { REIFICATION_OBJECT, REIFICATION_PREDICATE, REIFICATION_SUBJECT } from "@triliumnext/commons";
+import type { BacklinkCountResponse, BacklinksResponse, NoteMapFactEnds, NoteMapNote, NoteMapReificationLink } from "@triliumnext/commons";
 import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
+import { findReificationNote, isMapSuppressedRelation, isReificationNote } from "../../services/reification";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -54,7 +56,8 @@ function getNeighbors(note: BNote, depth: number): string[] {
     const retNoteIds: string[] = [];
 
     function isIgnoredRelation(relation: BAttribute) {
-        return ["relationMapLink", "template", "inherit", "image", "ancestor"].includes(relation.name);
+        return ["relationMapLink", "template", "inherit", "image", "ancestor"].includes(relation.name)
+            || isMapSuppressedRelation(relation.name);
     }
 
     // forward links
@@ -65,7 +68,7 @@ function getNeighbors(note: BNote, depth: number): string[] {
 
         const targetNote = relation.getTargetNote();
 
-        if (!targetNote || targetNote.isLabelTruthy("excludeFromNoteMap")) {
+        if (!targetNote || targetNote.isLabelTruthy("excludeFromNoteMap") || isReificationNote(targetNote)) {
             continue;
         }
 
@@ -84,7 +87,7 @@ function getNeighbors(note: BNote, depth: number): string[] {
 
         const sourceNote = relation.getNote();
 
-        if (!sourceNote || sourceNote.isLabelTruthy("excludeFromNoteMap")) {
+        if (!sourceNote || sourceNote.isLabelTruthy("excludeFromNoteMap") || isReificationNote(sourceNote)) {
             continue;
         }
 
@@ -133,8 +136,25 @@ function getLinkMap(req: Request<{ noteId: string }>) {
         noteIds.delete(mapRootNote.noteId);
     }
 
-    for (const noteId of getNeighbors(mapRootNote, 3)) {
-        noteIds.add(noteId);
+    if (isReificationNote(mapRootNote)) {
+        // The open note is the fact. Its neighbors are the relations of that fact,
+        // one step, including another fact. The notes the fact is about stay out:
+        // their own relations are not relations of the fact.
+        for (const relation of [ ...mapRootNote.getRelations(), ...mapRootNote.getTargetRelations() ]) {
+            if (isIgnoredMapRelation(relation)) {
+                continue;
+            }
+            const otherId = relation.noteId === mapRootNote.noteId ? relation.value : relation.noteId;
+            const other = becca.getNote(otherId);
+            if (!other || other.isDeleted || other.isLabelTruthy("excludeFromNoteMap")) {
+                continue;
+            }
+            noteIds.add(other.noteId);
+        }
+    } else {
+        for (const noteId of getNeighbors(mapRootNote, 3)) {
+            noteIds.add(noteId);
+        }
     }
 
     const noteIdsArray = Array.from(noteIds);
@@ -145,40 +165,113 @@ function getLinkMap(req: Request<{ noteId: string }>) {
         return [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ];
     });
 
-    const links = Object.values(becca.attributes)
-        .filter((rel) => {
-            if (rel.type !== "relation" || rel.name === "relationMapLink" || rel.name === "template" || rel.name === "inherit") {
-                return false;
-            } else if (!noteIds.has(rel.noteId) || !noteIds.has(rel.value)) {
-                return false;
-            } else if (rel.name === "imageLink") {
-                const parentNote = becca.getNote(rel.noteId);
-                /* v8 ignore next 3 -- defensive guard: rel.noteId is already constrained to noteIds (existing notes) */
-                if (!parentNote) {
-                    return false;
-                }
-
-                return !parentNote.getChildNotes().find((childNote) => childNote.noteId === rel.value);
-            } else if (includeRelations.size != 0 && !includeRelations.has(rel.name)) {
-                return false;
-            } else if (excludeRelations.has(rel.name)) {
+    const visibleRelations = Object.values(becca.attributes).filter((rel) => {
+        if (rel.type !== "relation" || isIgnoredMapRelation(rel)) {
+            return false;
+        } else if (!noteIds.has(rel.noteId) || !noteIds.has(rel.value)) {
+            return false;
+        } else if (rel.name === "imageLink") {
+            const parentNote = becca.getNote(rel.noteId);
+            /* v8 ignore next 3 -- defensive guard: rel.noteId is already constrained to noteIds (existing notes) */
+            if (!parentNote) {
                 return false;
             }
-            return true;
 
-        })
-        .map((rel) => ({
-            id: `${rel.noteId}-${rel.name}-${rel.value}`,
-            sourceNoteId: rel.noteId,
-            targetNoteId: rel.value,
-            name: rel.name
-        }));
+            return !parentNote.getChildNotes().find((childNote) => childNote.noteId === rel.value);
+        } else if (includeRelations.size != 0 && !includeRelations.has(rel.name)) {
+            return false;
+        } else if (excludeRelations.has(rel.name)) {
+            return false;
+        }
+        return true;
+    });
+
+    const links = visibleRelations.map((rel) => ({
+        id: `${rel.noteId}-${rel.name}-${rel.value}`,
+        sourceNoteId: rel.noteId,
+        targetNoteId: rel.value,
+        name: rel.name
+    }));
 
     return {
         notes,
         noteIdToDescendantCountMap: buildDescendantCountMap(noteIdsArray),
-        links
+        links,
+        // Kept off the people map. Folding the relation reads these and draws them
+        // from the folded fact, which is the first time that fact is a node here.
+        reificationLinks: reificationLinksFor(visibleRelations)
     };
+}
+
+function noteTuple(note: BNote): NoteMapNote {
+    return [ note.noteId, note.getTitleOrProtected(), note.type, note.getLabelValue("color"), note.getIcon() ];
+}
+
+/** The notes a fact is about, so the map can draw that fact as an edge rather than as this note. */
+function factEnds(note: BNote): NoteMapFactEnds | null {
+    const subjectId = note.getOwnedRelation(REIFICATION_SUBJECT)?.value;
+    const subject = subjectId ? becca.getNote(subjectId) : null;
+    if (!subject || subject.isDeleted) {
+        return null;
+    }
+    const objectId = note.getOwnedRelation(REIFICATION_OBJECT)?.value;
+    const object = objectId ? becca.getNote(objectId) : null;
+    return {
+        linkId: object && !object.isDeleted ? `${subject.noteId}-${object.noteId}` : subject.noteId,
+        predicate: note.getOwnedLabelValue(REIFICATION_PREDICATE) ?? "",
+        subject: noteTuple(subject),
+        object: object && !object.isDeleted ? noteTuple(object) : null
+    };
+}
+
+function isIgnoredMapRelation(relation: BAttribute): boolean {
+    return relation.name === "relationMapLink"
+        || relation.name === "template"
+        || relation.name === "inherit"
+        || isMapSuppressedRelation(relation.name);
+}
+
+/**
+ * Relations of the note that stands for one visible relation.
+ * `cause(loves(John, Mary), Event X)` hangs off the loves edge. The loves note
+ * itself is not added to the map.
+ */
+function reificationLinksFor(attributes: BAttribute[]): NoteMapReificationLink[] {
+    const links: NoteMapReificationLink[] = [];
+    const seen = new Set<string>();
+    for (const attribute of attributes) {
+        const token = findReificationNote(attribute.attributeId);
+        if (!token) {
+            continue;
+        }
+        for (const relation of [ ...token.getRelations(), ...token.getTargetRelations() ]) {
+            if (isIgnoredMapRelation(relation) || relation.isDeleted) {
+                continue;
+            }
+            const outgoing = relation.noteId === token.noteId;
+            const otherId = outgoing ? relation.value : relation.noteId;
+            const other = becca.getNote(otherId);
+            if (!other || other.isDeleted || other.isLabelTruthy("excludeFromNoteMap")) {
+                continue;
+            }
+            const key = `${attribute.noteId}-${attribute.value}:${relation.attributeId}`;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            const described = isReificationNote(other) ? factEnds(other) : null;
+            links.push({
+                linkId: `${attribute.noteId}-${attribute.value}`,
+                name: relation.name,
+                outgoing,
+                attributeId: attribute.attributeId,
+                hostPredicate: attribute.name,
+                note: described ? undefined : noteTuple(other),
+                otherFact: described ?? undefined
+            });
+        }
+    }
+    return links;
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {

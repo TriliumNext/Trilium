@@ -85,7 +85,7 @@ export default function NoteTypeChooserDialogComponent() {
             title={t("note_type_chooser.modal_title")}
             className="note-type-chooser-dialog"
             size="md"
-            zIndex={1100} // note type chooser needs to be higher than other dialogs from which it is triggered, e.g. "add link"
+            zIndex={2100} // above the dialogs that open it, including the note picker at 2000
             scrollable
             // Bootstrap focuses the dialog itself once shown, which the menu takes back.
             onShown={() => {

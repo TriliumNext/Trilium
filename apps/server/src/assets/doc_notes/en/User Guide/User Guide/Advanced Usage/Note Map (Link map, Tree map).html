@@ -59,6 +59,39 @@
     </ul>
   </li>
   <li>When hovering over a node, the adjacent relations and nodes are highlighted.</li>
+  <li>On a link map, right-click a relation. <em>Fold as loves(John, Mary)</em> turns
+    the two notes and the line into that one node. An edge that names several
+    relations, such as loves, knows, or a relation running the other way between
+    the same two notes, first asks which one, in a search. The choices read <code>loves(John, Mary)</code> and <code>knows(Mary, John)</code>.
+    The menu is then that relation's: <em>Fold as loves(John, Mary)</em>. That
+    statement becomes its own node, the other relation stays on the line, and
+    only a relation of the folded statement is drawn from the new node. A relation
+    attached to one of them folds as that statement, such as <code>cause(knows(John, Mary), Event X)</code>.
+    An edge drawn from another edge is named with that edge, such as <em>Fold as leadsTo(likes(A, B), Chaos)</em>.
+    The folded node shows relations of that fact, such as <code>cause(loves(John, Mary), Event X)</code>,
+    and not the other relations of John or Mary. The same menu lists every
+    reification that already includes this relation, such as <code>cause(loves(John, Mary), has(Mark, Jealousy))</code>,
+    and opens that note. The reification note is not drawn as its own circle
+    on this map. While the facts are still edges, a relation between them is
+    drawn between those edges, and the other fact's notes are shown with it.
+    Open it, and the map is about that note: the relations of the fact are
+    shown, including another reification one step away. Folding an edge that
+    is drawn from another edge folds that edge first, and the one you asked
+    for last, so it is the node that remains. Right-click the folded node. <em>Expand</em> opens
+    that one edge into its two ends, which may themselves still be folded,
+    and <em>Remove reification</em> removes the note for that relation. The relation
+    stays. Click one of those notes to open it. Click the folded node to create
+    the note, if it does not exist yet, and open it. A fold of another fold,
+    such as <code>leadsTo(likes(A, B), Chaos)</code>, opens the same way. <em>Open …</em> on
+    its menu goes to that note when it already exists. On that note, or on
+    any other reification drawn on the map, right-click it. <em>Show the two notes</em> opens
+    that one level into its two ends, and the edge's menu has <em>Show as one note</em> to
+    put that level back. A reification that appears among those ends can be
+    opened the same way. <em>Remove reification</em> removes the note. Click
+    either note to open it. The same menu also reaches the relation itself,
+    as a concept rather than one statement: <em>Go to loves</em> opens that note
+    when it exists, and <em>Connect loves to a note</em> points the name at a
+    note you pick, or at one you create there, the same way <code>@</code> does.</li>
   <li>The distance between nodes can be adjusted via the slider in the bottom-left.
     Similarly, this value is not saved.</li>
   <li><a class="reference-link" href="#root/_help_MKmLg5x6xkor">Archived Notes</a>&nbsp;are

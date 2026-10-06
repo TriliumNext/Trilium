@@ -117,7 +117,7 @@ interface RenderData {
     iconGlyphs: Map<string, IconGlyph>;
 }
 
-/** @returns a teardown function to call when the graph is discarded. */
+/** @returns `stop` for when the graph is discarded, and `resumeFraming` for a view asked for after that. */
 export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs }: RenderData) {
     // What the map is showing of the note under the pointer: the note itself, the notes a relation
     // runs between it and, and those relations. Worked out once when the hover changes rather than
@@ -170,7 +170,7 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
         }
 
         highlightColor = normalizeColor(getNodeColors(hoverNode, cssData).fill);
-        ({ neighbours, highlightLinks } = getHoveredNeighbourhood(hoverNode, notesAndRelations.links));
+        ({ neighbours, highlightLinks } = getHoveredNeighbourhood(hoverNode, graph.graphData().links));
     }
 
     /** Whether the note is the hovered one or one a relation runs between it and — all of them, while nothing is hovered. */
@@ -238,13 +238,14 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
 
     function paintNode(node: NoteMapNodeObject, color: string, ctx: CanvasRenderingContext2D) {
         const { x, y } = node;
-        // A coordinate of exactly 0 is a position like any other, and a common one: d3 lays the
-        // first node out at an angle of 0, so its y is 0 — and in a one-node map nothing ever moves
-        // it off that axis, which used to leave the map permanently blank.
-        if (x === undefined || y === undefined) {
+        // A point held on an edge is where a relation of that edge is drawn from. It is not a note.
+        if (node.joint || x === undefined || y === undefined) {
             return;
         }
         const size = noteIdToSizeMap[node.id];
+        if (!Number.isFinite(size) || size <= 0) {
+            return;
+        }
 
         const radius = size * NODE_RADIUS_RATIO;
 
@@ -358,11 +359,15 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
      * inside the larger ones.
      */
     function paintArrow(link: NoteMapLinkObject, source: NoteMapNodeObject, target: NoteMapNodeObject, ctx: CanvasRenderingContext2D) {
+        const targetSize = target.joint ? 0 : noteIdToSizeMap[target.id];
+        if (!Number.isFinite(targetSize)) {
+            return;
+        }
         const length = getLabelFontSize(ARROW_LENGTH_PX, zoomLevel);
         const outline = getArrowOutline(
             { x: source.x ?? 0, y: source.y ?? 0 },
             { x: target.x ?? 0, y: target.y ?? 0 },
-            noteIdToSizeMap[target.id] * NODE_RADIUS_RATIO,
+            targetSize * NODE_RADIUS_RATIO,
             length
         );
 
@@ -451,15 +456,17 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
         })
         .onNodeHover((node) => setHoveredNode(node ?? null))
         .nodePointerAreaPaint((node, color, ctx) => {
-            if (!node.id) {
+            const size = noteIdToSizeMap[node.id];
+            if (
+                !node.id || node.joint || node.x === undefined || node.y === undefined
+                || !Number.isFinite(size) || size <= 0
+            ) {
                 return;
             }
 
             ctx.fillStyle = color;
             ctx.beginPath();
-            if (node.x !== undefined && node.y !== undefined) {
-                ctx.arc(node.x, node.y, noteIdToSizeMap[node.id], 0, 2 * Math.PI, false);
-            }
+            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
             ctx.fill();
         })
         .nodeLabel((node) => getTooltip(node))
@@ -492,11 +499,28 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
     graph.d3Force("charge")?.strength(boundedCharge);
     graph.d3Force("charge")?.distanceMax(1000);
 
-    const stopFraming = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
+    const framing = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
 
-    return () => {
-        clearTimeout(fadeTimer);
-        stopFraming();
+    return {
+        stop() {
+            clearTimeout(fadeTimer);
+            framing.stop();
+        },
+        /** Sets `framing` and `fitWholeGraph` so `zoomToFit` follows the notes `showView` just put back. */
+        resumeFraming: framing.resume,
+        /**
+         * Points the hover fade at the nodes and links `graph.graphData` just installed.
+         * `restart` only snapshots the arrays `createFade` was built with.
+         */
+        setHoverGraph(nodes: NoteMapNodeObject[], links: NoteMapLinkObject[]) {
+            nodeFocus.replace(nodes);
+            linkFocus.replace(links);
+            if (!hoverNode) {
+                return;
+            }
+            const next = nodes.find((node) => node.id === hoverNode?.id) ?? null;
+            setHoveredNode(next);
+        }
     };
 }
 
@@ -686,6 +710,7 @@ export function traceRoundedPath(ctx: CanvasRenderingContext2D, points: [ number
  */
 export function createFade<T>(elements: T[], getTarget: (element: T) => number) {
     const startingPoints = new Map<T, number>();
+    let tracked = elements;
     let startedAt = 0;
 
     function get(element: T) {
@@ -700,13 +725,50 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
         get,
         /** Takes down where every value stands, for the fade the caller is about to bring about to start from. */
         restart() {
-            for (const element of elements) {
+            for (const element of tracked) {
                 startingPoints.set(element, get(element));
             }
 
             startedAt = performance.now();
+        },
+        /** `restart` reads this list. `graph.graphData` replaces the nodes and links, so the fade has to follow. */
+        replace(next: T[]) {
+            tracked = next;
+            startingPoints.clear();
         }
     };
+}
+
+/**
+ * Holds each point that stands for an edge on the midpoint of the two notes that edge joins.
+ * The layout would otherwise treat it as a note of its own and pull it off the line.
+ */
+function pinEdgeJoints(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>) {
+    const nodes = graph.graphData().nodes;
+    const byId = new Map<string, NoteMapNodeObject>();
+    for (const node of nodes) {
+        byId.set(node.id, node);
+    }
+    for (const node of nodes) {
+        if (!node.joint || !node.jointOf) {
+            continue;
+        }
+        const [ subjectId, objectId ] = node.jointOf;
+        const subject = byId.get(subjectId);
+        const object = byId.get(objectId);
+        if (
+            subject?.x === undefined || subject.y === undefined
+            || object?.x === undefined || object.y === undefined
+        ) {
+            continue;
+        }
+        const x = (subject.x + object.x) / 2;
+        const y = (subject.y + object.y) / 2;
+        node.x = x;
+        node.y = y;
+        node.fx = x;
+        node.fy = y;
+    }
 }
 
 /**
@@ -718,7 +780,8 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
  * force-graph's default zoom meanwhile (a few nodes around the origin, the rest already spread out
  * of sight) and then jumps to the real framing when it finally fires.
  *
- * @returns a teardown function to call when the graph is discarded.
+ * @returns `stop` for when the graph is discarded, and `resume` for a view the reader asked
+ *          for after a press had already stopped the framing.
  */
 function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, container: HTMLElement, { note, widgetMode, notesAndRelations, hopDistances }: Pick<RenderData, "note" | "widgetMode" | "notesAndRelations"> & { hopDistances: Map<string, number> }) {
     const { framedNoteIds, framesSubset, padding, fittedNoteCount } = planFraming({ widgetMode, noteType: note?.type, notesAndRelations, hopDistances });
@@ -741,13 +804,20 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
     container.addEventListener("pointerdown", releaseFraming, listenerOptions);
 
     let ticks = 0;
+    // showView sets this. zoomToFit then uses no node filter; planFraming's filter only covers the notes the map was built with.
+    let fitWholeGraph = false;
     graph.onEngineTick(() => {
+        pinEdgeJoints(graph);
         if (framing) {
-            // Fitting is what centres the view on the note, whether or not its zoom is kept.
-            graph.zoomToFit(0, padding, nodeFilter);
+            if (fitWholeGraph) {
+                graph.zoomToFit(0, padding);
+            } else {
+                // Fitting is what centres the view on the note, whether or not its zoom is kept.
+                graph.zoomToFit(0, padding, nodeFilter);
 
-            if (fittedNoteCount <= 1) {
-                graph.zoom(LONE_NOTE_ZOOM, 0);
+                if (fittedNoteCount <= 1) {
+                    graph.zoom(LONE_NOTE_ZOOM, 0);
+                }
             }
         }
 
@@ -758,9 +828,15 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
         }
     });
 
-    return () => {
-        container.removeEventListener("wheel", releaseFraming, listenerOptions);
-        container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+    return {
+        stop() {
+            container.removeEventListener("wheel", releaseFraming, listenerOptions);
+            container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+        },
+        resume() {
+            framing = true;
+            fitWholeGraph = true;
+        }
     };
 }
 

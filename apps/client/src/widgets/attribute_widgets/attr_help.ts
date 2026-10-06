@@ -191,7 +191,13 @@ export const ATTR_HELP: AttrHelpMap = {
         tabWidth: t("attribute_detail.tab_width"),
         indentWithTabs: t("attribute_detail.indent_with_tabs"),
         wrapLines: t("attribute_detail.wrap_lines"),
-        internalBookmark: t("attribute_detail.internal_bookmark")
+        internalBookmark: t("attribute_detail.internal_bookmark"),
+        reificationOf: t("attribute_detail.reification_of"),
+        reificationKind: t("attribute_detail.reification_kind"),
+        reificationPredicate: t("attribute_detail.reification_predicate"),
+        reificationLiteral: t("attribute_detail.reification_literal"),
+        reificationGeneratedTitle: t("attribute_detail.reification_generated_title"),
+        reificationOfPredicate: t("attribute_detail.reification_of_predicate")
     },
     relation: {
         "board:cardRedirectTo": t("attribute_detail.board_card_redirect_to"),
@@ -232,6 +238,8 @@ export const ATTR_HELP: AttrHelpMap = {
         hoistedNote: t("attribute_detail.hoisted_note"),
         shareLogo: t("attribute_detail.share_logo"),
         shareOpenGraphImage: t("attribute_detail.share_open_graph_image_relation"),
-        shareHtml: t("attribute_detail.share_html")
+        shareHtml: t("attribute_detail.share_html"),
+        reificationSubject: t("attribute_detail.reification_subject"),
+        reificationObject: t("attribute_detail.reification_object")
     }
 };
