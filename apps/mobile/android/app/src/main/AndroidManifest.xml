@@ -41,4 +41,13 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The geo map's locate button. Capacitor's WebChromeClient asks the user for these when the
+         page first calls the Geolocation API; without them the WebView answers with a denial. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- The location permissions above imply these features as required, which would hide the app
+         from GPS-less devices on Google Play. Locating is optional, so they are not. -->
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.location.network" android:required="false" />
 </manifest>

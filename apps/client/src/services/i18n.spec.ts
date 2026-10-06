@@ -98,17 +98,18 @@ describe("i18n", () => {
 
     // i18next HTML-escapes interpolated values by default, so a value carrying a slash, an
     // apostrophe or a quote reaches the user as `blobs&#x2F;9`. Almost everything we interpolate is
-    // rendered as text (a Preact child, a title attribute), where that escaping only produces
-    // gibberish, which is what the unescaped `{{- value}}` form is for. There is no way to tell
-    // from a catalog entry alone which one it should use, so this only covers the messages whose
-    // values are known to carry such characters.
-    it("interpolates values carrying special characters unescaped", async () => {
-        const catalog = JSON.parse(readFileSync(join(__dirname, "..", "translations", "en", "translation.json"), { encoding: "utf-8" }));
-        const i18n = i18next.createInstance();
-        await i18n.init({ lng: "en", resources: { en: { translation: catalog } } });
+    // rendered as text — a Preact child, a toast message, a `title` attribute — where that escaping
+    // only produces gibberish, so `initLocale()` turns it off for every key and locale at once, and
+    // the sinks that render a translated string as markup guard themselves instead.
+    it("interpolates values without HTML-escaping them", async () => {
+        (window as any).glob = { ...(window as any).glob, assetPath: "/assets" };
+        await initLocale("en");
+        i18next.addResourceBundle("en", "translation", {
+            escaping: { probe: "{{value}}" }
+        }, true, true);
 
-        // Diverged sync sectors are formatted `entityName/sector`.
-        expect(i18n.t("ws.sync-hash-check-failed", { sectors: "blobs/9" })).toContain("blobs/9");
+        expect(i18next.t("escaping.probe", { value: `blobs/9 "New note" it's <b>` }))
+            .toBe(`blobs/9 "New note" it's <b>`);
     });
 
     // The text editor localizes by passing the English text itself to the editor's translation

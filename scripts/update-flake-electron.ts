@@ -11,7 +11,7 @@
  *   error: flake.nix pins Electron 43.2.0, but apps/desktop/package.json wants 43.3.0
  *
  * This script is that mirroring, automated: it reads the wanted version, takes
- * the five per-platform zip checksums from the release's own `SHASUMS256.txt`,
+ * the per-platform zip checksums from the release's own `SHASUMS256.txt`,
  * computes the headers hash with `nix-prefetch-url`, and rewrites both
  * `pinnedElectron*` bindings. It is a no-op when the pin already matches, so it
  * is safe to run on a schedule.
@@ -60,15 +60,14 @@ export async function main() {
 
 /**
  * Nix system → the tag Electron uses in its release asset names, in the order the
- * generated `pinnedElectronHashes` block lists them. Mirrors `tags` in nixpkgs'
- * `pkgs/development/tools/electron/binary/generic.nix`, which is the builder the
- * flake reuses, so the set of systems here is exactly the set that builder covers.
+ * generated `pinnedElectronHashes` block lists them. A system belongs here when the
+ * Electron release ships that zip and `tags` in nixpkgs'
+ * `pkgs/development/tools/electron/binary/generic.nix` — the builder the flake
+ * reuses — covers it.
  */
 export const ELECTRON_PLATFORM_TAGS: Record<string, string> = {
     "x86_64-linux": "linux-x64",
-    "armv7l-linux": "linux-armv7l",
     "aarch64-linux": "linux-arm64",
-    "x86_64-darwin": "darwin-x64",
     "aarch64-darwin": "darwin-arm64"
 };
 
@@ -112,9 +111,13 @@ async function fetchShasums(version: string): Promise<string> {
 }
 
 /**
- * Pull the five zip checksums out of a release's `SHASUMS256.txt`, whose lines are
- * `<sha256> *<asset name>`. The file also lists chromedriver, symbol and mas
- * builds, so match asset names exactly rather than by substring.
+ * Pull the per-platform zip checksums out of a release's `SHASUMS256.txt`, whose
+ * lines are `<sha256> *<asset name>`. The file also lists chromedriver, symbol and
+ * mas builds, so match asset names exactly rather than by substring.
+ *
+ * Throw on a missing asset rather than emitting a partial set: Electron dropping a
+ * platform has to shrink `ELECTRON_PLATFORM_TAGS` and the flake together, which is a
+ * decision for a human, not something to paper over by silently pinning fewer systems.
  */
 export function parseShasums(shasums: string, version: string): Record<string, string> {
     const byAsset = new Map<string, string>();

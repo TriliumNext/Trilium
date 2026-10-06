@@ -150,7 +150,6 @@
         "quick_start": "Виберіть відповідний формат пакета, залежно від вашого дистрибутива:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_nixpkgs": "nixpkgs",
         "download_zip": "Portable (.zip)",
         "download_aur": "AUR",

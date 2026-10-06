@@ -255,7 +255,11 @@ async function getNotePathTitle(notePath: string) {
     return titlePath.join(NOTE_PATH_TITLE_SEPARATOR);
 }
 
-async function getNoteTitleWithPathAsSuffix(notePath: string) {
+/**
+ * @param ownedTitle the title of something the note owns, such as an attachment. When set, it is
+ *        shown as the title and the whole of `notePath` becomes the suffix.
+ */
+async function getNoteTitleWithPathAsSuffix(notePath: string, ownedTitle?: string) {
     utils.assertArguments(notePath);
 
     const titleComponents = await getNotePathTitleComponents(notePath);
@@ -265,8 +269,10 @@ async function getNoteTitleWithPathAsSuffix(notePath: string) {
         return "";
     }
 
-    const title = titleComponents[titleComponents.length - 1];
-    const path = titleComponents.slice(0, titleComponents.length - 1);
+    const title = ownedTitle ?? titleComponents[titleComponents.length - 1];
+    const path = ownedTitle
+        ? titleComponents
+        : titleComponents.slice(0, titleComponents.length - 1);
 
     const $titleWithPath = $('<span class="note-title-with-path">').append($('<span class="note-title">').text(title));
 

@@ -9,7 +9,7 @@
  * (which carries the saving component's id) is misclassified as a foreign change. The
  * hidden widget then refetches the whole blob after every save and publishes
  * `contentLoad: "loading"` to the shared note context, which makes the note-detail
- * loading overlay cover the visible editor — the content "disappears and reappears"
+ * loading overlay cover the visible editor, so the content "disappears and reappears"
  * while typing.
  *
  * These tests assert the *correct* behavior, so they are red while the bug exists and
@@ -32,6 +32,15 @@ import ReadOnlyText from "./ReadOnlyText";
 
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
+
+const { watchContentEmbeds, stopWatchingEmbeds } = vi.hoisted(() => {
+    const stop = vi.fn();
+    return { watchContentEmbeds: vi.fn(() => stop), stopWatchingEmbeds: stop };
+});
+vi.mock("./utils", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./utils")>(),
+    watchContentEmbeds
+}));
 
 vi.stubGlobal("logError", vi.fn());
 vi.stubGlobal("logInfo", vi.fn());
@@ -102,9 +111,10 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
     let cleanupContainer: HTMLElement | undefined;
 
     afterEach(() => {
-        if (cleanupContainer) {
-            render(null, cleanupContainer);
-            cleanupContainer.remove();
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
             cleanupContainer = undefined;
         }
     });
@@ -134,7 +144,7 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
         // save carries the shared parent component's id.
         await harness.fireContentChange(harness.parent.componentId);
 
-        // The change originated here — refetching the whole blob is pure waste...
+        // The change originated here, so refetching the whole blob is pure waste...
         expect(harness.getBlobSpy).toHaveBeenCalledTimes(1);
         // ...and publishing "loading" makes the note-detail overlay cover the editor mid-typing.
         expect(harness.contentLoadStates).toEqual([]);
@@ -177,6 +187,66 @@ describe("ReadOnlyText reacting to content changes (#10575)", () => {
     });
 });
 
+describe("ReadOnlyText ?bookmark= handling", () => {
+    let cleanupContainer: HTMLElement | undefined;
+
+    afterEach(() => {
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
+            cleanupContainer = undefined;
+        }
+    });
+
+    it("keeps the bookmark until the content renders, then expands the collapsible and consumes it", async () => {
+        Element.prototype.scrollIntoView = vi.fn();
+        const note = buildNote({
+            title: "Collapsible note",
+            type: "text",
+            content:
+                `<details class="trilium-collapsible"><summary>Hidden</summary>` +
+                `<p><a id="deep-anchor"></a>target</p></details>`
+        });
+        const parent = new Component();
+        const noteContext = new NoteContext("bm-ntx");
+        noteContext.viewScope = { bookmark: "deep-anchor" };
+
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        cleanupContainer = container;
+
+        // First act cycle only: the blob resolves on a microtask after the first effect flush
+        // (see setupHarness.mount), so this mounts with the content still loading.
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <ReadOnlyText
+                        note={note}
+                        noteContext={noteContext}
+                        ntxId={noteContext.ntxId}
+                        parentComponent={parent}
+                        viewScope={noteContext.viewScope}
+                        isVisible={true}
+                    />
+                </ParentComponent.Provider>,
+                container
+            );
+        });
+
+        // The mount effect ran against an empty container, so it must not consume the bookmark
+        // yet, or the post-load pass has nothing left to reveal.
+        expect(noteContext.viewScope?.bookmark).toBe("deep-anchor");
+
+        // Second act cycle: the blob lands, the content commits, and the [blob] effect fires.
+        await act(async () => {});
+
+        const details = container.querySelector("details");
+        expect(details?.open).toBe(true);
+        expect(noteContext.viewScope?.bookmark).toBeUndefined();
+    });
+});
+
 /**
  * The direction is resolved from the note's `#language` label and handed to the content
  * element as `dir`, which is what the RTL rules in the content stylesheets key off (they
@@ -188,9 +258,10 @@ describe("ReadOnlyText text direction", () => {
     let cleanupContainer: HTMLElement | undefined;
 
     afterEach(() => {
-        if (cleanupContainer) {
-            render(null, cleanupContainer);
-            cleanupContainer.remove();
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
             cleanupContainer = undefined;
         }
     });
@@ -209,5 +280,24 @@ describe("ReadOnlyText text direction", () => {
     it("marks the content left-to-right otherwise", async () => {
         expect((await mountWithLanguage("en"))?.getAttribute("dir")).toBe("ltr");
         expect((await mountWithLanguage(undefined))?.getAttribute("dir")).toBe("ltr");
+    });
+});
+
+describe("ReadOnlyText embedded notes", () => {
+    it("watches its content for embed boxes until it unmounts", async () => {
+        watchContentEmbeds.mockClear();
+        stopWatchingEmbeds.mockClear();
+        const harness = setupHarness({ isVisible: true });
+
+        await harness.mount();
+
+        const content = harness.container.querySelector(".note-detail-readonly-text-content");
+        expect(content).not.toBeNull();
+        expect(watchContentEmbeds.mock.calls).toEqual([ [ content ] ]);
+        expect(stopWatchingEmbeds).not.toHaveBeenCalled();
+
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
+        expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
     });
 });

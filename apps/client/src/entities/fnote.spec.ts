@@ -714,6 +714,33 @@ describe("FNote paths & hierarchy", () => {
         expect(leaf.getBestNotePathString()).toContain("sharedLeaf");
     });
 
+    it("keeps a bookmark clone out of the best path while a hidden note is active", () => {
+        // Bookmarking clones the note under `_lbBookmarks`, so its children gain a second path
+        // through `_hidden`. A search activates a search note that lives under `_hidden` as well,
+        // and that shared prefix must not promote the bookmark path over the real one.
+        const root = froca.notes["root"] ?? buildNote({ id: "root", title: "root" });
+        const hidden = froca.notes["_hidden"] ?? buildNote({ id: "_hidden", title: "Hidden" });
+        wireChild(root, hidden);
+
+        let launchBarParent = hidden;
+        for (const id of ["_lbRoot", "_lbVisibleLaunchers", "_lbBookmarks"]) {
+            const launcher = buildNote({ id, title: id });
+            wireChild(launchBarParent, launcher);
+            launchBarParent = launcher;
+        }
+
+        const inbox = buildNote({ id: "bmInbox", title: "Inbox" });
+        wireChild(root, inbox);
+        wireChild(launchBarParent, inbox);
+
+        const leaf = buildNote({ id: "bmLeaf", title: "ThisIsTest" });
+        wireChild(inbox, leaf);
+
+        expect(leaf.getAllNotePaths()).toHaveLength(2);
+        expect(leaf.getBestNotePath("root", "root/_hidden/_search/202609/searchNoteId"))
+            .toEqual(["root", "bmInbox", "bmLeaf"]);
+    });
+
     it("getSortedNotePathRecords orders by archived / hidden / search / length without an active path", () => {
         const leaf = froca.notes["sharedLeaf"];
         expect(leaf).toBeDefined();
@@ -796,6 +823,27 @@ describe("FNote paths & hierarchy", () => {
         // active path equal to one of the candidate paths -> equal-overlap branch exercised
         const withActive = leaf.getSortedNotePathRecords("root", "root/plainP/hoistLeaf");
         expect(withActive[0].notePath).toEqual(["root", "plainP", "hoistLeaf"]);
+    });
+
+    it("getBestNotePathString still resolves a note that froca has dropped", () => {
+        const root = froca.notes["root"] ?? buildNote({ id: "root", title: "root" });
+        const parent = buildNote({ id: "droppedParent", title: "parent" });
+        registerBranch("br-root-droppedParent", "droppedParent", "root", 0);
+        root.addChild("droppedParent", "br-root-droppedParent", false);
+        parent.addParent("root", "br-root-droppedParent", false);
+
+        const leaf = buildNote({ id: "droppedLeaf", title: "leaf", "#archived": "" });
+        registerBranch("br-droppedParent-droppedLeaf", "droppedLeaf", "droppedParent", 0);
+        parent.addChild("droppedLeaf", "br-droppedParent-droppedLeaf", false);
+        leaf.addParent("droppedParent", "br-droppedParent-droppedLeaf", false);
+
+        // `froca_updater` removes a deleted note from `froca.notes`, while a view can still hold it.
+        delete froca.notes["droppedLeaf"];
+
+        const [ record ] = leaf.getSortedNotePathRecords("root");
+        expect(record.notePath).toEqual(["root", "droppedParent", "droppedLeaf"]);
+        expect(record.isArchived).toBe(true);
+        expect(leaf.getBestNotePathString()).toBe("root/droppedParent/droppedLeaf");
     });
 
     it("getSortedNotePathRecords comparator exercises both ternary directions (reversed parent order)", () => {
@@ -1152,7 +1200,10 @@ describe("FNote executeScript", () => {
     });
 
     it("posts to the server for a backend script", async () => {
-        const postSpy = vi.spyOn(server, "post").mockResolvedValue(undefined);
+        // Runs through backend_scripting, so a failure is reported against the note rather than as
+        // a request that went wrong — which is why the silent variant is the one called.
+        const postSpy = vi.spyOn(server, "postWithSilentInternalServerError")
+            .mockResolvedValue(undefined);
         const note = makeNote({ type: "code", mime: "application/javascript;env=backend" });
 
         await note.executeScript();
@@ -1267,6 +1318,14 @@ function makeBlob(content: string | undefined): FBlob {
         dateModified: "2020",
         utcDateModified: "2020"
     });
+}
+
+/** Wires one froca note as a child of another, the way a branch does in the application. */
+function wireChild(parent: FNote, child: FNote) {
+    const branchId = `br-${parent.noteId}-${child.noteId}`;
+    registerBranch(branchId, child.noteId, parent.noteId, 0);
+    parent.addChild(child.noteId, branchId, false);
+    child.addParent(parent.noteId, branchId, false);
 }
 
 function registerBranch(branchId: string, noteId: string, parentNoteId: string, notePosition: number | undefined) {

@@ -1,5 +1,5 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import passwordService from "../../services/encryption/password.js";
 import { ValidationError } from "../../errors.js";
 

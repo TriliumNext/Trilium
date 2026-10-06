@@ -42,6 +42,8 @@ export interface BackupDownload {
     error?: string;
     /** How far it has got, once the first bytes have gone. */
     progress?: { sentBytes: number; totalBytes: number };
+    /** Where the file was written, on the platforms that put it somewhere they can name. */
+    location?: string;
     start: () => void;
 }
 
@@ -58,16 +60,19 @@ export function useBackupDownload(settings: SetupBackupSettings): BackupDownload
     const [ state, setState ] = useState<BackupDownload["state"]>("idle");
     const [ error, setError ] = useState<string>();
     const [ progress, setProgress ] = useState<BackupDownload["progress"]>();
+    const [ location, setLocation ] = useState<string>();
 
     return {
         fileName,
         state,
         error,
         progress,
+        location,
         start: () => {
             setState("running");
             setError(undefined);
             setProgress(undefined);
+            setLocation(undefined);
 
             const onProgress = (sentBytes: number, totalBytes: number) =>
                 setProgress({ sentBytes, totalBytes });
@@ -75,6 +80,7 @@ export function useBackupDownload(settings: SetupBackupSettings): BackupDownload
             void startBackupDownload(fileName, settings.passphrase, onProgress).then((result) => {
                 setState(result.status === "done" ? "done" : "failed");
                 setError(result.status === "done" ? undefined : result.message);
+                setLocation(result.location);
             });
         }
     };
@@ -231,7 +237,9 @@ export function BackupDownloadPanel({ download }: { download: BackupDownload }) 
                 it, and the button is what the user does next either way. */}
             {download.state === "done" && (
                 <Admonition type="note" className="backup-download-outcome">
-                    {t("setup.backup-downloaded")}
+                    {download.location
+                        ? t("setup.backup-saved-to", { location: download.location })
+                        : t("setup.backup-downloaded")}
                 </Admonition>
             )}
             {download.state === "failed" && (

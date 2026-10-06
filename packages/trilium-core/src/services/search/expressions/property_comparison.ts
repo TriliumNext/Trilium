@@ -8,7 +8,7 @@ import buildComparator from "../services/build_comparator.js";
  * Search string is lower cased for case-insensitive comparison. But when retrieving properties,
  * we need the case-sensitive form, so we have this translation object.
  */
-const PROP_MAPPING: Record<string, string> = {
+export const PROP_MAPPING: Record<string, string> = {
     noteid: "noteId",
     title: "title",
     type: "type",

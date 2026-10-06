@@ -113,6 +113,39 @@ describe("ShortcutHintsPanel", () => {
         expect(document.querySelector(".shortcut-hints-panel")).toBeNull();
     });
 
+    it("stands beside its anchor, lined up with its end, and keeps inside the window", async () => {
+        // happy-dom lays nothing out: a 1000×800 window and a 300×200 pane, as Floating UI measures them.
+        vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1000);
+        vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(300);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(200);
+        const host = mountPanel();
+        const anchor = document.createElement("button");
+        document.body.appendChild(anchor);
+        const placedAt = async (x: number, y: number) => {
+            vi.spyOn(anchor, "getBoundingClientRect").mockReturnValue(DOMRect.fromRect({ x, y, width: 80, height: 30 }));
+            act(() => { host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor }); });
+            const panel = document.querySelector<HTMLElement>(".shortcut-hints-panel");
+            await vi.waitFor(() => expect(panel?.style.visibility).toBe("visible"));
+            const placed = [ panel?.style.left, panel?.style.top ];
+            // The same request closes it again.
+            act(() => { host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor }); });
+            return placed;
+        };
+
+        try {
+            // Under the anchor with the right edges lined up, as a button at the end of a toolbar has it.
+            expect(await placedAt(700, 50)).toEqual([ "480px", "86px" ]);
+            // Near the window's left edge, lined up with the anchor's start instead of running off it.
+            expect(await placedAt(20, 50)).toEqual([ "20px", "86px" ]);
+            // Near its foot, above the anchor.
+            expect(await placedAt(700, 760)).toEqual([ "480px", "554px" ]);
+        } finally {
+            anchor.remove();
+            vi.restoreAllMocks();
+        }
+    });
+
     it("opens as a dropdown positioned under an anchor, and clicking the anchor does not dismiss it", () => {
         const host = mountPanel();
         const anchor = document.createElement("button");
@@ -120,10 +153,7 @@ describe("ShortcutHintsPanel", () => {
         try {
             act(() => { host.handleEvent("shortcutHintsRequested", { sections: SECTIONS, anchor }); });
 
-            const panel = document.querySelector<HTMLElement>(".shortcut-hints-panel");
-            // Anchored positioning uses top/bottom-auto instead of the corner's bottom offset.
-            expect(panel?.style.top).toBe("6px");
-            expect(panel?.style.bottom).toBe("auto");
+            expect(document.querySelector(".shortcut-hints-panel")).not.toBeNull();
             // No Esc footer when opened via the button (mouse users click away).
             expect(document.querySelector(".shortcut-hints-footer")).toBeNull();
 

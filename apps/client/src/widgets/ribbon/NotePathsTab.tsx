@@ -9,7 +9,7 @@ import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { useTriliumEvent } from "../react/hooks";
 import LinkButton from "../react/LinkButton";
-import NoteLink from "../react/NoteLink";
+import NoteLink, { NewNoteLink } from "../react/NoteLink";
 import { joinElements, ParentComponent } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
 
@@ -130,7 +130,9 @@ function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: strin
 
     return (
         <li class={classes}>
-            {joinElements(fullNotePaths.map((notePath, index, arr) => (
+            {joinElements(fullNotePaths.map((notePath, index, arr) => notePath === "root" ? (
+                <NewNoteLink key={notePath} notePath={notePath} iconOnly noPreview />
+            ) : (
                 <NoteLink key={notePath}
                     className={clsx({"basename": (index === arr.length - 1)})}
                     notePath={notePath}

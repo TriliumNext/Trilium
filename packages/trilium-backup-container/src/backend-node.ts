@@ -26,7 +26,7 @@ export const nodeBackend: ContainerBackend = {
         return randomBytes(size);
     },
 
-    createSha256() {
+    async createSha256() {
         const hash = createHash("sha256");
 
         return {

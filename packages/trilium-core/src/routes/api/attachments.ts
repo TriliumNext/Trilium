@@ -1,9 +1,6 @@
 import { ConvertAttachmentToNoteResponse, isAcceptedImageMime } from "@triliumnext/commons";
 import { ValidationError } from "../../errors";
-import type { Request } from "express";
-import type { File } from "../../services/import/common.js";
-
-type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
+import type { Request } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import blobService from "../../services/blob.js";
@@ -47,7 +44,7 @@ function saveAttachment(req: Request<{ noteId: string }>) {
     note.saveAttachment({ attachmentId, role, mime, title, content }, matchBy);
 }
 
-async function uploadAttachment(req: FileRequest<{ noteId: string }>) {
+async function uploadAttachment(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 
@@ -64,10 +61,19 @@ async function uploadAttachment(req: FileRequest<{ noteId: string }>) {
     // Convert buffer to Uint8Array (Buffer extends Uint8Array, string needs encoding)
     const buffer = wrapStringOrBuffer(file.buffer as string | Uint8Array);
 
+    // With `link=true`, the response links to the attachment and a picture is stored as uploaded.
+    const isLinkRequested = req.query.link === "true";
+
     if (isAcceptedImageMime(file.mimetype)) {
         // Always the user's own image: the pictures the app fetches for itself — a link preview's
         // favicon and cover — are stored by the code that fetched them, never uploaded through here.
-        const attachment = imageService.saveImageToAttachment(noteId, buffer, file.originalname, true, true);
+        const attachment = imageService.saveImageToAttachment(
+            noteId,
+            buffer,
+            file.originalname,
+            !isLinkRequested,
+            !isLinkRequested
+        );
 
         // The URL below is fetched the moment this answers — the editor puts it straight into the
         // document as the source of an image. Answering before the bytes are stored hands it the
@@ -75,7 +81,10 @@ async function uploadAttachment(req: FileRequest<{ noteId: string }>) {
         // something reloads the note. So this one image is waited for; nothing else is.
         await imageService.awaitImageWrite(attachment.attachmentId);
 
-        url = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`;
+        const { attachmentId, title } = attachment;
+        url = isLinkRequested
+            ? getAttachmentLinkUrl(noteId, attachmentId)
+            : `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`;
     } else {
         const attachment = note.saveAttachment({
             role: "file",
@@ -84,13 +93,17 @@ async function uploadAttachment(req: FileRequest<{ noteId: string }>) {
             content: file.buffer
         });
 
-        url = `#root/${noteId}?viewMode=attachments&attachmentId=${attachment.attachmentId}`;
+        url = getAttachmentLinkUrl(noteId, attachment.attachmentId);
     }
 
     return {
         uploaded: true,
         url
     };
+}
+
+function getAttachmentLinkUrl(noteId: string, attachmentId: string | undefined) {
+    return `#root/${noteId}?viewMode=attachments&attachmentId=${attachmentId}`;
 }
 
 function renameAttachment(req: Request<{ attachmentId: string }>) {

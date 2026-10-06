@@ -31,7 +31,7 @@ The following types are supported:
 *   _Multi-line text_, similar to a normal text field, but rendered in a bigger text box that also supports writing on multiple lines.
 *   _Number_, will display as a number input field with up/down arrows.
     *   Optionally a _precision_ which sets how many decimals the value steps by and is displayed with.
-*   _Boolean_, which renders as a checkbox for a true/false value.
+*   _Checkbox_, which renders as a checkbox for a true/false value. In the label definition, this type is written as `boolean`.
 *   _Select,_ which provides a list of user-defined options when editing.
     *   The list is not fixed, meaning that new options can be easily added from the promoted attribute.
     *   Renaming an option does not change the existing values since the value is stored as text. Consider a [bulk rename](../Bulk%20Actions.md).

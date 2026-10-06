@@ -1,0 +1,87 @@
+:where(:root) {
+  --board-rail-enter-duration: 250ms;
+  /* Must match RAIL_EXIT_MS in card_toolbar.tsx, which keeps the rail drawn that long. */
+  --board-rail-exit-duration: 400ms;
+}
+
+/* Laid out by the group, which pins itself over the board: the wrapper is there for its events. */
+.board-view-container .board-card-toolbar {
+  display: contents;
+}
+
+/* In over the edge it stands against, and back out over it when dismissed. */
+.board-view-container .board-card-toolbar .tn-overlay-control-group {
+  animation: board-rail-enter var(--board-rail-enter-duration) ease-out;
+}
+
+/* Standing in for a rail already there, which is dropped as this one arrives. Above the leaving
+   rule, which must still win for a rail that later leaves. */
+.board-view-container .board-card-toolbar.takes-over .tn-overlay-control-group {
+  animation: none;
+}
+
+.board-view-container .board-card-toolbar.leaving .tn-overlay-control-group {
+  animation: board-rail-leave var(--board-rail-exit-duration) ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes board-rail-enter {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes board-rail-leave {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-view-container .board-card-toolbar .tn-overlay-control-group,
+  .board-view-container .board-card-toolbar.leaving .tn-overlay-control-group {
+    animation: none;
+  }
+
+  /* Gone at once rather than standing still for the exit's length. */
+  .board-view-container .board-card-toolbar.leaving {
+    display: none;
+  }
+}
+
+/* Hidden once a lifted card is carried away, under the class board_drag.ts sets on the container
+   itself: a class rendered from state changes the attribute mid-drag and drops the drag's own,
+   and its auto-scroll. Visibility rather than display, which restarts the entrance afterwards. */
+.board-view-container.board-carrying .board-card-toolbar {
+  visibility: hidden;
+}
+
+.board-view-container .board-card-toolbar .tn-overlay-control-group {
+  /* A finger's target: 48px square meets Material, Apple's 44pt and WCAG 2.5.5 alike. */
+  --overlay-button-height: 48px;
+  --overlay-button-icon-size: 24px;
+  /* Flush with the screen edge, so a touch reaching for the rail cannot land on a card past it. */
+  --overlay-group-inset-end: 0;
+  z-index: 2;
+  border-inline-end: none;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+
+  .tn-overlay-icon-button {
+    width: 48px;
+  }
+
+  /* Takes the card away, and is marked the way destructive menu entries are. */
+  .board-remove-button {
+    color: var(--dropdown-item-icon-destructive-color);
+  }
+
+  /* The side that meets the screen edge keeps no rounding. */
+  button:first-child {
+    border-start-end-radius: 0;
+  }
+
+  button:last-child {
+    border-end-end-radius: 0;
+  }
+}

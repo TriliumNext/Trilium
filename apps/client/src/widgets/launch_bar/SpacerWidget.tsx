@@ -12,7 +12,7 @@ export default function SpacerWidget({ launcherNote, baseSize, growthFactor }: S
         <div
             className="spacer"
             style={{
-                flexBasis: baseSize ?? 0,
+                flexBasis: `${baseSize ?? 0}px`,
                 flexGrow: growthFactor ?? 1000,
                 flexShrink: 1000
             }}

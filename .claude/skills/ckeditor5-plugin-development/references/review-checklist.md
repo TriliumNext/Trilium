@@ -98,8 +98,8 @@ integration items at the end are specific to this monorepo.
       carry the CKSource header, some don't; don't add/strip wholesale).
 - [ ] **`pluginName` / `requires`** declared `as const`; type augmentation done via
       `declare module 'ckeditor5'` (config + command/plugin maps).
-- [ ] Custom SVG icons imported with `?raw` and re-exported via `export const icons = { … }`
-      from `index.ts`.
+- [ ] Custom SVG icons live in `packages/ckeditor5/src/icons/` and are imported with `?raw` by
+      the file that uses them.
 - [ ] Listeners use `this.listenTo()` (auto-cleaned); any other resources cleaned in `destroy()`.
 - [ ] `ckeditor5-metadata.json` updated for new public plugins/UI/HTML output.
 - [ ] Model is the source of truth — no view hacks standing in for model state (except genuine
@@ -117,5 +117,9 @@ integration items at the end are specific to this monorepo.
       `ClassicEditor` (Decoupled), `PopupEditor` (Balloon + `BlockToolbar`).
 - [ ] Block widgets enforce structural invariants with `registerPostFixer` (admonition,
       collapsible) rather than relying on command-side cleanup.
-- [ ] **Tests use the right environment**: happy-dom for unit/model logic; WebdriverIO
+- [ ] An added, renamed, redrawn or removed SVG icon (or a `ckeditor5` bump) comes with a
+      regenerated `cke` pack (`text-editor-icons.woff2` + `icon_pack_text_editor.json`), and no
+      page in `docs/User Guide` still uses a removed `cke-*` class. See `ui-and-localization.md`,
+      "The `cke` icon pack".
+- [ ] **Tests use the right environment**: happy-dom for unit/model logic; Playwright
       (browser) only where real DOM/layout is required.

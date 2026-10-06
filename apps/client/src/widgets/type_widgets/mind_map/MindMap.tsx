@@ -4,8 +4,7 @@ import "./MindMap.css";
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { t } from "i18next";
 import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, NodeObj, Operation, Theme, THEME as LIGHT_THEME } from "mind-elixir";
-import { ComponentChildren, HTMLAttributes, RefObject } from "preact";
-import { createPortal } from "preact/compat";
+import { ComponentChildren, createPortal, HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
@@ -68,7 +67,7 @@ function sanitizeMindMapNode(value: unknown): void {
 }
 
 interface MindElixirProps {
-    apiRef?: RefObject<MindElixirInstance>;
+    apiRef?: RefObject<MindElixirInstance | null>;
     /**
      * Rendered in an overlay on top of the map, outside of the DOM managed by Mind Elixir, and given
      * the instance it stands over. Asked for rather than handed in, the instance being built after
@@ -77,7 +76,7 @@ interface MindElixirProps {
      */
     children?: (mind: MindElixirInstance) => ComponentChildren;
     containerProps?: Omit<HTMLAttributes<HTMLDivElement>, "ref">;
-    containerRef?: RefObject<HTMLDivElement>;
+    containerRef?: RefObject<HTMLDivElement | null>;
     editable: boolean;
     onChange?: () => void;
     onSelectionChange?: (selectedNodes: NodeObj[]) => void;

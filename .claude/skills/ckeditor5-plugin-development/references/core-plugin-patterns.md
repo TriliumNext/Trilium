@@ -161,6 +161,48 @@ editor.editing.reconvertItem( item );   // manual full re-downcast (editingcontr
 Use when the *tag/structure* depends on an attribute (e.g. `td`↔`th`). Reconvert the parent when a
 child-count change affects the parent's rendering.
 
+### Reconversion silently drops sibling UIElements from reused child views
+
+`elementToStructure` reconverts on **every** direct-child insert/remove, and the reconversion
+reuses the children it can: `fillSlots()` → `reinsertNode()` moves each child by
+`writer.move(writer.createRangeOn(mappedViewElement), …)`. That range covers only the element the
+mapper is bound to — anything a *sibling* converter put next to it inside the same attribute
+wrapper is left behind in the discarded subtree.
+
+A to-do list item is the case that bites: its mapped element is
+`<span class="todo-list__label__description">`, while the checkbox is a UIElement sibling inside
+`<span class="todo-list__label">`. Put a to-do list in a structure slot and its checkboxes vanish
+as the body is edited. Plain lists survive only by accident — CKEditor's opt-out
+`isItemBlockInsideStructureSlot()` walks up through attribute elements named `ol`/`ul`/`li` only,
+so it reaches the slot parent from an `<li>` but stops at the to-do label. (Trilium hits this in
+`collapsible_editing.ts`; issue #11544.)
+
+The fix is to refresh those blocks so they are rebuilt rather than moved:
+
+```ts
+this.listenTo( model.document, 'change:data', () => {
+	// …collect the structure elements whose child list changed, then:
+	editor.editing.reconvertItem( block );
+} );   // NOTE: default priority — see below
+```
+
+Two things that look right and are not:
+
+- **Don't force non-reuse by adding to `refreshedItems`** from a `reduceChanges` listener. That
+  set only feeds `canReuseView()`; without the matching remove/insert differ entries the old view
+  stays bound in the mapper, and the next position lookup into it throws
+  `mapping-model-offset-not-found`. `editing.reconvertItem()` emits both — use it.
+- **Don't hook `ListEditing`'s `checkElement`.** It only fires for lists a change already
+  mentions, so a heading typed *below* the list reconverts the structure with nothing pointing at
+  the list, and every marker goes at once.
+
+**Listener priority is load-bearing here.** `change` and `change:data` listeners on
+`model.document` share one priority-ordered list, so `EditingController`'s `change` handler at
+`low` outranks anything at `lowest`. A forced reconversion must run at **default** priority: after
+`ListEditing`'s `high` handler, whose own refreshes add the insert/remove entries that trigger the
+reconversion, and before the controller's `low` handler that runs the conversion. At `high` it
+misses those entries; at `lowest` it runs after conversion and does nothing at all.
+
 ## Floating selection toolbar (BalloonToolbar)
 
 The `BalloonToolbar` plugin shows a toolbar over a non-collapsed selection (Medium-style). Items

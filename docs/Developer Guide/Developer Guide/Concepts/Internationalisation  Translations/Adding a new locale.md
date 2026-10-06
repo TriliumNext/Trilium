@@ -22,6 +22,6 @@ The website tracks its own Weblate component and its own list, so a locale added
 
 ## The coverage gate
 
-`scripts/translation/check-translation-coverage.ts` fails CI once Weblate reports a language above 50% that is missing from either list. It runs on the `weblate:*` branches, so the pull request that brings the translations in is where it fires.
+`scripts/translation/check-translation-coverage.mts` fails CI once Weblate reports a language above 50% that is missing from either list. It runs only on the pull requests Weblate opens, so the pull request that brings the translations in is where it fires.
 
 The gate only catches a language that is translated but not offered. It does not notice one that is offered and has since fallen behind, and it does not check that the locale renders — only that the id is listed.

@@ -1,7 +1,7 @@
 import type { CKTextEditor, AttributeEditor, EditorConfig, ModelPosition } from "@triliumnext/ckeditor5";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
-import { useEffect, useImperativeHandle, useRef } from "preact/compat";
-import { MutableRef } from "preact/hooks";
+import { RefObject } from "preact";
+import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
 
 export interface CKEditorApi {
     focus(): void;
@@ -26,7 +26,7 @@ export interface CKEditorApi {
 }
 
 interface CKEditorOpts {
-    apiRef: MutableRef<CKEditorApi | undefined>;
+    apiRef: RefObject<CKEditorApi | undefined>;
     currentValue?: string;
     className: string;
     tabIndex?: number;

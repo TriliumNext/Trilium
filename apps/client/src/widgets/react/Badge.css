@@ -55,6 +55,78 @@
     }
 }
 
+/*
+ * An attribute a search matched: its kind's icon and its name in a key shaded as a keyboard shortcut,
+ * then its value. Squared off as the app's other chips (`.tn-chip`), a pill being for a single token.
+ */
+.ext-badge.attribute-badge {
+    overflow: hidden;
+    padding-inline: 0;
+    border-radius: 6px;
+    /* The line the note autocomplete's footer and dividers are drawn with. */
+    border-color: var(--attribute-badge-line-color, var(--main-border-color));
+    color: var(--color, var(--muted-text-color));
+
+    /* On a highlighted row's background the border color fades out, so the lines take the text's. */
+    .dropdown-item:is(:hover, :focus, .tn-menu-active) & {
+        --attribute-badge-line-color: color-mix(in srgb, var(--main-text-color) 25%, transparent);
+    }
+
+    /* Centered by the badge, so it takes none of the Next theme's `.dropdown-item .tn-icon` offset. */
+    .tn-icon {
+        translate: none;
+    }
+
+    > span,
+    .text {
+        align-self: stretch;
+    }
+
+    .text {
+        display: flex;
+        min-width: 0;
+    }
+
+    /*
+     * The name and the value shrink only once the badge runs out of room, each by its share of the
+     * width, so a long name gives up more than a short value.
+     */
+    .attribute-badge-key {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        padding-inline: 6px 8px;
+        /* The shade and text of a button's keyboard shortcut (`button.btn kbd` in forms.css). */
+        background: var(
+            --cmd-button-keyboard-shortcut-background,
+            color-mix(in srgb, var(--color, var(--muted-text-color)) 15%, transparent)
+        );
+        color: var(--cmd-button-keyboard-shortcut-color, var(--main-text-color));
+    }
+
+    .attribute-badge-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .attribute-badge-value {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        padding-inline: 6px 8px;
+        border-inline-start: 1px solid var(--attribute-badge-line-color, var(--main-border-color));
+        color: var(--main-text-color);
+
+        > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
+
 .dropdown-badge {
     min-width: 0;
     overflow: hidden;

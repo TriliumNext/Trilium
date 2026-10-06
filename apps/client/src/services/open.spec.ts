@@ -24,10 +24,15 @@ function removeElectronApi() {
     delete realWindow.electronApi;
 }
 
+function removeStandaloneApi() {
+    delete realWindow.standaloneApi;
+}
+
 describe("open service", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         removeElectronApi();
+        removeStandaloneApi();
         // Default: behave like a plain web browser.
         vi.spyOn(utils, "isElectron").mockReturnValue(false);
         vi.spyOn(utils, "isMac").mockReturnValue(false);
@@ -37,6 +42,7 @@ describe("open service", () => {
 
     afterEach(() => {
         removeElectronApi();
+        removeStandaloneApi();
     });
 
     describe("getUrlForDownload", () => {
@@ -62,6 +68,36 @@ describe("open service", () => {
         it("navigates via window.location.href in the browser", () => {
             open.download("http://example/y");
             expect(window.location.href).toContain("http://example/y");
+        });
+
+        it("saves through the share sheet when the standalone build offers one", async () => {
+            // The Capacitor WebView has no download manager, so navigating would silently do
+            // nothing; standalone exposes `save` only there.
+            const saveUrl = vi.fn(async () => ({ status: "saved" as const, fileName: "Export.zip" }));
+            realWindow.standaloneApi = { save: { saveUrl } };
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
+            open.download("api/branches/b1/export/subtree/html/t1");
+
+            await vi.waitFor(() => expect(saveUrl).toHaveBeenCalledWith("api/branches/b1/export/subtree/html/t1"));
+            expect(window.location.href).not.toContain("api/branches/b1");
+            expect(toastSpy).not.toHaveBeenCalled();
+        });
+
+        it("reports a failed save, but stays quiet when the user dismisses the share sheet", async () => {
+            const saveUrl = vi.fn(async () => ({ status: "failed" as const, message: "No space left" }));
+            realWindow.standaloneApi = { save: { saveUrl } };
+            const toastSpy = vi.spyOn(toast, "showError").mockImplementation(() => {});
+            vi.spyOn(console, "error").mockImplementation(() => {});
+
+            open.download("api/notes/n1/download");
+            await vi.waitFor(() => expect(toastSpy).toHaveBeenCalled());
+
+            toastSpy.mockClear();
+            saveUrl.mockResolvedValue({ status: "cancelled" } as never);
+            open.download("api/notes/n1/download");
+            await vi.waitFor(() => expect(saveUrl).toHaveBeenCalledTimes(2));
+            expect(toastSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -154,6 +190,18 @@ describe("open service", () => {
         it("navigates via location.href for non-browser-openable mime types", async () => {
             await open.openAttachmentExternally("a3", "application/zip");
             expect(window.location.href).toContain("api/attachments/a3/download");
+        });
+
+        it("routes a non-previewable open through the mobile share sheet", async () => {
+            // Navigating to the attachment response would be dropped there, like any download.
+            const saveUrl = vi.fn(async () => ({ status: "saved" as const, fileName: "a.zip" }));
+            realWindow.standaloneApi = { save: { saveUrl } };
+
+            await open.openAttachmentExternally("a5", "application/zip");
+
+            await vi.waitFor(() => expect(saveUrl).toHaveBeenCalledWith(
+                expect.stringContaining("api/attachments/a5/download")
+            ));
         });
 
         it("covers all canOpenInBrowser branches (image/audio/video)", async () => {

@@ -59,7 +59,7 @@
     "sync-from-desktop-step1": "Open your desktop instance of Trilium Notes.",
     "sync-from-desktop-step2": "From the Trilium Menu, click Options.",
     "sync-from-desktop-step3": "Click on Sync category in the note tree.",
-    "sync-from-desktop-step4": "Change server instance address to point to one of the addresses on the right and click Save.",
+    "sync-from-desktop-step4": "Change server instance address to point to one of the addresses on the right (or below, on a narrow screen) and click Save.",
     "sync-from-desktop-step5": "Click the \"Test sync\" button to verify connection is successful.",
     "sync-from-desktop-warning": "Make sure both devices are on the same network.",
     "sync-from-desktop-waiting": "Waiting for connection...",
@@ -102,7 +102,7 @@
     "existing-data-backup-failed": "The backup could not be created.",
     "backup-data": "Backup your Trilium data",
     "backup-name": "Backup name",
-    "backup-name-description": "Give this backup a name you will recognise later, or keep the suggested one.",
+    "backup-name-description": "Give this backup a name you will recognize later, or keep the suggested one.",
     "backup-password": "Password (optional)",
     "backup-password-repeat": "Repeat password",
     "backup-password-description": "If you specify a password, the backup file will be encrypted. Keep the password somewhere safe: without it, the backup cannot be restored.",
@@ -159,6 +159,7 @@
     "restore-stage-validating": "Checking the database",
     "restore-stage-swapping": "Putting it in place",
     "restore-stage-migrating": "Opening the database",
-    "restore-do-not-close": "Do not close this window."
+    "restore-do-not-close": "Do not close this window.",
+    "backup-saved-to": "The backup has been saved to {{- location}}. Press \"Finish\" to return to the application."
   }
 }

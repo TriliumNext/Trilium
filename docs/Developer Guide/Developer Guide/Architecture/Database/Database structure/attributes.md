@@ -15,7 +15,7 @@
             <td>Text</td>
             <td>Non-null</td>
             <td>&nbsp;</td>
-            <td>Unique Id of the attribute (e.g. <code>qhC1vzU4nwSE</code>), can also have a special unique ID for&nbsp;<a class="reference-link" href="#root/r11Bh3uxFGRj">Special notes</a>&nbsp;(e.g. <code>_lbToday_liconClass</code>).</td>
+            <td>Unique Id of the attribute (e.g. <code>qhC1vzU4nwSE</code>), can also have a special unique ID for special notes (e.g. <code>_lbToday_liconClass</code>).</td>
         </tr>
         <tr>
             <th><code>noteId</code></th>

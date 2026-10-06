@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { IconPackData } from "../provider";
-import { getModulePath } from "../utils";
+import { getModulePath, readIconFontMetrics } from "../utils";
 
 export default function buildIcons(packName: "regular" | "fill"): IconPackData {
     const moduleDir = getModulePath("@phosphor-icons/web");
@@ -30,6 +30,10 @@ export default function buildIcons(packName: "regular" | "fill"): IconPackData {
     }
 
     const fontFile = readdirSync(baseDir).find(f => f.endsWith(".woff2"));
+    if (!fontFile) {
+        throw new Error(`No WOFF2 font to build the pack from in ${baseDir}.`);
+    }
+
     const prefix = packName === "regular" ? "ph" : `ph-${packName}`;
 
     return {
@@ -37,12 +41,13 @@ export default function buildIcons(packName: "regular" | "fill"): IconPackData {
         prefix,
         icon: `${prefix} ph-phosphor-logo`,
         manifest: {
-            icons
+            icons,
+            metrics: readIconFontMetrics(join(baseDir, fontFile.replace(/\.woff2$/, ".ttf")))
         },
         fontFile: {
-            name: fontFile!,
+            name: fontFile,
             mime: "font/woff2",
-            content: readFileSync(join(baseDir, fontFile!))
+            content: readFileSync(join(baseDir, fontFile))
         },
         meta: {
             version: packageJson.version,

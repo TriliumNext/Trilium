@@ -152,6 +152,12 @@
         max-height: 220px;
         object-fit: contain;
     }
+
+    .attachment-content-wrapper .canvas-drawing-picture {
+        display: block;
+        max-height: 220px;
+        margin-inline: auto;
+    }
 }
 
 /* The header stays put and only the listing under it scrolls, so the owning note and the upload actions
@@ -348,6 +354,14 @@ body[dir=rtl] .attachment-icon-marker {
    it the video (and the audio player's visualizer band) grows the layout instead of fitting the pane. */
 .attachment-content-wrapper.attachment-media-player {
     overflow: hidden;
+}
+
+.attachment-content-wrapper.attachment-canvas-drawing {
+    overflow: hidden;
+
+    > .canvas-render {
+        height: 100%;
+    }
 }
 
 /*

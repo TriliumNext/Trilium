@@ -1,10 +1,11 @@
 import "./index.css";
 import "gridstack/dist/gridstack.min.css";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { GridStack } from "gridstack";
 import { RefObject, TargetedMouseEvent } from "preact";
-import { MutableRef, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
@@ -83,7 +84,7 @@ function useDashboardNotes(noteIds: string[]) {
 
 /** Whether the dashboard is narrow enough to collapse to a single column, where dragging and
  *  resizing are disabled (the derived single-column layout isn't persisted). */
-function useIsCollapsed(containerRef: RefObject<HTMLElement>) {
+function useIsCollapsed(containerRef: RefObject<HTMLElement | null>) {
     const containerSize = useElementSize(containerRef);
     return (containerSize?.width ?? Number.POSITIVE_INFINITY) < SINGLE_COLUMN_BREAKPOINT;
 }
@@ -96,8 +97,8 @@ function useDashboardLayoutPersistence({ note, viewConfig, saveConfig, gridRef, 
     note: FNote;
     viewConfig: DashboardViewConfig | undefined;
     saveConfig: (config: DashboardViewConfig) => void;
-    gridRef: MutableRef<GridStack | null>;
-    containerRef: RefObject<HTMLDivElement>;
+    gridRef: RefObject<GridStack | null>;
+    containerRef: RefObject<HTMLDivElement | null>;
 }) {
     // Gridstack becomes the source of truth for geometry after init; capture the saved layout once
     // since the viewConfig prop changes identity after every save.
@@ -183,9 +184,9 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
     notes: FNote[];
     viewConfig: DashboardViewConfig | undefined;
     saveConfig: (config: DashboardViewConfig) => void;
-    containerRef: RefObject<HTMLDivElement>;
-    gridRef: MutableRef<GridStack | null>;
-    dropPositionsRef: MutableRef<WidgetLayouts>;
+    containerRef: RefObject<HTMLDivElement | null>;
+    gridRef: RefObject<GridStack | null>;
+    dropPositionsRef: RefObject<WidgetLayouts>;
     isCollapsed: boolean;
 }) {
     const { persistLayout, savedWidgetsRef } = useDashboardLayoutPersistence({ note, viewConfig, saveConfig, gridRef, containerRef });
@@ -199,7 +200,7 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
             column: GRID_COLUMNS,
             cellHeight: CELL_HEIGHT,
             margin: GRID_MARGIN,
-            float: true,
+            mode: "float",
             handle: ".dashboard-widget-header",
             columnOpts: {
                 // Collapse to a vertical stack when the dashboard itself gets narrow,
@@ -273,7 +274,7 @@ function useDashboardGrid({ note, notes, viewConfig, saveConfig, containerRef, g
  *  the dashboard and the first one is positioned under the cursor. Returns a ref holding the drop
  *  positions of the freshly cloned notes, which the reconcile effect consumes (once) when it
  *  promotes them to grid widgets — kept out of savedWidgetsRef so persistLayout still saves them. */
-function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, dropAreaRef: RefObject<HTMLDivElement>, gridContainerRef: RefObject<HTMLDivElement>, gridRef: RefObject<GridStack | null>) {
+function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, dropAreaRef: RefObject<HTMLDivElement | null>, gridContainerRef: RefObject<HTMLDivElement | null>, gridRef: RefObject<GridStack | null>) {
     const dropPositionsRef = useRef<WidgetLayouts>({});
 
     useCollectionTreeDrag(dropAreaRef, {
@@ -313,7 +314,7 @@ function useNoteTreeDropToDashboard(note: FNote, includeArchived: boolean, dropA
 interface DashboardWidgetProps {
     note: FNote;
     parentNote: FNote;
-    highlightedTokens: string[] | null | undefined;
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined;
     includeArchived: boolean;
     showTextRepresentation?: boolean;
 }

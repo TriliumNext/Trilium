@@ -21,7 +21,10 @@ export class TypedComponent<ChildT extends TypedComponent<ChildT>> {
     initialized: Promise<void> | null;
     parent?: TypedComponent<any>;
     _position!: number;
-    private listeners: Record<string, EventHandler[]> | null = {};
+    // Held in a set so that registering and removing cost the same whatever the list already
+    // holds: every froca hook re-subscribes whenever its handler changes identity, and a view of
+    // thousands of components keeps thousands of handlers for one event.
+    private listeners: Record<string, Set<EventHandler>> | null = {};
 
     constructor() {
         this.componentId = `${this.sanitizedClassName}-${utils.randomString(8)}`;
@@ -160,26 +163,22 @@ export class TypedComponent<ChildT extends TypedComponent<ChildT>> {
         }
 
         if (!this.listeners[name]) {
-            this.listeners[name] = [];
+            this.listeners[name] = new Set();
         }
 
-        if (this.listeners[name].includes(handler)) {
-            return;
-        }
-
-        this.listeners[name].push(handler);
+        this.listeners[name].add(handler);
     }
 
     removeHandler<T extends EventNames>(name: T, handler: EventHandler) {
-        if (!this.listeners?.[name]?.includes(handler)) {
+        const listeners = this.listeners?.[name];
+        if (!listeners) {
             return;
         }
 
-        this.listeners[name] = this.listeners[name]
-            .filter(listener => listener !== handler);
+        listeners.delete(handler);
 
-        if (!this.listeners[name].length) {
-            delete this.listeners[name];
+        if (!listeners.size) {
+            delete this.listeners?.[name];
         }
     }
 }

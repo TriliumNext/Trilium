@@ -181,8 +181,7 @@
     "okButton": "U redu"
   },
   "jump_to_note": {
-    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande...",
-    "search_button": "Pretraga u punom tekstu <kbd>Ctrl+Enter</kbd>"
+    "search_placeholder": "Pretraži belešku po njenom imenu ili unesi > za komande..."
   },
   "markdown_import": {
     "dialog_title": "Uvoz za Markdown",
@@ -237,10 +236,8 @@
     "title": "naslov",
     "date_created": "datum kreiranja",
     "date_modified": "datum izmene",
-    "sorting_direction": "Smer sortiranja",
     "ascending": "uzlazni",
     "descending": "silazni",
-    "folders": "Fascikle",
     "sort_folders_at_top": "sortiraj fascikle na vrh",
     "natural_sort": "Prirodno sortiranje",
     "sort_with_respect_to_different_character_sorting": "sortiranje sa poštovanjem različitih pravila sortiranja karaktera i kolacija u različitim jezicima ili regionima.",

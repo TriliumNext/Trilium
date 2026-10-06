@@ -1,6 +1,7 @@
 {
   "about": {
-    "data_directory": "دایرکتوری داده:"
+    "data_directory": "دایرکتوری داده:",
+    "version_label": "نسخه:"
   },
   "toast": {
     "critical-error": {

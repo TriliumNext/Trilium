@@ -16,6 +16,7 @@ import { isMobile } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import ActionButton from "../../react/ActionButton";
 import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { useContextualShortcutHints, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import { getParentFromNotePath } from "../../react/sibling_navigation";
@@ -94,7 +95,7 @@ export function claimsKeystroke(e: KeyboardEvent): boolean {
     return isMinuteJump && e.ctrlKey && !e.altKey && !e.metaKey;
 }
 
-export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function SeekBar({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
 
@@ -163,7 +164,7 @@ export function PlayPauseButton({ playing, togglePlayback }: {
     );
 }
 
-export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function VolumeControl({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [volume, setVolume] = useState(() => mediaRef.current?.volume ?? 1);
     const [muted, setMuted] = useState(() => mediaRef.current?.muted ?? false);
 
@@ -260,7 +261,7 @@ const OWNED_MEDIA_ACTIONS: MediaSessionAction[] = [ "previoustrack", "nexttrack"
  */
 export function useMediaSessionController({ source, entity, noteContext, ownerNote, viewScope, mimePrefix, mediaRef, isVisible = true, playMode, autoPlay }: MediaPlayerProps & {
     mimePrefix: string;
-    mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>;
+    mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>;
     playMode: MediaPlayMode;
 }) {
     // A note cycles the playable siblings in its folder; an attachment cycles the owner note's playable
@@ -479,18 +480,18 @@ function setActiveMediaPlayer(player: object | null) {
     for (const notify of mediaPlayerSubscribers) notify();
 }
 
-function seekBy(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, offset: number) {
+function seekBy(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, offset: number) {
     const media = mediaRef.current;
     // duration is NaN until metadata loads; setting currentTime to NaN throws.
     if (media && Number.isFinite(media.duration)) media.currentTime = Math.max(0, Math.min(media.duration, media.currentTime + offset));
 }
 
-function seekTo(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, time: number) {
+function seekTo(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, time: number) {
     const media = mediaRef.current;
     if (media && Number.isFinite(time)) media.currentTime = time;
 }
 
-function stopMedia(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>) {
+function stopMedia(mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>) {
     const media = mediaRef.current;
     if (!media) return;
     media.pause();
@@ -510,7 +511,7 @@ export function MediaSiblingButton({ navigation, direction, tooltipI18nKey }: { 
     );
 }
 
-export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, seconds: number, icon: string, text: string }) {
+export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, seconds: number, icon: string, text: string }) {
     const skip = () => {
         const media = mediaRef.current;
         if (!media) return;
@@ -529,7 +530,7 @@ export function SkipButton({ mediaRef, seconds, icon, text }: { mediaRef: RefObj
  * mode and persists changes back there; the `next` mode's actual auto-advance is handled by
  * {@link useMediaSessionController} (which receives the resolved `mode`).
  */
-export function useMediaPlayMode(noteContext: NoteContext | undefined, mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement>, playlistNoteId?: string): { mode: MediaPlayMode; setMode: (mode: MediaPlayMode) => void } {
+export function useMediaPlayMode(noteContext: NoteContext | undefined, mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null>, playlistNoteId?: string): { mode: MediaPlayMode; setMode: (mode: MediaPlayMode) => void } {
     const parentNoteId = playlistNoteId ?? getParentFromNotePath(noteContext?.notePath)?.parentNoteId;
     const [ mode, setLocalMode ] = useState<MediaPlayMode>("once");
     const [ refreshCounter, setRefreshCounter ] = useState(0);
@@ -596,17 +597,14 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
             title={t("media.play-mode-title", { mode: t(MEDIA_PLAY_MODE_LABEL_KEYS[mode]) })}
         >
             {MEDIA_PLAY_MODES.map((candidate) => (
-                <li key={candidate}>
-                    <button
-                        type="button"
-                        class={`dropdown-item ${candidate === mode ? "active" : ""}`}
-                        onClick={() => onSelectMode(candidate)}
-                    >
-                        <Icon icon={MEDIA_PLAY_MODE_ICONS[candidate]} />
-                        <span class="play-mode-name">{t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}</span>
-                        {candidate === mode && <Icon icon="bx bx-check" className="play-mode-check" />}
-                    </button>
-                </li>
+                <FormListItem
+                    key={candidate}
+                    icon={MEDIA_PLAY_MODE_ICONS[candidate]}
+                    trailingIcon={candidate === mode ? "bx bx-check" : undefined}
+                    onClick={() => onSelectMode(candidate)}
+                >
+                    {t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}
+                </FormListItem>
             ))}
         </Dropdown>
     );
@@ -614,7 +612,7 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
 
 const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2];
 
-export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement> }) {
+export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoElement | HTMLAudioElement | null> }) {
     const [speed, setSpeed] = useState(() => mediaRef.current?.playbackRate ?? 1);
 
     useEffect(() => {
@@ -647,14 +645,14 @@ export function PlaybackSpeed({ mediaRef }: { mediaRef: RefObject<HTMLVideoEleme
             title={t("media.playback-speed")}
         >
             {PLAYBACK_SPEEDS.map((rate) => (
-                <li key={rate}>
-                    <button
-                        class={`dropdown-item ${rate === speed ? "active" : ""}`}
-                        onClick={() => selectSpeed(rate)}
-                    >
-                        {rate}x
-                    </button>
-                </li>
+                <FormListItem
+                    key={rate}
+                    checkable
+                    checked={rate === speed}
+                    onClick={() => selectSpeed(rate)}
+                >
+                    {rate}x
+                </FormListItem>
             ))}
         </Dropdown>
     );

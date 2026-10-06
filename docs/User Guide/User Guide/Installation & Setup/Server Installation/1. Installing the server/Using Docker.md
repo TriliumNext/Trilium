@@ -7,7 +7,7 @@ Ensure Docker is installed on your system.
 
 If you need help installing Docker, reference the [Docker Installation Docs](https://docs.docker.com/engine/install/)
 
-**Note:** Trilium's Docker container requires root privileges to operate correctly.
+By default, the container starts as root, prepares the data directory and then runs Trilium as an unprivileged user. It can also run entirely without root, as described in _Running as a non-root user_ below.
 
 > [!WARNING]
 > If you're using a SMB/CIFS share or folder as your Trilium data directory, [you'll need](https://github.com/TriliumNext/Notes/issues/415#issuecomment-2344824400) to add the mount options of `nobrl` and `noperm` when mounting your SMB share.
@@ -20,7 +20,9 @@ If you need help installing Docker, reference the [Docker Installation Docs](htt
 wget https://raw.githubusercontent.com/TriliumNext/Trilium/master/docker-compose.yml
 ```
 
-Optionally, edit the `docker-compose.yml` file to configure the container settings prior to starting it. Unless configured otherwise, the data directory will be `~/trilium-data` and the container will be accessible at port 8080.
+Optionally, edit the `docker-compose.yml` file to configure the container settings prior to starting it. Unless configured otherwise, the data directory will be `trilium-data` next to `docker-compose.yml` and the container will be accessible at port 8080.
+
+To keep the data somewhere else, edit the `volumes` entry in `docker-compose.yml` and change the host path before the colon (for example `- /srv/trilium-data:/home/node/trilium-data`). Leave the path after the colon unchanged.
 
 ### Start the container:
 
@@ -111,131 +113,46 @@ If you want to run your instance in a non-default way, please use the volume swi
 1.  [Nginx](../2.%20Reverse%20proxy/Nginx.md)
 2.  [Apache](../2.%20Reverse%20proxy/Apache%20using%20Docker.md)
 
-### Note on --user Directive
-
-The `--user` directive is unsupported. Instead, use the `USER_UID` and `USER_GID` environment variables to set the appropriate user and group IDs.
-
 ### Note on timezones
 
 If you are having timezone issues and you are not using docker-compose, you may need to add a `TZ` environment variable with the [TZ identifier](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) of your local timezone.
 
-## Rootless Docker Image
+### Other environment variables
+
+For the complete list of environment variables Trilium reads (network settings, authentication, sync, etc.), see <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>.
+
+## Running as a non-root user
+
+By default, the container starts as root, gives the data directory to the `node` user (UID and GID `1000`, or the values of `USER_UID` and `USER_GID`) and then runs Trilium as that user. Some environments do not allow a container to start as root at all, for example rootless Docker or Podman, or Kubernetes with `runAsNonRoot`. Starting with v0.107.0, the same image can run entirely as a non-root user instead.
+
+To run Trilium as a non-root user, set the user with Docker's `--user` flag:
+
+```sh
+docker run -d -p 8080:8080 --user 1000:1000 -v /srv/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]
+```
+
+With Docker Compose, add `user:` to the service in `docker-compose.yml`:
+
+```yaml
+services:
+  trilium:
+    user: "1000:1000"
+```
+
+The image also runs with a read-only root filesystem and without any capabilities, for example with `--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges`.
+
+Without root, the container cannot change the ownership of files, so:
+
+*   The data directory on the host must exist and belong to that user before the container starts. If the directory is missing, Docker creates it as root, and Trilium cannot write to it. For example:
+    
+    ```sh
+    mkdir -p /srv/trilium-data
+    sudo chown 1000:1000 /srv/trilium-data
+    ```
+*   A named volume instead of a host directory only works for UID `1000`: Docker gives a new volume the owner of the image's data directory, which is the `node` user.
+*   `USER_UID` and `USER_GID` are ignored. The user comes from `--user` or `user:` alone.
+
+If Trilium cannot use its data directory, it stops at startup and prints which directory or files it cannot use, who owns them, and the command that fixes it.
 
 > [!NOTE]
-> Please keep in mind that the data directory is at `/home/trilium/trilium-data` instead of the typical `/home/node/trilium-data`. This is because a new user is created and used to run Trilium within the rootless containers.
-
-If you would prefer to run Trilium without having to run the Docker container as `root`, you can use either of the provided Debian (default) and Alpine-based images with the `rootless` tag. 
-
-_**If you're unsure, stick to the “rootful” Docker image referenced above.**_
-
-Below are some commands to pull the rootless images:
-
-```
-# For Debian-based image
-docker pull triliumnext/trilium:rootless
-
-# For Alpine-based image
-docker pull triliumnext/trilium:rootless-alpine
-```
-
-### Why Rootless?
-
-Running containers as non-root is a security best practice that reduces the potential impact of container breakouts. If an attacker manages to escape the container, they'll only have the permissions of the non-root user instead of full root access to the host.
-
-### How It Works
-
-The rootless Trilium image:
-
-1.  Creates a non-root user (`trilium`) during build time
-2.  Configures the application to run as this non-root user
-3.  Allows runtime customization of the user's UID/GID via Docker's `--user` flag
-4.  Does not require a separate Docker `entrypoint` script
-
-### Usage
-
-#### **Using docker-compose (Recommended)**
-
-```
-# Run with default UID/GID (1000:1000)
-docker-compose -f docker-compose.rootless.yml up -d
-
-# Run with custom UID/GID (e.g., match your host user)
-TRILIUM_UID=$(id -u) TRILIUM_GID=$(id -g) docker-compose -f docker-compose.rootless.yml up -d
-
-# Specify a custom data directory
-TRILIUM_DATA_DIR=/path/to/your/data TRILIUM_UID=$(id -u) TRILIUM_GID=$(id -g) docker-compose -f docker-compose.rootless.yml up -d
-
-```
-
-#### **Using Docker CLI**
-
-```
-# Build the image
-docker build -t triliumnext/trilium:rootless -f apps/server/Dockerfile.rootless .
-
-# Run with default UID/GID (1000:1000)
-docker run -d --name trilium -p 8080:8080 -v ~/trilium-data:/home/trilium/trilium-data triliumnext/trilium:rootless
-
-# Run with custom UID/GID
-docker run -d --name trilium -p 8080:8080 --user $(id -u):$(id -g) -v ~/trilium-data:/home/trilium/trilium-data triliumnext/trilium:rootless
-
-```
-
-### Environment Variables
-
-*   `TRILIUM_UID`: UID to use for the container process (passed to Docker's `--user` flag)
-*   `TRILIUM_GID`: GID to use for the container process (passed to Docker's `--user` flag)
-*   `TRILIUM_DATA_DIR`: Path to the data directory inside the container (default: `/home/node/trilium-data`)
-
-For a complete list of configuration environment variables (network settings, authentication, sync, etc.), see <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20environment%20variables).md">Configuration (config.ini or environment variables)</a>.
-
-### Volume Permissions
-
-If you encounter permission issues with the data volume, ensure that:
-
-1.  The host directory has appropriate permissions for the UID/GID you're using
-2.  You're setting both `TRILIUM_UID` and `TRILIUM_GID` to match the owner of the host directory
-
-```
-# For example, if your data directory is owned by UID 1001 and GID 1001:
-TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml up -d
-
-```
-
-### Considerations
-
-*   The container starts with a specific UID/GID which can be customized at runtime
-*   Unlike the traditional setup, this approach does not use a separate entrypoint script with `usermod`/`groupmod` commands
-*   The container cannot modify its own UID/GID at runtime, which is a security feature of rootless containers
-
-### Available Rootless Images
-
-Two rootless variants are provided:
-
-1.  **Debian-based** (default): Uses the Debian Bullseye Slim base image
-    *   Dockerfile: `apps/server/Dockerfile.rootless`
-    *   Recommended for most users
-2.  **Alpine-based**: Uses the Alpine base image for smaller size
-    *   Dockerfile: `apps/server/Dockerfile.alpine.rootless`
-    *   Smaller image size, but may have compatibility issues with some systems
-
-### Building Custom Rootless Images
-
-If you would prefer, you can also customize the UID/GID at build time:
-
-```
-# For Debian-based image with custom UID/GID
-docker build --build-arg USER=myuser --build-arg UID=1001 --build-arg GID=1001 \
-  -t triliumnext/trilium:rootless-custom -f apps/server/Dockerfile.rootless .
-
-# For Alpine-based image with custom UID/GID
-docker build --build-arg USER=myuser --build-arg UID=1001 --build-arg GID=1001 \
-  -t triliumnext/trilium:alpine-rootless-custom -f apps/server/Dockerfile.alpine.rootless .
-
-```
-
-Available build arguments:
-
-*   `USER`: Username for the non-root user (default: trilium)
-*   `UID`: User ID for the non-root user (default: 1000)
-*   `GID`: Group ID for the non-root user (default: 1000)
+> An installation that ran as root leaves its files owned by UID `1000`, or by `USER_UID` if it was set. To switch it to `--user`, either use that same UID, or give the data directory to the new user first, for example with `sudo chown -R 1001:1001 /srv/trilium-data`.

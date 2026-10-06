@@ -20,7 +20,13 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
-import FileUploadEditing, { isHtmlIncluded } from "./fileuploadediting.js";
+import { installGlobMock } from "../../../test/globals-test-kit.js";
+import ContentEmbed from "../content_embed/content_embed.js";
+import FileUploadEditing, {
+    isHtmlIncluded,
+    type FileUploadData,
+    type FileUploadEvent
+} from "./fileuploadediting.js";
 
 describe("FileUploadEditing", () => {
     let editor: ClassicEditor;
@@ -197,25 +203,74 @@ describe("FileUploadEditing", () => {
     // change post-fixer + _readAndUpload — happy path
     // -----------------------------------------------------------------
 
-    it("reads, uploads and completes a placeholder, then reloads the data", async () => {
+    it("completes a placeholder in place and keeps the undo history", async () => {
         const controls = installUploadAdapter(editor);
-        const fileRepository = editor.plugins.get(FileRepository);
+        const setDataSpy = vi.spyOn(editor, "setData");
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         const file = new File(["content"], "x.txt", { type: "text/plain" });
-        const loader = fileRepository.createLoader(file);
-        const uploadId = loader?.id;
-
-        insertReference(uploadId);
-
+        editor.execute("fileUpload", { file: [ file ] });
         await waitFor(() => controls.uploadCalled());
+        controls.resolveUpload({ default: "#root/abc" });
 
-        const setDataSpy = vi.spyOn(editor, "setData");
-        controls.resolveUpload({ default: "api/attachments/done/download" });
-
-        // Wait for the .then chain plus the 100ms froca delay.
+        // Long enough for any delayed step of the upload chain.
         await new Promise((res) => setTimeout(res, 250));
 
-        expect(setDataSpy).toHaveBeenCalled();
+        expect(getModelData(editor.model))
+            .toBe("<paragraph><reference href=\"#root/abc\"></reference> []</paragraph>");
+        expect(setDataSpy).not.toHaveBeenCalled();
+
+        // Undo takes back the inserted link, not the completion of its upload.
+        editor.execute("undo");
+        expect(getModelData(editor.model)).toBe("<paragraph>[]</paragraph>");
+    });
+
+    it("announces each upload and settles `done` whatever the outcome", async () => {
+        const controls = installUploadAdapter(editor);
+        vi.spyOn(editor.plugins.get(Notification), "showWarning").mockImplementation(() => {});
+        const uploads: FileUploadData[] = [];
+        editor.plugins.get(FileUploadEditing).on<FileUploadEvent>("upload", (_evt, upload) => {
+            uploads.push(upload);
+        });
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        for (const outcome of [ "resolve", "reject" ]) {
+            editor.execute("fileUpload", { file: [ new File(["content"], `${outcome}.pdf`) ] });
+            await waitFor(() => uploads.length > 0 && controls.uploadCalled());
+
+            const upload = uploads.pop();
+            expect(upload?.fileName).toBe(`${outcome}.pdf`);
+            expect(upload?.loader).toBe(editor.plugins.get(FileRepository).loaders.last);
+
+            let isDone = false;
+            void upload?.done.then(() => {
+                isDone = true;
+            });
+            await flushAsync();
+            expect(isDone).toBe(false);
+
+            if (outcome === "resolve") {
+                controls.resolveUpload({ default: "#root/abc" });
+            } else {
+                setLoaderStatus(upload?.loader ?? null, "error");
+                controls.rejectUpload("boom");
+            }
+            await flushAsync();
+            expect(isDone).toBe(true);
+        }
+    });
+
+    it("uploads a quiet file without announcing it", async () => {
+        const controls = installUploadAdapter(editor);
+        const announced = vi.fn();
+        editor.plugins.get(FileUploadEditing).on<FileUploadEvent>("upload", announced);
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        const file = new File(["{}"], "Canvas.excalidraw");
+        editor.execute("fileUpload", { file: [ file ], quiet: true });
+        await waitFor(() => controls.uploadCalled());
+
+        expect(announced).not.toHaveBeenCalled();
     });
 
     it("aborts the loader when the placeholder is inserted into the graveyard", () => {
@@ -507,7 +562,7 @@ class ReferenceSchema extends Plugin {
             allowWhere: "$text",
             isInline: true,
             isObject: true,
-            allowAttributes: ["href", "uploadId", "uploadStatus"]
+            allowAttributes: ["href", "uploadId", "uploadStatus", "uploadFileName"]
         });
 
         conversion.for("editingDowncast").elementToElement({
@@ -545,3 +600,61 @@ class ReferenceSchema extends Plugin {
         );
     }
 }
+
+describe("FileUploadEditing with embeds", () => {
+    it("completes an embed placeholder with the attachment it uploaded", async () => {
+        const loadEmbeddedAttachment = vi.fn();
+        const focusContentEmbed = vi.fn();
+        installGlobMock({
+            getComponentByEl: () => ({
+                getEmbedBoxSize: () => "small",
+                loadEmbeddedAttachment,
+                focusContentEmbed
+            })
+        });
+        const editor = await createTestEditor([
+            Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema,
+            ContentEmbed, FileUploadEditing
+        ]);
+        const controls = installUploadAdapter(editor);
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        const file = new File(["content"], "report.pdf", { type: "application/pdf" });
+        editor.execute("fileUpload", { file: [ file ], asEmbed: true });
+        await waitFor(() => controls.uploadCalled());
+        controls.resolveUpload({ default: "#root/owner?viewMode=attachments&attachmentId=att1" });
+        await waitFor(() => !getModelData(editor.model).includes("uploadId"));
+
+        expect(getModelData(editor.model)).toBe(
+            "<contentEmbed attachmentId=\"att1\" boxSize=\"small\"></contentEmbed>" +
+            "<paragraph>[]</paragraph>"
+        );
+        editor.editing.view.getDomRoot()?.querySelectorAll("div.include-note-wrapper");
+        expect(loadEmbeddedAttachment).toHaveBeenCalledWith("att1", expect.anything(), "small");
+        expect(focusContentEmbed).not.toHaveBeenCalled();
+    });
+
+    it("asks the host to focus the embed of a focus upload, before it renders", async () => {
+        const calls: string[] = [];
+        installGlobMock({
+            getComponentByEl: () => ({
+                loadEmbeddedAttachment: (id: string) => calls.push(`load ${id}`),
+                focusContentEmbed: (id: string) => calls.push(`focus ${id}`)
+            })
+        });
+        const editor = await createTestEditor([
+            Essentials, Paragraph, FileRepository, Notification, Clipboard, ReferenceSchema,
+            ContentEmbed, FileUploadEditing
+        ]);
+        const controls = installUploadAdapter(editor);
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        const file = new File(["{}"], "Canvas.excalidraw");
+        editor.execute("fileUpload", { file: [ file ], asEmbed: true, focusEmbed: true });
+        await waitFor(() => controls.uploadCalled());
+        controls.resolveUpload({ default: "#root/owner?viewMode=attachments&attachmentId=att1" });
+        await waitFor(() => !getModelData(editor.model).includes("uploadId"));
+
+        expect(calls).toEqual([ "focus att1", "load att1" ]);
+    });
+});

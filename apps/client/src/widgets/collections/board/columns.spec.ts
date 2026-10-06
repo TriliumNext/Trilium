@@ -8,7 +8,9 @@ import { buildNote } from "../../../test/easy-froca";
 import {
     BOARD_TEMPLATE_ID,
     canStoreColumnsInDefinition,
+    columnWidthClass,
     getStatusDefinition,
+    parseColumnWidth,
     resolveBoardColumns
 } from "./columns";
 
@@ -169,3 +171,68 @@ function buildBoard(
 
     return board;
 }
+
+describe("the inbox column", () => {
+    /** A column is its grouping value, and the inbox stands for the cards carrying none. */
+    it("is kept where the board's own list carries it", () => {
+        expect(resolveBoardColumns([ "To Do" ], [ "", "To Do" ], [ "To Do" ]))
+            .toEqual([ "", "To Do" ]);
+    });
+
+    it("is not made by a note carrying no value, nor by a gap in the definition", () => {
+        // `options=To Do;;Done` names nothing in the middle, and an unfiled note names nothing.
+        expect(resolveBoardColumns([ "To Do", "", "Done" ], [ "To Do", "Done" ], [ "", "To Do" ]))
+            .toEqual([ "To Do", "Done" ]);
+    });
+
+    /**
+     * Only the board's own list can name the inbox, and that list is read after the definition's
+     * options, so a grouping the definition leads would put the inbox behind every one of them.
+     */
+    it("leads even where the definition leads on the order", () => {
+        expect(resolveBoardColumns([ "High", "Low" ], [ "" ], [ "High", "Low" ]))
+            .toEqual([ "", "High", "Low" ]);
+    });
+
+    it("leads a list the board arranged itself, wherever that list carries it", () => {
+        expect(resolveBoardColumns([ "To Do", "Done" ], [ "To Do", "", "Done" ], []))
+            .toEqual([ "", "To Do", "Done" ]);
+    });
+
+    /** Deleting is recorded as `undefined`, which the inbox's own name must not be taken for. */
+    it("is told apart from a column being deleted", () => {
+        const pending = new Map([ [ "Done", undefined ] ]);
+
+        expect(resolveBoardColumns([ "To Do", "Done" ], [ "", "To Do", "Done" ], [], pending))
+            .toEqual([ "", "To Do" ]);
+    });
+});
+
+describe("parseColumnWidth", () => {
+    /** The label is the user's to write by hand, so it can name a width the board does not have. */
+    it("reads the three widths and falls back to the narrow default", () => {
+        expect(parseColumnWidth("narrow")).toBe("narrow");
+        expect(parseColumnWidth("medium")).toBe("medium");
+        expect(parseColumnWidth("wide")).toBe("wide");
+
+        expect(parseColumnWidth("enormous")).toBe("narrow");
+        expect(parseColumnWidth("")).toBe("narrow");
+        expect(parseColumnWidth(null)).toBe("narrow");
+        expect(parseColumnWidth(undefined)).toBe("narrow");
+    });
+});
+
+describe("columnWidthClass", () => {
+    it("names a class only for a width the board names itself", () => {
+        expect(columnWidthClass("narrow")).toBe("board-narrow-columns");
+        expect(columnWidthClass("medium")).toBe("board-medium-columns");
+        expect(columnWidthClass("wide")).toBe("board-wide-columns");
+
+        // Nothing to wear, so `--board-column-width` keeps the value it inherits. A theme setting
+        // that variable is what this leaves room for.
+        expect(columnWidthClass("enormous")).toBeUndefined();
+        expect(columnWidthClass("")).toBeUndefined();
+        expect(columnWidthClass(null)).toBeUndefined();
+        expect(columnWidthClass(undefined)).toBeUndefined();
+    });
+});

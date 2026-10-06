@@ -25,6 +25,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 مبني على كتابة الملاحظات بالتفرعات الشجرية مع التركيز على بناء قاعدة بيانات
 معرفية ضخمة.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⬇️ التنزيل

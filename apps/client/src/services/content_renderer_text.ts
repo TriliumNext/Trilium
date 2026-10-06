@@ -7,7 +7,7 @@ import froca from "./froca.js";
 import { t } from "./i18n.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
-import { getMermaidConfig, loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
+import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
 import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
@@ -27,7 +27,7 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
 
 /**
  * Apply the post-render passes that make CKEditor-compatible HTML fully
- * interactive: expand `<section class="include-note">`, render inline math and
+ * interactive: expand `<figure class="include-note">`, render inline math and
  * Mermaid diagrams, rewrite reference-link titles, and highlight code blocks.
  * Assumes the caller has already appended the HTML inside a `.ck-content` child
  * of `$renderedContent`.
@@ -35,14 +35,14 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
     seenNoteIds.add("noteId" in note ? note.noteId : note.attachmentId);
-    if (options.noIncludedNotes) {
-        $renderedContent.find("section.include-note").remove();
-    } else if (options.includesAsReferenceLinks) {
-        // This note is itself an included note in display mode: stop after the first level by
-        // degrading its own includes to reference links instead of expanding them.
-        replaceIncludesWithReferenceLinks($renderedContent[0]);
+    if (options.noContentEmbeds) {
+        $renderedContent.find(".include-note").remove();
+    } else if (options.embedsAsReferenceLinks) {
+        // This note is itself an embedded note in display mode: stop after the first level by
+        // degrading its own embeds to reference links instead of expanding them.
+        await replaceEmbedsWithReferenceLinks($renderedContent[0]);
     } else {
-        await renderIncludedNotes($renderedContent[0], seenNoteIds, options.expandNestedIncludes ?? false);
+        await renderContentEmbeds($renderedContent[0], seenNoteIds, options.expandNestedEmbeds ?? false);
     }
 
     if ($renderedContent.find("span.math-tex").length > 0) {
@@ -75,14 +75,14 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     }
 }
 
-async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>, expandNested: boolean) {
+async function renderContentEmbeds(contentEl: HTMLElement, seenNoteIds: Set<string>, expandNested: boolean) {
     // TODO: Consider duplicating with server's share/content_renderer.ts.
-    const includeNoteEls = contentEl.querySelectorAll("section.include-note");
+    const embedEls = contentEl.querySelectorAll(".include-note");
 
     // Gather the list of items to load.
     const noteIds: string[] = [];
-    for (const includeNoteEl of includeNoteEls) {
-        const noteId = includeNoteEl.getAttribute("data-note-id");
+    for (const embedEl of embedEls) {
+        const noteId = embedEl.getAttribute("data-note-id");
         if (noteId) {
             noteIds.push(noteId);
         }
@@ -92,53 +92,108 @@ async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<stri
     await froca.getNotes(noteIds);
 
     // Render and integrate the notes.
-    for (const includeNoteEl of includeNoteEls) {
-        const noteId = includeNoteEl.getAttribute("data-note-id");
+    for (const embedEl of embedEls) {
+        // A Tiny embed shows only a title, so it links to what it shows instead of rendering it.
+        if (embedEl.getAttribute("data-box-size") === "tiny") {
+            await replaceEmbedWithReferenceLink(embedEl);
+            continue;
+        }
+
+        const attachment = await getEmbeddedAttachment(embedEl);
+        if (attachment) {
+            const { $renderedContent } = await content_renderer.getRenderedContent(attachment);
+            replaceEmbedContent(embedEl, $renderedContent.toArray());
+            continue;
+        }
+
+        const noteId = embedEl.getAttribute("data-note-id");
         if (!noteId) continue;
 
         const note = froca.getNoteFromCache(noteId);
         if (!note) {
-            console.warn(`Unable to include ${noteId} because it could not be found.`);
+            console.warn(`Unable to embed ${noteId} because it could not be found.`);
             continue;
         }
 
         if (seenNoteIds.has(noteId)) {
-            console.warn(`Skipping inclusion of ${noteId} to avoid circular reference.`);
-            includeNoteEl.remove();
+            console.warn(`Skipping embedding of ${noteId} to avoid circular reference.`);
+            embedEl.remove();
             continue;
         }
 
-        // On display only the first level is expanded: the included note is rendered with its own
-        // includes degraded to reference links. Printing/export keeps expanding recursively.
+        // On display only the first level is expanded: the embedded note is rendered with its own
+        // embeds degraded to reference links. Printing/export keeps expanding recursively.
         // Clone seenNoteIds per descent so it tracks the current ancestor path only — sibling
-        // branches must not pollute each other (a note included in two sub-trees is not a cycle).
+        // branches must not pollute each other (a note embedded in two sub-trees is not a cycle).
         const renderedContent = (await content_renderer.getRenderedContent(note, expandNested
-            ? { seenNoteIds: new Set(seenNoteIds), expandNestedIncludes: true }
-            : { seenNoteIds: new Set(seenNoteIds), includesAsReferenceLinks: true }
+            ? { seenNoteIds: new Set(seenNoteIds), expandNestedEmbeds: true }
+            : { seenNoteIds: new Set(seenNoteIds), embedsAsReferenceLinks: true }
         )).$renderedContent;
-        includeNoteEl.replaceChildren(...renderedContent);
+        replaceEmbedContent(embedEl, renderedContent.toArray());
     }
 }
 
+/** Puts `content` in an embed, followed by the embed's caption. */
+function replaceEmbedContent(embedEl: Element, content: Node[]) {
+    const caption = getEmbedCaption(embedEl);
+    embedEl.replaceChildren(...content, ...(caption ? [ caption ] : []));
+}
+
+/** The caption of an embed, or `null` for a Tiny embed, which shows none. */
+export function getEmbedCaption(embedEl: Element) {
+    if (embedEl.getAttribute("data-box-size") === "tiny") {
+        return null;
+    }
+
+    return embedEl.querySelector<HTMLElement>(":scope > figcaption");
+}
+
 /**
- * Replace each `section.include-note` in the given content with a bare reference link to the
- * included note, without expanding it. Used on display to stop inclusion after the first level so a
- * note's transitive include graph is not rendered inline. The link's title, icon and colour are
+ * Replace each `.include-note` in the given content with a bare reference link to the
+ * embedded note, without expanding it. Used on display to stop embedding after the first level so a
+ * note's transitive embed graph is not rendered inline. The link's title, icon and colour are
  * filled in by the reference-link post-processing pass in `postProcessRichContent` (the same pass
  * that resolves reference links authored in the note), which also batch-prefetches the note.
  */
-function replaceIncludesWithReferenceLinks(contentEl: HTMLElement) {
-    for (const includeNoteEl of contentEl.querySelectorAll("section.include-note")) {
-        const noteId = includeNoteEl.getAttribute("data-note-id");
-        // Validate the ID against a note-ID allow-list before interpolating it into the href: it
-        // comes from note HTML, and the reference-link pass later reinterprets that href.
-        if (!noteId || !/^[a-zA-Z0-9_]+$/.test(noteId)) continue;
+async function replaceEmbedsWithReferenceLinks(contentEl: HTMLElement) {
+    for (const embedEl of contentEl.querySelectorAll(".include-note")) {
+        await replaceEmbedWithReferenceLink(embedEl);
+    }
+}
 
+/** Replaces `embedEl` with a bare reference link to the note or attachment it shows. */
+async function replaceEmbedWithReferenceLink(embedEl: Element) {
+    const attachment = await getEmbeddedAttachment(embedEl);
+    if (attachment) {
+        const { ownerId, attachmentId } = attachment;
+        const href = `#root/${ownerId}?viewMode=attachments&attachmentId=${attachmentId}`;
         const referenceLink = document.createElement("a");
         referenceLink.className = "reference-link";
-        referenceLink.setAttribute("href", `#root/${noteId}`);
-        includeNoteEl.replaceWith(referenceLink);
+        referenceLink.setAttribute("href", href);
+        embedEl.replaceWith(referenceLink);
+        return;
     }
+
+    const noteId = embedEl.getAttribute("data-note-id");
+    // Validate the ID against a note-ID allow-list before interpolating it into the href: it
+    // comes from note HTML, and the reference-link pass later reinterprets that href.
+    if (!noteId || !/^[a-zA-Z0-9_]+$/.test(noteId)) return;
+
+    const referenceLink = document.createElement("a");
+    referenceLink.className = "reference-link";
+    referenceLink.setAttribute("href", `#root/${noteId}`);
+    embedEl.replaceWith(referenceLink);
+}
+
+/** The attachment an embed shows, or `null` for an embed of a note. */
+async function getEmbeddedAttachment(embedEl: Element) {
+    const attachmentId = embedEl.getAttribute("data-attachment-id");
+    // The ID comes from note HTML, so it is checked before it reaches a request or an href.
+    if (!attachmentId || !/^[a-zA-Z0-9_]+$/.test(attachmentId)) {
+        return null;
+    }
+
+    return await froca.getAttachment(attachmentId, true);
 }
 
 /** Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it. */
@@ -242,7 +297,6 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     // surfaces its own error instead of blanking the diagrams beside it.
     for (const { visible, source } of pending) {
         try {
-            await loadElkIfNeeded(mermaid, source);
             const { svg } = await mermaid.render(`mermaid-inline-${mermaidRenderId++}`, source);
             const processed = postprocessMermaidSvg(svg);
             visible.innerHTML = processed;

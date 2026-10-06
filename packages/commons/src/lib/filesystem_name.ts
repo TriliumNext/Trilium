@@ -20,7 +20,7 @@
 export const FORBIDDEN_FILE_NAME_CHARACTERS = '<>:"/\\|?*';
 
 /** Reserved device names on Windows, which cannot be a file name there whatever the extension. */
-const RESERVED_FILE_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+const RESERVED_FILE_NAMES = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i;
 
 /**
  * Drops every character a file name may not contain, and nothing else.

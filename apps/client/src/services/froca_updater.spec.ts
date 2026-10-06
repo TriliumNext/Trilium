@@ -211,6 +211,28 @@ describe("froca_updater - branch changes", () => {
         expect(triggerSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("reports a deleted branch that froca already dropped while its notes are loaded", async () => {
+        // `froca.addResp()` replaces a refreshed note's parent branches, so a subtree load can
+        // remove the branch before the WebSocket update that deletes it arrives (#7288).
+        const parent = buildNote({ title: "Main", children: [{ title: "Moved" }] });
+        const childId = parent.children[0];
+        const branchId = `${parent.noteId}_${childId}`;
+        delete froca.branches[branchId];
+
+        await process([ec({
+            entityName: "branches",
+            entityId: branchId,
+            componentId: "comp-b",
+            entity: { branchId, noteId: childId, parentNoteId: parent.noteId, isDeleted: true } as any
+        })]);
+
+        expect(triggerSpy).toHaveBeenCalledTimes(1);
+        const { loadResults } = triggerSpy.mock.calls[0][1] as { loadResults: LoadResults };
+        expect(loadResults.getBranchRows()).toEqual([
+            expect.objectContaining({ branchId, noteId: childId, parentNoteId: parent.noteId, isDeleted: true })
+        ]);
+    });
+
     it("returns early for a deleted branch that is not loaded", async () => {
         await process([ec({
             entityName: "branches",

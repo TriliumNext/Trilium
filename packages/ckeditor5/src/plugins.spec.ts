@@ -9,8 +9,9 @@ import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import { CHAT_INPUT_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
+import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
 import TriliumFormatPainter from "./plugins/format_painter/format_painter.js";
-import IncludeNote from "./plugins/includenote.js";
+import ContentEmbed from "./plugins/content_embed/content_embed.js";
 import InternalLinkPlugin from "./plugins/internallink.js";
 import LinkEmbed from "./plugins/link_embed/link_embed.js";
 import TriliumSlashCommands from "./plugins/mention/slash_commands.js";
@@ -77,8 +78,9 @@ describe("plugin lists", () => {
     it("COMMON_PLUGINS includes the in-tree Trilium feature plugins", () => {
         expect(COMMON_PLUGINS).toContain(CutToNotePlugin);
         expect(COMMON_PLUGINS).toContain(InternalLinkPlugin);
-        expect(COMMON_PLUGINS).toContain(IncludeNote);
+        expect(COMMON_PLUGINS).toContain(ContentEmbed);
         expect(COMMON_PLUGINS).toContain(LinkEmbed);
+        expect(COMMON_PLUGINS).toContain(FindInLinkWidgets);
         expect(COMMON_PLUGINS).toContain(Uploadfileplugin);
     });
 

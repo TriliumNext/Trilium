@@ -1,3 +1,5 @@
+import { isProviderOfKind, type LlmProviderKind } from "@triliumnext/commons";
+
 import { getLog } from "../../services/log.js";
 import optionService from "../../services/options.js";
 
@@ -14,6 +16,8 @@ export interface LlmProviderSetup {
     id: string;
     name: string;
     provider: string;
+    /** Absent in configurations saved before search providers existed, all of which are `"llm"`. */
+    kind?: LlmProviderKind;
     apiKey: string;
     /** Optional override for the SDK's default API endpoint (e.g. for self-hosted Ollama, vLLM, or proxies). */
     baseURL?: string;
@@ -26,7 +30,7 @@ export interface LlmProviderSetup {
 }
 
 /** Provider type identifiers that can be instantiated, for error messages. */
-const PROVIDER_TYPES = ["anthropic", "openai", "google", "deepseek", "claude-agent", "copilot-agent", "ollama", "lmstudio", "openai-compatible"];
+const PROVIDER_TYPES = ["anthropic", "openai", "google", "deepseek", "claude-agent", "copilot-agent", "antigravity-agent", "codex-agent", "ollama", "lmstudio", "openai-compatible"];
 
 /**
  * Instantiate a provider from its type identifier.
@@ -65,6 +69,10 @@ async function createProviderInstance(provider: string, apiKey: string, baseURL?
             return await createHostProvider("claude-agent");
         case "copilot-agent":
             return await createHostProvider("copilot-agent");
+        case "antigravity-agent":
+            return await createHostProvider("antigravity-agent");
+        case "codex-agent":
+            return await createHostProvider("codex-agent");
         // Self-hosted endpoints. The three cards differ only in the URL and setup
         // hint the UI prefills; they all speak the OpenAI-compatible API, with
         // Ollama and LM Studio additionally offering a richer native listing.
@@ -88,7 +96,25 @@ let cachedProviders: Record<string, LlmProvider> = {};
 let cachedProvidersSource: string | null = null;
 
 /**
- * Get configured providers from the options.
+ * The configured search provider with the config id `searchProviderId`, or undefined when there is
+ * none, so web search falls back to the model's built-in search.
+ */
+export function getSearchProviderSetup(searchProviderId: string | undefined): LlmProviderSetup | undefined {
+    if (!searchProviderId) {
+        return undefined;
+    }
+    try {
+        const configs = JSON.parse(optionService.getOptionOrNull("llmProviders") ?? "[]") as LlmProviderSetup[];
+        return configs.find(c => c.id === searchProviderId && isProviderOfKind(c, "search"));
+    } catch (e) {
+        getLog().error(`Failed to parse llmProviders option: ${e}`);
+        return undefined;
+    }
+}
+
+/**
+ * Get the configured chat providers from the options. Search providers share the option and are
+ * left out, so none of them is ever picked to answer a chat.
  */
 function getConfiguredProviders(): LlmProviderSetup[] {
     try {
@@ -100,7 +126,7 @@ function getConfiguredProviders(): LlmProviderSetup[] {
         if (!providersJson) {
             return [];
         }
-        return JSON.parse(providersJson) as LlmProviderSetup[];
+        return (JSON.parse(providersJson) as LlmProviderSetup[]).filter(c => isProviderOfKind(c, "llm"));
     } catch (e) {
         getLog().error(`Failed to parse llmProviders option: ${e}`);
         return [];

@@ -70,11 +70,15 @@ describe("spreadsheet preview styling", () => {
             if (gridlinesColor) workbook.workbook.sheets.s1.gridlinesColor = gridlinesColor;
             document.body.innerHTML =
                 `<div class="ck-content office-preview-body">${renderSpreadsheetToHtml(JSON.stringify(workbook))}</div>`;
-            // The second cell styles nothing of its own, so what it shows is the gridline.
-            return getComputedStyle(document.querySelectorAll("td")[1]).borderTopColor;
+            // Read where GRIDLINE_RULE reads it: happy-dom substitutes only the first var() of a
+            // value, so the rule's second one — the color — never reaches a cell's border there.
+            return getComputedStyle(document.querySelectorAll(".spreadsheet-table")[0])
+                .getPropertyValue("--spreadsheet-gridline-color");
         };
 
         expect(gridlineColor()).toBe("#aabbcc");
+        // The second cell styles nothing of its own, so the gridline is the border it draws.
+        expect(getComputedStyle(document.querySelectorAll("td")[1]).borderTopStyle).toBe("solid");
         expect(gridlineColor("#00FF00")).toBe("#00FF00");
     });
 

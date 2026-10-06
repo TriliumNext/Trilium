@@ -3,7 +3,7 @@ import { CalendarOptions, Calendar as FullCalendar } from "fullcalendar";
 import { RefObject } from "preact";
 
 export interface CalendarProps extends CalendarOptions {
-    calendarRef?: RefObject<FullCalendar>;
+    calendarRef?: RefObject<FullCalendar | null>;
 }
 
 export default function Calendar({ calendarRef, ...options }: CalendarProps) {

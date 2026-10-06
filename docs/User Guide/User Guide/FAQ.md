@@ -8,6 +8,20 @@
 > [!NOTE]
 > Despite the fact that the Trillium flower has two “l"s, the Trilium application only has one.
 
+## How do I create a folder?
+
+Trilium has no separate folder type: any note can have child notes, so any note can act as a folder. A note can hold its own content and have children at the same time, unlike a file system, which separates files from directories.
+
+To organize notes into a folder:
+
+1.  Create a note that acts as the folder, for example "Projects".
+2.  Right-click it in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_, or hover over it and press the <span class="tn-icon bx bx-plus"></span> button.
+3.  To move existing notes into it, drag them onto it in the tree.
+
+The children of a note are listed at the end of its content (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>).
+
+If you want the note to look like a folder, with no content of its own and only its children shown, make it a collection instead: right-click in the tree, select _Collections_, then choose <a class="reference-link" href="Collections/Grid%20View.md">Grid View</a> or <a class="reference-link" href="Collections/List%20View.md">List View</a>. See <a class="reference-link" href="Collections.md">Collections</a> for the other views, such as tables, boards and calendars.
+
 ## macOS support
 
 Originally, Trilium Notes considered the macOS build unsupported. TriliumNext commits to make the experience on macOS as good as possible.

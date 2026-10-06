@@ -246,6 +246,45 @@ describe("checkImageAttachments", () => {
 
             expect(att.save).not.toHaveBeenCalled();
         });
+
+        it("keeps an attachment alive that only an embed shows", () => {
+            const pdf = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const note = buildNote({ title: "Test", attachments: [ pdf ] });
+            mockAttachmentSaves(note);
+            const [att] = note.getAttachments();
+
+            checkImageAttachments(note, embedOf(att.attachmentId ?? ""));
+
+            expect(att.save).not.toHaveBeenCalled();
+        });
+
+        it("points an embed of a foreign attachment at the note's own copy", () => {
+            const report = { title: "report.pdf", role: "file", mime: "application/pdf" };
+            const source = buildNote({
+                title: "Source",
+                attachments: [{ id: "foreignAtt2", ...report }]
+            });
+            const [ foreign ] = source.getAttachments();
+            foreign.blobId = "sharedPdfBlob";
+
+            const target = buildNote({
+                title: "Target",
+                attachments: [{ id: "localAtt2", ...report }]
+            });
+            mockAttachmentSaves(target);
+            const [ local ] = target.getAttachments();
+            local.blobId = "sharedPdfBlob";
+
+            const getAttachments = vi.spyOn(becca, "getAttachments").mockReturnValue([ foreign ]);
+
+            try {
+                const { content } = checkImageAttachments(target, embedOf("foreignAtt2"));
+
+                expect(content).toBe(embedOf("localAtt2"));
+            } finally {
+                getAttachments.mockRestore();
+            }
+        });
     });
 
     describe("Markdown content", () => {
@@ -711,6 +750,25 @@ describe("saveLinks", () => {
         expect(imageLink.markAsDeleted).not.toHaveBeenCalled();
     });
 
+    it("keeps the includeNoteLink relations of a text note's includes, of either element", () => {
+        const note = buildNote({ title: "Test" });
+        const [ figureTarget, sectionTarget, staleTarget ] = [ "Figure", "Section", "Stale" ]
+            .map((title) => buildNote({ title }));
+        const [ figureLink, sectionLink, staleLink ] = [ figureTarget, sectionTarget, staleTarget ]
+            .map((target) => makeLinkRelation(note.noteId, "includeNoteLink", target.noteId));
+        note.getRelations = () => [ figureLink, sectionLink, staleLink ];
+        note.getAttachments = () => [];
+
+        saveLinks(note, `<figure class="include-note" data-note-id="${figureTarget.noteId}"`
+            + ` data-box-size="medium"><figcaption>Caption</figcaption></figure>`
+            + `<section class="include-note" data-note-id="${sectionTarget.noteId}"`
+            + ` data-box-size="small">&nbsp;</section>`);
+
+        expect(figureLink.markAsDeleted).not.toHaveBeenCalled();
+        expect(sectionLink.markAsDeleted).not.toHaveBeenCalled();
+        expect(staleLink.markAsDeleted).toHaveBeenCalled();
+    });
+
     it("does not delete existing internalLink relations on markdown notes using #root links", () => {
         const note = buildNote({ title: "Test", type: "code", mime: "text/x-markdown" });
         const targetNote = buildNote({ title: "Other Note" });
@@ -1059,3 +1117,8 @@ describe("findLlmChatLinks", () => {
         expect(links).toEqual([]);
     });
 });
+
+/** An embed of the attachment, as the text editor saves one. */
+function embedOf(attachmentId: string) {
+    return `<section class="include-note" data-attachment-id="${attachmentId}">` + "</section>";
+}

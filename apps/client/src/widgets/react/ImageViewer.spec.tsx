@@ -68,17 +68,18 @@ describe("ImageViewer", () => {
 
         const sections = collectShortcutHints(host);
         expect(sections).toHaveLength(3);
+        // The first two sections are ZOOM_PAN_HINTS, shared with every other zoom/pan viewport.
         expect(sections[0].hints.map(h => h.labelKey)).toEqual([
-            "image_viewer.hints.zoom_in",
-            "image_viewer.hints.zoom_out",
-            "image_viewer.hints.reset_zoom"
+            "zoom_controls.hints.zoom_in",
+            "zoom_controls.hints.zoom_out",
+            "zoom_controls.hints.reset_zoom"
         ]);
         expect(sections[1].hints.map(h => h.labelKey)).toEqual([
-            "image_viewer.hints.pan_up",
-            "image_viewer.hints.pan_down",
-            "image_viewer.hints.pan_left",
-            "image_viewer.hints.pan_right",
-            "image_viewer.hints.pan_fast"
+            "zoom_controls.hints.pan_up",
+            "zoom_controls.hints.pan_down",
+            "zoom_controls.hints.pan_left",
+            "zoom_controls.hints.pan_right",
+            "zoom_controls.hints.pan_fast"
         ]);
         expect(sections[2].hints.map(h => h.labelKey)).toEqual([
             "image_viewer.hints.next_image",
@@ -109,7 +110,33 @@ describe("ImageViewer", () => {
         expect(props.doubleClick).toEqual({ mode: "reset" });
         // Numeric envelope is user-tunable — assert sane relationships, not exact values.
         expect(props.maxScale).toBeGreaterThan(props.minScale);
-        expect(props.wheel.step).toBeGreaterThan(0);
+        // The library cannot make a notch each way cancel, so useZoomPanWheel handles the wheel.
+        expect(props.wheel).toEqual({ disabled: true });
+    });
+
+    it("pans at any scale standalone, but only once zoomed in when embedded in a note", () => {
+        renderViewer({ src: "x" });
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+
+        // At the fitted size a drag scrolls the note.
+        renderViewer({ src: "x", environment: "embedded" });
+        const props = transformWrapperSpy.mock.lastCall?.[0];
+        expect(props.panning).toEqual({ disabled: true });
+        act(() => props.onTransform(null, { scale: 2 }));
+        expect(transformWrapperSpy.mock.lastCall?.[0].panning).toEqual({ disabled: false });
+    });
+
+    it("keeps the zoom controls but drops the shortcut-hints button when embedded", async () => {
+        const standalone = renderViewer({ src: "x" });
+        await vi.waitFor(() => {
+            expect(standalone.querySelector(".shortcut-hint-button-group")).not.toBeNull();
+        });
+
+        const embedded = renderViewer({ src: "x", environment: "embedded" });
+        await vi.waitFor(() => {
+            expect(embedded.querySelector(".image-viewer-controls")).not.toBeNull();
+        });
+        expect(embedded.querySelector(".shortcut-hint-button-group")).toBeNull();
     });
 
     it("lets minScale and maxScale be overridden", () => {

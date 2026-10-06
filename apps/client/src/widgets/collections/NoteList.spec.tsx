@@ -18,11 +18,19 @@ import Component from "../../components/component";
 import type FNote from "../../entities/fnote";
 import type { EntityChange } from "../../server_types";
 import LoadResults from "../../services/load_results";
-import { buildNote } from "../../test/easy-froca";
+import { buildNote, buildNotes } from "../../test/easy-froca";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteList, useNoteIds } from "./NoteList";
 
 let currentNoteIds: string[] = [];
+
+// The child ids below stand for real notes: a collection view resolves the ids it is given through
+// froca.getNotes(), which round-trips to the server for anything the mock does not hold.
+buildNotes([
+    { id: "child-a", title: "Child A" },
+    { id: "child-b", title: "Child B" },
+    { id: "child-new", title: "Child New" }
+]);
 
 /** Drains the chained awaits in `refreshNoteIds` (getNoteIds → search promise → setNoteIds). */
 async function flushMicrotasks() {
@@ -232,7 +240,9 @@ describe("CustomNoteList visibility latch", () => {
 
     it("keeps observing after a non-intersecting callback and renders once visible", async () => {
         const note = buildNote({ title: "Parent", type: "text" });
-        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ "child-a" ]);
+        // A note froca holds, since the list renders it and asks froca for it by id.
+        const child = buildNote({ title: "Child", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ child.noteId ]);
         note.getAttachmentsByRole = vi.fn(async () => []);
 
         const parent = new Component();
@@ -272,5 +282,57 @@ describe("CustomNoteList visibility latch", () => {
         await act(async () => observer.fire(true));
         expect(observer.disconnect).toHaveBeenCalled();
         expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+    });
+
+    it("waits for the note content before observing, and drops the latch when a new load starts", async () => {
+        const note = buildNote({ title: "Parent", type: "text" });
+        // A note froca holds, since the list renders it and asks froca for it by id.
+        const child = buildNote({ title: "Child", type: "text" });
+        note.getChildNoteIdsWithArchiveFiltering = vi.fn(async () => [ child.noteId ]);
+        note.getAttachmentsByRole = vi.fn(async () => []);
+
+        const parent = new Component();
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+
+        const renderList = async (contentReady: boolean) => {
+            await act(async () => {
+                render(
+                    <ParentComponent.Provider value={parent}>
+                        <CustomNoteList
+                            note={note}
+                            viewType="grid"
+                            isEnabled={true}
+                            contentReady={contentReady}
+                            notePath={`root/${note.noteId}`}
+                            ntxId="ntx-1"
+                            media="screen"
+                        />
+                    </ParentComponent.Provider>,
+                    mountPoint
+                );
+            });
+            // Let the 10ms observe delay (Firefox race workaround) elapse.
+            await act(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 25));
+            });
+        };
+
+        // While the content is loading the widget still sits inside the viewport, so observing
+        // now would latch it visible on effectively every note.
+        await renderList(false);
+        expect(MockIntersectionObserver.instances.every((o) => o.observe.mock.calls.length === 0)).toBe(true);
+
+        // Content loaded: observe, and render once actually visible.
+        await renderList(true);
+        const observer = MockIntersectionObserver.instances.find((o) => o.observe.mock.calls.length > 0);
+        if (!observer) throw new Error("expected the note list to observe once the content loaded");
+        await act(async () => observer.fire(true));
+        expect(mountPoint.querySelector(".note-list-widget-content")).not.toBeNull();
+
+        // A new load (e.g. a note switch) resets the latch instead of keeping the list mounted.
+        await renderList(false);
+        expect(mountPoint.querySelector(".note-list-widget-content")).toBeNull();
     });
 });

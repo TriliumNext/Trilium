@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, _getViewData as getViewData, ClassicEditor, Code, Essentials, Paragraph } from "ckeditor5";
+import { _getViewData as getViewData, _setModelData as setModelData, ClassicEditor, Code, Essentials, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
@@ -15,39 +15,37 @@ describe("InlineCodeNoSpellcheck", () => {
         expect(editor.plugins.get(InlineCodeNoSpellcheck)).toBeInstanceOf(InlineCodeNoSpellcheck);
     });
 
-    it("renders inline code with spellcheck=false in the editing view", () => {
-        setModelData(editor.model, "<paragraph>foo<$text code=\"true\">bar</$text>baz</paragraph>");
-        const viewData = getViewData(editor.editing.view);
-        expect(viewData).toContain("spellcheck=\"false\"");
-        expect(viewData).toContain("<code");
+    it("disables spellcheck on inline code in the editing view but not in the data", () => {
+        setModelData(editor.model, `<paragraph>foo<$text code="true">bar</$text>baz</paragraph>`);
+
+        expect(getViewData(editor.editing.view, { withoutSelection: true }))
+            .toBe(`<p>foo<code spellcheck="false">bar</code>baz</p>`);
+        expect(editor.getData()).toBe("<p>foo<code>bar</code>baz</p>");
     });
 
-    it("renders inline code with spellcheck=false in the output data", () => {
-        setModelData(editor.model, "<paragraph>foo<$text code=\"true\">bar</$text>baz</paragraph>");
-        const data = editor.getData();
-        expect(data).toContain("spellcheck=\"false\"");
-        expect(data).toContain("<code");
-    });
-
-    it("does not add spellcheck=false to non-code text", () => {
-        setModelData(editor.model, "<paragraph>plain[]text</paragraph>");
-        const viewData = getViewData(editor.editing.view);
-        expect(viewData).not.toContain("spellcheck");
-    });
-
-    it("round-trips spellcheck=false through setData/getData", () => {
-        editor.setData("<p>hello <code>world</code></p>");
-        const data = editor.getData();
-        expect(data).toContain("spellcheck=\"false\"");
-        expect(data).toContain("<code");
-    });
-
-    it("applies spellcheck=false to code text adjacent to plain text", () => {
+    it("marks every run of inline code, and nothing else", () => {
         setModelData(editor.model,
-            "<paragraph><$text code=\"true\">start</$text> middle <$text code=\"true\">end</$text></paragraph>");
-        const data = editor.getData();
-        const matches = data.match(/spellcheck="false"/g);
-        expect(matches).not.toBeNull();
-        expect(matches?.length).toBeGreaterThanOrEqual(1);
+            `<paragraph><$text code="true">start</$text> middle <$text code="true">end</$text></paragraph>`);
+
+        expect(getViewData(editor.editing.view, { withoutSelection: true }))
+            .toBe(`<p><code spellcheck="false">start</code> middle <code spellcheck="false">end</code></p>`);
+        expect(editor.getData()).toBe("<p><code>start</code> middle <code>end</code></p>");
+    });
+
+    it("does not add spellcheck to plain text", () => {
+        setModelData(editor.model, "<paragraph>plain[]text</paragraph>");
+
+        expect(getViewData(editor.editing.view)).not.toContain("spellcheck");
+    });
+
+    // Notes saved before the attribute moved to the editing view, and Markdown that keeps a table
+    // as raw HTML, both hand the editor a <code> that may or may not carry spellcheck. Either way
+    // the data comes back plain, so re-saving a note stops rewriting its every inline code.
+    it("normalizes both spellings of <code> to a plain one in the data", () => {
+        editor.setData("<p>hello <code>world</code></p>");
+        expect(editor.getData()).toBe("<p>hello <code>world</code></p>");
+
+        editor.setData(`<p>hello <code spellcheck="false">world</code></p>`);
+        expect(editor.getData()).toBe("<p>hello <code>world</code></p>");
     });
 });

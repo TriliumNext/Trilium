@@ -26,7 +26,9 @@ const SMOOTHING = 0.8;
  * Caveat: once tapped, the element's audio flows through the AudioContext. On the desktop custom protocol the
  * element is cross-origin, so the tap is blocked (tainted) — audio still plays, the spectrum just reads zero.
  */
-export function useAudioAnalyser(mediaRef: RefObject<HTMLMediaElement>): () => Uint8Array | null {
+export function useAudioAnalyser(
+    mediaRef: RefObject<HTMLMediaElement | null>
+): () => Uint8Array | null {
     useEffect(() => {
         const media = mediaRef.current;
         if (!media) return;

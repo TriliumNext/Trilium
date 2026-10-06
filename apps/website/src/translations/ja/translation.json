@@ -80,7 +80,7 @@
         "table_title": "テーブル",
         "table_description": "ノートに関する情報を表形式で表示・編集できます。テキスト、数値、チェックボックス、日時、リンク、色など、様々な列タイプに対応し、リレーションもサポートしています。オプションで、ノートを表内のツリー階層に表示することもできます。",
         "board_title": "カンバンボード",
-        "board_description": "新しい項目や列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
+        "board_description": "新しいアイテムや列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
         "geomap_title": "ジオマップ",
         "geomap_description": "カスタマイズ可能なマーカーを使って、休暇を計画したり、興味のある場所を地図上に直接マークしたりできます。記録されたGPXトラックを表示して、旅程を追跡できます。",
         "title": "あらゆる視点からノートを確認できます",
@@ -177,11 +177,11 @@
         "quick_start": "ディストリビューションに応じて適切なパッケージ形式を選択してください:",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "ポータブル (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
-        "download_appimage": ".AppImage"
+        "download_appimage": ".AppImage",
+        "download_flathub": "Flathub"
     },
     "download_helper_desktop_macos": {
         "title_x64": "Intel 向け macOS",

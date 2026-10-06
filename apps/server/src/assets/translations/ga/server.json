@@ -313,7 +313,7 @@
     "task-state-doing": "Ag déanamh",
     "task-state-done": "Déanta",
     "task-state-maybe": "B’fhéidir",
-    "task-state-cancelled": "Cealaithe",
+    "task-state-cancelled": "Curtha ar ceal",
     "task-state-attr-state-id": "Aitheantóir (riachtanach)",
     "task-state-attr-markdown-symbol": "Siombail Markdown",
     "task-state-attr-is-completed": "Comhaireamh mar chríochnaithe",
@@ -330,7 +330,8 @@
   "notes": {
     "new-note": "Nóta nua",
     "duplicate-note-suffix": "(dúpáil)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Theip ar scriosadh nótaí: {{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "Níl an comhad loga cúil '{{ fileName }}' ann (go fóill).",

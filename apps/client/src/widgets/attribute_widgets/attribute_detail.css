@@ -20,15 +20,6 @@
     contain: none;
 }
 
-/* The type menu is portaled to `document.body` (see the Dropdown's `portalToBody`): the popup is a
-   scroll container (`overflow: auto` above), so an inline menu could only open by scrolling the form
-   under itself. In body it competes with the popup in the root stacking context, where the global
-   dropdown z-index (999) loses to the popup's 1060 — raise it above the popup, staying below the
-   confirmations and prompts (2000) the popup summons. */
-body > div.attr-input-label-type > .dropdown-menu {
-    --bs-dropdown-zindex: 1100;
-}
-
 /*
  * The same mark the name completion puts against a system name, and so the same colour: quiet, because
  * it tells the reader whose name this is rather than asking anything of them. Without a `--color` the

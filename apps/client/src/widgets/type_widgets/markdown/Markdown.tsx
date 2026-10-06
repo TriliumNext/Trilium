@@ -2,6 +2,7 @@ import "./Markdown.css";
 import "./MarkdownCommons.css";
 
 import VanillaCodeMirror from "@triliumnext/codemirror";
+import { findWikilinkNoteIds, triliumNoteChips } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
 import { createLiteralTildeExtension } from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
@@ -20,11 +21,12 @@ import { removeIndividualBinding } from "../../../services/shortcuts";
 import tree from "../../../services/tree";
 import utils, { isDesktop } from "../../../services/utils";
 import { useLegacyImperativeHandlers, useTriliumEvent } from "../../react/hooks";
+import { resolveNoteChip } from "../../search_field_editor";
 import { extractHighlightsFromStaticHtml, type RawHighlight } from "../../sidebar/highlights_extract";
 import SplitEditor from "../helpers/SplitEditor";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText";
 import { TypeWidgetProps } from "../type_widget";
-import { useSlashCommands } from "./completions";
+import { useMarkdownCompletions } from "./completions";
 import { insertText, replaceSelection, uploadImageAndInsert } from "./editor_utils";
 
 const marked = new Marked({ breaks: true, gfm: true });
@@ -103,7 +105,8 @@ export default function Markdown(props: TypeWidgetProps) {
     usePublishHighlights(props.noteContext, editorView, highlights, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(props.parentComponent, editorView);
-    useSlashCommands(props.parentComponent, editorView, props.note);
+    useNoteLinkChips(editorView);
+    useMarkdownCompletions(props.parentComponent, editorView, props.note, () => props.noteContext?.notePath);
     useMarkdownKeymap(editorView);
 
     const ctx = useMemo<MarkdownContextValue>(
@@ -120,6 +123,7 @@ export default function Markdown(props: TypeWidgetProps) {
                 onContentChanged={setContent}
                 previewContent={<MarkdownPreview ntxId={props.ntxId} />}
                 forceOrientation={isDesktop() ? "horizontal" : "vertical"}
+                allowKeyboardSuggestions
             />
         </MarkdownContext.Provider>
     );
@@ -269,9 +273,13 @@ function useSyncedScrolling(view: VanillaCodeMirror | null, preview: HTMLDivElem
 }
 
 /**
- * Highlights the preview block that corresponds to the editor's active line,
- * matching the built-in `cm-activeLine` behavior. Re-runs when the rendered
- * HTML changes so newly inserted blocks pick up the current cursor position.
+ * Marks the preview block that corresponds to the editor's active line, matching the built-in
+ * `cm-activeLine` behavior. Re-runs when the rendered HTML changes so newly inserted blocks pick
+ * up the current cursor position.
+ *
+ * The marker is painted as the preview's background (see `Markdown.css`), so its geometry has to
+ * be measured here. Every block is observed for resize, since a block that grows after render —
+ * a mermaid diagram, an image, an embedded note — shifts everything below it.
  */
 function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElement | null, html: string) {
     useEffect(() => {
@@ -282,26 +290,43 @@ function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElem
         function update() {
             if (!view || !preview) return;
             const activeLine = view.state.doc.lineAt(view.state.selection.main.head).number;
-
             const blocks = preview.querySelectorAll<HTMLElement>("[data-source-line]");
-            let match: HTMLElement | null = null;
-            for (const el of blocks) {
-                if (parseInt(el.dataset.sourceLine!, 10) <= activeLine) match = el;
-                else break;
-            }
+            const match = findActiveBlock(blocks, activeLine);
 
-            if (match === current) return;
-            current?.classList.remove("markdown-preview-active");
-            match?.classList.add("markdown-preview-active");
+            // Animate from one block to the next, but not into or out of nothing: with no
+            // marker to move from, a transition reads as the bar growing out of the top edge.
+            const moving = !!current && !!match && current !== match;
+            preview.classList.toggle("markdown-preview-marker-moving", moving);
             current = match;
+
+            // `offsetTop` and the marker's containing block are both the preview's padding box.
+            preview.style.setProperty("--markdown-preview-marker-top", `${match?.offsetTop ?? 0}px`);
+            preview.style.setProperty("--markdown-preview-marker-height", `${match?.offsetHeight ?? 0}px`);
         }
 
         update();
+        const observer = new ResizeObserver(update);
+        observer.observe(preview);
+        for (const block of preview.children) observer.observe(block);
+
         const unsubscribe = view.addUpdateListener((v) => {
             if (v.selectionSet || v.docChanged) update();
         });
-        return unsubscribe;
+        return () => {
+            observer.disconnect();
+            unsubscribe();
+        };
     }, [ view, preview, html ]);
+}
+
+/** The last block that starts at or before `activeLine`, i.e. the one the cursor sits in. */
+export function findActiveBlock(blocks: ArrayLike<HTMLElement>, activeLine: number) {
+    let match: HTMLElement | null = null;
+    for (const block of Array.from(blocks)) {
+        if (Number(block.dataset.sourceLine) <= activeLine) match = block;
+        else break;
+    }
+    return match;
 }
 
 //#region Text commands
@@ -352,10 +377,10 @@ function useTextCommands(parentComponent: TypeWidgetProps["parentComponent"], ed
         addIncludeNoteToTextCommand() {
             if (!editorView) return;
 
-            parentComponent?.triggerCommand("showIncludeNoteDialog", {
+            parentComponent?.triggerCommand("showContentEmbedDialog", {
                 editorApi: {
-                    addIncludeNote(noteId: string, boxSize?: string) {
-                        insertText(editorView, `<section class="include-note" data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"></section>\n`);
+                    addContentEmbed(noteId: string, boxSize?: string) {
+                        insertText(editorView, `<figure class="include-note" data-note-id="${noteId}" data-box-size="${boxSize ?? "full"}"></figure>\n`);
                         editorView.focus();
                     },
                     async addImage(noteId: string) {
@@ -411,6 +436,22 @@ function useTextCommands(parentComponent: TypeWidgetProps["parentComponent"], ed
  * Adds markdown-specific formatting shortcuts (bold, italic, strikethrough, math).
  * Toggles the wrapper around the selection, or inserts it at the cursor.
  */
+/**
+ * Draws the `[[noteId]]` links as chips with the note's icon and title, as the search field draws
+ * its note ids, showing a link's text while the selection touches it so it stays editable.
+ */
+function useNoteLinkChips(editorView: VanillaCodeMirror | null) {
+    useEffect(() => {
+        if (!editorView) return;
+
+        editorView.setNamedExtension("noteLinkChips", triliumNoteChips(resolveNoteChip, {
+            find: findWikilinkNoteIds,
+            revealAtSelection: true
+        }));
+        return () => editorView.setNamedExtension("noteLinkChips", []);
+    }, [editorView]);
+}
+
 function useMarkdownKeymap(editorView: VanillaCodeMirror | null) {
     useEffect(() => {
         if (!editorView) return;

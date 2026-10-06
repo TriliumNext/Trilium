@@ -1,6 +1,5 @@
 import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
-import type { BackendApi as PublicBackendApi, ScriptBNote as PublicScriptBNote } from "@triliumnext/commons/src/lib/script_api.js";
-import type { Request, Response } from "express";
+import type { BackendApi as PublicBackendApi, ScriptBNote as PublicScriptBNote, ScriptRequest, ScriptResponse } from "@triliumnext/commons/src/lib/script_api.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import Becca from "../becca/becca-interface";
 import * as htmlParser from "node-html-parser";
@@ -117,16 +116,17 @@ export interface Api {
     // `@triliumnext/commons`, where they're required) because this interface types
     // *every* backend script, and they're only populated for custom request handlers.
     /**
-     * Express request object. Only present when the script runs as a custom request
-     * handler (a note with the `#customRequestHandler` label invoked via `/custom/...`);
-     * `undefined` for every other backend script.
+     * The request. Only present when the script runs as a custom request handler (a note with the
+     * `#customRequestHandler` label invoked via `/custom/...`); `undefined` for every other backend
+     * script. {@link ScriptRequest} is the same subset the in-editor language service offers; the
+     * object itself is Express's `req`, whose full API the Custom Request Handler guide points to.
      */
-    req?: Request;
+    req?: ScriptRequest;
     /**
-     * Express response object — write the HTTP response here. Only present in custom
-     * request handlers; `undefined` otherwise.
+     * The response to write the HTTP reply to, under the same conditions as {@link ApiParams.req}
+     * and likewise Express's own `res` at runtime.
      */
-    res?: Response;
+    res?: ScriptResponse;
     /**
      * Capture groups from the `#customRequestHandler` regex that matched this request's
      * URL, in order. Only present in custom request handlers.
@@ -344,9 +344,10 @@ export interface Api {
     sortNotes(
         parentNoteId: string,
         sortConfig: {
-            /** 'title', 'dateCreated', 'dateModified' or a label name
-             * See {@link https://triliumnext.github.io/Docs/Wiki/sorting.html} for details. */
+            /** The `#sorted` grammar: 'title', 'dateCreated', 'dateModified' or a label name per
+             * level, each optionally followed by 'asc' or 'desc', e.g. 'priority desc, dueDate'. */
             sortBy?: string;
+            /** Descending for levels without their own direction, the folders grouping and ties. */
             reverse?: boolean;
             foldersFirst?: boolean;
         }

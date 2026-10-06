@@ -7,7 +7,8 @@ test("Can duplicate note with broken links", async ({ page, context }) => {
         url: "/#root/Q5abPvymDH6C/2VammGGdG6Ie"
     });
 
-    await app.noteTree.getByText("Note map").first().click({ button: "right" });
+    // An inexact match also finds the CSS-hidden "Note Map" rows of `_hidden`, which render first.
+    await app.noteTree.getByText("Note map", { exact: true }).first().click({ button: "right" });
     await page.locator("#context-menu-container").getByText("Duplicate").click();
     await expect(page.locator(".toast-body", {
         hasText: `Note "Note map" has been`

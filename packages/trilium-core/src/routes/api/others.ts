@@ -1,10 +1,11 @@
 import becca from "../../becca/becca";
 
 import { RenderMarkdownResponse, ToMarkdownResponse } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
+import { ValidationError } from "../../errors.js";
 import markdown from "../../services/export/markdown.js";
-import { markdownImportService, ValidationError } from "../..";
+import markdownImportService from "../../services/import/markdown.js";
 
 function renderMarkdown(req: Request) {
     const { markdownContent } = req.body;
@@ -17,12 +18,16 @@ function renderMarkdown(req: Request) {
 }
 
 function toMarkdown(req: Request) {
-    const { htmlContent } = req.body;
+    const { htmlContent, headerlessTables } = req.body;
     if (typeof htmlContent !== 'string') {
         throw new ValidationError('htmlContent parameter is required and must be a string');
     }
+    if (headerlessTables !== undefined && headerlessTables !== "keepHtml"
+            && headerlessTables !== "emptyHeader") {
+        throw new ValidationError('headerlessTables must be "keepHtml" or "emptyHeader"');
+    }
     return {
-        markdownContent: markdown.toMarkdown(htmlContent)
+        markdownContent: markdown.toMarkdown(htmlContent, { headerlessTables })
     } satisfies ToMarkdownResponse;
 }
 

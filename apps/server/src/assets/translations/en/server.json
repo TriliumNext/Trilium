@@ -269,7 +269,7 @@
     "task-state-doing": "Doing",
     "task-state-done": "Done",
     "task-state-maybe": "Maybe",
-    "task-state-cancelled": "Cancelled",
+    "task-state-cancelled": "Canceled",
     "task-state-attr-state-id": "Identifier (required)",
     "task-state-attr-markdown-symbol": "Markdown symbol",
     "task-state-attr-is-completed": "Counts as completed",
@@ -336,7 +336,8 @@
   "notes": {
     "new-note": "New note",
     "duplicate-note-suffix": "(dup)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Deleting notes failed: {{- message}}"
   },
   "note_conversion": {
     "revision_before_markdown": "Before conversion to Markdown",
@@ -344,7 +345,8 @@
   },
   "backend_log": {
     "log-does-not-exist": "The backend log file '{{ fileName }}' does not exist (yet).",
-    "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed."
+    "reading-log-failed": "Reading the backend log file '{{ fileName }}' failed.",
+    "log-file-unavailable": "The log file could not be opened, so only the most recent entries kept in memory are shown. Trilium keeps trying to open it and writes these entries to it once it can."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed.",
@@ -411,6 +413,7 @@
   },
   "pdf": {
     "export_filter": "PDF Document (*.pdf)",
+    "render-timeout": "The note did not finish rendering within {{seconds}} seconds.",
     "unable-to-export-message": "The current note could not be exported as a PDF.",
     "unable-to-export-title": "Unable to export as PDF",
     "unable-to-save-message": "The selected file could not be written to. Try again or select another destination.",

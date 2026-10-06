@@ -300,7 +300,7 @@ export async function verifyLoginCredentials(password: string, totpToken: string
 }
 
 function verifyTOTP(submittedTotpToken: string) {
-    if (totp.validateTOTP(submittedTotpToken)) {
+    if (totp.verifyTOTP(submittedTotpToken)) {
         return true;
     }
 

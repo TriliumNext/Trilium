@@ -209,6 +209,13 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
                     new RegExp(`href="[^"]*attachmentId=${escapeRegExp(attachmentId)}[^"]*"`, "g"),
                     `href="#root/${note.noteId}"`
                 );
+
+                // An embed of the attachment becomes an include of the new note.
+                fixedContent = replaceAll(
+                    fixedContent,
+                    `data-attachment-id="${attachmentId}"`,
+                    `data-note-id="${note.noteId}"`
+                );
             }
 
             if (fixedContent !== origContent) {

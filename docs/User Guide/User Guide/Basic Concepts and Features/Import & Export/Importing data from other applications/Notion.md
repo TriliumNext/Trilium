@@ -70,15 +70,15 @@ The resulting collection will be <a class="reference-link" href="../../../Colle
     <tbody>
         <tr>
             <td>Text / Select / Status / Place</td>
-            <td>Single-valued <code spellcheck="false">text</code> label</td>
+            <td>Single-valued <code>text</code> label</td>
         </tr>
         <tr>
             <td>Number</td>
-            <td>Single-valued <code spellcheck="false">number</code> label for plain numbers. Formatted values (currency, percent, thousands separators) are normalized to a bare number, e.g. <code spellcheck="false">$1,200.50</code> → <code spellcheck="false">1200.50</code>.</td>
+            <td>Single-valued <code>number</code> label for plain numbers. Formatted values (currency, percent, thousands separators) are normalized to a bare number, e.g. <code>$1,200.50</code> → <code>1200.50</code>.</td>
         </tr>
         <tr>
             <td>ID</td>
-            <td>Single-valued <code spellcheck="false">number</code> or <code spellcheck="false">text</code> label (depending on whether a prefix is configured)</td>
+            <td>Single-valued <code>number</code> or <code>text</code> label (depending on whether a prefix is configured)</td>
         </tr>
         <tr>
             <td>Multi-select</td>
@@ -86,15 +86,15 @@ The resulting collection will be <a class="reference-link" href="../../../Colle
         </tr>
         <tr>
             <td>URL / Email / Phone</td>
-            <td><code spellcheck="false">url</code> label (<code spellcheck="false">mailto:</code>, <code spellcheck="false">tel:</code> prefix)</td>
+            <td><code>url</code> label (<code>mailto:</code>, <code>tel:</code> prefix)</td>
         </tr>
         <tr>
             <td>Date</td>
-            <td><ul><li><code spellcheck="false">datetime</code> if at least one has time.</li><li><code spellcheck="false">date</code> if only dates.</li><li>Two attributes if any of the dates have an end date.</li></ul></td>
+            <td><ul><li><code>datetime</code> if at least one has time.</li><li><code>date</code> if only dates.</li><li>Two attributes if any of the dates have an end date.</li></ul></td>
         </tr>
         <tr>
             <td>Checkbox</td>
-            <td><code spellcheck="false">boolean</code> label (<code spellcheck="false">true</code>/<code spellcheck="false">false</code>).</td>
+            <td><code>boolean</code> label (<code>true</code>/<code>false</code>).</td>
         </tr>
         <tr>
             <td>Person</td>
@@ -102,7 +102,7 @@ The resulting collection will be <a class="reference-link" href="../../../Colle
         </tr>
         <tr>
             <td>Created by / Edited by</td>
-            <td>Single-valued <code spellcheck="false">text</code> label</td>
+            <td>Single-valued <code>text</code> label</td>
         </tr>
         <tr>
             <td>Created time / Last edited time</td>
@@ -118,7 +118,7 @@ The resulting collection will be <a class="reference-link" href="../../../Colle
         </tr>
         <tr>
             <td>Formulas / Rollup</td>
-            <td><p>A <code spellcheck="false">text</code>, <code spellcheck="false">number</code> or <code spellcheck="false">boolean</code> label depending on the value. Dates are rendered as <code spellcheck="false">text</code> because the export doesn't offer any type information.</p><p>The Notion export does not preserve the formula/rollup configuration itself, instead it just exports the value.</p></td>
+            <td><p>A <code>text</code>, <code>number</code> or <code>boolean</code> label depending on the value. Dates are rendered as <code>text</code> because the export doesn't offer any type information.</p><p>The Notion export does not preserve the formula/rollup configuration itself, instead it just exports the value.</p></td>
         </tr>
         <tr>
             <td>Button / Verification / any other type</td>

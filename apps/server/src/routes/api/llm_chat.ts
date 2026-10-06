@@ -7,6 +7,12 @@ interface ChatRequest {
     config?: LlmProviderConfig;
 }
 
+/** Silence after which `streamChat` writes an SSE comment so idle proxies keep the socket. */
+export const SSE_HEARTBEAT_MS = 30_000;
+
+/** SSE comment frame. EventSource and the client's `data:` parser ignore it. */
+export const SSE_HEARTBEAT_FRAME = ":\n\n";
+
 /**
  * SSE endpoint for streaming chat completions.
  *
@@ -17,6 +23,9 @@ interface ChatRequest {
  *
  * On error:
  * data: {"type":"error","error":"Error message"}
+ *
+ * nginx/ALB drop an idle response at 60s. After 30s without a chunk the handler
+ * writes an SSE comment (`:\n\n`) that the client ignores.
  */
 async function streamChat(req: Request, res: Response) {
     const { messages, config = {} } = req.body as ChatRequest;
@@ -39,10 +48,28 @@ async function streamChat(req: Request, res: Response) {
     // Type assertion for flush method (available when compression is used)
     const flushableRes = res as Response & { flush?: () => void };
 
-    // Stop the turn when the client disconnects mid-stream, so a closed tab
-    // doesn't leave an agent loop running against the provider.
+    // Abort the provider turn when the client disconnects, so a closed tab
+    // does not leave an agent loop running. Aborting `runChat` does not always
+    // settle at once, so the heartbeat stops here rather than in `finally`.
     const abortController = new AbortController();
-    res.on("close", () => abortController.abort());
+
+    let stopped = false;
+    const writeFrame = (frame: string) => {
+        if (stopped) {
+            return;
+        }
+        res.write(frame);
+        if (typeof flushableRes.flush === "function") {
+            flushableRes.flush();
+        }
+    };
+
+    const heartbeat = startSseHeartbeat(() => writeFrame(SSE_HEARTBEAT_FRAME));
+    res.on("close", () => {
+        stopped = true;
+        heartbeat.stop();
+        abortController.abort();
+    });
 
     try {
         // Imported here rather than at module scope so the chat pipeline and
@@ -50,15 +77,34 @@ async function streamChat(req: Request, res: Response) {
         // getProviderModels in core's routes/api/llm.ts).
         const { runChat } = await import("@triliumnext/core/src/services/llm/chat.js");
         for await (const chunk of runChat(messages, config, abortController.signal)) {
-            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-            // Flush immediately to ensure real-time streaming
-            if (typeof flushableRes.flush === "function") {
-                flushableRes.flush();
-            }
+            writeFrame(`data: ${JSON.stringify(chunk)}\n\n`);
+            heartbeat.reset();
         }
     } finally {
+        stopped = true;
+        heartbeat.stop();
         res.end();
     }
+}
+
+function startSseHeartbeat(send: () => void) {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const arm = () => {
+        if (timer !== undefined) {
+            clearInterval(timer);
+        }
+        timer = setInterval(send, SSE_HEARTBEAT_MS);
+    };
+    arm();
+    return {
+        reset: arm,
+        stop() {
+            if (timer !== undefined) {
+                clearInterval(timer);
+                timer = undefined;
+            }
+        }
+    };
 }
 
 export default {

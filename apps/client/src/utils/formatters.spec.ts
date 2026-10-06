@@ -16,7 +16,7 @@ vi.mock("../services/i18n", async () => {
 import { LOCALES } from "@triliumnext/commons";
 
 import options from "../services/options";
-import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, isContentRightToLeft, normalizeLocale, resolveContentLanguage } from "./formatters";
+import { formatDateNumeric, formatDateTime, formatDuration, getMeasurementSystem, isContentRightToLeft, resolveContentLanguage } from "./formatters";
 
 describe("formatters", () => {
     it("tolerates incorrect locale", () => {
@@ -35,14 +35,6 @@ describe("formatters", () => {
         expect(formatDateTime(new Date())).toBeTruthy();
         expect(formatDateTime(new Date(), "full", "none")).toBeTruthy();
         expect(formatDateTime(new Date(), "none", "full")).toBeTruthy();
-    });
-
-    it("normalizes locale", () => {
-        expect(normalizeLocale("zh_CN")).toBe("zh-CN");
-        expect(normalizeLocale("cn")).toBe("zh-CN");
-        expect(normalizeLocale("tw")).toBe("zh-TW");
-        // The default branch returns the (underscore-normalized) locale unchanged.
-        expect(normalizeLocale("en_US")).toBe("en-US");
     });
 
     it("returns an empty string for falsy dates", () => {

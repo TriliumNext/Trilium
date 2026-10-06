@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Response } from "../../http_interface";
 
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";

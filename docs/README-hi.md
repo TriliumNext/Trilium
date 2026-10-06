@@ -25,6 +25,9 @@
 श्रेणीबद्ध (hierarchical) नोट लेने वाला एप्लिकेशन है, जिसका मुख्य ध्यान बड़े
 व्यक्तिगत ज्ञान आधार (knowledge bases) बनाने पर है।
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ डाउनलोड कीजिए

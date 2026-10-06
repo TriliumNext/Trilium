@@ -27,7 +27,7 @@ const NOTE_BOX_TARGET_CONFIG = {
 };
 
 interface NoteBoxProps extends MapDataNoteEntry {
-    mapApiRef: RefObject<RelationMapApi>;
+    mapApiRef: RefObject<RelationMapApi | null>;
 }
 
 export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {

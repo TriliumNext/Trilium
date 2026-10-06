@@ -12,7 +12,7 @@ interface OverlayPanelProps {
     className?: string;
     /** The panel's own element, for a caller that has something to do with it — marking it as where
      *  its component is found, say (see `useLegacyComponentElement`). */
-    containerRef?: RefObject<HTMLDivElement>;
+    containerRef?: RefObject<HTMLDivElement | null>;
     /**
      * What heads the panel: a {@link TabStrip} where it is divided into tabs, or an
      * {@link OverlayPanelTitle} where there is only the one thing to show.

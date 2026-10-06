@@ -59,12 +59,13 @@ function updateEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow | undef
         : updateNormalEntity(remoteEC, remoteEntityRow, instanceId, updateContext);
 
     if (updated) {
-        if (remoteEntityRow?.isDeleted) {
+        // An erase carries no row, so becca learns of it as a deletion.
+        if (remoteEC.isErased || remoteEntityRow?.isDeleted) {
             eventService.emit(eventService.ENTITY_DELETE_SYNCED, {
                 entityName: remoteEC.entityName,
                 entityId: remoteEC.entityId
             });
-        } else if (!remoteEC.isErased) {
+        } else {
             eventService.emit(eventService.ENTITY_CHANGE_SYNCED, {
                 entityName: remoteEC.entityName,
                 entityRow: remoteEntityRow

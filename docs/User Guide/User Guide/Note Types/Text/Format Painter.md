@@ -5,7 +5,7 @@ The Format Painter is a feature in text notes that allows users to copy the form
 
 ## Usage Instructions
 
-Click the text that you want to copy the formatting from and use the paint formatting toolbar button (<img class="image_resized" style="aspect-ratio:150/150;width:2.7%;" src="Format Painter_746436a2e1.svg" alt="Format painter" width="150" height="150">) to copy the style. Then select the target text with your mouse to apply the formatting.
+Click the text that you want to copy the formatting from and use the paint formatting toolbar button (<span class="tn-icon cke cke-paint-roller"></span>) to copy the style. Then select the target text with your mouse to apply the formatting.
 
 *   **To copy the formatting**: Place the cursor inside text with some formatting and click the paint formatting toolbar button. The mouse cursor changes to indicate the painter is armed.
 *   **To paint with the copied formatting**: Select the target text with your mouse. The formatting is applied when you release the button, and the painter disarms — the cursor returns to normal.

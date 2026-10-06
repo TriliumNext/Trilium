@@ -1,0 +1,1418 @@
+{
+  "icons": {
+    "cke-ai": {
+      "glyph": "",
+      "terms": [
+        "ai"
+      ]
+    },
+    "cke-ai-adjust-length": {
+      "glyph": "",
+      "terms": [
+        "ai-adjust-length"
+      ]
+    },
+    "cke-ai-ask-ai": {
+      "glyph": "",
+      "terms": [
+        "ai-ask-ai"
+      ]
+    },
+    "cke-ai-author": {
+      "glyph": "",
+      "terms": [
+        "ai-author"
+      ]
+    },
+    "cke-ai-change-tone": {
+      "glyph": "",
+      "terms": [
+        "ai-change-tone"
+      ]
+    },
+    "cke-ai-chat": {
+      "glyph": "",
+      "terms": [
+        "ai-chat"
+      ]
+    },
+    "cke-ai-chat-commands": {
+      "glyph": "",
+      "terms": [
+        "ai-chat-commands"
+      ]
+    },
+    "cke-ai-continue-writing": {
+      "glyph": "",
+      "terms": [
+        "ai-continue-writing"
+      ]
+    },
+    "cke-ai-grammar-check": {
+      "glyph": "",
+      "terms": [
+        "ai-grammar-check"
+      ]
+    },
+    "cke-ai-history": {
+      "glyph": "",
+      "terms": [
+        "ai-history"
+      ]
+    },
+    "cke-ai-improve-writing": {
+      "glyph": "",
+      "terms": [
+        "ai-improve-writing"
+      ]
+    },
+    "cke-ai-other": {
+      "glyph": "",
+      "terms": [
+        "ai-other"
+      ]
+    },
+    "cke-ai-quick-actions": {
+      "glyph": "",
+      "terms": [
+        "ai-quick-actions"
+      ]
+    },
+    "cke-ai-review": {
+      "glyph": "",
+      "terms": [
+        "ai-review"
+      ]
+    },
+    "cke-ai-translate": {
+      "glyph": "",
+      "terms": [
+        "ai-translate"
+      ]
+    },
+    "cke-accessibility": {
+      "glyph": "",
+      "terms": [
+        "accessibility"
+      ]
+    },
+    "cke-add-comment": {
+      "glyph": "",
+      "terms": [
+        "add-comment"
+      ]
+    },
+    "cke-align-bottom": {
+      "glyph": "",
+      "terms": [
+        "align-bottom"
+      ]
+    },
+    "cke-align-center": {
+      "glyph": "",
+      "terms": [
+        "align-center"
+      ]
+    },
+    "cke-align-justify": {
+      "glyph": "",
+      "terms": [
+        "align-justify"
+      ]
+    },
+    "cke-align-left": {
+      "glyph": "",
+      "terms": [
+        "align-left"
+      ]
+    },
+    "cke-align-middle": {
+      "glyph": "",
+      "terms": [
+        "align-middle"
+      ]
+    },
+    "cke-align-right": {
+      "glyph": "",
+      "terms": [
+        "align-right"
+      ]
+    },
+    "cke-align-top": {
+      "glyph": "",
+      "terms": [
+        "align-top"
+      ]
+    },
+    "cke-arrow-down": {
+      "glyph": "",
+      "terms": [
+        "arrow-down"
+      ]
+    },
+    "cke-arrow-up": {
+      "glyph": "",
+      "terms": [
+        "arrow-up"
+      ]
+    },
+    "cke-bold": {
+      "glyph": "",
+      "terms": [
+        "bold"
+      ]
+    },
+    "cke-bookmark": {
+      "glyph": "",
+      "terms": [
+        "bookmark"
+      ]
+    },
+    "cke-bookmark-inline": {
+      "glyph": "",
+      "terms": [
+        "bookmark-inline"
+      ]
+    },
+    "cke-bookmark-medium": {
+      "glyph": "",
+      "terms": [
+        "bookmark-medium"
+      ]
+    },
+    "cke-bookmark-small": {
+      "glyph": "",
+      "terms": [
+        "bookmark-small"
+      ]
+    },
+    "cke-box-with-check": {
+      "glyph": "",
+      "terms": [
+        "box-with-check"
+      ]
+    },
+    "cke-box-with-cross": {
+      "glyph": "",
+      "terms": [
+        "box-with-cross"
+      ]
+    },
+    "cke-box-with-marker": {
+      "glyph": "",
+      "terms": [
+        "box-with-marker"
+      ]
+    },
+    "cke-browse-files": {
+      "glyph": "",
+      "terms": [
+        "browse-files"
+      ]
+    },
+    "cke-bulb": {
+      "glyph": "",
+      "terms": [
+        "bulb"
+      ]
+    },
+    "cke-bulleted-list": {
+      "glyph": "",
+      "terms": [
+        "bulleted-list"
+      ]
+    },
+    "cke-cancel": {
+      "glyph": "",
+      "terms": [
+        "cancel"
+      ]
+    },
+    "cke-caption": {
+      "glyph": "",
+      "terms": [
+        "caption"
+      ]
+    },
+    "cke-case-change": {
+      "glyph": "",
+      "terms": [
+        "case-change"
+      ]
+    },
+    "cke-check": {
+      "glyph": "",
+      "terms": [
+        "check"
+      ]
+    },
+    "cke-chevron-down": {
+      "glyph": "",
+      "terms": [
+        "chevron-down"
+      ]
+    },
+    "cke-chevron-right": {
+      "glyph": "",
+      "terms": [
+        "chevron-right"
+      ]
+    },
+    "cke-chevron-up": {
+      "glyph": "",
+      "terms": [
+        "chevron-up"
+      ]
+    },
+    "cke-ckbox-image-edit": {
+      "glyph": "",
+      "terms": [
+        "ckbox-image-edit"
+      ]
+    },
+    "cke-close": {
+      "glyph": "",
+      "terms": [
+        "close"
+      ]
+    },
+    "cke-code": {
+      "glyph": "",
+      "terms": [
+        "code"
+      ]
+    },
+    "cke-code-block": {
+      "glyph": "",
+      "terms": [
+        "code-block"
+      ]
+    },
+    "cke-cog": {
+      "glyph": "",
+      "terms": [
+        "cog"
+      ]
+    },
+    "cke-color-palette": {
+      "glyph": "",
+      "terms": [
+        "color-palette"
+      ]
+    },
+    "cke-color-tile-check": {
+      "glyph": "",
+      "terms": [
+        "color-tile-check"
+      ]
+    },
+    "cke-comments-archive": {
+      "glyph": "",
+      "terms": [
+        "comments-archive"
+      ]
+    },
+    "cke-content-lock": {
+      "glyph": "",
+      "terms": [
+        "content-lock"
+      ]
+    },
+    "cke-content-unlock": {
+      "glyph": "",
+      "terms": [
+        "content-unlock"
+      ]
+    },
+    "cke-copy": {
+      "glyph": "",
+      "terms": [
+        "copy"
+      ]
+    },
+    "cke-document": {
+      "glyph": "",
+      "terms": [
+        "document"
+      ]
+    },
+    "cke-document-outline": {
+      "glyph": "",
+      "terms": [
+        "document-outline"
+      ]
+    },
+    "cke-document-outline-toggle": {
+      "glyph": "",
+      "terms": [
+        "document-outline-toggle"
+      ]
+    },
+    "cke-document-with-checkmark": {
+      "glyph": "",
+      "terms": [
+        "document-with-checkmark"
+      ]
+    },
+    "cke-document-with-cross": {
+      "glyph": "",
+      "terms": [
+        "document-with-cross"
+      ]
+    },
+    "cke-document-with-loupe": {
+      "glyph": "",
+      "terms": [
+        "document-with-loupe"
+      ]
+    },
+    "cke-drag-handle": {
+      "glyph": "",
+      "terms": [
+        "drag-handle"
+      ]
+    },
+    "cke-drag-indicator": {
+      "glyph": "",
+      "terms": [
+        "drag-indicator"
+      ]
+    },
+    "cke-dropbox": {
+      "glyph": "",
+      "terms": [
+        "dropbox"
+      ]
+    },
+    "cke-dropdown-arrow": {
+      "glyph": "",
+      "terms": [
+        "dropdown-arrow"
+      ]
+    },
+    "cke-edit-comment": {
+      "glyph": "",
+      "terms": [
+        "edit-comment"
+      ]
+    },
+    "cke-emoji": {
+      "glyph": "",
+      "terms": [
+        "emoji"
+      ]
+    },
+    "cke-eraser": {
+      "glyph": "",
+      "terms": [
+        "eraser"
+      ]
+    },
+    "cke-error": {
+      "glyph": "",
+      "terms": [
+        "error"
+      ]
+    },
+    "cke-export-pdf": {
+      "glyph": "",
+      "terms": [
+        "export-pdf"
+      ]
+    },
+    "cke-export-word": {
+      "glyph": "",
+      "terms": [
+        "export-word"
+      ]
+    },
+    "cke-eye": {
+      "glyph": "",
+      "terms": [
+        "eye"
+      ]
+    },
+    "cke-eye-crossed-out": {
+      "glyph": "",
+      "terms": [
+        "eye-crossed-out"
+      ]
+    },
+    "cke-facebook": {
+      "glyph": "",
+      "terms": [
+        "facebook"
+      ]
+    },
+    "cke-file-upload": {
+      "glyph": "",
+      "terms": [
+        "file-upload"
+      ]
+    },
+    "cke-find-replace": {
+      "glyph": "",
+      "terms": [
+        "find-replace"
+      ]
+    },
+    "cke-font-background": {
+      "glyph": "",
+      "terms": [
+        "font-background"
+      ]
+    },
+    "cke-font-color": {
+      "glyph": "",
+      "terms": [
+        "font-color"
+      ]
+    },
+    "cke-font-family": {
+      "glyph": "",
+      "terms": [
+        "font-family"
+      ]
+    },
+    "cke-font-size": {
+      "glyph": "",
+      "terms": [
+        "font-size"
+      ]
+    },
+    "cke-footnote": {
+      "glyph": "",
+      "terms": [
+        "footnote"
+      ]
+    },
+    "cke-fullscreen-enter": {
+      "glyph": "",
+      "terms": [
+        "fullscreen-enter"
+      ]
+    },
+    "cke-fullscreen-leave": {
+      "glyph": "",
+      "terms": [
+        "fullscreen-leave"
+      ]
+    },
+    "cke-google-drive": {
+      "glyph": "",
+      "terms": [
+        "google-drive"
+      ]
+    },
+    "cke-google-photos": {
+      "glyph": "",
+      "terms": [
+        "google-photos"
+      ]
+    },
+    "cke-heading-1": {
+      "glyph": "",
+      "terms": [
+        "heading-1"
+      ]
+    },
+    "cke-heading-2": {
+      "glyph": "",
+      "terms": [
+        "heading-2"
+      ]
+    },
+    "cke-heading-3": {
+      "glyph": "",
+      "terms": [
+        "heading-3"
+      ]
+    },
+    "cke-heading-4": {
+      "glyph": "",
+      "terms": [
+        "heading-4"
+      ]
+    },
+    "cke-heading-5": {
+      "glyph": "",
+      "terms": [
+        "heading-5"
+      ]
+    },
+    "cke-heading-6": {
+      "glyph": "",
+      "terms": [
+        "heading-6"
+      ]
+    },
+    "cke-history": {
+      "glyph": "",
+      "terms": [
+        "history"
+      ]
+    },
+    "cke-horizontal-line": {
+      "glyph": "",
+      "terms": [
+        "horizontal-line"
+      ]
+    },
+    "cke-html": {
+      "glyph": "",
+      "terms": [
+        "html"
+      ]
+    },
+    "cke-image": {
+      "glyph": "",
+      "terms": [
+        "image"
+      ]
+    },
+    "cke-image-asset-manager": {
+      "glyph": "",
+      "terms": [
+        "image-asset-manager"
+      ]
+    },
+    "cke-image-upload": {
+      "glyph": "",
+      "terms": [
+        "image-upload"
+      ]
+    },
+    "cke-image-url": {
+      "glyph": "",
+      "terms": [
+        "image-url"
+      ]
+    },
+    "cke-import-export": {
+      "glyph": "",
+      "terms": [
+        "import-export"
+      ]
+    },
+    "cke-import-word": {
+      "glyph": "",
+      "terms": [
+        "import-word"
+      ]
+    },
+    "cke-indent": {
+      "glyph": "",
+      "terms": [
+        "indent"
+      ]
+    },
+    "cke-info": {
+      "glyph": "",
+      "terms": [
+        "info"
+      ]
+    },
+    "cke-insert-merge-field": {
+      "glyph": "",
+      "terms": [
+        "insert-merge-field"
+      ]
+    },
+    "cke-italic": {
+      "glyph": "",
+      "terms": [
+        "italic"
+      ]
+    },
+    "cke-legal-style-list": {
+      "glyph": "",
+      "terms": [
+        "legal-style-list"
+      ]
+    },
+    "cke-line-height": {
+      "glyph": "",
+      "terms": [
+        "line-height"
+      ]
+    },
+    "cke-link": {
+      "glyph": "",
+      "terms": [
+        "link"
+      ]
+    },
+    "cke-list-style-circle": {
+      "glyph": "",
+      "terms": [
+        "list-style-circle"
+      ]
+    },
+    "cke-list-style-decimal": {
+      "glyph": "",
+      "terms": [
+        "list-style-decimal"
+      ]
+    },
+    "cke-list-style-decimal-leading-zero": {
+      "glyph": "",
+      "terms": [
+        "list-style-decimal-leading-zero"
+      ]
+    },
+    "cke-list-style-disc": {
+      "glyph": "",
+      "terms": [
+        "list-style-disc"
+      ]
+    },
+    "cke-list-style-lower-latin": {
+      "glyph": "",
+      "terms": [
+        "list-style-lower-latin"
+      ]
+    },
+    "cke-list-style-lower-roman": {
+      "glyph": "",
+      "terms": [
+        "list-style-lower-roman"
+      ]
+    },
+    "cke-list-style-square": {
+      "glyph": "",
+      "terms": [
+        "list-style-square"
+      ]
+    },
+    "cke-list-style-upper-latin": {
+      "glyph": "",
+      "terms": [
+        "list-style-upper-latin"
+      ]
+    },
+    "cke-list-style-upper-roman": {
+      "glyph": "",
+      "terms": [
+        "list-style-upper-roman"
+      ]
+    },
+    "cke-local": {
+      "glyph": "",
+      "terms": [
+        "local"
+      ]
+    },
+    "cke-loupe": {
+      "glyph": "",
+      "terms": [
+        "loupe"
+      ]
+    },
+    "cke-low-vision": {
+      "glyph": "",
+      "terms": [
+        "low-vision"
+      ]
+    },
+    "cke-magic-wand": {
+      "glyph": "",
+      "terms": [
+        "magic-wand"
+      ]
+    },
+    "cke-marker": {
+      "glyph": "",
+      "terms": [
+        "marker"
+      ]
+    },
+    "cke-maximize": {
+      "glyph": "",
+      "terms": [
+        "maximize"
+      ]
+    },
+    "cke-media": {
+      "glyph": "",
+      "terms": [
+        "media"
+      ]
+    },
+    "cke-media-placeholder": {
+      "glyph": "",
+      "terms": [
+        "media-placeholder"
+      ]
+    },
+    "cke-minimize": {
+      "glyph": "",
+      "terms": [
+        "minimize"
+      ]
+    },
+    "cke-multi-level-list": {
+      "glyph": "",
+      "terms": [
+        "multi-level-list"
+      ]
+    },
+    "cke-next-arrow": {
+      "glyph": "",
+      "terms": [
+        "next-arrow"
+      ]
+    },
+    "cke-notification": {
+      "glyph": "",
+      "terms": [
+        "notification"
+      ]
+    },
+    "cke-numbered-list": {
+      "glyph": "",
+      "terms": [
+        "numbered-list"
+      ]
+    },
+    "cke-object-center": {
+      "glyph": "",
+      "terms": [
+        "object-center"
+      ]
+    },
+    "cke-object-full-width": {
+      "glyph": "",
+      "terms": [
+        "object-full-width"
+      ]
+    },
+    "cke-object-inline": {
+      "glyph": "",
+      "terms": [
+        "object-inline"
+      ]
+    },
+    "cke-object-inline-left": {
+      "glyph": "",
+      "terms": [
+        "object-inline-left"
+      ]
+    },
+    "cke-object-inline-right": {
+      "glyph": "",
+      "terms": [
+        "object-inline-right"
+      ]
+    },
+    "cke-object-left": {
+      "glyph": "",
+      "terms": [
+        "object-left"
+      ]
+    },
+    "cke-object-right": {
+      "glyph": "",
+      "terms": [
+        "object-right"
+      ]
+    },
+    "cke-object-size-custom": {
+      "glyph": "",
+      "terms": [
+        "object-size-custom"
+      ]
+    },
+    "cke-object-size-full": {
+      "glyph": "",
+      "terms": [
+        "object-size-full"
+      ]
+    },
+    "cke-object-size-large": {
+      "glyph": "",
+      "terms": [
+        "object-size-large"
+      ]
+    },
+    "cke-object-size-medium": {
+      "glyph": "",
+      "terms": [
+        "object-size-medium"
+      ]
+    },
+    "cke-object-size-small": {
+      "glyph": "",
+      "terms": [
+        "object-size-small"
+      ]
+    },
+    "cke-one-drive": {
+      "glyph": "",
+      "terms": [
+        "one-drive"
+      ]
+    },
+    "cke-outdated": {
+      "glyph": "",
+      "terms": [
+        "outdated"
+      ]
+    },
+    "cke-outdent": {
+      "glyph": "",
+      "terms": [
+        "outdent"
+      ]
+    },
+    "cke-page-break": {
+      "glyph": "",
+      "terms": [
+        "page-break"
+      ]
+    },
+    "cke-pagination-example": {
+      "glyph": "",
+      "terms": [
+        "pagination-example"
+      ]
+    },
+    "cke-paint-roller": {
+      "glyph": "",
+      "terms": [
+        "paint-roller"
+      ]
+    },
+    "cke-paint-roller-cursor-default": {
+      "glyph": "",
+      "terms": [
+        "paint-roller-cursor-default"
+      ]
+    },
+    "cke-paint-roller-cursor-text": {
+      "glyph": "",
+      "terms": [
+        "paint-roller-cursor-text"
+      ]
+    },
+    "cke-paper-clip": {
+      "glyph": "",
+      "terms": [
+        "paper-clip"
+      ]
+    },
+    "cke-paragraph": {
+      "glyph": "",
+      "terms": [
+        "paragraph"
+      ]
+    },
+    "cke-pen": {
+      "glyph": "",
+      "terms": [
+        "pen"
+      ]
+    },
+    "cke-pencil": {
+      "glyph": "",
+      "terms": [
+        "pencil"
+      ]
+    },
+    "cke-pilcrow": {
+      "glyph": "",
+      "terms": [
+        "pilcrow"
+      ]
+    },
+    "cke-pin": {
+      "glyph": "",
+      "terms": [
+        "pin"
+      ]
+    },
+    "cke-play": {
+      "glyph": "",
+      "terms": [
+        "play"
+      ]
+    },
+    "cke-plus": {
+      "glyph": "",
+      "terms": [
+        "plus"
+      ]
+    },
+    "cke-preview-merge-fields": {
+      "glyph": "",
+      "terms": [
+        "preview-merge-fields"
+      ]
+    },
+    "cke-previous-arrow": {
+      "glyph": "",
+      "terms": [
+        "previous-arrow"
+      ]
+    },
+    "cke-print": {
+      "glyph": "",
+      "terms": [
+        "print"
+      ]
+    },
+    "cke-project-logo": {
+      "glyph": "",
+      "terms": [
+        "project-logo"
+      ]
+    },
+    "cke-quote": {
+      "glyph": "",
+      "terms": [
+        "quote"
+      ]
+    },
+    "cke-redo": {
+      "glyph": "",
+      "terms": [
+        "redo"
+      ]
+    },
+    "cke-refresh": {
+      "glyph": "",
+      "terms": [
+        "refresh"
+      ]
+    },
+    "cke-remove": {
+      "glyph": "",
+      "terms": [
+        "remove"
+      ]
+    },
+    "cke-remove-comment": {
+      "glyph": "",
+      "terms": [
+        "remove-comment"
+      ]
+    },
+    "cke-remove-format": {
+      "glyph": "",
+      "terms": [
+        "remove-format"
+      ]
+    },
+    "cke-return-arrow": {
+      "glyph": "",
+      "terms": [
+        "return-arrow"
+      ]
+    },
+    "cke-revision-history": {
+      "glyph": "",
+      "terms": [
+        "revision-history"
+      ]
+    },
+    "cke-robot-pencil": {
+      "glyph": "",
+      "terms": [
+        "robot-pencil"
+      ]
+    },
+    "cke-select-all": {
+      "glyph": "",
+      "terms": [
+        "select-all"
+      ]
+    },
+    "cke-selection": {
+      "glyph": "",
+      "terms": [
+        "selection"
+      ]
+    },
+    "cke-settings": {
+      "glyph": "",
+      "terms": [
+        "settings"
+      ]
+    },
+    "cke-show-blocks": {
+      "glyph": "",
+      "terms": [
+        "show-blocks"
+      ]
+    },
+    "cke-show-changes-off": {
+      "glyph": "",
+      "terms": [
+        "show-changes-off"
+      ]
+    },
+    "cke-show-changes-on": {
+      "glyph": "",
+      "terms": [
+        "show-changes-on"
+      ]
+    },
+    "cke-source": {
+      "glyph": "",
+      "terms": [
+        "source"
+      ]
+    },
+    "cke-sparkle": {
+      "glyph": "",
+      "terms": [
+        "sparkle"
+      ]
+    },
+    "cke-special-characters": {
+      "glyph": "",
+      "terms": [
+        "special-characters"
+      ]
+    },
+    "cke-stop": {
+      "glyph": "",
+      "terms": [
+        "stop"
+      ]
+    },
+    "cke-strikethrough": {
+      "glyph": "",
+      "terms": [
+        "strikethrough"
+      ]
+    },
+    "cke-submit": {
+      "glyph": "",
+      "terms": [
+        "submit"
+      ]
+    },
+    "cke-subscript": {
+      "glyph": "",
+      "terms": [
+        "subscript"
+      ]
+    },
+    "cke-superscript": {
+      "glyph": "",
+      "terms": [
+        "superscript"
+      ]
+    },
+    "cke-table": {
+      "glyph": "",
+      "terms": [
+        "table"
+      ]
+    },
+    "cke-table-cell-properties": {
+      "glyph": "",
+      "terms": [
+        "table-cell-properties"
+      ]
+    },
+    "cke-table-column": {
+      "glyph": "",
+      "terms": [
+        "table-column"
+      ]
+    },
+    "cke-table-layout": {
+      "glyph": "",
+      "terms": [
+        "table-layout"
+      ]
+    },
+    "cke-table-merge-cell": {
+      "glyph": "",
+      "terms": [
+        "table-merge-cell"
+      ]
+    },
+    "cke-table-of-contents": {
+      "glyph": "",
+      "terms": [
+        "table-of-contents"
+      ]
+    },
+    "cke-table-properties": {
+      "glyph": "",
+      "terms": [
+        "table-properties"
+      ]
+    },
+    "cke-table-row": {
+      "glyph": "",
+      "terms": [
+        "table-row"
+      ]
+    },
+    "cke-template": {
+      "glyph": "",
+      "terms": [
+        "template"
+      ]
+    },
+    "cke-template-generic": {
+      "glyph": "",
+      "terms": [
+        "template-generic"
+      ]
+    },
+    "cke-text": {
+      "glyph": "",
+      "terms": [
+        "text"
+      ]
+    },
+    "cke-text-alternative": {
+      "glyph": "",
+      "terms": [
+        "text-alternative"
+      ]
+    },
+    "cke-three-horizontal-dots": {
+      "glyph": "",
+      "terms": [
+        "three-horizontal-dots"
+      ]
+    },
+    "cke-three-stars": {
+      "glyph": "",
+      "terms": [
+        "three-stars"
+      ]
+    },
+    "cke-three-vertical-dots": {
+      "glyph": "",
+      "terms": [
+        "three-vertical-dots"
+      ]
+    },
+    "cke-thumb-down": {
+      "glyph": "",
+      "terms": [
+        "thumb-down"
+      ]
+    },
+    "cke-thumb-up": {
+      "glyph": "",
+      "terms": [
+        "thumb-up"
+      ]
+    },
+    "cke-todo-list": {
+      "glyph": "",
+      "terms": [
+        "todo-list"
+      ]
+    },
+    "cke-track-changes": {
+      "glyph": "",
+      "terms": [
+        "track-changes"
+      ]
+    },
+    "cke-track-changes-accept": {
+      "glyph": "",
+      "terms": [
+        "track-changes-accept"
+      ]
+    },
+    "cke-track-changes-discard": {
+      "glyph": "",
+      "terms": [
+        "track-changes-discard"
+      ]
+    },
+    "cke-underline": {
+      "glyph": "",
+      "terms": [
+        "underline"
+      ]
+    },
+    "cke-undo": {
+      "glyph": "",
+      "terms": [
+        "undo"
+      ]
+    },
+    "cke-unlink": {
+      "glyph": "",
+      "terms": [
+        "unlink"
+      ]
+    },
+    "cke-uploadcare-image-edit": {
+      "glyph": "",
+      "terms": [
+        "uploadcare-image-edit"
+      ]
+    },
+    "cke-uploadcare-image-upload": {
+      "glyph": "",
+      "terms": [
+        "uploadcare-image-upload"
+      ]
+    },
+    "cke-uploadcare-link": {
+      "glyph": "",
+      "terms": [
+        "uploadcare-link"
+      ]
+    },
+    "cke-user": {
+      "glyph": "",
+      "terms": [
+        "user"
+      ]
+    },
+    "cke-warning": {
+      "glyph": "",
+      "terms": [
+        "warning"
+      ]
+    },
+    "cke-web": {
+      "glyph": "",
+      "terms": [
+        "web"
+      ]
+    },
+    "cke-trilium-admonition": {
+      "glyph": "",
+      "terms": [
+        "trilium-admonition"
+      ]
+    },
+    "cke-trilium-collapsible": {
+      "glyph": "",
+      "terms": [
+        "trilium-collapsible"
+      ]
+    },
+    "cke-trilium-copy": {
+      "glyph": "",
+      "terms": [
+        "trilium-copy"
+      ]
+    },
+    "cke-trilium-date-time": {
+      "glyph": "",
+      "terms": [
+        "trilium-date-time"
+      ]
+    },
+    "cke-trilium-download": {
+      "glyph": "",
+      "terms": [
+        "trilium-download"
+      ]
+    },
+    "cke-trilium-fileupload": {
+      "glyph": "",
+      "terms": [
+        "trilium-fileupload"
+      ]
+    },
+    "cke-trilium-insert-footnote": {
+      "glyph": "",
+      "terms": [
+        "trilium-insert-footnote"
+      ]
+    },
+    "cke-trilium-kbd": {
+      "glyph": "",
+      "terms": [
+        "trilium-kbd"
+      ]
+    },
+    "cke-trilium-link-preview": {
+      "glyph": "",
+      "terms": [
+        "trilium-link-preview"
+      ]
+    },
+    "cke-trilium-markdown-mark": {
+      "glyph": "",
+      "terms": [
+        "trilium-markdown-mark"
+      ]
+    },
+    "cke-trilium-math": {
+      "glyph": "",
+      "terms": [
+        "trilium-math"
+      ]
+    },
+    "cke-trilium-mermaid-info": {
+      "glyph": "",
+      "terms": [
+        "trilium-mermaid-info"
+      ]
+    },
+    "cke-trilium-mermaid-insert": {
+      "glyph": "",
+      "terms": [
+        "trilium-mermaid-insert"
+      ]
+    },
+    "cke-trilium-mermaid-preview-mode": {
+      "glyph": "",
+      "terms": [
+        "trilium-mermaid-preview-mode"
+      ]
+    },
+    "cke-trilium-mermaid-source-mode": {
+      "glyph": "",
+      "terms": [
+        "trilium-mermaid-source-mode"
+      ]
+    },
+    "cke-trilium-mermaid-split-mode": {
+      "glyph": "",
+      "terms": [
+        "trilium-mermaid-split-mode"
+      ]
+    },
+    "cke-trilium-note": {
+      "glyph": "",
+      "terms": [
+        "trilium-note"
+      ]
+    },
+    "cke-trilium-scissors": {
+      "glyph": "",
+      "terms": [
+        "trilium-scissors"
+      ]
+    },
+    "cke-trilium": {
+      "glyph": "",
+      "terms": [
+        "trilium"
+      ]
+    },
+    "cke-trilium-ai": {
+      "glyph": "",
+      "terms": [
+        "trilium-ai"
+      ]
+    },
+    "cke-trilium-template": {
+      "glyph": "",
+      "terms": [
+        "trilium-template"
+      ]
+    }
+  },
+  "metrics": {
+    "ascent": 0.85,
+    "descent": 0.15
+  }
+}

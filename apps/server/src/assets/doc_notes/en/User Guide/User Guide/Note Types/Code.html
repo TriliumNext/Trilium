@@ -6,7 +6,7 @@
   <li>computer programmers can store code snippets as notes with syntax highlighting</li>
   <li>JavaScript code notes can be executed inside Trilium for some extra functionality
     <ul>
-      <li>we call such JavaScript code notes "scripts" - see&nbsp;<a class="reference-link"
+      <li>we call such JavaScript code notes "scripts" – see&nbsp;<a class="reference-link"
         href="#root/_help_CdNpE2pqjmI6">Scripting</a>
       </li>
     </ul>
@@ -53,25 +53,24 @@
   </li>
 </ul>
 <aside class="admonition note">
-  <p>Word wrapping can also be adjusted at note level through the <code spellcheck="false">#wrapLines</code> 
-    <a
+  <p>Word wrapping can also be adjusted at note level through the <code>#wrapLines</code>  <a
     href="#root/_help_HI6GBBIduIgv">label</a>, which can also be inherited.</p>
 </aside>
 <h2>Adjusting options using the status bar</h2>
 <aside class="admonition note">
   <p>This feature is only available for the&nbsp;<a class="reference-link"
-    href="#root/_help_IjZS7iK5EXtb">New Layout</a>. For the old layout, the tab width
-    can be adjusted at note level using the <code spellcheck="false">#tabWidth</code> attribute,
+    href="#root/_help_IjZS7iK5EXtb">New Layout</a>. For the old layout, the
+    tab width can be adjusted at note level using the <code>#tabWidth</code> attribute,
     but re-indentation is not available.</p>
 </aside>
 <p>The status bar at the bottom of the editor shows the current indentation
   settings and language. Clicking on the indentation indicator opens a menu
   with three sections:</p>
 <ol>
-  <li><strong>Indent Using</strong> — switch between Spaces and Tabs (<code spellcheck="false">#indentWithTabs</code>).
+  <li><strong>Indent Using</strong> — switch between Spaces and Tabs (<code>#indentWithTabs</code>).
     If a per-note override is active, a "Reset to default" option appears.</li>
   <li><strong>Display Width</strong> — choose from preset widths (1, 2, 3, 4,
-    6, 8). Changes are saved as a per-note <code spellcheck="false">#tabWidth</code> label.</li>
+    6, 8). Changes are saved as a per-note <code>#tabWidth</code> label.</li>
   <li><strong>Re-indent Content To</strong> — convert existing indentation to
     a different style. For example, re-indent a file from 4 spaces to 2 spaces,
     or from spaces to tabs. This rewrites the leading whitespace on every line
@@ -88,11 +87,10 @@
   <li>Preserves non-leading whitespace, blank lines, and content without indentation</li>
 </ul>
 <h2>Color schemes</h2>
-<p>Since Trilium 0.94.0 the colors of code notes can be customized by going&nbsp;
-  <a
-  class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ Code Notes and looking for the <em>Appearance</em> section.</p>
-<aside
-class="admonition note">
+<p>Since Trilium 0.94.0 the colors of code notes can be customized by going&nbsp;<a
+  class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→
+  Code Notes and looking for the <em>Appearance</em> section.</p>
+<aside class="admonition note">
   <p><strong>Why are there only a few themes whereas the code block themes for text notes have a lot?</strong>
     <br>The reason is that Code notes use a different technology than the one
     used in Text notes, and as such there is a more limited selection of themes.
@@ -100,4 +98,27 @@ class="admonition note">
     us know and we might consider adding it to the set of default themes. There
     is no possibility of adding new themes (at least for now), since the themes
     are defined in JavaScript and not at CSS level.</p>
-  </aside>
+</aside>
+<h2>Programming ligatures</h2>
+<p>If you see <code>!=</code> displayed as <code>≠</code> or <code>-&gt;</code> as <code>→</code> inside
+  a code note, those are <em>font ligature</em>: the default monospace font
+  draws certain character pairs as a single symbol. The underlying text is
+  not changed by Trilium (unlike text notes which have&nbsp;<a class="reference-link"
+  href="#root/_help_oI7GoyilXXAr">Automatic replacements</a>), and copying
+  it out gives you back <code>!=</code> and <code>-&gt;</code>.</p>
+<p>This can be turned off with&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a><em>→ Appearance → Fonts → Programming ligatures</em>.</p>
+<h2>Virtual keyboard behavior</h2>
+<p>When using a virtual keyboard, keyboard suggestions and corrections are
+  controlled as follows:</p>
+<ul>
+  <li>For&nbsp;<a class="reference-link" href="#root/_help_6RM1Q7ppFVoj">Markdown</a>&nbsp;and
+    plain text code notes, the autocorrect is <strong>on</strong>, as well as
+    automatic capitalization.</li>
+  <li>For all the other code notes, the autocorrect is off in order to avoid
+    issues when typing code.</li>
+</ul>
+<aside class="admonition note">
+  <p>Not all browsers and platforms respect this value, so the keyboard suggestions
+    might appear without autocorrecting or the browser might disregard this
+    and autocorrect anyway.</p>
+</aside>

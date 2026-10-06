@@ -1,3 +1,4 @@
+import { attachmentIcon } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -53,10 +54,10 @@ vi.mock("./open.js", () => ({
     }
 }));
 
-const loadElkIfNeeded = vi.fn(async (..._args: any[]) => {});
+const getMermaidConfig = vi.fn(() => ({ theme: "default", layout: "dagre", look: "classic" }));
 const postprocessMermaidSvg = vi.fn((...args: any[]) => `<svg class="mm">${args[0]}</svg>`);
 vi.mock("./mermaid.js", () => ({
-    loadElkIfNeeded: (...a: any[]) => loadElkIfNeeded(...a),
+    getMermaidConfig: () => getMermaidConfig(),
     postprocessMermaidSvg: (...a: any[]) => postprocessMermaidSvg(...a)
 }));
 
@@ -86,11 +87,23 @@ vi.mock("../widgets/type_widgets/WebView", () => ({ default: webViewComponent })
 const mediaPreviewComponent = vi.fn((_props: any): VNode<any> => h("span", { class: "mock-media-marker" }));
 vi.mock("../widgets/type_widgets/file/MediaPreview", () => ({ default: mediaPreviewComponent }));
 
+const imageViewerComponent = vi.fn((_props: any): VNode<any> =>
+    h("span", { class: "mock-image-viewer-marker" }));
+vi.mock("../widgets/react/ImageViewer", () => ({ default: imageViewerComponent }));
+
 const embeddedNoteListComponent = vi.fn((_props: any) => null);
 vi.mock("../widgets/collections/NoteList", () => ({ EmbeddedNoteList: embeddedNoteListComponent }));
 
 const iconPackPreviewComponent = vi.fn((_props: any) => null);
 vi.mock("../widgets/type_widgets/icon_pack/IconPackPreview", () => ({ IconPackPreview: iconPackPreviewComponent }));
+
+const canvasDrawingComponent = vi.fn((_props: any): VNode<any> =>
+    h("span", { class: "mock-canvas-drawing-marker" }));
+const renderCanvasDrawingPicture = vi.fn(async (_entity: unknown): Promise<Element | null> => null);
+vi.mock("../widgets/type_widgets/canvas/CanvasDrawing", () => ({
+    default: canvasDrawingComponent,
+    renderCanvasDrawingPicture: (entity: unknown) => renderCanvasDrawingPicture(entity)
+}));
 
 const chatPreviewComponent = vi.fn((props: any): VNode<any> =>
     h("span", { class: "mock-chat-marker" }, `messages:${props.messages.length}`));
@@ -110,7 +123,13 @@ vi.mock("@triliumnext/commons/src/lib/markdown_renderer", async (orig) => ({
 import appContext from "../components/app_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
-import { disposeInteractiveContent, getRenderedContent as rawGetRenderedContent } from "./content_renderer.js";
+import {
+    disposeInteractiveContent,
+    getEmbedBoxSize,
+    getRenderedContent as rawGetRenderedContent,
+    getUploadBoxSize,
+    hasRenderedPreview
+} from "./content_renderer.js";
 import froca from "./froca.js";
 import server from "./server.js";
 
@@ -148,6 +167,72 @@ beforeEach(() => {
     vi.clearAllMocks();
     isProtectedSessionAvailable.mockReturnValue(false);
     (window as any).electronApi = undefined;
+});
+
+describe("getEmbedBoxSize", () => {
+    it("sizes an embed by what it previews: none, audio, code or anything else", () => {
+        const protectedCode = buildNote({ title: "Secret", type: "code", mime: "text/javascript" });
+        protectedCode.isProtected = true;
+
+        expect([
+            buildNote({ title: "Map", type: "relationMap" }),
+            buildNote({ title: "Launcher", type: "launcher" }),
+            buildNote({ title: "Blank page", type: "webView" }),
+            buildNote({ title: "Archive", type: "file", mime: "application/zip" }),
+            buildAttachment({ role: "file", mime: "application/zip" }),
+            buildAttachment({ role: "canvasLibraryItem", mime: "application/json" })
+        ].map(getEmbedBoxSize)).toEqual(Array(6).fill("tiny"));
+
+        expect([
+            buildNote({ title: "Song", type: "file", mime: "audio/mpeg" }),
+            buildAttachment({ role: "file", mime: "audio/ogg" })
+        ].map(getEmbedBoxSize)).toEqual([ "small", "small" ]);
+
+        expect([
+            buildNote({ title: "Script", type: "code", mime: "text/javascript" }),
+            protectedCode,
+            buildAttachment({ role: "file", mime: "application/json" })
+        ].map(getEmbedBoxSize)).toEqual([ "full", "full", "full" ]);
+        expect(touchProtectedSession).not.toHaveBeenCalled();
+
+        expect([
+            buildNote({ title: "Text", type: "text" }),
+            buildNote({ title: "Readme", type: "code", mime: "text/x-markdown" }),
+            buildNote({ title: "Books", type: "book" }),
+            buildNote({ title: "Diagram", type: "mermaid" }),
+            buildNote({ title: "Site", type: "webView", "#webViewSrc": "https://example.com" }),
+            buildNote({ title: "Clip", type: "file", mime: "video/mp4" }),
+            buildAttachment({ role: "file", mime: "application/pdf" }),
+            buildAttachment({ role: "image", mime: "image/png" }),
+            buildAttachment({ role: "file", mime: "application/vnd.excalidraw+json" })
+        ].map(getEmbedBoxSize)).toEqual(Array(9).fill("medium"));
+    });
+
+    it("sizes an upload by its media type, as the attachment it becomes", () => {
+        expect([
+            "application/zip", "", "audio/mpeg", "application/json", "application/pdf",
+            "image/png", "video/mp4", "application/vnd.excalidraw+json"
+        ].map(getUploadBoxSize)).toEqual([
+            "tiny", "tiny", "small", "full", "medium", "medium", "medium", "medium"
+        ]);
+    });
+});
+
+describe("hasRenderedPreview", () => {
+    it("tells a file it draws, such as a canvas drawing, from one it shows as an icon", () => {
+        expect([
+            buildAttachment({ role: "file", mime: "application/vnd.excalidraw+json" }),
+            buildAttachment({ role: "importSource", mime: "application/json" }),
+            buildAttachment({ role: "file", mime: "application/pdf" }),
+            buildNote({ title: "Site", type: "webView", "#webViewSrc": "https://example.com" })
+        ].map(hasRenderedPreview)).toEqual([ true, true, true, true ]);
+
+        expect([
+            buildAttachment({ role: "file", mime: "text/plain" }),
+            buildAttachment({ role: "file", mime: "application/zip" }),
+            buildNote({ title: "Blank page", type: "webView" })
+        ].map(hasRenderedPreview)).toEqual([ false, false, false ]);
+    });
 });
 
 describe("getRenderedContent dispatch", () => {
@@ -253,6 +338,42 @@ describe("getRenderedContent image rendering", () => {
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("image");
         expect($renderedContent.find("img").attr("src")).toContain(`api/attachments/${att.attachmentId}/image/`);
+    });
+
+    it("mounts the image viewer when the caller embeds an image note or attachment", async () => {
+        const note = buildNote({ title: "Pic", type: "image" });
+        const { type, $renderedContent } = await getRenderedContent(note, {
+            mediaEnvironment: "embedded"
+        });
+        expect(type).toBe("image");
+        const $viewer = $renderedContent.find(".rendered-image-viewer");
+        expect($viewer.find(".mock-image-viewer-marker").length).toBe(1);
+        expect($renderedContent.find("img").length).toBe(0);
+        expect(imageViewerComponent).toHaveBeenCalledWith(expect.objectContaining({
+            src: expect.stringContaining(`api/images/${note.noteId}/`),
+            alt: "Pic",
+            environment: "embedded"
+        }), expect.anything());
+        // The viewer's <img> takes no pointer events, so the menu listens on the container.
+        expect(setupContextMenu).toHaveBeenCalledOnce();
+        expect(setupContextMenu.mock.calls[0][0].get(0)).toBe($viewer.get(0));
+
+        const att = buildAttachment({ role: "image" });
+        await getRenderedContent(att, { mediaEnvironment: "embedded" });
+        expect(imageViewerComponent).toHaveBeenLastCalledWith(expect.objectContaining({
+            src: expect.stringContaining(`api/attachments/${att.attachmentId}/image/`)
+        }), expect.anything());
+    });
+
+    it("keeps a plain image for an embedded canvas and outside an embed", async () => {
+        const canvas = buildNote({ title: "C", type: "canvas" });
+        const embedded = await getRenderedContent(canvas, { mediaEnvironment: "embedded" });
+        expect(embedded.$renderedContent.find("img").length).toBe(1);
+
+        const note = buildNote({ title: "Pic", type: "image" });
+        const native = await getRenderedContent(note, { mediaEnvironment: "native" });
+        expect(native.$renderedContent.find("img").length).toBe(1);
+        expect(imageViewerComponent).not.toHaveBeenCalled();
     });
 
     it("appends OCR text for FNote images when showTextRepresentation and OCR succeeds", async () => {
@@ -514,7 +635,9 @@ describe("getRenderedContent render / doc / protectedSession / mermaid", () => {
         const { type, $renderedContent } = await getRenderedContent(note);
         expect(type).toBe("mermaid");
         expect(mermaidInitialize).toHaveBeenCalledOnce();
-        expect(loadElkIfNeeded).toHaveBeenCalledOnce();
+        expect(mermaidInitialize).toHaveBeenCalledWith(
+            expect.objectContaining({ layout: "dagre", look: "classic", startOnLoad: false })
+        );
         expect(postprocessMermaidSvg).toHaveBeenCalledWith("<g/>");
         expect($renderedContent.find("svg.mm").length).toBe(1);
     });
@@ -543,6 +666,21 @@ describe("generic FNote fallback / webView", () => {
         expect(type).toBe("noteMap");
         expect($renderedContent.hasClass("no-preview")).toBe(true);
         expect($renderedContent.find("span").length).toBeGreaterThan(0);
+    });
+
+    it("gives an attachment without a preview its own icon, as a note gets", async () => {
+        const pdf = buildAttachment({ role: "file", mime: "application/pdf" });
+        const library = buildAttachment({ role: "canvasLibraryItem", mime: "application/json" });
+
+        const cases = [ [ pdf, { tooltip: true } ], [ library, {} ] ] as const;
+
+        for (const [ attachment, options ] of cases) {
+            const { $renderedContent } = await getRenderedContent(attachment, options);
+
+            expect($renderedContent.hasClass("no-preview")).toBe(true);
+            expect($renderedContent.find("span").attr("class"))
+                .toBe(attachmentIcon(attachment.role, attachment.mime));
+        }
     });
 
     it("renders a webView footer that opens in a new window when not in electron", async () => {
@@ -740,6 +878,44 @@ describe("generic FNote fallback / webView", () => {
     });
 });
 
+describe("getRenderedContent canvas drawing rendering", () => {
+    const canvasMime = "application/vnd.excalidraw+json";
+
+    it("mounts the editor for an interactive attachment, with its saving editor", async () => {
+        const att = buildAttachment({ role: "file", mime: canvasMime });
+        const attachmentEditor = { canEdit: vi.fn() } as any;
+
+        const { type, $renderedContent } = await getRenderedContent(att, {
+            interactive: true,
+            attachmentEditor
+        });
+
+        expect(type).toBe("canvasDrawing");
+        const $drawing = $renderedContent.find(".canvas-drawing[data-interactive-mount]");
+        expect($drawing.find(".mock-canvas-drawing-marker").length).toBe(1);
+        expect(canvasDrawingComponent).toHaveBeenCalledWith(
+            { attachment: att, editor: attachmentEditor }, expect.anything());
+        expect(renderCanvasDrawingPicture).not.toHaveBeenCalled();
+    });
+
+    it("shows a picture of the drawing elsewhere, and an icon for an empty drawing", async () => {
+        const att = buildAttachment({ role: "file", mime: canvasMime });
+        const picture = document.createElement("svg");
+        renderCanvasDrawingPicture.mockResolvedValueOnce(picture);
+
+        const { type, $renderedContent } = await getRenderedContent(att);
+        expect(type).toBe("canvasDrawing");
+        expect($renderedContent.children().get(0)).toBe(picture);
+        expect(canvasDrawingComponent).not.toHaveBeenCalled();
+
+        const note = buildNote({ title: "Drawing", type: "file", mime: canvasMime });
+        const { $renderedContent: $empty } = await getRenderedContent(note, { interactive: true });
+        expect(renderCanvasDrawingPicture).toHaveBeenLastCalledWith(note);
+        expect($empty.hasClass("no-preview")).toBe(true);
+        expect($empty.find(".bx-pen").length).toBe(1);
+    });
+});
+
 describe("interactive content disposal", () => {
     it("tags an interactive mount and disposes it, unmounting the widget", async () => {
         const note = buildNote({ title: "WI", type: "webView", "#webViewSrc": "https://example.com" });
@@ -798,13 +974,13 @@ describe("getRenderingType detection", () => {
         expect((await getRenderedContent(att)).type).toBe("file");
     });
 
-    it("returns the raw role for an attachment with an unhandled role (no rendering branch)", async () => {
+    it("returns the raw role of an attachment with no branch, drawn as an icon", async () => {
         const att = buildAttachment({ role: "unknownRole" });
         const { type, $renderedContent } = await getRenderedContent(att);
         expect(type).toBe("unknownRole");
-        // attachment falls through to the final `entity instanceof FNote` check (false) -> empty content
-        expect($renderedContent.hasClass("no-preview")).toBe(false);
-        expect($renderedContent.children().length).toBe(0);
+        expect($renderedContent.hasClass("no-preview")).toBe(true);
+        expect($renderedContent.find("span").attr("class"))
+            .toBe(attachmentIcon(att.role, att.mime));
     });
 
     it("maps json file notes to code unless tagged as an icon pack", async () => {

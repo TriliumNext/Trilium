@@ -49,7 +49,7 @@ export interface SpaceUsageSelection {
 export default function SelectionStrip({ selection, containerRef }: {
     selection: SpaceUsageSelection | null,
     /** Held by the page, which measures the strip to leave the map room to scroll clear of it. */
-    containerRef?: RefObject<HTMLDivElement>
+    containerRef?: RefObject<HTMLDivElement | null>
 }) {
     const titles = usePathTitles(selection?.notePath);
     // The note's own title is the last of them; anything above it is where the note sits. A mark

@@ -25,6 +25,9 @@ Trilium Notes este o aplicație gratuită și open-source pentru notițe structu
 ierarhic cu scopul de a crea o bază de date de cunoștințe personală, de mari
 dimensiuni.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Descarcă

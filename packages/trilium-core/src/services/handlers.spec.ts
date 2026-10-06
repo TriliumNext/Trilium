@@ -111,6 +111,23 @@ describe("handlers", () => {
             expect(sortNotesIfNeeded).toHaveBeenCalledWith("p");
         });
 
+        it("re-sorts the parent only when the changed label is one of the #sorted levels", () => {
+            buildNote({ id: "ml-par", children: [{ id: "ml-chld" }] });
+            addAttribute("ml-par", "label", "sorted", "priority desc, dueDate");
+
+            const unrelated = addAttribute("ml-chld", "label", "priorityNote", "x");
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: unrelated
+            });
+            expect(sortNotesIfNeeded).not.toHaveBeenCalledWith("ml-par");
+
+            const dueDate = addAttribute("ml-chld", "label", "dueDate", "2026-01-01");
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: dueDate
+            });
+            expect(sortNotesIfNeeded).toHaveBeenCalledWith("ml-par");
+        });
+
         it("re-sorts the parent when a sort-affecting label (e.g. 'top') changes", () => {
             buildNote({ id: "par", children: [{ id: "chld" }] });
             addAttribute("par", "label", "sorted", "title");

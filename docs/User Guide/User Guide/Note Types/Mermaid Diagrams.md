@@ -2,7 +2,7 @@
 > [!TIP]
 > For a quick understanding of the Mermaid syntax, see <a class="reference-link" href="Mermaid%20Diagrams/Syntax%20reference.dat">Syntax reference</a> (official documentation).
 
-<figure class="image image-style-align-center"><img style="aspect-ratio:886/663;" src="2_Mermaid Diagrams_image.png" width="886" height="663"></figure>
+<figure class="image"><img style="aspect-ratio:1464/915;" src="Mermaid Diagrams_image.png" width="1464" height="915"></figure>
 
 Trilium supports Mermaid, which adds support for various diagrams such as flowchart, sequence diagram, class diagram, state diagram, pie charts, etc., all using a text description of the chart instead of manually drawing the diagram.
 
@@ -22,17 +22,22 @@ Depending on the chart being edited and user preference, there are two layouts s
 *   Horizontal, where the source code (editable part) is on the left side of the screen and the preview is to the right.
 *   Vertical, where the source code is at the bottom of the screen and the preview is at the top.
 
-It's possible to switch between the two layouts at any time by pressing the ![](Mermaid%20Diagrams_image.png) icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+It's possible to switch between the two layouts at any time by pressing the <span class="tn-icon bx bxs-dock-left"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
 
 ## Interaction
 
 *   The source code of the diagram (in Mermaid format) is displayed on the left or bottom side of the note (depending on the layout).
     *   Changing the diagram code will refresh automatically the diagram.
 *   The preview of the diagram is displayed at the right or top side of the note (depending on the layout):
-    *   There are dedicated buttons at the bottom-right of the preview to control the zoom in, zoom out or re-center the diagram: ![](1_Mermaid%20Diagrams_image.png)
+    *   There are dedicated buttons at the bottom-right of the preview to control the zoom in, zoom out or fit the diagram.
     *   The preview can be moved around by holding the left mouse button and dragging.
     *   Zooming can also be done by using the scroll wheel.
     *   The zoom and position on the preview will remain fixed as the diagram changes, to be able to work more easily with large diagrams.
+    *   Double-clicking the preview resets the zoom/position.
+    *   The preview can also be focused by clicking on it, case in which keyboard shortcuts can be used:
+        *   <kbd>+</kbd> or <kbd>E</kbd> to zoom in, <kbd>-</kbd> or <kbd>Q</kbd> to zoom out.
+        *   <kbd>/</kbd> to reset the zoom/position.
+        *   Arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to pan. Holding <kbd>Shift</kbd> pans faster.
 *   The size of the source/preview panes can be adjusted by hovering over the border between them and dragging it with the mouse.
 *   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area:
     *   The source/preview can be laid out left-right or bottom-top via the _Move editing pane to the left / bottom_ option.

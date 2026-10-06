@@ -62,13 +62,13 @@
     </ul>
   </li>
   <li>Links between other imported pages are converted to&nbsp;<a class="reference-link"
-    href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if the text
-    of the link matches the name of the page, or plain links otherwise. If
-    the pages are not part of the import, the original <code spellcheck="false">onenote:</code> link
+    href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;if
+    the text of the link matches the name of the page, or plain links otherwise.
+    If the pages are not part of the import, the original <code>onenote:</code> link
     is kept.</li>
-  <li>Tags (apart from to-do lists) are mildly preserved by converting them
-    to emojis. This loses their searchability. Since Trilium has no concept
-    of inline attributes or badges, this is considered a middle-ground.</li>
+  <li>Tags (apart from to-do lists) are preserved by converting them to <a href="#root/_help_hD8GawVuazff">inline icons</a>,
+    which are searchable by the icon's name and can be recolored like any other
+    icon. Some icons are turned into emojis instead.</li>
 </ul>
 <p>Regarding the note structure:</p>
 <ul>
@@ -92,10 +92,9 @@
   timeout on their side or other issues. Trilium will try to refetch pages
   in order to avoid that but sometimes pages cannot be retrieved even after
   multiple retries. In that case, the importer will still create a corresponding
-  note in Trilium but with an error report instead of a content. This preserves&nbsp;
-  <a
-  class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;and makes it easy to identify and
-    manually fix the pages that failed.</p>
+  note in Trilium but with an error report instead of a content. This preserves&nbsp;<a
+  class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;and
+  makes it easy to identify and manually fix the pages that failed.</p>
 <p>At the end of the import, the top-level note called <em>OneNote</em>  <em>import</em> will
   contain information about how the import went:</p>
 <ul>
@@ -111,12 +110,12 @@
 <h2>Attributes</h2>
 <p>Pages imported from OneNote have a few built-in <a href="#root/_help_HI6GBBIduIgv">labels</a>:</p>
 <ul>
-  <li><code spellcheck="false">oneNotePageId</code>, with the corresponding
-    page ID in OneNote. This can be used to identify the original OneNote page.
-    Trilium doesn't use it in any way at this moment.</li>
-  <li><code spellcheck="false">oneNoteImportFailed</code> attached to notes that
-    couldn't be imported. This can be used to quickly&nbsp;<a class="reference-link"
-    href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;for failed notes.</li>
+  <li><code>oneNotePageId</code>, with the corresponding page ID in OneNote.
+    This can be used to identify the original OneNote page. Trilium doesn't
+    use it in any way at this moment.</li>
+  <li><code>oneNoteImportFailed</code> attached to notes that couldn't be imported.
+    This can be used to quickly&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;for
+    failed notes.</li>
 </ul>
 <h2>Limitations</h2>
 <h3>Regarding OneNote's freehand structure</h3>
@@ -149,7 +148,7 @@
   not be imported will be shown in the report (the top-level note called <em>OneNote import</em>).</p>
 <p>To unprotect a section in OneNote Desktop, right click on the protected
   section → <em>Password Protect This Section</em> and press <em>Remove Password</em> and
-  sync. Then reimport either only the protected sessions or the remove everything
+  sync. Then re-import either only the protected sections or remove everything
   and start the import from scratch.</p>
 <h2>Other limitations</h2>
 <p>The following are known limitations due to how the information comes from

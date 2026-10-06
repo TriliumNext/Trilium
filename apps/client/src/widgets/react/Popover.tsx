@@ -1,13 +1,12 @@
 import "./Popover.css";
 
-import { createPopper, Instance, Placement, VirtualElement } from "@popperjs/core";
+import { autoUpdate, type Placement, type VirtualElement } from "@floating-ui/dom";
 import clsx from "clsx";
-import { ComponentChildren } from "preact";
-import { createPortal } from "preact/compat";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { ComponentChildren, createPortal } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 
 import { FLOATING_LAYER_SELECTOR, isWithinFloatingLayer } from "./floating_layers";
-import { useResizeObserver } from "./hooks";
+import { placeFloating } from "./Popup";
 
 export interface PopoverProps {
     /**
@@ -20,9 +19,9 @@ export interface PopoverProps {
     /** Which side of the anchor to stand on, flipped away from the viewport's edges as needed. */
     placement?: Placement;
     /**
-     * Repositions when it changes. Popper watches scrolling and resizing on its own, but cannot
-     * know the anchor moved for a reason of the caller's — the popover switching to stand for
-     * something else, say — which is what this says.
+     * Places the popover again when it changes. `autoUpdate()` handles scrolling and resizing;
+     * this covers an anchor that moves for another reason, such as the popover switching to a
+     * different event.
      */
     updateKey?: unknown;
     className?: string;
@@ -45,10 +44,15 @@ export interface PopoverProps {
      * A state of this popover and not a surface of its own, which is the whole of the point: what
      * the card holds — a note's editor, mid-edit — stays mounted across the change, where a dialog
      * raised in its place would tear it down and build it again with whatever was typed still
-     * unsaved. Popper is not merely stopped but taken down, its `applyStyles` giving back the
-     * inline placement it wrote (see the effect below) so the stylesheet has the field to itself.
+     * unsaved. While maximized, the popover stops placing itself and removes its inline position
+     * and `data-placement` (see the effect below), so only the stylesheet positions it.
      */
     maximized?: boolean;
+    /**
+     * Called once the card is first placed and shown. A field inside the card can only take the focus
+     * from then on, since the card stays `visibility: hidden` until `placeFloating()` resolves.
+     */
+    onPlaced?(): void;
     children: ComponentChildren;
 }
 
@@ -56,64 +60,77 @@ export interface PopoverProps {
  * A small surface anchored beside something — a dragged-out calendar range, a clicked chip —
  * rather than docked at an edge or centred as a dialog. Portaled to the body, so no scroll
  * container clips it and no containment root flattens its frosting (see the Dropdown notes in
- * CLAUDE.md); positioned by Popper, which also keeps it in place while ancestors scroll.
+ * CLAUDE.md). `placeFloating()` positions it, and `autoUpdate()` places it again as ancestors
+ * scroll.
  */
-export default function Popover({ getAnchorRect, placement, updateKey, className, keepOpenSelector, onDismiss, maximized, children }: PopoverProps) {
+export default function Popover({ getAnchorRect, placement, updateKey, className, keepOpenSelector, onDismiss, maximized, onPlaced, children }: PopoverProps) {
     const elRef = useRef<HTMLDivElement>(null);
     const arrowRef = useRef<HTMLDivElement>(null);
-    const popperRef = useRef<Instance>();
+    const updateRef = useRef<(() => void) | undefined>(undefined);
 
-    // Held in a ref so the popper built once keeps asking the newest question — rebuilding it on
-    // every render would reset the positioning mid-interaction.
+    // In a ref, so the placement set up once reads the latest `getAnchorRect`. Setting it up again
+    // on every render would reset the position mid-interaction.
     const getRectRef = useRef(getAnchorRect);
     getRectRef.current = getAnchorRect;
+    const onPlacedRef = useRef(onPlaced);
+    onPlacedRef.current = onPlaced;
+    const hasBeenPlaced = useRef(false);
 
     useEffect(() => {
         const el = elRef.current;
-        // A maximized card is placed by the stylesheet rather than beside anything, so it is given
-        // no popper at all. Tearing down the one it had is what hands its placement back: Popper's
-        // `applyStyles` remembers the inline styles it found and restores them as it is destroyed,
-        // which the cleanup below runs on the way into this state.
+        // The stylesheet positions a maximized card. The cleanup below removes the inline position
+        // and `data-placement` as the card is maximized.
         if (!el || maximized) return;
 
         const anchor: VirtualElement = { getBoundingClientRect: () => getRectRef.current() };
-        const popper = createPopper(anchor, el, {
+        const options = {
             placement: placement ?? "right-start",
-            // Fixed, as the element stands in the body rather than beside its anchor.
-            strategy: "fixed",
-            modifiers: [
-                // Room for the arrow to stand in, and a little air past its tip.
-                { name: "offset", options: { offset: [ 0, 10 ] } },
-                // Held within the viewport on both axes. Popper keeps a popover inside it along the
-                // axis it was placed on and no further — a card standing to the left or the right
-                // is kept from running off the top and the bottom, and is left wherever the sides
-                // put it however far outside the window that is. An anchor with the room for a card
-                // on neither side (a calendar chip as wide as the grid, say) has no side to be
-                // placed on, so without this the card is put off the screen entirely and only its
-                // shadow is ever seen. Placement is still the first say — this is what is left when
-                // no placement fits.
-                { name: "preventOverflow", options: { padding: 8, altAxis: true } },
-                // Kept clear of the panel's rounded corners, where an arrow would grow out of thin
-                // air; an anchor so near a corner that it cannot be pointed at squarely gets the
-                // arrow as close as the padding allows.
-                { name: "arrow", options: { element: arrowRef.current, padding: 10 } }
-            ]
+            // The arrow's depth, plus a small gap past its tip.
+            offset: 10,
+            // Keeps the card in the viewport on both axes. With no room on either side of the
+            // anchor, as for a calendar chip as wide as the grid, the card is shifted over the
+            // anchor instead of off the screen.
+            shiftAcross: true,
+            // Keeps the arrow off the card's rounded corners. Near a corner of the anchor, the arrow
+            // stops at the padding instead of pointing at it squarely.
+            arrow: arrowRef.current ? { element: arrowRef.current, padding: 10 } : undefined
+        };
+        let released = false;
+        const release = () => {
+            el.style.removeProperty("left");
+            el.style.removeProperty("top");
+            el.style.removeProperty("visibility");
+            delete el.dataset.placement;
+        };
+        // `placeFloating()` resolves later, by which time the card can have been maximized.
+        const update = () => void placeFloating(el, anchor, options).then((placed) => {
+            if (released) {
+                release();
+                return;
+            }
+
+            el.dataset.placement = placed;
+            if (!hasBeenPlaced.current) {
+                hasBeenPlaced.current = true;
+                onPlacedRef.current?.();
+            }
         });
-        popperRef.current = popper;
+        updateRef.current = update;
+        // Places the card again when an ancestor scrolls, the viewport resizes, or the card's
+        // size changes, as it does when a note's editor or its promoted attributes load.
+        const stopUpdating = autoUpdate(anchor, el, update);
 
         return () => {
-            popperRef.current = undefined;
-            popper.destroy();
+            released = true;
+            updateRef.current = undefined;
+            stopUpdating();
+            release();
         };
     }, [ placement, maximized ]);
 
     useEffect(() => {
-        void popperRef.current?.update();
+        updateRef.current?.();
     }, [ updateKey ]);
-
-    // Placed again whenever what is placed changes size: what a popover holds arrives after it does
-    // — a note's editor mounting, its promoted attributes filling in — and Popper measures it once.
-    useResizeObserver(elRef, useCallback(() => void popperRef.current?.update(), []));
 
     useEffect(() => {
         if (!onDismiss) return;
@@ -145,10 +162,9 @@ export default function Popover({ getAnchorRect, placement, updateKey, className
             {maximized && <div className="tn-popover-backdrop" />}
 
             <div ref={elRef} className={clsx("tn-popover", maximized && "maximized", className)}>
-                {/* What the popover is pointing at, drawn by Popper against whichever side it ended
-                    up on (see the placements in Popover.css). First in the panel so its static
-                    position is the panel's own corner, which is what Popper's offset is reckoned
-                    from. */}
+                {/* Points at the anchor from the side the card is on (see the placements in
+                    Popover.css). First in the card, so its static position is the card's corner,
+                    which `placeFloating()` measures the arrow's offset from. */}
                 <div ref={arrowRef} className="tn-popover-arrow" />
                 {children}
             </div>

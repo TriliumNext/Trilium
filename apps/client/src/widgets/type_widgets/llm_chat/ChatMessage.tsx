@@ -3,21 +3,25 @@ import "../markdown/MarkdownCommons.css";
 
 import { type LlmCitation } from "@triliumnext/commons";
 import { memo } from "preact/compat";
-import { useMemo } from "preact/hooks";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import utils from "../../../services/utils.js";
 import { ExtendedAdmonition } from "../../react/Admonition.js";
 import Button from "../../react/Button.js";
+import { useResizeObserver } from "../../react/hooks.js";
+import LightboxLink from "../../react/LightboxLink.js";
+import LoadingSpinner from "../../react/LoadingSpinner.js";
 import { ReadOnlyTextContent } from "../text/ReadOnlyText.js";
 import { formatErrorDetails } from "./chat_error.js";
 import { renderMarkdown } from "./chat_markdown.js";
 import { renderQuoteSourceLinks } from "./chat_quote.js";
 import { ExpandableCard, ExpandableSection } from "./ExpandableCard.js";
-import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ToolCallBlock } from "./llm_chat_types.js";
+import { type ContentBlock, type FileBlock, getMessageText, type ImageBlock, type StoredMessage, type TextBlock, type TextFileBlock, type ThinkingBlock, type ToolCallBlock } from "./llm_chat_types.js";
 import { shortModelName } from "./model_name.js";
 import { SafeImage } from "./retry_image.js";
 import ToolCallCard from "./ToolCallCard.js";
+import { getAttachmentLightbox } from "./useChatAttachments.js";
 
 function shortenNumber(n: number): string {
     if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -50,10 +54,13 @@ interface Props {
     isStreaming?: boolean;
     /** When set on an error message, renders a Retry button that re-runs the failed turn. */
     onRetry?: () => void;
+    /** A progress line under the streamed blocks, such as the one a stalled reply shows. */
+    streamStatus?: string;
 }
 
 type ContentGroup =
     | { type: "text"; block: TextBlock; index: number }
+    | { type: "thinking"; block: ThinkingBlock; index: number }
     | { type: "tool_calls"; blocks: ToolCallBlock[]; index: number }
     | { type: "image"; block: ImageBlock; index: number }
     | { type: "file"; block: FileBlock; index: number }
@@ -118,7 +125,67 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
     );
 }
 
-function ChatMessage({ message, isStreaming, onRetry }: Props) {
+/**
+ * One stretch of the model's reasoning. A finished one folds to a single muted line: its leading
+ * `**Title**` (the shape of Codex's reasoning summaries), or else its first line, which the body
+ * then leaves out. The one being generated stays open in full under a spinner and its latest title.
+ */
+function ThinkingCard({ content, isLive }: { content: string; isLive?: boolean }) {
+    if (isLive) {
+        return (
+            <div className="expandable-line llm-chat-thinking llm-chat-thinking-live">
+                <div className="expandable-line-header">
+                    <LoadingSpinner />
+                    <span className="llm-chat-thinking-title">{latestThinkingTitle(content) ?? t("llm_chat.thinking")}</span>
+                </div>
+                <div className="expandable-line-body llm-chat-thinking-content">
+                    <TextBlockContent content={content} />
+                </div>
+            </div>
+        );
+    }
+
+    const { label, body } = splitThinkingLabel(content);
+    if (!body) {
+        return <ThinkingLine label={label || t("llm_chat.thought_process")} />;
+    }
+
+    return (
+        <ExpandableSection variant="line" className="llm-chat-thinking" icon="bx bx-brain" label={label || t("llm_chat.thought_process")}>
+            <div className="llm-chat-thinking-content">
+                <TextBlockContent content={body} />
+            </div>
+        </ExpandableSection>
+    );
+}
+
+/**
+ * A finished thought with nothing under its label. It opens, letting the label wrap, only when the
+ * label is cut off. The label is measured while closed, since an open one wraps and always fits.
+ */
+function ThinkingLine({ label }: { label: string }) {
+    const labelRef = useRef<HTMLSpanElement>(null);
+    const [fits, setFits] = useState(true);
+    const measure = useCallback(() => {
+        const el = labelRef.current;
+        if (el && !el.closest("details")?.open) {
+            setFits(el.scrollWidth <= el.clientWidth);
+        }
+    }, []);
+    useLayoutEffect(measure, [label, measure]);
+    useResizeObserver(labelRef, measure);
+
+    return (
+        <ExpandableSection
+            variant="line"
+            className={`llm-chat-thinking ${fits ? "llm-chat-thinking-fits" : ""}`}
+            icon="bx bx-brain"
+            label={<span ref={labelRef} className="llm-chat-thinking-label">{label}</span>}
+        />
+    );
+}
+
+function ChatMessage({ message, isStreaming, onRetry, streamStatus }: Props) {
     const isError = message.type === "error";
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
@@ -144,18 +211,11 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
         isThinking && "llm-chat-message-thinking"
     ].filter(Boolean).join(" ");
 
-    // Render thinking messages in a collapsible card
+    // Chats saved before reasoning moved into the reply hold it as a message of its own.
     if (isThinking) {
         return (
             <div className="llm-chat-message-wrapper llm-chat-message-wrapper-assistant">
-                <ExpandableCard className="llm-chat-thinking-card">
-                    <ExpandableSection icon="bx bx-brain" label={t("llm_chat.thought_process")}>
-                        <div className="llm-chat-thinking-content">
-                            {textContent}
-                            {isStreaming && <span className="llm-chat-cursor" />}
-                        </div>
-                    </ExpandableSection>
-                </ExpandableCard>
+                <ThinkingCard content={textContent} />
             </div>
         );
     }
@@ -203,6 +263,14 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                     ) : (
                         <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming && message.role === "assistant"} />
                     )}
+                    {streamStatus && (
+                        <div className="expandable-line llm-chat-stream-idle" role="status">
+                            <div className="expandable-line-header">
+                                <LoadingSpinner />
+                                <span>{streamStatus}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {message.citations && message.citations.length > 0 && (
                     <CitationsSection citations={message.citations} />
@@ -215,21 +283,21 @@ function ChatMessage({ message, isStreaming, onRetry }: Props) {
                 >
                     {utils.formatTime(new Date(message.createdAt))}
                 </span>
+                {message.usage?.model && (
+                    <span className="llm-chat-usage-model" title={message.usage.model}>
+                        {shortModelName(message.usage.model, message.usage.provider)}
+                    </span>
+                )}
                 {message.usage && typeof message.usage.promptTokens === "number" && (
                     <>
-                        {message.usage.model && (
-                            <span className="llm-chat-usage-model" title={message.usage.model}>
-                                {shortModelName(message.usage.model, message.usage.provider)}
-                            </span>
-                        )}
                         <span
                             className="llm-chat-usage-tokens"
                             title={t("llm_chat.tokens_detail", {
                                 prompt: message.usage.promptTokens.toLocaleString(),
-                                completion: message.usage.completionTokens.toLocaleString()
+                                completion: (message.usage.completionTokens ?? 0).toLocaleString()
                             })}
                         >
-                            {t("llm_chat.total_tokens", { total: shortenNumber(message.usage.totalTokens) })}
+                            {t("llm_chat.total_tokens", { total: shortenNumber(message.usage.totalTokens ?? message.usage.promptTokens) })}
                         </span>
                         {message.usage.cost != null && (
                             <span className="llm-chat-usage-cost">~${message.usage.cost.toFixed(2)}</span>
@@ -261,6 +329,8 @@ function groupContentBlocks(blocks: ContentBlock[]): ContentGroup[] {
             } else {
                 groups.push({ type: "tool_calls", blocks: [block], index: i });
             }
+        } else if (block.type === "thinking") {
+            groups.push({ type: "thinking", block, index: i });
         } else if (block.type === "image") {
             groups.push({ type: "image", block, index: i });
         } else if (block.type === "file") {
@@ -276,34 +346,54 @@ function groupContentBlocks(blocks: ContentBlock[]): ContentGroup[] {
 }
 
 function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
-    return groupContentBlocks(blocks).map((group) => {
+    const groups = groupContentBlocks(blocks);
+    const lastStep = groups.findLastIndex(group => group.type === "thinking" || group.type === "tool_calls");
+    const reply = lastStep >= 0 && groups[lastStep + 1]?.type === "text" ? groups[lastStep + 1] : undefined;
+
+    return groups.map((group) => {
+        const isLastBlock = group.index === blocks.length - 1;
         if (group.type === "text") {
-            const isLastBlock = group.index === blocks.length - 1;
             return (
-                <div key={group.index}>
+                <div key={group.index} className={group === reply ? "llm-chat-reply" : undefined}>
                     <TextBlockContent content={group.block.content} isStreaming={isStreaming && isLastBlock} />
                 </div>
             );
         }
 
+        if (group.type === "thinking") {
+            return <ThinkingCard key={group.index} content={group.block.content} isLive={isStreaming && isLastBlock} />;
+        }
+
         if (group.type === "image") {
             return (
-                <a
+                <LightboxLink
                     key={group.index}
-                    href={group.block.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    lightbox={{ src: group.block.url, title: group.block.title }}
                     className="llm-chat-message-image"
-                    title={group.block.title}
                 >
                     <SafeImage src={group.block.url} alt={group.block.title} />
-                </a>
+                </LightboxLink>
             );
         }
 
         if (group.type === "file" || group.type === "text_file") {
             const icon = group.type === "file" ? "bxs-file-pdf" : "bxs-file-blank";
-            return (
+            const lightbox = getAttachmentLightbox(group.block);
+            const content = <>
+                <span className={`bx ${icon}`} />
+                <span className="llm-chat-message-file-name">{group.block.title}</span>
+            </>;
+
+            return lightbox ? (
+                <LightboxLink
+                    key={group.index}
+                    lightbox={lightbox}
+                    href={group.block.url}
+                    className="llm-chat-message-file"
+                >
+                    {content}
+                </LightboxLink>
+            ) : (
                 <a
                     key={group.index}
                     href={group.block.url}
@@ -312,12 +402,31 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
                     className="llm-chat-message-file"
                     title={group.block.title}
                 >
-                    <span className={`bx ${icon}`} />
-                    <span className="llm-chat-message-file-name">{group.block.title}</span>
+                    {content}
                 </a>
             );
         }
 
         return <ToolCallCard key={group.index} toolCalls={group.blocks.map((b) => b.toolCall)} />;
     });
+}
+
+/** Matches a line that is only bold text, the title Codex puts on each reasoning summary. */
+const THINKING_TITLE_LINE = /^\*\*([^*\n]+)\*\*[ \t]*$/gm;
+
+/**
+ * Split off the line that names a folded thought: its leading `**Title**`, or else its first line
+ * without inline Markdown marks. The body is the rest, so the opened thought does not repeat it.
+ */
+function splitThinkingLabel(content: string): { label: string; body: string } {
+    const trimmed = content.trim();
+    const title = /^\*\*([^*\n]+)\*\*[ \t]*(?:\n|$)/.exec(trimmed);
+    const firstLine = title?.[0] ?? trimmed.split("\n", 1)[0];
+    const label = title?.[1] ?? firstLine.replace(/\*\*|`/g, "");
+    return { label: label.trim(), body: trimmed.slice(firstLine.length).trim() };
+}
+
+/** The last `**Title**` line of a thought, naming what the model is working on now. */
+function latestThinkingTitle(content: string): string | undefined {
+    return [...content.matchAll(THINKING_TITLE_LINE)].at(-1)?.[1].trim();
 }

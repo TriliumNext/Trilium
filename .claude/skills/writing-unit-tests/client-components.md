@@ -10,6 +10,7 @@ Put this in a shared `apps/client/src/test/render.ts` (recommended) or inline pe
 
 ```ts
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach } from "vitest";
 
 let container: HTMLDivElement | undefined;
@@ -20,21 +21,39 @@ export function renderInto(vnode: any) {
     return container;
 }
 // Always tear down, or bootstrap Tooltips / listeners leak between tests.
-afterEach(() => { if (container) { render(null, container); container.remove(); container = undefined; } });
+afterEach(() => {
+    const mounted = container;
+    if (mounted) {
+        act(() => render(null, mounted));
+        mounted.remove();
+        container = undefined;
+    }
+});
 ```
+
+**Unmount inside `act()`.** Preact 11 runs a removed component's `useEffect` cleanups after the next
+paint, as React does. `act()` flushes them on the spot; a bare `render(null, container)` leaves them
+to fire during the *next* test, after its `beforeEach` has cleared the mocks, so that test sees a call
+it never made (`Modal`'s `hide()`, a font unregistering). The same goes for an unmount inside a test
+followed by an assertion on the cleanup. Copy a `let container` into a `const` first: TypeScript's
+narrowing does not reach into the arrow function.
 
 Spec files that use JSX must be named `*.spec.tsx`.
 
 ## Firing events — match Preact's delegated event names
 
-Set the value, then dispatch the **native** event Preact listens for, always with `{ bubbles: true }`:
+Set the value, then dispatch the **native** event Preact listens for, always with `{ bubbles: true }`.
+`setup.ts` loads `preact/compat` for every spec, as the app always has it loaded, and compat's
+`options.vnode` hook renames several handlers. Dispatch what the renamed handler listens to:
 
 | Handler | Dispatch | Notes |
 |---|---|---|
 | `onClick` | `el.click()` | simplest |
 | `onInput` | `new Event("input", { bubbles: true })` | text inputs |
-| `onChange` (on `<select>`) | `new Event("change", { bubbles: true })` | |
-| **`onBlur`** | **`new Event("focusout", { bubbles: true })`** | ⚠️ Preact delegates blur→`focusout`; a `"blur"` event silently does **nothing** |
+| **`onChange` on a text-like `<input>`/`<textarea>`** | **`new Event("input", { bubbles: true })`** | ⚠️ compat maps it to `input` for every type but checkbox, radio and file — that includes `range` and `color`. A `"change"` event does **nothing** |
+| `onChange` on `<select>`, checkbox, radio, file | `new Event("change", { bubbles: true })` | |
+| **`onFocus` / `onBlur`** | **`new Event("focusin"/"focusout", { bubbles: true })`** | ⚠️ compat maps them to the bubbling events; `"focus"`/`"blur"` silently do **nothing** |
+| any other `on<Name>` | the lowercase DOM name (`dragover`, `dragstart`, `drop`) | Preact 11 always lowercases a camel-case handler. Preact 10 kept `DragOver` where the DOM had no `ondragover` property, as under happy-dom — don't bring that casing back |
 
 ## Tier A — presentational (props → DOM + click)
 
@@ -147,6 +166,19 @@ describe("ActionButton", () => {
 
 - **`isMobile()`/`isDesktop()` are cached at module load** (`const cachedIsMobile = isMobile()` in `Button`/`ActionButton`). To exercise both branches, `vi.mock("../../services/utils")` **before** importing the component — a runtime spy is too late.
 - **`Modal`** visibility is driven by the bootstrap Modal instance + `openDialog` (jQuery) inside `useEffect`; show/hide won't behave under happy-dom. Treat it as integration-tier; in happy-dom only assert its static structure with `show`.
+- **Preact runs `useEffect` after the next frame**, so a listener registered there is not in place when a spec dispatches an event right after `render`, and `await new Promise(r => setTimeout(r))` is not long enough. Register listeners the first interaction needs in `useLayoutEffect` (as `FormList` and `Popup` do), or `vi.waitFor` the effect's result.
+- **`t()` returns `undefined`** without an initialized i18next, and Preact then drops the attribute. To assert on a translated label, `vi.mock("../../services/i18n", () => ({ t: (key: string) => key }))` and expect the key.
+- **Popups placed by Floating UI** (`Popup`, `Menu`, `Dropdown`, `Popover`) need sizes, since happy-dom lays out nothing: stub `document.documentElement`'s `clientWidth`/`clientHeight` and `HTMLElement.prototype`'s `offsetWidth`/`offsetHeight`, and give the anchor a rect with `vi.spyOn(anchor, "getBoundingClientRect")`. Don't stub `getBoundingClientRect` on the whole prototype: Floating UI also measures `<html>`, and the popup lands somewhere else. Where several elements need rects, stub by selector (`this.matches(".tn-menu, .dropdown-item")`) and fall back to the original. Worked examples: `Popup.spec.tsx`, `Menu.spec.tsx`, `Dropdown.spec.tsx`.
+- **Preact runs no handler on an element it has removed.** Interact only with what is drawn now: a
+  menu closes on a pick, so a second pick needs the menu opened again and its item looked up again.
+  A reference taken before the first click points at a detached node, and clicking it does nothing
+  (Preact 10 still ran its handler, which let such a spec pass for the wrong reason). Assert the
+  re-queried element exists before clicking it.
+- **Bootstrap's transition timers outlive a spec.** happy-dom runs no transitions, so Bootstrap
+  finishes each fade with a ~5 ms `setTimeout()` of its own that the environment's teardown does
+  not cancel. `setup.ts` waits them out in a global `afterAll()`; without it a file ending mid-fade
+  throws `parameter 1 is not of type 'Event'` against whichever file runs next in that worker.
+- **Bootstrap's dropdown key handler is live in specs** (`setup.ts` imports Bootstrap). It captures Up, Down and Escape at `document` for any `.dropdown-menu` and throws when no `data-bs-toggle` is next to it, so a spec that presses those keys in a toggle-less `.dropdown-menu` fails with `reading 'parentNode'` unless the component captures them first.
 - Pre-existing stderr noise (KaTeX "quirks mode", the `setup.ts` "vi.mock not at top level" warning) is **not** a failure — ignore it.
 
 ## Optional ergonomic upgrade

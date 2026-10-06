@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import importService from "../../../services/import.js";
+import { fileAccept } from "../../../services/utils.js";
 import Button from "../../react/Button.js";
 import { Card, CardSection } from "../../react/Card.js";
 import FileDropZone from "../../react/FileDropZone.js";
@@ -53,7 +54,7 @@ function EvernotePanel({ parentNoteId, closeDialog, setFooter }: ImportProviderP
         <Card heading={t("evernote_import.choose_file")}>
             <CardSection>
                 <OptionsRow name="import-file" description={t("evernote_import.description_long")} stacked>
-                    <FileDropZone multiple onChange={onChange} accept=".enex" />
+                    <FileDropZone multiple onChange={onChange} accept={fileAccept(".enex")} />
                 </OptionsRow>
                 <OptionsRowWithToggle
                     name="shrink-images"

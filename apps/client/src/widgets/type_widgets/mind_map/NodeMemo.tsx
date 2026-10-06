@@ -28,7 +28,7 @@ export default function NodeMemo({ selectionKey, memo, readOnly, onCommit }: {
     readOnly: boolean;
     onCommit(html: string): void;
 }) {
-    const apiRef = useRef<CKEditorApi>();
+    const apiRef = useRef<CKEditorApi | undefined>(undefined);
     const editorRef = useRef<CKTextEditor>(null);
     const [ uiLanguage ] = useTriliumOption("locale");
     const html = toMemoHtml(memo);

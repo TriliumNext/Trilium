@@ -15,9 +15,7 @@ const FLAKE = `{
       pinnedElectronVersion = "43.2.0";
       pinnedElectronHashes = {
         x86_64-linux = "old-x64";
-        armv7l-linux = "old-armv7l";
         aarch64-linux = "old-arm64";
-        x86_64-darwin = "old-darwin-x64";
         aarch64-darwin = "old-darwin-arm64";
         headers = "old-headers";
       };
@@ -29,9 +27,7 @@ const FLAKE = `{
 
 const HASHES = {
     "x86_64-linux": "x64",
-    "armv7l-linux": "armv7l",
     "aarch64-linux": "arm64",
-    "x86_64-darwin": "darwin-x64",
     "aarch64-darwin": "darwin-arm64",
     "headers": "headers"
 };
@@ -70,12 +66,10 @@ describe("parseShasums", () => {
         ""
     ].join("\n");
 
-    it("picks the five platform zips and ignores the rest of the release", () => {
+    it("picks the platform zips it pins and ignores the rest of the release", () => {
         expect(parseShasums(shasums, "43.3.0")).toEqual({
             "x86_64-linux": "1".repeat(64),
-            "armv7l-linux": "2".repeat(64),
             "aarch64-linux": "3".repeat(64),
-            "x86_64-darwin": "4".repeat(64),
             "aarch64-darwin": "5".repeat(64)
         });
     });
@@ -83,7 +77,7 @@ describe("parseShasums", () => {
     it("names the assets it could not find rather than emitting a partial set", () => {
         expect(() => parseShasums(shasums, "43.4.0")).toThrow(/electron-v43\.4\.0-linux-x64\.zip/);
 
-        // Only the one that is genuinely absent — the four it did resolve stay unmentioned.
+        // Only the one that is genuinely absent — the two it did resolve stay unmentioned.
         const withoutArm = shasums.replace(/^.*darwin-arm64\.zip$/m, "");
         const onlyDarwinArm = /^(?!.*linux-x64).*darwin-arm64\.zip/s;
         expect(() => parseShasums(withoutArm, "43.3.0")).toThrow(onlyDarwinArm);
@@ -101,9 +95,7 @@ describe("rewriteFlake", () => {
       pinnedElectronVersion = "43.3.0";
       pinnedElectronHashes = {
         x86_64-linux = "x64";
-        armv7l-linux = "armv7l";
         aarch64-linux = "arm64";
-        x86_64-darwin = "darwin-x64";
         aarch64-darwin = "darwin-arm64";
         headers = "headers";
       };

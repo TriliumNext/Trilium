@@ -64,6 +64,9 @@ test("Can drag tab to new window", async ({ page, context }, testInfo) => {
 test("Tabs are restored in right order", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
+    // The barrier below waits on the recent-notes request itself, which the standalone build
+    // would otherwise answer without issuing one.
+    await app.observeApiRequests();
 
     // Open three tabs.
     await app.closeAllTabs();

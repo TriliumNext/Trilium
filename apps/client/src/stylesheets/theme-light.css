@@ -52,6 +52,14 @@ html {
     --active-item-background-color: #ddd;
     --active-item-border-color: transparent;
 
+    /* The highlighted row, the row padding and the list padding of every suggestion list: the
+       text editor's mentions, the search completions and `FormAutocomplete`. */
+    --suggestion-active-text-color: var(--active-item-text-color);
+    --suggestion-active-background-color: var(--active-item-background-color);
+    --suggestion-item-padding-block: 5px;
+    --suggestion-item-padding-inline: 5px;
+    --suggestion-list-padding: 6px;
+
     --menu-text-color: black;
     --menu-background-color: white;
 

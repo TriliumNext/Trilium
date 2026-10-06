@@ -24,7 +24,7 @@ vi.mock("./hooks", async (importOriginal) => ({
 interface ModalStubProps {
     header?: ComponentChildren;
     children?: ComponentChildren;
-    modalRef?: RefObject<HTMLDivElement>;
+    modalRef?: RefObject<HTMLDivElement | null>;
 }
 
 vi.mock("./Modal", () => ({

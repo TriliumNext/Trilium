@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CACHE_MAX_AGE_MS, fetchAllPages, isCacheFresh } from "./utils";
+import { CACHE_MAX_AGE_MS, fetchAllPages, isCacheFresh } from "./utils.mts";
 
 describe("isCacheFresh", () => {
     const now = new Date("2026-08-20T12:00:00Z").getTime();

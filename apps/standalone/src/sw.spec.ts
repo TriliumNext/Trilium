@@ -135,6 +135,46 @@ describe("fetch routing", () => {
         const event = fetchEvent(`${origin}/api/notes`);
         handlers.fetch(event);
         expect(event._response).toBeDefined();
+
+        // `/custom/` carries custom request handlers and resource providers. Left off this list it
+        // would be fetched as a static asset, over a network this build does not have.
+        const custom = fetchEvent(`${origin}/custom/my-handler`);
+        handlers.fetch(custom);
+        expect(custom._response).toBeDefined();
+    });
+
+    it("routes shared-note pages to the client bridge but serves the share theme's assets statically", async () => {
+        const handlers = await loadSw();
+
+        for (const path of [ "/share", "/share/", "/share/my-alias", "/share/api/notes/abc123" ]) {
+            const event = fetchEvent(`${origin}${path}`, { mode: "navigate" });
+            handlers.fetch(event);
+            expect(event._response, path).toBeDefined();
+        }
+
+        // The theme's own files ship with the build, so they take the ordinary static path.
+        vi.mocked(fetch).mockClear();
+        const asset = fetchEvent(`${origin}/share/assets/styles.css`);
+        handlers.fetch(asset);
+        await awaitResponse(asset);
+        expect(fetch).toHaveBeenCalled();
+    });
+
+    it("explains that Trilium must be open when a share page finds no app window", async () => {
+        // A lone pdfjs frame is not an app window: it carries no local bridge to render the page.
+        (self as unknown as SwGlobals).clients = {
+            claim: vi.fn(),
+            matchAll: vi.fn(async () => [{ url: `${origin}/pdfjs/viewer.html`, postMessage: vi.fn() }])
+        };
+        const handlers = await loadSw();
+        const event = fetchEvent(`${origin}/share/my-alias`, { mode: "navigate" });
+        handlers.fetch(event);
+
+        const res = await awaitResponse(event);
+        expect(res.status).toBe(503);
+        expect(await res.text()).toContain("Open Trilium in this browser");
+        // Nothing to forward to, and no server behind it either.
+        expect(fetch).not.toHaveBeenCalled();
     });
 
     it("serves navigations and .html network-first (which bypasses cache in dev)", async () => {

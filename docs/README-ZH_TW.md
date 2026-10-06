@@ -23,6 +23,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 
 Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式，專注於建立大型個人知識庫。
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 下載

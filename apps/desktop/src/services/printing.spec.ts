@@ -6,7 +6,8 @@ const h = vi.hoisted(() => ({
     on: new Map<string, Handler>(),
     handle: new Map<string, Handler>(),
     off: [] as Array<[string, unknown]>,
-    consoleHandlers: [] as Array<(event: { level: string }, message: string, line: number, sourceId: string) => void>,
+    consoleHandlers: [] as Array<(event: { level: string; message: string; lineNumber: number; sourceId: string }) => void>,
+    log: { info: vi.fn(), error: vi.fn() },
     loadURL: vi.fn((..._a: unknown[]) => Promise.resolve()),
     executeJavaScript: vi.fn((..._a: unknown[]): Promise<unknown> => Promise.resolve("REPORT")),
     print: vi.fn((_opts: unknown, cb: (success: boolean, reason?: string) => void) => cb(true)),
@@ -19,7 +20,8 @@ const h = vi.hoisted(() => ({
     getFocusedWindow: vi.fn((..._a: unknown[]): unknown => ({})),
     writeFile: vi.fn((..._a: unknown[]) => Promise.resolve()),
     isDev: true as boolean,
-    lastBwOpts: undefined as unknown
+    lastBwOpts: undefined as unknown,
+    webContents: undefined as unknown
 }));
 
 vi.mock("electron", () => {
@@ -34,6 +36,7 @@ vi.mock("electron", () => {
         print: (...a: unknown[]) => (h.print as (...args: unknown[]) => unknown)(...a),
         printToPDF: (...a: unknown[]) => h.printToPDF(...a)
     };
+    h.webContents = webContents;
     class FakeBrowserWindow {
         webContents = webContents;
         loadURL = (...a: unknown[]) => h.loadURL(...a);
@@ -61,7 +64,7 @@ vi.mock("@triliumnext/core", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@triliumnext/core")>();
     return {
         ...actual,
-        getLog: () => ({ info: vi.fn(), error: vi.fn() }),
+        getLog: () => h.log,
         utils: { ...actual.utils, isDev: () => h.isDev }
     };
 });
@@ -98,7 +101,8 @@ const PDF_OPTS = {
     pageSize: "A4" as const,
     scale: 1,
     margins: "default",
-    pageRanges: ""
+    pageRanges: "",
+    requestId: 7
 };
 
 describe("printing — pure helpers", () => {
@@ -159,6 +163,8 @@ describe("setupPrintingHandlers", () => {
         h.print.mockReset().mockImplementation((_opts, cb) => cb(true));
         h.printToPDF.mockReset().mockResolvedValue(Buffer.from("pdf-bytes"));
         h.destroy.mockReset();
+        h.log.info.mockReset();
+        h.log.error.mockReset();
         h.getPrintersAsync.mockReset().mockResolvedValue([]);
         h.showSaveDialogSync.mockReset().mockReturnValue("/out.pdf");
         h.showErrorBox.mockReset();
@@ -191,10 +197,11 @@ describe("setupPrintingHandlers", () => {
             expect(h.showErrorBox).not.toHaveBeenCalled();
         });
 
-        it("reports an error payload when the print window fails to load", async () => {
+        it("reports an error payload and destroys the window when the print window fails to load", async () => {
             h.loadURL.mockRejectedValue(new Error("load failed"));
             const e = await fireOn("print-note", { notePath: "root/abc" });
             expect(e.sender.send).toHaveBeenCalledWith("print-done", expect.objectContaining({ type: "error", message: "load failed" }));
+            expect(h.destroy).toHaveBeenCalledTimes(1);
         });
 
         it("uses offscreen rendering off Linux and forwards console output + progress", async () => {
@@ -205,14 +212,17 @@ describe("setupPrintingHandlers", () => {
             // Exercise the captured console-message handler at each log level.
             const consoleHandler = h.consoleHandlers[0];
             expect(consoleHandler).toBeDefined();
-            consoleHandler({ level: "debug" }, "dbg", 1, "s");
-            consoleHandler({ level: "error" }, "err", 2, "s");
-            consoleHandler({ level: "info" }, "info", 3, "s");
+            consoleHandler({ level: "debug", message: "dbg", lineNumber: 1, sourceId: "s" });
+            consoleHandler({ level: "error", message: "err", lineNumber: 2, sourceId: "s" });
+            consoleHandler({ level: "info", message: "info", lineNumber: 3, sourceId: "s" });
+            expect(h.log.error).toHaveBeenCalledWith("[Print Window s:2] err");
+            expect(h.log.info).toHaveBeenCalledWith("[Print Window s:3] info");
+            expect(h.log.info).not.toHaveBeenCalledWith(expect.stringContaining("dbg"));
 
             // Exercise the print-progress relay callback registered for this window.
             const progress = h.on.get("print-progress");
             expect(progress).toBeDefined();
-            progress?.({}, 42);
+            progress?.({ sender: h.webContents }, 42);
             expect(e.sender.send).toHaveBeenCalledWith("print-progress", { progress: 42, action: "printing" });
         });
 
@@ -232,6 +242,7 @@ describe("setupPrintingHandlers", () => {
                 .mockRejectedValueOnce(new Error("note never ready"));
             const e = await fireOn("print-note", { notePath: "root/abc" });
             expect(e.sender.send).toHaveBeenCalledWith("print-done", expect.objectContaining({ type: "error", message: "note never ready" }));
+            expect(h.destroy).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -280,28 +291,99 @@ describe("setupPrintingHandlers", () => {
     describe("export-as-pdf-preview", () => {
         it("returns the rendered buffer to the renderer", async () => {
             const e = await fireOn("export-as-pdf-preview", PDF_OPTS);
-            expect(e.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", expect.objectContaining({ notePath: "root/abc", buffer: expect.any(Buffer) }));
+            expect(e.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", expect.objectContaining({ notePath: "root/abc", requestId: 7, buffer: expect.any(Buffer) }));
             expect(e.sender.send).toHaveBeenCalledWith("print-done", "REPORT");
         });
 
         it("returns an error result when rendering fails (Error and non-Error)", async () => {
             h.printToPDF.mockRejectedValue(new Error("render boom"));
             const e1 = await fireOn("export-as-pdf-preview", PDF_OPTS);
-            expect(e1.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", error: "render boom" });
+            expect(e1.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "render boom" });
 
             h.printToPDF.mockRejectedValue("render string");
             const e2 = await fireOn("export-as-pdf-preview", PDF_OPTS);
-            expect(e2.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", error: "render string" });
+            expect(e2.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "render string" });
         });
 
-        it("reports an error payload when the print window fails (Error and non-Error)", async () => {
+        it("returns an error result and destroys the window when the print window fails (Error and non-Error)", async () => {
             h.loadURL.mockRejectedValue(new Error("load failed"));
             const e1 = await fireOn("export-as-pdf-preview", PDF_OPTS);
-            expect(e1.sender.send).toHaveBeenCalledWith("print-done", expect.objectContaining({ type: "error", message: "load failed" }));
+            expect(e1.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "load failed" });
+            expect(e1.sender.send).not.toHaveBeenCalledWith("print-done", expect.anything());
+            expect(h.destroy).toHaveBeenCalledTimes(1);
 
             h.loadURL.mockRejectedValue("load string");
             const e2 = await fireOn("export-as-pdf-preview", PDF_OPTS);
-            expect(e2.sender.send).toHaveBeenCalledWith("print-done", { type: "error", message: "load string", stack: undefined });
+            expect(e2.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "load string" });
+        });
+    });
+
+    describe("render timeout", () => {
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
+
+        it("fails the preview and destroys the window when the note never becomes ready", async () => {
+            h.executeJavaScript.mockReset()
+                .mockResolvedValueOnce(undefined)
+                .mockReturnValueOnce(new Promise(() => {}));
+            const fn = h.on.get("export-as-pdf-preview");
+            if (!fn) throw new Error("no on-handler for export-as-pdf-preview");
+            const e = makeEvent();
+            const done = fn(e, PDF_OPTS);
+
+            await vi.advanceTimersByTimeAsync(printing.RENDER_STALL_TIMEOUT_MS - 1);
+            expect(e.sender.send).not.toHaveBeenCalled();
+            expect(h.destroy).not.toHaveBeenCalled();
+
+            await vi.advanceTimersByTimeAsync(1);
+            await done;
+            expect(e.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "pdf.render-timeout" });
+            expect(h.printToPDF).not.toHaveBeenCalled();
+            expect(h.destroy).toHaveBeenCalledTimes(1);
+            expect(h.off).toContainEqual(["print-progress", expect.any(Function)]);
+        });
+
+        it("restarts the timeout on every progress report", async () => {
+            let ready: (report: unknown) => void = () => {};
+            h.executeJavaScript.mockReset()
+                .mockResolvedValueOnce(undefined)
+                .mockReturnValueOnce(new Promise((resolve) => { ready = resolve; }));
+            const fn = h.on.get("print-note");
+            if (!fn) throw new Error("no on-handler for print-note");
+            const e = makeEvent();
+            const done = fn(e, { notePath: "root/abc" });
+
+            const progress = h.on.get("print-progress");
+            expect(progress).toBeDefined();
+            await vi.advanceTimersByTimeAsync(printing.RENDER_STALL_TIMEOUT_MS - 1);
+            progress?.({ sender: h.webContents }, 50);
+            await vi.advanceTimersByTimeAsync(printing.RENDER_STALL_TIMEOUT_MS - 1);
+            ready("REPORT");
+            await done;
+
+            expect(h.print).toHaveBeenCalled();
+            expect(e.sender.send).toHaveBeenCalledWith("print-done", "REPORT");
+        });
+
+        it("ignores progress reports from other print windows", async () => {
+            h.executeJavaScript.mockReset()
+                .mockResolvedValueOnce(undefined)
+                .mockReturnValueOnce(new Promise(() => {}));
+            const fn = h.on.get("export-as-pdf-preview");
+            if (!fn) throw new Error("no on-handler for export-as-pdf-preview");
+            const e = makeEvent();
+            const done = fn(e, PDF_OPTS);
+
+            const progress = h.on.get("print-progress");
+            expect(progress).toBeDefined();
+            await vi.advanceTimersByTimeAsync(printing.RENDER_STALL_TIMEOUT_MS - 1);
+            progress?.({ sender: {} }, 50);
+            expect(e.sender.send).not.toHaveBeenCalledWith("print-progress", expect.anything());
+
+            await vi.advanceTimersByTimeAsync(1);
+            await done;
+            expect(e.sender.send).toHaveBeenCalledWith("export-as-pdf-preview-result", { notePath: "root/abc", requestId: 7, error: "pdf.render-timeout" });
+            expect(h.destroy).toHaveBeenCalledTimes(1);
         });
     });
 

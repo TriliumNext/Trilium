@@ -24,7 +24,7 @@ describe("WaveformSeekBar", () => {
         const media = document.createElement("audio");
         Object.defineProperty(media, "duration", { value: duration, writable: true, configurable: true });
         media.currentTime = currentTime;
-        return { current: media } as RefObject<HTMLAudioElement>;
+        return { current: media } as RefObject<HTMLAudioElement | null>;
     }
 
     function renderSeekBar(mediaRef = fakeMedia(), peaks: number[] | null = null) {

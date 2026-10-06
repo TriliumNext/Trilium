@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca";
 import { buildNote } from "../test/becca_easy_mocking";
-import { determineBestFontAttachment, generateCss, generateIconRegistry, IconPackManifest, processIconPack } from "./icon_packs";
+import { determineBestFontAttachment, generateCss, generateIconRegistry, generateIconTransformCss, getIconPacks, IconPackManifest, processIconPack } from "./icon_packs";
+import { getPlatform } from "./platform";
+import search from "./search/services/search";
 
 const manifest: IconPackManifest = {
     icons: {
@@ -164,6 +167,39 @@ describe("CSS generation", () => {
         expect(css).toContain(`.bx.bx-ball::before { content: "\ue9c2"; }`);
         expect(css).toContain(`.bx.bxs-party::before { content: "\uec92"; }`);
     });
+
+    it("declares the box a pack was measured in, and nothing where it was not", () => {
+        const measured = cssForManifest({ ...manifest, metrics: { ascent: 0.875, descent: 0.125 } });
+        expect(measured).toContain("ascent-override: 87.5%;");
+        expect(measured).toContain("descent-override: 12.5%;");
+        expect(measured).toContain("line-gap-override: 0%;");
+
+        const unmeasured = cssForManifest(manifest);
+        expect(unmeasured).toContain("@font-face");
+        expect(unmeasured).not.toContain("ascent-override");
+        expect(unmeasured).not.toContain("descent-override");
+    });
+
+    it("drops metrics a pack's author wrote by hand and got wrong", () => {
+        const evil = "0%; } body { display: none } @font-face { a: 1";
+
+        const css = cssForManifest({ ...manifest, metrics: { ascent: evil, descent: 0.1 } as never });
+        expect(css).not.toContain("ascent-override");
+        expect(css).not.toContain("display: none");
+    });
+
+    function cssForManifest(iconPackManifest: IconPackManifest) {
+        const processed = processIconPack(buildNote({
+            type: "text",
+            title: "Boxicons v2",
+            content: JSON.stringify(iconPackManifest),
+            attachments: [ defaultAttachment ],
+            "#iconPack": "bx"
+        }));
+        expect(processed).toBeTruthy();
+
+        return (processed && generateCss(processed, "/api/attachments/x/download")) ?? "";
+    }
 });
 
 describe("Generating CSS for untrusted manifests", () => {
@@ -209,6 +245,16 @@ describe("Generating CSS for untrusted manifests", () => {
 
         expect(css).toContain(`.un.utf-grinning-face::before { content: "\u{1F600}"; }`);
         expect(css).toContain(`.un.utf-\u{1F600}::before { content: "\u{1F600}"; }`);
+    });
+
+    it("resolves CSS escape sequences in glyphs, which packs copied from a stylesheet carry", () => {
+        const css = generateCssFor({
+            "fa-0": { glyph: "\\30 ", terms: [ "0" ] },
+            "fa-house": { glyph: "\\f015", terms: [ "house" ] }
+        });
+
+        expect(css).toContain(`.un.fa-0::before { content: "0"; }`);
+        expect(css).toContain(`.un.fa-house::before { content: "\uf015"; }`);
     });
 
     it("escapes a glyph so it cannot end the style element it is served in", () => {
@@ -286,5 +332,78 @@ describe("Icon registry", () => {
             "#iconPack": "bx"
         }));
         expect(iconPack).toBeFalsy();
+    });
+});
+
+describe("Generating CSS for icon transforms", () => {
+    it("carries every transform the text editor can write, unscoped to a pack", () => {
+        const css = generateIconTransformCss();
+
+        expect(css).toContain(".bx-rotate-90 { transform: rotate(90deg); }");
+        expect(css).toContain(".bx-rotate-180 { transform: rotate(180deg); }");
+        expect(css).toContain(".bx-rotate-270 { transform: rotate(270deg); }");
+        expect(css).toContain(".bx-flip-horizontal { transform: scaleX(-1); }");
+        expect(css).toContain(".bx-flip-vertical { transform: scaleY(-1); }");
+    });
+});
+
+describe("Listing icon packs", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("returns only the built-in packs, without searching, while becca is not loaded", () => {
+        const wasLoaded = becca.loaded;
+        const searchNotes = vi.spyOn(search, "searchNotes");
+        becca.loaded = false;
+        try {
+            const iconPacks = getIconPacks();
+            expect(iconPacks.map(p => [ p.prefix, p.builtin, !!p.internal ])).toStrictEqual([
+                [ "bx", true, false ],
+                [ "cke", true, true ]
+            ]);
+            expect(iconPacks[1].manifest.icons["cke-table-merge-cell"]).toBeDefined();
+            expect(searchNotes).not.toHaveBeenCalled();
+        } finally {
+            becca.loaded = wasLoaded;
+        }
+    });
+
+    it("skips a user pack that takes the prefix of a built-in one", () => {
+        const wasLoaded = becca.loaded;
+        const userPack = buildNote({
+            title: "Text Editor Icons",
+            type: "text",
+            content: JSON.stringify(manifest),
+            attachments: [ defaultAttachment ],
+            "#iconPack": "cke"
+        });
+        vi.spyOn(search, "searchNotes").mockReturnValue([ userPack ]);
+        becca.loaded = true;
+        try {
+            const iconPacks = getIconPacks();
+            expect(iconPacks.map(p => p.prefix)).toStrictEqual([ "bx", "cke" ]);
+            expect(iconPacks[1].builtin).toBe(true);
+        } finally {
+            becca.loaded = wasLoaded;
+        }
+    });
+
+    it("offers an internal pack for picking only in development", () => {
+        const wasLoaded = becca.loaded;
+        becca.loaded = false;
+        try {
+            const iconPacks = getIconPacks();
+            const getEnv = vi.spyOn(getPlatform(), "getEnv");
+            const listedPrefixes = () => generateIconRegistry(iconPacks).sources.map(s => s.prefix);
+
+            getEnv.mockImplementation((key) => (key === "TRILIUM_ENV" ? "production" : undefined));
+            expect(listedPrefixes()).toStrictEqual([ "bx" ]);
+
+            getEnv.mockImplementation((key) => (key === "TRILIUM_ENV" ? "dev" : undefined));
+            expect(listedPrefixes()).toStrictEqual([ "bx", "cke" ]);
+        } finally {
+            becca.loaded = wasLoaded;
+        }
     });
 });

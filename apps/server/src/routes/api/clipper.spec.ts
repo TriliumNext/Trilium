@@ -1,10 +1,24 @@
-import { becca_easy_mocking, BNote, cls } from "@triliumnext/core";
+import { BBranch, becca, becca_easy_mocking, BNote, cls } from "@triliumnext/core";
 import type { Request } from "express";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import clipperRoute, { processContent } from "./clipper";
 
 const { buildNote } = becca_easy_mocking;
+
+vi.mock("../../services/image.js", () => ({
+    default: {
+        saveImageToAttachment() {
+            return {
+                attachmentId: "foo",
+                title: "encodedTitle",
+            };
+        },
+        // The clipping is read as soon as this answers, so the picture has to be stored by
+        // then; nothing here defers, so there is nothing for the wait to do.
+        awaitImageWrite: async () => {}
+    }
+}));
 
 let note!: BNote;
 
@@ -14,19 +28,6 @@ describe("processContent", () => {
             content: "Hi there"
         });
         note.saveAttachment = () => {};
-        vi.mock("../../services/image.js", () => ({
-            default: {
-                saveImageToAttachment() {
-                    return {
-                        attachmentId: "foo",
-                        title: "encodedTitle",
-                    };
-                },
-                // The clipping is read as soon as this answers, so the picture has to be stored by
-                // then; nothing here defers, so there is nothing for the wait to do.
-                awaitImageWrite: async () => {}
-            }
-        }));
     });
 
     it("processes basic note", async () => {
@@ -100,6 +101,29 @@ describe("clipper route handlers", () => {
             }
         } as unknown as Request));
         expect(result.noteId).toBeTruthy();
+    });
+
+    it("clips to the top level when there is no clipper inbox and no journal", async () => {
+        const result = await cls.init(() => clipperRoute.createNote({
+            body: { title: "No journal", content: "<p>x</p>", images: [], clipType: "note", pageUrl: "https://example.com/nj" }
+        } as unknown as Request));
+
+        // Without a #calendarRoot the clipping must not have a calendar built around it.
+        const clipped = becca.getNoteOrThrow(result.noteId);
+        expect(clipped.getParentNotes().map((p) => p.noteId)).toEqual([ "root" ]);
+    });
+
+    it("clips into the day note once a journal exists", async () => {
+        const journal = buildNote({ title: "Journal", "#calendarRoot": "" });
+        // The day note is created beneath it, so it needs a path back to the root.
+        new BBranch({ noteId: journal.noteId, parentNoteId: "root", branchId: `root_${journal.noteId}` });
+
+        const result = await cls.init(() => clipperRoute.createNote({
+            body: { title: "With journal", content: "<p>x</p>", images: [], clipType: "note", pageUrl: "https://example.com/wj" }
+        } as unknown as Request));
+
+        const clipped = becca.getNoteOrThrow(result.noteId);
+        expect(clipped.getParentNotes().map((p) => p.noteId)).not.toEqual([ "root" ]);
     });
 
     it("returns a null noteId when no clipping matches the URL", async () => {

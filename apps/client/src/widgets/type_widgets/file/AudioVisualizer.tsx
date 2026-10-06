@@ -29,7 +29,7 @@ const DEFAULT_HIGH_COLOR = "rgb(136, 136, 136)";
  * lights up from the bottom and each cell takes a single colour from a low→high vertical gradient. Runs an rAF
  * loop only while playing (and briefly after, to animate the decay); when not playing every column rests at zero.
  */
-export function AudioVisualizer({ mediaRef, isPlaying, compact }: { mediaRef: RefObject<HTMLAudioElement>; isPlaying: boolean; compact?: boolean }) {
+export function AudioVisualizer({ mediaRef, isPlaying, compact }: { mediaRef: RefObject<HTMLAudioElement | null>; isPlaying: boolean; compact?: boolean }) {
     const cellSize = compact ? CELL_SIZE * COMPACT_SCALE : CELL_SIZE;
     const cellGap = compact ? CELL_GAP * COMPACT_SCALE : CELL_GAP;
     const canvasRef = useRef<HTMLCanvasElement>(null);

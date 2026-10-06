@@ -78,6 +78,79 @@ describe("note_tools — write tools return post-write content", () => {
             const result = getTool("set_note_content").execute({ noteId: "missing", content: "x" });
             expect(result).toEqual({ error: "Note not found" });
         });
+
+        it("changes the type along with the content", () => {
+            const note = buildNote({ id: "text3", type: "text", mime: "text/html", content: "<pre>print(1)</pre>" });
+            withMutableContent(note, "<pre>print(1)</pre>");
+            note.save = vi.fn() as typeof note.save;
+
+            const toCode = getTool("set_note_content").execute({
+                noteId: "text3", content: "print(1)", type: "code", mime: "text/x-python"
+            });
+            expect(toCode).toEqual({
+                success: true, noteId: "text3", title: note.title,
+                type: "code", mime: "text/x-python", content: "print(1)"
+            });
+            expect(note.setContent).toHaveBeenLastCalledWith("print(1)");
+            expect(note.save).toHaveBeenCalled();
+
+            // A code note keeps its mime unless one is given; only the mime can change too.
+            const mimeOnly = getTool("set_note_content").execute({
+                noteId: "text3", content: "console.log(1)", mime: "text/javascript"
+            });
+            expect(mimeOnly).toMatchObject({ type: "code", mime: "text/javascript" });
+
+            // Back to text: the content is Markdown again and the mime is the type's default.
+            const toText = getTool("set_note_content").execute({
+                noteId: "text3", content: "# Heading", type: "text"
+            });
+            expect(toText).toMatchObject({ type: "text", mime: "text/html" });
+            expect(note.setContent).toHaveBeenLastCalledWith(expect.stringContaining("<h2>Heading</h2>"));
+        });
+
+        it("requires a mime when a note becomes code, and leaves the note untouched", () => {
+            const note = buildNote({ id: "text4", type: "text", mime: "text/html", content: "<p>a</p>" });
+            withMutableContent(note, "<p>a</p>");
+
+            const result = getTool("set_note_content").execute({ noteId: "text4", content: "a", type: "code" });
+
+            expect(result).toEqual({ error: "mime is required when changing a note to code" });
+            expect(note.type).toBe("text");
+            expect(note.setContent).not.toHaveBeenCalled();
+        });
+
+        it("turns a note into an SVG image only with SVG content", () => {
+            const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><rect/></svg>";
+            const note = buildNote({ id: "code5", type: "code", mime: "text/xml", content: svg });
+            withMutableContent(note, svg);
+            note.save = vi.fn() as typeof note.save;
+
+            expect(getTool("set_note_content").execute({ noteId: "code5", content: "<rect/>", type: "image" }))
+                .toMatchObject({ error: expect.stringContaining("complete SVG source") });
+            expect(getTool("set_note_content").execute({ noteId: "code5", content: svg, type: "image", mime: "image/png" }))
+                .toEqual({ error: "Only SVG images are supported; use mime 'image/svg+xml'" });
+            expect(note.type).toBe("code");
+            expect(note.setContent).not.toHaveBeenCalled();
+
+            expect(getTool("set_note_content").execute({ noteId: "code5", content: svg, type: "image" }))
+                .toMatchObject({ success: true, type: "image", mime: "image/svg+xml", content: svg });
+
+            // An SVG image stays one, so a rewrite without a type is checked too.
+            expect(getTool("set_note_content").execute({ noteId: "code5", content: "<svg>" }))
+                .toMatchObject({ error: expect.stringContaining("complete SVG source") });
+        });
+
+        it("omits type and mime from the result when neither changed", () => {
+            const note = buildNote({ id: "code4", type: "code", mime: "text/plain", content: "old" });
+            withMutableContent(note, "old");
+
+            const result = getTool("set_note_content").execute({
+                noteId: "code4", content: "new", type: "code", mime: "text/plain"
+            });
+
+            expect(result).not.toHaveProperty("type");
+            expect(result).not.toHaveProperty("mime");
+        });
     });
 
     describe("append_to_note", () => {
@@ -92,6 +165,15 @@ describe("note_tools — write tools return post-write content", () => {
 
             expect(result.success).toBe(true);
             expect(result.content).toBe("first line\nsecond line");
+        });
+
+        it("refuses to append to an SVG image", () => {
+            const note = buildNote({ id: "svg1", type: "image", mime: "image/svg+xml", content: "<svg></svg>" });
+            withMutableContent(note, "<svg></svg>");
+
+            expect(getTool("append_to_note").execute({ noteId: "svg1", content: "<rect/>" }))
+                .toMatchObject({ error: expect.stringContaining("Cannot append to an SVG image") });
+            expect(note.setContent).not.toHaveBeenCalled();
         });
     });
 
@@ -112,6 +194,19 @@ describe("note_tools — write tools return post-write content", () => {
 
             expect(result.success).toBe(true);
             expect(result.content).toBe("const x = 42;\nconst y = 2;");
+        });
+
+        it("edits an SVG image, refusing edits that leave it incomplete", () => {
+            const svg = "<svg><rect fill=\"red\"/></svg>";
+            const note = buildNote({ id: "svg2", type: "image", mime: "image/svg+xml", content: svg });
+            withMutableContent(note, svg);
+
+            expect(getTool("edit_note_content").execute({ noteId: "svg2", edits: [{ oldText: "</svg>", newText: "" }] }))
+                .toMatchObject({ error: expect.stringContaining("complete SVG source") });
+            expect(note.setContent).not.toHaveBeenCalled();
+
+            expect(getTool("edit_note_content").execute({ noteId: "svg2", edits: [{ oldText: "red", newText: "blue" }] }))
+                .toMatchObject({ success: true, content: "<svg><rect fill=\"blue\"/></svg>" });
         });
 
         it("rejects text notes and returns no content field", () => {
@@ -272,6 +367,29 @@ describe("note_tools — write tools return post-write content", () => {
                 parentNoteId: "tparent", title: "T", content: "x", type: "text"
             })).toEqual({ error: "Failed to create note" });
         });
+
+        it("creates an SVG image note, and refuses other images or content that is not SVG", async () => {
+            buildNote({ id: "iparent", title: "IParent" });
+            const { default: noteService } = await import("../../../services/notes.js");
+            const svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><circle r=\"4\"/></svg>";
+
+            const created = buildNote({ id: "inew", type: "image", mime: "image/svg+xml", content: svg });
+            withMutableContent(created, svg);
+            vi.mocked(noteService.createNewNote).mockReturnValueOnce({ note: created } as ReturnType<typeof noteService.createNewNote>);
+            const ok = getTool("create_note").execute({ parentNoteId: "iparent", title: "Dot", content: svg, type: "image" });
+            expect(ok).toMatchObject({ success: true, type: "image", content: svg });
+            expect(noteService.createNewNote).toHaveBeenCalledWith(expect.objectContaining({
+                type: "image", mime: "image/svg+xml", content: svg
+            }));
+
+            expect(getTool("create_note").execute({
+                parentNoteId: "iparent", title: "x", content: svg, type: "image", mime: "image/png"
+            })).toEqual({ error: "Only SVG images are supported; use mime 'image/svg+xml'" });
+            expect(getTool("create_note").execute({
+                parentNoteId: "iparent", title: "x", content: "<svg><circle", type: "image"
+            })).toMatchObject({ error: expect.stringContaining("complete SVG source") });
+            expect(noteService.createNewNote).toHaveBeenCalledOnce();
+        });
     });
 
     describe("search_notes", () => {
@@ -362,8 +480,8 @@ describe("note_tools — write tools return post-write content", () => {
         it("renames a note and trims the title", () => {
             const note = buildNote({ id: "rn", title: "Old" });
             note.save = vi.fn() as typeof note.save;
-            const result = getTool("rename_note").execute({ noteId: "rn", newTitle: "  New  " }) as { title: string };
-            expect(result.title).toBe("New");
+            const result = getTool("rename_note").execute({ noteId: "rn", newTitle: "  New  " });
+            expect(result).toMatchObject({ title: "New", oldTitle: "Old" });
             expect(note.title).toBe("New");
             expect(note.save).toHaveBeenCalledOnce();
         });

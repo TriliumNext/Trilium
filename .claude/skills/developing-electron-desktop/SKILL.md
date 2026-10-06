@@ -26,12 +26,14 @@ apps/desktop/
   e2e/                           # Playwright against the built app (`pnpm --filter desktop e2e`)
   scripts/build.ts               # esbuild bundle + asset copy into dist/
   electron-forge/                # packaging (forge.config.ts, icons, dmg, portable/safe-mode launchers)
+                                 # flip-fuses.ts + trim-locales.ts are ALSO run as scripts by the
+                                 # Flathub manifest — see the packaging-for-flathub skill before editing
 ```
 
 ## Process and security model
 
 - **`nodeIntegration: false`, `contextIsolation: true`, `webviewTag: true`** on every window (`services/window.ts`). The renderer has no Node, no `require("electron")`, no `@electron/remote` (removed — never reintroduce it). Everything crosses through the preload bridge.
-- **`web_contents_security.ts`** vets every `<webview>` in `will-attach-webview` and denies `window.open`, routing allow-listed URLs to the OS. If a new feature needs a popup or a webview privilege, change it there — never relax `webPreferences` at the call site.
+- **`web_contents_security.ts`** vets every `<webview>` in `will-attach-webview` and decides `window.open`: the app shell's root URL becomes an extra window in the opener's renderer process (that is how the client opens new windows — no IPC channel), everything else is denied and allow-listed URLs are routed to the OS. If a new feature needs a popup or a webview privilege, change it there — never relax `webPreferences` at the call site.
 - **Main-process handlers validate their input** and never trust a path from the renderer: OS pickers run in the main process (`dialog.ts`, `import.ts`, `restore.ts`) and hand back a location the *user* chose; `import.ts` mints single-use access grants rather than accepting a path; `shell.ts` gates every channel with a validator that throws. Follow the same shape for anything that touches the filesystem or the OS.
 - **Secrets stay out of the DB where they must**: `security_settings.ts` reads `data_dir/security.json`, `backup_passphrase.ts` uses the OS keyring — the passphrase must not travel inside the backup it protects.
 - **`services/request.ts`** (`ElectronRequestProvider`) uses Electron's `net` so sync honours the system proxy; `referer.ts` keeps hosts that require an http(s) `Referer` working from the `trilium-app://` origin.

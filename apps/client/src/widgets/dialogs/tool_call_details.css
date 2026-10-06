@@ -1,0 +1,32 @@
+.modal.tool-call-details-dialog {
+    .modal-title {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    .tool-call-details-name {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--muted-text-color);
+    }
+
+    .tool-call-details-section + .tool-call-details-section {
+        margin-top: 1rem;
+    }
+
+    h6 {
+        font-size: 0.8rem;
+        color: var(--muted-text-color);
+    }
+
+    .code-block {
+        margin: 0;
+    }
+
+    .tool-call-details-empty {
+        margin: 0;
+        color: var(--muted-text-color);
+        font-style: italic;
+    }
+}

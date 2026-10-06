@@ -6,7 +6,6 @@ import { OCRProcessingOptions, OCRResult } from '../ocr_service.js';
 import { FileProcessor } from './file_processor.js';
 
 const PARSER_CONFIG: OfficeParserConfig = {
-    outputErrorToConsole: false,
     newlineDelimiter: '\n',
     ignoreNotes: false
 };
@@ -39,7 +38,16 @@ export class OfficeProcessor extends FileProcessor {
         // Dynamically imported so officeparser only loads when an Office file is actually processed.
         const { OfficeParser } = await import('officeparser');
         const ast = await OfficeParser.parseOffice(buffer, config);
-        const trimmed = ast.toText().trim();
+        // `preserveLayout` pads cells into aligned columns and prefixes list markers, which the
+        // search index has no use for and which makes a document's text depend on the format it
+        // was authored in. A flat stream of text nodes indexes the same words either way.
+        // `includeImages: 'none'` drops the `[Image: <alt text>]` line the text generator
+        // otherwise writes for every embedded image.
+        const { value } = await ast.to('text', {
+            includeImages: 'none',
+            textConfig: { preserveLayout: false }
+        });
+        const trimmed = value.trim();
 
         return {
             text: trimmed,

@@ -1,0 +1,192 @@
+:where(:root) {
+    /* The colour the quick search marks its terms in. */
+    --item-picker-mark-color: var(--quick-search-result-highlight-color);
+    --item-picker-inline-padding: 40px;
+    /* One line of caption plus the card's padding. Exact, so the collapse animates. */
+    --item-picker-item-height: calc(1.4em + 2 * var(--card-padding-block));
+    --item-picker-fold-duration: 0.15s;
+}
+
+.modal.item-picker-dialog {
+    .modal-body {
+        /* A column, so the empty state can take the space the list leaves. */
+        display: flex;
+        flex-direction: column;
+        padding-inline: var(--item-picker-inline-padding);
+    }
+
+    /* Holds the list. The empty state is positioned over it. */
+    .item-picker-results {
+        position: relative;
+        flex: 1 0 auto;
+    }
+
+    .modal-dialog {
+        /* Half again as wide as a small dialog, to fit the inline padding. */
+        max-width: 405px;
+    }
+
+    .settings-search {
+        margin-bottom: 20px;
+    }
+
+    .item-picker-groups {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* The gap between groups sits on each card, so it collapses with the card. */
+    .item-picker-groups > .tn-card {
+        margin-block-end: 1em;
+        transition: margin var(--item-picker-fold-duration) ease;
+    }
+
+    .item-picker-groups > .tn-card:last-child {
+        margin-block-end: 0;
+    }
+
+    /* The filter primitive hides an emptied group outright, which cuts the collapse short.
+          Overridden in kind, its own rule being `!important`. */
+    .tn-card.tn-filter-scope:not(:has(.tn-filter-match)) {
+        display: block !important;
+    }
+
+    .tn-card:not(:has(.item-picker-item:not(.item-picker-folded))) {
+        margin-block-end: 0;
+        pointer-events: none;
+
+        & .tn-card-heading {
+            height: 0;
+            margin: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+    }
+
+    .tn-card-heading {
+        height: 1.4em;
+        transition: height var(--item-picker-fold-duration) ease,
+            margin var(--item-picker-fold-duration) ease,
+            opacity calc(var(--item-picker-fold-duration) * 0.7) ease;
+    }
+
+    .item-picker-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        /* An exact height, not a max-height ceiling: a ceiling above the real height spends most of
+              the transition invisible. */
+        height: var(--item-picker-item-height);
+        /* The gap sits on the item, so it collapses with it. A flex gap would leave a stripe. */
+        margin-block-end: var(--card-section-gap);
+        transition: height var(--item-picker-fold-duration) ease,
+            margin var(--item-picker-fold-duration) ease,
+            padding var(--item-picker-fold-duration) ease,
+            border-width var(--item-picker-fold-duration) ease,
+            opacity calc(var(--item-picker-fold-duration) * 0.7) ease;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .item-picker-item:last-of-type {
+        margin-block-end: 0;
+    }
+
+    .item-picker-folded {
+        height: 0;
+        margin-block: 0;
+        padding-block: 0;
+        border-width: 0;
+        opacity: 0;
+    }
+
+    /* Marked by colour alone, as the quick search marks its results. */
+    .item-picker-caption {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Bootstrap's Reboot pads `mark`, which would part a matched term from the caption. */
+    .item-picker-caption mark {
+        margin: 0;
+        padding: 0;
+        background: none;
+        color: var(--item-picker-mark-color);
+        font-weight: 600;
+    }
+
+    /* Laid over the list so it holds still while the list collapses. Faded, not unmounted. */
+    .item-picker-empty {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity var(--item-picker-fold-duration) ease,
+            visibility 0s linear var(--item-picker-fold-duration);
+    }
+
+    /* Shown only when the filter leaves nothing. */
+    .item-picker-groups:not(:has(.item-picker-item:not(.item-picker-folded))) + .item-picker-empty {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity var(--item-picker-fold-duration) ease;
+    }
+
+    /* One animation for the whole list, however many items it holds. */
+    .item-picker-groups {
+        /* Long enough to read as its own animation under the dialog's opening. */
+        animation: item-picker-rise 0.4s ease-out;
+    }
+}
+
+.tn-card-body > .item-picker-item {
+    /* The card lays its own segments out with a gap; these carry their own so they can fold. */
+    margin-block-start: 0;
+}
+
+.modal.item-picker-dialog .tn-card-body {
+    gap: 0;
+}
+
+/* One height whatever it holds, the list scrolling inside it.
+
+   The height goes on `.modal-content`: a scrollable modal only caps that box, which is otherwise
+   sized by its contents and shrinks as the filter narrows the list. `.modal-dialog` then fills
+   the viewport and centres it, as `.modal-dialog-centered` does. */
+body:not(.mobile) .modal.item-picker-dialog {
+    .modal-dialog {
+        display: flex;
+        align-items: center;
+        height: 100%;
+        margin-block: 0;
+    }
+
+    .modal-content {
+        height: 60vh;
+        max-height: 100%;
+    }
+}
+
+/* A phone fills the screen instead, together with `isFullPageOnMobile`. */
+body.mobile .modal.item-picker-dialog .modal-content {
+    height: 100%;
+}
+
+@keyframes item-picker-rise {
+    from { opacity: 0; transform: translateY(50px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal.item-picker-dialog {
+        .item-picker-groups {
+            animation: none;
+        }
+
+        .item-picker-item {
+            transition: none;
+        }
+    }
+}

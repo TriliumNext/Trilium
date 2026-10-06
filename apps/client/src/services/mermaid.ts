@@ -1,7 +1,4 @@
 import type { MermaidConfig } from "mermaid";
-import type { Mermaid } from "mermaid";
-
-let elkLoaded = false;
 
 export function getMermaidConfig(): MermaidConfig {
     const documentStyle = window.getComputedStyle(document.documentElement);
@@ -9,6 +6,11 @@ export function getMermaidConfig(): MermaidConfig {
 
     return {
         theme: mermaidTheme.trim() as "default",
+        // Mermaid 12 made ELK the default layout and `neo` the default look. Both are pinned to the
+        // pre-12 values so diagrams already stored in notes keep rendering as they were written;
+        // front matter still overrides either one per diagram.
+        layout: "dagre",
+        look: "classic",
         securityLevel: "antiscript",
         flowchart: { useMaxWidth: false },
         sequence: { useMaxWidth: false },
@@ -19,30 +21,6 @@ export function getMermaidConfig(): MermaidConfig {
         journey: { useMaxWidth: false },
         gitGraph: { useMaxWidth: false }
     };
-}
-
-/**
- * Determines whether the ELK extension of Mermaid.js needs to be loaded (which is a relatively large library), based on the
- * front-matter of the diagram and loads the library if needed.
- *
- * <p>
- * If the library has already been loaded or the diagram does not require it, the method will exit immediately.
- *
- * @param mermaidContent the plain text of the mermaid diagram, potentially including a frontmatter.
- */
-export async function loadElkIfNeeded(mermaid: Mermaid, mermaidContent: string) {
-    if (elkLoaded) {
-        // Exit immediately since the ELK library is already loaded.
-        return;
-    }
-
-    const parsedContent = await mermaid.parse(mermaidContent, {
-        suppressErrors: true
-    });
-    if (parsedContent && parsedContent.config?.layout === "elk") {
-        elkLoaded = true;
-        mermaid.registerLayoutLoaders((await import("@mermaid-js/layout-elk")).default);
-    }
 }
 
 /**

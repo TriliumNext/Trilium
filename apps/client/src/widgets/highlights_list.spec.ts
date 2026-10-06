@@ -11,12 +11,12 @@ describe("getHighlightList", () => {
     it("supports old italics", async () => {
         const highlights = await widget.getHighlightList("This is <i>italic</i> text", [ "italic" ]);
         expect(highlights.$highlightsList.html()).toBe("<li><i>italic</i></li>");
-        expect(highlights.findSubStr).toContain("i:not(section.include-note i)");
+        expect(highlights.findSubStr).toContain("i:not(.include-note-wrapper i)");
     });
 
     it("supports new italics", async () => {
         const highlights = await widget.getHighlightList("This is <em>italic</em> text", [ "italic" ]);
         expect(highlights.$highlightsList.html()).toBe("<li><em>italic</em></li>");
-        expect(highlights.findSubStr).toContain("em:not(section.include-note em)");
+        expect(highlights.findSubStr).toContain("em:not(.include-note-wrapper em)");
     });
 })

@@ -163,7 +163,7 @@ export async function writeContainer(
         payload = encryptFrames(backend, key, header.encryption.noncePrefix, aad, payload);
     }
 
-    const hash = backend.createSha256();
+    const hash = await backend.createSha256();
     let payloadBytes = 0;
     for await (const chunk of payload) {
         hash.update(chunk);

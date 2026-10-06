@@ -1,0 +1,59 @@
+/*
+ * A custom property only animates once it is registered with a type, so both ends are declared as
+ * lengths for the transition below to interpolate. Where `@property` is unsupported the fades snap,
+ * and the `var()` fallbacks in the mask stand in for the initial values.
+ */
+@property --scroll-fade-start {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+/*
+ * Fades whichever edge a scroll container continues past, so what is cut off reads as going on
+ * rather than as ending.
+ *
+ * A mask rather than a painted gradient: it holds over any background, including a semi-transparent
+ * tint over a window material, which no painted color could match.
+ */
+.scroll-fade {
+    mask-image: linear-gradient(
+        var(--scroll-fade-direction, to bottom),
+        transparent,
+        black var(--scroll-fade-start, 0px),
+        black calc(100% - var(--scroll-fade-end, 0px)),
+        transparent
+    );
+    transition:
+        --scroll-fade-start var(--scroll-fade-duration, 300ms) ease,
+        --scroll-fade-end var(--scroll-fade-duration, 300ms) ease;
+}
+
+/* A gradient can only be given a physical direction, and the ends swap in a right-to-left page. */
+.scroll-fade-horizontal {
+    --scroll-fade-direction: to right;
+}
+
+body[dir=rtl] .scroll-fade-horizontal {
+    --scroll-fade-direction: to left;
+}
+
+.scroll-fade-start {
+    --scroll-fade-start: var(--scroll-fade-size, 20px);
+}
+
+.scroll-fade-end {
+    --scroll-fade-end: var(--scroll-fade-size, 20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .scroll-fade {
+        transition: none;
+    }
+}

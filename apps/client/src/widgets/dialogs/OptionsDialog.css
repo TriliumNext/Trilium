@@ -85,8 +85,8 @@ body.mobile .modal.options-dialog.mobile-master-detail {
        starts the text 32px in, where a phone is read. Widened where a sensor housing eats into
        the screen, which is a side of it rather than the start of a sentence: hence left and right,
        not start and end. */
-    --options-inset-left: max(16px, env(safe-area-inset-left));
-    --options-inset-right: max(16px, env(safe-area-inset-right));
+    --options-inset-left: max(16px, var(--safe-area-inset-left, env(safe-area-inset-left)));
+    --options-inset-right: max(16px, var(--safe-area-inset-right, env(safe-area-inset-right)));
 
     /* The room a scrolling pane keeps for its bar, held on both edges rather than the trailing one
        alone: on one edge the cards sit off centre whenever the bar is absent, and a bar that comes

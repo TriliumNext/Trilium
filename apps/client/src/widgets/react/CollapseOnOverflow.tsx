@@ -105,7 +105,7 @@ export function nextCollapsedState(state: CollapseState, { wantedWidth, givenWid
 }
 
 /** Watches the control and its container, answering which rendering the width allows for. */
-function useCollapsed(ref: RefObject<HTMLDivElement>, container: RefObject<HTMLElement | null>, alwaysCollapsed?: boolean) {
+function useCollapsed(ref: RefObject<HTMLDivElement | null>, container: RefObject<HTMLElement | null>, alwaysCollapsed?: boolean) {
     const [ collapsed, setCollapsed ] = useState(false);
     // Held rather than read from the state: the measuring below happens outside of a render, and what
     // it decides from is its own last answer along with the width it then found wanting.

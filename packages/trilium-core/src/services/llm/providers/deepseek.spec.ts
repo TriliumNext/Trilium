@@ -1,16 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const createOpenAiMock = vi.fn();
-const chatMock = vi.fn(() => ({}));
-
-vi.mock("@ai-sdk/openai", () => ({
-    createOpenAI: (opts: unknown) => {
-        createOpenAiMock(opts);
-        const fn: any = () => ({});
-        fn.chat = chatMock;
-        return fn;
-    }
+const { createDeepSeekMock, chatMock } = vi.hoisted(() => ({
+    createDeepSeekMock: vi.fn(),
+    chatMock: vi.fn()
 }));
+
+// Spies around the real SDK, so a stream fed through `fetch` is parsed as it is in production.
+vi.mock("@ai-sdk/deepseek", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@ai-sdk/deepseek")>();
+    return {
+        createDeepSeek: (opts: Parameters<typeof actual.createDeepSeek>[0]) => {
+            createDeepSeekMock(opts);
+            const sdk = actual.createDeepSeek(opts);
+            return { chat: (modelId: string) => { chatMock(modelId); return sdk.chat(modelId); } };
+        }
+    };
+});
+
+// Attachments resolve by kind rather than from Becca: an image part to PNG bytes, a file part to a PDF.
+vi.mock("../attachment_content.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../attachment_content.js")>();
+    return {
+        ...actual,
+        resolveAttachmentPart: (part: { type: string; text?: string; filename?: string }) => {
+            if (part.type === "text") return { kind: "text", text: part.text };
+            if (part.type === "image") return { kind: "image", bytes: new Uint8Array([ 137, 80, 78, 71 ]), mime: "image/png" };
+            return { kind: "file", bytes: new Uint8Array([ 37, 80, 68, 70 ]), mime: "application/pdf", filename: part.filename };
+        }
+    };
+});
 
 const { generateTextMock } = vi.hoisted(() => ({
     generateTextMock: vi.fn(async () => ({ text: "  A generated title  " }) as any)
@@ -21,8 +39,12 @@ vi.mock("ai", async (importOriginal) => {
     return { ...actual, generateText: generateTextMock };
 });
 
-import { DeepSeekProvider, deepSeekModelName } from "./deepseek.js";
+import type { LlmMessage, LlmStreamChunk } from "@triliumnext/commons";
+
 import { installGlobalFetchAsApiTransport } from "../../../test/request_provider.js";
+import { streamToChunks } from "../stream.js";
+import type { LlmProviderConfig } from "../types.js";
+import { DeepSeekProvider, deepSeekModelName } from "./deepseek.js";
 import { llmFetch } from "./fetch.js";
 
 // A provider reaches its endpoint through the request provider rather than the global `fetch`, so
@@ -31,19 +53,19 @@ beforeEach(installGlobalFetchAsApiTransport);
 
 describe("DeepSeekProvider construction", () => {
     beforeEach(() => {
-        createOpenAiMock.mockClear();
+        createDeepSeekMock.mockClear();
         chatMock.mockClear();
     });
 
     it("points at the official endpoint unless overridden, and requires a key", () => {
         new DeepSeekProvider("sk-deep");
-        expect(createOpenAiMock).toHaveBeenCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
 
         // An override reaches a gateway in front of DeepSeek; a blank one is no override.
         new DeepSeekProvider("sk-deep", "https://gateway.example/v1");
-        expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://gateway.example/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://gateway.example/v1", fetch: llmFetch });
         new DeepSeekProvider("sk-deep", "");
-        expect(createOpenAiMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
+        expect(createDeepSeekMock).toHaveBeenLastCalledWith({ apiKey: "sk-deep", baseURL: "https://api.deepseek.com/v1", fetch: llmFetch });
 
         expect(() => new DeepSeekProvider("")).toThrow(/API key is required/);
     });
@@ -197,6 +219,134 @@ describe("DeepSeekProvider title generation", () => {
     });
 });
 
+describe("DeepSeekProvider streaming", () => {
+    it("streams `reasoning_content` as thinking ahead of the answer", async () => {
+        const events = [
+            { choices: [{ index: 0, delta: { role: "assistant", reasoning_content: "Weighing " } }] },
+            { choices: [{ index: 0, delta: { reasoning_content: "the options." } }] },
+            { choices: [{ index: 0, delta: { content: "Pick B." } }] },
+            { choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 5, completion_tokens: 7 } }
+        ];
+        const fetchMock = vi.fn(async () => sseResponse(events));
+        vi.stubGlobal("fetch", fetchMock);
+
+        const provider = new DeepSeekProvider("sk-deep");
+        const chunks: LlmStreamChunk[] = [];
+        for await (const chunk of streamToChunks(provider.chat([{ role: "user", content: "A or B?" }], { model: "deepseek-v4-pro" }))) {
+            chunks.push(chunk);
+        }
+
+        expect(fetchMock).toHaveBeenCalledWith("https://api.deepseek.com/v1/chat/completions", expect.anything());
+        expect(chunks.filter(c => c.type === "thinking" || c.type === "text")).toEqual([
+            { type: "thinking", content: "Weighing " },
+            { type: "thinking", content: "the options." },
+            { type: "text", content: "Pick B." }
+        ]);
+    });
+});
+
+describe("DeepSeekProvider reasoning effort", () => {
+    const fetchMock = vi.fn();
+    const okJson = (body: unknown) => ({ ok: true, json: async () => body });
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it("offers the effort levels on V4 models only", async () => {
+        fetchMock.mockResolvedValue(okJson({ data: [{ id: "deepseek-v4-pro" }, { id: "deepseek-flash" }, { id: "deepseek-chat" }] }));
+        const models = await new DeepSeekProvider("sk-deep").listModels();
+
+        for (const id of ["deepseek-v4-pro", "deepseek-flash"]) {
+            expect(models.find(m => m.id === id)).toMatchObject({
+                reasoningEfforts: ["none", "low", "high", "max"],
+                defaultReasoningEffort: "high"
+            });
+        }
+        const legacy = models.find(m => m.id === "deepseek-chat");
+        expect(legacy).toBeDefined();
+        expect(legacy).not.toHaveProperty("reasoningEfforts");
+    });
+
+    it("sends the chosen effort, and the default when the chat has none", async () => {
+        fetchMock.mockImplementation(async () => sseResponse([
+            { choices: [{ index: 0, delta: { role: "assistant", content: "Ok" }, finish_reason: "stop" }] }
+        ]));
+        const provider = new DeepSeekProvider("sk-deep");
+        const requestBody = async (config: LlmProviderConfig) => {
+            fetchMock.mockClear();
+            for await (const _ of streamToChunks(provider.chat([{ role: "user", content: "Hi" }], config))) { /* drain */ }
+            expect(fetchMock).toHaveBeenCalledOnce();
+            return JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+        };
+
+        expect(await requestBody({ model: "deepseek-v4-pro", reasoningEffort: "max" }))
+            .toMatchObject({ thinking: { type: "enabled" }, reasoning_effort: "max" });
+        expect(await requestBody({ model: "deepseek-v4-pro" }))
+            .toMatchObject({ thinking: { type: "enabled" }, reasoning_effort: "high" });
+
+        const none = await requestBody({ model: "deepseek-v4-pro", reasoningEffort: "none" });
+        expect(none).toMatchObject({ thinking: { type: "disabled" } });
+        expect(none).not.toHaveProperty("reasoning_effort");
+
+        // A model without levels is left to DeepSeek's own default.
+        const legacy = await requestBody({ model: "deepseek-chat", reasoningEffort: "max" });
+        expect(legacy).not.toHaveProperty("thinking");
+        expect(legacy).not.toHaveProperty("reasoning_effort");
+    });
+});
+
+describe("DeepSeekProvider attachments", () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        fetchMock.mockImplementation(async () => sseResponse([
+            { choices: [{ index: 0, delta: { role: "assistant", content: "Ok" }, finish_reason: "stop" }] }
+        ]));
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    const messages: LlmMessage[] = [{ role: "user", content: [
+        { type: "text", text: "What is in these?" },
+        { type: "image", attachmentId: "img1", mime: "image/png" },
+        { type: "file", attachmentId: "pdf1", mime: "application/pdf", filename: "report.pdf" }
+    ] }];
+
+    async function sentUserContent(model: string) {
+        fetchMock.mockClear();
+        for await (const _ of streamToChunks(new DeepSeekProvider("sk-deep").chat(messages, { model }))) { /* drain */ }
+        expect(fetchMock).toHaveBeenCalledOnce();
+        const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+        return body.messages.find((m: { role: string }) => m.role === "user").content;
+    }
+
+    it("names what a text-only model cannot read instead of sending or dropping it", async () => {
+        const content = await sentUserContent("deepseek-v4-pro");
+        expect(typeof content).toBe("string");
+        expect(content).toContain("What is in these?");
+        expect(content).toContain("[attached image]");
+        expect(content).toContain("[attached file: report.pdf]");
+    });
+
+    it("lists what each model reads natively", async () => {
+        const okJson = (body: unknown) => ({ ok: true, json: async () => body });
+        fetchMock.mockResolvedValue(okJson({ data: [{ id: "deepseek-v4-pro" }, { id: "deepseek-v4-flash-vision-exp" }] }));
+        const models = await new DeepSeekProvider("sk-deep").listModels();
+        expect(models.find(m => m.id === "deepseek-v4-pro")?.attachmentKinds).toEqual([]);
+        expect(models.find(m => m.id === "deepseek-v4-flash-vision-exp")?.attachmentKinds).toEqual(["image"]);
+    });
+
+    it("sends images to the vision model, and names the PDF it cannot read", async () => {
+        const content = await sentUserContent("deepseek-v4-flash-vision-exp");
+        expect(content).toEqual(expect.arrayContaining([
+            expect.objectContaining({ type: "image_url" }),
+            expect.objectContaining({ type: "text", text: expect.stringContaining("[attached file: report.pdf]") })
+        ]));
+    });
+});
+
 describe("DeepSeekProvider recommendations", () => {
     it("pre-selects the current line but not the superseded coder models", () => {
         const provider = new DeepSeekProvider("sk-deep");
@@ -221,3 +371,9 @@ describe("deepSeekModelName", () => {
         expect(deepSeekModelName("llama3.2")).toBe("llama3.2");
     });
 });
+
+/** A Chat Completions stream carrying `events`, as DeepSeek sends it. */
+function sseResponse(events: object[]) {
+    const body = `${events.map(e => `data: ${JSON.stringify({ id: "c1", created: 0, model: "deepseek-v4-pro", ...e })}\n\n`).join("")}data: [DONE]\n\n`;
+    return new Response(body, { headers: { "content-type": "text/event-stream" } });
+}

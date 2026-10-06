@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response } from "../http_interface";
 import { describe, expect, it } from "vitest";
 
 import { serveContentWithRanges } from "./partial_content.js";

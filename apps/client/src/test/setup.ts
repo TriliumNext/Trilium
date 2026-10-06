@@ -1,11 +1,19 @@
+// The client always runs with `preact/compat` loaded, and its `options.vnode` hook changes how
+// every element renders (`onChange` on a text input is `input`, `onFocus` is `focusin`). Loaded
+// here so a spec renders the same way whether or not its own imports reach compat.
+import "preact/compat";
+
+import { Modal } from "bootstrap";
 import $ from "jquery";
-import { vi } from "vitest";
+import { afterAll, vi } from "vitest";
 
 // Top level, not in a beforeAll: vi.mock is hoisted either way, and nesting it only makes the order lie.
 vi.mock("../services/ws.js", mockWebsocket);
 vi.mock("../services/server.js", mockServer);
 
 injectGlobals();
+survivePendingModalCallbacks();
+drainBootstrapTransitions();
 
 function injectGlobals() {
     const uncheckedWindow = window as any;
@@ -19,6 +27,28 @@ function injectGlobals() {
     };
 }
 
+/**
+ * Keeps a disposed modal readable by the callbacks Bootstrap has already queued.
+ *
+ * `dispose()` nulls every property (twbs/bootstrap#37474) while the end of the opening is still
+ * waiting on a `transitionend` that happy-dom never fires, so it runs against a disposed instance
+ * some milliseconds later and throws where no test can catch it. A teardown that disposes a modal
+ * is how a spec releases the focus trap, so leave values those callbacks can read.
+ */
+function survivePendingModalCallbacks() {
+    const proto = Modal.prototype as unknown as Record<string, unknown>;
+    const dispose = proto.dispose as () => void;
+
+    proto.dispose = function (this: Record<string, unknown>) {
+        dispose.call(this);
+        this._config = { focus: false, backdrop: false, keyboard: false };
+        this._element = document.createElement("noscript");
+        this._dialog = this._element;
+        this._focustrap = { activate() {}, deactivate() {} };
+        this._backdrop = { show() {}, hide() {}, dispose() {} };
+    };
+}
+
 function mockWebsocket() {
     function subscribeToMessages(_callback: (message: unknown) => void) {
         // Do nothing.
@@ -28,14 +58,19 @@ function mockWebsocket() {
         // Do nothing.
     }
 
+    // Awaited before reading back what the server wrote. No write happens under test.
+    async function waitForMaxKnownEntityChangeId() {}
+
     return {
         default: {
-            subscribeToMessages
+            subscribeToMessages,
+            waitForMaxKnownEntityChangeId
         },
         // consumers also import these as named exports (e.g. useNoteIds); leaving them out makes
         // the subscription effect throw, which silently skips every later effect of the component
         subscribeToMessages,
         unsubscribeToMessage,
+        waitForMaxKnownEntityChangeId,
         // Code that reports a failure this way is usually in a catch block, so an undefined export
         // here throws over the error being handled and loses whatever the component did about it.
         logError(_message: string) {}
@@ -52,6 +87,11 @@ function mockServer() {
             return [];
         }
 
+        // Asked for by the icon picker as it opens, to sort the icons a note already wears first.
+        if (url === "other/icon-usage") {
+            return { iconClassToCountMap: {} };
+        }
+
         if (url === "tree") {
             return {
                 branches: [],
@@ -63,6 +103,12 @@ function mockServer() {
         console.warn(`Unsupported GET to mocked server: ${url}`);
     }
 
+    async function post(url: string, data: object) {
+        if (url === "tree/load") {
+            throw new Error(`A module tried to load from the server the following notes: ${((data as any).noteIds || []).join(",")}\nThis is not supported, use Froca mocking instead and ensure the note exist in the mock.`);
+        }
+    }
+
     return {
         default: {
             get,
@@ -71,11 +117,12 @@ function mockServer() {
             // in how it reports 404s, which the mock never produces, so share the same routing.
             getWithSilentNotFound: get,
 
-            async post(url: string, data: object) {
-                if (url === "tree/load") {
-                    throw new Error(`A module tried to load from the server the following notes: ${((data as any).noteIds || []).join(",")}\nThis is not supported, use Froca mocking instead and ensure the note exist in the mock.`);
-                }
-            },
+            // A backend script run goes through this variant so its failure is reported against the
+            // note rather than as a request that went wrong; it differs from `post` only in how it
+            // reports a 500, which the mock never produces.
+            postWithSilentInternalServerError: (url: string, data: object) => post(url, data),
+
+            post,
 
             // Widgets that persist as the user edits (attribute writes, view configs) reach for
             // these; without them the write rejects and surfaces as an unhandled rejection rather
@@ -84,4 +131,16 @@ function mockServer() {
             async remove(_url: string) {}
         }
     };
+}
+
+/**
+ * Lets Bootstrap's transition timers run out before the file's environment is torn down.
+ *
+ * happy-dom runs no transitions, so Bootstrap ends each one with a `setTimeout()` of about 5ms that
+ * dispatches `transitionend` itself. A file that ends with a dialog still opening or closing leaves
+ * one pending, and once the window is gone its `new Event()` belongs to another realm than the
+ * element, which throws outside any test.
+ */
+function drainBootstrapTransitions() {
+    afterAll(() => new Promise((resolve) => setTimeout(resolve, 50)));
 }

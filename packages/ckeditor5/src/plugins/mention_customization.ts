@@ -6,8 +6,7 @@ import TriliumMentionUI from "./mention/trilium_mention_ui.js";
  * Overrides the actions taken by the Mentions plugin (triggered by `@` in the text editor, or `~` & `#` in the attribute editor):
  *
  * - Auto-completes attributes and relations in the attribute editor.
- * - Triggers the modal to create notes.
- * - Inserts a reference link when a mention is selected.
+ * - Inserts a reference link when a note is mentioned.
  */
 export default class MentionCustomization extends Plugin {
 
@@ -38,8 +37,6 @@ interface MentionOpts {
 
 interface MentionAttribute {
     id: string;
-    action?: "create-note";
-    noteTitle: string;
     notePath: string;
 }
 
@@ -56,14 +53,6 @@ class CustomMentionCommand extends Command {
 			model.change(writer => {
 				// Replace a range with the text with a mention.
 				model.insertContent( writer.createText( mention.id, {} ), range );
-			});
-		}
-		else if (mention.action === 'create-note') {
-			const editorEl = this.editor.editing.view.getDomRoot();
-			const component = glob.getComponentByEl<EditorComponent>(editorEl);
-
-			component.createNoteForReferenceLink(mention.noteTitle).then(notePath => {
-				this.insertReference(range, notePath);
 			});
 		}
 		else {

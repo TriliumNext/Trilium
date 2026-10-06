@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import cloningService from "../../services/cloning.js";
 

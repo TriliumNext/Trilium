@@ -21,7 +21,7 @@ async function testImport(fileName: string) {
     return testImportBuffer(buffer);
 }
 
-async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }, opts?: { restoreAsRoot?: boolean; preserveIds?: boolean }) {
+async function testImportBuffer(buffer: Buffer, taskId = "import-mdx", taskData: Record<string, unknown> = { textImportedAsText: true }, opts?: Parameters<typeof zip.importZip>[3]) {
     const taskContext = TaskContext.getInstance(taskId, "importNotes", taskData);
 
     // `init` returns the callback's promise, so a failing import rejects here rather than hanging.
@@ -223,6 +223,43 @@ describe("processNoteContent", () => {
         expect(picture.attachmentId).not.toBe("mapPicture1");
         expect(content).toContain(`api/attachments/${picture.attachmentId}/image/photo.png`);
         expect(content).not.toContain("mapPicture1");
+    });
+
+    it("points an imported embed at its attachment as it was recreated", async () => {
+        const metaFile = {
+            formatVersion: 2,
+            appVersion: "0.0.0",
+            files: [{
+                noteId: "embedNote1",
+                title: "Report",
+                type: "text",
+                mime: "text/html",
+                dataFileName: "Report.html",
+                attachments: [{
+                    attachmentId: "embeddedPdf1",
+                    title: "report.pdf",
+                    role: "file",
+                    mime: "application/pdf",
+                    position: 10,
+                    dataFileName: "Report_report.pdf"
+                }]
+            }]
+        };
+
+        const zipBuffer = await createZipBuffer({
+            "!!!meta.json": JSON.stringify(metaFile),
+            "Report.html": `<section class="include-note" data-attachment-id="embeddedPdf1">`
+                + "</section>",
+            "Report_report.pdf": Buffer.from("%PDF-1.4")
+        });
+
+        const { importedNote } = await testImportBuffer(zipBuffer);
+        const [ pdf ] = importedNote.getAttachments();
+        const content = importedNote.getContent() as string;
+
+        expect(pdf.attachmentId).not.toBe("embeddedPdf1");
+        expect(content).toContain(`data-attachment-id="${pdf.attachmentId}"`);
+        expect(content).not.toContain("embeddedPdf1");
     });
 
     it("restores an embedded mermaid diagram as a note reference, not as a raw attachment", async () => {
@@ -543,6 +580,21 @@ describe("processNoteContent", () => {
         const note = rootNote.getChildNotes().find((n) => n.title === "csv_as_file_sample");
         expect(note?.type).toBe("file");
         expect(note?.mime).toBe("text/csv");
+    });
+
+    it("drops the extension of a font or a recording in a plain archive, as a single-file import does", async () => {
+        const zipBuffer = await createZipBuffer({
+            "Iosevka-Regular.ttf": Buffer.from("\0\u0001\0\0"),
+            "Interview.mp3": Buffer.from("ID3"),
+            // Nothing records that this is a spreadsheet but its name, so the name keeps it.
+            "Numbers.ods": Buffer.from("PK")
+        });
+        const { rootNote } = await testImportBuffer(zipBuffer, "import-font-zip", {});
+        const titleOf = (mime: string) => rootNote.getChildNotes().find((note) => note.mime === mime)?.title;
+
+        expect(titleOf("font/ttf")).toBe("Iosevka-Regular");
+        expect(titleOf("audio/mpeg")).toBe("Interview");
+        expect(titleOf("application/vnd.oasis.opendocument.spreadsheet")).toBe("Numbers.ods");
     });
 
     it("skips macOS resource-fork entries and reports an archive that holds nothing else", async () => {
@@ -1481,5 +1533,53 @@ describe("removeTriliumTags", () => {
                     </ul>
             </body>`;
         expect(output).toEqual(expected);
+    });
+});
+
+describe("Obsidian vault detection", () => {
+    async function importWithFallback(files: Record<string, string>, taskId: string) {
+        const onObsidianVault = vi.fn().mockResolvedValue(becca.getNoteOrThrow("root"));
+        const buffer = await createZipBuffer(files);
+        const { importedNote } = await testImportBuffer(buffer, taskId, { textImportedAsText: true }, { onObsidianVault });
+        return { onObsidianVault, importedNote };
+    }
+
+    it("hands a vault to the fallback, zipped as its folder or as its contents", async () => {
+        const wrapped = await importWithFallback({ "MyVault/.obsidian/app.json": "{}", "MyVault/Note.md": "# Note" }, "obsidian-wrapped");
+        expect(wrapped.onObsidianVault).toHaveBeenCalled();
+        // The fallback's note is what the import returns, so the archive was handed over rather than imported.
+        expect(wrapped.importedNote).toBe(becca.getNoteOrThrow("root"));
+
+        const bare = await importWithFallback({ ".obsidian/app.json": "{}", "Note.md": "# Note" }, "obsidian-bare");
+        expect(bare.onObsidianVault).toHaveBeenCalled();
+    });
+
+    it("imports normally when the archive is a Trilium export or holds no vault", async () => {
+        // `!!!meta.json` marks a Trilium export and wins over a stray `.obsidian/` entry inside it.
+        const triliumExport = await importWithFallback({ "!!!meta.json": JSON.stringify({ files: [] }), ".obsidian/app.json": "{}" }, "obsidian-meta");
+        expect(triliumExport.onObsidianVault).not.toHaveBeenCalled();
+
+        const plain = await importWithFallback({ "docs/Note.md": "# Note" }, "obsidian-plain");
+        expect(plain.onObsidianVault).not.toHaveBeenCalled();
+        expect(plain.importedNote?.title).toBe("docs");
+    });
+
+    it("leaves a vault nested among unrelated content to this importer", async () => {
+        // importObsidian strips only its own vault root, so everything beside the vault would be imported
+        // with Obsidian semantics under a root named after it.
+        const nested = await importWithFallback({
+            "Documents/MyVault/.obsidian/app.json": "{}",
+            "Documents/MyVault/Note.md": "# Note",
+            "Documents/Unrelated.md": "# Unrelated"
+        }, "obsidian-nested");
+
+        expect(nested.onObsidianVault).not.toHaveBeenCalled();
+    });
+
+    it("imports a vault generically when no fallback is offered", async () => {
+        const buffer = await createZipBuffer({ "MyVault/.obsidian/app.json": "{}", "MyVault/Note.md": "# Note" });
+        const { importedNote } = await testImportBuffer(buffer, "obsidian-no-fallback");
+
+        expect(importedNote?.title).toBe("MyVault");
     });
 });

@@ -69,7 +69,15 @@
     "toggle-archived-notes": "Mostrar/Ocultar notas archivadas en el árbol de notas",
     "show-deleted-notes": "Mostrar el cuadro de diálogo «Notas eliminadas»",
     "show-shortcut-hints": "Mostrar los atajos de teclado del widget enfocado",
-    "peek-right-pane": "Mostrar el panel derecho como panel temporal que flota sobre el contenido y se cierra al perder el foco"
+    "peek-right-pane": "Mostrar el panel derecho como panel temporal que flota sobre el contenido y se cierra al perder el foco",
+    "show-space-usage": "Abre la página «Uso de espacio»",
+    "create-new-split": "Abre una división vacía nueva a la derecha de la activa",
+    "close-active-split": "Cierra la división activa, manteniendo abiertas las demás divisiones de la pestaña",
+    "focus-split-left": "Mueve el foco a la división situada a la izquierda de la activa",
+    "focus-split-right": "Mueve el foco a la división situada a la derecha de la activa",
+    "split-view": "Vista dividida",
+    "move-split-left": "Intercambia la división activa con la de su izquierda, de modo que la nota se mueve y el foco la sigue",
+    "move-split-right": "Intercambia la división activa con la de su derecha, de modo que la nota se mueve y el foco la sigue"
   },
   "login": {
     "title": "Iniciar sesión",
@@ -207,19 +215,22 @@
     "content-manager-title": "Gestor de contenido",
     "desktop-title": "Escritorio",
     "security-title": "Seguridad",
-    "database-title": "Base de datos"
+    "database-title": "Base de datos",
+    "space-usage-title": "Uso de espacio"
   },
   "notes": {
     "new-note": "Nueva nota",
     "duplicate-note-suffix": "(dup)",
-    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}",
+    "delete-notes-failed": "Error al eliminar notas: {{- message}}"
   },
   "backend_log": {
     "log-does-not-exist": "El archivo de registro del backend '{{ fileName }}' no existe (aún).",
     "reading-log-failed": "Error al leer el archivo de registro del backend '{{ fileName }}'."
   },
   "content_renderer": {
-    "note-cannot-be-displayed": "Este tipo de nota no puede ser mostrado."
+    "note-cannot-be-displayed": "Este tipo de nota no puede ser mostrado.",
+    "included-note-requires-credentials": "Esta nota incluida está protegida con contraseña y no puede mostrarse aquí."
   },
   "pdf": {
     "export_filter": "Documento PDF (*.pdf)",
@@ -361,7 +372,14 @@
     "toggle-archived-notes": "Alternar visibilidad de notas archivadas",
     "show-deleted-notes": "Mostrar notas eliminadas",
     "show-shortcut-hints": "Mostrar sugerencias de atajos",
-    "peek-right-pane": "Vista rápida del panel derecho"
+    "peek-right-pane": "Vista rápida del panel derecho",
+    "show-space-usage": "Mostrar uso de espacio",
+    "create-new-split": "Crear división nueva",
+    "close-active-split": "Cerrar división activa",
+    "move-split-left": "Mover división a la izquierda",
+    "move-split-right": "Mover división a la derecha",
+    "focus-split-left": "Enfocar división a la izquierda",
+    "focus-split-right": "Enfocar división a la derecha"
   },
   "hidden_subtree_templates": {
     "board_note_first": "Primera nota",
@@ -392,7 +410,8 @@
     "background": "Fondo",
     "markdown-snippet": "Fragmento Markdown",
     "code-snippet": "Fragmento de código",
-    "dashboard": "Panel"
+    "dashboard": "Panel",
+    "ai-quick-action": "Acción rápida de IA"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de datos no inicializada, por favor, siga las instrucciones en pantalla.",
@@ -436,7 +455,7 @@
       "row-throttling": "Tiempo limitado por Microsoft Graph",
       "value-links": "{{resolved}} resueltos, {{unresolved}} apuntando fuera de la selección importada",
       "value-throttling_one": "{{- wait}} ({{count}} petición limitada)",
-      "value-throttling_many": "{{- wait}} ({{count}} peticiones limitadas)",
+      "value-throttling_many": "",
       "value-throttling_other": "{{- wait}} ({{count}} peticiones limitadas)",
       "skipped-sections-title": "Secciones que no se pudieron importar",
       "skipped-sections-section": "Sección",
@@ -448,7 +467,7 @@
       "failed-pages-error": "Error",
       "failed-resources-title": "Imágenes y archivos adjuntos faltantes",
       "failed-resources-item_one": "{{- pageLink}}: no se pudo descargar {{count}} recurso",
-      "failed-resources-item_many": "{{- pageLink}}: no se pudieron descargar {{count}} recursos",
+      "failed-resources-item_many": "",
       "failed-resources-item_other": "{{- pageLink}}: no se pudieron descargar {{count}} recursos"
     }
   },

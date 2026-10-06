@@ -1,4 +1,4 @@
-import { trimIndentation } from "@triliumnext/commons";
+import { HIGHLIGHT_BACKGROUND, HIGHLIGHT_STYLE, trimIndentation } from "@triliumnext/commons";
 import { describe, expect,it } from "vitest";
 
 import markdownExportService, { DEFAULT_ADMONITION_TYPE } from "./markdown.js";
@@ -199,6 +199,25 @@ describe("Markdown export", () => {
     it("supports keyboard shortcuts", () => {
         const html = "<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Delete</kbd>";
         expect(markdownExportService.toMarkdown(html)).toBe(html);
+    });
+
+    it("keeps an icon, the space beside it and the colour around it", () => {
+        // Turndown drops an element holding nothing before it consults a single rule, and
+        // collapses the space beside it away with it, so the icon is given something to hold.
+        const cog = `<span class="tn-icon bx bx-cog"></span>`;
+        const star = `<span class="tn-icon bx bx-star"></span>`;
+        const red = `<span style="color:rgb(255,0,0);">`;
+
+        expect(markdownExportService.toMarkdown(`<p>Press ${cog} to open it.</p>`))
+            .toBe(`Press ${cog} to open it.`);
+        expect(markdownExportService.toMarkdown(`<p>Two ${cog}${star} in a row.</p>`))
+            .toBe(`Two ${cog}${star} in a row.`);
+        expect(markdownExportService.toMarkdown(`<p>a${red}${cog}</span>b</p>`))
+            .toBe(`a${red}${cog}</span>b`);
+
+        // A note that only talks about the class is returned as it came, not re-serialized.
+        expect(markdownExportService.toMarkdown(`<p>The <code>tn-icon</code> class.</p>`))
+            .toBe("The `tn-icon` class.");
     });
 
     it("exports admonitions properly", () => {
@@ -480,6 +499,17 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("indents a nested list to the content column of its item, however wide the number", () => {
+        const html = /*html*/`<ol start="9"><li>Ninth<ol><li>A</li></ol></li><li>Tenth<ol><li>B</li><li>C</li></ol></li></ol>`;
+        const expected = trimIndentation`\
+            9.  Ninth
+                1.  A
+            10.  Tenth
+                 1.  B
+                 2.  C`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
     it("converts inline math expressions into proper Markdown syntax", () => {
         const html = /*html*/String.raw`<span class="math-tex">\(H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\)</span></span>`;
         const expected = String.raw`$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$`;
@@ -490,6 +520,11 @@ describe("Markdown export", () => {
         const html = /*html*/String.raw`<span class="math-tex">\[H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}\]</span></span>`;
         const expected = String.raw`$$H(X, Y) = \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 \frac{1}{p(x_i, y_j)} = - \sum_{i=1}^{M} \sum_{j=1}^{L} p(x_i, y_j) \log_2 p(x_i, y_j) \frac{\text{bits}}{\text{symbol}}$$`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("trims the spaces inside inline math delimiters, so the import reads it back as math", () => {
+        const html = /*html*/String.raw`<p>Area: <span class="math-tex">\( \pi r^2 \)</span></p>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(String.raw`Area: $\pi r^2$`);
     });
 
     it("keeps a math expression without delimiters verbatim", () => {
@@ -529,6 +564,17 @@ describe("Markdown export", () => {
         const html = /*html*/`<section class="include-note" data-note-id="i4A5g9iOg9I0" data-box-size="full"> </section>`;
         const expected = /*markdown*/`<section class="include-note" data-note-id="i4A5g9iOg9I0" data-box-size="full">&nbsp;</section>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("preserves an include note figure, with or without its caption", () => {
+        const start = `<figure class="include-note" data-note-id="i4A5g9iOg9I0"`
+            + ` data-box-size="full">`;
+        const blank = `${start}&nbsp;</figure>`;
+        const captioned = `${start}<figcaption>A <strong>caption</strong></figcaption></figure>`;
+
+        expect(markdownExportService.toMarkdown(blank)).toBe(blank);
+        expect(markdownExportService.toMarkdown(`<p>Before</p>${captioned}<p>After</p>`))
+            .toBe(`Before\n\n${captioned}\n\nAfter`);
     });
 
     it("exports todo lists properly", () => {
@@ -626,6 +672,36 @@ describe("Markdown export", () => {
     </tbody>
 </table>`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    // The clipboard's "copy as markdown" never reimports, so it accepts the phantom header the
+    // note export refuses: a copied subset of body cells still comes out as a markdown table.
+    it("renders a headerless table under a blank header with headerlessTables: emptyHeader", () => {
+        const html = trimIndentation/*html*/`\
+            <figure class="table">
+                <table>
+                    <tbody>
+                        <tr><td>a1</td><td>b1</td></tr>
+                        <tr><td>a2</td><td>b2</td></tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = "|  |  |\n| --- | --- |\n| a1 | b1 |\n| a2 | b2 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
+        // The mode is per call, not sticky converter state.
+        expect(markdownExportService.toMarkdown(html)).toContain("<table>");
+    });
+
+    it("keeps a real heading row as the header under headerlessTables: emptyHeader", () => {
+        const html = "<table><thead><tr><th>h1</th><th>h2</th></tr></thead>"
+            + "<tbody><tr><td>a1</td><td>b1</td></tr></tbody></table>";
+        const expected = "| h1 | h2 |\n| --- | --- |\n| a1 | b1 |";
+
+        expect(markdownExportService.toMarkdown(html, { headerlessTables: "emptyHeader" }))
+            .toBe(expected);
     });
 
     // Admonitions are block content, and GFM table cells can only hold inline
@@ -785,6 +861,17 @@ describe("Markdown export", () => {
 
             expect(markdownExportService.toMarkdown(/*html*/`<p>A <mark>highlight</mark> here.</p>`))
                 .toBe("A ==highlight== here.");
+        });
+
+        it("renders the palette yellow as ==text==, ignoring its theme-adaptive variable", () => {
+            const yellow = `<span style="background-color:${HIGHLIGHT_BACKGROUND};">a</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${yellow}</p>`)).toBe("==a==");
+            const withVariable = `<span style="${HIGHLIGHT_STYLE}">b</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${withVariable}</p>`)).toBe("==b==");
+
+            // Another colour keeps its colour and its variable.
+            const red = `<span style="background-color:#e64d4d;--tn-background:#e64d4d;">c</span>`;
+            expect(markdownExportService.toMarkdown(`<p>${red}</p>`)).toBe(red);
         });
 
         it("keeps any other colour as inline HTML rather than repainting it yellow", () => {

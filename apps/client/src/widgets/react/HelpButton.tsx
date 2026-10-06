@@ -1,4 +1,4 @@
-import { CSSProperties } from "preact/compat";
+import { CSSProperties } from "preact";
 import { useContext } from "preact/hooks";
 
 import appContext from "../../components/app_context";

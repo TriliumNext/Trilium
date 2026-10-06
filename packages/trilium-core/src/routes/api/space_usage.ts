@@ -1,5 +1,5 @@
 import type { EraseExcessRevisionsOptions } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { getLog } from "../../services/log.js";
 import { formatSize } from "../../services/utils/index.js";

@@ -1,8 +1,7 @@
 import "./totp.css";
 
 import { TOTPEnableResponse, TOTPGenerate, TOTPRecoveryKeysResponse, TOTPStatus, TOTPVerifyResponse } from "@triliumnext/commons";
-import { ComponentChildren, RefObject } from "preact";
-import { createPortal } from "preact/compat";
+import { ComponentChildren, createPortal, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import qrcode from "qrcode-generator";
 import { Trans } from "react-i18next";
@@ -324,7 +323,7 @@ function TotpVerifyStep({ secret, secretUrl, code, setCode, codeRejected, codeRe
     code: string,
     setCode: (value: string) => void,
     codeRejected: boolean,
-    codeRef: RefObject<HTMLInputElement>
+    codeRef: RefObject<HTMLInputElement | null>
 }) {
     return (
         <>

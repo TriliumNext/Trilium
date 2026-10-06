@@ -3,9 +3,9 @@ import "./NoteDetail.css";
 import clsx from "clsx";
 import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
-import appContext from "../components/app_context";
+import appContext, { type EventData } from "../components/app_context";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import type { PrintReport } from "../print";
@@ -19,7 +19,13 @@ import toast from "../services/toast.js";
 import { isElectron } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import Button from "./react/Button";
-import { useDelayedVisibility, useGetContextDataFrom, useNoteContext, useTriliumEvent } from "./react/hooks";
+import {
+    useDelayedVisibility,
+    useGetContextDataFrom,
+    useHasTabBeenShown,
+    useNoteContext,
+    useTriliumEvent
+} from "./react/hooks";
 import Icon from "./react/Icon";
 import NoItems from "./react/NoItems";
 import { NoteListWithLinks } from "./react/NoteList";
@@ -47,24 +53,7 @@ export default function NoteDetail() {
     const widgetRequestId = useRef(0);
 
     // Defer loading for tabs that haven't been active yet (e.g. on app refresh).
-    // A tab can hold multiple splits; activating the tab makes all of them visible at once, so deferral
-    // is keyed on the whole tab (the main context) rather than the individual split. Keying it on the
-    // active split would leave the non-focused split of the active tab blank until it's clicked.
-    // Special contexts (ntxId starting with "_", e.g. popup editor) are always considered active.
-    const isSpecialContext = ntxId?.startsWith("_") ?? false;
-    const isInActiveTab = () =>
-        isContextInActiveTab(noteContext, appContext.tabManager.getActiveMainContext()?.ntxId);
-    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => isSpecialContext || isInActiveTab());
-    useEffect(() => {
-        if (!hasTabBeenActive && isInActiveTab()) {
-            setHasTabBeenActive(true);
-        }
-    }, [ noteContext, hasTabBeenActive ]); // eslint-disable-line react-hooks/exhaustive-deps
-    useTriliumEvent("activeNoteChanged", () => {
-        if (!hasTabBeenActive && isInActiveTab()) {
-            setHasTabBeenActive(true);
-        }
-    });
+    const hasTabBeenActive = useHasTabBeenShown(noteContext);
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -136,6 +125,15 @@ export default function NoteDetail() {
                 parentComponent.triggerEvent("noteTypeMimeChanged", { noteId: note.noteId });
             }
         }
+    });
+
+    // A focus requested while the note is still switching (e.g. right after creating it) reaches
+    // a type widget that is hidden or not mounted yet, so it is sent again once the new one shows.
+    const isTypeWidgetShown = !!note && note.noteId === noteContext?.noteId && !!type && activeNoteType === type;
+    const requestDetailFocus = useDeferredDetailFocus(isTypeWidgetShown,
+        (data) => parentComponent.handleEventInChildren("focusOnDetail", data));
+    useTriliumEvent("focusOnDetail", (data) => {
+        if (data.ntxId === ntxId) requestDetailFocus(data);
     });
 
     // Automatically focus the editor.
@@ -243,17 +241,24 @@ export default function NoteDetail() {
 }
 
 /**
- * True when the given context belongs to the active tab, identified by `activeMainNtxId` (the ntxId of
- * the active tab's main context). A tab can hold several splits, but only one of them is the "active"
- * context at a time; every split of the active tab is visible and must load eagerly, so the deferral
- * check is keyed on the tab (the main context), not the individual split.
+ * Holds a `focusOnDetail` that arrives while `isReady` is false and calls `replay` with it once
+ * `isReady` turns true. A request made while ready is left to the widgets that already received it.
  */
-export function isContextInActiveTab(noteContext: NoteContext | undefined, activeMainNtxId: string | null | undefined): boolean {
-    if (!noteContext || activeMainNtxId == null) {
-        return false;
-    }
+export function useDeferredDetailFocus(isReady: boolean, replay: (data: EventData<"focusOnDetail">) => void) {
+    const pendingRef = useRef<EventData<"focusOnDetail"> | undefined>(undefined);
+    const replayRef = useRef(replay);
+    replayRef.current = replay;
 
-    return activeMainNtxId === noteContext.getMainContext().ntxId;
+    useEffect(() => {
+        const pending = pendingRef.current;
+        if (!isReady || !pending) return;
+        pendingRef.current = undefined;
+        replayRef.current(pending);
+    }, [ isReady ]);
+
+    return useCallback((data: EventData<"focusOnDetail">) => {
+        if (!isReady) pendingRef.current = data;
+    }, [ isReady ]);
 }
 
 /**

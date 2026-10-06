@@ -1,9 +1,9 @@
+import "../attribute_widgets/attribute_kind.css";
 import "./AttributeList.css";
 
 import { promotedAttributeDefinitionParser } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChildren } from "preact";
-import { createPortal } from "preact/compat";
+import { ComponentChildren, createPortal } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FAttribute from "../../entities/fattribute";
@@ -15,7 +15,8 @@ import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import { isMobile } from "../../services/utils";
-import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_detail";
+import { AttributeDetail, AttributeDetailOpts, AttributeForm, AttrType, DEFINITION_TYPES, getAttrType } from "../attribute_widgets/attribute_detail";
+import { attributeKindIcon, RELATION_DEFINITION_TYPE } from "../attribute_widgets/attribute_types";
 import { ColorChip, renderLabelValue } from "../attribute_widgets/label_value_display";
 import ActionButton from "../react/ActionButton";
 import { FormListItem } from "../react/FormList";
@@ -72,7 +73,7 @@ export default function AttributeList() {
 
     // Collected while rendering rather than in an effect, which would leave one frame listing the
     // attributes of the note navigated away from. The initial `undefined` is what collects the first.
-    const shownNoteId = useRef<string | null>();
+    const shownNoteId = useRef<string | null | undefined>(undefined);
     if (shownNoteId.current !== (note?.noteId ?? null)) {
         // An attribute left open for editing — in the popup or in its own row — is closed by the
         // change of note, and closing keeps what was typed into it — as a press outside does — rather
@@ -623,7 +624,7 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
     const rowRef = useRef<HTMLLIElement>(null);
     const attrType = getAttributeKind(attribute);
     const markerClass = getKindMarkerClass(attribute, attrType, isSystem);
-    const kindIcon = getKindIcon(attribute, attrType);
+    const kindIcon = attributeKindIcon(attribute.type, attribute.name, attribute.value ?? "");
     const kindTooltip = getKindTooltip(attribute, attrType, isSystem);
     const rowClass = clsx("attribute-row", active && "active", valueEditor && "editing");
 
@@ -728,21 +729,6 @@ function AttributeRow({ attribute, note, active, valueEditor, isSystem, showOwne
  * the rows are redrawn on every keystroke the popup takes.
  */
 const IS_MOBILE = isMobile();
-
-/**
- * What the attribute is, as an icon. A definition takes the icon of the field it sets up, the same one
- * the popup offers that field under — it needs no marker of its own, being only ever listed in a card
- * of definitions. Everything else is the icon of a label or of a relation.
- */
-function getKindIcon(attribute: Attribute, attrType: AttributeKind) {
-    if (isDefinition(attrType)) {
-        // A definition written by hand can name a field the popup knows nothing of, leaving the icon of
-        // the label it defines to stand for it.
-        return getDefinitionType(attribute, attrType)?.icon ?? "bx bx-hash";
-    }
-
-    return attrType === "relation" ? "bx bx-transfer" : "bx bx-hash";
-}
 
 /**
  * The badge the kind icon carries on its corner, where there is one to carry: a cog for the names

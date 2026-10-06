@@ -3,10 +3,30 @@
 
 Note search enables you to find notes by searching for text in the title, content, or [attributes](../../Advanced%20Usage/Attributes.md) of the notes. You also have the option to save your searches, which will create a special search note which is visible on your navigation tree and contains the search results as sub-items.
 
+## Types of search
+
+There are multiple types of searches, all using the same search mechanism and query language:
+
+*   <a class="reference-link" href="Quick%20search.md">Quick search</a> which can be found in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> for small one-off searches.
+    
+    *   The results are shown in a popup and it has an infinite scroll.
+*   _Full search_ is the more advanced search mechanism.
+    
+    *   The results are displayed in a separate page and it has multiple advanced features (search script, fast search, include archived notes, order by, limit).
+    *   <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a> such as adding a label/relation can be applied to the results.
+    *   The results are paginated and they can be displayed in any <a class="reference-link" href="../../Collections.md">Collections</a> view (e.g. grid, list, calendar, table).
+*   Some <a class="reference-link" href="../../Collections.md">Collections</a> such as board view have a dedicated search bar which applies to that collection.
+    
+    *   In this case, the results are displayed directly in the collection instead of a popup and they are limited to the collection but the query language remains the same.
+
+> [!NOTE]
+> [Jump to note](Jump%20to%20%26%20command%20palette.md) is a similar concept but it's mainly used to search for notes by title, not by content. Nevertheless, it also features a way to search in full text if the results are unsatisfactory.
+
 ## Accessing the search
 
 *   From the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a>, look for the dedicated search button.
 *   To limit the search to a note and its children, select _Search from subtree_ from the <a class="reference-link" href="../UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a> or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>.
+*   Go to <a class="reference-link" href="Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a>, look for something then press _Show in full search_ below the results (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>).
 
 ## Interaction
 
@@ -23,6 +43,53 @@ To search for notes, click on the magnifying glass icon on the toolbar or press 
 5.  Press _Search_ to trigger the search. The results are displayed below the search configuration pane.
 6.  The _Search & Execute actions_ button is only relevant if at least one action has been added (as described in the section below).
 7.  The _Save to note_ will create a new note with the search configuration. For more information, see <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a>.
+
+## Features
+
+### Autocomplete
+
+To help with the syntax, Trilium offers an autocomplete functionality which can be triggered by pressing <kbd>Ctrl</kbd>+<kbd>Space</kbd>.
+
+Some suggestions also open on their own as you type: label and relation names after `#` and `~`, fields after `.`, operators, values, and notes after `@`. Keywords such as `and`, `or`, `not`, `orderBy` and `limit` appear only on <kbd>Ctrl</kbd>+<kbd>Space</kbd>, since a plain word is usually a search term.
+
+No suggestion is selected when a list opens on its own, so <kbd>Enter</kbd> runs the search as typed. To insert a suggestion, select it with <kbd>Down</kbd> and press <kbd>Enter</kbd>. The list opened with <kbd>Ctrl</kbd>+<kbd>Space</kbd> and the notes after `@` open on the best match instead, so <kbd>Enter</kbd> inserts it.
+
+The autocomplete offers:
+
+*   Basic operators such as `*=` and keywords (`limit`, `not`).
+*   Fields for object-like fields such as `note` or `~relation`, triggered by typing `.`.
+*   Contextual enumerations such as `note.type = "` or `note.mime = "`.
+*   [Label](../../Advanced%20Usage/Attributes/Labels.md) names by typing `#`.
+    
+    *   A small gear on the name's icon indicates a system attribute.
+    *   After typing the label name, the value is also autocompleted with values that are present in the database.
+*   [Relation](../../Advanced%20Usage/Attributes/Relations.md) names by typing `~`.
+*   [Note ID](../../Advanced%20Usage/Note%20ID.md)s can be inserted easily by typing `@` and looking for a note.
+    
+    *   If the note ID is under a valid syntax, it will be shown as a chip of the note instead of the raw ID.
+    *   This is especially useful for queries that make use of the note ID such as searching by template: `~template.noteId = @`
+
+### Syntax highlighting
+
+The search input features syntax highlighting, making recognized fields such as `note.` and operators like `NOT` stand out.
+
+### Error highlighting & linting
+
+The search is also checked for errors in two phases, which will be displayed as a red squiggle:
+
+*   Linter errors which identify common error patterns and also provide a way to fix them.
+*   Search errors which are checked by the server, without indicating the exact place the error occurred.
+
+An error the search only runs into while running, such as an operator that note content cannot be searched with, is shown in a _Search error_ card instead: below the search string, or at the top of the <a class="reference-link" href="Quick%20search.md">Quick search</a> results.
+
+### Multiline
+
+Long or complicated searches can be formatted by using newlines, similar to SQL queries. Newlines are treated just like spaces.
+
+To add a new line, press <kbd>Shift</kbd>+<kbd>Enter</kbd>.
+
+> [!NOTE]
+> Multiline is available only for the full search, other inputs such as the quick search or the collection filter are single line.
 
 ## Search options
 
@@ -55,12 +122,29 @@ The options available are:
     3.  The actions given are the same as the ones in <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a>, which is an alternative for operating directly with notes within the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>.
     4.  After defining the actions, first press _Search_ to check the matched notes and then press _Search & Execute actions_ to trigger the actions.
 
-### Simple Note Search Examples
+## Viewing search results
+
+Results appear below the search pane as a list of **snippet cards**. Each card shows the note title and a short excerpt of the text that matched.
+
+The search will also highlight the words from the title or content that matched:
+
+*   With a solid underlined green for a direct match;
+*   With a dotted underline orange for a partial match (matched by the fuzzy search).
+
+In addition: 
+
+*   The **total number of results** is always shown, so you can immediately tell how broad a query is.
+*   A **page-size selector** lets you choose how many results to display per page. Your choice is remembered and synced across your devices (stored in the `searchResultsPageSize` option), so you do not have to reset it on every device.
+*   **Clicking a result** opens the note and jumps straight to the first match. The in-note find bar opens pre-filled with the first word of your search, so you can step through its matches with the find controls. To have the find bar look for a whole phrase instead, put the phrase in quotes in the search, e.g. `"The Lord of the Rings"`. In read-only notes, the other words of the search are highlighted as well.
+*   If a match is inside a **collapsed section** (for example a folded heading), that section is expanded automatically so the match is visible.
+
+## Simple Note Search Examples
 
 *   `rings tolkien`: Full-text search to find notes containing both "rings" and "tolkien".
 *   `"The Lord of the Rings" Tolkien`: Full-text search where "The Lord of the Rings" must match exactly.
 *   `note.content *=* rings OR note.content *=* tolkien`: Find notes containing "rings" or "tolkien" in their content.
 *   `towers #book`: Combine full-text and attribute search to find notes containing "towers" and having the "book" label.
+*   `c#` or `towers#book`: A `#` or `~` inside a word is part of the text, so these find notes containing "c#" or "towers#book". To start a label or relation, put a space before it.
 *   `towers #book or #author`: Search for notes containing "towers" and having either the "book" or "author" label.
 *   `towers #!book`: Search for notes containing "towers" and not having the "book" label.
 *   `#book #publicationYear = 1954`: Find notes with the "book" label and "publicationYear" set to 1954.
@@ -71,22 +155,7 @@ The options available are:
 *   `#publicationYear %= '19[0-9]{2}'`: Use the '%=' operator to match a regular expression (regex). This feature has been available since Trilium 0.52.
 *   `note.content %= '\\d{2}:\\d{2} (PM|AM)'`: Find notes that mention a time. Backslashes in a regex must be escaped.
 
-### Fuzzy Search
-
-Trilium supports fuzzy search operators that find results with typos or spelling variations:
-
-*   `#title ~= trilim`: Fuzzy exact match - finds notes with titles like "Trilium" even if you typed "trilim" (with typo)
-*   `#content ~* progra`: Fuzzy contains match - finds notes containing words like "program", "programmer", "programming" even with slight misspellings
-*   `note.content ~* develpment`: Will find notes containing "development" despite the typo
-
-**Important notes about fuzzy search:**
-
-*   Fuzzy search requires at least 3 characters in the search term
-*   Maximum edit distance is 2 characters (number of character changes needed)
-*   Diacritics are normalized (e.g., "café" matches "cafe")
-*   Fuzzy matches work best for finding content with minor typos or spelling variations
-
-### Advanced Use Cases
+## Advanced Use Cases
 
 *   `~author.relations.son.title = 'Christopher Tolkien'`: Search for notes with an "author" relation to a note that has a "son" relation to "Christopher Tolkien". This can be modeled with the following note structure:
     *   Books
@@ -97,11 +166,17 @@ Trilium supports fuzzy search operators that find results with typos or spelling
         *   J. R. R. Tolkien
             *   relation: “son” points to "Christopher Tolkien" note
             *   Christopher Tolkien
-*   `~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)`: Use boolean expressions and parentheses to group expressions. Note that expressions starting with a parenthesis need an "expression separator sign" (# or ~) prepended.
+*   `~author.title *= Tolkien OR (#publicationDate >= 1954 AND #publicationDate <= 1960)`: Use boolean expressions and parentheses to group expressions.
+*   `towers (#genre = fantasy OR #genre = scifi)`: A group can open the expression part directly, without a `#` or `~` before the parenthesis. Here it finds notes containing "towers" whose genre is fantasy or scifi.
 *   `note.parents.title = 'Books'`: Find notes with a parent named "Books".
 *   `note.parents.parents.title = 'Books'`: Find notes with a grandparent named "Books".
 *   `note.ancestors.title = 'Books'`: Find notes with an ancestor named "Books".
 *   `note.children.title = 'sub-note'`: Find notes with a child named "sub-note".
+*   `note.links.title = 'Tolkien'`: Find notes linking to a note named "Tolkien".
+*   `note.backlinks.title = 'Reading list'`: Find the notes that "Reading list" links to.
+*   A link is a relation you created, such as `~author`, or one that content creates: an internal link (`~internalLink`), an image (`~imageLink`), an included note (`~includeNoteLink`) or a relation map connection (`~relationMapLink`). Relations that configure a note, such as `~template` or a saved search's `~ancestor`, are not links.
+
+See also <a class="reference-link" href="Search/Under%20the%20hood.md">Under the hood</a> for more syntax references.
 
 ### Search with Note Properties
 
@@ -127,95 +202,14 @@ This example will:
 Some queries can only be expressed with negation:
 
 ```
-#book AND not(note.ancestor.title = 'Tolkien')
+#book AND not(note.ancestors.title = 'Tolkien')
 ```
 
 This query finds all book notes not in the "Tolkien" subtree.
 
-## Progressive Search Strategy
-
-Trilium uses a progressive search strategy that performs exact matching first, then adds fuzzy matching when needed.
-
-### How Progressive Search Works
-
-1.  **Phase 1 - Exact Matching**: When you search, Trilium first looks for exact matches of your search terms. This handles the vast majority of searches (90%+) and returns results almost instantly.
-2.  **Phase 2 - Fuzzy Fallback**: If Phase 1 doesn't find enough high-quality results (fewer than 5 results with good relevance scores), Trilium automatically adds fuzzy matching to find results with typos or spelling variations.
-3.  **Result Ordering**: Exact matches always appear before fuzzy matches, regardless of individual scores. This ensures that when you search for "project", notes containing the exact word "project" will appear before notes containing similar words like "projects" or "projection".
-
-### Progressive Search Behavior
-
-*   **Speed**: Most searches complete using only exact matching
-*   **Ordering**: Exact matches appear before fuzzy matches
-*   **Fallback**: Fuzzy matching activates when exact matches return fewer than 5 results
-*   **Identification**: Results indicate whether they are exact or fuzzy matches
-
-### Search Performance
-
-Search system specifications:
-
-*   Content size limit: 10MB per note (previously 50KB)
-*   Edit distance calculations for fuzzy matching
-*   Infinite scrolling in Quick Search
-
 ## Under the Hood
 
-### Label and Relation Shortcuts
-
-The "full" syntax for searching by labels is:
-
-```
-note.labels.publicationYear = 1954
-```
-
-For relations:
-
-```
-note.relations.author.title *=* Tolkien
-```
-
-However, common label and relation searches have shortcut syntax:
-
-```
-#publicationYear = 1954
-~author.title *=* Tolkien
-```
-
-### Separating Full-Text and Attribute Parts
-
-Search syntax allows combining full-text search with attribute-based search. For example, `tolkien #book` contains:
-
-1.  Full-text tokens - `tolkien`
-2.  Attribute expressions - `#book`
-
-Trilium detects the separation between full text search and attribute/property search by looking for certain special characters or words that denote attributes and properties (e.g., #, ~, note.). If you need to include these in full-text search, escape them with a backslash so they are processed as regular text:
-
-```
-"note.txt" 
-\#hash 
-#myLabel = 'Say "Hello World"'
-```
-
-### Escaping Special Characters
-
-Special characters can be enclosed in quotes or escaped with a backslash to be used in full-text search:
-
-```
-"note.txt"
-\#hash
-#myLabel = 'Say "Hello World"'
-```
-
-Three types of quotes are supported: single, double, and backtick.
-
-### Type Coercion
-
-Label values are technically strings but can be coerced for numeric comparisons:
-
-```
-note.dateCreated =* '2019-05'
-```
-
-This finds notes created in May 2019. Numeric operators like `#publicationYear >= 1960` convert string values to numbers for comparison.
+See the [dedicated page](Search/Under%20the%20hood.md) to understand how progressive search works in Trilium, as well as some advanced use cases.
 
 ## Auto-Trigger Search from URL
 
@@ -229,8 +223,8 @@ You can open Trilium and automatically trigger a search by including the search 
 
 | Parameter | Value | Description |
 | --- | --- | --- |
-| `MIN_FUZZY_TOKEN_LENGTH` | 3 | Minimum characters for fuzzy matching |
-| `MAX_EDIT_DISTANCE` | 2 | Maximum character changes allowed |
+| `MIN_FUZZY_TOKEN_LENGTH` | 3 | Minimum characters the `~=` and `~*` operators accept |
+| `MAX_EDIT_DISTANCE` | 2 | Ceiling on character changes, reached only by 7+ character terms; shorter terms allow fewer. See the _Fuzzy tolerance_ section above |
 | `RESULT_SUFFICIENCY_THRESHOLD` | 5 | Minimum exact results before fuzzy fallback |
 | `MAX_CONTENT_SIZE` | 10MB | Maximum note content size for search processing |
 
@@ -238,4 +232,4 @@ You can open Trilium and automatically trigger a search by including the search 
 
 *   Searched note content is limited to 10MB per note to prevent performance issues
 *   Notes exceeding this limit will still be included in title and attribute searches
-*   Fuzzy matching requires tokens of at least 3 characters
+*   Terms of 3 characters or fewer are matched exactly; typo tolerance starts at 4 characters

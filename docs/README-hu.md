@@ -24,6 +24,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 A Trilium Notes egy ingyenes és nyílt forráskódú, platformfüggetlen hierarchikus
 jegyzetelő alkalmazás, amely nagy személyes tudásbázisok építésére összpontosít.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Letöltés

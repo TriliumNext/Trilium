@@ -1,4 +1,4 @@
-import { date_utils as dateUtils, note_types as noteTypeService } from "@triliumnext/core";
+import { date_utils as dateUtils, note_types as noteTypeService, utils } from "@triliumnext/core";
 
 import { becca } from "@triliumnext/core";
 
@@ -101,7 +101,7 @@ function isValidEntityId(obj: unknown) {
         return;
     }
 
-    if (typeof obj !== "string" || !/^[A-Za-z0-9_]{4,128}$/.test(obj)) {
+    if (typeof obj !== "string" || !utils.isValidEntityId(obj)) {
         return `'${obj}' is not a valid entityId. Only alphanumeric characters are allowed of length 4 to 32.`;
     }
 }

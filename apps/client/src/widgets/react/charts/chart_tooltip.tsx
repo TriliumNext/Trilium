@@ -69,7 +69,7 @@ export function useChartTooltip<T extends HTMLElement>() {
                     tooltip.flipX && "chart-tooltip-flip-x",
                     tooltip.flipY && "chart-tooltip-flip-y"
                 )}
-                style={{ left: tooltip.x, top: tooltip.y }}
+                style={{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }}
             >
                 <div className="tooltip-inner">{tooltip.text}</div>
             </div>

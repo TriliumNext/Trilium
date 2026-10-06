@@ -238,6 +238,7 @@ const defaultOptions: DefaultOption[] = [
     // Search settings
     { name: "searchEnableFuzzyMatching", value: "true", isSynced: true },
     { name: "searchAutocompleteFuzzy", value: "false", isSynced: true },
+    { name: "searchResultsPageSize", value: "20", isSynced: true },
 
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaMethod", value: "totp", isSynced: false },
@@ -322,13 +323,13 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
+    { name: "mathFieldEnabled", value: "true", isSynced: true },
     { name: "textNoteContentHintsEnabled", value: "true", isSynced: true },
     { name: "textNoteAutoLinkPreviewsEnabled", value: "true", isSynced: true },
     // Off: the tags this carries are the ones the editor has no feature for, and GHS's handling of
     // them is worse than their absence. See `textNoteHtmlSupportEnabled` for what turning it off costs.
     { name: "textNoteHtmlSupportEnabled", value: "false", isSynced: true },
     { name: "clipboardImageEmbedEnabled", value: "true", isSynced: true },
-    { name: "includeNoteDefaultBoxSize", value: "medium", isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },
@@ -372,6 +373,7 @@ const defaultOptions: DefaultOption[] = [
     // Was previously the "llm" experimental feature; inherit the value from there for existing users.
     { name: "aiEnabled", value: (optionsMap) => optionsMap.experimentalFeatures?.includes('"llm"') ? "true" : "false", isSynced: true },
     { name: "llmProviders", value: "[]", isSynced: true },
+    { name: "llmWebSearchProvider", value: "", isSynced: true },
     { name: "aiAssistantModel", value: "", isSynced: true },
     { name: "mcpEnabled", value: "false", isSynced: false },
 

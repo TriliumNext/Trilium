@@ -29,10 +29,8 @@ test("Activate it when hoisting a note", async ({ page, context }) => {
 
     const treeNode = app.noteTree.getByText(NOTE_TITLE);
     await treeNode.click({ button: "right" });
-    const hoistMenuItem = page.locator(
-        '#context-menu-container .dropdown-item span',
-        { hasText: "Hoist note" }
-    );
+    const hoistMenuItem = page.locator("#context-menu-container")
+        .getByText("Hoist note", { exact: true });
     await hoistMenuItem.click();
     await expect(app.noteTreeActiveNote).toContainText(NOTE_TITLE);
     await app.page.locator(".unhoist-button").click();

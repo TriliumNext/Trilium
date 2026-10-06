@@ -1,5 +1,4 @@
-import type { ComponentChildren } from "preact";
-import { CSSProperties } from "preact/compat";
+import type { ComponentChildren, CSSProperties } from "preact";
 
 type OnChangeListener = (newValue: string) => void;
 

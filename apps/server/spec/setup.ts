@@ -13,6 +13,7 @@ import NodejsInAppHelpProvider from "../src/in_app_help_provider.js";
 import { initializeTranslationsWithParams } from "../src/services/i18n.js";
 import ServerLogService from "../src/log_provider.js";
 import { serverImageProvider } from "../src/services/image_provider.js";
+import { registerShareProvider } from "../src/share/share_provider.js";
 
 // Initialize environment variables.
 process.env.TRILIUM_DATA_DIR = join(__dirname, "db");
@@ -50,4 +51,7 @@ beforeAll(async () => {
         log: new ServerLogService(),
         image: serverImageProvider
     });
+
+    // The share specs render real share-theme templates, which the provider reads from disk.
+    registerShareProvider();
 });

@@ -7,6 +7,7 @@ import config from "./config.js";
 import events from "./events.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import options from "./options.js";
+import { getPlatform } from "./platform.js";
 import protected_session from "./protected_session.js";
 import { startScheduler } from "./scheduler.js";
 import scriptService from "./script.js";
@@ -44,10 +45,20 @@ function buildBackendScript() {
     return buildNote({ type: "code", mime: "application/javascript;env=backend", content: "" });
 }
 
+/**
+ * Sets what `TRILIUM_SAFE_MODE` reads as, through the platform provider that owns it.
+ *
+ * `process.env` is not that provider on every runtime: the browser build has no `process` and takes
+ * the value from a `?safeMode` URL parameter, so a spec that sets the variable directly would leave
+ * the branch untested there.
+ */
+function stubSafeMode(value?: string) {
+    vi.spyOn(getPlatform(), "getEnv").mockImplementation((key) => (key === "TRILIUM_SAFE_MODE" ? value : undefined));
+}
+
 describe("scheduler", () => {
     const originalScriptingEnabled = config.Security.backendScriptingEnabled;
     const originalInstanceName = config.General.instanceName;
-    const originalSafeMode = process.env.TRILIUM_SAFE_MODE;
 
     let getNotesWithLabel: ReturnType<typeof vi.spyOn>;
     let executeNoteNoException: ReturnType<typeof vi.spyOn>;
@@ -66,7 +77,7 @@ describe("scheduler", () => {
 
         config.Security.backendScriptingEnabled = true;
         config.General.instanceName = "";
-        delete process.env.TRILIUM_SAFE_MODE;
+        stubSafeMode();
 
         getNotesWithLabel = vi.spyOn(attributeService, "getNotesWithLabel").mockReturnValue([]);
         executeNoteNoException = vi.spyOn(scriptService, "executeNoteNoException").mockImplementation(() => {});
@@ -85,11 +96,6 @@ describe("scheduler", () => {
         vi.restoreAllMocks();
         config.Security.backendScriptingEnabled = originalScriptingEnabled;
         config.General.instanceName = originalInstanceName;
-        if (originalSafeMode === undefined) {
-            delete process.env.TRILIUM_SAFE_MODE;
-        } else {
-            process.env.TRILIUM_SAFE_MODE = originalSafeMode;
-        }
     });
 
     it("runs backendStartup, hourly and daily scripts on their timers when scripting is enabled", async () => {
@@ -145,7 +151,7 @@ describe("scheduler", () => {
     });
 
     it("does not schedule script timers in safe mode", async () => {
-        process.env.TRILIUM_SAFE_MODE = "1";
+        stubSafeMode("1");
 
         startScheduler();
         await settleDbReady();

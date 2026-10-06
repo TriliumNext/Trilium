@@ -1,5 +1,6 @@
-import { getNoteIcon } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo } from "@triliumnext/commons";
 
+import { runBackendScript } from "../services/backend_scripting.js";
 import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
@@ -74,6 +75,9 @@ export default class FNote {
     // Managed by Froca.
     searchResultsLoaded?: boolean;
     highlightedTokens?: string[];
+    /** Structured, diacritic/regex-aware counterpart of {@link highlightedTokens}; prefer this
+     *  when present. */
+    highlightedTokenInfos?: HighlightedTokenInfo[];
 
     constructor(froca: Froca, row: FNoteRow) {
         this.froca = froca;
@@ -434,12 +438,16 @@ export default class FNote {
 
     getSortedNotePathRecords(hoistedNoteId = "root", activeNotePath: string | null = null): NotePathRecord[] {
         const isHoistedRoot = hoistedNoteId === "root";
+        // Every ancestor in a path comes out of `froca.notes`, but the last segment is this note,
+        // which a view can still hold after `froca_updater` drops it from the cache.
+        const getPathNote = (noteId: string) =>
+            noteId === this.noteId ? this : this.froca.notes[noteId];
 
         const notePaths: NotePathRecord[] = this.getAllNotePaths().map((path) => ({
             notePath: path,
             isInHoistedSubTree: isHoistedRoot || path.includes(hoistedNoteId),
-            isArchived: path.some((noteId) => this.froca.notes[noteId].isArchived),
-            isSearch: path.some((noteId) => this.froca.notes[noteId].type === "search"),
+            isArchived: path.some((noteId) => getPathNote(noteId).isArchived),
+            isSearch: path.some((noteId) => getPathNote(noteId).type === "search"),
             isHidden: path.includes("_hidden")
         }));
 
@@ -450,16 +458,6 @@ export default class FNote {
         };
 
         notePaths.sort((a, b) => {
-            if (activeNotePath) {
-                const activeSegments = activeNotePath.split('/');
-                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
-                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
-                // Paths with more matching prefix segments are prioritized
-                // when the match count is equal, other criteria are used for sorting
-                if (bOverlap !== aOverlap) {
-                    return bOverlap - aOverlap;
-                }
-            }
             if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
                 return a.isInHoistedSubTree ? -1 : 1;
             } else if (a.isArchived !== b.isArchived) {
@@ -471,6 +469,19 @@ export default class FNote {
                 return a.isSearch ? 1 : -1;
             }
             /* v8 ignore stop */
+
+            if (activeNotePath) {
+                // Among otherwise equal paths, the one sharing the longest prefix with the active
+                // note wins, so opening a clone keeps the user where they came from. The checks
+                // above outrank it: an active `_hidden` note must not promote a bookmark clone.
+                const activeSegments = activeNotePath.split("/");
+                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
+                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
+                if (bOverlap !== aOverlap) {
+                    return bOverlap - aOverlap;
+                }
+            }
+
             return a.notePath.length - b.notePath.length;
         });
 
@@ -1126,7 +1137,7 @@ export default class FNote {
         if (env === "frontend") {
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
-            await server.post(`script/run/${this.noteId}`);
+            await runBackendScript(this.noteId);
         } else {
             throw new Error(`Unrecognized env type ${env} for note ${this.noteId}`);
         }

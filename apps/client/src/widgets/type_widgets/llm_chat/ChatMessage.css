@@ -69,6 +69,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     display: block;
     margin: 0.5rem 0;
     max-width: 100%;
+    cursor: zoom-in;
 }
 
 .llm-chat-message-image img {
@@ -200,23 +201,59 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
     margin-top: 0.75rem;
 }
 
-.llm-chat-thinking-card.expandable-card {
-    width: 100%;
-    max-width: 100%;
-    border-style: dashed;
-    margin-right: 0;
-    margin: 0;
+/* The disclosure line itself is `.expandable-line` in ExpandableCard.css. */
+.llm-chat-thinking {
+    margin: 0.25rem 0;
+
+    /* `text-overflow` needs a block container: as a flex container the label never shows the ellipsis. */
+    .expandable-section-label {
+        display: block;
+    }
+
+    .llm-chat-thinking-label {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* The label is the only copy of its line, so the opened thought wraps it in full. */
+    &[open] > .expandable-section-summary :is(.expandable-section-label, .llm-chat-thinking-label) {
+        white-space: normal;
+    }
+
+    /* A body-less thought whose label fits has nothing to reveal. */
+    &.llm-chat-thinking-fits > .expandable-section-summary {
+        pointer-events: none;
+
+        .expandable-section-chevron {
+            display: none;
+        }
+    }
 }
 
-.llm-chat-thinking-card .expandable-section-summary {
-    color: var(--muted-text-color);
+.llm-chat-thinking-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.llm-chat-thinking-content {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    color: var(--muted-text-color);
-    white-space: pre-wrap;
+/* Spaced like `.llm-chat-thinking` and `.llm-chat-tool-calls`, the lines it follows. */
+.llm-chat-stream-idle {
+    margin: 0.25rem 0;
+    animation: llm-chat-stream-idle-appear 0.2s ease-out;
+}
+
+@keyframes llm-chat-stream-idle-appear {
+    from {
+        opacity: 0;
+    }
+}
+
+/* The text after the last thought or tool call, set apart from the steps that led to it. */
+.llm-chat-reply {
+    margin-top: 1rem;
 }
 
 /* Markdown styles */
@@ -304,7 +341,7 @@ body.background-effects.theme-supports-background-effects .llm-chat-message-user
 }
 
 .llm-chat-markdown blockquote p {
-    margin: 0;
+    margin: 0 1.5em;
 }
 
 .llm-chat-markdown a {

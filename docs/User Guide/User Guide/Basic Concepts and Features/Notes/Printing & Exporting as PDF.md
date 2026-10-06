@@ -1,5 +1,5 @@
 # Printing & Exporting as PDF
-<figure class="image"><img style="aspect-ratio:2023/1488;" src="1_Printing &amp; Exporting as PDF_image.png" width="2023" height="1488"><figcaption>Screenshot of the Print preview functionality introduced in v0.103.0.</figcaption></figure>
+<figure class="image"><img style="aspect-ratio:2023/1488;" src="Printing &amp; Exporting as PDF_image.png" width="2023" height="1488"><figcaption>Screenshot of the Print preview functionality introduced in v0.103.0.</figcaption></figure>
 
 Trilium allows printing notes to a real printer, or generating a structured PDF for a single note or for multiple notes through <a class="reference-link" href="../../Collections.md">Collections</a>.
 
@@ -24,7 +24,6 @@ This will trigger the print preview screen next.
 The print preview dialog allows the following printing options to be adjusted:
 
 *   The printer to use
-    
     *   _Save as PDF_ generates a PDF that is structured (maintains a table of contents, keeps the text selectable). Prefer this over other virtual PDF printers that ship with the operating system.
 *   Page orientation: _Portrait_ (default) or _Landscape_.
 *   Page size
@@ -36,8 +35,10 @@ Additional interaction:
 
 *   _Print using system dialog_ allows setting more options that are otherwise not available in Trilium.
 
+If the note cannot be rendered with the current options, or stops making progress for 30 seconds, the preview is replaced by an error message. Adjust the options to try again.
+
 > [!NOTE]
-> Most of the options here (expect printer & which pages to print) are managed at note level through <a class="reference-link" href="../../Advanced%20Usage/Attributes.md">Attributes</a> (such as `#printLandscape`, `#printPageSize`, `#printScale`, `#printMargins`).
+> Most of the options here (except printer & which pages to print) are managed at note level through <a class="reference-link" href="../../Advanced%20Usage/Attributes.md">Attributes</a> (such as `#printLandscape`, `#printPageSize`, `#printScale`, `#printMargins`).
 > 
 > This means that the print settings will be restored when printing the same note. There are no default settings that can be configured for all the notes, but this can be achieved via [inheritable attributes](../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md).
 
@@ -45,13 +46,13 @@ Additional interaction:
 
 This feature allows printing of notes. It works on both the desktop client, but also on the web.
 
-To print a note, select the <img src="Printing &amp; Exporting as PDF_image.png" width="29" height="31"> button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
+To print a note, select the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> ([New layout](../UI%20Elements/New%20Layout.md), or <span class="tn-icon bx bx-dots-vertical-rounded"></span> for the old layout) button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
 On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
 
 ## Reporting issues with the rendering
 
-Should you encounter any visual issues in the resulting PDF file (e.g. a table does not fit properly, there is cut off text, etc.) feel free to [report the issue](../../Troubleshooting/Reporting%20issues.md). In this case, it's best to offer a sample note (click on the <img src="Printing &amp; Exporting as PDF_image.png" width="29" height="31"> button, select Export note → This note and all of its descendants → HTML in ZIP archive). Make sure not to accidentally leak any personal information.
+Should you encounter any visual issues in the resulting PDF file (e.g. a table does not fit properly, there is cut off text, etc.) feel free to [report the issue](../../Troubleshooting/Reporting%20issues.md). In this case, it's best to offer a sample note (click on the <span class="tn-icon cke cke-three-vertical-dots"></span> button, select _Export note_ → _This note and all of its descendants_ → _HTML in ZIP archive_). Make sure not to accidentally leak any personal information.
 
 Consider adjusting font sizes and using [page breaks](../../Note%20Types/Text/Insert%20buttons.md) to work around the layout.
 
@@ -94,6 +95,7 @@ It's possible to trigger both printing and export as PDF from the keyboard by go
 
 Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> are supported when printing, in which case the _Print_ and _Export as PDF_ options will be disabled.
 
+*   For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, font, background and table colors are printed in the shades of light themes, whatever the current theme (see <a class="reference-link" href="../../Note%20Types/Text/General%20formatting.md">General formatting</a>).
 *   For <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes:
     *   Line numbers are not printed.
     *   Syntax highlighting is enabled, however a default theme (Visual Studio) is enforced.
@@ -142,5 +144,3 @@ Both printing and exporting as PDF use the same mechanism: a note is rendered in
 The webpage that renders a single note can actually be accessed in a web browser. For example `http://localhost:8080/#root/WWRGzqHUfRln/RRZsE9Al8AIZ?ntxId=0o4fzk` becomes `http://localhost:8080/?print#root/WWRGzqHUfRln/RRZsE9Al8AIZ`.
 
 Accessing the print note in a web browser allows for easy debugging to understand why a particular note doesn't render well. The mechanism for rendering is similar to the one used in <a class="reference-link" href="Note%20List.md">Note List</a>.
-
-1.  <sup><strong><a href="#fnrefsr779u3zm6">^</a></strong></sup>

@@ -1,4 +1,4 @@
-import { type ImgHTMLAttributes } from "preact/compat";
+import type { AccessibleImgHTMLAttributes, ImgHTMLAttributes } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 /**
@@ -50,5 +50,11 @@ export function SafeImage({ src, ...rest }: SafeImageProps) {
         }, 300 * next);
     }, [src]);
 
-    return <img {...rest} src={currentSrc} onError={handleError} />;
+    return (
+        <img
+            {...(rest as AccessibleImgHTMLAttributes<HTMLImageElement>)}
+            src={currentSrc}
+            onError={handleError}
+        />
+    );
 }

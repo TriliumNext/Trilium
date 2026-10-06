@@ -2,19 +2,36 @@ import { extractLlmChatText } from "@triliumnext/commons/src/lib/llm/extract_cha
 import { extractSpreadsheetText } from "@triliumnext/commons/src/lib/spreadsheet/extract_text.js";
 import striptags from "striptags";
 import { normalizeSearchText } from "../utils/text_utils";
-import { normalize } from "../../utils/index";
+import { normalize, unescapeHtml } from "../../utils/index";
 
-export default function preprocessContent(rawContent: string | Uint8Array, type: string, mime: string, raw?: boolean) {
-    let content = normalize(rawContent.toString());
+/** Resolves a note's title by its id, injected so this module stays free of a becca import. */
+export type NoteTitleResolver = (noteId: string) => string | null;
+
+export default function preprocessContent(rawContent: string | Uint8Array, type: string, mime: string, raw?: boolean, resolveNoteTitle?: NoteTitleResolver) {
+    const originalContent = rawContent.toString();
+    let content = normalize(originalContent);
 
     if (type === "text" && mime === "text/html") {
         if (!raw) {
-            // surface link-preview metadata (title/url/description) as text, since it lives in
-            // data attributes that stripTags would otherwise discard along with the element
-            const previewText = [...content.matchAll(/\sdata-(?:title|url|description)="([^"]*)"/gi)].map((match) => match[1]).join(" ");
+            // Runs before stripTags(), which discards the data-* metadata and anchor text, and
+            // against the original markup, because normalize() lowercases the noteIds it needs.
+            const injectedText = [
+                extractLinkSearchText(originalContent, resolveNoteTitle),
+                extractIconSearchText(originalContent)
+            ].filter(Boolean).join(" ");
 
             // Content size already filtered at DB level, safe to process
-            content = stripTags(`${previewText} ${content}`);
+            content = stripTags(content);
+
+            // The body is decoded so a query can reach the text the editor shows, and before the
+            // injected link text is appended, since that arrives decoded already.
+            content = unescapeHtml(content);
+
+            if (injectedText) {
+                // The body above was normalized, and matchesContent() compares a lowercased query
+                // token against the raw string, so the injected text must be normalized too.
+                content = `${content} ${normalize(injectedText)}`;
+            }
         }
 
         content = content.replace(/&nbsp;/g, " ");
@@ -116,6 +133,113 @@ function processCanvasContent(content: string) {
         content = "";
     }
     return content;
+}
+
+/** Metadata attributes to index from link previews, in the order they are appended. */
+const LINK_PREVIEW_ATTRIBUTES = ["data-url", "data-title", "data-description", "data-site-name"] as const;
+
+// Must match what link_embed_editing.ts writes in its dataDowncast.
+const LINK_PREVIEW_TAG_RE = /<(?:section|span)\b[^>]*\bclass=["'][^"']*\blink-(?:embed|mention)\b[^"']*["'][^>]*>/gi;
+
+// Mirrors findInternalLinks() in services/notes.ts, inlined to keep that import out of here.
+const INTERNAL_LINK_RE = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)\/?"/g;
+
+// Must match what inline_icon_editing.ts writes in its dataDowncast.
+export const ICON_TAG_RE = /<span\b[^>]*\bclass=["'][^"']*\btn-icon\b[^"']*["'][^>]*>/gi;
+
+/** The class every icon wears beside its pack's, which says nothing about which icon it is. */
+const ICON_MARKER_CLASS = "tn-icon";
+
+/**
+ * The pack classes an icon tag wears — `bx-error-circle` from `tn-icon bx bx-error-circle`.
+ *
+ * The marker is worn by every icon, and a pack's bare prefix — `bx` — by every icon that pack
+ * holds, so neither names one. A tag can also wear a class from outside any pack, since the editor
+ * keeps what imported markup carried: only a class the tag declares the prefix of draws a glyph,
+ * so only those are read. Markup declaring no prefix falls back to every hyphenated class, which
+ * is all there is left to go on.
+ */
+export function readIconClasses(tag: string): string[] {
+    const classNames = (extractAttribute(tag, "class") ?? "")
+        .split(/\s+/)
+        .filter((className) => className && className !== ICON_MARKER_CLASS);
+    const prefixes = new Set(classNames.filter((className) => !className.includes("-")));
+    const packClasses = classNames.filter((className) => className.includes("-"));
+    const named = packClasses.filter((className) => prefixes.has(className.slice(0, className.indexOf("-"))));
+
+    return named.length ? named : packClasses;
+}
+
+/** The name inside a pack class: `error-circle` from `bx-error-circle`. */
+export function readIconName(className: string): string {
+    return className.slice(className.indexOf("-") + 1);
+}
+
+/** Collects extra searchable text from a note's link previews and internal-link targets. */
+function extractLinkSearchText(content: string, resolveNoteTitle?: NoteTitleResolver): string {
+    const parts: string[] = [];
+
+    for (const tag of content.match(LINK_PREVIEW_TAG_RE) ?? []) {
+        for (const attrName of LINK_PREVIEW_ATTRIBUTES) {
+            const value = extractAttribute(tag, attrName);
+            if (value) {
+                parts.push(value);
+            }
+        }
+    }
+
+    if (resolveNoteTitle) {
+        const seen = new Set<string>();
+        let match: RegExpExecArray | null;
+        INTERNAL_LINK_RE.lastIndex = 0;
+        while ((match = INTERNAL_LINK_RE.exec(content)) !== null) {
+            const noteId = match[1];
+            if (seen.has(noteId)) {
+                continue;
+            }
+            seen.add(noteId);
+
+            const title = resolveNoteTitle(noteId);
+            if (title) {
+                parts.push(title);
+            }
+        }
+    }
+
+    return parts.join(" ");
+}
+
+/**
+ * Collects what the icons in a note's content should be findable by.
+ *
+ * An icon is an empty element, so stripping the markup leaves nothing of it behind and a note
+ * marked with one is unfindable. Each icon's pack class and the name inside it are appended as
+ * words instead — `bx bx-error-circle` gives `bx-error-circle error-circle` — so the class serves
+ * a search that knows it and the name serves one that does not.
+ */
+function extractIconSearchText(content: string): string {
+    const parts = new Set<string>();
+
+    for (const tag of content.match(ICON_TAG_RE) ?? []) {
+        for (const className of readIconClasses(tag)) {
+            parts.add(className);
+            parts.add(readIconName(className));
+        }
+    }
+
+    return [ ...parts ].join(" ");
+}
+
+/** Reads a single/double-quoted HTML attribute value from a tag string, entity-decoded. */
+function extractAttribute(tag: string, attrName: string): string | null {
+    const re = new RegExp(`\\b${attrName}=(?:"([^"]*)"|'([^']*)')`, "i");
+    const match = re.exec(tag);
+    if (!match) {
+        return null;
+    }
+
+    const rawValue = match[1] !== undefined ? match[1] : match[2];
+    return rawValue ? unescapeHtml(rawValue) : null;
 }
 
 function stripTags(content: string) {

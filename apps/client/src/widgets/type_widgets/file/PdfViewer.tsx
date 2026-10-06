@@ -1,6 +1,7 @@
 import type { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { onEffectiveThemeStyleChange } from "../../../services/theme";
 import { useSyncedRef, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 
 interface FontDefinition {
@@ -14,7 +15,7 @@ const FONTS: FontDefinition[] = [
 ];
 
 interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabIndex"> {
-    iframeRef?: RefObject<HTMLIFrameElement>;
+    iframeRef?: RefObject<HTMLIFrameElement | null>;
     /** Relative URLs resolve against /pdfjs/web; build API paths with {@link getPdfUrl} instead. */
     pdfUrl: string;
     onLoad?(): void;
@@ -33,12 +34,18 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
      * crisper preview. Has no effect when the real DPR already meets or exceeds this value.
      */
     minPixelRatio?: number;
+    /**
+     * The note and note context the viewer addresses its messages to. They travel in the URL so
+     * that messages posted before the frame's `load` event carry them too.
+     */
+    noteId?: string;
+    ntxId?: string | null;
 }
 
 /**
  * Reusable component displaying a PDF. The PDF needs to be provided via a URL.
  */
-export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection, minPixelRatio }: PdfViewerProps) {
+export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable, toolbar = true, disableSelection, minPixelRatio, noteId, ntxId }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const [ newLayout ] = useTriliumOptionBool("newLayout");
@@ -49,7 +56,7 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
             ref={iframeRef}
             class="pdf-preview"
             style={{width: "100%", height: "100%"}}
-            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}`}
+            src={`pdfjs/web/viewer.html?v=${glob.triliumVersion}&file=${pdfUrl}&locale=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}&toolbar=${toolbar ? "1" : "0"}${minPixelRatio ? `&minPixelRatio=${minPixelRatio}` : ""}${noteId ? getAddressParams(noteId, ntxId) : ""}`}
             onLoad={() => {
                 injectStyles();
                 onLoad?.();
@@ -58,7 +65,14 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
     );
 }
 
-function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>, disableSelection?: boolean) {
+function getAddressParams(noteId: string, ntxId: string | null | undefined) {
+    return `&noteId=${encodeURIComponent(noteId)}${ntxId ? `&ntxId=${encodeURIComponent(ntxId)}` : ""}`;
+}
+
+function useStyleInjection(
+    iframeRef: RefObject<HTMLIFrameElement | null>,
+    disableSelection?: boolean
+) {
     const styleRef = useRef<HTMLStyleElement | null>(null);
 
     // First load.
@@ -90,9 +104,7 @@ function useStyleInjection(iframeRef: RefObject<HTMLIFrameElement>, disableSelec
             styleRef.current!.textContent = cssVarsToString(getRootCssVariables());
         };
 
-        const media = window.matchMedia("(prefers-color-scheme: dark)");
-        media.addEventListener("change", listener);
-        return () => media.removeEventListener("change", listener);
+        return onEffectiveThemeStyleChange(listener);
     }, [ iframeRef ]);
 
     return onLoad;

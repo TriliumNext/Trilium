@@ -48,34 +48,81 @@ describe("buildComparator", () => {
     });
 
     describe("equality operators (= and !=)", () => {
-        it("matches a single word case-insensitively against any word in the value", () => {
-            const eq = buildComparator("=", "Hello")!;
-            expect(eq("hello world")).toBe(true);
-            expect(eq("say HELLO there")).toBe(true);
-            expect(eq("hellothere")).toBe(false); // not an exact word
-            expect(eq("")).toBe(false);
+        it("matches only the exact full value, case-insensitively (strict equality)", () => {
+            const eq = buildComparator("=", "Vienna");
+            expect(eq?.("vienna")).toBe(true);
+            expect(eq?.("VIENNA")).toBe(true);
+            // No longer a word/substring match: the value must equal the whole thing.
+            expect(eq?.("Vienna Austria")).toBe(false);
+            expect(eq?.("hello vienna world")).toBe(false);
+            expect(eq?.("")).toBe(false);
         });
 
-        it("matches a multi-word phrase as a consecutive substring", () => {
-            const eq = buildComparator("=", "hello world")!;
-            expect(eq("well hello world friend")).toBe(true);
-            expect(eq("world hello")).toBe(false);
+        it("matches a multi-word compared value only against the whole value", () => {
+            const eq = buildComparator("=", "Vienna Austria");
+            expect(eq?.("vienna austria")).toBe(true);
+            expect(eq?.("well vienna austria friend")).toBe(false);
+            expect(eq?.("austria vienna")).toBe(false);
         });
 
         it("normalizes diacritics on both sides", () => {
-            const eq = buildComparator("=", "café")!;
-            expect(eq("the cafe is open")).toBe(true);
+            const eq = buildComparator("=", "café");
+            expect(eq?.("cafe")).toBe(true);
+            expect(eq?.("the cafe is open")).toBe(false);
         });
 
-        it("negates the equality match and treats empty value as a match", () => {
-            const neq = buildComparator("!=", "hello")!;
-            expect(neq("hello world")).toBe(false);
-            expect(neq("goodbye world")).toBe(true);
-            expect(neq("")).toBe(true);
+        it("keeps each value's own verdict when values repeat and alternate", () => {
+            // A comparator is reused across every note in the database and remembers the last
+            // value it normalized, so a run of repeats must not carry a verdict into the next
+            // distinct value — nor an unnormalized value into a repeat of a normalized one.
+            const eq = buildComparator("=", "false");
+            for (const [value, expected] of [
+                ["false", true], ["false", true], ["true", false], ["false", true],
+                ["", false], ["false", true], ["FALSE", true], ["falsey", false], ["false", true]
+            ] as const) {
+                expect([ value, eq?.(value) ]).toEqual([ value, expected ]);
+            }
 
-            const neqPhrase = buildComparator("!=", "hello world")!;
-            expect(neqPhrase("well hello world")).toBe(false);
-            expect(neqPhrase("world hello")).toBe(true);
+            const diacritics = buildComparator("=", "café");
+            expect(diacritics?.("café")).toBe(true);
+            expect(diacritics?.("cafe")).toBe(true);
+            expect(diacritics?.("cafè")).toBe(true);
+            expect(diacritics?.("cafes")).toBe(false);
+            expect(diacritics?.("café")).toBe(true);
+        });
+
+        it("negates the strict equality match and treats empty value as a match", () => {
+            const neq = buildComparator("!=", "vienna");
+            expect(neq?.("vienna")).toBe(false);
+            expect(neq?.("Vienna Austria")).toBe(true);
+            expect(neq?.("goodbye world")).toBe(true);
+            expect(neq?.("")).toBe(true);
+        });
+    });
+
+    describe("internal word= operator (title fulltext word/phrase match)", () => {
+        it("matches a single word case-insensitively against any word in the value", () => {
+            const eq = buildComparator("word=", "Hello");
+            expect(eq?.("hello world")).toBe(true);
+            expect(eq?.("say HELLO there")).toBe(true);
+            expect(eq?.("hellothere")).toBe(false); // not an exact word
+            expect(eq?.("")).toBe(false);
+        });
+
+        it("matches a multi-word phrase as a consecutive substring", () => {
+            const eq = buildComparator("word=", "hello world");
+            expect(eq?.("well hello world friend")).toBe(true);
+            expect(eq?.("world hello")).toBe(false);
+        });
+
+        it("matches a punctuation-wrapped word against the bare token", () => {
+            const eq = buildComparator("word=", "books");
+            expect(eq?.("(Books)")).toBe(true);
+        });
+
+        it("normalizes diacritics on both sides", () => {
+            const eq = buildComparator("word=", "café");
+            expect(eq?.("the cafe is open")).toBe(true);
         });
     });
 
@@ -154,6 +201,21 @@ describe("buildComparator", () => {
             const fuzzy = buildComparator("~*", "ab")!;
             expect(fuzzy("crab")).toBe(true);
             expect(fuzzy("xyz")).toBe(false);
+        });
+
+        it("~* matches a substring fragment of a longer word (fuzzy contains, #10616)", () => {
+            // "~*" is fuzzy CONTAINS, so a fragment like "progr" must match a value
+            // containing "programming" even though it is a proper substring.
+            const fuzzy = buildComparator("~*", "progr");
+            expect(fuzzy?.("learn programming today")).toBe(true);
+            expect(fuzzy?.("unrelated content")).toBe(false);
+        });
+
+        it("~* still matches a fuzzy typo that is not a substring", () => {
+            // "progrms" is one edit from "programs" (not a substring), so fuzzy
+            // matching must still catch it.
+            const fuzzy = buildComparator("~*", "progrms");
+            expect(fuzzy?.("view programs list")).toBe(true);
         });
     });
 });

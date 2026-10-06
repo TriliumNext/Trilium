@@ -1,6 +1,6 @@
 /**
- * Locates the bring-your-own-binary CLIs the agent providers drive (Claude
- * Code, GitHub Copilot).
+ * Locates and probes the bring-your-own-binary CLIs the agent providers drive
+ * (Claude Code, GitHub Copilot, Google Antigravity, OpenAI Codex).
  *
  * A GUI-launched app does not inherit the user's shell environment: on macOS
  * launchd hands `Trilium.app` a bare `/usr/bin:/bin:/usr/sbin:/sbin`, and on
@@ -50,6 +50,64 @@ export async function findOnPath(binary: string): Promise<string | undefined> {
         getLog().info(`Adopted PATH from the login shell to reach ${binary} at ${found}`);
     }
     return found;
+}
+
+/**
+ * Memoize a binary probe: concurrent first calls share one run, and a failed
+ * one is forgotten so a later install is picked up without a restart.
+ */
+export function cachedProbe(probe: () => Promise<string>): { resolve: () => Promise<string>; reset: () => void } {
+    let cached: Promise<string> | undefined;
+    return {
+        resolve() {
+            if (!cached) {
+                cached = probe().catch((err: unknown) => {
+                    cached = undefined;
+                    throw err;
+                });
+            }
+            return cached;
+        },
+        reset() {
+            cached = undefined;
+        }
+    };
+}
+
+/**
+ * Runs `binary --version` with stdin closed and resolves with everything it
+ * printed, stdout before stderr. On failure, `failure` names the timeout or
+ * carries execFile's own message for a spawn or exit failure.
+ */
+export function runVersionProbe(binary: string, timeoutMs: number): Promise<{ output: string; failure?: string }> {
+    return new Promise((resolve) => {
+        // `shell` is required for the .cmd/.bat shims npm creates on Windows —
+        // Node refuses to spawn those directly (CVE-2024-27980). With a shell
+        // the command line is not auto-quoted, so quote the path ourselves.
+        const shell = needsShell(binary);
+        const options = { timeout: timeoutMs, encoding: "utf8" as const, shell };
+        const child = execFile(shell ? `"${binary}"` : binary, ["--version"], options, (err, stdout, stderr) => {
+            const output = [stdout, stderr].map((text) => text.trim()).filter(Boolean).join("\n");
+            if (!err) {
+                resolve({ output });
+            } else if (err.killed) {
+                resolve({ output, failure: `did not exit within ${timeoutMs / 1000} seconds` });
+            } else {
+                // execFile's message already quotes stderr after the command.
+                const failure = (err instanceof Error ? err.message : String(err)).trim();
+                resolve({ output: stdout.trim(), failure });
+            }
+        });
+        child.stdin?.end();
+    });
+}
+
+/**
+ * Whether the binary is an npm `.cmd`/`.bat` shim that can only be launched
+ * through a shell. Used by the version probe and the ACP spawn.
+ */
+export function needsShell(binary: string): boolean {
+    return /\.(cmd|bat)$/i.test(binary);
 }
 
 /** For tests: forget the login shell's PATH so the next call re-reads it. */

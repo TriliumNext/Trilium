@@ -1,13 +1,17 @@
 import "./ChatMessageList.css";
 
-import { useMemo } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
+import LoadingSpinner from "../../react/LoadingSpinner.js";
 import NoItems from "../../react/NoItems.js";
 import ChatMessage from "./ChatMessage.js";
-import type { StoredMessage } from "./llm_chat_types.js";
+import type { ContentBlock, StoredMessage } from "./llm_chat_types.js";
 import type { UseLlmChatReturn } from "./useLlmChat.js";
+
+/** How long a streaming reply goes without changing before the list says it is still working. */
+const STREAM_IDLE_MS = 2000;
 
 interface ChatMessageListProps {
     /** The chat hook result. */
@@ -25,6 +29,7 @@ interface ChatMessageListProps {
  */
 export default function ChatMessageList({ chat, emptyStateText, className }: ChatMessageListProps) {
     const { messages, isStreaming, retryLast } = chat;
+    const isStreamIdle = useStreamIdle(chat.streamingBlocks, isStreaming);
 
     // Rebuilt only when the timeline itself changes: renders caused by anything else
     // (streaming commits, toggles) skip the O(messages) vnode allocation and the
@@ -41,16 +46,8 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
         />
     )), [messages, isStreaming, retryLast]);
 
-    // Stable placeholder objects: rebuilt only when their streamed content advances, so
-    // renders caused by anything else let memo(ChatMessage) skip the placeholders too.
-    const thinkingMessage = useMemo<StoredMessage | null>(() => chat.streamingThinking ? {
-        id: "streaming-thinking",
-        role: "assistant",
-        content: chat.streamingThinking,
-        createdAt: new Date().toISOString(),
-        type: "thinking"
-    } : null, [chat.streamingThinking]);
-
+    // A stable placeholder object: rebuilt only when its streamed content advances, so
+    // renders caused by anything else let memo(ChatMessage) skip the placeholder too.
     const streamingMessage = useMemo<StoredMessage | null>(() => chat.streamingBlocks.length > 0 ? {
         id: "streaming",
         role: "assistant",
@@ -66,16 +63,21 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
                     <NoItems icon="bx bx-conversation" text={emptyStateText} />
                 )}
                 {storedMessages}
-                {isStreaming && thinkingMessage && (
-                    <ChatMessage
-                        message={thinkingMessage}
-                        isStreaming
-                    />
+                {isStreaming && !streamingMessage && (
+                    <div className={`chat-stream-status ${chat.streamingStatus ? "" : "chat-stream-status-waiting"}`} role="status">
+                        <LoadingSpinner />
+                        {chat.streamingStatus
+                            ? t(`llm_chat.stream_status.${chat.streamingStatus}`)
+                            : t("llm_chat.stream_status.waiting_for_reply")}
+                    </div>
                 )}
                 {isStreaming && streamingMessage && (
                     <ChatMessage
                         message={streamingMessage}
                         isStreaming
+                        streamStatus={isStreamIdle && !showsOwnProgress(chat.streamingBlocks)
+                            ? t("llm_chat.stream_status.still_working")
+                            : undefined}
                     />
                 )}
                 <div ref={chat.messagesEndRef} className="chat-messages-end" aria-hidden="true" />
@@ -92,4 +94,22 @@ export default function ChatMessageList({ chat, emptyStateText, className }: Cha
             )}
         </div>
     );
+}
+
+/** Whether `blocks` has gone {@link STREAM_IDLE_MS} without changing while the turn streams. */
+function useStreamIdle(blocks: ContentBlock[], isStreaming: boolean) {
+    const [isIdle, setIsIdle] = useState(false);
+    useEffect(() => {
+        setIsIdle(false);
+        if (!isStreaming) return;
+        const timer = setTimeout(() => setIsIdle(true), STREAM_IDLE_MS);
+        return () => clearTimeout(timer);
+    }, [blocks, isStreaming]);
+    return isIdle;
+}
+
+/** A thought being streamed and a tool call awaiting its result each show a spinner of their own. */
+function showsOwnProgress(blocks: ContentBlock[]) {
+    const last = blocks.at(-1);
+    return last?.type === "thinking" || (last?.type === "tool_call" && !last.toolCall.result);
 }

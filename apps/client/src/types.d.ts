@@ -7,7 +7,6 @@ import type { PrintReport } from "./print";
 import type { lint } from "./services/eslint";
 import type { Froca } from "./services/froca-interface";
 import { Library } from "./services/library_loader";
-import { Suggestion } from "./services/note_autocomplete";
 import server from "./services/server";
 import utils from "./services/utils";
 
@@ -64,48 +63,27 @@ declare global {
         electronApi?: ElectronApi;
         /** Present only in the standalone build, where the stack runs in this browser. */
         standaloneApi?: StandaloneApi;
+
+        /**
+         * Chromium's Local Font Access API, absent from the DOM typings. Defined only in a secure
+         * context on Chromium, and it rejects unless the `local-fonts` permission is granted — see
+         * `listSystemFontFamilies`, which is the only caller.
+         */
+        queryLocalFonts?: () => Promise<FontData[]>;
+    }
+
+    /** One installed font face, as {@link Window.queryLocalFonts} reports it. */
+    interface FontData {
+        family: string;
+        fullName: string;
+        postscriptName: string;
+        style: string;
     }
 
 
     interface WindowEventMap {
         "note-ready": Event;
         "note-load-progress": CustomEvent<{ progress: number }>;
-    }
-
-    interface AutoCompleteConfig {
-        appendTo?: HTMLElement | null;
-        hint?: boolean;
-        openOnFocus?: boolean;
-        minLength?: number;
-        tabAutocomplete?: boolean;
-        autoselect?: boolean;
-        dropdownMenuContainer?: HTMLElement;
-        debug?: boolean;
-    }
-
-    type AutoCompleteCallback = (values: AutoCompleteArg[]) => void;
-
-    interface AutoCompleteArg {
-        name?: string;
-        value?: string;
-        notePathTitle?: string;
-        displayKey?: "name" | "value" | "notePathTitle";
-        cache?: boolean;
-        source?: (term: string, cb: AutoCompleteCallback) => void,
-        templates?: {
-            suggestion: (suggestion: Suggestion) => string | undefined
-        }
-    }
-
-    interface JQuery {
-        autocomplete: (action?: "close" | "open" | "destroy" | "val" | AutoCompleteConfig, args?: AutoCompleteArg[] | string) => JQuery<HTMLElement>;
-
-        getSelectedNotePath(): string | undefined;
-        getSelectedNoteId(): string | null;
-        setSelectedNotePath(notePath: string | null | undefined);
-        getSelectedExternalLink(): string | undefined;
-        setSelectedExternalLink(externalLink: string | null | undefined);
-        setNote(noteId: string);
     }
 
     var logError: (message: string, e?: unknown) => void;

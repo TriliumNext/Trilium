@@ -1,0 +1,63 @@
+<h2>Progressive Search Strategy</h2>
+<p>Trilium uses a progressive search strategy that performs exact matching
+  first, then adds fuzzy matching when needed.</p>
+<p>The search has three phases:</p>
+<ol>
+  <li><strong>Phase 1 - Exact Matching</strong>: When you search, Trilium first
+    looks for exact matches of your search terms. This handles the vast majority
+    of searches (90%+) and returns results almost instantly.</li>
+  <li><strong>Phase 2 - Fuzzy Fallback</strong>: If Phase 1 doesn't find enough
+    high-quality results (fewer than 5 results with good relevance scores),
+    Trilium automatically adds fuzzy matching to find results with typos or
+    spelling variations.</li>
+  <li><strong>Result Ordering</strong>: Exact matches always appear before fuzzy
+    matches, regardless of individual scores. This ensures that when you search
+    for "project", notes containing the exact word "project" will appear before
+    notes containing similar words like "projects" or "projection".</li>
+</ol>
+<h3>Progressive Search Behavior</h3>
+<ul>
+  <li><strong>Speed</strong>: Most searches complete using only exact matching</li>
+  <li><strong>Ordering</strong>: Exact matches appear before fuzzy matches</li>
+  <li><strong>Fallback</strong>: Fuzzy matching activates when exact matches
+    return fewer than 5 results</li>
+  <li><strong>Identification</strong>: Results indicate whether they are exact
+    or fuzzy matches</li>
+</ul>
+<h2>Search Performance</h2>
+<p>Search system specifications:</p>
+<ul>
+  <li>Content size limit: 10MB per note (previously 50KB)</li>
+  <li>Edit distance calculations for fuzzy matching</li>
+  <li>Infinite scrolling in Quick Search</li>
+</ul>
+<h2>Label and Relation Shortcuts</h2>
+<p>The "full" syntax for searching by labels is:</p><pre><code class="language-text-x-trilium-auto">note.labels.publicationYear = 1954</code></pre>
+<p>For relations:</p><pre><code class="language-text-x-trilium-auto">note.relations.author.title *=* Tolkien</code></pre>
+<p>However, common label and relation searches have shortcut syntax:</p><pre><code class="language-text-x-trilium-auto">#publicationYear = 1954
+~author.title *=* Tolkien</code></pre>
+<h2>Separating Full-Text and Attribute Parts</h2>
+<p>Search syntax allows combining full-text search with attribute-based search.
+  For example, <code>tolkien #book</code> contains:</p>
+<ol>
+  <li>Full-text tokens - <code>tolkien</code>
+  </li>
+  <li>Attribute expressions - <code>#book</code>
+  </li>
+</ol>
+<p>Trilium detects the separation between full text search and attribute/property
+  search by looking for certain special characters or words that denote attributes
+  and properties (e.g., #, ~, note.). If you need to include these in full-text
+  search, escape them with a backslash so they are processed as regular text:</p><pre><code class="language-text-x-trilium-auto">"note.txt" 
+\#hash 
+#myLabel = 'Say "Hello World"'</code></pre>
+<h2>Escaping Special Characters</h2>
+<p>Special characters can be enclosed in quotes or escaped with a backslash
+  to be used in full-text search:</p><pre><code class="language-text-x-trilium-auto">"note.txt"
+\#hash
+#myLabel = 'Say "Hello World"'</code></pre>
+<p>Three types of quotes are supported: single, double, and backtick.</p>
+<h2>Type Coercion</h2>
+<p>Label values are technically strings but can be coerced for numeric comparisons:</p><pre><code class="language-text-x-trilium-auto">note.dateCreated =* '2019-05'</code></pre>
+<p>This finds notes created in May 2019. Numeric operators like <code>#publicationYear &gt;= 1960</code> convert
+  string values to numbers for comparison.</p>

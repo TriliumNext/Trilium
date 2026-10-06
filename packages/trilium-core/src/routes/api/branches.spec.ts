@@ -47,25 +47,68 @@ describe("Branches API (core)", () => {
     });
 
     describe("moving", () => {
-        it("moves a branch under a different parent and returns the new clone", async () => {
-            const parent = await createTextNote(api, { title: "Move target parent" });
-            const child = await createTextNote(api, { title: "Branch to move" });
+        it("moves several branches into a childless note, in order, and expands it", async () => {
+            const source = await createTextNote(api, { title: "Move source" });
+            const target = await createTextNote(api, { parentNoteId: source.noteId, title: "Move target" });
+            const children = [
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 1" }),
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 2" }),
+                await createTextNote(api, { parentNoteId: source.noteId, title: "Moved 3" })
+            ];
 
-            const res = await api.put<{ success: boolean; branch?: { parentNoteId: string } }>(
-                `/api/branches/${child.branchId}/move-to/${parent.branchId}`
-            );
+            const res = await api.put<{ success: boolean }>(`/api/branches/move-to/${target.branchId}`, {
+                body: { branchIds: children.map((child) => child.branchId) }
+            });
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.branch?.parentNoteId).toBe(parent.noteId);
-            // The original branch is replaced by a clone under the new parent.
-            expect(getBranchRow(child.branchId)?.isDeleted).toBe(1);
+            // Each original branch is replaced by a clone under the new parent.
+            for (const child of children) {
+                expect(getBranchRow(child.branchId)?.isDeleted).toBe(1);
+            }
+            expect(getSql().getColumn(
+                "SELECT noteId FROM branches WHERE parentNoteId = ? AND isDeleted = 0 ORDER BY notePosition",
+                [ target.noteId ]
+            )).toEqual(children.map((child) => child.noteId));
+            expect(getBranchRow(target.branchId)?.isExpanded).toBe(1);
         });
 
-        it("400s when moving a non-existent branch", async () => {
+        it("stops at the first move that fails validation", async () => {
+            const movable = await createTextNote(api, { title: "Movable" });
+            const ancestor = await createTextNote(api, { title: "Ancestor of target" });
+            const nestedTarget = await createTextNote(api, { parentNoteId: ancestor.noteId, title: "Nested target" });
+            const notReached = await createTextNote(api, { title: "Not reached" });
+
+            // Moving `ancestor` under its own descendant would create a cycle.
+            const res = await api.put<{ success: boolean; message: string }>(
+                `/api/branches/move-to/${nestedTarget.branchId}`,
+                { body: { branchIds: [ movable.branchId, ancestor.branchId, notReached.branchId ] } }
+            );
+
+            expect(res.status).toBe(200);
+            expect(res.body.success).toBe(false);
+            expect(res.body.message).toBeTruthy();
+            expect(getBranchRow(movable.branchId)?.isDeleted).toBe(1);
+            expect(getBranchRow(ancestor.branchId)?.isDeleted).toBe(0);
+            expect(getBranchRow(notReached.branchId)?.isDeleted).toBe(0);
+        });
+
+        it("400s without moving anything when a branch or the target does not exist", async () => {
             const parent = await createTextNote(api, { title: "Has a valid parent branch" });
-            const res = await api.put(`/api/branches/missingBranch123/move-to/${parent.branchId}`);
-            expect(res.status).toBe(400);
+            const child = await createTextNote(api, { title: "Not moved" });
+
+            const missingBranch = await api.put(`/api/branches/move-to/${parent.branchId}`, {
+                body: { branchIds: [ child.branchId, "missingBranch123" ] }
+            });
+            const missingTarget = await api.put("/api/branches/move-to/missingBranch123", {
+                body: { branchIds: [ child.branchId ] }
+            });
+            const notAnArray = await api.put(`/api/branches/move-to/${parent.branchId}`, {
+                body: { branchIds: child.branchId }
+            });
+
+            expect([ missingBranch.status, missingTarget.status, notAnArray.status ]).toEqual([ 400, 400, 400 ]);
+            expect(getBranchRow(child.branchId)?.isDeleted).toBe(0);
         });
 
         it("reorders a branch before a sibling", async () => {

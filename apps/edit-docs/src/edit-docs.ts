@@ -1,27 +1,9 @@
 import debounce from "@triliumnext/client/src/services/debounce.js";
-import type { AdvancedExportOptions, ExportFormat, NoteMeta, NoteMetaFile } from "@triliumnext/core";
 import { cls } from "@triliumnext/core";
 
-import { parseNoteMetaFile, serverTextNoteHandler, standaloneTextNoteHandler, stripAppVersion } from "./help_meta_generator.js";
-import fs from "fs/promises";
-import { load } from "js-yaml";
-import path from "path";
-
 import packageJson from "../package.json" with { type: "json" };
-import { extractZip, importData, initializeEditDocsCore, rewriteHelpLinks, startElectron } from "./utils.js";
-
-interface NoteMapping {
-    rootNoteId: string;
-    path: string;
-    format: "markdown" | "html";
-    ignoredFiles?: string[];
-    exportOnly?: boolean;
-}
-
-interface Config {
-    baseUrl: string;
-    noteMappings: NoteMapping[];
-}
+import { type Config, exportMappings, importMappings, loadConfig } from "./docs_pipeline.js";
+import { initializeEditDocsCore, startElectron } from "./utils.js";
 
 // Parse command-line arguments
 function parseArgs() {
@@ -81,36 +63,10 @@ if (showHelp) {
     process.exit(0);
 }
 
-// Configuration variables to be initialized
-let BASE_URL: string;
-let NOTE_MAPPINGS: NoteMapping[];
-
-// Load configuration from edit-docs-config.yaml
-async function loadConfig() {
-    let CONFIG_PATH = configPath
-        ? path.resolve(configPath)
-        : path.join(process.cwd(), "edit-docs-config.yaml");
-
-    const exists = await fs.access(CONFIG_PATH).then(() => true).catch(() => false);
-    if (!exists && !configPath) {
-        // Fallback to project root if running from within a subproject
-        CONFIG_PATH = path.join(__dirname, "../../../edit-docs-config.yaml");
-    }
-
-    const configContent = await fs.readFile(CONFIG_PATH, "utf-8");
-    const config = load(configContent) as Config;
-
-    BASE_URL = config.baseUrl;
-    // Resolve all paths relative to the config file's directory (for flexibility with external configs)
-    const CONFIG_DIR = path.dirname(CONFIG_PATH);
-    NOTE_MAPPINGS = config.noteMappings.map((mapping) => ({
-        ...mapping,
-        path: path.resolve(CONFIG_DIR, mapping.path)
-    }));
-}
+let config: Config;
 
 async function main() {
-    await loadConfig();
+    config = await loadConfig(configPath);
     const initializedPromise = startElectron(() => {
         // Wait for the import to be finished and the application to be loaded before we listen to changes.
         setTimeout(() => {
@@ -127,11 +83,7 @@ async function main() {
         await sql_init.createInitialDatabase(true);
         await beccaLoader.beccaLoaded;
 
-        for (const mapping of NOTE_MAPPINGS) {
-            if (!mapping.exportOnly) {
-                await importData(mapping.path);
-            }
-        }
+        await importMappings(config.noteMappings);
         setOptions();
         initializedPromise.resolve();
     });
@@ -150,117 +102,12 @@ async function setOptions() {
     optionsService.setOption("openNoteContexts", JSON.stringify([{ notePath: startNoteId, active: true }]));
 }
 
-async function exportData(noteId: string, format: ExportFormat, outputPath: string, ignoredFiles?: Set<string>) {
-    const zipFilePath = "output.zip";
-
-    try {
-        await fs.rm(outputPath, { recursive: true, force: true });
-        await fs.mkdir(outputPath, { recursive: true });
-
-        // First export as zip.
-        const { zipExportService } = (await import("@triliumnext/core"));
-
-        const exportOpts: AdvancedExportOptions = {};
-        if (format === "html") {
-            exportOpts.skipHtmlTemplate = true;
-            exportOpts.customRewriteLinks = (originalRewriteLinks, getNoteTargetUrl) => {
-                return (content: string, noteMeta: NoteMeta) => {
-                    content = content.replace(/src="[^"]*api\/images\/([a-zA-Z0-9_]+)\/[^"]*"/g, (match, targetNoteId) => {
-                        const url = getNoteTargetUrl(targetNoteId, noteMeta);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/src="[^"]*api\/attachments\/([a-zA-Z0-9_]+)\/image\/[^"]*"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `src="${url}"` : match;
-                    });
-
-                    content = content.replace(/href="[^"]*#root[^"]*attachmentId=([a-zA-Z0-9_]+)\/?"/g, (match, targetAttachmentId) => {
-                        const url = findAttachment(targetAttachmentId);
-
-                        return url ? `href="${url}"` : match;
-                    });
-
-                    content = rewriteHelpLinks(content);
-
-                    return content;
-
-                    function findAttachment(targetAttachmentId: string) {
-                        let url;
-
-                        const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === targetAttachmentId);
-                        if (attachmentMeta) {
-                            // easy job here, because attachment will be in the same directory as the note's data file.
-                            url = attachmentMeta.dataFileName;
-                        } else {
-                            console.info(`Could not find attachment meta object for attachmentId '${targetAttachmentId}'`);
-                        }
-                        return url;
-                    }
-                };
-            };
-        }
-
-        await zipExportService.exportToZipFile(noteId, format, zipFilePath, exportOpts);
-        await extractZip(zipFilePath, outputPath, ignoredFiles);
-    } finally {
-        await fs.rm(zipFilePath, { force: true });
-    }
-
-    const minifyMeta = (format === "html" || format === "share");
-    await cleanUpMeta(outputPath, minifyMeta);
-}
-
-async function cleanUpMeta(outputPath: string, minify: boolean) {
-    const metaPath = path.join(outputPath, "!!!meta.json");
-    const meta = JSON.parse(await fs.readFile(metaPath, "utf-8")) as NoteMetaFile;
-    for (const file of meta.files) {
-        file.notePosition = 1;
-        traverse(file);
-    }
-
-    function traverse(el: NoteMeta) {
-        for (const child of el.children || []) {
-            traverse(child);
-        }
-
-        el.isExpanded = false;
-
-        // Rewrite web view URLs that point to root.
-        if (el.type === "webView" && minify) {
-            const srcAttr = el.attributes.find(attr => attr.name === "webViewSrc");
-            if (srcAttr.value.startsWith("/")) {
-                srcAttr.value = BASE_URL + srcAttr.value;
-            }
-        }
-    }
-
-    if (minify) {
-        const subtree = parseNoteMetaFile(meta, serverTextNoteHandler, BASE_URL);
-        await fs.writeFile(metaPath, JSON.stringify(subtree));
-
-        // Generate standalone meta: webView-based, pointing to online docs.
-        const standaloneSubtree = parseNoteMetaFile(meta, standaloneTextNoteHandler, BASE_URL);
-        const standaloneMetaPath = path.resolve(__dirname, "../../standalone/src/assets/help_meta.json");
-        await fs.writeFile(standaloneMetaPath, JSON.stringify(standaloneSubtree));
-    } else {
-        await fs.writeFile(metaPath, JSON.stringify(stripAppVersion(meta), null, 4));
-    }
-
-}
-
 async function registerHandlers() {
     const { events } = await import("@triliumnext/core");
     const { erase: eraseService } = await import("@triliumnext/core");
     const debouncer = debounce(async () => {
         eraseService.eraseUnusedAttachmentsNow();
-
-        for (const mapping of NOTE_MAPPINGS) {
-            const ignoredFiles = mapping.ignoredFiles ? new Set(mapping.ignoredFiles) : undefined;
-            await exportData(mapping.rootNoteId, mapping.format, mapping.path, ignoredFiles);
-        }
+        await exportMappings(config.noteMappings, config.baseUrl);
     }, 10_000);
     events.subscribe(events.ENTITY_CHANGED, async (e) => {
         if (e.entityName === "options") {

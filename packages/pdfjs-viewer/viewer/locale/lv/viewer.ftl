@@ -178,12 +178,13 @@ pdfjs-find-previous-button-label = Iepriekšējā
 pdfjs-find-next-button =
     .title = Atrast nākamo
 pdfjs-find-next-button-label = Nākamā
-pdfjs-find-highlight-checkbox = Iekrāsot visas
-pdfjs-find-match-case-checkbox-label = Lielo, mazo burtu jutīgs
+pdfjs-find-highlight-checkbox = Izcelt visus
+pdfjs-find-match-case-checkbox-label = Lielo un mazo burtu atbilstība
+pdfjs-find-match-diacritics-checkbox-label = Diakritisko zīmju atbilstība
 pdfjs-find-entire-word-checkbox-label = Veselus vārdus
 pdfjs-find-reached-top = Sasniegts dokumenta sākums, turpinām no beigām
 pdfjs-find-reached-bottom = Sasniegtas dokumenta beigas, turpinām no sākuma
-pdfjs-find-not-found = Frāze nav atrasta
+pdfjs-find-not-found = Vārdkopa nav atrasta
 
 ## Predefined zoom values
 
@@ -198,8 +199,8 @@ pdfjs-page-scale-percent = { $scale }%
 ## Loading indicator messages
 
 pdfjs-loading-error = Ielādējot PDF notika kļūda.
-pdfjs-invalid-file-error = Nederīgs vai bojāts PDF fails.
-pdfjs-missing-file-error = PDF fails nav atrasts.
+pdfjs-invalid-file-error = Nederīga vai bojāt PDF datne.
+pdfjs-missing-file-error = PDF datne nav atrasta.
 pdfjs-unexpected-response-error = Negaidīa servera atbilde.
 pdfjs-rendering-error = Attēlojot lapu radās kļūda
 
@@ -220,3 +221,55 @@ pdfjs-password-invalid = Nepareiza parole, mēģiniet vēlreiz.
 pdfjs-password-ok-button = Labi
 pdfjs-password-cancel-button = Atcelt
 pdfjs-web-fonts-disabled = Tīmekļa fonti nav aktivizēti: Nevar iegult PDF fontus.
+
+## Editing
+
+pdfjs-editor-stamp-button =
+    .title = Pievienot vai labot attēlus
+pdfjs-editor-stamp-button-label = Pievienot vai labot attēlus
+pdfjs-editor-signature-button =
+    .title = Pievienot parakstu
+pdfjs-editor-signature-button-label = Pievienot parakstu
+
+##
+
+pdfjs-editor-stamp-add-image-button =
+    .title = Pievienot attēlu
+pdfjs-editor-stamp-add-image-button-label = Pievienot attēlu
+pdfjs-editor-signature-add-signature-button =
+    .title = Pievienot jaunu parakstu
+pdfjs-editor-signature-add-signature-button-label = Pievienot jaunu parakstu
+
+## Alt-text dialog
+
+pdfjs-editor-alt-text-add-description-label = Pievienot aprakstu
+
+## Add a signature dialog
+
+pdfjs-editor-add-signature-dialog-title = Pievienot parakstu
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-add-button = Pievienot
+
+##  Edit a comment dialog
+
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Pievienot piebildi
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Pievienot
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Pievienot piebildi
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-views-manager-add-file-button =
+    .title = Pievienot datni
+pdfjs-views-manager-add-file-button-label = Pievienot datni

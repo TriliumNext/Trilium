@@ -41,7 +41,7 @@ export interface MobileMasterDetail {
  * `mobile-view-{list,page}`, `mobile-transition-to-{list,page}`), which master_detail.css lays out and
  * slides. The dialog's own stylesheet is left with whatever is particular to its panes.
  */
-export function useMobileMasterDetail(modalRef: RefObject<HTMLElement>): MobileMasterDetail {
+export function useMobileMasterDetail(modalRef: RefObject<HTMLElement | null>): MobileMasterDetail {
     const [ mobileView, setMobileView ] = useState<"list" | "page">("list");
     // Direction of the in-flight slide between the two views, or null when at rest. While set, both
     // panes stay rendered so the outgoing one can slide away as the incoming one slides in.

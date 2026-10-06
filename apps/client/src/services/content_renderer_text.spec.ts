@@ -7,6 +7,7 @@ import DOMPurify from "dompurify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import FAttachment from "../entities/fattachment";
+import content_renderer from "./content_renderer";
 import froca from "./froca";
 import server from "./server";
 import { buildNote } from "../test/easy-froca";
@@ -19,8 +20,6 @@ const mermaidInitialize = vi.fn();
 vi.mock("mermaid", () => ({
     default: {
         initialize: (...args: unknown[]) => mermaidInitialize(...args),
-        // loadElkIfNeeded() probes the source via parse(); no ELK layout in tests.
-        parse: async () => undefined,
         render: (id: string, source: string) => mermaidRenderImpl(id, source)
     }
 }));
@@ -60,9 +59,9 @@ import renderText, {
 } from "./content_renderer_text";
 
 describe("Text content renderer", () => {
-    it("renders included note", async () => {
+    it("renders embedded note", async () => {
         const contentEl = document.createElement("div");
-        const includedNote = buildNote({
+        const embeddedNote = buildNote({
             title: "Included note",
             content: "<p>This is the included note.</p>"
         });
@@ -72,7 +71,7 @@ describe("Text content renderer", () => {
                 <p>
                     Hi there
                 </p>
-                <section class="include-note" data-note-id="${includedNote.noteId}" data-box-size="medium">
+                <section class="include-note" data-note-id="${embeddedNote.noteId}" data-box-size="medium">
                     &nbsp;
                 </section>
             `
@@ -82,9 +81,74 @@ describe("Text content renderer", () => {
         expect(contentEl.querySelectorAll("section.include-note p").length).toBe(1);
     });
 
-    it("skips rendering included note", async () => {
+    it("renders the caption of an embed after its content, unless nested", async () => {
         const contentEl = document.createElement("div");
-        const includedNote = buildNote({
+        const figure = (noteId: string, boxSize: string, caption: string) =>
+            `<figure class="include-note" data-note-id="${noteId}" data-box-size="${boxSize}">`
+            + `<figcaption>${caption}</figcaption></figure>`;
+        const nestedNote = buildNote({ title: "Nested note", content: "<p>Nested.</p>" });
+        const embeddedNote = buildNote({
+            title: "Included note",
+            content: `<p>Included.</p>${figure(nestedNote.noteId, "medium", "Nested caption")}`
+        });
+        const note = buildNote({
+            title: "New note",
+            content: figure(embeddedNote.noteId, "medium", "A <strong>caption</strong>")
+        });
+
+        await renderText(note, $(contentEl));
+
+        const [ embed ] = contentEl.querySelectorAll(".ck-content > .include-note");
+        expect(embed.querySelector("p")?.textContent).toBe("Included.");
+        expect(embed.lastElementChild?.outerHTML)
+            .toBe("<figcaption>A <strong>caption</strong></figcaption>");
+        expect(embed.querySelectorAll("figcaption")).toHaveLength(1);
+    });
+
+    it("renders a Tiny embed as a link, without rendering what it shows", async () => {
+        const embeddedNote = buildNote({ title: "Tiny note", content: "<p>Not rendered.</p>" });
+        const owner = buildNote({
+            title: "Tiny owner",
+            content: `<figure class="include-note" data-note-id="${embeddedNote.noteId}"`
+                + ` data-box-size="tiny"><figcaption>Tiny caption</figcaption></figure>`
+                + `<figure class="include-note" data-attachment-id="tinyPic" data-box-size="tiny">`
+                + "</figure>"
+        });
+        new FAttachment(froca, {
+            attachmentId: "tinyPic",
+            ownerId: owner.noteId,
+            role: "image",
+            mime: "image/png",
+            title: "photo.png",
+            dateModified: "",
+            utcDateModified: "",
+            utcDateScheduledForErasureSince: "",
+            contentLength: 0
+        });
+        const getRenderedContent = vi.spyOn(content_renderer, "getRenderedContent");
+
+        try {
+            const contentEl = document.createElement("div");
+            await renderText(owner, $(contentEl));
+
+            expect(getRenderedContent).not.toHaveBeenCalled();
+            expect(contentEl.querySelector(".include-note")).toBeNull();
+            expect(contentEl.querySelector("img")).toBeNull();
+            expect(contentEl.textContent).not.toContain("Not rendered.");
+            expect(contentEl.textContent).not.toContain("Tiny caption");
+            const links = Array.from(contentEl.querySelectorAll("a.reference-link"));
+            expect(links.map((link) => link.getAttribute("href"))).toEqual([
+                `#root/${embeddedNote.noteId}`,
+                `#root/${owner.noteId}?viewMode=attachments&attachmentId=tinyPic`
+            ]);
+        } finally {
+            getRenderedContent.mockRestore();
+        }
+    });
+
+    it("skips rendering embedded note", async () => {
+        const contentEl = document.createElement("div");
+        const embeddedNote = buildNote({
             title: "Included note",
             content: "<p>This is the included note.</p>"
         });
@@ -94,12 +158,12 @@ describe("Text content renderer", () => {
                 <p>
                     Hi there
                 </p>
-                <section class="include-note" data-note-id="${includedNote.noteId}" data-box-size="medium">
+                <section class="include-note" data-note-id="${embeddedNote.noteId}" data-box-size="medium">
                     &nbsp;
                 </section>
             `
         });
-        await renderText(note, $(contentEl), { noIncludedNotes: true });
+        await renderText(note, $(contentEl), { noContentEmbeds: true });
         expect(contentEl.querySelectorAll("section.include-note").length).toBe(0);
     });
 
@@ -265,9 +329,9 @@ describe("Text content renderer", () => {
     });
 });
 
-describe("Nested include notes (single-level display vs recursive print)", () => {
-    function buildIncludeChain() {
-        // C (leaf) ← included by B ← included by A. Distinctive bodies so we can
+describe("Nested embeds (single-level display vs recursive print)", () => {
+    function buildEmbedChain() {
+        // C (leaf) ← embedded by B ← embedded by A. Distinctive bodies so we can
         // assert which levels were expanded vs. replaced with a reference link.
         const noteC = buildNote({ id: "nestC", title: "Note C", content: "<p>C body</p>" });
         const noteB = buildNote({
@@ -289,8 +353,8 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
         return { noteA, noteB, noteC };
     }
 
-    it("on display, renders only the first level and replaces the nested include with a reference link", async () => {
-        const { noteA } = buildIncludeChain();
+    it("on display, renders only the first level and replaces the nested embed with a reference link", async () => {
+        const { noteA } = buildEmbedChain();
         const contentEl = document.createElement("div");
         await renderText(noteA, $(contentEl));
 
@@ -298,17 +362,17 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
         expect(contentEl.textContent).toContain("B body");
         // Second level (C) is NOT expanded — its body must be absent.
         expect(contentEl.textContent).not.toContain("C body");
-        // The nested include section for C is gone, replaced by a reference link to C.
+        // The nested embed section for C is gone, replaced by a reference link to C.
         expect(contentEl.querySelector('section.include-note[data-note-id="nestC"]')).toBeNull();
         const refLink = contentEl.querySelector("a.reference-link");
         expect(refLink).not.toBeNull();
         expect(refLink?.getAttribute("href")).toContain("nestC");
     });
 
-    it("on print (expandNestedIncludes), keeps expanding nested includes recursively", async () => {
-        const { noteA } = buildIncludeChain();
+    it("on print (expandNestedEmbeds), keeps expanding nested embeds recursively", async () => {
+        const { noteA } = buildEmbedChain();
         const contentEl = document.createElement("div");
-        await renderText(noteA, $(contentEl), { expandNestedIncludes: true });
+        await renderText(noteA, $(contentEl), { expandNestedEmbeds: true });
 
         // Both levels expanded, all bodies present, no reference-link placeholder.
         expect(contentEl.textContent).toContain("B body");
@@ -317,7 +381,7 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
     });
 
     it("on print, expands a note shared across sibling branches in each branch (not a false cycle)", async () => {
-        // Diamond: A includes B and C; both B and C include D. D is not a cycle, so under recursive
+        // Diamond: A embeds B and C; both B and C embed D. D is not a cycle, so under recursive
         // expansion it must render in both branches (the ancestor path is tracked per-branch).
         buildNote({ id: "dagD", title: "Note D", content: "<p>D body</p>" });
         buildNote({ id: "dagB", title: "Note B", content: `<p>B body</p><section class="include-note" data-note-id="dagD" data-box-size="medium">&nbsp;</section>` });
@@ -331,18 +395,18 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
             `
         });
         const contentEl = document.createElement("div");
-        await renderText(noteA, $(contentEl), { expandNestedIncludes: true });
+        await renderText(noteA, $(contentEl), { expandNestedEmbeds: true });
 
         expect((contentEl.textContent?.match(/D body/g) ?? []).length).toBe(2);
         expect(contentEl.querySelector("a.reference-link")).toBeNull();
     });
 
-    it("renders a note's own includes as reference links when includesAsReferenceLinks is set", async () => {
-        // This mirrors how an already-included note (e.g. the editor include widget) is rendered:
-        // its content shows, but its own includes degrade to reference links.
-        const { noteB } = buildIncludeChain();
+    it("renders a note's own embeds as reference links when embedsAsReferenceLinks is set", async () => {
+        // This mirrors how an already-embedded note (e.g. the editor embed widget) is rendered:
+        // its content shows, but its own embeds degrade to reference links.
+        const { noteB } = buildEmbedChain();
         const contentEl = document.createElement("div");
-        await renderText(noteB, $(contentEl), { includesAsReferenceLinks: true });
+        await renderText(noteB, $(contentEl), { embedsAsReferenceLinks: true });
 
         expect(contentEl.textContent).toContain("B body");
         expect(contentEl.textContent).not.toContain("C body");
@@ -361,7 +425,7 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
             `
         });
         const contentEl = document.createElement("div");
-        await renderText(note, $(contentEl), { includesAsReferenceLinks: true });
+        await renderText(note, $(contentEl), { embedsAsReferenceLinks: true });
 
         // Neither the missing-id nor the invalid-id section is converted to a reference link;
         // both are left in place.
@@ -370,7 +434,7 @@ describe("Nested include notes (single-level display vs recursive print)", () =>
     });
 });
 
-describe("renderIncludedNotes via postProcessRichContent", () => {
+describe("renderContentEmbeds via postProcessRichContent", () => {
     it("warns and skips an include-note section whose note cannot be found", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         // Make the froca reload a no-op so the missing note stays absent from the
@@ -400,6 +464,37 @@ describe("renderIncludedNotes via postProcessRichContent", () => {
         await postProcessRichContent(host, $rendered);
         // No data-note-id means it is skipped in both gather and render loops.
         expect($rendered.find("section.include-note").length).toBe(1);
+    });
+});
+
+describe("Attachment embeds", () => {
+    it("renders an embedded attachment in place, and links to it one level down", async () => {
+        const owner = buildNote({
+            title: "Embed owner",
+            content: `<section class="include-note" data-attachment-id="embedPic">&nbsp;</section>`
+        });
+        new FAttachment(froca, {
+            attachmentId: "embedPic",
+            ownerId: owner.noteId,
+            role: "image",
+            mime: "image/png",
+            title: "photo.png",
+            dateModified: "",
+            utcDateModified: "",
+            utcDateScheduledForErasureSince: "",
+            contentLength: 0
+        });
+
+        const contentEl = document.createElement("div");
+        await renderText(owner, $(contentEl));
+        expect(contentEl.querySelector("section.include-note img")?.getAttribute("src"))
+            .toContain("api/attachments/embedPic/image/");
+
+        const nestedEl = document.createElement("div");
+        await renderText(owner, $(nestedEl), { embedsAsReferenceLinks: true });
+        expect(nestedEl.querySelector("section.include-note")).toBeNull();
+        expect(nestedEl.querySelector("a.reference-link")?.getAttribute("href"))
+            .toBe(`#root/${owner.noteId}?viewMode=attachments&attachmentId=embedPic`);
     });
 });
 

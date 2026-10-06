@@ -70,17 +70,17 @@ Note that some integration tests rely on an in-memory database in order to funct
 
 ### Browser-mode tests for the text editor
 
-`packages/ckeditor5` runs its tests in a real headless Chrome, through `@vitest/browser-webdriverio`, because the editor needs a real DOM and real selection handling. By default webdriverio downloads both a Chrome for Testing build and a matching chromedriver, which is what happens on a normal machine and needs no setup.
+`packages/ckeditor5` runs its tests in a real headless Chromium, through `@vitest/browser-playwright`, because the editor needs a real DOM and real selection handling. Playwright downloads the browser itself; install it once with `pnpm exec playwright install chromium` from the repository root.
 
-Where those downloaded binaries cannot run — NixOS being the case in point, since they are dynamically linked against libraries no store path provides and die on a missing `libxcb.so.1` — point the suite at a system browser and driver instead:
+Where that downloaded browser cannot run — NixOS being the case in point, since it is dynamically linked against libraries no store path provides and dies on a missing `libxcb.so.1` — point the suite at a system browser instead:
 
 ```
-CHROME_BIN=/path/to/chromium CHROMEDRIVER_PATH=/path/to/chromedriver pnpm --filter @triliumnext/ckeditor5 test
+CHROME_BIN=/path/to/chromium pnpm --filter @triliumnext/ckeditor5 test
 ```
 
-`CHROMEDRIVER_PATH` is webdriverio's own variable; `CHROME_BIN` is read by the package's `vitest.config.ts` and passed through as a capability, which also stops webdriverio from downloading a browser at all. The two versions have to match, at least in their major.
+`CHROME_BIN` is read by the package's `vitest.config.ts` and passed to the provider as `launchOptions.executablePath`, so Playwright launches that binary rather than its own download. There is no separate driver to supply — Playwright speaks CDP to the browser directly.
 
-The Nix dev shell (`nix develop`) sets both from `pkgs.chromium` and `pkgs.chromedriver`, so inside it the tests run unchanged.
+The Nix dev shell (`nix develop`) sets it from `pkgs.chromium`, so inside it the tests run unchanged.
 
 ### REST API testing for the server
 

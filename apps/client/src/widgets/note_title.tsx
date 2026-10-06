@@ -57,7 +57,7 @@ export default function NoteTitleWidget(props: {className?: string}) {
 
     // Manage focus.
     const textBoxRef = useRef<HTMLInputElement>(null);
-    const isNewNote = useRef<boolean>();
+    const isNewNote = useRef<boolean | undefined>(undefined);
     const pendingSelect = useRef<boolean>(false);
 
     // Re-apply selection when title changes if we have a pending select.

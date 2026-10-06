@@ -13,6 +13,7 @@ import FormSelect from "../react/FormSelect";
 import FormTextBox, { FormTextBoxWithUnit } from "../react/FormTextBox";
 import { useNoteLabelBoolean, useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
+import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import PdfViewer from "../type_widgets/file/PdfViewer";
 import OptionsRow from "../type_widgets/options/components/OptionsRow";
@@ -96,9 +97,11 @@ export default function PrintPreviewDialog() {
     const [pdfUrl, setPdfUrl] = useState<string>();
     const [note, setNote] = useState<FNote>();
     const [loading, setLoading] = useState(false);
-    const bufferRef = useRef<Uint8Array>();
+    const [error, setError] = useState<string>();
+    const bufferRef = useRef<Uint8Array | undefined>(undefined);
     const notePathRef = useRef("");
-    const pdfUrlRef = useRef<string>();
+    const pdfUrlRef = useRef<string | undefined>(undefined);
+    const requestIdRef = useRef(0);
 
 
     const [landscape, setLandscape] = useNoteLabelBoolean(note, "printLandscape");
@@ -152,29 +155,27 @@ export default function PrintPreviewDialog() {
     });
 
     // Handle regeneration results via a persistent listener scoped to the
-    // dialog's lifecycle. A generation counter discards stale results when
+    // dialog's lifecycle. `requestIdRef` discards stale results when
     // multiple requests overlap.
     useEffect(() => {
         const api = window.electronApi?.printing;
         if (!shown || !api) return;
 
-        api.onExportAsPdfPreviewResult(({ buffer, error }) => {
+        api.onExportAsPdfPreviewResult(({ buffer, error, requestId }) => {
+            if (requestId !== requestIdRef.current) return;
             toast.closePersistent("printing");
             if (error) {
                 setLoading(false);
+                setError(error);
+                bufferRef.current = undefined;
                 if (pdfUrlRef.current) {
                     URL.revokeObjectURL(pdfUrlRef.current);
                     pdfUrlRef.current = undefined;
                     setPdfUrl(undefined);
                 }
-                toast.showPersistent({
-                    id: "print-preview-error",
-                    icon: "bx bx-error-circle",
-                    message: `${t("print_preview.render_error")}\n\n${error}`
-                });
                 return;
             }
-            toast.closePersistent("print-preview-error");
+            setError(undefined);
             if (buffer) {
                 updatePreview(buffer);
             }
@@ -190,6 +191,7 @@ export default function PrintPreviewDialog() {
 
         setLoading(true);
         api.exportAsPdfPreview({
+            requestId: ++requestIdRef.current,
             notePath: notePathRef.current,
             pageSize: opts.pageSize,
             landscape: opts.landscape,
@@ -214,9 +216,10 @@ export default function PrintPreviewDialog() {
     }, [shown, landscape, pageSize, scale, marginsStr, pageRanges, pageRangesValid, regeneratePreview]);
 
     function handleClose() {
+        requestIdRef.current++;
         setShown(false);
         isFirstGenerationRef.current = true;
-        toast.closePersistent("print-preview-error");
+        setError(undefined);
         if (pdfUrlRef.current) {
             URL.revokeObjectURL(pdfUrlRef.current);
             pdfUrlRef.current = undefined;
@@ -407,7 +410,7 @@ export default function PrintPreviewDialog() {
                         icon={destination === DESTINATION_PDF ? "bx-file" : "bx-printer"}
                         className="btn-primary"
                         onClick={handlePrimaryAction}
-                        disabled={loading}
+                        disabled={loading || (destination === DESTINATION_PDF && !!error)}
                     />
                 </>
             }
@@ -417,6 +420,12 @@ export default function PrintPreviewDialog() {
                     <div class="print-preview-loading-overlay">
                         <span class="bx bx-loader-circle bx-spin" />
                     </div>
+                )}
+                {error && (
+                    <NoItems icon="bx bx-error-circle" text={t("print_preview.render_error_title")}>
+                        <p>{t("print_preview.render_error_description")}</p>
+                        <p>{error}</p>
+                    </NoItems>
                 )}
                 {pdfUrl && <PdfViewer pdfUrl={pdfUrl} toolbar={false} disableSelection minPixelRatio={2} />}
             </div>

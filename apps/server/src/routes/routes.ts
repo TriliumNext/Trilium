@@ -1,6 +1,5 @@
 import { routes } from "@triliumnext/core";
 import express from "express";
-import rateLimit from "express-rate-limit";
 
 import etapiAppInfoRoutes from "../etapi/app_info.js";
 import etapiAttachmentRoutes from "../etapi/attachments.js";
@@ -34,7 +33,7 @@ import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
-import loginRoute from "./login.js";
+import loginRoute, { createLoginRateLimiter } from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
@@ -48,11 +47,7 @@ function register(app: express.Application) {
     route(GET, "/login", [auth.checkAppInitialized, auth.checkPasswordSet], loginRoute.loginPage);
     route(GET, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPasswordPage);
 
-    const loginRateLimiter = rateLimit({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 10, // limit each IP to 10 requests per windowMs
-        skipSuccessfulRequests: true // successful auth to rate-limited ETAPI routes isn't counted. However, successful auth to /login is still counted!
-    });
+    const loginRateLimiter = createLoginRateLimiter();
 
     route(GET, "/bootstrap", [ auth.checkAuth ], indexRoute.bootstrap);
     asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login, null);

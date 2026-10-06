@@ -8,12 +8,11 @@ import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import bulk_action, { ACTION_GROUPS } from "../../services/bulk_action";
-import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import search from "../../services/search";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
-import { getErrorMessage } from "../../services/utils";
 import ws from "../../services/ws";
 import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
 import Button, { SplitButton } from "../react/Button";
@@ -55,18 +54,10 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
             return;
         }
 
-        try {
-            const result = await froca.loadSearchNote(noteId);
-            if (result?.error) {
-                setError({ message: result?.error});
-            } else {
-                setError(undefined);
-            }
-        } catch (e: unknown) {
-            toast.showError(getErrorMessage(e));
+        const result = await search.runSearchNote(parentComponent, noteId, ntxId);
+        if (result) {
+            setError(result.error ? { message: result.error } : undefined);
         }
-
-        parentComponent?.triggerEvent("searchRefreshed", { ntxId });
     }
 
     // Refresh the list of available and active options.
@@ -98,7 +89,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                                             <Dropdown
                                                 buttonClassName="action-add-toggle btn btn-sm"
                                                 text={<><Icon icon="bx bx-plus" />{" "}{t("search_definition.option")}</>}
-                                                dropdownContainerClassName="mobile-bottom-menu" mobileBackdrop
+                                                mobileBottomSheet
                                                 noSelectButtonStyle
                                             >
                                                 {searchOptions?.availableOptions.map(({ icon, label, tooltip, attributeName, attributeType, defaultValue }) => (
@@ -220,9 +211,10 @@ function AddBulkActionButton({ note }: { note: FNote }) {
     return (
         <Dropdown
             buttonClassName="action-add-toggle btn btn-sm"
+            dropdownContainerClassName="action-add-menu"
             text={<><Icon icon="bx bxs-zap" />{" "}{t("search_definition.action")}</>}
             noSelectButtonStyle
-            dropdownContainerClassName="mobile-bottom-menu" mobileBackdrop
+            mobileBottomSheet
         >
             {ACTION_GROUPS.map(({ actions, title }, index) => (
                 <Fragment key={index}>

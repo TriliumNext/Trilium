@@ -22,8 +22,8 @@ export async function serverZipExportProviderFactory(format: ExportFormat, data:
             return new MarkdownExportProvider(data);
         }
         case "share": {
-            const { default: ShareThemeExportProvider } = await import("./share_theme.js");
-            return new ShareThemeExportProvider(data);
+            const { createShareThemeExportProvider } = await import("./share_theme.js");
+            return createShareThemeExportProvider(data);
         }
         default:
             throw new Error(`Unsupported export format: '${format}'`);

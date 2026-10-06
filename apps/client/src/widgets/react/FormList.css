@@ -9,6 +9,10 @@
         flex-shrink: 0;
     }
 
+    & > span > div:has(> .switch-widget) {
+        flex-grow: 1;
+    }
+
     .switch-widget {
         flex-grow: 1;
         width: 100%;

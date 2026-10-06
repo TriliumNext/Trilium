@@ -46,6 +46,13 @@ describe("Route transport & middleware", () => {
             expect(res.body.isMainWindow).toBe(false);
         });
 
+        it("includes the server's platform and CPU architecture in the payload", async () => {
+            // The client picks the Antigravity ACP server download for the machine running Trilium.
+            const res = await supertest(app).get("/bootstrap").expect(200);
+            expect(res.body.platform).toBe(process.platform);
+            expect(res.body.arch).toBe(process.arch);
+        });
+
         it("includes platform in the setup (uninitialized DB) payload", async () => {
             // The setup window relies on `glob.platform` to apply the
             // platform-darwin drag-region CSS on macOS.
@@ -66,6 +73,28 @@ describe("Route transport & middleware", () => {
                 .set("x-csrf-token", "bogustoken1234567890")
                 .send({ noteIds: ["root"] })
                 .expect(403);
+        });
+
+        it("accepts a valid CSRF token in a browser form body", async () => {
+            const agent = supertest.agent(app);
+            await agent.post("/login").send({ password: "demo1234" }).expect(302);
+            const csrfToken = (await agent.get("/bootstrap").expect(200)).body.csrfToken;
+
+            await agent.post("/logout")
+                .type("form")
+                .send({ "x-csrf-token": csrfToken })
+                .expect(302);
+        });
+
+        it("returns a failed logout form navigation to the app, keeping any prefix", async () => {
+            // "." resolves against the request URL, so /trilium/logout lands on /trilium/ rather
+            // than the origin root; ".." would drop the prefix and strand the user outside the app.
+            const res = await supertest(app).post("/logout")
+                .type("form")
+                .set("Accept", "text/html")
+                .send({ "x-csrf-token": "bogustoken1234567890" })
+                .expect(302);
+            expect(res.headers.location).toBe(".");
         });
 
         it("returns a 404 body for an unknown route", async () => {

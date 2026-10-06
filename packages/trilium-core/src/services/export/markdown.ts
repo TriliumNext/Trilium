@@ -8,10 +8,22 @@ import Turnish, { type Rule } from "turnish";
 
 import { getTaskStates } from "../task_states.js";
 
-let instance: Turnish | null = null;
+/** One converter per headerless-table mode, built lazily and reused across invocations. */
+const instances = new Map<HeaderlessTableMode, Turnish>();
 
 /** Task states for the current `toMarkdown` invocation, consulted by the list-item filter. */
 let currentTaskStates: TaskStateDef[] = [];
+
+/**
+ * How a table without a heading row renders: kept as raw HTML so notes round-trip ("keepHtml",
+ * the default), or under a synthesized blank header ("emptyHeader") for output that never
+ * reimports, such as the clipboard.
+ */
+export type HeaderlessTableMode = "keepHtml" | "emptyHeader";
+
+export interface ToMarkdownOptions {
+    headerlessTables?: HeaderlessTableMode;
+}
 
 export { ADMONITION_TYPE_MAPPINGS };
 
@@ -36,17 +48,20 @@ const fencedCodeBlockFilter: Rule = {
     }
 };
 
-function toMarkdown(content: string) {
+function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
     currentTaskStates = getTaskStates();
 
-    if (instance === null) {
+    const headerlessTables = options.headerlessTables ?? "keepHtml";
+    let instance = instances.get(headerlessTables);
+    if (instance === undefined) {
         instance = new Turnish({
             headingStyle: "atx",
             bulletListMarker: "*",
             emDelimiter: "_",
             codeBlockStyle: "fenced",
+            headerlessTables,
             blankReplacement(_content, node) {
-                if (node.nodeName === "SECTION" && node.classList.contains("include-note")) {
+                if (isContentEmbed(node)) {
                     return node.outerHTML;
                 }
 
@@ -68,6 +83,7 @@ function toMarkdown(content: string) {
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("linkPreview", buildLinkPreviewFilter());
+        instance.addRule("inlineIcon", buildInlineIconFilter());
         // Before "math": rules are consulted in reverse registration order, so a highlighted
         // formula stays a formula instead of being flattened into `==\(x\)==`.
         instance.addRule("highlight", buildHighlightFilter());
@@ -75,9 +91,56 @@ function toMarkdown(content: string) {
         instance.addRule("li", buildListItemFilter());
         instance.use(gfm);
         instance.keep([ "kbd", "sup", "sub" ]);
+        instances.set(headerlessTables, instance);
     }
 
-    return instance.render(injectLinkPreviewFallbacks(content));
+    return instance.render(injectIconFallbacks(injectLinkPreviewFallbacks(content)));
+}
+
+/** The class every icon in the application wears beside its pack's own. */
+const ICON_CLASS = "tn-icon";
+
+/**
+ * Stands in for an icon's own content while Turndown runs. Turndown drops an element holding
+ * nothing before it consults a single rule, and collapses the space beside it away with it.
+ */
+const ICON_PLACEHOLDER = String.fromCodePoint(0xE000);
+
+function injectIconFallbacks(content: string): string {
+    if (!content.includes(ICON_CLASS)) {
+        return content;
+    }
+
+    const root = parseHtml(content);
+    const icons = root.querySelectorAll(`span.${ICON_CLASS}`);
+    // Returned as it came where the class was only ever mentioned, rather than serialized back out
+    // of a parse that had nothing to change.
+    if (!icons.length) {
+        return content;
+    }
+
+    for (const icon of icons) {
+        icon.textContent = ICON_PLACEHOLDER;
+    }
+
+    return root.toString();
+}
+
+function buildInlineIconFilter() {
+    const iconFilter: Rule = {
+        filter(node) {
+            return node.nodeName === "SPAN" && node.classList.contains(ICON_CLASS);
+        },
+        replacement(_content, node) {
+            // Written from the class alone, so an icon leaves in the form it is stored in and the
+            // placeholder injected above never reaches the file.
+            const classNames = "getAttribute" in node ? node.getAttribute("class") ?? "" : "";
+
+            return `<span class="${escapeHtml(classNames)}"></span>`;
+        }
+    };
+
+    return iconFilter;
 }
 
 function rewriteLanguageTag(source: string) {
@@ -230,13 +293,19 @@ function buildInlineLinkFilter(): Rule {
 function buildFigureFilter(): Rule {
     return {
         filter(node, options) {
-            return node.nodeName === 'FIGURE'
-                && node.classList.contains("image");
+            return (node.nodeName === "FIGURE" && node.classList.contains("image"))
+                || isContentEmbed(node);
         },
         replacement(content, node) {
             return (node as HTMLElement).outerHTML;
         }
     };
+}
+
+/** Whether `node` is an embed. Embeds saved before captions existed are `<section>`s. */
+function isContentEmbed(node: Pick<LinkPreviewNodeLike, "nodeName" | "classList">) {
+    return (node.nodeName === "FIGURE" || node.nodeName === "SECTION")
+        && node.classList.contains("include-note");
 }
 
 /**
@@ -354,15 +423,15 @@ function buildListItemFilter(): Rule {
     return {
         filter: "li",
         replacement(content, node, options) {
-            content = content
-                .trim()
-                .replace(/\n/gm, '\n    '); // indent
             let prefix = `${options.bulletListMarker}   `;
+            let indentWidth = 4;
             const parent = node.parentNode as HTMLElement;
             if (parent.nodeName === 'OL') {
                 const start = parent.getAttribute('start');
                 const index = Array.prototype.indexOf.call(parent.children, node);
                 prefix = `${start ? Number(start) + index : index + 1}.  `;
+                // Nested blocks must reach the item's content column, which moves right from item 10.
+                indentWidth = prefix.length;
             } else if (parent.classList.contains("todo-list")) {
                 const state = (node as HTMLElement).getAttribute("data-trilium-task-state");
                 const stateMarker = state
@@ -376,7 +445,10 @@ function buildListItemFilter(): Rule {
                 }
             }
 
-            const result = prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
+            content = content
+                .trim()
+                .replace(/\n/gm, `\n${" ".repeat(indentWidth)}`);
+            const result = prefix + content +(node.nextSibling && !/\n$/.test(content) ? '\n' : '');
             return result;
         }
     };
@@ -397,9 +469,10 @@ function buildMathFilter(): Rule {
             // We have to use the raw HTML text, otherwise the content is escaped too much.
             const content = (node as HTMLElement).innerText;
 
-            // Inline math
+            // Inline math. The import only reads `$…$` as math when no space touches a delimiter,
+            // so the equation is trimmed, as CKEditor does when it loads one.
             if (content.startsWith(MATH_INLINE_PREFIX) && content.endsWith(MATH_INLINE_SUFFIX)) {
-                return `$${content.substring(MATH_INLINE_PREFIX.length, content.length - MATH_INLINE_SUFFIX.length)}$`;
+                return `$${content.substring(MATH_INLINE_PREFIX.length, content.length - MATH_INLINE_SUFFIX.length).trim()}$`;
             }
 
             // Display math
@@ -465,7 +538,9 @@ function isPlainDefaultHighlight(node: HTMLElement): boolean {
         return false;
     }
 
-    const declarations = parseStyleDeclarations(node.getAttribute("style"));
+    // The text editor repeats every color in a `--tn-*` variable for the theme to adapt.
+    const declarations = parseStyleDeclarations(node.getAttribute("style"))
+        .filter(({ property }) => !property.startsWith("--tn-"));
 
     // A bare `<mark>` is a highlight with no colour of its own; a span always has a declaration,
     // since that is what the filter matched on.
@@ -480,8 +555,12 @@ function isPlainDefaultHighlight(node: HTMLElement): boolean {
     const [ declaration ] = declarations;
 
     return declaration.property === "background-color"
-        && normalizeColor(declaration.value) === normalizeColor(HIGHLIGHT_BACKGROUND);
+        && DEFAULT_HIGHLIGHT_BACKGROUNDS.includes(normalizeColor(declaration.value));
 }
+
+/** The palette Yellow, and CKEditor's stock yellow that Markdown imports used before it. */
+const DEFAULT_HIGHLIGHT_BACKGROUNDS = [ HIGHLIGHT_BACKGROUND, "hsl(60, 75%, 60%)" ]
+    .map(normalizeColor);
 
 function parseStyleDeclarations(style: string | null) {
     return (style ?? "")

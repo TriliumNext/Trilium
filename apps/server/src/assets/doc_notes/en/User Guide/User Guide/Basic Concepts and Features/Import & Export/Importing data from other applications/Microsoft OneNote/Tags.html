@@ -1,0 +1,298 @@
+<p>OneNote's <em>Tags</em> functionality is imported in Trilium as&nbsp;<a
+  class="reference-link" href="#root/_help_hD8GawVuazff">Icons</a>&nbsp;using
+  the default icon pack or emojis (if there is no suitable replacement).</p>
+<aside
+class="admonition important">
+  <p>Custom tags are not supported by OneNote's Graph API so Trilium cannot
+    import them.</p>
+</aside>
+<h3>Decorative tags</h3>
+<p>These remain formatted as paragraphs, with the glyph prepended to the
+  text. A paragraph can carry several tags at once, in which case their glyphs
+  stack.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>OneNote tag</th>
+        <th><code>data-tag</code>
+        </th>
+        <th>Imported as</th>
+        <th>Searchable as</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Important</td>
+        <td><code>important</code>
+        </td>
+        <td><span class="tn-icon bx bx-star"></span>
+        </td>
+        <td><code>star</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Critical</td>
+        <td><code>critical</code>
+        </td>
+        <td><span class="tn-icon bx bx-error-circle"></span>
+        </td>
+        <td><code>error-circle</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Question</td>
+        <td><code>question</code>
+        </td>
+        <td><span class="tn-icon bx bx-help-circle"></span>
+        </td>
+        <td><code>help-circle</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Highlight</td>
+        <td><code>highlight</code>
+        </td>
+        <td><span class="tn-icon bx bx-highlight"></span>
+        </td>
+        <td><code>highlight</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Definition</td>
+        <td><code>remember-for-later</code>
+        </td>
+        <td><span class="tn-icon bx bx-pin"></span>
+        </td>
+        <td><code>pin</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Remember for later</td>
+        <td><code>remember-for-later</code>
+        </td>
+        <td><span class="tn-icon bx bx-pin"></span>
+        </td>
+        <td><code>pin</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Remember for blog</td>
+        <td><code>remember-for-blog</code>
+        </td>
+        <td><span class="tn-icon bx bx-edit"></span>
+        </td>
+        <td><code>edit</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Idea</td>
+        <td><code>idea</code>
+        </td>
+        <td><span class="tn-icon bx bx-bulb"></span>
+        </td>
+        <td><code>bulb</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Password</td>
+        <td><code>password</code>
+        </td>
+        <td><span class="tn-icon bx bx-key"></span>
+        </td>
+        <td><code>key</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Contact</td>
+        <td><code>contact</code>
+        </td>
+        <td><span class="tn-icon bx bx-user"></span>
+        </td>
+        <td><code>user</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Address</td>
+        <td><code>address</code>
+        </td>
+        <td><span class="tn-icon bx bx-home"></span>
+        </td>
+        <td><code>home</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Phone number</td>
+        <td><code>phone-number</code>
+        </td>
+        <td><span class="tn-icon bx bx-phone"></span>
+        </td>
+        <td><code>phone</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Web site to visit</td>
+        <td><code>web-site-to-visit</code>
+        </td>
+        <td><span class="tn-icon bx bx-globe"></span>
+        </td>
+        <td><code>globe</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Source for article</td>
+        <td><code>source-for-article</code>
+        </td>
+        <td><span class="tn-icon bx bx-news"></span>
+        </td>
+        <td><code>news</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Send in email</td>
+        <td><code>send-in-email</code>
+        </td>
+        <td><span class="tn-icon bx bx-envelope"></span>
+        </td>
+        <td><code>envelope</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Movie to see</td>
+        <td><code>movie-to-see</code>
+        </td>
+        <td><span class="tn-icon bx bx-movie"></span>
+        </td>
+        <td><code>movie</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Book to read</td>
+        <td><code>book-to-read</code>
+        </td>
+        <td><span class="tn-icon bx bx-book"></span>
+        </td>
+        <td><code>book</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Music to listen to</td>
+        <td><code>music-to-listen-to</code>
+        </td>
+        <td><span class="tn-icon bx bx-music"></span>
+        </td>
+        <td><code>music</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Project A</td>
+        <td><code>project-a</code>
+        </td>
+        <td>🅰️</td>
+        <td>🅰️</td>
+      </tr>
+      <tr>
+        <td>Project B</td>
+        <td><code>project-b</code>
+        </td>
+        <td>🅱️</td>
+        <td>🅱️</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<h3>Check box tags</h3>
+<p>These become&nbsp;<a class="reference-link" href="#root/_help_fASfBrYnquKU">To-do Lists</a>,
+  with the glyph inside the item with the tick state preserved:</p>
+<figure
+class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>OneNote tag</th>
+        <th><code>data-tag</code>
+        </th>
+        <th>Imported as</th>
+        <th>Searchable as</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>To Do</td>
+        <td><code>to-do</code>
+        </td>
+        <td><em>(none)</em>
+        </td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>To Do priority 1</td>
+        <td><code>to-do-priority-1</code>
+        </td>
+        <td>1️⃣</td>
+        <td>1️⃣</td>
+      </tr>
+      <tr>
+        <td>To Do priority 2</td>
+        <td><code>to-do-priority-2</code>
+        </td>
+        <td>2️⃣</td>
+        <td>2️⃣</td>
+      </tr>
+      <tr>
+        <td>Discuss with Person A</td>
+        <td><code>discuss-with-person-a</code>
+        </td>
+        <td><span class="tn-icon bx bx-message-rounded"></span>
+        </td>
+        <td><code>message-rounded</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Discuss with Person B</td>
+        <td><code>discuss-with-person-b</code>
+        </td>
+        <td><span class="tn-icon bx bx-message-rounded"></span>
+        </td>
+        <td><code>message-rounded</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Discuss with manager</td>
+        <td><code>discuss-with-manager</code>
+        </td>
+        <td><span class="tn-icon bx bx-conversation"></span>
+        </td>
+        <td><code>conversation</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Schedule meeting</td>
+        <td><code>schedule-meeting</code>
+        </td>
+        <td><span class="tn-icon bx bx-calendar"></span>
+        </td>
+        <td><code>calendar</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Call back</td>
+        <td><code>call-back</code>
+        </td>
+        <td><span class="tn-icon bx bx-phone-call"></span>
+        </td>
+        <td><code>phone-call</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Client request</td>
+        <td><code>client-request</code>
+        </td>
+        <td><span class="tn-icon bx bx-clipboard"></span>
+        </td>
+        <td><code>clipboard</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</figure>

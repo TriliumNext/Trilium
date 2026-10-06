@@ -10,12 +10,12 @@ Once you send a message or run the <a class="reference-link" href="../Note%20Ty
 | Cloud providers | The provider's servers (Anthropic, OpenAI, Google, DeepSeek) |
 | Subscription-based | The provider's servers, via Claude Code running locally |
 | Local / self-hosted | Nothing leaves the machine running the model |
-| Custom endpoint | Wherever you pointed it — which may be your own hardware or a hosted service |
+| Custom endpoint | Wherever it was pointed, which may be your own hardware or a hosted service |
 
-This is the reason the provider list is grouped this way, and why Trilium pre-selects nothing: the choice of where your notes travel is made explicitly, by you, before anything is sent.
+This is the reason the provider list is grouped this way, and why Trilium pre-selects nothing: the choice of where your note content is sent is made explicitly by you, before anything is sent.
 
 > [!NOTE]
-> The <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> has a model selection of its own, so it maybe answered by a different provider than the one in the chat. The row at the bottom of the assistant's menu always names the one being used.
+> The <a class="reference-link" href="../Note%20Types/Text/In-editor%20AI%20assistant.md">In-editor AI assistant</a> has a model selection of its own, so it may be answered by a different provider than the one in the chat. The row at the bottom of the assistant's menu always names the one being used.
 
 ## What is actually sent
 
@@ -30,7 +30,8 @@ This is the reason the provider list is grouped this way, and why Trilium pre-se
     *   Tools let the model search your tree and read notes, attributes and attachments beyond the current one.
     *   It decides what to fetch; there is no per-note permission system, so the reachable scope is your whole tree.
 *   **Attachments and mentions**, when you add them: images, PDFs and text files are sent to the provider, and an `@` mention makes that note fetchable.
-*   **Your search query**, when web search is enabled, the model's search terms reach the provider's own search infrastructure.
+*   **Your search query**, when web search is enabled, the model's search terms reach the provider's own search infrastructure, or the search provider chosen in the _Tools_ menu (Brave Search, Tavily, Exa, Serper, Perplexity or your SearXNG instance).
+*   **The pages the model reads**, when web search goes through a search provider: Trilium fetches each page the model asks for from the site itself, so the site sees a request from the machine running Trilium. The page's text is then sent to the model's provider.
 
 ## The in-editor AI assistant
 
@@ -53,9 +54,9 @@ The same applies to the <a class="reference-link" href="../Note%20Types/Text/In
 ## What you control
 
 *   **Which provider**: the single decision that determines whether anything leaves your machine at all.
-*   **Note access**: turn tools off from the model selector at the bottom of the chat, and the model can read nothing beyond what you type.
+*   **Note access**: turn it off in the <span class="tn-icon bx bx-shield-quarter"></span> _Tools_ menu at the bottom of the chat, and the model can read nothing beyond what you type.
 *   **The current note:** the file icon in the sidebar chat.
-*   **Web search:** also in the model selector.
+*   **Web search:** also in the _Tools_ menu.
 *   **The editor assistant**: it has no per-run toggles. What you control is whether you run it, what you select before you do and which model answers.
 
 With note access and note context both off, the provider receives only the words you typed.

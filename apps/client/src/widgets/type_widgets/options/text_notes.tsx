@@ -2,7 +2,7 @@ import "./text_notes.css";
 
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { getThemeVariant, Themes } from "@triliumnext/highlightjs";
-import type { CSSProperties } from "preact/compat";
+import type { CSSProperties } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
@@ -27,6 +27,7 @@ import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
 import ThemeModeSelector from "./components/ThemeModeSelector";
 import { HighlightsListOptions } from "./highlights_list_options";
+import HelpButton from "../../react/HelpButton";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -82,7 +83,8 @@ function ToolbarStyle() {
     const [ textNoteEditorType, setTextNoteEditorType ] = useTriliumOption("textNoteEditorType");
 
     return (
-        <Card className="thumbnail-selector-option-card" heading={t("editing.editor_type.toolbar_style")}>
+        <Card className="thumbnail-selector-option-card" heading={t("editing.editor_type.toolbar_style")}
+            actions={<HelpButton helpPage="nRhnJkTT8cPs" />}>
             <CardSection>
                 <RadioWithIllustration
                     currentValue={textNoteEditorType}
@@ -148,6 +150,7 @@ function ToolbarIcon({ wide }: { wide?: boolean }) {
 }
 
 function EditorFeatures() {
+    const [mathFieldEnabled, setMathFieldEnabled] = useTriliumOptionBool("mathFieldEnabled");
     const [emojiCompletionEnabled, setEmojiCompletionEnabled] = useTriliumOptionBool("textNoteEmojiCompletionEnabled");
     const [noteCompletionEnabled, setNoteCompletionEnabled] = useTriliumOptionBool("textNoteCompletionEnabled");
     const [slashCommandsEnabled, setSlashCommandsEnabled] = useTriliumOptionBool("textNoteSlashCommandsEnabled");
@@ -157,6 +160,14 @@ function EditorFeatures() {
 
     return (
         <Card heading={t("editorfeatures.title")}>
+            <OptionCardSection
+                name="mathlive-enabled"
+                label={t("editorfeatures.mathlive_enabled")}
+                description={t("editorfeatures.mathlive_description")}
+            >
+                <FormToggle currentValue={mathFieldEnabled} onChange={setMathFieldEnabled} />
+            </OptionCardSection>
+
             <OptionCardSection
                 name="emoji-completion-enabled"
                 label={t("editorfeatures.emoji_completion_enabled")}
@@ -224,6 +235,7 @@ function AutomaticReplacements() {
         <Card className="text-notes-replacements"
             heading={t("automatic_replacements.title")}
             description={t("automatic_replacements.description")}
+            actions={<HelpButton helpPage="oI7GoyilXXAr" />}
         >
             <OptionCardSection
                 name="double-quote-style"
@@ -464,9 +476,6 @@ function HeadingStyleSelector({ currentValue, onChange }: { currentValue: string
     return (
         <Dropdown
             text={t(currentStyle.labelKey)} mobileBottomSheet
-            // The options card is a container, and so a backdrop root: left inside it the menu
-            // loses its blur and reads as a flat tint.
-            portalToBody
         >
             {HEADING_STYLES.map(({ value, labelKey }) => (
                 <FormListItem

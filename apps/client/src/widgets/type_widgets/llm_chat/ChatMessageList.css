@@ -65,3 +65,23 @@
     opacity: 1;
     background-color: var(--hover-item-background-color);
 }
+
+/* Shown until the first content of a reply arrives, for a turn that waits on something slow. */
+.chat-stream-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+
+    /* Fades in after a delay, so a reply that starts quickly never flashes it. */
+    &.chat-stream-status-waiting {
+        animation: chat-stream-status-appear 0.2s ease-out 0.6s backwards;
+    }
+}
+
+@keyframes chat-stream-status-appear {
+    from {
+        opacity: 0;
+    }
+}

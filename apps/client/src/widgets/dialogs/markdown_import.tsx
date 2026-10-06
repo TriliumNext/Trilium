@@ -1,3 +1,5 @@
+import "./markdown_import.css";
+
 import { RenderMarkdownResponse } from "@triliumnext/commons";
 import { useRef, useState } from "preact/hooks";
 
@@ -58,7 +60,6 @@ export default function MarkdownImportDialog() {
             <p>{t("markdown_import.modal_body_text")}</p>
             <textarea ref={markdownImportTextArea} value={text}
                 onInput={(e) => setText(e.currentTarget.value)}
-                style={{ height: 340, width: "100%" }}
                 onKeyDown={(e) => {
                     if (e.key === "Enter" && e.ctrlKey) {
                         e.preventDefault();

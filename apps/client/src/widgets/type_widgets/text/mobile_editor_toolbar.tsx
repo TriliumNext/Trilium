@@ -1,7 +1,8 @@
 import "./mobile_editor_toolbar.css";
 
 import type { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { RefObject } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isIOS } from "../../../services/utils";
 import { useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent } from "../../react/hooks";
@@ -65,7 +66,7 @@ export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolb
     );
 }
 
-function usePositioningOniOS(enabled: boolean, wrapperRef: MutableRef<HTMLDivElement | null>) {
+function usePositioningOniOS(enabled: boolean, wrapperRef: RefObject<HTMLDivElement | null>) {
     // Fallback path for plain mobile Safari (no Capacitor): the WKWebView
     // isn't resized when the keyboard opens, so visualViewport.height
     // shrinks while window.innerHeight stays the same. Push the toolbar

@@ -53,6 +53,23 @@ describe("CKEditor config", () => {
     });
 });
 
+describe("the Insert group", () => {
+    it("offers the drawing canvas above the Mermaid diagram, on both toolbars", () => {
+        const toolbars = [
+            buildClassicToolbar(false, true).toolbar.items,
+            buildFloatingToolbar(true).blockToolbar
+        ];
+        for (const items of toolbars) {
+            const group = items.find((item) => typeof item === "object"
+                && "label" in item && item.label === "text-editor.toolbar-groups.insert");
+            const groupItems = (group as { items: string[] } | undefined)?.items ?? [];
+            const index = groupItems.indexOf("drawingCanvas");
+            expect(groupItems.slice(index, index + 2)).toEqual([ "drawingCanvas", "mermaid" ]);
+            expect(items).not.toContain("drawingCanvas");
+        }
+    });
+});
+
 describe("buildClassicToolbar", () => {
     it("reflects the multiline flag via shouldNotGroupWhenFull", () => {
         expect(buildClassicToolbar(false, true).toolbar.shouldNotGroupWhenFull).toBe(false);

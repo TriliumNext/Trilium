@@ -1,3 +1,4 @@
+import { IconEmoji } from "@ckeditor/ckeditor5-icons";
 import {
     type Editor,
     EmojiPicker,
@@ -8,7 +9,8 @@ import {
     Typing
 } from "ckeditor5";
 
-import { registerMentionFeed } from "./register_feed.js";
+import { registerHostedMentionFeed } from "./register_feed.js";
+import type { MentionHostedList } from "./types.js";
 
 export const EMOJI_MARKER = ":";
 
@@ -17,8 +19,31 @@ const SHOW_ALL_ID = ":__trilium_show_all_emoji__:";
 
 const DROPDOWN_LIMIT = 6;
 
+declare module "@ckeditor/ckeditor5-emoji" {
+    interface EmojiConfig {
+        /**
+         * The host's list of the `:` completion, which lists {@link TriliumEmojiMention.search} for
+         * the query and commits the {@link EmojiSuggestion} picked. Without it there is no completion.
+         */
+        list?: ( editor: Editor ) => MentionHostedList;
+    }
+}
+
+/** An entry of the `:` completion, as {@link TriliumEmojiMention.search} lists it and its list commits it. */
+export interface EmojiSuggestion extends MentionFeedObjectItem {
+    /** The emoji, or for the entry that opens the picker, the query it opens the picker on. */
+    text: string;
+    /** What the row says: the emoji's `:annotation:`, or the picker entry's caption. */
+    title: string;
+    /** Marks the entry that opens the emoji picker on the query instead of inserting an emoji. */
+    opensPicker?: boolean;
+    /** The picker entry's icon as SVG markup: the one of the toolbar button that opens the picker too. */
+    icon?: string;
+}
+
 /**
- * The `:smile:` autocomplete, hosted on {@link TriliumMentionUI}.
+ * The `:smile:` autocomplete: what it finds and what a pick inserts, for the list the host draws in
+ * `emoji.list`, which {@link TriliumMentionUI} runs as a hosted feed.
  *
  * Upstream ships this as `EmojiMention`, which we cannot use: it `requires` the `Mention` façade and
  * so drags in upstream's `MentionUI` next to ours, leaving the text editor with two panels fighting
@@ -30,8 +55,8 @@ const DROPDOWN_LIMIT = 6;
  * Only that ~60 lines of glue is reimplemented here. The emoji data, the query engine and the picker
  * remain upstream's: `EmojiRepository` requires just `EmojiUtils`, and `EmojiPicker` never touches
  * `Mention`, so neither pulls a second autocomplete UI into the editor. Insertion goes through the
- * feed's own {@link TriliumMentionFeed.commit} callback rather than the `mention` command, so there
- * is no listener left to be orphaned by a command swap.
+ * feed's own `commit` callback rather than the `mention` command, so there is no listener left to
+ * be orphaned by a command swap.
  */
 export default class TriliumEmojiMention extends Plugin {
 
@@ -48,24 +73,27 @@ export default class TriliumEmojiMention extends Plugin {
 
         editor.config.define("emoji", { dropdownLimit: DROPDOWN_LIMIT });
 
-        registerMentionFeed(editor, {
+        const list = editor.config.get("emoji.list");
+        if (!list) {
+            return;
+        }
+
+        registerHostedMentionFeed(editor, {
             marker: EMOJI_MARKER,
             // `:` is common in ordinary prose ("note: see below"). The marker pattern already
             // requires whitespace before it, and two more characters keep a bare `:` from opening
-            // a panel over every colon the user types.
+            // a list over every colon the user types.
             minimumCharacters: 2,
-            dropdownLimit: editor.config.get("emoji.dropdownLimit") as number,
-            feed: (query: string) => this._query(query),
-            itemRenderer: (item) => this._renderItem(item),
-            commit: (editorInstance, item) => this._commit(editorInstance, item)
+            list,
+            commit: (editorInstance, item) => this._commit(editorInstance, item as EmojiSuggestion)
         });
     }
 
-    private get _picker(): EmojiPicker | null {
-        return this.editor.plugins.has(EmojiPicker) ? this.editor.plugins.get(EmojiPicker) : null;
-    }
-
-    private _query(query: string): MentionFeedObjectItem[] {
+    /**
+     * The emoji matching what was typed after the `:`, at most `emoji.dropdownLimit` of them, the
+     * last of which opens the picker on the query where the picker is loaded.
+     */
+    search(query: string): EmojiSuggestion[] {
         const repository = this.editor.plugins.get(EmojiRepository);
 
         if (!repository.isRepositoryReady) {
@@ -80,37 +108,28 @@ export default class TriliumEmojiMention extends Plugin {
         const skinTone = picker ? picker.skinTone : this.editor.config.get("emoji.skinTone") as EmojiSkinToneId;
         const limit = this.editor.config.get("emoji.dropdownLimit") as number;
 
-        const emojis = repository.getEmojiByQuery(query).map((emoji) => ({
-            id: `${EMOJI_MARKER}${emoji.annotation}${EMOJI_MARKER}`,
-            text: emoji.skins[skinTone] ?? emoji.skins.default
-        }));
+        const emojis = repository.getEmojiByQuery(query).map((emoji): EmojiSuggestion => {
+            const shortcode = `${EMOJI_MARKER}${emoji.annotation}${EMOJI_MARKER}`;
+            return { id: shortcode, title: shortcode, text: emoji.skins[skinTone] ?? emoji.skins.default };
+        });
 
-        if (!this._picker) {
-            return emojis;
+        if (!picker) {
+            return emojis.slice(0, limit);
         }
 
         // One slot is given up to the hand-off entry, so the list length stays at the limit.
-        return [ ...emojis.slice(0, limit - 1), { id: SHOW_ALL_ID, text: query } ];
+        return [
+            ...emojis.slice(0, limit - 1),
+            { id: SHOW_ALL_ID, title: this.editor.t("Show all emoji..."), text: query, opensPicker: true, icon: IconEmoji }
+        ];
     }
 
-    private _renderItem(item: MentionFeedObjectItem): HTMLElement {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.tabIndex = -1;
-        button.classList.add("ck", "ck-button", "ck-button_with-text");
-
-        const label = document.createElement("span");
-        label.classList.add("ck", "ck-button__label");
-        label.textContent = item.id === SHOW_ALL_ID
-            ? this.editor.t("Show all emoji...")
-            : `${item.text} ${item.id}`;
-
-        button.append(label);
-        return button;
+    private get _picker(): EmojiPicker | null {
+        return this.editor.plugins.has(EmojiPicker) ? this.editor.plugins.get(EmojiPicker) : null;
     }
 
-    private _commit(editor: Editor, item: MentionFeedObjectItem) {
-        if (item.id !== SHOW_ALL_ID) {
+    private _commit(editor: Editor, item: EmojiSuggestion) {
+        if (!item.opensPicker) {
             editor.execute("insertText", { text: item.text });
             return;
         }

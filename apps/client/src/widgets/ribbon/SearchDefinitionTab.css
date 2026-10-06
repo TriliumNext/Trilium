@@ -34,10 +34,6 @@
     display: inline-block !important;
 }
 
-.search-setting-table .button-column .dropdown-menu {
-    white-space: normal;
-}
-
 .search-setting-table .button-column > * {
     vertical-align: middle;
 }
@@ -59,7 +55,7 @@
     margin: 3px;
 }
 
-.dropdown-header {
+.action-add-menu .dropdown-header {
     background-color: var(--accented-background-color);
 }
 

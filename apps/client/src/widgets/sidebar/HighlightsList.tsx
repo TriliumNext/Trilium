@@ -116,9 +116,6 @@ function HighlightsListMenu({ currentValue, onChange }: {
             iconAction
             hideToggleArrow
             noSelectButtonStyle
-            // The card establishes a stacking context of its own and clips its overflow, so the menu
-            // is rendered into the body to stand clear of it — as the card's help popup is.
-            portalToBody
         >
             {HIGHLIGHT_FORMATS.map(({ val, titleKey, icon }) => (
                 <FormListToggleableItem
@@ -152,7 +149,10 @@ function HighlightItem<T extends RawHighlight>({ highlight, onClick }: {
                     fontStyle: highlight.attrs.italic ? "italic" : undefined,
                     textDecoration: highlight.attrs.underline ? "underline" : undefined,
                     color: highlight.attrs.color,
-                    backgroundColor: highlight.attrs.background
+                    backgroundColor: highlight.attrs.background,
+                    // Adapted to the theme by `adaptive-colors.css`, like the note's own colors.
+                    "--tn-color": highlight.attrs.color,
+                    "--tn-background": highlight.attrs.background
                 }}
                 html={highlight.text}
             />

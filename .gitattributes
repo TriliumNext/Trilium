@@ -4,20 +4,17 @@ package-lock.json linguist-generated=true
 apps/server/src/assets/doc_notes/en/User[[:space:]]Guide/** linguist-generated
 
 # Ignore from GitHub language stats.
-apps/server/src/assets/doc_notes/en/User[[:space:]]Guide/**/*.html eol=lf
 apps/server/src/assets/doc_notes/** linguist-vendored=true
 apps/edit-docs/demo/** linguist-vendored=true
 docs/** linguist-vendored=true
 
-# Normalize line endings.
-docs/**/*.md eol=lf
-docs/**/*.json eol=lf
-demo/**/*.html eol=lf
-demo/**/*.json eol=lf
-demo/**/*.svg eol=lf
-demo/**/*.txt eol=lf
-demo/**/*.js eol=lf
-demo/**/*.css eol=lf
+# Normalize line endings. edit-docs writes the three generated trees with LF, so they have to
+# check out with LF too — otherwise every export leaves them looking modified on Windows.
+# `text=auto` keeps the images and other binary attachments they contain out of the conversion.
+patches/** eol=lf
+docs/** text=auto eol=lf
+apps/server/src/assets/doc_notes/** text=auto eol=lf
+apps/edit-docs/demo/** text=auto eol=lf
 *.sh eol=lf
 
 # Always diff TypeScript sources as text so a stray control byte (e.g. a NUL in

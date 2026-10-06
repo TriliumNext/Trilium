@@ -31,7 +31,7 @@ interface RightPanelWidgetProps {
     title: string;
     children: ComponentChildren;
     buttons?: ComponentChildren;
-    containerRef?: RefObject<HTMLDivElement>;
+    containerRef?: RefObject<HTMLDivElement | null>;
     contextMenuItems?: MenuItem<unknown>[];
     /**
      * Take the height the other widgets of the tab leave over, scrolling the body within it, instead of

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as cls from "./context.js";
 import { getLog } from "./log.js";
 import oneTimeTimer from "./one_time_timer.js";
 
@@ -131,6 +132,36 @@ describe("oneTimeTimer", () => {
 
             vi.advanceTimersByTime(50);
             expect(inner).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("execution context", () => {
+        beforeEach(() => {
+            // Real timers, because what is under test is what survives an actual asynchronous
+            // hop: AsyncLocalStorage carries a scope across one, the browser context's stack
+            // has already unwound by then.
+            vi.useRealTimers();
+        });
+
+        it("runs the callback inside an execution context, so a committing write can record its entity changes", async () => {
+            let failure: unknown;
+
+            // The entity-deletion handler schedules "hidden-subtree-check" from inside the scope
+            // of the write that triggered it. checkHiddenSubtree() commits a transaction, and
+            // ws.sendTransactionEntityChangesToAllClients() then calls this on the way out.
+            cls.init(() => {
+                oneTimeTimer.scheduleExecution("context-scope", 1, () => {
+                    try {
+                        cls.getAndClearEntityChangeIds();
+                    } catch (e: unknown) {
+                        failure = e;
+                    }
+                });
+            });
+
+            await new Promise((resolve) => setTimeout(resolve, 20));
+
+            expect(failure).toBeUndefined();
         });
     });
 });

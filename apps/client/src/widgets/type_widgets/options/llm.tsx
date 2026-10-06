@@ -1,6 +1,6 @@
 import "./llm.css";
 
-import type { NetworkAddressesResponse } from "@triliumnext/commons";
+import { isProviderOfKind, type LlmProviderKind, type NetworkAddressesResponse } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";
@@ -17,11 +17,25 @@ import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import MaskedIcon from "../../react/MaskedIcon";
 import NoItems from "../../react/NoItems";
+import { shortModelName } from "../llm_chat/model_name";
 import OptionsPageHeader from "./components/OptionsPageHeader";
-import AddProviderModal, { type LlmProviderConfig, PROVIDER_TYPES } from "./llm/AddProviderModal";
+import AddProviderModal, { findProviderType, type LlmProviderConfig } from "./llm/AddProviderModal";
 
 export default function LlmSettings() {
     const [aiEnabled, setAiEnabled] = useTriliumOptionBool("aiEnabled");
+    // Read once for both cards: each saves the whole list, so a card holding its own copy would
+    // write back the other card's providers as they were before its last edit.
+    const [providersJson, setProvidersJson] = useTriliumOption("llmProviders");
+    const allProviders = useMemo<LlmProviderConfig[]>(() => {
+        try {
+            return providersJson ? JSON.parse(providersJson) : [];
+        } catch {
+            return [];
+        }
+    }, [providersJson]);
+    const setAllProviders = useCallback((newProviders: LlmProviderConfig[]) => {
+        setProvidersJson(JSON.stringify(newProviders));
+    }, [setProvidersJson]);
 
     return (
         <>
@@ -43,7 +57,8 @@ export default function LlmSettings() {
 
             {aiEnabled && (
                 <>
-                    <ProviderSettings />
+                    <ProviderSettings kind="llm" allProviders={allProviders} setAllProviders={setAllProviders} />
+                    <ProviderSettings kind="search" allProviders={allProviders} setAllProviders={setAllProviders} />
                     <McpSettings />
                 </>
             )}
@@ -51,18 +66,14 @@ export default function LlmSettings() {
     );
 }
 
-function ProviderSettings() {
-    const [providersJson, setProvidersJson] = useTriliumOption("llmProviders");
-    const providers = useMemo<LlmProviderConfig[]>(() => {
-        try {
-            return providersJson ? JSON.parse(providersJson) : [];
-        } catch {
-            return [];
-        }
-    }, [providersJson]);
-    const setProviders = useCallback((newProviders: LlmProviderConfig[]) => {
-        setProvidersJson(JSON.stringify(newProviders));
-    }, [setProvidersJson]);
+/** The configured providers of one kind. Both kinds are stored in the `llmProviders` option. */
+function ProviderSettings({ kind, allProviders, setAllProviders }: {
+    kind: LlmProviderKind;
+    /** Every configured provider, of both kinds. */
+    allProviders: LlmProviderConfig[];
+    setAllProviders: (providers: LlmProviderConfig[]) => void;
+}) {
+    const providers = useMemo(() => allProviders.filter(p => isProviderOfKind(p, kind)), [allProviders, kind]);
     // `undefined` while closed; the edited provider (or a fresh marker) while open.
     // The bumping token keys the modal so it re-initializes its wizard on every open.
     const [modalProvider, setModalProvider] = useState<LlmProviderConfig | undefined>();
@@ -77,31 +88,35 @@ function ProviderSettings() {
 
     // Upsert: editing replaces the config with the matching id, adding appends.
     const handleSaveProvider = useCallback((saved: LlmProviderConfig) => {
-        setProviders(providers.some(p => p.id === saved.id)
-            ? providers.map(p => (p.id === saved.id ? saved : p))
-            : [...providers, saved]);
-    }, [providers, setProviders]);
+        setAllProviders(allProviders.some(p => p.id === saved.id)
+            ? allProviders.map(p => (p.id === saved.id ? saved : p))
+            : [...allProviders, saved]);
+    }, [allProviders, setAllProviders]);
 
     const handleDeleteProvider = useCallback(async (providerId: string, providerName: string) => {
         if (!(await dialog.confirm(t("llm.delete_provider_confirmation", { name: providerName })))) {
             return;
         }
-        setProviders(providers.filter(p => p.id !== providerId));
-    }, [providers, setProviders]);
+        setAllProviders(allProviders.filter(p => p.id !== providerId));
+    }, [allProviders, setAllProviders]);
+
+    const isSearch = kind === "search";
 
     return (<>
-        <Card heading={t("llm.configured_providers")}>
+        <Card heading={isSearch ? t("llm.search_providers") : t("llm.model_providers")}>
             <ProviderList
                 providers={providers}
+                emptyIcon={isSearch ? "bx bx-search" : "bx bx-bot"}
+                emptyText={isSearch ? t("llm.no_search_providers_configured") : t("llm.no_model_providers_configured")}
                 onEdit={openModal}
                 onDelete={handleDeleteProvider}
             />
 
             <CardSection className="llm-add-provider">
                 <Button
-                    name="add-llm-provider-button"
+                    name={isSearch ? "add-search-provider-button" : "add-llm-provider-button"}
                     size="micro" icon="bx-plus"
-                    text={t("llm.add_provider")}
+                    text={isSearch ? t("llm.add_search_provider") : t("llm.add_model_provider")}
                     onClick={() => openModal()}
                 />
             </CardSection>
@@ -111,6 +126,7 @@ function ProviderSettings() {
             key={openToken}
             show={modalOpen}
             existingProvider={modalProvider}
+            kind={kind}
             onHidden={() => setModalOpen(false)}
             onSave={handleSaveProvider}
         />
@@ -260,23 +276,24 @@ function getMcpEndpointUrl() {
 
 interface ProviderListProps {
     providers: LlmProviderConfig[];
+    emptyIcon: string;
+    emptyText: string;
     onEdit: (provider: LlmProviderConfig) => void;
     onDelete: (providerId: string, providerName: string) => Promise<void>;
 }
 
-function ProviderList({ providers, onEdit, onDelete }: ProviderListProps) {
+function ProviderList({ providers, emptyIcon, emptyText, onEdit, onDelete }: ProviderListProps) {
     if (!providers.length) {
         return (
             <CardSection>
-                <NoItems icon="bx bx-bot" text={t("llm.no_providers_configured")} />
+                <NoItems icon={emptyIcon} text={emptyText} />
             </CardSection>
         );
     }
 
     return <>
         {providers.map((provider) => {
-            const providerType = PROVIDER_TYPES.find(p => p.id === provider.provider);
-            const modelCount = provider.selectedModels?.length ?? 0;
+            const providerType = findProviderType(provider.provider);
             return (
                 <OptionCardSection
                     key={provider.id}
@@ -286,9 +303,7 @@ function ProviderList({ providers, onEdit, onDelete }: ProviderListProps) {
                             {provider.name}
                         </span>
                     }
-                    description={modelCount > 0
-                        ? t("llm.provider_model_count", { count: modelCount })
-                        : providerType?.name || provider.provider}
+                    description={isProviderOfKind(provider, "llm") ? <ModelList provider={provider} /> : provider.baseURL}
                 >
                     <span className="tn-card-option-actions">
                         <ActionButton
@@ -307,4 +322,14 @@ function ProviderList({ providers, onEdit, onDelete }: ProviderListProps) {
             );
         })}
     </>;
+}
+
+/** The short names of a model provider's selected models, as the chat's picker shows them. */
+function ModelList({ provider }: { provider: LlmProviderConfig }) {
+    const models = provider.selectedModels ?? [];
+    if (!models.length) {
+        return <>{t("llm.provider_no_models")}</>;
+    }
+    const names = models.map((model) => shortModelName(model.name, provider.provider)).join(", ");
+    return <span className="llm-provider-models" title={names}>{names}</span>;
 }

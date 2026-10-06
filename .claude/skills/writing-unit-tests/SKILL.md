@@ -53,7 +53,7 @@ Some layers have a purpose-built spec harness documented in the skill that owns 
 - Coverage: append `--coverage`.
 - Server tests run **sequentially** (shared DB, `pool: "forks"`, fork isolation is **per file**). Client/package tests run in parallel.
 
-> **Windows/sandbox note:** `pnpm --filter … exec vitest` can trigger a pnpm auto-install that hits `EPERM`. If so, run the hoisted binary directly (it lives in the **repo-root** `node_modules`): `CI=true node node_modules/vitest/vitest.mjs run <spec> --root apps/client`, or `node_modules/.bin/vitest.CMD run <spec> --root apps/<app>`.
+> **Windows/sandbox note:** any `pnpm --filter …` invocation — `exec vitest` and the package's own `test` script alike — can trigger a pnpm auto-install that hits `EPERM`/`Access is denied` on a `node_modules` directory VS Code holds open (it rolls back, but the run is lost). If so, run the hoisted binary directly (it lives in the **repo-root** `node_modules`): `CI=true node node_modules/vitest/vitest.mjs run <spec> --root apps/client`, or `node_modules/.bin/vitest.CMD run <spec> --root apps/<app>`.
 
 ## Coverage config rules (Vitest 4)
 
@@ -82,7 +82,7 @@ coverage: {
 - **`vi.resetModules()` drops `importOriginal`-based partial mocks.** The next dynamic import of the module gets the *real* dependency back, not your stub, and the symptom reads as "the mock isn't applying" rather than as a reset problem. Prefer registering singletons and IPC handlers **once** and ordering the tests instead — put the one that latches module-level state last. Where a reset is genuinely needed (a value cached on first call), mock with a full factory rather than an `importOriginal` partial.
 - **Don't assert on translated (i18n) strings** — assert structure/keys/behavior (classes, counts, ids), not human-readable English.
 - **happy-dom is not a browser:** `getBoundingClientRect()` returns zeros, `ResizeObserver`/layout/visibility are stubs. Anything pixel/size/scroll-based needs `@vitest/browser`, not happy-dom.
-- **`@vitest/browser` real-browser mode IS configured** — the `packages/ckeditor5`, `-mermaid` and `-math` bundles run their co-located `src/**/*.spec.ts` in headless Chrome (`@vitest/browser-webdriverio`; see `packages/ckeditor5/vitest.config.ts`). These are the browser-mode `test:sequential` suites. Reserve real-browser mode for genuine layout/integration needs (CKEditor, Excalidraw, Modal transitions, size measurement); normal unit tests stay on happy-dom.
+- **`@vitest/browser` real-browser mode IS configured** — the `packages/ckeditor5`, `-mermaid` and `-math` bundles run their co-located `src/**/*.spec.ts` in headless Chromium (`@vitest/browser-playwright`; see `packages/ckeditor5/vitest.config.ts`). These are the browser-mode `test:sequential` suites. Reserve real-browser mode for genuine layout/integration needs (CKEditor, Excalidraw, Modal transitions, size measurement); normal unit tests stay on happy-dom.
 - **WASM scrypt is ~10× slower** under the standalone suite (pure-JS `scrypt-js` under V8 coverage instrumentation, vs Node's native `scryptSync`) — enough to blow the 5s default. A core spec that hashes a password bumps the timeout for the standalone runtime only; copy the guard from `packages/trilium-core/src/routes/api/login.spec.ts:13`:
     ```ts
     const isBrowserRuntime = typeof window !== "undefined";

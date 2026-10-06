@@ -85,3 +85,7 @@ See the dedicated section on PDFs in <a class="reference-link" href="../../Basi
 PDFs can also be shared using the <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a> feature. This will also use Trilium's customized PDF viewer.
 
 If you are using a reverse proxy on your server with strict access limitations for the share functionality, make sure that `[host].com/pdfjs` directory is accessible. Note that this directory is outside the `/share` route as it's common with the rest of the application.
+
+## OCR
+
+PDFs are eligible for <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>, which means that their text can be used in <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a>.

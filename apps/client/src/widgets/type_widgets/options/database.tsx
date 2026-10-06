@@ -37,6 +37,7 @@ import { showCleanupDialog } from "../space_usage/cleanup_dialog";
 import DatabaseFileList from "./components/DatabaseFileList";
 import OptionsPageHeader from "./components/OptionsPageHeader";
 import RelatedSettings from "./components/RelatedSettings";
+import HelpButton from "../../react/HelpButton";
 
 /**
  * What can be done to the knowledge base as a whole, rather than to anything inside it: keeping the
@@ -120,6 +121,10 @@ function DatabaseInfo({ refreshToken }: { refreshToken: number }) {
                 </span>
             </OptionCardSection>
 
+            {/* Follows the storage it qualifies, and only where that storage is the browser's:
+                a database on disk stays there whatever the browser thinks of it. */}
+            {isStandalone && <StoragePersistence refreshToken={refreshToken} />}
+
             <OptionCardSection label={t("database.info_content")}>
                 <span className="tn-card-option-value">
                     {t("database.info_notes", { count: info.noteCount })}
@@ -142,6 +147,52 @@ function DatabaseInfo({ refreshToken }: { refreshToken: number }) {
                 download, taken there and then, so there is nothing standing to state. */}
             {!isBackupDownloadSupported() && <BackupStanding refreshToken={refreshToken} />}
         </Card>
+    );
+}
+
+/**
+ * Whether the browser has undertaken to keep the storage the database lives in. Standalone asks for
+ * that undertaking at every startup, and the browser decides from its own heuristics — chiefly how
+ * installed the site looks — so this states the answer and what follows from it.
+ *
+ * Read from the page rather than from `database/info`, which is answered by core: `persisted()` is
+ * the browser's own reading of its own storage, and there is nothing in the database to base it on.
+ * Nothing is shown where the browser does not report it, which is every build whose database is a
+ * file on disk.
+ *
+ * Read again on `refreshToken`, like the figures beside it: the startup request can still be in
+ * flight when this mounts, and the browser is free to change its mind afterwards.
+ */
+function StoragePersistence({ refreshToken }: { refreshToken: number }) {
+    const [ persisted, setPersisted ] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let current = true;
+        navigator.storage?.persisted?.()
+            .then((result) => { if (current) setPersisted(result); })
+            .catch(() => {});
+
+        return () => { current = false; };
+    }, [ refreshToken ]);
+
+    if (persisted === null) {
+        return null;
+    }
+
+    return (
+        <OptionCardSection
+            className="database-persistence"
+            label={t("database.info_persistence")}
+            description={persisted
+                ? t("database.info_persistence_persistent_description")
+                : t("database.info_persistence_best_effort_description")}
+        >
+            <span className="tn-card-option-value">
+                {persisted
+                    ? t("database.info_persistence_persistent")
+                    : t("database.info_persistence_best_effort")}
+            </span>
+        </OptionCardSection>
     );
 }
 
@@ -375,6 +426,7 @@ function AnonymizationOptions() {
             <Card className="database-anonymization"
                 heading={t("database_anonymization.title")}
                 description={t("database_anonymization.description")}
+                actions={<HelpButton helpPage="x59R8J8KV5Bp" />}
             >
                 <OptionCardSection
                     label={t("database_anonymization.full_anonymization")}

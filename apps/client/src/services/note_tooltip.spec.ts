@@ -3,12 +3,20 @@ import $ from "jquery";
 
 // --- Mocks (hoisted above imports) ---
 
-const { parseNavigationStateFromUrl, renderNormalAttributes, getRenderedContent, getNoteTitleWithPathAsSuffix, getActiveContext } = vi.hoisted(() => ({
+const {
+    parseNavigationStateFromUrl,
+    renderNormalAttributes,
+    getRenderedContent,
+    getNoteTitleWithPathAsSuffix,
+    getActiveContext,
+    t
+} = vi.hoisted(() => ({
     parseNavigationStateFromUrl: vi.fn(),
     renderNormalAttributes: vi.fn(),
     getRenderedContent: vi.fn(),
     getNoteTitleWithPathAsSuffix: vi.fn(),
-    getActiveContext: vi.fn()
+    getActiveContext: vi.fn(),
+    t: vi.fn((key: string) => key)
 }));
 
 vi.mock("./link.js", () => ({
@@ -31,9 +39,7 @@ vi.mock("../components/app_context.js", () => ({
     default: { tabManager: { getActiveContext } }
 }));
 
-vi.mock("./i18n.js", () => ({
-    t: (key: string) => key
-}));
+vi.mock("./i18n.js", () => ({ t }));
 
 // Imports AFTER vi.mock calls.
 import DeletedFNote from "../entities/deleted_fnote.js";
@@ -294,6 +300,34 @@ describe("renderTooltip", () => {
         expect(html).toContain('class="note-tooltip-attributes"');
         expect(html).toContain("body");
     });
+
+    it("renders an attachment under its note's path, without the note's attributes", async () => {
+        const owner = fakeNote({ noteId: "owner", bestPath: "root/owner" });
+        const attachment = {
+            attachmentId: "att1",
+            ownerId: "owner",
+            title: "report.pdf",
+            contentLength: 21_590_000,
+            getNote: () => owner
+        } as any;
+        const href = "#owner?viewMode=attachments&attachmentId=att1";
+
+        const $html = $(`<div>${await renderTooltip(attachment)}</div>`);
+
+        expect(getNoteTitleWithPathAsSuffix).toHaveBeenCalledWith("root/owner", "report.pdf");
+        expect(getRenderedContent).toHaveBeenCalledWith(attachment, { tooltip: true, trim: true });
+        expect($html.find("h5.note-tooltip-title a").attr("href")).toBe(href);
+        expect($html.find(".content").text()).toBe("body");
+        expect(renderNormalAttributes).not.toHaveBeenCalled();
+        expect($html.find(".note-tooltip-attributes")).toHaveLength(0);
+        expect($html.find("a.open-popup-button").attr("href")).toBe(`${href}&popup`);
+
+        // The info line names what it is and its size, unless the link supplies a detail itself.
+        expect($html.find(".note-tooltip-detail").text()).toBe("note_tooltip.attachment-info");
+        expect(t).toHaveBeenCalledWith("note_tooltip.attachment-info", { size: "20.59 MiB" });
+        const $withDetail = $(`<div>${await renderTooltip(attachment, "From the link")}</div>`);
+        expect($withDetail.find(".note-tooltip-detail").text()).toBe("From the link");
+    });
 });
 
 describe("mouseEnterHandler", () => {
@@ -408,6 +442,34 @@ describe("mouseEnterHandler", () => {
 
         expect(loadSpy).toHaveBeenCalledWith("deleted12345");
         expect(froca.getNote).not.toHaveBeenCalled();
+    });
+
+    it("previews the attachment an attachment link points to, rather than its note", async () => {
+        vi.useFakeTimers();
+        froca.getNote = vi.fn(async () => null) as any;
+        froca.getAttachmentOfNote = vi.fn(async () => ({
+            attachmentId: "att1",
+            ownerId: "owner",
+            title: "report.pdf",
+            getNote: () => fakeNote({ noteId: "owner", bestPath: "root/owner" })
+        })) as any;
+        const href = "#root/owner?viewMode=attachments&attachmentId=att1";
+        const $link = makeLink(`<a href="${href}">x</a>`);
+        parseNavigationStateFromUrl.mockReturnValue({
+            notePath: "root/owner",
+            noteId: "owner",
+            viewScope: { viewMode: "attachments", attachmentId: "att1" }
+        });
+        hoverActive = true;
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(froca.getAttachmentOfNote).toHaveBeenCalledWith("owner", "att1");
+        expect(froca.getNote).not.toHaveBeenCalled();
+        const [ options ] = ($.fn.tooltip as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(options.title).toContain("attachmentId=att1");
     });
 
     it("routes ordinary note links through froca, not the deleted-content route", async () => {

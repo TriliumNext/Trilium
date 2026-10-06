@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
             _fileName: string,
             _passphrase?: string,
             _onProgress?: (sentBytes: number, totalBytes: number) => void
-        ) => ({ status: "done" }) as { status: string; message?: string }
+        ) => ({ status: "done" }) as { status: string; message?: string; location?: string }
     )
 }));
 
@@ -338,6 +338,23 @@ describe("backing up from the setup screen", () => {
         expect(button("setup.backup-download")?.disabled).toBe(false);
         expect(container.querySelector(".backup-download-file")).not.toBeNull();
         expect(button("setup.backup-finish")?.disabled).toBe(false);
+    });
+
+    it("names where the file went on a platform that puts it somewhere it can name", async () => {
+        // The mobile shell writes the backup itself rather than handing it to a download manager,
+        // so it is the only thing that knows where the user should go looking.
+        mocks.startBackupDownload.mockResolvedValue({
+            status: "done",
+            location: "/documents/Trilium/b.tnbackup"
+        });
+        await reachDownload();
+
+        button("setup.backup-download")?.click();
+        await settle();
+
+        const outcome = container.querySelector(".backup-download-outcome")?.textContent;
+        expect(outcome).toContain("setup.backup-saved-to");
+        expect(outcome).not.toContain("setup.backup-downloaded");
     });
 
     it("counts the download as it goes, since the browser's own progress is out of sight on a phone", async () => {

@@ -125,6 +125,11 @@ function renderPage() {
     return container;
 }
 
+/** What the browser reports about its own storage, which only the browser build reads. */
+function setStorageManager(storage: { persisted?: () => Promise<boolean> } | undefined) {
+    Object.defineProperty(navigator, "storage", { value: storage, configurable: true });
+}
+
 /** By name rather than by label: one label is a prefix of the other. */
 function button(name: string): HTMLButtonElement | null {
     return container.querySelector<HTMLButtonElement>(`button[name='${name}']`);
@@ -139,6 +144,7 @@ beforeEach(() => {
     failing.info = false;
     INFO = DATABASE_INFO;
     standalone.enabled = false;
+    setStorageManager(undefined);
     BACKUPS = [ { mtime: new Date("2026-01-01T10:00:00Z") }, { mtime: new Date("2026-01-02T10:00:00Z") } ];
     ANONYMIZED = [ ANONYMIZED_COPY ];
     dialog.closeActiveDialog.mockClear();
@@ -215,6 +221,75 @@ describe("what the database is", () => {
         expect(container.querySelector(".database-anonymization")).toBeNull();
         expect(container.querySelector(".database-file-list")).toBeNull();
         expect(server.get).not.toHaveBeenCalledWith("database/anonymized-databases");
+    });
+
+    it("states whether the browser has undertaken to keep the storage", async () => {
+        standalone.enabled = true;
+        INFO = { ...DATABASE_INFO, filePath: null };
+        setStorageManager({ persisted: async () => true });
+        renderPage();
+        await settle();
+
+        const [ , persistence ] = infoValues();
+        expect(persistence).toBe("database.info_persistence_persistent");
+        expect(container.querySelector(".database-info")?.textContent)
+            .toContain("database.info_persistence_persistent_description");
+    });
+
+    it("says what follows from storage the browser can evict", async () => {
+        standalone.enabled = true;
+        INFO = { ...DATABASE_INFO, filePath: null };
+        setStorageManager({ persisted: async () => false });
+        renderPage();
+        await settle();
+
+        expect(infoValues()[1]).toBe("database.info_persistence_best_effort");
+        // The row is named so its CSS can keep "Best-effort" off a second line, where the half of
+        // it left above would read as a word of its own.
+        expect(container.querySelector(".database-info .database-persistence")).not.toBeNull();
+        // The grant is the browser's own decision and no button here can overrule it, so the row
+        // says what earns it instead.
+        expect(container.querySelector(".database-info")?.textContent)
+            .toContain("database.info_persistence_best_effort_description");
+    });
+
+    it("reads the storage's standing again with the figures, since the grant can land later", async () => {
+        standalone.enabled = true;
+        INFO = { ...DATABASE_INFO, filePath: null };
+        let granted = false;
+        setStorageManager({ persisted: async () => granted });
+        renderPage();
+        await settle();
+
+        expect(infoValues()[1]).toBe("database.info_persistence_best_effort");
+
+        // Standalone asks for the grant at startup and the browser can answer after this page is
+        // already open, so the row follows the card's own refresh rather than only its mounting.
+        granted = true;
+        button("cleanup-button")?.click();
+        await settle();
+
+        expect(infoValues()[1]).toBe("database.info_persistence_persistent");
+    });
+
+    it("leaves out the persistence row where the browser does not answer for the storage", async () => {
+        // A database on disk stays there whatever the browser thinks, and a browser old enough to
+        // lack `navigator.storage` has nothing to report.
+        setStorageManager({ persisted: async () => true });
+        renderPage();
+        await settle();
+        expect(container.querySelector(".database-info")?.textContent)
+            .not.toContain("database.info_persistence");
+
+        render(null, container);
+        container.remove();
+        standalone.enabled = true;
+        INFO = { ...DATABASE_INFO, filePath: null };
+        setStorageManager(undefined);
+        renderPage();
+        await settle();
+        expect(container.querySelector(".database-info")?.textContent)
+            .not.toContain("database.info_persistence");
     });
 
     it("says a database has never been backed up rather than leaving the row blank", async () => {

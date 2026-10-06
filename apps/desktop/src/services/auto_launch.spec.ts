@@ -80,6 +80,7 @@ beforeEach(() => {
     state.wasOpenedAtLogin = false;
     state.ipcOn.clear();
     delete process.env.APPIMAGE;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
 });
 
@@ -87,6 +88,7 @@ afterEach(() => {
     setPlatform(ORIGINAL_PLATFORM);
     setExecPath(ORIGINAL_EXECPATH);
     delete process.env.APPIMAGE;
+    delete process.env.TRILIUM_LAUNCH_EXEC;
     delete process.env.XDG_CONFIG_HOME;
 });
 
@@ -163,6 +165,22 @@ describe("auto_launch", () => {
 
         const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
         expect(content).toContain('Exec="/home/user/Apps/Trilium.AppImage"');
+    });
+
+    it("prefers TRILIUM_LAUNCH_EXEC over both APPIMAGE and execPath for the Linux Exec line", () => {
+        setPlatform("linux");
+        setExecPath("/tmp/electron");
+        process.env.APPIMAGE = "/home/user/Apps/Trilium.AppImage";
+        process.env.TRILIUM_LAUNCH_EXEC = 'electron42 "/usr/lib/triliumnext/app.asar"';
+        state.launchOnStartup = true;
+        state.hideOnAutoStart = true;
+
+        applyLaunchOnStartup();
+
+        const [, content] = state.writeFileSync.mock.calls[0] as [string, string];
+        expect(content).toContain('Exec=electron42 "/usr/lib/triliumnext/app.asar" --start-hidden');
+        expect(content).not.toContain("/tmp/electron");
+        expect(content).not.toContain("/home/user/Apps/Trilium.AppImage");
     });
 
     it("honours $XDG_CONFIG_HOME for the Linux autostart directory", () => {

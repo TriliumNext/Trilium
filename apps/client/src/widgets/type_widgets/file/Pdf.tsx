@@ -244,8 +244,6 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 if (win) {
                     win.TRILIUM_VIEW_HISTORY_STORE = historyConfig.config;
                     win.TRILIUM_SIGNATURES = options.getJson("pdfSignatures") ?? {};
-                    win.TRILIUM_NOTE_ID = note.noteId;
-                    win.TRILIUM_NTX_ID = noteContext.ntxId;
                 }
 
                 if (iframeRef.current?.contentWindow) {
@@ -255,6 +253,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 }
             }}
             editable={!isReadOnly}
+            noteId={note.noteId}
+            ntxId={noteContext.ntxId}
         />
     );
 }

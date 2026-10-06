@@ -170,24 +170,25 @@ export default class HighlightsListWidget extends RightPanelWidget {
         let findSubStr = "",
             combinedRegexStr = "";
         if (optionsHighlightsList.includes("bgColor")) {
-            findSubStr += `,span[style*="background-color"]:not(section.include-note span[style*="background-color"])`;
+            findSubStr += `,span[style*="background-color"]`
+                + `:not(.include-note-wrapper span[style*="background-color"])`;
             combinedRegexStr += `|${regex1.source}`;
         }
         if (optionsHighlightsList.includes("color")) {
-            findSubStr += `,span[style*="color"]:not(section.include-note span[style*="color"])`;
+            findSubStr += `,span[style*="color"]:not(.include-note-wrapper span[style*="color"])`;
             combinedRegexStr += `|${regex2.source}`;
         }
         if (optionsHighlightsList.includes("italic")) {
-            findSubStr += `,i:not(section.include-note i)`;
-            findSubStr += `,em:not(section.include-note em)`;
+            findSubStr += `,i:not(.include-note-wrapper i)`;
+            findSubStr += `,em:not(.include-note-wrapper em)`;
             combinedRegexStr += `|${regex3.source}`;
         }
         if (optionsHighlightsList.includes("bold")) {
-            findSubStr += `,strong:not(section.include-note strong)`;
+            findSubStr += `,strong:not(.include-note-wrapper strong)`;
             combinedRegexStr += `|${regex4.source}`;
         }
         if (optionsHighlightsList.includes("underline")) {
-            findSubStr += `,u:not(section.include-note u)`;
+            findSubStr += `,u:not(.include-note-wrapper u)`;
             combinedRegexStr += `|${regex5.source}`;
         }
 

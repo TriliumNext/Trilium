@@ -21,7 +21,7 @@ Used by the frontend for all operations:
 
 **Search:**
 
-*   `GET /api/search?query=...` - Search notes
+*   `GET /api/search?searchString=...` - Search notes
 *   `GET /api/search-note/:noteId` - Execute search note
 
 ### ETAPI (External API)

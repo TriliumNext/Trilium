@@ -14,7 +14,7 @@ import { asSetupTargetScreen, getSetupPlatform, hasExistingData } from "../../se
 import { getLog } from "../../services/log.js";
 import appInfo from "../../services/app_info.js";
 import optionService from "../../services/options.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import { SetupSyncFromServerResponse } from "@triliumnext/commons";
 
 function getStatus() {
@@ -56,16 +56,19 @@ function getStatus() {
 /**
  * Unlocks the wizard with the password of the knowledge base sitting behind it.
  *
- * Rate limited from the outside like every other password check. Answers with the token the rest of
- * the setup routes want, or with a plain no: which of the two is the only thing it ever says about
- * the password.
+ * Returns the token the rest of the setup routes require, or 401 and nothing else: a wrong password
+ * and a wrong second factor are refused identically, which is all this ever says about either.
+ *
+ * The 401 is what makes a failed attempt count. `loginRateLimiter` runs with
+ * `skipSuccessfulRequests`, and express-rate-limit refunds the hit for every response below 400, so
+ * answering a refusal with 200 lets the password and the second factor be guessed without limit.
  */
 async function authenticate(req: Request) {
     const password = typeof req.body?.password === "string" ? req.body.password : "";
     const totpToken = typeof req.body?.totpToken === "string" ? req.body.totpToken : "";
     const token = await authenticateSetup(password, totpToken);
 
-    return token ? { authenticated: true, token } : { authenticated: false };
+    return token ? { authenticated: true, token } : [ 401, { authenticated: false } ];
 }
 
 /**

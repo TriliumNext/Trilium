@@ -6,7 +6,7 @@ Capacitor shell that wraps the [`@triliumnext/standalone`](../standalone/) PWA b
 
 - Android SDK + an emulator or attached device (set up `ANDROID_HOME` / `ANDROID_SDK_ROOT`).
 - JDK 17+.
-- The monorepo installed: `corepack enable && pnpm install` at the repo root.
+- The monorepo installed: `npm install -g pnpm && pnpm install` at the repo root.
 
 ## First-time setup
 
@@ -30,7 +30,9 @@ pnpm --filter @triliumnext/mobile open:android   # open Android Studio
 
 ## How web requests reach the local server (Android vs iOS)
 
-There is **no network backend** — the whole server runs in-process as WASM in a web worker. How the client's API/sync calls (`/api`, `/sync`, `/bootstrap`, `/search`) reach that worker differs by platform, because the two WebViews resolve `*Scheme: "https"` differently:
+There is **no network backend** — the whole server runs in-process as WASM in a web worker. The app is a single WebView, so its one tab always wins the database lock, and a tab that owns the worker calls it directly: `window.standaloneApi.localFetch`, which the client's `ajax()` ([`apps/client/src/services/server.ts`](../client/src/services/server.ts)) prefers over issuing a request at all. Most of the client's API/sync calls (`/api`, `/sync`, `/bootstrap`, `/search`) therefore never leave the page, on either platform.
+
+What still leaves it — images and fonts the engine loads, uploads, the LLM stream — reaches the worker differently per platform, because the two WebViews resolve `*Scheme: "https"` differently:
 
 - **Android** — `androidScheme: "https"` works: the app loads at `https://localhost` (a real secure origin), so the **service worker** ([`apps/standalone/src/sw.ts`](../standalone/src/sw.ts)) intercepts those requests and forwards them to the worker.
 - **iOS** — the app loads at **`capacitor://localhost`** and uses **fetch / XHR / image interceptors** ([`apps/standalone/src/main.ts`](../standalone/src/main.ts), gated on `location.protocol === "capacitor:"`) instead, because a service worker cannot register on `capacitor://` (`navigator.serviceWorker.register()` throws — the scheme is not HTTP/HTTPS).

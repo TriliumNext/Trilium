@@ -157,7 +157,17 @@ body.desktop .note-detail-split .note-detail-code-editor {
 }
 
 /* #region SVG */
+/* react-zoom-pan-pinch sizes both of its boxes as `fit-content`, which leaves the percentage heights
+   below nothing to resolve against. Stretch them to the pane so the SVG fits it at a scale of 1. */
+.note-detail-split.svg-editor .svg-preview-root,
+.note-detail-split.svg-editor .svg-preview-viewport,
+.note-detail-split.svg-editor .svg-preview-content {
+    width: 100%;
+    height: 100%;
+}
+
 .note-detail-split.svg-editor .render-container {
+    width: 100%;
     height: 100%;
 }
 
@@ -167,8 +177,8 @@ body.desktop .note-detail-split .note-detail-code-editor {
     max-width: 100% !important;
 }
 
-/* Pinned by the corner it names (see `placement` on OverlayControlGroup); left here is only what it
-   stands above, which is the error card the preview may be dimmed behind. */
+/* OverlayControlGroup pins the controls by its `placement`. The z-index keeps them above
+   `.note-detail-error-card`, which uses 10 as well. */
 .note-detail-split.svg-editor .svg-preview-controls {
     z-index: 10;
 }

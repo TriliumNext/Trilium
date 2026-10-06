@@ -5,3 +5,39 @@
     width: 32px;
 }
 
+/* Animates only while waiting for the device's position, the one state that is a wait rather than a
+   choice. Boxicons draws the glyph in the button's ::before. */
+.geo-map-container .geo-map-toolbar .geo-map-locate-button.locating::before {
+    animation: geo-map-locating 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes geo-map-locating {
+    to { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .geo-map-container .geo-map-toolbar .geo-map-locate-button.locating::before {
+        animation: none;
+    }
+}
+
+/* MapLibre's pulse is a ::before scaled to three times the dot. A pseudo-element is hit-tested
+   regardless of opacity, so without this the fading ring would count as the dot in isLocationDot
+   (MapToolbar.tsx). */
+.geo-map-container .maplibregl-user-location-dot::before {
+    pointer-events: none;
+}
+
+.geo-map-container .maplibregl-user-location-dot {
+    --location-dot-target: 27px;
+    box-sizing: content-box;
+    border: calc((var(--location-dot-target) - 15px) / 2) solid transparent;
+    background-clip: padding-box;
+}
+
+@media (pointer: coarse) {
+    .geo-map-container .maplibregl-user-location-dot {
+        --location-dot-target: 44px;
+    }
+}
+

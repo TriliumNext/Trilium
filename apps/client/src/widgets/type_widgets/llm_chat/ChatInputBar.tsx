@@ -1,13 +1,12 @@
 import "./ChatInputBar.css";
 
-import type { AttributeEditor as CKEditorAttributeEditor, CKTextEditor, MentionFeed } from "@triliumnext/ckeditor5";
-import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import type { AttributeEditor as CKEditorAttributeEditor, CKTextEditor, MentionHostedFeed } from "@triliumnext/ckeditor5";
+import type { DISPLAYABLE_LOCALE_IDS, LlmReasoningEffort } from "@triliumnext/commons";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
-import note_autocomplete, { type Suggestion } from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
 import ActionButton from "../../react/ActionButton.js";
 import Button from "../../react/Button.js";
@@ -15,43 +14,31 @@ import CKEditor, { type CKEditorApi } from "../../react/CKEditor.js";
 import Dropdown from "../../react/Dropdown.js";
 import { FormListHeader, FormListItem } from "../../react/FormList.js";
 import { useLegacyImperativeHandlers, useTriliumOption } from "../../react/hooks.js";
+import LightboxLink from "../../react/LightboxLink.js";
 import MaskedIcon from "../../react/MaskedIcon.js";
 import AddProviderModal, { type LlmProviderConfig, type ProviderStep } from "../options/llm/AddProviderModal.js";
 import { providerIconUrl } from "../options/llm/provider_icons.js";
+import { createNoteMentionList } from "../text/mention_list_view.js";
 import { computeContextUsage } from "./chat_context_usage.js";
 import { insertNewBlock as insertNewBlockCommand, isSelectionInCodeBlock, outdentListItemAtStart } from "./chat_input_editing.js";
 import { editorHtmlToMarkdown } from "./chat_input_markdown.js";
 import { shortModelName } from "./model_name.js";
+import ChatToolsDropdown, { useChatWebSearch } from "./ChatToolsDropdown.js";
+import ReasoningEffortDropdown from "./ReasoningEffortDropdown.js";
 import { SafeImage } from "./retry_image.js";
-import { useChatAttachments } from "./useChatAttachments.js";
-import { type ModelOption, resolveSelectedModel } from "../../../services/llm_providers.js";
-import { type UseLlmChatReturn } from "./useLlmChat.js";
+import { getAttachmentLightbox, getUnreadableReasons, useChatAttachments } from "./useChatAttachments.js";
+import { type ModelOption, resolveSelectedModel, unreadableAttachments } from "../../../services/llm_providers.js";
+import { type AttachmentBlock, type UseLlmChatReturn } from "./useLlmChat.js";
 
 const READ_ONLY_LOCK = "llm-chat-streaming";
 
-const mentionFeeds: MentionFeed[] = [
+const hostedMentions: MentionHostedFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
-        itemRenderer: (rawItem) => {
-            const item = rawItem as Suggestion;
-            const itemElement = document.createElement("button");
-
-            const iconElement = document.createElement("span");
-            let iconClass = item.icon ?? "bx bx-note";
-            if (item.action === "create-note") {
-                iconClass = "bx bx-plus";
-            }
-            iconElement.className = iconClass;
-
-            itemElement.append(iconElement, document.createTextNode(" "));
-            const titleContainer = document.createElement("span");
-            titleContainer.innerHTML = item.highlightedNotePathTitle ?? "";
-            itemElement.append(...titleContainer.childNodes, document.createTextNode(" "));
-
-            return itemElement;
-        },
-        minimumCharacters: 0
+        minimumCharacters: 0,
+        // Note titles contain spaces, so the query must be allowed to as well.
+        allowSpaces: true,
+        list: () => createNoteMentionList()
     }
 ];
 
@@ -79,12 +66,10 @@ interface ChatInputBarProps {
     onWebSearchChange?: () => void;
     /** Callback when note tools toggle changes */
     onNoteToolsChange?: () => void;
-    /** Callback when extended thinking toggle changes */
+    /** Callback when the extended thinking switch or the reasoning effort changes */
     onExtendedThinkingChange?: () => void;
     /** Callback when model changes */
     onModelChange?: (model: string) => void;
-    /** Rendered inside the narrow right sidebar — opens the model submenu leftwards so it doesn't overflow. */
-    inSidebar?: boolean;
 }
 
 export default function ChatInputBar({
@@ -95,8 +80,7 @@ export default function ChatInputBar({
     onWebSearchChange,
     onNoteToolsChange,
     onExtendedThinkingChange,
-    onModelChange,
-    inSidebar
+    onModelChange
 }: ChatInputBarProps) {
     // Provider add/edit modal. `modalProvider` undefined = adding; a config = editing.
     // The bumping token re-keys the modal so it re-initializes its wizard on each open.
@@ -104,8 +88,8 @@ export default function ChatInputBar({
     const [modalStep, setModalStep] = useState<ProviderStep | undefined>();
     const [modalOpen, setModalOpen] = useState(false);
     const [openToken, setOpenToken] = useState(0);
-    const editorApiRef = useRef<CKEditorApi>();
-    const editorInstanceRef = useRef<CKTextEditor>();
+    const editorApiRef = useRef<CKEditorApi | undefined>(undefined);
+    const editorInstanceRef = useRef<CKTextEditor | undefined>(undefined);
     const [ uiLanguage ] = useTriliumOption("locale");
     // CKEditor is the heaviest module the client has, and importing it statically here put it
     // on the startup critical path: the right panel mounts SidebarChat, which pulls this bar,
@@ -143,24 +127,30 @@ export default function ChatInputBar({
     // the draft state) avoids the React-render / CKEditor-change-event race that left
     // the editor visually populated after submit.
     const handleSubmit = useCallback((e: Event) => {
-        const hasResolvedModel = !!resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
-        const willSubmit = (chat.hasInputText || chat.pendingAttachments.length > 0) && !chat.isStreaming && hasResolvedModel;
+        const model = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
+        const willSubmit = (chat.hasInputText || chat.pendingAttachments.length > 0) && !chat.isStreaming && !!model
+            && unreadableAttachments(model, chat.pendingAttachments).length === 0;
         baseSubmit(e);
         if (willSubmit) {
             editorApiRef.current?.setText("");
             editorApiRef.current?.focus();
         }
-    }, [baseSubmit, chat.hasInputText, chat.isStreaming, chat.pendingAttachments.length, chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId]);
+    }, [baseSubmit, chat.hasInputText, chat.isStreaming, chat.pendingAttachments, chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId]);
     submitRef.current = handleSubmit;
 
     // Expose the reply-input editor to the chat hook so timeline actions (e.g. quoting a selection)
-    // can write into it. A stable wrapper reads the live api ref, so it works regardless of whether
-    // the CKEditor's imperative handle has committed by the time this effect first runs.
+    // can write into it and the note can focus it. Registered once the editor has initialized, so a
+    // focus the hook holds for it lands on an editor that exists.
     const registerInputEditor = chat.registerInputEditor;
+    const [ isEditorReady, setIsEditorReady ] = useState(false);
     useEffect(() => {
-        registerInputEditor({ appendBlockQuote: (text) => editorApiRef.current?.appendBlockQuote(text) });
+        if (!isEditorReady) return;
+        registerInputEditor({
+            appendBlockQuote: (text) => editorApiRef.current?.appendBlockQuote(text),
+            focus: () => editorApiRef.current?.focus()
+        });
         return () => registerInputEditor(undefined);
-    }, [registerInputEditor]);
+    }, [registerInputEditor, isEditorReady]);
 
     // Reflect streaming state into CKEditor's read-only lock.
     useEffect(() => {
@@ -173,11 +163,6 @@ export default function ChatInputBar({
         }
     }, [chat.isStreaming]);
 
-    const handleWebSearchToggle = (newValue: boolean) => {
-        chat.setEnableWebSearch(newValue);
-        onWebSearchChange?.();
-    };
-
     const handleNoteToolsToggle = (newValue: boolean) => {
         chat.setEnableNoteTools(newValue);
         onNoteToolsChange?.();
@@ -185,6 +170,11 @@ export default function ChatInputBar({
 
     const handleExtendedThinkingToggle = (newValue: boolean) => {
         chat.setEnableExtendedThinking(newValue);
+        onExtendedThinkingChange?.();
+    };
+
+    const handleReasoningEffortChange = (effort: LlmReasoningEffort) => {
+        chat.setReasoningEffort(effort);
         onExtendedThinkingChange?.();
     };
 
@@ -233,11 +223,8 @@ export default function ChatInputBar({
     // shows as selected is exactly what will be sent (see resolveSelectedModel).
     const currentModel = resolveSelectedModel(chat.availableModels, chat.selectedModel, chat.selectedProvider, chat.selectedProviderId);
     const isSelectedModel = (m: ModelOption) => m === currentModel;
-    // Gemini 2.x cannot combine googleSearch with function tools in a single
-    // request. When note tools are enabled on a Gemini model we silently drop
-    // web search server-side; reflect that here by disabling the toggle so the
-    // user understands the trade-off instead of seeing it mysteriously ignored.
-    const webSearchUnavailable = currentModel?.provider === "google" && chat.enableNoteTools;
+    const unreadableReasons = getUnreadableReasons(currentModel, chat.pendingAttachments);
+    const { webSearch, searchProviders, chooseWebSearch } = useChatWebSearch(chat, currentModel?.provider, onWebSearchChange);
     // Null until the window is close enough to matter, and null (rather than a guess) when
     // the model advertises no window at all. See chat_context_usage.
     const contextUsage = computeContextUsage({
@@ -292,29 +279,13 @@ export default function ChatInputBar({
                 {chat.pendingAttachments.length > 0 && (
                     <div className="llm-chat-attachments">
                         {chat.pendingAttachments.map((att) => (
-                            <div
+                            <PendingAttachmentChip
                                 key={att.attachmentId}
-                                className={`llm-chat-attachment-chip llm-chat-attachment-chip-${att.type}`}
-                                title={att.title}
-                            >
-                                {att.type === "image" ? (
-                                    <SafeImage src={att.url} alt={att.title} />
-                                ) : (
-                                    <div className="llm-chat-attachment-file">
-                                        <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
-                                        <span className="llm-chat-attachment-file-name">{att.title}</span>
-                                    </div>
-                                )}
-                                <button
-                                    type="button"
-                                    className="llm-chat-attachment-remove"
-                                    title={t("llm_chat.remove_attachment")}
-                                    onClick={() => chat.removePendingAttachment(att.attachmentId)}
-                                    disabled={chat.isStreaming}
-                                >
-                                    <span className="bx bx-x" />
-                                </button>
-                            </div>
+                                att={att}
+                                reason={unreadableReasons.get(att.attachmentId)}
+                                onRemove={() => chat.removePendingAttachment(att.attachmentId)}
+                                disabled={chat.isStreaming}
+                            />
                         ))}
                     </div>
                 )}
@@ -332,7 +303,7 @@ export default function ChatInputBar({
                             extraPlugins: ckEditor.plugins,
                             toolbar: { items: [] },
                             placeholder: t("llm_chat.placeholder"),
-                            mention: { feeds: mentionFeeds },
+                            mention: { feeds: [], hostedFeeds: hostedMentions },
                             licenseKey: "GPL"
                         }}
                         // The strings the box shows of its own — the link balloon it raises on Ctrl+K —
@@ -344,6 +315,7 @@ export default function ChatInputBar({
                         }}
                         onInitialized={(editor) => {
                             editorInstanceRef.current = editor;
+                            setIsEditorReady(true);
                             const insertNewBlock = () => {
                                 insertNewBlockCommand(editor);
                                 editor.editing.view.scrollToTheSelection();
@@ -439,12 +411,6 @@ export default function ChatInputBar({
                             titlePosition="top"
                             buttonClassName="llm-chat-model-select"
                             className="llm-chat-model-dropdown"
-                            // In the sidebar the menu lives inside `.sidebar-chat-container`'s
-                            // `overflow: hidden`, which clips the leftward-opening legacy submenu.
-                            // Portal it to the body (with a fixed popper) so it can extend past the
-                            // sidebar edge, matching the sidebar's other dropdowns.
-                            portalToBody={inSidebar}
-                            dropdownOptions={inSidebar ? { popperConfig: { strategy: "fixed" } } : undefined}
                         >
                             {chat.modelGroups.map(group => (
                                 <Fragment key={group.id}>
@@ -477,34 +443,36 @@ export default function ChatInputBar({
                                 </Fragment>
                             ))}
                         </Dropdown>
+                        {currentModel?.reasoningEfforts?.length ? (
+                            <ReasoningEffortDropdown
+                                model={currentModel}
+                                value={chat.reasoningEffort}
+                                onChange={handleReasoningEffortChange}
+                                disabled={chat.isStreaming}
+                            />
+                        ) : null}
                     </div>
-                    {/* What the model can reach this turn. Lifted out of the model dropdown so
-                        their state reads at a glance and flipping one is a single click — the
-                        system prompt currently has to tell the user where these live, which is
-                        a fair sign a menu was the wrong home. Grouped so they stay together. */}
+                    {/* What the model can reach this turn (the Tools menu) and how it answers
+                        (extended thinking), grouped so they stay together. */}
                     <div className="llm-chat-capabilities">
-                        <CapabilityToggle
-                            icon="bx bx-globe"
-                            label={t("llm_chat.web_search")}
-                            active={chat.enableWebSearch && !webSearchUnavailable}
-                            onToggle={handleWebSearchToggle}
-                            disabled={chat.isStreaming}
-                            unavailableReason={webSearchUnavailable ? t("llm_chat.web_search_unavailable_gemini") : undefined}
-                        />
-                        <CapabilityToggle
-                            icon="bx bx-note"
-                            label={t("llm_chat.note_tools")}
-                            active={chat.enableNoteTools}
-                            onToggle={handleNoteToolsToggle}
+                        <ChatToolsDropdown
+                            enableNoteTools={chat.enableNoteTools}
+                            onNoteToolsChange={handleNoteToolsToggle}
+                            modelProvider={currentModel?.provider}
+                            webSearch={webSearch}
+                            searchProviders={searchProviders}
+                            onWebSearchChoose={chooseWebSearch}
                             disabled={chat.isStreaming}
                         />
-                        <CapabilityToggle
-                            icon="bx bx-brain"
-                            label={t("llm_chat.extended_thinking")}
-                            active={chat.enableExtendedThinking}
-                            onToggle={handleExtendedThinkingToggle}
-                            disabled={chat.isStreaming}
-                        />
+                        {!currentModel?.reasoningEfforts?.length && (
+                            <CapabilityToggle
+                                icon="bx bx-brain"
+                                label={t("llm_chat.extended_thinking")}
+                                active={chat.enableExtendedThinking}
+                                onToggle={handleExtendedThinkingToggle}
+                                disabled={chat.isStreaming}
+                            />
+                        )}
                     </div>
                     {/* The actions, boxed so they keep a fixed gap from the capabilities. The
                         row's `auto` spacer collapses to nothing once the row is full — which is
@@ -538,9 +506,11 @@ export default function ChatInputBar({
                             icon={chat.isStreaming ? "bx bx-stop" : "bx bx-up-arrow-alt"}
                             text={chat.isStreaming
                                 ? t("llm_chat.stop")
-                                : !currentModel ? t("llm_chat.no_model_selected") : t("llm_chat.send")}
+                                : !currentModel ? t("llm_chat.no_model_selected")
+                                    : unreadableReasons.size > 0 ? t("llm_chat.remove_unreadable_attachments", { model: currentModel.name })
+                                        : t("llm_chat.send")}
                             onClick={chat.isStreaming ? chat.stopStreaming : handleSubmit}
-                            disabled={!chat.isStreaming && (!currentModel || (!chat.hasInputText && chat.pendingAttachments.length === 0))}
+                            disabled={!chat.isStreaming && (!currentModel || unreadableReasons.size > 0 || (!chat.hasInputText && chat.pendingAttachments.length === 0))}
                             className={`llm-chat-send-btn ${chat.isStreaming ? "llm-chat-stop-btn" : ""}`}
                         />
                     </div>
@@ -581,35 +551,71 @@ export default function ChatInputBar({
     );
 }
 
+/** A pending attachment above the input, marked when the selected model can't read it. */
+export function PendingAttachmentChip({ att, reason, onRemove, disabled }: {
+    att: AttachmentBlock;
+    /** Why the selected model can't read it; undefined when it can. */
+    reason?: string;
+    onRemove: () => void;
+    disabled: boolean;
+}) {
+    return (
+        <div
+            className={`llm-chat-attachment-chip llm-chat-attachment-chip-${att.type} ${reason ? "llm-chat-attachment-chip-unreadable" : ""}`}
+            title={reason ? `${att.title}\n${reason}` : att.title}
+        >
+            <AttachmentChipPreview att={att} />
+            {reason && <span className="bx bx-error llm-chat-attachment-unreadable-icon" />}
+            <button
+                type="button"
+                className="llm-chat-attachment-remove"
+                title={t("llm_chat.remove_attachment")}
+                onClick={onRemove}
+                disabled={disabled}
+            >
+                <span className="bx bx-x" />
+            </button>
+        </div>
+    );
+}
+
+/** The inside of a pending attachment's chip; an image or PDF opens in the lightbox when clicked. */
+function AttachmentChipPreview({ att }: { att: AttachmentBlock }) {
+    const lightbox = getAttachmentLightbox(att);
+    const preview = att.type === "image"
+        ? <SafeImage src={att.url} alt={att.title} />
+        : (
+            <div className="llm-chat-attachment-file">
+                <span className={`bx ${att.type === "file" ? "bxs-file-pdf" : "bxs-file-blank"} llm-chat-attachment-file-icon`} />
+                <span className="llm-chat-attachment-file-name">{att.title}</span>
+            </div>
+        );
+
+    return lightbox
+        ? <LightboxLink lightbox={lightbox} href={att.url} className="llm-chat-attachment-preview-link">{preview}</LightboxLink>
+        : preview;
+}
+
 /**
  * One of the model's per-conversation capability switches, as an icon toggle whose state
  * reads without opening anything. The label is the tooltip.
  */
-function CapabilityToggle({ icon, label, active, onToggle, disabled, unavailableReason }: {
+function CapabilityToggle({ icon, label, active, onToggle, disabled }: {
     icon: string;
     label: string;
     active: boolean;
     onToggle: (newValue: boolean) => void;
     disabled?: boolean;
-    /** Why this capability can't be used with the current model, if it can't. */
-    unavailableReason?: string;
 }) {
-    const button = (
+    return (
         <ActionButton
             icon={icon}
-            text={unavailableReason ?? label}
+            text={label}
             active={active}
-            disabled={disabled || !!unavailableReason}
+            disabled={disabled}
             onClick={() => onToggle(!active)}
             className="llm-chat-capability"
         />
     );
-
-    // A disabled <button> receives no mouse events, so its own tooltip never fires — which is
-    // why the dropdown this replaced had to put the explanation on a separate info icon. The
-    // wrapper carries it instead, and only exists when there is something to explain.
-    return unavailableReason
-        ? <span className="llm-chat-capability-unavailable" title={unavailableReason}>{button}</span>
-        : button;
 }
 

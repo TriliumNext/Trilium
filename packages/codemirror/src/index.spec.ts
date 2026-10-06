@@ -1,6 +1,6 @@
 import { indentUnit } from "@codemirror/language";
-import { EditorSelection, EditorState } from "@codemirror/state";
-import { EditorView, type ViewUpdate } from "@codemirror/view";
+import { EditorSelection, EditorState, StateEffect } from "@codemirror/state";
+import { EditorView, showTooltip, type ViewUpdate } from "@codemirror/view";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import CodeMirror, { type EditorConfig, getThemeById } from "./index.js";
@@ -67,6 +67,82 @@ describe("CodeMirror", () => {
             editor = build({ tabIndex: 7 });
             expect(editor.dom.tabIndex).toBe(7);
         });
+
+        it("keeps on-screen keyboard suggestions off unless the editor holds prose", () => {
+            // Android reads `autocomplete`, not the `spellcheck`/`autocorrect` pair CodeMirror sets
+            // on its own, so its absence is what lets Gboard complete and correct words in code.
+            editor = build();
+            expect(editor.contentDOM.getAttribute("autocomplete")).toBe("off");
+
+            editor.destroy();
+            editor = build({ allowKeyboardSuggestions: true });
+            expect(editor.contentDOM.hasAttribute("autocomplete")).toBe(false);
+        });
+
+        it("follows a switch between prose and code after construction", () => {
+            // The language dropdown can move a note between `text/plain` and a real language, so
+            // the attributes have to track it rather than being fixed when the editor is built.
+            editor = build();
+            editor.setAllowKeyboardSuggestions(true);
+            expect(editor.contentDOM.hasAttribute("autocomplete")).toBe(false);
+
+            editor.setAllowKeyboardSuggestions(false);
+            expect(editor.contentDOM.getAttribute("autocomplete")).toBe("off");
+        });
+
+        it("gives a prose editor back the keyboard help CodeMirror turns off for code", () => {
+            // CodeMirror hard-codes both to off for every editor, so leaving its defaults alone
+            // would cost a Markdown note its sentence capitalization and its typo correction.
+            editor = build();
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("off");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("off");
+
+            editor.setAllowKeyboardSuggestions(true);
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("on");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("sentences");
+
+            editor.destroy();
+            editor = build({ allowKeyboardSuggestions: true });
+            expect(editor.contentDOM.getAttribute("autocorrect")).toBe("on");
+            expect(editor.contentDOM.getAttribute("autocapitalize")).toBe("sentences");
+        });
+
+        it("hosts tooltips in one body-level element, outside the editor that would clip them", () => {
+            editor = build();
+            const host = document.body.querySelector(".cm-tooltip-host");
+            expect(host).not.toBeNull();
+            expect(editor.dom.contains(host)).toBe(false);
+
+            // A second editor shares the host rather than adding one of its own.
+            const second = build();
+            try {
+                expect(document.body.querySelectorAll(".cm-tooltip-host")).toHaveLength(1);
+            } finally {
+                second.destroy();
+            }
+        });
+
+        it("renders a tooltip into the host, under the editor's theme classes", () => {
+            editor = build();
+            const dom = document.createElement("div");
+            dom.className = "cm-tooltip-lint";
+            editor.dispatch({
+                effects: StateEffect.appendConfig.of(showTooltip.of({ pos: 0, create: () => ({ dom }) }))
+            });
+
+            const host = document.body.querySelector(".cm-tooltip-host");
+            expect(host?.contains(dom)).toBe(true);
+            expect(editor.dom.contains(dom)).toBe(false);
+            // The editor's scoped base themes, such as the lint tooltip's width cap, match through
+            // these classes on the container.
+            const container = dom.closest(".cm-tooltip-host > *");
+            expect(container).not.toBeNull();
+            const themeClasses = editor.themeClasses.split(" ").filter(Boolean);
+            expect(themeClasses.length).toBeGreaterThan(0);
+            for (const cls of themeClasses) {
+                expect(container?.classList.contains(cls)).toBe(true);
+            }
+        });
     });
 
     describe("text access", () => {
@@ -95,6 +171,47 @@ describe("CodeMirror", () => {
             // With no selection there is nothing to return.
             editor.dispatch({ selection: EditorSelection.cursor(0) });
             expect(editor.getSelectedText()).toBe("");
+        });
+    });
+
+    describe("setText while hidden", () => {
+        const bigDoc = Array.from({ length: 10_000 }, (_, i) => `line ${i}`).join("\n");
+
+        /** happy-dom has no layout, so offsetParent cannot tell hidden from visible on its own. */
+        function pinOffsetParent(el: HTMLElement, value: Element | null) {
+            Object.defineProperty(el, "offsetParent", { value, configurable: true });
+        }
+
+        it("keeps the viewport small instead of rendering every line of the new document", () => {
+            editor = build();
+            pinOffsetParent(editor.dom, null);
+            editor.setText(bigDoc);
+
+            expect(editor.getText()).toBe(bigDoc);
+            // The regression rendered all 10,000 lines into the hidden DOM.
+            expect(editor.dom.querySelectorAll(".cm-line").length).toBeLessThan(1_000);
+
+            // The rebuilt view keeps accepting transactions once visible again.
+            pinOffsetParent(editor.dom, document.body);
+            editor.setText("visible again");
+            expect(editor.getText()).toBe("visible again");
+            editor.dispatch({ changes: { from: 0, insert: "still " } });
+            expect(editor.getText()).toBe("still visible again");
+        });
+
+        it("skips the change notification for hidden loads", () => {
+            const onContentChanged = vi.fn();
+            editor = build({ onContentChanged });
+
+            pinOffsetParent(editor.dom, null);
+            editor.setText(bigDoc);
+            // The hidden path swaps the state in without an update, so no change notification
+            // fires — hidden loads are programmatic, and the caller resets history right after.
+            expect(onContentChanged).not.toHaveBeenCalled();
+
+            pinOffsetParent(editor.dom, document.body);
+            editor.setText("typed");
+            expect(onContentChanged).toHaveBeenCalledTimes(1);
         });
     });
 

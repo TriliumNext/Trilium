@@ -1,8 +1,7 @@
 import "./TabSwitcher.css";
 
 import clsx from "clsx";
-import { ComponentChild } from "preact";
-import { createPortal, Fragment } from "preact/compat";
+import { ComponentChild, createPortal, Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";

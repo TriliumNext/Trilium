@@ -23,15 +23,13 @@ process.env.TRILIUM_PORT = String(PORT);
 process.env.TRILIUM_RESOURCE_DIR = resolve(__dirname, "../../server/src");
 process.env.NODE_ENV = "development";
 process.env.TRILIUM_ENV = "dev";
+// Deploying backend scripts is what this harness is for, and `scripting_guard` refuses to run them
+// unless the instance opts in.
+process.env.TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED = "true";
 
 // ── Constants ───────────────────────────────────────────────────────────────
 const SCRIPTS_DIR = resolve(__dirname, "../scripts");
 const needsInit = !existsSync(join(DATA_DIR, "document.db"));
-
-async function ensureTranslations() {
-    const i18n = await import("@triliumnext/server/src/services/i18n.js");
-    await i18n.initializeTranslations();
-}
 
 async function ensureDatabase() {
     if (!needsInit) return;
@@ -126,7 +124,9 @@ function watchScripts() {
         if (timers.has(filename)) clearTimeout(timers.get(filename));
         timers.set(filename, setTimeout(() => {
             timers.delete(filename);
-            syncFile(filename);
+            // A script that fails to transpile rejects here; logging keeps the watcher alive so the
+            // next save can fix it.
+            syncFile(filename).catch((err) => console.error(`  [watch] ${filename}:`, err));
         }, 100));
     });
 
@@ -187,7 +187,10 @@ function watchScripts() {
 }
 
 async function main() {
-    await ensureTranslations();
+    // Every step below reaches for `cls` or `becca`, so core has to come up first.
+    const { initializeServerCore } = await import("@triliumnext/server/src/core_init.js");
+    await initializeServerCore();
+
     await ensureDatabase();
     await ensureEtapiToken();
 

@@ -66,7 +66,9 @@ export async function launchCustomNoteLauncher(evt: MouseEvent | KeyboardEvent, 
 
     if ((evt.which === 1 && ctrlKey) || evt.which === 2) {
         const activate = !!evt.shiftKey;
-        await appContext.tabManager.openInNewTab(targetNoteId, hoistedNoteIdWithDefault, activate);
+        await appContext.tabManager.openInNewTab(
+            targetNoteId, hoistedNoteIdWithDefault, activate, "afterCurrent"
+        );
     } else {
         await appContext.tabManager.openInSameTab(targetNoteId, hoistedNoteIdWithDefault);
     }

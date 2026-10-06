@@ -7,6 +7,20 @@ import { randomString } from "../../services/utils";
 import { buildNote } from "../../test/easy-froca";
 import { getFormattingToolbarState } from "./FormattingToolbar";
 
+vi.mock("../../services/tree.ts", () => ({
+    default: {
+        getActiveContextNotePath() {
+            return "root";
+        },
+        resolveNotePath(inputNotePath: string) {
+            return inputNotePath;
+        },
+        getNoteIdFromUrl(url) {
+            return url.split("/").at(-1);
+        }
+    }
+}));
+
 interface NoteContextInfo {
     type: NoteType;
     viewScope?: ViewMode;
@@ -15,20 +29,6 @@ interface NoteContextInfo {
 
 describe("Formatting toolbar logic", () => {
     beforeAll(() => {
-        vi.mock("../../services/tree.ts", () => ({
-            default: {
-                getActiveContextNotePath() {
-                    return "root";
-                },
-                resolveNotePath(inputNotePath: string) {
-                    return inputNotePath;
-                },
-                getNoteIdFromUrl(url) {
-                    return url.split("/").at(-1);
-                }
-            }
-        }));
-
         buildNote({
             id: "root",
             title: "Root"

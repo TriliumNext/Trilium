@@ -12,11 +12,11 @@ import dialog from "../../../services/dialog";
 import { t } from "i18next";
 import { executeBulkActions } from "../../../services/bulk_action";
 
-export default function useColTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote) {
+export default function useColTableEditing(api: RefObject<Tabulator | null>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote) {
 
-    const existingAttributeToEdit = useRef<Attribute>();
-    const newAttribute = useRef<Attribute>();
-    const newAttributePosition = useRef<number>();
+    const existingAttributeToEdit = useRef<Attribute | undefined>(undefined);
+    const newAttribute = useRef<Attribute | undefined>(undefined);
+    const newAttributePosition = useRef<number | undefined>(undefined);
 
     useLegacyImperativeHandlers({
         addNewTableColumnCommand({ referenceColumn, columnToEdit, direction, type }: EventData<"addNewTableColumn">) {

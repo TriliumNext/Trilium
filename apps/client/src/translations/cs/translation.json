@@ -248,8 +248,7 @@
     "copy_to_clipboard": "Kopírovat do schránky"
   },
   "jump_to_note": {
-    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy...",
-    "search_button": "Hledat v celém textu"
+    "search_placeholder": "Hledat poznámku podle jména nebo typu > pro příkazy..."
   },
   "markdown_import": {
     "dialog_title": "Markdown import",
@@ -306,10 +305,8 @@
     "title": "název",
     "date_created": "datum vytvoření",
     "date_modified": "datum úpravy",
-    "sorting_direction": "Směr řazení",
     "ascending": "vzestupně",
     "descending": "sestupně",
-    "folders": "Složky",
     "sort_folders_at_top": "řadit složky nahoře",
     "natural_sort": "Přirozené řazení",
     "sort_with_respect_to_different_character_sorting": "řadit s ohledem na různá pravidla řazení a kolace v různých jazycích nebo oblastech.",
@@ -742,10 +739,7 @@
     "button_title": "Exportovat diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu",
-    "reset_pan_zoom_title": "Resetovat posun & zoom na počáteční souřadnice a zvětšení",
-    "zoom_in_title": "Přiblížit",
-    "zoom_out_title": "Oddálit"
+    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Vložit dceřinou poznámku",
@@ -987,7 +981,6 @@
     "label_rock_or_pop": "stačí, aby byl přítomen jeden ze štítků",
     "label_year_comparison": "numerické porovnání (také >, >=, <).",
     "label_date_created": "poznámky vytvořené za poslední měsíc",
-    "error": "Chyba vyhledávání: {{error}}",
     "search_prefix": "Hledání:"
   },
   "attachment_detail": {
@@ -1155,7 +1148,6 @@
     "note_tree_font": "Font stromu poznámek",
     "note_detail_font": "Font detailu poznámky",
     "monospace_font": "Monospace (kód) Font",
-    "not_all_fonts_available": "Ne všechny uvedené fonty nemusí být dostupné ve vašem systému.",
     "generic-fonts": "Obecné fonty",
     "sans-serif-system-fonts": "Systémové sans-serif fonty",
     "serif-system-fonts": "Systémové serif fonty",
@@ -1640,7 +1632,6 @@
     "placeholder": "Rychlé hledání",
     "searching": "Hledání...",
     "no-results": "Nebyla nalezena žádná výsledná",
-    "more-results": "... a dalších {{number}} výsledků.",
     "show-in-full-search": "Zobrazit v úplném vyhledávání"
   },
   "note_tree": {
@@ -1851,12 +1842,9 @@
     "zoom-factor": "Míra přiblížení"
   },
   "note_autocomplete": {
-    "search-for": "Hledat \"{{term}}\"",
     "create-note": "Vytvořit a propojit dceřinnou poznámku \"{{term}}\"",
     "insert-external-link": "Vložit externí odkaz na \"{{term}}\"",
-    "clear-text-field": "Vymazat textové pole",
-    "show-recent-notes": "Zobrazit nedávné poznámky",
-    "full-text-search": "Vyhledávání v celém textu"
+    "clear-text-field": "Vymazat textové pole"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Poznámka byla smazána.",
@@ -1992,7 +1980,6 @@
     "remove-from-board": "Odebrat z tabule",
     "archive-note": "Archivovat poznámku",
     "unarchive-note": "Odarchivovat poznámku",
-    "move-to": "Přesunout do",
     "insert-above": "Vložit nad",
     "insert-below": "Vložit pod",
     "delete-column": "Odstranit sloupec",
@@ -2266,9 +2253,6 @@
   "llm": {
     "feature_not_enabled": "Povolte experimentální funkci LLM v Nastavení → Pokročilé → Experimentální funkce pro použití integrací AI.",
     "add_provider": "Přidat poskytovatele",
-    "add_provider_title": "Přidat poskytovatele AI",
-    "configured_providers": "Konfigurovaní poskytovatelé",
-    "no_providers_configured": "Ještě nejsou nakonfigurováni žádní poskytovatelé.",
     "provider_name": "Název",
     "actions": "Akce",
     "delete_provider": "Odstranit",

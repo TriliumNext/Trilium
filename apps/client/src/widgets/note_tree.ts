@@ -11,7 +11,6 @@ import appContext, { type CommandListenerData, type EventData } from "../compone
 import type { SetNoteOpts } from "../components/note_context.js";
 import type FBranch from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
-import contextMenu from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import branchService from "../services/branches.js";
 import froca from "../services/froca.js";
@@ -489,12 +488,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 return true;
             },
             activate: async (event, data) => {
-                // click event won't propagate so let's close context menu manually
-                contextMenu.hide();
-
-                // hide all dropdowns, fix calendar widget dropdown doesn't close when click on a note
-                $('.dropdown-menu').parent('.dropdown').find('[data-bs-toggle="dropdown"]').dropdown('hide');
-
                 this.clearSelectedNodes();
 
                 const notePath = treeService.getNotePath(data.node);
@@ -549,6 +542,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     return true; // allow dragging to start
                 },
                 dragEnter: (node, data) => {
+                    publishDropMarkerShift(node);
+
                     if (node.data.noteType === "search") {
                         return false;
                     } else if (node.data.noteId === "_lbRoot") {
@@ -585,6 +580,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         const importService = await import("../services/import.js");
 
                         importService.uploadFiles("notes", node.data.noteId, files, {
+                            // Nothing was chosen here the way the import dialog makes a user choose, so
+                            // let the importer recognize an archive it knows (an Obsidian vault).
+                            format: "auto",
                             safeImport: true,
                             shrinkImages: true,
                             textImportedAsText: true,
@@ -1979,6 +1977,30 @@ function buildEnhanceTitle() {
             $span.append($badge);
         }
     };
+}
+
+/**
+ * Tells the drop marker how far it sits from the boundary between two rows, in pixels.
+ *
+ * dnd5 anchors the marker on the target *title* — its bottom edge for "after", its top edge for
+ * "before" — and those are half the row's spare height either side of the boundary the note
+ * actually lands on. Left alone, dropping between two notes draws the line in one of two places
+ * depending on which of them the pointer is over.
+ *
+ * Measured rather than written down: the distance is the row height less the title's line box, and
+ * both follow whichever family and size the tree font names.
+ */
+export function publishDropMarkerShift(node: Fancytree.FancytreeNode) {
+    const row = node.span;
+    const title = row?.querySelector(".fancytree-title");
+    if (!row || !title) {
+        return;
+    }
+
+    const shift = (row.getBoundingClientRect().height - title.getBoundingClientRect().height) / 2;
+    // On the body, since the marker is parented there and custom properties inherit; it is also
+    // created lazily, so it cannot be relied on to exist when the first note is dragged over.
+    document.body.style.setProperty("--tree-drop-marker-shift", `${shift}px`);
 }
 
 type ScrollIntoViewFn = (this: Fancytree.FancytreeNode, effects?: boolean | object, options?: object) => JQueryPromise<unknown>;

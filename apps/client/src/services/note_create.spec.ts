@@ -133,6 +133,17 @@ describe("createNote", () => {
         expect(triggerEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
     });
 
+    it("focuses an AI chat's input rather than its title, which the first reply names", async () => {
+        setActiveContext(true);
+        await noteCreateService.createNote("root", { type: "llmChat" });
+        expect(triggerEvent).toHaveBeenCalledWith("focusOnDetail", { ntxId: "ntx-1" });
+        expect(triggerEvent).not.toHaveBeenCalledWith("focusAndSelectTitle", expect.anything());
+
+        triggerEvent.mockClear();
+        await noteCreateService.createNote("root", { type: "llmChat", focus: "title" });
+        expect(triggerEvent).toHaveBeenCalledWith("focusAndSelectTitle", { isNewNote: true, ntxId: "ntx-1" });
+    });
+
     it("activates without firing a focus event when focus is neither title nor content", async () => {
         const setNote = setActiveContext(true);
         // an out-of-range focus value still activates the note but triggers no focus event
@@ -272,6 +283,33 @@ describe("createNote", () => {
             expect.anything(),
             undefined
         );
+    });
+});
+
+describe("createTemplateNote", () => {
+    /**
+     * A template is a note carrying `#template`, and it is opened in a popup rather than in the
+     * tab: what asked for one is usually a dialog the reader is still standing in.
+     */
+    it("makes a note carrying the label under the given one, and opens it in a popup", async () => {
+        const result = await noteCreateService.createTemplateNote("board1", "New card template");
+
+        expect(server.post).toHaveBeenCalledWith(
+            expect.stringContaining("notes/board1/children"),
+            expect.objectContaining({
+                title: "New card template",
+                type: "text",
+                attributes: [
+                    { type: "label", name: "template", value: "", isInheritable: false }
+                ]
+            }),
+            undefined
+        );
+        expect(triggerCommand).toHaveBeenCalledWith("openInPopup", {
+            noteIdOrPath: NOTE_ID,
+            showNoteTypeSwitcher: true
+        });
+        expect(result).toBe(childNote);
     });
 });
 

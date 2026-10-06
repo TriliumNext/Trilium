@@ -5,11 +5,11 @@ In Trilium, is possible to work with two or more notes side-by-side.
 
 ## Interactions
 
-*   Press the ![](Split%20View_Split%20View_image.png) button to the right of a note's title to open a new split to the right of it.
+*   Press the <span class="tn-icon bx bx-dock-right"></span> button to the right of a note's title to open a new split to the right of it.
     *   It is possible to have as many splits as desired, simply press again the button.
     *   Only horizontal splits are possible, vertical or drag & dropping is not supported.
-*   When at least one split is open, press the ![](Split%20View_3_Split%20View_image.png) button next to it to close it.
-*   Use the ![](Split%20View_4_Split%20View_image.png) or the ![](Split%20View_1_Split%20View_image.png) button to move around the splits.
+*   When at least one split is open, press the <span class="tn-icon bx bx-x"></span> button next to it to close it.
+*   Use the <span class="tn-icon bx bx-chevron-right"></span> or the <span class="tn-icon bx bx-chevron-left"></span> button to move around the splits.
 *   Creating, closing and moving a split can also be triggered from a [keyboard shortcut](../Keyboard%20Shortcuts.md) (_Create New Split_, _Close Active Split_, _Move Split Left_ and _Move Split Right_, all unassigned by default) or through the [command palette](../Navigation/Jump%20to%20%26%20command%20palette.md).
 *   The focus can be moved from one split to the one next to it with the _Focus Split to the Left_ and _Focus Split to the Right_ actions, which stop at either end of the tab instead of continuing into the next tab. They are unassigned by default as well.
 *   Each [tab](Tabs.md) has its own split view configuration (e.g. one tab can have two notes in a split view, whereas the others are one-note views).

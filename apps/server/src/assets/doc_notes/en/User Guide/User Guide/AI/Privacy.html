@@ -29,17 +29,17 @@
       </tr>
       <tr>
         <td>Custom endpoint</td>
-        <td>Wherever you pointed it — which may be your own hardware or a hosted service</td>
+        <td>Wherever it was pointed, which may be your own hardware or a hosted service</td>
       </tr>
     </tbody>
   </table>
 </figure>
 <p>This is the reason the provider list is grouped this way, and why Trilium
-  pre-selects nothing: the choice of where your notes travel is made explicitly,
-  by you, before anything is sent.</p>
+  pre-selects nothing: the choice of where your note content is sent is made
+  explicitly by you, before anything is sent.</p>
 <aside class="admonition note">
   <p>The&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>&nbsp;has
-    a model selection of its own, so it maybe answered by a different provider
+    a model selection of its own, so it may be answered by a different provider
     than the one in the chat. The row at the bottom of the assistant's menu
     always names the one being used.</p>
 </aside>
@@ -72,10 +72,16 @@
     </ul>
   </li>
   <li><strong>Attachments and mentions</strong>, when you add them: images,
-    PDFs and text files are sent to the provider, and an <code spellcheck="false">@</code> mention
+    PDFs and text files are sent to the provider, and an <code>@</code> mention
     makes that note fetchable.</li>
   <li><strong>Your search query</strong>, when web search is enabled, the model's
-    search terms reach the provider's own search infrastructure.</li>
+    search terms reach the provider's own search infrastructure, or the search
+    provider chosen in the <em>Tools</em> menu (Brave Search, Tavily, Exa, Serper,
+    Perplexity or your SearXNG instance).</li>
+  <li><strong>The pages the model reads</strong>, when web search goes through
+    a search provider: Trilium fetches each page the model asks for from the
+    site itself, so the site sees a request from the machine running Trilium.
+    The page's text is then sent to the model's provider.</li>
 </ul>
 <h2>The in-editor AI assistant</h2>
 <p>A run of the&nbsp;<a class="reference-link" href="#root/_help_VRoP0g1uHHc2">In-editor AI assistant</a>&nbsp;sends
@@ -112,11 +118,11 @@
 <ul>
   <li><strong>Which provider</strong>: the single decision that determines whether
     anything leaves your machine at all.</li>
-  <li><strong>Note access</strong>: turn tools off from the model selector at
-    the bottom of the chat, and the model can read nothing beyond what you
+  <li><strong>Note access</strong>: turn it off in the <span class="tn-icon bx bx-shield-quarter"></span>  <em>Tools</em> menu
+    at the bottom of the chat, and the model can read nothing beyond what you
     type.</li>
   <li><strong>The current note:</strong> the file icon in the sidebar chat.</li>
-  <li><strong>Web search:</strong> also in the model selector.</li>
+  <li><strong>Web search:</strong> also in the <em>Tools</em> menu.</li>
   <li><strong>The editor assistant</strong>: it has no per-run toggles. What
     you control is whether you run it, what you select before you do and which
     model answers.</li>
@@ -133,12 +139,12 @@
 <h2>Telemetry &amp; security</h2>
 <p>Trilium itself collects no telemetry from the AI integration.</p>
 <p>Your API key is stored in your database, sent only to the provider it
-  belongs to, and is write-only through the options API so that a malevolent&nbsp;
-  <a
-  class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot access it. If you have backend or SQL console
-    access enabled, a malevolent script <strong>could potentially exfiltrate your API keys</strong>.</p>
+  belongs to, and is write-only through the options API so that a malevolent&nbsp;<a
+  class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>&nbsp;cannot
+  access it. If you have backend or SQL console access enabled, a malevolent
+  script <strong>could potentially exfiltrate your API keys</strong>.</p>
 <p>The built-in MCP server is off by default. When enabled, every request
   must carry an ETAPI token, which grants the same full read and write access
   to your notes as the REST API; treat one like a password. On desktop it
-  is reachable only from <code spellcheck="false">localhost</code> unless you
-  turn on&nbsp;<a class="reference-link" href="#root/_help_swSFivWk6KkA">Network Access</a>.</p>
+  is reachable only from <code>localhost</code> unless you turn on&nbsp;<a
+  class="reference-link" href="#root/_help_swSFivWk6KkA">Network Access</a>.</p>

@@ -8,6 +8,7 @@ import utils, {
     escapeHtml,
     escapeQuotes,
     escapeRegExp,
+    fileAccept,
     formatDateTime,
     formatSize,
     getErrorMessage,
@@ -216,9 +217,11 @@ describe("isHtmlEmpty", () => {
         expect(isHtmlEmpty("<p>  </p>")).toBe(true);
     });
 
-    it("detects content via img / section / link-mention", () => {
+    it("detects content via img / section / include / link-mention", () => {
         expect(isHtmlEmpty("<IMG src='x'>")).toBe(false);
         expect(isHtmlEmpty("<SECTION></section>")).toBe(false);
+        expect(isHtmlEmpty("<figure class=\"include-note\" data-note-id=\"n1\">&nbsp;</figure>"))
+            .toBe(false);
         expect(isHtmlEmpty("<span class='link-mention'></span>")).toBe(false);
     });
 
@@ -303,6 +306,19 @@ describe("platform / device detection", () => {
         (window as any).Capacitor = { isNativePlatform: () => true };
         expect(isMobileApp()).toBe(true);
         delete (window as any).Capacitor;
+    });
+
+    it("fileAccept widens the filter on Android and iOS only", () => {
+        const uaSpy = vi.spyOn(navigator, "userAgent", "get");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (X11; Linux x86_64) Chrome/120.0.0.0");
+        expect(fileAccept(".gpx,application/gpx+xml")).toBe(".gpx,application/gpx+xml");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (Linux; Android 14; SM-S911B) Chrome/120.0.0.0 Mobile");
+        expect(fileAccept(".gpx,application/gpx+xml")).toBe("*/*");
+
+        uaSpy.mockReturnValue("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/605.1");
+        expect(fileAccept(".enex")).toBe("*/*");
     });
 
     it("isMobile / isDesktop respond to glob.device", () => {

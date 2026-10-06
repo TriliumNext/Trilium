@@ -10,6 +10,14 @@ export async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
 
+    // The client drops every message not addressed to its own note and context, and a small
+    // document can post before the frame's `load` event, so the address comes with the URL.
+    const noteId = urlParams.get("noteId");
+    if (noteId !== null) {
+        window.TRILIUM_NOTE_ID = noteId;
+        window.TRILIUM_NTX_ID = urlParams.get("ntxId");
+    }
+
     applyMinPixelRatio(urlParams);
 
     const hideToolbar = urlParams.get("toolbar") === "0";

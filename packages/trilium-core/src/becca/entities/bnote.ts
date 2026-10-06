@@ -10,6 +10,7 @@ import noteService from "../../services/notes.js";
 import optionService from "../../services/options.js";
 import protectedSessionService from "../../services/protected_session.js";
 import searchService from "../../services/search/services/search.js";
+import { normalizeSearchText, tokenizeNormalizedText } from "../../services/search/utils/text_utils.js";
 import TaskContext from "../../services/task_context.js";
 import type { NotePojo } from "../becca-interface.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
@@ -48,6 +49,14 @@ interface ConvertOpts {
     autoConversion?: boolean;
 }
 
+/** A note's title in the two forms scoring needs, cached together since both derive from it. */
+export interface SearchableTitle {
+    normalized: string;
+    words: string[];
+    /** The title lowercased with its diacritics kept, or `null` when it has none. */
+    accented: string | null;
+}
+
 /**
  * Trilium's main entity, which can represent text note, image, code note, file attachment etc.
  */
@@ -77,8 +86,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
     targetRelations!: BAttribute[];
 
     __flatTextCache!: string | null;
+    __searchableTitleCache: SearchableTitle | null = null;
 
     private __attributeCache!: BAttribute[] | null;
+    private __isArchivedCache: boolean | null = null;
     private __inheritableAttributeCache!: BAttribute[] | null;
     private __ancestorCache!: BNote[] | null;
 
@@ -129,6 +140,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.decrypt();
 
         this.__flatTextCache = null;
+        this.__searchableTitleCache = null;
 
         return this;
     }
@@ -139,6 +151,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.children = [];
         this.ownedAttributes = [];
         this.__attributeCache = null;
+        this.__isArchivedCache = null;
         this.__inheritableAttributeCache = null;
         this.targetRelations = [];
 
@@ -709,7 +722,13 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     get isArchived() {
-        return this.hasAttribute("label", "archived");
+        // Ranking a note path tests this for every note on it, so the attribute walk is cached
+        // alongside the attributes it reads.
+        if (this.__isArchivedCache === null) {
+            this.__isArchivedCache = this.hasAttribute("label", "archived");
+        }
+
+        return this.__isArchivedCache;
     }
 
     areAllNotePathsArchived() {
@@ -803,10 +822,30 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return this.__flatTextCache as string;
     }
 
+    /**
+     * The title normalized for search, plus its punctuation-stripped words. Scoring reads both for
+     * every match it ranks, so they are derived once per title rather than once per result.
+     */
+    getSearchableTitle(): SearchableTitle {
+        if (!this.__searchableTitleCache) {
+            const normalized = normalizeSearchText(this.title);
+            const lowercased = this.title.toLowerCase();
+            this.__searchableTitleCache = {
+                normalized,
+                words: tokenizeNormalizedText(normalized),
+                accented: lowercased === normalized ? null : lowercased
+            };
+        }
+
+        return this.__searchableTitleCache;
+    }
+
     invalidateThisCache() {
         this.__flatTextCache = null;
+        this.__searchableTitleCache = null;
 
         this.__attributeCache = null;
+        this.__isArchivedCache = null;
         this.__inheritableAttributeCache = null;
         this.__ancestorCache = null;
 
@@ -1519,6 +1558,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             try {
                 this.title = protectedSessionService.decryptString(this.title) || "";
                 this.__flatTextCache = null;
+                this.__searchableTitleCache = null;
                 // The pre-built flat text search index still holds this note's encrypted
                 // title, so schedule a refresh — otherwise the note stays unsearchable by
                 // title even after the protected session is unlocked (issue #10406).

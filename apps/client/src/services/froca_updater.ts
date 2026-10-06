@@ -138,7 +138,16 @@ async function processBranchChange(loadResults: LoadResults, ec: EntityChange) {
     let branch = froca.branches[ec.entityId];
 
     if (ec.isErased || ec.entity?.isDeleted) {
-        if (branch) {
+        if (!branch) {
+            // `froca.addResp()` can drop the branch before its deletion arrives here, but the tree
+            // still shows it while either note is loaded.
+            const branchRow = ec.entity as FBranchRow | undefined;
+            const isShown = !!branchRow
+                && (branchRow.noteId in froca.notes || branchRow.parentNoteId in froca.notes);
+            if (ec.componentId && isShown) {
+                loadResults.addBranch(ec.entityId, ec.componentId);
+            }
+        } else {
             const childNote = froca.notes[branch.noteId];
             const parentNote = froca.notes[branch.parentNoteId];
 
@@ -292,7 +301,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
                 note.attachments = note.attachments.filter((att) => att.attachmentId !== attachment.attachmentId);
             }
 
-            loadResults.addAttachmentRow(attachmentEntity);
+            loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
 
             delete froca.attachments[ec.entityId];
         }
@@ -313,7 +322,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
         }
     }
 
-    loadResults.addAttachmentRow(attachmentEntity);
+    loadResults.addAttachmentRow(attachmentEntity, ec.componentId);
 }
 
 export default {

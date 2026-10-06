@@ -44,6 +44,15 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("do not have access to web search");
     });
 
+    it("points the user at the place in the Tools menu that turns a missing capability on", () => {
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        // The menu's own icon, as ChatToolsDropdown draws it, for the model to show the user.
+        const menu = `<span class="tn-icon bx bx-shield-quarter"></span> "Tools" menu`;
+        expect(prompt).toContain(`turn it on by choosing a search source under "Web search" in the ${menu}`);
+        expect(prompt).toContain(`turn it on with the "Note access" switch in the ${menu}`);
+        expect(prompt).not.toContain("model name dropdown");
+    });
+
     it("always appends the markdown formatting hints", () => {
         const prompt = buildSystemPrompt([], {}) ?? "";
         expect(prompt).toContain("Admonitions");
@@ -52,6 +61,12 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("Tables");
         expect(prompt).toContain("Collapsible blocks");
         expect(prompt).toContain("Keyboard keys");
+        expect(prompt).toContain(`<span class="tn-icon bx bx-cog"></span>`);
+    });
+
+    it("names the icon search tool in the icon hint only when the tool is there", () => {
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain("find one with search_icons");
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain("find one with search_icons");
     });
 
     it("lists the workspace's custom task-state markers so the model can recognize them", () => {

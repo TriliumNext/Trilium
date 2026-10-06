@@ -1,5 +1,6 @@
 import { password as passwordService, ValidationError } from "@triliumnext/core";
 import type { Request, Response } from 'express';
+import rateLimit from "express-rate-limit";
 
 import { verifyLoginCredentials } from "../services/auth.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
@@ -140,6 +141,25 @@ function logout(req: Request, res: Response) {
         }
 
         res.redirect('login');
+    });
+}
+
+/**
+ * Caps password guessing per IP across every route that checks a credential: `/login`,
+ * `/api/login/*`, `/api/setup/auth` and the ETAPI login.
+ *
+ * `skipSuccessfulRequests` refunds the hit from a `res.on("finish")` handler, and
+ * express-rate-limit decides what to refund with `requestWasSuccessful`, which defaults to
+ * `response.statusCode < 400`. So every route behind this MUST answer a failed credential with a
+ * status of 400 or above, or its attempts are refunded as fast as they are counted and the limit is
+ * never reached. A successful login to `/login` is counted all the same: it redirects, and a 302 is
+ * below 400.
+ */
+export function createLoginRateLimiter() {
+    return rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutes
+        max: 10, // limit each IP to 10 requests per windowMs
+        skipSuccessfulRequests: true
     });
 }
 

@@ -4,8 +4,7 @@ import { dayjs, type RevisionItem, type RevisionPojo, safeHostname, safeLinkPrev
 import clsx from "clsx";
 import { diffWords } from "diff";
 import HtmlDiff from "htmldiff-js";
-import { Fragment } from "preact";
-import type { CSSProperties } from "preact/compat";
+import { type CSSProperties, Fragment } from "preact";
 import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
@@ -244,8 +243,7 @@ function RevisionsMenu({ note, onRevisionSaved, onAllDeleted, hasRevisions }: {
             buttonClassName="custom-title-bar-button"
             noSelectButtonStyle
             buttonProps={{ title: t("revisions.menu_tooltip") }}
-            dropdownContainerClassName="mobile-bottom-menu"
-            dropdownOptions={{ popperConfig: { strategy: "fixed" } }}
+            mobileBottomSheet
         >
             <FormListItem
                 icon="bx bx-save"

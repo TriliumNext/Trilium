@@ -53,29 +53,6 @@
             .dropdown-toggle {
                 padding: 0.1em 0.25em;
             }
-
-            .dropdown-menu {
-                width: max-content;
-            }
-        }
-
-        .dropdown-note-info {
-            padding: 1em !important;
-        }
-
-        .dropdown-note-paths {
-            .note-paths-widget {
-                padding: 0.5em;
-            }
-        }
-
-        .dropdown-backlinks {
-            --menu-padding-size: .9em;
-
-            min-width: 300px;
-            max-width: 500px;
-            max-height: 60vh;
-            overflow-y: auto;
         }
     }
 
@@ -126,6 +103,38 @@
         outline: none;
     }
 
+}
+
+/* The status bar's popups, which open on the page's body. */
+.dropdown-menu.status-bar-dropdown-menu {
+    width: max-content;
+
+    &.dropdown-note-info {
+        padding: 1em !important;
+    }
+
+    &.dropdown-note-paths {
+        max-width: min(720px, calc(100vw - 20px));
+
+        .note-paths-widget {
+            padding: 0.5em;
+        }
+
+        .note-path-list li {
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &.dropdown-backlinks {
+        --menu-padding-size: .9em;
+
+        min-width: 300px;
+        max-width: 500px;
+
+        > .tn-panel-scroll {
+            max-height: 60vh;
+        }
+    }
 }
 
 body.experimental-feature-new-layout .note-info-content {

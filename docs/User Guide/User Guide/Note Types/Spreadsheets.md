@@ -37,6 +37,8 @@ Both [import and export](../Basic%20Concepts%20and%20Features/Import%20%26%20Exp
     *   If exported as a single file via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>, the resulting file will be a custom `.triliumsheet` file that preserves the spreadsheet as-is.
         *   The export is intentionally a different process than the normal <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a> functionality because it does conversion to multiple formats with varying degrees of compatibility.
 
+Cells pasted from Excel or another application keep their formatting except for the font, so they use the spreadsheet's font like the rest of the cells.
+
 > [!IMPORTANT]
 > Import & export for both .xlsx and .csv files are supported on a best-effort basis. It does not support advanced features (data validation, scripting, etc.). If you notice a particular issue, it can be [reported](../Troubleshooting/Reporting%20issues.md), however all bug reports must contain a sample file in order to be taken into consideration.
 

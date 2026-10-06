@@ -1,4 +1,4 @@
-export {};
+import type { HTMLAttributes } from "preact";
 
 declare module "htmldiff-js" {
     const HtmlDiff: {
@@ -30,13 +30,6 @@ declare module "draggabilly" {
     }
 }
 
-declare module "katex/contrib/auto-render" {
-    var renderMathInElement: (element: HTMLElement, options: {
-        trust: boolean;
-    }) => void;
-    export default renderMathInElement;
-}
-
 declare global {
     /** Geometry of the title bar area left free by the native window controls, and changes to it. */
     interface WindowControlsOverlay extends EventTarget {
@@ -59,7 +52,7 @@ declare global {
 
 declare module "preact" {
     namespace JSX {
-        interface ElectronWebViewElement extends JSX.HTMLAttributes<HTMLElement> {
+        interface ElectronWebViewElement extends HTMLAttributes<HTMLElement> {
             src: string;
             class: string;
             key?: string | number;

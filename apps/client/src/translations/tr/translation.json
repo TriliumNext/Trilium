@@ -411,7 +411,6 @@
     },
     "feature_not_enabled": "Yapay zeka bütünleşmelerini kullanmak için Ayarlar → Gelişmiş → Deneysel özellikler'de LLM deneysel özelliğini etkinleştirin.",
     "add_provider": "Sağlayıcı Ekle",
-    "add_provider_title": "Yapay Zeka Sağlayıcısı Ekle",
     "edit_provider_title": "{{- name}} Düzenle",
     "edit_provider": "Düzenle",
     "save": "Kaydet",
@@ -424,13 +423,8 @@
     "models_select_all": "Tümünü seç",
     "models_select_none": "Hiçbirini seçme",
     "models_reset_defaults": "Varsayılanlara sıfırla",
-    "provider_model_count_one": "{{count}} model",
-    "provider_model_count_other": "{{count}} model",
-    "configured_providers": "Yapılandırılmış Sağlayıcılar",
-    "no_providers_configured": "Henüz yapılandırılmış sağlayıcı yok.",
     "provider_name": "Ad",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Trilium'u çalıştıran makinede Claude Code gerektirir.",
     "actions": "Eylemler",
     "delete_provider": "Sil",
     "delete_provider_confirmation": "\"{{name}}\" sağlayıcısını silmek istediğinizden emin misiniz?",
@@ -497,7 +491,6 @@
       "insert-a-page-break-for-printing": "Sayfa sonu ekle (yazdırma için)",
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Tıklandığında içeriği gizleyen/gösteren, açılıp kapanabilir bir bölüm ekleyin.",
       "insert-an-anchor-for-internal-linking": "Dahili linkleme için bir bağlantı metni ekleyin",
-      "insert-the-current-date-and-time": "Geçerli tarih ve saati girin",
       "justify-text-alignment": "Metni iki yana hizala",
       "admonition": "İkaz",
       "anchor": "Bağlantı noktası",
@@ -550,8 +543,6 @@
       "insert-an-empty-mermaid-diagram": "Boş bir Mermaid diyagramı ekle",
       "insert-date-time": "Tarih/saat ekle",
       "insert-footnote-0": "%0 dipnotunu ekle",
-      "insert-math": "Matematik ekle",
-      "insert-mermaid-diagram": "Mermaid diyagramı ekle",
       "insert-mermaid-source-code": "Mermaid kaynak kodu ekle",
       "insert-paragraph-after-code-block": "Kod bloğundan sonra paragraf ekle",
       "insert-paragraph-before-code-block": "Kod bloğundan önce paragraf ekle",
@@ -628,8 +619,7 @@
     "button_include": "Not ekle"
   },
   "jump_to_note": {
-    "search_placeholder": "Notu adına veya türüne göre ara > komutlar için...",
-    "search_button": "Tüm metinde ara"
+    "search_placeholder": "Notu adına veya türüne göre ara > komutlar için..."
   },
   "markdown_editor": {
     "image_upload_failed": "\"{{name}}\" görseli yüklenemiyor."
@@ -771,10 +761,8 @@
     "title": "başlık",
     "date_created": "oluşturulma tarihi",
     "date_modified": "değiştirilme tarihi",
-    "sorting_direction": "Sıralama yönü",
     "ascending": "artan",
     "descending": "azalan",
-    "folders": "Klasöler",
     "sort_folders_at_top": "klasörleri en üstte sırala",
     "natural_sort": "Doğal Sıralama",
     "sort_with_respect_to_different_character_sorting": "farklı dillerde veya bölgelerde geçerli olan farklı karakter sıralama ve karşılaştırma kurallarına göre sırala.",
@@ -1526,15 +1514,7 @@
     "button_title": "Diyagramı SVG olarak dışa aktar"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Alt not oluştur ve haritaya ekle",
-    "reset_pan_zoom_title": "Kaydırma ve yakınlaştırmayı başlangıç koordinatlarına ve büyütmeye sıfırla",
-    "zoom_in_title": "Yakınlaştır",
-    "zoom_out_title": "Uzaklaştır"
-  },
-  "image_buttons": {
-    "zoom_in": "Yakınlaştır",
-    "zoom_out": "Uzaklaştır",
-    "reset_zoom": "Yakınlaştırmayı sıfırla"
+    "create_child_note_title": "Alt not oluştur ve haritaya ekle"
   },
   "image_navigation": {
     "previous": "Önceki resim: {{- title}}",
@@ -1543,16 +1523,6 @@
   "image_viewer": {
     "loading_error": "Resim yüklenirken bir hata oluştu.",
     "hints": {
-      "zoom": "Yakınlaştırma",
-      "zoom_in": "Yakınlaştır",
-      "zoom_out": "Uzaklaştır",
-      "reset_zoom": "Yakınlaştırmayı sıfırla",
-      "pan": "Kaydırma",
-      "pan_up": "Yukarı",
-      "pan_down": "Aşağı",
-      "pan_left": "Sol",
-      "pan_right": "Sağ",
-      "pan_fast": "Daha hızlı kaydırma",
       "navigation": "Gezinme",
       "next_image": "Sonraki resim",
       "previous_image": "Önceki resim",
@@ -1812,7 +1782,6 @@
     "label_rock_or_pop": "etiketlerden yalnızca biri bulunmalıdır",
     "label_year_comparison": "sayısal karşılaştırma (ayrıca >, >=, <).",
     "label_date_created": "geçen ay oluşturulan notlar",
-    "error": "Arama hatası: {{error}}",
     "search_prefix": "Ara:"
   },
   "attachment_detail": {
@@ -2080,7 +2049,6 @@
     "monospace_ligatures": "Programlama bağlantı harfleri",
     "monospace_ligatures_description": "Eş aralıklı yazı tipi destekliyorsa, != ve -> gibi karakter çiftlerini tek sembol olarak (≠, →) oluşturur. Metnin kendisi değişmez.",
     "size_relative_to_general": "Boyut, genel yazı tipi boyutuna görecelidir",
-    "not_all_fonts_available": "Listelenen tüm yazı tipleri sisteminizde mevcut olmayabilir",
     "apply_changes": "Değişiklikleri uygulamak için yeniden yükle",
     "generic-fonts": "Genel yazı tipleri",
     "sans-serif-system-fonts": "Sans-serif sistem yazı tipleri",
@@ -2738,7 +2706,6 @@
     "thought_process": "Düşünme süreci",
     "tool_calls": "{{count}} araç çağrısı",
     "input": "Girdi",
-    "input_streaming": "Girdi (akış halinde…)",
     "edit_index": "{{total}} içinden {{index}}. düzenleme",
     "result": "Sonuç",
     "error": "Hata",
@@ -2843,7 +2810,6 @@
     "placeholder": "Hızlı arama",
     "searching": "Aranıyor...",
     "no-results": "Sonuç bulunamadı",
-    "more-results": "... ve {{number}} sonuç daha.",
     "show-in-full-search": "Tam aramada göster"
   },
   "mobile_note_navigator": {
@@ -3067,12 +3033,9 @@
     "zoom-factor": "Yakınlaştırma oranı"
   },
   "note_autocomplete": {
-    "search-for": "\"{{term}}\" için ara",
     "create-note": "\"{{term}}\" alt notunu oluştur ve bağlantı ver",
     "insert-external-link": "\"{{term}}\" için harici bağlantı ekle",
-    "clear-text-field": "Metin alanını temizle",
-    "show-recent-notes": "Son notları göster",
-    "full-text-search": "Tam metin arama"
+    "clear-text-field": "Metin alanını temizle"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Not silindi.",
@@ -3090,8 +3053,6 @@
     "move-marker-toast-title": "İşaretçiyi taşı",
     "unable-to-load-map": "Harita yüklenemiyor.",
     "webgl-unavailable": "WebGL kullanılamadığı için bu harita çizilemiyor. Donanım hızlandırmanın etkin ve ekran kartı sürücülerinizin güncel olduğunu kontrol edin.",
-    "zoom-in": "Yakınlaştır",
-    "zoom-out": "Uzaklaştır",
     "enter-3d": "3B görünüme eğ\nHaritayı serbestçe eğmek için Ctrl'yi basılı tutup sürükleyin",
     "exit-3d": "Haritayı tekrar düz yatır",
     "close-details": "Kapat",
@@ -3459,7 +3420,6 @@
     "remove-from-board": "Panodan kaldır",
     "archive-note": "Notu arşivle",
     "unarchive-note": "Notu arşivden çıkar",
-    "move-to": "Taşı",
     "insert-above": "Üstüne ekle",
     "insert-below": "Altına ekle",
     "delete-column": "Sütunu sil",
@@ -3721,7 +3681,6 @@
     "page_size": "Sayfa boyutu",
     "scale": "Ölçek",
     "margins": "Kenar boşlukları",
-    "render_error": "Geçerli ayarlarla PDF oluşturulamıyor. Lütfen kenar boşluklarını ve ölçeği kontrol edin.",
     "margins_default": "Varsayılan",
     "margins_none": "Yok",
     "margins_minimum": "En Az",
@@ -3880,9 +3839,6 @@
     "tags-differ": "Seçili düğümler aynı etiketleri taşımıyor, bu yüzden bunlar yalnızca okunabilir.",
     "add-tag": "Bu etiketi ekle",
     "remove-tag": "Bu etiketi kaldır",
-    "zoom-in": "Yakınlaştır",
-    "zoom-out": "Uzaklaştır",
-    "reset-zoom": "Yakınlaştırmayı sıfırla",
     "center-map": "Haritayı ortala",
     "direction-left": "Dallar sola",
     "direction-right": "Dallar sağa",

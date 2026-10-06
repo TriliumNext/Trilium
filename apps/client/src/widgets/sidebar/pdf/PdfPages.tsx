@@ -1,5 +1,6 @@
 import "./PdfPages.css";
 
+import type { CSSProperties } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type React from "react";
 import { List, type RowComponentProps } from "react-window";
@@ -85,7 +86,7 @@ function PdfPagesList({ pagesData, ntxId }: { pagesData: NoteContextDataMap["pdf
                         requestThumbnail,
                         scrollToPage: pagesData.scrollToPage
                     }}
-                    style={{ height: containerHeight }}
+                    style={{ height: `${containerHeight}px` }}
                 />
             )}
         </div>
@@ -106,7 +107,7 @@ function PdfPageRow({ index, style, ...data }: RowComponentProps<PdfPageRowData>
     const pages = Array.from({ length: COLUMNS }, (_, i) => startPage + i).filter(p => p <= totalPages);
 
     return (
-        <div style={style as preact.JSX.CSSProperties} className="pdf-page-row">
+        <div style={style as CSSProperties} className="pdf-page-row">
             {pages.map(pageNumber => (
                 <PdfPageCell
                     key={pageNumber}

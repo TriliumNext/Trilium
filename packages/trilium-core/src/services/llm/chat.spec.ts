@@ -11,13 +11,22 @@ const state = vi.hoisted(() => ({
     chunkSignal: undefined as AbortSignal | undefined,
     /** Records how runChat resolved the provider. */
     providerIdRequested: undefined as string | undefined,
-    providerTypeRequested: undefined as string | undefined
+    providerTypeRequested: undefined as string | undefined,
+    /** The config the provider's `chat()` was handed. */
+    chatConfig: undefined as unknown,
+    /** The abort signal the provider's `chat()` was handed. */
+    chatSignal: undefined as AbortSignal | undefined
 }));
 
 vi.mock("./index.js", () => {
     const makeProvider = () => ({
         name: "fake",
-        chat: () => { if (state.chatThrows !== undefined) throw state.chatThrows; return {}; },
+        chat: (_messages: unknown, config: unknown, signal?: AbortSignal) => {
+            state.chatConfig = config;
+            state.chatSignal = signal;
+            if (state.chatThrows !== undefined) throw state.chatThrows;
+            return {};
+        },
         chatChunks: state.chunkNative
             ? async function* (_messages: unknown, _config: unknown, signal?: AbortSignal) {
                 state.chunkSignal = signal;
@@ -30,6 +39,7 @@ vi.mock("./index.js", () => {
     return {
         hasConfiguredProviders: () => state.configured,
         getSelectedModel: () => undefined,
+        getSearchProviderSetup: (id: string | undefined) => (id === "s1" ? { id: "s1", provider: "tavily", apiKey: "tk" } : undefined),
         getProvider: (id: string) => { state.providerIdRequested = id; return makeProvider(); },
         getProviderByType: (type: string) => { state.providerTypeRequested = type; return makeProvider(); }
     };
@@ -65,6 +75,16 @@ async function collect(messages: LlmMessage[], config: object = {}, signal?: Abo
 const HELLO: LlmMessage[] = [{ role: "user", content: "hi" }];
 
 describe("runChat", () => {
+    it("routes web search through the stored search provider the request names, and only that", async () => {
+        const smuggled = { provider: "brave", apiKey: "stolen", baseURL: "http://169.254.169.254" };
+
+        await collect(HELLO, { enableWebSearch: true, webSearchProviderId: "s1", webSearch: smuggled });
+        expect((state.chatConfig as { webSearch?: unknown }).webSearch).toEqual({ id: "s1", provider: "tavily", apiKey: "tk" });
+
+        await collect(HELLO, { enableWebSearch: true, webSearchProviderId: "deleted", webSearch: smuggled });
+        expect((state.chatConfig as { webSearch?: unknown }).webSearch).toBeUndefined();
+    });
+
     afterEach(() => {
         Object.assign(state, {
             configured: true,
@@ -74,7 +94,8 @@ describe("runChat", () => {
             chunkNative: false,
             chunkSignal: undefined,
             providerIdRequested: undefined,
-            providerTypeRequested: undefined
+            providerTypeRequested: undefined,
+            chatConfig: undefined
         });
         generateChatTitle.mockClear();
         errorMock.mockClear();
@@ -136,6 +157,12 @@ describe("runChat", () => {
         const controller = new AbortController();
         expect(await collect(HELLO, { provider: "claude-agent" }, controller.signal)).toEqual(state.chunks);
         expect(state.chunkSignal).toBe(controller.signal);
+    });
+
+    it("hands the abort signal to an AI SDK provider too, so its tool calls stop with the turn", async () => {
+        const controller = new AbortController();
+        await collect(HELLO, {}, controller.signal);
+        expect(state.chatSignal).toBe(controller.signal);
     });
 
     it("stops at the next chunk once aborted", async () => {

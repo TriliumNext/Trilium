@@ -32,9 +32,12 @@ export function backupFileName(name: string): string {
 }
 
 /**
- * Starts the download and resolves with how it ended, which is when the stream behind it has been
+ * Starts the backup and resolves with how it ended, which is when the stream behind it has been
  * fully produced — the closest thing to "finished" the application can see, with the browser's
  * own download UI carrying the transfer itself.
+ *
+ * Inside the mobile shell there is no download manager to carry it, so the backup is written onto
+ * the device and offered to the share sheet instead; the result then carries where it went.
  *
  * @param passphrase encrypts the container. Omitted or empty leaves it unencrypted, which is still
  *                   a container: one format, one extension, whatever the user chose.
@@ -44,10 +47,11 @@ export async function startBackupDownload(
     passphrase?: string,
     onProgress?: (sentBytes: number, totalBytes: number) => void
 ): Promise<StandaloneDownloadResult> {
-    const api = window.standaloneApi;
-    if (!api) {
+    const backup = window.standaloneApi?.backup;
+    if (!backup) {
         return { status: "failed", message: "This platform does not back up by download." };
     }
 
-    return await api.backup.downloadDatabase(fileName, passphrase || undefined, onProgress);
+    const take = backup.saveDatabase ?? backup.downloadDatabase;
+    return await take.call(backup, fileName, passphrase || undefined, onProgress);
 }

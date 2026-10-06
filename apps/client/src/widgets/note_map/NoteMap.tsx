@@ -26,7 +26,7 @@ const MAX_NOTES_THRESHOLD = 1_000;
 interface NoteMapProps {
     note: FNote;
     widgetMode: NoteMapWidgetMode;
-    parentRef: RefObject<HTMLElement>;
+    parentRef: RefObject<HTMLElement | null>;
 }
 
 export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
@@ -35,7 +35,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ mapType, setMapType ] = useMapType(note, widgetMode);
     const [ mapRootIdLabel ] = useNoteLabel(note, "mapRootNoteId");
 
-    const graphRef = useRef<ForceGraph<NoteMapNodeObject, NoteMapLinkObject>>();
+    const graphRef =
+        useRef<ForceGraph<NoteMapNodeObject, NoteMapLinkObject> | undefined>(undefined);
     // Everything the map is drawn in is settled when it is built — the colour of a note of each type,
     // the colour its title is written in, the shadow under it — so a change of theme calls for it to
     // be built again. The hook answers a theme being chosen and, for the themes that follow the
@@ -46,7 +47,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ linkDistance, setLinkDistance ] = useState(40);
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
     const [ bypassLimit, setBypassLimit ] = useState(false);
-    const notesAndRelationsRef = useRef<NotesAndRelationsData>();
+    const notesAndRelationsRef = useRef<NotesAndRelationsData | undefined>(undefined);
 
     const mapRootId = useMemo(() => {
         if (note.noteId && isRootedAtCurrentNote(widgetMode)) {

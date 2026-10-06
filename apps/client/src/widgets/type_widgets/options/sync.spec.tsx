@@ -31,7 +31,8 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
     useTriliumOption: (name: string) => [
         mocks.stored[name] ?? "",
         async (value: string) => void mocks.saved.push([ name, value ])
-    ]
+    ],
+    useTriliumOptionBool: (name: string) => [ mocks.stored[name] === "true", vi.fn() ]
 }));
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
@@ -76,6 +77,12 @@ function type(index: number, value: string) {
     });
 }
 
+/** The read-only row naming the address sync contacts, which only an override puts on screen. */
+function effectiveServerRow() {
+    return [ ...host.querySelectorAll(".tn-card-option") ]
+        .find((row) => row.querySelector(".tn-card-option-value"));
+}
+
 describe("the sync settings", () => {
     it("keeps the test apart from the settings it checks, in a card with no heading of its own", () => {
         open();
@@ -117,5 +124,37 @@ describe("the sync settings", () => {
         await pressTest();
         expect(mocks.showError).toHaveBeenCalled();
         expect(mocks.showMessage).not.toHaveBeenCalled();
+    });
+
+    it("says nothing about the server in use while the stored address is the one in force", () => {
+        open();
+
+        // The card is there and holds the test alone, rather than the row having gone missing.
+        const testCard = testButton()?.closest(".tn-card");
+        expect(testCard).not.toBeNull();
+        expect(testCard?.querySelectorAll(".tn-card-option")).toHaveLength(1);
+        expect(effectiveServerRow()).toBeUndefined();
+    });
+
+    it("names the server in use beside the test that contacts it, under a config override", () => {
+        mocks.stored.syncServerHostOverridden = "true";
+        mocks.stored.effectiveSyncServerHost = "https://override.example.com";
+        open();
+
+        const row = effectiveServerRow();
+        expect(row?.textContent).toContain("sync_2.effective_server");
+        expect(row?.querySelector(".tn-card-option-value")?.textContent)
+            .toBe("https://override.example.com");
+        // Beside the test, not among the settings: the button it explains shares its card.
+        expect(row?.closest(".tn-card")).toBe(testButton()?.closest(".tn-card"));
+    });
+
+    it("reports sync turned off rather than an empty address when the override disables it", () => {
+        mocks.stored.syncServerHostOverridden = "true";
+        mocks.stored.effectiveSyncServerHost = "";
+        open();
+
+        expect(effectiveServerRow()?.querySelector(".tn-card-option-value")?.textContent)
+            .toBe("sync_2.effective_server_disabled");
     });
 });

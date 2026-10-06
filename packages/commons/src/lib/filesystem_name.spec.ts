@@ -65,8 +65,13 @@ describe("asFileName", () => {
         expect(asFileName("NUL")).toBeNull();
         expect(asFileName("com1")).toBeNull();
         expect(asFileName("Aux")).toBeNull();
+        expect(asFileName("NUL.txt")).toBeNull();
+        expect(asFileName("COM1.xls")).toBeNull();
+        expect(asFileName("aux.tar.gz")).toBeNull();
         // Only the names themselves, not everything starting with them.
         expect(asFileName("nullify")).toBe("nullify");
+        expect(asFileName("nullify.txt")).toBe("nullify.txt");
+        expect(asFileName("confidence.csv")).toBe("confidence.csv");
     });
 
     it("never answers with something that reaches outside the directory it is used in", () => {

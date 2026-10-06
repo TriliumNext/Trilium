@@ -32,6 +32,9 @@ describe("NoteWrapperWidget", () => {
         expect(hasBackgroundEffects(audio)).toBe(true);
 
         expect(hasBackgroundEffects(buildNote({ title: "Grid", type: "book", "#viewType": "grid" }))).toBe(true);
+        // The board lays its columns on a bare surface, the way the grid lays its cards.
+        expect(hasBackgroundEffects(
+            buildNote({ title: "Board", type: "book", "#viewType": "board" }))).toBe(true);
 
         // Notes whose content paints its own background stay opaque.
         expect(hasBackgroundEffects(buildNote({ title: "Plain", type: "text" }))).toBe(false);

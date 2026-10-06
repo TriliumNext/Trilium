@@ -5,7 +5,7 @@ import type {
     SetupBackupSettings,
     SetupExistingBackup
 } from "@triliumnext/commons";
-import type { Response } from "express";
+import type { Response } from "../http_interface";
 
 import { getContext } from "./context.js";
 import dateUtils from "./utils/date.js";

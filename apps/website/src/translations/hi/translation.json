@@ -112,7 +112,6 @@
         "title_arm64": "ARM पर लिनक्स",
         "download_deb": ".deb",
         "download_rpm": ".rpm",
-        "download_flatpak": ".flatpak",
         "download_zip": "पोर्टेबल (.zip)",
         "download_nixpkgs": "nixpkgs",
         "description_x64": "अधिकांश लिनक्स डिस्ट्रीब्यूशन्स के लिए, x86_64 आर्किटेक्चर के साथ कम्पेटिबल।",

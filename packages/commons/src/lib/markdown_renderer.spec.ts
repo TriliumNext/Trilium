@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CustomMarkdownRenderer, demoteHeadings, extractCodeBlocks, renderToHtml } from "./markdown_renderer.js";
+import { HIGHLIGHT_STYLE } from "./marked_extensions.js";
 import { DEFAULT_TASK_STATES, DONE_TASK_STATE, NONE_TASK_STATE, type TaskStateDef } from "./task_states.js";
 
 /** Identity sanitizer so we can assert the raw rendered HTML. */
@@ -209,9 +210,9 @@ describe("renderToHtml", () => {
     });
 
     describe("inline code (codespan)", () => {
-        it("renders inline code with spellcheck disabled and escaped content", () => {
+        it("renders inline code with escaped content", () => {
             const html = render("use `foo > bar` here");
-            expect(html).toBe('<p>use <code spellcheck="false">foo &gt; bar</code> here</p>');
+            expect(html).toBe('<p>use <code>foo &gt; bar</code> here</p>');
         });
     });
 
@@ -565,7 +566,7 @@ describe("renderToHtml", () => {
         it("does not convert a formula-like sequence inside inline code (codeMap path)", () => {
             const html = render("use `$x$` and real $y$");
             // The `$x$` inside the codespan stays literal; only the bare $y$ becomes a formula.
-            expect(html).toContain('<code spellcheck="false">$x$</code>');
+            expect(html).toContain('<code>$x$</code>');
             expect(html).toContain('<span class="math-tex">\\(y\\)</span>');
         });
 
@@ -584,6 +585,16 @@ describe("renderToHtml", () => {
             expect(render("$e=mc^2$$")).toBe("<p>$e=mc^2$$</p>");
             expect(render("$$$x$$")).toBe("<p>$$$x$$</p>");
             expect(render("$$e=mc^2$")).not.toContain("math-tex");
+        });
+
+        it("leaves dollar amounts as literal text (#5682)", () => {
+            expect(render("An Avg cost of $15. Components cost $6 and $4 each."))
+                .toBe("<p>An Avg cost of $15. Components cost $6 and $4 each.</p>");
+            expect(render("Split $5,$10 between them")).toBe("<p>Split $5,$10 between them</p>");
+
+            const html = render("The $4,000 grows to $7,414.40 by the formula $FV = PV (1 + i)$.");
+            expect(html).toContain("The $4,000 grows to $7,414.40 by the formula ");
+            expect(html).toContain('<span class="math-tex">\\(FV = PV (1 + i)\\)</span>');
         });
 
         it("does not treat dollars in a blockquoted code block as formulas (#10268)", () => {
@@ -620,7 +631,7 @@ describe("renderToHtml", () => {
     });
 
     describe("highlights (==text==)", () => {
-        const HL = '<span style="background-color:hsl(60, 75%, 60%);">';
+        const HL = `<span style="${HIGHLIGHT_STYLE}">`;
 
         it("renders ==text== as a background-coloured span without any flag", () => {
             expect(render("==hi==")).toBe(`<p>${HL}hi</span></p>`);
@@ -637,7 +648,7 @@ describe("renderToHtml", () => {
         });
 
         it("does not highlight == inside code", () => {
-            expect(render("`==x==`")).toBe('<p><code spellcheck="false">==x==</code></p>');
+            expect(render("`==x==`")).toBe('<p><code>==x==</code></p>');
             expect(render("```\na ==x== b\n```")).toContain("a ==x== b");
         });
 

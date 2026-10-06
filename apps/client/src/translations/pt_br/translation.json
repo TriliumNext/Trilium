@@ -232,7 +232,8 @@
     "inPageSearch": "pesquisa na página",
     "title": "Folha de Dicas",
     "editShortcuts": "Editar atalhos de teclado",
-    "toggleArchivedNotes": "mostrar/esconder notas arquivadas"
+    "toggleArchivedNotes": "mostrar/esconder notas arquivadas",
+    "openAiAssistant": "abrir o assistente de IA na seleção"
   },
   "import": {
     "importIntoNote": "Importar para a nota",
@@ -289,8 +290,7 @@
     "copy_to_clipboard": "Copiar para a área de transferência"
   },
   "jump_to_note": {
-    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos...",
-    "search_button": "Pesquisar em texto completo"
+    "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos..."
   },
   "markdown_import": {
     "dialog_title": "Importar Markdown",
@@ -356,16 +356,22 @@
     "title": "título",
     "date_created": "data de criação",
     "date_modified": "data de modificação",
-    "sorting_direction": "Direção de ordenação",
     "ascending": "crescente",
     "descending": "decrescente",
-    "folders": "Pastas",
     "sort_folders_at_top": "colocar pastas no topo",
     "natural_sort": "Ordenação Natural",
     "sort_with_respect_to_different_character_sorting": "classificar de acordo com diferentes regras de ordenação de caracteres e colação em diferentes idiomas ou regiões.",
     "natural_sort_language": "Linguagem da ordenação natural",
     "the_language_code_for_natural_sort": "O código do idioma para ordenação natural, por exemplo, \"zh-CN\" para chinês.",
-    "sort": "Ordenar"
+    "sort": "Ordenar",
+    "sorting_criteria_description": "Anotações são organizadas pelo primeiro nível; o próximo nível apenas decide entre as anotações as últimas deixadas iguais.",
+    "label": "Rótulo",
+    "label_name": "Nome do rótulo",
+    "add_level": "Adicionar nível",
+    "remove_level": "Remover nível",
+    "move_level_up": "Mover nível para cima",
+    "move_level_down": "Mover nível para baixo",
+    "folders_follow_first_level": "No final ao invés de quando o primeiro nível está descendo"
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Enviar anexos para a nota",
@@ -1105,10 +1111,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "zoom_in_title": "Aumentar",
-    "zoom_out_title": "Reduzir",
-    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação",
-    "reset_pan_zoom_title": "Redefinir pan & zoom para coordenadas e ampliação iniciais"
+    "create_child_note_title": "Criar nova nota filha e adicione neste mapa de relação"
   },
   "zpetne_odkazy": {
     "relation": "relação",
@@ -1361,10 +1364,14 @@
     "label_rock_or_pop": "apenas uma das etiquetas deve estar presente",
     "label_year_comparison": "comparação numérica (também >, >=, <).",
     "label_date_created": "notas criadas no último mês",
-    "error": "Erro na busca: {{error}}",
     "search_prefix": "Busca:",
     "placeholder": "palavras-chave fulltext, #tag = valor...",
-    "complete_help": "ajuda completa da sintaxe de busca"
+    "complete_help": "ajuda completa da sintaxe de busca",
+    "hints": {
+      "completions": "Mostrar sugestões",
+      "new_line": "Nova linha",
+      "run_search": "Inicializar a pesquisa"
+    }
   },
   "attachment_list": {
     "open_help_page": "Abrir página de ajuda nos anexos",
@@ -1476,7 +1483,6 @@
     "note_tree_font": "Fonte da Árvore de Notas",
     "note_detail_font": "Fonte Padrão da Nota",
     "monospace_font": "Fonte Monospace (código)",
-    "not_all_fonts_available": "Nem todas as fontes listadas podem estar disponíveis em seu sistema",
     "generic-fonts": "Fontes genéricas",
     "sans-serif-system-fonts": "Fontes sem serifa de sistema",
     "serif-system-fonts": "Fontes serifadas de sistema",
@@ -1886,7 +1892,6 @@
     "placeholder": "Busca rápida",
     "searching": "Buscando...",
     "no-results": "Nenhum resultado encontrado",
-    "more-results": "... e mais {{number}} resultados.",
     "show-in-full-search": "Exibir na busca completa"
   },
   "note_tree": {
@@ -2019,7 +2024,9 @@
     "delete-notes-in-progress": "Exclusão de notas em andamento: {{count}}",
     "delete-finished-successfully": "Exclusão concluída com sucesso.",
     "undeleting-notes-in-progress": "Restauração de notas em andamento: {{count}}",
-    "undeleting-notes-finished-successfully": "Restauração de notas concluída com sucesso."
+    "undeleting-notes-finished-successfully": "Restauração de notas concluída com sucesso.",
+    "delete-notes-in-progress-with-total": "{{progress}} apagado de {{total}} anotações",
+    "erasing-notes": "Apagando anotações…"
   },
   "frontend_script_api": {
     "async_warning": "Você está passando uma função assíncrona para `api.runOnBackend()`, o que provavelmente não irá funcionar como esperado.\\nTorne a função síncrona (removendo a palavra-chave `async`), ou use `api.runAsyncOnBackendWithManualTransactionHandling()`.",
@@ -2109,12 +2116,9 @@
     "zoom-factor": "Fator de Zoom"
   },
   "note_autocomplete": {
-    "search-for": "Buscar por \"{{term}}\"",
     "create-note": "Criar conectar nota filha \"{{term}}\"",
     "insert-external-link": "Inserir link externo para \"{{term}}\"",
-    "clear-text-field": "Limpar campo de texto",
-    "show-recent-notes": "Exibir notas recentes",
-    "full-text-search": "Busca por texto completo"
+    "clear-text-field": "Limpar campo de texto"
   },
   "note_tooltip": {
     "note-has-been-deleted": "A nota foi excluída.",
@@ -2134,8 +2138,6 @@
     "move-marker-instruction": "Clique no mapa para mover o marcador para aquele local ou pressione Escape para dispensar.",
     "move-marker-toast-title": "Mover marcador",
     "webgl-unavailable": "Este mapa não pode ser desenhado porque o WebGL não está disponível. Verifique se a aceleração de hardware está ativada e se os drivers gráficos estão atualizados.",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
     "enter-3d": "Inclinar para uma visualização 3D\nSegure Ctrl e arraste para inclinar o mapa livremente",
     "exit-3d": "Deixar o mapa plano novamente",
     "close-details": "Fechar",
@@ -2279,7 +2281,6 @@
   },
   "board_view": {
     "delete-note": "Deletar nota...",
-    "move-to": "Mover para",
     "insert-above": "Inserir acima",
     "insert-below": "Inserir abaixo",
     "delete-column": "Excluir coluna",
@@ -2810,7 +2811,6 @@
     "thought_process": "Processo de raciocínio",
     "tool_calls": "{{count}} chamada(s) de ferramenta",
     "input": "Entrada",
-    "input_streaming": "Entrada (transmitindo…)",
     "edit_index": "Editar {{index}} de {{total}}",
     "error_api": "Erro de API (HTTP {{status}})",
     "error_show_details": "Mostrar detalhes",
@@ -2895,7 +2895,6 @@
     "delete_provider_confirmation": "Tem certeza de que deseja excluir o provedor \"{{name}}\"?",
     "feature_not_enabled": "Ative o recurso experimental LLM em Configurações → Avançado → Recursos experimentais para usar as integrações de IA.",
     "add_provider": "Adicionar provedor",
-    "add_provider_title": "Adicionar provedor de IA",
     "edit_provider_title": "Editar {{- name}}",
     "edit_provider": "Editar",
     "save": "Salvar",
@@ -2908,13 +2907,7 @@
     "models_select_all": "Selecionar todos",
     "models_select_none": "Não selecionar nenhum",
     "models_reset_defaults": "Redefinir para os padrões",
-    "provider_model_count_one": "{{count}} modelo",
-    "provider_model_count_many": "",
-    "provider_model_count_other": "{{count}} modelos",
-    "configured_providers": "Provedores configurados",
-    "no_providers_configured": "Nenhum provedor configurado ainda.",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Requer o Claude Code na máquina que executa o Trilium.",
     "provider_unavailable_standalone": "Indisponível na versão de navegador: este provedor funciona executando o Claude Code como um programa separado, e não há máquina aqui para executá-lo.",
     "base_url": "URL base",
     "base_url_description": "Opcional. Alcança a mesma API por meio de um proxy ou gateway. Para executar um modelo você mesmo, adicione um provedor Ollama ou LM Studio em vez disso.",
@@ -3004,9 +2997,6 @@
     "tags-differ": "Os nós selecionados não carregam as mesmas etiquetas, então estas só podem ser lidas.",
     "add-tag": "Adicionar esta etiqueta",
     "remove-tag": "Remover esta etiqueta",
-    "zoom-in": "Ampliar",
-    "zoom-out": "Reduzir",
-    "reset-zoom": "Redefinir zoom",
     "center-map": "Centralizar o mapa",
     "direction-left": "Ramos para a esquerda",
     "direction-right": "Ramos para a direita",
@@ -3064,7 +3054,6 @@
     "page_ranges_placeholder": "ex. 1-5, 8, 11-13",
     "page_ranges_invalid": "Formato invalido. Use p. ex. 1-5, 8, 11-13.",
     "margins_none": "Nenhum",
-    "render_error": "Não foi possível gerar o PDF com as configurações atuais. Verifique as margens e a escala.",
     "page_size": "Tamanho da página",
     "destination_printers": "Impressoras",
     "destination_pdf": "Salvar como PDF",
@@ -3327,11 +3316,6 @@
     "title": "Opções",
     "back": "Voltar a todas as opções"
   },
-  "image_buttons": {
-    "zoom_in": "Ampliar",
-    "zoom_out": "Reduzir",
-    "reset_zoom": "Redefinir zoom"
-  },
   "image_navigation": {
     "previous": "Imagem anterior: {{- title}}",
     "next": "Próxima imagem: {{- title}}"
@@ -3339,16 +3323,6 @@
   "image_viewer": {
     "loading_error": "Ocorreu um erro ao carregar a imagem.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Ampliar",
-      "zoom_out": "Reduzir",
-      "reset_zoom": "Redefinir zoom",
-      "pan": "Movimentar",
-      "pan_up": "Para cima",
-      "pan_down": "Para baixo",
-      "pan_left": "Para a esquerda",
-      "pan_right": "Para a direita",
-      "pan_fast": "Movimentação mais rápida",
       "navigation": "Navegação",
       "next_image": "Próxima imagem",
       "previous_image": "Imagem anterior",
@@ -3891,13 +3865,10 @@
       "insert-an-empty-mermaid-diagram": "Inserir um diagrama Mermaid vazio",
       "insert-date-time": "Inserir data/hora",
       "insert-footnote-0": "Inserir nota de rodapé %0",
-      "insert-math": "Inserir matemática",
-      "insert-mermaid-diagram": "Inserir diagrama Mermaid",
       "insert-mermaid-source-code": "Inserir código-fonte Mermaid",
       "insert-paragraph-after-code-block": "Inserir parágrafo após o bloco de código",
       "insert-paragraph-before-code-block": "Inserir parágrafo antes do bloco de código",
       "insert-text-snippet": "Inserir trecho de texto",
-      "insert-the-current-date-and-time": "Inserir a data e a hora atuais",
       "internal-link": "Link interno",
       "justify-text-alignment": "Justificar o alinhamento do texto",
       "keyboard-shortcut": "Atalho de teclado",
@@ -3972,5 +3943,27 @@
   "note_picker": {
     "label": "Nota",
     "ok": "Escolha"
+  },
+  "search_lint": {
+    "relation_needs_property": "Relações apontam para uma anotação, então elas não podem ser checadas para igualdade. Use . ao invés para acessar suas propiedades.",
+    "text_needs_contains": "anotação.texto pesquisa o texto e o conteúdo junto, então ela só pode ser combinada com *=*.",
+    "compare_the_title": "Comparar o título",
+    "use_operator": "Use {{operator}}"
+  },
+  "search_completion": {
+    "note": "Título da anotação, propriedades e anotações relacionadas",
+    "operator_equal": "Igual ao valor todo",
+    "operator_not_equal": "Não é igual ao valor todo",
+    "operator_contains": "Contém",
+    "operator_starts_with": "Começa com",
+    "operator_ends_with": "Termina com",
+    "operator_greater_than": "Maior que",
+    "operator_greater_or_equal": "Maior que ou igual a",
+    "operator_less_than": "Menor que",
+    "operator_less_or_equal": "Menor que ou igual a",
+    "operator_regex": "Combina com uma expressão regular",
+    "operator_fuzzy_equal": "Igual, tolerando erros de digitação",
+    "operator_fuzzy_contains": "Contém, tolerando erros de digitação",
+    "property_content": "A estrutura da anotação do texto"
   }
 }

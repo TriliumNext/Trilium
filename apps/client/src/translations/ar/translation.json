@@ -530,7 +530,6 @@
     "title_column": "سلسلة البحث:",
     "search_syntax": "صياغة البحث",
     "also_see": "انظر ايضا",
-    "error": "خطأ في البحث: {{error}}",
     "complete_help": "دليل شامل لصياغة البحث",
     "full_text_search": "أدخل أي نص لإجراء بحث نصي كامل",
     "label_abc": "يعيد الملاحظات التي تحتوي على التسميةabc",
@@ -576,7 +575,6 @@
     "preview": "معاينة",
     "custom_fonts": "استخدام خطوط مخصصة",
     "apply_changes": "إعادة التحميل لتطبيق التغييرات",
-    "not_all_fonts_available": "قد لا تكون جميع الخطوط المدرجة متوفرة على نظامك",
     "monospace_font_description": "يُستخدم لملاحظات الكود وكتل الكود.",
     "size_relative_to_general": "الحجم يعتمد نسبيًا على حجم الخط العام"
   },
@@ -749,12 +747,10 @@
     "title": "عنوان",
     "ascending": "تصاعدي",
     "descending": "تنازلي",
-    "folders": "مجلدات",
     "sort": "ترتيب",
     "sorting_criteria": "معايير الترتيب",
     "date_created": "تاريخ الانشاء",
     "date_modified": "تاريخ التعديل",
-    "sorting_direction": "اتجاه الترتيب",
     "natural_sort": "الترتيب الطبيعي",
     "natural_sort_language": "لغات الترتيب الطبيعي",
     "sort_children_by": "ترتيب العناصر الفرعية حسب...",
@@ -1219,8 +1215,7 @@
     "searching": "جار البحث...",
     "placeholder": "البحث السريع",
     "no-results": "لم يتم العثور على نتائج",
-    "show-in-full-search": "عرض في البحث الكامل",
-    "more-results": "… و {{number}} نتيجة أخرى."
+    "show-in-full-search": "عرض في البحث الكامل"
   },
   "note_tree": {
     "unhoist": "ارجاع الى الترتيب الطبيعي",
@@ -1472,9 +1467,6 @@
     "button_title": "عرض الازرار"
   },
   "relation_map_buttons": {
-    "zoom_in_title": "تكبير",
-    "zoom_out_title": "تصغير",
-    "reset_pan_zoom_title": "إعادة ضبط التحريك والتكبير إلى الإحداثيات والتكبير الأصليين",
     "create_child_note_title": "إنشاء ملاحظة فرعية وإضافتها إلى الخريطة"
   },
   "inherited_attribute_list": {
@@ -1746,7 +1738,6 @@
     "delete-note": "حذف الملاحظة...",
     "archive-note": "ارشفة الملاحظة",
     "unarchive-note": "الغاء ارشفة الملاحظة",
-    "move-to": "نقل الى",
     "insert-above": "ادراج اعلاه",
     "insert-below": "ادراج ادناه",
     "delete-column": "حذف العمود",
@@ -1851,9 +1842,6 @@
   },
   "note_autocomplete": {
     "clear-text-field": "مسح حقل النص",
-    "show-recent-notes": "عرض الملاحظات الاخيرة",
-    "full-text-search": "البحث بالنص الكامل",
-    "search-for": "بحث ل \"{{term}}\"",
     "insert-external-link": "إدراج رابط خارجي إلى \"{{term}}\"",
     "create-note": "إنشاء ملاحظة فرعية وربطها \"{{term}}\""
   },
@@ -1917,7 +1905,6 @@
     "slide-overview": "تبديل عرض نظرة عامة على الشرائح"
   },
   "jump_to_note": {
-    "search_button": "البحث في النص الكامل",
     "search_placeholder": "ابحث عن ملاحظة حسب اسمها أو نوعها > للأوامر..."
   },
   "password_not_set": {
@@ -2223,7 +2210,6 @@
     "tokens_used_with_model": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens)",
     "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} المُدخل + {{completion}} الاستجابة = {{total}} رمزًا (Tokens) (~${{cost}})",
     "web_search_unavailable_gemini": "غير متاح في نماذج Gemini أثناء تفعيل الوصول إلى الملاحظات — واجهة Google البرمجية لا تسمح بدمج الاثنين معًا. عطّل الوصول إلى الملاحظات أو بدّل إلى مزود آخر لاستخدام البحث على الويب.",
-    "input_streaming": "الإدخال (تدفق مباشر…)",
     "attach_file": "إرفاق صورة أو ملف PDF أو ملف نصي",
     "remove_attachment": "إزالة المرفق",
     "attachment_upload_failed": "فشل رفع \"{{name}}\".",
@@ -2234,7 +2220,6 @@
     "actions": "الإجراءات",
     "delete_provider": "حذف",
     "add_provider": "إضافة مزود",
-    "configured_providers": "المزوّدون المُهيّؤون",
     "api_key": "مفتاح API",
     "mcp_enabled": "خادم MCP",
     "mcp_endpoint_title": "رابط نقطة النهاية",
@@ -2263,8 +2248,6 @@
       "create_note": "إنشاء ملاحظة",
       "note_in_parent": "‎<Note/> في ‎<Parent/>‎"
     },
-    "add_provider_title": "إضافة مزوّد ذكاء اصطناعي",
-    "no_providers_configured": "لم يتم إعداد أي مزوّدين بعد.",
     "api_key_placeholder": "أدخل مفتاح API الخاص بك",
     "mcp_title": "بروتوكول سياق النموذج (MCP)",
     "base_url": "عنوان URL الأساسي",
@@ -2426,8 +2409,7 @@
     "title": "معاينة الطباعة",
     "page_size": "حجم الصفحة",
     "page_ranges_hint": "اتركه فارغًا لطباعة جميع الصفحات.",
-    "page_ranges_invalid": "تنسيق غير صالح. استخدم مثلًا: 1-5، 8، 11-13.",
-    "render_error": "تعذّر عرض ملف PDF بالإعدادات الحالية. يرجى التحقق من الهوامش ومقياس العرض."
+    "page_ranges_invalid": "تنسيق غير صالح. استخدم مثلًا: 1-5، 8، 11-13."
   },
   "display_mode": {
     "preview": "معاينة",

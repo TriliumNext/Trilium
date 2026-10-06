@@ -25,6 +25,9 @@ Trilium Notes — це безкоштовний кросплатформний �
 нотаток з відкритим кодом, орієнтований на створення великих персональних баз
 знань.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Завантажити

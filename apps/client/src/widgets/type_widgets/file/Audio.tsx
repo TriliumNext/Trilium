@@ -1,4 +1,5 @@
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { RefObject } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
@@ -128,7 +129,7 @@ function useWaveformPeaks(fullUrl: string): number[] | null {
     return peaks;
 }
 
-function useKeyboardShortcuts(audioRef: MutableRef<HTMLAudioElement | null>, togglePlayback: () => void) {
+function useKeyboardShortcuts(audioRef: RefObject<HTMLAudioElement | null>, togglePlayback: () => void) {
     return useCallback((e: KeyboardEvent) => {
         const audio = audioRef.current;
         if (!audio || !claimsKeystroke(e)) return;

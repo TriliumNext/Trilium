@@ -1,11 +1,43 @@
 import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../test/becca_easy_mocking";
-import { findLlmChatExcerpts, findMindMapExcerpts } from "./backlink_excerpts";
+import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "./backlink_excerpts";
 
 function chatContent(messages: unknown[]) {
     return JSON.stringify({ messages });
 }
+
+describe("findExcerpts", () => {
+    it("quotes a paragraph holding several links to the note once, without nesting", () => {
+        const link = `<a class="reference-link" href="#root/excMany">Many</a>`;
+        const html = `<p>first ${link} and ${link} and ${link}</p><p>second ${link}</p>`;
+
+        const excerpts = findExcerpts(html, "excMany");
+
+        expect(excerpts).toEqual([
+            `<div class="ck-content backlink-excerpt"><p>first ` +
+                `<a class="reference-link backlink-link" href="#root/excMany">Many</a> and ` +
+                `<a class="reference-link backlink-link" href="#root/excMany">Many</a> and ` +
+                `<a class="reference-link backlink-link" href="#root/excMany">Many</a></p>` +
+                `<p>second <a class="reference-link backlink-link" href="#root/excMany">Many</a></p></div>`
+        ]);
+    });
+
+    it("quotes separate paragraphs separately and truncates a neighbor from its start", () => {
+        const filler = "x".repeat(150);
+        const html = `<p>${filler} <a href="#root/excSplit">one</a></p>` +
+            `<p>start of the next ${"y".repeat(300)} end</p>` +
+            `<p>${filler} <a href="#root/excSplit">two</a></p>`;
+
+        const excerpts = findExcerpts(html, "excSplit");
+
+        expect(excerpts).toHaveLength(2);
+        expect(excerpts[0]).toContain(`<a href="#root/excSplit" class="backlink-link">one</a>`);
+        expect(excerpts[0]).toContain("start of the next");
+        expect(excerpts[0]).not.toContain(" end…");
+        expect(excerpts[1]).toContain(`<a href="#root/excSplit" class="backlink-link">two</a>`);
+    });
+});
 
 describe("findLlmChatExcerpts", () => {
     it("quotes the assistant prose around the wiki-link, links titled and text escaped", () => {
@@ -56,9 +88,9 @@ describe("findLlmChatExcerpts", () => {
             }
         ]), "excMissing");
 
-        expect(excerpts).toHaveLength(2);
+        expect(excerpts).toHaveLength(1);
         expect(excerpts[0]).toContain(">my name</a>");
-        expect(excerpts[1]).toContain(">excMissing</a>");
+        expect(excerpts[0]).toContain(">excMissing</a>");
     });
 
     it("truncates long neighboring paragraphs with ellipses, one excerpt per mention", () => {

@@ -197,6 +197,15 @@ describe("AnthropicProvider tool handling", () => {
         expect(opts.stopWhen).toBeDefined();
     });
 
+    it("passes the turn's abort signal to streamText, with or without extended thinking", () => {
+        const provider = new AnthropicProvider("sk-ant-test");
+        const signal = new AbortController().signal;
+        provider.chat([{ role: "user", content: "hi" }], {}, signal);
+        provider.chat([{ role: "user", content: "hi" }], { enableExtendedThinking: true }, signal);
+
+        expect(streamTextMock.mock.calls.map(([ opts ]) => (opts as any).abortSignal)).toEqual([ signal, signal ]);
+    });
+
     it("defaults the thinking budget and floors maxOutputTokens when unset", () => {
         const provider = new AnthropicProvider("sk-ant-test");
         provider.chat([{ role: "user", content: "hi" }], {

@@ -84,6 +84,19 @@ describe("security_settings", () => {
             h.fileStore.set(SETTINGS_PATH, "{ not valid json");
             expect(securitySettings.getSecuritySettings()).toEqual({});
         });
+
+        it("answers for nothing a setting was not given a boolean for", () => {
+            // What main.ts does with this is assign it straight to `config.Security`, where it is
+            // read as a boolean: the string "false" is truthy, so taking the file at its word would
+            // enable the setting it appears to turn off. Nothing but a boolean is an answer.
+            h.fileStore.set(SETTINGS_PATH, JSON.stringify({
+                backendScriptingEnabled: "false",
+                sqlConsoleEnabled: 1,
+                allowLanAccess: true
+            }));
+
+            expect(securitySettings.getSecuritySettings()).toEqual({ allowLanAccess: true });
+        });
     });
 
     describe("registerSecurityIpcHandlers — enabling", () => {

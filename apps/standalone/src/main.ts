@@ -1,10 +1,13 @@
+import type { StandaloneApi } from "@triliumnext/commons";
+
 import {
     initSplashProgress, reportSplashPhase, type SplashPhase
 } from "../../client/src/services/splash.js";
 import { showErrorOverlay } from "./error-overlay.js";
 import { installIosInterceptors } from "./ios-interceptors.js";
 import { claimLeadership } from "./leader_election.js";
-import { announceLeadership, attachServiceWorkerBridge, downloadDatabase, registerNativeHttpHandler, restoreBackup, startLocalServerWorker } from "./local-bridge.js";
+import { announceLeadership, attachServiceWorkerBridge, downloadDatabase, localFetch, registerNativeHttpHandler, restoreBackup, saveDatabase, startLocalServerWorker } from "./local-bridge.js";
+import { createSecurityApi } from "./security_gate.js";
 
 /**
  * What a cold standalone start passes through, drawn as the splash's progress bar. Weights are
@@ -83,10 +86,15 @@ async function bootstrap() {
 
     // The client's way to the worker for the few things that carry a file, which the request path
     // would serialise whole and time out on. The desktop's `window.electronApi` is the same idea.
-    window.standaloneApi = {
+    const standaloneApi: StandaloneApi = {
         restore: { importBackup: restoreBackup },
         backup: { downloadDatabase }
     };
+    window.standaloneApi = standaloneApi;
+
+    // Never awaited: the verdict changes nothing about how startup proceeds, and the browser is
+    // free to take its time reaching one.
+    void requestPersistentStorage();
 
     try {
         // When running inside a Capacitor WebView, register the native HTTP
@@ -94,6 +102,13 @@ async function bootstrap() {
         if ("Capacitor" in window) {
             const { capacitorHttpHandler } = await import("./services/capacitor_http_handler.js");
             registerNativeHttpHandler(capacitorHttpHandler);
+
+            // The shell's WebView drops a download the moment the response says `attachment`,
+            // so the client routes downloads through the share sheet instead. The backup takes the
+            // same route, off its own stream rather than a response.
+            const { saveUrlToDevice } = await import("./services/capacitor_download.js");
+            standaloneApi.save = { saveUrl: saveUrlToDevice };
+            standaloneApi.backup.saveDatabase = saveDatabase;
         }
 
         // 1) Start the local worker ASAP (so /bootstrap is fast) — but only in
@@ -103,6 +118,12 @@ async function bootstrap() {
         // worker instead. See leader_election.ts.
         claimLeadership(() => {
             startLocalServerWorker();
+            // The leader answers API requests from its own worker, so the client's server.ts
+            // can skip the service-worker round trip.
+            standaloneApi.localFetch = localFetch;
+            // Its worker is also the one holding the lock on the security settings file, so it is
+            // the only tab that can change what this instance is allowed to run. See security_gate.ts.
+            standaloneApi.security = createSecurityApi();
             announceLeadership();
         });
 
@@ -128,6 +149,34 @@ async function bootstrap() {
             "Failed to Initialize",
             err instanceof Error ? err.message : String(err)
         );
+    }
+}
+
+/**
+ * Asks the browser to keep the storage the database lives in. Without the grant that storage is
+ * best-effort: WebKit drops it after about a week without a visit and Chromium evicts it under
+ * pressure, taking the whole database with it.
+ *
+ * The browser answers from its own heuristics — how installed the site looks — and a page can
+ * neither prompt for it nor appeal it, so this reports the verdict and carries on. It runs here
+ * rather than beside the OPFS code because `StorageManager.persist()` is exposed on the window
+ * only; a worker can read `persisted()` but cannot ask.
+ *
+ * `navigator.storage` is absent outside a secure context, which standalone already refuses to
+ * start in.
+ */
+async function requestPersistentStorage() {
+    if (!navigator.storage?.persist) {
+        return;
+    }
+
+    try {
+        const granted = await navigator.storage.persist();
+        console.log(granted
+            ? "[Bootstrap] Storage is persistent"
+            : "[Bootstrap] Storage is best-effort, so the browser can evict the database");
+    } catch (err) {
+        console.warn("[Bootstrap] Could not ask for persistent storage:", err);
     }
 }
 

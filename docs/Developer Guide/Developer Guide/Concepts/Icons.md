@@ -71,4 +71,4 @@ These are stored in `images`:
 
 *   In the client, more specifically in `src/public/app/widgets/buttons/global_menu.js`, where the SVG content of the icon is directly embedded to allow styling via CSS.
 *   In the <a class="reference-link" href="Demo%20document.md">Demo document</a>, as an attachment.
-*   In the <a class="reference-link" href="#root/OeKBfN6JbMIq/MF99QFRe1gVy/xkj1bqW7zJwQ/t6mT72MfEzb2">CKEditor</a> build, look for `packages/ckeditor5-build-balloon-block/src/icons/trilium.svg`. Make sure not to have any `fill` overrides in the SVG as the wrong color will be used.
+*   In the <a class="reference-link" href="../Dependencies/CKEditor.md">CKEditor</a> build, look for `packages/ckeditor5-build-balloon-block/src/icons/trilium.svg`. Make sure not to have any `fill` overrides in the SVG as the wrong color will be used.

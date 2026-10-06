@@ -258,8 +258,7 @@
     "copy_to_clipboard": "क्लिपबोर्ड पर कॉपी करें"
   },
   "jump_to_note": {
-    "search_placeholder": "नोट के नाम या टाइप से सर्च करें > कमांड्स के लिए..।",
-    "search_button": "पूरे टेक्स्ट में सर्च करें"
+    "search_placeholder": "नोट के नाम या टाइप से सर्च करें > कमांड्स के लिए..।"
   },
   "markdown_import": {
     "dialog_title": "Markdown इम्पोर्ट",
@@ -316,10 +315,8 @@
     "title": "टाइटल",
     "date_created": "बनाने की तारीख",
     "date_modified": "बदलाव की तारीख",
-    "sorting_direction": "सॉर्टिंग की दिशा",
     "ascending": "आरोही (ascending)",
     "descending": "अवरोही (descending)",
-    "folders": "फ़ोल्डर्स",
     "sort_folders_at_top": "फ़ोल्डर्स को सबसे ऊपर सॉर्ट करें",
     "natural_sort": "नेचुरल सॉर्ट (Natural Sort)",
     "sort_with_respect_to_different_character_sorting": "अलग-अलग भाषाओं या क्षेत्रों के हिसाब से वर्णों को सॉर्ट करने के नियमों के अनुसार सॉर्ट करें।",
@@ -745,10 +742,7 @@
     "button_title": "डायग्राम को SVG की तरह एक्सपोर्ट करें"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "सब-नोट बनाएं और मैप में जोड़ें",
-    "reset_pan_zoom_title": "पैन और ज़ूम को शुरूआती स्थिति पर रीसेट करें",
-    "zoom_in_title": "ज़ूम इन (बड़ा करें)",
-    "zoom_out_title": "ज़ूम आउट (छोटा करें)"
+    "create_child_note_title": "सब-नोट बनाएं और मैप में जोड़ें"
   },
   "zpetne_odkazy": {
     "backlink_one": "{{count}} बैकलिंक",
@@ -1001,7 +995,6 @@
     "label_rock_or_pop": "दिए गए लेबल्स में से कम से कम एक होना चाहिए",
     "label_year_comparison": "नंबरों की तुलना (साथ ही >, >=, < भी)।",
     "label_date_created": "पिछले महीने बने नोट्स",
-    "error": "सर्च एरर: {{error}}",
     "search_prefix": "खोजें:"
   },
   "attachment_detail": {
@@ -1171,7 +1164,6 @@
     "note_tree_font": "नोट ट्री फ़ॉन्ट",
     "note_detail_font": "नोट डिटेल फ़ॉन्ट",
     "monospace_font": "मोनोस्पेस (कोड) फ़ॉन्ट",
-    "not_all_fonts_available": "हो सकता है कि लिस्ट में दिए गए सभी फ़ॉन्ट्स आपके सिस्टम पर न हों।",
     "generic-fonts": "सामान्य फ़ॉन्ट्स",
     "sans-serif-system-fonts": "Sans-serif सिस्टम फ़ॉन्ट्स",
     "serif-system-fonts": "Serif सिस्टम फ़ॉन्ट्स",
@@ -1761,7 +1753,6 @@
     "placeholder": "तुरंत खोजें (Quick search)",
     "searching": "खोजा जा रहा है..।",
     "no-results": "कोई परिणाम नहीं मिला",
-    "more-results": "... और {{number}} परिणाम।",
     "show-in-full-search": "पूरी खोज (Full search) में दिखाएं"
   },
   "note_tree": {
@@ -1985,12 +1976,9 @@
     "zoom-factor": "ज़ूम फैक्टर (Zoom factor)"
   },
   "note_autocomplete": {
-    "search-for": "\"{{term}}\" के लिए खोजें",
     "create-note": "चाइल्ड नोट \"{{term}}\" बनाएं और लिंक करें",
     "insert-external-link": "\"{{term}}\" का बाहरी लिंक जोड़ें",
-    "clear-text-field": "टेक्स्ट साफ़ करें",
-    "show-recent-notes": "हाल के नोट्स दिखाएं",
-    "full-text-search": "पूरी खोज (Full text search)"
+    "clear-text-field": "टेक्स्ट साफ़ करें"
   },
   "note_tooltip": {
     "note-has-been-deleted": "नोट डिलीट कर दिया गया है।",
@@ -2131,7 +2119,6 @@
     "remove-from-board": "बोर्ड से हटाएं",
     "archive-note": "नोट आर्काइव करें",
     "unarchive-note": "नोट आर्काइव से निकालें",
-    "move-to": "इसमें ले जाएं",
     "insert-above": "ऊपर जोड़ें",
     "insert-below": "नीचे जोड़ें",
     "delete-column": "कॉलम डिलीट करें",
@@ -2474,11 +2461,6 @@
     "title": "ऑप्शंस",
     "back": "सभी ऑप्शंस पर वापस जाएं"
   },
-  "image_buttons": {
-    "zoom_in": "ज़ूम इन",
-    "zoom_out": "ज़ूम आउट",
-    "reset_zoom": "ज़ूम रीसेट करें"
-  },
   "image_navigation": {
     "previous": "पिछली इमेज: {{- title}}",
     "next": "अगली इमेज: {{- title}}"
@@ -2576,7 +2558,6 @@
     "thought_process": "विचार प्रक्रिया",
     "tool_calls": "{{count}} टूल कॉल",
     "input": "इनपुट",
-    "input_streaming": "इनपुट (स्ट्रीमिंग…)",
     "edit_index": "{{total}} में से {{index}} संपादित करें",
     "result": "परिणाम",
     "error": "त्रुटि",
@@ -2661,7 +2642,6 @@
     "page_size": "पेज साइज",
     "scale": "स्केल",
     "margins": "मार्जिन",
-    "render_error": "वर्तमान सेटिंग्स के साथ PDF रेंडर करने में असमर्थ। कृपया मार्जिन और स्केल की जांच करें।",
     "margins_default": "डिफ़ॉल्ट",
     "margins_none": "कोई नहीं",
     "margins_minimum": "न्यूनतम",
@@ -2726,9 +2706,6 @@
   "llm": {
     "feature_not_enabled": "AI इंटीग्रेशन का उपयोग करने के लिए सेटिंग्स → एडवांस्ड → एक्सपेरिमेंटल फीचर्स में LLM एक्सपेरिमेंटल फीचर को इनेबल करें।",
     "add_provider": "प्रोवाइडर जोड़ें",
-    "add_provider_title": "AI प्रोवाइडर जोड़ें",
-    "configured_providers": "कॉन्फ़िगर किए गए प्रोवाइडर्स",
-    "no_providers_configured": "अभी तक कोई प्रोवाइडर कॉन्फ़िगर नहीं है।",
     "provider_name": "नाम",
     "actions": "क्रियाएं",
     "delete_provider": "डिलीट करें",
@@ -2815,7 +2792,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "एक टॉगल करने योग्य सेक्शन डालें जो क्लिक करने पर कंटेंट को छुपाता/दिखाता है।",
       "insert-an-anchor-for-internal-linking": "इंटरनल लिंकिंग के लिए एक एंकर डालें",
       "insert-an-empty-mermaid-diagram": "एक खाली मरमेड डायग्राम डालें",
-      "insert-the-current-date-and-time": "करंट डेट और टाइम डालें",
       "justify-text-alignment": "टेक्स्ट अलाइनमेंट जस्टिफाई करें",
       "right-click-or-press-0-to-change-state": "अधिक टास्क स्टेट्स के लिए राइट क्लिक करें।\nस्टेट्स के बीच साइकिल करने के लिए %0 दबाएं।",
       "select-collapsible-block": "कोलाप्सिबल ब्लॉक चुनें",

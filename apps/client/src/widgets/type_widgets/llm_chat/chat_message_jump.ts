@@ -14,7 +14,7 @@ const FLASH_DURATION_MS = 1200;
  * message, so there's no per-message wiring. A missing target (the referenced message was deleted or
  * regenerated) is a graceful no-op — mirroring how highlights drop orphaned anchors.
  */
-export function useChatMessageJumps(scrollContainerRef: RefObject<HTMLElement>) {
+export function useChatMessageJumps(scrollContainerRef: RefObject<HTMLElement | null>) {
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;

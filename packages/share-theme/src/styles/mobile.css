@@ -40,6 +40,10 @@
     width: 32px;
 }
 
+#mobile-backdrop {
+    display: none;
+}
+
 @media (max-width: 48em) {
 
     html,
@@ -99,22 +103,18 @@
         transform: translateX(0);
     }
 
-    body::before {
-        content: "";
+    #mobile-backdrop {
         display: block;
         position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        inset: 0;
         background: rgba(0,0,0,0);
         pointer-events: none;
         transition: background-color 200ms ease;
         z-index: 1;
     }
 
-    body.menu-open::before,
-    body.toc-open::before {
+    body.menu-open #mobile-backdrop,
+    body.toc-open #mobile-backdrop {
         background: rgba(0,0,0, 0.6);
         pointer-events: auto;
     }

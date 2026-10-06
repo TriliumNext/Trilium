@@ -1,195 +1,476 @@
-import $ from "jquery";
-import { render } from "preact";
-import { act } from "preact/test-utils";
+import { type ComponentChildren, render } from "preact";
+import { useRef } from "preact/hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// A single fake Bootstrap dropdown instance so the component wiring (dropdownRef, `_menu`
-// re-pointing, dispose-on-unmount) can be asserted without real Bootstrap/Popper.
-const { instance, getOrCreateInstance } = vi.hoisted(() => {
-    const instance = {
-        show: vi.fn(),
-        hide: vi.fn(),
-        update: vi.fn(),
-        dispose: vi.fn(),
-        _menu: null as HTMLElement | null
-    };
-    return { instance, getOrCreateInstance: vi.fn(() => instance) };
-});
+import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "./Dropdown";
+import { FormDropdownSubmenu, FormListItem } from "./FormList";
 
-vi.mock("bootstrap", () => ({
-    Dropdown: { getOrCreateInstance },
-    Tooltip: class {}
+// A dialog's focus trap would pull focus out of a menu portaled over it.
+const focusTraps = vi.hoisted(() => ({ suspend: vi.fn(() => () => {}) }));
+vi.mock("./modal_focustrap", () => ({ suspendModalFocusTraps: focusTraps.suspend }));
+
+const layout = vi.hoisted(() => ({
+    onMobile: false,
+    narrow: true,
+    onChange: new Set<() => void>()
 }));
-
-// Stub only the Bootstrap-Tooltip hook; keep the rest of the hooks module real. The stubs must be
-// referentially stable across renders — onShown/onHidden depend on hideTooltip's identity.
-const tooltipStub = vi.hoisted(() => ({ showTooltip: vi.fn(), hideTooltip: vi.fn() }));
-vi.mock("./hooks", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("./hooks")>()),
-    useTooltip: () => tooltipStub
-}));
-
-// `mobileBottomSheet` only takes effect on a mobile layout, which has to be answerable per test.
-const isMobileMock = vi.hoisted(() => vi.fn(() => false));
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../services/utils")>()),
-    isMobile: () => isMobileMock()
+    isMobile: () => layout.onMobile
 }));
 
-import Dropdown from "./Dropdown";
-
-// happy-dom has no ResizeObserver; the component only needs observe/disconnect to exist.
-class ResizeObserverStub {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-}
-globalThis.ResizeObserver = globalThis.ResizeObserver ?? (ResizeObserverStub as unknown as typeof ResizeObserver);
-
-let container: HTMLDivElement | undefined;
-function renderInto(vnode: preact.ComponentChild) {
-    const el = document.createElement("div");
-    container = el;
-    document.body.appendChild(el);
-    void act(() => render(vnode, el));
-    return el;
-}
-
-function getToggle() {
-    const button = container?.querySelector("button");
-    expect(button).toBeTruthy();
-    return button as HTMLButtonElement;
-}
-
-function fire(target: EventTarget, eventName: string) {
-    void act(() => {
-        target.dispatchEvent(new Event(eventName, { bubbles: true }));
-    });
-}
-
 describe("Dropdown", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+
     beforeEach(() => {
-        vi.clearAllMocks();
-        isMobileMock.mockReturnValue(false);
-        instance._menu = null;
+        vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1000);
+        vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
+        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(200);
+        vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(100);
+        // A phone's width unless a spec says otherwise; happy-dom's window is 1024px wide.
+        vi.spyOn(window, "matchMedia").mockImplementation((media) => ({
+            matches: layout.narrow,
+            media,
+            addEventListener: (_: string, listener: () => void) => layout.onChange.add(listener),
+            removeEventListener: (_: string, listener: () => void) => {
+                layout.onChange.delete(listener);
+            }
+        }) as unknown as MediaQueryList);
     });
 
     afterEach(() => {
-        if (container) {
-            const el = container;
-            void act(() => render(null, el));
-            el.remove();
-            container = undefined;
+        render(null, host);
+        vi.restoreAllMocks();
+        layout.onMobile = false;
+        layout.narrow = true;
+        layout.onChange.clear();
+    });
+
+    /** Renders a `Dropdown`, or a `DropdownPanel` for `panel`. */
+    function renderDropdown({ panel, ...props }: Partial<DropdownPanelProps> & { panel?: boolean } = {}, content: ComponentChildren = <li className="dropdown-item">By title</li>) {
+        let handle: { current: DropdownHandle | null } = { current: null };
+        const Component = panel ? DropdownPanel : Dropdown;
+        function Harness() {
+            const dropdownRef = useRef<DropdownHandle | null>(null);
+            handle = dropdownRef;
+            return (
+                <Component text="Sort" dropdownRef={dropdownRef} dropdownContainerClassName="sort-menu" {...props}>
+                    {content}
+                </Component>
+            );
         }
-    });
+        render(<Harness />, host);
+        const toggle = host.querySelector<HTMLButtonElement>("button");
+        if (!toggle) throw new Error("expected the toggle to render");
+        vi.spyOn(toggle, "getBoundingClientRect").mockReturnValue(DOMRect.fromRect({ x: 100, y: 50, width: 80, height: 30 }));
+        return { toggle, handle: () => handle.current };
+    }
 
-    it("renders a non-portaled menu inline, exposes the instance via dropdownRef and disposes it on unmount", () => {
-        const dropdownRef = { current: null };
-        const el = renderInto(<Dropdown dropdownRef={dropdownRef}>item</Dropdown>);
+    const popup = () => document.querySelector<HTMLElement>(".tn-popup");
+    const click = (element: HTMLElement) => {
+        // A press comes before its click, and would reach the popup's dismissal first.
+        element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+        element.click();
+    };
 
-        // Menu is nested next to the toggle, not in the body.
-        expect(el.querySelector(".dropdown .dropdown-menu")).toBeTruthy();
-        expect(dropdownRef.current).toBe(instance);
-
-        void act(() => render(null, el));
-        expect(instance.dispose).toHaveBeenCalledTimes(1);
-    });
-
-    it("mounts the portaled menu on arm (pointerdown/focus), wires _menu, and tears down on blur without open", () => {
-        renderInto(<Dropdown portalToBody className="my-scope" text="btn">item</Dropdown>);
-
-        // Not mounted while idle — no empty wrapper left in the body.
-        expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
-
-        // Pointer press arms it: the wrapper + menu mount in the body and _menu is re-pointed.
-        fire(getToggle(), "pointerdown");
-        const menu = document.body.querySelector(":scope > .my-scope > .dropdown-menu");
-        expect(menu).toBeTruthy();
-        expect(instance._menu).toBe(menu);
-        // `tn-dropdown-portal` is what style.css hangs the out-of-modal z-index on; without it a
-        // portaled menu paints under whatever dialog it was opened from.
-        expect(menu?.parentElement?.classList.contains("tn-dropdown-portal")).toBe(true);
-
-        // Releasing focus without opening tears the empty menu back down.
-        fire(getToggle(), "focusout");
-        expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
-
-        // Focusing the toggle (keyboard path) arms it too.
-        fire(getToggle(), "focusin");
-        expect(document.body.querySelector(":scope > .my-scope > .dropdown-menu")).toBeTruthy();
-    });
-
-    it("keeps an open portaled menu mounted through blur and unmounts it on hide", () => {
+    it("opens a popup below its toggle on a click, and closes it on another", async () => {
         const onShown = vi.fn();
         const onHidden = vi.fn();
-        const el = renderInto(
-            <Dropdown portalToBody className="my-scope" onShown={onShown} onHidden={onHidden}>
-                <li>entry</li>
-            </Dropdown>
-        );
+        const { toggle } = renderDropdown({ onShown, onHidden, className: "sort-dropdown" });
+        expect(popup()).toBeNull();
+        expect(toggle.getAttribute("aria-expanded")).toBe("false");
 
-        fire(getToggle(), "pointerdown");
-
-        // Bootstrap opens the dropdown: children render and blur no longer unmounts.
-        const dropdownEl = el.querySelector(".dropdown");
-        expect(dropdownEl).toBeTruthy();
-        void act(() => {
-            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
-        });
+        click(toggle);
+        await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+        const opened = popup();
+        // A menu, which lays its rows out in a scroller of its own.
+        expect([ ...opened?.classList ?? [] ]).toEqual([ "tn-popup", "dropdown-menu", "show", "tn-menu", "tn-dropdown-menu", "sort-menu" ]);
+        expect(opened?.getAttribute("role")).toBe("menu");
+        expect(opened?.querySelector(":scope > .tn-menu-scroll")?.textContent).toBe("By title");
+        // In the page's body, in a wrapper with the dropdown's class, so CSS scoped under it applies.
+        expect(opened?.parentElement?.className).toBe("tn-dropdown-portal sort-dropdown");
+        expect(opened?.getAttribute("aria-labelledby")).toBe(toggle.id);
+        // 2px below the toggle, as Bootstrap's dropdowns stood.
+        expect([ opened?.style.left, opened?.style.top ]).toEqual([ "100px", "82px" ]);
+        expect(toggle.getAttribute("aria-expanded")).toBe("true");
+        expect(toggle.classList.contains("show")).toBe(true);
         expect(onShown).toHaveBeenCalledTimes(1);
-        expect(document.body.querySelector(":scope > .my-scope li")).toBeTruthy();
 
-        fire(getToggle(), "focusout");
-        expect(document.body.querySelector(":scope > .my-scope > .dropdown-menu")).toBeTruthy();
-
-        // Hiding resets both `shown` and `armed`, unmounting the portaled menu.
-        void act(() => {
-            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
-        });
+        // The toggle's own press is not a press outside, so its click closes rather than reopens.
+        click(toggle);
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        expect(toggle.getAttribute("aria-expanded")).toBe("false");
         expect(onHidden).toHaveBeenCalledTimes(1);
-        expect(document.body.querySelector(":scope > .my-scope")).toBeNull();
     });
 
-    it("leaves a mobileBottomSheet menu alone on a desktop layout", () => {
-        const el = renderInto(<Dropdown mobileBottomSheet forceShown>item</Dropdown>);
+    it("closes on a press outside, and on Escape, which hands focus back to the toggle", async () => {
+        const { toggle } = renderDropdown();
 
-        // Nested next to the toggle, unclassed and undimmed: the sheet is a mobile arrangement only.
-        expect(el.querySelector(".dropdown > .dropdown-menu")).toBeTruthy();
-        expect(el.querySelector(".mobile-bottom-menu")).toBeNull();
+        click(toggle);
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+        await vi.waitFor(() => expect(popup()).toBeNull());
+
+        // The menu takes focus as it shows, and gives it back to the toggle as Escape closes it.
+        click(toggle);
+        await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+        popup()?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        expect(document.activeElement).toBe(toggle);
     });
 
-    it("makes a mobileBottomSheet menu a bottom sheet on mobile: classed, portaled out and over the backdrop", () => {
-        isMobileMock.mockReturnValue(true);
-        const cover = document.createElement("div");
-        cover.id = "context-menu-cover";
-        document.body.appendChild(cover);
+    it("opens, closes and toggles through its handle, for a caller that decides when", async () => {
+        const { handle } = renderDropdown();
+        await vi.waitFor(() => expect(handle()).not.toBeNull());
 
-        const el = renderInto(<Dropdown mobileBottomSheet>item</Dropdown>);
-        const dropdownEl = el.querySelector(".dropdown");
-        void act(() => {
-            $(dropdownEl as HTMLElement).trigger("show.bs.dropdown");
+        handle()?.show();
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        handle()?.hide();
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        handle()?.toggle();
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
+        handle()?.toggle();
+        await vi.waitFor(() => expect(popup()).toBeNull());
+    });
+
+    it("closes an open popup once it is disabled, and does not open while it is", async () => {
+        const { toggle } = renderDropdown();
+        click(toggle);
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
+
+        renderDropdown({ disabled: true });
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        const disabledToggle = host.querySelector<HTMLButtonElement>("button");
+        expect(disabledToggle?.disabled).toBe(true);
+    });
+
+    describe("content", () => {
+        const items = <>
+            <li className="dropdown-item" tabIndex={0}>By title</li>
+            <li className="dropdown-item disabled" tabIndex={0}>By size</li>
+            {/* As `FormListToggleableItem`, which stops its click so the menu stays up. */}
+            <li className="dropdown-item" tabIndex={0} onClick={(e) => e.stopPropagation()}>Descending</li>
+            <li><input className="filter" /></li>
+            <li className="dropdown-item" tabIndex={0}>By date</li>
+        </>;
+        const item = (title: string) => {
+            const found = [ ...popup()?.querySelectorAll<HTMLElement>("li") ?? [] ].find((li) => li.textContent === title);
+            if (!found) throw new Error(`expected an item titled ${title}`);
+            return found;
+        };
+
+        it("closes on a click on an item, but not on one the item stops, in a field, or on the menu itself", async () => {
+            const { toggle } = renderDropdown({}, items);
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+
+            item("Descending").click();
+            popup()?.querySelector<HTMLElement>("input")?.click();
+            popup()?.click();
+            expect(popup()).not.toBeNull();
+
+            item("By title").click();
+            await vi.waitFor(() => expect(popup()).toBeNull());
         });
 
-        // The one prop stands in for all three pieces the arrangement needs.
-        expect(instance._menu?.classList.contains("mobile-bottom-menu")).toBe(true);
-        expect(el.contains(instance._menu)).toBe(false);
-        expect(instance._menu?.closest("body")).toBeTruthy();
-        expect(cover.classList.contains("show")).toBe(true);
+        it("stays up for a click inside when it closes only on one outside", async () => {
+            const { toggle } = renderDropdown({ autoClose: "outside" }, items);
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
 
-        void act(() => {
-            $(dropdownEl as HTMLElement).trigger("hide.bs.dropdown");
+            item("By title").click();
+            expect(popup()).not.toBeNull();
+            document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            await vi.waitFor(() => expect(popup()).toBeNull());
         });
-        expect(cover.classList.contains("show")).toBe(false);
-        cover.remove();
+
+        it("closes only on a click inside, or on neither, when asked to", async () => {
+            const outside = () => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            // A close is rendered after the fact, so a popup still there is checked a turn later.
+            const settle = () => new Promise((resolve) => setTimeout(resolve));
+            const { toggle } = renderDropdown({ autoClose: "inside" }, items);
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+            outside();
+            await settle();
+            expect(popup()).not.toBeNull();
+            item("By title").click();
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            render(null, host);
+
+            const { toggle: manual } = renderDropdown({ autoClose: false }, items);
+            click(manual);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+            outside();
+            item("By title").click();
+            await settle();
+            expect(popup()).not.toBeNull();
+            // Escape and the toggle still close it.
+            popup()?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+            await vi.waitFor(() => expect(popup()).toBeNull());
+        });
+
+        it("opens at its last item on Up from the toggle, and moves in from the toggle while open", async () => {
+            const { toggle } = renderDropdown({ panel: true }, items);
+            const key = (name: string) =>
+                toggle.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+
+            // Other keys are the toggle's own.
+            expect(key("a")).toBe(true);
+            expect(popup()).toBeNull();
+
+            toggle.focus();
+            key("ArrowUp");
+            await vi.waitFor(() => expect(document.activeElement?.textContent).toBe("By date"));
+
+            toggle.focus();
+            key("ArrowDown");
+            expect(document.activeElement?.textContent).toBe("By title");
+        });
+
+        it("opens above its toggle when asked to", async () => {
+            const { toggle } = renderDropdown({ placement: "top" });
+            vi.spyOn(toggle, "getBoundingClientRect").mockReturnValue(DOMRect.fromRect({ x: 100, y: 500, width: 80, height: 30 }));
+            click(toggle);
+            // Centered over the toggle, and ending 2px above it: 500 - 100 - 2.
+            await vi.waitFor(() => expect([ popup()?.style.left, popup()?.style.top ]).toEqual([ "40px", "398px" ]));
+        });
+
+        it("moves focus over the items with Up and Down, keeping them from Bootstrap, and opens from the toggle", async () => {
+            const bootstrapHeard = vi.fn();
+            document.addEventListener("keydown", bootstrapHeard, true);
+            // A panel, whose items are no rows of a menu, moves focus over them as Bootstrap's did.
+            const { toggle } = renderDropdown({ panel: true }, items);
+            const key = (target: Element, name: string) =>
+                target.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+
+            toggle.focus();
+            key(toggle, "ArrowDown");
+            await vi.waitFor(() => expect(document.activeElement?.textContent).toBe("By title"));
+            // A plain popup, which assistive technology is not told is a menu.
+            expect(toggle.getAttribute("aria-haspopup")).toBe("true");
+            expect(popup()?.getAttribute("role")).toBeNull();
+            // Its frame does not scroll, so the theme's blur stays on its `::before`.
+            expect(popup()?.classList.contains("tn-dropdown-list")).toBe(false);
+            // Bootstrap reacts on a toggle only with `data-bs-toggle`, which this one does not carry.
+            bootstrapHeard.mockClear();
+
+            // Past the disabled item, round from the last to the first, and back.
+            key(item("By title"), "ArrowDown");
+            expect(document.activeElement?.textContent).toBe("Descending");
+            key(item("Descending"), "ArrowDown");
+            expect(document.activeElement?.textContent).toBe("By date");
+            key(item("By date"), "ArrowDown");
+            expect(document.activeElement?.textContent).toBe("By title");
+            key(item("By title"), "ArrowUp");
+            expect(document.activeElement?.textContent).toBe("By date");
+            expect(bootstrapHeard).not.toHaveBeenCalled();
+
+            // A field keeps its own arrows.
+            const field = popup()?.querySelector("input");
+            if (!field) throw new Error("expected the field");
+            key(field, "ArrowDown");
+            expect(bootstrapHeard).toHaveBeenCalledTimes(1);
+            document.removeEventListener("keydown", bootstrapHeard, true);
+        });
+
+        it("scrolls a scrollable panel's content inside it, in the room the viewport leaves", async () => {
+            // Content taller than the room: 100px each, in a viewport of 800.
+            const { toggle } = renderDropdown({ panel: true, scrollable: true });
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            expect(popup()?.querySelector(":scope > .tn-panel-scroll")?.textContent).toBe("By title");
+            expect(popup()?.style.maxHeight).not.toBe("");
+            render(null, host);
+
+            // Otherwise the content stands in the panel, which grows with it.
+            const { toggle: plain } = renderDropdown({ panel: true });
+            click(plain);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            expect(popup()?.querySelector(".tn-panel-scroll")).toBeNull();
+            expect(popup()?.style.maxHeight).toBe("");
+        });
+
+        it("suspends the focus traps of the dialogs under it while it is up, and restores them after", async () => {
+            const restore = vi.fn();
+            focusTraps.suspend.mockReturnValue(restore);
+            const { toggle } = renderDropdown();
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+            expect(focusTraps.suspend).toHaveBeenCalledTimes(1);
+            expect(restore).not.toHaveBeenCalled();
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            expect(restore).toHaveBeenCalledTimes(1);
+        });
     });
 
-    it("mounts and shows a forceShown portaled dropdown immediately", () => {
-        // No className: the portaled wrapper falls back to an empty class.
-        renderInto(<Dropdown portalToBody forceShown>item</Dropdown>);
+    describe("as a menu", () => {
+        it("caps its height to the room below its toggle, its rows scrolling inside, as the context menu does", async () => {
+            vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(1000);
+            const { toggle } = renderDropdown();
 
-        expect(instance.show).toHaveBeenCalledTimes(1);
-        // The menu was mounted into the body (via the class-less wrapper) and wired as _menu.
-        expect(instance._menu?.classList.contains("dropdown-menu")).toBe(true);
-        expect(instance._menu?.closest("body")).toBeTruthy();
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            // Below the toggle's bottom (80) and its 2px gap, less the 5px kept from the viewport's edge.
+            expect(popup()?.style.maxHeight).toBe(`${800 - 82 - 5}px`);
+            expect(popup()?.querySelector(":scope > .tn-menu-scroll")).not.toBeNull();
+        });
+
+        it("closes on a row's click, but not on one the row stopped, as a toggle does to stay up", async () => {
+            const picked: string[] = [];
+            const { toggle } = renderDropdown({}, <>
+                <FormListItem onClick={(e) => { picked.push("wrap"); e.stopPropagation(); }}>Wrap lines</FormListItem>
+                <FormListItem onClick={() => picked.push("title")}>By title</FormListItem>
+            </>);
+            const row = (title: string) => [ ...document.querySelectorAll<HTMLElement>(".tn-popup li.dropdown-item") ]
+                .find((item) => item.textContent === title);
+
+            click(toggle);
+            await vi.waitFor(() => expect(row("Wrap lines")).toBeTruthy());
+            row("Wrap lines")?.click();
+            expect(popup()).not.toBeNull();
+
+            row("By title")?.click();
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            expect(picked).toEqual([ "wrap", "title" ]);
+        });
+
+        it("stays open on a click on a submenu's row, which unfolds the submenu on a phone", async () => {
+            const toggled = vi.fn();
+            const content = (
+                <FormDropdownSubmenu icon="bx bx-chip" title="Advanced" onDropdownToggleClicked={toggled}>
+                    <FormListItem>Show log</FormListItem>
+                </FormDropdownSubmenu>
+            );
+            const submenuRow = () => popup()?.querySelector<HTMLElement>("li.dropdown-submenu");
+
+            const { toggle } = renderDropdown({}, content);
+            click(toggle);
+            await vi.waitFor(() => expect(submenuRow()).toBeTruthy());
+            submenuRow()?.click();
+            expect(toggled).toHaveBeenCalledOnce();
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(popup()).not.toBeNull();
+
+            render(null, host);
+            layout.onMobile = true;
+            const { toggle: phoneToggle } = renderDropdown({}, content);
+            click(phoneToggle);
+            await vi.waitFor(() => expect(submenuRow()).toBeTruthy());
+            submenuRow()?.click();
+            await vi.waitFor(() => expect(submenuRow()?.querySelector(":scope > .dropdown-menu.show")?.textContent)
+                .toBe("Show log"));
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(popup()).not.toBeNull();
+
+            // A row in the unfolded submenu still closes the menu.
+            submenuRow()?.querySelector<HTMLElement>(".dropdown-menu li.dropdown-item")?.click();
+            await vi.waitFor(() => expect(popup()).toBeNull());
+        });
+
+        it("opens a nested submenu as a layer of its own, beside the scroller rather than in it", async () => {
+            const { toggle } = renderDropdown({}, (
+                <FormDropdownSubmenu icon="bx bx-chip" title="Advanced">
+                    <FormListItem>Show log</FormListItem>
+                </FormDropdownSubmenu>
+            ));
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.querySelector("li.dropdown-submenu")).not.toBeNull());
+            popup()?.querySelector("li.dropdown-submenu")?.dispatchEvent(new PointerEvent("pointerenter"));
+            await vi.waitFor(() => expect(popup()?.querySelector(":scope > div.dropdown-submenu > .dropdown-menu")?.textContent)
+                .toBe("Show log"));
+        });
+    });
+
+    describe("as a sheet or over a backdrop", () => {
+        /** The dimmed cover the shell keeps for menus on a phone. */
+        function addCover() {
+            const cover = document.createElement("div");
+            cover.id = "context-menu-cover";
+            document.body.append(cover);
+            return cover;
+        }
+
+        it("rises from the bottom of a phone's screen, where the stylesheet places it, over the cover", async () => {
+            layout.onMobile = true;
+            const cover = addCover();
+            const { toggle } = renderDropdown({ mobileBottomSheet: true });
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(true);
+            // Nothing placed it beside the toggle; the `.mobile-bottom-menu` rules do.
+            expect([ popup()?.style.left, popup()?.style.top ]).toEqual([ "", "" ]);
+            expect([ ...cover.classList ]).toEqual([ "show", "global-menu-cover" ]);
+
+            // A tap on the cover is one outside the menu.
+            cover.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            expect(cover.classList.contains("show")).toBe(false);
+            cover.remove();
+        });
+
+        it("opens beside its toggle, capped, on a tablet's wider mobile layout", async () => {
+            layout.onMobile = true;
+            layout.narrow = false;
+            const cover = addCover();
+            const { toggle } = renderDropdown({ mobileBottomSheet: true });
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(false);
+            expect(popup()?.style.top).toBe("82px");
+            expect(popup()?.style.maxHeight).not.toBe("");
+            expect([ ...cover.classList ]).toEqual([ "show", "global-menu-cover" ]);
+            cover.remove();
+        });
+
+        it("turns into a placed menu and back as a tablet turns while it is open", async () => {
+            layout.onMobile = true;
+            const turn = (narrow: boolean) => {
+                layout.narrow = narrow;
+                for (const listener of layout.onChange) listener();
+            };
+            const { toggle } = renderDropdown({ mobileBottomSheet: true });
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.classList).toContain("mobile-bottom-menu"));
+
+            turn(false);
+            await vi.waitFor(() => expect(popup()?.style.top).toBe("82px"));
+            expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(false);
+            expect(popup()?.style.maxHeight).not.toBe("");
+
+            // Back to the sheet, with nothing inline left for its rules to contend with.
+            turn(true);
+            await vi.waitFor(() => expect(popup()?.classList).toContain("mobile-bottom-menu"));
+            const { left, top, maxHeight } = popup()?.style ?? {};
+            expect([ left, top, maxHeight ]).toEqual([ "", "", "" ]);
+        });
+
+        it("is an ordinary menu beside its toggle on a desktop, with no cover", async () => {
+            const cover = addCover();
+            const { toggle } = renderDropdown({ mobileBottomSheet: true, mobileBackdrop: true });
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()?.style.visibility).toBe("visible"));
+            expect(popup()?.classList.contains("mobile-bottom-menu")).toBe(false);
+            expect(popup()?.style.top).toBe("82px");
+            expect(cover.classList.contains("show")).toBe(false);
+            cover.remove();
+        });
+
+        it("dims the page under it when asked to, drawn just before it", async () => {
+            const { toggle } = renderDropdown({ backdrop: true, className: "icon-picker-dropdown" });
+
+            click(toggle);
+            await vi.waitFor(() => expect(popup()).not.toBeNull());
+            const drawn = [ ...popup()?.parentElement?.children ?? [] ].map((child) => child.classList[0]);
+            expect(drawn).toEqual([ "tn-dropdown-backdrop", "tn-popup" ]);
+        });
     });
 });

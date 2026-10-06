@@ -5,9 +5,9 @@ import { t } from "i18next";
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
-import { getIconPacks } from "./icon_packs.js";
+import { getIconPacks, type ProcessedIconPack } from "./icon_packs.js";
 import noteService from "./notes.js";
-import { escapeCssString } from "./utils/index.js";
+import { decodeCssEscapes, escapeCssString } from "./utils/index.js";
 
 /**
  * Returns the task states from the `_taskStates` hidden subtree, in note order.
@@ -129,13 +129,13 @@ const UNSAFE_CSS_VALUE_PATTERN = /["'<>;{}\\]|[\u0000-\u001F\u007F]/;
  * using the icon-pack manifests — the same data that powers the icon picker.
  * Works for any installed pack without a browser or font-CSS parsing.
  */
-function resolveIconGlyph(iconClass: string): {glyph: string; fontFamily: string} | null {
+function resolveIconGlyph(iconClass: string, iconPacks: ProcessedIconPack[]): {glyph: string; fontFamily: string} | null {
     const parts = iconClass.trim().split(/\s+/);
     if (parts.length < 2) {
         return null;
     }
     const [prefix, name] = parts;
-    for (const pack of getIconPacks()) {
+    for (const pack of iconPacks) {
         if (pack.prefix !== prefix) {
             continue;
         }
@@ -169,15 +169,16 @@ function computeHue(color: string): number | undefined {
 /**
  * Generates the CSS that renders each task state's icon on its `data-trilium-task-state`
  * checkbox. Resolution is a plain manifest lookup, so this works server-side and
- * the same stylesheet can be served to both the app and shared notes.
+ * the same stylesheet can be served to both the app and shared notes. A caller that has
+ * already loaded the packs passes them as `iconPacks`.
  */
-export function generateTaskStateCss(): string {
+export function generateTaskStateCss(iconPacks: ProcessedIconPack[] = getIconPacks()): string {
     const rules: string[] = [];
     for (const state of getTaskStates()) {
         if (isAnchorState(state.name) || !state.icon) {
             continue;
         }
-        const resolved = resolveIconGlyph(state.icon);
+        const resolved = resolveIconGlyph(state.icon, iconPacks);
         if (!resolved) {
             continue;
         }
@@ -186,7 +187,7 @@ export function generateTaskStateCss(): string {
         const hue = color ? computeHue(color) : undefined;
 
         rules.push(`[data-trilium-task-state="${name}"], .tn-task-checkbox[data-trilium-task-state="${name}"] {
-            --task-state-glyph: "${escapeCssString(resolved.glyph)}";
+            --task-state-glyph: "${escapeCssString(decodeCssEscapes(resolved.glyph))}";
             --task-state-glyph-font-family: "${escapeCssString(resolved.fontFamily)}";
             --task-state-color: ${color || "inherit"};
             --task-state-hue: ${hue ?? "unset"};

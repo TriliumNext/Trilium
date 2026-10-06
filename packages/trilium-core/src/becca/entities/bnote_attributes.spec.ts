@@ -350,4 +350,16 @@ describe("BNote attribute methods (real DB)", () => {
             expect(() => getContext().init(() => note.setAttributeValueById("missing-attr-id", "x"))).toThrow();
         });
     });
+    describe("isArchived", () => {
+        it("reports an archived label and stops reporting it once removed", () => {
+            const { note } = createNote("root");
+            expect(note.isArchived).toBe(false);
+
+            getContext().init(() => note.addLabel("archived"));
+            expect(note.isArchived).toBe(true);
+
+            getContext().init(() => note.removeLabel("archived"));
+            expect(note.isArchived).toBe(false);
+        });
+    });
 });

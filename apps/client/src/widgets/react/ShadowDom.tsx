@@ -4,7 +4,7 @@ import { useSyncedRef } from "./hooks";
 
 interface ShadowDomProps extends Omit<HTMLAttributes<HTMLDivElement>, "ref"> {
     children: ComponentChildren;
-    containerRef?: RefObject<HTMLDivElement>;
+    containerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export default function ShadowDom({ children, containerRef: externalContainerRef, ...containerProps }: ShadowDomProps) {

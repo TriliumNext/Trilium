@@ -2,7 +2,7 @@ import BAttribute from "../../becca/entities/battribute";
 import BNote from "../../becca/entities/bnote";
 import becca from "../../becca/becca";
 import type { BacklinkCountResponse, BacklinksResponse, NoteMapNote } from "@triliumnext/commons";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
 

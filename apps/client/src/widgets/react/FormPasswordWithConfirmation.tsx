@@ -11,7 +11,7 @@ export interface FormPasswordWithConfirmationProps {
     /** Label of the second field. Defaults to a plain "Repeat password". */
     confirmationLabel?: string;
     /** Focus target, for a host that wants the first field focused when it opens. */
-    inputRef?: RefObject<HTMLInputElement>;
+    inputRef?: RefObject<HTMLInputElement | null>;
     /**
      * Whether leaving both fields empty is an answer in itself, for a password that is offered
      * rather than required. It is reported as an empty string, which is a settled "no password" as

@@ -1,0 +1,47 @@
+:where(:root) {
+    --ck-table-insert-form-error-color: var(--ck-color-base-error);
+}
+
+.ck.ck-table-insert-form {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    gap: var(--ck-spacing-standard) var(--ck-spacing-large);
+    padding: var(--ck-spacing-large);
+
+    &:focus {
+        outline: none;
+    }
+
+    .ck-table-insert-form__field {
+        display: contents;
+    }
+
+    .ck.ck-label {
+        font-weight: normal;
+    }
+
+    .ck.ck-input-number {
+        min-width: 0;
+        width: 10em;
+    }
+
+    /* `width: 0` keeps the message from widening the column; it wraps under the input instead. */
+    .ck-table-insert-form__error {
+        grid-column: 2;
+        min-width: 100%;
+        width: 0;
+        color: var(--ck-table-insert-form-error-color);
+        font-size: var(--ck-font-size-small);
+        white-space: normal;
+    }
+
+    .ck-table-insert-form__size-error {
+        grid-column: 1 / -1;
+    }
+
+    .ck.ck-button-action {
+        grid-column: 2;
+        justify-self: start;
+    }
+}

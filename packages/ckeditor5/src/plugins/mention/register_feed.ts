@@ -1,9 +1,10 @@
 import type { Editor } from "ckeditor5";
 
-import type { TriliumMentionFeed } from "./types.js";
+import type { MentionHostedFeed } from "./types.js";
 
 /**
- * Appends a feed to `mention.feeds`, creating the entry when the host application configured none.
+ * Appends a feed to `mention.hostedFeeds`, creating the entry when the host application configured
+ * none.
  *
  * Call this from a plugin **constructor**, not from `init()`: {@link TriliumMentionUI} compiles the
  * configured feeds into trigger patterns in its own `init()`, and CKEditor runs every plugin
@@ -14,13 +15,13 @@ import type { TriliumMentionFeed } from "./types.js";
  * feeds sharing a marker would make {@link findMarkerMatch} pick whichever came first and silently
  * shadow the other.
  */
-export function registerMentionFeed(editor: Editor, feed: TriliumMentionFeed): void {
-    const feeds = (editor.config.get("mention.feeds") ?? []) as TriliumMentionFeed[];
+export function registerHostedMentionFeed(editor: Editor, feed: MentionHostedFeed): void {
+    const feeds = editor.config.get("mention.hostedFeeds") ?? [];
 
     if (feeds.some((existing) => existing.marker === feed.marker)) {
         console.warn(`[trilium-mention] the "${feed.marker}" marker is already registered; ignoring the duplicate feed.`);
         return;
     }
 
-    editor.config.set("mention.feeds", [ ...feeds, feed ]);
+    editor.config.set("mention.hostedFeeds", [ ...feeds, feed ]);
 }

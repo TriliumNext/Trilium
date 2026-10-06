@@ -80,6 +80,9 @@ async function register(app: express.Application) {
             vite.middlewares(req, res, next);
         });
         app.use(`/node_modules/@excalidraw/excalidraw/dist/prod`, persistentCacheStatic(path.join(srcRoot, "../../node_modules/@excalidraw/excalidraw/dist/prod")));
+        app.get(`/share/assets/client/share_mermaid.json`, (_req, res) => {
+            res.json({ entry: `/${assetUrlFragment}/src/share_mermaid.ts`, files: [] });
+        });
     } else {
         const publicDir = path.join(resourceDir, "public");
         if (!existsSync(publicDir)) {
@@ -100,15 +103,22 @@ async function register(app: express.Application) {
         app.use(`/${assetUrlFragment}/fonts`, persistentCacheStatic(path.join(publicDir, "fonts")));
         app.use(`/${assetUrlFragment}/translations/`, persistentCacheStatic(path.join(publicDir, "translations")));
         app.use(`/node_modules/`, persistentCacheStatic(path.join(publicDir, "node_modules")));
+        // The share theme loads the client's mermaid through `src/share_mermaid.json`.
+        const clientSrc = express.static(path.join(publicDir, "src"), STATIC_OPTIONS);
+        app.use(`/share/assets/client/`, clientSrc);
     }
     app.use(`/share/assets/fonts/`, express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS));
     app.use(`/share/assets/`, express.static(getShareThemeAssetDir(), STATIC_OPTIONS));
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
-    app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts"), STATIC_OPTIONS));
-    app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images"), STATIC_OPTIONS));
-    app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets"), STATIC_OPTIONS));
+    // `vX` is a version-independent alias so custom themes and scripts can reference built-in assets
+    // without naming a version they would have to bump on every upgrade. It serves the same files as
+    // the versioned routes above, but without `maxAge`: the URL no longer changes between releases,
+    // so a long-lived cache entry would pin the client to the previous version's assets.
+    app.use(`/assets/vX/stylesheets`, express.static(path.join(getClientDir(), "stylesheets"), STATIC_OPTIONS));
+    app.use(`/assets/vX/fonts`, express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS));
+    app.use(`/assets/vX/images`, express.static(path.join(resourceDir, "assets", "images"), STATIC_OPTIONS));
 }
 
 export function getShareThemeAssetDir() {
@@ -118,6 +128,14 @@ export function getShareThemeAssetDir() {
     }
     const resourceDir = getResourceDir();
     return path.join(resourceDir, "share-theme/assets");
+}
+
+/** The client's build output: `public/` in a packaged app, `apps/client/dist` in development. */
+export function getClientBuildDir() {
+    if (process.env.NODE_ENV === "development") {
+        return path.join(getClientDir(), "..", "dist");
+    }
+    return getClientDir();
 }
 
 export function getPdfjsAssetDir() {

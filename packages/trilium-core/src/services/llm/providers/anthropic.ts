@@ -125,9 +125,9 @@ export class AnthropicProvider extends BaseProvider {
     /**
      * Override chat to add Anthropic-specific extended thinking support.
      */
-    override chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
+    override chat(messages: LlmMessage[], config: LlmProviderConfig, signal?: AbortSignal): StreamResult {
         if (!config.enableExtendedThinking) {
-            return super.chat(messages, config);
+            return super.chat(messages, config, signal);
         }
 
         const systemPrompt = this.buildSystemPrompt(messages, config);
@@ -152,6 +152,7 @@ export class AnthropicProvider extends BaseProvider {
             // Reject any system message smuggled into `messages` (prompt injection guard).
             allowSystemInMessages: false,
             telemetry: TELEMETRY_OFF,
+            abortSignal: signal,
             providerOptions: {
                 anthropic: { thinking }
             }

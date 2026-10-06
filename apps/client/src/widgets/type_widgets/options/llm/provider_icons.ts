@@ -1,5 +1,6 @@
 /**
- * Per-provider marks, shared by the provider setup wizard and the chat model picker.
+ * Per-provider marks, chat and search alike, shared by the provider setup wizard, the chat model
+ * picker and the chat's Tools menu.
  *
  * Keyed by provider *type* (`LlmProviderConfig.provider`), not by the user's configuration
  * id — two Ollama configurations show the same mark, which is why the model picker keeps its
@@ -11,25 +12,41 @@
  */
 
 import anthropicIcon from "./icons/anthropic.svg?url";
+import antigravityIcon from "./icons/antigravity.svg?url";
+import braveIcon from "./icons/brave.svg?url";
 import claudeAgentIcon from "./icons/claude-ai.svg?url";
+import codexIcon from "./icons/codex.svg?url";
 import deepseekIcon from "./icons/deepseek.svg?url";
+import exaIcon from "./icons/exa.svg?url";
 import geminiIcon from "./icons/gemini.svg?url";
 import githubCopilotIcon from "./icons/github-copilot.svg?url";
 import lmStudioIcon from "./icons/lmstudio.svg?url";
 import ollamaIcon from "./icons/ollama.svg?url";
 import openaiIcon from "./icons/openai.svg?url";
+import perplexityIcon from "./icons/perplexity.svg?url";
 import openAiCompatibleIcon from "./icons/robot.svg?url";
+import searxngIcon from "./icons/searxng.svg?url";
+import serperIcon from "./icons/serper.svg?url";
+import tavilyIcon from "./icons/tavily.svg?url";
 
 export const PROVIDER_ICONS: Record<string, string> = {
     anthropic: anthropicIcon,
+    "antigravity-agent": antigravityIcon,
+    brave: braveIcon,
     "claude-agent": claudeAgentIcon,
+    "codex-agent": codexIcon,
     "copilot-agent": githubCopilotIcon,
     deepseek: deepseekIcon,
+    exa: exaIcon,
     google: geminiIcon,
     lmstudio: lmStudioIcon,
     ollama: ollamaIcon,
     openai: openaiIcon,
-    "openai-compatible": openAiCompatibleIcon
+    "openai-compatible": openAiCompatibleIcon,
+    perplexity: perplexityIcon,
+    searxng: searxngIcon,
+    serper: serperIcon,
+    tavily: tavilyIcon
 };
 
 /**

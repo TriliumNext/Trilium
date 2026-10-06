@@ -46,6 +46,21 @@ describe("#newEntityId", () => {
     });
 });
 
+describe("#isValidEntityId", () => {
+    it("accepts only letters, digits and underscores with a length of 4 to 128", () => {
+        const accepted = [ "root", "_hidden", "abcDEF012345", "a".repeat(128) ];
+        for (const id of accepted) {
+            expect(utils.isValidEntityId(id), id).toBe(true);
+        }
+
+        const dashedId = "0d8949e4-6fe3-4f4b-82c1-679baf64fccb";
+        const rejected = [ "", "abc", "a".repeat(129), dashedId, "bad/id01", "bad id01" ];
+        for (const id of rejected) {
+            expect(utils.isValidEntityId(id), id).toBe(false);
+        }
+    });
+});
+
 describe("#randomString", () => {
     it("should return a string with a length as per argument", () => {
         const stringLength = 5;
@@ -287,6 +302,11 @@ describe("#isStringNote", () => {
         [
             "w/ 'undefined' note type and the InkML mime type, it should return true",
             [ undefined, "application/inkml+xml" ],
+            true
+        ],
+        [
+            "w/ 'undefined' note type and the mime type of a canvas drawing, it should return true",
+            [ undefined, "application/vnd.excalidraw+json" ],
             true
         ]
     ];
@@ -747,6 +767,21 @@ describe("#normalizeUrl", () => {
     });
 });
 
+describe("#trimTrailingSlashes", () => {
+    it("removes every trailing slash and nothing else", () => {
+        expect(utils.trimTrailingSlashes("http://localhost:8888///")).toBe("http://localhost:8888");
+        expect(utils.trimTrailingSlashes("https://example.com/a//b")).toBe("https://example.com/a//b");
+        expect(utils.trimTrailingSlashes("///")).toBe("");
+        expect(utils.trimTrailingSlashes("")).toBe("");
+    });
+
+    it("stays linear on a long run of slashes", () => {
+        const start = performance.now();
+        utils.trimTrailingSlashes(`${"/".repeat(100_000)}x`);
+        expect(performance.now() - start).toBeLessThan(100);
+    });
+});
+
 describe("#normalizeCustomHandlerPattern", () => {
     const testCases: TestCase<typeof utils.normalizeCustomHandlerPattern>[] = [
         [ "should handle pattern without ending - add both versions", [ "foo" ], [ "foo", "foo/" ] ],
@@ -1039,6 +1074,16 @@ describe("#removeFileExtension (media types)", () => {
         expect(utils.removeFileExtension("clip.mov", "video/quicktime")).toBe("clip");
         expect(utils.removeFileExtension("song.flac", "audio/flac")).toBe("song");
     });
+
+    it("strips the extension for the fonts Trilium draws, and leaves the rest alone", () => {
+        expect(utils.removeFileExtension("Iosevka-Regular.ttf", "font/ttf")).toBe("Iosevka-Regular");
+        expect(utils.removeFileExtension("Inter.woff2", "font/woff2")).toBe("Inter");
+        expect(utils.removeFileExtension("Legacy.ttf", "application/x-font-ttf")).toBe("Legacy");
+        // Neither an EOT nor a font arriving as an opaque binary is one Trilium can draw, so the
+        // name it was uploaded under is all there is to say what it holds.
+        expect(utils.removeFileExtension("Old.eot", "application/vnd.ms-fontobject")).toBe("Old.eot");
+        expect(utils.removeFileExtension("Mystery.ttf", "application/octet-stream")).toBe("Mystery.ttf");
+    });
 });
 
 describe("#compareVersions", () => {
@@ -1078,6 +1123,38 @@ describe("#escapeCssString", () => {
 
     it("leaves the private-use glyphs an icon pack actually carries untouched", () => {
         expect(utils.escapeCssString("")).toBe("");
+    });
+});
+
+describe("#decodeCssEscapes", () => {
+    it("decodes a hex escape with or without its terminating space", () => {
+        expect(utils.decodeCssEscapes("\\30 ")).toBe("0");
+        expect(utils.decodeCssEscapes("\\f015")).toBe("\uf015");
+        expect(utils.decodeCssEscapes("\\1F600")).toBe("\u{1F600}");
+        expect(utils.decodeCssEscapes("\\61\\62")).toBe("ab");
+    });
+
+    it("resolves the code points CSS maps to the replacement character", () => {
+        expect(utils.decodeCssEscapes("\\0")).toBe("\uFFFD");
+        expect(utils.decodeCssEscapes("\\d800 ")).toBe("\uFFFD");
+        expect(utils.decodeCssEscapes("\\ffffff")).toBe("\uFFFD");
+    });
+
+    it("leaves text carrying no hex escape untouched", () => {
+        expect(utils.decodeCssEscapes("")).toBe("");
+        expect(utils.decodeCssEscapes("\uf015")).toBe("\uf015");
+        expect(utils.decodeCssEscapes("</style>")).toBe("</style>");
+        expect(utils.decodeCssEscapes("\\")).toBe("\\");
+    });
+
+    it("cannot widen what the generated stylesheet emits, since escaping follows it", () => {
+        // A glyph spelling `</style>` as escapes decodes to the markup, then escapes back to it.
+        const smuggled = "\\3c /style\\3e ";
+        expect(utils.decodeCssEscapes(smuggled)).toBe("</style>");
+        expect(utils.escapeCssString(utils.decodeCssEscapes(smuggled))).toBe("\\3c /style\\3e ");
+
+        // A backslash reaching the output would let the glyph end its own CSS string.
+        expect(utils.escapeCssString(utils.decodeCssEscapes("\\5c "))).toBe("\\5c ");
     });
 });
 

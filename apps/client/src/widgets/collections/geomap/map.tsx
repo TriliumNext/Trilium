@@ -52,7 +52,7 @@ export const MapStyleLoaded = createContext(false);
 
 interface MapProps {
     apiRef?: RefObject<MapLibreGLMap | null>;
-    containerRef?: RefObject<HTMLDivElement>;
+    containerRef?: RefObject<HTMLDivElement | null>;
     coordinates: { lat: number; lng: number } | [number, number];
     zoom: number;
     layerData: MapLayer;
@@ -144,10 +144,10 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
     const [ map, setMap ] = useState<MapLibreGLMap | null>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
-    useImperativeHandle(apiRef ?? null, () => map);
+    useImperativeHandle<MapLibreGLMap | null, MapLibreGLMap | null>(apiRef ?? null, () => map);
     // What the style this map was last given was made of, which is how the sources and layers on it
     // that are its own are told from the ones a child added. See `keepAdditions`.
-    const appliedStyle = useRef<StyleContents>();
+    const appliedStyle = useRef<StyleContents | undefined>(undefined);
     // Whether there is no map to be had here at all — see the catch below.
     const [ unsupported, setUnsupported ] = useState(false);
     // See MapStyleLoaded.

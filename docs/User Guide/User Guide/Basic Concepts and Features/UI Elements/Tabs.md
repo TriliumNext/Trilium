@@ -1,5 +1,5 @@
 # Tabs
-<figure class="image image-style-align-center"><img style="aspect-ratio:1119/43;" src="2_Tabs_image.png" width="1119" height="43"></figure>
+<figure class="image image-style-align-center"><img style="aspect-ratio:1119/43;" src="Tabs_image.png" width="1119" height="43"></figure>
 
 In Trilium, tabs allow easy switching between notes.
 
@@ -12,8 +12,8 @@ Depending on the <a class="reference-link" href="Vertical%20and%20horizontal%20
 
 ## Interaction
 
-*   To create a new tab, press the ![](1_Tabs_image.png) button that is to the right of the last tab.
-*   To close a tab, press the corresponding ![](Tabs_image.png) button.
+*   To create a new tab, press the <span class="tn-icon bx bx-plus"></span> button that is to the right of the last tab.
+*   To close a tab, press the corresponding <span class="tn-icon bx bx-x"></span> button.
 *   For multitasking, tabs can be used alongside <a class="reference-link" href="Split%20View.md">Split View</a>. Each tab can have one or more notes, displayed horizontally.
 *   Tabs can be reordered by drag-and-dropping it into a new position.
 *   An existing tab can be displayed in a new window by dragging the tab upwards or downwards. It is not possible to combine tabs back into another window.

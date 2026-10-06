@@ -94,6 +94,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 // width.
                 ...(aiAssistant ? ["aiAssistant"] : []),
                 "imageUpload",
+                "fileUpload",
                 "blockQuote",
                 "admonition",
                 "insertTable",
@@ -105,7 +106,7 @@ export function buildClassicToolbar(multilineToolbar: boolean, aiAssistant: bool
                 "footnote",
                 {
                     ...buildInsertGroup(),
-                    items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji"]
+                    items: ["link", "linkEmbed", "bookmark", "internallink", "contentEmbed", "|", "collapsible", "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak", "|", "dateTime", "specialCharacters", "emoji", "insertIcon"]
                 },
                 "|",
                 buildAlignmentToolbar(),
@@ -169,6 +170,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "todoList",
             "|",
             "imageUpload",
+            "fileUpload",
             "blockQuote",
             "admonition",
             "codeBlock",
@@ -177,7 +179,7 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "clozeDeletion",
             {
                 ...buildInsertGroup(),
-                items: ["link", "linkEmbed", "bookmark", "internallink", "includeNote", "|", "collapsible", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+                items: ["link", "linkEmbed", "bookmark", "internallink", "contentEmbed", "|", "collapsible", "math", "drawingCanvas", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
             },
             "|",
             buildAlignmentToolbar(),
@@ -187,7 +189,8 @@ export function buildFloatingToolbar(aiAssistant: boolean) {
             "insertTemplate",
             "markdownImport",
             "specialCharacters",
-            "emoji"
+            "emoji",
+            "insertIcon"
         ]
     };
 }
@@ -206,7 +209,10 @@ function buildTextFormattingGroup() {
 function buildInsertGroup() {
     return {
         label: t("text-editor.toolbar-groups.insert"),
-        icon: "plus"
+        icon: "plus",
+        // The group holds enough entries that a strip of icons reads as a puzzle; `asMenu` (see
+        // the `ToolbarGroupMenu` plugin) opens it as a menu of icon-and-label rows instead.
+        asMenu: true
     };
 }
 

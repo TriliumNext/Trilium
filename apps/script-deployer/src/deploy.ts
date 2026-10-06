@@ -97,12 +97,17 @@ export function transpile(source: string, filePath: string): string {
 
 // ── Note ID helpers ──────────────────────────────────────────────────────────
 
+/** `createNewNote()` rejects a note ID with a dash, and the script IDs are kebab-case. */
+function toNoteIdPart(scriptId: string) {
+    return scriptId.replace(/[^A-Za-z0-9_]/g, "_");
+}
+
 export function codeNoteId(scriptId: string) {
-    return `_sd_${scriptId}`;
+    return `_sd_${toNoteIdPart(scriptId)}`;
 }
 
 export function renderNoteId(scriptId: string) {
-    return `_sd_${scriptId}_render`;
+    return `_sd_${toNoteIdPart(scriptId)}_render`;
 }
 
 // ── Deployment ───────────────────────────────────────────────────────────────

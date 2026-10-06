@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
     electron: true,
+    standalone: false,
     /** What the settings currently are, as the options store answers them. */
     stored: {} as Record<string, boolean>,
     /** What the main process answers when asked to write one — refusing leaves nothing pending. */
@@ -12,9 +13,12 @@ const mocks = vi.hoisted(() => ({
 
 // `isElectron` decides both whether these settings can be written at all and whether the LAN card is
 // on offer, so a scenario has to be able to say which kind of build it is pretending to be.
+// `isStandalone` is a const rather than a function, hence the getter: a scenario sets it before it
+// renders, and the page reads it while rendering.
 vi.mock("../../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils")>()),
-    isElectron: () => mocks.electron
+    isElectron: () => mocks.electron,
+    get isStandalone() { return mocks.standalone; }
 }));
 
 // i18next is never initialised here and answers `undefined` until it is, which would make every
@@ -34,6 +38,7 @@ let host: HTMLElement;
 
 beforeEach(() => {
     mocks.electron = true;
+    mocks.standalone = false;
     mocks.stored = {};
     mocks.confirms = true;
     (window as unknown as { electronApi: unknown }).electronApi = {
@@ -50,7 +55,35 @@ afterEach(() => {
     render(null, host);
     document.body.innerHTML = "";
     delete (window as unknown as { electronApi?: unknown }).electronApi;
+    delete (window as unknown as { standaloneApi?: unknown }).standaloneApi;
 });
+
+/**
+ * Turns this into the in-browser build, where the settings live in an OPFS file the database
+ * worker holds the lock on. Only the tab that owns that worker is given a `security` API to reach
+ * it with, which is what `ownsDatabase` decides here.
+ */
+function asStandalone(ownsDatabase: boolean) {
+    mocks.electron = false;
+    mocks.standalone = true;
+    delete (window as unknown as { electronApi?: unknown }).electronApi;
+    (window as unknown as { standaloneApi: unknown }).standaloneApi = {
+        restore: {},
+        backup: {},
+        security: ownsDatabase
+            ? {
+                setBackendScriptingEnabled: vi.fn(async () => mocks.confirms),
+                setSqlConsoleEnabled: vi.fn(async () => mocks.confirms)
+            }
+            : undefined
+    };
+}
+
+function standaloneSecurityApi() {
+    return (window as unknown as {
+        standaloneApi: { security: Record<string, ReturnType<typeof vi.fn>> };
+    }).standaloneApi.security;
+}
 
 function open() {
     act(() => {
@@ -131,5 +164,58 @@ describe("the security settings", () => {
         // The config-file and environment-variable instructions, which the desktop build has no use for.
         expect(host.querySelectorAll(".collapsible")).toHaveLength(2);
         expect(restartOffered()).toBe(false);
+    });
+});
+
+describe("the security settings in a browser", () => {
+    it("are written through the standalone bridge, asking for a reload not a restart", async () => {
+        asStandalone(true);
+        open();
+
+        // LAN access is a desktop setting: there is no listener here to open.
+        expect(switches()).toHaveLength(2);
+        expect(switches().every((toggle) => toggle.disabled)).toBe(false);
+
+        await flip(0);
+        expect(standaloneSecurityApi().setBackendScriptingEnabled).toHaveBeenCalledWith(true);
+
+        const row = switches()[0].closest(".tn-card-option");
+        const description = row?.querySelector(".tn-card-option-description")?.textContent;
+        expect(description).toBe("security.standalone.reload_required");
+        expect(host.querySelector(".restart-action button")?.textContent)
+            .toContain("security.standalone.reload_now");
+    });
+
+    it("describes what a backend script reaches in a browser, not on a server", () => {
+        asStandalone(true);
+        open();
+
+        // The desktop wording promises filesystem, network and OS access, none of which a Web
+        // Worker has — telling a browser user that would be scaring them off the wrong thing.
+        const description = host.querySelector(".tn-card-description")?.textContent;
+        expect(description).toBe("security.standalone.backend_scripting_section_description");
+    });
+
+    it("leaves the switch where it was when the user declines the browser's dialog", async () => {
+        mocks.confirms = false;
+        asStandalone(true);
+        open();
+
+        await flip(0);
+
+        expect(standaloneSecurityApi().setBackendScriptingEnabled).toHaveBeenCalledWith(true);
+        expect(restartOffered()).toBe(false);
+    });
+
+    it("holds them out of reach in a tab that does not own the database", () => {
+        asStandalone(false);
+        open();
+
+        expect(switches().every((toggle) => toggle.disabled)).toBe(true);
+        expect(host.textContent).toContain("security.standalone.other_tab_hint");
+
+        // Never the server instructions: there is no config.ini to add anything to.
+        expect(host.querySelectorAll(".collapsible")).toHaveLength(0);
+        expect(host.textContent).not.toContain("security.server_config_hint");
     });
 });

@@ -118,6 +118,12 @@ describe("LoadResults", () => {
         const attachment = { attachmentId: "att1" } as never;
         lr.addAttachmentRow(attachment);
         expect(lr.getAttachmentRows()).toEqual([attachment]);
+
+        const savedByComp1 = { attachmentId: "att2" } as never;
+        lr.addAttachmentRow(savedByComp1, "comp1");
+        expect(lr.getAttachmentRows()).toEqual([attachment, savedByComp1]);
+        expect(lr.getAttachmentRows("comp1")).toEqual([attachment]);
+        expect(lr.getAttachmentRows("comp2")).toEqual([attachment, savedByComp1]);
     });
 
     it("reports attribute-related changes from branches or attributes", () => {

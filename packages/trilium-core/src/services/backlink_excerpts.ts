@@ -30,14 +30,18 @@ export function findExcerpts(html: string, referencedNoteId: string): string[] {
 
     removeImages(document);
 
-    for (const linkEl of document.querySelectorAll("a")) {
-        const href = linkEl.getAttribute("href");
+    const linkEls = document.querySelectorAll("a").filter((el) => el.getAttribute("href")?.endsWith(referencedNoteId));
+    for (const linkEl of linkEls) {
+        linkEl.classList.add("backlink-link");
+    }
 
-        if (!href || !href.endsWith(referencedNoteId)) {
+    // A link inside an already quoted element is covered by that excerpt.
+    const quotedEls = new Set<ElementOrText>();
+
+    for (const linkEl of linkEls) {
+        if (isInside(linkEl, quotedEls)) {
             continue;
         }
-
-        linkEl.classList.add("backlink-link");
 
         let centerEl: HTMLElement = linkEl;
 
@@ -79,7 +83,7 @@ export function findExcerpts(html: string, referencedNoteId: string): string[] {
                 const nextText = next.textContent;
 
                 if (nextText && nextText.length + excerptLength > EXCERPT_CHAR_LIMIT) {
-                    const suffix = nextText.substr(nextText.length - (EXCERPT_CHAR_LIMIT - excerptLength));
+                    const suffix = nextText.substring(0, EXCERPT_CHAR_LIMIT - excerptLength);
 
                     const textNode = new TextNode(`${suffix}…`);
                     excerptEls.push(textNode);
@@ -98,17 +102,24 @@ export function findExcerpts(html: string, referencedNoteId: string): string[] {
             }
         }
 
-        const excerptWrapper = new HTMLElement("div", {});
-        excerptWrapper.classList.add("ck-content");
-        excerptWrapper.classList.add("backlink-excerpt");
-
+        // Serialized rather than appended to a wrapper: `appendChild()` moves a node out of
+        // `document`, and the next link needs its neighbors in place.
         for (const childEl of excerptEls) {
-            excerptWrapper.appendChild(childEl);
+            quotedEls.add(childEl);
         }
 
-        excerpts.push(excerptWrapper.outerHTML);
+        excerpts.push(`<div class="ck-content backlink-excerpt">${excerptEls.map(String).join("")}</div>`);
     }
     return excerpts;
+}
+
+function isInside(node: ElementOrText, ancestors: Set<ElementOrText>) {
+    for (let current: HTMLElement | null = node.parentNode; current; current = current.parentNode) {
+        if (ancestors.has(current)) {
+            return true;
+        }
+    }
+    return ancestors.has(node);
 }
 
 function removeImages(document: HTMLElement) {

@@ -1,3 +1,12 @@
+.database-info .database-persistence {
+    /* "Best-effort" reads as a word of its own once it breaks in two, so the value holds its
+       width and the description beside it wraps instead. */
+    .tn-card-option-value {
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+}
+
 /* The notice sits above the cards it precedes, so the gap belongs under it. */
 .admonition.start-over-pending {
     margin-bottom: 16px;

@@ -11,11 +11,6 @@ import searchService from "./search.js";
  * `loadNeededInfoFromDatabase()`, which only runs when an expression asked for it via
  * `searchContext.dbLoadNeeded`. That makes these the one group of properties that needs a real
  * database to test, hence this file rather than the mocked-becca `search.spec.ts`.
- *
- * Regression: PropertyComparisonExp used to set the flag by testing its case-mapped property name
- * ("contentSize") against a lower-cased list, so it never matched. The fields stayed undefined and
- * every comparison against them silently matched nothing, while `orderBy` on the same properties
- * worked (ValueExtractor does the equivalent check correctly).
  */
 describe("search on database-backed note properties", () => {
     const BODY_LENGTH = 500;
@@ -30,9 +25,37 @@ describe("search on database-backed note properties", () => {
                 title: "DbPropsProbe",
                 type: "text",
                 mime: "text/html",
-                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`
+                content: `<p>${"x".repeat(BODY_LENGTH)}</p>`,
+                attributes: [{ type: "label", name: "tcDbProbe", isInheritable: false, position: 0 }]
             })
         );
+    });
+
+    /** Puts the probe back in the state `BNote`'s constructor leaves it, before any load. */
+    function resetMemoizedNoteProperties() {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        probe.contentSize = null;
+        probe.contentAndAttachmentsSize = null;
+        probe.contentAndAttachmentsAndRevisionsSize = null;
+        probe.revisionCount = null;
+    }
+
+    it("loads the database-backed properties for a pure '#' query", () => {
+        resetMemoizedNoteProperties();
+
+        expect(searchService.searchNotes("#tcDbProbe note.contentSize >= 0")).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH}`)).toHaveLength(1);
+        expect(searchService.searchNotes(`#tcDbProbe note.contentSize > ${BODY_LENGTH * 10}`)).toHaveLength(0);
+    });
+
+    it("counts revisions instead of always reporting zero", () => {
+        const probe = searchService.searchNotes("note.title *=* DbPropsProbe")[0];
+        getContext().init(() => probe.saveRevision());
+
+        resetMemoizedNoteProperties();
+
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount >= 1")).toHaveLength(1);
+        expect(searchService.searchNotes("note.title *=* DbPropsProbe AND note.revisionCount = 0")).toHaveLength(0);
     });
 
     it("filters on contentSize instead of silently matching nothing", () => {

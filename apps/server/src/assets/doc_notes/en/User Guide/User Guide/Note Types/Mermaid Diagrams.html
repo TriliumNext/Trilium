@@ -2,9 +2,9 @@
   <p>For a quick understanding of the Mermaid syntax, see&nbsp;<a class="reference-link"
     href="#root/_help_WWgeUaBb7UfC">Syntax reference</a>&nbsp;(official documentation).</p>
 </aside>
-<figure class="image image-style-align-center">
-  <img style="aspect-ratio:886/663;" src="2_Mermaid Diagrams_image.png"
-  width="886" height="663">
+<figure class="image">
+  <img style="aspect-ratio:1464/915;" src="Mermaid Diagrams_image.png" width="1464"
+  height="915">
 </figure>
 <p>Trilium supports Mermaid, which adds support for various diagrams such
   as flowchart, sequence diagram, class diagram, state diagram, pie charts,
@@ -12,8 +12,8 @@
   the diagram.</p>
 <p>This note type is a split view, meaning that both the source code and
   a preview of the document are displayed side-by-side. See&nbsp;<a class="reference-link"
-  href="#root/_help_SL5f1Auq7sVN">Note types with split view</a>&nbsp;for more
-  information.</p>
+  href="#root/_help_SL5f1Auq7sVN">Note types with split view</a>&nbsp;for
+  more information.</p>
 <h2>Sample diagrams</h2>
 <p>Starting with v0.103.0, Mermaid diagrams no longer start with a sample
   flowchart, but instead a pane at the bottom will show all the supported
@@ -34,8 +34,8 @@
     preview is at the top.</li>
 </ul>
 <p>It's possible to switch between the two layouts at any time by pressing
-  the
-  <img src="Mermaid Diagrams_image.png">icon in the&nbsp;<a class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;area.</p>
+  the&nbsp;<span class="tn-icon bx bxs-dock-left"></span> icon in the&nbsp;<a
+  class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;area.</p>
 <h2>Interaction</h2>
 <ul>
   <li>The source code of the diagram (in Mermaid format) is displayed on the
@@ -48,13 +48,22 @@
     note (depending on the layout):
     <ul>
       <li>There are dedicated buttons at the bottom-right of the preview to control
-        the zoom in, zoom out or re-center the diagram:
-        <img src="1_Mermaid Diagrams_image.png">
-      </li>
+        the zoom in, zoom out or fit the diagram.</li>
       <li>The preview can be moved around by holding the left mouse button and dragging.</li>
       <li>Zooming can also be done by using the scroll wheel.</li>
       <li>The zoom and position on the preview will remain fixed as the diagram
         changes, to be able to work more easily with large diagrams.</li>
+      <li>Double-clicking the preview resets the zoom/position.</li>
+      <li>The preview can also be focused by clicking on it, case in which keyboard
+        shortcuts can be used:
+        <ul>
+          <li><kbd>+</kbd> or <kbd>E</kbd> to zoom in, <kbd>-</kbd> or <kbd>Q</kbd> to zoom
+            out.</li>
+          <li><kbd>/</kbd> to reset the zoom/position.</li>
+          <li>Arrow keys or <kbd>W</kbd>  <kbd>A</kbd>  <kbd>S</kbd>  <kbd>D</kbd> to pan. Holding <kbd>Shift</kbd> pans
+            faster.</li>
+        </ul>
+      </li>
     </ul>
   </li>
   <li>The size of the source/preview panes can be adjusted by hovering over

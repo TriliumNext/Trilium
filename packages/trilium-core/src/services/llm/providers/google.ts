@@ -18,7 +18,7 @@ const OFFICIAL_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
  * is Trilium's higher-value capability and is what the user explicitly toggled.
  */
 function geminiHasToolConflict(config: LlmProviderConfig): boolean {
-    return !!(config.enableWebSearch && config.enableNoteTools);
+    return !!(config.enableWebSearch && config.enableNoteTools && !config.webSearch);
 }
 
 export class GoogleProvider extends BaseProvider {
@@ -89,23 +89,25 @@ export class GoogleProvider extends BaseProvider {
      * Override chat to add Google-specific extended thinking support.
      * Gemini 2.5 uses thinkingBudget, Gemini 3.x uses thinkingLevel.
      */
-    override chat(messages: LlmMessage[], config: LlmProviderConfig): StreamResult {
+    override chat(messages: LlmMessage[], config: LlmProviderConfig, signal?: AbortSignal): StreamResult {
         if (!config.enableExtendedThinking) {
-            return super.chat(messages, config);
+            return super.chat(messages, config, signal);
         }
 
         const systemPrompt = this.buildSystemPrompt(messages, config);
         const chatMessages = this.applyNoteHint(messages.filter(m => m.role !== "system"), config);
-        const coreMessages = this.buildMessages(chatMessages);
+        const modelId = config.model || this.defaultModel;
+        const coreMessages = this.buildMessages(chatMessages, modelId);
 
         const streamOptions: Parameters<typeof streamText>[0] = {
-            model: this.createModel(config.model || this.defaultModel),
+            model: this.createModel(modelId),
             system: this.buildSystemMessage(systemPrompt),
             messages: coreMessages,
             maxOutputTokens: config.maxTokens || 8096,
             // Reject any system message smuggled into `messages` (prompt injection guard).
             allowSystemInMessages: false,
             telemetry: TELEMETRY_OFF,
+            abortSignal: signal,
             providerOptions: {
                 google: {
                     thinkingConfig: {

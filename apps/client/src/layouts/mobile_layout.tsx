@@ -1,6 +1,7 @@
 import "./mobile_layout.css";
 
 import type AppContext from "../components/app_context.js";
+import ApiLog from "../widgets/api_log.jsx";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
@@ -22,7 +23,7 @@ import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import QuickSearchWidget from "../widgets/quick_search.js";
+import QuickSearch from "../widgets/quick_search.jsx";
 import ScrollPadding from "../widgets/scroll_padding";
 import SearchResult from "../widgets/search_result.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
@@ -50,7 +51,7 @@ export default class MobileLayout {
                                 new FlexContainer("column")
                                     .filling()
                                     .id("mobile-sidebar-wrapper")
-                                    .child(new QuickSearchWidget())
+                                    .child(<QuickSearch />)
                                     .child(<MobileNoteNavigator />)
                             )
                     )
@@ -83,6 +84,7 @@ export default class MobileLayout {
                                                 .child(<SearchResult />)
                                                 .child(<ScrollPadding />)
                                         )
+                                        .child(<ApiLog />)
                                         .child(<MobileEditorToolbar />)
                                         .child(new FindWidget())
                                 )

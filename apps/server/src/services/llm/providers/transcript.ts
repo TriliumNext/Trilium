@@ -6,7 +6,8 @@
  * reseed a fresh session when it doesn't (replay).
  */
 
-import type { LlmFilePart, LlmImagePart, LlmMessage, LlmMessagePart, LlmTextAttachmentPart } from "@triliumnext/commons";
+import type { LlmMessage, LlmMessagePart } from "@triliumnext/commons";
+import { attachmentPlaceholder } from "@triliumnext/core/src/services/llm/attachment_content.js";
 import { createHash } from "crypto";
 
 /**
@@ -43,11 +44,4 @@ export function flattenContent(content: string | LlmMessagePart[]): string {
     return content
         .map(part => (part.type === "text" ? part.text : attachmentPlaceholder(part)))
         .join("\n");
-}
-
-/** Short "[attached …]" stand-in used wherever an attachment's bytes aren't sent. */
-export function attachmentPlaceholder(part: LlmImagePart | LlmFilePart | LlmTextAttachmentPart): string {
-    const kind = part.type === "image" ? "image" : "file";
-    const name = "filename" in part ? `: ${part.filename}` : "";
-    return `[attached ${kind}${name}]`;
 }

@@ -1,6 +1,6 @@
 <figure class="image">
-  <img style="aspect-ratio:2089/1515;" src="2_Note Revisions_image.png"
-  width="2089" height="1515">
+  <img style="aspect-ratio:2089/1515;" src="Note Revisions_image.png" width="2089"
+  height="1515">
 </figure>
 <p>Trilium supports seamless versioning of notes by storing snapshots ("revisions")
   of notes at regular intervals.</p>
@@ -9,9 +9,8 @@
   <li>On the&nbsp;<a class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>,
     press the <a href="#root/_help_8YBEPzcpUgxw">note context menu</a> and select <em>Note revisions…</em>
   </li>
-  <li>On the old layout, press directly the
-    <img class="image_resized" style="aspect-ratio:27/25;width:2.32%;"
-    src="1_Note Revisions_image.png" width="27" height="25">button in the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;area.</li>
+  <li>On the old layout, press directly the&nbsp;<span class="tn-icon bx bx-history"></span> button
+    in the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>&nbsp;area.</li>
 </ul>
 <h2>Interaction</h2>
 <aside class="admonition note">
@@ -28,9 +27,8 @@
     </ul>
   </li>
   <li>The icon of a revision indicates the <em>source</em> of that revision (e.g.
-    a
-    <img class="image_resized" style="aspect-ratio:20/21;width:2.49%;" src="Note Revisions_image.png"
-    width="20" height="21">icon for a manually saved revision).</li>
+    a&nbsp;<span class="tn-icon bx bx-save"></span> icon for a manually saved
+    revision).</li>
   <li>Pressing the […] on the top-right of the dialog displays multiple options,
     including:
     <ul>
@@ -73,7 +71,7 @@
   <li>Go to the&nbsp;<a class="reference-link" href="#root/_help_8YBEPzcpUgxw">Note buttons</a>,
     select <em>Save named revision…</em>, enter the name of revision and confirm.</li>
   <li>Use the corresponding <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a> or
-    the&nbsp;<a class="reference-link" href="#root/_help_F1r9QtzQLZqm">Jump to...</a>&nbsp;command
+    the&nbsp;<a class="reference-link" href="#root/_help_F1r9QtzQLZqm">Jump to &amp; command palette</a>&nbsp;command
     with the same name.</li>
   <li>Save a revision normally, and adjust the name afterwards from the note
     revision list.</li>
@@ -103,18 +101,17 @@
     as a revision to prevent potential data loss.</li>
 </ul>
 <h4>Snapshot interval</h4>
-<p>Time interval of taking note snapshot is configurable in the Options -&gt;
+<p>Time interval of taking note snapshot is configurable in the Options →
   Other dialog. This provides a trade-off between more revisions and more
   data to store.</p>
-<p>To turn off note versioning for a particular note (or sub-tree), add
-  <code
-  spellcheck="false">disableVersioning</code> <a href="#root/_help_zEY4DaJG4YT5">label</a> to the note.</p>
+<p>To turn off note versioning for a particular note (or sub-tree), add <code>disableVersioning</code>  <a
+  href="#root/_help_zEY4DaJG4YT5">label</a> to the note.</p>
 <h4>Maximum revisions</h4>
 <p>The limit on the number of note snapshots can be configured in the Options
-  -&gt; Other dialog. The note revision snapshot number limit refers to the
-  maximum number of revisions that can be saved for each note. Where -1 means
-  no limit, 0 means delete all revisions. You can set the maximum revisions
-  for a single note through the <code spellcheck="false">versioningLimit=X</code> label.</p>
+  → Other dialog. The note revision snapshot number limit refers to the maximum
+  number of revisions that can be saved for each note. Where -1 means no
+  limit, 0 means delete all revisions. You can set the maximum revisions
+  for a single note through the <code>versioningLimit=X</code> label.</p>
 <p>The note limit will not take effect immediately; it will only apply when
   the note is modified.</p>
 <p>You can click the <em>Erase excess revision snapshots now</em> button to

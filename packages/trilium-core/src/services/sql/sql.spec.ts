@@ -154,6 +154,31 @@ describe("SqlService (real DB)", () => {
             expect(raw).toEqual([["x", 7]]);
         });
 
+        it("getRawRowsBulk returns the same positional arrays getRawRows does", () => {
+            const table = createTempTable();
+            getSql().insert(table, { name: "x", val: 7 });
+            getSql().insert(table, { name: null, val: 0 });
+            getSql().insert(table, { name: `quote" and \\ backslash and ünïcode ☃`, val: -3 });
+
+            const columns = ["name", "val"];
+            const from = /*sql*/`FROM "${table}" ORDER BY rowid`;
+
+            expect(getSql().getRawRowsBulk<[string, number]>(columns, from)).toEqual(
+                getSql().getRawRows<[string, number]>(`SELECT ${columns.join(", ")} ${from}`)
+            );
+        });
+
+        it("getRawRowsBulk returns an empty array when nothing matches, and binds params", () => {
+            const table = createTempTable();
+            getSql().insert(table, { name: "keep", val: 1 });
+            getSql().insert(table, { name: "drop", val: 2 });
+
+            const name = ["name"];
+            expect(getSql().getRawRowsBulk(name, /*sql*/`FROM "${table}" WHERE val > 99`)).toEqual([]);
+            expect(getSql().getRawRowsBulk(name, /*sql*/`FROM "${table}" WHERE val = ?`, [1]))
+                .toEqual([["keep"]]);
+        });
+
         it("iterateRows yields rows lazily", () => {
             const table = createTempTable();
             getSql().insert(table, { name: "i1", val: 1 });

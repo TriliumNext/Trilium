@@ -228,7 +228,7 @@ export function isOptionPageVisibleOnPlatform(page: FNote) {
  * `.note-detail` pane in the mobile master-detail flow.
  */
 function SettingsScrollReset(
-    { modalRef, searching }: { modalRef: RefObject<HTMLDivElement>, searching: boolean }
+    { modalRef, searching }: { modalRef: RefObject<HTMLDivElement | null>, searching: boolean }
 ) {
     const { noteId } = useNoteContext();
     useLayoutEffect(() => {

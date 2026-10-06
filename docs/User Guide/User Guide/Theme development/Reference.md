@@ -171,7 +171,9 @@ When a workspace is hoisted for a given tab, it is possible to get the backgroun
 
 ## Custom fonts
 
-Currently the only way to include a custom font is to use [Custom resource providers](../Advanced%20Usage/Custom%20Resource%20Providers.md). Basically import a font into Trilium and assign it `#customResourceProvider=fonts/myfont.ttf` and then import the font in CSS via `/custom/fonts/myfont.ttf`. Use `../../../custom/fonts/myfont.ttf` if you run your Trilium server on a different path than `/`.
+The recommended way of using customized fonts is to import a font directly in Trilium. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Personalizing%20the%20font.md">Personalizing the font</a> for information on how to do so.
+
+Alternatively, for a theme providing its own font, [Custom resource providers](../Advanced%20Usage/Custom%20Resource%20Providers.md) can be used: Import a font into Trilium and assign it `#customResourceProvider=fonts/myfont.ttf` and then import the font in CSS via `/custom/fonts/myfont.ttf`. Use `../../../custom/fonts/myfont.ttf` if you run your Trilium server on a different path than `/`.
 
 ## Dark and light themes
 
@@ -196,3 +198,31 @@ If the theme is auto (e.g. supports both light or dark based on `prefers-color-s
 ```
 
 This will affect the behavior of the Electron application by informing the operating system of the color preference (e.g. background effects will appear correct on Windows).
+
+## Adaptive text and table colors
+
+Colors applied in a text note, from the font color and background color buttons (see <a class="reference-link" href="../Note%20Types/Text/General%20formatting.md">General formatting</a>) or from the table and cell properties (see <a class="reference-link" href="../Note%20Types/Text/Tables.md">Tables</a>), are shown in a shade that suits the theme: the hue stays, while the lightness and the saturation are kept within limits. A theme can change these limits, for example if its page background is much darker or lighter than the one of the built-in themes:
+
+```css
+:root {
+    --adaptive-text-light-max-lightness: 35;
+    --adaptive-text-dark-min-lightness: 80;
+}
+```
+
+Each variable is named `--adaptive-<role>-<light|dark>-<limit>`:
+
+*   The role is `text` (font color), `background` (font background color), `table-border` or `table-background` (tables and cells).
+*   `light` or `dark` is the kind of theme the limit applies to, as declared by `--theme-style`.
+*   The limit is `min-lightness` or `max-lightness` (the CIELAB lightness, from 0 for black to 100 for white), or `max-chroma` (how saturated the color can be; `150` sets no practical limit). Each value must be a plain number, otherwise the colors lose their adaptation.
+
+The defaults are:
+
+| Role | Light themes | Dark themes |
+| --- | --- | --- |
+| `text` | `max-lightness: 40`, `max-chroma: 150` | `min-lightness: 75`, `max-chroma: 55` |
+| `background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
+| `table-border` | `max-lightness: 60`, `max-chroma: 150` | `min-lightness: 47`, `max-chroma: 150` |
+| `table-background` | `min-lightness: 90`, `max-chroma: 20` | `max-lightness: 30`, `max-chroma: 30` |
+
+The limits apply while a note is displayed, so a change to them affects every note at once. The note itself keeps each color as it was picked, in its `color`, `background-color` or `border-color` style, and a second time in a `--tn-color`, `--tn-background` or `--tn-border-color` variable, which the adaptation reads.

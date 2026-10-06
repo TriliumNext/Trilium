@@ -1,5 +1,4 @@
-import { ComponentChildren } from "preact";
-import { createPortal } from "preact/compat";
+import { ComponentChildren, createPortal } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import { useColorScheme } from "./hooks";

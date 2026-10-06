@@ -1,4 +1,10 @@
-import type { LlmCitation, LlmErrorDetails, LlmUsage } from "@triliumnext/commons";
+import {
+    isToolErrorResult,
+    type LlmCitation,
+    type LlmErrorDetails,
+    type LlmReasoningEffort,
+    type LlmUsage
+} from "@triliumnext/commons";
 
 export type MessageType = "message" | "error" | "thinking";
 
@@ -18,6 +24,15 @@ export interface ToolCall {
 /** A block of text content (rendered as Markdown for assistant messages). */
 export interface TextBlock {
     type: "text";
+    content: string;
+}
+
+/**
+ * A stretch of the model's reasoning, kept in stream order among the reply's other blocks.
+ * It is shown in the timeline but never sent back to the model.
+ */
+export interface ThinkingBlock {
+    type: "thinking";
     content: string;
 }
 
@@ -71,7 +86,7 @@ export interface TextFileBlock {
 }
 
 /** An ordered content block in a chat message. */
-export type ContentBlock = TextBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
+export type ContentBlock = TextBlock | ThinkingBlock | ToolCallBlock | ImageBlock | FileBlock | TextFileBlock;
 
 /**
  * Extract the plain text from message content (works for both legacy string and block formats).
@@ -99,6 +114,14 @@ export function trimToFirstUserMessage<T extends { role: string }>(messages: T[]
 /**
  * Extract tool calls from message content blocks.
  */
+/**
+ * Whether a tool call failed: flagged so by the provider, or answered with the `{ error }` a note tool
+ * returns. The result covers chats saved while a provider did not pass the flag on.
+ */
+export function isFailedToolCall(toolCall: ToolCall): boolean {
+    return !!toolCall.isError || isToolErrorResult(toolCall.result);
+}
+
 export function getMessageToolCalls(message: StoredMessage): ToolCall[] {
     if (Array.isArray(message.content)) {
         return message.content
@@ -138,7 +161,10 @@ export interface StoredMessage {
     content: string | ContentBlock[];
     createdAt: string;
     citations?: LlmCitation[];
-    /** Message type for special rendering. Defaults to "message" if omitted. */
+    /**
+     * Message type for special rendering. Defaults to "message" if omitted. `"thinking"` appears
+     * only in chats saved before reasoning moved into {@link ThinkingBlock}s.
+     */
     type?: MessageType;
     /**
      * For `type: "error"` messages, the failed provider call's context (HTTP status, URL,
@@ -174,4 +200,6 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    /** The effort chosen for a model with levels; absent means the model's default. */
+    reasoningEffort?: LlmReasoningEffort;
 }

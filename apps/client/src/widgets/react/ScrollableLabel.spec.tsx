@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import ScrollableLabel from "./ScrollableLabel";
@@ -18,10 +19,15 @@ afterEach(() => {
  * writable already; the two widths are not, and stand for a line of the given length in a 100px box.
  */
 function renderLabel(text: string, scrollWidth: number, clientWidth = 100, autoScroll = false) {
-    container = document.body.appendChild(document.createElement("div"));
-    render(<ScrollableLabel autoScroll={autoScroll}>{text}</ScrollableLabel>, container);
+    const mountPoint = document.body.appendChild(document.createElement("div"));
+    container = mountPoint;
+    // Flushed here: the fade attaches its listeners from an effect, which Preact defers past the
+    // render, and a test that scrolled before that would be scrolling at nothing.
+    act(() => {
+        render(<ScrollableLabel autoScroll={autoScroll}>{text}</ScrollableLabel>, mountPoint);
+    });
 
-    const label = container.querySelector<HTMLDivElement>(".scrollable-label");
+    const label = mountPoint.querySelector<HTMLDivElement>(".scrollable-label");
 
     if (!label) {
         throw new Error("the label did not render");
@@ -41,7 +47,7 @@ async function scrollTo(label: HTMLDivElement, scrollLeft: number) {
     label.scrollLeft = scrollLeft;
     label.dispatchEvent(new Event("scroll"));
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 }
 
 describe("ScrollableLabel", () => {
@@ -50,30 +56,30 @@ describe("ScrollableLabel", () => {
 
         // Sitting at the start: the end continues, nothing is cut off behind.
         await scrollTo(label, 0);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(false);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(true);
+        expect(label.classList.contains("scroll-fade-start")).toBe(false);
+        expect(label.classList.contains("scroll-fade-end")).toBe(true);
 
         // Part way along: cut off at both ends.
         await scrollTo(label, 100);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(true);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(true);
+        expect(label.classList.contains("scroll-fade-start")).toBe(true);
+        expect(label.classList.contains("scroll-fade-end")).toBe(true);
 
         // Scrolled to the end: only what is behind is cut off.
         await scrollTo(label, 200);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(true);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(false);
+        expect(label.classList.contains("scroll-fade-start")).toBe(true);
+        expect(label.classList.contains("scroll-fade-end")).toBe(false);
     });
 
     it("takes a right-to-left line's negative offsets as the same distance travelled", async () => {
         const label = renderLabel("a right-to-left name", 300);
 
         await scrollTo(label, -100);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(true);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(true);
+        expect(label.classList.contains("scroll-fade-start")).toBe(true);
+        expect(label.classList.contains("scroll-fade-end")).toBe(true);
 
         await scrollTo(label, -200);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(true);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(false);
+        expect(label.classList.contains("scroll-fade-start")).toBe(true);
+        expect(label.classList.contains("scroll-fade-end")).toBe(false);
     });
 
     it("walks an auto-scrolling label at its own pace, and stops it at the end", () => {
@@ -160,7 +166,7 @@ describe("ScrollableLabel", () => {
         const label = renderLabel("short", 100);
 
         await scrollTo(label, 0);
-        expect(label.classList.contains("scrollable-label-fade-start")).toBe(false);
-        expect(label.classList.contains("scrollable-label-fade-end")).toBe(false);
+        expect(label.classList.contains("scroll-fade-start")).toBe(false);
+        expect(label.classList.contains("scroll-fade-end")).toBe(false);
     });
 });

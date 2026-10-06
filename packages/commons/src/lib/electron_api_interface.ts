@@ -1,3 +1,5 @@
+import type { SecurityToggleApi } from "./security_settings.js";
+
 /**
  * Parameters delivered by the main process to the renderer when the user opens
  * the system context menu (right-click) somewhere inside a web view.
@@ -126,12 +128,6 @@ export interface ElectronWindowApi {
     /** Closes the current window. */
     closeWindow(): void;
 
-    /**
-     * Opens a new top-level Trilium window navigated to the given hash route.
-     * @param extraWindowHash The URL hash fragment (without the leading `#`) for the new window.
-     */
-    createExtraWindow(extraWindowHash: string): void;
-
     /** Synchronously returns whether the window is pinned above all others. */
     isAlwaysOnTop(): boolean;
 
@@ -234,6 +230,12 @@ export interface ElectronClipboardApi {
      * grant the sensitive `clipboard-read` permission to the whole session.
      */
     readText(): Promise<string>;
+
+    /**
+     * Reads the HTML flavor of the system clipboard, the same way as {@link readText}. Empty when
+     * the clipboard has no HTML.
+     */
+    readHTML(): Promise<string>;
 }
 
 /**
@@ -417,7 +419,7 @@ export interface ElectronPrintingApi {
     exportAsPdfPreview(opts: Record<string, unknown>): void;
 
     /** Subscribes to the result of an {@link exportAsPdfPreview} call. */
-    onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string }) => void): void;
+    onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string; requestId?: number }) => void): void;
 
     /** Removes the listener registered via {@link onExportAsPdfPreviewResult}. */
     removeExportAsPdfPreviewResultListener(): void;
@@ -493,17 +495,7 @@ export interface ElectronNavigationApi {
  * to prevent malicious scripts from modifying them. Changes require a native
  * OS confirmation dialog and an app restart to take effect.
  */
-export interface ElectronSecurityApi {
-    /**
-     * Requests a change to a security setting. Shows a native OS confirmation
-     * dialog before writing. Returns `true` if the user confirmed and the
-     * change was written (restart required to take effect), `false` if cancelled.
-     */
-    setBackendScriptingEnabled(enabled: boolean): Promise<boolean>;
-
-    /** Requests a change to the SQL console setting. Same flow as above. */
-    setSqlConsoleEnabled(enabled: boolean): Promise<boolean>;
-
+export interface ElectronSecurityApi extends SecurityToggleApi {
     /**
      * Requests enabling/disabling LAN access. When enabled, the desktop binds
      * its TCP listener to all interfaces (instead of loopback) so other devices

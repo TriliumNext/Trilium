@@ -1,11 +1,12 @@
-import { useEffect, useRef, type InputHTMLAttributes, type RefObject } from "preact/compat";
+import type { AccessibleInputHTMLAttributes, InputHTMLAttributes, RefObject } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 
 export interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
     id?: string;
     currentValue?: string;
     onChange?(newValue: string, validity: ValidityState): void;
     onBlur?(newValue: string): void;
-    inputRef?: RefObject<HTMLInputElement>;
+    inputRef?: RefObject<HTMLInputElement | null>;
 }
 
 export default function FormTextBox({ inputRef, className, type, currentValue, onChange, onBlur, autoFocus, ...rest}: FormTextBoxProps) {
@@ -41,7 +42,7 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
     // compat-using import, remaps `onChange` — in any casing — to the input event. Held in a ref so
     // the once-bound listener commits through the props of the render it fires in, not the one it
     // was bound in.
-    const commitNumber = useRef<() => void>();
+    const commitNumber = useRef<(() => void) | undefined>(undefined);
     commitNumber.current = () => {
         const input = innerRef.current;
         if (!input) return;
@@ -67,7 +68,6 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
                 if (inputRef) inputRef.current = element;
             }}
             className={`form-control ${className ?? ""}`}
-            type={type ?? "text"}
             value={currentValue}
             onInput={onChange && (e => {
                 const target = e.currentTarget;
@@ -81,7 +81,10 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
                 // fired where anything changed; committing here too would only say it twice.
                 if (type !== "number") onBlur?.(currentValue);
             })}
-            {...rest}
+            {...({
+                ...rest,
+                type: type ?? "text"
+            } as AccessibleInputHTMLAttributes<HTMLInputElement>)}
         />
     );
 }

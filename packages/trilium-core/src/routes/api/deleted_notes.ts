@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import type { NoteRow, NoteType } from "@triliumnext/commons";
 
 import { NotFoundError } from "../../errors.js";

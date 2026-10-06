@@ -1,7 +1,8 @@
 /**
- * The bar of editing actions over a geo map (see EditToolbar.tsx). What is checked is the one
- * button it holds so far: that a press arms the map and a press on an armed one stands it down,
- * that the mode is worn as held down, and that a map that may not be edited refuses it.
+ * The bar of editing actions over a geo map (see EditToolbar.tsx): that a press on each button arms
+ * the map and a press on an armed one disarms it, that an armed mode is shown active, and that a
+ * read-only map disables them all. The drawing tools have a group of their own, checked in
+ * DrawToolbar.spec.tsx.
  */
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
@@ -31,7 +32,7 @@ function renderBar({ map = {} as never, isReadOnly = false, placing = false } = 
         buttons: all,
         /** The first button, which is the +. */
         button: () => all()[0] ?? null,
-        gpxButton: () => all()[1] ?? null
+        gpxButton: () => all()[all().length - 1] ?? null
     };
 }
 
@@ -69,6 +70,7 @@ describe("geo map EditToolbar", () => {
     it("refuses every button on a map that may not be edited", () => {
         const { buttons } = renderBar({ isReadOnly: true });
 
+        expect(buttons().length).toBe(2);
         for (const button of buttons()) {
             expect(button.disabled).toBe(true);
         }

@@ -51,7 +51,8 @@ function register(router: Router) {
         isExpanded: [v.notNull, v.isBoolean],
         noteId: [v.notNull, v.isValidEntityId],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route(router, "post", "/etapi/create-note", (req, res, next) => {
@@ -66,6 +67,11 @@ function register(router: Router) {
 
         try {
             const resp = noteService.createNewNote(params);
+            // `save()` stamps the current time, so `setDateCreatedAndModified()` applies the
+            // requested date afterwards.
+            if (req.body.utcDateModified) {
+                resp.note.setDateCreatedAndModified(undefined, req.body.utcDateModified);
+            }
 
             res.status(201).json({
                 note: mappers.mapNoteToPojo(resp.note),
@@ -81,7 +87,8 @@ function register(router: Router) {
         type: [v.notNull, v.isString],
         mime: [v.notNull, v.isString],
         dateCreated: [v.notNull, v.isString, v.isLocalDateTime],
-        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
+        utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime],
+        utcDateModified: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
     eu.route<{ noteId: string }>(router, "patch", "/etapi/notes/:noteId", (req, res, next) => {
@@ -102,6 +109,9 @@ function register(router: Router) {
         noteService.saveRevisionIfNeeded(note);
         eu.validateAndPatch(note, req.body, ALLOWED_PROPERTIES_FOR_PATCH);
         note.save();
+        if (req.body.utcDateModified) {
+            note.setDateCreatedAndModified(undefined, req.body.utcDateModified);
+        }
 
         res.json(mappers.mapNoteToPojo(note));
     });

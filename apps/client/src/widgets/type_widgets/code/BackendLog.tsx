@@ -10,7 +10,7 @@ import { useNote, useNoteLabelOptionalBool, useTriliumEvent } from "../../react/
 import { TypeWidgetProps } from "../type_widget";
 import { CodeEditor } from "./Code";
 
-export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) {
+export default function BackendLog({ ntxId }: TypeWidgetProps) {
     const [ content, setContent ] = useState<string>();
     const editorRef = useRef<CodeMirror>(null);
     const note = useNote("_backendLog");
@@ -47,7 +47,7 @@ export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) 
         <div className="backend-log-editor-container">
             <CodeEditor
                 editorRef={editorRef}
-                ntxId={ntxId} parentComponent={parentComponent}
+                ntxId={ntxId}
                 content={content ?? ""}
                 mime={MIME_TYPE_TRILIUM_LOG}
                 readOnly

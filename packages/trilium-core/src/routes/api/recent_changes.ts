@@ -1,11 +1,11 @@
 import protectedSessionService from "../../services/protected_session.js";
 import noteService from "../../services/notes.js";
 import becca from "../../becca/becca.js";
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 import type { RecentChangeRow } from "@triliumnext/commons";
 import { getSql } from "../../services/sql/index.js";
 
-function getRecentChanges(req: Request<{ ancestorNoteId: string }, unknown, unknown, { deletedOnly?: string }>) {
+function getRecentChanges(req: Request<{ ancestorNoteId: string }, { deletedOnly?: string }>) {
     const { ancestorNoteId } = req.params;
     const deletedOnly = req.query.deletedOnly === "true";
 

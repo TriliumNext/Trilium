@@ -97,23 +97,37 @@ export default class App {
         }
     }
 
+    /**
+     * Sends this tab's API calls through the service worker, where Playwright can see them.
+     *
+     * Standalone's leader tab answers its own calls from the in-page SQLite worker
+     * (`standaloneApi.localFetch`), so they never reach the network stack and
+     * `page.waitForResponse()` never fires. Call this in a test that waits on a request rather than
+     * on what the request changes. Does nothing on the server build, which has no `standaloneApi`,
+     * and lasts until the next navigation re-runs standalone's bootstrap.
+     */
+    async observeApiRequests() {
+        await this.page.evaluate(() => {
+            const standaloneApi = (window as unknown as { standaloneApi?: { localFetch?: unknown } }).standaloneApi;
+            delete standaloneApi?.localFetch;
+        });
+    }
+
     async goToNoteInNewTab(noteTitle: string) {
         const autocomplete = this.currentNoteSplit.locator(".note-autocomplete");
         await expect(autocomplete).toBeVisible();
-        // The algolia autocomplete listens to keyboard events. `fill()` only
-        // dispatches `input`, which doesn't reliably open the dropdown — clear
-        // and type with real key events instead.
+        // Typed with real key events, as a person types, rather than `fill()`.
         await autocomplete.click();
         await autocomplete.clear();
         await autocomplete.pressSequentially(noteTitle);
 
-        // The second suggestion is the best candidate; the first is "Create a
-        // new note". Asserting on the suggestion itself (instead of the parent
-        // `.note-detail-empty-results`, which also contains the recent-notes
-        // list) ensures the dropdown actually opened.
+        // The notes come first, ahead of the search and creation rows, which also carry the
+        // title. Asserting on the suggestion itself (instead of the parent
+        // `.note-detail-empty-results`, which also contains the recent-notes list) ensures the
+        // dropdown actually opened.
         const suggestionSelector = this.currentNoteSplit
-            .locator(".note-detail-empty-results .aa-suggestion")
-            .nth(1);
+            .locator(".note-detail-empty-results .note-suggestion-list > .dropdown-item")
+            .first();
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }
@@ -185,7 +199,7 @@ export default class App {
         const noteActionsButton = this.currentNoteSplit.locator(".note-actions");
         await noteActionsButton.click();
 
-        const dropdownMenu = noteActionsButton.locator(".dropdown-menu").first();
+        const dropdownMenu = this.page.locator(".tn-dropdown-portal.note-actions .dropdown-menu").first();
         await this.page.waitForTimeout(100);
         await expect(dropdownMenu).toBeVisible();
         dropdownMenu.getByText(itemToFind).click();

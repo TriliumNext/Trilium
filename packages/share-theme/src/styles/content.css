@@ -57,7 +57,19 @@
 }
 
 a.reference-link > span > .tn-icon {
+    /* These three rules must match `.reference-link .tn-icon` in
+       apps/client/src/stylesheets/style.css, which explains them. */
+    display: inline;
     margin-inline-end: 3px;
+    white-space: nowrap;
+}
+
+a.reference-link > span > .tn-icon::before {
+    display: inline-block;
+}
+
+a.reference-link > span > .tn-icon::after {
+    content: "\2060";
 }
 
 body:not(.math-loaded) .math-tex {
@@ -160,4 +172,17 @@ body.type-webView {
     display: block;
     max-width: 100%;
     object-fit: contain;
+}
+
+/* An include with a caption: the included content, then the caption. */
+.ck-content figure.include-note {
+    margin: 1em 0;
+}
+
+.ck-content .include-note > figcaption {
+    margin-top: .5em;
+    border-top: 1px solid var(--background-active);
+    padding-top: .5em;
+    font-size: .9em;
+    text-align: center;
 }

@@ -16,13 +16,10 @@ import ReferenceLink from "./referencelink.js";
 
 describe("MentionCustomization", () => {
     let editor: ClassicEditor;
-    let createNoteForReferenceLink: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        createNoteForReferenceLink = vi.fn(async () => "createdNotePath");
         installGlobMock({
             getComponentByEl: () => ({
-                createNoteForReferenceLink,
                 loadReferenceLinkTitle: vi.fn(async () => {})
             }),
             getReferenceLinkTitle: vi.fn(async () => "Some title"),
@@ -78,25 +75,6 @@ describe("MentionCustomization", () => {
 
         expect(getModelData(editor.model)).toContain("<reference");
         expect(getModelData(editor.model)).toContain("noteAbc");
-    });
-
-    it("creates a note then inserts the reference link for a create-note mention", async () => {
-        setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
-
-        editor.execute("mention", {
-            mention: { id: "@Brand new note", action: "create-note", noteTitle: "Brand new note" },
-            marker: "@"
-        });
-
-        expect(createNoteForReferenceLink).toHaveBeenCalledWith("Brand new note");
-
-        // Wait for the createNoteForReferenceLink promise (and the chained
-        // getReferenceLinkTitle promise from the referenceLink command) to resolve.
-        await Promise.resolve();
-        await Promise.resolve();
-
-        expect(getModelData(editor.model)).toContain("<reference");
-        expect(getModelData(editor.model)).toContain("createdNotePath");
     });
 
     it("uses the provided range instead of the current selection when inserting a reference", async () => {

@@ -71,8 +71,15 @@ describe("useData", () => {
         return { note, noteIds };
     }
 
+    /** Hands the hook a reload reporting nothing but what the test overrides. */
     async function fire(loadResults: Record<string, unknown>) {
-        await act(async () => handlers.get("entitiesReloaded")?.({ loadResults: loadResults as unknown as LoadResults }));
+        const reload = {
+            getAttributeRows: () => [],
+            getBranchRows: () => [],
+            isNoteReloaded: () => false,
+            ...loadResults
+        };
+        await act(async () => handlers.get("entitiesReloaded")?.({ loadResults: reload as unknown as LoadResults }));
         await settle();
     }
 
@@ -100,11 +107,7 @@ describe("useData", () => {
 
         const task = froca.notes[noteIds[0]];
         task.title = "Renamed";
-        await fire({
-            getAttributeRows: () => [],
-            getBranchRows: () => [ { parentNoteId: note.noteId } ],
-            getNoteIds: () => []
-        });
+        await fire({ getBranchRows: () => [ { parentNoteId: note.noteId } ] });
 
         expect(captured?.rowData?.map((row) => row.title)).toEqual([ "Renamed", "Task 2" ]);
         // The very same array: rebuilt columns are replaced wholesale in Tabulator, which would
@@ -123,19 +126,38 @@ describe("useData", () => {
 
         // The table's own write comes back around: rebuilding now would pull the open editor
         // out from under the user, so its component id filters the change away.
-        await fire({
-            getAttributeRows: (componentId?: string) => componentId === "table-cid" ? [] : definitionRows,
-            getBranchRows: () => [],
-            getNoteIds: () => []
-        });
+        await fire({ getAttributeRows: (componentId?: string) => componentId === "table-cid" ? [] : definitionRows });
         expect(captured?.columnDefs).toBe(columnsBefore);
 
         // The same change made elsewhere rebuilds the columns.
-        await fire({
-            getAttributeRows: () => definitionRows,
-            getBranchRows: () => [],
-            getNoteIds: () => []
-        });
+        await fire({ getAttributeRows: () => definitionRows });
         expect(captured?.columnDefs).not.toBe(columnsBefore);
+    });
+
+    it("rebuilds the rows for a cell changed elsewhere, but not for its own edit", async () => {
+        const { note, noteIds } = collection();
+        await mount(note, noteIds);
+        const rowsBefore = captured?.rowData;
+
+        const task = froca.notes[noteIds[0]];
+        task.title = "Renamed";
+        const labelRows = [ { noteId: noteIds[0], type: "label", name: "status", value: "Done" } ];
+
+        // The title and the label this table has just written come back as this table's own
+        // reload: rebuilding the rows now would cancel the editor Tab has opened in the next cell.
+        await fire({
+            isNoteReloaded: (noteId: string, componentId?: string) => noteId === noteIds[0] && componentId !== "table-cid",
+            getAttributeRows: (componentId?: string) => componentId === "table-cid" ? [] : labelRows
+        });
+        expect(captured?.rowData).toBe(rowsBefore);
+
+        // The same title change made elsewhere rebuilds the rows.
+        await fire({ isNoteReloaded: (noteId: string) => noteId === noteIds[0] });
+        expect(captured?.rowData?.map((row) => row.title)).toEqual([ "Renamed", "Task 2" ]);
+
+        // As does a label changed elsewhere.
+        const rowsAfterTitle = captured?.rowData;
+        await fire({ getAttributeRows: () => labelRows });
+        expect(captured?.rowData).not.toBe(rowsAfterTitle);
     });
 });

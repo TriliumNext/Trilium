@@ -1,8 +1,7 @@
 import "./ContextualHelp.css";
 
 import { Tooltip } from "bootstrap";
-import type { RefObject } from "preact";
-import { createPortal } from "preact/compat";
+import { createPortal, type RefObject } from "preact";
 import { useMemo, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
@@ -100,7 +99,7 @@ function TappedHelp({ helpMessage }: ContextualHelpProps) {
 }
 
 interface HelpIconProps {
-    iconRef?: RefObject<HTMLSpanElement>;
+    iconRef?: RefObject<HTMLSpanElement | null>;
     helpMessage: string;
     /** What activating the icon opens, for anything that is not simply revealed in place. */
     popup?: "dialog";
@@ -148,7 +147,7 @@ function HelpIcon({ iconRef, helpMessage, popup, onActivate, onDismiss }: HelpIc
 }
 
 /** Shows the icon's explanation, or puts it away again if it is already up. */
-function toggleTooltip(iconRef: RefObject<HTMLSpanElement>) {
+function toggleTooltip(iconRef: RefObject<HTMLSpanElement | null>) {
     const element = iconRef.current;
 
     if (element) {
@@ -163,7 +162,7 @@ function toggleTooltip(iconRef: RefObject<HTMLSpanElement>) {
  * takes it off again on hide, which is the only public sign of whether one is open — and asking
  * matters, because the answer decides whether the key press is ours to keep.
  */
-function dismissTooltip(iconRef: RefObject<HTMLSpanElement>) {
+function dismissTooltip(iconRef: RefObject<HTMLSpanElement | null>) {
     const element = iconRef.current;
 
     if (!element?.hasAttribute("aria-describedby")) {

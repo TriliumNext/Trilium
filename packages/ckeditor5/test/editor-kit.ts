@@ -1,4 +1,4 @@
-import { ClassicEditor } from "ckeditor5";
+import { ClassicEditor, type Editor } from "ckeditor5";
 
 /**
  * Shared editor lifecycle helpers for the spec suite.
@@ -18,8 +18,13 @@ import { ClassicEditor } from "ckeditor5";
 type EditorCreateConfig = NonNullable<Parameters<typeof ClassicEditor.create>[1]>;
 
 interface TrackedEditor {
-    editor: ClassicEditor;
+    editor: Editor;
     editorElement: HTMLDivElement;
+}
+
+/** An editor class as the kit reaches for it: `ClassicEditor`, `BalloonEditor`, and the rest. */
+interface EditorClass<T extends Editor> {
+    create(sourceElement: HTMLElement, config: EditorCreateConfig): Promise<T>;
 }
 
 const trackedEditors: TrackedEditor[] = [];
@@ -34,10 +39,22 @@ export async function createTestEditor(
     plugins: EditorCreateConfig["plugins"],
     extraConfig: Omit<EditorCreateConfig, "plugins"> = {}
 ): Promise<ClassicEditor> {
+    return createTestEditorOf(ClassicEditor, plugins, extraConfig);
+}
+
+/**
+ * The same, over the editor class the spec names — for a spec whose subject is what a given
+ * editor builds around it, such as the toolbar a `BalloonEditor` has instead of a fixed bar.
+ */
+export async function createTestEditorOf<T extends Editor>(
+    EditorClass: EditorClass<T>,
+    plugins: EditorCreateConfig["plugins"],
+    extraConfig: Omit<EditorCreateConfig, "plugins"> = {}
+): Promise<T> {
     const editorElement = document.createElement("div");
     document.body.appendChild(editorElement);
 
-    const editor = await ClassicEditor.create(editorElement, {
+    const editor = await EditorClass.create(editorElement, {
         licenseKey: "GPL",
         plugins,
         ...extraConfig
@@ -51,7 +68,7 @@ export async function createTestEditor(
  * Return the host `<div>` an editor was created over via {@link createTestEditor}. Throws if the
  * editor was not created through the kit, so callers narrow the element without a non-null `!`.
  */
-export function getEditorElement(editor: ClassicEditor): HTMLDivElement {
+export function getEditorElement(editor: Editor): HTMLDivElement {
     const tracked = trackedEditors.find((entry) => entry.editor === editor);
     if (!tracked) {
         throw new Error("Editor was not created via createTestEditor(); no host element is tracked.");

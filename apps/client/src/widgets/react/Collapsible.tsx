@@ -73,7 +73,9 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
                 id={contentId}
                 ref={bodyRef}
                 className={clsx("collapsible-body", {"fully-expanded": fullyExpanded})}
-                style={{ height: expanded ? height : "0" }}
+                style={{
+                    height: expanded ? (height === undefined ? undefined : `${height}px`) : "0"
+                }}
                 aria-hidden={!expanded}
             >
                 <div

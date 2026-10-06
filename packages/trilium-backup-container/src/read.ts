@@ -415,7 +415,7 @@ async function* readFrames(
     found: FoundTrailer
 ): AsyncGenerator<Uint8Array> {
     const aad = aadOf(header);
-    const hash = backend.createSha256();
+    const hash = await backend.createSha256();
     let counter = 0;
 
     for (;;) {
@@ -486,7 +486,7 @@ async function* readPlainPayload(
     backend: ContainerBackend,
     found: FoundTrailer
 ): AsyncGenerator<Uint8Array> {
-    const hash = backend.createSha256();
+    const hash = await backend.createSha256();
     let held = EMPTY;
 
     for (;;) {

@@ -1,46 +1,52 @@
-import { render } from "preact";
+import { type ComponentChildren, render } from "preact";
 import { useEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import SvgSplitEditor from "./SvgSplitEditor";
 import type { SplitEditorProps } from "./SplitEditor";
+import SvgSplitEditor from "./SvgSplitEditor";
 
-// svg-pan-zoom strips the SVG's `viewBox` attribute as soon as it initializes (it caches the
-// original value internally and works off pan/zoom transforms afterwards) and its `destroy()`
-// never puts it back. `useResizer` (SvgSplitEditor.tsx) is responsible for restoring it itself;
-// this fake reproduces exactly that stripping-without-restoring behavior so the test exercises
-// the real bug shape rather than a strawman.
-//
-// It also keeps a scale, the way the library does: a step multiplies it by the library's own
-// sensitivity and is clamped to the same bounds, a fit takes it back to the view it opened at, and
-// every change is told to whoever asked to be told (`setOnZoom`) — which is what the readout follows.
-vi.mock("svg-pan-zoom", () => ({
-    default: vi.fn((svgEl: SVGElement) => {
-        svgEl.removeAttribute("viewBox");
-        let zoom = 1;
-        let onZoom: ((zoom: number) => void) | undefined;
-        const setZoom = (value: number) => {
-            zoom = Math.min(10, Math.max(0.5, value));
-            onZoom?.(zoom);
-            return instance;
-        };
-        const instance = {
-            resize: () => instance,
-            center: () => instance,
-            fit: () => setZoom(1),
-            zoom: (value: number) => setZoom(value),
-            zoomIn: () => setZoom(zoom * 1.2),
-            zoomOut: () => setZoom(zoom / 1.2),
-            pan: () => instance,
-            getPan: () => ({ x: 0, y: 0 }),
-            getZoom: () => zoom,
-            setOnZoom: (fn: (zoom: number) => void) => { onZoom = fn; return instance; },
-            destroy: () => {}
-        };
-        return instance;
-    })
-}));
+// react-zoom-pan-pinch measures its boxes, which happy-dom cannot do. This fake keeps the parts the
+// controls drive: `zoomIn`/`zoomOut` add their step to the current scale and clamp it to the given
+// bounds, copying `handleCalculateButtonZoom`; `resetTransform` returns to the fitted view; and each
+// change calls `onTransform`, which is what updates the readout. It also records the props, so the
+// tests can assert what the component passes to the library.
+const { transformWrapperSpy } = vi.hoisted(() => ({ transformWrapperSpy: vi.fn() }));
+
+vi.mock("react-zoom-pan-pinch", async () => {
+    const { forwardRef, useImperativeHandle, useRef } = await import("preact/compat");
+
+    interface FakeProps {
+        children?: ComponentChildren;
+        minScale: number;
+        maxScale: number;
+        onTransform?: (ref: unknown, state: { scale: number }) => void;
+    }
+
+    return {
+        TransformWrapper: forwardRef((props: FakeProps, ref) => {
+            transformWrapperSpy(props);
+            // One object, mutated in place: `useZoomPanPinch` reads `instance.state.scale` as a
+            // button is pressed, so a fresh snapshot per render would be one step behind.
+            const state = useRef({ scale: 1 });
+            const apply = (target: number) => {
+                const rounded = Number(target.toFixed(3));
+                state.current.scale = Math.min(props.maxScale, Math.max(props.minScale, rounded));
+                props.onTransform?.(null, { scale: state.current.scale });
+            };
+            useImperativeHandle(ref, () => ({
+                instance: { state: state.current },
+                zoomIn: (step: number) => apply(state.current.scale + step),
+                zoomOut: (step: number) => apply(state.current.scale - step),
+                resetTransform: () => apply(1)
+            }));
+            return props.children;
+        }),
+        TransformComponent: (props: { children?: ComponentChildren; wrapperClass?: string }) => (
+            <div className={props.wrapperClass}>{props.children}</div>
+        )
+    };
+});
 
 // SplitEditor pulls in CodeMirror, Split.js and a Bootstrap ribbon that have nothing to do with
 // the pan/zoom behavior under test; stub it down to just the preview pane and the controls over it,
@@ -63,33 +69,42 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 const ORIGINAL_VIEW_BOX = "0 0 1234 56";
 const SVG_MARKUP = `<svg viewBox="${ORIGINAL_VIEW_BOX}" xmlns="http://www.w3.org/2000/svg">`
     + `<rect width="10" height="10"/></svg>`;
-const SVG_MARKUP_WITHOUT_VIEW_BOX = `<svg xmlns="http://www.w3.org/2000/svg">`
-    + `<rect width="10" height="10"/></svg>`;
 
 describe("SvgSplitEditor", () => {
-    it("restores the viewBox on cleanup, undoing what svg-pan-zoom stripped on init", async () => {
-        const svgEl = await mountAndUnmount(SVG_MARKUP, (el) => {
-            // Sanity check that the mocked library actually ran and stripped the attribute, so a
-            // passing assertion below reflects the restore and not an untouched attribute.
-            expect(el.getAttribute("viewBox")).toBeNull();
-        });
+    beforeEach(() => transformWrapperSpy.mockClear());
 
-        expect(svgEl.getAttribute("viewBox")).toBe(ORIGINAL_VIEW_BOX);
-    });
+    it("renders the diagram inside the pan/zoom viewport, with its viewBox untouched", async () => {
+        const { container, controls, unmount } = await mount();
 
-    it("does not invent a viewBox for an SVG that never had one", async () => {
-        const svgEl = await mountAndUnmount(SVG_MARKUP_WITHOUT_VIEW_BOX);
+        const svgEl = container.querySelector(".svg-preview-viewport .render-container svg");
+        expect(svgEl).not.toBeNull();
+        // The fit comes from the viewBox rather than from a measured scale, so it must not be
+        // stripped — svg-pan-zoom used to, which shrank gantt charts to invisibility on a re-fit
+        // (#9749).
+        expect(svgEl?.getAttribute("viewBox")).toBe(ORIGINAL_VIEW_BOX);
 
-        expect(svgEl.getAttribute("viewBox")).toBeNull();
+        expect(transformWrapperSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ minScale: 0.5, maxScale: 10 })
+        );
+
+        // Without a pointer the keys are the only way to pan, so the preview shows a hints button
+        // alongside the three zoom steps.
+        expect(controls().all.length).toBe(4);
+
+        unmount();
+        container.remove();
     });
 
     it("says the scale the diagram is drawn at, and fits it back to the pane when the readout is pressed", async () => {
-        const { container, controls, unmount } = await mountControls();
+        const { container, controls, unmount } = await mount();
 
         expect(controls().readout.textContent).toBe("100%");
 
         act(() => controls().zoomIn.click());
         expect(controls().readout.textContent).toBe("120%");
+
+        act(() => controls().zoomIn.click());
+        expect(controls().readout.textContent).toBe("144%");
 
         act(() => controls().readout.click());
         expect(controls().readout.textContent).toBe("100%");
@@ -98,19 +113,37 @@ describe("SvgSplitEditor", () => {
         container.remove();
     });
 
+    it("takes the keys on a press, in a split with the editor as much as on its own", async () => {
+        // This matters most beside the editor: `smartIndentWithTab` consumes Tab, so a press on the
+        // preview is the only way to reach the keys that pan the diagram.
+        const modes: Record<string, string>[] = [ {}, { displayMode: "preview" } ];
+        for (const labels of modes) {
+            const { container, preview, unmount } = await mount(labels);
+
+            expect(preview().tabIndex).toBe(0);
+            expect(preview().className).toContain("tn-zoom-pan-viewport");
+
+            act(() => { preview().dispatchEvent(new Event("pointerup", { bubbles: true })); });
+            expect(document.activeElement).toBe(preview());
+
+            unmount();
+            container.remove();
+        }
+    });
+
     it("leaves a step with no room left to it disabled", async () => {
-        const { container, controls, unmount } = await mountControls();
+        const { container, controls, unmount } = await mount();
 
         expect(controls().zoomOut.disabled).toBe(false);
 
-        // Far enough to be clamped at either end, so the readout sits exactly on the limit — which
+        // Far enough to be clamped at either end, so the readout sits exactly on the bound — which
         // is where the rounding the tolerance covers would otherwise leave the button live.
         for (let i = 0; i < 20; i++) act(() => controls().zoomOut.click());
         expect(controls().readout.textContent).toBe("50%");
         expect(controls().zoomOut.disabled).toBe(true);
         expect(controls().zoomIn.disabled).toBe(false);
 
-        for (let i = 0; i < 20; i++) act(() => controls().zoomIn.click());
+        for (let i = 0; i < 30; i++) act(() => controls().zoomIn.click());
         expect(controls().readout.textContent).toBe("1000%");
         expect(controls().zoomIn.disabled).toBe(true);
         expect(controls().zoomOut.disabled).toBe(false);
@@ -121,65 +154,46 @@ describe("SvgSplitEditor", () => {
 });
 
 /**
- * Mounts `SvgSplitEditor` and waits for the controls over the rendered diagram to appear, handing
- * back a reader for the three buttons. They are read afresh on every call, the group being drawn
- * anew whenever the scale changes.
+ * Mounts `SvgSplitEditor` and waits for the rendered diagram and its controls. `controls()` re-reads
+ * the buttons on every call, because the group re-renders whenever the scale changes.
  */
-async function mountControls() {
+async function mount(labels: Record<string, string> = {}) {
     const container = document.createElement("div");
     document.body.appendChild(container);
 
     await act(async () => {
-        render(<SvgSplitEditor {...svgSplitEditorProps(SVG_MARKUP)} />, container);
+        render(<SvgSplitEditor {...svgSplitEditorProps(SVG_MARKUP, labels)} />, container);
     });
 
-    await vi.waitFor(() => expect(container.querySelectorAll(".tn-overlay-control-group button")).toHaveLength(3));
+    await vi.waitFor(() => expect(container.querySelectorAll(".svg-preview-controls button").length).toBeGreaterThanOrEqual(3));
 
+    // The zoom steps are the last three on the group; the shortcut-hints button leads it.
     const controls = () => {
-        const [ zoomOut, readout, zoomIn ] = container.querySelectorAll<HTMLButtonElement>(".svg-preview-controls button");
-        return { zoomOut, readout, zoomIn };
+        const buttons = [ ...container.querySelectorAll<HTMLButtonElement>(".svg-preview-controls button") ];
+        const [ zoomOut, readout, zoomIn ] = buttons.slice(-3);
+        return { zoomOut, readout, zoomIn, all: buttons };
     };
 
-    return { container, controls, unmount: () => act(() => render(null, container)) };
-}
+    const preview = () => {
+        const el = container.querySelector<HTMLDivElement>(".svg-preview-root");
+        if (!el) throw new Error("Expected the preview viewport to be present.");
+        return el;
+    };
 
-/**
- * Mounts `SvgSplitEditor` around the given SVG markup, waits for the SVG to render, runs the
- * optional pre-unmount assertion, then unmounts to trigger the effect cleanup under test and
- * returns the (now detached) SVG element for post-cleanup assertions.
- */
-async function mountAndUnmount(svgMarkup: string, beforeUnmount?: (svgEl: SVGElement) => void) {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-
-    await act(async () => {
-        render(<SvgSplitEditor {...svgSplitEditorProps(svgMarkup)} />, container);
-    });
-
-    await vi.waitFor(() => expect(container.querySelector("svg")).not.toBeNull());
-    const svgEl = container.querySelector("svg");
-    if (!svgEl) {
-        throw new Error("Expected the rendered SVG to be present after waiting for it.");
-    }
-
-    beforeUnmount?.(svgEl);
-
-    // Unmounting tears the effect down (its only cleanup), which is where the fix lives.
-    act(() => render(null, container));
-
-    container.remove();
-    return svgEl;
+    return { container, controls, preview, unmount: () => act(() => render(null, container)) };
 }
 
 /**
  * Minimal props for `SvgSplitEditor`; SplitEditor is mocked away, so most of `SplitEditorProps`
  * is unused.
  */
-function svgSplitEditorProps(svgMarkup: string) {
+function svgSplitEditorProps(svgMarkup: string, labels: Record<string, string> = {}) {
     const note = {
         noteId: "note1",
         title: "Gantt",
-        getAttachments: async () => []
+        getAttachments: async () => [],
+        getLabelValue: (name: string) => labels[name] ?? null,
+        isLabelTruthy: (name: string) => name in labels && labels[name] !== "false"
     };
 
     return {

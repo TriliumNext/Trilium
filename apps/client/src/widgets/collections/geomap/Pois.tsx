@@ -1,15 +1,16 @@
-import "./Pois.css";
-
-import { type AllPaintProperties, type ExpressionSpecification, type InterpolationSpecification, type Map as MapLibreGLMap, type MapGeoJSONFeature, type MapMouseEvent, Popup } from "maplibre-gl";
+import { type AllPaintProperties, type ExpressionSpecification, type InterpolationSpecification, type Map as MapLibreGLMap, type MapGeoJSONFeature, type MapMouseEvent } from "maplibre-gl";
 import { useContext, useEffect } from "preact/hooks";
 
 import { CLUSTER_LAYERS } from "./clusters";
 import type { GeoSearchResult } from "./geocoding";
 import { trackHitLayers } from "./GpxTrack";
+import { useHoverName } from "./hover_name";
 import { MapStyleLoaded, ParentMap } from "./map";
+import { isLocationDot } from "./MapToolbar";
 import { MARKER_LAYER } from "./Markers";
 import { placeIcon } from "./osm_icons";
 import { PLACE_LAYER, PLACE_MARKER_COLOR } from "./PlaceMarker";
+import { shapeHitLayers } from "./ShapeLayer";
 
 /** The source layer the vector styles draw shops, cafes and the rest of the base map's places from. */
 const POI_SOURCE_LAYER = "pois";
@@ -25,18 +26,6 @@ const MIN_POI_ZOOM = 17;
  * this, which is what keeps them a background; a place that can be kept is not one.
  */
 const CLICKABLE_OPACITY = 0.95;
-
-/**
- * How long the pointer has to rest on a place before its name is shown.
- *
- * Shorter than the wait a marker's preview sits out, that one reading a note from the server while
- * this is already in hand — but long enough that sweeping the pointer down a high street does not
- * name every shop on the way past.
- */
-const TOOLTIP_DELAY = 200;
-
-/** How far the name stands above the place's icon, which is drawn at half size by the styles. */
-const TOOLTIP_OFFSET = 10;
 
 /**
  * The OSM keys a tile classifies a place by, in the order the styles draw them. A feature carries at
@@ -86,6 +75,9 @@ export default function Pois({ placing, onPick }: PoisProps) {
 
         const onClick = (e: MapMouseEvent) => {
             if (map.getZoom() < MIN_POI_ZOOM || isOwnUnderPointer(map, e.point)) return;
+            // The location dot is a DOM marker, not a layer, so poiLayers below cannot see it;
+            // isLocationDot checks the click's target directly (see useGeolocate in MapToolbar).
+            if (isLocationDot(e.originalEvent.target)) return;
 
             const layers = poiLayers(map);
             if (!layers.length) return;
@@ -108,115 +100,23 @@ export default function Pois({ placing, onPick }: PoisProps) {
      * give way to whatever is placed before them (see `text-optional` in Markers). Shown on hover
      * instead, the name costs the map nothing until it is asked for.
      */
-    useEffect(() => {
-        if (!parentMap || placing) return;
-        // Aliased so the narrowing above carries into the functions below.
-        const map = parentMap;
-
-        const tooltip = new Popup({
-            closeButton: false,
-            closeOnClick: false,
-            // Otherwise MapLibre puts the caret in the popup as it opens, taking the focus out of
-            // whatever the user was typing in (see Tooltips).
-            focusAfterOpen: false,
-            offset: TOOLTIP_OFFSET,
-            className: "place-tooltip"
-        });
-
-        let bound: string[] = [];
-        // The place under the pointer, which is what keeps a name from being shown twice over and
-        // from coming back after a click until the pointer has left and returned.
-        let hovered: string | null = null;
-        let showTimer: ReturnType<typeof setTimeout> | undefined;
-
-        const setCursor = (cursor: string) => { map.getCanvas().style.cursor = cursor; };
-
-        function hide() {
-            clearTimeout(showTimer);
-            tooltip.remove();
-        }
-
-        function onMouseMove(e: MapMouseEvent & { features?: MapGeoJSONFeature[] }) {
-            // A marker, a cluster or a track stands above the base map, and owns the pointer along
-            // with the click while it does.
-            if (map.getZoom() < MIN_POI_ZOOM || isOwnUnderPointer(map, e.point)) {
-                hovered = null;
-                hide();
-                return;
+    useHoverName(parentMap, {
+        disabled: placing,
+        layers: poiLayers,
+        answer: (e) => {
+            // A marker, a cluster, a track or a drawn shape stands above the base map, and owns the
+            // pointer along with the click while it does.
+            if (!parentMap || parentMap.getZoom() < MIN_POI_ZOOM || isOwnUnderPointer(parentMap, e.point)) {
+                return "deferred";
             }
 
             const place = poiFromFeature(e.features?.[0]);
-            if (!place) {
-                // A place with no name answers no click either, so the pointer offers none.
-                hovered = null;
-                setCursor("");
-                hide();
-                return;
-            }
+            // A place with no name answers no click either, so the pointer offers none.
+            if (!place) return null;
 
-            setCursor("pointer");
-            // Watched by the move rather than by `mouseenter`, which fires on entering the layer
-            // rather than the place: the pointer crossing from one place to the next never leaves
-            // the layer, and the first name would stay up over the second.
-            if (place.id === hovered) return;
-
-            hovered = place.id;
-            hide();
-            showTimer = setTimeout(() => {
-                tooltip
-                    .setLngLat([ place.lng, place.lat ])
-                    .setDOMContent(placeLabel(place))
-                    .addTo(map);
-            }, TOOLTIP_DELAY);
+            return { id: place.id, lngLat: [ place.lng, place.lat ], icon: place.icon, text: place.name };
         }
-
-        function onMouseLeave() {
-            hovered = null;
-            setCursor("");
-            hide();
-        }
-
-        /**
-         * Puts the name away because the map was clicked, whatever the click was for. `hovered` is
-         * kept rather than cleared, which is what stops the name coming back over the panel the
-         * click has just opened: the place stays the one under the pointer until the pointer leaves.
-         */
-        function dismiss() {
-            hide();
-        }
-
-        function unbind() {
-            if (bound.length) {
-                map.off("mousemove", bound, onMouseMove);
-                map.off("mouseleave", bound, onMouseLeave);
-            }
-            bound = [];
-        }
-
-        function bind() {
-            unbind();
-            bound = poiLayers(map);
-            if (bound.length) {
-                map.on("mousemove", bound, onMouseMove);
-                map.on("mouseleave", bound, onMouseLeave);
-            }
-        }
-
-        bind();
-        // Switching the style replaces every layer the handlers were bound to.
-        map.on("style.load", bind);
-        map.on("click", dismiss);
-
-        return () => {
-            map.off("style.load", bind);
-            map.off("click", dismiss);
-            unbind();
-            hide();
-            // The pointer is put back by hand, since this can be torn down while it sits on a place
-            // and the `mouseleave` that would have cleared it is no longer listened for.
-            setCursor("");
-        };
-    }, [ parentMap, placing, styleLoaded ]);
+    });
 
     /**
      * Draws the places that answer a click in the colour a place is pinned in, so which of them do
@@ -337,11 +237,14 @@ export function poiLayers(map: MapLibreGLMap) {
 }
 
 /**
- * Whether the map has something of its own under the pointer — a marker, a cluster, a track or the
- * pin of a place already in hand. Those stand above the base map and answer for it.
+ * Whether the map has something of its own under the pointer — a marker, a cluster, a track, a drawn
+ * shape, or the pin of a place already in hand. Those stand above the base map and answer for it.
+ *
+ * A shape counts over its whole area rather than along its boundary, `shapeHitLayers` including
+ * the fill: a place standing inside a shape belongs to the shape.
  */
 function isOwnUnderPointer(map: MapLibreGLMap, point: MapMouseEvent["point"]) {
-    const own = [ MARKER_LAYER, PLACE_LAYER, ...CLUSTER_LAYERS, ...trackHitLayers(map) ]
+    const own = [ MARKER_LAYER, PLACE_LAYER, ...CLUSTER_LAYERS, ...trackHitLayers(map), ...shapeHitLayers(map) ]
         .filter((id) => map.getLayer(id));
 
     return own.length > 0 && map.queryRenderedFeatures(point, { layers: own }).length > 0;
@@ -447,21 +350,3 @@ function readRamp(value: unknown) {
     return { stops: read, interpolation };
 }
 
-/** The name of a place and the icon it would wear as a marker, as the tooltip shows them. */
-function placeLabel(place: GeoSearchResult) {
-    const label = document.createElement("span");
-    label.className = "place-tooltip-label";
-
-    if (place.icon) {
-        const icon = document.createElement("i");
-        icon.className = place.icon;
-        label.appendChild(icon);
-    }
-
-    const name = document.createElement("span");
-    // A place is named by whatever OpenStreetMap holds, which is not ours to read as markup.
-    name.textContent = place.name;
-    label.appendChild(name);
-
-    return label;
-}

@@ -10,17 +10,25 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { consumeBookmark } from "../../../services/bookmark_jump";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
+import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import { useNoteBlob, useNoteLabel, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
+import {
+    loadEmbeddedAttachment,
+    loadEmbeddedNote,
+    refreshEmbeddedNote,
+    setupImageOpening,
+    watchContentEmbeds
+} from "./utils";
 
 export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent, isVisible }: TypeWidgetProps) {
     // The componentId matters: the WS echo of a save made by the editable-text editor in the same
@@ -36,15 +44,18 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=...
+    // Scroll to bookmark anchor if navigated with ?bookmark=... The blob gate skips the mount run,
+    // which fires against an empty container while the content is still loading.
     useEffect(() => {
-        const viewScope = noteContext?.viewScope;
-        if (!viewScope?.bookmark || !readOnlyContentRef.current) return;
-
-        const el = readOnlyContentRef.current.querySelector(`[id="${CSS.escape(viewScope.bookmark)}"]`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        viewScope.bookmark = undefined;
+        if (!blob) return;
+        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
     }, [blob]);
+
+    // Jump to the first search match when navigated from search results.
+    useEffect(() => {
+        if (blob) consumeSearchTerms(noteContext, ntxId);
+    }, [blob]);
+    useSearchTermsConsumer(note, noteContext, ntxId);
 
     return (
         <>
@@ -72,7 +83,7 @@ interface ReadOnlyTextContentProps {
 
 /**
  * Renders arbitrary CKEditor-style HTML with the same pipeline as {@link ReadOnlyText}:
- * mermaid rewriting, inline mermaid, included-note expansion, KaTeX math, reference-link
+ * mermaid rewriting, inline mermaid, embed expansion, KaTeX math, reference-link
  * titles, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
@@ -97,14 +108,14 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
             appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
         }
 
-        // The passes that lazily load their library (mermaid, highlight.js) — plus included notes,
+        // The passes that lazily load their library (mermaid, highlight.js) — plus embedded notes,
         // which render a whole note of their own — finish after this effect returns. On screen they
         // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
         // them, so the work is registered rather than dropped on the floor.
         trackPendingRender(container, Promise.all([
             rewriteMermaidDiagramsInContainer(container),
             applyInlineMermaid(container),
-            applyIncludedNotes(container),
+            applyContentEmbeds(container),
             applyLinkEmbeds(container),
             applyReferenceLinks(container),
             formatCodeBlocks($(container))
@@ -114,10 +125,15 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
         setupImageOpening(container, true);
     }, [ html, ntxId, contentRef ]);
 
-    // React to included note changes.
-    useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
+    useEffect(() => {
         if (!contentRef.current) return;
-        refreshIncludedNote(contentRef.current, noteId);
+        return watchContentEmbeds(contentRef.current);
+    }, [ contentRef ]);
+
+    // React to embedded note changes.
+    useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
+        if (!contentRef.current) return;
+        refreshEmbeddedNote(contentRef.current, noteId);
     });
 
     // Search integration.
@@ -148,19 +164,22 @@ function useNoteLanguage(note: FNote) {
     return { isRtl };
 }
 
-function applyIncludedNotes(container: HTMLDivElement) {
+function applyContentEmbeds(container: HTMLDivElement) {
     const loaded: Promise<unknown>[] = [];
-    const includedNotes = container.querySelectorAll<HTMLElement>("section.include-note");
-    for (const includedNote of includedNotes) {
-        const noteId = includedNote.dataset.noteId;
-        if (!noteId) continue;
-        loaded.push(loadIncludedNote(noteId, $(includedNote)));
+    const embeddedNotes = container.querySelectorAll<HTMLElement>(".include-note");
+    for (const embeddedNote of embeddedNotes) {
+        const { attachmentId, noteId } = embeddedNote.dataset;
+        if (attachmentId) {
+            loaded.push(loadEmbeddedAttachment(attachmentId, $(embeddedNote)));
+        } else if (noteId) {
+            loaded.push(loadEmbeddedNote(noteId, $(embeddedNote)));
+        }
     }
     return Promise.all(loaded);
 }
 
 function applyMath(container: HTMLDivElement) {
-    const equations = container.querySelectorAll("span.math-tex");
+    const equations = container.querySelectorAll<HTMLElement>("span.math-tex");
     for (const equation of equations) {
         // throwOnError: false renders invalid formulas as an inline red error (with the
         // parse message as a tooltip) instead of throwing and logging to the console.

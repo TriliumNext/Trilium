@@ -62,14 +62,14 @@ Here's a list of various features supported by text notes:
         </tr>
         <tr>
             <td><a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a></td>
-            <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">[missing note]</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
+            <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Other%20features.md">[missing note]</a></td>
+            <td><a class="reference-link" href="Text/Other%20features.md">Other features</a></td>
             <td><ul><li>Indentation<ul><li>Markdown import</li></ul></li><li><a class="reference-link" href="Text/Cut%20to%20subnote.md">Cut to subnote</a></li></ul></td>
         </tr>
         <tr>
-            <td><a class="reference-link" href="Text/Premium%20features.md">[missing note]</a></td>
+            <td><a class="reference-link" href="Text/Premium%20features.md">Premium features</a></td>
             <td><ul><li><a class="reference-link" href="Text/Slash%20Commands.md">Slash Commands</a></li><li><a class="reference-link" href="../Advanced%20Usage/Templates.md">Templates</a></li><li><a class="reference-link" href="Text/Format%20Painter.md">Format Painter</a></li></ul></td>
         </tr>
     </tbody>
@@ -77,7 +77,7 @@ Here's a list of various features supported by text notes:
 
 ## Read-Only vs. Editing Mode
 
-Text notes are usually opened in edit mode. However, they may open in read-only mode if the note is too big or the note is explicitly marked as read-only. For more information, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">[missing note]</a>.
+Text notes are usually opened in edit mode. However, they may open in read-only mode if the note is too big or the note is explicitly marked as read-only. For more information, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>.
 
 ## Keyboard shortcuts
 
@@ -85,7 +85,7 @@ There are numerous keyboard shortcuts to format the text without having to use t
 
 ## Content width
 
-For readability purposes on wider screens, the width of text notes is limited via a configurable option. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">[missing note]</a> for more information.
+For readability purposes on wider screens, the width of text notes is limited via a configurable option. See <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Content%20width.md">Content width</a> for more information.
 
 ## Converting to a Markdown note
 
@@ -93,4 +93,4 @@ Text notes can be converted to <a class="reference-link" href="Markdown.md">Mar
 
 ## Technical details
 
-For the text editing functionality, Trilium uses a commercial product (with an open-source base) called <a class="reference-link" href="../Advanced%20Usage/Technologies%20used/CKEditor.md">[missing note]</a>. This brings the benefit of having a powerful WYSIWYG (What You See Is What You Get) editor.
+For the text editing functionality, Trilium uses a commercial product (with an open-source base) called <a class="reference-link" href="../Advanced%20Usage/Technologies%20used/CKEditor.md">CKEditor</a>. This brings the benefit of having a powerful WYSIWYG (What You See Is What You Get) editor.

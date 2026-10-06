@@ -9,7 +9,7 @@
  * path then maps the neutral result into its own SDK's block shape.
  */
 
-import type { LlmMessagePart } from "@triliumnext/commons";
+import type { LlmFilePart, LlmImagePart, LlmMessagePart, LlmTextAttachmentPart } from "@triliumnext/commons";
 import becca from "../../becca/becca.js";
 import { getLog } from "../../services/log.js";
 import { decodeUtf8 } from "../../services/utils/binary.js";
@@ -67,6 +67,13 @@ export function resolveAttachmentPart(part: LlmMessagePart): ResolvedAttachment 
         getLog().error(`Failed to resolve message part for attachment ${part.attachmentId}: ${err}`);
         return null;
     }
+}
+
+/** Short "[attached …]" stand-in used wherever an attachment's bytes aren't sent. */
+export function attachmentPlaceholder(part: LlmImagePart | LlmFilePart | LlmTextAttachmentPart): string {
+    const kind = part.type === "image" ? "image" : "file";
+    const name = "filename" in part ? `: ${part.filename}` : "";
+    return `[attached ${kind}${name}]`;
 }
 
 function wrapFile(filename: string, text: string): string {

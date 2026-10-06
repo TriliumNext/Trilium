@@ -43,7 +43,9 @@ const { FakePopup } = vi.hoisted(() => {
     return { FakePopup };
 });
 
-vi.mock("maplibre-gl", () => ({ Popup: FakePopup, setWorkerUrl: vi.fn() }));
+// isLocationDot is imported from MapToolbar, which extends GeolocateControl at module load
+// (HiddenGeolocateControl); the mock must define it too.
+vi.mock("maplibre-gl", () => ({ GeolocateControl: class {}, Popup: FakePopup, setWorkerUrl: vi.fn() }));
 
 /** What the tooltip currently reads, or `null` where none is up. */
 function tooltipText() {
@@ -51,6 +53,10 @@ function tooltipText() {
 }
 
 type Listener = (e?: unknown) => void;
+
+/** The hit layers a drawn shape adds, named after its note (see ShapeLayer). */
+const SHAPE_FILL_LAYER = "shape-fill-note1";
+const SHAPE_HIT_LAYER = "shape-hit-note1";
 
 /** A place as a tile carries one: named, classified by its OSM tags, standing at a point. */
 function poiFeature(properties: Record<string, unknown>, coordinates: [number, number] = [ 13.4, 52.5 ]) {
@@ -92,8 +98,10 @@ function fakeMap({
             onPoi = poi;
             onOwn = own;
         },
-        click() {
-            for (const fn of listeners.get("click") ?? []) fn({ point: { x: 0, y: 0 } });
+        /** Fires a map click event with `originalEvent.target` set to the given element, as MapLibre
+         *  does for a click on a marker. */
+        click(target: Element | null = null) {
+            for (const fn of listeners.get("click") ?? []) fn({ point: { x: 0, y: 0 }, originalEvent: { target } });
         },
         /** The pointer coming to rest on a place of the base map, as MapLibre reports it. */
         hover(feature: unknown) {
@@ -253,6 +261,37 @@ describe("geo map Pois", () => {
         expect(picked).toEqual([]);
     });
 
+    /**
+     * A drawn shape is one of the map's own, and an area covers every place inside it. Left out of
+     * the hit test, a click opened the place alongside the pane the shape had just opened.
+     */
+    it("leaves a click that landed inside a drawn shape to the shape", async () => {
+        const map = fakeMap({ ownLayerIds: [ SHAPE_FILL_LAYER, SHAPE_HIT_LAYER ] });
+        const { picked } = await renderPois(map);
+
+        map.setUnderPointer({
+            poi: [ poiFeature({ name: "Café Kranzler", amenity: "cafe" }) ],
+            own: [ { properties: { id: "note1" } } ]
+        });
+        await act(async () => { map.click(); });
+
+        expect(picked).toEqual([]);
+    });
+
+    it("leaves a click that landed on the device's own dot to the dot", async () => {
+        const map = fakeMap();
+        const { picked } = await renderPois(map);
+        map.setUnderPointer({ poi: [ poiFeature({ name: "Café Kranzler", amenity: "cafe" }) ] });
+
+        // isLocationDot checks the click's target directly, since the dot is a DOM marker over the
+        // canvas rather than a layer the POI hit test below can see.
+        const dot = document.createElement("div");
+        dot.className = "maplibregl-marker maplibregl-user-location-dot";
+        await act(async () => { map.click(dot); });
+
+        expect(picked).toEqual([]);
+    });
+
     it("leaves the click alone while one is armed to place a marker", async () => {
         const map = fakeMap();
         const { picked } = await renderPois(map, { placing: true });
@@ -341,6 +380,17 @@ describe("geo map Pois", () => {
         map.hover(place);
 
         expect(map.cursor).toBe("pointer");
+    });
+
+    /** An area covers every place inside it, so a hover there names the shape. */
+    it("leaves the pointer to a drawn shape the place stands inside", async () => {
+        const map = fakeMap({ ownLayerIds: [ SHAPE_FILL_LAYER, SHAPE_HIT_LAYER ] });
+        await renderPois(map);
+
+        map.setUnderPointer({ own: [ { properties: { id: "note1" } } ] });
+        map.hover(poiFeature({ name: "Café Kranzler", amenity: "cafe" }));
+
+        expect(map.cursor).toBe("");
     });
 
     it("puts the pointer back on the layers a style switch brought in", async () => {

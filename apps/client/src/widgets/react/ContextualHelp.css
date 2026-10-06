@@ -33,6 +33,6 @@
     .modal-body {
         padding-top: 0.5em;
         /* The sheet sits on the bottom edge, where a gesture bar would otherwise cross the text. */
-        padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+        padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), 1rem);
     }
 }

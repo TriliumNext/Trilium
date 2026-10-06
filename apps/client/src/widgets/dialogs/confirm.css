@@ -1,4 +1,8 @@
 .modal.confirm-dialog {
+    .form-checkbox {
+        margin-top: 12px;
+    }
+
     .confirm-delete-note-outcome {
         color: var(--muted-text-color);
         margin-block: 4px 0;

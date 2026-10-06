@@ -17,6 +17,7 @@ Here's how the location is decided:
 Data directory is normally named `trilium-data` and it is stored in:
 
 *   `/home/[user]/.local/share` for Linux
+*   `/home/[user]/.var/app/org.triliumnotes.Trilium/data` for the Flathub version on Linux
 *   `C:\Users\[user]\AppData\Roaming` for Windows Vista and up
 *   `/Users/[user]/Library/Application Support` for Mac OS
 *   user's home is a fallback if some of the paths above don't exist

@@ -19,7 +19,9 @@ export const ContainerVisibilityContext = createContext(true);
  * @param ref the React ref from which to obtain the jQuery selector.
  * @returns the corresponding jQuery selector.
  */
-export function refToJQuerySelector<T extends HTMLElement>(ref: RefObject<T> | null): JQuery<T> {
+export function refToJQuerySelector<T extends HTMLElement>(
+    ref: RefObject<T | null> | null
+): JQuery<T> {
     if (ref?.current) {
         return $(ref.current);
     } else {

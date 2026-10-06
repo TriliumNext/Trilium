@@ -204,4 +204,6 @@ callbacks above) renders the external/async output into the editing view.
 The official CKEditor 5 "Conversion deep dive" docs (ckeditor.com/docs → Framework › Deep dive ›
 Conversion) cover
 `elementToStructure`, reconversion/triggers, marker conversion, and data processors. For
+`elementToStructure` + slots as used here, reconversion triggers, and the hazard where a
+reconversion drops sibling UIElements from reused child views, see `core-plugin-patterns.md`. For
 widget-specific conversion patterns see `widgets.md`.

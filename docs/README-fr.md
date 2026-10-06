@@ -25,6 +25,9 @@ Trilium Notes est une application gratuite, open-source et multiplateforme de
 prise de notes hiérarchique, conçue pour créer et gérer de vastes bases de
 connaissances personnelles.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Télécharger

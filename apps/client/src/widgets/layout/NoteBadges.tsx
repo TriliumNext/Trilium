@@ -11,7 +11,7 @@ import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../react/hooks";
 import { useShareState } from "../ribbon/BasicPropertiesTab";
-import { useShareInfo } from "../shared_info";
+import { type ShareScope, useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 import { SnippetBadge } from "./SnippetBadge";
 
@@ -82,23 +82,27 @@ export function OfficePreviewBadge() {
 function ShareBadge() {
     const { note } = useNoteContext();
     const [ , switchShareState ] = useShareState(note);
-    const { isSharedExternally, linkHref } = useShareInfo(note);
+    const { scope, linkHref } = useShareInfo(note);
+    const badge = SHARE_BADGES[scope];
 
     return (linkHref &&
         <BadgeWithDropdown
-            icon={isSharedExternally ? "bx bx-world" : "bx bx-share-alt"}
-            text={isSharedExternally ? t("breadcrumb_badges.shared_publicly") : t("breadcrumb_badges.shared_locally")}
+            icon={badge.icon}
+            text={t(badge.text)}
+            tooltip={badge.tooltip && t(badge.tooltip, { format: t("export.format_share_name") })}
             className="share-badge"
         >
-            <FormListItem
-                icon="bx bx-copy"
-                onClick={() => copyTextWithToast(linkHref)}
-            >{t("breadcrumb_badges.shared_copy_to_clipboard")}</FormListItem>
-            <FormListItem
-                icon="bx bx-link-external"
-                onClick={(e) => goToLinkExt(e, linkHref)}
-            >{t("breadcrumb_badges.shared_open_in_browser")}</FormListItem>
-            <FormDropdownDivider />
+            {scope !== "export-only" && <>
+                <FormListItem
+                    icon="bx bx-copy"
+                    onClick={() => copyTextWithToast(linkHref)}
+                >{t("breadcrumb_badges.shared_copy_to_clipboard")}</FormListItem>
+                <FormListItem
+                    icon="bx bx-link-external"
+                    onClick={(e) => goToLinkExt(e, linkHref)}
+                >{t("breadcrumb_badges.shared_open_in_browser")}</FormListItem>
+                <FormDropdownDivider />
+            </>}
             <FormListItem
                 icon="bx bx-unlink"
                 onClick={() => switchShareState(false)}
@@ -106,6 +110,21 @@ function ShareBadge() {
         </BadgeWithDropdown>
     );
 }
+
+const SHARE_BADGES: Record<ShareScope, { icon: string; text: string; tooltip?: string }> = {
+    public: { icon: "bx bx-world", text: "breadcrumb_badges.shared_publicly" },
+    local: { icon: "bx bx-share-alt", text: "breadcrumb_badges.shared_locally" },
+    preview: {
+        icon: "bx bx-show",
+        text: "breadcrumb_badges.shared_preview",
+        tooltip: "breadcrumb_badges.shared_preview_description"
+    },
+    "export-only": {
+        icon: "bx bx-export",
+        text: "breadcrumb_badges.shared_export_only",
+        tooltip: "breadcrumb_badges.shared_export_only_description"
+    }
+};
 
 function ClippedNoteBadge() {
     const { note } = useNoteContext();

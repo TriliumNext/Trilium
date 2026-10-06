@@ -219,7 +219,6 @@
     "hide_child_notes": "Ukryj notatki podrzędne w derzwie"
   },
   "board_view": {
-    "move-to": "Przenieś do",
     "insert-above": "Wstaw powyżej",
     "insert-below": "Wstaw poniżej",
     "delete-column": "Usuń kolumnę",
@@ -598,8 +597,7 @@
     "copy_to_clipboard": "Kopiuj do schowka"
   },
   "jump_to_note": {
-    "search_placeholder": "Szukaj notatki po nazwie lub wpisz > dla poleceń...",
-    "search_button": "Szukaj w pełnym tekście"
+    "search_placeholder": "Szukaj notatki po nazwie lub wpisz > dla poleceń..."
   },
   "markdown_import": {
     "dialog_title": "Import Markdown",
@@ -644,9 +642,6 @@
   },
   "note_autocomplete": {
     "clear-text-field": "Wyczyść pole tekstowe",
-    "show-recent-notes": "Pokaż ostatnie notatki",
-    "full-text-search": "Wyszukiwanie pełnotekstowe",
-    "search-for": "Szukaj \"{{term}}\"",
     "create-note": "Utwórz i podlinkuj notatkę podrzędną \"{{term}}\"",
     "insert-external-link": "Wstaw link zewnętrzny do \"{{term}}\""
   },
@@ -819,10 +814,8 @@
     "title": "tytuł",
     "date_created": "data utworzenia",
     "date_modified": "data modyfikacji",
-    "sorting_direction": "Kierunek sortowania",
     "ascending": "rosnąco",
     "descending": "malejąco",
-    "folders": "Foldery",
     "sort_folders_at_top": "sortuj foldery na górze",
     "natural_sort": "Naturalne sortowanie",
     "sort_with_respect_to_different_character_sorting": "sortuj z uwzględnieniem różnych zasad sortowania znaków w różnych językach lub regionach.",
@@ -1118,10 +1111,7 @@
     "button_title": "Eksportuj diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy",
-    "reset_pan_zoom_title": "Zresetuj przesunięcie i powiększenie do początkowych współrzędnych i powiększenia",
-    "zoom_in_title": "Powiększ",
-    "zoom_out_title": "Pomniejsz"
+    "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy"
   },
   "zpetne_odkazy": {
     "relation": "relacja",
@@ -1208,7 +1198,6 @@
     "label_rock_or_pop": "tylko jedna z etykiet musi być obecna",
     "label_year_comparison": "porównanie liczbowe (także >, >=, <).",
     "label_date_created": "notatki utworzone w ostatnim miesiącu",
-    "error": "Błąd wyszukiwania: {{error}}",
     "search_prefix": "Szukaj:"
   },
   "attachment_detail": {
@@ -1337,7 +1326,6 @@
     "note_tree_font": "Czcionka drzewa notatek",
     "note_detail_font": "Czcionka szczegółów notatki",
     "monospace_font": "Czcionka o stałej szerokości (kod)",
-    "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w twoim systemie.",
     "generic-fonts": "Czcionki ogólne",
     "sans-serif-system-fonts": "Systemowe czcionki bezszeryfowe",
     "serif-system-fonts": "Systemowe czcionki szeryfowe",
@@ -1760,7 +1748,6 @@
     "placeholder": "Szybkie wyszukiwanie",
     "searching": "Szukanie...",
     "no-results": "Brak wyników",
-    "more-results": "... i {{number}} więcej wyników.",
     "show-in-full-search": "Pokaż w pełnym wyszukiwaniu"
   },
   "note_tree": {

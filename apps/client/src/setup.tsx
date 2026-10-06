@@ -203,7 +203,11 @@ function afterExistingData(glob: SetupGlob): State {
 function SelectLanguage({ setState }: { setState: (state: State) => void }) {
     const { t, i18n } = useTranslation();
     const [ currentLocale, setCurrentLocale ] = useState(i18n.language);
-    const filteredLocales = useMemo(() => LOCALES.filter(l => !l.contentOnly), []);
+    const filteredLocales = useMemo(() => LOCALES.filter(l => {
+        if (l.contentOnly) return false;
+        if (l.devOnly && !window.glob.isDev) return false;
+        return true;
+    }), []);
     // The row the user chose last, which is not the last bundle to arrive: each language is a
     // 160-290 KB fetch, so two taps in a row are answered in whichever order the two loads finish.
     const chosen = useRef(currentLocale);

@@ -555,6 +555,14 @@ select.form-control:focus,
         outline-offset 200ms ease-out;
 }
 
+select:disabled,
+select.form-select:disabled,
+select.form-control:disabled {
+    background: var(--input-background-color) var(--dropdown-arrow);
+    color: var(--input-text-color);
+    opacity: 0.65;
+}
+
 option {
     color: var(--select-dropdown-text-color);
 }
@@ -768,12 +776,12 @@ div.switch-widget {
     --switch-on-thumb-background: var(--main-background-color);
 }
 
-/* Links */
+/* Links. `:where(:not(.excalidraw *))` leaves out the menus of an embedded canvas drawing. */
 
 body a.tn-link,
 body a.tn-link:visited,
-.use-tn-links a,
-.use-tn-links a:visited {
+.use-tn-links a:where(:not(.excalidraw *)),
+.use-tn-links a:visited:where(:not(.excalidraw *)) {
     --background: transparent;
 
     box-shadow: 0 0 0 0 var(--background);
@@ -790,13 +798,13 @@ body a.tn-link:visited,
 }
 
 body a.tn-link:focus-visible,
-.use-tn-links a:focus-visible {
+.use-tn-links a:focus-visible:where(:not(.excalidraw *)) {
     outline: 2px solid var(--input-focus-outline-color);
     outline-offset: 2px;
 }
 
 body a.tn-link:hover,
-.use-tn-links a:hover,
+.use-tn-links a:hover:where(:not(.excalidraw *)),
 .use-tn-links a.ck-widget_selected {
     box-shadow: 0 0 0 4px var(--link-hover-background);
     --background: var(--link-hover-background);
@@ -812,9 +820,9 @@ body a.tn-link:hover,
 a.tn-link.external:not(.no-arrow)::after,
 a.tn-link[href^="http://"]:not(.no-arrow)::after,
 a.tn-link[href^="https://"]:not(.no-arrow)::after,
-.use-tn-links a.external:not(.no-arrow)::after,
-.use-tn-links a[href^="http://"]:not(.no-arrow)::after,
-.use-tn-links a[href^="https://"]:not(.no-arrow)::after
+.use-tn-links a.external:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a[href^="http://"]:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a[href^="https://"]:not(.no-arrow):where(:not(.excalidraw *))::after
 {
     display: inline-block;
     opacity: 0.5;
@@ -832,9 +840,9 @@ a.tn-link[href^="https://"]:not(.no-arrow)::after,
 a.tn-link:hover.external:not(.no-arrow)::after,
 a.tn-link:hover[href^="http://"]:not(.no-arrow)::after,
 a.tn-link:hover[href^="https://"]:not(.no-arrow)::after,
-.use-tn-links a:hover.external:not(.no-arrow)::after,
-.use-tn-links a:hover[href^="http://"]:not(.no-arrow)::after,
-.use-tn-links a:hover[href^="https://"]:not(.no-arrow)::after
+.use-tn-links a:hover.external:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a:hover[href^="http://"]:not(.no-arrow):where(:not(.excalidraw *))::after,
+.use-tn-links a:hover[href^="https://"]:not(.no-arrow):where(:not(.excalidraw *))::after
 {
     animation: link-arrow-blink 500ms linear alternate infinite;
 }

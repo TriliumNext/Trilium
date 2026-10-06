@@ -1,7 +1,7 @@
 import "./mobile_detail_menu.css";
 
-import { Dropdown as BootstrapDropdown } from "bootstrap";
-import { createPortal, useRef, useState } from "preact/compat";
+import { createPortal } from "preact";
+import { useRef, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
@@ -10,6 +10,7 @@ import server from "../../services/server";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
+import type { DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
 import { useNoteContext, useNoteProperty } from "../react/hooks";
 import Modal from "../react/Modal";
@@ -21,7 +22,7 @@ import SimilarNotesTab from "../ribbon/SimilarNotesTab";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 
 export default function MobileDetailMenu() {
-    const dropdownRef = useRef<BootstrapDropdown | null>(null);
+    const dropdownRef = useRef<DropdownHandle | null>(null);
     const { note, noteContext, parentComponent, ntxId, viewScope, hoistedNoteId } = useNoteContext();
     const subContexts = noteContext?.getMainContext().getSubContexts() ?? [];
     const isMainContext = noteContext?.isMainContext();

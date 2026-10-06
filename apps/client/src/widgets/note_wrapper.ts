@@ -93,8 +93,9 @@ const CONTAINER_OWNED_CLASSES = [ "active", "last-visible" ];
 
 /**
  * Whether the split should be translucent (`bgfx`), letting the window background effect show through.
- * This suits notes that render their content on a bare background (media, option pages, grid/list
- * collections); notes that paint their own background stay opaque. Exported as a pure function for
+ * This suits notes that render their content on a bare background (media, option pages, and the
+ * collections whose own surface is only what they lay out on it); notes that paint their own
+ * background stay opaque. Exported as a pure function for
  * unit testing.
  */
 export function hasBackgroundEffects(note: FNote): boolean {
@@ -104,7 +105,8 @@ export function hasBackgroundEffects(note: FNote): boolean {
 
     const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
         "grid",
-        "list"
+        "list",
+        "board"
     ];
 
     if (note.isOptions()) {

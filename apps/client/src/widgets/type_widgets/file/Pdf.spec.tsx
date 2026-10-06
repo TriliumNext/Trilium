@@ -34,8 +34,9 @@ vi.mock("../../collections/NoteList", () => ({
 // The viewer iframe itself is a separate component with its own spec; here it only has to hand
 // back a frame the messages can be addressed to, and report it loaded.
 vi.mock("./PdfViewer", () => ({
-    default: ({ iframeRef, onLoad }: { iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void }) =>
-        <iframe ref={iframeRef} class="pdf-preview" onLoad={onLoad} />,
+    default: ({ iframeRef, onLoad, noteId, ntxId }: {
+        iframeRef: { current: HTMLIFrameElement | null }; onLoad: () => void; noteId?: string; ntxId?: string | null;
+    }) => <iframe ref={iframeRef} class="pdf-preview" onLoad={onLoad} data-note-id={noteId} data-ntx-id={ntxId} />,
     getPdfUrl: (path: string) => `/api/${path}`
 }));
 const activateNoteContext = vi.hoisted(() => vi.fn());
@@ -256,14 +257,14 @@ describe("PdfPreview", () => {
         expect(posted).toHaveBeenCalledTimes(2);
     });
 
-    it("hands the viewer its identity and stores on load, and claims focus on a click inside", () => {
+    it("hands the viewer its identity in the URL and its stores on load, and claims focus on a click inside", () => {
         vi.spyOn(options, "getJson").mockReturnValue({ sig: 1 });
         const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+        // The viewer can post before `load`, so the address it stamps on messages goes in the URL.
+        expect(iframe.dataset).toMatchObject({ noteId: "note-1", ntxId: "ntx-1" });
         iframe.dispatchEvent(new Event("load"));
 
         const win = iframe.contentWindow as Window;
-        expect(win.TRILIUM_NOTE_ID).toBe("note-1");
-        expect(win.TRILIUM_NTX_ID).toBe("ntx-1");
         expect(win.TRILIUM_VIEW_HISTORY_STORE).toEqual({ files: [] });
         expect(win.TRILIUM_SIGNATURES).toEqual({ sig: 1 });
 

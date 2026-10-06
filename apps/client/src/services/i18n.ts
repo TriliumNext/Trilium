@@ -39,6 +39,11 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
         backend: {
             loadPath: `${window.glob.assetPath}/translations/{{lng}}/{{ns}}.json`
         },
+        // Interpolated values are not HTML-escaped: the client renders translated strings as text, where
+        // escaping shows `&#x2F;` and `&#39;` to the reader. A string headed for a sink that takes HTML
+        // escapes its own values: `Menu` titles and `highlightedNotePathTitle` callers use
+        // `escapeHtml()`, and the confirm and info dialogs render through `SanitizedHtml`.
+        interpolation: { escapeValue: false },
         returnEmptyString: false
     });
 

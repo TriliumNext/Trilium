@@ -4,7 +4,7 @@ import BRecentNote from "../../becca/entities/brecent_note.js";
 import { getSql } from "../../services/sql/index.js";
 import dateUtils from "../../services/utils/date.js";
 
-import type { Request } from "express";
+import type { Request } from "../../http_interface";
 
 function addRecentNote(req: Request) {
     new BRecentNote({

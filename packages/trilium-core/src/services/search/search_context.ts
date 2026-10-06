@@ -1,7 +1,10 @@
 "use strict";
 
+import type { HighlightedTokenInfo } from "@triliumnext/commons";
+
 import hoistedNoteService from "../hoisted_note.js";
 import optionService from "../options.js";
+import { betterQuality, type ContentMatchQuality } from "./match_quality.js";
 import type { SearchParams } from "./services/types.js";
 
 class SearchContext {
@@ -20,13 +23,25 @@ class SearchContext {
     debugInfo: {} | null;
     fuzzyAttributeSearch: boolean;
     enableFuzzyMatching: boolean; // Controls whether fuzzy matching is enabled for this search phase
-    /** When true, skip the two-phase fuzzy fallback and use the single-token fast path. */
+    /** When true, a single-token flat-text search resolves each match's best note path directly. */
     autocomplete: boolean;
+    rankInTwoPasses: boolean;
     highlightedTokens: string[];
+    /**
+     * Subset of {@link highlightedTokens} that came from the `%=` (regex) operator
+     * and must be matched as regular expressions rather than literal text.
+     */
+    regexTokens: Set<string>;
     originalQuery: string;
     fulltextQuery: string;
     dbLoadNeeded: boolean;
     error: string | null;
+    /**
+     * Per-note content match quality recorded during expression evaluation and
+     * consumed by scoring. Bounded memory: one small record per matched note.
+     * Cleared at the start of each progressive search phase.
+     */
+    contentMatches: Map<string, ContentMatchQuality>;
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -37,8 +52,6 @@ class SearchContext {
         this.ancestorNoteId = params.ancestorNoteId;
 
         if (!this.ancestorNoteId && !this.ignoreHoistedNote) {
-            // hoisting in hidden subtree should not limit autocomplete
-            // since we want to link (create relations) to the normal non-hidden notes
             this.ancestorNoteId = hoistedNoteService.getHoistedNoteId();
         }
 
@@ -50,18 +63,45 @@ class SearchContext {
         this.debugInfo = null;
         this.fuzzyAttributeSearch = !!params.fuzzyAttributeSearch;
         this.autocomplete = !!params.autocomplete;
+        this.rankInTwoPasses = !!params.rankInTwoPasses;
+        let fuzzyMatchingEnabled: boolean;
         try {
-            this.enableFuzzyMatching = optionService.getOptionBool("searchEnableFuzzyMatching");
+            fuzzyMatchingEnabled = optionService.getOptionBool("searchEnableFuzzyMatching");
         } catch {
-            this.enableFuzzyMatching = true; // Default to true if option not yet initialized
+            fuzzyMatchingEnabled = true; // Default to true if option not yet initialized
         }
+        // A caller can only narrow the option, so a surface that opts out stays out whatever the
+        // option says, and one that says nothing follows it.
+        this.enableFuzzyMatching = fuzzyMatchingEnabled && (params.enableFuzzyMatching ?? true);
         this.highlightedTokens = [];
+        this.regexTokens = new Set();
         this.originalQuery = "";
         this.fulltextQuery = ""; // complete fulltext part
         // if true, becca does not have (up-to-date) information needed to process the query
         // and some extra data needs to be loaded before executing
         this.dbLoadNeeded = false;
         this.error = null;
+        this.contentMatches = new Map();
+    }
+
+    /**
+     * Records how well a note's content matched, merging with any existing record
+     * for that note so the best quality wins (higher tier, then more tokens).
+     */
+    recordContentMatch(noteId: string, quality: ContentMatchQuality) {
+        const existing = this.contentMatches.get(noteId);
+        this.contentMatches.set(noteId, existing ? betterQuality(existing, quality) : quality);
+    }
+
+    /**
+     * Maps {@link highlightedTokens} to structured token infos, tagging each token
+     * as `regex` when it was collected from a `%=` operator and `plain` otherwise.
+     */
+    getHighlightedTokenInfos(): HighlightedTokenInfo[] {
+        return this.highlightedTokens.map((token) => ({
+            token,
+            type: this.regexTokens.has(token) ? "regex" : "plain"
+        }));
     }
 
     addError(error: string) {

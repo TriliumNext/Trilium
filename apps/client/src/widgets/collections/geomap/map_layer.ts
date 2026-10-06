@@ -9,6 +9,10 @@ export type MapLayer = ({
      * had on the day it was taken.
      */
     style: string;
+    /**
+     * If present, makes the theme light/dark mode aware.
+     */
+    styleDark?: string;
 } | {
     type: "raster";
     url: string;
@@ -48,25 +52,37 @@ export const MAP_LAYERS: Record<string, MapLayer> = {
         style: versatilesStyle("eclipse"),
         isDarkTheme: true
     },
+    "versatile-colorful-eclipse": {
+        name: "VersaTiles Colorful/Eclipse",
+        type: "vector",
+        style: versatilesStyle("colorful"),
+        styleDark: versatilesStyle("eclipse")
+    },
     "versatiles-graybeard": {
         name: "VersaTiles Graybeard",
         type: "vector",
         style: versatilesStyle("graybeard")
-    },
-    "versatiles-neutrino": {
-        name: "VersaTiles Neutrino",
-        type: "vector",
-        style: versatilesStyle("neutrino")
     },
     "versatiles-shadow": {
         name: "VersaTiles Shadow",
         type: "vector",
         style: versatilesStyle("shadow"),
         isDarkTheme: true
-    }
+    },
+    "versatile-graybeard-shadow": {
+        name: "VersaTiles Graybeard/Shadow",
+        type: "vector",
+        style: versatilesStyle("graybeard"),
+        styleDark: versatilesStyle("shadow")
+    },
+    "versatiles-neutrino": {
+        name: "VersaTiles Neutrino",
+        type: "vector",
+        style: versatilesStyle("neutrino")
+    },
 };
 
-export const DEFAULT_MAP_LAYER_NAME: keyof typeof MAP_LAYERS = "versatiles-colorful";
+export const DEFAULT_MAP_LAYER_NAME: keyof typeof MAP_LAYERS = "versatile-colorful-eclipse";
 
 /**
  * One of the styles VersaTiles publishes, labelled in English.

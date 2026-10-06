@@ -1,7 +1,7 @@
 import "./password.css";
 
 import { ChangePasswordResponse, OAuthStatus, TOTPStatus } from "@triliumnext/commons";
-import { createPortal } from "preact/compat";
+import { createPortal } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import dialog from "../../../services/dialog";

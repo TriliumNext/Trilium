@@ -9,6 +9,7 @@
 @import "./layout.css";
 @import "./content.css";
 @import "./task-states.css";
+@import "./adaptive-colors.css";
 @import "./content-footer.css";
 @import "./link-embed.css";
 

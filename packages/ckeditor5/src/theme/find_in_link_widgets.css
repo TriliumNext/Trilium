@@ -1,0 +1,6 @@
+/* CKEditor sets the highlight text color on ".ck-find-result" alone, which the nested
+   current-result span of a text result inherits. A widget's current match carries
+   ".ck-find-result_selected" by itself, so restate the same color for it. */
+.ck-content .ck-find-result_selected {
+    color: var(--ck-color-text);
+}

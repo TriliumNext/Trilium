@@ -33,8 +33,8 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                     const content = await content_renderer.getRenderedContent(note, {
                         trim: false,
                         noChildrenList: true,
-                        // Printing preserves full include-note nesting (see expandNestedIncludes).
-                        expandNestedIncludes: true,
+                        // Printing preserves full embed nesting (see expandNestedEmbeds).
+                        expandNestedEmbeds: true,
                         mediaEnvironment: "native"
                     });
 

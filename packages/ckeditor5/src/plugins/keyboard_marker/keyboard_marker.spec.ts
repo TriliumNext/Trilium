@@ -1,4 +1,4 @@
-import { _setModelData as setModelData, ButtonView, ClassicEditor, Paragraph } from "ckeditor5";
+import { _getViewData as getViewData, _setModelData as setModelData, ButtonView, ClassicEditor, GeneralHtmlSupport, Paragraph } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
@@ -31,18 +31,23 @@ describe("Kbd", () => {
         });
     });
 
-    it("downcasts the kbd attribute to a <kbd> element with spellcheck disabled", () => {
+    it("downcasts the kbd attribute to a plain <kbd> in the data and disables spellcheck only while editing", () => {
         setModelData(editor.model, "<paragraph>[Ctrl]</paragraph>");
 
         editor.execute("kbd");
 
-        expect(editor.getData()).toBe(`<p><kbd spellcheck="false">Ctrl</kbd></p>`);
+        expect(editor.getData()).toBe("<p><kbd>Ctrl</kbd></p>");
+        expect(getViewData(editor.editing.view, { withoutSelection: true }))
+            .toBe(`<p><kbd spellcheck="false">Ctrl</kbd></p>`);
     });
 
-    it("upcasts a <kbd> element back to the kbd attribute", () => {
-        editor.setData(`<p>Press <kbd spellcheck="false">Ctrl</kbd>.</p>`);
+    it("upcasts a <kbd> element back to the kbd attribute, with or without spellcheck", () => {
+        editor.setData("<p>Press <kbd>Ctrl</kbd>.</p>");
+        expect(editor.getData()).toBe("<p>Press <kbd>Ctrl</kbd>.</p>");
 
-        expect(editor.getData()).toBe(`<p>Press <kbd spellcheck="false">Ctrl</kbd>.</p>`);
+        // Notes saved before the attribute moved to the editing view normalize to a plain <kbd>.
+        editor.setData(`<p>Press <kbd spellcheck="false">Ctrl</kbd>.</p>`);
+        expect(editor.getData()).toBe("<p>Press <kbd>Ctrl</kbd>.</p>");
     });
 
     it("registers the toolbar button bound to the command", () => {
@@ -55,5 +60,20 @@ describe("Kbd", () => {
         button.fire("execute");
 
         expect(command?.value).toBe(true);
+    });
+});
+
+describe("Kbd under the shipped General HTML Support configuration", () => {
+    // `textNoteHtmlSupportEnabled` ships off, which leaves GHS with an empty allow-list. A plain
+    // <kbd> has to be claimed by the plugin itself, or nothing models it and the element is lost on
+    // the note's next save — the Markdown docs under `docs/` write <kbd> without any attribute.
+    it("keeps a plain <kbd> the docs store", async () => {
+        const editor = await createTestEditor([Paragraph, Kbd, GeneralHtmlSupport], {
+            htmlSupport: { allow: [] }
+        });
+
+        editor.setData("<p>Press <kbd>Ctrl</kbd> + <kbd>R</kbd>.</p>");
+
+        expect(editor.getData()).toBe("<p>Press <kbd>Ctrl</kbd> + <kbd>R</kbd>.</p>");
     });
 });

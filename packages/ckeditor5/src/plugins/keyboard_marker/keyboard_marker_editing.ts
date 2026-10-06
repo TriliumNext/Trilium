@@ -34,7 +34,23 @@ export default class KbdEditing extends Plugin {
         // Enable two-step caret movement so the user can arrow out of the kbd element.
         editor.plugins.get(TwoStepCaretMovement).registerAttribute(KBD);
 
-        editor.conversion.attributeToElement({
+        // Match every <kbd>, whatever attributes it carries. A pattern that demanded
+        // spellcheck="false" left a plain <kbd> to General HTML Support, which drops it when the
+        // allow-list is empty — the shipped default.
+        editor.conversion.for("upcast").elementToAttribute({
+            model: KBD,
+            view: KBD
+        });
+
+        editor.conversion.for("dataDowncast").attributeToElement({
+            model: KBD,
+            view: KBD
+        });
+
+        // The browser spellchecker underlines key names, so switch it off where the user types.
+        // Keeping spellcheck out of the data means the attribute never reaches stored content,
+        // where `sanitizeHtml` strips it off <kbd> on every import.
+        editor.conversion.for("editingDowncast").attributeToElement({
             model: KBD,
             view: {
                 name: KBD,

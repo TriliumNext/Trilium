@@ -51,7 +51,7 @@ function fakeMedia({ duration = 100, currentTime = 0 } = {}) {
     const media = document.createElement("audio");
     Object.defineProperty(media, "duration", { value: duration, writable: true, configurable: true });
     media.currentTime = currentTime;
-    return { current: media } as RefObject<HTMLAudioElement>;
+    return { current: media } as RefObject<HTMLAudioElement | null>;
 }
 
 const click = (el: Element | null | undefined) =>
@@ -65,7 +65,7 @@ const input = (el: Element | null, value: string) =>
 
 /** A Dropdown only mounts its items once Bootstrap announces the open, which is what this stands in for. */
 const openDropdown = () =>
-    act(() => { $(container.querySelector(".dropdown") as HTMLElement).trigger("show.bs.dropdown"); });
+    act(() => { $(container.querySelector(".dropdown") as HTMLElement).children("button:not([aria-expanded=true])").trigger("click"); });
 
 /** Lets a chain of promises inside the component settle, then flushes the renders and effects it caused. */
 const settle = async () => {
@@ -253,7 +253,7 @@ describe("VolumeControl", () => {
 });
 
 describe("PlaybackSpeed", () => {
-    const items = () => Array.from(container.querySelectorAll(".dropdown-item"));
+    const items = () => Array.from(document.querySelectorAll(".dropdown-item"));
 
     it("offers the speeds, marking the element's current one", () => {
         const mediaRef = fakeMedia();
@@ -264,7 +264,9 @@ describe("PlaybackSpeed", () => {
         openDropdown();
 
         expect(items().map(el => el.textContent)).toEqual([ "0.5x", "1x", "1.25x", "1.5x", "2x" ]);
-        expect(items().find(el => el.classList.contains("active"))?.textContent).toBe("1.5x");
+        const checked = items().filter(el => el.getAttribute("aria-checked") === "true");
+        expect(checked.map(el => el.textContent)).toEqual([ "1.5x" ]);
+        expect(checked[0].querySelector(".bx-check")).not.toBeNull();
         expect(container.querySelector(".media-speed-label")?.textContent).toBe("1.5x");
     });
 
@@ -278,6 +280,7 @@ describe("PlaybackSpeed", () => {
         click(items().find(el => el.textContent === "2x"));
         expect(media.playbackRate).toBe(2);
         expect(container.querySelector(".media-speed-label")?.textContent).toBe("2x");
+        expect(document.querySelector("[role=menu]")).toBeNull();
 
         act(() => {
             media.playbackRate = 0.5;
@@ -329,14 +332,16 @@ describe("PlayModeButton", () => {
         act(() => render(<PlayModeButton mode="loop" onSelectMode={onSelectMode} />, container));
         openDropdown();
 
-        const items = Array.from(container.querySelectorAll(".dropdown-item"));
+        const items = Array.from(document.querySelectorAll("[role=menu] [role=menuitem]"));
         expect(items).toHaveLength(3);
-        const active = items.find(el => el.classList.contains("active"));
-        expect(active?.querySelector(".bx-repeat")).not.toBeNull();
-        expect(active?.querySelector(".play-mode-check")).not.toBeNull();
+        // The mode's own icon stays, and the tick goes at the end of its row.
+        const ticked = items.filter(el => el.querySelector(".menu-trailing-icon.bx-check"));
+        expect(ticked).toHaveLength(1);
+        expect(ticked[0].querySelector(".bx-repeat")).not.toBeNull();
 
         click(items[2]);
         expect(onSelectMode).toHaveBeenCalledWith("next");
+        expect(document.querySelector("[role=menu]")).toBeNull();
     });
 });
 
@@ -353,7 +358,7 @@ describe("useMediaPlayMode", () => {
     async function renderHook({ notePath, playlistNoteId, mediaRef = fakeMedia() }: {
         notePath?: string;
         playlistNoteId?: string;
-        mediaRef?: RefObject<HTMLAudioElement>;
+        mediaRef?: RefObject<HTMLAudioElement | null>;
     }) {
         const noteContext = { notePath } as NoteContext;
 

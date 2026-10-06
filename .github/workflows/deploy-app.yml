@@ -26,21 +26,21 @@ jobs:
   build-and-deploy:
     name: Build and Deploy App
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     # Required permissions for deployment
     permissions:
       contents: read
       deployments: write
-      pull-requests: write # For PR preview comments
-      id-token: write # For OIDC authentication (if needed)
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -61,12 +61,18 @@ jobs:
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages
-        if: github.repository == vars.REPO_MAIN
+        if: github.event_name != 'pull_request' && github.repository == vars.REPO_MAIN
         with:
           project_name: "trilium-app"
-          comment_body: "🖥️ App preview is ready"
-          production_url: "https://app.triliumnotes.org"
           deploy_dir: "apps/standalone/dist"
           cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A pull request from a fork reaches neither secrets nor vars, so the build
+      # travels to deploy-previews.yml instead of deploying from here.
+      - name: Upload preview
+        uses: ./.github/actions/upload-cloudflare-preview
+        if: github.event_name == 'pull_request'
+        with:
+          artifact_name: "app-preview"
+          deploy_dir: "apps/standalone/dist"

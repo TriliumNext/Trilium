@@ -6,8 +6,7 @@ import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
 // handful of calls the map made when it was written and knows nothing of the rest — the ends of the
 // zoom range, or unsubscribing from a report.
 import panzoom, { PanZoom, PanZoomOptions } from "panzoom";
-import { RefObject } from "preact";
-import { HTMLProps } from "preact/compat";
+import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -23,7 +22,8 @@ import { JsPlumb } from "./jsplumb";
 import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { NoteBox } from "./NoteBox";
 import setupOverlays, { uniDirectionalOverlays } from "./overlays";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId, promptForRelationName } from "./utils";
+import RelationNamePopover, { type AskRelationName, useRelationNamePrompt } from "./RelationNamePopover";
+import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
 
 interface Clipboard {
     noteId: string;
@@ -118,7 +118,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef });
 
-    const connectionCallback = useRelationCreation({ mapApiRef, jsPlumbApiRef: pbApiRef });
+    const relationNamePrompt = useRelationNamePrompt();
+    const connectionCallback = useRelationCreation({ mapApiRef, jsPlumbApiRef: pbApiRef, askRelationName: relationNamePrompt.ask });
 
     const panZoom = usePanZoom({
         ntxId,
@@ -176,6 +177,15 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 panZoom={panZoom}
                 onCommand={(command) => parentComponent?.triggerEvent(command, { ntxId })}
             />
+
+            {relationNamePrompt.request && (
+                <RelationNamePopover
+                    key={relationNamePrompt.request.id}
+                    connection={relationNamePrompt.request.connection}
+                    defaultValue={relationNamePrompt.request.defaultValue}
+                    onAnswer={relationNamePrompt.answer}
+                />
+            )}
         </div>
     );
 }
@@ -187,7 +197,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
  */
 function usePanZoom({ ntxId, containerRef, options, transformData, onTransform }: {
     ntxId: string | null | undefined;
-    containerRef: RefObject<HTMLDivElement>;
+    containerRef: RefObject<HTMLDivElement | null>;
     options: PanZoomOptions;
     transformData: MapData["transform"] | undefined;
     onTransform: (pzInstance: PanZoom) => void
@@ -237,7 +247,7 @@ function usePanZoom({ ntxId, containerRef, options, transformData, onTransform }
     return panZoom;
 }
 
-async function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi>, jsPlumbRef: RefObject<jsPlumbInstance>) {
+async function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi | null>, jsPlumbRef: RefObject<jsPlumbInstance | null>) {
     const noteIds = mapData?.notes.map((note) => note.noteId);
     const [ relations, setRelations ] = useState<ClientRelation[]>();
     const [ inverseRelations, setInverseRelations ] = useState<RelationMapPostResponse["inverseRelations"]>();
@@ -325,8 +335,8 @@ async function useRelationData(noteId: string, mapData: MapData | undefined, map
 function useNoteCreation({ ntxId, note, containerRef, mapApiRef }: {
     ntxId: string | null | undefined;
     note: FNote;
-    containerRef: RefObject<HTMLDivElement>;
-    mapApiRef: RefObject<RelationMapApi>;
+    containerRef: RefObject<HTMLDivElement | null>;
+    mapApiRef: RefObject<RelationMapApi | null>;
 }) {
     const clipboardRef = useRef<Clipboard>(null);
     useTriliumEvent("relationMapCreateChildNote", async ({ ntxId: eventNtxId }) => {
@@ -364,9 +374,9 @@ function useNoteCreation({ ntxId, note, containerRef, mapApiRef }: {
 }
 
 function useNoteDragging({ containerRef, mapApiRef }: {
-    containerRef: RefObject<HTMLDivElement>;
-    mapApiRef: RefObject<RelationMapApi>;
-}): Pick<HTMLProps<HTMLDivElement>, "onDrop" | "onDragOver"> {
+    containerRef: RefObject<HTMLDivElement | null>;
+    mapApiRef: RefObject<RelationMapApi | null>;
+}): Pick<HTMLAttributes<HTMLDivElement>, "onDrop" | "onDragOver"> {
     const dragProps = useMemo(() => ({
         onDrop(ev: DragEvent) {
             const container = containerRef.current;
@@ -403,18 +413,22 @@ function useNoteDragging({ containerRef, mapApiRef }: {
     return dragProps;
 }
 
-function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObject<RelationMapApi>, jsPlumbApiRef: RefObject<jsPlumbInstance> }) {
+function useRelationCreation({ mapApiRef, jsPlumbApiRef, askRelationName }: {
+    mapApiRef: RefObject<RelationMapApi | null>,
+    jsPlumbApiRef: RefObject<jsPlumbInstance | null>,
+    askRelationName: AskRelationName
+}) {
     const connectionCallback = useCallback(async (info: OnConnectionBindInfo, originalEvent: Event) => {
         const connection = info.connection;
 
         // Called whenever a connection is created, either initially or manually when added by the user.
-        const handler = buildRelationContextMenuHandler(connection, mapApiRef);
+        const handler = buildRelationContextMenuHandler(connection, mapApiRef, askRelationName);
         connection.bind("contextmenu", handler);
 
         // if there's no event, then this has been triggered programmatically
         if (!originalEvent || !mapApiRef.current) return;
 
-        const name = await promptForRelationName();
+        const name = await askRelationName(connection);
 
         // Delete the newly created connection if the dialog was dismissed.
         if (!name || !name.trim()) {
@@ -429,7 +443,7 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
             toast.showError(t("relation_map.connection_exists", { name }));
             jsPlumbApiRef.current?.deleteConnection(connection);
         }
-    }, []);
+    }, [ askRelationName ]);
 
     return connectionCallback;
 }

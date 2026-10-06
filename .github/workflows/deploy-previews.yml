@@ -1,0 +1,62 @@
+# Publishes the previews built by the three deploy workflows.
+#
+# Those workflows build on pull_request, which is unprivileged: a pull request
+# opened from a fork receives no secrets and no repository variables, so its run
+# cannot deploy. The completed run arrives here as a workflow_run event, which
+# always executes the default branch's copy of this file with the base
+# repository's secrets and a write-capable token.
+#
+# Do not add a build step, a checkout of the pull request's head, or any other
+# way of running its code. The privilege of this workflow rests on it doing
+# nothing but forwarding a directory of static files.
+name: Deploy previews
+
+on:
+  workflow_run:
+    workflows:
+      - Deploy Standalone App
+      - Deploy Documentation
+      - Deploy website
+    types: [completed]
+
+# A called workflow can only narrow these, so they are declared at the widest
+# scope cloudflare-preview.yml needs.
+permissions:
+  actions: read
+  contents: read
+  deployments: write
+  pull-requests: write
+
+jobs:
+  app:
+    name: App
+    if: ${{ github.event.workflow_run.name == 'Deploy Standalone App' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/cloudflare-preview.yml
+    secrets: inherit
+    with:
+      artifact_name: "app-preview"
+      project_name: "trilium-app"
+      comment_body: "🖥️ App preview is ready"
+      production_url: "https://app.triliumnotes.org"
+
+  docs:
+    name: Documentation
+    if: ${{ github.event.workflow_run.name == 'Deploy Documentation' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/cloudflare-preview.yml
+    secrets: inherit
+    with:
+      artifact_name: "docs-preview"
+      project_name: "trilium-docs"
+      comment_body: "📚 Documentation preview is ready"
+      production_url: "https://docs.triliumnotes.org"
+
+  website:
+    name: Website
+    if: ${{ github.event.workflow_run.name == 'Deploy website' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    uses: ./.github/workflows/cloudflare-preview.yml
+    secrets: inherit
+    with:
+      artifact_name: "website-preview"
+      project_name: "trilium-homepage"
+      comment_body: "📚 Website preview is ready"
+      production_url: "https://triliumnotes.org"

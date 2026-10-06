@@ -25,6 +25,9 @@ Trillium Notes is een gratis en open-source, platformonafhankelijke,
 hiërarchische notitie-applicatie die zich richt op het opbouwen van grote
 persoonlijke kennisbanken.
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## Download

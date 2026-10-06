@@ -117,6 +117,14 @@
         }
     }
 
+    a.tn-link {
+        --link-hover-background: transparent;
+        --link-hover-color: currentColor;
+
+        color: inherit;
+        font-weight: inherit;
+    }
+
     /* Nothing to press where the set is read-only: the chips are then only a display of it, and a
        button offering a removal that is not on the table would say otherwise. */
     > .tn-chip-remove:disabled {

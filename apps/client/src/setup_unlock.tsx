@@ -2,7 +2,6 @@ import "./setup_unlock.css";
 
 import logo from "./assets/icon-color.svg?url";
 import { t } from "./services/i18n";
-import server from "./services/server";
 import { setSetupAuthToken } from "./services/setup_auth";
 import CredentialsForm, { type Credentials } from "./widgets/react/CredentialsForm";
 
@@ -28,22 +27,39 @@ import CredentialsForm, { type Credentials } from "./widgets/react/CredentialsFo
 export default function SetupUnlock({ onUnlocked }: { onUnlocked: () => void }) {
     async function submit({ password, totpToken }: Credentials) {
         try {
-            const { authenticated, token } = await server.post<{ authenticated: boolean; token?: string }>(
-                "setup/auth", { password, totpToken });
+            // `fetch` rather than `server.post`, as on the login screen: the status carries the
+            // answer here, and `server.post` drops it — it reports a non-2xx through a toast and
+            // rejects with the response text alone.
+            const resp = await fetch(`${window.glob.baseApiUrl}setup/auth`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password, totpToken })
+            });
 
-            if (!authenticated || !token) {
+            if (resp.status === 429) {
+                // The limiter counting the attempts, not a wrong answer.
+                return t("login.too-many-attempts");
+            }
+
+            if (!resp.ok) {
                 // Which of the two was wrong is not said, because the server does not say: both are
                 // asked for together and a failure in either is one refusal.
                 return t("setup.unlock-refused");
             }
 
-            setSetupAuthToken(token);
+            // The body is read as well as the status: standalone's `apiResultHandler` drops the
+            // status out of a `[status, body]` tuple, so a refusal reaches this build as a 200.
+            const answer = await resp.json() as { authenticated?: boolean; token?: string };
+            if (!answer.authenticated || !answer.token) {
+                return t("setup.unlock-refused");
+            }
+
+            setSetupAuthToken(answer.token);
             onUnlocked();
 
             return null;
         } catch {
-            // A wrong answer is answered, not thrown, so anything landing here is the connection or
-            // the rate limiter the attempts are counted by.
+            // `fetch` rejects only on a network-level failure, never on an HTTP status.
             return t("login.connection-error");
         }
     }

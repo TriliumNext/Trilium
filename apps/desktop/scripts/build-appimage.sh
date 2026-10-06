@@ -61,11 +61,12 @@ cat > "$APPDIR/$EXECUTABLE_NAME.desktop" << DESKTOP_EOF
 Name=$PRODUCT_NAME
 Comment=Build your personal knowledge base with Trilium Notes
 GenericName=Note Taking Application
+Keywords=Trillium;
 Exec=$EXECUTABLE_NAME %U
 Icon=$EXECUTABLE_NAME
 Type=Application
 StartupNotify=true
-StartupWMClass=$PRODUCT_NAME
+StartupWMClass=$EXECUTABLE_NAME
 Categories=Office;Utility;
 DESKTOP_EOF
 

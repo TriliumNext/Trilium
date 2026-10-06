@@ -4,7 +4,7 @@ import type { PanZoom } from "panzoom";
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
-import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../../react/OverlayControlGroup";
 
 /** What the buttons ask for, which is what the map itself answers (see `usePanZoom` in RelationMap.tsx). */
 export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom";
@@ -38,22 +38,13 @@ export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
 
     return (
         <OverlayControlGroup className="relation-map-toolbar" placement="bottom-end">
-            <OverlayControlButton
-                title={t("relation_map_buttons.zoom_out_title")}
-                icon="bx-minus-circle"
-                disabled={scale <= panZoom.getMinZoom()}
-                onClick={() => onCommand("relationMapResetZoomOut")}
-            />
-            <OverlayControlButton
-                title={t("relation_map_buttons.reset_pan_zoom_title")}
-                text={`${Math.round(scale * 100)}%`}
-                onClick={() => onCommand("relationMapResetPanZoom")}
-            />
-            <OverlayControlButton
-                title={t("relation_map_buttons.zoom_in_title")}
-                icon="bx-plus-circle"
-                disabled={scale >= panZoom.getMaxZoom()}
-                onClick={() => onCommand("relationMapResetZoomIn")}
+            <ZoomControls
+                percent={scale * 100}
+                canZoomIn={scale < panZoom.getMaxZoom()}
+                canZoomOut={scale > panZoom.getMinZoom()}
+                onZoomIn={() => onCommand("relationMapResetZoomIn")}
+                onZoomOut={() => onCommand("relationMapResetZoomOut")}
+                onReset={() => onCommand("relationMapResetPanZoom")}
             />
         </OverlayControlGroup>
     );

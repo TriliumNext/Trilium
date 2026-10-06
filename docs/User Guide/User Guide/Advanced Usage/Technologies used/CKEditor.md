@@ -9,9 +9,9 @@ CKEditor by itself is a commercial product, but the core is open-source. As desc
 
 ## Premium features
 
-Some features are marked as premium in the CKEditor feature set. This means that they cannot be used without a license.
+CKEditor ships some plugins as premium (slash commands, templates, AI integration). Initially Trilium (since v0.96.0) shipped some of them like slash commands as part of a license grant from CKEditor to the Trilium Notes developers.
 
-Trilium cannot benefit from any of these premium features as they require a commercial license, however we are in discussions with the CKEditor team to allow us to use a subset of these premium features such as [Slash commands](https://ckeditor.com/docs/ckeditor5/latest/features/slash-commands.html).
+In v0.105.0 we've decided to replace those premium plugins with our own open-source implementations. This also means that we can better tailor those plugins to the Trilium app.
 
 ## Plugins
 

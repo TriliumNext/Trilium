@@ -8,7 +8,10 @@ import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_d
 import { isMobile } from "../../services/utils";
 import { useStaticTooltip } from "./hooks";
 
-export interface ActionButtonProps extends Pick<HTMLAttributes<HTMLButtonElement>, "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style"> {
+export interface ActionButtonProps extends Pick<
+    HTMLAttributes<HTMLButtonElement>,
+    "onClick" | "onAuxClick" | "onContextMenu" | "onBlur" | "style" | "aria-expanded"
+> {
     text: string;
     titlePosition?: "top" | "right" | "bottom" | "left";
     /** Extra class applied to the tooltip popup (e.g. `tooltip-top` to raise its z-index above modals). */

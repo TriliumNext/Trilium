@@ -87,7 +87,8 @@ export default class MathUI extends Plugin {
 				katexRenderOptions: mathConfig.katexRenderOptions!
 			},
 			mathConfig.enablePreview,
-			mathConfig.popupClassName!
+			mathConfig.popupClassName!,
+			mathConfig.enableMathField
 		);
 
 		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );
@@ -257,7 +258,7 @@ export default class MathUI extends Plugin {
 			const button = new ButtonView( locale );
 
 			button.isEnabled = true;
-			button.label = t( 'Insert math' );
+			button.label = t( 'Math' );
 			button.icon = mathIcon;
 			button.keystroke = mathKeystroke;
 			button.tooltip = true;

@@ -98,7 +98,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     return stylesheets;
 }
 
-function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivElement>, api: RevealApi | undefined }) {
+function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivElement | null>, api: RevealApi | undefined }) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;

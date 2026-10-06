@@ -187,6 +187,7 @@ export function extractChatHeadings(messages: StoredMessage[], container: HTMLEl
             const levelOffset = hasUserHeading ? 1 : 0;
             let index = 0;
             for (const headingEl of messageEl.querySelectorAll<HTMLHeadingElement>(REPLY_HEADING_SELECTOR)) {
+                if (headingEl.closest(".llm-chat-thinking")) continue;
                 headings.push({
                     id: `${message.id}:${index}`,
                     level: parseInt(headingEl.tagName.substring(1), 10) + levelOffset,

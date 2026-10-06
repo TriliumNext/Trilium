@@ -143,10 +143,10 @@ export default function Treemap<T>({ root, selectedItemId, onItemClick, onItemCo
                         )}
                         // Geometry and tint are computed per layout run, so they cannot live in a stylesheet.
                         style={{
-                            left: cell.x0,
-                            top: cell.y0,
-                            width: cellWidth,
-                            height: cellHeight,
+                            left: `${cell.x0}px`,
+                            top: `${cell.y0}px`,
+                            width: `${cellWidth}px`,
+                            height: `${cellHeight}px`,
                             borderRadius: blockCornerRadius(cell),
                             ...(item.hue !== undefined && { "--treemap-hue": String(item.hue) })
                         }}
@@ -157,7 +157,7 @@ export default function Treemap<T>({ root, selectedItemId, onItemClick, onItemCo
                         {...item.attributes}
                     >
                         {item.icon && iconSize >= MIN_ICON_SIZE && (
-                            <span className={clsx("treemap-cell-icon", item.icon)} style={{ fontSize: iconSize }} />
+                            <span className={clsx("treemap-cell-icon", item.icon)} style={{ fontSize: `${iconSize}px` }} />
                         )}
                     </div>
                 );

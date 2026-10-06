@@ -262,7 +262,6 @@
     "copy_to_clipboard": "Copier dans le presse-papiers"
   },
   "jump_to_note": {
-    "search_button": "Rechercher dans le texte intégral",
     "search_placeholder": "Rechercher une note par son nom ou saisir ‘>’ pour les commandes…"
   },
   "markdown_import": {
@@ -320,10 +319,8 @@
     "title": "titre",
     "date_created": "date de création",
     "date_modified": "date de modification",
-    "sorting_direction": "Sens de tri",
     "ascending": "ascendant",
     "descending": "descendant",
-    "folders": "Dossiers",
     "sort_folders_at_top": "trier les dossiers en haut",
     "natural_sort": "Tri naturel",
     "sort_with_respect_to_different_character_sorting": "trier en fonction de différentes règles de tri et de classement des caractères dans différentes langues ou régions.",
@@ -768,10 +765,7 @@
     "button_title": "Exporter le diagramme au format SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte",
-    "reset_pan_zoom_title": "Réinitialiser le panoramique et le zoom aux coordonnées et à la position initiales",
-    "zoom_in_title": "Zoomer",
-    "zoom_out_title": "Dézoomer"
+    "create_child_note_title": "Créer une note enfant et l'ajouter à la carte"
   },
   "zpetne_odkazy": {
     "relation": "relation",
@@ -1029,7 +1023,6 @@
     "label_rock_or_pop": "un seul des labels doit être présent",
     "label_year_comparison": "comparaison numérique (également >, >=, <).",
     "label_date_created": "notes créées le mois dernier",
-    "error": "Erreur de recherche : {{error}}",
     "search_prefix": "Recherche :"
   },
   "attachment_detail": {
@@ -1175,7 +1168,6 @@
     "note_tree_font": "Police de l'arborescence des notes",
     "note_detail_font": "Police du texte des notes",
     "monospace_font": "Police Monospace (code)",
-    "not_all_fonts_available": "Toutes les polices répertoriées peuvent ne pas être disponibles sur votre système",
     "generic-fonts": "Polices génériques",
     "sans-serif-system-fonts": "Polices système sans serif",
     "serif-system-fonts": "Polices système Serif",
@@ -1659,7 +1651,6 @@
     "placeholder": "Recherche rapide",
     "searching": "Recherche...",
     "no-results": "Aucun résultat trouvé",
-    "more-results": "... et {{number}} autres résultats.",
     "show-in-full-search": "Afficher dans la recherche complète"
   },
   "note_tree": {
@@ -1887,12 +1878,9 @@
     "zoom-factor": "Facteur de zoom"
   },
   "note_autocomplete": {
-    "search-for": "Rechercher \"{{term}}\"",
     "create-note": "Créer et lier une note enfant \"{{term}}\"",
     "insert-external-link": "Insérer un lien externe vers \"{{term}}\"",
-    "clear-text-field": "Effacer le champ de texte",
-    "show-recent-notes": "Afficher les notes récentes",
-    "full-text-search": "Recherche dans le texte"
+    "clear-text-field": "Effacer le champ de texte"
   },
   "note_tooltip": {
     "note-has-been-deleted": "La note a été supprimée.",
@@ -2075,7 +2063,6 @@
     "remove-from-board": "Retirer du tableau",
     "archive-note": "Note archivée",
     "unarchive-note": "Note désarchivée",
-    "move-to": "Déplacer vers",
     "insert-above": "Insérer au-dessus",
     "insert-below": "Insérer au-dessous",
     "delete-column": "Supprimer la colonne",
@@ -2312,7 +2299,6 @@
     "retry": "Réessayer",
     "edit_index": "Modification {{index}} sur {{total}}",
     "web_search_unavailable_gemini": "Non disponible sur les modèles Gemini lorsque l'accès aux notes est activé — l'API de Google ne permet pas de combiner les deux. Désactivez l'accès aux notes ou changez de fournisseur pour utiliser la recherche web.",
-    "input_streaming": "Entrée (streaming…)",
     "attach_file": "Joindre une image, un PDF ou un fichier texte",
     "remove_attachment": "Supprimer la pièce jointe",
     "attachment_upload_failed": "Impossible de téléverser \"{{name}}\".",
@@ -2491,9 +2477,6 @@
   },
   "llm": {
     "add_provider": "Ajouter le fournisseur",
-    "add_provider_title": "Ajouter le fournisseur d'IA",
-    "configured_providers": "Fournisseurs configurés",
-    "no_providers_configured": "Aucun fournisseur n'est encore configuré.",
     "provider_name": "Nom",
     "actions": "Actions",
     "delete_provider": "Supprimer",
@@ -2733,7 +2716,6 @@
     "page_size": "Format de page",
     "scale": "Échelle",
     "margins": "Marges",
-    "render_error": "Impossible de générer le PDF avec les paramètres actuels. Veuillez vérifier les marges et l’échelle.",
     "margins_default": "Par défaut",
     "margins_none": "Aucunes",
     "margins_minimum": "Minimums",
@@ -2792,7 +2774,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Insérer une section repliable qui affiche/masque le contenu au clic.",
       "insert-an-anchor-for-internal-linking": "Insérer une ancre pour les liens internes",
       "insert-an-empty-mermaid-diagram": "Insérer un diagramme Mermaid vide",
-      "insert-the-current-date-and-time": "Insérer la date et l'heure actuelles",
       "justify-text-alignment": "Justifier le texte",
       "right-click-or-press-0-to-change-state": "Clic droit pour plus d'états.\nAppuyez sur %0 pour changer d'état.",
       "select-collapsible-block": "Sélectionner le bloc repliable",
@@ -2801,11 +2782,6 @@
       "type-the-content-here": "Saisissez le contenu ici...",
       "undefined-custom-task-state": "État personnalisé non défini"
     }
-  },
-  "image_buttons": {
-    "zoom_in": "Zoomer",
-    "zoom_out": "Dézoomer",
-    "reset_zoom": "Zoom par défaut"
   },
   "image_navigation": {
     "previous": "Image précédente : {{- title}}",

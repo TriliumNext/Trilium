@@ -41,10 +41,17 @@ export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
 
 const MAX_OPEN_TABS = 50;
 
-export default function CollectionProperties({ note, centerChildren, rightChildren }: {
+export default function CollectionProperties({
+    note,
+    centerChildren,
+    rightChildren,
+    optionsChildren
+}: {
     note: FNote;
     centerChildren?: ComponentChildren;
     rightChildren?: ComponentChildren;
+    /** Entries appended below a divider at the end of the settings dropdown. */
+    optionsChildren?: ComponentChildren;
 }) {
     const [ viewType, setViewType ] = useViewType(note);
     const noteType = useNoteProperty(note, "type");
@@ -54,7 +61,7 @@ export default function CollectionProperties({ note, centerChildren, rightChildr
         <div className="collection-properties">
             <div className="left-container">
                 <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
-                <ViewOptions note={note} viewType={viewType} />
+                <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
             </div>
             <div className="center-container">
                 {centerChildren}
@@ -131,7 +138,6 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
     return (
         <Dropdown
             dropdownContainerRef={dropdownContainerRef}
-            noDropdownListStyle
             text={<>
                 <Icon icon={ICON_MAPPINGS[viewType]} />&nbsp;
                 {VIEW_TYPE_MAPPINGS[viewType]}
@@ -151,16 +157,18 @@ function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions
     );
 }
 
-function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOptions }) {
+function ViewOptions({ note, viewType, optionsChildren }: {
+    note: FNote,
+    viewType: ViewTypeOptions,
+    optionsChildren?: ComponentChildren
+}) {
     const properties = bookPropertiesConfig[viewType].properties;
 
     return (
         <Dropdown
             buttonClassName="bx bx-cog icon-action"
             hideToggleArrow
-            dropdownContainerClassName="mobile-bottom-menu"
-            noDropdownListStyle
-            mobileBackdrop
+            mobileBottomSheet
         >
             {properties.map((property, index) => (
                 <ViewProperty key={index} note={note} property={property} />
@@ -180,6 +188,11 @@ function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOption
                 label: t("book_properties.include_archived_notes"),
                 bindToLabel: "includeArchived"
             } as CheckBoxProperty} />
+
+            {optionsChildren && <>
+                <FormDropdownDivider />
+                {optionsChildren}
+            </>}
         </Dropdown>
     );
 }

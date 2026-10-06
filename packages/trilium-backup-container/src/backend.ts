@@ -14,7 +14,11 @@ export interface ByteSink {
     end(): Promise<void>;
 }
 
-/** Incremental SHA-256, which WebCrypto cannot provide and both directions need. */
+/**
+ * Incremental SHA-256, which WebCrypto cannot provide and both directions need. Created
+ * asynchronously because the web backend instantiates a WASM hasher; the streaming itself
+ * is synchronous.
+ */
 export interface StreamingHash {
     update(chunk: Uint8Array): void;
     digest(): Uint8Array;
@@ -30,7 +34,7 @@ export interface StreamingHash {
  */
 export interface ContainerBackend {
     randomBytes(size: number): Uint8Array;
-    createSha256(): StreamingHash;
+    createSha256(): Promise<StreamingHash>;
     /**
      * Derives the 32-byte file key with scrypt. The passphrase arrives already NFC-normalised
      * and UTF-8 encoded. Throws whatever the platform throws; the core wraps it.

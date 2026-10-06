@@ -1,0 +1,55 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : "system-dark"
+    }
+  ],
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "leaf-right.svg",
+          "name" : "leaf-right"
+        },
+        {
+          "glass" : true,
+          "image-name" : "leaf-bottom.svg",
+          "name" : "leaf-bottom"
+        },
+        {
+          "glass" : true,
+          "image-name" : "leaf-left.svg",
+          "name" : "leaf-left"
+        }
+      ],
+      "lighting" : "individual",
+      "position" : {
+        "scale" : 0.8,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

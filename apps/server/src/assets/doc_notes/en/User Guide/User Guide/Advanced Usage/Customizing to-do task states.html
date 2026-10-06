@@ -18,17 +18,16 @@
   <li><strong>Title</strong> (required): The name of the task state shown in
     the UI. For example: "Doing", "Postponed".</li>
   <li><strong>Identifier</strong> (required): A short name for the state, using
-    only letters, digits, "<code spellcheck="false">-</code>" and "<code spellcheck="false">_</code>".
-    It is stored as metadata in the note's markup and used to identify the
-    task state. Two task states cannot share the same identifier.
-    <br>Prefix the identifiers of your custom task states with an underscore "
-    <code
-    spellcheck="false">_</code>" or a hyphen "<code spellcheck="false">-</code>" to avoid clashes
-      with task states that may be introduced in future versions of Trilium.</li>
+    only letters, digits, "<code>-</code>" and "<code>_</code>". It is stored
+    as metadata in the note's markup and used to identify the task state. Two
+    task states cannot share the same identifier.
+    <br>Prefix the identifiers of your custom task states with an underscore "<code>_</code>"
+    or a hyphen "<code>-</code>" to avoid clashes with task states that may
+    be introduced in future versions of Trilium.</li>
   <li><strong>Markdown symbol</strong>: A single character used to represent
-    the state in Markdown syntax. For example, "<code spellcheck="false">#</code>"
-    creates a task state that can be applied in Markdown using " <code spellcheck="false">- [#]</code> ".
-    Make sure no other task state uses the same symbol.</li>
+    the state in Markdown syntax. For example, "<code>#</code>" creates a task
+    state that can be applied in Markdown using " <code>- [#]</code> ". Make
+    sure no other task state uses the same symbol.</li>
   <li><strong>Counts as completed</strong>: If checked, the task is treated
     as completed.</li>
   <li><strong>Color</strong>: The color of the checkbox. Its lightness and saturation

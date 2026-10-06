@@ -1,4 +1,4 @@
-import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, note_service as noteService, sanitize, ValidationError, ws } from "@triliumnext/core";
+import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, becca, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, note_service as noteService, sanitize, ValidationError, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
@@ -77,13 +77,18 @@ function findClippingNote(clipperInboxNote: BNote, pageUrl: string, clipType: st
 }
 
 async function getClipperInboxNote() {
-    let clipperInbox = attributeService.getNoteWithLabel("clipperInbox");
-
-    if (!clipperInbox) {
-        clipperInbox = await dateNoteService.getDayNote(dateUtils.localNowDate());
+    const clipperInbox = attributeService.getNoteWithLabel("clipperInbox");
+    if (clipperInbox) {
+        return clipperInbox;
     }
 
-    return clipperInbox;
+    // Clipping a page is not a request for a journal, so a database without one keeps the
+    // clipping at the top level rather than having a calendar built around it (#11034).
+    if (!dateNoteService.hasCalendarRoot()) {
+        return becca.getNoteOrThrow("root");
+    }
+
+    return await dateNoteService.getDayNote(dateUtils.localNowDate());
 }
 
 async function createNote(req: Request) {

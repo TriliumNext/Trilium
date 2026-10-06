@@ -9,14 +9,22 @@ This page explains how to manipulate the note tree in TriliumNext, focusing on m
 
 You can easily rearrange the note tree by dragging and dropping notes, as demonstrated in the example above.
 
+### Importing files
+
+A file or archive can easily be imported into Trilium just by dragging it inside the note tree.
+
+Note that a drag & drop always imports with _safe import_ on, meaning that some features such as scripts are disabled in the upcoming notes. To bypass that, use the dedicated [import](../Import%20%26%20Export.md) feature (right click → _Import into note_).
+
+Unlike the import dialog, the drag & drop also has some basic auto-detection of the import. For example, dragging a .zip file with a `.obsidian` folder in it will automatically trigger a dedicated <a class="reference-link" href="../Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a> import.
+
 ## Keyboard Manipulation
 
 ![Example of using keyboard keys to move a note](Note%20Tree_move-note-with-keyboard.gif)Trilium offers efficient keyboard-based manipulation using the following [shortcuts](../Keyboard%20Shortcuts.md):
 
-*   <kbd>Ctrl</kbd> + <kbd><span>↑</span></kbd> and <kbd>Ctrl</kbd> +<kbd><span>↓</span></kbd>: Move the note up or down in the order.
-*   <kbd>Ctrl</kbd>+<kbd><span>←</span></kbd>: Move the note up in the hierarchy by changing its parent to the note's grandparent.
-*   <kbd>Ctrl</kbd>+<kbd><span>→</span></kbd>: Move the note down in the hierarchy by setting its parent to the note currently above it (this action is best understood through a demo or hands-on experience).
-*   <kbd><span>←</span></kbd> and <kbd><span>→</span></kbd>: Expand and collapse a sub-tree.
+*   <kbd>Ctrl</kbd> + <kbd>↑</kbd> and <kbd>Ctrl</kbd> +<kbd>↓</kbd>: Move the note up or down in the order.
+*   <kbd>Ctrl</kbd>+<kbd>←</kbd>: Move the note up in the hierarchy by changing its parent to the note's grandparent.
+*   <kbd>Ctrl</kbd>+<kbd>→</kbd>: Move the note down in the hierarchy by setting its parent to the note currently above it (this action is best understood through a demo or hands-on experience).
+*   <kbd>←</kbd> and <kbd>→</kbd>: Expand and collapse a sub-tree.
 
 ## Context Menu
 

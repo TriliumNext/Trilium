@@ -55,7 +55,7 @@ export default function FloatingButtons({ items }: FloatingButtonsProps) {
     });
 
     return (
-        <div className="floating-buttons no-print" style={{top}}>
+        <div className="floating-buttons no-print" style={{ top: `${top}px` }}>
             <div className={`floating-buttons-children ${!visible ? "temporarily-hidden" : ""}`}>
                 {context && items.map((Component) => (
                     <Component {...context} />

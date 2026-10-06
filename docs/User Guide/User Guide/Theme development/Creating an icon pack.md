@@ -61,7 +61,7 @@ Example minimal manifest:
 ```
 
 > [!NOTE]
-> *   You can supply glyph as the escaped `\uXXXX` sequence or as the actual UTF‑8 character.
+> *   You can supply glyph as the escaped `\uXXXX` sequence or as the actual UTF‑8 character. The CSS form (`\ea3f`, as written in a stylesheet's `content`) is accepted too, so glyphs copied out of the font's own CSS work as they stand.
 > *   It is also possible to use the unescaped glyph inside the JSON. It will appear strange (e.g. ), but it will be rendered properly regardless.
 > *   The manifest keys (e.g. `ph-acorn`) should match the class names used by the font (prefix + name is a common pattern).
 > *   Like the prefix, a manifest key becomes a CSS class name, so it can contain only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation and whitespace (e.g. `ph.acorn` or `ph acorn`) are not usable as class names; icons with such a key are skipped and an error is logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>, while the rest of the pack still loads.
@@ -142,7 +142,7 @@ What to do with the script:
 > [!TIP]
 > **Mind the escape format when processing CSS**
 > 
-> The Unicode escape syntax is different in CSS (`"\ea3f"`) when compared to JSON (`"\uea3f"`). Notice how the JSON escape is `\u` and not `\`.
+> The Unicode escape syntax is different in CSS (`"\ea3f"`) when compared to JSON (`"\uea3f"`). Notice how the JSON escape is `\u` and not `\`. Both forms are accepted: keep the CSS escape by writing the backslash itself as `"\\ea3f"` in the JSON, or convert it to the JSON escape `"\uea3f"`.
 > 
 > As a more compact alternative, provide the un-escaped character directly, as UTF-8 is supported.
 

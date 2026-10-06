@@ -125,6 +125,21 @@ describe("boot sequence", () => {
         }
     });
 
+    it("takes the note and context it reports to from the URL, before the frame has loaded", async () => {
+        // The parent assigns nothing until the frame's `load` event, which a small document can beat.
+        delete (window as Partial<Window>).TRILIUM_NOTE_ID;
+        delete (window as Partial<Window>).TRILIUM_NTX_ID;
+        viewer = await installViewerApp(allFeaturesPdf());
+        await bootWith("editable=1&noteId=note-2&ntxId=ntx-2");
+
+        viewer.eventBus.dispatch("documentloaded", { source: null });
+        await vi.waitFor(() => expect(viewer.messagesOfType("pdfjs-viewer-page-info").length).toBeGreaterThan(0));
+
+        for (const message of viewer.messages) {
+            expect(message).toMatchObject({ noteId: "note-2", ntxId: "ntx-2" });
+        }
+    });
+
     it("applies the toolbar and sidebar switches from the URL", async () => {
         document.body.innerHTML = `
             <div id="viewsManagerToggleButton"></div>

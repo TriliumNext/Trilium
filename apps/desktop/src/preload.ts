@@ -62,9 +62,6 @@ contextBridge.exposeInMainWorld("electronApi", {
         closeWindow() {
             ipcRenderer.send("close-window");
         },
-        createExtraWindow(extraWindowHash: string) {
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
-        },
         isAlwaysOnTop(): boolean {
             return ipcRenderer.sendSync("is-always-on-top");
         },
@@ -124,6 +121,9 @@ contextBridge.exposeInMainWorld("electronApi", {
         },
         readText() {
             return ipcRenderer.invoke("read-clipboard-text");
+        },
+        readHTML() {
+            return ipcRenderer.invoke("read-clipboard-html");
         }
     },
 
@@ -201,7 +201,7 @@ contextBridge.exposeInMainWorld("electronApi", {
         exportAsPdfPreview(opts: Record<string, unknown>) {
             ipcRenderer.send("export-as-pdf-preview", opts);
         },
-        onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string }) => void) {
+        onExportAsPdfPreviewResult(callback: (result: { buffer?: Uint8Array; error?: string; requestId?: number }) => void) {
             ipcRenderer.on("export-as-pdf-preview-result", (_event, result) => callback(result));
         },
         removeExportAsPdfPreviewResultListener() {

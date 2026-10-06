@@ -1,15 +1,12 @@
-import { Request, Response } from "express";
+import { Request, Response } from "../../http_interface";
 import becca from "../../becca/becca";
 import type BAttachment from "../../becca/entities/battachment";
 import type BNote from "../../becca/entities/bnote";
-import type { File } from "../../services/import/common.js";
 import noteService from "../../services/notes.js";
 import { convertOfficeToHtml } from "../../services/office_preview.js";
 import protected_session from "../../services/protected_session";
 import { downloadData, downloadNoteInt } from "../helpers";
 import { serveContentWithRanges } from "../partial_content";
-
-type FileRequest<P> = Omit<Request<P>, "file"> & { file?: File };
 
 const downloadFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, true);
 const openFile = (req: Request<{ noteId: string }>, res: Response) => downloadNoteInt(req.params.noteId, res, false);
@@ -47,7 +44,7 @@ function openPartialAttachment(req: Request<{ attachmentId: string }>, res: Resp
  * PDF viewer saves annotations through. `replace=1` writes straight over the content — for an editor
  * saving its own work, where a revision per save would bury the note in them.
  */
-function updateFile(req: FileRequest<{ noteId: string }>) {
+function updateFile(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const file = req.file;
@@ -77,7 +74,7 @@ function updateFile(req: FileRequest<{ noteId: string }>) {
 }
 
 /** The attachment counterpart of {@link updateFile}: replacing an attachment's file with another. */
-function updateAttachment(req: FileRequest<{ attachmentId: string }>) {
+function updateAttachment(req: Request<{ attachmentId: string }>) {
     const attachment = becca.getAttachmentOrThrow(req.params.attachmentId);
     const file = req.file;
     if (!file) {

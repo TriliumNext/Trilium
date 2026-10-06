@@ -1,6 +1,6 @@
 import "./SyncStatus.css";
 
-import { WebSocketMessage } from "@triliumnext/commons";
+import { SyncPullProgress, WebSocketMessage } from "@triliumnext/commons";
 import clsx from "clsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -8,7 +8,7 @@ import { t } from "../../services/i18n";
 import sync from "../../services/sync";
 import { escapeQuotes } from "../../services/utils";
 import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
-import { useStaticTooltip, useTriliumOption } from "../react/hooks";
+import { useStaticTooltip, useTriliumOption, useTriliumOptionBool } from "../react/hooks";
 import { launcherContextMenuHandler, LauncherNoteProps } from "./launch_bar_widgets";
 
 type SyncState = "unknown" | "in-progress"
@@ -51,16 +51,26 @@ const STATE_MAPPINGS: Record<SyncState, StateMapping> = {
 };
 
 export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
-    const syncState = useSyncStatus();
+    const { syncState, pullProgress } = useSyncStatus();
     const { title, icon, hasChanges } = STATE_MAPPINGS[syncState];
     const spanRef = useRef<HTMLSpanElement>(null);
-    const [ syncServerHost ] = useTriliumOption("syncServerHost");
+    const [ storedSyncServerHost ] = useTriliumOption("syncServerHost");
+    const [ effectiveSyncServerHost ] = useTriliumOption("effectiveSyncServerHost");
+    const [ isSyncServerHostOverridden ] = useTriliumOptionBool("syncServerHostOverridden");
+
     useStaticTooltip(spanRef, {
         html: true,
         title: escapeQuotes(title)
     });
 
-    return (syncServerHost &&
+    // config.ini and environment variables hold still for the life of the process, so only the
+    // stored option can change while the app runs. Reading it directly makes the button appear as
+    // soon as sync is configured, without waiting for a reload.
+    const showSyncStatus = isSyncServerHostOverridden
+        ? !!effectiveSyncServerHost
+        : !!storedSyncServerHost && storedSyncServerHost !== "disabled";
+
+    return (showSyncStatus &&
         <div
             class="sync-status-widget launcher-button"
             onContextMenu={launcherContextMenuHandler(launcherNote)}
@@ -80,12 +90,29 @@ export default function SyncStatus({ launcherNote }: LauncherNoteProps) {
                     )}
                 </span>
             </div>
+            {pullProgress && <SyncPullProgressBar {...pullProgress} />}
         </div>
+    );
+}
+
+function SyncPullProgressBar({ pulled, total }: SyncPullProgress) {
+    const percent = Math.min(100, Math.round(pulled / total * 100));
+
+    return (
+        <div
+            class="sync-status-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percent}
+            style={{ "--sync-progress": `${percent}%` }}
+        />
     );
 }
 
 function useSyncStatus() {
     const [ syncState, setSyncState ] = useState<SyncState>("unknown");
+    const [ pullProgress, setPullProgress ] = useState<SyncPullProgress>();
 
     useEffect(() => {
         let lastSyncedPush: number;
@@ -103,14 +130,22 @@ function useSyncStatus() {
 
             switch (message.type) {
                 case "sync-pull-in-progress":
+                    setSyncState("in-progress");
+                    if (message.progress && message.progress.total > 0) {
+                        setPullProgress(message.progress);
+                    }
+                    break;
                 case "sync-push-in-progress":
                     setSyncState("in-progress");
+                    setPullProgress(undefined);
                     break;
                 case "sync-finished":
                     setSyncState(allChangesPushed ? "connected-no-changes" : "connected-with-changes");
+                    setPullProgress(undefined);
                     break;
                 case "sync-failed":
                     setSyncState(allChangesPushed ? "disconnected-no-changes" : "disconnected-with-changes");
+                    setPullProgress(undefined);
                     break;
                 case "frontend-update":
                     lastSyncedPush = message.data.lastSyncedPush;
@@ -122,5 +157,5 @@ function useSyncStatus() {
         return () => unsubscribeToMessage(onMessage);
     }, []);
 
-    return syncState;
+    return { syncState, pullProgress };
 }

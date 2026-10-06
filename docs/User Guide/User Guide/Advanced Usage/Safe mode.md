@@ -8,4 +8,5 @@ What it does:
 *   Disables `customWidget` launcher types in `app/widgets/containers/launcher.js`.
 *   Disables the running of `mobileStartup` or `frontendStartup` scripts.
 *   Displays the root note instead of the previously saved session.
+*   Does not run a <a class="reference-link" href="../Note%20Types/Saved%20Search.md">Saved Search</a> when it is opened; press _Search now_ to run it.
 *   Disables the running of `backendStartup`, `hourly`, `daily` scripts and checks for the hidden subtree.

@@ -2,12 +2,12 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import { t } from "../../services/i18n";
 import Modal from "../react/Modal";
-import NoteAutocomplete from "../react/NoteAutocomplete";
+import NoteAutocomplete, { type NoteAutocompleteHandle } from "../react/NoteAutocomplete";
 import froca from "../../services/froca";
 import FormGroup from "../react/FormGroup";
 import FormTextBox from "../react/FormTextBox";
 import Button from "../react/Button";
-import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
+import { Suggestion } from "../../services/note_autocomplete";
 import { logError } from "../../services/ws";
 import tree from "../../services/tree";
 import branches from "../../services/branches";
@@ -20,7 +20,7 @@ export default function CloneToDialog() {
     const [ prefix, setPrefix ] = useState("");
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ shown, setShown ] = useState(false);
-    const autoCompleteRef = useRef<HTMLInputElement>(null);
+    const autocompleteRef = useRef<NoteAutocompleteHandle>(null);
 
     useTriliumEvent("cloneNoteIdsTo", ({ noteIds }) => {
         if (!noteIds || noteIds.length === 0) {
@@ -65,7 +65,7 @@ export default function CloneToDialog() {
                 <Button text={t("clone_to.clone_to_selected_note")} keyboardShortcut="Enter" />
             </>}
             onSubmit={onSubmit}
-            onShown={() => triggerRecentNotes(autoCompleteRef.current)}
+            onShown={() => autocompleteRef.current?.showRecentNotes()}
             onHidden={() => setShown(false)}
             show={shown}
         >
@@ -75,7 +75,7 @@ export default function CloneToDialog() {
                 <NoteAutocomplete
                     placeholder={t("clone_to.search_for_note_by_its_name")}
                     onChange={setSuggestion}
-                    inputRef={autoCompleteRef}
+                    handleRef={autocompleteRef}
                 />      
             </FormGroup>
             <FormGroup name="clone-prefix" label={t("clone_to.prefix_optional")} title={t("clone_to.cloned_note_prefix_title")}>

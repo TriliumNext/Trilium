@@ -1,3 +1,4 @@
+import { SEARCH_NOTE_PATH } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import becca from "../../../becca/becca.js";
@@ -5,7 +6,8 @@ import BBranch from "../../../becca/entities/bbranch.js";
 import BNote from "../../../becca/entities/bnote.js";
 import { note, NoteBuilder } from "../../../test/becca_mocking.js";
 import NoteSet from "../note_set.js";
-import PropertyComparisonExp from "./property_comparison.js";
+import { PROP_MAPPING as EXTRACTOR_PROP_MAPPING } from "../value_extractor.js";
+import PropertyComparisonExp, { PROP_MAPPING } from "./property_comparison.js";
 
 /** Build a NoteSet that contains every note currently registered in becca. */
 function allNotesSet() {
@@ -21,6 +23,18 @@ function noteIds(noteSet: NoteSet) {
 }
 
 let rootNote: NoteBuilder;
+
+describe("the shared property list", () => {
+    it("holds exactly the properties both engine tables accept", () => {
+        // `SEARCH_NOTE_PATH.properties` is what the client completes after `note.`, so a property
+        // added to one of these tables and not the other would be offered but not understood.
+        const shared = [ ...SEARCH_NOTE_PATH.properties ].sort();
+
+        expect(Object.values(PROP_MAPPING).sort()).toEqual(shared);
+        expect(Object.values(EXTRACTOR_PROP_MAPPING).sort()).toEqual(shared);
+        expect(SEARCH_NOTE_PATH.properties.every((name) => PropertyComparisonExp.isProperty(name.toLowerCase()))).toBe(true);
+    });
+});
 
 describe("PropertyComparisonExp", () => {
     beforeEach(() => {

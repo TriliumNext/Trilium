@@ -8,12 +8,15 @@ on:
         description: 'Git tag to release from'
         type: string
         required: true
+# The winget publish authenticates with a PAT, the job token is not used.
+permissions: {}
+
 jobs:
   release-winget:
     runs-on: ubuntu-latest
     steps:
       - name: Publish to WinGet
-        uses: vedantmgoyal9/winget-releaser@b3a5dae0047c6180023acba3f548c55fdf6b7193 # main
+        uses: vedantmgoyal9/winget-releaser@a8fff44b123f115ce4c21543edf8b677376fc7e0 # main
         with:
           identifier: TriliumNext.Notes
           token: ${{ secrets.WINGET_PAT  }}

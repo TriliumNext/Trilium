@@ -278,7 +278,6 @@
     "copy_to_clipboard": "In Zwischenablage kopieren"
   },
   "jump_to_note": {
-    "search_button": "Suche im Volltext",
     "search_placeholder": "Notiz anhand ihres Titels suchen oder > für Befehle eingeben..."
   },
   "markdown_import": {
@@ -345,16 +344,15 @@
     "title": "Titel",
     "date_created": "Erstellungsdatum",
     "date_modified": "Änderungsdatum",
-    "sorting_direction": "Sortierrichtung",
     "ascending": "aufsteigend",
     "descending": "absteigend",
-    "folders": "Ordner",
     "sort_folders_at_top": "Ordner oben sortieren",
     "natural_sort": "Natürliche Sortierung",
     "sort_with_respect_to_different_character_sorting": "Sortierung unter Berücksichtigung unterschiedlicher Regeln für Zeichensortierung und Kollation in verschiedenen Sprachen oder Regionen.",
     "natural_sort_language": "Natürliche Sortiersprache",
     "the_language_code_for_natural_sort": "Der Sprachcode für die natürliche Sortierung, z. B. \"zh-CN\" für Chinesisch.",
-    "sort": "Sortieren"
+    "sort": "Sortieren",
+    "sorting_criteria_description": "Notizen sind nach der ersten Ebene sortiert; die nächste Ebene dient nur zur Entscheidung zw. Notizen, die auf der vorherigen Ebene gleichwertig waren."
   },
   "upload_attachments": {
     "upload_attachments_to_note": "Anhänge zur Notiz hochladen",
@@ -988,9 +986,6 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
-    "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
-    "zoom_in_title": "Hineinzoomen",
-    "zoom_out_title": "Herauszoomen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
@@ -1254,7 +1249,6 @@
     "label_rock_or_pop": "Es darf nur eines der Labels vorhanden sein",
     "label_year_comparison": "numerischer Vergleich (auch >, >=, <).",
     "label_date_created": "Notizen, die im letzten Monat erstellt wurden",
-    "error": "Suchfehler: {{error}}",
     "search_prefix": "Suche:"
   },
   "attachment_detail": {
@@ -1399,7 +1393,6 @@
     "note_tree_font": "Notizbaum-Schriftart",
     "note_detail_font": "Notiz-Detail-Schriftart",
     "monospace_font": "Monospace-Schriftart (Code)",
-    "not_all_fonts_available": "Möglicherweise sind nicht alle aufgelisteten Schriftarten auf Ihrem System verfügbar",
     "generic-fonts": "Generische Schriftarten",
     "sans-serif-system-fonts": "Sans-serif Systemschriftarten",
     "serif-system-fonts": "Serif Systemschriftarten",
@@ -1887,7 +1880,6 @@
     "placeholder": "Schnellsuche",
     "searching": "Suche läuft...",
     "no-results": "Keine Ergebnisse gefunden",
-    "more-results": "... und {{number}} weitere Ergebnisse.",
     "show-in-full-search": "In der vollständigen Suche anzeigen"
   },
   "note_tree": {
@@ -2118,12 +2110,9 @@
     "zoom-factor": "Zoomfaktor"
   },
   "note_autocomplete": {
-    "search-for": "Suche nach „{{term}}“",
     "create-note": "Untergeordnete Notiz „{{term}}“ erstellen und verlinken",
     "insert-external-link": "Externen Link zu „{{term}}“ einfügen",
-    "clear-text-field": "Textfeldinhalt löschen",
-    "show-recent-notes": "Aktuelle Notizen anzeigen",
-    "full-text-search": "Volltextsuche"
+    "clear-text-field": "Textfeldinhalt löschen"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Notiz wurde gelöscht.",
@@ -2381,7 +2370,6 @@
   },
   "board_view": {
     "delete-note": "Notiz löschen...",
-    "move-to": "Verschieben zu",
     "insert-above": "Oberhalb einfügen",
     "insert-below": "Unterhalb einfügen",
     "delete-column": "Spalte entfernen",
@@ -2772,7 +2760,6 @@
     "edit_index": "Bearbeitung {{index}} von {{total}}",
     "retry": "Erneut versuchen",
     "web_search_unavailable_gemini": "Bei Gemini-Modellen nicht verfügbar solange der Notizzugriff aktiv ist — Googles API erlaubt keine Kombination beider Funktionen. Notizzugriff deaktivieren oder einen anderen Anbieter wählen um die Websuche zu nutzen.",
-    "input_streaming": "Eingabe (wird gestreamt…)",
     "attach_file": "Bild, PDF oder Textdatei anhängen",
     "remove_attachment": "Anhang entfernen",
     "attachment_upload_failed": "„{{name}}“ konnte nicht hochgeladen werden.",
@@ -2854,10 +2841,7 @@
     "actions": "Aktionen",
     "provider_name": "Name",
     "add_provider": "Anbieter hinzufügen",
-    "add_provider_title": "KI-Anbieter hinzufügen",
     "feature_not_enabled": "Aktivieren Sie die experimentelle LLM-Funktion unter Einstellungen → Erweitert → Experimentelle Funktionen, um KI-Integrationen zu verwenden.",
-    "configured_providers": "Konfigurierte Anbieter",
-    "no_providers_configured": "Noch keine Anbieter konfiguriert.",
     "delete_provider_confirmation": "Möchten Sie den Anbieter „{{name}}“ wirklich löschen?",
     "api_key_placeholder": "Geben Sie Ihren API-Schlüssel ein",
     "mcp_title": "MCP (Model Context Protocol)",
@@ -2880,10 +2864,7 @@
     "models_select_all": "Alle auswählen",
     "models_select_none": "Keine auswählen",
     "models_reset_defaults": "Auf Standardwerte zurücksetzen",
-    "provider_model_count_one": "{{count}} Modell",
-    "provider_model_count_other": "{{count}} Modelle",
     "beta": "Beta",
-    "provider_desc_claude_agent": "Erfordert Claude Code auf dem Computer, auf dem Trilium ausgeführt wird.",
     "claude_agent_description": "Verwendet Ihr Claude-Pro-/Max-Abonnement über Claude Code, daher ist kein API-Schlüssel erforderlich. Claude Code muss auf dem Computer installiert sein, auf dem Trilium ausgeführt wird (beim Self-Hosting der Server, bei der Desktop-App dieser Computer). Melden Sie sich dort einmalig mit „claude /login“ an.",
     "add_provider_title_named": "{{- name}} hinzufügen",
     "provider_group_cloud": "Cloud-Anbieter",
@@ -3078,7 +3059,6 @@
     "page_size": "Seitengröße",
     "scale": "Skalierung",
     "margins": "Seitenränder",
-    "render_error": "PDF kann mit den aktuellen Einstellungen nicht gerendert werden. Bitte prüfen Sie Seitenränder und Skalierung.",
     "margins_default": "Standard",
     "margins_none": "Keine",
     "margins_minimum": "Minimum",
@@ -3136,7 +3116,6 @@
       "insert-a-toggleable-section-that-hides-shows-content-on-click": "Einen ein-/ausklappbaren Abschnitt einfügen, der Inhalt per Klick verbirgt oder anzeigt.",
       "insert-an-anchor-for-internal-linking": "Anker für interne Verlinkung einfügen",
       "insert-an-empty-mermaid-diagram": "Leeres Mermaid-Diagramm einfügen",
-      "insert-the-current-date-and-time": "Aktuelles Datum und Uhrzeit einfügen",
       "justify-text-alignment": "Blocksatz",
       "link-preview": "Linkvorschau",
       "missing-definition": "(fehlende Definition)",
@@ -3152,11 +3131,6 @@
       "url": "URL"
     }
   },
-  "image_buttons": {
-    "zoom_in": "Vergrößern",
-    "zoom_out": "Verkleinern",
-    "reset_zoom": "Zoom zurücksetzen"
-  },
   "image_navigation": {
     "previous": "Vorheriges Bild: {{- title}}",
     "next": "Nächstes Bild: {{- title}}"
@@ -3164,16 +3138,6 @@
   "image_viewer": {
     "loading_error": "Beim Laden des Bildes ist ein Fehler aufgetreten.",
     "hints": {
-      "zoom": "Zoom",
-      "zoom_in": "Vergrößern",
-      "zoom_out": "Verkleinern",
-      "reset_zoom": "Zoom zurücksetzen",
-      "pan": "Verschieben",
-      "pan_up": "Nach oben",
-      "pan_down": "Nach unten",
-      "pan_left": "Nach links",
-      "pan_right": "Nach rechts",
-      "pan_fast": "Schneller verschieben",
       "navigation": "Navigation",
       "next_image": "Nächstes Bild",
       "previous_image": "Vorheriges Bild",

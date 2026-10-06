@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { backupFileName } from "./backup_download";
+import { backupFileName, isBackupDownloadSupported, startBackupDownload } from "./backup_download";
 
 // What the suggested name itself looks like is settled in commons, which every platform shares;
 // this is about the file that name becomes.
@@ -26,5 +26,48 @@ describe("naming a backup file", () => {
         // A Windows device name is not a file there, whatever it is called afterwards.
         expect(backupFileName("NUL")).toMatch(dated);
         expect(backupFileName("com1")).toMatch(dated);
+    });
+});
+
+describe("taking the backup", () => {
+    const realWindow = window as unknown as { standaloneApi?: unknown };
+
+    afterEach(() => {
+        delete realWindow.standaloneApi;
+    });
+
+    it("hands the backup to the device where one saves it, and to the browser otherwise", async () => {
+        const downloadDatabase = vi.fn(async () => ({ status: "done" as const }));
+        const saveDatabase = vi.fn(async () => ({
+            status: "done" as const,
+            location: "/documents/Trilium/b.tnbackup"
+        }));
+        const onProgress = vi.fn();
+
+        realWindow.standaloneApi = { backup: { downloadDatabase } };
+        expect(await startBackupDownload("b.tnbackup", "pw", onProgress)).toEqual({ status: "done" });
+        expect(downloadDatabase).toHaveBeenCalledWith("b.tnbackup", "pw", onProgress);
+
+        // The mobile shell has no download manager, so it writes the file itself and says where.
+        realWindow.standaloneApi = { backup: { downloadDatabase, saveDatabase } };
+        expect(await startBackupDownload("b.tnbackup", "pw", onProgress)).toEqual({
+            status: "done",
+            location: "/documents/Trilium/b.tnbackup"
+        });
+        expect(saveDatabase).toHaveBeenCalledWith("b.tnbackup", "pw", onProgress);
+        expect(downloadDatabase).toHaveBeenCalledTimes(1);
+    });
+
+    it("passes no passphrase at all for an empty one, and fails where nothing backs up this way", async () => {
+        const downloadDatabase = vi.fn(async () => ({ status: "done" as const }));
+        realWindow.standaloneApi = { backup: { downloadDatabase } };
+
+        await startBackupDownload("b.tnbackup", "");
+        // An empty string would be a passphrase, and would lock the container with it.
+        expect(downloadDatabase).toHaveBeenCalledWith("b.tnbackup", undefined, undefined);
+
+        delete realWindow.standaloneApi;
+        expect(isBackupDownloadSupported()).toBe(false);
+        expect(await startBackupDownload("b.tnbackup")).toMatchObject({ status: "failed" });
     });
 });

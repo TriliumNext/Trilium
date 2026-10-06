@@ -24,6 +24,9 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes ایک مفت اور اوپن سورس، کراس پلیٹ فارم، درجہ بندی پر مبنی نوٹ لینے
 کی ایپلیکیشن ہے جو بڑے ذاتی علم کے ذخائر بنانے پر توجہ مرکوز کرتی ہے۔
 
+Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
+Notes", with one `l`.
+
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ ڈاؤنلوڈ

@@ -4,10 +4,10 @@ Trilium never used Karma/Mocha/Sinon — the plugin tests are Vitest from the st
 migration to do. This reference collects the Trilium-specific conventions and traps when writing
 CKEditor 5 plugin tests.
 
-## The environment: WebdriverIO browser mode
+## The environment: Playwright browser mode
 
-`packages/ckeditor5` runs its tests in **real headless Chrome** via
-`@vitest/browser-webdriverio`, so layout, `getBoundingClientRect()`, `elementFromPoint()` and
+`packages/ckeditor5` runs its tests in **real headless Chromium** via
+`@vitest/browser-playwright`, so layout, `getBoundingClientRect()`, `elementFromPoint()` and
 pointer events all behave as they do in a browser. Both gate `src/**` at 100% coverage.
 
 Trilium used to run some plugins on happy-dom. Nothing does now, but the difference matters when

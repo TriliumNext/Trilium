@@ -1,0 +1,36 @@
+name: "Upload a Cloudflare Pages preview"
+description: "Uploads a built directory and its pull request number for the 'Deploy previews' workflow to publish. A pull_request run started from a fork receives neither secrets nor repository variables, so it cannot deploy the preview itself."
+inputs:
+  artifact_name:
+    description: "Artifact name the preview workflow downloads; must match the caller job in deploy-previews.yml."
+    required: true
+  deploy_dir:
+    description: "The directory to publish as the preview."
+    required: true
+runs:
+  using: composite
+  steps:
+    # github.event.workflow_run.pull_requests is empty for a fork's pull request,
+    # so the number travels with the build instead.
+    - name: Record the pull request number
+      shell: bash
+      run: |
+        mkdir -p "${RUNNER_TEMP}/preview-meta"
+        echo "${PR_NUMBER}" > "${RUNNER_TEMP}/preview-meta/pr-number"
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+
+    - name: Upload the built site
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.deploy_dir }}
+        retention-days: 1
+        include-hidden-files: true
+
+    - name: Upload the preview metadata
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact_name }}-meta
+        path: ${{ runner.temp }}/preview-meta
+        retention-days: 1

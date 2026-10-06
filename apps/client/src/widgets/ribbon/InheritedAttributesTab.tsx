@@ -1,6 +1,6 @@
 import "./InheritedAttributesTab.css";
 
-import { createPortal } from "preact/compat";
+import { createPortal } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import FAttribute from "../../entities/fattribute";

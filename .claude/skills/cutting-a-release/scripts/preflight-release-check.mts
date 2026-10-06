@@ -112,7 +112,21 @@ function main(): void {
         }
     }
 
-    // 2. The publish step hard-requires the release-notes file at the DOUBLED path.
+    // 2. The newest <release> is the version Flathub displays, and the manifest installs
+    //    the metainfo from the tagged checkout, so a stale entry ships as-is.
+    const metainfoRel = join("apps", "desktop", "flatpak", "org.triliumnotes.Trilium.metainfo.xml");
+    const metainfo = existsSync(join(root, metainfoRel))
+        ? readFileSync(join(root, metainfoRel), "utf-8") : "";
+    const newest = /<release version="([^"]+)"/.exec(metainfo)?.[1];
+    if (newest === expectedVersion) {
+        console.log(`[ OK ] ${metainfoRel} newest <release> = ${newest}  (CI gate does NOT check this)`);
+    } else {
+        failures.push(`${metainfoRel}: newest <release> is ${newest ?? "absent"}, expected ${expectedVersion}`);
+        console.log(`[FAIL] ${metainfoRel} newest <release> = ${newest ?? "absent"}, expected `
+            + `${expectedVersion} — run pnpm chore:update-version (CI gate does NOT check this)`);
+    }
+
+    // 3. The publish step hard-requires the release-notes file at the DOUBLED path.
     const notesRel = join("docs", "Release Notes", "Release Notes", `${tag}.md`);
     if (existsSync(join(root, notesRel))) {
         console.log(`[ OK ] ${notesRel} exists`);
@@ -121,7 +135,7 @@ function main(): void {
         console.log(`[FAIL] ${notesRel} — softprops/action-gh-release will ENOENT (release.yml:155)`);
     }
 
-    // 3. rc/beta labeling — release.yml:159-160 substring-matches the ref.
+    // 4. rc/beta labeling — release.yml:159-160 substring-matches the ref.
     if (tag.includes("rc")) {
         console.log(`[INFO] tag contains "rc" -> prerelease=true, make_latest=false (intended for a release candidate)`);
     } else if (/beta|alpha|dev|test/i.test(tag)) {

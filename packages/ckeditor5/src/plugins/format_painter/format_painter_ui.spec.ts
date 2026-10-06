@@ -1,4 +1,4 @@
-import { userEvent } from "vitest/browser";
+import { cdp, userEvent } from "vitest/browser";
 import {
     Bold,
     type ButtonView,
@@ -157,8 +157,10 @@ describe("FormatPainterUI", () => {
             if (!(second instanceof HTMLElement) || !(third instanceof HTMLElement)) {
                 throw new Error("target paragraphs are not attached");
             }
-            // A real pointer press, move and release — i.e. a native text drag-select.
-            await userEvent.dragAndDrop(second, third);
+            // A real pointer press, move and release — i.e. a native text drag-select. Driven over
+            // CDP because `userEvent.dragAndDrop` turns on Playwright's drag interception, which
+            // reports a drag intent to the page instead of selecting any text.
+            await dragSelect(second, third);
 
             const selection = editor.model.document.selection;
             expect(selection.isCollapsed).toBe(false);
@@ -208,3 +210,21 @@ describe("FormatPainterUI", () => {
         });
     });
 });
+
+/**
+ * Presses at the start of `from`, drags to the middle of `to` and releases, the way a user selects
+ * text across two elements.
+ *
+ * `CDPSession` carries no methods of its own, so the one command this needs is named here.
+ */
+async function dragSelect(from: Element, to: Element) {
+    const session = cdp() as { send(method: string, params: Record<string, unknown>): Promise<unknown> };
+    const start = from.getBoundingClientRect();
+    const end = to.getBoundingClientRect();
+    const press = { x: start.left + 2, y: start.top + start.height / 2 };
+    const release = { x: end.left + end.width / 2, y: end.top + end.height / 2 };
+
+    await session.send("Input.dispatchMouseEvent", { type: "mousePressed", button: "left", buttons: 1, clickCount: 1, ...press });
+    await session.send("Input.dispatchMouseEvent", { type: "mouseMoved", button: "left", buttons: 1, ...release });
+    await session.send("Input.dispatchMouseEvent", { type: "mouseReleased", button: "left", buttons: 0, clickCount: 1, ...release });
+}

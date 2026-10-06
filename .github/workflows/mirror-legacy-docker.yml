@@ -1,0 +1,74 @@
+name: Mirror legacy Docker images
+
+# Copies a release image to the pre-rename Docker Hub repositories, so installs that still
+# pull triliumnext/notes or zadam/trilium keep receiving updates.
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Tag of ghcr.io/triliumnext/trilium to copy"
+        default: "stable"
+      tags:
+        description: "Space-separated tags to write; empty writes each repository's release tags"
+        default: ""
+      target:
+        description: "Repositories to write"
+        type: choice
+        options:
+          - all
+          - notes
+          - zadam
+        default: all
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_IMAGE: ghcr.io/triliumnext/trilium
+
+jobs:
+  mirror:
+    name: Mirror to ${{ matrix.image }}
+    if: ${{ github.repository == vars.REPO_MAIN }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: notes
+            image: docker.io/triliumnext/notes
+            username_secret: DOCKERHUB_USERNAME
+            token_secret: DOCKERHUB_TOKEN
+            release_tags: "stable latest"
+          # The version tags and 0.63-latest stay on 0.63, so only installs tracking latest move.
+          - name: zadam
+            image: docker.io/zadam/trilium
+            username: zadam
+            token_secret: ZADAM_DOCKERHUB_TOKEN
+            release_tags: "latest"
+    steps:
+      - name: Set up crane
+        if: ${{ !inputs.target || inputs.target == 'all' || inputs.target == matrix.name }}
+        uses: imjasonh/setup-crane@feee3b6bb0d4c68370f256a4502498c9227e5c6b # v0.7
+
+      - name: Login to DockerHub
+        if: ${{ !inputs.target || inputs.target == 'all' || inputs.target == matrix.name }}
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: docker.io
+          username: ${{ matrix.username || secrets[matrix.username_secret] }}
+          password: ${{ secrets[matrix.token_secret] }}
+
+      - name: Copy image
+        if: ${{ !inputs.target || inputs.target == 'all' || inputs.target == matrix.name }}
+        env:
+          SOURCE_TAG: ${{ inputs.source || 'stable' }}
+          TARGET_IMAGE: ${{ matrix.image }}
+          TARGET_TAGS: ${{ inputs.tags || matrix.release_tags }}
+        run: |
+          for TAG in ${TARGET_TAGS}; do
+            echo "Copying ${SOURCE_IMAGE}:${SOURCE_TAG} -> ${TARGET_IMAGE}:${TAG}"
+            crane copy "${SOURCE_IMAGE}:${SOURCE_TAG}" "${TARGET_IMAGE}:${TAG}"
+            crane manifest "${TARGET_IMAGE}:${TAG}" > /dev/null
+          done

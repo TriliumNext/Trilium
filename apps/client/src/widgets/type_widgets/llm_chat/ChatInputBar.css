@@ -64,6 +64,15 @@
     width: 56px;
 }
 
+.llm-chat-attachment-preview-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+    cursor: zoom-in;
+}
+
 .llm-chat-attachment-chip-image img {
     width: 100%;
     height: 100%;
@@ -124,6 +133,26 @@
     cursor: not-allowed;
 }
 
+.llm-chat-attachment-chip-unreadable {
+    border-color: var(--admonition-warning-accent-color);
+
+    & > :first-child {
+        opacity: 0.45;
+    }
+}
+
+.llm-chat-attachment-unreadable-icon {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    border-radius: 50%;
+    background: var(--accented-background-color);
+    color: var(--admonition-warning-accent-color);
+    font-size: 1rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
 /*
  * The editor. Stripped of its own chrome so the island owns the border, the
  * background and the focus ring. The `!important`s override CKEditor's bundled
@@ -174,9 +203,24 @@
 
 /* Control row, inside the island */
 .llm-chat-options {
+    container: llm-chat-options / inline-size;
     display: flex;
     align-items: center;
     gap: 0.25rem;
+}
+
+/* Compact: the model and reasoning effort pickers show only their icon; the tooltips carry the
+   model name and the level. The label collapses to no width rather than `display: none`, so its
+   line of text still sets the button's height. */
+@container llm-chat-options (width < 23rem) {
+    .llm-chat-input-form .llm-chat-model-select .llm-chat-model-select-name:not(.llm-chat-model-placeholder) {
+        width: 0;
+    }
+
+    .llm-chat-input-form .llm-chat-model-select .llm-chat-model-icon,
+    .llm-chat-input-form .llm-chat-model-select .llm-chat-reasoning-effort-icon {
+        margin-inline-end: 0;
+    }
 }
 
 /* Model selector */
@@ -204,10 +248,6 @@
     gap: 0.0625rem;
     margin-inline-end: auto;
     flex-shrink: 0;
-}
-
-.llm-chat-capability-unavailable {
-    display: inline-flex;
 }
 
 .llm-chat-input-form .llm-chat-capability.icon-action {
@@ -267,21 +307,10 @@
 }
 
 /* Scoped to the dropdown wrapper (not `.llm-chat-model-selector`) so these menu styles
-   survive `portalToBody`, which reparents the menu to <body> under this same class. */
+   reach the menu, which is portaled to <body> under this same class. */
 .llm-chat-model-dropdown small {
     margin-left: 0.5em;
     color: var(--muted-text-color);
-}
-
-.llm-chat-model-dropdown .dropdown-menu {
-    max-height: 80vh;
-    overflow: auto;
-}
-
-/* Position legacy models submenu to open upward */
-.llm-chat-model-dropdown .dropdown-submenu .dropdown-menu {
-    bottom: 0;
-    top: auto;
 }
 
 /*

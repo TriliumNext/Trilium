@@ -1,11 +1,15 @@
-import { IconRegistry } from "@triliumnext/commons";
+import { iconFontFaceOverrides, type IconFontMetrics, IconRegistry } from "@triliumnext/commons";
 
+import becca from "../becca/becca";
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
+import textEditorManifest from "./icon_pack_text_editor.json" with { type: "json" };
 import { getLog } from "./log";
 import search from "./search/services/search";
-import { escapeCssString, safeExtractMessageAndStackFromError } from "./utils/index";
+import {
+    decodeCssEscapes, escapeCssString, isDev, safeExtractMessageAndStackFromError
+} from "./utils/index";
 
 const PREFERRED_MIME_TYPE = [
     "font/woff2",
@@ -38,6 +42,12 @@ export interface IconPackManifest {
         glyph: string,
         terms: string[];
     }>;
+    /**
+     * Where the pack draws its glyphs, so that a browser centres them on the box they were drawn in
+     * rather than on the one the font's platform metrics describe. Packs built before this was
+     * measured carry none, and are left to the browser.
+     */
+    metrics?: IconFontMetrics;
 }
 
 export interface ProcessedIconPack {
@@ -50,28 +60,52 @@ export interface ProcessedIconPack {
     icon: string;
     /** Indicates whether this icon pack is built-in (shipped with Trilium) or user-defined. */
     builtin: boolean;
+    /**
+     * Whether the pack exists for Trilium's own documentation. Its icons render everywhere, but
+     * are offered for picking only in development, where the documentation is written.
+     */
+    internal?: boolean;
 }
 
 export function getIconPacks() {
-    const defaultIconPack: ProcessedIconPack = {
-        prefix: "bx",
-        manifest: boxiconsManifest,
-        manifestNoteId: "boxicons",
-        fontMime: "font/woff2",
-        fontAttachmentId: "boxicons",
-        title: "Boxicons",
-        icon: "bx bx-package",
-        builtin: true
-    };
+    const builtinIconPacks: ProcessedIconPack[] = [
+        {
+            prefix: "bx",
+            manifest: boxiconsManifest,
+            manifestNoteId: "boxicons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "boxicons",
+            title: "Boxicons",
+            icon: "bx bx-package",
+            builtin: true
+        },
+        {
+            // The icons of the text editor's toolbar, built by `apps/icon-pack-builder`.
+            prefix: "cke",
+            manifest: textEditorManifest,
+            manifestNoteId: "text-editor-icons",
+            fontMime: "font/woff2",
+            fontAttachmentId: "text-editor-icons",
+            title: "Text Editor Icons",
+            icon: "cke cke-pilcrow",
+            builtin: true,
+            internal: true
+        }
+    ];
 
-    const usedPrefixes = new Set<string>([defaultIconPack.prefix]);
+    // Custom packs are notes, which a search cannot find before becca is loaded (e.g. during setup).
+    if (!becca.loaded) {
+        return builtinIconPacks;
+    }
+
+    const usedPrefixes = new Set<string>(builtinIconPacks.map((iconPack) => iconPack.prefix));
     const customIconPacks = search.searchNotes("#iconPack")
         .filter(note => !note.isProtected)
         .map(iconPackNote => processIconPack(iconPackNote))
         .filter(iconPack => {
             if (!iconPack) return false;
 
-            if (iconPack.prefix === "bx" || usedPrefixes.has(iconPack.prefix)) {
+            if (usedPrefixes.has(iconPack.prefix)) {
                 getLog().info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
                 return false;
             }
@@ -80,7 +114,7 @@ export function getIconPacks() {
         }) as ProcessedIconPack[];
 
     return [
-        defaultIconPack,
+        ...builtinIconPacks,
         ...customIconPacks
     ];
 }
@@ -88,7 +122,9 @@ export function getIconPacks() {
 export function generateIconRegistry(iconPacks: ProcessedIconPack[]): IconRegistry {
     const sources: IconRegistry["sources"] = [];
 
-    for (const { manifest, title, icon, prefix } of iconPacks) {
+    for (const { manifest, title, icon, prefix, internal } of iconPacks) {
+        if (internal && !isDev()) continue;
+
         const icons: IconRegistry["sources"][number]["icons"] = Object.entries(manifest.icons)
             .map(( [id, { terms }] ) => {
                 if (!id || !terms) return null;
@@ -160,6 +196,30 @@ export function determineBestFontAttachment(iconPackNote: BNote) {
     return null;
 }
 
+/**
+ * The transforms an icon can carry in a note's content, written by the text editor's icon toolbar
+ * as a class. Boxicons names them, but the rules are not scoped to a pack, so they apply to any
+ * icon — the application's own `bx bx-sidebar bx-flip-horizontal` is one.
+ */
+const ICON_TRANSFORM_RULES: Record<string, string> = {
+    "bx-rotate-90": "rotate(90deg)",
+    "bx-rotate-180": "rotate(180deg)",
+    "bx-rotate-270": "rotate(270deg)",
+    "bx-flip-horizontal": "scaleX(-1)",
+    "bx-flip-vertical": "scaleY(-1)"
+};
+
+/**
+ * Generates the CSS for {@link ICON_TRANSFORM_RULES}. `boxicons-compat.css` carries these rules in
+ * the application, which a shared or exported page does not load: there they come from here, beside
+ * the icon packs' own CSS.
+ */
+export function generateIconTransformCss(): string {
+    return Object.entries(ICON_TRANSFORM_RULES)
+        .map(([ className, transform ]) => `.${className} { transform: ${transform}; }`)
+        .join("\n");
+}
+
 export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, prefix }: ProcessedIconPack, fontUrl: string) {
     try {
         const iconDeclarations: string[] = [];
@@ -169,17 +229,22 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
                 continue;
             }
 
-            const glyph = escapeCssString(String(mapping.glyph ?? ""));
+            const glyph = escapeCssString(decodeCssEscapes(String(mapping.glyph ?? "")));
             iconDeclarations.push(`.${prefix}.${key}::before { content: "${glyph}"; }`);
         }
 
         const fontFamily = builtin ? fontAttachmentId : `trilium-icon-pack-${prefix}`;
+        const fontFace = [
+            `font-family: '${fontFamily}';`,
+            "font-weight: normal;",
+            "font-style: normal;",
+            `src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');`,
+            ...iconFontFaceOverrides(manifest.metrics)
+        ].join("\n                ");
+
         return `\
             @font-face {
-                font-family: '${fontFamily}';
-                font-weight: normal;
-                font-style: normal;
-                src: url('${fontUrl}') format('${MIME_TO_CSS_FORMAT_MAPPINGS[fontMime]}');
+                ${fontFace}
             }
 
             .${prefix} {

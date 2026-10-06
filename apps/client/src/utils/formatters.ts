@@ -1,3 +1,5 @@
+import { normalizeLocale } from "@triliumnext/commons";
+
 import { getLocaleById, t } from "../services/i18n";
 import options from "../services/options";
 import type { MeasurementSystem } from "./units";
@@ -182,15 +184,6 @@ function parseDate(date: string | Date | number): Date {
 
     // Invalid type
     throw new TypeError(`Invalid type for the "date" argument.`);
-}
-
-export function normalizeLocale(locale: string) {
-    locale = locale.replaceAll("_", "-");
-    switch (locale) {
-        case "cn": return "zh-CN";
-        case "tw": return "zh-TW";
-        default: return locale;
-    }
 }
 
 /**

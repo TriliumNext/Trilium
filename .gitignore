@@ -37,6 +37,7 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
 .vitest-reports
+.vitest
 __screenshots__
 .vitest-attachments
 

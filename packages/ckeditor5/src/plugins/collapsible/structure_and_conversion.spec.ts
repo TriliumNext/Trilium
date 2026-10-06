@@ -1,4 +1,4 @@
-import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
+import { _getModelData as getModelData, _setModelData as setModelData, ClassicEditor, Essentials, Heading, Paragraph, TodoList } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../../test/editor-kit.js";
@@ -42,6 +42,117 @@ describe("collapsible structure and conversion", () => {
             editor.editing.view.forceRender();
 
             expect(root.querySelector("details")?.open).toBe(false);
+        });
+    });
+
+    describe("to-do list in the body", () => {
+        let todoEditor: ClassicEditor;
+
+        /** One entry per rendered `<li>`: whether it still carries its checkbox. */
+        function checkboxes(): boolean[] {
+            todoEditor.editing.view.forceRender();
+            const items = todoEditor.editing.view.getDomRoot()?.querySelectorAll("li") ?? [];
+            return [...items].map((item) => !!item.querySelector("input[type=checkbox]"));
+        }
+
+        beforeEach(async () => {
+            todoEditor = await createTestEditor([Essentials, Paragraph, Heading, TodoList, CollapsibleEditing]);
+        });
+
+        it("keeps every checkbox as body items are added and indented", () => {
+            setModelData(
+                todoEditor.model,
+                "<details open=\"true\"><summary>T</summary>"
+                + "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"todo\">one[]</paragraph>"
+                + "</details>"
+            );
+
+            for (const label of ["two", "three", "four"]) {
+                todoEditor.execute("enter");
+                todoEditor.execute("insertText", { text: label });
+            }
+            todoEditor.execute("indentList");
+
+            expect(checkboxes()).toEqual([true, true, true, true]);
+        });
+
+        it("keeps every checkbox when an item is split at its first character", () => {
+            setModelData(
+                todoEditor.model,
+                "<details open=\"true\"><summary>T</summary>"
+                + "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"todo\">one</paragraph>"
+                + "<paragraph listIndent=\"0\" listItemId=\"b\" listType=\"todo\">[]two</paragraph>"
+                + "</details>"
+            );
+
+            // Splitting at offset 0 leaves the item's text behind an empty new item, so the
+            // reconversion has to map a position into a block whose view it just replaced.
+            todoEditor.execute("enter");
+
+            expect(checkboxes()).toEqual([true, true, true]);
+        });
+
+        it("keeps every checkbox when a neighbouring block merges into the list", () => {
+            setModelData(
+                todoEditor.model,
+                "<details open=\"true\"><summary>T</summary>"
+                + "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"todo\">one</paragraph>"
+                + "<paragraph>[]tail</paragraph><paragraph>keep</paragraph>"
+                + "</details>"
+            );
+            todoEditor.editing.view.forceRender();
+
+            todoEditor.execute("delete");
+
+            expect(checkboxes()).toEqual([true]);
+        });
+
+        it("keeps every checkbox as blocks around the list change", () => {
+            setModelData(
+                todoEditor.model,
+                "<details open=\"true\"><summary>T</summary>"
+                + "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"todo\">one</paragraph>"
+                + "<paragraph listIndent=\"0\" listItemId=\"b\" listType=\"todo\">two[]</paragraph>"
+                + "</details>"
+            );
+
+            // Leave the list, then build a heading and two paragraphs under it. None of these
+            // changes mentions the list, so nothing but the reconversion itself points at it.
+            todoEditor.execute("enter");
+            todoEditor.execute("todoList");
+            todoEditor.execute("heading", { value: "heading2" });
+            todoEditor.execute("insertText", { text: "Section" });
+            for (const label of ["first", "second"]) {
+                todoEditor.execute("enter");
+                todoEditor.execute("insertText", { text: label });
+            }
+            expect(checkboxes()).toEqual([true, true]);
+
+            todoEditor.model.change((writer) => {
+                const details = todoEditor.model.document.getRoot()?.getChild(0);
+                const last = details?.is("element") ? details.getChild(details.childCount - 1) : null;
+                if (last) {
+                    writer.remove(last);
+                }
+            });
+            expect(checkboxes()).toEqual([true, true]);
+
+            // Putting that block back reconverts the collapsible once more.
+            todoEditor.execute("undo");
+            expect(checkboxes()).toEqual([true, true]);
+        });
+
+        it("leaves a to-do list outside any collapsible alone", () => {
+            setModelData(
+                todoEditor.model,
+                "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"todo\">one[]</paragraph>"
+                + "<details><summary>T</summary><paragraph>body</paragraph></details>"
+            );
+
+            todoEditor.execute("enter");
+            todoEditor.execute("insertText", { text: "two" });
+
+            expect(checkboxes()).toEqual([true, true]);
         });
     });
 

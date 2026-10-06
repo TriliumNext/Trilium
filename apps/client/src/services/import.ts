@@ -10,7 +10,10 @@ import ws from "./ws.js";
 type BooleanLike = boolean | "true" | "false";
 
 export interface UploadFilesOptions {
-    /** Routes the upload to a specific importer (e.g. "notion"), overriding extension-based detection. */
+    /**
+     * Routes the upload to a specific importer (e.g. "notion"), overriding extension-based detection.
+     * `"auto"` instead lets the importer recognize the archive itself, which only drag-and-drop asks for.
+     */
     format?: string;
     safeImport?: BooleanLike;
     shrinkImages: BooleanLike;

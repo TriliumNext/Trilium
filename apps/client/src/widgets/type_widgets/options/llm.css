@@ -1,11 +1,19 @@
 .llm-provider-name {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.5em;
 }
 
 .llm-add-provider {
     text-align: end;
+}
+
+/* One line, cut off at the row's width; the full list is in its tooltip. */
+.llm-provider-models {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Scale the provider logo down to sit inline with the row label text. */

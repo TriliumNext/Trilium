@@ -44,8 +44,10 @@ pre.file-preview-content:not(.hljs) {
 /* base .office-preview-body / .office-preview-loading styles live in content_renderer.css.
    The unpadded wrapper is the scroll host (like .scrolling-container for text notes):
    the scrollbar hugs the split edge and the body's padding scrolls with the document.
-   The GPX preview needs the same: a file note is full-height, so nothing above scrolls for it. */
+   The GPX and font previews need the same: a file note is full-height, so nothing above scrolls
+   for them. */
 .note-detail-file:has(> .office-preview-body),
+.note-detail-file:has(> .font-preview),
 .note-detail-file:has(> .gpx-preview) {
     overflow: auto;
     padding: 0;

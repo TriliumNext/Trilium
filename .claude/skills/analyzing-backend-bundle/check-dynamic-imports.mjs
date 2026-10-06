@@ -56,8 +56,20 @@ for (const file of files) {
             console.log(`BROKEN  ${path.basename(file)} -> ${path.basename(m[2])}  wants=[${wanted}]  exports=[${[...has].slice(0, 5)}]`);
         }
     }
+    // The other spelling of the same read: `(await import("./x.mjs")).name`
+    // reaches straight into the namespace and breaks identically.
+    for (const m of src.matchAll(/\(await import\("\.\/([^"]+\.mjs)"\)\)\.([A-Za-z_$][\w$]*)/g)) {
+        const target = path.join(chunkDir, path.basename(m[1]));
+        if (!exportCache.has(target)) exportCache.set(target, exportedNames(target));
+        const has = exportCache.get(target);
+        checked++;
+        if (!has.has(m[2])) {
+            broken++;
+            console.log(`BROKEN  ${path.basename(file)} -> ${path.basename(m[1])}  wants=[${m[2]}]  exports=[${[...has].slice(0, 5)}]`);
+        }
+    }
 }
-console.log(`\n${checked} destructuring dynamic imports checked, ${broken} broken`);
+console.log(`\n${checked} dynamic import reads checked, ${broken} broken`);
 if (broken) {
     console.log("Fix: read the module object through its CJS interop, e.g.\n" +
         "  const mod = await import(\"pkg\");\n" +

@@ -20,16 +20,20 @@ import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
+import { ContentEmbedOpts } from "../widgets/dialogs/content_embed.jsx";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
-import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import { IconPickerOpts } from "../widgets/dialogs/icon_picker.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
+import type { LightboxOptions } from "../widgets/dialogs/lightbox.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
 import type { PrintPreviewData } from "../widgets/dialogs/print_preview.jsx";
 import type { NotePickerDialogOptions } from "../widgets/dialogs/note_picker.js";
+import type { ItemPickerDialogOptions } from "../widgets/dialogs/item_picker.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import type { RightPaneTabId } from "../widgets/sidebar/RightPaneTabs.jsx";
+import type { ToolCall } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import Component from "./component.js";
 import Entrypoints from "./entrypoints.js";
 import MainTreeExecutors from "./main_tree_executors.js";
@@ -151,8 +155,11 @@ export type CommandMappings = {
         isNewNote?: boolean;
     };
     showPromptDialog: PromptDialogOptions;
+    showItemPickerDialog: ItemPickerDialogOptions;
     showNotePickerDialog: NotePickerDialogOptions;
     showInfoDialog: InfoProps;
+    showLightbox: LightboxOptions;
+    showToolCallDetails: { toolCall: ToolCall };
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showDeletedNotes: CommandData & { ancestorNoteId?: string };
@@ -161,7 +168,12 @@ export type CommandMappings = {
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
     /** Opens a note in the quick-edit popup. A `viewScope` carrying an `attachmentId` opens that attachment instead of the note itself. */
-    openInPopup: CommandData & { noteIdOrPath: string; viewScope?: ViewScope; };
+    openInPopup: CommandData & {
+        noteIdOrPath: string;
+        viewScope?: ViewScope;
+        /** Offers the note type switcher while the note is still blank, as the tab layout does. */
+        showNoteTypeSwitcher?: boolean;
+    };
     /** Dismisses the quick-edit popup, for something within it that has sent the reader elsewhere. Does nothing if it isn't open. */
     closePopupEditor: CommandData;
     openInTreePopup: CommandData & { noteIdOrPath: string; hoistedNoteId: string; };
@@ -259,8 +271,9 @@ export type CommandMappings = {
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
-    showIncludeNoteDialog: CommandData & IncludeNoteOpts;
+    showContentEmbedDialog: CommandData & ContentEmbedOpts;
     showAddLinkDialog: CommandData & AddLinkOpts;
+    showIconPickerDialog: CommandData & IconPickerOpts;
     showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;
@@ -407,7 +420,7 @@ export type CommandMappings = {
     unhoist: CommandData;
     reloadFrontendApp: CommandData;
     openDevTools: CommandData;
-    findInText: CommandData;
+    findInText: CommandData & { searchTerms?: string[] };
     toggleLeftPane: CommandData;
     toggleFullscreen: CommandData;
     zoomOut: CommandData;
@@ -459,7 +472,7 @@ type EventMappings = {
     notesReloaded: {
         noteIds: string[];
     };
-    refreshIncludedNote: {
+    refreshEmbeddedNote: {
         noteId: string;
     };
     apiLogMessages: {
@@ -563,6 +576,8 @@ type EventMappings = {
     geoMapCreateChildNote: {
         ntxId: string | null | undefined; // TODO: deduplicate ntxId
     };
+    /** Opens the board's properties dialog, which only the board itself can show. */
+    showBoardProperties: { ntxId: string | null | undefined; };
     tabReorder: {
         ntxIdsInOrder: string[];
     };
@@ -581,7 +596,7 @@ type EventMappings = {
     relationMapResetZoomOut: { ntxId: string | null | undefined };
     activeNoteChanged: {ntxId: string | null | undefined};
     showAddLinkDialog: AddLinkOpts;
-    showIncludeDialog: IncludeNoteOpts;
+    showContentEmbedDialog: ContentEmbedOpts;
     openBulkActionsDialog: {
         selectedOrActiveNoteIds: string[];
     };

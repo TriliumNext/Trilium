@@ -104,7 +104,7 @@
 }
 
 /* The search results list */
-.note-detail-empty span.aa-dropdown-menu {
+.note-detail-empty menu.note-suggestion-list {
     margin-top: 1em;
     border: unset;
 }

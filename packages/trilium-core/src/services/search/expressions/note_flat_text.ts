@@ -3,7 +3,14 @@ import becca from "../../../becca/becca.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import NoteSet from "../note_set.js";
 import type SearchContext from "../search_context.js";
-import { fuzzyMatchWordWithResult, normalizeSearchText } from "../utils/text_utils.js";
+import {
+    containsAnyChunk,
+    fuzzyMatchInWords,
+    fuzzyMatchWordWithResult,
+    getAutoMaxEditDistance,
+    normalizeSearchText,
+    splitIntoWords
+} from "../utils/text_utils.js";
 import Expression from "./expression.js";
 
 class NoteFlatTextExp extends Expression {
@@ -12,8 +19,10 @@ class NoteFlatTextExp extends Expression {
     constructor(tokens: string[]) {
         super();
 
-        // Normalize tokens using centralized normalization function
-        this.tokens = tokens.map(token => normalizeSearchText(token));
+        // Every token is matched against each note on its own, so a repeat only repeats the scan.
+        // Deduplicating after normalization also folds tokens that differ solely in case or
+        // diacritics. Order is kept, so the tokens still read as the user typed them.
+        this.tokens = [ ...new Set(tokens.map(token => normalizeSearchText(token))) ];
     }
 
     execute(inputNoteSet: NoteSet, executionContext: any, searchContext: SearchContext) {
@@ -25,7 +34,10 @@ class NoteFlatTextExp extends Expression {
             const key = `${noteId}-${parentNoteId}`;
             let cached = titleCache.get(key);
             if (cached === undefined) {
-                cached = normalizeSearchText(becca_service.getNoteTitle(noteId, parentNoteId));
+                const note = becca.notes[noteId];
+                cached = note
+                    ? normalizedTitleUnder(note, parentNoteId, becca.getBranchFromChildAndParent(noteId, parentNoteId)?.prefix)
+                    : normalizeSearchText(becca_service.getNoteTitle(noteId, parentNoteId));
                 titleCache.set(key, cached);
             }
             return cached;
@@ -144,8 +156,14 @@ class NoteFlatTextExp extends Expression {
                 }
             }
 
-            for (const parentNote of note.parents) {
-                const title = normalizeSearchText(becca_service.getNoteTitle(note.noteId, parentNote.noteId));
+            for (const parentBranch of note.parentBranches) {
+                const parentNote = parentBranch.parentNote;
+
+                if (!parentNote) {
+                    continue;
+                }
+
+                const title = normalizedTitleUnder(note, parentNote.noteId, parentBranch.prefix);
                 const foundTokens = foundAttrTokens.slice();
 
                 for (const token of this.tokens) {
@@ -202,8 +220,32 @@ class NoteFlatTextExp extends Expression {
             }
 
             const flatText = flatTexts[i];
+            // Split on the first token that gets as far as the word scan, then reuse it for the
+            // rest. Splitting per token instead repeats work already done for this note: across
+            // a 12-token query over a 22k-note database, over half the splits are repeats.
+            let words: string[] | undefined;
+
             for (const token of this.tokens) {
-                if (this.smartMatch(flatText, token, searchContext)) {
+                if (flatText.includes(token)) {
+                    candidateNotes.push(note);
+                    break;
+                }
+
+                if (!searchContext?.enableFuzzyMatching) {
+                    continue;
+                }
+
+                const maxDistance = getAutoMaxEditDistance(token.length);
+
+                if (maxDistance <= 0 || !containsAnyChunk(flatText, token, maxDistance)) {
+                    continue;
+                }
+
+                words ??= splitIntoWords(flatText);
+                const matchedWord = fuzzyMatchInWords(token, words, maxDistance);
+
+                if (matchedWord) {
+                    rememberFuzzyMatch(searchContext, matchedWord);
                     candidateNotes.push(note);
                     break;
                 }
@@ -226,20 +268,37 @@ class NoteFlatTextExp extends Expression {
             return true;
         }
 
-        // Fuzzy fallback only if enabled and for tokens >= 4 characters
-        if (searchContext?.enableFuzzyMatching && token.length >= 4) {
+        // Fuzzy fallback only if enabled and the token is long enough to be allowed any edit
+        // distance under the length-scaled rule, which starts at four characters.
+        if (searchContext?.enableFuzzyMatching && getAutoMaxEditDistance(token.length) > 0) {
             const matchedWord = fuzzyMatchWordWithResult(token, text);
             if (matchedWord) {
-                // Track the fuzzy matched word for highlighting
-                if (!searchContext.highlightedTokens.includes(matchedWord)) {
-                    searchContext.highlightedTokens.push(matchedWord);
-                }
+                rememberFuzzyMatch(searchContext, matchedWord);
                 return true;
             }
         }
 
         return false;
     }
+}
+
+/** Keeps a fuzzily matched word for highlighting, so a result can show why it matched. */
+function rememberFuzzyMatch(searchContext: SearchContext | undefined, word: string) {
+    if (searchContext && !searchContext.highlightedTokens.includes(word)) {
+        searchContext.highlightedTokens.push(word);
+    }
+}
+
+/**
+ * The normalized title a note carries under one parent. A branch without a prefix shows the note's
+ * own title, whose normalized form the note caches, so only a prefixed branch builds a new string.
+ */
+function normalizedTitleUnder(note: BNote, parentNoteId: string, prefix: string | null | undefined): string {
+    if (!prefix && note.isContentAvailable()) {
+        return note.getSearchableTitle().normalized;
+    }
+
+    return normalizeSearchText(becca_service.getNoteTitle(note.noteId, parentNoteId));
 }
 
 export default NoteFlatTextExp;

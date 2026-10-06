@@ -1,5 +1,5 @@
 import { isSvgMime } from "@triliumnext/commons";
-import { Response } from "express";
+import { Response } from "../http_interface";
 import becca from "../becca/becca";
 import BNote from "../becca/entities/bnote";
 import protected_session from "../services/protected_session";
