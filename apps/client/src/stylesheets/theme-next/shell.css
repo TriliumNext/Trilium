@@ -138,23 +138,6 @@ body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.
 }
 
 /*
- * Zen mode
- */
-
-@keyframes zen-formatting-toolbar-entrance {
-    from {
-        transform: translateY(200%);
-    } to {
-        transform: translateY(0);
-    }
-}
-
-body.zen .note-split .ribbon-container .classic-toolbar-widget {
-    position: relative;
-    animation: zen-formatting-toolbar-entrance 300ms ease-out;
-}
-
-/*
  * Gutter
  */
 

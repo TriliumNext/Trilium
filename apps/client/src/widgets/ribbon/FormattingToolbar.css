@@ -4,6 +4,12 @@
     --ck-color-button-default-disabled-background: transparent;
     min-height: 39px;
     flex-shrink: 0;
+    transition: opacity 250ms ease-in;
+
+    &.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+    }
 }
 
 .classic-toolbar-widget .ck.ck-toolbar {
@@ -12,13 +18,4 @@
 
 .classic-toolbar-widget .ck.ck-button.ck-disabled {
     opacity: 0.3;
-}
-
-body.experimental-feature-new-layout .classic-toolbar-widget {
-    transition: opacity 250ms ease-in;
-
-    &.disabled {
-        opacity: 0.3;
-        pointer-events: none;
-    }
 }

@@ -115,7 +115,7 @@ export default class DesktopLayout {
                                     .css("height", "40px")
                                     .css("align-items", "center")
                             )
-                            .optChild(isNewLayout, <FixedFormattingToolbar />)
+                            .child(<FixedFormattingToolbar />)
                             .child(
                                 new FlexContainer("row")
                                     .filling()

@@ -10,14 +10,12 @@ import { useActiveNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvent
 import { TabConfiguration, TabContext } from "./ribbon-interface";
 
 /**
- * Handles the editing toolbar when the CKEditor is in decoupled mode.
+ * Handles the editing toolbar of a single note context when the CKEditor is in decoupled mode, as
+ * used by the quick edit popup. The main window uses `FixedFormattingToolbar` instead.
  *
  * This toolbar is only enabled if the user has selected the classic CKEditor.
  *
- * The ribbon item is active by default for text notes, as long as they are not in read-only mode.
- *
- * ! The toolbar is not only used in the ribbon, but also in the quick edit feature.
- * * The mobile toolbar is handled separately (see `MobileEditorToolbar`).
+ * The mobile toolbar is handled separately (see `MobileEditorToolbar`).
  */
 export default function FormattingToolbar({ hidden, ntxId }: TabContext) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -43,7 +41,7 @@ export default function FormattingToolbar({ hidden, ntxId }: TabContext) {
     );
 };
 
-/** Visibility predicate for the formatting toolbar, shared by the ribbon tab definition and the standalone usages (e.g. the popup editor). */
+/** Visibility predicate for the quick edit popup's formatting toolbar. */
 export const showFormattingToolbar: TabConfiguration["show"] = async ({ note, noteContext }) =>
     note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
     && options.get("textNoteEditorType") === "ckeditor-classic"

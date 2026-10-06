@@ -3,7 +3,6 @@ import options from "../../services/options";
 import BasicPropertiesTab from "./BasicPropertiesTab";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
-import FormattingToolbar, { showFormattingToolbar } from "./FormattingToolbar";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import InheritedAttributesTab from "./InheritedAttributesTab";
 import NoteInfoTab from "./NoteInfoTab";
@@ -17,15 +16,6 @@ import SearchDefinitionTab from "./SearchDefinitionTab";
 import SimilarNotesTab from "./SimilarNotesTab";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
-    {
-        title: t("classic_editor_toolbar.title"),
-        icon: "bx bx-text",
-        show: showFormattingToolbar,
-        toggleCommand: "toggleRibbonTabClassicEditor",
-        content: FormattingToolbar,
-        activate: ({ note }) => !options.is("editedNotesOpenInRibbon") || !note?.hasOwnedLabel("dateNote"),
-        stayInDom: true
-    },
     {
         title: ({ note }) => note?.isTriliumSqlite() ? t("script_executor.query") : t("script_executor.script"),
         icon: "bx bx-play",
