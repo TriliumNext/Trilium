@@ -230,6 +230,15 @@ describe("TextEmbed", () => {
             .toBe("<div><p>Newer</p></div>");
     });
 
+    it("shows a save that landed before it listened for saves", async () => {
+        const note = buildTextNote("late");
+        note.getBlob = async () => buildBlob("<p>Saved meanwhile</p>");
+        const { figure } = await mount(note, buildEditor(), { content: "<p>Read before</p>" });
+        await settle();
+        expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+            .toBe("<div><p>Saved meanwhile</p></div>");
+    });
+
     it("lets another include of the note follow its saves while an editor closes", async () => {
         const note = buildTextNote("shared");
         let finishSave = () => {};
@@ -302,6 +311,8 @@ interface MountOptions {
     /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
     hasFixedToolbar?: boolean;
     renderPreview?: (content: string) => Promise<HTMLElement>;
+    /** The content that the host read for the embed, instead of the content of the note. */
+    content?: string;
 }
 
 /** Renders `TextEmbed` in the markup of an embed, as the host does. */
@@ -329,7 +340,7 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
     document.body.append(hostRoot);
     figures.push(figure);
 
-    const content = (await note.getBlob())?.content ?? "";
+    const content = options.content ?? (await note.getBlob())?.content ?? "";
     await act(async () => {
         render(
             <ParentComponent.Provider value={appContext}>

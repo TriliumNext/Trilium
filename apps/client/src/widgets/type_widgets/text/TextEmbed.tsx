@@ -77,6 +77,10 @@ function useShownContent(note: FNote, initialContent: string) {
         }
     }, [ note ]);
 
+    // Reads once on mount too, for a save that landed after the host read the content.
+    useEffect(() => {
+        void refresh();
+    }, [ refresh ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.isNoteContentReloaded(note.noteId)) {
             void refresh();
