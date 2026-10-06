@@ -1,4 +1,4 @@
-import { cls } from "@triliumnext/core";
+import { cls, NotFoundError } from "@triliumnext/core";
 import express from "express";
 import { existsSync } from "fs";
 import request from "supertest";
@@ -228,5 +228,34 @@ describe("internalRoute CLS wiring", () => {
         expect(closeProbe.error).toBeUndefined();
         expect(closeProbe.componentId).toBe("comp-close");
         expect(closeProbe.wrote).toBe("written");
+    });
+});
+
+describe("internalRoute without a result handler", () => {
+    let app: express.Application;
+
+    beforeAll(() => {
+        asyncRoute("get", "/no-handler/reject", [], async () => {
+            throw new Error("boom");
+        }, null);
+
+        asyncRoute("get", "/no-handler/reject-http", [], async () => {
+            throw new NotFoundError("missing");
+        }, null);
+
+        app = express();
+        app.use(router);
+    });
+
+    it("answers a rejected async handler with a 500 instead of leaving the request open", async () => {
+        const res = await request(app).get("/no-handler/reject").timeout(2000).expect(500);
+
+        expect(res.body).toEqual({ message: "boom" });
+    });
+
+    it("keeps the status of a rejected HttpError", async () => {
+        const res = await request(app).get("/no-handler/reject-http").timeout(2000).expect(404);
+
+        expect(res.body).toEqual({ message: "missing" });
     });
 });
