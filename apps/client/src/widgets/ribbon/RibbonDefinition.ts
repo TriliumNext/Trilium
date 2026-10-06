@@ -3,7 +3,6 @@ import options from "../../services/options";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
-import NoteInfoTab from "./NoteInfoTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
 import ScriptTab from "./ScriptTab";
@@ -56,11 +55,4 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         toggleCommand: "toggleRibbonTabImageProperties",
         activate: true,
     },
-    {
-        title: t("note_info_widget.title"),
-        icon: "bx bx-info-circle",
-        show: ({ note }) => !!note,
-        content: NoteInfoTab,
-        toggleCommand: "toggleRibbonTabNoteInfo"
-    }
 ];

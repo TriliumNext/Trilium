@@ -28,7 +28,7 @@ vi.mock("../react/hooks", () => ({
 import type FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
-import { useNoteMetadata } from "./NoteInfoTab";
+import { useNoteMetadata } from "./note_metadata";
 
 /** A reload touching this note, which is what a deletion looks like to the hook. */
 const NOTE_RELOADED = { loadResults: { isNoteReloaded: () => true, isNoteContentReloaded: () => false } };

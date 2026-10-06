@@ -15,7 +15,7 @@ import NoteIcon from "../note_icon";
 import NoteTitleWidget from "../note_title";
 import { useNoteContext, useNoteProperty, useStaticTooltip } from "../react/hooks";
 import { joinElements } from "../react/react_utils";
-import { useNoteMetadata } from "../ribbon/NoteInfoTab";
+import { useNoteMetadata } from "./note_metadata";
 
 export default function InlineTitle() {
     const { note, parentComponent, viewScope } = useNoteContext();

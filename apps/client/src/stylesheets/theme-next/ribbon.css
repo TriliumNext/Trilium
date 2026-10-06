@@ -42,7 +42,6 @@ div.promoted-attributes-container {
  */
 
  /* The property label */
-.note-info-item > span:first-child,
 .file-properties-widget .file-table th,
 .image-properties > div:first-child > span > strong {
     opacity: 0.65;
@@ -137,13 +136,4 @@ div.promoted-attributes-container {
 :root .similar-notes-widget a:hover {
     color: var(--cmd-button-hover-text-color);
     background: var(--cmd-button-hover-background-color);
-}
-
-/*
- * Note info
- */
-
-/* Narrow width layout */
-.note-info-widget {
-    container: info-section / inline-size;
 }
