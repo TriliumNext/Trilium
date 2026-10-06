@@ -71,6 +71,17 @@ describe("Login Route test", () => {
 
     });
 
+    it("returns a 401 status, when login is attempted without a password (#11919)", async () => {
+
+        // Used to hang forever: the missing password made scrypt throw inside the
+        // async handler, and the rejection was never consumed, so no response was sent.
+        await supertest(app)
+            .post("/login")
+            .send({})
+            .expect(401);
+
+    });
+
     describe("login stays reachable with redirectBareDomain enabled (#10552)", () => {
         // The fixture DB contains a #shareRoot note (y0AFOwgOgkWO), so enabling
         // redirectBareDomain arms the bare-domain → share redirect in checkAuth.

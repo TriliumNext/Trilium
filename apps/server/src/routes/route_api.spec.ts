@@ -230,3 +230,42 @@ describe("internalRoute CLS wiring", () => {
         expect(closeProbe.wrote).toBe("written");
     });
 });
+
+/**
+ * Routes registered without a result handler (e.g. `POST /login`) write their own response.
+ * Their handler's promise still has to be consumed by `internalRoute`: a rejection that nobody
+ * awaits escapes as an unhandled rejection and the request is never answered at all — it hangs
+ * until the client gives up (#11919).
+ */
+describe("internalRoute with no result handler", () => {
+    let app: express.Application;
+
+    beforeAll(() => {
+        asyncRoute("post", "/no-handler/throws", [], async () => {
+            throw new Error("handler blew up");
+        }, null);
+
+        asyncRoute("post", "/no-handler/responds", [], async (_req, res) => {
+            res.status(200).json({ ok: true });
+        }, null);
+
+        app = express();
+        app.use(router);
+    });
+
+    it("answers with a 500 instead of hanging when the handler rejects", async () => {
+        const res = await request(app)
+            .post("/no-handler/throws")
+            .expect(500);
+
+        expect(res.body.message).toBe("handler blew up");
+    });
+
+    it("leaves a handler that writes its own response untouched", async () => {
+        const res = await request(app)
+            .post("/no-handler/responds")
+            .expect(200);
+
+        expect(res.body).toEqual({ ok: true });
+    });
+});

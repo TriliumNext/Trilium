@@ -82,8 +82,16 @@ async function login(req: Request, res: Response) {
         return;
     }
 
-    const submittedPassword = req.body.password;
-    const submittedTotpToken = req.body.totpToken;
+    const submittedPassword = req.body?.password;
+    const submittedTotpToken = req.body?.totpToken;
+
+    // A missing or non-string password (e.g. an empty JSON body) is just a failed
+    // login: answer 401 like a wrong password instead of letting scrypt throw on
+    // the invalid argument inside verifyLoginCredentials (#11919).
+    if (typeof submittedPassword !== "string") {
+        sendLoginError(req, res, "password");
+        return;
+    }
 
     const failedFactor = await verifyLoginCredentials(submittedPassword, submittedTotpToken);
     if (failedFactor) {

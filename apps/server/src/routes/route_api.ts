@@ -101,6 +101,14 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
             });
 
             if (!resultHandler) {
+                // Handlers without a result handler write the response themselves, but a
+                // rejected promise still has to be consumed here: otherwise it escapes as
+                // an unhandled rejection and the request is never answered at all — it
+                // hangs until the client gives up (e.g. POST /login with a missing
+                // password, #11919).
+                if (result instanceof Promise) {
+                    result.catch((e: unknown) => handleException(e, method, path, res));
+                }
                 return;
             }
 
