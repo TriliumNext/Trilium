@@ -241,6 +241,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
     if (entity instanceof FNote) {
         $renderedContent.addClass(entity.getCssClass());
+        $renderedContent.toggleClass("full-content-width", entity.isLabelTruthy("fullContentWidth"));
     }
 
     return {

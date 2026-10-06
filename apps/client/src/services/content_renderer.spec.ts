@@ -256,6 +256,16 @@ describe("hasRenderedPreview", () => {
 });
 
 describe("getRenderedContent dispatch", () => {
+    it("marks a note that asks for the full content width", async () => {
+        const wide = buildNote({ title: "Wide", type: "text", "#fullContentWidth": "" });
+        const narrow = buildNote({ title: "Narrow", type: "text" });
+
+        expect((await getRenderedContent(wide)).$renderedContent.hasClass("full-content-width"))
+            .toBe(true);
+        expect((await getRenderedContent(narrow)).$renderedContent.hasClass("full-content-width"))
+            .toBe(false);
+    });
+
     it("renders text/book via renderText and applies css class", async () => {
         const note = buildNote({ title: "T", type: "text", "#cssClass": "my-class" });
         const { $renderedContent, type } = await getRenderedContent(note);
