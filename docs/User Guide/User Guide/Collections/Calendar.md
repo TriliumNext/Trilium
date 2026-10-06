@@ -151,6 +151,7 @@ For each note of the calendar, the following attributes can be used:
 | `#calendar:color` | **❌️ Removed since v0.100.0. Use** `#color` **instead.**      <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
 | `#iconClass` | If present, the icon of the note will be displayed to the left of the event title. |
 | `#calendar:title` | Changes the title of an event to point to an attribute of the note other than the title, can either a label or a relation (without the `#` or `~` symbol). See _Use-cases_ for more information. |
+| `#calendar:titleTemplate` | Changes the title an event is displayed with on the calendar, filled in again for every occurrence of a repeating event. See _Use-cases_ for displaying an age on a birthday. |
 | `#calendar:displayedAttributes` | Allows displaying the value of one or more attributes in the calendar like this:           <br>  <br>![](6_Calendar_image.png)          <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`         <br>  <br>It can also be used with relations, case in which it will display the title of the target note:          <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
 | `#calendar:startDate` | Allows using a different label to represent the start date, other than `startDate` (e.g. `expiryDate`). The label name **must not be** prefixed with `#`. If the label is not defined for a note, the default will be used instead. |
 | `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
@@ -292,3 +293,31 @@ Moreover, if there are more relations of the same name, they will be displayed a
 ```
 #calendar:title="shortName" #shortName="John S."
 ```
+
+### Displaying an age on a recurring event
+
+A birthday or an anniversary repeats every year, and what is interesting about each occurrence is the number of years it marks. `#calendar:titleTemplate` sets the title an event is displayed with, and is filled in again for every occurrence the recurrence rule produces:
+
+```
+#startDate=1990-05-12 #recurrence="FREQ=YEARLY" #calendar:titleTemplate="${title} (${age})"
+```
+
+The event is then displayed as “John Smith (35)” in 2025, “John Smith (36)” in 2026, and so on. Only the calendar is affected; the note keeps its own title.
+
+The following values can be used in the template:
+
+| Value | Description |
+| --- | --- |
+| `${title}` | The title the event would otherwise be displayed with: the note title, or the attribute `#calendar:title` points to. |
+| `${age}` | The whole years between `#startDate` and the occurrence being displayed. It is `0` on the first occurrence. |
+| `${date}` | The date of the occurrence being displayed, as a [day.js](https://day.js.org/docs/en/display/format) object. For example, `${date.format('YYYY')}`. |
+| `${startDate}` | The date the event starts on, in the same form. For example, `${startDate.format('YYYY')}`. |
+
+To use the same template for every event of a calendar, make the label inheritable on the Collection note:
+
+```
+#calendar:titleTemplate(inheritable)="${title} (${age})"
+```
+
+> [!NOTE]
+> A template that cannot be read — an unknown value, or an expression other than a value and the `format` call shown above — leaves the event with its plain title and reports the reason in the browser console.
