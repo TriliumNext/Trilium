@@ -1,4 +1,4 @@
-import { cls } from "@triliumnext/core";
+import { cls, NotFoundError } from "@triliumnext/core";
 import express from "express";
 import { existsSync } from "fs";
 import request from "supertest";
@@ -239,6 +239,10 @@ describe("internalRoute without a result handler", () => {
             throw new Error("boom");
         }, null);
 
+        asyncRoute("get", "/no-handler/reject-http", [], async () => {
+            throw new NotFoundError("missing");
+        }, null);
+
         app = express();
         app.use(router);
     });
@@ -247,5 +251,11 @@ describe("internalRoute without a result handler", () => {
         const res = await request(app).get("/no-handler/reject").timeout(2000).expect(500);
 
         expect(res.body).toEqual({ message: "boom" });
+    });
+
+    it("keeps the status of a rejected HttpError", async () => {
+        const res = await request(app).get("/no-handler/reject-http").timeout(2000).expect(404);
+
+        expect(res.body).toEqual({ message: "missing" });
     });
 });
