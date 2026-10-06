@@ -149,14 +149,46 @@ describe("TextEmbed", () => {
 
         // A save made before the editor closed lands while its last save runs.
         note.getBlob = async () => buildBlob("<p>Typed</p>");
-        const earlierSave = new LoadResults([]);
-        earlierSave.addNoteContent(note.noteId, "other-component");
         await act(async () => {
-            await appContext.handleEvent("entitiesReloaded", { loadResults: earlierSave });
+            await reloadNoteContent(note);
             await new Promise((resolve) => setTimeout(resolve, 50));
         });
         expect(shownPreview()).toBe("<div><p>Typed just now</p></div>");
         expect(renderPreview).toHaveBeenCalledExactlyOnceWith("<p>Typed just now</p>");
+
+        // Once the last save lands, the preview follows what the note holds.
+        note.getBlob = async () => buildBlob("<p>Saved</p>");
+        await act(async () => {
+            finishSave();
+        });
+        await vi.waitFor(() => expect(shownPreview()).toBe("<div><p>Saved</p></div>"));
+    });
+
+    it("lets another include of the note follow its saves while an editor closes", async () => {
+        const note = buildTextNote("shared");
+        let finishSave = () => {};
+        editorAskedToSave.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            finishSave = resolve;
+        }));
+        const { figure: edited } = await mount(note, buildEditor(), { isEditable: true });
+        const { figure: other } = await mount(note, buildEditor());
+        await vi.waitFor(() => {
+            expect(edited.querySelector(".editable-text-stub")).not.toBeNull();
+        }, { timeout: 5000 });
+
+        editorData = "<p>Final</p>";
+        await act(async () => {
+            delete edited.dataset.editable;
+            await Promise.resolve();
+        });
+        note.getBlob = async () => buildBlob("<p>Final</p>");
+        await act(async () => {
+            await reloadNoteContent(note);
+        });
+        await vi.waitFor(() => {
+            expect(other.querySelector(".editable-embed-preview")?.innerHTML)
+                .toBe("<div><p>Final</p></div>");
+        });
         await act(async () => {
             finishSave();
         });
@@ -264,6 +296,13 @@ function buildEditor(): ContentEditor {
         scheduleSave: vi.fn(),
         release: vi.fn()
     };
+}
+
+/** Announces a save of the content of `note`, as the server does. */
+async function reloadNoteContent(note: FNote) {
+    const loadResults = new LoadResults([]);
+    loadResults.addNoteContent(note.noteId, "other-component");
+    await appContext.handleEvent("entitiesReloaded", { loadResults });
 }
 
 function buildBlob(content: string) {

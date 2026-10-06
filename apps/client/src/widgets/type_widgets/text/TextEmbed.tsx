@@ -1,5 +1,5 @@
 import { lazy } from "preact/compat";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
@@ -36,15 +36,7 @@ export default function TextEmbed({
         note,
         focusTarget: ".ck-editor__editable"
     });
-    const [ content, setContent ] = useState(initialContent);
-    const blob = useNoteBlob(note);
-    // While the last save of the editor runs, the preview shows what the editor held, rather than
-    // what an earlier save stored.
-    useEffect(() => {
-        if (blob && !getClosingSave(note.noteId)) {
-            setContent(blob.content);
-        }
-    }, [ blob ]);
+    const [ content, onEditorClose ] = useShownContent(note, initialContent);
     const shownPreview =
         useEmbedPreview(preview, content, () => renderPreview(content), isEditing);
 
@@ -58,10 +50,44 @@ export default function TextEmbed({
             <TextEmbedEditor
                 note={note}
                 hasFixedToolbar={isEditing && hasFixedToolbarAround(rootRef.current)}
-                onClose={setContent}
+                onClose={onEditorClose}
             />
         </EditableEmbedContent>
     );
+}
+
+/**
+ * The content of `note` to preview: the content of the editor of the embed as it closed, until its
+ * last save lands, and otherwise the content that each save of the note stores. Returns that
+ * content, and the callback that takes the content of the closing editor and its save.
+ */
+function useShownContent(note: FNote, initialContent: string) {
+    const [ content, setContent ] = useState(initialContent);
+    const closingSaveRef = useRef<Promise<void> | undefined>(undefined);
+    const blob = useNoteBlob(note);
+
+    // An earlier save that lands while the last save runs stores older content.
+    useEffect(() => {
+        if (blob && !closingSaveRef.current) {
+            setContent(blob.content);
+        }
+    }, [ blob ]);
+
+    const onEditorClose = useCallback((editorContent: string, save: Promise<void>) => {
+        setContent(editorContent);
+        closingSaveRef.current = save;
+        void save
+            .then(() => (closingSaveRef.current === save ? note.getBlob() : undefined))
+            .then((saved) => {
+                if (closingSaveRef.current !== save) return;
+                closingSaveRef.current = undefined;
+                if (saved) {
+                    setContent(saved.content);
+                }
+            });
+    }, [ note ]);
+
+    return [ content, onEditorClose ] as const;
 }
 
 /** The last saves of the editors of included notes that went away, by note ID, until they land. */
@@ -83,6 +109,7 @@ export function trackClosingSave(noteId: string, save: Promise<unknown> | null) 
             }
         });
     closingSaves.set(noteId, tracked);
+    return tracked;
 }
 
 /** The last save of an editor of `noteId` that went away, while it runs. */

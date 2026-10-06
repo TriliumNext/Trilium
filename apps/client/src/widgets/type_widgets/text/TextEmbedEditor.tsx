@@ -18,8 +18,11 @@ interface TextEmbedEditorProps {
     note: FNote;
     /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
     hasFixedToolbar: boolean;
-    /** Receives the content of the editor as it goes away, which can be unsaved yet. */
-    onClose(content: string): void;
+    /**
+     * Receives the content of the editor as it goes away, which can be unsaved yet, and the save
+     * of what is left.
+     */
+    onClose(content: string, save: Promise<void>): void;
 }
 
 /**
@@ -44,10 +47,10 @@ export default function TextEmbedEditor({ note, hasFixedToolbar, onClose }: Text
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {
-        trackClosingSave(note.noteId, announceEmbeddedNoteClosing(component, ntxId));
+        const save = trackClosingSave(note.noteId, announceEmbeddedNoteClosing(component, ntxId));
         const content = findTextEditorIn(rootRef.current)?.getData();
         if (content !== undefined) {
-            onCloseRef.current(content);
+            onCloseRef.current(content, save);
         }
     }, [ component, ntxId ]);
 

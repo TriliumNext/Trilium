@@ -23,7 +23,10 @@ interface PendingSave<T> {
     getContent?: () => string;
     /** The content read when the editor went away. */
     content?: string;
-    /** Counts the changes, so that a save keeps the changes made while it ran. */
+    /**
+     * Numbers the change, uniquely among all changes, so that a save drops only the change it
+     * sent, also when it is retried.
+     */
     revision: number;
 }
 
@@ -33,6 +36,7 @@ interface PendingSave<T> {
  */
 abstract class PendingSaves<T, I extends object> {
     protected pending = new Map<string, PendingSave<T>>();
+    private lastRevision = 0;
     private sentRevisions = new WeakMap<I, { id: string; revision: number }>();
 
     getUnsavedContent(id: string) {
@@ -59,8 +63,7 @@ abstract class PendingSaves<T, I extends object> {
     }
 
     protected schedule(id: string, entity: T, getContent: () => string) {
-        const revision = (this.pending.get(id)?.revision ?? 0) + 1;
-        this.pending.set(id, { entity, getContent, revision });
+        this.pending.set(id, { entity, getContent, revision: ++this.lastRevision });
     }
 
     /** One item for each change, with the content read at the time of the call. */

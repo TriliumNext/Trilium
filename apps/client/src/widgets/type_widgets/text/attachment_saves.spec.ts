@@ -192,6 +192,19 @@ describe("NoteSaves", () => {
         expect(saves.getUnsavedContent("code2")).toBeUndefined();
     });
 
+    it("keeps a change made while a retry of an earlier save runs", () => {
+        const saves = new NoteSaves(vi.fn(), "host");
+        const note = buildCodeNote("code1");
+        saves.scheduleSave(note, () => "first");
+        const sent = saves.collect();
+        saves.markSaved(sent);
+
+        // The batch is retried, as after another note of it failed, while the note changes.
+        saves.scheduleSave(note, () => "typed during the retry");
+        saves.markSaved(sent);
+        expect(saves.getUnsavedContent("code1")).toBe("typed during the retry");
+    });
+
     it("tracks the save state of each note, and tells its listeners", async () => {
         const saves = new NoteSaves(vi.fn(), "host");
         const listener = vi.fn();
