@@ -26,6 +26,7 @@ import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
+import './nested_editor_events.js';
 
 export const COMMAND_NAME = 'insertContentEmbed';
 export const BOX_SIZE_COMMAND_NAME = 'contentEmbedBoxSize';
@@ -1214,7 +1215,12 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 	}, { capture: true } );
 
 	domElement.addEventListener( 'focus', ( evt: FocusEvent ) => {
-		stopEventPropagationAndHackRendererFocus( evt );
+		// The content of the embed, such as the editor of an included note, hears its own focus.
+		if ( isInEmbedContent( evt.target ) ) {
+			hackRendererFocus();
+		} else {
+			stopEventPropagationAndHackRendererFocus( evt );
+		}
 
 		// Content that takes the focus without a press, as a canvas drawing just added, selects
 		// its widget as a press does, which shows its toolbar. The focus stays in the content.
@@ -1233,10 +1239,19 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 
 	function stopEventPropagationAndHackRendererFocus( evt: Event ) {
 		evt.stopPropagation();
+		hackRendererFocus();
+	}
+
+	function hackRendererFocus() {
 		// This prevents rendering changed view selection thus preventing to changing DOM selection while inside a widget.
         //@ts-expect-error: We are accessing a private field.
 		editor.editing.view._renderer.isFocused = false;
 	}
+}
+
+/** Whether `target` is in the content box of an embed, rather than in its title row. */
+function isInEmbedContent( target: EventTarget | null ): boolean {
+	return target instanceof Element && !!target.closest( '.include-note-content' );
 }
 
 /**

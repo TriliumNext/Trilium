@@ -113,6 +113,10 @@ const codeEmbedComponent = vi.fn((_props: any): VNode<any> =>
     h("span", { class: "mock-code-embed-marker" }));
 vi.mock("../widgets/type_widgets/code/CodeEmbed", () => ({ default: codeEmbedComponent }));
 
+const textEmbedComponent = vi.fn((_props: any): VNode<any> =>
+    h("span", { class: "mock-text-embed-marker" }));
+vi.mock("../widgets/type_widgets/text/TextEmbed", () => ({ default: textEmbedComponent }));
+
 // `addHook` is a no-op here: sanitize_content.ts registers a DOMPurify hook at
 // module load (pulled in transitively), which would otherwise throw against this mock.
 vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s, addHook: () => {} } }));
@@ -415,6 +419,45 @@ describe("getRenderedContent editable code", () => {
         expect(attachmentEditor.release).toHaveBeenCalledWith(att.attachmentId);
     });
 
+    it("mounts TextEmbed for an interactive text note, with a preview to render again", async () => {
+        const note = buildNote({ title: "Doc", type: "text", content: "<p>Hi</p>" });
+        const noteEditor = buildEditor();
+
+        const { type, $renderedContent } = await getRenderedContent(note, {
+            interactive: true,
+            embedsAsReferenceLinks: true,
+            noteEditor
+        });
+
+        expect(type).toBe("text");
+        expect($renderedContent.find(".text-embed[data-interactive-mount]").length).toBe(1);
+        const props = textEmbedComponent.mock.calls[0][0];
+        expect(props.note).toBe(note);
+        expect(props.content).toBe("<p>Hi</p>");
+        expect(props.preview.querySelector(".from-render-text")).not.toBeNull();
+        expect(renderText).toHaveBeenLastCalledWith(
+            note, expect.anything(), expect.objectContaining({ embedsAsReferenceLinks: true }));
+        expect(props.editor.canEdit()).toBe(true);
+        expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
+
+        const again = await props.renderPreview();
+        expect(again).not.toBe(props.preview);
+        expect(again.querySelector(".from-render-text")).not.toBeNull();
+    });
+
+    it("edits only code and text notes", async () => {
+        const json = buildNote({
+            title: "Data", type: "file", mime: "application/json", content: "{}"
+        });
+        const { $renderedContent } = await getRenderedContent(json, {
+            interactive: true,
+            noteEditor: buildEditor()
+        });
+
+        expect($renderedContent.find("pre > code").text()).toBe("{}");
+        expect(codeEmbedComponent).not.toHaveBeenCalled();
+    });
+
     it("keeps the static preview without an editor, or outside an embed", async () => {
         const note = buildNote({
             title: "Script", type: "code", mime: "text/javascript", content: "x"
@@ -431,6 +474,11 @@ describe("getRenderedContent editable code", () => {
         expect(results.map(({ $renderedContent }) => $renderedContent.find("pre > code").text()))
             .toEqual([ "x", "y", "x" ]);
         expect(codeEmbedComponent).not.toHaveBeenCalled();
+
+        const text = buildNote({ title: "Doc", type: "text", content: "<p>Hi</p>" });
+        const { $renderedContent } = await getRenderedContent(text, { noteEditor: buildEditor() });
+        expect($renderedContent.find(".from-render-text").length).toBe(1);
+        expect(textEmbedComponent).not.toHaveBeenCalled();
     });
 });
 
@@ -995,7 +1043,7 @@ describe("getRenderedContent canvas drawing rendering", () => {
 
     it("mounts the editor for an interactive attachment, with its saving editor", async () => {
         const att = buildAttachment({ role: "file", mime: canvasMime });
-        const attachmentEditor = { canEdit: vi.fn() } as any;
+        const attachmentEditor = { canEdit: vi.fn(() => true), release: vi.fn() } as any;
 
         const { type, $renderedContent } = await getRenderedContent(att, {
             interactive: true,
@@ -1005,8 +1053,12 @@ describe("getRenderedContent canvas drawing rendering", () => {
         expect(type).toBe("canvasDrawing");
         const $drawing = $renderedContent.find(".canvas-drawing[data-interactive-mount]");
         expect($drawing.find(".mock-canvas-drawing-marker").length).toBe(1);
-        expect(canvasDrawingComponent).toHaveBeenCalledWith(
-            { attachment: att, editor: attachmentEditor }, expect.anything());
+        const { attachment, editor } = canvasDrawingComponent.mock.calls[0][0];
+        expect(attachment).toBe(att);
+        expect(editor.canEdit()).toBe(true);
+        editor.release();
+        expect(attachmentEditor.canEdit).toHaveBeenCalledWith(att);
+        expect(attachmentEditor.release).toHaveBeenCalledWith(att.attachmentId);
         expect(renderCanvasDrawingPicture).not.toHaveBeenCalled();
     });
 

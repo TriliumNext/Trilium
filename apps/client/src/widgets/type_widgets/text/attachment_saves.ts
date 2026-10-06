@@ -128,16 +128,18 @@ export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEdi
     /**
      * @param scheduleUpdate schedules a save.
      * @param componentId the component that saves the changes.
+     * @param getHostNoteId the note that shows the embeds, which they cannot edit.
      */
     constructor(
         private scheduleUpdate: () => void,
-        readonly componentId: string | undefined
+        readonly componentId: string | undefined,
+        private getHostNoteId: () => string | undefined = () => undefined
     ) {
         super();
     }
 
     canEdit(note: FNote) {
-        return note.type === "code" && note.isContentAvailable();
+        return note.noteId !== this.getHostNoteId() && note.isContentAvailable();
     }
 
     scheduleSave(note: FNote, getContent: () => string) {
@@ -205,12 +207,13 @@ export function useAttachmentEditor(
  */
 export function useNoteEditor(noteContext: NoteContext | null | undefined): NoteEditor {
     const parentComponent = useContext(ParentComponent);
-    const [ saves ] = useState(() => new NoteSaves(
-        () => spacedUpdate.scheduleUpdate(),
-        parentComponent?.componentId
-    ));
     const noteContextRef = useRef(noteContext);
     noteContextRef.current = noteContext;
+    const [ saves ] = useState(() => new NoteSaves(
+        () => spacedUpdate.scheduleUpdate(),
+        parentComponent?.componentId,
+        () => noteContextRef.current?.noteId ?? undefined
+    ));
 
     const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>(
         {

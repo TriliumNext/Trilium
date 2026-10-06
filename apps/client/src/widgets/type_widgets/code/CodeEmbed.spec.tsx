@@ -39,7 +39,7 @@ describe("CodeEmbed", () => {
         const note = buildCodeNote("print(1)");
         const preview = buildPreview("print(1)");
         const { figure } = await mount(note, buildEditor(), { preview });
-        expect(figure.querySelector(".code-embed-preview")?.firstChild).toBe(preview);
+        expect(figure.querySelector(".editable-embed-preview")?.firstChild).toBe(preview);
         expect(getContentEmbedTools(figure)?.hasEditableFlag).toBe(true);
 
         const { figure: locked } = await mount(note, buildEditor({ canEdit: () => false }));
@@ -58,7 +58,7 @@ describe("CodeEmbed", () => {
 
         const view = await findView(figure);
         expect(view.state.doc.toString()).toBe("print(1)");
-        expect(figure.querySelector(".code-embed-preview")).toBeNull();
+        expect(figure.querySelector(".editable-embed-preview")).toBeNull();
         expect(editor.scheduleSave).not.toHaveBeenCalled();
 
         act(() => view.dispatch({ changes: { from: 0, insert: "# " } }));
@@ -80,7 +80,7 @@ describe("CodeEmbed", () => {
 
         expect(editor.release).toHaveBeenCalledOnce();
         await vi.waitFor(() => {
-            expect(figure.querySelector(".code-embed-preview")?.textContent).toBe("ab");
+            expect(figure.querySelector(".editable-embed-preview")?.textContent).toBe("ab");
         });
         expect(figure.querySelector(".cm-editor")).toBeNull();
     });

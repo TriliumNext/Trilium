@@ -161,11 +161,12 @@ describe("NoteSaves", () => {
         return { noteId, type: "code", isContentAvailable: () => true, ...overrides } as FNote;
     }
 
-    it("edits code notes whose content is available", () => {
-        const saves = new NoteSaves(vi.fn(), "host");
+    it("edits the notes whose content is available, except the note that shows them", () => {
+        const saves = new NoteSaves(vi.fn(), "host", () => "host1");
 
         expect(saves.canEdit(buildCodeNote("code1"))).toBe(true);
-        expect(saves.canEdit(buildCodeNote("text1", { type: "text" }))).toBe(false);
+        expect(saves.canEdit(buildCodeNote("text1", { type: "text" }))).toBe(true);
+        expect(saves.canEdit(buildCodeNote("host1", { type: "text" }))).toBe(false);
         expect(saves.canEdit(buildCodeNote("locked", { isContentAvailable: () => false })))
             .toBe(false);
     });

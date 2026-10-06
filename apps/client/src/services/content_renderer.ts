@@ -125,6 +125,9 @@ export interface NoteEditor {
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
 
+/** The types of the notes that an embed can edit in place. */
+const EDITABLE_NOTE_TYPES = new Set<string>([ "code", "text" ]);
+
 /** The media types of attached files, besides `text/*` and JSON, that show as code. */
 const ATTACHED_CODE_MIME_TYPES = new Set([
     "application/javascript", "application/x-javascript", "application/x-sql"
@@ -160,6 +163,9 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         // view type is excluded: it's the only view that re-propagates `interactive` to its tiles, so
         // skipping it here is what keeps an embedded collection from recursing into itself.
         await renderCollection(entity, $renderedContent);
+    } else if (type === "text" && options.interactive && options.noteEditor
+        && entity instanceof FNote) {
+        await renderEditableText(entity, $renderedContent, options);
     } else if (type === "text" || type === "book") {
         await renderText(entity, $renderedContent, options);
     } else if (type === "markdown") {
@@ -240,6 +246,40 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         $renderedContent,
         type
     };
+}
+
+/**
+ * Renders a text note that `TextEmbed` edits in place while the Editable toggle of its embed is
+ * on.
+ */
+async function renderEditableText(
+    note: FNote,
+    $renderedContent: JQuery<HTMLElement>,
+    options: RenderOptions
+) {
+    const renderPreview = async () => {
+        const $preview = $("<div>");
+        await renderText(note, $preview, options);
+        return $preview[0];
+    };
+    const [ preview, blob, { default: TextEmbed } ] = await Promise.all([
+        renderPreview(),
+        note.getBlob(),
+        import("../widgets/type_widgets/text/TextEmbed")
+    ]);
+
+    const $container = $('<div class="text-embed">');
+    const container = $container.get(0);
+    if (container) {
+        await mountInteractiveWidget(h(TextEmbed, {
+            note,
+            editor: getContentEditor(note, options),
+            content: blob?.content ?? "",
+            preview,
+            renderPreview
+        }), container);
+    }
+    $renderedContent.append($container);
 }
 
 /**
@@ -366,29 +406,36 @@ export interface ContentEditor {
     componentId?: string;
 }
 
+/** `editor`, saving the changes to `attachment`. */
+export function bindAttachmentEditor(
+    editor: AttachmentEditor,
+    attachment: FAttachment
+): ContentEditor {
+    return {
+        canEdit: () => editor.canEdit(attachment),
+        getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
+        scheduleSave: (getContent) => editor.scheduleSave(attachment, getContent),
+        release: () => editor.release(attachment.attachmentId)
+    };
+}
+
 /** The editor of `options` that saves the changes to `entity`, or `undefined`. */
 function getContentEditor(
     entity: FNote | FAttachment,
     options: RenderOptions
 ): ContentEditor | undefined {
     if (entity instanceof FAttachment) {
-        const editor = options.attachmentEditor;
-        return editor && {
-            canEdit: () => editor.canEdit(entity),
-            getUnsavedContent: () => editor.getUnsavedContent(entity.attachmentId),
-            scheduleSave: (getContent) => editor.scheduleSave(entity, getContent),
-            release: () => editor.release(entity.attachmentId)
-        };
+        return options.attachmentEditor && bindAttachmentEditor(options.attachmentEditor, entity);
     }
 
     const editor = options.noteEditor;
-    return editor && {
+    return editor && EDITABLE_NOTE_TYPES.has(entity.type) ? {
         canEdit: () => editor.canEdit(entity),
         getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
         scheduleSave: (getContent) => editor.scheduleSave(entity, getContent),
         release: () => editor.release(entity.noteId),
         componentId: editor.componentId
-    };
+    } : undefined;
 }
 
 async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
@@ -453,7 +500,7 @@ async function renderCanvasDrawing(
         if (container) {
             await mountInteractiveWidget(h(CanvasDrawing, {
                 attachment: entity,
-                editor: options.attachmentEditor
+                editor: getContentEditor(entity, options)
             }), container);
         }
         $renderedContent.append($container);
