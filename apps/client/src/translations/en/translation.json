@@ -1377,7 +1377,6 @@
   "note_paths": {
     "title": "Note Paths",
     "clone_button": "Clone note to new location...",
-    "intro_placed": "This note is placed into the following paths:",
     "intro_not_placed": "This note is not yet placed into the note tree.",
     "outside_hoisted": "This path is outside of hoisted note and you would have to unhoist.",
     "archived": "Archived",

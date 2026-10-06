@@ -19,8 +19,8 @@ import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
 import { NoteContextMenu } from "../ribbon/NoteActions";
 import NoteActionsCustom from "../ribbon/NoteActionsCustom";
-import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
 import SimilarNotesTab from "../ribbon/SimilarNotesTab";
+import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 
 export default function MobileDetailMenu() {

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import froca from "../../services/froca";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { NotePathsWidget } from "./NotePathsTab";
+import { NotePathsWidget } from "./NotePaths";
 
 describe("NotePathsWidget", () => {
     it("shows the root note as its icon, titled with the root note's name", async () => {
