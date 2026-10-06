@@ -582,7 +582,11 @@
     "unarchive": "アーカイブ解除",
     "open-in-a-new-window": "新しいウィンドウで開く",
     "hide-subtree": "サブツリーを非表示",
-    "show-subtree": "サブツリーを表示"
+    "show-subtree": "サブツリーを表示",
+    "duplicate-with-children": "ノートと子ノート",
+    "duplicate-note-only": "このノートのみ",
+    "clone": "クローン",
+    "clone-tooltip": "クローン（同じノートを2か所に同時に配置）"
   },
   "zen_mode": {
     "button_exit": "禅モードを退出"
@@ -884,7 +888,9 @@
     "llm-chat": "AI チャット",
     "markdown": "マークダウン",
     "note-types": "ノートタイプ",
-    "built-in-templates": "組み込みテンプレート"
+    "built-in-templates": "組み込みテンプレート",
+    "more": "その他",
+    "widget-preset-sample": "ウィジェットからのメッセージ"
   },
   "edited_notes": {
     "no_edited_notes_found": "この日の編集されたノートはまだありません...",
@@ -1806,7 +1812,8 @@
     "note_type_switcher_templates": "テンプレート",
     "note_type_switcher_collection": "コレクション",
     "edited_notes": "この日に編集されたノート",
-    "promoted_attributes": "プロモート属性"
+    "promoted_attributes": "プロモート属性",
+    "note_type_switcher_all": "すべてのタイプ"
   },
   "search_result": {
     "no_notes_found": "指定された検索パラメータに該当するノートは見つかりませんでした。",
@@ -4506,5 +4513,11 @@
   },
   "split_button": {
     "more_actions": "その他の操作"
+  },
+  "menu": {
+    "no_matches": "一致するものはありません",
+    "filter": "フィルター",
+    "filter_placeholder": "入力して絞り込み…",
+    "back": "戻る"
   }
 }
