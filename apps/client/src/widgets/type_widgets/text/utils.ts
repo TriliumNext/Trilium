@@ -4,7 +4,9 @@ import { h, type JSX } from "preact";
 
 import appContext from "../../../components/app_context";
 import linkContextMenu from "../../../menus/link_context_menu";
-import content_renderer, { type AttachmentEditor } from "../../../services/content_renderer";
+import content_renderer, {
+    type AttachmentEditor, type NoteEditor
+} from "../../../services/content_renderer";
 import { getEmbedCaption } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
 import link, { ViewScope } from "../../../services/link";
@@ -12,11 +14,21 @@ import utils from "../../../services/utils";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, { getNoteActions, TinyContentEmbed } from "./ContentEmbed";
 
+interface EmbeddedNoteOptions {
+    /** Saves the changes that the content makes to the note, such as a code note. */
+    noteEditor?: NoteEditor;
+}
+
 /**
  * Fills an embed box with a note. Without a box size of its own, the box takes the one of its
  * embed.
  */
-export async function loadEmbeddedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
+export async function loadEmbeddedNote(
+    noteId: string,
+    $el: JQuery<HTMLElement>,
+    boxSize?: string,
+    { noteEditor }: EmbeddedNoteOptions = {}
+) {
     const note = await froca.getNote(noteId);
     if (!note) return;
 
@@ -47,7 +59,8 @@ export async function loadEmbeddedNote(noteId: string, $el: JQuery<HTMLElement>,
     const { $renderedContent, type } = await content_renderer.getRenderedContent(note, {
         interactive: true,
         embedsAsReferenceLinks: true,
-        mediaEnvironment: "embedded"
+        mediaEnvironment: "embedded",
+        noteEditor
     });
 
     const box = h(ContentEmbed, {
@@ -224,10 +237,14 @@ function disposeRemoved(records: MutationRecord[]) {
     }
 }
 
-export function refreshEmbeddedNote(container: HTMLDivElement, noteId: string) {
+export function refreshEmbeddedNote(
+    container: HTMLDivElement,
+    noteId: string,
+    options?: EmbeddedNoteOptions
+) {
     const embeddedNotes = container.querySelectorAll(`.include-note[data-note-id="${noteId}"]`);
     for (const embeddedNote of embeddedNotes) {
-        loadEmbeddedNote(noteId, $(embeddedNote as HTMLElement));
+        loadEmbeddedNote(noteId, $(embeddedNote as HTMLElement), undefined, options);
     }
 }
 

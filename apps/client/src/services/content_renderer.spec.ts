@@ -109,6 +109,10 @@ const chatPreviewComponent = vi.fn((props: any): VNode<any> =>
     h("span", { class: "mock-chat-marker" }, `messages:${props.messages.length}`));
 vi.mock("../widgets/type_widgets/llm_chat/ChatPreview", () => ({ default: chatPreviewComponent }));
 
+const codeEmbedComponent = vi.fn((_props: any): VNode<any> =>
+    h("span", { class: "mock-code-embed-marker" }));
+vi.mock("../widgets/type_widgets/code/CodeEmbed", () => ({ default: codeEmbedComponent }));
+
 // `addHook` is a no-op here: sanitize_content.ts registers a DOMPurify hook at
 // module load (pulled in transitively), which would otherwise throw against this mock.
 vi.mock("dompurify", () => ({ default: { sanitize: (s: string) => s, addHook: () => {} } }));
@@ -191,8 +195,10 @@ describe("getEmbedBoxSize", () => {
         expect([
             buildNote({ title: "Script", type: "code", mime: "text/javascript" }),
             protectedCode,
-            buildAttachment({ role: "file", mime: "application/json" })
-        ].map(getEmbedBoxSize)).toEqual([ "full", "full", "full" ]);
+            buildAttachment({ role: "file", mime: "application/json" }),
+            buildAttachment({ role: "file", mime: "text/x-python" }),
+            buildAttachment({ role: "file", mime: "application/javascript" })
+        ].map(getEmbedBoxSize)).toEqual(Array(5).fill("full"));
         expect(touchProtectedSession).not.toHaveBeenCalled();
 
         expect([
@@ -211,9 +217,11 @@ describe("getEmbedBoxSize", () => {
     it("sizes an upload by its media type, as the attachment it becomes", () => {
         expect([
             "application/zip", "", "audio/mpeg", "application/json", "application/pdf",
-            "image/png", "video/mp4", "application/vnd.excalidraw+json"
+            "image/png", "video/mp4", "application/vnd.excalidraw+json", "text/plain",
+            "application/x-sql", "text/rtf"
         ].map(getUploadBoxSize)).toEqual([
-            "tiny", "tiny", "small", "full", "medium", "medium", "medium", "medium"
+            "tiny", "tiny", "small", "full", "medium", "medium", "medium", "medium", "full",
+            "full", "medium"
         ]);
     });
 });
@@ -224,12 +232,14 @@ describe("hasRenderedPreview", () => {
             buildAttachment({ role: "file", mime: "application/vnd.excalidraw+json" }),
             buildAttachment({ role: "importSource", mime: "application/json" }),
             buildAttachment({ role: "file", mime: "application/pdf" }),
+            buildAttachment({ role: "file", mime: "text/plain" }),
+            buildAttachment({ role: "importSource", mime: "text/html" }),
             buildNote({ title: "Site", type: "webView", "#webViewSrc": "https://example.com" })
-        ].map(hasRenderedPreview)).toEqual([ true, true, true, true ]);
+        ].map(hasRenderedPreview)).toEqual(Array(6).fill(true));
 
         expect([
-            buildAttachment({ role: "file", mime: "text/plain" }),
             buildAttachment({ role: "file", mime: "application/zip" }),
+            buildNote({ title: "Notes", type: "file", mime: "text/plain" }),
             buildNote({ title: "Blank page", type: "webView" })
         ].map(hasRenderedPreview)).toEqual([ false, false, false ]);
     });
@@ -319,6 +329,93 @@ describe("getRenderedContent code rendering", () => {
         note.mime = "text/x-csrc";
         const { $renderedContent } = await getRenderedContent(note);
         expect($renderedContent.find("code").text()).toBe("");
+    });
+});
+
+describe("getRenderedContent editable code", () => {
+    function buildEditor() {
+        return {
+            canEdit: vi.fn(() => true),
+            getUnsavedContent: vi.fn((): string | undefined => undefined),
+            scheduleSave: vi.fn(),
+            release: vi.fn(),
+            componentId: "host"
+        };
+    }
+
+    it("renders an attached code file as code", async () => {
+        const att = buildAttachment({ role: "file", mime: "text/x-python" });
+        att.getBlob = (async () => ({ content: "print(1)" })) as any;
+
+        const { type, $renderedContent } = await getRenderedContent(att);
+        expect(type).toBe("code");
+        expect($renderedContent.find("pre > code").text()).toBe("print(1)");
+    });
+
+    it("mounts CodeEmbed for an interactive code note, saved by `noteEditor`", async () => {
+        const note = buildNote({
+            title: "Script", type: "code", mime: "text/javascript", content: "saved"
+        });
+        const noteEditor = buildEditor();
+        noteEditor.getUnsavedContent.mockReturnValue("unsaved");
+
+        const { type, $renderedContent } = await getRenderedContent(note, {
+            interactive: true,
+            noteEditor
+        });
+
+        expect(type).toBe("code");
+        const $mount = $renderedContent.find(".code-embed[data-interactive-mount]");
+        expect($mount.find(".mock-code-embed-marker").length).toBe(1);
+        const props = codeEmbedComponent.mock.calls[0][0];
+        expect(props.entity).toBe(note);
+        expect(props.content).toBe("unsaved");
+        expect(props.preview.textContent).toBe("unsaved");
+
+        const getContent = () => "edited";
+        props.editor.scheduleSave(getContent);
+        props.editor.release();
+        expect(props.editor.canEdit()).toBe(true);
+        expect(props.editor.componentId).toBe("host");
+        expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
+        expect(noteEditor.getUnsavedContent).toHaveBeenCalledWith(note.noteId);
+        expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent);
+        expect(noteEditor.release).toHaveBeenCalledWith(note.noteId);
+    });
+
+    it("mounts CodeEmbed for an interactive code file, saved by `attachmentEditor`", async () => {
+        const att = buildAttachment({ role: "file", mime: "application/json" });
+        att.getBlob = (async () => ({ content: "{}" })) as any;
+        const attachmentEditor = buildEditor();
+
+        await getRenderedContent(att, { interactive: true, attachmentEditor });
+
+        const props = codeEmbedComponent.mock.calls[0][0];
+        expect(props.entity).toBe(att);
+        expect(props.content).toBe("{}");
+        props.editor.scheduleSave(() => "[]");
+        props.editor.release();
+        expect(attachmentEditor.getUnsavedContent).toHaveBeenCalledWith(att.attachmentId);
+        expect(attachmentEditor.scheduleSave).toHaveBeenCalledWith(att, expect.any(Function));
+        expect(attachmentEditor.release).toHaveBeenCalledWith(att.attachmentId);
+    });
+
+    it("keeps the static preview without an editor, or outside an embed", async () => {
+        const note = buildNote({
+            title: "Script", type: "code", mime: "text/javascript", content: "x"
+        });
+        const att = buildAttachment({ role: "file", mime: "text/plain" });
+        att.getBlob = (async () => ({ content: "y" })) as any;
+
+        const results = await Promise.all([
+            getRenderedContent(note, { interactive: true, attachmentEditor: buildEditor() }),
+            getRenderedContent(att, { interactive: true, noteEditor: buildEditor() }),
+            getRenderedContent(note, { noteEditor: buildEditor() })
+        ]);
+
+        expect(results.map(({ $renderedContent }) => $renderedContent.find("pre > code").text()))
+            .toEqual([ "x", "y", "x" ]);
+        expect(codeEmbedComponent).not.toHaveBeenCalled();
     });
 });
 
@@ -970,8 +1067,11 @@ describe("getRenderingType detection", () => {
     });
 
     it("renders an importSource attachment like a file", async () => {
-        const att = buildAttachment({ role: "importSource", mime: "text/html" });
-        expect((await getRenderedContent(att)).type).toBe("file");
+        const html = buildAttachment({ role: "importSource", mime: "text/html" });
+        html.getBlob = (async () => ({ content: "<p></p>" })) as any;
+        const zip = buildAttachment({ role: "importSource", mime: "application/zip" });
+        expect((await getRenderedContent(html)).type).toBe("code");
+        expect((await getRenderedContent(zip)).type).toBe("file");
     });
 
     it("returns the raw role of an attachment with no branch, drawn as an icon", async () => {

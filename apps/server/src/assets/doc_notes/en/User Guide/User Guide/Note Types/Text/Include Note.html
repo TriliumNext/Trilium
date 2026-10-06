@@ -33,7 +33,7 @@
   <li><em>Tiny</em> for a note or an attachment that has no preview, such as
     a relation map or an archive.</li>
   <li><em>Small</em> for audio.</li>
-  <li><em>Full</em> for a code note.</li>
+  <li><em>Full</em> for a code note or a code file, such as a <code>.js</code>, <code>.py</code> or <code>.txt</code> attachment.</li>
   <li><em>Medium</em> for anything else.</li>
 </ul>
 <p>The dialog that includes a note selects that size once the note is picked,
@@ -100,9 +100,9 @@
 <p>In a note being edited, the menu also has the commands of the include's
   toolbar: the <em>Size</em> submenu, <em>Show title</em> and <em>Show caption</em>,
   each checked while it is in effect, and <em>Convert to link</em> at the end.
-  A drawing canvas also has <em>Editable</em>, above <em>Size</em>. For an
-  embedded attachment they follow its first group of actions; for an included
-  note they end the menu.</p>
+  A drawing canvas, an included code note and an embedded code file also
+  have <em>Editable</em>, above <em>Size</em>. For an embedded attachment they
+  follow its first group of actions; for an included note they end the menu.</p>
 <p>To show an include of size <em>Medium</em> or <em>Full</em> on the whole screen,
   press the <span class="tn-icon bx bx-fullscreen"></span>  <em>Fullscreen</em> button
   at the end of its title. To return, press <span class="tn-icon bx bx-exit"></span>  <em>Exit fullscreen</em> in
@@ -159,6 +159,25 @@
 </ul>
 <p>In a <em>Small</em> or <em>Medium</em> box, the image is scaled down to fit
   the height of the box. In fullscreen, it fits the screen.</p>
+<h2>Included code</h2>
+<p>An included code note, or an embedded code file such as a <code>.js</code>, <code>.py</code> or <code>.txt</code> attachment,
+  is shown with syntax highlighting. It can also be edited in place, in the
+  same code editor as a <a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a> note.</p>
+<ul>
+  <li>To edit the code, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span>  <em>Editable</em> button
+    at the start of its toolbar, or check <em>Editable</em> in its <span class="tn-icon cke cke-three-vertical-dots"></span>  <em>More actions</em> menu.
+    The highlighted code is replaced by the code editor, which follows the
+    theme, indentation and line wrapping settings of code notes. Turn <em>Editable</em> off
+    to return to the highlighted view.</li>
+  <li>The changes are saved as you type, to the included note or to the attachment,
+    as they would be in its own tab.</li>
+  <li>A new include starts with <em>Editable</em> off.</li>
+  <li>Editing is not available in a <a href="#root/_help_CoFPLs3dRlXc">read-only note</a>,
+    for an included note marked <code>#readOnly</code>, or for an attachment
+    of another note.</li>
+  <li>A change saved elsewhere, for example in the note's own tab, is shown
+    in the include unless the include has changes of its own still being saved.</li>
+</ul>
 <h2>Drawing canvases</h2>
 <p>A drawing canvas is an Excalidraw canvas, like the one of a <a class="reference-link"
   href="#root/_help_grjYqerjn243">Canvas</a> note, drawn directly in the text

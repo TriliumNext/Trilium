@@ -30,7 +30,7 @@ import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSe
 import IconPicker from "../../react/IconPicker";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
-import AttachmentSaves from "./attachment_saves";
+import AttachmentSaves, { useNoteEditor } from "./attachment_saves";
 import CKEditorWithWatchdog, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditorWithWatchdog";
 import { getContentEmbedTools } from "./content_embed_tools";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
@@ -77,6 +77,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const initialized = useRef(deferred<void>());
     const [ attachmentSaves ] = useState(() =>
         new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
+    const noteEditor = useNoteEditor(noteContext);
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
@@ -201,7 +202,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
-        loadEmbeddedNote,
+        loadEmbeddedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
+            return loadEmbeddedNote(noteId, $el, boxSize, { noteEditor });
+        },
         loadEmbeddedAttachment(attachmentId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
             const isFocused = focusedAttachmentIdRef.current === attachmentId;
             if (isFocused) {
@@ -298,7 +301,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
     useTriliumEvent("refreshEmbeddedNote", ({ noteId }) => {
         if (!containerRef.current) return;
-        refreshEmbeddedNote(containerRef.current, noteId);
+        refreshEmbeddedNote(containerRef.current, noteId, { noteEditor });
     });
 
     useEffect(() => () => stopWatchingEmbedsRef.current?.(), []);

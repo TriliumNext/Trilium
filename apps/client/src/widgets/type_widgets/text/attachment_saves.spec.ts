@@ -6,13 +6,14 @@ import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
 import { ParentComponent } from "../../react/react_utils";
-import AttachmentSaves, { useAttachmentEditor } from "./attachment_saves";
+import AttachmentSaves, { NoteSaves, useAttachmentEditor, useNoteEditor } from "./attachment_saves";
 
 const serverPost = vi.hoisted(() => vi.fn(async () => undefined));
+const serverPut = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock("../../../services/server", () => ({
-    default: { get: async () => [], post: serverPost }
+    default: { get: async () => [], post: serverPost, put: serverPut }
 }));
 
 const drawing = {
@@ -152,5 +153,79 @@ describe("useAttachmentEditor", () => {
         await act(() => render(null, container));
         expect(serverPost).toHaveBeenCalledTimes(2);
         expect(serverPost).toHaveBeenLastCalledWith(...savedRequest("second"));
+    });
+});
+
+describe("NoteSaves", () => {
+    function buildCodeNote(noteId: string, overrides: Partial<FNote> = {}) {
+        return { noteId, type: "code", isContentAvailable: () => true, ...overrides } as FNote;
+    }
+
+    it("edits code notes whose content is available", () => {
+        const saves = new NoteSaves(vi.fn(), "host");
+
+        expect(saves.canEdit(buildCodeNote("code1"))).toBe(true);
+        expect(saves.canEdit(buildCodeNote("text1", { type: "text" }))).toBe(false);
+        expect(saves.canEdit(buildCodeNote("locked", { isContentAvailable: () => false })))
+            .toBe(false);
+    });
+
+    it("collects each note with its content, and keeps a change made while a save runs", () => {
+        const scheduleUpdate = vi.fn();
+        const saves = new NoteSaves(scheduleUpdate, "host");
+        const first = buildCodeNote("code1");
+        const second = buildCodeNote("code2");
+
+        saves.scheduleSave(first, () => "one");
+        saves.scheduleSave(second, () => "two");
+        const sent = saves.collect();
+        expect(sent).toStrictEqual([
+            { note: first, content: "one" },
+            { note: second, content: "two" }
+        ]);
+        expect(scheduleUpdate).toHaveBeenCalledTimes(2);
+
+        saves.scheduleSave(first, () => "changed meanwhile");
+        saves.markSaved(sent);
+        expect(saves.getUnsavedContent("code1")).toBe("changed meanwhile");
+        expect(saves.getUnsavedContent("code2")).toBeUndefined();
+    });
+});
+
+describe("useNoteEditor", () => {
+    const code = { noteId: "code1", type: "code", isProtected: false } as FNote;
+    const noteContext = { ntxId: "ntx1", setContextData: vi.fn() } as unknown as NoteContext;
+
+    let component: Component;
+    let editor: NoteEditor | undefined;
+    function Probe() {
+        editor = useNoteEditor(noteContext);
+        return null;
+    }
+
+    it("saves each note on its own, before the note switches and once it goes away", async () => {
+        component = new Component();
+        const container = document.createElement("div");
+        await act(() => {
+            render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
+        });
+        expect(editor?.componentId).toBe(component.componentId);
+
+        editor?.scheduleSave(code, () => "first");
+        await act(async () => {
+            await component.handleEvent("beforeNoteSwitch", { noteContext } as never);
+        });
+        expect(serverPut).toHaveBeenCalledExactlyOnceWith(
+            "notes/code1/data", { content: "first" }, component.componentId);
+        expect(editor?.getUnsavedContent("code1")).toBeUndefined();
+        expect(noteContext.setContextData)
+            .toHaveBeenLastCalledWith("saveState", { state: "saved" });
+
+        editor?.scheduleSave(code, () => "second");
+        editor?.release("code1");
+        await act(() => render(null, container));
+        expect(serverPut).toHaveBeenCalledTimes(2);
+        expect(serverPut).toHaveBeenLastCalledWith(
+            "notes/code1/data", { content: "second" }, component.componentId);
     });
 });
