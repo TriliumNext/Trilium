@@ -262,7 +262,8 @@
     "move-split-left": "분할 화면 왼쪽으로 이동",
     "move-split-right": "분할 화면 오른쪽으로 이동",
     "focus-split-left": "왼쪽 분할 화면으로 포커스 이동",
-    "focus-split-right": "오른쪽 분할 화면으로 포커스 이동"
+    "focus-split-right": "오른쪽 분할 화면으로 포커스 이동",
+    "duplicate-note": "하위 노트 없이 노트 복제"
   },
   "login": {
     "title": "로그인",
