@@ -189,7 +189,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             attribute: attrs[attrs.length - 1],
             isOwned: true,
             x: rect ? (rect.left + rect.right) / 2 : 0,
-            y: rect?.bottom ?? 0,
             focus: "name",
             parent: wrapperRef.current ?? undefined
         });
@@ -305,7 +304,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                                         attribute: matchedAttr,
                                         isOwned: true,
                                         x: e.pageX,
-                                        y: e.pageY,
                                         parent: wrapperRef.current ?? undefined
                                     });
                                 } else {

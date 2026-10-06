@@ -149,7 +149,6 @@ export default function AttributeList() {
             attribute,
             isOwned,
             x: e.pageX,
-            y: e.pageY,
             anchor: anchor ?? undefined,
             // Presses on another row swap the shown attribute instead of dismissing the popup first.
             parent: spawningArea()
@@ -191,7 +190,6 @@ export default function AttributeList() {
             attribute,
             isOwned: true,
             x: e.pageX,
-            y: e.pageY,
             focus: "name",
             // There is no row to anchor to yet: the attribute only joins the list once it is saved.
             anchor: containerRef.current ?? undefined,

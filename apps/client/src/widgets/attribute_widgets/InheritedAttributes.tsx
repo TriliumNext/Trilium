@@ -78,7 +78,6 @@ export default function InheritedAttributes({ note, componentId }: InheritedAttr
                                     },
                                     isOwned: false,
                                     x: e.pageX,
-                                    y: e.pageY,
                                     parent: containerRef.current ?? undefined
                                 });
                             }}

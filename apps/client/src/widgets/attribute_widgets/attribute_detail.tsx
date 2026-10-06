@@ -4,21 +4,19 @@ import "./attribute_kind.css";
 import { type DefinitionObject, type LabelType, promotedAttributeDefinitionParser } from "@triliumnext/commons";
 import clsx from "clsx";
 import { ComponentChildren, ComponentProps } from "preact";
-import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context.js";
 import { DEFINITION_PREFIXES, isDefinitionName } from "../../entities/fattribute.js";
 import contextMenu, { MenuItem } from "../../menus/context_menu.js";
 import type { Attribute } from "../../services/attribute_parser.js";
 import { getBuiltinLabelSelectOptions, getBuiltinLabelValueType, isBuiltinAttribute } from "../../services/attributes.js";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
 import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
 import froca from "../../services/froca.js";
 import { t } from "../../services/i18n.js";
 import server from "../../services/server.js";
 import { isIMEComposing } from "../../services/shortcuts.js";
 import utils from "../../services/utils.js";
-import BasicWidget from "../basic_widget.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import { Badge, BadgeWithDropdown } from "../react/Badge.jsx";
 import Button from "../react/Button.jsx";
@@ -31,7 +29,7 @@ import Icon from "../react/Icon.jsx";
 import { suspendModalFocusTraps } from "../react/modal_focustrap.js";
 import NoteAutocomplete, { HighlightedText } from "../react/NoteAutocomplete.jsx";
 import NoteLink, { NewNoteLink } from "../react/NoteLink.jsx";
-import { disposeReactWidget, ParentComponent, renderReactWidgetAtElement } from "../react/react_utils.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "../react/react_utils.jsx";
 import OptionsRow, { OptionsRowWithToggle } from "../type_widgets/options/components/OptionsRow.jsx";
 import { ATTR_HELP, AttrHelpEntry } from "./attr_help.js";
 import { attributeKindIcon, DEFINITION_TYPE_ICONS, RELATION_DEFINITION_TYPE } from "./attribute_types.js";
@@ -43,7 +41,6 @@ export interface AttributeDetailOpts {
     attribute: Attribute;
     isOwned: boolean;
     x: number;
-    y: number;
     focus?: "name";
     /**
      * The element the popup was spawned from. Mouse presses inside it do not dismiss the
@@ -180,7 +177,6 @@ export interface AttributeDetailProps extends AttributeFormCallbacks {
  */
 export function AttributeDetail({ opts, currentNoteId, onDismiss, onCancel, ...formCallbacks }: AttributeDetailProps) {
     const popupRef = useRef<HTMLDivElement>(null);
-    const parentComponent = useContext(ParentComponent);
     const shown = !!opts;
     const { onSaveAndClose } = formCallbacks;
 
@@ -222,11 +218,7 @@ export function AttributeDetail({ opts, currentNoteId, onDismiss, onCancel, ...f
             return;
         }
 
-        // Classic-layout coordinates are relative to the hosting widget, mirroring how the
-        // legacy widget resolved its own parent in the component tree.
-        const hostWidget = parentComponent instanceof BasicWidget ? parentComponent : null;
-        const reposition = () =>
-            positionPopup(popup, opts, hostWidget?.$widget?.offset() ?? { top: 0, left: 0 });
+        const reposition = () => positionPopup(popup, opts);
         reposition();
 
         // The placement holds only for the size it measured, and editing changes that size — a
@@ -236,7 +228,7 @@ export function AttributeDetail({ opts, currentNoteId, onDismiss, onCancel, ...f
         const resizeObserver = new ResizeObserver(reposition);
         resizeObserver.observe(popup);
         return () => resizeObserver.disconnect();
-    }, [ opts, parentComponent ]);
+    }, [ opts ]);
 
     // Dismiss on click outside the popup, except in floating UI logically belonging
     // to it (autocomplete dropdowns and context menus are appended to the body).
@@ -1104,9 +1096,7 @@ const ATTR_TITLES: Record<string, string> = {
     "relation-definition": t("attribute_detail.definition")
 };
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
-
-export function positionPopup(popup: HTMLElement, { x, y, anchor }: AttributeDetailOpts, parentOffset: { top: number; left: number }) {
+export function positionPopup(popup: HTMLElement, { x, anchor }: AttributeDetailOpts) {
     const outerWidth = popup.offsetWidth;
     const outerHeight = popup.offsetHeight;
     const windowHeight = document.documentElement.clientHeight;
@@ -1118,38 +1108,26 @@ export function positionPopup(popup: HTMLElement, { x, y, anchor }: AttributeDet
 
     if (anchor) {
         positionPopupBesideAnchor(popup, anchor);
-    } else if (isNewLayout) {
-        // The popup always sits above the note attributes pane so it never covers it;
-        // when the pane is closed (e.g. opened from the collection column editor),
-        // it docks to the status bar instead.
-        const attrPane = document.querySelector(".bottom-panel.attribute-list");
-        const paneShown = attrPane instanceof HTMLElement && !attrPane.classList.contains("hidden-ext");
-        const anchorTop = paneShown
-            ? attrPane.getBoundingClientRect().top
-            : document.body.clientHeight - (document.querySelector<HTMLElement>(".component.status-bar")?.offsetHeight ?? 0);
-
-        // Centered on the click, clamped to the viewport. Deliberately not using
-        // getDetailPosition(): its legacy right-pin quirk reads as a plain 0 here,
-        // which kept the popup flush left regardless of the click position.
-        const windowWidth = document.documentElement.clientWidth;
-        const left = Math.max(Math.min(x - outerWidth / 2, windowWidth - outerWidth - 10), 10);
-
-        popup.style.left = `${left}px`;
-        popup.style.right = "";
-        popup.style.top = "unset";
-        popup.style.bottom = `${document.body.clientHeight - anchorTop}px`;
-        popup.style.maxHeight = `${anchorTop}px`;
-    } else {
-        const detPosition = getDetailPosition(x, parentOffset.left, outerWidth);
-
-        popup.style.left = toCssPos(detPosition.left);
-        popup.style.right = toCssPos(detPosition.right);
-        popup.style.top = `${y - parentOffset.top + 70}px`;
-        popup.style.bottom = "";
-        // `>=` so that re-placing a popup already at the cap keeps the cap: with `>` it would
-        // un-cap, grow, and be capped again by the resize-driven re-placement, ping-ponging forever.
-        popup.style.maxHeight = outerHeight + y >= windowHeight - 50 ? `${windowHeight - y - 50}px` : "10000px";
+        return;
     }
+
+    // The popup sits above the note attributes pane so it never covers it; when the pane is closed
+    // (e.g. opened from the collection column editor), it docks to the status bar instead.
+    const attrPane = document.querySelector(".bottom-panel.attribute-list");
+    const paneShown = attrPane instanceof HTMLElement && !attrPane.classList.contains("hidden-ext");
+    const anchorTop = paneShown
+        ? attrPane.getBoundingClientRect().top
+        : document.body.clientHeight - (document.querySelector<HTMLElement>(".component.status-bar")?.offsetHeight ?? 0);
+
+    // Centered on the click, clamped to the viewport.
+    const windowWidth = document.documentElement.clientWidth;
+    const left = Math.max(Math.min(x - outerWidth / 2, windowWidth - outerWidth - 10), 10);
+
+    popup.style.left = `${left}px`;
+    popup.style.right = "";
+    popup.style.top = "unset";
+    popup.style.bottom = `${document.body.clientHeight - anchorTop}px`;
+    popup.style.maxHeight = `${anchorTop}px`;
 }
 
 /** How far the popup stays from its anchor, and from the edges of the viewport. */
@@ -1179,32 +1157,6 @@ function positionPopupBesideAnchor(popup: HTMLElement, anchor: HTMLElement) {
     // Level with the anchor, slid up as far as needed to stay wholly on screen.
     popup.style.top = `${Math.max(Math.min(anchorRect.top, windowHeight - outerHeight - VIEWPORT_MARGIN), VIEWPORT_MARGIN)}px`;
     popup.style.bottom = "";
-}
-
-function getDetailPosition(x: number, offsetLeft: number, outerWidth: number) {
-    let left: number | string = x - offsetLeft - outerWidth / 2;
-    let right: number | string = "";
-
-    if (left < 0) {
-        left = 10;
-    } else {
-        const rightEdge = left + outerWidth;
-
-        // Kept bug-for-bug from the legacy widget: this compares against the popup's own
-        // width instead of the viewport's, so it holds whenever left >= 0 and the popup
-        // effectively pins to the right edge except for far-left clicks.
-        if (rightEdge > outerWidth - 10) {
-            left = "";
-            right = 10;
-        }
-    }
-
-    return { left, right };
-}
-
-/** An empty string clears the property, matching the jQuery `.css()` behavior. */
-function toCssPos(value: number | string) {
-    return typeof value === "number" ? `${value}px` : value;
 }
 
 export type AttrType = "label" | "label-definition" | "relation" | "relation-definition" | undefined;
