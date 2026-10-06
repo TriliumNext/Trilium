@@ -12,13 +12,13 @@ import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
-import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
+import { useColorScheme, useElementSize, useNote, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import Slider from "../react/Slider";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import MapTypeSwitcher from "./MapTypeSwitcher";
+import MapTypeSwitcher, { CloneCombineSwitcher } from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
-import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
+import { CloneCombine, isRootedAtCurrentNote, MapType, NOTE_MAP_CLONE_COMBINE_OPTION, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, showsCloneCombine, toCloneCombine, toMapType, usesReaderPreference } from "./utils";
 
 /** Maximum number of notes to render in the note map before showing a warning. */
 const MAX_NOTES_THRESHOLD = 1_000;
@@ -33,6 +33,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const styleResolverRef = useRef<HTMLDivElement>(null);
     const [ mapType, setMapType ] = useMapType(note, widgetMode);
+    const [ combine, setCombine ] = useCloneCombine(note, widgetMode);
     const [ mapRootIdLabel ] = useNoteLabel(note, "mapRootNoteId");
 
     const graphRef =
@@ -60,6 +61,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         return appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
 
     }, [ note ]);
+    const mapRoot = useNote(mapRootId);
 
     // Build the note graph instance.
     useEffect(() => {
@@ -85,7 +87,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         const excludeRelations = labelValues("mapExcludeRelation");
         const includeRelations = labelValues("mapIncludeRelation");
         Promise.all([
-            loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType, widgetMode === "sidebar"),
+            loadNotesAndRelations(mapRootId, excludeRelations, includeRelations, mapType, widgetMode === "sidebar", combine),
             // Awaited alongside the notes rather than after them: a canvas asked to draw from a font
             // it does not have yet says nothing and draws tofu, and the map is painted the moment its
             // data lands. Every pack's font, since which of them the map wears is not known until the
@@ -114,7 +116,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 themeStyle,
                 widgetMode,
                 container,
-                iconGlyphs
+                iconGlyphs,
+                mapType
             });
 
             // Interaction
@@ -146,11 +149,14 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph._destructor();
             container.replaceChildren();
         };
-    }, [ note, mapType, bypassLimit, themeStyle ]);
+    }, [ note, mapType, combine, bypassLimit, themeStyle ]);
 
     useEffect(() => {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
+        if (mapType === "clone") {
+            graphRef.current.dagLevelDistance(linkDistance);
+        }
         graphRef.current.graphData(notesAndRelationsRef.current);
     }, [ linkDistance, mapType ]);
 
@@ -175,7 +181,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
     useEffect(() => {
         setBypassLimit(false);
-    }, [ note, mapType ]);
+    }, [ note, mapType, combine ]);
 
     if (tooManyNotes && !bypassLimit) {
         return (
@@ -198,10 +204,18 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             {/* The sidebar offers the choice in its card's header instead, where the pane keeps the
                 controls of a widget — see sidebar/NoteMap.tsx. */}
             {widgetMode !== "sidebar" && (
-                <MapTypeSwitcher
-                    mapType={mapType} setMapType={setMapType}
-                    className="btn-group-sm content-floating-buttons top-left" frame
-                />
+                <div className="note-map-overlay-start content-floating-buttons top-left">
+                    <MapTypeSwitcher
+                        mapType={mapType} setMapType={setMapType}
+                        className="btn-group-sm" frame
+                    />
+                    {showsCloneCombine(mapType, mapRoot?.type) && (
+                        <CloneCombineSwitcher
+                            combine={combine} setCombine={setCombine}
+                            className="btn-group-sm" frame
+                        />
+                    )}
+                </div>
             )}
 
             {/* Not in the sidebar, where neither has anything to hold on to: a map that small is not
@@ -238,7 +252,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 }
 
 /**
- * Which of the two maps to draw, and how to ask for the other one.
+ * Which map to draw, and how to ask for another one.
  *
  * The connections tab's map is a lens on whatever note is being read, so which map it draws is the
  * reader's own preference and is kept as an option (see {@link usesReaderPreference}). Everywhere
@@ -252,6 +266,15 @@ function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (map
     return usesReaderPreference(widgetMode)
         ? [ toMapType(option), (mapType) => void setOption(mapType) ]
         : [ toMapType(label), setLabel ];
+}
+
+function useCloneCombine(note: FNote, widgetMode: NoteMapWidgetMode): [ CloneCombine, (combine: CloneCombine) => void ] {
+    const [ label, setLabel ] = useNoteLabel(note, "mapCloneCombine");
+    const [ option, setOption ] = useTriliumOption(NOTE_MAP_CLONE_COMBINE_OPTION);
+
+    return usesReaderPreference(widgetMode)
+        ? [ toCloneCombine(option), (combine) => void setOption(combine) ]
+        : [ toCloneCombine(label), setLabel ];
 }
 
 /**

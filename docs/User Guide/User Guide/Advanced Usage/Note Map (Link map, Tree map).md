@@ -1,10 +1,11 @@
 # Note Map (Link map, Tree map)
 Note map is a visualization of connections between notes. This provides an insight into a structure ("web") of notes.
 
-There are two types of note map:
+There are three types of note map:
 
 *   Link Map, which shows relations between notes.
-*   Note Map, which shows the hierarchical tree structure.
+*   Tree Map, which shows the hierarchical tree structure under a note.
+*   Clone Map, which shows every placement of a note by walking its parents up to the root.
 
 ## Accessing the note map
 
@@ -51,6 +52,16 @@ The link map will also show unlinked notes that are part of the hierarchy as a c
 Shows hierarchical map of notes:
 
 <figure class="image"><img style="aspect-ratio:1420/1490;" src="1_Note Map (Link map, Tree map)_image.png" width="1420" height="1490"></figure>
+
+## Clone Map
+
+Shows every placement of the current note by walking its parents up to the root. Shared ancestors appear once, so two clone paths that share a parent merge instead of listing the same note twice.
+
+Unlike the tree map, which draws the notes *under* the current note, the clone map draws the notes *above* it. A note that is not cloned is a single chain to the root.
+
+On a dedicated <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a> note, the clone map shows the placements of the map's root note, not that note's subtree.
+
+Rooted at a <a class="reference-link" href="../Note%20Types/Saved%20Search.md">search note</a>, the clone map uses the search results as seeds instead of the search note itself. Any and All are decided on clone paths only: *Any seed* keeps a note if at least one seed sits on a clone path below it; *All seeds* keeps a note if every seed does, plus the clone paths from that meet down to the seeds. A parent that is only on some of the seeds' clone paths is dropped, and a tree child that is not on any clone path is ignored. The choice is remembered like `#mapType`: as `#mapCloneCombine` on a dedicated note map, and as a sidebar option otherwise.
 
 ## See also
 

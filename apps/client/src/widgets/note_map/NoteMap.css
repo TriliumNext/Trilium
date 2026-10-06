@@ -3,6 +3,13 @@
     overflow: hidden;
 }
 
+.note-map-widget .note-map-overlay-start {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
 /* Style Ui Element to Drag Nodes */
 .fixnodes-type-switcher {
     display: flex;

@@ -181,6 +181,7 @@ export const ATTR_HELP: AttrHelpMap = {
         geolocation: t("attribute_detail.geolocation"),
         geoShape: t("attribute_detail.geo_shape"),
         mapType: t("attribute_detail.map_type"),
+        mapCloneCombine: t("attribute_detail.map_clone_combine"),
         "map:style": t("attribute_detail.map_style"),
         "map:darkStyle": t("attribute_detail.map_dark_style"),
         "map:scale": t("attribute_detail.map_scale"),

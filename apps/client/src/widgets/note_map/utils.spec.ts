@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getFitPadding, getHopDistances, mixColors, rgb2hex, toMapType, usesReaderPreference, withAlpha } from "./utils";
+import { getFitPadding, getHopDistances, mixColors, rgb2hex, showsCloneCombine, toCloneCombine, toMapType, usesReaderPreference, withAlpha } from "./utils";
 
 describe("getHopDistances", () => {
     const link = (source: string, target: string) => ({ source, target });
@@ -79,8 +79,9 @@ describe("withAlpha", () => {
 });
 
 describe("toMapType", () => {
-    it("only reads the tree map out of the label, the link map standing for anything else", () => {
+    it("reads the tree and clone maps out of the label, the link map standing for anything else", () => {
         expect(toMapType("tree")).toBe("tree");
+        expect(toMapType("clone")).toBe("clone");
         expect(toMapType("link")).toBe("link");
         expect(toMapType("nonsense")).toBe("link");
         expect(toMapType(null)).toBe("link");
@@ -88,9 +89,30 @@ describe("toMapType", () => {
     });
 });
 
+describe("toCloneCombine", () => {
+    it("reads All out of the value and takes anything else as Any", () => {
+        expect(toCloneCombine("all")).toBe("all");
+        expect(toCloneCombine("any")).toBe("any");
+        expect(toCloneCombine("nonsense")).toBe("any");
+        expect(toCloneCombine(null)).toBe("any");
+        expect(toCloneCombine(undefined)).toBe("any");
+    });
+});
+
+describe("showsCloneCombine", () => {
+    it("is only a choice on a clone map rooted at a search", () => {
+        expect(showsCloneCombine("clone", "search")).toBe(true);
+        expect(showsCloneCombine("clone", "text")).toBe(false);
+        expect(showsCloneCombine("link", "search")).toBe(false);
+        expect(showsCloneCombine("tree", "search")).toBe(false);
+        expect(showsCloneCombine("clone", null)).toBe(false);
+        expect(showsCloneCombine("clone", undefined)).toBe(false);
+    });
+});
+
 describe("usesReaderPreference", () => {
     it("is the connections tab's map and the same map expanded, and no other", () => {
-        // Which of the two maps those draw is the reader's own preference; everywhere else it is the
+        // Which map those draw is the reader's own preference; everywhere else it is the
         // note's, asked for through its `mapType` label.
         expect(usesReaderPreference("sidebar")).toBe(true);
         expect(usesReaderPreference("expanded")).toBe(true);
