@@ -10,6 +10,8 @@ Entity hashing is done in `content_hash#getEntityHashes`.
     *   `branches`
     *   `etapi_tokens`
     *   `options`
+    *   `flashcards`
+    *   `flashcard_reviews`
 *   For some reason `note_reordering` entities are ignored specifically.
 *   All the rows in `entity_changes` are then ordered alphabetically, based on their `entityId`.
 *   Every entity row is then grouped by `entityName` and then by sector. The sector is defined as the first character of the `id`.

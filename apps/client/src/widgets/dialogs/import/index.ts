@@ -1,3 +1,4 @@
+import ankiProvider from "./anki.js";
 import anytypeProvider from "./anytype.js";
 import evernoteProvider from "./evernote.js";
 import filesProvider from "./files.js";
@@ -12,6 +13,15 @@ import type { ImportProvider } from "./types.js";
  * picker (services in a grid, local file import grouped full-width beneath) and each provider's panel
  * automatically.
  */
-export const importProviders: ImportProvider[] = [filesProvider, oneNoteProvider, notionProvider, keepProvider, evernoteProvider, anytypeProvider, obsidianProvider];
+export const importProviders: ImportProvider[] = [
+    filesProvider,
+    ankiProvider,
+    oneNoteProvider,
+    notionProvider,
+    keepProvider,
+    evernoteProvider,
+    anytypeProvider,
+    obsidianProvider
+];
 
 export type { ImportProvider, ImportProviderPanelProps } from "./types.js";

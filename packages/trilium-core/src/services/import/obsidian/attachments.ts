@@ -121,14 +121,20 @@ export function resolveAttachment(index: AttachmentIndex, name: string): Resolve
 
 /**
  * Extracts the vault file a `src`/`href` points at, or null for an external URL, an in-note anchor, or an
- * empty value. Strips the leading `/` the Markdown renderer adds, URL-decodes, and peels off Obsidian's
- * `#heading` and `|size` suffixes (the numeric size becomes the image width).
+ * empty value. Strips the leading `/` the Markdown renderer adds and a raw `#heading` fragment
+ * before URL-decoding (so `%23` remains a filename character), then peels off Obsidian's `|size`
+ * suffix (the numeric size becomes the image width).
  */
 function attachmentRef(value: string | undefined | null): { name: string; width?: string } | null {
     if (!value || /^(https?:|data:|mailto:|tel:|#)/i.test(value)) {
         return null;
     }
-    let ref = safeDecode(value.replace(/^\//, ""));
+    let rawRef = value.replace(/^\//, "");
+    const fragment = rawRef.indexOf("#");
+    if (fragment !== -1) {
+        rawRef = rawRef.slice(0, fragment);
+    }
+    let ref = safeDecode(rawRef);
     let width: string | undefined;
     const pipe = ref.indexOf("|");
     if (pipe !== -1) {
@@ -137,10 +143,6 @@ function attachmentRef(value: string | undefined | null): { name: string; width?
             width = size[1];
         }
         ref = ref.slice(0, pipe);
-    }
-    const hash = ref.indexOf("#");
-    if (hash !== -1) {
-        ref = ref.slice(0, hash);
     }
     ref = ref.replace(/\\/g, "/").trim();
     return ref ? { name: ref, width } : null;

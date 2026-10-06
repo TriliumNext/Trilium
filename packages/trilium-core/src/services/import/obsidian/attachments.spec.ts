@@ -140,6 +140,22 @@ describe("applyAttachments", () => {
         expect(saveImageToAttachment).toHaveBeenCalledWith("note1", expect.any(Uint8Array), "pic.png", false);
     });
 
+    it("preserves a percent-encoded # as part of the filename", () => {
+        const { note } = fakeNote();
+        applyAttachments(
+            note,
+            `<p><img src="/photo%23one.png"></p>`,
+            indexOf("photo#one.png"),
+            false
+        );
+        expect(saveImageToAttachment).toHaveBeenCalledWith(
+            "note1",
+            expect.any(Uint8Array),
+            "photo#one.png",
+            false
+        );
+    });
+
     it("ignores a non-numeric |suffix (it carries no width) and skips an empty reference", () => {
         const { note } = fakeNote();
         // `picture.png|caption` — the alias isn't a size, so no width attribute is added.

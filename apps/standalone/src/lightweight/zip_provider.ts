@@ -1,5 +1,5 @@
 import type { FileStream, ZipArchive, ZipEntry, ZipProvider, ZipSource } from "@triliumnext/core/src/services/zip_provider.js";
-import { strToU8, unzip, zipSync } from "fflate";
+import { strToU8, Unzip, UnzipInflate, zipSync } from "fflate";
 
 /** The browser/WASM build has no filesystem, so a `path` source is unsupported here — only raw bytes. */
 function requireBuffer(source: ZipSource): Uint8Array {
@@ -7,6 +7,16 @@ function requireBuffer(source: ZipSource): Uint8Array {
         throw new Error("Path-based zip reading is not supported in the browser; uploads arrive as bytes.");
     }
     return source;
+}
+
+function joinChunks(chunks: Uint8Array[], totalBytes: number): Uint8Array {
+    const result = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return result;
 }
 
 type ZipOutput = {
@@ -79,33 +89,92 @@ export default class BrowserZipProvider implements ZipProvider {
         throw new Error("File stream creation is not supported in the browser.");
     }
 
-    readZipFile(
+    async readZipFile(
         source: ZipSource,
-        processEntry: (entry: ZipEntry, readContent: () => Promise<Uint8Array>) => Promise<void>,
-        filenameEncoding?: string
+        processEntry: (
+            entry: ZipEntry,
+            readContent: (maximumBytes?: number) => Promise<Uint8Array>
+        ) => Promise<void>,
+        filenameEncoding?: string,
+        entryFilter?: (entry: ZipEntry) => boolean
     ): Promise<void> {
         const buffer = requireBuffer(source);
-        return new Promise<void>((res, rej) => {
-            // Read inside the executor so a malformed archive rejects rather than throwing
-            // synchronously, matching how an unzip() failure surfaces.
-            const fileNames = readCentralDirectory(buffer);
+        const fileNames = readCentralDirectory(buffer);
+        let extractionError: unknown;
+        let processing = Promise.resolve();
 
-            unzip(buffer, async (err, files) => {
-                if (err) { rej(err); return; }
+        const unzipper = new Unzip((file) => {
+            const fileName = decodeZipFileName(
+                file.name,
+                fileNames.get(file.name),
+                filenameEncoding
+            );
+            const entry = { fileName, uncompressedSize: file.originalSize };
+            if (entryFilter && !entryFilter(entry)) {
+                return;
+            }
 
-                try {
-                    for (const [fileName, data] of Object.entries(files)) {
-                        await processEntry(
-                            { fileName: decodeZipFileName(fileName, fileNames.get(fileName), filenameEncoding) },
-                            () => Promise.resolve(data)
-                        );
-                    }
-                    res();
-                } catch (e) {
-                    rej(e);
+            let contentPromise: Promise<Uint8Array> | undefined;
+            const readContent = (maximumBytes?: number) => {
+                if (contentPromise) {
+                    return contentPromise;
                 }
+                contentPromise = new Promise<Uint8Array>((resolve, reject) => {
+                    const chunks: Uint8Array[] = [];
+                    let totalBytes = 0;
+                    file.ondata = (error, data, final) => {
+                        if (error) {
+                            extractionError = error;
+                            reject(error);
+                            return;
+                        }
+                        totalBytes += data.byteLength;
+                        if (maximumBytes !== undefined && totalBytes > maximumBytes) {
+                            const limitError = new Error(
+                                `ZIP entry exceeds ${maximumBytes} byte read limit.`
+                            );
+                            extractionError = limitError;
+                            file.terminate();
+                            reject(limitError);
+                            return;
+                        }
+                        chunks.push(data);
+                        if (final) {
+                            resolve(joinChunks(chunks, totalBytes));
+                        }
+                    };
+                    file.start();
+                });
+                return contentPromise;
+            };
+            // Match server provider's archive-order processing. A later file may already be
+            // buffered by fflate, but it is not expanded or handed to importer before this file
+            // completes.
+            processing = processing.then(async () => {
+                if (!extractionError) {
+                    await processEntry(entry, readContent);
+                }
+            }).catch((error) => {
+                extractionError ??= error;
             });
         });
+        unzipper.register(UnzipInflate);
+
+        // Small input chunks bound how much one inflate step can allocate beyond
+        // readContent()'s limit.
+        const inputChunkSize = 4 * 1024;
+        for (let offset = 0; offset < buffer.byteLength; offset += inputChunkSize) {
+            const end = Math.min(offset + inputChunkSize, buffer.byteLength);
+            unzipper.push(buffer.subarray(offset, end), end === buffer.byteLength);
+            await Promise.resolve();
+            if (extractionError) {
+                throw extractionError;
+            }
+        }
+        await processing;
+        if (extractionError) {
+            throw extractionError;
+        }
     }
 }
 

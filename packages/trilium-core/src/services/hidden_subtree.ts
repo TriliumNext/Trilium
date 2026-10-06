@@ -344,6 +344,7 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock", attributes: [{ type: "label", name: "notInStandalone" }] },
                     
                     // Miscellaneous
+                    { id: "_optionsFlashcards", title: t("hidden-subtree.flashcards-title"), type: "contentWidget", icon: "bx-brain" },
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
                     { id: "_optionsAdvanced", title: t("hidden-subtree.advanced-title"), type: "contentWidget" }
                 ]

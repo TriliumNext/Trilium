@@ -29,6 +29,10 @@ function eraseNotes(noteIdsToErase: string[]) {
 
     eraseRevisions(revisionIdsToErase);
 
+    const cardIdsToErase = sql.getManyRows<{ cardId: string }>(/*sql*/`SELECT cardId FROM flashcards WHERE noteId IN (???)`, noteIdsToErase).map((row) => row.cardId);
+
+    eraseFlashcards(cardIdsToErase);
+
     getLog().info(`Erased notes: ${JSON.stringify(noteIdsToErase)}`);
 }
 
@@ -95,6 +99,35 @@ function eraseRevisions(revisionIdsToErase: string[]) {
     getLog().info(`Removed revisions: ${JSON.stringify(revisionIdsToErase)}`);
 }
 
+function eraseFlashcards(cardIdsToErase: string[]) {
+    if (cardIdsToErase.length === 0) {
+        return;
+    }
+
+    const sql = getSql();
+    const reviewIdsToErase = sql.getManyRows<{ reviewId: string }>(/*sql*/`SELECT reviewId FROM flashcard_reviews WHERE cardId IN (???)`, cardIdsToErase).map((row) => row.reviewId);
+    eraseFlashcardReviews(reviewIdsToErase);
+
+    sql.executeMany(/*sql*/`DELETE FROM flashcards WHERE cardId IN (???)`, cardIdsToErase);
+
+    setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'flashcards' AND entityId IN (???)`, cardIdsToErase));
+
+    getLog().info(`Erased flashcards: ${JSON.stringify(cardIdsToErase)}`);
+}
+
+function eraseFlashcardReviews(reviewIdsToErase: string[]) {
+    if (reviewIdsToErase.length === 0) {
+        return;
+    }
+
+    const sql = getSql();
+    sql.executeMany(/*sql*/`DELETE FROM flashcard_reviews WHERE reviewId IN (???)`, reviewIdsToErase);
+
+    setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'flashcard_reviews' AND entityId IN (???)`, reviewIdsToErase));
+
+    getLog().info(`Erased flashcard reviews: ${JSON.stringify(reviewIdsToErase)}`);
+}
+
 function eraseUnusedBlobs() {
     const sql = getSql();
     const unusedBlobIds = sql.getColumn(`
@@ -141,6 +174,9 @@ function eraseDeletedEntities(eraseEntitiesAfterTimeInSeconds: number | null = n
         const attachmentIdsToErase = sql.getColumn<string>("SELECT attachmentId FROM attachments WHERE isDeleted = 1 AND utcDateModified <= ?", [dateUtils.utcDateTimeStr(cutoffDate)]);
         eraseAttachments(attachmentIdsToErase);
 
+        const cardIdsToErase = sql.getColumn<string>("SELECT cardId FROM flashcards WHERE isDeleted = 1 AND utcDateModified <= ?", [dateUtils.utcDateTimeStr(cutoffDate)]);
+        eraseFlashcards(cardIdsToErase);
+
         eraseUnusedBlobs();
     });
 }
@@ -181,6 +217,12 @@ function eraseNotesWithDeleteIds(deleteIds: string[]) {
         deleteIds
     ).map((row) => row.attachmentId);
     eraseAttachments(attachmentIdsToErase);
+
+    const cardIdsToErase = sql.getManyRows<{ cardId: string }>(
+        /*sql*/`SELECT cardId FROM flashcards WHERE isDeleted = 1 AND deleteId IN (???)`,
+        deleteIds
+    ).map((row) => row.cardId);
+    eraseFlashcards(cardIdsToErase);
 
     eraseUnusedBlobs();
 }

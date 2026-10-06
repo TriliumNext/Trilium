@@ -154,6 +154,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "experimentalFeatures",
     "newLayout",
     "mfaMethod",
+    "flashcardSchedulerConfig",
     // LLM options
     "aiEnabled",
     "llmProviders",

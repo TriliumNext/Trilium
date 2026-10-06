@@ -38,6 +38,7 @@ const enum KeyboardActionNamesEnum {
     activatePreviousTab,
     openNewWindow,
     openTodayNote,
+    showFlashcards,
     toggleTray,
     toggleZenMode,
     firstTab,

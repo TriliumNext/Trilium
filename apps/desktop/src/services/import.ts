@@ -153,10 +153,11 @@ async function runNativeImport(path: string, opts: ImportFromTokenOpts): Promise
 }
 
 /**
- * Builds the {@link File} the importer expects from a path on disk. A zip that's read in place — a generic
- * zip that will be exploded, or any tagged provider zip (obsidian/anytype/notion/keep) — is left unbuffered
- * (an empty buffer + the `path`) so it streams per entry; every other file is small enough to read into
- * memory here. The MIME is resolved by the importer from the filename, so it's left blank.
+ * Builds the {@link File} the importer expects from a path on disk. An archive read in place —
+ * a generic exploded zip or a tagged provider package (Anki, Obsidian, Anytype, Notion, Keep) —
+ * is left unbuffered (an empty buffer + the `path`) so it streams per entry; every other file is
+ * small enough to read into memory here. The importer resolves MIME from filename, so it stays
+ * blank.
  */
 async function buildImportFile(path: string, explodeArchives: boolean, format?: string): Promise<File> {
     const fileName = basename(path);

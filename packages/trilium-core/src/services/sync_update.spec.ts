@@ -177,6 +177,62 @@ describe("sync_update service (real DB)", () => {
         expect(Buffer.from(b ?? []).toString()).toBe(shortContent);
     });
 
+    it("applies flashcard rows from sync and normalizes browser booleans", () => {
+        const cardId = "su_sync_card";
+
+        apply([{
+            entityChange: buildEC({ entityName: "flashcards", entityId: cardId }),
+            entity: flashcardRow(cardId, { suspended: true, isDeleted: false })
+        }]);
+
+        expect(getSql().getRowOrNull(/*sql*/`
+            SELECT cardId, noteId, suspended, isDeleted, cardType
+            FROM flashcards
+            WHERE cardId = ?
+        `, [cardId])).toEqual({
+            cardId,
+            noteId: "su_sync_note",
+            suspended: 1,
+            isDeleted: 0,
+            cardType: "basic"
+        });
+    });
+
+    it("applies flashcard review rows from sync", () => {
+        const cardId = "su_sync_review_card";
+        const reviewId = "su_sync_review";
+        cls.init(() => {
+            getSql().replace("flashcards", flashcardRow(cardId));
+        });
+
+        apply([{
+            entityChange: buildEC({ entityName: "flashcard_reviews", entityId: reviewId }),
+            entity: flashcardReviewRow(reviewId, cardId)
+        }]);
+
+        expect(getSql().getRowOrNull(/*sql*/`
+            SELECT reviewId, cardId, rating, schedulingRevisionAfter
+            FROM flashcard_reviews
+            WHERE reviewId = ?
+        `, [reviewId])).toEqual({
+            reviewId,
+            cardId,
+            rating: 3,
+            schedulingRevisionAfter: 1
+        });
+    });
+
+    it("erases flashcard rows from sync", () => {
+        const cardId = "su_sync_erase_card";
+        cls.init(() => {
+            getSql().replace("flashcards", flashcardRow(cardId));
+        });
+
+        apply([{ entityChange: buildEC({ entityName: "flashcards", entityId: cardId, isErased: true }), entity: undefined }]);
+
+        expect(getSql().getRowOrNull("SELECT 1 FROM flashcards WHERE cardId = ?", [cardId])).toBeNull();
+    });
+
     it("ignores option changes that have no entity row", () => {
         // entityName 'options' + no row -> early return, no throw.
         expect(() => apply([{ entityChange: buildEC({ entityName: "options", entityId: "su_missing_option" }), entity: undefined }])).not.toThrow();
@@ -203,4 +259,70 @@ function localChangeId(entityName: string, entityId: string): string {
 function blobRow(blobId: string, content: string): EntityRow {
     const now = dateUtils.utcNowDateTime();
     return { blobId, content, dateModified: now, utcDateModified: now } as unknown as EntityRow;
+}
+
+function flashcardRow(cardId: string, extra: Record<string, unknown> = {}): EntityRow {
+    const now = dateUtils.utcNowDateTime();
+    return {
+        cardId,
+        noteId: "su_sync_note",
+        deckNoteId: "root",
+        ordinal: 0,
+        state: 2,
+        due: "2099-01-02 00:00:00.000Z",
+        stability: 3,
+        difficulty: 4,
+        elapsedDays: 1,
+        scheduledDays: 2,
+        learningSteps: 0,
+        reps: 5,
+        lapses: 0,
+        lastReview: "2099-01-01 00:00:00.000Z",
+        suspended: 0,
+        algorithm: "fsrs-6",
+        algorithmVersion: "ts-fsrs@5.4.1",
+        schedulingRevision: 1,
+        schedulerConfig: "{}",
+        cardType: "basic",
+        utcDateCreated: now,
+        utcDateModified: now,
+        isDeleted: 0,
+        deleteId: null,
+        ...extra
+    } as unknown as EntityRow;
+}
+
+function flashcardReviewRow(reviewId: string, cardId: string): EntityRow {
+    const now = dateUtils.utcNowDateTime();
+    return {
+        reviewId,
+        cardId,
+        rating: 3,
+        state: 2,
+        dueBefore: "2099-01-02 00:00:00.000Z",
+        dueAfter: "2099-01-03 00:00:00.000Z",
+        stabilityBefore: 2,
+        stabilityAfter: 3,
+        difficultyBefore: 4,
+        difficultyAfter: 5,
+        elapsedDays: 1,
+        scheduledDays: 2,
+        learningSteps: 0,
+        reviewedAt: "2099-01-01 00:00:00.000Z",
+        durationMs: 1000,
+        algorithm: "fsrs-6",
+        algorithmVersion: "ts-fsrs@5.4.1",
+        clientRequestId: null,
+        utcDateCreated: now,
+        utcDateModified: now,
+        elapsedDaysBefore: 0,
+        scheduledDaysBefore: 1,
+        learningStepsBefore: 0,
+        repsBefore: 4,
+        lapsesBefore: 0,
+        lastReviewBefore: "2098-12-31 00:00:00.000Z",
+        schedulingRevisionBefore: 0,
+        schedulingRevisionAfter: 1,
+        schedulerConfig: "{}"
+    } as unknown as EntityRow;
 }

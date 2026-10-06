@@ -1,8 +1,10 @@
 import type { BranchRow } from "@triliumnext/commons";
 import type { EntityChange } from "@triliumnext/commons";
+import type { FlashcardRow } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
+import BFlashcard from "../becca/entities/bflashcard.js";
 import noteTypesService from "../services/note_types.js";
 import { hashedBlobId, randomString } from "../services/utils/index.js";
 import * as cls from "./context.js";
@@ -13,6 +15,7 @@ import optionsService from "./options.js";
 import { getSql } from "./sql/index.js";
 import sqlInit from "./sql_init.js";
 import syncMutexService from "./sync_mutex.js";
+import syncOptions from "./sync_options.js";
 import ws from "./ws.js";
 import { default as eraseService } from "./erase.js";
 import becca_loader from "../becca/becca_loader.js";
@@ -437,6 +440,50 @@ class ConsistencyChecks {
                     logFix(`Attachment '${attachmentId}' has been deleted since the associated note '${noteId}' is deleted.`);
                 } else {
                     logError(`Attachment '${attachmentId}' is not deleted even though the associated note '${noteId}' is deleted.`);
+                }
+            }
+        );
+
+        this.findAndFixIssues(
+            `
+                    SELECT cardId,
+                            flashcards.noteId
+                    FROM flashcards
+                    LEFT JOIN notes ON notes.noteId = flashcards.noteId AND notes.isDeleted = 0
+                    WHERE flashcards.isDeleted = 0
+                    AND notes.noteId IS NULL`,
+            ({ cardId, noteId }) => {
+                if (this.autoFix) {
+                    const flashcard = getFlashcardEntity(cardId);
+                    if (!flashcard) return;
+                    flashcard.markAsDeleted("missing-source-note");
+                    delete becca.flashcards[cardId];
+
+                    logFix(`Flashcard '${cardId}' has been deleted since its source note '${noteId}' is missing or deleted.`);
+                } else {
+                    logError(`Flashcard '${cardId}' references missing or deleted source note '${noteId}'.`);
+                }
+            }
+        );
+
+        this.findAndFixIssues(
+            `
+                    SELECT cardId,
+                            flashcards.deckNoteId
+                    FROM flashcards
+                    LEFT JOIN notes ON notes.noteId = flashcards.deckNoteId AND notes.isDeleted = 0
+                    WHERE flashcards.isDeleted = 0
+                    AND notes.noteId IS NULL`,
+            ({ cardId, deckNoteId }) => {
+                if (this.autoFix) {
+                    const flashcard = getFlashcardEntity(cardId);
+                    if (!flashcard) return;
+                    flashcard.deckNoteId = "root";
+                    flashcard.save();
+
+                    logFix(`Flashcard '${cardId}' has been moved to root since its deck note '${deckNoteId}' is missing or deleted.`);
+                } else {
+                    logError(`Flashcard '${cardId}' references missing or deleted deck note '${deckNoteId}'.`);
                 }
             }
         );
@@ -916,7 +963,7 @@ class ConsistencyChecks {
         // The `syncIncomplete` option is set to "true" when a sync pull begins
         // and cleared to "false" only after sync fully converges.  While it is
         // set, we skip consistency checks entirely.
-        if (optionsService.getOptionOrNull("syncIncomplete") === "true") {
+        if (syncOptions.isSyncSetup() && optionsService.getOptionOrNull("syncIncomplete") === "true") {
             getLog().info("Skipping consistency checks because sync is incomplete");
             return;
         }
@@ -941,6 +988,20 @@ class ConsistencyChecks {
             getLog().info(`All consistency checks passed ${  this.fixedIssues ? "after some fixes" : "with no errors detected"  } (took ${elapsedTimeMs}ms)`);
         }
     }
+}
+
+function getFlashcardEntity(cardId: string) {
+    const cached = becca.getFlashcard(cardId);
+    if (cached) {
+        return cached;
+    }
+
+    const row = getSql().getRow<FlashcardRow | null>(
+        "SELECT * FROM flashcards WHERE cardId = ?",
+        [cardId]
+    );
+
+    return row ? new BFlashcard(row) : null;
 }
 
 function getBlankContent(isProtected: boolean, type: string, mime: string) {

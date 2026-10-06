@@ -41,6 +41,12 @@ export default function buildLaunchBarConfig() {
             command: "showRecentChanges",
             icon: "bx bx-history"
         },
+        flashcards: {
+            title: t("hidden-subtree.flashcards-title"),
+            type: "launcher",
+            command: "showFlashcards",
+            icon: "bx bx-brain"
+        },
         deletedNotes: {
             title: t("hidden-subtree.deleted-notes-title"),
             type: "launcher",
@@ -105,6 +111,7 @@ export default function buildLaunchBarConfig() {
             builtinWidget: "sidebarChat",
             icon: "bx bx-message-square-dots"
         },
+        { id: "_lbFlashcards", ...sharedLaunchers.flashcards },
         { id: "_lbDeletedNotes", ...sharedLaunchers.deletedNotes }
     ];
 
@@ -198,6 +205,7 @@ export default function buildLaunchBarConfig() {
         { id: "_lbMobileSearchNotes", ...sharedLaunchers.searchNotes },
         { id: "_lbMobileToday", ...sharedLaunchers.openToday },
         { id: "_lbMobileRecentChanges", ...sharedLaunchers.recentChanges },
+        { id: "_lbMobileFlashcards", ...sharedLaunchers.flashcards },
         { id: "_lbMobileBookmarks", ...sharedLaunchers.bookmarks },
         { id: "_lbMobileSyncStatus", ...sharedLaunchers.syncStatus }
     ];

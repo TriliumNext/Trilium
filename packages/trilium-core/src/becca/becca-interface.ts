@@ -4,11 +4,13 @@ import { formatSize } from "../services/utils/index.js";
 import type BOption from "./entities/boption.js";
 import type BNote from "./entities/bnote.js";
 import type BEtapiToken from "./entities/betapi_token.js";
+import type BFlashcard from "./entities/bflashcard.js";
+import BFlashcardReview from "./entities/bflashcard_review.js";
 import type BAttribute from "./entities/battribute.js";
 import type BBranch from "./entities/bbranch.js";
 import BRevision from "./entities/brevision.js";
 import BAttachment from "./entities/battachment.js";
-import type { AttachmentRow, BlobRow, RevisionRow } from "@triliumnext/commons";
+import type { AttachmentRow, BlobRow, FlashcardReviewRow, RevisionRow } from "@triliumnext/commons";
 import BBlob from "./entities/bblob.js";
 import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
@@ -30,6 +32,7 @@ export default class Becca {
     attributeIndex!: Record<string, BAttribute[]>;
     options!: Record<string, BOption>;
     etapiTokens!: Record<string, BEtapiToken>;
+    flashcards!: Record<string, BFlashcard>;
 
     allNoteSetCache: NoteSet | null;
 
@@ -59,6 +62,7 @@ export default class Becca {
         this.attributeIndex = {};
         this.options = {};
         this.etapiTokens = {};
+        this.flashcards = {};
 
         this.dirtyNoteSetCache();
 
@@ -223,6 +227,15 @@ export default class Becca {
         return Object.hasOwn(this.etapiTokens, etapiTokenId) ? this.etapiTokens[etapiTokenId] : null;
     }
 
+    getFlashcard(cardId: string): BFlashcard | null {
+        return Object.hasOwn(this.flashcards, cardId) ? this.flashcards[cardId] : null;
+    }
+
+    getFlashcardReview(reviewId: string) {
+        const row = getSql().getRow<FlashcardReviewRow | null>("SELECT * FROM flashcard_reviews WHERE reviewId = ?", [reviewId]);
+        return row ? new BFlashcardReview(row) : null;
+    }
+
     getEntity<T extends AbstractBeccaEntity<T>>(entityName: string, entityId: string): AbstractBeccaEntity<T> | null {
         if (!entityName || !entityId) {
             return null;
@@ -232,6 +245,8 @@ export default class Becca {
             return this.getRevision(entityId);
         } else if (entityName === "attachments") {
             return this.getAttachment(entityId);
+        } else if (entityName === "flashcard_reviews") {
+            return this.getFlashcardReview(entityId) as AbstractBeccaEntity<T> | null;
         }
 
         const camelCaseEntityName = entityName.toLowerCase().replace(/(_[a-z])/g, (group) => group.toUpperCase().replace("_", ""));

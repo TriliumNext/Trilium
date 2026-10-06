@@ -5,6 +5,8 @@ import BAttribute from "./entities/battribute.js";
 import BBlob from "./entities/bblob.js";
 import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
+import BFlashcard from "./entities/bflashcard.js";
+import BFlashcardReview from "./entities/bflashcard_review.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
 import BRecentNote from "./entities/brecent_note.js";
@@ -18,6 +20,8 @@ const ENTITY_NAME_TO_ENTITY: Record<string, ConstructorData<any> & EntityClass> 
     blobs: BBlob,
     branches: BBranch,
     etapi_tokens: BEtapiToken,
+    flashcard_reviews: BFlashcardReview,
+    flashcards: BFlashcard,
     notes: BNote,
     options: BOption,
     recent_notes: BRecentNote,

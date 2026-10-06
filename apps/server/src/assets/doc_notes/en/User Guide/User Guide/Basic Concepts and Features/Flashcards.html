@@ -1,0 +1,46 @@
+<p>Flashcards let you review notes with spaced repetition. Trilium schedules reviews with FSRS, the same family of scheduler used by modern flashcard applications.</p>
+<h2>Creating flashcards</h2>
+<p>A flashcard is created from a normal note. Use the note actions menu or command palette to add flashcards to the current note. The note title becomes the front of a basic card, and the note body becomes the answer.</p>
+<p>For fill-in-the-blank cards, use cloze deletions inside text notes:</p>
+<pre><code class="language-text">The capital of France is {{c1::Paris}}.</code></pre>
+<p>Use the cloze toolbar button to wrap selected text. Repeated <code spellcheck="false">c1</code>, <code spellcheck="false">c2</code>, and later numbers become separate cloze cards for the same note.</p>
+<h2>Card templates</h2>
+<p>When you start flashcards from a note, use <strong>Edit templates</strong> to create multiple basic cards from the same note. Templates use these placeholders:</p>
+<ul>
+  <li><code spellcheck="false">{{title}}</code> - note title,</li>
+  <li><code spellcheck="false">{{content}}</code> - note body,</li>
+  <li><code spellcheck="false">{{ordinal}}</code> - card number for the current template.</li>
+</ul>
+<p>For example, a reverse card can use <code spellcheck="false">{{content}}</code> on the front and <code spellcheck="false">{{title}}</code> on the back. Saving templates syncs the card set for the note while keeping existing schedules for templates whose position did not change.</p>
+<h2>Reviewing cards</h2>
+<p>Open flashcards from the launcher bar, command palette, or note actions. The review dialog shows due cards first, then learning cards, then new cards.</p>
+<p>After revealing the answer, choose one of the ratings:</p>
+<ul>
+  <li><strong>Again</strong> when the answer was wrong or forgotten.</li>
+  <li><strong>Hard</strong> when the answer was remembered with difficulty.</li>
+  <li><strong>Good</strong> when the answer was remembered correctly.</li>
+  <li><strong>Easy</strong> when the answer was obvious.</li>
+</ul>
+<p>Keyboard shortcuts are available in the dialog: press <kbd>Space</kbd> to reveal, number keys to rate, and <kbd>U</kbd> to undo the last review.</p>
+<h2>Decks and filtered decks</h2>
+<p>Decks are ordinary notes that contain flashcards. The deck browser shows due, new, learning, review, suspended, and total counts.</p>
+<p>Filtered decks are based on saved searches. They do not move cards into a separate storage location; membership is recalculated from the search query. Use them for temporary study sets such as a topic, tag, or branch of notes.</p>
+<h2>Scheduling settings</h2>
+<p>Flashcard settings are in Options -&gt; Flashcards. Defaults work for most users. Advanced users can adjust:</p>
+<ul>
+  <li>requested retention,</li>
+  <li>maximum interval,</li>
+  <li>learning and relearning steps,</li>
+  <li>daily new and review limits,</li>
+  <li>day rollover hour,</li>
+  <li>FSRS weights.</li>
+</ul>
+<p>Leave FSRS weights blank to use Trilium's built-in defaults. If you optimize parameters with external FSRS tooling, paste the full 21-number vector here and Trilium will sync it with the rest of the scheduler settings.</p>
+<p>If several devices sync the same database, reviews are scheduled by the backend that receives the review. Conflict protection prevents duplicate submissions from overwriting newer review state.</p>
+<h2>Suspending and leeches</h2>
+<p>Suspended cards stay out of the review queue until resumed. Cards with repeated lapses can become leeches and may be suspended automatically. The leech section helps find and resume those cards later.</p>
+<h2>Import, export, and portability</h2>
+<p>Trilium can import Anki <code spellcheck="false">.apkg</code> packages. Imported cards become Trilium notes and flashcards; referenced media is imported as attachments when possible. Scheduling state and review history are preserved as far as Trilium's FSRS scheduler can use them.</p>
+<p>Flashcard data is included in normal Trilium database backups and sync. Flashcard scheduling state and review history are also included in Trilium JSON export/import. Use <strong>Export .apkg</strong> in Options -&gt; Flashcards when you need a package that other flashcard applications can read.</p>
+<h2>Privacy</h2>
+<p>Review history records what was reviewed, when it was reviewed, the selected rating, and scheduler state. This data syncs with the rest of your Trilium database. Treat flashcard history like normal note data when choosing sync servers, backups, and exports.</p>

@@ -1,9 +1,10 @@
 import "./NoteInfoTab.css";
 
-import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
+import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse, type FlashcardCardSummary } from "@triliumnext/commons";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import flashcards from "../../services/flashcards";
 import debounce from "../../services/debounce";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
@@ -13,6 +14,7 @@ import { formatSize } from "../../services/utils";
 import { formatDateTime } from "../../utils/formatters";
 import { useTriliumEvent } from "../react/hooks";
 import LinkButton from "../react/LinkButton";
+import { Badge } from "../react/Badge";
 import LoadingSpinner from "../react/LoadingSpinner";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
@@ -49,11 +51,59 @@ export default function NoteInfoTab({ note }: { note: FNote | null | undefined }
                             <NoteSizeWidget {...sizeProps} />
                         </span>
                     </div>
+                    {note.hasLabel("flashcard") && <FlashcardStatusItem note={note} />}
                 </>
             )}
         </div>
     );
 }
+
+export function FlashcardStatusItem({ note }: { note: FNote }) {
+    const [ card, setCard ] = useState<FlashcardCardSummary | null>();
+
+    const refresh = useCallback(() => {
+        flashcards.getCardForNote(note.noteId)
+            .then(setCard)
+            .catch(() => setCard(null));
+    }, [ note.noteId ]);
+
+    useEffect(() => refresh(), [ refresh ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.isNoteReloaded(note.noteId)) {
+            refresh();
+        } else if (card?.cardId && loadResults.getEntityRow("flashcards", card.cardId)) {
+            refresh();
+        }
+    });
+
+    if (card == null) {
+        return null;
+    }
+
+    const stateLabel = t(`flashcards.state_${FLASHCARD_STATE_LABELS[card.state]}`);
+
+    return (
+        <div className="note-info-item">
+            <span>{t("flashcards.title")}:</span>
+            <span className="note-info-flashcard-status">
+                <span className="flashcard-state">{stateLabel}</span>{" "}
+                <span>·</span>{" "}
+                <span>{t("flashcards.due")}: {formatDateTime(card.due)}</span>{" "}
+                <span>·</span>{" "}
+                <span>{card.deckTitle}</span>
+                {card.suspended && <Badge className="flashcard-suspended-badge" text={t("flashcards.status_suspended")} />}
+                {card.leech && <Badge className="flashcard-leech-badge" text={t("flashcards.leech")} />}
+            </span>
+        </div>
+    );
+}
+
+const FLASHCARD_STATE_LABELS = {
+    0: "new",
+    1: "learning",
+    2: "review",
+    3: "relearning"
+} as const;
 
 export function NoteSizeWidget({ isLoading, noteSizeResponse, subtreeSizeResponse, requestSizeInfo }: Omit<ReturnType<typeof useNoteMetadata>, "metadata">) {
     return <>

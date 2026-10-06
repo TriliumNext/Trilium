@@ -74,6 +74,20 @@ function makeLegacyZip(entries: { placeholder: string; nameBytes?: number[] }[])
 // "啊.txt" as a legacy Chinese-Windows archiver writes it: 0xB0 0xA1 is the GBK encoding of 啊.
 const GBK_NAME_BYTES = [0xb0, 0xa1, 0x2e, 0x74, 0x78, 0x74];
 
+function falsifyUncompressedSize(buffer: Uint8Array, size: number): Uint8Array {
+    const forged = buffer.slice();
+    const view = new DataView(forged.buffer, forged.byteOffset, forged.byteLength);
+    for (let offset = 0; offset + 28 < forged.byteLength; offset++) {
+        const signature = view.getUint32(offset, true);
+        if (signature === 0x04034b50) {
+            view.setUint32(offset + 22, size, true);
+        } else if (signature === 0x02014b50) {
+            view.setUint32(offset + 24, size, true);
+        }
+    }
+    return forged;
+}
+
 describe("BrowserZipArchive", () => {
     it("appends string and binary entries and sends them to a send()-style destination", async () => {
         const archive = provider.createZipArchive();
@@ -149,10 +163,8 @@ describe("BrowserZipArchive store + backpressure", () => {
 });
 
 describe("BrowserZipProvider path sources are unsupported", () => {
-    it("readZipFile throws for a { path } source", () => {
-        // readZipFile isn't async, so the guard throws synchronously before the work promise is created;
-        // real callers await it inside an async function, where the throw surfaces as a rejection anyway.
-        expect(() => provider.readZipFile({ path: "/tmp/x.zip" }, async () => {})).toThrow(
+    it("readZipFile rejects for a { path } source", async () => {
+        await expect(provider.readZipFile({ path: "/tmp/x.zip" }, async () => {})).rejects.toThrow(
             "Path-based zip reading is not supported in the browser"
         );
     });
@@ -175,6 +187,33 @@ describe("BrowserZipProvider.readZipFile", () => {
         const zip = makeZip({ "one.txt": "first", "dir/two.txt": "second" });
         const result = await readAll(zip);
         expect(result).toEqual({ "one.txt": "first", "dir/two.txt": "second" });
+    });
+
+    it("reports expanded sizes and filters entries before extraction", async () => {
+        const zip = makeZip({ "keep.txt": "hello", "skip.txt": "ignored" });
+        const seen: ZipEntry[] = [];
+        await provider.readZipFile(
+            zip,
+            async (entry, readContent) => {
+                seen.push(entry);
+                await readContent();
+            },
+            undefined,
+            (entry) => entry.fileName === "keep.txt"
+        );
+
+        expect(seen).toHaveLength(1);
+        expect(seen[0]).toMatchObject({ fileName: "keep.txt", uncompressedSize: 5 });
+    });
+
+    it("bounds actual expansion even when the ZIP declares a smaller size", async () => {
+        const zip = zipSync({ "bomb.txt": strToU8("x".repeat(64 * 1024)) });
+        const forged = falsifyUncompressedSize(zip, 1);
+
+        await expect(provider.readZipFile(forged, async (entry, readContent) => {
+            expect(entry.uncompressedSize).toBe(1);
+            await readContent(1024);
+        })).rejects.toThrow("ZIP entry exceeds 1024 byte read limit");
     });
 
     it("rejects on a corrupt archive", async () => {

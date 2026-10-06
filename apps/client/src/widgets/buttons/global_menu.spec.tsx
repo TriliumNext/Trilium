@@ -149,3 +149,55 @@ describe("parseLatestVersion", () => {
         expect(parseLatestVersion({ tag_name: 104 })).toBeUndefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Global menu contents
+// ---------------------------------------------------------------------------
+
+vi.mock("../react/hooks", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("../react/hooks")>()),
+    useTriliumOption: () => ["1", vi.fn()],
+    useTriliumOptionBool: () => [ ctrl.checkForUpdates, vi.fn() ]
+}));
+
+import { ParentComponent } from "../react/react_utils";
+import GlobalMenu from "./global_menu";
+
+describe("GlobalMenu", () => {
+    let menuHost: HTMLElement;
+
+    async function mountMenu() {
+        menuHost = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={null}>
+                    <GlobalMenu isHorizontalLayout={true} />
+                </ParentComponent.Provider>,
+                menuHost
+            );
+        });
+    }
+
+    it("lists flashcards wired to the showFlashcards command", async () => {
+        await mountMenu();
+
+        const toggle = menuHost.querySelector("button[data-bs-toggle='dropdown']") as HTMLElement;
+        expect(toggle).toBeTruthy();
+        await act(async () => {
+            toggle.click();
+            await vi.advanceTimersByTimeAsync(1);
+        });
+
+        const scope = [ menuHost, document.body ];
+        const items = scope.flatMap((root) => [ ...root.querySelectorAll("[data-trigger-command]") ]);
+        const flashcardsItem = items.find((el) => el.getAttribute("data-trigger-command") === "showFlashcards");
+        expect(flashcardsItem).toBeTruthy();
+        expect(flashcardsItem!.querySelector(".bx-brain")).toBeTruthy();
+    });
+
+    it("keeps the update badge hidden while there is nothing to install", async () => {
+        await mountMenu();
+
+        expect(menuHost.querySelector(".global-menu-button-update-available")).toBeNull();
+    });
+});

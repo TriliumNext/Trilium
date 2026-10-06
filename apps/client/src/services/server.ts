@@ -65,6 +65,14 @@ async function postWithSilentInternalServerError<T>(url: string, data?: unknown,
     return await call<T>("POST", url, componentId, { data, silentInternalServerError: true });
 }
 
+async function postWithSilentConflict<T>(url: string, data?: unknown, componentId?: string) {
+    return await call<T>("POST", url, componentId, {
+        data,
+        silentConflict: true,
+        rejectWithResponse: true
+    });
+}
+
 /**
  * For an operation that runs in minutes rather than seconds — see {@link CallOptions.timeoutMs}. The
  * work carries on server-side whatever the client does, so giving up early does not stop it; it only
@@ -84,6 +92,14 @@ async function postWithTimeout<T>(url: string, timeoutMs: number, data?: unknown
 
 async function put<T>(url: string, data?: unknown, componentId?: string) {
     return await call<T>("PUT", url, componentId, { data });
+}
+
+async function putWithSilentConflict<T>(url: string, data?: unknown, componentId?: string) {
+    return await call<T>("PUT", url, componentId, {
+        data,
+        silentConflict: true,
+        rejectWithResponse: true
+    });
 }
 
 async function patch<T>(url: string, data: unknown, componentId?: string) {
@@ -170,6 +186,7 @@ interface CallOptions {
     data?: unknown;
     silentNotFound?: boolean;
     silentInternalServerError?: boolean;
+    silentConflict?: boolean;
     /** Suppresses the error toast for a 400, for callers that show the server's message themselves. */
     silentBadRequest?: boolean;
     /** Suppresses the generic error toast for a 401, for callers that present the failure themselves
@@ -185,6 +202,12 @@ interface CallOptions {
      * everywhere else, so an ordinary request that hangs still fails rather than hanging its caller.
      */
     timeoutMs?: number;
+    rejectWithResponse?: boolean;
+}
+
+export interface ServerErrorResponse {
+    status: number;
+    responseText: string;
 }
 
 /**
@@ -286,6 +309,8 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                     // report nothing
                 } else if (opts.silentInternalServerError && jqXhr.status === 500) {
                     // report nothing
+                } else if (opts.silentConflict && jqXhr.status === 409) {
+                    // report nothing
                 } else if (opts.silentUnauthorized && jqXhr.status === 401) {
                     // report nothing
                 } else if (opts.silentBadRequest && jqXhr.status === 400) {
@@ -298,7 +323,12 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                     }
                 }
 
-                rej(jqXhr.responseText);
+                rej(opts.rejectWithResponse
+                    ? <ServerErrorResponse>{
+                        status: jqXhr.status,
+                        responseText: jqXhr.responseText
+                    }
+                    : jqXhr.responseText);
             }
         };
 
@@ -451,8 +481,10 @@ export default {
     getWithTimeout,
     post,
     postWithSilentInternalServerError,
+    postWithSilentConflict,
     postWithTimeout,
     put,
+    putWithSilentConflict,
     patch,
     remove,
     upload,

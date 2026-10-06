@@ -316,6 +316,10 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     seenCallToActions: string;
     experimentalFeatures: string;
 
+    // Flashcard settings
+    /** JSON: account-wide FSRS scheduler config for future flashcard reviews. */
+    flashcardSchedulerConfig: string;
+
     // AI / LLM
     /** Whether the AI/LLM features (chat sidebar, LLM chat notes) are enabled. */
     aiEnabled: boolean;

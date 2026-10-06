@@ -56,6 +56,30 @@ describe("froca_updater - empty / no-op handling", () => {
         expect(invalidateSpy).not.toHaveBeenCalled();
     });
 
+    it("accepts flashcard sync changes and exposes them through LoadResults", async () => {
+        await process([ec({
+            entityName: "flashcards",
+            entityId: "card1",
+            entity: { cardId: "card1", noteId: "note1" } as any
+        })]);
+
+        expect(triggerSpy).toHaveBeenCalledWith("entitiesReloaded", expect.anything());
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getEntityRow("flashcards", "card1")?.cardId).toBe("card1");
+    });
+
+    it("accepts flashcard review sync changes", async () => {
+        await process([ec({
+            entityName: "flashcard_reviews",
+            entityId: "review1",
+            entity: { reviewId: "review1", cardId: "card1" } as any
+        })]);
+
+        expect(triggerSpy).toHaveBeenCalledWith("entitiesReloaded", expect.anything());
+        const loadResults = triggerSpy.mock.calls[0][1].loadResults as LoadResults;
+        expect(loadResults.getEntityRow("flashcard_reviews", "review1")?.reviewId).toBe("review1");
+    });
+
     it("throws a wrapped error for an unknown entityName", async () => {
         await expect(process([ec({ entityName: "weird" as any, entityId: "z" })]))
             .rejects.toThrow(/Unknown entityName 'weird'/);
