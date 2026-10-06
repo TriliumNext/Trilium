@@ -396,6 +396,7 @@ class ContentEmbedEditing extends Plugin {
 		schema.register( 'contentEmbed', {
 			// Behaves like a self-contained object (e.g. an image).
 			isObject: true,
+			isBlock: true,
 
 			// An embed shows either a note or an attachment. An embed that
 			// `FileUploadEditing` is uploading carries the upload attributes instead of its id.

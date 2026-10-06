@@ -4,9 +4,10 @@ import { describe, expect, it } from "vitest";
 import { createTestEditor } from "../test/editor-kit.js";
 import { AttributeEditor } from "./index.js";
 import Admonition from "./plugins/admonition/admonition.js";
+import BlockDragHandle from "./plugins/block_drag_handle.js";
 import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
 import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
-import { CHAT_INPUT_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import { CHAT_INPUT_PLUGINS, CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import Uploadfileplugin from "./plugins/file_upload/uploadfileplugin.js";
 import FindInLinkWidgets from "./plugins/find_in_link_widgets.js";
@@ -91,6 +92,12 @@ describe("plugin lists", () => {
     it("POPUP_EDITOR_PLUGINS adds BlockToolbar on top of COMMON_PLUGINS", () => {
         expect(POPUP_EDITOR_PLUGINS).toContain(BlockToolbar);
         expect(COMMON_PLUGINS).not.toContain(BlockToolbar);
+    });
+
+    it("CLASSIC_EDITOR_PLUGINS adds BlockDragHandle on top of COMMON_PLUGINS", () => {
+        expect(CLASSIC_EDITOR_PLUGINS).toContain(BlockDragHandle);
+        expect(CLASSIC_EDITOR_PLUGINS).not.toContain(BlockToolbar);
+        expect(POPUP_EDITOR_PLUGINS).not.toContain(BlockDragHandle);
     });
 
     // Each of these replaced a premium plugin, which is why `ckeditor5-premium-features` is no

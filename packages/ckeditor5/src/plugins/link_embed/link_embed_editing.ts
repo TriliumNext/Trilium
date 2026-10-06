@@ -45,6 +45,7 @@ export default class LinkEmbedEditing extends Plugin {
 
         schema.register('linkEmbed', {
             isObject: true,
+            isBlock: true,
             allowAttributes: ['url', 'embedType', 'title', 'description', 'favicon', 'siteName', 'image'],
             allowWhere: '$block'
         });

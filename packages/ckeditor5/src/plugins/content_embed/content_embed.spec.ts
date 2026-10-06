@@ -62,8 +62,15 @@ describe("ContentEmbed", () => {
         const schema = editor.model.schema;
         expect(schema.isRegistered("contentEmbed")).toBe(true);
         expect(schema.isObject("contentEmbed")).toBe(true);
+        expect(schema.isBlock("contentEmbed")).toBe(true);
         expect(schema.checkAttribute(["$root", "contentEmbed"], "noteId")).toBe(true);
         expect(schema.checkAttribute(["$root", "contentEmbed"], "boxSize")).toBe(true);
+    });
+
+    it("is one of the selected blocks when selected", () => {
+        setModelData(editor.model, "[<contentEmbed noteId=\"n1\"></contentEmbed>]");
+        const blocks = Array.from(editor.model.document.selection.getSelectedBlocks());
+        expect(blocks.map((block) => block.name)).toStrictEqual([ "contentEmbed" ]);
     });
 
     // -----------------------------------------------------------------------

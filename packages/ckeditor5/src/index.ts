@@ -7,7 +7,7 @@ import "./theme/code_block_toolbar.css";
 import "./theme/link_embed_form.css";
 import type { ClipboardImageEmbedConfig } from "./plugins/clipboard_image_embed.js";
 import type { PasteTarget } from "./plugins/cuttonote.js";
-import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
+import { CLASSIC_EDITOR_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 export { default as EditorWatchdog } from "./custom_watchdog";
 export { CHAT_INPUT_PLUGINS, MEMO_PLUGINS } from "./plugins.js";
@@ -70,7 +70,7 @@ export class AttributeEditor extends BalloonEditor {
  */
 export class ClassicEditor extends DecoupledEditor {
     static override get builtinPlugins() {
-        return COMMON_PLUGINS;
+        return CLASSIC_EDITOR_PLUGINS;
     }
 }
 
