@@ -1,6 +1,6 @@
 import "./StatusBar.css";
 
-import { getCodeLanguageIcon, Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon, Locale, NOTE_TYPE_ICONS, NoteType, SimilarNoteResponse } from "@triliumnext/commons";
 import clsx from "clsx";
 import { type ComponentChildren, createPortal, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -9,6 +9,7 @@ import appContext, { CommandNames } from "../../components/app_context";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { ATTRIBUTE_HELP_PAGE } from "../../services/in_app_help";
 import { ViewScope } from "../../services/link";
@@ -27,9 +28,10 @@ import HelpDropdown from "../react/HelpDropdown";
 import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNoteLabelInt, useNoteLabelOptionalBool, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumEvents, useTriliumOptionBool, useTriliumOptionInt, useAttachments } from "../react/hooks";
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
+import NoItems from "../react/NoItems";
+import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
 import { NoteSizeWidget, useNoteMetadata } from "../ribbon/NoteInfoTab";
-import SimilarNotesTab from "../ribbon/SimilarNotesTab";
 import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import type { RightPaneTabId } from "../sidebar/RightPaneTabs";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
@@ -322,8 +324,51 @@ function SimilarNotesPane({ note, similarNotesShown, setSimilarNotesShown }: Not
             visible={similarNotesShown}
             setVisible={setSimilarNotesShown}
         >
-            <SimilarNotesTab note={note} />
+            <SimilarNotesList note={note} />
         </BottomPanel>
+    );
+}
+
+export function SimilarNotesList({ note }: { note: FNote | null | undefined }) {
+    const [ similarNotes, setSimilarNotes ] = useState<SimilarNoteResponse>();
+
+    useEffect(() => {
+        if (note) {
+            server.get<SimilarNoteResponse>(`similar-notes/${note.noteId}`).then(async similarNotes => {
+                if (similarNotes) {
+                    const noteIds = similarNotes.flatMap((note) => note.notePath);
+                    await froca.getNotes(noteIds, true); // preload all at once
+                }
+                setSimilarNotes(similarNotes);
+            });
+        }
+
+    }, [ note?.noteId ]);
+
+    return (
+        <div className="similar-notes-widget">
+            {similarNotes?.length ? (
+                <div className="similar-notes-wrapper">
+                    {similarNotes.map(({notePath, score}) => (
+                        <NoteLink
+                            key={notePath.join("/")}
+                            notePath={notePath}
+                            noTnLink
+                            style={{
+                                "font-size": (1 - 1 / (1 + score)) + "em"
+                            }}
+                        />
+                    ))}
+                </div>
+            ) : similarNotes && (
+                // Outside the list's wrapper, whose font size is that of the most similar link.
+                <NoItems
+                    size="small"
+                    icon="bx bx-bar-chart"
+                    text={t("similar_notes.no_similar_notes_found")}
+                />
+            )}
+        </div>
     );
 }
 //#endregion

@@ -10,7 +10,7 @@ import server from "../../services/server";
 import { useLanguageSwitcher } from "../dialogs/content_languages";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
-import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
+import { getLocaleName, NoteInfoContent, SimilarNotesList } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import type { DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
@@ -19,7 +19,6 @@ import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
 import { NoteContextMenu } from "../ribbon/NoteActions";
 import NoteActionsCustom from "../ribbon/NoteActionsCustom";
-import SimilarNotesTab from "../ribbon/SimilarNotesTab";
 import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 
@@ -223,7 +222,7 @@ function SimilarNotesModal({ note, modalShown, setModalShown }: { note: FNote | 
             show={modalShown}
             onHidden={() => setModalShown(false)}
         >
-            <SimilarNotesTab note={note} />
+            <SimilarNotesList note={note} />
         </Modal>
     );
 }

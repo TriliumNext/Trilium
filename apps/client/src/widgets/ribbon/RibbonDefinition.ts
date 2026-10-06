@@ -8,7 +8,6 @@ import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
 import ScriptTab from "./ScriptTab";
 import SearchDefinitionTab from "./SearchDefinitionTab";
-import SimilarNotesTab from "./SimilarNotesTab";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
     {
@@ -56,13 +55,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         show: ({ note }) => note?.type === "image",
         toggleCommand: "toggleRibbonTabImageProperties",
         activate: true,
-    },
-    {
-        title: t("similar_notes.title"),
-        icon: "bx bx-bar-chart",
-        show: ({ note }) => note?.type !== "search" && !note?.isLabelTruthy("similarNotesWidgetDisabled"),
-        content: SimilarNotesTab,
-        toggleCommand: "toggleRibbonTabSimilarNotes"
     },
     {
         title: t("note_info_widget.title"),
