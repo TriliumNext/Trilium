@@ -92,4 +92,22 @@ describe("CKEditorWithWatchdog", () => {
         await vi.waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
         expect(mocks.destroy).toHaveBeenCalledTimes(1);
     });
+
+    it("destroys its editor when it goes away", async () => {
+        const props = {
+            contentLanguage: null,
+            watchdogRef: createRef<EditorWatchdog>(),
+            onChange: vi.fn(),
+            editorApi: createRef<CKEditorApi>(),
+            templates: []
+        };
+        await act(async () => {
+            render(<CKEditorWithWatchdog {...props} />, host);
+        });
+        await vi.waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
+
+        await act(async () => render(null, host));
+        await vi.waitFor(() => expect(mocks.destroy).toHaveBeenCalledOnce());
+        expect(props.watchdogRef.current).toBeNull();
+    });
 });

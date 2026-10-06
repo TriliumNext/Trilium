@@ -113,6 +113,29 @@ describe("useEmbedEditors", () => {
 });
 
 describe("useEmbedPreview", () => {
+    it("renders no preview while paused, and the latest one once resumed", async () => {
+        const initial = document.createElement("pre");
+        const rendered = document.createElement("pre");
+        const renderPreview = vi.fn(async () => rendered);
+        let preview: HTMLElement | undefined;
+        function Probe({ previewKey, isPaused }: { previewKey: string; isPaused: boolean }) {
+            preview = useEmbedPreview(initial, previewKey, renderPreview, isPaused);
+            return null;
+        }
+
+        const container = document.createElement("div");
+        await act(async () => render(<Probe previewKey="a" isPaused />, container));
+        await act(async () => render(<Probe previewKey="b" isPaused />, container));
+        await act(async () => render(<Probe previewKey="c" isPaused />, container));
+        expect(renderPreview).not.toHaveBeenCalled();
+        expect(preview).toBe(initial);
+
+        await act(async () => render(<Probe previewKey="c" isPaused={false} />, container));
+        await vi.waitFor(() => expect(preview).toBe(rendered));
+        expect(renderPreview).toHaveBeenCalledOnce();
+        act(() => render(null, container));
+    });
+
     it("keeps the first preview for its key, and renders one for any other key", async () => {
         const initial = document.createElement("pre");
         const rendered = document.createElement("pre");

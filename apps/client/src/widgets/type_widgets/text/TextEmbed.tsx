@@ -4,7 +4,9 @@ import { useRef } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { useNoteBlob } from "../../react/hooks";
-import { EditableEmbedContent, useEditableEmbed, useEmbedPreview } from "./editable_embed";
+import {
+    EditableEmbedContent, hasFixedToolbarAround, useEditableEmbed, useEmbedPreview
+} from "./editable_embed";
 
 const TextEmbedEditor = lazy(() => import("./TextEmbedEditor"));
 
@@ -34,7 +36,8 @@ export default function TextEmbed({
         focusTarget: ".ck-editor__editable"
     });
     const blob = useNoteBlob(note);
-    const shownPreview = useEmbedPreview(preview, blob?.content ?? content, renderPreview);
+    const shownPreview =
+        useEmbedPreview(preview, blob?.content ?? content, renderPreview, isEditing);
 
     return (
         <EditableEmbedContent
@@ -43,7 +46,10 @@ export default function TextEmbed({
             isEditing={isEditing}
             preview={shownPreview}
         >
-            <TextEmbedEditor note={note} />
+            <TextEmbedEditor
+                note={note}
+                hasFixedToolbar={isEditing && hasFixedToolbarAround(rootRef.current)}
+            />
         </EditableEmbedContent>
     );
 }

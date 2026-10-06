@@ -97,7 +97,7 @@ declare global {
          * The box size of a new embed of a file being uploaded, from its media type. Hosts without
          * embeds leave it out.
          */
-        getEmbedBoxSize?(mime: string): string;
+        getEmbedBoxSize?(mime: string, size: number): string;
         /**
          * Opens the context menu of what `embed` shows, below `anchor`. Hosts without embeds
          * leave it out.

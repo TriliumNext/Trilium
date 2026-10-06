@@ -45,13 +45,21 @@ afterEach(() => {
     for (const figure of figures) {
         const box = figure.querySelector(".include-note-content");
         if (box) act(() => render(null, box));
-        figure.remove();
+        figure.parentElement?.remove();
     }
     figures.length = 0;
     (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
 });
 
 describe("TextEmbed", () => {
+    it("uses the floating toolbar inside an editor that has one", async () => {
+        const { figure } = await mount(buildTextNote("floating"), buildEditor(), { isEditable: true });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        const props = editorProps.mock.calls[0][0] as TypeWidgetProps;
+        expect(props.viewScope?.floatingToolbar).toBe(true);
+        expect(figure.isConnected).toBe(true);
+    });
+
     it("shows the preview, and offers the Editable toggle only where it can edit", async () => {
         const preview = buildPreview("Hello");
         const { figure } = await mount(buildTextNote("hello"), buildEditor(), { preview });
@@ -65,7 +73,7 @@ describe("TextEmbed", () => {
 
     it("edits in a note context of its own, and saves before the editor goes away", async () => {
         const note = buildTextNote("edited");
-        const { figure } = await mount(note, buildEditor(), { isEditable: true });
+        const { figure } = await mount(note, buildEditor(), { isEditable: true, hasFixedToolbar: true });
 
         // The editor module loads on demand, which takes a while under a busy test run.
         await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
@@ -74,7 +82,7 @@ describe("TextEmbed", () => {
         expect(props.note).toBe(note);
         expect(props.ntxId).toMatch(/^_embed_/);
         expect(props.noteContext?.ntxId).toBe(props.ntxId);
-        // The formatting toolbar of the note hosts the buttons of the editor.
+        // Inside an editor with a fixed toolbar, that toolbar shows the buttons of this editor.
         expect(props.viewScope).toMatchObject({ viewMode: "default", floatingToolbar: false });
         expect(props.isNested).toBe(true);
         // The plugins of the editor find their host from its DOM.
@@ -103,6 +111,8 @@ describe("TextEmbed", () => {
 interface MountOptions {
     preview?: HTMLElement;
     isEditable?: boolean;
+    /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
+    hasFixedToolbar?: boolean;
 }
 
 /** Renders `TextEmbed` in the markup of an embed, as the host does. */
@@ -121,7 +131,13 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
     const box = wrapper.querySelector(".include-note-content");
     if (!box) throw new Error("Expected the content box.");
     figure.append(wrapper);
-    document.body.append(figure);
+    // The editable root of the text editor that shows the embed.
+    const hostRoot = document.createElement("div");
+    hostRoot.className = "ck-editor__editable";
+    const toolbar = options.hasFixedToolbar ? { element: document.createElement("div") } : undefined;
+    Object.assign(hostRoot, { ckeditorInstance: { ui: { view: { toolbar } } } });
+    hostRoot.append(figure);
+    document.body.append(hostRoot);
     figures.push(figure);
 
     const content = (await note.getBlob())?.content ?? "";

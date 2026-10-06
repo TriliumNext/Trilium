@@ -90,17 +90,23 @@ export function EditableEmbedContent({
 /**
  * The preview of the content of an embed: `initial` while `key` has its first value, otherwise
  * what `render` returns for the current key. The previous preview stays until the next is ready.
+ * While `isPaused`, as while the content is edited, no preview renders.
  */
 export function useEmbedPreview(
     initial: HTMLElement,
     key: string,
-    render: () => Promise<HTMLElement>
+    render: () => Promise<HTMLElement>,
+    isPaused = false
 ) {
     const [ preview, setPreview ] = useState(initial);
     const initialKeyRef = useRef(key);
+    const shownKeyRef = useRef(key);
 
     useEffect(() => {
+        if (isPaused || key === shownKeyRef.current) return;
+
         if (key === initialKeyRef.current) {
+            shownKeyRef.current = key;
             setPreview(initial);
             return;
         }
@@ -108,13 +114,14 @@ export function useEmbedPreview(
         let isCurrent = true;
         render().then((element) => {
             if (isCurrent) {
+                shownKeyRef.current = key;
                 setPreview(element);
             }
         });
         return () => {
             isCurrent = false;
         };
-    }, [ key ]);
+    }, [ key, isPaused ]);
 
     return preview;
 }
@@ -178,6 +185,15 @@ export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>) {
     }, [ rootRef ]);
 
     return slot;
+}
+
+/**
+ * Whether the text editor around `element` shows its buttons in a fixed formatting toolbar,
+ * rather than in a floating one.
+ */
+export function hasFixedToolbarAround(element: HTMLElement | null) {
+    const editable = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR);
+    return !!editable?.ckeditorInstance?.ui.view.toolbar;
 }
 
 /** The editable root of a text editor, which CKEditor gives a reference to the editor. */

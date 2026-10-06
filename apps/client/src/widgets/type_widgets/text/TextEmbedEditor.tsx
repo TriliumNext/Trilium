@@ -13,15 +13,22 @@ import { useLegacyComponentElement, useNoteContext } from "../../react/hooks";
 import EditableText from "./EditableText";
 import { NestedEmbedContext, useEmbedBadgeSlot } from "./editable_embed";
 
+interface TextEmbedEditorProps {
+    note: FNote;
+    /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
+    hasFixedToolbar: boolean;
+}
+
 /**
  * The text editor of a text note in an embed. It has a note context and a component of its own,
  * as the note pane of a geo map does, and saves the note as a note tab does.
  */
-export default function TextEmbedEditor({ note }: { note: FNote }) {
+export default function TextEmbedEditor({ note, hasFixedToolbar }: TextEmbedEditorProps) {
     const [ ntxId ] = useState(() => `_embed_${randomString(10)}`);
-    // The formatting toolbar of the note shows the buttons of this editor while it has the focus.
+    // Inside an editor with a fixed toolbar, that toolbar shows the buttons of this editor while
+    // it has the focus.
     const { noteContext, component } =
-        useEmbeddedNoteContext(note, ntxId, { floatingToolbar: false });
+        useEmbeddedNoteContext(note, ntxId, { floatingToolbar: !hasFixedToolbar });
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {

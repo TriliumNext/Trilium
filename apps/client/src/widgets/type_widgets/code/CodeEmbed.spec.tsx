@@ -2,10 +2,13 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../../components/component";
 import FAttachment from "../../../entities/fattachment";
+import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
+import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
@@ -22,7 +25,7 @@ vi.mock("../../../services/content_renderer", () => ({ renderCodePreview }));
 // `CodeEditor` reads the theme as a string.
 options.set("codeNoteTheme", "");
 
-const parent = { registerHandler() {}, removeHandler() {}, componentId: "embed-test" } as any;
+const parent = new Component();
 const figures: HTMLElement[] = [];
 
 afterEach(() => {
@@ -114,6 +117,36 @@ describe("CodeEmbed", () => {
         });
     });
 
+    it("follows each save of its note or attachment, its own included, while it has no changes", async () => {
+        const note = buildCodeNote("one");
+        const editor = buildEditor();
+        const { figure } = await mount(note, editor, { content: "one", isEditable: true });
+        const view = await findView(figure);
+
+        // A save of this embed, or of another embed of the same note.
+        note.getBlob = async () => buildBlob("two");
+        const noteSaved = new LoadResults([]);
+        noteSaved.addNoteContent(note.noteId, "any-component");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: noteSaved });
+        });
+        await vi.waitFor(() => expect(view.state.doc.toString()).toBe("two"));
+
+        const attachment = buildAttachment("script.py");
+        const { figure: attachmentFigure } = await mount(attachment, buildEditor(), {
+            content: "a",
+            isEditable: true
+        });
+        const attachmentView = await findView(attachmentFigure);
+        attachment.getBlob = async () => buildBlob("b");
+        const attachmentSaved = new LoadResults([]);
+        attachmentSaved.addAttachmentRow({ attachmentId: attachment.attachmentId } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: attachmentSaved });
+        });
+        await vi.waitFor(() => expect(attachmentView.state.doc.toString()).toBe("b"));
+    });
+
     it("loads the note as saved elsewhere, unless it has unsaved changes", async () => {
         const { figure } = await mount(buildCodeNote("saved"), buildEditor(), {
             content: "stale",
@@ -187,7 +220,6 @@ function buildEditor(overrides: Partial<ContentEditor> = {}): ContentEditor {
         getUnsavedContent: () => undefined,
         scheduleSave: vi.fn(),
         release: vi.fn(),
-        componentId: "host",
         ...overrides
     };
 }
@@ -209,4 +241,28 @@ async function findView(figure: HTMLElement) {
     }, { timeout: 5000 });
     if (!view) throw new Error("CodeMirror did not mount.");
     return view as InstanceType<typeof EditorView>;
+}
+
+function buildBlob(content: string) {
+    return new FBlob({
+        blobId: `blob-${content}`,
+        content,
+        contentLength: content.length,
+        dateModified: "",
+        utcDateModified: ""
+    });
+}
+
+function buildAttachment(title: string) {
+    return new FAttachment(froca, {
+        attachmentId: `att-${title}`,
+        ownerId: "owner",
+        role: "file",
+        mime: "text/plain",
+        title,
+        dateModified: "",
+        utcDateModified: "",
+        utcDateScheduledForErasureSince: "",
+        contentLength: 0
+    } as never);
 }

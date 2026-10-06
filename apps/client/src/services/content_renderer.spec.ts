@@ -218,6 +218,12 @@ describe("getEmbedBoxSize", () => {
         ].map(getEmbedBoxSize)).toEqual(Array(9).fill("medium"));
     });
 
+    it("shows an upload too large to highlight as a file", () => {
+        expect(getUploadBoxSize("text/plain", 256 * 1024)).toBe("full");
+        expect(getUploadBoxSize("text/plain", 256 * 1024 + 1)).toBe("tiny");
+        expect(getUploadBoxSize("application/json", 10_000_000)).toBe("tiny");
+    });
+
     it("sizes an upload by its media type, as the attachment it becomes", () => {
         expect([
             "application/zip", "", "audio/mpeg", "application/json", "application/pdf",
@@ -342,10 +348,23 @@ describe("getRenderedContent editable code", () => {
             canEdit: vi.fn(() => true),
             getUnsavedContent: vi.fn((): string | undefined => undefined),
             scheduleSave: vi.fn(),
-            release: vi.fn(),
-            componentId: "host"
+            release: vi.fn()
         };
     }
+
+    it("renders an attached code file too large to highlight as a file", async () => {
+        const large = buildAttachment({ role: "file", mime: "text/plain", contentLength: 256 * 1024 + 1 });
+        large.getBlob = vi.fn(async () => ({ content: "x" })) as any;
+
+        const { type } = await getRenderedContent(large, { interactive: true });
+        expect(type).toBe("file");
+        const largeSource = buildAttachment({
+            role: "importSource", mime: "text/html", contentLength: 256 * 1024 + 1
+        });
+        expect((await getRenderedContent(largeSource)).type).toBe("file");
+        expect(large.getBlob).not.toHaveBeenCalled();
+        expect(applySingleBlockSyntaxHighlight).not.toHaveBeenCalled();
+    });
 
     it("renders an attached code file as code, highlighted by the language of its name", async () => {
         const att = buildAttachment({ role: "file", mime: "text/x-python", title: "a.py" });
@@ -394,7 +413,6 @@ describe("getRenderedContent editable code", () => {
         props.editor.scheduleSave(getContent);
         props.editor.release();
         expect(props.editor.canEdit()).toBe(true);
-        expect(props.editor.componentId).toBe("host");
         expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
         expect(noteEditor.getUnsavedContent).toHaveBeenCalledWith(note.noteId);
         expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent);

@@ -111,9 +111,28 @@ export default class SpacedUpdate<T = void> {
         this.commit = commit;
     }
 
-    /** Flushes the pending change (if any) and waits until all queued snapshots are persisted. */
+    /**
+     * Flushes the pending change (if any) and waits until all queued snapshots are persisted. The
+     * pending change is read at once, also while another save runs, so its source can go away.
+     */
     updateNowIfNecessary(): Promise<void> {
+        if (this.drainPromise) {
+            try {
+                // The running save waits for an asynchronous snapshot and handles its failure.
+                const snapshotted = this.snapshotPending();
+                if (snapshotted instanceof Promise) {
+                    snapshotted.catch(() => {});
+                }
+            } catch (e) {
+                return Promise.reject(e);
+            }
+        }
         return this.drain();
+    }
+
+    /** Whether a change made under the current binding is not saved yet. */
+    hasUnsavedChanges() {
+        return this.changed || this.pendingCommits.has(this.bindingKey);
     }
 
     isAllSavedAndTriggerUpdate() {

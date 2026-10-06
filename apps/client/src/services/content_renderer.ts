@@ -119,11 +119,12 @@ export interface NoteEditor {
     scheduleSave(note: FNote, getContent: () => string): void;
     /** Reads the unsaved content of the note now, before its editor unmounts. */
     release(noteId: string): void;
-    /** The component that saves the changes, which the reload of a saved change names. */
-    readonly componentId: string | undefined;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
+
+/** The size of an attached text or code file above which it shows as a file: highlighting is slow. */
+const MAX_ATTACHED_CODE_SIZE = 256 * 1024;
 
 /** The types of the notes that an embed can edit in place. */
 const EDITABLE_NOTE_TYPES = new Set<string>([ "code", "text" ]);
@@ -402,8 +403,6 @@ export interface ContentEditor {
     getUnsavedContent(): string | undefined;
     scheduleSave(getContent: () => string): void;
     release(): void;
-    /** The component that saves the changes, for a note. */
-    componentId?: string;
 }
 
 /** `editor`, saving the changes to `attachment`. */
@@ -433,8 +432,7 @@ function getContentEditor(
         canEdit: () => editor.canEdit(entity),
         getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
         scheduleSave: (getContent) => editor.scheduleSave(entity, getContent),
-        release: () => editor.release(entity.noteId),
-        componentId: editor.componentId
+        release: () => editor.release(entity.noteId)
     } : undefined;
 }
 
@@ -922,8 +920,8 @@ export function hasRenderedPreview(entity: FNote | FAttachment) {
 }
 
 /** The box size of a new embed of a file being uploaded, from the attachment it becomes. */
-export function getUploadBoxSize(mime: string): BoxSize {
-    const type = isAcceptedImageMime(mime) ? "image" : getAttachedFileContentType(mime);
+export function getUploadBoxSize(mime: string, size?: number): BoxSize {
+    const type = isAcceptedImageMime(mime) ? "image" : getAttachedFileContentType(mime, size);
     return getBoxSize(type, PREVIEWED_TYPES.has(type));
 }
 
@@ -966,7 +964,7 @@ function getContentType(entity: FNote | FAttachment) {
     // "importSource" attachments (e.g. the OneNote debug source HTML/InkML) are plain files kept
     // for reference; render them exactly like a "file" role.
     if (entity.role === "importSource") {
-        return getAttachedFileContentType(entity.mime);
+        return getAttachedFileContentType(entity.mime, entity.contentLength);
     }
     // A link preview's "favicon" is a picture like any other as far as showing it goes; the
     // role only says where it came from. Without this it would fall through to the unknown
@@ -975,16 +973,20 @@ function getContentType(entity: FNote | FAttachment) {
         return "image";
     }
     return entity.role === "file"
-        ? getAttachedFileContentType(entity.mime)
+        ? getAttachedFileContentType(entity.mime, entity.contentLength)
         : getFileContentType(entity.role, entity.mime);
 }
 
-/** The kind of file an attachment holds, which is code for text and the code media types. */
-function getAttachedFileContentType(mime: string) {
+/**
+ * The kind of file an attachment holds, which is code for text and the code media types up to
+ * `MAX_ATTACHED_CODE_SIZE`.
+ */
+function getAttachedFileContentType(mime: string, size = 0) {
     const type = getFileContentType("file", mime);
-    return type === "file" && (mime.startsWith("text/") || ATTACHED_CODE_MIME_TYPES.has(mime))
-        ? "code"
-        : type;
+    const isCode = type === "code"
+        || (type === "file" && (mime.startsWith("text/") || ATTACHED_CODE_MIME_TYPES.has(mime)));
+    if (!isCode) return type;
+    return size <= MAX_ATTACHED_CODE_SIZE ? "code" : "file";
 }
 
 /** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */

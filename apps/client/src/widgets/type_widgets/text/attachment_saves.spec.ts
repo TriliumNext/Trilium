@@ -210,7 +210,6 @@ describe("useNoteEditor", () => {
         await act(() => {
             render(h(ParentComponent.Provider, { value: component }, h(Probe, {})), container);
         });
-        expect(editor?.componentId).toBe(component.componentId);
 
         editor?.scheduleSave(code, () => "first");
         await act(async () => {

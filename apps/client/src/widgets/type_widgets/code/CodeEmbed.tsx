@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type FAttachment from "../../../entities/fattachment";
 import FNote from "../../../entities/fnote";
 import { type ContentEditor, renderCodePreview } from "../../../services/content_renderer";
-import { useNoteBlob, useNoteProperty } from "../../react/hooks";
+import { useNoteBlob, useNoteProperty, useTriliumEvent } from "../../react/hooks";
 import {
     EditableEmbedContent, useEditableEmbed, useEmbedPreview
 } from "../text/editable_embed";
@@ -37,11 +37,12 @@ export default function CodeEmbed({
     const { isEditing } = useEditableEmbed(rootRef, { editor, note, focusTarget: ".cm-content" });
     const [ content, setContent ] = useState(initialContent);
     const mime = useNoteProperty(note, "mime") ?? initialMime;
-    useChangesFromElsewhere(note, editor, setContent);
+    useSavedContent(entity, editor, setContent);
     const shownPreview = useEmbedPreview(
         preview,
         `${mime}\n${content}`,
-        () => renderCodePreview(content, mime)
+        () => renderCodePreview(content, mime),
+        isEditing
     );
 
     return (
@@ -63,19 +64,29 @@ export default function CodeEmbed({
 }
 
 /**
- * Shows the content that another component saves to `note`. Unsaved changes made in the embed
- * are kept, and replace that content when they save.
+ * Shows the content of `entity` each time it saves, also when another embed of it saved it.
+ * Unsaved changes made in the embed are kept, and replace that content when they save.
  */
-function useChangesFromElsewhere(
-    note: FNote | null,
+function useSavedContent(
+    entity: FNote | FAttachment,
     editor: ContentEditor,
     setContent: (content: string) => void
 ) {
-    const blob = useNoteBlob(note, editor.componentId);
+    const noteBlob = useNoteBlob(entity instanceof FNote ? entity : null);
+    const [ attachmentContent, setAttachmentContent ] = useState<string>();
+    const content = entity instanceof FNote ? noteBlob?.content : attachmentContent;
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (entity instanceof FNote) return;
+        const rows = loadResults.getAttachmentRows();
+        if (rows.some((row) => row.attachmentId === entity.attachmentId)) {
+            void entity.getBlob().then((blob) => setAttachmentContent(blob?.content));
+        }
+    });
 
     useEffect(() => {
-        if (blob && editor.getUnsavedContent() === undefined) {
-            setContent(blob.content);
+        if (content !== undefined && editor.getUnsavedContent() === undefined) {
+            setContent(content);
         }
-    }, [ blob ]);
+    }, [ content ]);
 }
