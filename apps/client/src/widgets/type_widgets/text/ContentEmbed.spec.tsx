@@ -8,13 +8,17 @@ const {
     triggerCommand,
     openContextMenu,
     getOriginBelow,
-    disposeInteractiveContent
+    disposeInteractiveContent,
+    setupWindowShortcutsForElement,
+    removeIndividualBinding
 } = vi.hoisted(() => ({
     openTabWithNoteWithHoisting: vi.fn(),
     triggerCommand: vi.fn(),
     openContextMenu: vi.fn(),
     getOriginBelow: vi.fn((anchor: Element) => ({ below: anchor })),
-    disposeInteractiveContent: vi.fn()
+    disposeInteractiveContent: vi.fn(),
+    setupWindowShortcutsForElement: vi.fn(async (_$el: JQuery<HTMLElement>) => [ { shortcut: "ctrl+j" } ]),
+    removeIndividualBinding: vi.fn()
 }));
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
@@ -25,6 +29,13 @@ vi.mock("../../../menus/link_context_menu", () => ({
     default: { openContextMenu, getOriginBelow }
 }));
 vi.mock("../../../services/content_renderer", () => ({ default: { disposeInteractiveContent } }));
+vi.mock("../../../services/keyboard_actions", () => ({
+    default: { setupWindowShortcutsForElement }
+}));
+vi.mock("../../../services/shortcuts", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    removeIndividualBinding
+}));
 
 import ContentEmbed, {
     getNoteActions,
@@ -408,6 +419,18 @@ describe("ContentEmbed", () => {
         click(secondBackdrop);
         expect(document.activeElement).toBe(box);
         expect(isActive()).toBe(true);
+    });
+
+    it("runs the window shortcuts from its content, whose keys the editor keeps to itself", async () => {
+        renderBox();
+        const box = contentBox();
+        expect(setupWindowShortcutsForElement).toHaveBeenCalledOnce();
+        expect(setupWindowShortcutsForElement.mock.calls[0][0][0]).toBe(box);
+
+        await act(async () => render(null, container));
+        await vi.waitFor(() => {
+            expect(removeIndividualBinding).toHaveBeenCalledWith({ shortcut: "ctrl+j" });
+        });
     });
 
     it("lets a drag reach its content, with the backdrop back once the drag leaves or ends", () => {

@@ -69,12 +69,13 @@ describe("TextEmbed", () => {
 
         // The editor module loads on demand, which takes a while under a busy test run.
         await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
-        // Mounted once the note context holds the note, with the floating toolbar from the start.
+        // Mounted once the note context holds the note, with its view scope from the start.
         const props = editorProps.mock.calls[0][0] as TypeWidgetProps & { isNested: boolean };
         expect(props.note).toBe(note);
         expect(props.ntxId).toMatch(/^_embed_/);
         expect(props.noteContext?.ntxId).toBe(props.ntxId);
-        expect(props.viewScope?.floatingToolbar).toBe(true);
+        // The formatting toolbar of the note hosts the buttons of the editor.
+        expect(props.viewScope).toMatchObject({ viewMode: "default", floatingToolbar: false });
         expect(props.isNested).toBe(true);
         // The plugins of the editor find their host from its DOM.
         const stub = figure.querySelector<HTMLElement>(".editable-text-stub");

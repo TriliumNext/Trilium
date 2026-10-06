@@ -66,9 +66,34 @@ async function setupWindowShortcuts() {
     for (const action of actions) {
         /* v8 ignore next -- effectiveShortcuts is always normalized to an array by the loader (line 13) before this resolves, so the ?? [] fallback is unreachable */
         for (const shortcut of action.effectiveShortcuts ?? []) {
-            shortcutService.bindGlobalShortcut(shortcut, () => appContext.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
+            shortcutService.bindGlobalShortcut(shortcut, () => runWindowAction(action.actionName));
         }
     }
+}
+
+/**
+ * Binds the window-scoped actions on `$el` as well, for content that keeps its keys from the
+ * document, such as the content of an embed in a text note.
+ */
+async function setupWindowShortcutsForElement($el: JQuery<HTMLElement>) {
+    const bindings: ShortcutBinding[] = [];
+
+    for (const action of await getActionsForScope("window")) {
+        for (const shortcut of action.effectiveShortcuts ?? []) {
+            const binding = shortcutService.bindElShortcut($el, shortcut, () => {
+                runWindowAction(action.actionName);
+            });
+            if (binding) {
+                bindings.push(binding);
+            }
+        }
+    }
+
+    return bindings;
+}
+
+function runWindowAction(actionName: ActionKeyboardShortcut["actionName"]) {
+    return appContext.triggerCommand(actionName, { ntxId: appContext.tabManager.activeNtxId });
 }
 
 async function getAction(actionName: string, silent = false) {
@@ -138,6 +163,7 @@ function updateDisplayedShortcuts($container: JQuery<HTMLElement>) {
 export default {
     updateDisplayedShortcuts,
     setupWindowShortcuts,
+    setupWindowShortcutsForElement,
     setupActionsForElement,
     getAction,
     getActions,

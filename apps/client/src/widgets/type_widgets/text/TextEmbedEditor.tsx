@@ -17,7 +17,9 @@ import { NestedEmbedContext } from "./editable_embed";
  */
 export default function TextEmbedEditor({ note }: { note: FNote }) {
     const [ ntxId ] = useState(() => `_embed_${randomString(10)}`);
-    const { noteContext, component } = useEmbeddedNoteContext(note, ntxId);
+    // The formatting toolbar of the note shows the buttons of this editor while it has the focus.
+    const { noteContext, component } =
+        useEmbeddedNoteContext(note, ntxId, { floatingToolbar: false });
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {

@@ -149,7 +149,7 @@ export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
  * the selection in every browser.
  *
  * Looks up the editor in the split pane that contains `node`, because a right-click does not
- * activate that pane.
+ * activate that pane. Inside an included note edited in place, the editor of that note answers.
  */
 export async function getTextEditorContaining(
     node: Node | null | undefined
@@ -164,7 +164,7 @@ export async function getTextEditorContaining(
         const domRoot = editor?.editing.view.getDomRoot();
 
         if (editor && domRoot && domRoot.contains(node)) {
-            return editor;
+            return getNestedEditor(node, domRoot) ?? editor;
         }
     } catch (error) {
         // Editor not ready or the request timed out.
@@ -172,6 +172,17 @@ export async function getTextEditorContaining(
     }
 
     return null;
+}
+
+/** The editor of an included note edited inside the editable `domRoot`, which contains `node`. */
+function getNestedEditor(node: Node, domRoot: HTMLElement) {
+    const element = node instanceof Element ? node : node.parentElement;
+    const editable = element?.closest<HTMLElement & { ckeditorInstance?: CKTextEditor }>(
+        ".ck-editor__editable:not(.ck-editor__nested-editable)"
+    );
+    return editable && editable !== domRoot && domRoot.contains(editable)
+        ? editable.ckeditorInstance ?? null
+        : null;
 }
 
 /**

@@ -119,6 +119,30 @@ describe("getTextEditorAtSelection", () => {
         expect(await getTextEditorAtSelection()).toBeNull();
     });
 
+    it("returns the editor of an included note that is edited inside the note", async () => {
+        const root = document.createElement("div");
+        root.className = "ck-editor__editable";
+        const { editor } = fakeEditor({ domRoot: root });
+        const nestedEditor = { editing: { view: {} } };
+        const nestedRoot = Object.assign(document.createElement("div"), {
+            className: "ck-editor__editable",
+            ckeditorInstance: nestedEditor
+        });
+        const caption = document.createElement("div");
+        caption.className = "ck-editor__editable ck-editor__nested-editable";
+        root.append(nestedRoot, caption);
+        const nestedText = nestedRoot.appendChild(document.createTextNode("inside"));
+        const nestedCaption = nestedRoot.appendChild(caption.cloneNode());
+
+        setSelection(nestedText);
+        expect(await getTextEditorAtSelection()).toBe(nestedEditor);
+        setSelection(nestedCaption);
+        expect(await getTextEditorAtSelection()).toBe(nestedEditor);
+        // The editable caption of a widget belongs to the editor around it.
+        setSelection(caption.appendChild(document.createTextNode("caption")));
+        expect(await getTextEditorAtSelection()).toBe(editor);
+    });
+
     it("returns null for a non-text note, and swallows a failing editor lookup", async () => {
         setSelection(document.createTextNode("hello"));
 

@@ -107,7 +107,7 @@ In a _Small_ or _Medium_ box, the image is scaled down to fit the height of the 
 An included text note, an included code note and an embedded code file such as a `.js`, `.py` or `.txt` attachment can be edited without leaving the note that includes them. A code note or file is shown with syntax highlighting until then.
 
 *   To edit, select the include and turn on the <span class="tn-icon bx bx-edit-alt"></span> _Editable_ button at the start of its toolbar, or check _Editable_ in its <span class="tn-icon cke cke-three-vertical-dots"></span> _More actions_ menu. Turn _Editable_ off to return to the preview.
-*   A text note is edited with the floating toolbar, which appears over the selected text, whichever toolbar the other text notes use. The notes it includes in turn stay read-only.
+*   While an included text note has the focus, the formatting toolbar applies to it. The notes it includes in turn stay read-only.
 *   Code is edited in the same code editor as a <a class="reference-link" href="../Code.md">Code</a> note, with its theme, indentation and line wrapping settings.
 *   The changes are saved as you type, to the included note or to the attachment, as they would be in its own tab.
 *   Editing is not available in a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), for an included note marked `#readOnly`, or for an attachment of another note.

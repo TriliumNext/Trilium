@@ -42,7 +42,11 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
  * child, so app-wide events travel down into the pane — a component hanging off nothing would never
  * hear that its note was edited elsewhere.
  */
-export function useEmbeddedNoteContext(note: FNote | undefined, ntxId: string) {
+export function useEmbeddedNoteContext(
+    note: FNote | undefined,
+    ntxId: string,
+    { floatingToolbar = true }: { floatingToolbar?: boolean } = {}
+) {
     const parentComponent = useContext(ParentComponent);
     const [ noteContext ] = useState(() => new NoteContext(ntxId));
     const [ component ] = useState(() => new Component());
@@ -72,7 +76,7 @@ export function useEmbeddedNoteContext(note: FNote | undefined, ntxId: string) {
                 readOnlyTemporarilyDisabled: !note.hasLabel("readOnly"),
                 // The pane has a third of a note's width, which is not a toolbar's worth: the
                 // editor's own follows the selection instead of standing in a bar (see link.ts).
-                floatingToolbar: true
+                floatingToolbar
             }
         });
     }, [ noteContext, note?.noteId ]);

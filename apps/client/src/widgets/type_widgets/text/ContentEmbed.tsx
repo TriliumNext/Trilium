@@ -5,8 +5,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import appContext from "../../../components/app_context";
 import linkContextMenu from "../../../menus/link_context_menu";
 import content_renderer from "../../../services/content_renderer";
+import keyboard_actions from "../../../services/keyboard_actions";
 import { t } from "../../../services/i18n";
 import type { ViewScope } from "../../../services/link";
+import { removeIndividualBinding } from "../../../services/shortcuts";
 import ActionButton from "../../react/ActionButton";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
@@ -56,6 +58,7 @@ export default function ContentEmbed({
     const isContentActive = useFocusWithin(contentRef);
     const isDraggedOver = useIsDraggedOver(bodyRef);
     useFullscreenEvents(contentRef);
+    useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
     const isExpandable = boxSize === "expandable";
     const hasFullscreen = boxSize === "medium" || boxSize === "full";
@@ -255,6 +258,26 @@ function ContentEmbedActionButton({ className, action }: {
  * Opens the menu of the embed for a right click on its title row. The title link is left to the
  * handler of every link, which opens the same menu, or a quick edit with Ctrl.
  */
+/**
+ * Runs the window shortcuts, such as switching tabs, from inside the content. The text editor
+ * keeps the keys pressed in an embed from the document, where these shortcuts listen.
+ */
+function useWindowShortcuts(contentRef: RefObject<HTMLElement | null>) {
+    useEffect(() => {
+        const content = contentRef.current;
+        if (!content) return;
+
+        const bindings = keyboard_actions.setupWindowShortcutsForElement($(content));
+        return () => {
+            void bindings.then((bound) => {
+                for (const binding of bound) {
+                    removeIndividualBinding(binding);
+                }
+            });
+        };
+    }, [ contentRef ]);
+}
+
 /**
  * Whether something is dragged over the body of the embed, which then lets the drag reach the
  * content under the backdrop, such as the editor of an included note.

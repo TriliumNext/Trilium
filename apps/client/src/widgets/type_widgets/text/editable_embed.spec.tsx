@@ -9,7 +9,7 @@ import { buildNote } from "../../../test/easy-froca";
 import { type ContentEmbedToolProvider, getContentEmbedTools } from "./content_embed_tools";
 import {
     type EditableEmbedOptions, NestedEmbedContext, useEditableEmbed, useEmbedEditors,
-    useEmbedPreview
+    useEmbedPreview, useNestedEditor
 } from "./editable_embed";
 
 const figures: HTMLElement[] = [];
@@ -139,6 +139,55 @@ describe("useEmbedPreview", () => {
     });
 });
 
+describe("useNestedEditor", () => {
+    it("follows the focus between the editor of a note and an editor nested in it", () => {
+        const split = buildEditable({ ntxId: "ntx1" });
+        const host = buildEditable({ parent: split, editor: buildFakeEditor() });
+        const nestedEditor = buildFakeEditor();
+        const nested = buildEditable({ parent: host, editor: nestedEditor });
+        const caption = buildEditable({ parent: nested, isNestedEditable: true });
+        const otherSplit = buildEditable({ ntxId: "ntx2" });
+        const otherNested = buildEditable({
+            parent: buildEditable({ parent: otherSplit, editor: buildFakeEditor() }),
+            editor: buildFakeEditor()
+        });
+        const button = document.body.appendChild(document.createElement("button"));
+        document.body.append(split, otherSplit);
+
+        let editor: unknown;
+        function Probe() {
+            editor = useNestedEditor("ntx1");
+            return null;
+        }
+        const container = document.createElement("div");
+        act(() => render(<Probe />, container));
+        expect(editor).toBeNull();
+
+        act(() => nested.focus());
+        expect(editor).toBe(nestedEditor);
+        // The focus moves to a toolbar, or into a caption of the nested editor.
+        act(() => button.focus());
+        act(() => caption.focus());
+        expect(editor).toBe(nestedEditor);
+        // Another split has its own toolbar.
+        act(() => otherNested.focus());
+        expect(editor).toBe(nestedEditor);
+
+        act(() => host.focus());
+        expect(editor).toBeNull();
+
+        act(() => nested.focus());
+        expect(editor).toBe(nestedEditor);
+        act(() => nestedEditor.fire("destroy"));
+        expect(editor).toBeNull();
+
+        act(() => render(null, container));
+        split.remove();
+        otherSplit.remove();
+        button.remove();
+    });
+});
+
 interface ProbeState {
     canEdit: boolean;
     isEditing: boolean;
@@ -183,5 +232,42 @@ function buildEditor(canEdit = true): ContentEditor {
         getUnsavedContent: () => undefined,
         scheduleSave: vi.fn(),
         release: vi.fn()
+    };
+}
+
+interface EditableOptions {
+    parent?: HTMLElement;
+    ntxId?: string;
+    editor?: object;
+    isNestedEditable?: boolean;
+}
+
+/** An element with the classes of a text editor's editable, focusable, or a split with `ntxId`. */
+function buildEditable({ parent, ntxId, editor, isNestedEditable }: EditableOptions) {
+    const element = document.createElement("div");
+    element.tabIndex = -1;
+    if (ntxId) {
+        element.dataset.ntxId = ntxId;
+    } else {
+        element.className = isNestedEditable
+            ? "ck-editor__editable ck-editor__nested-editable"
+            : "ck-editor__editable";
+    }
+    Object.assign(element, { ckeditorInstance: editor });
+    parent?.append(element);
+    return element;
+}
+
+/** An editor that fires its events to the listeners added with `on()`. */
+function buildFakeEditor() {
+    const listeners = new Map<string, Set<() => void>>();
+    return {
+        on: (name: string, listener: () => void) => {
+            listeners.set(name, (listeners.get(name) ?? new Set()).add(listener));
+        },
+        off: (name: string, listener: () => void) => listeners.get(name)?.delete(listener),
+        fire: (name: string) => {
+            for (const listener of listeners.get(name) ?? []) listener();
+        }
     };
 }
