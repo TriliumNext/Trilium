@@ -251,3 +251,40 @@ export function getMimeTypeFromMarkdownName(mdLanguageCode: string) {
 
     return byMarkdownNameMappings[mdLanguageCode];
 }
+
+/**
+ * The code MIME type of a file, from its extension, such as `text/x-python` for `script.py`, or
+ * `undefined` for a file without a known language.
+ */
+export function getMimeTypeFromFileName(fileName: string) {
+    const lowerCaseName = fileName.toLowerCase();
+    const extension = lowerCaseName.includes(".")
+        ? lowerCaseName.slice(lowerCaseName.lastIndexOf(".") + 1)
+        : lowerCaseName;
+    return getMimeTypeFromMarkdownName(LANGUAGES_BY_EXTENSION[extension] ?? extension)?.mime;
+}
+
+/** The Markdown language names of the file extensions that are not language names themselves. */
+const LANGUAGES_BY_EXTENSION: Record<string, string> = {
+    cc: "cpp",
+    cjs: "javascript",
+    clj: "clojure",
+    cs: "csharp",
+    cxx: "cpp",
+    erl: "erlang",
+    ex: "elixir",
+    exs: "elixir",
+    h: "c",
+    hpp: "cpp",
+    hs: "haskell",
+    htm: "html",
+    kt: "kotlin",
+    kts: "kotlin",
+    m: "objectivec",
+    md: "markdown",
+    mjs: "javascript",
+    pl: "perl",
+    ps1: "powershell",
+    rb: "ruby",
+    rs: "rust"
+};

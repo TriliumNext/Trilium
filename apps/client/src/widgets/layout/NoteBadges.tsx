@@ -4,6 +4,7 @@ import { isOfficeMimeType } from "@triliumnext/commons";
 import { clsx } from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
+import type { SaveState } from "../../components/note_context";
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
@@ -180,12 +181,18 @@ const SAVE_STATE_DEBOUNCE_MS = 200;
 export function SaveStatusBadge() {
     const { noteContext} = useNoteContext();
     const saveState = useGetContextDataFrom(noteContext, "saveState");
-    const [debouncedState, setDebouncedState] = useState(saveState);
+
+    return <SaveStateBadge state={saveState?.state} />;
+}
+
+/** The badge of `state`, which follows a change of the state once it lasts a moment. */
+export function SaveStateBadge({ state }: { state: SaveState | undefined }) {
+    const [debouncedState, setDebouncedState] = useState(state);
 
     useEffect(() => {
-        const timer = setTimeout(() => setDebouncedState(saveState), SAVE_STATE_DEBOUNCE_MS);
+        const timer = setTimeout(() => setDebouncedState(state), SAVE_STATE_DEBOUNCE_MS);
         return () => clearTimeout(timer);
-    }, [saveState]);
+    }, [state]);
 
     if (!debouncedState) return;
 
@@ -212,11 +219,11 @@ export function SaveStatusBadge() {
         }
     };
 
-    const { icon, title, tooltip } = stateConfig[debouncedState.state];
+    const { icon, title, tooltip } = stateConfig[debouncedState];
 
     return (
         <Badge
-            className={clsx("save-status-badge", debouncedState.state)}
+            className={clsx("save-status-badge", debouncedState)}
             icon={icon}
             text={title}
             tooltip={tooltip}

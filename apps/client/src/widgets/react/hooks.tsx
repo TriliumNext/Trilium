@@ -175,6 +175,8 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
     // React to note/blob changes.
     useEffect(() => {
         if (!blob || !note) return;
+        // Changes not saved here yet stay when another editor saves the note, and replace it.
+        if (loadedNoteIdRef.current === note.noteId && spacedUpdate.hasUnsavedChanges()) return;
         noteSavedDataStore.set(note.noteId, blob.content);
         spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob.content));
         loadedNoteIdRef.current = note.noteId;
