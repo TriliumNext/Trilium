@@ -186,7 +186,8 @@
     "move-split-left": "分割画面を左へ移動",
     "move-split-right": "分割画面を右へ移動",
     "focus-split-left": "左側の分割画面にフォーカスを移動",
-    "focus-split-right": "右側の分割画面にフォーカスを移動"
+    "focus-split-right": "右側の分割画面にフォーカスを移動",
+    "duplicate-note": "子ノートを含めずに複製"
   },
   "login": {
     "title": "ログイン",
