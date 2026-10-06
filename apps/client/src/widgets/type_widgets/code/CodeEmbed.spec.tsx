@@ -147,6 +147,34 @@ describe("CodeEmbed", () => {
         await vi.waitFor(() => expect(attachmentView.state.doc.toString()).toBe("b"));
     });
 
+    it("keeps the latest attachment content when an older fetch resolves last", async () => {
+        const attachment = buildAttachment("script.py");
+        const { figure } = await mount(attachment, buildEditor(), {
+            content: "a",
+            isEditable: true
+        });
+        const view = await findView(figure);
+        const resolvers: ((blob: FBlob) => void)[] = [];
+        attachment.getBlob = () => new Promise((resolve) => resolvers.push(resolve));
+        const saved = new LoadResults([]);
+        saved.addAttachmentRow({ attachmentId: attachment.attachmentId } as never, "any");
+        await act(async () => {
+            await parent.handleEvent("entitiesReloaded", { loadResults: saved });
+            await parent.handleEvent("entitiesReloaded", { loadResults: saved });
+        });
+        expect(resolvers).toHaveLength(2);
+
+        await act(async () => {
+            resolvers[1](buildBlob("new"));
+        });
+        await vi.waitFor(() => expect(view.state.doc.toString()).toBe("new"));
+        await act(async () => {
+            resolvers[0](buildBlob("old"));
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+        expect(view.state.doc.toString()).toBe("new");
+    });
+
     it("loads the note as saved elsewhere, unless it has unsaved changes", async () => {
         const { figure } = await mount(buildCodeNote("saved"), buildEditor(), {
             content: "stale",

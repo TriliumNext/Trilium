@@ -74,13 +74,19 @@ function useSavedContent(
 ) {
     const noteBlob = useNoteBlob(entity instanceof FNote ? entity : null);
     const [ attachmentContent, setAttachmentContent ] = useState<string>();
+    const requestIdRef = useRef(0);
     const content = entity instanceof FNote ? noteBlob?.content : attachmentContent;
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (entity instanceof FNote) return;
         const rows = loadResults.getAttachmentRows();
         if (rows.some((row) => row.attachmentId === entity.attachmentId)) {
-            void entity.getBlob().then((blob) => setAttachmentContent(blob?.content));
+            const requestId = ++requestIdRef.current;
+            void entity.getBlob().then((blob) => {
+                if (requestId === requestIdRef.current) {
+                    setAttachmentContent(blob?.content);
+                }
+            });
         }
     });
 
