@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildNote, buildNotes } from "../../../test/easy-froca.js";
 import { buildEvent, buildEvents } from "./event_builder.js";
 import { LOCALE_MAPPINGS } from "./index.js";
+import { serializeRecurrence } from "./recurrence.js";
 import { isValidDuration, parseDurationSeconds } from "./utils.js";
 
 describe("Building events", () => {
@@ -420,6 +421,48 @@ describe("Recurrence", () => {
             ]);
             expect(occurrences.every(({ end }) => end.endsWith(" 13:00"))).toBe(true);
         });
+
+        it("skips the dates a UTC EXDATE names, keeping the rest at local time", async () => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "11:00",
+                    "#endTime": "13:00",
+                    "#recurrence": [
+                        "RRULE:FREQ=WEEKLY;BYDAY=SU",
+                        "EXDATE:20261011T110000Z",
+                        "EXDATE:20261025T110000Z"
+                    ].join("\n")
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-10-01").map(({ start }) => start)).toEqual([
+                "2026-10-04 11:00", "2026-10-18 11:00", "2026-11-01 11:00", "2026-11-08 11:00"
+            ]);
+        });
+
+        it.each([
+            [ "the recurrence editor writes", untilRule("2026-11-29") ],
+            [ "is stored in UTC", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261129T235959Z" ]
+        ])("ends the series on the day an UNTIL that %s names", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "11:00",
+                    "#endTime": "13:00",
+                    "#recurrence": recurrence
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-11-15").map(({ start }) => start)).toEqual([
+                "2026-11-01 11:00", "2026-11-08 11:00", "2026-11-15 11:00", "2026-11-22 11:00",
+                "2026-11-29 11:00"
+            ]);
+        });
     });
 
     describe("in a time zone behind UTC", () => {
@@ -438,6 +481,27 @@ describe("Recurrence", () => {
             expect(occurrences.map(({ start }) => start)).toEqual([
                 "2026-10-04 00:00", "2026-10-11 00:00", "2026-10-18 00:00", "2026-10-25 00:00",
                 "2026-11-01 00:00", "2026-11-08 00:00"
+            ]);
+        });
+
+        it.each([
+            [ "the recurrence editor writes", untilRule("2026-11-29") ],
+            [ "is stored in UTC", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261129T235959Z" ]
+        ])("keeps a late occurrence on the day an UNTIL that %s names", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                {
+                    title: "Weekly",
+                    "#startDate": "2026-10-04",
+                    "#startTime": "21:00",
+                    "#endTime": "22:00",
+                    "#recurrence": recurrence
+                }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            expect(renderOccurrences(events, "2026-11-15").map(({ start }) => start)).toEqual([
+                "2026-11-01 21:00", "2026-11-08 21:00", "2026-11-15 21:00", "2026-11-22 21:00",
+                "2026-11-29 21:00"
             ]);
         });
     });
@@ -473,8 +537,25 @@ function useTimeZone(timeZone: string) {
         process.env.TZ = timeZone;
     });
     afterAll(() => {
-        process.env.TZ = originalTimeZone;
+        if (originalTimeZone === undefined) {
+            delete process.env.TZ;
+        } else {
+            process.env.TZ = originalTimeZone;
+        }
     });
+}
+
+/** A weekly Sunday rule ending on `date`, as the recurrence editor writes it. */
+function untilRule(date: string) {
+    return serializeRecurrence({
+        kind: "simple",
+        rule: {
+            frequency: "WEEKLY",
+            interval: 1,
+            weekdays: [ "SU" ],
+            ends: { type: "until", date }
+        }
+    }) ?? "";
 }
 
 function formatLocal(date: Date | null) {

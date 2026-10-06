@@ -157,7 +157,7 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
             // spells the same thing — is not an option: the rrule library drops a DTSTART written
             // that way without a word and starts the series from today instead.
             const dtStart = dayjs(startDate).format(allDay ? "YYYYMMDD" : "YYYYMMDD[T]HHmmss");
-            const rruleString = `DTSTART:${dtStart}\n${toLocalUntil(recurrence)}`;
+            const rruleString = `DTSTART:${dtStart}\n${toLocalDates(recurrence)}`;
 
             // Validate rrule string
             let rruleValid = true;
@@ -183,12 +183,14 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
 }
 
 /**
- * Rewrites a UTC `UNTIL` (`UNTIL=20261130T235959Z`) as local time, like the DTSTART that
- * `buildEvent()` writes. FullCalendar's rrule plugin reads the whole rule as UTC when any of its
- * dates carries a zone, which moves every occurrence by the local UTC offset.
+ * Rewrites the UTC dates of `UNTIL` and `EXDATE` (`…T235959Z`) as local time, like the DTSTART
+ * that `buildEvent()` writes. FullCalendar's rrule plugin reads the whole rule as UTC when any of
+ * them carries a zone, which moves every occurrence by the local UTC offset.
  */
-function toLocalUntil(recurrence: string) {
-    return recurrence.replace(/\b(UNTIL=\d{8}T\d{6})Z\b/gi, "$1");
+function toLocalDates(recurrence: string) {
+    return recurrence
+        .replace(/\b(UNTIL=\d{8}T\d{6})Z\b/gi, "$1")
+        .replace(/^EXDATE:.*$/gim, (line) => line.replace(/(\d{8}T\d{6})Z\b/gi, "$1"));
 }
 
 /**
