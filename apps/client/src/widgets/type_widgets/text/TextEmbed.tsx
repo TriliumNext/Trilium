@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
 import froca from "../../../services/froca";
-import { useNoteBlob } from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks";
 import {
     EditableEmbedContent, hasFixedToolbarAround, useEditableEmbed, useEmbedPreview
 } from "./editable_embed";
@@ -58,55 +58,63 @@ export default function TextEmbed({
 
 /**
  * The content of `note` to preview: the content of the editor of the embed as it closed, until its
- * last save lands, and otherwise the content that each save of the note stores. Returns that
- * content, and the callback that takes the content of the closing editor and its save.
+ * last save lands, and otherwise the latest content that a save of the note stores. After a failed
+ * save, the content of the editor stays until the next save of the note. Returns that content,
+ * and the callback that takes the content of the closing editor and its save.
  */
 function useShownContent(note: FNote, initialContent: string) {
     const [ content, setContent ] = useState(initialContent);
-    const closingSaveRef = useRef<Promise<void> | undefined>(undefined);
-    const blob = useNoteBlob(note);
+    const requestIdRef = useRef(0);
+    const closingSaveRef = useRef<Promise<boolean> | undefined>(undefined);
 
-    // An earlier save that lands while the last save runs stores older content.
-    useEffect(() => {
-        if (blob && !closingSaveRef.current) {
+    // Only the latest read applies, and none while the last save of the editor runs: an earlier
+    // save that lands meanwhile stores older content.
+    const refresh = useCallback(async () => {
+        const requestId = ++requestIdRef.current;
+        const blob = await note.getBlob();
+        if (blob && requestId === requestIdRef.current && !closingSaveRef.current) {
             setContent(blob.content);
         }
-    }, [ blob ]);
+    }, [ note ]);
 
-    const onEditorClose = useCallback((editorContent: string, save: Promise<void>) => {
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.isNoteContentReloaded(note.noteId)) {
+            void refresh();
+        }
+    });
+
+    const onEditorClose = useCallback((editorContent: string, save: Promise<boolean>) => {
         setContent(editorContent);
         closingSaveRef.current = save;
-        void save
-            .then(() => (closingSaveRef.current === save ? note.getBlob() : undefined))
-            .then((saved) => {
-                if (closingSaveRef.current !== save) return;
-                closingSaveRef.current = undefined;
-                if (saved) {
-                    setContent(saved.content);
-                }
-            });
-    }, [ note ]);
+        void save.then((isSaved) => {
+            if (closingSaveRef.current !== save) return;
+            closingSaveRef.current = undefined;
+            if (isSaved) {
+                void refresh();
+            }
+        });
+    }, [ refresh ]);
 
     return [ content, onEditorClose ] as const;
 }
 
 /** The last saves of the editors of included notes that went away, by note ID, until they land. */
-const closingSaves = new Map<string, Promise<void>>();
+const closingSaves = new Map<string, Promise<boolean>>();
 
 /**
- * Tracks `save`, the last save of an editor of `noteId` that went away, until it lands. Then drops
- * the content that `froca` fetched before, so that the next editor loads what the save stored.
+ * Tracks `save`, the last save of an editor of `noteId` that went away, which resolves to whether
+ * it succeeded, until it lands. Then drops the content that `froca` fetched before, so that the
+ * next editor loads what the save stored.
  */
-export function trackClosingSave(noteId: string, save: Promise<unknown> | null) {
-    const tracked: Promise<void> = Promise.resolve(save)
-        .catch(() => {
-            // Failures are logged by `SpacedUpdate` and retried.
-        })
-        .then(() => {
+export function trackClosingSave(noteId: string, save: Promise<boolean>) {
+    const tracked: Promise<boolean> = save
+        .catch(() => false)
+        .then((isSaved) => {
             delete froca.blobPromises[`notes-${noteId}`];
             if (closingSaves.get(noteId) === tracked) {
                 closingSaves.delete(noteId);
             }
+            return isSaved;
         });
     closingSaves.set(noteId, tracked);
     return tracked;

@@ -3,6 +3,8 @@ import "./TextEmbedEditor.css";
 import { createPortal, type RefObject } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 
+import type Component from "../../../components/component";
+import type NoteContext from "../../../components/note_context";
 import type FNote from "../../../entities/fnote";
 import { randomString } from "../../../services/utils";
 import {
@@ -22,7 +24,7 @@ interface TextEmbedEditorProps {
      * Receives the content of the editor as it goes away, which can be unsaved yet, and the save
      * of what is left.
      */
-    onClose(content: string, save: Promise<void>): void;
+    onClose(content: string, save: Promise<boolean>): void;
 }
 
 /**
@@ -47,12 +49,12 @@ export default function TextEmbedEditor({ note, hasFixedToolbar, onClose }: Text
 
     // A layout cleanup runs while the editor is still mounted, so it saves what is left.
     useLayoutEffect(() => () => {
-        const save = trackClosingSave(note.noteId, announceEmbeddedNoteClosing(component, ntxId));
+        const save = trackClosingSave(note.noteId, saveWhatIsLeft(component, noteContext, ntxId));
         const content = findTextEditorIn(rootRef.current)?.getData();
         if (content !== undefined) {
             onCloseRef.current(content, save);
         }
-    }, [ component, ntxId ]);
+    }, [ component, noteContext, ntxId ]);
 
     return (
         <EmbeddedNoteScope component={component} noteContext={noteContext}>
@@ -89,4 +91,13 @@ function ScopedEditor({ rootRef, note }: ScopedEditorProps) {
             {badgeSlot && createPortal(<SaveStatusBadge />, badgeSlot)}
         </div>
     );
+}
+
+/**
+ * Saves what is left in the editor of `ntxId`, and resolves to whether the save succeeded. The
+ * editor reports a failed save in the save state of its note context.
+ */
+async function saveWhatIsLeft(component: Component, noteContext: NoteContext, ntxId: string) {
+    await announceEmbeddedNoteClosing(component, ntxId);
+    return noteContext.getContextData("saveState")?.state !== "error";
 }

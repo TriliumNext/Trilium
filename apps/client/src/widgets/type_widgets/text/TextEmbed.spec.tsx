@@ -164,6 +164,72 @@ describe("TextEmbed", () => {
         await vi.waitFor(() => expect(shownPreview()).toBe("<div><p>Saved</p></div>"));
     });
 
+    it("keeps what the editor held when its last save fails", async () => {
+        const note = buildTextNote("failing");
+        const { figure } = await mount(note, buildEditor(), { isEditable: true });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        const { noteContext } = editorProps.mock.calls[0][0] as TypeWidgetProps;
+        editorAskedToSave.mockImplementationOnce(async () => {
+            noteContext?.setContextData("saveState", { state: "error" });
+        });
+
+        editorData = "<p>Not saved yet</p>";
+        note.getBlob = async () => buildBlob("<p>Saved before</p>");
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await settle();
+        expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+            .toBe("<div><p>Not saved yet</p></div>");
+    });
+
+    it("shows the newest content when reads of the note land out of order", async () => {
+        const note = buildTextNote("racing");
+        const { figure } = await mount(note, buildEditor(), { isEditable: true });
+        await vi.waitFor(() => {
+            expect(figure.querySelector(".editable-text-stub")).not.toBeNull();
+        }, { timeout: 5000 });
+
+        let finishSave = () => {};
+        editorAskedToSave.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            finishSave = resolve;
+        }));
+        editorData = "<p>Closed</p>";
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+
+        // The read that follows the last save of the editor is slow.
+        let slowRead = () => {};
+        const isRead = vi.fn();
+        note.getBlob = () => new Promise((resolve) => {
+            isRead();
+            slowRead = () => resolve(buildBlob("<p>Older</p>"));
+        });
+        await act(async () => {
+            finishSave();
+        });
+        await settle();
+        expect(isRead).toHaveBeenCalledOnce();
+
+        // Another editor saves the note meanwhile.
+        note.getBlob = async () => buildBlob("<p>Newer</p>");
+        await act(async () => {
+            await reloadNoteContent(note);
+        });
+        await settle();
+        expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+            .toBe("<div><p>Newer</p></div>");
+        await act(async () => {
+            slowRead();
+        });
+        await settle();
+        expect(figure.querySelector(".editable-embed-preview")?.innerHTML)
+            .toBe("<div><p>Newer</p></div>");
+    });
+
     it("lets another include of the note follow its saves while an editor closes", async () => {
         const note = buildTextNote("shared");
         let finishSave = () => {};
@@ -296,6 +362,15 @@ function buildEditor(): ContentEditor {
         scheduleSave: vi.fn(),
         release: vi.fn()
     };
+}
+
+/** Lets the reads, renders and effects that are under way finish. */
+async function settle() {
+    for (let i = 0; i < 3; i++) {
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+    }
 }
 
 /** Announces a save of the content of `note`, as the server does. */
