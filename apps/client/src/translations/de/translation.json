@@ -300,8 +300,7 @@
     "modal_body": "Notiztyp / Vorlage der neuen Notiz auswählen:",
     "templates": "Vorlagen",
     "change_path_prompt": "Ändern, wo die neue Notiz erzeugt wird:",
-    "search_placeholder": "Pfad nach Namen durchsuchen (Standard falls leer)",
-    "builtin_templates": "Eingebaute Vorlagen"
+    "search_placeholder": "Pfad nach Namen durchsuchen (Standard falls leer)"
   },
   "password_not_set": {
     "title": "Das Passwort ist nicht festgelegt",
@@ -1788,7 +1787,6 @@
     "copy-note-path-to-clipboard": "Notiz-Pfad in die Zwischenablage kopieren",
     "protect-subtree": "Zweig schützen",
     "unprotect-subtree": "Zweig-Schutz aufheben",
-    "copy-clone": "Kopieren / Klonen",
     "clone-to": "Klonen nach...",
     "cut": "Ausschneiden",
     "move-to": "Verschieben nach...",
@@ -1836,7 +1834,6 @@
     "ai-chat": "KI-Chat",
     "task-list": "Aufgabenliste",
     "new-feature": "Neu",
-    "collections": "Sammlungen",
     "spreadsheet": "Tabelle",
     "llm-chat": "KI-Chat",
     "markdown": "Markdown"
@@ -1933,7 +1930,6 @@
     "created_on": "Erstellt am <Value />",
     "last_modified": "Bearbeitet am <Value />",
     "note_type_switcher_label": "Von {{type}} wechseln zu:",
-    "note_type_switcher_others": "Andere Notizart",
     "note_type_switcher_templates": "Vorlage",
     "note_type_switcher_collection": "Sammlung",
     "edited_notes": "Notizen, bearbeitet an diesem Tag",

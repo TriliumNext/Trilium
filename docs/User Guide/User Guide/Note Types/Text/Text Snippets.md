@@ -9,7 +9,7 @@ In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/
 
 1.  Right click a note where to place the text snippet.
 2.  Select _Insert child note_.
-3.  Select _Text snippet_.
+3.  Select _More_ → _Text snippet_.
 
 Afterwards, simply type in the content of the note the desired text. The text can be formatted in the same manner as a normal text note.
 

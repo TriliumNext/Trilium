@@ -1366,7 +1366,14 @@ function replaceByMap(str: string, mapObj: Record<string, string>) {
     return str.replace(re, (matched) => mapObj[matched]);
 }
 
-function duplicateSubtree(origNoteId: string, newParentNoteId: string) {
+/**
+ * Copies a note and its descendants into `newParentNoteId`, right after the original, and appends
+ * `notes.duplicate-note-suffix` to the copy's title.
+ *
+ * With `withChildren: false`, only the note itself is copied; links and relations to its children
+ * keep pointing at the original children.
+ */
+function duplicateSubtree(origNoteId: string, newParentNoteId: string, { withChildren = true }: { withChildren?: boolean } = {}) {
     if (origNoteId === "root") {
         throw new Error("Duplicating root is not possible");
     }
@@ -1377,9 +1384,11 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string) {
     // might be null if orig note is not in the target newParentNoteId
     const origBranch = origNote.getParentBranches().find((branch) => branch.parentNoteId === newParentNoteId);
 
-    const noteIdMapping = getNoteIdMapping(origNote);
+    const noteIdMapping = withChildren
+        ? getNoteIdMapping(origNote)
+        : { [origNote.noteId]: newEntityId() };
 
-    const res = duplicateSubtreeInner(origNote, origBranch, newParentNoteId, noteIdMapping);
+    const res = duplicateSubtreeInner(origNote, origBranch, newParentNoteId, noteIdMapping, withChildren);
 
     const duplicateNoteSuffix = t("notes.duplicate-note-suffix");
 
@@ -1410,7 +1419,7 @@ function duplicateSubtreeWithoutRoot(origNoteId: string, newNoteId: string) {
     }
 }
 
-function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | undefined, newParentNoteId: string, noteIdMapping: Record<string, string>) {
+function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | undefined, newParentNoteId: string, noteIdMapping: Record<string, string>, withChildren = true) {
     if (origNote.isProtected && !protectedSessionService.isProtectedSessionAvailable()) {
         throw new Error(`Cannot duplicate note '${origNote.noteId}' because it is protected and protected session is not available. Enter protected session and try again.`);
     }
@@ -1460,9 +1469,11 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
             attr.save({ skipValidation: true });
         }
 
-        for (const childBranch of origNote.getChildBranches()) {
-            if (childBranch) {
-                duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
+        if (withChildren) {
+            for (const childBranch of origNote.getChildBranches()) {
+                if (childBranch) {
+                    duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
+                }
             }
         }
 

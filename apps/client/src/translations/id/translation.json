@@ -331,8 +331,7 @@
     "search_placeholder": "cari jalur berdasarkan nama (default jika kosong)",
     "modal_title": "Pilih jenis catatan",
     "modal_body": "Pilih jenis catatan / templat catatan baru:",
-    "templates": "Templat",
-    "builtin_templates": "Templat bawaan"
+    "templates": "Templat"
   },
   "password_not_set": {
     "title": "Kata sandi belum diatur",
@@ -2216,7 +2215,6 @@
     "copy-note-path-to-clipboard": "Salin path catatan ke clipboard",
     "protect-subtree": "Lindungi subtree",
     "unprotect-subtree": "Batalkan perlindungan subtree",
-    "copy-clone": "Salin / clone",
     "clone-to": "Clone ke...",
     "cut": "Potong",
     "move-to": "Pindahkan ke...",
@@ -2267,7 +2265,6 @@
     "llm-chat": "AI Chat",
     "task-list": "Daftar Tugas",
     "new-feature": "Baru",
-    "collections": "Koleksi",
     "spreadsheet": "Spreadsheet",
     "note-types": "Jenis catatan",
     "built-in-templates": "Templat bawaan"
@@ -2494,7 +2491,6 @@
     "created_on": "Dibuat pada <Value />",
     "last_modified": "Diubah pada <Value />",
     "note_type_switcher_label": "Beralih dari {{type}} ke:",
-    "note_type_switcher_others": "Tipe catatan lain",
     "note_type_switcher_templates": "Template",
     "note_type_switcher_collection": "Koleksi",
     "edited_notes": "Catatan yang diedit pada hari ini",

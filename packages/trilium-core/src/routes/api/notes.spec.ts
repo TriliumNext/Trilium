@@ -621,6 +621,18 @@ describe("Notes API (core)", () => {
             expect(res.status).toBe(200);
             expect(res.body.note.noteId).not.toBe(original.noteId);
             expect(res.body.note.title).toContain("Original subtree");
+            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(1);
+        });
+
+        it("duplicates only the note when the body asks for no children", async () => {
+            const original = await createTextNote(api, { title: "Original note only" });
+            await createTextNote(api, { parentNoteId: original.noteId, title: "Child" });
+
+            const res = await api.post<{ note: { noteId: string } }>(
+                `/api/notes/${original.noteId}/duplicate/root`, { body: { withChildren: false } }
+            );
+            expect(res.status).toBe(200);
+            expect(becca.getNoteOrThrow(res.body.note.noteId).getChildNotes()).toHaveLength(0);
         });
     });
 

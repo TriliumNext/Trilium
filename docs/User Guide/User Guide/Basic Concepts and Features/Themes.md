@@ -5,6 +5,8 @@ Trilium comes with a couple pre-installed color themes, with the default being a
 
 ![Dark Theme](Themes_dark-theme.png)
 
+While a dark theme is active, Trilium asks the Dark Reader browser extension not to darken the page a second time. Dark Reader still darkens the light themes. After switching from a dark theme to a light one, reload the page (<kbd>Ctrl</kbd>+<kbd>R</kbd>) for Dark Reader to take effect again.
+
 ## Creating Custom CSS Themes
 
 Trilium supports custom user themes, allowing you to personalize the application's appearance. To create a custom theme, follow these steps:

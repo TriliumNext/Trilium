@@ -30,6 +30,7 @@ const enum KeyboardActionNamesEnum {
     addNoteAboveToSelection,
     addNoteBelowToSelection,
     duplicateSubtree,
+    duplicateNote,
     openNewTab,
     closeActiveTab,
     reopenLastTab,

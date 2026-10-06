@@ -347,8 +347,7 @@
     "search_placeholder": "пошук шляху за назвою (за замовчуванням, якщо порожня)",
     "modal_title": "Вибрати тип нотатки",
     "modal_body": "Вибрати тип/шаблон нової нотатки:",
-    "templates": "Шаблони",
-    "builtin_templates": "Вбудовані Шаблони"
+    "templates": "Шаблони"
   },
   "password_not_set": {
     "title": "Пароль не встановлено",
@@ -1434,7 +1433,6 @@
     "placeholder": "введіть тут заголовок нотатки...",
     "note_type_switcher_label": "Змінити з {{type}} на:",
     "note_type_switcher_collection": "Колекція",
-    "note_type_switcher_others": "Інший тип нотатки",
     "created_on": "Створено <Value />",
     "last_modified": "Змінено <Value />"
   },
@@ -1718,7 +1716,6 @@
     "copy-note-path-to-clipboard": "Копіювати шлях до нотатки в буфер обміну",
     "protect-subtree": "Захистити піддерево",
     "unprotect-subtree": "Зняти захист піддерева",
-    "copy-clone": "Копіювати / клонувати",
     "clone-to": "Клонувати до...",
     "cut": "Вирізати",
     "move-to": "Перемістити до...",
@@ -1765,7 +1762,6 @@
     "beta-feature": "Бета",
     "task-list": "Список завдань",
     "new-feature": "Нова",
-    "collections": "Колекції",
     "render-note": "Рендерінг Нотатки"
   },
   "protect_note": {

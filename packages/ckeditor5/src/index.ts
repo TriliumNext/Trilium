@@ -20,6 +20,7 @@ export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";
 export type { MentionHostedFeed, MentionHostedList, MentionHostedListState } from "./plugins/mention/types.js";
+export type { ToolbarGroupMenuEntry, ToolbarGroupMenuHost, ToolbarGroupMenuItem, ToolbarGroupMenuRequest } from "./plugins/toolbar_group_menu.js";
 export { default as TriliumSnippets } from "./plugins/snippets/snippets.js";
 export type { SnippetDefinition } from "./plugins/snippets/snippetsconfig.js";
 export { default as TriliumAiAssistant } from "./plugins/ai_assistant/ai_assistant.js";

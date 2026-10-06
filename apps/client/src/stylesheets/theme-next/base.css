@@ -173,7 +173,7 @@ body.backdrop-effects-disabled {
 }
 
 /* The row's own icon is spaced by the `.tn-menu-gap` beside it. */
-.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon:not(.dropdown-item > span > :first-child) {
+.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon:not(.dropdown-item > span > :first-child, .menu-trailing-icon) {
     margin-inline-end: 6px;
 }
 
@@ -246,19 +246,16 @@ body.desktop .dropdown-item.dropdown-submenu .dropdown-toggle,
     padding-inline-end: var(--menu-item-end-padding) !important;
 }
 
+.dropdown-item:not(.dropdown-submenu) span.menu-trailing-icon {
+    margin-inline-end: calc(var(--menu-item-start-padding) - var(--menu-item-end-padding));
+}
+
 .dropdown-item.dropdown-submenu {
     padding: 0 !important;
 
     .dropdown-toggle {
         flex-grow: 1;
     }
-}
-
-/* Each menu level holds its rows in its own `.tn-menu-scroll`; submenu layers are outside it. */
-body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item:not(.dropdown-submenu),
-body.desktop .tn-menu-scroll:has(.dropdown-submenu.dropstart) .dropdown-item.dropdown-submenu .dropdown-toggle {
-    padding-inline-end: var(--menu-item-start-padding) !important;
-    padding-inline-start: var(--menu-item-end-padding) !important;
 }
 
 :root .dropdown-item:focus-visible {
@@ -339,7 +336,7 @@ html body .dropdown-item[disabled] {
 
 /* Menu item arrow */
 body.mobile .dropdown-submenu .dropdown-toggle::after,
-body.desktop .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
+body.desktop .dropdown-submenu .dropdown-toggle::after {
     content: "\ed3b" !important;
     position: absolute;
     display: flex !important;
@@ -355,33 +352,9 @@ body.desktop .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
     color: var(--menu-item-arrow-color) !important;
 }
 
-body.mobile .dropdown-submenu.dropstart .dropdown-toggle::before {
-    content: unset;
-}
-
-body.desktop .dropdown-submenu.dropstart .dropdown-toggle::before {
+/* Right to left, the end side is the left, so the arrow points the other way. */
+body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
     content: "\ea4d" !important;
-    position: absolute;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    top: 0;
-    inset-inline-start: 0;
-    margin: unset !important;
-    border: unset !important;
-    padding: 0 4px;
-    font-family: boxicons;
-    font-size: 1.2em;
-    color: var(--menu-item-arrow-color) !important;
-}
-
-/* Right to left, the end side is the left, so both arrows point the other way. */
-body.desktop[dir=rtl] .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
-    content: "\ea4d" !important;
-}
-
-body.desktop[dir=rtl] .dropdown-submenu.dropstart .dropdown-toggle::before {
-    content: "\ed3b" !important;
 }
 
 /* Menu item group heading */
@@ -495,14 +468,9 @@ body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
     backdrop-filter: var(--dropdown-backdrop-filter);
     position: relative;
 
-    .dropdown-toggle::after {
-        top: 0.5em;
-        right: var(--dropdown-menu-padding-horizontal);
-        transform: translateX(50%) rotate(90deg);
-    }
-
-    .dropdown-item.submenu-open .dropdown-toggle::after {
-        transform: rotate(270deg);
+    .dropdown-submenu .dropdown-toggle::after {
+        bottom: 0;
+        inset-inline-end: calc(var(--dropdown-menu-padding-horizontal) / 2);
     }
 
     .dropdown-item,
@@ -533,53 +501,6 @@ body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
 
     .dropdown-divider {
         visibility: hidden;
-    }
-
-    .dropdown-submenu {
-        padding: 0 !important;
-        backdrop-filter: unset !important;
-
-        /* The submenu sits in a track that grows from 0fr to 1fr, so the expanded
-           height is whatever the items measure. The toggle's track is max-content
-           rather than auto: an auto track absorbs the slack mid-transition and
-           visibly stretches the item. */
-        display: grid !important;
-        grid-template-rows: max-content 0fr;
-        transition: grid-template-rows 100ms ease-in;
-
-        .dropdown-toggle {
-            padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal);
-        }
-
-        .dropdown-menu {
-            --menu-background-color: --menu-submenu-mobile-background-color;
-            --bs-dropdown-divider-margin-y: 0.25rem;
-            border-radius: 0;
-            display: block !important;
-
-            /* Counters align-items: center from style.css, which would let the
-               submenu keep its content height instead of following the track. */
-            align-self: stretch;
-            min-height: 0;
-            overflow: hidden;
-
-            /* The vertical padding grows with the track; applying it at once would
-               hold the collapsed submenu open by that much. */
-            padding: 0 0.75rem !important;
-            transition: padding 100ms ease-in;
-
-            &.show {
-                padding-block: 0.5rem !important;
-            }
-        }
-
-        &.submenu-open {
-            grid-template-rows: max-content 1fr;
-
-            .dropdown-toggle {
-                padding-bottom: var(--dropdown-menu-padding-vertical);
-            }
-        }
     }
 
     .dropdown-custom-item:has(.note-color-picker) {

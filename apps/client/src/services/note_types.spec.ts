@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../components/app_context";
 import { buildNote } from "../test/easy-froca";
 import froca from "./froca";
+import options from "./options";
 import server from "./server.js";
 
 // i18next is not initialized in the test env, so the real `t` returns undefined.
@@ -233,14 +235,19 @@ describe("getBuiltInTemplates", () => {
         withTemplates([], ["tpl-plain"]);
     });
 
-    it("warns and returns nothing when the templates root is missing", async () => {
+    /** Every item, those in submenus included. */
+    const allItems = (items: any[]): any[] => items.flatMap((i) => [ i, ...allItems(i.items ?? []) ]);
+    const builtInSubmenus = (items: any[]) => items
+        .filter((i) => i.title === "note_types.book")
+        .map((i) => i.title);
+
+    it("warns and offers no built-in templates when the templates root is missing", async () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const restore = withTemplatesRoot(null);
         try {
             const items = await noteTypesService.getNoteTypeItems();
-            // No header/separator coming from built-in templates -> only blank note types remain.
-            expect(items.some((i: any) => i.kind === "separator")).toBe(false);
-            expect(items.some((i: any) => i.kind === "header")).toBe(false);
+            expect(allItems(items).some((i) => i.templateNoteId)).toBe(false);
+            expect(builtInSubmenus(items)).toEqual([]);
             expect(warn).toHaveBeenCalled();
         } finally {
             restore();
@@ -248,20 +255,19 @@ describe("getBuiltInTemplates", () => {
         }
     });
 
-    it("returns nothing when the templates root has no children", async () => {
+    it("offers no built-in templates when the templates root has no children", async () => {
         const restore = withTemplatesRoot([]);
         try {
             const items = await noteTypesService.getNoteTypeItems();
-            expect(items.some((i: any) => i.kind === "separator")).toBe(false);
-            expect(items.some((i: any) => i.kind === "header")).toBe(false);
+            expect(allItems(items).some((i) => i.templateNoteId)).toBe(false);
+            expect(builtInSubmenus(items)).toEqual([]);
         } finally {
             restore();
         }
     });
 
-    it("emits a separator for non-collection group and a header for the collections group, filtering by labels", async () => {
-        // Children include: a plain template (non-collection), a collection template,
-        // and a child that is neither a template nor matches -> skipped in both passes.
+    it("puts a template of no group after a separator and a collection in its submenu, filtering by labels", async () => {
+        // A plain template, a collection template, and a child that is not a template at all.
         const plain = fakeTemplate("tpl-plain", ["template"], "Plain");
         const collection = fakeTemplate("tpl-coll", ["template", "collection"], "Coll");
         const notTemplate = fakeTemplate("tpl-skip", ["collection"], "Skip"); // missing "template"
@@ -269,37 +275,22 @@ describe("getBuiltInTemplates", () => {
         try {
             const items: any[] = await noteTypesService.getNoteTypeItems("cmd" as never);
 
-            // Non-collection pass (filterCollections=false, title=null) pushes a separator
-            // then the plain template.
-            const sepIdx = items.findIndex((i) => i.kind === "separator");
-            expect(sepIdx).toBeGreaterThanOrEqual(0);
-            expect(items.some((i) => i.templateNoteId === "tpl-plain")).toBe(true);
+            // The plain template stands at the top level, after a separator.
+            const plainIdx = items.findIndex((i) => i.templateNoteId === "tpl-plain");
+            expect(plainIdx).toBeGreaterThan(0);
+            expect(items[plainIdx - 1].kind).toBe("separator");
 
-            // Collections pass (filterCollections=true, title set) pushes a header then
-            // the collection template.
-            const headerIdx = items.findIndex((i) => i.kind === "header");
-            expect(headerIdx).toBeGreaterThanOrEqual(0);
-            expect(items.some((i) => i.templateNoteId === "tpl-coll")).toBe(true);
+            // The collection template is in the collections submenu, and only there.
+            const collections = items.find((i) => i.title === "note_types.book");
+            expect(collections.items.map((i: any) => i.templateNoteId)).toEqual([ "tpl-coll" ]);
+            expect(allItems(items).filter((i) => i.templateNoteId === "tpl-coll")).toHaveLength(1);
+            expect(allItems(items).filter((i) => i.templateNoteId === "tpl-plain")).toHaveLength(1);
 
             // The note missing the "template" label is never included.
-            expect(items.some((i) => i.templateNoteId === "tpl-skip")).toBe(false);
+            expect(allItems(items).some((i) => i.templateNoteId === "tpl-skip")).toBe(false);
 
-            // Each template is emitted in EXACTLY ONE pass — the label filter must keep
-            // tpl-plain out of the collections pass and tpl-coll out of the non-collection
-            // pass. An inverted/broken filter would emit a template in both passes (a
-            // duplicate), which `.some(...)` above would not catch.
-            const plainIdx = items.findIndex((i) => i.templateNoteId === "tpl-plain");
-            const collIdx = items.findIndex((i) => i.templateNoteId === "tpl-coll");
-            expect(items.filter((i) => i.templateNoteId === "tpl-plain")).toHaveLength(1);
-            expect(items.filter((i) => i.templateNoteId === "tpl-coll")).toHaveLength(1);
-
-            // ...and the placement reflects which pass emitted them: tpl-plain (non-collection
-            // pass) precedes the collections header; tpl-coll (collections pass) follows it.
-            expect(plainIdx).toBeLessThan(headerIdx);
-            expect(collIdx).toBeGreaterThan(headerIdx);
-
-            // built-in template items carry command/type/icon/title.
-            const plainItem = items.find((i) => i.templateNoteId === "tpl-plain");
+            // Built-in template items carry command/type/icon/title.
+            const plainItem = items[plainIdx];
             expect(plainItem.command).toBe("cmd");
             expect(plainItem.type).toBe("text");
             expect(plainItem.uiIcon).toBe("tn-icon bx-x");
@@ -307,8 +298,7 @@ describe("getBuiltInTemplates", () => {
             expect(plainItem.badges).toHaveLength(1);
             expect(plainItem.badges[0].className).toBe("new-note-type-badge");
             // The old collection template is not marked new.
-            const collItem = items.find((i) => i.templateNoteId === "tpl-coll");
-            expect(collItem.badges).toBeUndefined();
+            expect(collections.items[0].badges).toBeUndefined();
         } finally {
             restore();
         }
@@ -401,6 +391,223 @@ describe("new template badges", () => {
             expect(first.every((i: any) => !i.type || i.command === "insertNoteAfter")).toBe(true);
             expect(second.every((i: any) => !i.type || i.command === "insertChildNote")).toBe(true);
         } finally {
+            restore();
+        }
+    });
+
+    it("puts the collections in a submenu of the menu", async () => {
+        withTemplates([], [ "tpl-coll" ]);
+        const restore = withTemplatesRoot([
+            fakeTemplate("tpl-plain", [ "template" ], "Plain"),
+            fakeTemplate("tpl-coll", [ "template", "collection" ], "Coll")
+        ]);
+        try {
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu: any[] = noteTypesService.buildNoteTypeItems(data, "insertNoteAfter" as never);
+
+            const submenu = menu.find((i) => i.title === "note_types.book");
+            expect(submenu).toBeDefined();
+            expect(submenu.kind).toBeUndefined();
+            expect(submenu.command).toBeUndefined();
+            expect(submenu.items.map((i: any) => i.templateNoteId)).toEqual([ "tpl-coll" ]);
+            expect(submenu.items[0].command).toBe("insertNoteAfter");
+            expect(submenu.items[0].badges).toHaveLength(1);
+            // The collections are only in the submenu, and the menu has no header left for them.
+            expect(menu.some((i) => i.templateNoteId === "tpl-coll")).toBe(false);
+            expect(menu.some((i) => i.kind === "header")).toBe(false);
+            expect(menu.some((i) => i.templateNoteId === "tpl-plain")).toBe(true);
+
+        } finally {
+            restore();
+        }
+    });
+
+    it("puts the snippets and the AI quick action under More, after its note types", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([
+            fakeTemplate("tpl-text-snippet", [ "template", "textSnippet" ], "Text snippet"),
+            fakeTemplate("tpl-code-snippet", [ "template", "snippet" ], "Code snippet"),
+            fakeTemplate("tpl-ai", [ "template", "aiQuickAction" ], "AI quick action")
+        ]);
+        const titles = (items: any[]) => items.map((i) => i.templateNoteId ?? i.type ?? i.kind);
+        try {
+            llmFlag.mockReturnValue(true);
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu: any[] = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+
+            // Notes the text editor reads, created as rarely as the other entries of More.
+            expect(titles(menu).filter((title) => String(title).startsWith("tpl-"))).toEqual([]);
+            const more = menu.find((i) => i.title === "note_types.more");
+            // After the note types it holds, as the templates follow the note types everywhere in the menu.
+            expect(titles(more.items).slice(-4)).toEqual([ "separator", "tpl-text-snippet", "tpl-code-snippet", "tpl-ai" ]);
+            expect(more.items.slice(-3).every((i: any) => i.command === "insertChildNote")).toBe(true);
+
+
+            // Without the AI features, neither the chat nor the quick action is offered.
+            llmFlag.mockReturnValue(false);
+            const withoutAiMenu: any[] = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+            const withoutAi = titles([ ...withoutAiMenu, ...withoutAiMenu.at(-1).items ]);
+            expect(withoutAiMenu.at(-1).title).toBe("note_types.more");
+            expect(withoutAi).not.toContain("llmChat");
+            expect(withoutAi).not.toContain("tpl-ai");
+            expect(withoutAi.slice(-3)).toEqual([ "separator", "tpl-text-snippet", "tpl-code-snippet" ]);
+        } finally {
+            restore();
+        }
+    });
+
+    it("puts the scripting presets at the top of Code, above its languages", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([ fakeTemplate("tpl-code-snippet", [ "template", "snippet" ], "Code snippet") ]);
+        const key = (i: any) => i.notePreset ?? i.templateNoteId ?? i.mime ?? i.kind;
+        const original = options.get("codeNotesMimeTypes");
+        try {
+            options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python" ]));
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu: any[] = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+
+            const code = menu.find((i) => i.type === "code" && i.mime === "text/plain");
+            expect(code.items.map(key)).toEqual([
+                "appCss", "widget", "backendScript",
+                "separator",
+                "text/plain", "text/x-python",
+                "separator",
+                undefined
+            ]);
+            expect(code.items.slice(0, 3).every((i: any) => i.command === "insertChildNote")).toBe(true);
+
+            // Neither the top level nor More offers them a second time.
+            const more = menu.find((i) => i.title === "note_types.more");
+            expect([ ...menu, ...more.items ].some((i) => i.notePreset)).toBe(false);
+            expect(more.items.map(key).slice(-2)).toEqual([ "separator", "tpl-code-snippet" ]);
+        } finally {
+            options.set("codeNotesMimeTypes", original);
+            restore();
+        }
+    });
+
+    it("groups the note types of the menu by kind, common ones first, and offers each exactly once", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([ fakeTemplate("tpl-ai", [ "template", "aiQuickAction" ], "AI quick action") ]);
+        const key = (i: any) => i.kind ?? (i.mime === "text/x-markdown" ? "markdown" : i.type) ?? i.title;
+        try {
+            llmFlag.mockReturnValue(true);
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu: any[] = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+            expect(menu.map(key)).toEqual([
+                "text", "markdown", "code", "spreadsheet", "llmChat",
+                "separator",
+                "canvas", "mermaid", "mindMap", "relationMap",
+                "separator",
+                "note_types.more"
+            ]);
+
+            // No creatable type is left out or offered twice, at the top level and under More.
+            const offered = [ ...menu, ...menu.at(-1).items ]
+                .filter((i) => i.command && !i.templateNoteId && !i.notePreset).map(key);
+            const creatable = selectableNoteTypes(false).filter((nt) => nt.type !== "book")
+                .map((nt) => (nt.mime === "text/x-markdown" ? "markdown" : nt.type));
+            expect([ ...offered ].sort()).toEqual([ ...creatable, "noteMap", "search" ].sort());
+
+            // Without AI, the chat is left out of its group.
+            llmFlag.mockReturnValue(false);
+            const withoutAi = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never).map(key);
+            expect(withoutAi.slice(0, 5)).toEqual([ "text", "markdown", "code", "spreadsheet", "separator" ]);
+
+        } finally {
+            restore();
+        }
+    });
+
+    it("puts the rarely created note types in a More submenu of the menu, after the collections", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([
+            fakeTemplate("tpl-snippet", [ "template", "snippet" ], "Snippet"),
+            fakeTemplate("tpl-coll", [ "template", "collection" ], "Coll")
+        ]);
+        const rare = [ "noteMap", "render", "search", "webView" ];
+        try {
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu: any[] = noteTypesService.buildNoteTypeItems(data, "insertNoteAfter" as never);
+
+            const more = menu.find((i) => i.title === "note_types.more");
+            expect(more).toBeDefined();
+            expect(more.command).toBeUndefined();
+            expect(more.items.slice(0, rare.length).map((i: any) => i.type)).toEqual(rare);
+            expect(more.items.every((i: any) => i.kind === "separator" || i.command === "insertNoteAfter")).toBe(true);
+            expect(menu.some((i) => rare.includes(i.type))).toBe(false);
+            const submenus = menu.filter((i) => i.items && i.type === undefined).map((i) => i.title);
+            expect(submenus).toEqual([ "note_types.book", "note_types.more" ]);
+
+        } finally {
+            restore();
+        }
+    });
+
+    it("escapes template titles, as a menu renders them as HTML", async () => {
+        const user = buildNote({ id: "userTemplateHtml", title: "<img src=x onerror=alert(1)>", "#template": "" });
+        withTemplates([ user.noteId ]);
+        const restore = withTemplatesRoot([
+            fakeTemplate("tpl-snippet", [ "template", "snippet" ], "A & <b>B</b>"),
+            fakeTemplate("tpl-coll", [ "template", "collection" ], "<i>Board</i>")
+        ]);
+        const all = (items: any[]): any[] => items.flatMap((i) => [ i, ...all(i.items ?? []) ]);
+        const titleOf = (items: any[], templateNoteId: string) =>
+            all(items).find((i) => i.templateNoteId === templateNoteId)?.title;
+        try {
+            const data = await noteTypesService.loadNoteTypeData();
+            const menu = noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never);
+            /** What `Menu` shows for a title: the title as HTML, here as its elements and its text. */
+            const rendered = (title: string) => {
+                const element = document.createElement("span");
+                element.innerHTML = title;
+                return { elements: element.children.length, text: element.textContent };
+            };
+            expect(rendered(titleOf(menu, user.noteId))).toEqual({ elements: 0, text: "<img src=x onerror=alert(1)>" });
+            expect(rendered(titleOf(menu, "tpl-snippet"))).toEqual({ elements: 0, text: "A & <b>B</b>" });
+            expect(rendered(titleOf(menu, "tpl-coll"))).toEqual({ elements: 0, text: "<i>Board</i>" });
+
+        } finally {
+            restore();
+        }
+    });
+
+    it("offers the enabled code languages in a submenu of Code, as they stand when the menu opens", async () => {
+        withTemplates();
+        const restore = withTemplatesRoot([]);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockImplementation(async () => undefined);
+        const original = options.get("codeNotesMimeTypes");
+        try {
+            const data = await noteTypesService.loadNoteTypeData();
+            const codeRow = (items: any[]) => items.find((i) => i.type === "code" && i.mime === "text/plain");
+
+            options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/x-markdown" ]));
+            const code = codeRow(noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never));
+            // The row still makes a plain text code note of its own.
+            expect(code.command).toBe("insertChildNote");
+            // The scripting presets lead the submenu; the languages follow them.
+            const languages = code.items.filter((i: any) => i.mime && !i.notePreset);
+            // Plain text is always enabled; Markdown has an entry of its own.
+            expect(languages.map((i: any) => i.mime)).toEqual([ "text/plain", "text/x-python" ]);
+            expect(languages.every((i: any) => i.type === "code" && i.command === "insertChildNote")).toBe(true);
+            // The icon the note takes in the tree once created.
+            expect(languages.map((i: any) => i.uiIcon)).toEqual([ "bx bx-file", "bx bxl-python" ]);
+
+            const configure = code.items.at(-1);
+            expect(configure.command).toBeUndefined();
+            configure.handler();
+            expect(triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsCodeNotes" });
+
+            // A language enabled since is offered the next time the menu opens.
+            options.set("codeNotesMimeTypes", JSON.stringify([ "text/x-python", "text/apl" ]));
+            const again = codeRow(noteTypesService.buildNoteTypeItems(data, "insertChildNote" as never));
+            expect(again.items.filter((i: any) => i.mime).map((i: any) => i.mime)).toContain("text/apl");
+            // A language without an icon of its own takes that of the code note type.
+            expect(again.items.find((i: any) => i.mime === "text/apl").uiIcon).toBe("bx bx-code");
+
+        } finally {
+            options.set("codeNotesMimeTypes", original);
+            triggerCommand.mockRestore();
             restore();
         }
     });

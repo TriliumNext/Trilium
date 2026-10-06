@@ -151,13 +151,13 @@ describe("buildTableMenuSections", () => {
         const firstRows = build([LATER_ROW]);
         expect(titles(firstRows.main)).toEqual(MAIN_TITLES);
         expect(findItem(firstRows.main, FIRST_ROWS_TITLE))
-            .toMatchObject({ uiIcon: "bx bx-dock-top", trailingIcon: undefined });
+            .toMatchObject({ uiIcon: "bx bx-dock-top", checked: false });
 
         const laterRow = build([FIRST_ROWS], [LATER_ROW]);
         expect(titles(laterRow.main)).toEqual(MAIN_TITLES
             .map((title) => (title === FIRST_ROWS_TITLE ? LATER_ROW_TITLE : title)));
         expect(findItem(laterRow.main, LATER_ROW_TITLE))
-            .toMatchObject({ uiIcon: "bx bx-arrow-to-top", trailingIcon: "bx bx-check" });
+            .toMatchObject({ uiIcon: "bx bx-arrow-to-top", checked: true });
         run(laterRow.main, LATER_ROW_TITLE);
         expect(laterRow.executed).toEqual([LATER_ROW]);
 

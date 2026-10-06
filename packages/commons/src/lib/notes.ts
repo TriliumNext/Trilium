@@ -3,7 +3,7 @@
  */
 
 import { isFontMimeType } from "./font_mimes.js";
-import { MIME_TYPES_DICT } from "./mime_type.js";
+import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
 import { NoteType } from "./rows.js";
 
 export const NOTE_TYPE_ICONS = {
@@ -175,8 +175,7 @@ export function getNoteIcon({
         }
         return "bx bx-note";
     } else if (type === "code") {
-        const correspondingMimeType = MIME_TYPES_DICT.find(m => m.mime === mime);
-        return correspondingMimeType?.icon ?? NOTE_TYPE_ICONS.code;
+        return getCodeLanguageIcon(MIME_TYPES_DICT.find(m => m.mime === mime));
     } else if (type === "file") {
         return getFileMimeIcon(mime);
     } else if (type === "image") {
@@ -199,6 +198,14 @@ export function getMimeIcon(mime: string | undefined | null): string {
     }
 
     return mime.startsWith("image/") ? getImageMimeIcon(mime) : getFileMimeIcon(mime);
+}
+
+/**
+ * The icon of a code note in `language`: the language's own, or the code note type's for a language
+ * without one or a mime `MIME_TYPES_DICT` does not know.
+ */
+export function getCodeLanguageIcon(language: Pick<MimeTypeDefinition, "icon"> | undefined): string {
+    return language?.icon ?? NOTE_TYPE_ICONS.code;
 }
 
 function getFileMimeIcon(mime: string): string {

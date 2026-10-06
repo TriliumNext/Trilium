@@ -9,6 +9,7 @@ import { NoteContextDataMap } from "../../../components/note_context";
 import { t } from "../../../services/i18n";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
 import RightPanelWidget from "../RightPanelWidget";
+import { showCopyReferenceMenu } from "./PdfAnnotations";
 
 const ROW_HEIGHT = 180;
 const COLUMNS = 2;
@@ -84,7 +85,8 @@ function PdfPagesList({ pagesData, ntxId }: { pagesData: NoteContextDataMap["pdf
                         thumbnails,
                         currentPage: pagesData.currentPage,
                         requestThumbnail,
-                        scrollToPage: pagesData.scrollToPage
+                        scrollToPage: pagesData.scrollToPage,
+                        copyReference: pagesData.copyReference
                     }}
                     style={{ height: `${containerHeight}px` }}
                 />
@@ -99,10 +101,11 @@ interface PdfPageRowData {
     currentPage: number;
     requestThumbnail: (page: number) => void;
     scrollToPage: (page: number) => void;
+    copyReference: (page: number) => void;
 }
 
 function PdfPageRow({ index, style, ...data }: RowComponentProps<PdfPageRowData>) {
-    const { totalPages, thumbnails, currentPage, requestThumbnail, scrollToPage } = data;
+    const { totalPages, thumbnails, currentPage, requestThumbnail, scrollToPage, copyReference } = data;
     const startPage = index * COLUMNS + 1;
     const pages = Array.from({ length: COLUMNS }, (_, i) => startPage + i).filter(p => p <= totalPages);
 
@@ -116,18 +119,20 @@ function PdfPageRow({ index, style, ...data }: RowComponentProps<PdfPageRowData>
                     thumbnail={thumbnails.get(pageNumber)}
                     requestThumbnail={requestThumbnail}
                     scrollToPage={scrollToPage}
+                    copyReference={copyReference}
                 />
             ))}
         </div>
     ) as React.ReactElement;
 }
 
-function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scrollToPage }: {
+function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scrollToPage, copyReference }: {
     pageNumber: number;
     isActive: boolean;
     thumbnail?: string;
     requestThumbnail: (page: number) => void;
     scrollToPage: (page: number) => void;
+    copyReference: (page: number) => void;
 }) {
     const hasRequested = useRef(false);
 
@@ -142,6 +147,7 @@ function PdfPageCell({ pageNumber, isActive, thumbnail, requestThumbnail, scroll
         <div
             className={`pdf-page-item ${isActive ? 'active' : ''}`}
             onClick={() => scrollToPage(pageNumber)}
+            onContextMenu={(e) => showCopyReferenceMenu(e, () => copyReference(pageNumber))}
         >
             <div className="pdf-page-thumbnail">
                 {thumbnail ? (

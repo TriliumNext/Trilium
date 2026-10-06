@@ -672,6 +672,28 @@ describe("notes service (real DB)", () => {
             expect(dupChildren[0].noteId).not.toBe(child.note.noteId);
         });
 
+        it("duplicates only the note when withChildren is false, keeping references to the original children", () => {
+            const parent = createNote("root", { title: "spec-dup-only" });
+            const child = createNote(parent.note.noteId, { title: "spec-dup-only-child" });
+            getContext().init(() => {
+                parent.note.setLabel("iconClass", "bx bx-star");
+                parent.note.setRelation("selfRel", parent.note.noteId);
+                parent.note.setRelation("childRel", child.note.noteId);
+                parent.note.setContent(`<p><a href="#root/${child.note.noteId}">child</a></p>`);
+            });
+
+            const { note: dupNote } = getContext().init(() =>
+                noteService.duplicateSubtree(parent.note.noteId, "root", { withChildren: false }));
+
+            expect(dupNote.noteId).not.toBe(parent.note.noteId);
+            expect(dupNote.getChildNotes()).toHaveLength(0);
+            expect(parent.note.getChildNotes().map((n) => n.noteId)).toStrictEqual([ child.note.noteId ]);
+            expect(dupNote.getLabelValue("iconClass")).toBe("bx bx-star");
+            expect(dupNote.getRelationValue("selfRel")).toBe(dupNote.noteId);
+            expect(dupNote.getRelationValue("childRel")).toBe(child.note.noteId);
+            expect(dupNote.getContent()).toContain(child.note.noteId);
+        });
+
         it("refuses to duplicate the root note", () => {
             expect(() => getContext().init(() => noteService.duplicateSubtree("root", "root"))).toThrow(
                 /Duplicating root is not possible/

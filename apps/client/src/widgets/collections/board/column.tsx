@@ -393,10 +393,10 @@ export default function Column({
         return () => window.clearTimeout(timer);
     }, [ isExpanding ]);
 
-    // Only while the column is open: the strip's own press opens it, which is what it says
-    // instead. Memoised because `useStaticTooltip` rebuilds the tooltip on a new config.
+    // Off on a strip and on mobile. Memoised: `useStaticTooltip` rebuilds on a new config.
     const headerTooltip = useMemo(
-        () => ({ title: isCollapsed ? "" : t("board_view.collapse-hint") }), [ isCollapsed ]);
+        () => ({ title: isCollapsed || isMobile() ? "" : t("board_view.collapse-hint") }),
+        [ isCollapsed ]);
     useStaticTooltip(headerRef, headerTooltip);
 
     // Reported on the way in only. A column opened by being selected closes when another one is

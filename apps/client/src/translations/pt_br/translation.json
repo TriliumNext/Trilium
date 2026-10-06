@@ -312,8 +312,7 @@
     "search_placeholder": "buscar caminho pelo nome (valor padrão se não for preenchido)",
     "modal_title": "Escolher tipo de nota",
     "modal_body": "Escolha o tipo/modelo da nova nota:",
-    "templates": "Modelos",
-    "builtin_templates": "Modelos Incorporados"
+    "templates": "Modelos"
   },
   "password_not_set": {
     "title": "A senha não está definida",
@@ -830,7 +829,6 @@
     "copy-note-path-to-clipboard": "Copiar caminho da nota para a área de transferência",
     "protect-subtree": "Proteger subárvore",
     "unprotect-subtree": "Desproteger subárvore",
-    "copy-clone": "Copiar / clonar",
     "clone-to": "Clonar para...",
     "cut": "Recortar",
     "move-to": "Mover para...",
@@ -1843,7 +1841,6 @@
     "beta-feature": "Beta",
     "task-list": "Lista de Tarefas",
     "new-feature": "Novo",
-    "collections": "Coleções",
     "text": "Texto",
     "code": "Código",
     "saved-search": "Pesquisa Salva",
@@ -1947,7 +1944,6 @@
     "created_on": "Criado em <Value />",
     "last_modified": "Modificado em <Value />",
     "note_type_switcher_label": "Alternar de {{type}} para:",
-    "note_type_switcher_others": "Outro tipo de nota",
     "note_type_switcher_templates": "Modelo",
     "note_type_switcher_collection": "Coleção",
     "edited_notes": "Notas editadas",

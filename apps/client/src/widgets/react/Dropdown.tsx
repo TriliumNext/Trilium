@@ -6,6 +6,7 @@ import {
 } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import type { MenuItem } from "../../menus/context_menu";
 import { isMobile, isNarrowLayout, onNarrowLayoutChange } from "../../services/utils";
 import { focusListItem } from "./FormList";
 import { useTooltip, useUniqueName } from "./hooks";
@@ -20,7 +21,14 @@ type DataAttributes = {
 export interface DropdownProps extends Pick<HTMLAttributes<HTMLDivElement>, "id" | "className"> {
     buttonClassName?: string;
     buttonProps?: Partial<ButtonHTMLAttributes<HTMLButtonElement> & DataAttributes>;
-    children: ComponentChildren;
+    children?: ComponentChildren;
+    /**
+     * For a {@link Dropdown}, its rows as data instead of {@link children}: a row runs its
+     * `handler`, then closes the menu.
+     */
+    items?: MenuItem<unknown>[];
+    /** For a {@link Dropdown} of {@link items}, offers an input at its top that filters them. */
+    filterable?: boolean;
     title?: string;
     dropdownContainerStyle?: CSSProperties;
     dropdownContainerClassName?: string;
@@ -95,6 +103,12 @@ export default function Dropdown(props: DropdownProps) {
                     bottomSheet={bottomSheet}
                     startAt={startAt}
                     isWanted={isWanted}
+                    items={props.items}
+                    filterable={props.filterable}
+                    onSelect={(item, e) => {
+                        item.handler?.(item, e);
+                        if (!item.items) close();
+                    }}
                     onDismiss={() => dismiss("outside")}
                     onClose={close}
                 >

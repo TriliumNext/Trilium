@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "./Dropdown";
 import { FormDropdownSubmenu, FormListItem } from "./FormList";
+import { MenuItemRows } from "./Menu";
 
 // A dialog's focus trap would pull focus out of a menu portaled over it.
 const focusTraps = vi.hoisted(() => ({ suspend: vi.fn(() => () => {}) }));
@@ -45,6 +46,7 @@ describe("Dropdown", () => {
         layout.onMobile = false;
         layout.narrow = true;
         layout.onChange.clear();
+        document.body.classList.remove("motion-disabled");
     });
 
     /** Renders a `Dropdown`, or a `DropdownPanel` for `panel`. */
@@ -73,6 +75,84 @@ describe("Dropdown", () => {
         element.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
         element.click();
     };
+
+    it("draws its rows from data, filters them from an input at its top, and runs the one chosen", async () => {
+        const picked: string[] = [];
+        const row = (title: string) => ({ title, handler: () => picked.push(title) });
+        const { toggle } = renderDropdown({
+            filterable: true,
+            items: [ row("Python"), row("JavaScript"), row("Plain text"), { kind: "separator" }, { ...row("Configure"), uiIcon: "bx bx-cog" } ]
+        }, null);
+        const key = (name: string) => {
+            const event = new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true });
+            (document.activeElement ?? document.body).dispatchEvent(event);
+        };
+        const input = () => popup()?.querySelector<HTMLInputElement>("input.tn-menu-filter-input") ?? null;
+        const titles = () => [ ...popup()?.querySelectorAll("li.dropdown-item") ?? [] ]
+            .map((item) => item.querySelector(".tn-menu-filter-title")?.textContent ?? item.textContent);
+
+        click(toggle);
+        await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+        expect(input()?.value).toBe("");
+        expect(titles()).toEqual([ "Python", "JavaScript", "Plain text", "Configure" ]);
+
+        // Typing in the menu goes on in the input, and Enter runs the first match.
+        key("j");
+        await vi.waitFor(() => expect(document.activeElement).toBe(input()));
+        expect(titles()).toEqual([ "JavaScript" ]);
+        key("Enter");
+        expect(picked).toEqual([ "JavaScript" ]);
+        await vi.waitFor(() => expect(popup()).toBeNull());
+
+        // Escape empties the input, then, with nothing to go back to, closes the menu.
+        click(toggle);
+        await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+        key("x");
+        await vi.waitFor(() => expect(input()?.value).toBe("x"));
+        key("Escape");
+        await vi.waitFor(() => expect(input()?.value).toBe(""));
+        expect(popup()).not.toBeNull();
+        key("Escape");
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        expect(picked).toEqual([ "JavaScript" ]);
+    });
+
+    it("filters the rows a filterable submenu of components draws from data, on a desktop and on a phone", async () => {
+        for (const onMobile of [ false, true ]) {
+            layout.onMobile = onMobile;
+            const picked: string[] = [];
+            const row = (title: string) => ({ title, handler: () => picked.push(title) });
+            const { toggle } = renderDropdown({}, (
+                <FormDropdownSubmenu title="Language" filterable>
+                    <MenuItemRows items={[ row("Python"), row("JavaScript") ]} />
+                </FormDropdownSubmenu>
+            ));
+            const key = (name: string) => {
+                const event = new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true });
+                (document.activeElement ?? document.body).dispatchEvent(event);
+            };
+            const input = () => popup()?.querySelector<HTMLInputElement>("input.tn-menu-filter-input") ?? null;
+            const titles = () => [ ...popup()?.querySelectorAll("li.dropdown-item:not(.dropdown-submenu)") ?? [] ]
+                .map((item) => item.querySelector(".tn-menu-filter-title")?.textContent ?? item.textContent);
+
+            click(toggle);
+            await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+            key("ArrowDown");
+            // Each key waits for the one before it to render, as a key press arrives in a task of its own.
+            await vi.waitFor(() => expect(popup()?.getAttribute("aria-activedescendant")).toBeTruthy());
+            key(onMobile ? "Enter" : "ArrowRight");
+            await vi.waitFor(() => expect(input()).not.toBeNull());
+            expect(titles()).toEqual([ "Python", "JavaScript" ]);
+
+            key("j");
+            await vi.waitFor(() => expect(document.activeElement).toBe(input()));
+            expect(titles()).toEqual([ "JavaScript" ]);
+            key("Enter");
+            expect(picked).toEqual([ "JavaScript" ]);
+            await vi.waitFor(() => expect(popup()).toBeNull());
+            render(null, host);
+        }
+    });
 
     it("opens a popup below its toggle on a click, and closes it on another", async () => {
         const onShown = vi.fn();
@@ -339,7 +419,7 @@ describe("Dropdown", () => {
             expect(picked).toEqual([ "wrap", "title" ]);
         });
 
-        it("stays open on a click on a submenu's row, which unfolds the submenu on a phone", async () => {
+        it("stays open on a click on a submenu's row, or on the header of the page it opens on a phone", async () => {
             const toggled = vi.fn();
             const content = (
                 <FormDropdownSubmenu icon="bx bx-chip" title="Advanced" onDropdownToggleClicked={toggled}>
@@ -358,17 +438,28 @@ describe("Dropdown", () => {
 
             render(null, host);
             layout.onMobile = true;
+            // Without slides, a page goes as soon as it closes.
+            document.body.classList.add("motion-disabled");
             const { toggle: phoneToggle } = renderDropdown({}, content);
             click(phoneToggle);
             await vi.waitFor(() => expect(submenuRow()).toBeTruthy());
             submenuRow()?.click();
-            await vi.waitFor(() => expect(submenuRow()?.querySelector(":scope > .dropdown-menu.show")?.textContent)
-                .toBe("Show log"));
+            const page = () => popup()?.querySelector<HTMLElement>(":scope > .tn-menu-page");
+            await vi.waitFor(() => expect(page()?.querySelector(".tn-menu-scroll")?.textContent).toBe("Show log"));
             await new Promise((resolve) => setTimeout(resolve, 20));
             expect(popup()).not.toBeNull();
 
-            // A row in the unfolded submenu still closes the menu.
-            submenuRow()?.querySelector<HTMLElement>(".dropdown-menu li.dropdown-item")?.click();
+            // Neither does its header, the way back included.
+            page()?.querySelector<HTMLElement>(".tn-master-detail-title")?.click();
+            page()?.querySelector<HTMLElement>(".tn-menu-page-header button")?.click();
+            await vi.waitFor(() => expect(page()).toBeNull());
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(popup()).not.toBeNull();
+
+            // A row on the page still closes the menu.
+            submenuRow()?.click();
+            await vi.waitFor(() => expect(page()).not.toBeNull());
+            page()?.querySelector<HTMLElement>("li.dropdown-item")?.click();
             await vi.waitFor(() => expect(popup()).toBeNull());
         });
 

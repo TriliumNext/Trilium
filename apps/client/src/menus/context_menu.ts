@@ -3,6 +3,7 @@ import { Tooltip } from "bootstrap";
 import { h, JSX, render } from "preact";
 
 import note_tooltip from "../services/note_tooltip.js";
+import type { NotePresetId } from "../services/note_presets.js";
 import utils from "../services/utils.js";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
 
@@ -33,6 +34,12 @@ export interface MenuHeader {
     kind: "header";
 }
 
+/** A row of items side by side, each drawn as its icon over its title. */
+export interface MenuActionRow<T> {
+    kind: "actions";
+    items: MenuCommandItem<T>[];
+}
+
 export interface MenuItemBadge {
     title: string;
     className?: string;
@@ -50,6 +57,16 @@ export interface MenuCommandItem<T> {
      */
     uiIcon?: string;
     /**
+     * A smaller icon set over the bottom corner of {@link uiIcon}, which tells apart items that
+     * share one. Drawn in a row of actions only.
+     */
+    uiIconBadge?: string;
+    /**
+     * What a row of actions shows in the item's tooltip in place of its title, for an action whose
+     * short title needs a word of explanation.
+     */
+    tooltip?: string;
+    /**
      * Classes tinting {@link uiIcon} with the colour of whatever the item stands for, as
      * `cssClassManager.createClassForColor()` and `FNote#getColorClass()` return them. Only the
      * icon is tinted, the label staying readable against the highlight.
@@ -57,26 +74,31 @@ export interface MenuCommandItem<T> {
     iconColorClass?: string;
     badges?: MenuItemBadge[];
     templateNoteId?: string;
+    /** The scripting preset the item creates a note from, adding a label and content to its type. */
+    notePreset?: NotePresetId;
     enabled?: boolean;
     handler?: MenuHandler<T>;
     items?: MenuItem<T>[] | null;
     shortcut?: string;
     keyboardShortcut?: KeyboardActionNames;
     spellingSuggestion?: string;
+    /**
+     * Makes the item a checkable one and says whether it is checked. The check shows at the trailing
+     * edge when the item has a {@link uiIcon} of its own, and in place of the icon when it has none.
+     */
     checked?: boolean;
     /** Classes put on the item itself, for a menu styling one of its entries differently. */
     className?: string;
-    /**
-     * An icon shown at the trailing edge of the item, where a shortcut would go.
-     *
-     * Unlike {@link checked}, which takes the place of {@link uiIcon}, this leaves the item's own
-     * icon standing — for a list where that icon is what tells one entry from another.
-     */
+    /** An icon shown at the trailing edge of the item, where a shortcut would go. */
     trailingIcon?: string;
-    columns?: number;
+    /**
+     * For an item with {@link items}: typing while its submenu is open filters every item inside
+     * it, at any depth, into one list, which shows what was typed.
+     */
+    filterable?: boolean;
 }
 
-export type MenuItem<T> = MenuCommandItem<T> | CustomMenuItem | MenuSeparatorItem | MenuHeader;
+export type MenuItem<T> = MenuCommandItem<T> | CustomMenuItem | MenuSeparatorItem | MenuHeader | MenuActionRow<T>;
 export type MenuHandler<T> = (item: MenuCommandItem<T>, e: MouseEvent | KeyboardEvent) => void;
 export type ContextMenuEvent = PointerEvent | MouseEvent | JQuery.ContextMenuEvent;
 

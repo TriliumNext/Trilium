@@ -181,7 +181,7 @@ written beside the codebase rather than in it. Run them in the verify worktree
 | generated help never alone | `doc_notes/**` or `help_meta.json` changed ⇔ `docs/User Guide/**` changed |
 | only the `en` catalogues edited | `git diff --name-only $R \| grep -P 'translations/(?!en/)'` is empty |
 | `en-GB` twin for US spellings | an added `en` string with `color\|center\|meter\|recogni[sz]e\|labell?ed\|cancell?ed` needs the `en-GB` entry |
-| comment style | added comment lines with `—`, ` may `, `was \|previously\|no longer\|moved from\|removed\|intentionally not`; CSS `/* was Npx */` |
+| comment style | added comment lines with `—`, ` may `, `was \|previously\|no longer\|moved from\|removed\|intentionally not`; any added CSS `/* … */` that is not a browser workaround, a value shared with another file or a `z-index` contract |
 | no ~10-SLOC module | `git diff --diff-filter=A --numstat $R \| awk '$1 <= 15 && $3 !~ /spec/'` |
 | helpers below the primary export | in an added module, the first non-exported `function` comes after the first `export` |
 | CJS dynamic-import interop in split ESM | `const mod = await import("pkg"); const { x } = mod.default ?? mod;` — a plain destructure is the trap (`analyzing-backend-bundle` skill) |

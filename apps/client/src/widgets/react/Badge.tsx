@@ -145,7 +145,7 @@ function htmlToText(html: string) {
 }
 
 export function BadgeWithDropdown({ text, children, tooltip, className, dropdownProps, ...props }: BadgeProps & {
-    children: ComponentChildren,
+    children?: ComponentChildren,
     dropdownProps?: Partial<DropdownProps>
 }) {
     return (

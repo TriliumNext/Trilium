@@ -478,7 +478,6 @@ body.desktop .tabulator-popup-container,
 :root .excalidraw .dropdown-menu .dropdown-menu-container,
 :root .excalidraw .popover {
     border: 1px solid var(--dropdown-border-color);
-    column-rule: 1px solid var(--dropdown-border-color);
     box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
     animation: dropdown-menu-opening 100ms ease-in;
 }
@@ -549,15 +548,6 @@ body.mobile .dropdown-menu .dropdown-submenu > span {
 }
 
 
-/* Scoped by the menu: a dropdown's menu stands in the page's body, outside its `.dropdown`. */
-body.mobile .dropdown-menu .dropdown-submenu {
-    flex-wrap: wrap;
-
-    & > span {
-        flex-grow: 1;
-    }
-}
-
 .dropdown-item span.keyboard-shortcut,
 .dropdown-item span.menu-trailing-icon,
 .dropdown-item *:not(.keyboard-shortcut) > kbd {
@@ -580,12 +570,6 @@ body.mobile .dropdown-menu .dropdown-submenu {
 :root .excalidraw .context-menu .context-menu-item:hover {
     color: var(--menu-text-color) !important;
     border: 1px solid transparent !important;
-}
-
-/*  This is a workaround for Firefox not supporting break-before / break-after: avoid on columns.
- *  It usually wraps a menu item followed by a separator / header and another menu item. */
-.dropdown-no-break {
-    break-inside: avoid;
 }
 
 .dropdown-item.disabled,
@@ -1743,7 +1727,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     bottom: 0 !important;
     top: unset !important;
     max-height: var(--tn-modal-max-height);
-    overflow: auto !important;
+    overflow-y: auto !important;
     user-select: none;
     -webkit-user-select: none;
     padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
@@ -1752,17 +1736,6 @@ body.mobile #context-menu-container.mobile-bottom-menu {
 body.mobile .dropdown-menu {
     position: fixed !important;
     z-index: 3000 !important;
-}
-
-body.mobile .dropdown-submenu > .dropdown-menu {
-    position: static !important;
-    border: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    top: unset !important;
-    margin-top: 0 !important;
-    width: 100%;
-    max-height: none;
 }
 
 #context-menu-container,
@@ -2305,6 +2278,10 @@ button.close:hover {
 
 .reference-link .tn-icon::after {
     content: "\2060";
+}
+
+.reference-link small {
+    display: inline-block;
 }
 
 /* The board column a reference points at. `--custom-color` is set by the theme on

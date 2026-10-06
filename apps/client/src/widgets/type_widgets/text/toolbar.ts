@@ -211,7 +211,7 @@ function buildInsertGroup() {
         label: t("text-editor.toolbar-groups.insert"),
         icon: "plus",
         // The group holds enough entries that a strip of icons reads as a puzzle; `asMenu` (see
-        // the `ToolbarGroupMenu` plugin) opens it as a menu of icon-and-label rows instead.
+        // the `ToolbarGroupMenu` plugin) opens it as the app's menu of icon-and-label rows instead.
         asMenu: true
     };
 }

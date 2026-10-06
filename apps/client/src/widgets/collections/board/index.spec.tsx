@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Modal as BootstrapModal } from "bootstrap";
+import { Modal as BootstrapModal, Tooltip } from "bootstrap";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -680,8 +680,8 @@ describe("Collapsed board columns", () => {
 
         // Archived notes are not shown, so the entry is not ticked, and pressing it asks for them.
         // The inbox column is turned on in the properties dialog rather than here.
-        expect("trailingIcon" in entry("bx bx-archive") && entry("bx bx-archive").trailingIcon)
-            .toBeUndefined();
+        expect("checked" in entry("bx bx-archive") && entry("bx bx-archive").checked)
+            .toBe(false);
         entry("bx bx-archive").handler?.(entry("bx bx-archive"), {} as never);
         expect(archived).toHaveBeenCalledWith(true);
 
@@ -1370,6 +1370,15 @@ describe("Board column rename", () => {
         expect(saved.at(-1)?.columns?.[0]).toEqual({ value: "To Do", collapsed: true });
         // The title editor is left to F2 and to the menu.
         expect(first.querySelector("h3 input")).toBeNull();
+    });
+
+    it("hints at the double click and Space on an open column's heading", async () => {
+        const { container } = await setup();
+        const heading = container.querySelector(".board-column h3");
+        expect(heading).not.toBeNull();
+
+        // `useStaticTooltip` installs one only where there is a title to show.
+        expect(heading && Tooltip.getInstance(heading)).not.toBeNull();
     });
 
     /** The tooltip is set on the element, which is where `useStaticTooltip` reads it back from. */
@@ -5533,6 +5542,13 @@ describe("Column toolbar on mobile", () => {
         await act(async () => { heading(0).blur(); });
         await letRailLeave();
         expect(toolbar()).toBeNull();
+    });
+
+    /** Neither gesture the hint names is there on a touch screen, where the rail collapses. */
+    it("leaves the collapse hint off the heading", async () => {
+        await setup();
+
+        expect(Tooltip.getInstance(heading(0))).toBeNull();
     });
 
     it("collapses and opens the column, offering only the open on a strip", async () => {

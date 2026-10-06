@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
+import contextMenu from "../../../menus/context_menu";
 import options from "../../../services/options";
 import PdfPages from "./PdfPages";
 
@@ -12,7 +13,13 @@ import PdfPages from "./PdfPages";
 const shown = vi.hoisted(() => ({
     note: null as FNote | null,
     noteContext: null as NoteContext | null,
-    pages: null as { totalPages: number; currentPage: number; scrollToPage: (page: number) => void; requestThumbnail: (page: number) => void } | null
+    pages: null as {
+        totalPages: number;
+        currentPage: number;
+        scrollToPage: (page: number) => void;
+        requestThumbnail: (page: number) => void;
+        copyReference: (page: number) => void;
+    } | null
 }));
 // react-window virtualises rows off the container's laid-out height, which happy-dom does not
 // have; and under vitest it resolves a second copy of the hooks and cannot render at all. What the
@@ -49,7 +56,7 @@ beforeEach(() => {
 
     shown.note = { noteId: "note-1", type: "file", mime: "application/pdf" } as unknown as FNote;
     shown.noteContext = { ntxId: "ntx-1" } as NoteContext;
-    shown.pages = { totalPages: 3, currentPage: 2, scrollToPage: vi.fn(), requestThumbnail: vi.fn() };
+    shown.pages = { totalPages: 3, currentPage: 2, scrollToPage: vi.fn(), requestThumbnail: vi.fn(), copyReference: vi.fn() };
 
     container = document.createElement("div");
     document.body.append(container);
@@ -90,6 +97,20 @@ describe("PdfPages", () => {
         expect(shown.pages?.scrollToPage).toHaveBeenCalledWith(3);
     });
 
+    it("copies a reference to a page from its context menu", () => {
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        renderPanel();
+
+        const cell = container.querySelectorAll(".pdf-page-item")[2] as HTMLElement;
+        cell.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(show).toHaveBeenCalledOnce();
+        const [ item ] = show.mock.calls[0][0].items as { title: string; handler: () => void }[];
+        expect(item.title).toBe("pdf.copy_reference({})");
+        item.handler();
+        expect(shown.pages?.copyReference).toHaveBeenCalledWith(3);
+        show.mockRestore();
+    });
+
     it("shows a thumbnail rendered for its own context, and ignores another viewer's", () => {
         renderPanel();
 
@@ -110,14 +131,14 @@ describe("PdfPages", () => {
         renderPanel();
         expect(container.querySelector(".pdf-pages-list")).toBeNull();
 
-        shown.pages = { totalPages: 3, currentPage: 1, scrollToPage: vi.fn(), requestThumbnail: vi.fn() };
+        shown.pages = { totalPages: 3, currentPage: 1, scrollToPage: vi.fn(), requestThumbnail: vi.fn(), copyReference: vi.fn() };
         shown.note = { noteId: "note-2", type: "text", mime: "text/html" } as unknown as FNote;
         renderPanel();
         expect(container.querySelector(".pdf-pages-list")).toBeNull();
     });
 
     it("says so when the document has no pages", () => {
-        shown.pages = { totalPages: 0, currentPage: 0, scrollToPage: vi.fn(), requestThumbnail: vi.fn() };
+        shown.pages = { totalPages: 0, currentPage: 0, scrollToPage: vi.fn(), requestThumbnail: vi.fn(), copyReference: vi.fn() };
         renderPanel();
         expect(container.querySelector(".no-pages")).not.toBeNull();
     });

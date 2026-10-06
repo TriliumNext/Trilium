@@ -49,7 +49,7 @@ export function buildTableMenuSections(
     });
     const toggleItem = (title: string, uiIcon: string, commandName: string) => ({
         ...commandItem(title, uiIcon, commandName),
-        trailingIcon: editor.commands.get(commandName)?.value === true ? "bx bx-check" : undefined
+        checked: editor.commands.get(commandName)?.value === true
     });
 
     // One toggle under two labels: only the item enabled for the selection is shown.

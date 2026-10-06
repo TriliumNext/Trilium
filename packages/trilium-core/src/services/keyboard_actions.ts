@@ -280,6 +280,13 @@ function getDefaultKeyboardActions() {
             defaultShortcuts: [],
             scope: "note-tree"
         },
+        {
+            actionName: "duplicateNote",
+            friendlyName: t("keyboard_action_names.duplicate-note"),
+            iconClass: "bx bx-file",
+            defaultShortcuts: [],
+            scope: "note-tree"
+        },
 
         {
             separator: t("keyboard_actions.tabs-and-windows")

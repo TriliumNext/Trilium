@@ -1,6 +1,6 @@
 import "./StatusBar.css";
 
-import { Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
+import { getCodeLanguageIcon, Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
 import clsx from "clsx";
 import { type ComponentChildren, createPortal, RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
@@ -24,7 +24,7 @@ import { useActiveNoteContext, useLegacyImperativeHandlers, useNoteLabel, useNot
 import Icon from "../react/Icon";
 import LinkButton from "../react/LinkButton";
 import { ParentComponent } from "../react/react_utils";
-import { ContentLanguagesModal, NoteTypeCodeNoteList, NoteTypeOptionsModal, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
+import { codeLanguageItems, ContentLanguagesModal, NoteTypeOptionsModal, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
 import AttributeEditor, { AttributeEditorImperativeHandlers } from "../ribbon/components/AttributeEditor";
 import AttributeHelp from "../ribbon/components/AttributeHelp";
 import InheritedAttributesTab from "../ribbon/InheritedAttributesTab";
@@ -606,18 +606,18 @@ function CodeNoteSwitcher({ note }: StatusBarContext) {
     return (noteType === "code" &&
         <>
             <StatusBarDropdown
-                icon={correspondingMimeType?.icon ?? "bx bx-code-curly"}
+                icon={getCodeLanguageIcon(correspondingMimeType)}
                 text={correspondingMimeType?.title}
                 title={t("status_bar.code_note_switcher")}
                 dropdownContainerClassName="dropdown-code-note-switcher"
-            >
-                <NoteTypeCodeNoteList
-                    currentMimeType={currentNoteMime}
-                    mimeTypes={enabledMimeTypes}
-                    changeNoteType={(type, mime) => server.put(`notes/${note.noteId}/type`, { type, mime })}
-                    setModalShown={() => setModalShown(true)}
-                />
-            </StatusBarDropdown>
+                filterable
+                items={codeLanguageItems({
+                    currentMimeType: currentNoteMime,
+                    mimeTypes: enabledMimeTypes,
+                    changeNoteType: (type, mime) => void server.put(`notes/${note.noteId}/type`, { type, mime }),
+                    onConfigure: () => setModalShown(true)
+                })}
+            />
             {createPortal(
                 <NoteTypeOptionsModal modalShown={modalShown} setModalShown={setModalShown} />,
                 document.body

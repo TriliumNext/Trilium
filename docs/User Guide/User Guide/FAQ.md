@@ -20,7 +20,7 @@ To organize notes into a folder:
 
 The children of a note are listed at the end of its content (see <a class="reference-link" href="Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a>).
 
-If you want the note to look like a folder, with no content of its own and only its children shown, make it a collection instead: right-click in the tree, select _Collections_, then choose <a class="reference-link" href="Collections/Grid%20View.md">Grid View</a> or <a class="reference-link" href="Collections/List%20View.md">List View</a>. See <a class="reference-link" href="Collections.md">Collections</a> for the other views, such as tables, boards and calendars.
+If you want the note to look like a folder, with no content of its own and only its children shown, make it a collection instead: right-click in the tree, select _Insert child note_ → _Collection_, then choose <a class="reference-link" href="Collections/Grid%20View.md">Grid View</a> or <a class="reference-link" href="Collections/List%20View.md">List View</a>. See <a class="reference-link" href="Collections.md">Collections</a> for the other views, such as tables, boards and calendars.
 
 ## macOS support
 

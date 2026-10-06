@@ -67,6 +67,20 @@ The benefit of “baked-in annotations” is that they are also accessible if do
 
 The downside is that the entire PDF needs to be sent back to the server, which can slow down performance for larger documents. If you encounter any issues from this system, feel free to [report it](../../Troubleshooting/Reporting%20issues.md).
 
+## Linking to a page or an annotation
+
+A link can open a PDF at a given page, or at one of its annotations. To create one:
+
+*   To link to a page, right-click the page in the _Pages_ section of the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and select _Copy reference_.
+*   To link to an annotation, right-click it in the _Annotations_ section of the sidebar and select _Copy reference_.
+
+Pasted into a text note, the reference becomes one of the <a class="reference-link" href="../Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a>, showing the title of the PDF followed by the page (_Page 5_), or by _Annotation on page 5_ for a reference to an annotation. Clicking it opens the PDF and scrolls to the page or to the annotation.
+
+A reference to an annotation also carries its page, so a link to an annotation that was deleted still opens the right page.
+
+> [!NOTE]
+> An annotation drawn since the PDF was opened does not have a permanent identifier until the PDF is opened again, so a reference copied for it points at its page only.
+
 ## Filling out forms
 
 Similar to annotations, forms are also supported by Trilium since v0.102.0. If the document has fields that can be filled-in, they will be indicated with a colored background.

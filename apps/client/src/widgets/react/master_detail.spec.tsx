@@ -81,7 +81,7 @@ function renderHost() {
 function endSlide() {
     act(() => {
         host()?.dispatchEvent(Object.assign(new Event("animationend", { bubbles: true }), {
-            animationName: "tn-master-detail-slide-in"
+            animationName: "tn-slide-in-from-right"
         }));
     });
 }

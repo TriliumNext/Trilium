@@ -113,6 +113,7 @@
     "add-note-above-to-selection": "Add Note Above to Selection",
     "add-note-below-to-selection": "Add Note Below to Selection",
     "duplicate-subtree": "Duplicate Subtree",
+    "duplicate-note": "Duplicate Note Without Children",
     "open-new-tab": "Open New Tab",
     "close-active-tab": "Close Active Tab",
     "reopen-last-tab": "Reopen Last Tab",

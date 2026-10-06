@@ -188,14 +188,14 @@ describe("Board column context menu", () => {
             return found;
         };
 
-        // The check sits after the title, the entry keeping its own icon ahead of it.
+        // Checked, which the menu shows after the title, as the entry has an icon of its own.
         const unchecked = entryOf(false);
-        expect("trailingIcon" in unchecked && unchecked.trailingIcon).toBeUndefined();
+        expect("checked" in unchecked && unchecked.checked).toBe(false);
         unchecked.handler?.(unchecked, {} as never);
         expect(onKeepCollapsed).toHaveBeenLastCalledWith(true);
 
         const checked = entryOf(true);
-        expect("trailingIcon" in checked && checked.trailingIcon).toBe("bx bx-check");
+        expect("checked" in checked && checked.checked).toBe(true);
         checked.handler?.(checked, {} as never);
         expect(onKeepCollapsed).toHaveBeenLastCalledWith(false);
 
@@ -267,14 +267,14 @@ describe("Board column context menu", () => {
             return found;
         };
 
-        // The check sits after the title, the entry keeping its own icon ahead of it.
+        // Checked, which the menu shows after the title, as the entry has an icon of its own.
         const unchecked = entryOf(false);
-        expect("trailingIcon" in unchecked && unchecked.trailingIcon).toBeUndefined();
+        expect("checked" in unchecked && unchecked.checked).toBe(false);
         unchecked.handler?.(unchecked, {} as never);
         expect(api.setInboxNested).toHaveBeenLastCalledWith(true);
 
         const checked = entryOf(true);
-        expect("trailingIcon" in checked && checked.trailingIcon).toBe("bx bx-check");
+        expect("checked" in checked && checked.checked).toBe(true);
         checked.handler?.(checked, {} as never);
         expect(api.setInboxNested).toHaveBeenLastCalledWith(false);
     });
@@ -955,9 +955,9 @@ describe("Board item context menu", () => {
             '<span class="tn-menu-name">To Do</span>',
             '<span class="tn-menu-name">Done</span>'
         ]);
-        // The tick goes at the trailing edge, leaving each column's own icon where it stands.
-        expect(columns.map(item => item && "trailingIcon" in item ? item.trailingIcon : undefined))
-            .toEqual([ "bx bx-check", undefined ]);
+        // Ticked, which the menu shows after the title, as each column has an icon of its own.
+        expect(columns.map(item => item && "checked" in item ? item.checked : undefined))
+            .toEqual([ true, false ]);
         // And the one the card is under carries the class the stylesheet weights it by.
         expect(columns.map(item => item && "className" in item ? item.className : undefined))
             .toEqual([ "board-current-column", undefined ]);
@@ -1128,8 +1128,8 @@ describe("Board item context menu", () => {
             } as unknown as BoardApi;
 
             expect(marksOf(openSelectionMenu(together, notes)))
-                .toEqual([ undefined, "bx bx-check" ]);
-            expect(marksOf(openSelectionMenu(apart, notes))).toEqual([ undefined, undefined ]);
+                .toEqual([ false, true ]);
+            expect(marksOf(openSelectionMenu(apart, notes))).toEqual([ false, false ]);
         });
 
         it("files every card under the column picked", async () => {
@@ -1192,7 +1192,7 @@ describe("Board item context menu", () => {
 
         function marksOf(items: MenuItem<unknown>[]) {
             return columnEntries(items)
-                .map(item => item && "trailingIcon" in item ? item.trailingIcon : undefined);
+                .map(item => item && "checked" in item ? item.checked : undefined);
         }
 
         function titlesOf(items: MenuItem<unknown>[]) {

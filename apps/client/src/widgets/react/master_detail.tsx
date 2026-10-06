@@ -1,4 +1,5 @@
 import "./master_detail.css";
+import "./slide_animations.css";
 
 import clsx from "clsx";
 import { ComponentChildren, createContext, RefObject } from "preact";
@@ -8,6 +9,7 @@ import utils from "../../services/utils";
 import ActionButton from "./ActionButton";
 import { useWindowSize } from "./hooks";
 import Modal, { ModalProps } from "./Modal";
+import { useSlide } from "./SlidePages";
 
 /**
  * The flow a dialog that pairs a list with a detail takes on a screen too narrow to hold both: one at a
@@ -20,9 +22,6 @@ import Modal, { ModalProps } from "./Modal";
 /** Mobile viewports at least this wide (tablets) keep a side-by-side layout; narrower ones get the
  *  master-detail flow. */
 export const MASTER_DETAIL_TABLET_MIN_WIDTH = 768;
-
-/** What every slide of the flow is named with, which is how a finished one is recognised. */
-const SLIDE_ANIMATION_PREFIX = "tn-master-detail-";
 
 export interface MobileMasterDetail {
     /** True on narrow mobile viewports where the list and detail collapse into a master-detail flow. */
@@ -43,27 +42,27 @@ export interface MobileMasterDetail {
  */
 export function useMobileMasterDetail(modalRef: RefObject<HTMLElement | null>): MobileMasterDetail {
     const [ mobileView, setMobileView ] = useState<"list" | "page">("list");
-    // Direction of the in-flight slide between the two views, or null when at rest. While set, both
-    // panes stay rendered so the outgoing one can slide away as the incoming one slides in.
-    const [ mobileTransition, setMobileTransition ] = useState<"to-list" | "to-page" | null>(null);
     const isMobile = utils.isMobile();
     const { windowWidth } = useWindowSize();
     const isMasterDetail = isMobile && windowWidth < MASTER_DETAIL_TABLET_MIN_WIDTH;
+    /** Whether the next change of view slides: a switch does, a reset does not. */
+    const slideNext = useRef(false);
+    // Outside the master-detail flow both panes are on show, and there is nothing to slide between.
+    const slide = useSlide(mobileView, isMasterDetail && slideNext.current);
+    // While set, both panes stay rendered so the outgoing one can slide away as the incoming one slides in.
+    const mobileTransition = slide.from === undefined ? null : mobileView === "page" ? "to-page" : "to-list";
 
     const switchMobileView = useCallback((view: "list" | "page") => {
-        if (view === mobileView) return;
+        slideNext.current = true;
         setMobileView(view);
-        // With animations globally disabled there is no animationend to clear the transition, so
-        // switch directly. Outside the master-detail flow there is nothing to animate.
-        if (isMasterDetail && !document.body.classList.contains("motion-disabled")) {
-            setMobileTransition(view === "page" ? "to-page" : "to-list");
-        }
-    }, [ mobileView, isMasterDetail ]);
-
-    const resetMobileView = useCallback((view: "list" | "page") => {
-        setMobileView(view);
-        setMobileTransition(null);
     }, []);
+
+    const { settle } = slide;
+    const resetMobileView = useCallback((view: "list" | "page") => {
+        slideNext.current = false;
+        setMobileView(view);
+        settle();
+    }, [ settle ]);
 
     // Bootstrap adds its own classes (e.g. `show`) to the modal element at runtime, so the className
     // prop must stay static; toggle the mobile view classes directly on the element instead.
@@ -75,18 +74,14 @@ export function useMobileMasterDetail(modalRef: RefObject<HTMLElement | null>): 
         modalRef.current?.classList.toggle("mobile-transition-to-page", mobileTransition === "to-page");
     }, [ isMasterDetail, mobileView, mobileTransition ]);
 
-    // End the view transition once the slide finishes (animationend bubbles up from the panes).
+    // The slide's end bubbles up from the panes.
+    const { onAnimationEnd } = slide;
     useEffect(() => {
         const modalElement = modalRef.current;
         if (!modalElement) return;
-        function onAnimationEnd(e: AnimationEvent) {
-            if (e.animationName.startsWith(SLIDE_ANIMATION_PREFIX)) {
-                setMobileTransition(null);
-            }
-        }
         modalElement.addEventListener("animationend", onAnimationEnd);
         return () => modalElement.removeEventListener("animationend", onAnimationEnd);
-    }, []);
+    }, [ onAnimationEnd ]);
 
     return { isMasterDetail, mobileView, switchMobileView, resetMobileView };
 }

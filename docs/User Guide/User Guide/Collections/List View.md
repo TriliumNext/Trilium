@@ -7,7 +7,7 @@ In the example above, the "Node.js" note on the left panel contains several chil
 
 ### Creating a new table
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _List View_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _List View_.
 
 ## Interaction
 

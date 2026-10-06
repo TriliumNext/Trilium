@@ -28,6 +28,13 @@ export interface RowEntry {
     custom: boolean;
     disabled: boolean;
     hasSubmenu: boolean;
+    /** Whether typing while its submenu is open filters it. */
+    filterable?: boolean;
+    /**
+     * Stands beside its neighbours in a row of actions, where the arrow towards the end moves on
+     * as Down does and the one towards the start moves back as Up does.
+     */
+    inline?: boolean;
     /** Runs the row, as a press or Enter does, once its submenu, if it has one, is open. */
     select(e: MouseEvent | KeyboardEvent): void;
 }
@@ -36,6 +43,15 @@ export interface RowEntry {
 export interface ActiveRow {
     level: number;
     id: string;
+}
+
+/** What was typed into a filterable submenu, and the row it opened from. */
+export interface MenuFilter {
+    /** The id of the row the filtered submenu opened from. */
+    rowId: string;
+    /** The level that row stands at; the submenu is one deeper. */
+    level: number;
+    text: string;
 }
 
 /** What every row of a menu shares, at every level. */
@@ -56,13 +72,17 @@ export interface MenuContextValue {
     /** Whether the keys moved the menu since the pointer last did. */
     keyboardDriven: boolean;
     /**
-     * Whether the submenus of each level's rows open towards the start, indexed by level. The rows
-     * of a level that does carry `.dropstart`, which points their arrow that way.
+     * Whether the submenus of each level's rows open towards the start, indexed by level. Only the
+     * placement follows it; a row's arrow points to the end, as in the operating system's menus.
      */
     dropStart: boolean[];
     /** Records the side the submenus of `level`'s rows open on. */
     setDropStart(level: number, dropStart: boolean): void;
     close(): void;
+    /** What is typed into a filterable submenu, while anything is. */
+    filter?: MenuFilter;
+    /** Sets what is typed into a filterable submenu, or with `undefined` empties it. */
+    setFilter(filter: MenuFilter | undefined): void;
     /**
      * Where a row renders its submenu's layer: the top level's element, so the rules scoped to the
      * menu apply, but outside its scroller and any other layer, as a fixed layer escapes a
@@ -72,6 +92,11 @@ export interface MenuContextValue {
 }
 
 export const MenuContext = createContext<MenuContextValue | null>(null);
+/**
+ * The filterable submenu the rows rendered here stand in, with what is typed into it, which is
+ * empty until something is. `undefined` in a submenu that does not filter.
+ */
+export const MenuFilterContext = createContext<MenuFilter | undefined>(undefined);
 /** How deep the rows rendered here stand: 0 at the top level, 1 in its submenus, and so on. */
 export const MenuLevelContext = createContext(0);
 

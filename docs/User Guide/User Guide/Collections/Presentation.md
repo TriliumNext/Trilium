@@ -5,7 +5,7 @@ The Presentation view allows the creation of slideshows directly from within Tri
 
 ### Creating a new presentation
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Presentation_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Presentation_.
 
 ## How it works
 

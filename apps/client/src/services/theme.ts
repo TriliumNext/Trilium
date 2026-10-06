@@ -114,6 +114,24 @@ export function updateColorSchemeClasses() {
     const colorScheme = readCssVar(document.body, "theme-style").asString();
     document.body.classList.toggle("light-theme", colorScheme === "light");
     document.body.classList.toggle("dark-theme", colorScheme === "dark");
+    syncDarkReaderLock();
+}
+
+/**
+ * Adds `<meta name="darkreader-lock">` while the effective style is dark, so the Dark Reader extension leaves a
+ * dark theme alone and still darkens a light one. Dark Reader disables itself when the tag appears, but removing
+ * the tag does not re-enable it until the page reloads.
+ */
+function syncDarkReaderLock() {
+    const lock = document.head.querySelector("meta[name='darkreader-lock']");
+    const isDark = getEffectiveThemeStyle() === "dark";
+    if (isDark && !lock) {
+        const meta = document.createElement("meta");
+        meta.name = "darkreader-lock";
+        document.head.appendChild(meta);
+    } else if (!isDark && lock) {
+        lock.remove();
+    }
 }
 
 let backgroundEffectsSuspended = false;
@@ -265,6 +283,7 @@ export function onEffectiveThemeStyleChange(listener: (themeStyle: "light" | "da
  */
 export function initThemeChangeNotifier() {
     lastKnownThemeStyle = getEffectiveThemeStyle();
+    syncDarkReaderLock();
 
     // A module-level reference, so a repeated init cannot stack duplicate listeners.
     document.addEventListener("visibilitychange", reconcileOnceVisible);
@@ -293,6 +312,7 @@ function reconcileEffectiveThemeStyle() {
 function notifyThemeChanged() {
     const themeStyle = getEffectiveThemeStyle();
     lastKnownThemeStyle = themeStyle;
+    syncDarkReaderLock();
     for (const listener of themeStyleListeners) {
         listener(themeStyle);
     }

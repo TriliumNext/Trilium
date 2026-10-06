@@ -36,7 +36,7 @@ The button that shows your location is offered only when Trilium is reached over
 
 ## Creating a new geo map
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Geo Map_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Geo Map_.
 
 By default the map will be empty and will show the entire world.
 

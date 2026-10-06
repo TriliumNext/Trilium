@@ -250,6 +250,11 @@ export interface FloatingPlacement {
     /** Hides it while its anchor is scrolled out of view, as a submenu whose row scrolled away. */
     hideWithAnchor?: boolean;
     /**
+     * Keeps its top at this viewport y instead of where its height would place it, for a popup
+     * whose content changes while it is read. With {@link capHeight}, the cap is the room below it.
+     */
+    pinTop?: number;
+    /**
      * An arrow element inside it. Its offset along the edge facing the anchor is set to point at
      * the anchor, at least `padding` pixels from the corners.
      */
@@ -262,7 +267,7 @@ export interface FloatingPlacement {
  * near the viewport's edge. It stays hidden until placed, so it never paints at a stale position.
  * Resolves to the placement Floating UI chose.
  */
-export async function placeFloating(element: HTMLElement, anchor: ReferenceElement, { placement, offset: gap, shiftAcross, capHeight, hideWithAnchor, arrow: pointer }: FloatingPlacement) {
+export async function placeFloating(element: HTMLElement, anchor: ReferenceElement, { placement, offset: gap, shiftAcross, capHeight, hideWithAnchor, pinTop, arrow: pointer }: FloatingPlacement) {
     const padding = viewportPadding();
     const { x, y, placement: placed, middlewareData } = await computePosition(anchor, element, {
         strategy: "fixed",
@@ -283,7 +288,10 @@ export async function placeFloating(element: HTMLElement, anchor: ReferenceEleme
     });
 
     element.style.left = `${x}px`;
-    element.style.top = `${y}px`;
+    element.style.top = `${pinTop ?? y}px`;
+    if (capHeight && pinTop !== undefined) {
+        element.style.maxHeight = `${document.documentElement.clientHeight - pinTop - padding.bottom}px`;
+    }
     element.style.visibility = middlewareData.hide?.referenceHidden ? "hidden" : "visible";
     if (pointer) {
         // Only the offset along the facing edge; the stylesheet sets the other axis.

@@ -437,8 +437,7 @@
     "search_placeholder": "이름으로 경로 검색(비워 두면 기본 경로)",
     "modal_title": "노트 유형 선택",
     "modal_body": "새 노트의 노트 유형/템플릿 선택:",
-    "templates": "템플릿",
-    "builtin_templates": "내장 템플릿"
+    "templates": "템플릿"
   },
   "password_not_set": {
     "title": "비밀번호가 설정되지 않았습니다",
@@ -2421,7 +2420,6 @@
     "copy-note-path-to-clipboard": "노트 경로를 클립보드에 복사",
     "protect-subtree": "하위 트리 보호",
     "unprotect-subtree": "하위 트리 보호 해제",
-    "copy-clone": "복사 / 복제",
     "clone-to": "다음 위치로 복제...",
     "cut": "잘라내기",
     "move-to": "다음 위치로 이동...",
@@ -2472,7 +2470,6 @@
     "llm-chat": "AI 채팅",
     "task-list": "작업 목록",
     "new-feature": "신규",
-    "collections": "컬렉션",
     "spreadsheet": "스프레드시트",
     "note-types": "노트 유형",
     "built-in-templates": "기본 제공 템플릿"
@@ -2490,7 +2487,7 @@
     "empty_state": "아래에 메시지를 입력하여 대화를 시작하세요.",
     "searching_web": "웹에서 검색하는 중...",
     "web_search": "웹 검색",
-    "web_search_unavailable_gemini": "노트 접근이 켜져 있을 때 Gemini 모델에서는 지원되지 않습니다 — Google API는 두 가지 결합을 허용하지 않습니다. 노트 접근을 비활성화하거나 웹 검색을 위해 다른 제공업체로 전환하세요.",
+    "web_search_unavailable_gemini": "Gemini는 기본 제공 검색과 노트 접근을 함께 사용할 수 없습니다. 노트 접근을 끄거나 대신 검색 제공자를 선택하세요.",
     "note_tools": "노트 접근",
     "sources": "출처",
     "sources_summary": "{{sites}} 사이트에서 {{count}} 출처",
@@ -2588,7 +2585,15 @@
     "attachment_count_other": "첨부 파일 {{count}}개",
     "attribute_count_other": "({{count}}개 속성)",
     "search_icons_count_other": "({{count}}개 아이콘)",
-    "web_sources_count_other": "({{count}}개 출처)"
+    "web_sources_count_other": "({{count}}개 출처)",
+    "tools": "도구",
+    "note_tools_description": "노트를 검색하고 읽고 편집합니다",
+    "web_search_disabled": "사용 안 함",
+    "web_search_builtin": "모델의 기본 제공 검색 사용",
+    "manage_search_providers": "검색 제공자 관리…",
+    "web_search_builtin_unsupported": "이 모델에는 기본 제공 웹 검색 기능이 없습니다. 대신 검색 제공자를 선택하세요.",
+    "web_search_provider_unsupported": "이 모델의 제공자는 자체 도구를 사용해 웹을 검색합니다.",
+    "searched_with": "{{name}}으로 검색함"
   },
   "sidebar_chat": {
     "title": "AI 채팅",
@@ -2709,7 +2714,6 @@
     "created_on": "생성일 <Value />",
     "last_modified": "수정됨 <Value />",
     "note_type_switcher_label": "{{type}}에서 다음으로 전환하세요:",
-    "note_type_switcher_others": "기타 노트 유형",
     "note_type_switcher_templates": "템플릿",
     "note_type_switcher_collection": "컬렉션",
     "edited_notes": "이 날 편집된 노트",
@@ -2721,7 +2725,8 @@
     "search_now": "지금 검색",
     "result_count_other": "{{count}}개 결과",
     "page_size": "페이지당",
-    "snippet_unavailable": "미리보기를 사용할 수 없습니다."
+    "snippet_unavailable": "미리보기를 사용할 수 없습니다.",
+    "searching": "검색 중..."
   },
   "sql_result": {
     "not_executed": "쿼리는 아직 실행되지 않았습니다.",
@@ -3746,7 +3751,10 @@
     "annotation_drawing": "{{pageNumber}}페이지에 그리기",
     "annotation_highlight": "{{pageNumber}}페이지에 강조 표시",
     "annotation_note": "{{pageNumber}}페이지에 노트",
-    "annotation_text_box": "{{pageNumber}}페이지에 텍스트 상자"
+    "annotation_text_box": "{{pageNumber}}페이지에 텍스트 상자",
+    "copy_reference": "참조 복사",
+    "page_reference": "{{pageNumber}}페이지",
+    "annotation_reference": "{{pageNumber}}페이지의 주석"
   },
   "platform_indicator": {
     "available_on": "{{platform}}에서 이용 가능"
@@ -3985,7 +3993,21 @@
     "antigravity_setup_download": "Trilium을 실행하는 기기에서 Google의 <Link>ACP 레지스트리 항목</Link> 페이지를 열어 사용 중인 플랫폼용 압축 파일을 다운로드하고, 계속 보관할 폴더에 압축을 풉니다.",
     "antigravity_setup_archive": "<Link>Trilium을 실행하는 기기용 압축 파일</Link> 항목을 열어 다운로드한 뒤, 해당 기기에서 계속 보관할 폴더에 압축을 풉니다.",
     "antigravity_setup_path": "해당 폴더를 <Code>PATH</Code> 환경 변수에 추가하거나, <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> 환경 변수의 값을 해당 폴더 안의 <Code>agy_acp_server.par</Code> 파일로 설정합니다. Windows에서는 <Code>agy_acp_server.exe</Code> 파일을 사용합니다. 그런 다음 Trilium을 다시 시작합니다.",
-    "codex_agent_description": "OpenAI Codex를 통해 ChatGPT 요금제(Free, Go, Plus, Pro 또는 Business)의 Codex 사용량을 사용하므로 API 키가 필요하지 않습니다.\n\nCodex CLI는 Trilium을 실행하는 기기에 설치되어 있어야 합니다. 셀프 호스팅의 경우 서버이고, 데스크톱에서는 이 컴퓨터입니다. 예를 들어 해당 기기에서 \"npm install -g @openai/codex\" 명령을 실행하여 설치할 수 있습니다.\n\n처음으로 모델 목록을 불러오면 해당 기기의 브라우저에서 ChatGPT 로그인 페이지가 열립니다."
+    "codex_agent_description": "OpenAI Codex를 통해 ChatGPT 요금제(Free, Go, Plus, Pro 또는 Business)의 Codex 사용량을 사용하므로 API 키가 필요하지 않습니다.\n\nCodex CLI는 Trilium을 실행하는 기기에 설치되어 있어야 합니다. 셀프 호스팅의 경우 서버이고, 데스크톱에서는 이 컴퓨터입니다. 예를 들어 해당 기기에서 \"npm install -g @openai/codex\" 명령을 실행하여 설치할 수 있습니다.\n\n처음으로 모델 목록을 불러오면 해당 기기의 브라우저에서 ChatGPT 로그인 페이지가 열립니다.",
+    "search_providers": "검색 제공자",
+    "no_search_providers_configured": "아직 구성된 검색 제공자가 없습니다.",
+    "add_search_provider": "검색 제공자 추가",
+    "search_provider_group_cloud": "검색 API",
+    "search_provider_group_cloud_description": "API 키를 사용하며, 서비스에 따라 월별 무료 사용량이 제공되거나 검색 건별로 요금이 부과됩니다. 검색 내용은 제공자의 서버로 전송됩니다.",
+    "search_provider_group_local": "셀프 호스팅",
+    "search_provider_group_local_description": "직접 운영하는 메타검색 인스턴스입니다. 검색 요청은 해당 인스턴스와 그 인스턴스가 사용하는 검색 엔진에만 전달됩니다.",
+    "search_base_url_description": "선택 사항입니다. 프록시 또는 게이트웨이를 통해 동일한 API에 연결합니다.",
+    "model_providers": "모델 제공자",
+    "add_model_provider": "모델 제공자 추가",
+    "no_model_providers_configured": "아직 구성된 모델 제공자가 없습니다.",
+    "provider_no_models": "선택된 모델이 없어 채팅에 표시되지 않습니다.",
+    "search_provider_unavailable_standalone": "브라우저 버전에서는 사용할 수 없습니다. 이 서비스는 웹 페이지에서 보낸 요청을 거부하므로 데스크톱 또는 서버 버전에서만 사용할 수 있습니다.",
+    "setup_hint_searxng": "SearXNG 인스턴스의 주소입니다. <Code>settings.yml</Code> 파일의 <Code>search.formats</Code> 항목에 <Code>json</Code> 값이 포함되어 있어야 합니다."
   },
   "common": {
     "save": "저장",
@@ -4473,7 +4495,9 @@
     "label_marker": "라벨을 참조합니다. Enter 키를 눌러 라벨 목록 보기",
     "label_marker_negated": "라벨을 제외합니다. Enter 키를 눌러 라벨 목록 보기",
     "relation_marker": "관계를 참조합니다. Enter 키를 눌러 관계 목록 보기",
-    "relation_marker_negated": "관계를 제외합니다. Enter 키를 눌러 관계 목록 보기"
+    "relation_marker_negated": "관계를 제외합니다. Enter 키를 눌러 관계 목록 보기",
+    "property_links": "이 노트가 링크하는 노트에서 계속 검색",
+    "property_backlinks": "이 노트를 링크하는 노트에서 계속 검색"
   },
   "lightbox": {
     "image": "이미지",

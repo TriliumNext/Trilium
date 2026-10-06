@@ -43,7 +43,7 @@ overrides:
   # 300-400 MB native Codex build the adapter depends on is never used.
   "@agentclientprotocol/codex-acp>@openai/codex": "-"
   "zod": "4.6.5"
-  "mermaid": "12.0.0"
+  "mermaid": "12.1.0"
   "preact": "11.0.0"
   "roughjs": "4.6.6"
   "@types/express-serve-static-core": "5.1.3"

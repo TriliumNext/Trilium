@@ -22,6 +22,7 @@ import { createEmojiList, createNoteMentionList, createSlashCommandList } from "
 import { buildQuoteTransformation, resolveQuoteSetting } from "./quotes.js";
 import { buildCustomTransformations, parseCustomReplacements } from "./replacements.js";
 import { buildToolbarConfig } from "./toolbar.js";
+import { createToolbarGroupMenuHost } from "./toolbar_group_menu.js";
 
 /**
  * The only license key Trilium ever passes to CKEditor. Every premium plugin the editor used has
@@ -319,6 +320,8 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             }
         ] : []
     };
+
+    config.toolbarGroupMenu = { host: () => createToolbarGroupMenuHost() };
 
     return {
         ...config,

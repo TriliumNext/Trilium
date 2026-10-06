@@ -1,6 +1,8 @@
 # Custom app-wide CSS
 It is possible to provide a CSS file to be used regardless of the theme set by the user.
 
+The quickest way to create one is _Insert child note_ → _Code_ → _Custom CSS_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, which creates a CSS note that already has the `#appCss` label. To set one up by hand instead:
+
 |  |  |
 | --- | --- |
 | ![](Custom%20app-wide%20CSS_image.png) | Start by creating a new note and changing the note type to CSS |

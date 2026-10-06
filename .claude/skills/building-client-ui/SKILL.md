@@ -7,7 +7,7 @@ description: Use when building or changing any UI in the Trilium client (`apps/c
 
 The client is a Preact app (legacy widgets are jQuery `BasicWidget`s; new UI is Preact). Shared components live in `apps/client/src/widgets/react/`. **Always reuse them instead of writing raw HTML elements or a custom implementation** — every hand-rolled `<input>`, `<select>`, `<button>`, `<a>`, pill or overlay button is a second copy of styling, focus handling and accessibility that drifts.
 
-The general styling rules (no inline styles, one `.css` file per component imported at the top, scope by root class + native CSS nesting) are in the repo `CLAUDE.md`; this skill is about *which component* and *how to drive it*.
+The general styling rules (no inline styles, one `.css` file per component imported at the top, scope by root class + native CSS nesting, no CSS comments beyond a browser workaround, a value shared with another file or a stacking contract) are in the repo `CLAUDE.md`; this skill is about *which component* and *how to drive it*.
 
 > **CLAUDE.md still foregrounds the jQuery widget lifecycle** (`doRenderBody` / `refreshWithNote` / `this.$widget`). That is for maintaining existing widgets. New UI is a `.tsx` component using the hooks below; reach for `useLegacyWidget` only to embed an existing jQuery widget into a Preact tree.
 

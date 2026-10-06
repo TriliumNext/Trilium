@@ -600,7 +600,7 @@ export function PlayModeButton({ mode, onSelectMode }: { mode: MediaPlayMode, on
                 <FormListItem
                     key={candidate}
                     icon={MEDIA_PLAY_MODE_ICONS[candidate]}
-                    trailingIcon={candidate === mode ? "bx bx-check" : undefined}
+                    checked={candidate === mode}
                     onClick={() => onSelectMode(candidate)}
                 >
                     {t(MEDIA_PLAY_MODE_LABEL_KEYS[candidate])}

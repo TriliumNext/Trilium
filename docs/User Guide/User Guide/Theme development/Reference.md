@@ -185,7 +185,7 @@ A light theme needs to have the following CSS:
 }
 ```
 
-if the theme is dark, then `--theme-style` needs to be `dark`.
+if the theme is dark, then `--theme-style` needs to be `dark`. A dark `--theme-style` also tells the Dark Reader browser extension to leave the page alone.
 
 If the theme is auto (e.g. supports both light or dark based on `prefers-color-scheme`) it must also declare (in addition to setting `--theme-style` to either `light` or `dark`):
 

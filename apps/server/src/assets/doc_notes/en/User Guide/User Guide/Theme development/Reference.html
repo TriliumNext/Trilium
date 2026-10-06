@@ -146,7 +146,9 @@ body.electron:not(.native-titlebar) {
 <p>A light theme needs to have the following CSS:</p><pre><code class="language-text-css">:root {
 	--theme-style: light;
 }</code></pre>
-<p>if the theme is dark, then <code>--theme-style</code> needs to be <code>dark</code>.</p>
+<p>if the theme is dark, then <code>--theme-style</code> needs to be <code>dark</code>.
+  A dark <code>--theme-style</code> also tells the Dark Reader browser extension
+  to leave the page alone.</p>
 <p>If the theme is auto (e.g. supports both light or dark based on <code>prefers-color-scheme</code>)
   it must also declare (in addition to setting <code>--theme-style</code> to
   either <code>light</code> or <code>dark</code>):</p><pre><code class="language-text-css">:root {

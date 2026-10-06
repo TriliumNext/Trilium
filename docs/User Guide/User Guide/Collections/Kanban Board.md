@@ -3,7 +3,7 @@ The Board view lets you arrange subnotes as cards on a [Kanban board](https://en
 
 ## Creating a Kanban board
 
-Right-click an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, select **Insert child note**, and look for **Kanban Board**.
+Right-click an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, select _Insert child note_ → _Collection_ → _Kanban Board_.
 
 ## How it works
 

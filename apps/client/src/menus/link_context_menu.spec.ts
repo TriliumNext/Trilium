@@ -475,13 +475,13 @@ describe("openContextMenu", () => {
                         title: "link_context_menu.show_title",
                         uiIcon: "bx bx-window-alt",
                         enabled: true,
-                        trailingIcon: undefined
+                        checked: false
                     },
                     {
                         title: "link_context_menu.show_caption",
                         uiIcon: "bx bx-captions",
                         enabled: true,
-                        trailingIcon: CHECK
+                        checked: true
                     },
                     { kind: "separator" },
                     { title: "Rename" },
@@ -515,7 +515,7 @@ describe("openContextMenu", () => {
                 {
                     title: "link_context_menu.editable",
                     uiIcon: "bx bx-edit-alt",
-                    trailingIcon: CHECK
+                    checked: true
                 },
                 { title: "link_context_menu.include_size" }
             ]);
@@ -524,7 +524,7 @@ describe("openContextMenu", () => {
 
             state = { ...state, isEditable: false };
             expect((await openOn(editable.querySelector("a")))[7])
-                .toMatchObject({ title: "link_context_menu.editable", trailingIcon: undefined });
+                .toMatchObject({ title: "link_context_menu.editable", checked: false });
         });
 
         it("appends the commands of an embedded note, its conversion in a group of its own", async () => {
@@ -554,8 +554,8 @@ describe("openContextMenu", () => {
             expect((await openOn(editable.querySelector("a"), {})).slice(4)).toMatchObject([
                 { kind: "separator" },
                 { title: "link_context_menu.include_size" },
-                { title: "link_context_menu.show_title", enabled: false, trailingIcon: CHECK },
-                { title: "link_context_menu.show_caption", enabled: false, trailingIcon: undefined }
+                { title: "link_context_menu.show_title", enabled: false, checked: true },
+                { title: "link_context_menu.show_caption", enabled: false, checked: false }
             ]);
 
             // A link in the embedded content, an embed the editor does not know, and an editor

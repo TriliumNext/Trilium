@@ -6,8 +6,8 @@ Markdown Snippets are closely related to <a class="reference-link" href="../Tem
 In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>: 
 
 1.  Right-click the note where you want to place the snippet.
-2.  Select **Insert child** _note_.
-3.  Select _**Markdown snippet**_.
+2.  Select _Insert child note_.
+3.  Select _More_ → _Markdown snippet_.
 
 Then simply type the desired content into the note.
 

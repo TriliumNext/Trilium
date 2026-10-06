@@ -25,6 +25,10 @@ declare global {
             pdfDocument: PDFDocumentProxy;
             pdfViewer: {
                 currentPageNumber: number;
+                /** Settles once every page has been sized. */
+                pagesPromise: Promise<void>;
+                /** Works out the visible pages and records the scroll position. */
+                update(): void;
                 /**
                  * pdf.js' own type, rather than a local restatement of it — the previous
                  * hand-written shape declared the config object directly and omitted the
@@ -33,14 +37,18 @@ declare global {
                 optionalContentConfigPromise: Promise<OptionalContentConfig>;
                 getPageView(pageIndex: number): {
                     div: HTMLDivElement;
-                };
+                    viewport: {
+                        /** Maps a point in PDF units to CSS pixels on the page. */
+                        convertToViewportPoint(x: number, y: number): number[];
+                    };
+                } | undefined;
                 container: HTMLElement;
             };
             pdfLinkService: {
                 goToDestination(dest: PdfJsDestination);
             };
             eventBus: {
-                on(event: string, listener: (...args: any[]) => void): void;
+                on(event: string, listener: (...args: any[]) => void, options?: { once?: boolean }): void;
                 dispatch(event: string, data?: any): void;
             };
             findBar?: {

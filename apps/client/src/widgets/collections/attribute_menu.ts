@@ -82,7 +82,7 @@ function buildBooleanItem<T>(notes: FNote[], attribute: PromotedAttribute): Menu
 
     return {
         ...attributeEntry<T>(attribute),
-        trailingIcon: isSet ? CHECK : undefined,
+        checked: isSet,
         handler: () => {
             void setLabelOnNotes(notes, attribute.name, isSet ? FALSE : TRUE);
         }

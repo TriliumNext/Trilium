@@ -115,6 +115,10 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             const codeEditor = editorRef.current;
             if (!codeEditor) return;
             codeEditor.setText(content ?? "");
+            // `setText()` loads a hidden editor without an update, so its listener reports nothing.
+            if (codeEditor.dom.offsetParent === null) {
+                onContentChanged?.(content ?? "");
+            }
             codeEditor.setMimeType(note.mime);
             codeEditor.clearHistory();
 

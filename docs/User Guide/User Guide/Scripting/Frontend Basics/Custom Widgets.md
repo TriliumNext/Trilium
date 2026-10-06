@@ -13,6 +13,10 @@ Wherever possible, widget examples will be both in the legacy and Preact format.
 
 ## Creating a custom widget
 
+The quickest way is _Insert child note_ → _Code_ → _Widget_ in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>. It creates a JSX note with the `#widget` label and a minimal Preact widget to start from.
+
+To set one up by hand instead:
+
 1.  Create a <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
 2.  Set the language to:
     1.  JavaScript (frontend) for legacy widgets using jQuery.

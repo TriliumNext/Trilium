@@ -22,7 +22,7 @@ Classic collections make use of pagination to support a large number of notes. T
 
 ## Creating a new collection
 
-To create a new collections, right click in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and look for the _Collections_ entry and select the desired type.
+To create a new collection, right-click a note in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → the desired type.
 
 By default, collections come with a default configuration and sometimes even sample notes. To create a collection completely from scratch:
 

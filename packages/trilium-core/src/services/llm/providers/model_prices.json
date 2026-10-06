@@ -99,6 +99,11 @@
       "input": 2,
       "output": 10,
       "ctx": 1000000
+    },
+    "claude-sonnet-5-5": {
+      "input": 2,
+      "output": 10,
+      "ctx": 1000000
     }
   },
   "deepseek": {
@@ -551,6 +556,11 @@
       "ctx": 922000
     },
     "gpt-6-sol": {
+      "input": 2,
+      "output": 10,
+      "ctx": 922000
+    },
+    "gpt-6.1-sol": {
       "input": 2,
       "output": 10,
       "ctx": 922000

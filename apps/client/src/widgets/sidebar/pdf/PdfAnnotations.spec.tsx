@@ -2,6 +2,7 @@ import { render } from "preact";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import FNote from "../../../entities/fnote";
+import contextMenu from "../../../menus/context_menu";
 import options from "../../../services/options";
 import PdfAnnotations, { isDark } from "./PdfAnnotations";
 
@@ -9,7 +10,11 @@ import PdfAnnotations, { isDark } from "./PdfAnnotations";
 // arrive through hooks that need the whole app context, so they are handed over directly here.
 const shown = vi.hoisted(() => ({
     note: null as FNote | null,
-    annotations: null as { annotations: PdfAnnotationInfo[]; scrollToAnnotation: (id: string, page: number) => void } | null
+    annotations: null as {
+        annotations: PdfAnnotationInfo[];
+        scrollToAnnotation: (id: string, page: number) => void;
+        copyReference: (id: string, page: number) => void;
+    } | null
 }));
 // i18next is not initialised for client specs, so t() would render every label as an empty
 // string. Echoing the key and its interpolations instead keeps the assertions about which
@@ -45,14 +50,18 @@ function annotation(overrides: Partial<PdfAnnotationInfo>): PdfAnnotationInfo {
     };
 }
 
-function renderPanel(annotations: PdfAnnotationInfo[], scrollToAnnotation: (id: string, page: number) => void = () => {}) {
+function renderPanel(
+    annotations: PdfAnnotationInfo[],
+    scrollToAnnotation: (id: string, page: number) => void = () => {},
+    copyReference: (id: string, page: number) => void = () => {}
+) {
     // The surrounding RightPanelWidget reads which panels the user collapsed from the options.
     options.set("rightPaneCollapsedItems", JSON.stringify([]));
 
     const container = document.createElement("div");
     document.body.append(container);
     shown.note = pdfNote();
-    shown.annotations = { annotations, scrollToAnnotation };
+    shown.annotations = { annotations, scrollToAnnotation, copyReference };
     render(<PdfAnnotations />, container);
     return container;
 }
@@ -72,7 +81,7 @@ describe("PdfAnnotations", () => {
 
         options.set("rightPaneCollapsedItems", JSON.stringify([]));
         shown.note = { type: "text", mime: "text/html" } as unknown as FNote;
-        shown.annotations = { annotations: [ annotation({}) ], scrollToAnnotation: () => {} };
+        shown.annotations = { annotations: [ annotation({}) ], scrollToAnnotation: () => {}, copyReference: () => {} };
         const notPdf = document.createElement("div");
         document.body.append(notPdf);
         render(<PdfAnnotations />, notPdf);
@@ -87,6 +96,21 @@ describe("PdfAnnotations", () => {
         expect(row.querySelector(".pdf-annotation-author")?.textContent).toBe("Alice");
         row.click();
         expect(scrollTo).toHaveBeenCalledWith("5R", 3);
+    });
+
+    it("copies a reference to an annotation from its context menu", () => {
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue(undefined);
+        const copyReference = vi.fn();
+        const container = renderPanel([ annotation({ id: "5R", pageNumber: 3 }) ], () => {}, copyReference);
+
+        const row = container.querySelector(".pdf-annotation-item") as HTMLElement;
+        row.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(show).toHaveBeenCalledOnce();
+        const [ item ] = show.mock.calls[0][0].items as { title: string; handler: () => void }[];
+        expect(item.title).toBe("pdf.copy_reference({})");
+        item.handler();
+        expect(copyReference).toHaveBeenCalledWith("5R", 3);
+        show.mockRestore();
     });
 
     it("falls back to a generic label and icon for a kind it has no specific ones for", () => {

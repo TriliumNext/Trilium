@@ -26,7 +26,7 @@
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
-    "katex": "0.18.10"
+    "katex": "0.19.0"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",

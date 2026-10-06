@@ -15,7 +15,7 @@ Unlike other Collection view types, the Calendar view also allows some kind of i
 
 ## Creating a calendar
 
-Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ and look for _Calendar_.
+Right click on an existing note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → _Calendar_.
 
 ## Creating a new event/note
 

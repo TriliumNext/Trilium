@@ -1,13 +1,15 @@
 import {
     addListToDropdown, Bold, ButtonView, type ClassicEditor, Collection, createDropdown,
-    type DropdownMenuNestedMenuView, DropdownView, Essentials, Italic,
-    type ListDropdownItemDefinition, ListSeparatorView, type Locale, Paragraph, Plugin,
-    SplitButtonView, type ToolbarView, UIModel, View
+    DropdownView, type Editor, Essentials, Italic, type ListDropdownItemDefinition, type Locale,
+    Paragraph, Plugin, SplitButtonView, type ToolbarView, UIModel, View
 } from "ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../test/editor-kit.js";
-import ToolbarGroupMenu from "./toolbar_group_menu.js";
+import ToolbarGroupMenu, {
+    type ToolbarGroupMenuEntry, type ToolbarGroupMenuHost, type ToolbarGroupMenuItem,
+    type ToolbarGroupMenuRequest
+} from "./toolbar_group_menu.js";
 
 const insertedSamples: string[] = [];
 const blankInserts = vi.fn();
@@ -59,8 +61,7 @@ class SampleDropdown extends Plugin {
             dropdown.on("change:isOpen", (evt, name, isOpen) => {
                 if (isOpen) {
                     items.clear();
-                    const model = new UIModel({ label: now, withText: true });
-                    items.add({ type: "button", model });
+                    items.add({ type: "button", model: new UIModel({ label: now, withText: true }) });
                 }
             });
 
@@ -76,6 +77,7 @@ class SampleDropdown extends Plugin {
             items.add({ type: "separator" });
             items.add({ type: "button", model: new UIModel({ label: "First", withText: true }) });
             items.add({ type: "separator" });
+            items.add({ type: "separator" });
             items.add({ type: "button", model: new UIModel({ withText: true }) });
             items.add({
                 type: "group",
@@ -85,6 +87,7 @@ class SampleDropdown extends Plugin {
                     model: new UIModel({ label: "Inside", withText: true })
                 }])
             });
+            items.add({ type: "separator" });
             addListToDropdown(dropdown, items);
 
             return dropdown;
@@ -97,7 +100,19 @@ class SampleDropdown extends Plugin {
             return view;
         });
 
-        // A dropdown with no list of its own: nothing to open onto, so it stays a plain row.
+        // A dropdown whose button carries an icon and no label.
+        this.editor.ui.componentFactory.add("iconOnly", (locale: Locale) => {
+            const dropdown = createDropdown(locale);
+            dropdown.buttonView.set({ icon: "<svg />" });
+
+            const items = new Collection<ListDropdownItemDefinition>();
+            items.add({ type: "button", model: new UIModel({ label: "Row", withText: true }) });
+            addListToDropdown(dropdown, items);
+
+            return dropdown;
+        });
+
+        // A dropdown with no list of its own, which the menu has no rows to draw for.
         this.editor.ui.componentFactory.add("panelOnly", (locale: Locale) => {
             const dropdown = createDropdown(locale);
             dropdown.buttonView.set({ label: "Panel only", icon: "<svg />" });
@@ -116,204 +131,277 @@ const MENU_GROUP = {
 const PLAIN_GROUP = { label: "Plain", icon: "text", items: ["bold", "italic"] };
 const PLUGINS = [Essentials, Paragraph, Bold, Italic, SampleDropdown, ToolbarGroupMenu];
 
+/** A host that records what it is asked to show, as the client's `Menu` would draw it. */
+function createHost() {
+    const requests: ToolbarGroupMenuRequest[] = [];
+    const host = {
+        show: vi.fn((request: ToolbarGroupMenuRequest) => {
+            requests.push(request);
+        }),
+        hide: vi.fn(),
+        destroy: vi.fn()
+    } satisfies ToolbarGroupMenuHost;
+
+    return {
+        host,
+        config: { toolbarGroupMenu: { host: () => host } },
+        /** The request of the menu shown last. */
+        last() {
+            const request = requests.at(-1);
+            if (!request) {
+                throw new Error("The host was asked to show no menu.");
+            }
+            return request;
+        }
+    };
+}
+
 describe("ToolbarGroupMenu", () => {
-    it("opens a group marked with asMenu as a menu of rows, ruled as the group was", async () => {
+    it("hands a group marked with asMenu to the host as entries, ruled as the group was", async () => {
+        const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
+            ...config,
             toolbar: { items: ["bold", MENU_GROUP, PLAIN_GROUP] }
         });
 
-        const menu = openGroup(getToolbar(editor), "Insert");
-        expect(rowLabels(menu)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
+        const dropdown = groupDropdown(getToolbar(editor), "Insert");
+        dropdown.buttonView.fire("open");
 
-        // Each row carries the icon of the toolbar item it stands for, and follows its enabled
-        // state: `bold` is disabled while the editor is read-only, so its row is too.
-        const [bold] = menu.buttons;
+        // The dropdown never opens its own panel; the host's menu opens under its button.
+        expect(dropdown.isOpen).toBe(false);
+        expect(host.show).toHaveBeenCalledTimes(1);
+        expect(last().anchor).toBe(dropdown.buttonView.element);
+        expect(labels(last().items)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
+
+        // Each entry carries the icon and the enabled state of the toolbar item it stands for, as
+        // they are when the menu opens: `bold` is disabled while the editor is read-only.
+        const bold = entry(last().items, "Bold");
         expect(bold.icon).toBeTruthy();
         expect(bold.isEnabled).toBe(true);
+
+        last().onClose(false);
         editor.enableReadOnlyMode("spec");
-        expect(bold.isEnabled).toBe(false);
+        dropdown.buttonView.fire("open");
+        expect(entry(last().items, "Bold").isEnabled).toBe(false);
+
+        // A group not marked opens its own panel, as CKEditor has it.
+        const plain = groupDropdown(getToolbar(editor), "Plain");
+        plain.isOpen = true;
+        expect(plain.isOpen).toBe(true);
+        expect(host.show).toHaveBeenCalledTimes(2);
     });
 
-    it("opens an entry carrying a list of its own as a submenu over that list", async () => {
+    it("describes an entry carrying a list of its own as a submenu, read on each open", async () => {
+        const { config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [MENU_GROUP] }
+            ...config,
+            toolbar: { items: [{ ...MENU_GROUP, items: ["samples", "clock"] }] }
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        const submenu = openSubmenu(dropdown);
-        expect(submenu.buttonView.label).toBe("Insert sample");
-        expect(submenu.buttonView.icon).toBe("<svg />");
-        // `toolbar_group_menu.css` sizes the icons of a panel pinned into the body by this class.
-        expect(submenu.panelView.class).toBe("ck-toolbar-group-menu__panel");
-        expect(itemLabels(submenu.listView.items)).toStrictEqual(["Flowchart", "Sequence"]);
-    });
+        const dropdown = groupDropdown(getToolbar(editor), "Insert");
+        dropdown.isOpen = true;
 
-    it("runs the action of a split button when its submenu's opener is pressed", async () => {
-        const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [MENU_GROUP] }
-        });
+        const samples = entry(last().items, "Insert sample");
+        expect(samples.icon).toBe("<svg />");
+        expect(labels(samples.children ?? [])).toStrictEqual(["Flowchart", "Sequence"]);
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        submenuOf(dropdown).buttonView.fire("execute");
-
+        // A split button runs its own action from the submenu's opener; a plain dropdown only
+        // opens its submenu.
+        samples.run?.();
         expect(blankInserts).toHaveBeenCalled();
-        expect(dropdown.isOpen).toBe(false);
+        expect(entry(last().items, "Clock").run).toBeUndefined();
+
+        // `clock`, like `dateTime`, fills its list as it opens, so each menu reads it afresh.
+        expect(labels(entry(last().items, "Clock").children ?? [])).toStrictEqual(["noon"]);
+        now = "half past";
+        dropdown.isOpen = true;
+        expect(labels(entry(last().items, "Clock").children ?? [])).toStrictEqual(["half past"]);
     });
 
-    it("runs the toolbar item a row stands for, in the menu and in a submenu alike", async () => {
+    it("runs the toolbar item an entry stands for, hiding the menu first", async () => {
+        const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
+            ...config,
             toolbar: { items: [MENU_GROUP] }
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        const menuView = openGroup(getToolbar(editor), "Insert");
+        const dropdown = groupDropdown(getToolbar(editor), "Insert");
+        dropdown.isOpen = true;
+        const order: string[] = [];
+        host.hide.mockImplementation(() => order.push("hide"));
+        editor.commands.get("bold")?.on("execute", () => order.push("bold"));
 
-        const bold = menuView.buttons.find((button) => button.label === "Bold");
-        expect(bold).toBeTruthy();
-        bold?.fire("execute");
+        entry(last().items, "Bold").run?.();
+        expect(order).toStrictEqual(["hide", "bold"]);
         expect(editor.commands.get("bold")?.value).toBe(true);
+        expect(editor.editing.view.document.isFocused).toBe(true);
 
-        submenuRow(openSubmenu(dropdown), "Sequence").fire("execute");
+        dropdown.isOpen = true;
+        const sequence = entry(entry(last().items, "Insert sample").children ?? [], "Sequence");
+        sequence.run?.();
         expect(insertedSamples).toStrictEqual(["Sequence"]);
     });
 
-    it("draws a submenu on each open, so an entry filling its own list stays fresh", async () => {
+    it("toggles the menu from the group's button, and returns focus to it on Escape", async () => {
+        const { host, config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [{ ...MENU_GROUP, items: ["clock"] }] }
+            ...config,
+            toolbar: { items: [MENU_GROUP] }
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        expect(itemLabels(openSubmenu(dropdown).listView.items)).toStrictEqual(["noon"]);
+        const dropdown = groupDropdown(getToolbar(editor), "Insert");
+        dropdown.buttonView.fire("open");
+        dropdown.buttonView.fire("open");
+        expect(host.show).toHaveBeenCalledTimes(1);
+        expect(host.hide).toHaveBeenCalledTimes(1);
 
-        // Reopening the submenu alone is enough: it is what the reader waits in front of.
-        now = "half past";
-        submenuOf(dropdown).isOpen = false;
-        expect(itemLabels(openSubmenu(dropdown).listView.items)).toStrictEqual(["half past"]);
-
-        now = "one";
-        dropdown.isOpen = false;
+        // The ▼ key sets `isOpen` itself, past the button.
         dropdown.isOpen = true;
-        expect(itemLabels(openSubmenu(dropdown).listView.items)).toStrictEqual(["one"]);
+        expect(host.show).toHaveBeenCalledTimes(2);
+
+        // Closed by the host, the menu opens again on the next press rather than toggling shut.
+        last().onClose(true);
+        expect(document.activeElement).toBe(dropdown.buttonView.element);
+        dropdown.buttonView.fire("open");
+        expect(host.show).toHaveBeenCalledTimes(3);
+
+        // A close that comes late, from a menu since replaced, leaves the shown one alone.
+        const first = last();
+        dropdown.buttonView.fire("open");
+        dropdown.buttonView.fire("open");
+        first.onClose(false);
+        dropdown.buttonView.fire("open");
+        expect(host.hide).toHaveBeenCalledTimes(3);
     });
 
-    it("only opens the submenu of an entry that has no action of its own", async () => {
+    it("counts the menu's element as the editor's own while it is shown", async () => {
+        const { config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [{ ...MENU_GROUP, items: ["clock"] }] }
+            ...config,
+            toolbar: { items: [MENU_GROUP] }
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        const submenu = submenuOf(dropdown);
-        submenu.buttonView.fire("execute");
+        groupDropdown(getToolbar(editor), "Insert").isOpen = true;
+        const element = document.createElement("div");
+        document.body.appendChild(element);
+        const pressesReachingDocument = vi.fn();
+        document.addEventListener("mousedown", pressesReachingDocument);
 
-        expect(submenu.isOpen).toBe(true);
-        expect(dropdown.isOpen).toBe(true);
+        last().setElement(element);
+        expect(editor.ui.focusTracker.elements).toContain(element);
+        element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        expect(pressesReachingDocument).not.toHaveBeenCalled();
+
+        last().setElement(null);
+        expect(editor.ui.focusTracker.elements).not.toContain(element);
+        element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        expect(pressesReachingDocument).toHaveBeenCalledTimes(1);
+
+        document.removeEventListener("mousedown", pressesReachingDocument);
+        element.remove();
     });
 
-    it("holds a dropdown that carries a panel of its own in the row, panel and all", async () => {
+    it("keeps the toolbar's overflow dropdown open around the menu, and closes it on a run", async () => {
+        const { config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [{ ...MENU_GROUP, items: ["bold", "panelOnly"] }] }
+            ...config,
+            toolbar: { items: ["bold", "italic", MENU_GROUP] }
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        expect(openGroup(getToolbar(editor), "Insert").menus).toStrictEqual([]);
-
-        const mounted = rowChildren(dropdown).at(-1);
-        expect(mounted).toBeInstanceOf(DropdownView);
-        if (!(mounted instanceof DropdownView)) {
-            return;
+        // The suite loads no editor stylesheet, so the items would wrap rather than overflow.
+        const style = document.createElement("style");
+        style.textContent = ".ck.ck-toolbar, .ck.ck-toolbar__items { display: flex; flex-wrap: nowrap; }";
+        document.head.appendChild(style);
+        const toolbar = getToolbar(editor);
+        if (toolbar.element) {
+            toolbar.element.style.width = "60px";
         }
-
-        // Its panel opens from inside the menu, where firing the detached dropdown could only have
-        // opened it on the strip the menu replaced.
-        expect(mounted.buttonView.withText).toBe(true);
-        mounted.isOpen = true;
-        expect(mounted.panelView.isVisible).toBe(true);
-
-        // A redraw leaves it alive: it belongs to the group, not to the menu drawn over it.
-        dropdown.isOpen = false;
-        dropdown.isOpen = true;
-        expect(rowChildren(dropdown).at(-1)).toBe(mounted);
-    });
-
-    it("hands the keyboard to a mounted control when its row takes focus", async () => {
-        const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [{ ...MENU_GROUP, items: ["panelOnly"] }] }
+        const overflow = await vi.waitFor(() => {
+            const found = [...toolbar.children].find((child): child is DropdownView =>
+                child instanceof DropdownView && child.class?.includes("ck-toolbar__grouped-dropdown") === true);
+            if (!found) {
+                throw new Error("The toolbar grouped no items yet.");
+            }
+            return found;
         });
 
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-        const mounted = rowChildren(dropdown).at(-1);
-        expect(mounted).toBeInstanceOf(DropdownView);
-        if (!(mounted instanceof DropdownView)) {
-            return;
-        }
+        overflow.isOpen = true;
+        groupDropdown(toolbar, "Insert").isOpen = true;
+        const element = document.createElement("div");
+        document.body.appendChild(element);
+        last().setElement(element);
+        expect(overflow.focusTracker.elements).toContain(element);
 
-        // The row goes on naming the button that stood there as its `childView`, which only the
-        // hover behaviour reads, and only to recognize a submenu. Focus takes the other road:
-        // `ListItemView#focus()` reaches for `children.first`, which is the control itself.
-        const [row] = [...dropdown.menuView?.items ?? []] as Array<{ childView?: unknown }>;
-        expect(row?.childView).not.toBe(mounted);
+        entry(last().items, "Italic").run?.();
+        expect(overflow.isOpen).toBe(false);
+        expect(editor.commands.get("italic")?.value).toBe(true);
 
-        dropdown.menuView?.focus();
-        expect(document.activeElement).toBe(mounted.buttonView.element);
+        last().setElement(null);
+        element.remove();
+        style.remove();
     });
 
-    it("draws a rule where the list has one, never at its head, and names every row", async () => {
+    it("passes over items it has no entry for, and rules that would lead, end or double", async () => {
+        const { config, last } = createHost();
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: [{ ...MENU_GROUP, items: ["oddList"] }] }
-        });
-
-        const dropdown = openDropdown(getToolbar(editor), "Insert");
-
-        // `listEntriesOf()` skips a `ListItemGroupView`, and `labelOf()` names an unlabeled
-        // button "", which still runs on execute.
-        const rows = itemLabels(openSubmenu(dropdown).listView.items);
-        expect(rows).toStrictEqual(["First", "—", ""]);
-    });
-
-    // `_cleanSeparatorsAndLineBreaks()` drops a leading `|`, so `plan.definition` can only be
-    // empty at a separator when `planGroupMenu()` skipped the item before it.
-    it("passes over an item it has no row for, and the rule that follows it", async () => {
-        const editor = await createTestEditor(PLUGINS, {
+            ...config,
             toolbar: {
-                items: [{ ...MENU_GROUP, items: ["plainView", "|", "bold", "-", "italic"] }]
+                items: [{
+                    ...MENU_GROUP,
+                    items: [
+                        "plainView", "|", "bold", "-", "panelOnly", "|", "italic", "oddList",
+                        "iconOnly", "|", "plainView"
+                    ]
+                }]
             }
         });
 
-        const menu = openGroup(getToolbar(editor), "Insert");
-        expect(rowLabels(menu)).toStrictEqual(["Bold", "Italic"]);
+        groupDropdown(getToolbar(editor), "Insert").isOpen = true;
+        expect(labels(last().items)).toStrictEqual(["Bold", "—", "Italic", "Odd list", ""]);
+        // A list's groups are passed over, and an unlabeled button or dropdown is named "".
+        expect(labels(entry(last().items, "Odd list").children ?? [])).toStrictEqual(["First", "—", ""]);
+        expect(labels(entry(last().items, "").children ?? [])).toStrictEqual(["Row"]);
     });
 
     it("converts a group of the block toolbar, filled after the plugin is set up", async () => {
         const { BlockToolbar } = await import("ckeditor5");
+        const { config, last } = createHost();
         const editor = await createTestEditor([BlockToolbar, ...PLUGINS], {
+            ...config,
             toolbar: { items: ["bold"] },
             blockToolbar: [MENU_GROUP]
         });
 
-        const menu = openGroup(editor.plugins.get(BlockToolbar).toolbarView, "Insert");
-        expect(rowLabels(menu)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
+        groupDropdown(editor.plugins.get(BlockToolbar).toolbarView, "Insert").isOpen = true;
+        expect(labels(last().items)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
     });
 
     // A real `BalloonEditor`, whose UI view carries no fixed bar at all: the group is reached
     // through the plugin holding the selection toolbar, and nowhere else.
-    it("converts a group of the selection balloon", async () => {
+    it("converts a group of the selection balloon, and destroys the host with the editor", async () => {
         const { BalloonEditor, BalloonToolbar } = await import("ckeditor5");
-        const editor = await createTestEditorOf(BalloonEditor, PLUGINS, {
+        const { host, config, last } = createHost();
+        const editor: Editor = await createTestEditorOf(BalloonEditor, PLUGINS, {
+            ...config,
             toolbar: [MENU_GROUP]
         });
 
         expect((editor.ui.view as { toolbar?: ToolbarView }).toolbar).toBeUndefined();
-        const menu = openGroup(editor.plugins.get(BalloonToolbar).toolbarView, "Insert");
-        expect(rowLabels(menu)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
+        groupDropdown(editor.plugins.get(BalloonToolbar).toolbarView, "Insert").isOpen = true;
+        expect(labels(last().items)).toStrictEqual(["Bold", "—", "Italic", "Insert sample"]);
+
+        await editor.destroy();
+        expect(host.destroy).toHaveBeenCalled();
     });
 
-    it("leaves every group alone when none is marked", async () => {
+    it("leaves a group marked with asMenu to CKEditor when no host is configured", async () => {
         const editor = await createTestEditor(PLUGINS, {
-            toolbar: { items: ["bold", PLAIN_GROUP] }
+            toolbar: { items: [MENU_GROUP] }
         });
 
-        expect(editor.plugins.has(ToolbarGroupMenu)).toBe(true);
-        expect(openDropdown(getToolbar(editor), "Plain").menuView).toBeUndefined();
+        const dropdown = groupDropdown(getToolbar(editor), "Insert");
+        dropdown.isOpen = true;
+        expect(dropdown.isOpen).toBe(true);
     });
 });
 
@@ -321,85 +409,27 @@ function getToolbar(editor: ClassicEditor) {
     return (editor.ui.view as { toolbar: ToolbarView }).toolbar;
 }
 
-function openDropdown(toolbar: ToolbarView, label: string) {
+function groupDropdown(toolbar: ToolbarView, label: string) {
     const dropdown = [...toolbar.items].find((item): item is DropdownView =>
         item instanceof DropdownView && item.buttonView.label === label);
     if (!dropdown) {
         throw new Error(`No "${label}" group dropdown in the toolbar.`);
     }
 
-    dropdown.isOpen = true;
     return dropdown;
 }
 
-/** Open the group dropdown carrying `label` and return the menu built in its panel. */
-function openGroup(toolbar: ToolbarView, label: string) {
-    const menuView = openDropdown(toolbar, label).menuView;
-    if (!menuView) {
-        throw new Error(`The "${label}" group built no menu.`);
+/** The labels of `items`, with a rule written as an em dash. */
+function labels(items: ToolbarGroupMenuItem[]) {
+    return items.map((item) => (item.kind === "separator" ? "—" : item.label));
+}
+
+function entry(items: ToolbarGroupMenuItem[], label: string) {
+    const found = items.find((item): item is ToolbarGroupMenuEntry =>
+        item.kind === "entry" && item.label === label);
+    if (!found) {
+        throw new Error(`No "${label}" entry in the menu.`);
     }
 
-    return menuView;
-}
-
-function submenuOf(dropdown: DropdownView) {
-    const [submenu] = dropdown.menuView?.menus ?? [];
-    if (!submenu) {
-        throw new Error("The menu holds no submenu.");
-    }
-
-    return submenu;
-}
-
-/** Open the menu's one submenu, which is what draws its rows. */
-function openSubmenu(dropdown: DropdownView) {
-    const submenu = submenuOf(dropdown);
-    submenu.isOpen = true;
-    return submenu;
-}
-
-function submenuRow(submenu: DropdownMenuNestedMenuView, label: string) {
-    for (const item of submenu.listView.items) {
-        const child = (item as { children?: { first?: unknown } }).children?.first;
-        if (child instanceof ButtonView && child.label === label) {
-            return child;
-        }
-    }
-
-    throw new Error(`No "${label}" row in the submenu.`);
-}
-
-/** What each row of the menu holds: a button, a submenu, or a control mounted into the row. */
-function rowChildren(dropdown: DropdownView) {
-    return [...dropdown.menuView?.items ?? []]
-        .map((item) => (item as { children?: { first?: unknown } }).children?.first);
-}
-
-/** The labels the menu shows, top level only, with a rule written as an em dash. */
-function rowLabels(menuView: { items: Iterable<unknown> }) {
-    return itemLabels(menuView.items);
-}
-
-function itemLabels(items: Iterable<unknown>) {
-    const labels: string[] = [];
-
-    for (const item of items) {
-        if (item instanceof ListSeparatorView) {
-            labels.push("—");
-            continue;
-        }
-
-        const child = (item as { children?: { first?: unknown } }).children?.first;
-        if (child instanceof ButtonView) {
-            labels.push(child.label ?? "");
-        } else if (isNestedMenu(child)) {
-            labels.push(child.buttonView.label ?? "");
-        }
-    }
-
-    return labels;
-}
-
-function isNestedMenu(view: unknown): view is DropdownMenuNestedMenuView {
-    return !!view && typeof view === "object" && "buttonView" in view && "listView" in view;
+    return found;
 }

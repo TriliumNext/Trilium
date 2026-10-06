@@ -2,8 +2,10 @@ import { useEffect, useRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
+import type { NoteContextDataMap } from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
+import { copyReferenceWithToast } from "../../../services/clipboard_ext";
 import open from "../../../services/open";
 import options from "../../../services/options";
 import { useViewModeConfig } from "../../collections/NoteList";
@@ -16,15 +18,75 @@ import PdfViewer, { getPdfUrl } from "./PdfViewer";
  */
 const SAVE_INTERVAL = 5_000;
 
-export default function PdfPreview({ note, blob, componentId, noteContext }: {
+/**
+ * The form of the id pdf.js gives an annotation stored in the document: its object reference,
+ * such as `12R`. An annotation drawn in this session has an editor id instead, which the next load
+ * of the document does not reuse.
+ */
+const STORED_ANNOTATION_ID = /^\d+R\d*$/;
+
+type PdfContextDataKey = "toc" | "pdfPages" | "pdfAttachments" | "pdfAnnotations" | "pdfLayers";
+
+export default function PdfPreview({ note, blob, componentId, noteContext, isVisible = true }: {
     note: FNote;
     noteContext: NoteContext;
     blob: FBlob | null | undefined;
     componentId: string | undefined;
+    /** False while `NoteDetail` keeps the viewer mounted but the pane shows another note. */
+    isVisible?: boolean;
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const historyConfig = useViewModeConfig<HistoryData>(note, "pdfHistory");
+    const isVisibleRef = useRef(isVisible);
+    isVisibleRef.current = isVisible;
+    /**
+     * What the viewer last sent for each sidebar panel. `NoteContext.setNote()` clears the context
+     * data when the pane leaves the note, and a viewer kept mounted has loaded already, so it does
+     * not send its data again on the way back.
+     */
+    const publishedRef = useRef(new Map<PdfContextDataKey, unknown>());
+
+    function publish<K extends PdfContextDataKey>(key: K, value: NoteContextDataMap[K]) {
+        publishedRef.current.set(key, value);
+        if (isShown()) {
+            noteContext.setContextData(key, value);
+        }
+    }
+
+    /**
+     * Whether the pane shows this viewer's PDF. `NoteDetailWrapper` passes `isVisible` at once
+     * and the next note's props a render later, so a viewer kept from another PDF is briefly
+     * visible while `noteContext.note` is already the new one.
+     */
+    function isShown() {
+        return isVisibleRef.current && noteContext.note?.noteId === note.noteId;
+    }
+
+    function getPublished<K extends PdfContextDataKey>(key: K) {
+        return publishedRef.current.get(key) as NoteContextDataMap[K] | undefined;
+    }
+
+    /**
+     * Scrolls to the page or annotation a link opened the note at, once the viewer is shown and has
+     * listed its annotations, which it does once it can scroll to one.
+     */
+    function revealLinkTarget() {
+        const viewScope = noteContext.viewScope;
+        if (!isShown() || !publishedRef.current.has("pdfAnnotations") || !viewScope?.page) return;
+
+        const pageNumber = Number.parseInt(viewScope.page, 10);
+        const annotationId = viewScope.annotation;
+        viewScope.page = undefined;
+        viewScope.annotation = undefined;
+        if (!(pageNumber >= 1)) return;
+
+        iframeRef.current?.contentWindow?.postMessage({
+            type: "trilium-scroll-to-annotation",
+            annotationId,
+            pageNumber
+        }, window.location.origin);
+    }
 
     const spacedUpdate = useBlobEditorSpacedUpdate({
         note,
@@ -57,6 +119,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
         },
         onContentChange() {
             if (iframeRef.current?.contentWindow) {
+                publishedRef.current.clear();
                 iframeRef.current.contentWindow.location.reload();
             }
         },
@@ -91,7 +154,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                 if (event.data.data) {
                     // Convert PDF outline to HeadingContext format
                     const headings = convertPdfOutlineToHeadings(event.data.data);
-                    noteContext.setContextData("toc", {
+                    publish("toc", {
                         headings,
                         activeHeadingId: null,
                         scrollToHeading: (heading) => {
@@ -103,7 +166,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                     });
                 } else {
                     // No ToC available, use empty headings
-                    noteContext.setContextData("toc", {
+                    publish("toc", {
                         headings: [],
                         activeHeadingId: null,
                         scrollToHeading: () => {}
@@ -112,9 +175,9 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             }
 
             if (event.data.type === "pdfjs-viewer-active-heading") {
-                const currentToc = noteContext.getContextData("toc");
+                const currentToc = getPublished("toc");
                 if (currentToc) {
-                    noteContext.setContextData("toc", {
+                    publish("toc", {
                         ...currentToc,
                         activeHeadingId: event.data.headingId
                     });
@@ -122,7 +185,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             }
 
             if (event.data.type === "pdfjs-viewer-page-info") {
-                noteContext.setContextData("pdfPages", {
+                publish("pdfPages", {
                     totalPages: event.data.totalPages,
                     currentPage: event.data.currentPage,
                     scrollToPage: (page: number) => {
@@ -136,14 +199,17 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                             type: "trilium-request-thumbnail",
                             pageNumber: page
                         }, window.location.origin);
+                    },
+                    copyReference: (page: number) => {
+                        void copyReferenceWithToast(pdfReference(getNotePath(), page));
                     }
                 });
             }
 
             if (event.data.type === "pdfjs-viewer-current-page") {
-                const currentPages = noteContext.getContextData("pdfPages");
+                const currentPages = getPublished("pdfPages");
                 if (currentPages) {
-                    noteContext.setContextData("pdfPages", {
+                    publish("pdfPages", {
                         ...currentPages,
                         currentPage: event.data.currentPage
                     });
@@ -164,7 +230,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             }
 
             if (event.data.type === "pdfjs-viewer-attachments") {
-                noteContext.setContextData("pdfAttachments", {
+                publish("pdfAttachments", {
                     attachments: event.data.attachments,
                     downloadAttachment: (id: string) => {
                         iframeRef.current?.contentWindow?.postMessage({
@@ -176,7 +242,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             }
 
             if (event.data.type === "pdfjs-viewer-annotations") {
-                noteContext.setContextData("pdfAnnotations", {
+                publish("pdfAnnotations", {
                     annotations: event.data.annotations,
                     scrollToAnnotation: (annotationId: string, pageNumber: number) => {
                         iframeRef.current?.contentWindow?.postMessage({
@@ -184,12 +250,17 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
                             annotationId,
                             pageNumber
                         }, window.location.origin);
+                    },
+                    copyReference: (annotationId: string, pageNumber: number) => {
+                        void copyReferenceWithToast(pdfReference(getNotePath(), pageNumber, annotationId));
                     }
                 });
+
+                revealLinkTarget();
             }
 
             if (event.data.type === "pdfjs-viewer-layers") {
-                noteContext.setContextData("pdfLayers", {
+                publish("pdfLayers", {
                     layers: event.data.layers,
                     toggleLayer: (layerId: string, visible: boolean) => {
                         iframeRef.current?.contentWindow?.postMessage({
@@ -202,11 +273,40 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             }
         }
 
+        function getNotePath() {
+            return noteContext.notePath ?? note.noteId;
+        }
+
         window.addEventListener("message", handleMessage);
         return () => {
             window.removeEventListener("message", handleMessage);
         };
     }, [ note, historyConfig, componentId, blob, noteContext, isReadOnly, spacedUpdate ]);
+
+    // A different PDF reloads the viewer, which sends everything again.
+    useEffect(() => () => publishedRef.current.clear(), [ note.noteId ]);
+
+    useEffect(() => {
+        if (!isShown()) return;
+        for (const key of publishedRef.current.keys()) {
+            republish(key);
+        }
+        revealLinkTarget();
+    }, [ isVisible ]);
+
+    function republish<K extends PdfContextDataKey>(key: K) {
+        const value = getPublished(key);
+        if (value) {
+            noteContext.setContextData(key, value);
+        }
+    }
+
+    // A link to the PDF this pane already shows changes no content, so nothing else re-reads it.
+    useTriliumEvent("noteSwitched", ({ noteContext: switchedContext }) => {
+        if (switchedContext.ntxId !== noteContext.ntxId) return;
+        if (switchedContext.note?.noteId !== note.noteId) return;
+        revealLinkTarget();
+    });
 
     useTriliumEvent("customDownload", async ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
@@ -257,6 +357,18 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             ntxId={noteContext.ntxId}
         />
     );
+}
+
+/**
+ * The link that opens a PDF note at `pageNumber`, and at the annotation `annotationId` on it when
+ * the document already stores that annotation.
+ */
+export function pdfReference(notePath: string, pageNumber: number, annotationId?: string) {
+    let reference = `#${notePath}?page=${pageNumber}`;
+    if (annotationId && STORED_ANNOTATION_ID.test(annotationId)) {
+        reference += `&annotation=${encodeURIComponent(annotationId)}`;
+    }
+    return reference;
 }
 
 interface PdfHeading {

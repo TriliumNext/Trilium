@@ -25,7 +25,14 @@ Depending on the note type, the inline title will also present some more interac
 
 ### New note type switcher
 
-When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note is created, a note type switcher will appear below the _Inline title_. Apart from changing the note type, it's also possible to apply a [template](../../Advanced%20Usage/Templates.md).
+When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note is created, a note type switcher will appear below the _Inline title_. Apart from changing the note type, it's also possible to apply a [template](../../Advanced%20Usage/Templates.md):
+
+*   _Markdown_ and _Canvas_ switch the note to that type in one click.
+*   _Code_ lists the scripting notes (_Custom CSS_, _Widget_ and _Backend script_), then the enabled code languages.
+*   _Collection_ and _Template_ list the collections and the templates.
+*   _All types_ offers everything at once, the shortcuts above included: the same menu as _Insert note after_ in the <a class="reference-link" href="Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, with every note type and template grouped the same way.
+
+Typing while the _Code_, _Template_ or _All types_ menu is open narrows it down to the matching entries.
 
 The switcher will disappear as soon as a text is entered.
 

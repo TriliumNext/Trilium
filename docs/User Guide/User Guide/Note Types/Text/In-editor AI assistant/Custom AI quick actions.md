@@ -5,9 +5,9 @@ _Quick actions_ are a feature of the <a class="reference-link" href="../In-edit
 
 In the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>: 
 
-1.  Right click a note where to place the text snippet.
+1.  Right-click the note where you want to place the quick action.
 2.  Select _Insert child note_.
-3.  Select _AI Quick Action_.
+3.  Select _More_ → _AI Quick Action_. The entry appears only when AI is enabled.
 
 Afterwards, simply type in the content of the note the desired prompt. The text can be formatted in the same manner as a normal text note and it will be passed to the LLM as Markdown.
 

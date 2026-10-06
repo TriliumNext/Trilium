@@ -432,7 +432,6 @@
     "copy-note-path-to-clipboard": "Copia il percorso della nota negli appunti",
     "protect-subtree": "Proteggi sottoalbero",
     "unprotect-subtree": "Rimuovi protezione dal sottoalbero",
-    "copy-clone": "Copia / clona",
     "clone-to": "Clona in...",
     "paste-into": "Incolla in",
     "paste-after": "Incolla dopo",
@@ -1071,8 +1070,7 @@
     "search_placeholder": "cerca percorso per nome (predefinito se vuoto)",
     "modal_title": "Scegli il tipo di nota",
     "modal_body": "Scegli il tipo / modello della nuova nota:",
-    "templates": "Modelli",
-    "builtin_templates": "Modelli incorporati"
+    "templates": "Modelli"
   },
   "prompt": {
     "title": "Richiesta",
@@ -2421,7 +2419,6 @@
     "beta-feature": "Beta",
     "task-list": "Elenco delle attività",
     "new-feature": "Nuovo",
-    "collections": "Collezioni",
     "ai-chat": "Chat con IA",
     "spreadsheet": "Foglio di calcolo",
     "llm-chat": "Chat con IA",
@@ -2502,7 +2499,6 @@
     "created_on": "Creato il <Value />",
     "last_modified": "Modificato il <Value />",
     "note_type_switcher_label": "Passa da {{type}} a:",
-    "note_type_switcher_others": "Altro tipo di nota",
     "note_type_switcher_templates": "Modello",
     "note_type_switcher_collection": "Collezione",
     "edited_notes": "Note modificate in questo giorno",

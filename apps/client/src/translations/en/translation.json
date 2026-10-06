@@ -423,8 +423,7 @@
     "search_placeholder": "search path by name (default if empty)",
     "modal_title": "Choose note type",
     "modal_body": "Choose note type / template of the new note:",
-    "templates": "Templates",
-    "builtin_templates": "Built-in Templates"
+    "templates": "Templates"
   },
   "password_not_set": {
     "title": "Password is not set",
@@ -2692,20 +2691,23 @@
     "copy-note-path-to-clipboard": "Copy note path to clipboard",
     "protect-subtree": "Protect subtree",
     "unprotect-subtree": "Unprotect subtree",
-    "copy-clone": "Copy / clone",
     "clone-to": "Clone to...",
     "cut": "Cut",
     "move-to": "Move to...",
     "paste-into": "Paste into",
     "paste-after": "Paste after",
     "duplicate": "Duplicate",
+    "duplicate-with-children": "Note and its children",
+    "duplicate-note-only": "This note only",
     "export": "Export",
     "import-into-note": "Import into note",
     "apply-bulk-actions": "Apply bulk actions",
     "converted-to-attachments_one": "{{count}} note has been converted to attachments.",
     "converted-to-attachments_other": "{{count}} notes have been converted to attachments.",
     "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
-    "open-in-popup": "Quick edit"
+    "open-in-popup": "Quick edit",
+    "clone": "Clone",
+    "clone-tooltip": "Clone, to have the same note in two places at once"
   },
   "shared_info": {
     "shared_publicly": "This note is shared publicly on {{- link}}.",
@@ -2744,10 +2746,11 @@
     "llm-chat": "AI Chat",
     "task-list": "Task List",
     "new-feature": "New",
-    "collections": "Collections",
     "spreadsheet": "Spreadsheet",
     "note-types": "Note types",
-    "built-in-templates": "Built-in templates"
+    "built-in-templates": "Built-in templates",
+    "more": "More",
+    "widget-preset-sample": "Hello from a widget"
   },
   "template_selection": {
     "add-existing": "Add existing template",
@@ -3021,11 +3024,11 @@
     "created_on": "Created on <Value />",
     "last_modified": "Modified on <Value />",
     "note_type_switcher_label": "Switch from {{type}} to:",
-    "note_type_switcher_others": "Other note type",
     "note_type_switcher_templates": "Template",
     "note_type_switcher_collection": "Collection",
     "edited_notes": "Notes edited on this day",
-    "promoted_attributes": "Promoted attributes"
+    "promoted_attributes": "Promoted attributes",
+    "note_type_switcher_all": "All types"
   },
   "search_result": {
     "no_notes_found": "No notes have been found for given search parameters.",
@@ -4180,7 +4183,10 @@
     "annotation_drawing": "Drawing on page {{pageNumber}}",
     "annotation_highlight": "Highlight on page {{pageNumber}}",
     "annotation_note": "Note on page {{pageNumber}}",
-    "annotation_text_box": "Text box on page {{pageNumber}}"
+    "annotation_text_box": "Text box on page {{pageNumber}}",
+    "copy_reference": "Copy reference",
+    "page_reference": "Page {{pageNumber}}",
+    "annotation_reference": "Annotation on page {{pageNumber}}"
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"
@@ -4749,5 +4755,11 @@
   },
   "split_button": {
     "more_actions": "More actions"
+  },
+  "menu": {
+    "no_matches": "No matches",
+    "filter": "Filter",
+    "filter_placeholder": "Type to filter…",
+    "back": "Back"
   }
 }

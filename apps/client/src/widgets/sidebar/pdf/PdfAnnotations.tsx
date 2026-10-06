@@ -2,6 +2,7 @@ import "./PdfAnnotations.css";
 
 import clsx from "clsx";
 
+import contextMenu from "../../../menus/context_menu";
 import { t } from "../../../services/i18n";
 import { useActiveNoteContext, useGetContextData, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
@@ -36,6 +37,7 @@ export default function PdfAnnotations() {
                         key={annotation.id}
                         annotation={annotation}
                         onNavigate={annotationsData.scrollToAnnotation}
+                        onCopyReference={annotationsData.copyReference}
                     />
                 ))}
             </div>
@@ -45,10 +47,12 @@ export default function PdfAnnotations() {
 
 function PdfAnnotationItem({
     annotation,
-    onNavigate
+    onNavigate,
+    onCopyReference
 }: {
     annotation: PdfAnnotationInfo;
     onNavigate: (annotationId: string, pageNumber: number) => void;
+    onCopyReference: (annotationId: string, pageNumber: number) => void;
 }) {
     // Contents on a highlight or a drawing is a remark somebody attached to it, so the row reads
     // as a comment. A free-text box's contents are the box itself, so it keeps its own icon.
@@ -67,6 +71,7 @@ function PdfAnnotationItem({
                 isDark(annotation.color) && "tinted-dark"
             )}
             onClick={() => onNavigate(annotation.id, annotation.pageNumber)}
+            onContextMenu={(e) => showCopyReferenceMenu(e, () => onCopyReference(annotation.id, annotation.pageNumber))}
             style={annotation.color ? { backgroundColor: annotation.color } : undefined}
         >
             <Icon icon={icon} />
@@ -100,6 +105,17 @@ export function isDark(color: string | null) {
     const [ r, g, b ] = rgb.slice(1).map((component) => parseInt(component, 16));
     // Rec. 601 luma, the usual stand-in for perceived brightness.
     return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+}
+
+/** Opens the context menu of a page or an annotation in the PDF sidebar. */
+export function showCopyReferenceMenu(e: MouseEvent, copyReference: () => void) {
+    e.preventDefault();
+    void contextMenu.show({
+        x: e.pageX,
+        y: e.pageY,
+        items: [ { title: t("pdf.copy_reference"), uiIcon: "bx bx-copy", handler: copyReference } ],
+        selectMenuItemHandler: () => {}
+    });
 }
 
 /** Names an annotation that carries no text of its own, by kind and page. */

@@ -16,6 +16,7 @@ import { expandAncestorDetails } from "../../services/collapsible";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import keyboard_actions from "../../services/keyboard_actions";
+import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { parseNavigationStateFromUrl, ViewScope } from "../../services/link";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../services/note_types";
 import options, { type OptionValue } from "../../services/options";
@@ -1421,7 +1422,9 @@ export function useStaticTooltipWithKeyboardShortcut(
 ) {
     const [ keyboardShortcut, setKeyboardShortcut ] = useState<string[]>();
     useStaticTooltip(elRef, {
-        title: keyboardShortcut?.length ? `${title} (${keyboardShortcut?.join(",")})` : title,
+        title: keyboardShortcut?.length
+            ? `${title} (${keyboardShortcut.map((shortcut) => joinShortcut(formatShortcut(shortcut))).join(", ")})`
+            : title,
         ...opts
     });
 

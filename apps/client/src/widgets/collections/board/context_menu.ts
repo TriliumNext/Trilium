@@ -76,8 +76,7 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
         ...(isInbox ? [ {
             title: t("board_view.inbox-nested"),
             uiIcon: "bx bx-subdirectory-right",
-            // At the trailing edge, so the entry keeps its own icon in front.
-            trailingIcon: column.nested ? "bx bx-check" : undefined,
+            checked: column.nested,
             handler: () => api.setInboxNested(!column.nested)
         } ] : []),
         {
@@ -138,8 +137,7 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
             ...(column.canKeepCollapsed ? [ {
                 title: t("board_view.keep-column-collapsed"),
                 uiIcon: "bx bx-lock-alt",
-                // At the trailing edge, so the entry keeps its own icon in front.
-                trailingIcon: column.keepCollapsed ? "bx bx-check" : undefined,
+                checked: column.keepCollapsed,
                 handler: () => column.onKeepCollapsed(!column.keepCollapsed)
             } ] : []),
             {
@@ -247,7 +245,7 @@ export function openBoardContextMenu(event: ContextMenuEvent, board: BoardMenuTa
             {
                 title: t("board_view.show-archived-notes"),
                 uiIcon: "bx bx-archive",
-                trailingIcon: board.archivedShown ? "bx bx-check" : undefined,
+                checked: board.archivedShown,
                 handler: () => board.onShowArchived(!board.archivedShown)
             },
             { kind: "separator" },
@@ -447,7 +445,7 @@ function buildColumnItems(api: Api, target: NoteMenuTarget): MenuItem<CommandNam
         iconColorClass: api.getColumnColorClass(name),
         // The one they are already under is shown rather than hidden, so the list reads as the
         // whole set of columns and says which of them the cards belong to.
-        trailingIcon: name === current ? "bx bx-check" : undefined,
+        checked: name === current,
         className: name === current ? "board-current-column" : undefined,
         badges: api.isColumnArchived(name)
             ? [ { title: t("board_view.archived-badge") } ]

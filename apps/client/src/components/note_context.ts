@@ -58,6 +58,8 @@ export interface NoteContextDataMap {
         currentPage: number;
         scrollToPage(page: number): void;
         requestThumbnail(page: number): void;
+        /** Copies a reference that opens the PDF at `page`. */
+        copyReference(page: number): void;
     };
     pdfAttachments: {
         attachments: PdfAttachment[];
@@ -70,6 +72,8 @@ export interface NoteContextDataMap {
     pdfAnnotations: {
         annotations: PdfAnnotationInfo[];
         scrollToAnnotation(annotationId: string, pageNumber: number): void;
+        /** Copies a reference that opens the PDF at the annotation. */
+        copyReference(annotationId: string, pageNumber: number): void;
     };
     /** Published by a board, so the right pane can list its columns and scroll the board to one. */
     boardColumns: {

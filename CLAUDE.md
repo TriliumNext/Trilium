@@ -150,6 +150,9 @@ Shared components live in `apps/client/src/widgets/react/` — **always** reuse 
 ### Mobile (Capacitor) app
 `apps/mobile` wraps the standalone WASM build in a Capacitor WebView — no network backend. Its one tab always owns the worker, so the client answers most API calls in-page; what still leaves it (images, fonts, uploads) goes through the service worker on Android, at `https://localhost`, and through `apps/standalone/src/ios-interceptors.ts` on iOS, at `capacitor://localhost`, where no service worker can register. **`iosScheme: "https"` is a no-op and must not be re-added, and the iOS interceptor path is not dead code.** Load the **`developing-capacitor-mobile` skill** before touching `apps/mobile`, `ios-interceptors.ts`, `capacitor_http_handler.ts` or the `capacitor:` branches of `sw.ts`/`main.ts`.
 
+### PDF viewer
+PDF notes render in Mozilla's PDF.js viewer plus Trilium's code from `packages/pdfjs-viewer`, which every app serves from the built `dist` — **rebuild it (`pnpm --filter @triliumnext/pdfjs-viewer build`) after every viewer change**, since no `*:start` script does; load the **`developing-pdf-viewer` skill** before touching the viewer, `Pdf.tsx` or the PDF sidebar panels.
+
 ### Database
 
 SQLite (`better-sqlite3` on Node, `@sqlite.org/sqlite-wasm` on OPFS in standalone) behind `packages/trilium-core/src/services/sql/` (`DatabaseProvider`, prepared-statement cache, transactions). Schema: `packages/trilium-core/src/assets/schema.sql`; migrations: integer-versioned entries in the descending `MIGRATIONS` array in `packages/trilium-core/src/migrations/migrations.ts` (inline SQL or a `NNNN__description.ts` module) — load the **`evolving-the-data-model` skill** before adding a column or migration.
@@ -203,7 +206,7 @@ Use `note.getOwnedAttribute()` for direct, `note.getAttribute()` for inherited.
   - **This rule overrides the file you are editing.** Most comments in the repository predate it and use a literary register — personified subjects, em-dash asides, inverted clauses. Do not match them; they are history, not house style. Code has no voice: a card does not *state*, a row does not *say*, a request does not *stand*, a tool does not *hand over*.
   - Name the identifier instead of alluding to it. Write ``// Erasing changes the note and attachment counts, so `DatabaseInfo` reads them again.`` — not `// Erasing frees pages inside the file rather than shrinking it, so what the card above has to re-read is what the database holds.`
   - **Never comment an absence.** A removal — a prop, a flag, a CSS rule, a branch, a whole widget — is explained by the commit that makes it, not by a note left where the code was: at the call site it defends something the reader cannot see. The same goes for a removal's mirror image: don't annotate a default that was left alone, or an option deliberately not passed. If an absence needs defending in the source, name the code better instead.
-- **CSS comments** never narrate a change (`/* was 8px */`, `/* moved from the toolbar */`) — that is the commit message. Comment only what is non-obvious in place: a browser workaround, a value that must match one elsewhere, a `z-index` in a stacking contract.
+- **Avoid CSS comments.** A rule is read through its selector and properties; a comment explaining why a margin is negative or a selector excludes a class belongs in the commit message. Comment only what no reader can recover from the stylesheet: a browser workaround, a value that must match one in another file, a `z-index` in a stacking contract. Never narrate a change (`/* was 8px */`, `/* moved from the toolbar */`).
 
 ## Testing
 

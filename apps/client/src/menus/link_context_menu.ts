@@ -251,7 +251,7 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
     const editableItems: MenuItem<CommandNames>[] = state.isEditableToggleable ? [ {
         title: t("link_context_menu.editable"),
         uiIcon: "bx bx-edit-alt",
-        trailingIcon: state.isEditable ? CHECK_ICON : undefined,
+        checked: state.isEditable,
         handler: () => runEmbedCommand(embed, "toggleContentEmbedEditable")
     } ] : [];
 
@@ -265,14 +265,14 @@ function getEmbedItems(embed: MenuEmbed): MenuItem<CommandNames>[] {
             title: t("link_context_menu.show_title"),
             uiIcon: "bx bx-window-alt",
             enabled: state.isTitleToggleable,
-            trailingIcon: state.isTitleShown ? CHECK_ICON : undefined,
+            checked: state.isTitleShown,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedTitle")
         },
         {
             title: t("link_context_menu.show_caption"),
             uiIcon: "bx bx-captions",
             enabled: state.isCaptionToggleable,
-            trailingIcon: state.hasCaption ? CHECK_ICON : undefined,
+            checked: state.hasCaption,
             handler: () => runEmbedCommand(embed, "toggleContentEmbedCaption", {
                 focusCaptionOnShow: true
             })

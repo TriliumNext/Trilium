@@ -9,6 +9,19 @@
         flex-shrink: 0;
     }
 
+    .tn-svg-icon {
+        display: inline-flex;
+
+        & > svg {
+            width: 1em;
+            height: 1em;
+        }
+
+        & > svg *:not([fill]) {
+            fill: currentColor;
+        }
+    }
+
     & > span > div:has(> .switch-widget) {
         flex-grow: 1;
     }

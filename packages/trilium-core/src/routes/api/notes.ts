@@ -355,8 +355,9 @@ function changeTitle(req: Request<{ noteId: string }>) {
 
 function duplicateSubtree(req: Request<{ noteId: string; parentNoteId: string }>) {
     const { noteId, parentNoteId } = req.params;
+    const { withChildren } = (req.body ?? {}) as { withChildren?: unknown };
 
-    return noteService.duplicateSubtree(noteId, parentNoteId);
+    return noteService.duplicateSubtree(noteId, parentNoteId, { withChildren: withChildren !== false });
 }
 
 function eraseDeletedNotesNow() {

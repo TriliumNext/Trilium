@@ -1,10 +1,11 @@
 import "./BasicPropertiesTab.css";
 
-import { MimeType, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
+import { getCodeLanguageIcon, MimeType, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
 import { createPortal } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import type { MenuItem } from "../../menus/context_menu";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
 import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
@@ -16,11 +17,13 @@ import protected_session from "../../services/protected_session";
 import server from "../../services/server";
 import sync from "../../services/sync";
 import toast from "../../services/toast";
+import { escapeHtml } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import FormDropdownList from "../react/FormDropdownList";
-import { FormDropdownDivider, FormListBadge, FormListItem } from "../react/FormList";
+import { FormListItem } from "../react/FormList";
 import FormToggle from "../react/FormToggle";
 import HelpButton from "../react/HelpButton";
+import { MenuItemRows } from "../react/Menu";
 import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import Modal from "../react/Modal";
 import { CodeMimeTypesList } from "../type_widgets/options/code_mime_types_list";
@@ -48,6 +51,7 @@ function NoteTypeWidget({ note }: { note?: FNote | null }) {
     const currentNoteType = useNoteProperty(note, "type") ?? undefined;
     const currentNoteMime = useNoteProperty(note, "mime");
     const [ modalShown, setModalShown ] = useState(false);
+    const items = useNoteTypeItems({ currentNoteType, currentNoteMime, note, setModalShown });
 
     return (
         <div className="note-type-container">
@@ -56,9 +60,8 @@ function NoteTypeWidget({ note }: { note?: FNote | null }) {
                 dropdownContainerClassName="note-type-dropdown"
                 text={<span className="note-type-desc">{findTypeTitle(currentNoteType, currentNoteMime)}</span>}
                 disabled={notSelectableNoteTypes.includes(currentNoteType ?? "text")}
-            >
-                <NoteTypeDropdownContent currentNoteType={currentNoteType} currentNoteMime={currentNoteMime} note={note} setModalShown={setModalShown} />
-            </Dropdown>
+                items={items} filterable
+            />
 
             {createPortal(
                 <NoteTypeOptionsModal modalShown={modalShown} setModalShown={setModalShown} />,
@@ -68,13 +71,25 @@ function NoteTypeWidget({ note }: { note?: FNote | null }) {
     );
 }
 
-export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note, setModalShown, noCodeNotes }: {
+interface NoteTypeListProps {
     currentNoteType?: NoteType;
     currentNoteMime?: string | null;
     note?: FNote | null;
     setModalShown: Dispatch<StateUpdater<boolean>>;
     noCodeNotes?: boolean;
-}) {
+}
+
+/** The note types to switch `note` to, as rows of a menu or a list. See {@link useNoteTypeItems}. */
+export function NoteTypeDropdownContent(props: NoteTypeListProps) {
+    return <MenuItemRows items={useNoteTypeItems(props)} />;
+}
+
+/**
+ * The note types to switch `note` to, the current one ticked, as menu items: the note types, then,
+ * unless {@link NoteTypeListProps.noCodeNotes}, the enabled code languages under a "Code" heading
+ * and a row opening their options.
+ */
+export function useNoteTypeItems({ currentNoteType, currentNoteMime, note, setModalShown, noCodeNotes }: NoteTypeListProps) {
     const { enabledMimeTypes } = useMimeTypes();
     const noteTypes = useMemo(() => selectableNoteTypes(!noCodeNotes), [ noCodeNotes ]);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
@@ -95,70 +110,54 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
         await server.put(`notes/${note.noteId}/type`, { type, mime });
     }, [ note, currentNoteType, currentNoteMime ]);
 
-    return (
-        <>
-            {noteTypes.map(({ isNew, isBeta, type, mime, title }) => {
-                const badges: FormListBadge[] = [];
-                if (isNew) {
-                    badges.push({
-                        className: "new-note-type-badge",
-                        text: t("note_types.new-feature")
-                    });
-                }
-                if (isBeta) {
-                    badges.push({
-                        text: t("note_types.beta-feature")
-                    });
-                }
-
-                if (noCodeNotes || type !== "code") {
-                    return (
-                        <FormListItem
-                            checked={isCurrentNoteType({ type, mime }, note)}
-                            badges={badges}
-                            onClick={() => changeNoteType(type, mime)}
-                        >{title}</FormListItem>
-                    );
-                }
-                return (
-                    <>
-                        <FormDropdownDivider />
-                        <FormListItem disabled>
-                            <strong>{title}</strong>
-                        </FormListItem>
-                    </>
-                );
-            })}
-
-            {!noCodeNotes && <NoteTypeCodeNoteList currentMimeType={currentNoteMime ?? undefined} mimeTypes={enabledMimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
-        </>
-    );
+    const items: MenuItem<unknown>[] = [];
+    for (const { isNew, isBeta, type, mime, title } of noteTypes) {
+        if (noCodeNotes || type !== "code") {
+            items.push({
+                title: escapeHtml(title),
+                checked: isCurrentNoteType({ type, mime }, note),
+                badges: [
+                    ...isNew ? [ { className: "new-note-type-badge", title: t("note_types.new-feature") } ] : [],
+                    ...isBeta ? [ { title: t("note_types.beta-feature") } ] : []
+                ],
+                handler: () => void changeNoteType(type, mime)
+            });
+        } else {
+            // The code entries head the list of languages that follows.
+            items.push({ kind: "separator" }, { title: `<strong>${escapeHtml(title)}</strong>`, uiIcon: undefined, enabled: false });
+        }
+    }
+    if (!noCodeNotes) {
+        items.push(...codeLanguageItems({
+            currentMimeType: currentNoteMime ?? undefined,
+            mimeTypes: enabledMimeTypes,
+            changeNoteType: (type, mime) => void changeNoteType(type, mime),
+            onConfigure: () => setModalShown(true)
+        }));
+    }
+    return items;
 }
 
-export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteType, setModalShown }: {
+interface CodeLanguageListProps {
     currentMimeType?: string;
     mimeTypes: MimeType[];
     changeNoteType(type: NoteType, mime: string): void;
-    setModalShown?(shown: boolean): void;
-}) {
-    return (
-        <>
-            {mimeTypes.map(({ title, mime }) => (
-                <FormListItem
-                    key={mime}
-                    checked={mime === currentMimeType}
-                    onClick={() => changeNoteType("code", mime)}
-                >
-                    {title}
-                </FormListItem>
-            ))}
+    /** Opens the options of the code languages, from a row at the end; without it, there is none. */
+    onConfigure?(): void;
+}
 
-            {setModalShown && <>
-                <FormDropdownDivider />
-                <FormListItem icon="bx bx-cog" onClick={() => setModalShown(true)}>{t("basic_properties.configure_code_notes")}</FormListItem>
-            </>}
-        </>
-    );
+/** The code languages to switch a note to, the current one ticked, as menu items. */
+export function codeLanguageItems({ currentMimeType, mimeTypes, changeNoteType, onConfigure }: CodeLanguageListProps) {
+    const items: MenuItem<unknown>[] = mimeTypes.map((mimeType) => ({
+        title: escapeHtml(mimeType.title),
+        uiIcon: getCodeLanguageIcon(mimeType),
+        checked: mimeType.mime === currentMimeType,
+        handler: () => changeNoteType("code", mimeType.mime)
+    }));
+    if (onConfigure) {
+        items.push({ kind: "separator" }, { title: t("basic_properties.configure_code_notes"), uiIcon: "bx bx-cog", handler: onConfigure });
+    }
+    return items;
 }
 
 export function useMimeTypes() {

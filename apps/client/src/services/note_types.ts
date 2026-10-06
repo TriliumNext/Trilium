@@ -1,16 +1,20 @@
 import {
-    buildNoteTypeId, buildTemplateId, type NoteType as CommonNoteType, type NoteTypeId,
+    buildNoteTypeId, buildTemplateId, getCodeLanguageIcon, type NoteType as CommonNoteType, type NoteTypeId,
     type TemplatesResponse
 } from "@triliumnext/commons";
 
+import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import type { NoteType } from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import { isExperimentalFeatureEnabled } from "./experimental_features.js";
+import { getNotePresetItems } from "./note_presets.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import mimeTypes from "./mime_types.js";
 import server from "./server.js";
+import { escapeHtml } from "./utils.js";
 
 export interface NoteTypeMapping {
     type: NoteType;
@@ -216,27 +220,71 @@ async function loadNoteTypeData(): Promise<NoteTypeData> {
     return { builtInTemplateNotes, userTemplateNotes, newTemplates: new Set(newTemplateNoteIds) };
 }
 
+/**
+ * The menu of what a new note can be made from, as the note tree's insert menus and the note type
+ * chooser offer it: the note types grouped by kind ({@link MENU_GROUPS}), the collections in a
+ * submenu, then the user's templates. The "More" submenu holds the rarely created note types, then
+ * the templates whose notes the text editor reads: the snippets and, where AI is enabled, the AI
+ * quick action.
+ */
 function buildNoteTypeItems(data: NoteTypeData, command?: TreeCommandNames) {
     const { builtInTemplateNotes, userTemplateNotes, newTemplates } = data;
+    const builtIn = (group: BuiltInTemplateGroup) =>
+        getBuiltInTemplates(command, builtInTemplateNotes, group, newTemplates);
+    const blankTypes = getBlankNoteTypes(command);
+    const inGroup = (group: Pick<NoteTypeMapping, "type" | "mime">[]) => group.flatMap(({ type, mime }) => {
+        const item = blankTypes.find((blankType) => blankType.type === type && (mime === undefined || blankType.mime === mime));
+        if (!item) return [];
+        if (type === "code" && mime === "text/plain") item.items = getCodeLanguageItems(command);
+        return [ item ];
+    });
 
-    const items: MenuItem<TreeCommandNames>[] = [
-        ...getBlankNoteTypes(command),
-        ...getBuiltInTemplates(null, command, builtInTemplateNotes, false, newTemplates),
-        ...getBuiltInTemplates(
-            t("note_types.collections"), command, builtInTemplateNotes, true, newTemplates
-        ),
-        ...getUserTemplates(command, userTemplateNotes, newTemplates)
+    const items: MenuItem<TreeCommandNames>[] = [];
+    for (const group of MENU_GROUPS) {
+        const groupItems = inGroup(group);
+        if (groupItems.length === 0) continue;
+        if (items.length > 0) items.push(SEPARATOR);
+        items.push(...groupItems);
+    }
+
+    const collections = builtIn("collection");
+    items.push(...withLeading(SEPARATOR, builtIn("other")), SEPARATOR);
+    if (collections.length > 0) items.push({ title: t("note_types.book"), uiIcon: "bx bx-book", items: collections });
+    const editorTemplates = [
+        ...builtIn("snippet"),
+        ...(isExperimentalFeatureEnabled("llm") ? builtIn("aiQuickAction") : [])
     ];
+    items.push({
+        title: t("note_types.more"),
+        uiIcon: "bx bx-dots-horizontal-rounded",
+        items: [
+            ...inGroup(MORE_GROUP),
+            ...withLeading(SEPARATOR, editorTemplates)
+        ]
+    });
 
+    items.push(...getUserTemplates(command, userTemplateNotes, newTemplates));
     return items;
 }
+
+/**
+ * How the menus order and group the blank note types, each group set apart by a separator. The
+ * last group opens from the "More" submenu. A note type in none of them is not offered.
+ */
+const MENU_GROUPS: Pick<NoteTypeMapping, "type" | "mime">[][] = [
+    [ { type: "text" }, { type: "code", mime: MARKDOWN_NOTE_TYPE_MIME }, { type: "code", mime: "text/plain" }, { type: "spreadsheet" }, { type: "llmChat" } ],
+    [ { type: "canvas" }, { type: "mermaid" }, { type: "mindMap" }, { type: "relationMap" } ]
+];
+const MORE_GROUP: Pick<NoteTypeMapping, "type" | "mime">[] = [
+    { type: "noteMap" }, { type: "render" }, { type: "search" }, { type: "webView" }
+];
 
 /** Builds a single note type menu. Use {@link loadNoteTypeData} directly to build several. */
 async function getNoteTypeItems(command?: TreeCommandNames) {
     return buildNoteTypeItems(await loadNoteTypeData(), command);
 }
 
-function getBlankNoteTypes(command?: TreeCommandNames): MenuItem<TreeCommandNames>[] {
+function getBlankNoteTypes(command?: TreeCommandNames): MenuCommandItem<TreeCommandNames>[] {
     return NOTE_TYPES
         .filter((nt) => !nt.reserved && nt.type !== "book")
         .filter((nt) => nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
@@ -262,34 +310,61 @@ function getBlankNoteTypes(command?: TreeCommandNames): MenuItem<TreeCommandName
         });
 }
 
-function getUserTemplates(command: TreeCommandNames | undefined, templateNotes: FNote[], newTemplates: Set<string>) {
-    if (templateNotes.length === 0) {
-        return [];
-    }
+/**
+ * The scripting presets, then the code languages enabled in the code note options, Markdown aside
+ * since it has an entry of its own, then a row to configure them. The options are read again each
+ * time, so a language enabled since the last menu is offered.
+ */
+function getCodeLanguageItems(command?: TreeCommandNames): MenuItem<TreeCommandNames>[] {
+    mimeTypes.loadMimeTypes();
+    const languages = mimeTypes.getMimeTypes()
+        .filter((mimeType) => mimeType.enabled && mimeType.mime !== MARKDOWN_NOTE_TYPE_MIME)
+        .map<MenuItem<TreeCommandNames>>((mimeType) => ({
+            title: escapeHtml(mimeType.title),
+            uiIcon: getCodeLanguageIcon(mimeType),
+            command,
+            type: "code",
+            mime: mimeType.mime
+        }));
 
-    const items: MenuItem<TreeCommandNames>[] = [
+    return [
+        ...getNotePresetItems(command),
+        SEPARATOR,
+        ...languages,
+        SEPARATOR,
         {
-            title: t("note_type_chooser.templates"),
-            kind: "header"
+            title: t("basic_properties.configure_code_notes"),
+            uiIcon: "bx bx-cog",
+            handler: () => void appContext.triggerCommand("showOptions", { section: "_optionsCodeNotes" })
         }
     ];
+}
 
-    for (const templateNote of templateNotes) {
-        const item: MenuItem<TreeCommandNames> = {
-            title: templateNote.title,
-            uiIcon: templateNote.getIcon(),
-            command,
-            type: templateNote.type,
-            templateNoteId: templateNote.noteId
-        };
+/**
+ * The rows of the built-in templates of `group`, or of the user's own templates for `"user"`, as
+ * the note type menu lists them.
+ */
+function getTemplateItems(data: NoteTypeData, group: BuiltInTemplateGroup | "user", command?: TreeCommandNames) {
+    return group === "user"
+        ? getUserTemplateRows(command, data.userTemplateNotes, data.newTemplates)
+        : getBuiltInTemplates(command, data.builtInTemplateNotes, group, data.newTemplates);
+}
 
-        if (newTemplates.has(templateNote.noteId)) {
-            item.badges = [NEW_BADGE];
-        }
+function getUserTemplates(command: TreeCommandNames | undefined, templateNotes: FNote[], newTemplates: Set<string>) {
+    const header: MenuItem<TreeCommandNames> = { title: t("note_type_chooser.templates"), kind: "header" };
+    return withLeading(header, getUserTemplateRows(command, templateNotes, newTemplates));
+}
 
-        items.push(item);
-    }
-    return items;
+function getUserTemplateRows(command: TreeCommandNames | undefined, templateNotes: FNote[], newTemplates: Set<string>) {
+    return templateNotes.map<MenuItem<TreeCommandNames>>((templateNote) => ({
+        // A menu renders titles as HTML.
+        title: escapeHtml(templateNote.title),
+        uiIcon: templateNote.getIcon(),
+        command,
+        type: templateNote.type,
+        templateNoteId: templateNote.noteId,
+        ...(newTemplates.has(templateNote.noteId) && { badges: [ NEW_BADGE ] })
+    }));
 }
 
 async function getBuiltInTemplateNotes() {
@@ -302,29 +377,27 @@ async function getBuiltInTemplateNotes() {
     return await templatesRoot.getChildNotes();
 }
 
-function getBuiltInTemplates(title: string | null, command: TreeCommandNames | undefined, childNotes: FNote[], filterCollections: boolean, newTemplates: Set<string>) {
-    if (childNotes.length === 0) {
-        return [];
-    }
+export type BuiltInTemplateGroup = "collection" | "snippet" | "aiQuickAction" | "other";
 
+/** The group of the note type menus a built-in template stands in, told by the labels it carries. */
+function builtInTemplateGroup(templateNote: FNote): BuiltInTemplateGroup {
+    if (templateNote.hasLabel("collection")) return "collection";
+    if (templateNote.hasLabel("snippet") || templateNote.hasLabel("textSnippet")) return "snippet";
+    if (templateNote.hasLabel("aiQuickAction")) return "aiQuickAction";
+    return "other";
+}
+
+function getBuiltInTemplates(command: TreeCommandNames | undefined, childNotes: FNote[], group: BuiltInTemplateGroup, newTemplates: Set<string>) {
     const items: MenuItem<TreeCommandNames>[] = [];
-    if (title) {
-        items.push({
-            title,
-            kind: "header"
-        });
-    } else {
-        items.push(SEPARATOR);
-    }
 
     for (const templateNote of childNotes) {
-        if (templateNote.hasLabel("collection") !== filterCollections ||
-            !templateNote.hasLabel("template")) {
+        if (!templateNote.hasLabel("template") || builtInTemplateGroup(templateNote) !== group) {
             continue;
         }
 
         const item: MenuItem<TreeCommandNames> = {
-            title: templateNote.title,
+            // A menu renders titles as HTML.
+            title: escapeHtml(templateNote.title),
             uiIcon: templateNote.getIcon(),
             command,
             type: templateNote.type,
@@ -347,10 +420,17 @@ function getBuiltInTemplates(title: string | null, command: TreeCommandNames | u
     return items;
 }
 
+/** `items` led by `lead`, or nothing when there are no items to lead. */
+function withLeading(lead: MenuItem<TreeCommandNames>, items: MenuItem<TreeCommandNames>[]) {
+    return items.length > 0 ? [ lead, ...items ] : [];
+}
+
 export default {
     loadNoteTypeData,
     buildNoteTypeItems,
     getNoteTypeItems,
+    getCodeLanguageItems,
+    getTemplateItems,
     getNoteTypeOptions,
     resolveNoteTypeOptions
 };

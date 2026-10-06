@@ -54,12 +54,16 @@ jobs:
       - name: Bump pdfjs-dist
         id: bump
         # `update --latest` writes both package.json and the lockfile, and keeps the
-        # exact pin exact. It installs too, which the re-vendor and the suites below
-        # need — build.ts copies the library straight out of node_modules.
+        # exact pin exact. A filtered update also installs only the filtered project,
+        # which prunes every other package from the hoisted node_modules and breaks the
+        # root postinstall, so it only rewrites the lockfile and a full install follows.
+        # The re-vendor and the suites below need that install: build.ts copies the
+        # library straight out of node_modules.
         run: |
           read_version() { node -p "require('./packages/pdfjs-viewer/package.json').devDependencies['pdfjs-dist']"; }
           from=$(read_version)
-          pnpm --filter pdfjs-viewer update pdfjs-dist --latest
+          pnpm --filter pdfjs-viewer update pdfjs-dist --latest --lockfile-only
+          pnpm install --frozen-lockfile
           to=$(read_version)
           [ "$from" = "$to" ] && changed=false || changed=true
           {

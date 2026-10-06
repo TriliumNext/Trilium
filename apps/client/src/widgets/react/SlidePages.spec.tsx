@@ -29,9 +29,14 @@ function arriving() {
 
 /** Ends the animation the way the browser would, which is what tells the component to let go. */
 async function finishSlide() {
-    leaving()?.dispatchEvent(new Event("animationend", { bubbles: true }));
+    leaving()?.dispatchEvent(slideEnd());
     // Letting go is the one part that needs a render of its own, which Preact schedules.
     await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** The end of a slide, as the browser reports it: named after the keyframes that ran. */
+function slideEnd() {
+    return Object.assign(new Event("animationend", { bubbles: true }), { animationName: "tn-slide-out-to-left" });
 }
 
 afterEach(() => {
@@ -88,11 +93,26 @@ describe("sliding between pages", () => {
 
         // Animation events bubble, and a spinner or a field's own animation ending is not the slide
         // ending: acting on it would drop the page mid-flight and snap the other into place.
-        container.querySelector(".page-first")?.dispatchEvent(new Event("animationend", { bubbles: true }));
+        container.querySelector(".page-first")?.dispatchEvent(Object.assign(new Event("animationend", { bubbles: true }),
+            { animationName: "spin" }));
         await new Promise((resolve) => setTimeout(resolve, 0));
 
         expect(leaving()).toBeTruthy();
         expect(arriving()?.className).toContain("slide-in-forward");
+    });
+
+    it("switches at once with motion disabled, where no animation would run to end the slide", () => {
+        document.body.classList.add("motion-disabled");
+        try {
+            show("first");
+            show("second");
+
+            expect(leaving()).toBeFalsy();
+            expect(container.textContent).toBe("second");
+            expect(arriving()?.className).toContain("slide-current");
+        } finally {
+            document.body.classList.remove("motion-disabled");
+        }
     });
 
     it("takes only the page leaving out of the flow when the pages keep their place", () => {
