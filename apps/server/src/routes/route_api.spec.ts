@@ -230,3 +230,22 @@ describe("internalRoute CLS wiring", () => {
         expect(closeProbe.wrote).toBe("written");
     });
 });
+
+describe("internalRoute without a result handler", () => {
+    let app: express.Application;
+
+    beforeAll(() => {
+        asyncRoute("get", "/no-handler/reject", [], async () => {
+            throw new Error("boom");
+        }, null);
+
+        app = express();
+        app.use(router);
+    });
+
+    it("answers a rejected async handler with a 500 instead of leaving the request open", async () => {
+        const res = await request(app).get("/no-handler/reject").timeout(2000).expect(500);
+
+        expect(res.body).toEqual({ message: "boom" });
+    });
+});

@@ -71,6 +71,15 @@ describe("Login Route test", () => {
 
     });
 
+    it("returns a 401 status, when the password field is missing or not a string", async () => {
+        for (const body of [{}, { password: ["a"] }]) {
+            await supertest(app)
+                .post("/login")
+                .send(body)
+                .expect(401);
+        }
+    });
+
     describe("login stays reachable with redirectBareDomain enabled (#10552)", () => {
         // The fixture DB contains a #shareRoot note (y0AFOwgOgkWO), so enabling
         // redirectBareDomain arms the bare-domain → share redirect in checkAuth.
