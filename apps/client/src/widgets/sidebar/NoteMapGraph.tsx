@@ -2,8 +2,7 @@ import "./NoteMap.css";
 
 import { useRef } from "preact/hooks";
 
-// The map itself is shared with the ribbon's note map tab and the note map note type;
-// only the framing differs here.
+// The map itself is shared with the note map note type; only the framing differs here.
 import NoteMapEl from "../note_map/NoteMap";
 import { useActiveNoteContext } from "../react/hooks";
 

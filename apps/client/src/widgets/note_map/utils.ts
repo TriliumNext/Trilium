@@ -3,7 +3,7 @@
  * which the card's expand button opens — the only thing that opens it — so it is that card's map
  * rather than a surface of its own, and reads what the card reads.
  */
-export type NoteMapWidgetMode = "ribbon" | "sidebar" | "expanded" | "hoisted" | "type";
+export type NoteMapWidgetMode = "sidebar" | "expanded" | "hoisted" | "type";
 export type MapType = "tree" | "link";
 
 /**
@@ -27,7 +27,7 @@ export function usesReaderPreference(widgetMode: NoteMapWidgetMode) {
 
 /** Whether the map is rooted at the note being read, rather than at a configured or hoisted note. */
 export function isRootedAtCurrentNote(widgetMode: NoteMapWidgetMode) {
-    return widgetMode === "ribbon" || widgetMode === "sidebar" || widgetMode === "expanded";
+    return widgetMode === "sidebar" || widgetMode === "expanded";
 }
 
 /** The map a note asks to be drawn as through its `mapType` label, the link map standing for anything else. */
@@ -39,7 +39,6 @@ export function toMapType(labelValue: string | null | undefined): MapType {
 const FIT_PADDING: Record<NoteMapWidgetMode, number> = {
     // The sidebar's is not a fixed one — see getFitPadding.
     sidebar: 0,
-    ribbon: 50,
     // Not the sidebar's own, small enough that a graph fitted with room to spare is a thumbnail: what
     // the card is short of, a map given the greater part of the window has plenty of.
     expanded: 50,

@@ -1359,9 +1359,7 @@
     "show_similar_notes": "Show similar notes"
   },
   "note_map": {
-    "open_full": "Expand to full",
     "expand": "Expand map",
-    "collapse": "Collapse to normal size",
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",

@@ -242,7 +242,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
  *
  * The connections tab's map is a lens on whatever note is being read, so which map it draws is the
  * reader's own preference and is kept as an option (see {@link usesReaderPreference}). Everywhere
- * else the map is a note's own thing — a note map note, a hoisted map, the ribbon's tab — and the
+ * else the map is a note's own thing — a note map note or a hoisted map — and the
  * note it belongs to says which to draw through its `mapType` label.
  */
 function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (mapType: MapType) => void ] {

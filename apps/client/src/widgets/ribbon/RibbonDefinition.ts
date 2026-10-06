@@ -4,7 +4,6 @@ import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import NoteInfoTab from "./NoteInfoTab";
-import NoteMapTab from "./NoteMapTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
 import ScriptTab from "./ScriptTab";
@@ -57,13 +56,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         show: ({ note }) => note?.type === "image",
         toggleCommand: "toggleRibbonTabImageProperties",
         activate: true,
-    },
-    {
-        title: t("note_map.title"),
-        icon: "bx bxs-network-chart",
-        content: NoteMapTab,
-        show: true,
-        toggleCommand: "toggleRibbonTabNoteMap"
     },
     {
         title: t("similar_notes.title"),

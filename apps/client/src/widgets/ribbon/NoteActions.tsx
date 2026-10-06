@@ -135,7 +135,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
 
                 <CommandItem command="findInText" icon="bx bx-search" disabled={!isSearchable} text={t("note_actions.search_in_note")} />
                 <CommandItem command="showAttachments" icon="bx bx-paperclip" disabled={isInOptionsOrHelp} text={t("note_actions.note_attachments")} />
-                {isNewLayout && <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />}
+                <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />
                 {/* The attributes panel is a right pane tab where there is a right pane; on a phone the
                     menu is where it is reached, and a modal is where it is shown. */}
                 {isMobile && <CommandItem command="showNoteAttributes" icon="bx bx-list-check" disabled={isInOptionsOrHelp} text={t("note_actions.note_attributes")} />}

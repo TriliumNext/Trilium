@@ -710,8 +710,8 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
 }
 
 /**
- * Keeps the view framed on the interesting part of the graph — the subtree the current note belongs
- * to in the ribbon, the linked notes elsewhere — while the layout settles.
+ * Keeps the view framed on the interesting part of the graph — the notes reachable from the current
+ * note in the maps rooted at it, the linked notes elsewhere — while the layout settles.
  *
  * The fit runs on every tick of the simulation rather than once after a fixed delay: the layout
  * keeps expanding for seconds after the data lands, so a single delayed fit leaves the map at
