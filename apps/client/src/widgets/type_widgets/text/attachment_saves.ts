@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
-import type NoteContext from "../../../components/note_context";
+import type { default as NoteContext, SaveState } from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
 import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
@@ -33,7 +33,7 @@ interface PendingSave<T> {
  */
 abstract class PendingSaves<T, I extends object> {
     protected pending = new Map<string, PendingSave<T>>();
-    private sentRevisions = new WeakMap<I[], Map<string, number>>();
+    private sentRevisions = new WeakMap<I, { id: string; revision: number }>();
 
     getUnsavedContent(id: string) {
         const save = this.pending.get(id);
@@ -50,14 +50,10 @@ abstract class PendingSaves<T, I extends object> {
 
     /** Drops the changes that `items`, as returned by `collectItems()`, saved. */
     markSaved(items: I[] | undefined) {
-        const revisions = items && this.sentRevisions.get(items);
-        if (!revisions) {
-            return;
-        }
-
-        for (const [ id, revision ] of revisions) {
-            if (this.pending.get(id)?.revision === revision) {
-                this.pending.delete(id);
+        for (const item of items ?? []) {
+            const sent = this.sentRevisions.get(item);
+            if (sent && this.pending.get(sent.id)?.revision === sent.revision) {
+                this.pending.delete(sent.id);
             }
         }
     }
@@ -70,13 +66,12 @@ abstract class PendingSaves<T, I extends object> {
     /** One item for each change, with the content read at the time of the call. */
     protected collectItems(toItem: (id: string, entity: T, content: string) => I) {
         const items: I[] = [];
-        const revisions = new Map<string, number>();
         for (const [ id, save ] of this.pending) {
-            items.push(toItem(id, save.entity, readContent(save)));
-            revisions.set(id, save.revision);
+            const item = toItem(id, save.entity, readContent(save));
+            this.sentRevisions.set(item, { id, revision: save.revision });
+            items.push(item);
         }
 
-        this.sentRevisions.set(items, revisions);
         return items;
     }
 }
@@ -125,6 +120,9 @@ export default class AttachmentSaves
  * shows. `useNoteEditor()` saves them.
  */
 export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEditor {
+    private saveStates = new Map<string, SaveState>();
+    private stateListeners = new Set<() => void>();
+
     /**
      * @param scheduleUpdate schedules a save.
      * @param componentId the component that saves the changes.
@@ -144,12 +142,51 @@ export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEdi
 
     scheduleSave(note: FNote, getContent: () => string) {
         this.schedule(note.noteId, note, getContent);
+        this.setSaveState(note.noteId, "unsaved");
         this.scheduleUpdate();
+    }
+
+    getSaveState(noteId: string) {
+        return this.saveStates.get(noteId);
+    }
+
+    subscribeSaveState(listener: () => void) {
+        this.stateListeners.add(listener);
+        return () => {
+            this.stateListeners.delete(listener);
+        };
     }
 
     /** The notes to save, read at the time of the call. */
     collect() {
         return this.collectItems((_noteId, note, content) => ({ note, content }));
+    }
+
+    /**
+     * Saves `items`, as returned by `collect()`, one note after the other with `saveNote`. Stops at
+     * the first note that fails to save, and rejects with its error.
+     */
+    async save(items: SavedNote[], saveNote: (item: SavedNote) => Promise<unknown>) {
+        for (const item of items) {
+            const { noteId } = item.note;
+            this.setSaveState(noteId, "saving");
+            try {
+                await saveNote(item);
+            } catch (e) {
+                this.setSaveState(noteId, "error");
+                throw e;
+            }
+
+            this.markSaved([ item ]);
+            this.setSaveState(noteId, this.pending.has(noteId) ? "unsaved" : "saved");
+        }
+    }
+
+    private setSaveState(noteId: string, state: SaveState) {
+        this.saveStates.set(noteId, state);
+        for (const listener of this.stateListeners) {
+            listener();
+        }
     }
 }
 
@@ -215,21 +252,14 @@ export function useNoteEditor(noteContext: NoteContext | null | undefined): Note
         () => noteContextRef.current?.noteId ?? undefined
     ));
 
-    const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>(
-        {
-            key: null,
-            prepare: () => saves.collect(),
-            commit: async (notes) => {
-                for (const { note, content } of notes) {
-                    protected_session_holder.touchProtectedSessionIfNecessary(note);
-                    await server.put(`notes/${note.noteId}/data`, { content }, saves.componentId);
-                }
-                saves.markSaved(notes);
-            }
-        },
-        undefined,
-        (state) => noteContextRef.current?.setContextData("saveState", { state })
-    ));
+    const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>({
+        key: null,
+        prepare: () => saves.collect(),
+        commit: (notes) => saves.save(notes, ({ note, content }) => {
+            protected_session_holder.touchProtectedSessionIfNecessary(note);
+            return server.put(`notes/${note.noteId}/data`, { content }, saves.componentId);
+        })
+    }));
 
     useSaveBeforeLeaving(spacedUpdate, noteContext);
     useSaveOnUnmount(spacedUpdate);

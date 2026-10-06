@@ -13,6 +13,7 @@ import {
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
+import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
@@ -20,7 +21,9 @@ import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type { BoxSize } from "../widgets/type_widgets/text/CKEditorWithWatchdog.js";
-import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
+import renderText, {
+    postProcessRichContent, renderChildrenList, renderTextContent
+} from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
 import { renderOfficeToHtml } from "./office_renderer.js";
@@ -119,6 +122,10 @@ export interface NoteEditor {
     scheduleSave(note: FNote, getContent: () => string): void;
     /** Reads the unsaved content of the note now, before its editor unmounts. */
     release(noteId: string): void;
+    /** How the saving of the note goes, or `undefined` before its first change. */
+    getSaveState(noteId: string): SaveState | undefined;
+    /** Calls `listener` when the save state of a note changes, until the returned call. */
+    subscribeSaveState(listener: () => void): () => void;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
@@ -259,16 +266,17 @@ async function renderEditableText(
     $renderedContent: JQuery<HTMLElement>,
     options: RenderOptions
 ) {
-    const renderPreview = async () => {
+    const renderPreview = async (content: string) => {
         const $preview = $("<div>");
-        await renderText(note, $preview, options);
+        await renderTextContent(note, content, $preview, options);
         return $preview[0];
     };
-    const [ preview, blob, { default: TextEmbed } ] = await Promise.all([
-        renderPreview(),
+    const [ blob, { default: TextEmbed } ] = await Promise.all([
         note.getBlob(),
         import("../widgets/type_widgets/text/TextEmbed")
     ]);
+    const content = blob?.content ?? "";
+    const preview = await renderPreview(content);
 
     const $container = $('<div class="text-embed">');
     const container = $container.get(0);
@@ -276,7 +284,7 @@ async function renderEditableText(
         await mountInteractiveWidget(h(TextEmbed, {
             note,
             editor: getContentEditor(note, options),
-            content: blob?.content ?? "",
+            content,
             preview,
             renderPreview
         }), container);
@@ -404,6 +412,13 @@ export interface ContentEditor {
     getUnsavedContent(): string | undefined;
     scheduleSave(getContent: () => string): void;
     release(): void;
+    /**
+     * How the saving goes, for content that saves on its own rather than with the note that shows
+     * it, or `undefined`.
+     */
+    getSaveState?(): SaveState | undefined;
+    /** Calls `listener` when `getSaveState()` changes, until the returned call. */
+    subscribeSaveState?(listener: () => void): () => void;
 }
 
 /** `editor`, saving the changes to `attachment`. */
@@ -433,7 +448,9 @@ function getContentEditor(
         canEdit: () => editor.canEdit(entity),
         getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
         scheduleSave: (getContent) => editor.scheduleSave(entity, getContent),
-        release: () => editor.release(entity.noteId)
+        release: () => editor.release(entity.noteId),
+        getSaveState: () => editor.getSaveState(entity.noteId),
+        subscribeSaveState: (listener) => editor.subscribeSaveState(listener)
     } : undefined;
 }
 

@@ -3,6 +3,7 @@ import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
+import type { SaveState } from "../../../components/note_context";
 import FAttachment from "../../../entities/fattachment";
 import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
@@ -175,6 +176,37 @@ describe("CodeEmbed", () => {
         expect(view.state.doc.toString()).toBe("new");
     });
 
+    it("shows how the saving goes in the title row of its embed while it edits", async () => {
+        const listeners = new Set<() => void>();
+        let state: SaveState = "unsaved";
+        const editor = buildEditor({
+            getSaveState: () => state,
+            subscribeSaveState: (listener) => {
+                listeners.add(listener);
+                return () => listeners.delete(listener);
+            }
+        });
+        const { figure } = await mount(buildCodeNote("x"), editor, {
+            content: "x",
+            isEditable: true
+        });
+        const findBadge = (name: string) =>
+            figure.querySelector(`.include-note-badges > .save-status-badge.${name}`);
+        await vi.waitFor(() => expect(findBadge("unsaved")).not.toBeNull());
+
+        act(() => {
+            state = "error";
+            for (const listener of listeners) listener();
+        });
+        await vi.waitFor(() => expect(findBadge("error")).not.toBeNull());
+
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        expect(figure.querySelector(".save-status-badge")).toBeNull();
+    });
+
     it("loads the note as saved elsewhere, unless it has unsaved changes", async () => {
         const { figure } = await mount(buildCodeNote("saved"), buildEditor(), {
             content: "stale",
@@ -215,9 +247,17 @@ async function mount(
     if (options.isEditable) {
         figure.dataset.editable = "true";
     }
+    const wrapper = document.createElement("div");
+    wrapper.className = "include-note-wrapper";
+    const titleRow = document.createElement("div");
+    titleRow.className = "include-note-title-row";
+    const badges = document.createElement("div");
+    badges.className = "include-note-badges";
+    titleRow.append(badges);
     const box = document.createElement("div");
     box.className = "include-note-content";
-    figure.append(box);
+    wrapper.append(titleRow, box);
+    figure.append(wrapper);
     document.body.append(figure);
     figures.push(figure);
 

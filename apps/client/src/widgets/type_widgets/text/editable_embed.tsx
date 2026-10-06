@@ -172,17 +172,18 @@ export function useNestedEditor(ntxId: string | null | undefined) {
 
 /**
  * The element in the title row of the embed around `rootRef` that holds the badges of its content,
- * such as the save status of an included note, or `null`.
+ * such as the save status of an included note, or `null`. `null` while not `isShown` as well:
+ * content mounts before its embed box takes it in, so it looks for the element once it shows.
  */
-export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>) {
+export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>, isShown = true) {
     const [ slot, setSlot ] = useState<HTMLElement | null>(null);
 
     useEffect(() => {
-        const wrapper = rootRef.current?.closest(".include-note-wrapper");
+        const wrapper = isShown ? rootRef.current?.closest(".include-note-wrapper") : null;
         setSlot(wrapper?.querySelector<HTMLElement>(
             ":scope > .include-note-title-row > .include-note-badges"
         ) ?? null);
-    }, [ rootRef ]);
+    }, [ rootRef, isShown ]);
 
     return slot;
 }
@@ -194,6 +195,11 @@ export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>) {
 export function hasFixedToolbarAround(element: HTMLElement | null) {
     const editable = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR);
     return !!editable?.ckeditorInstance?.ui.view.toolbar;
+}
+
+/** The text editor whose editable root is in `element`, as the editor of an included note. */
+export function findTextEditorIn(element: HTMLElement | null) {
+    return element?.querySelector<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
 }
 
 /** The editable root of a text editor, which CKEditor gives a reference to the editor. */

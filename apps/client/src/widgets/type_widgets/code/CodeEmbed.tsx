@@ -1,14 +1,16 @@
 import "./CodeEmbed.css";
 
-import { lazy } from "preact/compat";
+import { createPortal, type RefObject } from "preact";
+import { lazy, useSyncExternalStore } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type FAttachment from "../../../entities/fattachment";
 import FNote from "../../../entities/fnote";
 import { type ContentEditor, renderCodePreview } from "../../../services/content_renderer";
+import { SaveStateBadge } from "../../layout/NoteBadges";
 import { useNoteBlob, useNoteProperty, useTriliumEvent } from "../../react/hooks";
 import {
-    EditableEmbedContent, useEditableEmbed, useEmbedPreview
+    EditableEmbedContent, useEditableEmbed, useEmbedBadgeSlot, useEmbedPreview
 } from "../text/editable_embed";
 
 const CodeEmbedEditor = lazy(() => import("./CodeEmbedEditor"));
@@ -46,21 +48,44 @@ export default function CodeEmbed({
     );
 
     return (
-        <EditableEmbedContent
-            rootRef={rootRef}
-            className="code-embed-content"
-            isEditing={isEditing}
-            preview={shownPreview}
-        >
-            <CodeEmbedEditor
-                note={note}
-                editor={editor}
-                content={content}
-                mime={mime}
-                onClose={setContent}
-            />
-        </EditableEmbedContent>
+        <>
+            <EditableEmbedContent
+                rootRef={rootRef}
+                className="code-embed-content"
+                isEditing={isEditing}
+                preview={shownPreview}
+            >
+                <CodeEmbedEditor
+                    note={note}
+                    editor={editor}
+                    content={content}
+                    mime={mime}
+                    onClose={setContent}
+                />
+            </EditableEmbedContent>
+            <SaveStatus rootRef={rootRef} editor={editor} isShown={isEditing} />
+        </>
     );
+}
+
+interface SaveStatusProps {
+    rootRef: RefObject<HTMLElement | null>;
+    editor: ContentEditor;
+    isShown: boolean;
+}
+
+/**
+ * The save state of `editor` in the title row of the embed around `rootRef`, while `isShown`, for
+ * content that saves on its own.
+ */
+function SaveStatus({ rootRef, editor, isShown }: SaveStatusProps) {
+    const slot = useEmbedBadgeSlot(rootRef, isShown);
+    const state = useSyncExternalStore(
+        editor.subscribeSaveState ?? subscribeToNothing,
+        () => editor.getSaveState?.()
+    );
+
+    return slot && createPortal(<SaveStateBadge state={state} />, slot);
 }
 
 /**
@@ -95,4 +120,8 @@ function useSavedContent(
             setContent(content);
         }
     }, [ content ]);
+}
+
+function subscribeToNothing() {
+    return () => {};
 }

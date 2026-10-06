@@ -191,6 +191,41 @@ describe("NoteSaves", () => {
         expect(saves.getUnsavedContent("code1")).toBe("changed meanwhile");
         expect(saves.getUnsavedContent("code2")).toBeUndefined();
     });
+
+    it("tracks the save state of each note, and tells its listeners", async () => {
+        const saves = new NoteSaves(vi.fn(), "host");
+        const listener = vi.fn();
+        const unsubscribe = saves.subscribeSaveState(listener);
+        const first = buildCodeNote("code1");
+        const second = buildCodeNote("code2");
+        expect(saves.getSaveState("code1")).toBeUndefined();
+
+        saves.scheduleSave(first, () => "one");
+        saves.scheduleSave(second, () => "two");
+        expect(saves.getSaveState("code1")).toBe("unsaved");
+        expect(listener).toHaveBeenCalled();
+
+        const seen: [ string, string | undefined ][] = [];
+        await expect(saves.save(saves.collect(), async ({ note }) => {
+            seen.push([ note.noteId, saves.getSaveState(note.noteId) ]);
+            if (note.noteId === "code2") throw new Error("offline");
+        })).rejects.toThrow("offline");
+        expect(seen).toStrictEqual([ [ "code1", "saving" ], [ "code2", "saving" ] ]);
+        expect(saves.getSaveState("code1")).toBe("saved");
+        expect(saves.getSaveState("code2")).toBe("error");
+        expect(saves.getUnsavedContent("code1")).toBeUndefined();
+
+        // A change made while the note saves keeps it unsaved.
+        await saves.save(saves.collect(), async () => {
+            saves.scheduleSave(second, () => "newer");
+        });
+        expect(saves.getSaveState("code2")).toBe("unsaved");
+
+        unsubscribe();
+        listener.mockClear();
+        saves.scheduleSave(first, () => "changed");
+        expect(listener).not.toHaveBeenCalled();
+    });
 });
 
 describe("useNoteEditor", () => {
@@ -218,8 +253,9 @@ describe("useNoteEditor", () => {
         expect(serverPut).toHaveBeenCalledExactlyOnceWith(
             "notes/code1/data", { content: "first" }, component.componentId);
         expect(editor?.getUnsavedContent("code1")).toBeUndefined();
-        expect(noteContext.setContextData)
-            .toHaveBeenLastCalledWith("saveState", { state: "saved" });
+        // The embed of the note shows its save state, not the indicator of the host note.
+        expect(editor?.getSaveState("code1")).toBe("saved");
+        expect(noteContext.setContextData).not.toHaveBeenCalled();
 
         editor?.scheduleSave(code, () => "second");
         editor?.release("code1");

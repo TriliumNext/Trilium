@@ -7,10 +7,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const renderText = vi.fn(async (...args: any[]) => {
     args[1].append($('<div class="from-render-text">'));
 });
+const renderTextContent = vi.fn(async (...args: any[]) => {
+    args[2].append($('<div class="from-render-text-content">').attr("data-content", args[1]));
+});
 const postProcessRichContent = vi.fn(async (..._args: any[]) => {});
 const renderChildrenList = vi.fn(async (..._args: any[]) => {});
 vi.mock("./content_renderer_text.js", () => ({
     default: (...args: any[]) => renderText(...args),
+    renderTextContent: (...args: any[]) => renderTextContent(...args),
     postProcessRichContent: (...args: any[]) => postProcessRichContent(...args),
     renderChildrenList: (...args: any[]) => renderChildrenList(...args)
 }));
@@ -129,6 +133,7 @@ vi.mock("@triliumnext/commons/src/lib/markdown_renderer", async (orig) => ({
 
 // --- Imports AFTER the mocks. ---
 import appContext from "../components/app_context.js";
+import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
 import {
@@ -358,7 +363,9 @@ describe("getRenderedContent editable code", () => {
             canEdit: vi.fn(() => true),
             getUnsavedContent: vi.fn((): string | undefined => undefined),
             scheduleSave: vi.fn(),
-            release: vi.fn()
+            release: vi.fn(),
+            getSaveState: vi.fn((): SaveState | undefined => "saving"),
+            subscribeSaveState: vi.fn(() => () => {})
         };
     }
 
@@ -427,6 +434,11 @@ describe("getRenderedContent editable code", () => {
         expect(noteEditor.getUnsavedContent).toHaveBeenCalledWith(note.noteId);
         expect(noteEditor.scheduleSave).toHaveBeenCalledWith(note, getContent);
         expect(noteEditor.release).toHaveBeenCalledWith(note.noteId);
+        const listener = () => {};
+        expect(props.editor.getSaveState()).toBe("saving");
+        props.editor.subscribeSaveState(listener);
+        expect(noteEditor.getSaveState).toHaveBeenCalledWith(note.noteId);
+        expect(noteEditor.subscribeSaveState).toHaveBeenCalledWith(listener);
     });
 
     it("mounts CodeEmbed for an interactive code file, saved by `attachmentEditor`", async () => {
@@ -462,15 +474,18 @@ describe("getRenderedContent editable code", () => {
         const props = textEmbedComponent.mock.calls[0][0];
         expect(props.note).toBe(note);
         expect(props.content).toBe("<p>Hi</p>");
-        expect(props.preview.querySelector(".from-render-text")).not.toBeNull();
-        expect(renderText).toHaveBeenLastCalledWith(
-            note, expect.anything(), expect.objectContaining({ embedsAsReferenceLinks: true }));
+        const rendered = (preview: HTMLElement) =>
+            preview.querySelector(".from-render-text-content")?.getAttribute("data-content");
+        expect(rendered(props.preview)).toBe("<p>Hi</p>");
+        expect(renderTextContent).toHaveBeenLastCalledWith(
+            note, "<p>Hi</p>", expect.anything(),
+            expect.objectContaining({ embedsAsReferenceLinks: true }));
         expect(props.editor.canEdit()).toBe(true);
         expect(noteEditor.canEdit).toHaveBeenCalledWith(note);
 
-        const again = await props.renderPreview();
+        const again = await props.renderPreview("<p>Edited</p>");
         expect(again).not.toBe(props.preview);
-        expect(again.querySelector(".from-render-text")).not.toBeNull();
+        expect(rendered(again)).toBe("<p>Edited</p>");
     });
 
     it("edits only code and text notes", async () => {

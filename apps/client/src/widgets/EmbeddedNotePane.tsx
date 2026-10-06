@@ -45,7 +45,7 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
 export function useEmbeddedNoteContext(
     note: FNote | undefined,
     ntxId: string,
-    { floatingToolbar = true }: { floatingToolbar?: boolean } = {}
+    { floatingToolbar = true, skipRecentNotes = false }: EmbeddedNoteContextOptions = {}
 ) {
     const parentComponent = useContext(ParentComponent);
     const [ noteContext ] = useState(() => new NoteContext(ntxId));
@@ -70,6 +70,7 @@ export function useEmbeddedNoteContext(
             // Selecting a note in the pane is not the kind of navigation that should dismiss an
             // open dialog.
             keepActiveDialog: true,
+            skipRecentNotes,
             viewScope: {
                 // A note held read-only only because of its size is editable here, as it is in the
                 // quick editor; one the reader has marked read-only stays that way.
@@ -82,6 +83,13 @@ export function useEmbeddedNoteContext(
     }, [ noteContext, note?.noteId ]);
 
     return { noteContext, component };
+}
+
+interface EmbeddedNoteContextOptions {
+    /** Whether the editor shows its buttons in a toolbar that follows the selection. */
+    floatingToolbar?: boolean;
+    /** Whether the note stays out of the recent notes. */
+    skipRecentNotes?: boolean;
 }
 
 /**

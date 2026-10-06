@@ -4,8 +4,11 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
+import NoteContext from "../../../components/note_context";
+import FBlob from "../../../entities/fblob";
 import type FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
+import LoadResults from "../../../services/load_results";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { buildNote } from "../../../test/easy-froca";
 import { useTriliumEvent } from "../../react/hooks";
@@ -17,6 +20,8 @@ import TextEmbed from "./TextEmbed";
 
 const editorAskedToSave = vi.fn();
 const editorProps = vi.fn();
+/** What the text editor holds. */
+let editorData = "";
 
 /** The text editor, which has a spec of its own. It listens for what a real editor listens for. */
 vi.mock("./EditableText", () => ({
@@ -24,7 +29,18 @@ vi.mock("./EditableText", () => ({
         const isNested = useContext(NestedEmbedContext);
         editorProps({ ...props, isNested });
         useTriliumEvent("beforeNoteContextRemove", editorAskedToSave);
-        return <div className="editable-text-stub" />;
+        return (
+            <div className="editable-text-stub">
+                <div
+                    className="ck-editor__editable"
+                    ref={(element) => {
+                        if (element) {
+                            Object.assign(element, { ckeditorInstance: { getData: () => editorData } });
+                        }
+                    }}
+                />
+            </div>
+        );
     }
 }));
 
@@ -72,6 +88,7 @@ describe("TextEmbed", () => {
     });
 
     it("edits in a note context of its own, and saves before the editor goes away", async () => {
+        const saveToRecentNotes = vi.spyOn(NoteContext.prototype, "saveToRecentNotes");
         const note = buildTextNote("edited");
         const { figure } = await mount(note, buildEditor(), { isEditable: true, hasFixedToolbar: true });
 
@@ -85,6 +102,9 @@ describe("TextEmbed", () => {
         // Inside an editor with a fixed toolbar, that toolbar shows the buttons of this editor.
         expect(props.viewScope).toMatchObject({ viewMode: "default", floatingToolbar: false });
         expect(props.isNested).toBe(true);
+        // Editing an included note does not add it to the recent notes.
+        expect(saveToRecentNotes).not.toHaveBeenCalled();
+        saveToRecentNotes.mockRestore();
         // The plugins of the editor find their host from its DOM.
         const stub = figure.querySelector<HTMLElement>(".editable-text-stub");
         expect(stub && appContext.getComponentByEl(stub)).toBe(props.parentComponent);
@@ -106,6 +126,76 @@ describe("TextEmbed", () => {
         expect(figure.querySelector(".editable-text-stub")).toBeNull();
         expect(figure.querySelector(".editable-embed-preview")).not.toBeNull();
     });
+
+    it("previews what the editor holds once it closes, before the note saves", async () => {
+        const note = buildTextNote("closing");
+        const renderPreview = vi.fn(async (content: string) => buildPreview(content));
+        let finishSave = () => {};
+        editorAskedToSave.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            finishSave = resolve;
+        }));
+        const { figure } = await mount(note, buildEditor(), { isEditable: true, renderPreview });
+        await vi.waitFor(() => {
+            expect(figure.querySelector(".editable-text-stub")).not.toBeNull();
+        }, { timeout: 5000 });
+
+        editorData = "<p>Typed just now</p>";
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        const shownPreview = () => figure.querySelector(".editable-embed-preview")?.innerHTML;
+        await vi.waitFor(() => expect(shownPreview()).toBe("<div><p>Typed just now</p></div>"));
+
+        // A save made before the editor closed lands while its last save runs.
+        note.getBlob = async () => buildBlob("<p>Typed</p>");
+        const earlierSave = new LoadResults([]);
+        earlierSave.addNoteContent(note.noteId, "other-component");
+        await act(async () => {
+            await appContext.handleEvent("entitiesReloaded", { loadResults: earlierSave });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+        expect(shownPreview()).toBe("<div><p>Typed just now</p></div>");
+        expect(renderPreview).toHaveBeenCalledExactlyOnceWith("<p>Typed just now</p>");
+        await act(async () => {
+            finishSave();
+        });
+    });
+
+    it("loads the note once the save of the editor it replaces lands", async () => {
+        const note = buildTextNote("redrawn");
+        const countEditors = () =>
+            new Set(editorProps.mock.calls.map(([ props ]) => props.ntxId)).size;
+        let finishSave = () => {};
+        editorAskedToSave.mockImplementationOnce(() => new Promise<void>((resolve) => {
+            finishSave = resolve;
+        }));
+        const { figure: first } = await mount(note, buildEditor(), { isEditable: true });
+        await vi.waitFor(() => expect(countEditors()).toBe(1), { timeout: 5000 });
+
+        // The host draws the embed again, as for a change of its size.
+        const firstBox = first.querySelector(".include-note-content");
+        expect(firstBox).not.toBeNull();
+        await act(async () => {
+            if (firstBox) render(null, firstBox);
+        });
+        expect(editorAskedToSave).toHaveBeenCalledOnce();
+        const { figure: second } = await mount(note, buildEditor(), { isEditable: true });
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        });
+        expect(countEditors()).toBe(1);
+        expect(second.querySelector(".editable-embed-preview")).not.toBeNull();
+
+        // The content fetched before the save lands is not loaded.
+        froca.blobPromises[`notes-${note.noteId}`] = Promise.resolve(null);
+        await act(async () => {
+            finishSave();
+        });
+        await vi.waitFor(() => expect(countEditors()).toBe(2), { timeout: 5000 });
+        expect(froca.blobPromises[`notes-${note.noteId}`]).toBeUndefined();
+        expect(second.querySelector(".editable-text-stub")).not.toBeNull();
+    });
 });
 
 interface MountOptions {
@@ -113,6 +203,7 @@ interface MountOptions {
     isEditable?: boolean;
     /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
     hasFixedToolbar?: boolean;
+    renderPreview?: (content: string) => Promise<HTMLElement>;
 }
 
 /** Renders `TextEmbed` in the markup of an embed, as the host does. */
@@ -149,7 +240,7 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
                     editor={editor}
                     content={content}
                     preview={options.preview ?? buildPreview(content)}
-                    renderPreview={async () => buildPreview(content)}
+                    renderPreview={options.renderPreview ?? (async (html) => buildPreview(html))}
                 />
             </ParentComponent.Provider>,
             box
@@ -173,6 +264,16 @@ function buildEditor(): ContentEditor {
         scheduleSave: vi.fn(),
         release: vi.fn()
     };
+}
+
+function buildBlob(content: string) {
+    return new FBlob({
+        blobId: `blob-${content}`,
+        content,
+        contentLength: content.length,
+        dateModified: "",
+        utcDateModified: ""
+    });
 }
 
 function buildPreview(content: string) {
