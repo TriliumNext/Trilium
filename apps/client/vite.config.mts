@@ -139,6 +139,13 @@ export default defineConfig(() => ({
         setupFiles: [
             "./src/test/setup.ts"
         ],
+        server: {
+            deps: {
+                // The plugin reads `rrule` through a namespace import, which Node resolves to the
+                // package's CommonJS build with no named exports. Bundling it applies Vite's interop.
+                inline: ["@fullcalendar/rrule"]
+            }
+        },
         reporters: [
             "verbose",
             ["html", { outputFile: "./test-output/vitest/html/index.html" }],
