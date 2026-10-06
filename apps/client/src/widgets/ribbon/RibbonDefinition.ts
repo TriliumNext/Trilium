@@ -1,6 +1,5 @@
 import { t } from "../../services/i18n";
 import options from "../../services/options";
-import BasicPropertiesTab from "./BasicPropertiesTab";
 import EditedNotesTab from "./EditedNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
@@ -61,13 +60,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         show: ({ note }) => note?.type === "image",
         toggleCommand: "toggleRibbonTabImageProperties",
         activate: true,
-    },
-    {
-        title: t("basic_properties.basic_properties"),
-        icon: "bx bx-slider",
-        content: BasicPropertiesTab,
-        show: ({note}) => !note?.isLaunchBarConfig(),
-        toggleCommand: "toggleRibbonTabBasicProperties"
     },
     {
         title: t("owned_attribute_list.owned_attributes"),

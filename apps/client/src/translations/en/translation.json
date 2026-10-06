@@ -1282,8 +1282,6 @@
   "basic_properties": {
     "note_type": "Note type",
     "editable": "Editable",
-    "basic_properties": "Basic Properties",
-    "language": "Language",
     "configure_code_notes": "Configure code notes..."
   },
   "book_properties": {
@@ -2467,9 +2465,7 @@
     "importSource": "Import source"
   },
   "bookmark_switch": {
-    "bookmark": "Bookmark",
-    "bookmark_this_note": "Bookmark this note to the left side panel",
-    "remove_bookmark": "Remove bookmark"
+    "bookmark": "Bookmark"
   },
   "editability_select": {
     "auto": "Auto",
@@ -2585,10 +2581,7 @@
     "reorder": "Drag to reorder"
   },
   "protect_note": {
-    "toggle-on": "Protect the note",
-    "toggle-off": "Unprotect the note",
-    "toggle-on-hint": "Note is not protected, click to make it protected",
-    "toggle-off-hint": "Note is protected, click to make it unprotected"
+    "toggle-on": "Protect the note"
   },
   "llm_chat": {
     "placeholder": "Type a message...",
@@ -2735,15 +2728,11 @@
   },
   "shared_switch": {
     "shared": "Shared",
-    "toggle-on-title": "Share the note",
-    "toggle-off-title": "Unshare the note",
     "shared-branch": "This note exists only as a shared note, unsharing would delete it. Do you want to continue and thus delete this note?",
     "inherited": "Note cannot be unshared here because it is shared through inheritance from an ancestor."
   },
   "template_switch": {
-    "template": "Template",
-    "toggle-on-hint": "Make the note a template",
-    "toggle-off-hint": "Remove the note as a template"
+    "template": "Template"
   },
   "full_content_width_switch": {
     "title": "Full width"

@@ -7,7 +7,9 @@ import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import server from "../../services/server";
+import { useLanguageSwitcher } from "../dialogs/content_languages";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
+import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
 import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import type { DropdownHandle } from "../react/Dropdown";
@@ -15,7 +17,6 @@ import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react
 import { useNoteContext, useNoteProperty } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
-import { codeLanguageItems, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
 import { NoteContextMenu } from "../ribbon/NoteActions";
 import NoteActionsCustom from "../ribbon/NoteActionsCustom";
 import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";

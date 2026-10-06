@@ -34,7 +34,7 @@ vi.mock("../../services/i18n", async () => {
 });
 
 import options from "../../services/options";
-import { useLanguageSwitcher } from "./BasicPropertiesTab";
+import { useLanguageSwitcher } from "./content_languages";
 
 type Switcher = ReturnType<typeof useLanguageSwitcher>;
 

@@ -1,8 +1,8 @@
 import "./NoteActions.css";
 
-import { ConvertToAttachmentResponse } from "@triliumnext/commons";
+import { ConvertToAttachmentResponse, ToggleInParentResponse } from "@triliumnext/commons";
 import { ComponentChildren, RefObject } from "preact";
-import { useContext, useEffect, useRef } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
@@ -21,13 +21,14 @@ import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
+import { useShareState } from "../layout/NoteBadges";
+import { NoteTypeDropdownContent } from "../layout/NoteTypeSwitcher";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
-import { NoteTypeDropdownContent, useNoteBookmarkState, useShareState } from "./BasicPropertiesTab";
 import NoteActionsCustom from "./NoteActionsCustom";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
@@ -439,4 +440,29 @@ function ExportAsImage({ ntxId, parentComponent }: { ntxId: string | null | unde
             >{t("note_actions.export_as_image_svg")}</FormListItem>
         </FormDropdownSubmenu>
     );
+}
+
+export function useNoteBookmarkState(note: FNote | null | undefined) {
+    const [ isBookmarked, setIsBookmarked ] = useState<boolean>(false);
+    const refreshState = useCallback(() => {
+        const isBookmarked = note && !!note.getParentBranches().find((b) => b.parentNoteId === "_lbBookmarks");
+        setIsBookmarked(!!isBookmarked);
+    }, [ note ]);
+
+    const changeHandler = useCallback(async (shouldBookmark: boolean) => {
+        if (!note) return;
+        const resp = await server.put<ToggleInParentResponse>(`notes/${note.noteId}/toggle-in-parent/_lbBookmarks/${shouldBookmark}`);
+
+        if (!resp.success && "message" in resp) {
+            toast.showError(resp.message);
+        }
+    }, [ note ]);
+
+    useEffect(() => refreshState(), [ refreshState ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (note && loadResults.getBranchRows().find((b) => b.noteId === note.noteId)) {
+            refreshState();
+        }
+    });
+    return [ isBookmarked, changeHandler ] as const;
 }

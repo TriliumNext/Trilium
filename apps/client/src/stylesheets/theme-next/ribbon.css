@@ -89,31 +89,6 @@ div.promoted-attributes-container {
 }
 
 /*
- * Basic properties
- */
-
-/* Note type dropdown */
-
-ul.note-type-dropdown .check {
-    margin-inline-end: 6px;
-}
-
-ul.note-type-dropdown li.dropdown-item {
-    --menu-item-icon-vert-offset: 0;
-}
-
-/* Editability dropdown */
-
-ul.editability-dropdown li.dropdown-item > div {
-    margin-inline-start: 4px;
-}
-
-.editability-dropdown .dropdown-item .description {
-    opacity: 0.75;
-    font-size: 0.85em;
-}
-
-/*
  * Edited notes (for calendar notes)
  */
 

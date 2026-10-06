@@ -2,15 +2,22 @@ import "./NoteBadges.css";
 
 import { isOfficeMimeType } from "@triliumnext/commons";
 import { clsx } from "clsx";
-import { useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
+import FNote from "../../entities/fnote";
+import branches from "../../services/branches";
 import { copyTextWithToast } from "../../services/clipboard_ext";
+import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
+import server from "../../services/server";
+import sync from "../../services/sync";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../react/hooks";
-import { useShareState } from "../ribbon/BasicPropertiesTab";
+import {
+    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty,
+    useTriliumEvent
+} from "../react/hooks";
 import { type ShareScope, useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
 import { SnippetBadge } from "./SnippetBadge";
@@ -222,4 +229,38 @@ export function SaveStatusBadge() {
             tooltip={tooltip}
         />
     );
+}
+
+export function useShareState(note: FNote | null | undefined) {
+    const [ isShared, setIsShared ] = useState(false);
+    const refreshState = useCallback(() => {
+        setIsShared(!!note?.hasAncestor("_share"));
+    }, [ note ]);
+
+    useEffect(() => refreshState(), [ refreshState ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (note && loadResults.getBranchRows().find((b) => b.noteId === note.noteId)) {
+            refreshState();
+        }
+    });
+
+    const switchShareState = useCallback(async (shouldShare: boolean) => {
+        if (!note) return;
+
+        if (shouldShare) {
+            await branches.cloneNoteToParentNote(note.noteId, "_share");
+        } else {
+            if (note?.getParentBranches().length === 1 && !(await dialog.confirm(t("shared_switch.shared-branch")))) {
+                return;
+            }
+
+            const shareBranch = note?.getParentBranches().find((b) => b.parentNoteId === "_share");
+            if (!shareBranch?.branchId) return;
+            await server.remove(`branches/${shareBranch.branchId}?taskId=no-progress-reporting`);
+        }
+
+        sync.syncNow(true);
+    }, [ note ]);
+
+    return [ isShared, switchShareState ] as const;
 }
