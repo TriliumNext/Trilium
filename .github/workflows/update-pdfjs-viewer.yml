@@ -133,6 +133,13 @@ jobs:
           # link, which is always exact.
           printf '[Upstream comparison](https://github.com/mozilla/pdf.js/compare/v%s...v%s)\n\n' "$FROM" "$TO" >> "$body"
           notes=$(gh api "/repos/mozilla/pdf.js/releases/tags/v$TO" --jq .body 2>/dev/null || true)
+          # A zero-width space after `@` stops GitHub from notifying the upstream authors,
+          # and `redirect.github.com` stops it from adding a cross-reference to each
+          # upstream pull request.
+          zwsp=$'​'
+          notes=$(printf '%s' "$notes" | sed -E \
+            -e "s/(^|[^[:alnum:]_.\`/-])@([[:alnum:]])/\1@${zwsp}\2/g" \
+            -e 's#https://github\.com/#https://redirect.github.com/#g')
           if [ -n "$notes" ]; then
             if [ "${#notes}" -gt 30000 ]; then
               notes=$(printf '%s' "$notes" | head -c 30000)
