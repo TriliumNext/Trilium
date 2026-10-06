@@ -98,6 +98,11 @@
             "groupName": "fullcalendar monorepo"
         },
         {
+            "description": "Capacitor plugins peer-depend on @capacitor/core, and the native android and ios packages must match it, so the mobile app's Capacitor packages move in one PR",
+            "matchPackageNames": ["@capacitor/**"],
+            "groupName": "capacitor"
+        },
+        {
             "matchPackageNames": "@univerjs/**",
             "groupName": "univer monorepo"
         },
