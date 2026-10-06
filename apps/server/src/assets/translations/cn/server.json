@@ -368,7 +368,8 @@
     "move-split-left": "向左拆分移动",
     "move-split-right": "向右拆分移动",
     "focus-split-left": "将焦点分割到左侧",
-    "focus-split-right": "将焦点分割到右侧"
+    "focus-split-right": "将焦点分割到右侧",
+    "duplicate-note": "创建笔记副本（不含子笔记）"
   },
   "share_theme": {
     "site-theme": "网站主题",
