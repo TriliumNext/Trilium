@@ -109,7 +109,7 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
     // An event with no start time takes the whole day, which is how the editor writes one too (see
     // EventDatesEditor). When the event repeats this has to be said outright rather than left to
     // FullCalendar's rrule plugin to infer from the rule: the plugin reads the whole of the rule
-    // looking for a time, so an `UNTIL=…T235959Z` — which the recurrence editor writes for an end
+    // looking for a time, so an `UNTIL=…T235959` — which the recurrence editor writes for an end
     // date (see recurrence.ts) — makes it take the event for a timed one whatever its DTSTART says.
     const allDay = !startTime;
 
@@ -156,7 +156,8 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
             // invented for hours the event does not have. `DTSTART;VALUE=DATE:` — the way iCalendar
             // spells the same thing — is not an option: the rrule library drops a DTSTART written
             // that way without a word and starts the series from today instead.
-            const rruleString = `DTSTART:${dayjs(startDate).format(allDay ? "YYYYMMDD" : "YYYYMMDD[T]HHmmss")}\n${recurrence}`;
+            const dtStart = dayjs(startDate).format(allDay ? "YYYYMMDD" : "YYYYMMDD[T]HHmmss");
+            const rruleString = `DTSTART:${dtStart}\n${toLocalUntil(recurrence)}`;
 
             // Validate rrule string
             let rruleValid = true;
@@ -179,6 +180,15 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
         events.push(eventData);
     }
     return events;
+}
+
+/**
+ * Rewrites a UTC `UNTIL` (`UNTIL=20261130T235959Z`) as local time, like the DTSTART that
+ * `buildEvent()` writes. FullCalendar's rrule plugin reads the whole rule as UTC when any of its
+ * dates carries a zone, which moves every occurrence by the local UTC offset.
+ */
+function toLocalUntil(recurrence: string) {
+    return recurrence.replace(/\b(UNTIL=\d{8}T\d{6})Z\b/gi, "$1");
 }
 
 /**

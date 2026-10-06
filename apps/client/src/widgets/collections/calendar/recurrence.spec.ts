@@ -93,7 +93,7 @@ describe("serializeRecurrence", () => {
         expect(serialize({ frequency: "WEEKLY", weekdays: [ "FR", "MO" ] }))
             .toBe("RRULE:FREQ=WEEKLY;BYDAY=MO,FR");
         expect(serialize({ frequency: "DAILY", ends: { type: "until", date: "2026-06-05" } }))
-            .toBe("RRULE:FREQ=DAILY;UNTIL=20260605T235959Z");
+            .toBe("RRULE:FREQ=DAILY;UNTIL=20260605T235959");
     });
 
     it("holds an 'until' whose date has not been picked yet as never ending", () => {

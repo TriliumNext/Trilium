@@ -327,7 +327,7 @@ describe("Recurrence", () => {
 
         expect(events).toHaveLength(2);
         // Said outright rather than left to FullCalendar to guess: the rrule plugin reads the whole
-        // of the rule for a time, and a `UNTIL=…T235959Z` — which the recurrence editor writes —
+        // of the rule for a time, and a `UNTIL=…T235959` — which the recurrence editor writes —
         // makes it guess a timed event however the DTSTART is written.
         expect(events[0].allDay).toBe(true);
         expect(events[1].allDay).toBe(false);
@@ -396,15 +396,7 @@ describe("Recurrence", () => {
     });
 
     describe("in a time zone ahead of UTC", () => {
-        const originalTimeZone = process.env.TZ;
-
-        beforeAll(() => {
-            process.env.TZ = "Europe/Bucharest";
-        });
-
-        afterAll(() => {
-            process.env.TZ = originalTimeZone;
-        });
+        useTimeZone("Europe/Bucharest");
 
         it.each([
             [ "without an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU" ],
@@ -427,6 +419,26 @@ describe("Recurrence", () => {
                 "2026-11-01 11:00", "2026-11-08 11:00"
             ]);
             expect(occurrences.every(({ end }) => end.endsWith(" 13:00"))).toBe(true);
+        });
+    });
+
+    describe("in a time zone behind UTC", () => {
+        useTimeZone("America/New_York");
+
+        it.each([
+            [ "without an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU" ],
+            [ "with an end date", "RRULE:FREQ=WEEKLY;BYDAY=SU;UNTIL=20261130T235959Z" ]
+        ])("shows a whole-day occurrence on its own day %s", async (_, recurrence) => {
+            const noteIds = buildNotes([
+                { title: "Weekly", "#startDate": "2026-10-04", "#recurrence": recurrence }
+            ]);
+            const events = await buildEvents(noteIds);
+
+            const occurrences = renderOccurrences(events, "2026-10-01");
+            expect(occurrences.map(({ start }) => start)).toEqual([
+                "2026-10-04 00:00", "2026-10-11 00:00", "2026-10-18 00:00", "2026-10-25 00:00",
+                "2026-11-01 00:00", "2026-11-08 00:00"
+            ]);
         });
     });
 });
@@ -452,6 +464,17 @@ function renderOccurrences(events: EventInput[], date: string) {
     calendar.destroy();
     element.remove();
     return occurrences;
+}
+
+/** Runs the specs of the enclosing `describe` with the local time zone set to `timeZone`. */
+function useTimeZone(timeZone: string) {
+    const originalTimeZone = process.env.TZ;
+    beforeAll(() => {
+        process.env.TZ = timeZone;
+    });
+    afterAll(() => {
+        process.env.TZ = originalTimeZone;
+    });
 }
 
 function formatLocal(date: Date | null) {
