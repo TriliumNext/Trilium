@@ -52,7 +52,9 @@ export default function ContentEmbed({
     boxSize, title, content, contentType, notePath, viewScope, isFocusedOnMount
 }: ContentEmbedProps) {
     const contentRef = useRef<HTMLDivElement>(null);
+    const bodyRef = useRef<HTMLDivElement>(null);
     const isContentActive = useFocusWithin(contentRef);
+    const isDraggedOver = useIsDraggedOver(bodyRef);
     useFullscreenEvents(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
     const isExpandable = boxSize === "expandable";
@@ -110,7 +112,10 @@ export default function ContentEmbed({
                 )}
                 <MoreActionsButton notePath={notePath} viewScope={viewScope} />
             </div>
-            <div className={clsx("include-note-body", isContentActive && "active")}>
+            <div
+                ref={bodyRef}
+                className={clsx("include-note-body", isContentActive && "active")}
+            >
                 <div
                     ref={contentRef}
                     className={`include-note-content type-${contentType}`}
@@ -137,7 +142,7 @@ export default function ContentEmbed({
                         </div>
                     )}
                 </div>
-                {!isContentActive && (
+                {!isContentActive && !isDraggedOver && (
                     <div
                         className="include-note-backdrop"
                         onClick={(e) => {
@@ -250,6 +255,42 @@ function ContentEmbedActionButton({ className, action }: {
  * Opens the menu of the embed for a right click on its title row. The title link is left to the
  * handler of every link, which opens the same menu, or a quick edit with Ctrl.
  */
+/**
+ * Whether something is dragged over the body of the embed, which then lets the drag reach the
+ * content under the backdrop, such as the editor of an included note.
+ */
+function useIsDraggedOver(bodyRef: RefObject<HTMLElement | null>) {
+    const [ isDraggedOver, setIsDraggedOver ] = useState(false);
+
+    useEffect(() => {
+        const body = bodyRef.current;
+        if (!body) return;
+
+        const enter = () => setIsDraggedOver(true);
+        const end = () => setIsDraggedOver(false);
+        // A `dragleave` also fires when the drag moves between the elements of the body.
+        const leave = (event: DragEvent) => {
+            const { left, top, right, bottom } = body.getBoundingClientRect();
+            const { clientX: x, clientY: y } = event;
+            if (x < left || x >= right || y < top || y >= bottom) {
+                end();
+            }
+        };
+        body.addEventListener("dragenter", enter);
+        body.addEventListener("dragleave", leave);
+        body.addEventListener("drop", end, true);
+        document.addEventListener("dragend", end);
+        return () => {
+            body.removeEventListener("dragenter", enter);
+            body.removeEventListener("dragleave", leave);
+            body.removeEventListener("drop", end, true);
+            document.removeEventListener("dragend", end);
+        };
+    }, [ bodyRef ]);
+
+    return isDraggedOver;
+}
+
 /**
  * Dispatches `fullscreenChangeStart` on the content box as it enters or leaves fullscreen, then
  * `enterFullscreen` or `leaveFullscreen` once it has the size that fullscreen gives or takes back.

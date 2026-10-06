@@ -409,6 +409,38 @@ describe("ContentEmbed", () => {
         expect(document.activeElement).toBe(box);
         expect(isActive()).toBe(true);
     });
+
+    it("lets a drag reach its content, with the backdrop back once the drag leaves or ends", () => {
+        renderBox();
+        const box = contentBox();
+        const body = box.parentElement;
+        const backdrop = () => container.querySelector<HTMLElement>(".include-note-backdrop");
+        if (!body) throw new Error("Expected the body of the embed.");
+        body.getBoundingClientRect = () => new DOMRect(0, 0, 100, 100);
+        const drag = (target: EventTarget, type: string, clientX = 50) => act(() => {
+            target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX, clientY: 50 }));
+        });
+
+        const firstBackdrop = backdrop();
+        expect(firstBackdrop).not.toBeNull();
+        if (!firstBackdrop) return;
+        drag(firstBackdrop, "dragenter");
+        expect(backdrop()).toBeNull();
+        // Moving between the elements of the content keeps the drag inside.
+        drag(box, "dragleave");
+        expect(backdrop()).toBeNull();
+        drag(box, "dragleave", 150);
+        expect(backdrop()).not.toBeNull();
+
+        for (const [ target, end ] of [ [ box, "drop" ], [ document, "dragend" ] ] as const) {
+            const shown = backdrop();
+            if (!shown) return;
+            drag(shown, "dragenter");
+            expect(backdrop()).toBeNull();
+            drag(target, end);
+            expect(backdrop()).not.toBeNull();
+        }
+    });
 });
 
 describe("ContentEmbed focused on mount", () => {
