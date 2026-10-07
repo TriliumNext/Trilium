@@ -354,9 +354,9 @@ function fixTabs(writer: ModelWriter, tabs: ModelElement): boolean {
         if (!tab.is("element", ELEMENTS.tab)) {
             continue;
         }
-        const children = [...tab.getChildren()];
+        const children = [...tab.getChildren()] as ModelElement[];
         const title = children.find(child => child.is("element", ELEMENTS.tabTitle));
-        const panel = children.find(child => child.is("element", ELEMENTS.tabPanel)) as ModelElement | undefined;
+        let panel: ModelElement | undefined = children.find(child => child.is("element", ELEMENTS.tabPanel));
 
         if (!title) {
             writer.insertElement(ELEMENTS.tabTitle, tab, 0);
@@ -367,14 +367,54 @@ function fixTabs(writer: ModelWriter, tabs: ModelElement): boolean {
         }
 
         if (!panel) {
-            const newPanel = writer.createElement(ELEMENTS.tabPanel);
-            writer.appendElement("paragraph", newPanel);
-            writer.append(newPanel, tab);
+            panel = writer.createElement(ELEMENTS.tabPanel);
+            writer.append(panel, tab);
             changed = true;
-        } else if (panel.isEmpty) {
+        }
+
+        if (mergeIntoPanel(writer, children, title, panel)) {
+            changed = true;
+        }
+
+        if (panel.isEmpty) {
             writer.appendElement("paragraph", panel);
             changed = true;
         }
+    }
+    return changed;
+}
+
+/**
+ * Moves the content of every title and panel of a tab other than `title` and `panel` into
+ * `panel`, keeping document order: what precedes `panel` goes before its content, what follows it
+ * goes after. An extra title becomes a paragraph.
+ */
+function mergeIntoPanel(writer: ModelWriter, children: ModelElement[], title: ModelElement | undefined, panel: ModelElement) {
+    let offset: number | "end" = 0;
+    let changed = false;
+    for (const child of children) {
+        if (child === title) {
+            continue;
+        }
+        if (child === panel) {
+            offset = "end";
+            continue;
+        }
+
+        const target = writer.createPositionAt(panel, offset);
+        let count = 1;
+        if (child.is("element", ELEMENTS.tabPanel)) {
+            count = child.childCount;
+            writer.move(writer.createRangeIn(child), target);
+            writer.remove(child);
+        } else {
+            writer.rename(child, "paragraph");
+            writer.move(writer.createRangeOn(child), target);
+        }
+        if (offset !== "end") {
+            offset += count;
+        }
+        changed = true;
     }
     return changed;
 }

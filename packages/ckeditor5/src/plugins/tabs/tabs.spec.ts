@@ -94,6 +94,34 @@ describe("Tabs", () => {
         );
     });
 
+    it("merges extra titles and panels of a tab into its first panel, in document order", () => {
+        editor.setData(
+            "<div class=\"trilium-tabs\">" +
+                "<section class=\"trilium-tab\">" +
+                    "<p class=\"trilium-tab-title\">A</p>" +
+                    "<p class=\"trilium-tab-title\">B</p>" +
+                    "<div class=\"trilium-tab-panel\"><p>x</p></div>" +
+                    "<div class=\"trilium-tab-panel\"><p>y</p></div>" +
+                    "<p class=\"trilium-tab-title\">C</p>" +
+                "</section>" +
+                "<section class=\"trilium-tab\">" +
+                    "<div class=\"trilium-tab-panel\"><p>z</p></div>" +
+                    "<p class=\"trilium-tab-title\">D</p>" +
+                    "<div class=\"trilium-tab-panel\"></div>" +
+                "</section>" +
+            "</div>"
+        );
+
+        expect(model()).toBe(
+            "<tabs>" +
+                "<tab><tabTitle>A</tabTitle><tabPanel>" +
+                    "<paragraph>B</paragraph><paragraph>x</paragraph><paragraph>y</paragraph><paragraph>C</paragraph>" +
+                "</tabPanel></tab>" +
+                "<tab><tabTitle>D</tabTitle><tabPanel><paragraph>z</paragraph></tabPanel></tab>" +
+            "</tabs>"
+        );
+    });
+
     it("shows the first tab, then whichever tab holds the selection", () => {
         editor.setData(TWO_TABS);
         expect(activeTitles()).toEqual(["Windows"]);
