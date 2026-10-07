@@ -1,9 +1,15 @@
 .ck-editor__editable .trilium-tabs {
+    --_tabs-background: var(--card-background-color,
+                            var(--accented-background-color, var(--ck-color-base-foreground)));
+    --_tabs-delimiter-width: 2px;
+    --_tabs-border-radius: 8px;
+
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    gap: 0 2px;
+    gap: 0 var(--_tabs-delimiter-width);
     margin: 1em 0;
+    border-radius: var(--_tabs-border-radius);
 
     & > .trilium-tab {
         display: contents;
@@ -13,14 +19,17 @@
         order: 0;
         min-width: 4em;
         max-width: 100%;
-        margin: 0;
-        padding: 4px 12px;
-        border: 1px solid var(--main-border-color, var(--ck-color-base-border));
-        border-bottom: 0;
-        border-radius: 6px 6px 0 0;
-        background: var(--accented-background-color, var(--ck-color-base-foreground));
+        margin: 0 0 var(--_tabs-delimiter-width);
+        padding: 6px 1rem;
+        border-radius: var(--_tabs-border-radius) var(--_tabs-border-radius) 0 0;
+        background: var(--_tabs-background);
         color: var(--muted-text-color, inherit);
         cursor: pointer;
+        transition: color 200ms ease-out;
+
+        &:hover {
+            color: inherit;
+        }
     }
 
     & > .trilium-tab > .trilium-tab-panel {
@@ -28,18 +37,19 @@
         order: 1;
         flex: 1 0 100%;
         min-width: 0;
-        padding: 0 1em;
-        border: 1px solid var(--main-border-color, var(--ck-color-base-border));
-        border-radius: 0 6px 6px 6px;
+        padding: 0 1rem;
+        border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
+        background: var(--_tabs-background);
+    }
+
+    & > .trilium-tab:not(:first-child) > .trilium-tab-panel {
+        border-start-start-radius: var(--_tabs-border-radius);
     }
 
     & > .trilium-tab.trilium-tab--active {
         & > .trilium-tab-title {
-            position: relative;
-            z-index: 1;
-            margin-bottom: -1px;
-            padding-bottom: 5px;
-            background: var(--main-background-color, var(--ck-color-base-background));
+            margin-bottom: 0;
+            padding-bottom: calc(6px + var(--_tabs-delimiter-width));
             color: inherit;
             font-weight: 600;
             cursor: text;
