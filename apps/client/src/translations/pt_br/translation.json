@@ -646,7 +646,8 @@
     "hoisted_note": "A nota para a qual içar quando um lançador abre seu alvo.",
     "share_logo": "Uma nota de imagem usada como o logotipo da página compartilhada. Ela precisa estar dentro da subárvore compartilhada.",
     "share_open_graph_image_relation": "Uma nota de imagem servida como o <code>og:image</code> da página compartilhada. Defina o rótulo de mesmo nome para apontar para um endereço.",
-    "share_html": "Uma nota HTML injetada na página compartilhada, onde <code>#shareHtmlLocation</code> nessa nota indica. Ela precisa estar dentro da subárvore compartilhada."
+    "share_html": "Uma nota HTML injetada na página compartilhada, onde <code>#shareHtmlLocation</code> nessa nota indica. Ela precisa estar dentro da subárvore compartilhada.",
+    "custom_font": "Marca arquivos de fonte que são oferecidos no seletor de fontes nas opções Trilium, sob o próprio título da nota."
   },
   "attachments_actions": {
     "delete_attachment": "Excluir anexo",
@@ -3183,6 +3184,25 @@
       "collapsible_summary": "Resumo",
       "collapsible_details": "Detalhes",
       "table_column": "Coluna {{number}}"
+    },
+    "titles": {
+      "date": "Insira a data/tempo",
+      "include": "Inclua a nota",
+      "image": "Carregue a imagem",
+      "link": "Link interno",
+      "math": "Equação matematica",
+      "footnote": "Nota de Rodapé",
+      "mermaid": "Diagrama Mermaid",
+      "mermaid_template": "Diagrama Mermaid: {{name}}",
+      "collapsible": "Bloco colapsável",
+      "page_break": "Quebra de página",
+      "table": "Tabela",
+      "note": "Nota",
+      "tip": "Dica",
+      "important": "Importante",
+      "caution": "Cuidado",
+      "warning": "Aviso",
+      "todo": "Tarefa: {{title}}"
     }
   },
   "file_upload": {
