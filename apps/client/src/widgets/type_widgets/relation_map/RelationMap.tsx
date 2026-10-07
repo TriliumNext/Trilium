@@ -220,6 +220,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
 
             <NotePane
                 paneRef={paneRef}
+                hostRef={wrapperRef}
                 noteIdsOnMap={noteIdsOnMap}
                 mapApiRef={mapApiRef}
                 isReadOnly={isReadOnly}

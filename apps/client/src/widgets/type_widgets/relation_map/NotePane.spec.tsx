@@ -87,10 +87,16 @@ describe("relation map NotePane", () => {
         const paneRef = useRef<NotePaneHandle>(null);
         handle = paneRef;
         const mapApiRef = useRef(mapApi);
-        return <NotePane
-            paneRef={paneRef} noteIdsOnMap={noteIdsOnMap} mapApiRef={mapApiRef}
-            isReadOnly={isReadOnly} selection={selection} onSelect={setSelection}
-        />;
+        const hostRef = useRef<HTMLDivElement>(null);
+        return (
+            <div ref={hostRef} className="map-host">
+                <div className="map-canvas" tabIndex={0} />
+                <NotePane
+                    paneRef={paneRef} hostRef={hostRef} noteIdsOnMap={noteIdsOnMap} mapApiRef={mapApiRef}
+                    isReadOnly={isReadOnly} selection={selection} onSelect={setSelection}
+                />
+            </div>
+        );
     }
 
     /** Mounts the pane afresh, with the map's selection set to `selection`. */
@@ -136,9 +142,16 @@ describe("relation map NotePane", () => {
         expect(pane()).toBeNull();
     });
 
+    /** Presses Escape on `target`, and waits for the pane to decide whether the press was its own. */
+    async function pressEscape(target: Element | null | undefined) {
+        const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+        await act(async () => { target?.dispatchEvent(event); });
+        await settle();
+    }
+
     it("closes on Escape and through the handle the map holds", async () => {
         await mount();
-        await act(async () => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); });
+        await pressEscape(container?.querySelector(".map-canvas"));
         expect(pane()).toBeNull();
 
         await mount({ selection: { noteId: "second" } });
@@ -146,6 +159,24 @@ describe("relation map NotePane", () => {
         await act(async () => handle.current?.close());
         expect(editorAskedToSave).toHaveBeenCalled();
         expect(pane()).toBeNull();
+    });
+
+    it("leaves an Escape pressed outside the map, or handled by what it was pressed in, to them", async () => {
+        await mount();
+        const dialog = document.createElement("div");
+        document.body.appendChild(dialog);
+        try {
+            await pressEscape(dialog);
+            expect(pane()).toBeTruthy();
+        } finally {
+            dialog.remove();
+        }
+
+        const popup = document.createElement("div");
+        popup.addEventListener("keydown", (e) => e.preventDefault());
+        pane()?.querySelector(".relation-map-note-pane-body")?.appendChild(popup);
+        await pressEscape(popup);
+        expect(pane()).toBeTruthy();
     });
 
     it("stays closed for a note that is not on the map, and closes once its note leaves it after asking the editor to save", async () => {

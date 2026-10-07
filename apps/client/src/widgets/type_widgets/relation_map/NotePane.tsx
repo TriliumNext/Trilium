@@ -29,8 +29,10 @@ export interface NotePaneHandle {
  * Panel at the trailing edge of a relation map that shows the selected note's title, promoted
  * attributes and content for editing.
  */
-export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly, selection, onSelect }: {
+export default function NotePane({ paneRef, hostRef, noteIdsOnMap, mapApiRef, isReadOnly, selection, onSelect }: {
     paneRef: RefObject<NotePaneHandle | null>;
+    /** The map the pane is in. Escape closes the pane only when pressed inside it. */
+    hostRef: RefObject<HTMLElement | null>;
     /** IDs of the notes on the map. The pane closes when its note is not among them, and a link in
      *  the pane switches the pane only to a note among them. */
     noteIdsOnMap: string[];
@@ -76,12 +78,17 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
         if (!selection || isMobile()) return;
 
         const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") closePane();
+            if (e.key !== "Escape" || !(e.target instanceof Node) || !hostRef.current?.contains(e.target)) return;
+            // Waits for the event to finish, so that an editor popup that handles Escape stays the
+            // only thing it closes.
+            setTimeout(() => {
+                if (!e.defaultPrevented) closePane();
+            });
         };
         // Capture phase, because `OverlayPanel` stops key presses inside it from bubbling.
         window.addEventListener("keydown", onKeyDown, true);
         return () => window.removeEventListener("keydown", onKeyDown, true);
-    }, [ selection?.noteId, closePane ]);
+    }, [ selection?.noteId, hostRef, closePane ]);
 
     if (!note) return null;
 
