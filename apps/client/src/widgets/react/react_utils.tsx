@@ -14,16 +14,39 @@ export const POPUP_EDITOR_NTX_ID = "_popup-editor";
 
 /**
  * A click handler that triggers `command` from the surrounding component with the `ntxId` of the
- * surrounding `NoteContextContext`, so a handler can act on the note of a context that is not the
- * active tab, such as the quick edit popup's. Undefined when there is no command to trigger.
+ * note context the component stands in: the surrounding `NoteContextContext`, or else the one held by
+ * the closest legacy ancestor, such as a split's. A handler can then act on the note of a context
+ * that is not the active one, such as the quick edit popup's or an inactive split's, since a split
+ * activates only once the click has reached it. Undefined when there is no command to trigger.
  */
 export function useCommandTrigger(command: CommandNames | undefined) {
     const parentComponent = useContext(ParentComponent);
     const noteContext = useContext(NoteContextContext);
 
     return command && (() => {
-        parentComponent?.triggerCommand(command, { ntxId: noteContext?.ntxId } as CommandMappings[typeof command]);
+        const ntxId = (noteContext ?? findClosestNoteContext(parentComponent))?.ntxId;
+        parentComponent?.triggerCommand(command, { ntxId } as CommandMappings[typeof command]);
     });
+}
+
+/**
+ * Finds the note context held by the closest legacy ancestor component (e.g. the note split's
+ * `NoteWrapperWidget`). Used to initialize `useNoteContext()` for components that mount after
+ * the initial `setNoteContext` event has been dispatched (e.g. components rendered via
+ * `LazyComponent`), which would otherwise not know their context until the next note switch.
+ */
+export function findClosestNoteContext(component: Component | null): NoteContext | undefined {
+    let current: Component | undefined = component ?? undefined;
+    while (current) {
+        if ("noteContext" in current) {
+            const { noteContext } = current as { noteContext?: NoteContext };
+            if (noteContext) {
+                return noteContext;
+            }
+        }
+        current = current.parent as Component | undefined;
+    }
+    return undefined;
 }
 
 /**
