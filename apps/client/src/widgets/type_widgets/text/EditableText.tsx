@@ -171,6 +171,16 @@ export default function EditableText({
         consumeBlockReference(root, noteContext?.viewScope);
     }
 
+    async function copyReference() {
+        const editor = watchdogRef.current?.editor as CKTextEditor | undefined;
+        if (!editor) return;
+
+        const notePath = noteContext?.notePath ?? `root/${note.noteId}`;
+        await copyBlockReference(editor, notePath, note.title);
+        // Saved now, so that the link resolves in other notes at once.
+        spacedUpdate.updateNowIfNecessary();
+    }
+
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;
         if (!editor) return;
@@ -271,16 +281,9 @@ export default function EditableText({
         getEmbedBoxSize: getUploadBoxSize,
         openContentEmbedMenu,
         openBlockHandleMenu(event: MouseEvent, count: number) {
-            const editor = watchdogRef.current?.editor as CKTextEditor | undefined;
-            if (!editor) return;
-
-            const notePath = noteContext?.notePath ?? `root/${note.noteId}`;
-            openBlockHandleMenu(event, count, async () => {
-                await copyBlockReference(editor, notePath, note.title);
-                // Saved now, so that the link resolves in other notes at once.
-                spacedUpdate.updateNowIfNecessary();
-            });
+            openBlockHandleMenu(event, count, () => void copyReference());
         },
+        copyBlockReference: copyReference,
         getContentEmbedTools,
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.

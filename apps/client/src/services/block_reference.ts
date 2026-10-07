@@ -1,12 +1,18 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
-import { formatBlockRange, resolveBlockRange, resolveBlockReference } from "@triliumnext/commons";
+import {
+    formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
+} from "@triliumnext/commons";
 
-import contextMenu from "../menus/context_menu.js";
+import type { CommandNames } from "../components/app_context.js";
+import contextMenu, { type MenuItem } from "../menus/context_menu.js";
+import type { ClipboardAccess } from "../menus/table_context_menu.js";
+import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast } from "./clipboard_ext.js";
 import { expandAncestorDetails } from "./collapsible.js";
+import froca from "./froca.js";
 import { t } from "./i18n.js";
-import { calculateHash, type ViewScope } from "./link.js";
+import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
 import toast from "./toast.js";
 
 const FLASH_CLASS = "block-reference-flash";
@@ -14,18 +20,77 @@ const FLASH_CLASS = "block-reference-flash";
 const FLASH_DURATION_MS = 1500;
 const HIGHLIGHT_CLASS = "block-reference-highlight";
 
+/** A reference to blocks of a note, read from the clipboard. */
+export interface ClipboardBlockReference {
+    noteId: string;
+    /** The `block` link parameter. */
+    block: string;
+    /** The href of a reference link to the blocks. */
+    href: string;
+}
+
+/** The block reference rows of the text editor's right-click menu. */
+export interface BlockReferenceMenuItems {
+    /** Copies a reference to the selected blocks, in the _Copy_ submenu, or `null`. */
+    copy: MenuItem<CommandNames> | null;
+    /** Pastes the reference on the clipboard, in the _Paste_ submenu. */
+    paste: MenuItem<CommandNames>[];
+}
+
+/** The component of a text editor that copies references to the blocks of its note. */
+interface BlockReferenceHost {
+    copyBlockReference?(): Promise<void>;
+}
+
 /** Opens the menu of the block handle at `event`, which copies a reference to `count` blocks. */
 export function openBlockHandleMenu(event: MouseEvent, count: number, copyReference: () => void) {
     void contextMenu.show({
         x: event.pageX,
         y: event.pageY,
-        items: [ {
-            title: t("block_reference.copy", { count }),
-            uiIcon: "bx bx-link",
-            handler: copyReference
-        } ],
+        items: [ getCopyItem(count, copyReference) ],
         selectMenuItemHandler: () => {}
     });
+}
+
+/**
+ * The block reference rows for a right-click on `element`, or `null` when `element` is not in a
+ * text editor. `clipboard` enables the paste rows.
+ */
+export async function buildBlockReferenceMenuItems(
+    element: Element | null | undefined,
+    clipboard?: ClipboardAccess
+): Promise<BlockReferenceMenuItems | null> {
+    const editor = await getTextEditorContaining(element);
+    if (!editor?.plugins.has("BlockReference")) {
+        return null;
+    }
+
+    return {
+        copy: getCopyMenuItem(editor),
+        paste: clipboard ? getPasteMenuItems(editor, clipboard) : []
+    };
+}
+
+/**
+ * The first link to blocks of a note in the HTML of the clipboard, else its text as such a link,
+ * or `null`.
+ */
+export function getClipboardBlockReference(
+    { html, text }: { html: string; text: string }
+): ClipboardBlockReference | null {
+    const links = html
+        ? new DOMParser().parseFromString(html, "text/html").querySelectorAll("a[href]")
+        : [];
+    const hrefs = Array.from(links, (link) => link.getAttribute("href") ?? "");
+
+    for (const href of [ ...hrefs, text ]) {
+        const reference = parseBlockReferenceHref(href);
+        if (reference) {
+            return reference;
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -150,6 +215,124 @@ function isInRange(range: Range, node: Node) {
     nodeRange.selectNode(node);
     return range.compareBoundaryPoints(Range.START_TO_START, nodeRange) <= 0
         && range.compareBoundaryPoints(Range.END_TO_END, nodeRange) >= 0;
+}
+
+function getCopyItem(count: number, copyReference: () => void): MenuItem<CommandNames> {
+    return {
+        title: t("block_reference.copy", { count }),
+        uiIcon: "bx bx-link",
+        handler: copyReference
+    };
+}
+
+function getCopyMenuItem(editor: CKTextEditor) {
+    const command = editor.commands.get("assignBlockReference");
+    const root = editor.editing.view.getDomRoot();
+    const host: BlockReferenceHost | undefined = root && glob.getComponentByEl(root);
+    if (!command?.isEnabled || !host?.copyBlockReference) {
+        return null;
+    }
+
+    return getCopyItem(command.value, () => void host.copyBlockReference?.());
+}
+
+function getPasteMenuItems(
+    editor: CKTextEditor,
+    clipboard: ClipboardAccess
+): MenuItem<CommandNames>[] {
+    const canEmbed = editor.commands.get("insertContentEmbed")?.isEnabled === true;
+    return [
+        {
+            title: t("block_reference.paste_as_link"),
+            uiIcon: "bx bx-link",
+            enabled: clipboard.enabled,
+            handler: () => void pasteBlockReference(editor, clipboard, getLinkHtml)
+        },
+        {
+            title: t("block_reference.paste_as_excerpt"),
+            uiIcon: "bx bx-window-alt",
+            enabled: clipboard.enabled && canEmbed,
+            handler: () => void pasteBlockReference(editor, clipboard, getExcerptHtml)
+        }
+    ];
+}
+
+/**
+ * Reads the clipboard and pastes the HTML that `toHtml` makes of the block reference on it, at
+ * the selection the menu was opened on. The selection is pinned before the read, which can wait
+ * on a permission prompt. `toHtml` returns `null` for a reference it cannot paste.
+ */
+async function pasteBlockReference(
+    editor: CKTextEditor,
+    clipboard: ClipboardAccess,
+    toHtml: (reference: ClipboardBlockReference) => string | Promise<string | null>
+) {
+    const target = editor.capturePasteTarget();
+    try {
+        const reference = getClipboardBlockReference(await clipboard.read());
+        if (!reference) {
+            toast.showMessage(t("block_reference.no_reference_on_clipboard"), 3000,
+                "bx bx-info-circle");
+            return;
+        }
+
+        const html = await toHtml(reference);
+        if (html) {
+            target.paste(html, reference.href);
+        }
+    } catch (error) {
+        console.warn("Failed to paste a block reference:", error);
+    } finally {
+        target.release();
+    }
+}
+
+function getLinkHtml({ href }: ClipboardBlockReference) {
+    const link = document.createElement("a");
+    link.className = "reference-link";
+    link.setAttribute("href", href);
+    link.textContent = href;
+    return link.outerHTML;
+}
+
+/** The HTML of an embed of the referenced blocks, or `null` when their note is gone. */
+async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
+    // Imported on demand: `content_renderer` imports `content_renderer_text`, which imports this
+    // module.
+    const [ note, { getEmbedBoxSize } ] = await Promise.all([
+        froca.getNote(noteId, true),
+        import("./content_renderer.js")
+    ]);
+    if (!note) {
+        toast.showError(t("block_reference.not_found"));
+        return null;
+    }
+
+    const embed = document.createElement("figure");
+    embed.className = "include-note";
+    embed.dataset.noteId = noteId;
+    embed.dataset.block = block;
+    embed.dataset.boxSize = getEmbedBoxSize(note);
+    return embed.outerHTML;
+}
+
+/** The note and the blocks that `href` links to, or `null` for a link to anything else. */
+function parseBlockReferenceHref(href: string): ClipboardBlockReference | null {
+    let state: ReturnType<typeof parseNavigationStateFromUrl>;
+    try {
+        state = parseNavigationStateFromUrl(href);
+    } catch {
+        // A malformed percent escape.
+        return null;
+    }
+
+    const { notePath, noteId } = state;
+    const block = state.viewScope?.block;
+    if (!notePath || !noteId || !block || !parseBlockRange(block)) {
+        return null;
+    }
+
+    return { noteId, block, href: calculateHash({ notePath, viewScope: { block } }) };
 }
 
 function flashBlocks(elements: Element[]) {

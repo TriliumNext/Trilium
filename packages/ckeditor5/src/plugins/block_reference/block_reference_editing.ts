@@ -88,8 +88,12 @@ export default class BlockReferenceEditing extends Plugin {
 /** Gives ids to the first and the last block of the selection, and returns the reference. */
 export class AssignBlockReferenceCommand extends Command {
 
+    /** The number of blocks that a reference made from the selection points at. */
+    declare value: number;
+
     override refresh() {
-        this.isEnabled = getReferenceBlocks(this.editor.model).length > 0;
+        this.value = getReferenceBlocks(this.editor.model).length;
+        this.isEnabled = this.value > 0;
     }
 
     override execute(): BlockReferenceTarget {

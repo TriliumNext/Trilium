@@ -1,7 +1,7 @@
 import { DomEmitterMixin, Plugin } from "ckeditor5";
 
 import BlockReferenceEditing, {
-    type AssignBlockReferenceCommand, getReferenceBlocks
+    type AssignBlockReferenceCommand
 } from "./block_reference_editing.js";
 
 /**
@@ -57,13 +57,13 @@ export default class BlockReference extends Plugin {
 
     private openMenu(event: MouseEvent) {
         const editor = this.editor;
-        const count = getReferenceBlocks(editor.model).length;
-        if (!count || !editor.commands.get("assignBlockReference")?.isEnabled) {
+        const command = editor.commands.get("assignBlockReference");
+        if (!command?.isEnabled) {
             return;
         }
 
         const component = glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
-        component?.openBlockHandleMenu?.(event, count);
+        component?.openBlockHandleMenu?.(event, command.value);
     }
 }
 

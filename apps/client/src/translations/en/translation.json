@@ -4599,6 +4599,9 @@
   "block_reference": {
     "copy_one": "Copy reference to this block",
     "copy_other": "Copy reference to these {{count}} blocks",
+    "paste_as_link": "Paste reference as a link",
+    "paste_as_excerpt": "Paste reference as an excerpt",
+    "no_reference_on_clipboard": "The clipboard does not contain a block reference.",
     "broken": "Broken reference",
     "not_found": "A referenced block could not be found. It might have been deleted.",
     "untitled": "Block",

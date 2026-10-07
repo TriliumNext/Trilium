@@ -20,6 +20,9 @@ vi.mock("../components/app_context.js", () => ({
 // The module under test pulls in several DOM/jQuery-heavy collaborators at import
 // time; stub them so importing stays cheap and side-effect free.
 vi.mock("../components/zoom.js", () => ({ default: {} }));
+vi.mock("../services/block_reference.js", () => ({
+    buildBlockReferenceMenuItems: vi.fn(async () => null)
+}));
 vi.mock("../services/clipboard_ext.js", () => ({ copyHtml: vi.fn(), copyTextWithToast: vi.fn() }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("../services/options.js", () => ({ default: { get: () => "" } }));
@@ -33,6 +36,7 @@ vi.mock("./table_context_menu.js", () => ({
     hasTableCellSelection: vi.fn(async () => false)
 }));
 
+import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import server from "../services/server.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
@@ -308,6 +312,52 @@ describe("buildNoteContextMenuItems", () => {
         await build({ element: document.createElement("td") });
 
         expect(buildTableContextMenuSections).not.toHaveBeenCalled();
+    });
+
+    it("puts the block reference rows in the copy and paste submenus", async () => {
+        const cell = document.createElement("td");
+        vi.mocked(buildTableContextMenuSections).mockResolvedValueOnce({
+            main: [],
+            sort: { title: "S" },
+            delete: [],
+            select: { title: "SEL" },
+            pasteRows: [ { title: "PR1" } ]
+        } as TableMenuSections);
+        vi.mocked(buildBlockReferenceMenuItems).mockResolvedValueOnce({
+            copy: { title: "BC" },
+            paste: [ { title: "BP1" }, { title: "BP2" } ]
+        });
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+
+        const items = await build({ isEditable: true, element: cell, selectionText: "" }, host);
+
+        expect(buildBlockReferenceMenuItems).toHaveBeenCalledWith(cell, host.paste);
+        // Built once the table sections have moved the selection into the clicked cell.
+        expect(vi.mocked(buildTableContextMenuSections).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(buildBlockReferenceMenuItems).mock.invocationCallOrder[0]);
+        expect(titles(submenu(items, "electron_context_menu.copy"))).toEqual([
+            "electron_context_menu.copy",
+            "electron_context_menu.copy-as-markdown",
+            "---",
+            "BC"
+        ]);
+        // Without a selection only the reference can be copied, so the row opens its submenu.
+        expect(findItem(items, "electron_context_menu.copy"))
+            .toMatchObject({ enabled: true, handler: undefined });
+        expect(titles(submenu(items, "electron_context_menu.paste"))).toEqual([
+            "electron_context_menu.paste",
+            "electron_context_menu.paste-as-plain-text",
+            "---",
+            "BP1",
+            "BP2",
+            "---",
+            "PR1"
+        ]);
+
+        await build({ element: cell });
+        expect(buildBlockReferenceMenuItems).toHaveBeenCalledTimes(1);
     });
 
     it("converts the selection through the to-markdown route", async () => {

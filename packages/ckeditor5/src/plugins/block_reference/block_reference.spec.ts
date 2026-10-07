@@ -83,6 +83,7 @@ describe("BlockReference", () => {
                 "<blockQuote><paragraph>o[ne</paragraph></blockQuote>"
                 + "<paragraph>two</paragraph><paragraph>thr]ee</paragraph>"
             );
+            expect(editor.commands.get("assignBlockReference")?.value).toBe(3);
 
             const reference = editor.execute("assignBlockReference");
             const quote = editor.model.document.getRoot()?.getChild(0);
@@ -115,6 +116,7 @@ describe("BlockReference", () => {
                 "<table><tableRow><tableCell><paragraph>[a</paragraph></tableCell>"
                 + "<tableCell><paragraph>b]</paragraph></tableCell></tableRow></table>"
             );
+            expect(editor.commands.get("assignBlockReference")?.value).toBe(1);
 
             const reference = editor.execute("assignBlockReference");
 
@@ -143,7 +145,10 @@ describe("BlockReference", () => {
             editor.conversion.elementToElement({ model: "frame", view: "aside" });
             setModelData(editor.model, "<frame><paragraph>[]one</paragraph></frame>");
 
-            expect(editor.commands.get("assignBlockReference")?.isEnabled).toBe(false);
+            expect(editor.commands.get("assignBlockReference")).toMatchObject({
+                isEnabled: false,
+                value: 0
+            });
         });
     });
 
