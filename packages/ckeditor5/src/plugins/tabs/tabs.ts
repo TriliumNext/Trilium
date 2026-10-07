@@ -1,8 +1,8 @@
 import { Plugin } from "ckeditor5";
 
 import "../../theme/tabs.css";
-import TabsEditing from "./tabs_editing.js";
 import type { InsertTabCommand, InsertTabsCommand, MoveTabCommand, RemoveTabCommand } from "./tabs_commands.js";
+import TabsEditing from "./tabs_editing.js";
 import TabsUI from "./tabs_ui.js";
 
 /**

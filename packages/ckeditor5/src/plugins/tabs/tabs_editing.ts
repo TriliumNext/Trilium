@@ -18,20 +18,8 @@ import { CLASSES, ELEMENTS, TABS_WIDGET_PROPERTY } from "./constants.js";
 import { InsertTabCommand, InsertTabsCommand, MoveTabCommand, RemoveTabCommand } from "./tabs_commands.js";
 
 /**
- * Schema, conversion, commands and key handling for tabs blocks.
- *
- * Model:        <tabs><tab><tabTitle>…</tabTitle><tabPanel>…blocks…</tabPanel></tab>…</tabs>
- * Data view:    <div class="trilium-tabs">
- *                   <section class="trilium-tab">
- *                       <p class="trilium-tab-title">…</p>
- *                       <div class="trilium-tab-panel">…blocks…</div>
- *                   </section>
- *               </div>
- * Editing view: a widget whose titles form the tab strip and whose active panel shows below it.
- *
- * The active tab is editing-view state only: it follows the selection, so clicking a title or
- * moving the caret into a tab shows that tab. The saved HTML lists every tab in order, which
- * reads as a sequence of titled sections wherever no script turns it into tabs.
+ * Schema, conversion, commands and key handling for tabs blocks. The active tab is editing-view
+ * state only and follows the selection; the saved HTML lists every tab as a titled section.
  */
 export default class TabsEditing extends Plugin {
 
