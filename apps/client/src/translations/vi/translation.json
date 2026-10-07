@@ -19,37 +19,165 @@
       "nightly": "Tối",
       "standalone": "Độc lập"
     },
-    "github_tooltip": "Báo lỗi, đề xuất tính năng hoặc đóng góp trên GitHub"
+    "github_tooltip": "Báo lỗi, đề xuất tính năng hoặc đóng góp trên GitHub",
+    "build_info": "Bản dựng: {{buildDate}}, revision: <buildRevision />",
+    "contributors_label": "Người đóng góp:"
   },
   "add_link": {
     "add_link": "Thêm liên kết",
     "button_add_link": "Thêm liên kết",
     "help_on_links": "Trợ giúp về các liên kết",
     "link_title": "Đề mục liên kết",
-    "note": "Ghi chú"
+    "note": "Ghi chú",
+    "edit_link": "Sửa liên kết",
+    "search_note": "Tìm kiếm ghi chú theo tên",
+    "link_title_mirrors": "Tiêu đề liên kết phản chiếu tiêu đề hiện tại của ghi chú",
+    "link_title_arbitrary": "Tiêu đề liên kết có thể thay đổi tùy ý",
+    "anchor": "Neo (tùy chọn)",
+    "anchor_none": "Không (liên kết đến ghi chú)",
+    "button_edit_link": "Lưu liên kết"
   },
   "bulk_actions": {
-    "other": "Khác"
+    "other": "Khác",
+    "bulk_actions": "Hành động hàng loạt",
+    "affected_notes": "Các ghi chú bị ảnh hưởng",
+    "include_descendants": "Bao gồm các ghi chú con của ghi chú được chọn",
+    "available_actions": "Hành động khả dụng",
+    "chosen_actions": "Hành động đã chọn",
+    "execute_bulk_actions": "Thực thi hành động hàng loạt",
+    "bulk_actions_executed": "Các hành động hàng loạt đã được thực thi thành công.",
+    "none_yet": "Chưa có hành động nào... thêm hành động bằng cách nhấp vào một trong các hành động khả dụng ở trên.",
+    "labels": "Nhãn",
+    "relations": "Quan hệ",
+    "notes": "Ghi chú"
   },
   "branch_prefix": {
-    "save": "Lưu"
+    "save": "Lưu",
+    "edit_branch_prefix": "Sửa tiền tố nhánh",
+    "edit_branch_prefix_multiple": "Sửa tiền tố nhánh cho các nhánh {{count}}",
+    "help_on_tree_prefix": "Trợ giúp về tiền tố cây",
+    "prefix": "Tiền tố",
+    "branch_prefix_saved": "Tiền tố nhánh đã được lưu.",
+    "branch_prefix_saved_multiple": "Tiền tố nhánh đã được lưu cho các nhánh {{count}}.",
+    "affected_branches": "Các nhánh bị ảnh hưởng ({{count}}):",
+    "preview_in_tree": "Xem trước trong cây",
+    "description": "Được thêm vào trước tiêu đề ghi chú chỉ trong nhánh này. Các nhánh khác vẫn giữ tiêu đề gốc.",
+    "cancel": "Huỷ"
   },
   "confirm": {
     "ok": "OK",
-    "cancel": "Huỷ"
+    "cancel": "Huỷ",
+    "confirmation": "Xác nhận",
+    "are_you_sure_remove_note": "Bạn có chắc chắn muốn xóa ghi chú \"{{title}}\" khỏi bản đồ quan hệ không? ",
+    "if_you_dont_check": "Bản thân ghi chú vẫn được giữ lại; chỉ có vị trí của nó ở đây bị xóa.",
+    "delete_note_keeps_note_other": "Ghi chú này có {{count}} bản sao khác, nên bản thân ghi chú vẫn được giữ lại.",
+    "delete_note_deletes_note": "Đây là vị trí duy nhất của ghi chú trong cây, nên bản thân ghi chú sẽ bị xóa. Bạn có thể hoàn tác việc này trong các thay đổi gần đây.",
+    "delete_note_deletes_clones": "Ghi chú sẽ bị xóa khỏi tất cả {{places}} vị trí mà nó xuất hiện. Bạn có thể hoàn tác việc này trong các thay đổi gần đây.",
+    "also_delete_note": "Đồng thời xóa ghi chú"
   },
   "delete_notes": {
     "close": "Đóng",
-    "cancel": "Huỷ"
+    "cancel": "Huỷ",
+    "title": "Xóa ghi chú",
+    "clones_label": "Bản sao",
+    "delete_clones_description_other": "Đồng thời xóa {{count}} bản sao khác. Có thể hoàn tác trong các thay đổi gần đây.",
+    "delete_all_clones_description": "Đồng thời xóa tất cả bản sao (có thể hoàn tác trong các thay đổi gần đây)",
+    "erase_notes_label": "Xóa vĩnh viễn",
+    "erase_notes_description": "Xóa ghi chú ngay lập tức thay vì xóa tạm thời. Hành động này không thể hoàn tác và sẽ buộc ứng dụng phải tải lại.",
+    "erase_notes_warning": "Xóa ghi chú vĩnh viễn (không thể hoàn tác), bao gồm tất cả các bản sao. Hành động này sẽ buộc ứng dụng phải tải lại.",
+    "notes_to_be_deleted": "Các ghi chú sẽ bị xóa ({{notesCount}})",
+    "no_note_to_delete": "Không có ghi chú nào bị xóa (chỉ xóa các bản sao).",
+    "broken_relations_to_be_deleted": "Các quan hệ bị hỏng ({{relationCount}})",
+    "table_note_with_relation": "Ghi chú có quan hệ",
+    "table_relation": "Quan hệ",
+    "table_points_to": "Trỏ tới (đã xóa)",
+    "delete": "Xoá"
   },
   "export": {
     "close": "Đóng",
     "export": "Xuất",
-    "choose_export_type": "Xin hãy chọn cách xuất trước"
+    "choose_export_type": "Xin hãy chọn cách xuất trước",
+    "export_note_title": "Xuất ghi chú",
+    "what_to_export": "Nội dung cần xuất",
+    "export_type_subtree": "Ghi chú này & tất cả ghi chú con",
+    "export_type_single": "Chỉ ghi chú này",
+    "format": "Định dạng",
+    "format_html_name": "HTML",
+    "format_html_description": "Giữ lại toàn bộ định dạng",
+    "format_markdown_name": "Markdown",
+    "format_markdown_description": "Giữ lại hầu hết định dạng",
+    "format_opml_name": "OPML",
+    "format_opml_description": "Định dạng phác thảo với nội dung HTML",
+    "format_share_name": "HTML cho web",
+    "format_share_description": "Trang web tĩnh có thể xuất bản sử dụng giao diện shared-notes",
+    "recommended": "Khuyên dùng",
+    "result_subtree_html": "Một tệp nén ZIP chứa các ghi chú văn bản được lưu dưới dạng HTML. Mã nguồn, hình ảnh và các tệp khác giữ nguyên định dạng gốc.",
+    "result_subtree_markdown": "Một tệp nén ZIP chứa các ghi chú văn bản được lưu dưới dạng Markdown. Mã nguồn, hình ảnh và các tệp khác giữ nguyên định dạng gốc.",
+    "result_share": "Một tệp nén ZIP chứa trang web tĩnh có thể xuất bản sử dụng giao diện shared-notes.",
+    "result_opml": "Một tệp phác thảo OPML duy nhất. Bao gồm tiêu đề và nội dung ghi chú; không bao gồm hình ảnh, tệp mã nguồn và tệp đính kèm.",
+    "result_single_html": "Một tệp HTML duy nhất. Hình ảnh và tệp đính kèm được nhúng bên trong.",
+    "result_single_markdown": "Một tệp Markdown (.md) duy nhất.",
+    "preparing_export": "Đang chuẩn bị xuất…",
+    "export_in_progress_with_total": "Đã xuất {{progressCount}} trên tổng số {{totalCount}} ghi chú",
+    "export_finished_successfully": "Xuất dữ liệu thành công.",
+    "format_pdf": "PDF - dùng để in ấn hoặc chia sẻ."
   },
   "help": {
     "other": "Khác",
-    "notSet": "chưa được đặt"
+    "notSet": "chưa được đặt",
+    "title": "Bảng tra cứu nhanh",
+    "editShortcuts": "Chỉnh sửa phím tắt",
+    "noteNavigation": "Điều hướng ghi chú",
+    "goUpDown": "Lên/xuống trong danh sách ghi chú",
+    "collapseExpand": "Thu gọn/mở rộng nhánh",
+    "goBackForwards": "Quay lại / đi tiếp trong lịch sử",
+    "showJumpToNoteDialog": "Hiển thị hộp thoại <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Chuyển đến\"</a>",
+    "scrollToActiveNote": "Cuộn đến ghi chú hiện tại",
+    "jumpToParentNote": "Chuyển đến ghi chú cha",
+    "collapseWholeTree": "Thu gọn toàn bộ cây ghi chú",
+    "collapseSubTree": "Thu gọn cây con",
+    "toggleArchivedNotes": "Hiển thị/ẩn ghi chú đã lưu trữ",
+    "tabShortcuts": "Phím tắt tab",
+    "newTabNoteLink": "Mở ghi chú trong tab mới khi nhấp vào liên kết",
+    "newTabWithActivationNoteLink": "Mở và chuyển sang ghi chú trong tab mới khi nhấp vào liên kết",
+    "onlyInDesktop": "Chỉ dành cho máy tính (bản dựng Electron)",
+    "openEmptyTab": "Mở tab trống",
+    "closeActiveTab": "Đóng tab hiện tại",
+    "activateNextTab": "Chuyển sang tab tiếp theo",
+    "activatePreviousTab": "Chuyển sang tab trước đó",
+    "creatingNotes": "Tạo ghi chú",
+    "createNoteAfter": "Tạo ghi chú mới sau ghi chú hiện tại",
+    "createNoteInto": "Tạo ghi chú con mới trong ghi chú hiện tại",
+    "editBranchPrefix": "Chỉnh sửa <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">tiền tố</a> của bản sao ghi chú hiện tại",
+    "movingCloningNotes": "Di chuyển / nhân bản ghi chú",
+    "moveNoteUpDown": "Di chuyển ghi chú lên/xuống trong danh sách ghi chú",
+    "moveNoteUpHierarchy": "Di chuyển ghi chú lên trong phân cấp",
+    "multiSelectNote": "Chọn nhiều ghi chú phía trên/dưới",
+    "selectAllNotes": "Chọn tất cả ghi chú ở cấp hiện tại",
+    "selectNote": "Chọn ghi chú",
+    "copyNotes": "Sao chép ghi chú đang hoạt động (hoặc vùng chọn hiện tại) vào clipboard (dùng để <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">nhân bản</a>)",
+    "cutNotes": "Cắt ghi chú hiện tại (hoặc vùng chọn hiện tại) vào clipboard (dùng để di chuyển ghi chú)",
+    "pasteNotes": "Dán (các) ghi chú làm ghi chú con vào ghi chú đang hoạt động (sẽ là di chuyển hoặc nhân bản tùy thuộc vào việc nó được sao chép hay cắt vào clipboard)",
+    "deleteNotes": "Xóa ghi chú / nhánh con",
+    "editingNotes": "Chỉnh sửa ghi chú",
+    "editNoteTitle": "Trong khung cây thư mục sẽ chuyển từ khung cây sang tiêu đề ghi chú. Nhấn Enter từ tiêu đề ghi chú sẽ chuyển tiêu điểm sang trình chỉnh sửa văn bản. <kbd>Ctrl+.</kbd> sẽ chuyển ngược lại từ trình chỉnh sửa sang khung cây.",
+    "createEditLink": "Tạo / chỉnh sửa liên kết ngoài",
+    "openAiAssistant": "Mở trợ lý AI cho vùng chọn",
+    "createInternalLink": "Tạo liên kết nội bộ",
+    "followLink": "Đi tới liên kết dưới con trỏ",
+    "insertDateTime": "Chèn ngày và giờ hiện tại tại vị trí con trỏ",
+    "jumpToTreePane": "Nhảy sang khung cây thư mục và cuộn đến ghi chú đang hoạt động",
+    "markdownAutoformat": "Tự động định dạng kiểu Markdown",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code> V.v. theo sau bởi dấu cách để tạo tiêu đề",
+    "bulletList": "<code>*</code> Hoặc <code>-</code> theo sau bởi dấu cách để tạo danh sách dấu đầu dòng",
+    "numberedList": "<code>1.</code> Hoặc <code>1)</code> theo sau bởi dấu cách để tạo danh sách đánh số",
+    "blockQuote": "Bắt đầu một dòng bằng <code>></code> theo sau bởi dấu cách để tạo khối trích dẫn",
+    "troubleshooting": "Khắc phục sự cố",
+    "reloadFrontend": "Tải lại giao diện Trilium",
+    "showDevTools": "Hiển thị công cụ nhà phát triển",
+    "showSQLConsole": "Hiển thị bảng điều khiển SQL",
+    "quickSearch": "Tập trung vào ô tìm kiếm nhanh",
+    "inPageSearch": "Tìm kiếm trong trang"
   },
   "toast": {
     "critical-error": {
@@ -64,17 +192,74 @@
     "bundle-error": {
       "title": "Tải script tùy chọn thất bại",
       "message": "Script từ ghi chú với ID \"{{id}}\", Tiêu đề \"{{title}}\" không thể chạy được vì:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Không thể lấy danh sách widget từ máy chủ"
+    },
+    "widget-render-error": {
+      "title": "Không thể hiển thị widget React tùy chỉnh"
+    },
+    "widget-missing-parent": "Widget tùy chỉnh chưa định nghĩa thuộc tính bắt buộc '{{property}}'.\n\nNếu script này được thiết kế để chạy mà không có thành phần giao diện (UI), hãy sử dụng '#run=frontendStartup' thay thế.",
+    "open-script-note": "Mở ghi chú script",
+    "scripting-error": "Chạy ghi chú script thất bại",
+    "unhandled-error": {
+      "title": "Một tác vụ nền đã thất bại",
+      "details-button": "Xem thêm chi tiết...",
+      "details-intro": "Ứng dụng vẫn đang chạy và các ghi chú của bạn không bị ảnh hưởng. Nếu lỗi này tiếp tục xảy ra, vui lòng báo cáo trên GitHub bằng cách dán thông tin bên dưới.",
+      "details-title": "Thông tin kỹ thuật"
     }
   },
   "import": {
-    "options": "Tuỳ chọn"
+    "options": "Tuỳ chọn",
+    "importIntoNote": "Nhập vào ghi chú",
+    "importIntoNoteNamed": "Nhập vào {{- title}}",
+    "import_from": "Nhập từ",
+    "cardName": "Tệp & các định dạng khác",
+    "cardDescription": "ZIP, ENEX, OPML, Markdown, HTML, hình ảnh và nhiều hơn nữa",
+    "chooseImportFile": "Chọn tệp nhập",
+    "importZipRecommendation": "Khi nhập tệp ZIP, phân cấp ghi chú sẽ phản ánh cấu trúc thư mục con bên trong tệp nén.",
+    "safeImportTooltip": "Bản xuất Trilium <code>.zip</code> có thể chứa các tập lệnh thực thi. Nhập an toàn sẽ vô hiệu hóa chúng; chỉ bỏ chọn nếu tệp nén được thiết kế để chạy tập lệnh và bạn tin tưởng nội dung của nó.",
+    "safeImport": "Nhập an toàn",
+    "explodeArchivesTooltip": "Tạo ghi chú từ các tệp bên trong tệp nén <code>.zip</code>, <code>.enex</code> và <code>.opml</code>. Khi tắt, các tệp nén sẽ được đính kèm nguyên bản.",
+    "explodeArchives": "Đọc nội dung của các tệp nén <code>.zip</code>, <code>.enex</code> và <code>.opml</code>.",
+    "shrinkImagesTooltip": "Giảm kích thước của hình ảnh được nhập, điều này có thể làm giảm nhẹ chất lượng của chúng. Không áp dụng cho các tệp nhập <code>.zip</code> chứa siêu dữ liệu Trilium, vốn được giả định là đã được nén sẵn.",
+    "shrinkImagesProviderTooltip": "Giảm kích thước của hình ảnh được nhập, điều này có thể làm giảm nhẹ chất lượng của chúng.",
+    "shrinkImages": "Nén hình ảnh",
+    "textImportedAsText": "Nhập HTML, Markdown và TXT dưới dạng ghi chú văn bản nếu không rõ ràng từ siêu dữ liệu",
+    "codeImportedAsCode": "Nhập các tệp mã được nhận dạng (ví dụ: <code>.json</code>) dưới dạng ghi chú mã nếu không rõ ràng từ siêu dữ liệu",
+    "spreadsheetImportedAsSpreadsheet": "Nhập các tệp CSV và Excel dưới dạng bảng tính có thể chỉnh sửa thay vì tệp thông thường",
+    "replaceUnderscoresWithSpaces": "Thay thế dấu gạch dưới bằng khoảng trắng trong tên ghi chú được nhập",
+    "import": "Nhập",
+    "failed": "Nhập thất bại: {{message}}.",
+    "html_import_tags": {
+      "title": "Thẻ nhập HTML",
+      "description": "Cấu hình các thẻ HTML nào sẽ được giữ lại khi nhập ghi chú. Các thẻ không có trong danh sách này sẽ bị loại bỏ trong quá trình nhập. Một số thẻ (như 'script') luôn bị loại bỏ vì lý do bảo mật.",
+      "placeholder": "Nhập các thẻ HTML, mỗi thẻ một dòng",
+      "reset_button": "Đặt lại về danh sách mặc định"
+    },
+    "starting": "Đang nhập…",
+    "in-progress": "Đã nhập {{progress}} ghi chú",
+    "in-progress-with-total": "Đã nhập {{progress}} trên tổng số {{total}} ghi chú",
+    "extracting": "Đã trích xuất {{progress}} trên tổng số {{total}} mục",
+    "processing": "Đã xử lý {{progress}} trên tổng số {{total}} ghi chú",
+    "throttled": "Dịch vụ đang giới hạn tần suất yêu cầu; quá trình nhập đang chờ để tiếp tục truy cập…",
+    "throttled-with-total": "Đã nhập {{progress}} trên tổng số {{total}} ghi chú — dịch vụ đang giới hạn tần suất yêu cầu, đang chờ để tiếp tục truy cập…",
+    "successful": "Quá trình nhập đã hoàn thành thành công."
   },
   "info": {
     "okButton": "OK",
-    "closeButton": "Đóng"
+    "closeButton": "Đóng",
+    "modalTitle": "Thông báo thông tin",
+    "copy_to_clipboard": "Sao chép vào khay nhớ tạm"
   },
   "move_to": {
-    "dialog_title": "Chuyển ghi chép tới..."
+    "dialog_title": "Chuyển ghi chép tới...",
+    "notes_to_move": "Các ghi chú cần di chuyển",
+    "target_parent_note": "Ghi chú cha đích",
+    "search_placeholder": "Tìm kiếm ghi chú theo tên",
+    "move_button": "Di chuyển đến ghi chú được chọn",
+    "error_no_path": "Không có đường dẫn để di chuyển đến.",
+    "move_success_message": "Các ghi chú được chọn đã được di chuyển vào "
   },
   "prompt": {
     "ok": "OK"
@@ -119,5 +304,164 @@
   "active_content_badges": {
     "menu_run_daily": "Mỗi ngày",
     "menu_run_hourly": "Mỗi giờ"
+  },
+  "clone_to": {
+    "clone_notes_to": "Nhân bản ghi chú tới...",
+    "help_on_links": "Trợ giúp về các liên kết",
+    "notes_to_clone": "Ghi chú cần nhân bản",
+    "target_parent_note": "Ghi chú cha đích",
+    "search_for_note_by_its_name": "Tìm kiếm ghi chú theo tên",
+    "cloned_note_prefix_title": "Ghi chú được nhân bản sẽ hiển thị trong cây ghi chú với tiền tố được chỉ định",
+    "prefix_optional": "Tiền tố (tùy chọn)",
+    "clone_to_selected_note": "Nhân bản vào ghi chú được chọn",
+    "no_path_to_clone_to": "Không có đường dẫn để nhân bản đến.",
+    "note_cloned": "Ghi chú \"{{clonedTitle}}\" đã được nhân bản vào \"{{targetTitle}}\""
+  },
+  "file_upload": {
+    "drop_or_browse_single": "Kéo và thả tệp vào đây, hoặc nhấp để duyệt",
+    "drop_or_browse_multiple": "Kéo và thả tệp vào đây, hoặc nhấp để duyệt",
+    "browse_single": "Chạm để chọn một tệp",
+    "browse_multiple": "Chạm để chọn các tệp",
+    "remove_file": "Xóa tệp"
+  },
+  "import_provider": {
+    "choose_provider": "Chọn một dịch vụ ở trên để nhập."
+  },
+  "onenote_import": {
+    "name": "Microsoft OneNote",
+    "description": "Kết nối với tài khoản của bạn",
+    "connect_description": "Đăng nhập bằng tài khoản Microsoft của bạn để nhập các sổ tay OneNote.",
+    "connect": "Đăng nhập bằng Microsoft",
+    "section_heading": "Microsoft OneNote",
+    "checking": "Đang kết nối với OneNote…",
+    "connecting": "Đang chờ hoàn tất đăng nhập…",
+    "device_instructions": "Mở trang đăng nhập Microsoft và nhập mã này:",
+    "device_open_page": "Mở trang đăng nhập",
+    "device_cancel": "Hủy đăng nhập",
+    "connected_as": "Đã kết nối dưới tên {{name}}",
+    "disconnect": "Ngắt kết nối",
+    "refresh": "Làm mới",
+    "load_failed": "Không thể tải các sổ tay OneNote của bạn.",
+    "load_retry": "Thử lại",
+    "no_notebooks": "Không tìm thấy sổ ghi chú nào trong tài khoản này.",
+    "no_notebooks_hint": "Chỉ các sổ ghi chú được lưu trữ trong OneDrive của chính tài khoản này mới được liệt kê. Các sổ ghi chú được chia sẻ với bạn, hoặc được lưu trên trang SharePoint hoặc Teams, không thể nhập.",
+    "select_sections": "Chọn các mục để nhập",
+    "select_sections_hint": "OneNote không bao gồm thứ tự ban đầu trong dữ liệu nhập, vì vậy các mục và nhóm được sắp xếp theo ngày tạo và có thể không khớp với cách chúng hiển thị trong OneNote.",
+    "import": "Nhập các mục đã chọn",
+    "import_count_other": "Nhập {{count}} mục",
+    "attach_source": "Đính kèm HTML gốc (gỡ lỗi)",
+    "attach_source_hint": "Lưu HTML OneNote chưa sửa đổi của mỗi trang dưới dạng tệp đính kèm trên ghi chú được nhập, để so sánh với kết quả đã chuyển đổi."
+  },
+  "notion_import": {
+    "name": "Notion",
+    "description": "Từ bản xuất HTML",
+    "description_long": "Trong Notion, xuất không gian làm việc hoặc một trang của bạn dưới dạng HTML bao gồm cả các trang con, sau đó chọn tệp .zip kết quả tại đây.",
+    "choose_file": "Bản xuất Notion (.zip)",
+    "import": "Nhập"
+  },
+  "keep_import": {
+    "name": "Google Keep",
+    "description": "Từ bản xuất Takeout",
+    "description_long": "Trong Google Takeout, xuất dữ liệu Keep của bạn dưới dạng tệp .zip, sau đó chọn tệp kết quả tại đây.",
+    "choose_file": "Bản xuất Google Keep (.zip)",
+    "import": "Nhập"
+  },
+  "anytype_import": {
+    "name": "Anytype",
+    "description": "Từ bản xuất JSON",
+    "description_long": "Trong Anytype, xuất không gian của bạn bằng định dạng \"Any-Block\" với \"JSON\" được chọn, sau đó chọn tệp .zip kết quả tại đây. Hiện tại chỉ có các trang và văn bản của chúng được nhập.",
+    "choose_file": "Bản xuất Anytype (.zip)",
+    "import": "Nhập"
+  },
+  "obsidian_import": {
+    "name": "Obsidian",
+    "description": "Từ một vault",
+    "description_long": "Nén thư mục vault Obsidian của bạn thành tệp zip, sau đó chọn tệp .zip kết quả tại đây.",
+    "choose_file": "Vault Obsidian (.zip)",
+    "import": "Nhập"
+  },
+  "evernote_import": {
+    "name": "Evernote",
+    "description": "Từ các tệp .enex",
+    "description_long": "Trong Evernote, xuất một sổ ghi chú (hoặc tối đa 100 ghi chú cùng lúc) dưới dạng tệp ENEX, sau đó chọn một hoặc nhiều tệp .enex tại đây. Mỗi tệp được nhập dưới dạng một sổ ghi chú riêng biệt.",
+    "choose_file": "Bản xuất Evernote (.enex)",
+    "import": "Nhập"
+  },
+  "include_note": {
+    "dialog_title": "Bao gồm ghi chú",
+    "label_note": "Ghi chú",
+    "placeholder_search": "Tìm kiếm ghi chú theo tên",
+    "box_size_prompt": "Kích thước hộp của ghi chú được bao gồm:",
+    "box_size_small": "Nhỏ (~ 10 dòng)",
+    "box_size_medium": "Trung bình (~ 30 dòng)",
+    "box_size_full": "Đầy đủ (hộp hiển thị toàn bộ văn bản)",
+    "box_size_expandable": "Có thể mở rộng (thu gọn theo mặc định)",
+    "button_include": "Bao gồm ghi chú",
+    "box_size_tiny": "Siêu nhỏ (một hàng duy nhất có tiêu đề và các hành động)"
+  },
+  "jump_to_note": {
+    "search_placeholder": "Tìm kiếm ghi chú theo tên hoặc nhập > để tìm lệnh..."
+  },
+  "markdown_editor": {
+    "image_upload_failed": "Không thể tải lên hình ảnh \"{{name}}\"."
+  },
+  "markdown_import": {
+    "dialog_title": "Nhập Markdown",
+    "modal_body_text": "Do cơ chế hộp cát (sandbox) của trình duyệt, không thể đọc trực tiếp khay nhớ tạm từ JavaScript. Vui lòng dán Markdown cần nhập vào vùng văn bản bên dưới và nhấp vào nút Nhập",
+    "import_button": "Nhập",
+    "import_success": "Nội dung Markdown đã được nhập vào tài liệu."
+  },
+  "markdown_slash_commands": {
+    "date": "Chèn ngày và giờ hiện tại",
+    "include": "Bao gồm một ghi chú khác",
+    "image": "Tải lên và chèn một hình ảnh",
+    "link": "Chèn một liên kết ghi chú",
+    "math": "Chèn một khối phương trình toán học",
+    "footnote": "Chèn một chú thích chân trang",
+    "mermaid": "Chèn một sơ đồ Mermaid",
+    "mermaid_template": "Chèn một sơ đồ Mermaid \"{{name}}\"",
+    "collapsible": "Chèn một khối có thể thu gọn",
+    "page_break": "Chèn một dấu ngắt trang (để in)",
+    "table": "Chèn một bảng",
+    "admonition": "Chèn cảnh báo {{type}}",
+    "todo": "Chèn một mục công việc \"{{title}}\"",
+    "todo_nonstandard": "Chèn một mục công việc \"{{title}}\" (không tiêu chuẩn)",
+    "titles": {
+      "date": "Chèn ngày/giờ",
+      "include": "Bao gồm ghi chú",
+      "image": "Tải lên hình ảnh",
+      "link": "Liên kết nội bộ",
+      "math": "Phương trình toán học",
+      "footnote": "Chú thích chân trang",
+      "mermaid": "Sơ đồ Mermaid",
+      "mermaid_template": "Sơ đồ Mermaid: {{name}}",
+      "collapsible": "Khối có thể thu gọn",
+      "page_break": "Ngắt trang",
+      "table": "Bảng",
+      "note": "Ghi chú",
+      "tip": "Mẹo",
+      "important": "Quan trọng",
+      "caution": "Thận trọng",
+      "warning": "Cảnh báo",
+      "todo": "Công việc: {{title}}"
+    },
+    "placeholders": {
+      "math": "Phương trình",
+      "collapsible_summary": "Tóm tắt",
+      "collapsible_details": "Chi tiết",
+      "table_column": "Cột {{number}}"
+    }
+  },
+  "note_type_chooser": {
+    "change_path_prompt": "Thay đổi nơi tạo ghi chú mới:",
+    "search_placeholder": "Tìm kiếm đường dẫn theo tên (mặc định nếu để trống)",
+    "modal_title": "Chọn loại ghi chú",
+    "modal_body": "Chọn loại ghi chú / bản mẫu của ghi chú mới:",
+    "templates": "Bản mẫu"
+  },
+  "password_not_set": {
+    "title": "Mật khẩu chưa được thiết lập",
+    "body1": "Các ghi chú được bảo vệ được mã hóa bằng mật khẩu người dùng, nhưng mật khẩu vẫn chưa được thiết lập.",
+    "body2": "Để có thể bảo vệ các ghi chú, hãy nhấp vào nút bên dưới để mở hộp thoại Tùy chọn và thiết lập mật khẩu của bạn."
   }
 }
