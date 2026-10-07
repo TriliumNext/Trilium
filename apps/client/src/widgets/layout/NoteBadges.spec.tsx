@@ -22,7 +22,7 @@ vi.mock("../../services/i18n", () => ({
 
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { getShareScope, OfficePreviewBadge } from "./NoteBadges";
+import { ExecuteBadge, getShareScope, OfficePreviewBadge } from "./NoteBadges";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -50,6 +50,23 @@ describe("OfficePreviewBadge", () => {
         shownNote.current = buildNote({ title: "Document", ...noteDef });
         shownNote.viewScope = viewScope;
         return renderInto(<OfficePreviewBadge />).querySelector(".office-preview-badge");
+    }
+});
+
+describe("ExecuteBadge", () => {
+    it("titles the button with #executeTitle or the value of #executeButton, falling back to the wording for the note's language", () => {
+        expect(renderBadge({ "#executeButton": "", "#executeTitle": "Deploy" })?.textContent).toBe("Deploy");
+        expect(renderBadge({ "#executeButton": "Create launcher" })?.textContent).toBe("Create launcher");
+        expect(renderBadge({ "#executeButton": "true", "#executeTitle": "Deploy" })?.textContent).toBe("Deploy");
+        expect(renderBadge({ "#executeButton": "true" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({ "#executeButton": "" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({ "#executeDescription": "Rebuilds the index" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({})).toBeNull();
+    });
+
+    function renderBadge(labels: Record<`#${string}`, string>) {
+        shownNote.current = buildNote({ title: "Script", type: "code", mime: "application/javascript;env=frontend", ...labels });
+        return renderInto(<ExecuteBadge />).querySelector(".execute-badge .text");
     }
 });
 

@@ -18,7 +18,7 @@ import { isElectron, isMobileApp, isStandalone } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import {
-    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty,
+    useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty,
     useTriliumEvent, useTriliumOption
 } from "../react/hooks";
 import { ActiveContentBadges } from "./ActiveContentBadges";
@@ -165,19 +165,23 @@ function ClippedNoteBadge() {
     );
 }
 
-function ExecuteBadge() {
+export function ExecuteBadge() {
     const { note, parentComponent } = useNoteContext();
     const isScript = note?.isTriliumScript();
     const isSql = note?.isTriliumSqlite();
     const isExecutable = isScript || isSql;
     const [ executeDescription ] = useNoteLabel(note, "executeDescription");
     const [ executeButton ] = useNoteLabelBoolean(note, "executeButton");
+    const [ executeTitle ] = useNoteLabel(note, "executeTitle");
+    // `#executeButton` is typed as a flag, but the User Guide documents its value as the button's title.
+    const [ executeButtonValue ] = useNoteLabelByName(note, "executeButton");
+    const title = executeTitle || (executeButtonValue !== "true" && executeButtonValue !== "false" && executeButtonValue);
 
     return (note && isExecutable && (executeDescription || executeButton) &&
         <Badge
             className="execute-badge"
             icon="bx bx-play"
-            text={isScript ? t("breadcrumb_badges.execute_script") : t("breadcrumb_badges.execute_sql")}
+            text={title || (isScript ? t("breadcrumb_badges.execute_script") : t("breadcrumb_badges.execute_sql"))}
             tooltip={executeDescription || (isScript ? t("breadcrumb_badges.execute_script_description") : t("breadcrumb_badges.execute_sql_description"))}
             onClick={() => parentComponent.triggerCommand("runActiveNote")}
         />
