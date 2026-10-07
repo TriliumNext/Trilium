@@ -6,12 +6,14 @@
  * in the tree, while the notes dragged onto it live wherever they lived and are merely named in the
  * map's content.
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import froca from "../../../services/froca";
 import * as noteDeletion from "../../../services/note_deletion";
+import server from "../../../services/server";
+import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
-import RelationMapApi, { MapData } from "./api";
+import RelationMapApi, { type ClientRelation, MapData } from "./api";
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
@@ -64,5 +66,87 @@ describe("RelationMapApi", () => {
                 deletion.mockRestore();
             }
         });
+    });
+});
+
+describe("RelationMapApi relations and placements", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    /** A map of `a` and `b` with an `author` relation from `a` to `b`, recording each change. */
+    function build() {
+        buildNote({ id: "themap", title: "The map" });
+        const data: MapData = {
+            notes: [ { noteId: "a", x: 0, y: 0 }, { noteId: "b", x: 100, y: 0 } ],
+            transform: { x: 0, y: 0, scale: 1 }
+        };
+        const changes: boolean[] = [];
+        const api = new RelationMapApi(froca.notes["themap"], data, (_data, refreshUi) => changes.push(refreshUi));
+        const relation: ClientRelation = {
+            attributeId: "rel", sourceNoteId: "a", targetNoteId: "b", name: "author", type: "uniDirectional", render: true
+        };
+        api.loadRelations([ relation ]);
+        return {
+            api, data, changes,
+            put: vi.spyOn(server, "put").mockResolvedValue(undefined),
+            remove: vi.spyOn(server, "remove").mockResolvedValue(undefined)
+        };
+    }
+
+    it("connects two notes under a cleaned name, once", async () => {
+        const { api, put, changes } = build();
+
+        expect(await api.connect("has child", "a", "b")).toBe(true);
+        expect(put).toHaveBeenCalledWith("notes/a/relations/haschild/to/b");
+        expect(await api.connect("author", "a", "b")).toBe(false);
+        expect(put).toHaveBeenCalledTimes(1);
+        expect(changes).toEqual([ true ]);
+    });
+
+    it("renames a relation unless the new name is taken or the relation is unknown", async () => {
+        const { api, put, remove } = build();
+        expect(api.getRelationName("rel")).toBe("author");
+
+        expect(await api.renameRelation("rel", "editor")).toBe(true);
+        expect(put).toHaveBeenCalledWith("notes/a/relations/editor/to/b");
+        expect(remove).toHaveBeenCalledWith("notes/a/relations/author/to/b");
+
+        expect(await api.renameRelation("rel", "author")).toBe(false);
+        expect(await api.renameRelation("unknown", "editor")).toBe(false);
+        expect(put).toHaveBeenCalledTimes(1);
+    });
+
+    it("removes a known relation from its source note", async () => {
+        const { api, remove, changes } = build();
+
+        await api.removeRelation("rel");
+        await api.removeRelation("unknown");
+        expect(remove.mock.calls).toEqual([ [ "notes/a/relations/author/to/b" ] ]);
+        expect(changes).toEqual([ true, true ]);
+    });
+
+    it("adds, moves and drops boxes, reporting whether the boxes change", () => {
+        const { api, data, changes } = build();
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+        const logError = vi.fn();
+        vi.stubGlobal("logError", logError);
+
+        api.addMultipleNotes([]);
+        api.addMultipleNotes([ { noteId: "a", title: "A", x: 5, y: 5 }, { noteId: "c", title: "C", x: 200, y: 0 } ]);
+        expect(showError).toHaveBeenCalledTimes(1);
+        api.createItem({ noteId: "d", x: 0, y: 100 });
+        expect(data.notes.map((note) => note.noteId)).toEqual([ "a", "b", "c", "d" ]);
+
+        api.moveNote("b", 150, 50);
+        api.moveNote("unknown", 0, 0);
+        expect(data.notes[1]).toEqual({ noteId: "b", x: 150, y: 50 });
+        expect(logError).toHaveBeenCalledTimes(1);
+
+        api.cleanupOtherNotes([ "a", "b", "c", "d" ]);
+        api.cleanupOtherNotes([ "a", "c" ]);
+        expect(data.notes.map((note) => note.noteId)).toEqual([ "a", "c" ]);
+        expect(changes).toEqual([ true, true, false, true ]);
     });
 });

@@ -4,10 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import contextMenu, { type MenuItem } from "../../../menus/context_menu";
 import link_context_menu from "../../../menus/link_context_menu";
+import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
+import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
 import type RelationMapApi from "./api";
-import { buildNoteContextMenuHandler, showCanvasContextMenu } from "./context_menu";
+import type { ClientRelation } from "./api";
+import { buildNoteContextMenuHandler, showCanvasContextMenu, showRelationContextMenu } from "./context_menu";
 
 describe("relation map note context menu", () => {
     let container: HTMLElement | undefined;
@@ -79,5 +82,62 @@ describe("relation map canvas context menu", () => {
         expect([ onPaste.mock.calls.length, onAddNote.mock.calls.length ]).toEqual([ 1, 0 ]);
         choose(2);
         expect(onAddNote).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("relation map relation context menu", () => {
+    const relation: ClientRelation = {
+        attributeId: "rel", sourceNoteId: "a", targetNoteId: "b", name: "author", type: "uniDirectional", render: true
+    };
+    const renameRelation = vi.fn(async () => true);
+    const removeRelation = vi.fn();
+    const mapApiRef = { current: { getRelationName: () => "author", renameRelation, removeRelation } as unknown as RelationMapApi };
+    const askRelationName = vi.fn<(defaultValue: string) => Promise<string | null>>();
+
+    /** Opens the menu and chooses `command`, waiting for what it does. */
+    async function choose(command: string) {
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+        const event = new MouseEvent("contextmenu", { cancelable: true });
+        showRelationContextMenu(event, relation, mapApiRef, askRelationName);
+        expect(event.defaultPrevented).toBe(true);
+
+        const options = show.mock.calls.at(-1)?.[0];
+        await options?.selectMenuItemHandler({ title: command, command }, event);
+    }
+
+    beforeEach(() => {
+        for (const mock of [ renameRelation, removeRelation, askRelationName ]) mock.mockClear();
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it("renames the relation to a new name asked for next to it, and reports a name already taken", async () => {
+        const showError = vi.spyOn(toast, "showError").mockImplementation(() => {});
+
+        askRelationName.mockResolvedValueOnce("editor");
+        await choose("rename");
+        expect(askRelationName).toHaveBeenCalledWith("author");
+        expect(renameRelation).toHaveBeenCalledWith("rel", "editor");
+
+        for (const answer of [ null, "  ", "author" ]) {
+            askRelationName.mockResolvedValueOnce(answer);
+            await choose("rename");
+        }
+        expect(renameRelation).toHaveBeenCalledTimes(1);
+
+        askRelationName.mockResolvedValueOnce("taken");
+        renameRelation.mockResolvedValueOnce(false);
+        await choose("rename");
+        expect(showError).toHaveBeenCalledTimes(1);
+    });
+
+    it("removes the relation once confirmed", async () => {
+        const confirm = vi.spyOn(dialog, "confirm").mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+        await choose("remove");
+        expect(removeRelation).not.toHaveBeenCalled();
+        await choose("remove");
+        expect(confirm).toHaveBeenCalledTimes(2);
+        expect(removeRelation).toHaveBeenCalledWith("rel");
     });
 });
