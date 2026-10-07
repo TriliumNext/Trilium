@@ -87,13 +87,13 @@ describe("the layout choices", () => {
         expect(host.querySelector(".appearance-layout-choices")).toBeNull();
     });
 
-    it("offers the ribbon setting only on the old layout, which is the only one that has one", () => {
+    it("offers the edited notes setting on both layouts", () => {
         open();
         expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
 
         mocks.stored = { newLayout: true };
         open();
-        expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).toBeNull();
+        expect(host.querySelector("input.switch-toggle[id^='edited-notes-open-in-ribbon-']")).not.toBeNull();
     });
 });
 

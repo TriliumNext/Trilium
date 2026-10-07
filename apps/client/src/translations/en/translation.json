@@ -1312,9 +1312,7 @@
     "open_all_limit_exceeded": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
   },
   "edited_notes": {
-    "no_edited_notes_found": "No edited notes on this day yet...",
-    "title": "Edited Notes",
-    "deleted": "(deleted)"
+    "no_edited_notes_found": "No edited notes on this day yet..."
   },
   "file_properties": {
     "original_file_name": "Original file name",
@@ -1877,9 +1875,6 @@
     "enabled": "enabled",
     "disabled": "disabled"
   },
-  "ribbon": {
-    "edited_notes_message": "Edited Notes ribbon tab will automatically open on day notes"
-  },
   "theme": {
     "title": "User Interface",
     "theme_label": "Application theme",
@@ -1908,7 +1903,8 @@
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "launcher bar is on the left (default)",
-    "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width."
+    "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width.",
+    "edited_notes_expanded": "Expand \"Notes edited on this day\" on day notes"
   },
   "ui-performance": {
     "title": "Performance",

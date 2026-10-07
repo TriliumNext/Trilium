@@ -1,18 +1,9 @@
 import { t } from "../../services/i18n";
-import options from "../../services/options";
-import EditedNotesTab from "./EditedNotesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
-    {
-        title: t("edited_notes.title"),
-        icon: "bx bx-calendar-edit",
-        content: EditedNotesTab,
-        show: ({ note }) => note?.hasOwnedLabel("dateNote"),
-        activate: () => options.is("editedNotesOpenInRibbon")
-    },
     {
         title: t("note_properties.info"),
         icon: "bx bx-info-square",

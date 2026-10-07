@@ -94,7 +94,6 @@ export default function AppearanceSettings() {
 function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme");
     const [ customThemes, setCustomThemes ] = useState<CustomTheme[]>([]);
-    const [ newLayout ] = useTriliumOptionBool("newLayout");
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
 
     useEffect(() => {
@@ -180,10 +179,10 @@ function UserInterface() {
                 />
             </OptionCardSection>
 
-            {!isMobile() && !newLayout && (
+            {!isMobile() && (
                 <OptionCardSection
                     name="edited-notes-open-in-ribbon"
-                    label={t("ribbon.edited_notes_message")}
+                    label={t("theme.edited_notes_expanded")}
                 >
                     <FormToggle
                         currentValue={editedNotesOpenInRibbon}

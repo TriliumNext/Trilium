@@ -1,16 +1,18 @@
 import "./NoteTitleActions.css";
 
+import { EditedNotesResponse } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
+import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import server from "../../services/server";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
 import { PromotedAttributesContent, usePromotedAttributeData } from "../PromotedAttributes";
 import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsible";
 import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import { NewNoteLink } from "../react/NoteLink";
-import { useEditedNotes } from "../ribbon/EditedNotesTab";
 import SearchDefinition from "../search/SearchDefinition";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
 
@@ -99,5 +101,20 @@ function EditedNotesContent({ note }: { note: FNote }) {
         )) : (
             <div className="no-edited-notes-found">{t("edited_notes.no_edited_notes_found")}</div>
         )));
+}
+
+function useEditedNotes(note: FNote) {
+    const [ editedNotes, setEditedNotes ] = useState<EditedNotesResponse>();
+
+    useEffect(() => {
+        server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async editedNotes => {
+            editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);
+            const noteIds = editedNotes.flatMap((n) => n.noteId);
+            await froca.getNotes(noteIds, true); // preload all at once
+            setEditedNotes(editedNotes);
+        });
+    }, [ note ]);
+
+    return editedNotes;
 }
 //#endregion
