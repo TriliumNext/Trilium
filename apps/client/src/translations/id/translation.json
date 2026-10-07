@@ -540,7 +540,6 @@
     "hide_relations": "Nama-nama relasi yang dipisahkan dengan koma dan akan disembunyikan. Semua relasi lainnya akan ditampilkan.",
     "title_template": "Judul bawaan untuk catatan yang dibuat sebagai anak dari catatan ini. Nilainya dievaluasi sebagai string JavaScript sehingga dapat diperkaya dengan konten dinamis melalui variabel <code>now</code> dan <code>parentNote</code> yang disuntikkan. Contoh:\n\n<ul>\n<li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n<li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n</ul>\n\nLihat <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki untuk detailnya</a>, dokumentasi API untuk <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a>, dan <a href=\"https://day.js.org/docs/en/display/format\">now</a> untuk informasi lebih lanjut.",
     "template": "Catatan ini akan muncul dalam daftar templat yang tersedia saat membuat catatan baru.",
-    "toc": "<code>#toc</code> atau <code>#toc=show</code> akan memaksa Daftar Isi untuk ditampilkan, <code>#toc=hide</code> akan memaksanya untuk disembunyikan. Jika label tidak ada, pengaturan global akan diterapkan.",
     "color": "Menentukan warna catatan di pohon catatan, tautan, dan sebagainya. Gunakan nilai warna CSS yang valid seperti `red` atau `#a13d5f`.",
     "keyboard_shortcut": "Mendefinisikan pintasan keyboard yang akan langsung berpindah ke catatan ini. Contoh: 'ctrl+alt+e'. Memerlukan pemuatan ulang frontend agar perubahan berlaku.",
     "keep_current_hoisting": "Membuka tautan ini tidak akan mengubah hoisting meskipun catatan tidak dapat ditampilkan dalam subtree hoisted saat ini.",
@@ -548,7 +547,6 @@
     "execute_description": "Deskripsi yang lebih panjang untuk catatan kode saat ini yang ditampilkan bersama tombol jalankan.",
     "exclude_from_note_map": "Catatan dengan label ini akan disembunyikan dari Peta Catatan.",
     "new_notes_on_top": "Catatan baru akan dibuat di bagian atas catatan induk, bukan di bagian bawah.",
-    "hide_highlight_widget": "Menyembunyikan Daftar Sorotan untuk catatan ini, tetapi tetap menampilkannya pada semua catatan lainnya.",
     "run_on_note_creation": "Dijalankan saat catatan dibuat di backend. Gunakan relasi ini jika Anda ingin menjalankan skrip untuk semua catatan yang dibuat di bawah subpohon tertentu. Dalam hal ini, buat relasi pada catatan akar subpohon dan jadikan dapat diwariskan. Setiap catatan baru yang dibuat di dalam subpohon (pada kedalaman apa pun) akan memicu skrip.",
     "run_on_child_note_creation": "Dijalankan saat catatan baru dibuat di bawah catatan tempat relasi ini didefinisikan.",
     "run_on_note_title_change": "Dijalankan saat judul catatan diubah (termasuk saat catatan dibuat).",
@@ -591,7 +589,6 @@
     "show_all_in_search": "Tampilkan semua dalam pencarian",
     "relation_type": "Relasi",
     "versioning_limit": "Membatasi jumlah revisi yang disimpan untuk catatan ini, menggantikan pengaturan global.",
-    "similar_notes_widget_disabled": "Menonaktifkan tab pita Catatan Serupa untuk catatan ini. Hanya untuk tata letak lama.",
     "llm_chat_home": "Obrolan AI baru dibuat sebagai catatan anak dari catatan ini.",
     "workspace_llm_chat_home": "Obrolan AI baru dibuat sebagai catatan anak dari catatan ini saat di-hoist ke salah satu leluhur workspace ini.",
     "date_pattern": "Pola untuk judul catatan harian yang dibuat di bawah akar kalender ini, misalnya <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -949,15 +946,6 @@
   "create_pane_button": {
     "create_new_split": "Buat split baru"
   },
-  "edit_button": {
-    "edit_this_note": "Edit catatan ini"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Tampilkan Daftar Isi"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Tampilkan Daftar Sorotan"
-  },
   "global_menu": {
     "menu": "Menu",
     "options": "Opsi",
@@ -1058,9 +1046,6 @@
     "active": "Sesi terlindungi aktif. Klik untuk keluar dari sesi terlindungi.",
     "inactive": "Klik untuk masuk ke sesi terlindungi"
   },
-  "revisions_button": {
-    "note_revisions": "Revisi Catatan"
-  },
   "update_available": {
     "update_available": "Pembaruan tersedia"
   },
@@ -1075,25 +1060,11 @@
     "opening_api_docs_message": "Membuka dokumentasi API...",
     "sql_console_saved_message": "Catatan Konsol SQL telah disimpan ke {{note_path}}"
   },
-  "copy_image_reference_button": {
-    "button_title": "Salin referensi gambar ke clipboard, dapat ditempelkan ke catatan teks."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Sembunyikan tombol"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Tampilkan tombol"
-  },
-  "svg_export_button": {
-    "button_title": "Ekspor diagram sebagai SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Buat catatan anak dan tambahkan ke peta",
     "create_child_note_text": "Tambahkan catatan"
   },
   "zpetne_odkazy": {
-    "backlink_other": "{{count}} Backlink",
-    "relation": "relasi",
     "no_backlinks": "Tidak ada catatan yang menaut ke catatan ini."
   },
   "mobile_detail_menu": {
@@ -1121,8 +1092,6 @@
   "basic_properties": {
     "note_type": "Jenis catatan",
     "editable": "Dapat diedit",
-    "basic_properties": "Properti Dasar",
-    "language": "Bahasa",
     "configure_code_notes": "Konfigurasikan catatan kode..."
   },
   "book_properties": {
@@ -1152,37 +1121,23 @@
     "open_all_limit_exceeded": "Terlalu banyak catatan untuk dibuka sekaligus ({{count}}). Maksimal adalah {{max}}, coba persempit hasil terlebih dahulu."
   },
   "edited_notes": {
-    "no_edited_notes_found": "Belum ada catatan yang diedit pada hari ini...",
-    "title": "Catatan yang Diedit",
-    "deleted": "(dihapus)"
+    "no_edited_notes_found": "Belum ada catatan yang diedit pada hari ini..."
   },
   "file_properties": {
-    "note_id": "ID Catatan",
     "original_file_name": "Nama file asli",
-    "file_type": "Jenis file",
-    "file_size": "Ukuran file",
     "download": "Unduh",
     "open": "Buka secara eksternal",
-    "upload_new_revision": "Unggah revisi baru",
     "upload_success": "Revisi file baru telah diunggah.",
-    "upload_failed": "Pengunggahan revisi file baru gagal.",
-    "title": "File"
+    "upload_failed": "Pengunggahan revisi file baru gagal."
   },
   "image_properties": {
-    "original_file_name": "Nama file asli",
-    "file_type": "Jenis file",
-    "file_size": "Ukuran file",
-    "download": "Unduh",
-    "open": "Buka",
     "copy_reference_to_clipboard": "Salin referensi ke clipboard",
     "upload_new_revision": "Unggah revisi baru",
     "upload_success": "Revisi gambar baru telah diunggah.",
-    "upload_failed": "Pengunggahan revisi gambar baru gagal: {{message}}",
-    "title": "Gambar"
+    "upload_failed": "Pengunggahan revisi gambar baru gagal: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Atribut Turunan",
-    "no_inherited_attributes": "Tidak ada atribut turunan.",
     "none": "tidak ada"
   },
   "note_info_widget": {
@@ -1199,8 +1154,6 @@
     "show_similar_notes": "Tampilkan catatan serupa"
   },
   "note_map": {
-    "open_full": "Bentangkan penuh",
-    "collapse": "Lipat ke ukuran normal",
     "title": "Peta Catatan",
     "fix-nodes": "Perbaiki node",
     "link-distance": "Jarak tautan",
@@ -1211,18 +1164,10 @@
   "note_paths": {
     "title": "Jalur Catatan",
     "clone_button": "Kloning catatan ke lokasi baru...",
-    "intro_placed": "Catatan ini ditempatkan pada jalur berikut:",
     "intro_not_placed": "Catatan ini belum ditempatkan di tree catatan.",
     "outside_hoisted": "Jalur ini berada di luar catatan yang di-hoist dan Anda harus membatalkan hoist.",
     "archived": "Diarsipkan",
     "search": "Cari"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Catatan ini awalnya diambil dari:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Atribut Milik Sendiri"
   },
   "promoted_attributes": {
     "promoted_attributes": "Atribut yang Dipromosikan",
@@ -1249,12 +1194,6 @@
     "delete_confirmation": "Hapus <strong>{{name}}</strong> beserta nilainya dari setiap catatan dalam koleksi ini? Tindakan ini tidak dapat dibatalkan.",
     "drawn_by_collection": "Koleksi diatur berdasarkan atribut ini, sehingga itemnya tidak mengulanginya",
     "display_on_items": "Tampilkan atribut pada item koleksi"
-  },
-  "script_executor": {
-    "query": "Kueri",
-    "script": "Skrip",
-    "execute_query": "Jalankan Kueri",
-    "execute_script": "Jalankan Skrip"
   },
   "search_definition": {
     "add_search_option": "Tambahkan opsi pencarian:",
@@ -1592,8 +1531,6 @@
   "experimental_features": {
     "title": "Opsi Eksperimental",
     "disclaimer": "Opsi ini bersifat eksperimental dan dapat menyebabkan ketidakstabilan. Gunakan dengan hati-hati.",
-    "new_layout_name": "Tata Letak Baru",
-    "new_layout_description": "Coba tata letak baru untuk tampilan yang lebih modern dan kemudahan penggunaan yang lebih baik. Dapat berubah besar pada rilis mendatang.",
     "llm_name": "Chat AI / LLM",
     "llm_description": "Aktifkan panel samping chat AI dan catatan chat LLM yang didukung oleh large language model."
   },
@@ -1645,9 +1582,6 @@
     "title": "Bilah Judul Native (memerlukan restart aplikasi)",
     "enabled": "diaktifkan",
     "disabled": "dinonaktifkan"
-  },
-  "ribbon": {
-    "edited_notes_message": "Tab ribbon Catatan yang Diedit akan terbuka otomatis pada catatan harian"
   },
   "theme": {
     "title": "Antarmuka Pengguna",
@@ -1839,17 +1773,7 @@
     "italic": "Teks miring",
     "underline": "Teks bergaris bawah",
     "color": "Teks berwarna",
-    "bg_color": "Teks dengan warna latar belakang",
-    "visibility_title": "Visibilitas Daftar Sorotan",
-    "visibility_description": "Anda dapat menyembunyikan widget sorotan per catatan dengan menambahkan label #hideHighlightWidget.",
-    "shortcut_info": "Anda dapat mengatur pintasan keyboard untuk menampilkan/menyembunyikan panel kanan (termasuk Sorotan) dengan cepat di Opsi -> Pintasan (nama: 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Daftar Isi",
-    "description": "Daftar isi akan muncul di catatan teks ketika catatan memiliki lebih dari jumlah heading yang ditentukan. Anda dapat menyesuaikan jumlah ini:",
-    "unit": "heading",
-    "disable_info": "Anda juga dapat menggunakan opsi ini untuk menonaktifkan TOC secara efektif dengan menetapkan angka yang sangat tinggi.",
-    "shortcut_info": "Anda dapat mengatur pintasan keyboard untuk menampilkan/menyembunyikan panel kanan (termasuk TOC) dengan cepat di Opsi -> Pintasan (nama: 'toggleRightPane')."
+    "bg_color": "Teks dengan warna latar belakang"
   },
   "text_auto_read_only_size": {
     "title": "Ukuran Otomatis Hanya-Baca",
@@ -2175,9 +2099,7 @@
     "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
-    "bookmark": "Bookmark",
-    "bookmark_this_note": "Tambahkan catatan ini ke bookmark di panel sisi kiri",
-    "remove_bookmark": "Hapus bookmark"
+    "bookmark": "Bookmark"
   },
   "editability_select": {
     "auto": "Otomatis",
@@ -2228,16 +2150,7 @@
     "convert-to-attachment-confirm": "Apakah Anda yakin ingin mengubah catatan yang dipilih menjadi lampiran dari catatan induknya? Operasi ini hanya berlaku untuk catatan Gambar, catatan lain akan dilewati.",
     "open-in-popup": "Edit cepat"
   },
-  "shared_info": {
-    "shared_publicly": "Catatan ini dibagikan secara publik di {{- link}}.",
-    "shared_locally": "Catatan ini dibagikan secara lokal di {{- link}}.",
-    "help_link": "Untuk bantuan, kunjungi <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "Catatan ini dibagikan di {{- link}}, tetapi hanya browser ini yang dapat membuka halaman tersebut, dan hanya selama Trilium tetap terbuka di dalamnya. Mempublikasikannya untuk orang lain memerlukan server Trilium.",
-    "shared_export_only": "Catatan ini dibagikan, tetapi aplikasi seluler tidak dapat membuka halaman yang dibagikan. Untuk mempublikasikannya, ekspor subpohon sebagai \"{{format}}\" dan hos berkasnya pada server web apa pun, atau gunakan server Trilium."
-  },
   "read-only-info": {
-    "read-only-note": "Saat ini sedang melihat catatan hanya-baca.",
-    "auto-read-only-note": "Catatan ini ditampilkan dalam mode hanya-baca agar pemuatan lebih cepat.",
     "edit-note": "Edit catatan"
   },
   "note_types": {
@@ -2270,10 +2183,7 @@
     "built-in-templates": "Templat bawaan"
   },
   "protect_note": {
-    "toggle-on": "Lindungi catatan",
-    "toggle-off": "Batalkan perlindungan catatan",
-    "toggle-on-hint": "Catatan tidak dilindungi, klik untuk menjadikannya terlindungi",
-    "toggle-off-hint": "Catatan dilindungi, klik untuk membatalkan perlindungannya"
+    "toggle-on": "Lindungi catatan"
   },
   "llm_chat": {
     "placeholder": "Ketik pesan...",
@@ -2402,15 +2312,11 @@
   },
   "shared_switch": {
     "shared": "Dibagikan",
-    "toggle-on-title": "Bagikan catatan",
-    "toggle-off-title": "Batalkan pembagian catatan",
     "shared-branch": "Catatan ini hanya ada sebagai catatan yang dibagikan, sehingga pembatalan pembagian akan menghapusnya. Apakah Anda ingin melanjutkan dan dengan demikian menghapus catatan ini?",
     "inherited": "Pembagian catatan tidak dapat dibatalkan di sini karena dibagikan melalui pewarisan dari ancestor."
   },
   "template_switch": {
-    "template": "Template",
-    "toggle-on-hint": "Jadikan catatan ini template",
-    "toggle-off-hint": "Hapus catatan ini sebagai template"
+    "template": "Template"
   },
   "open-help-page": "Buka halaman bantuan",
   "find": {
@@ -2422,9 +2328,7 @@
     "replace_all": "Ganti semua"
   },
   "highlights_list_2": {
-    "title": "Daftar Sorotan",
     "title_with_count_other": "{{count}} sorotan",
-    "options": "Opsi",
     "menu_configure": "Konfigurasikan daftar sorotan...",
     "no_highlights": "Tidak ada sorotan yang ditemukan."
   },
@@ -2523,7 +2427,6 @@
   },
   "toc": {
     "table_of_contents": "Daftar Isi",
-    "options": "Opsi",
     "no_headings": "Tidak ada heading."
   },
   "watched_file_update_status": {
@@ -2620,9 +2523,6 @@
     "tab_width": "Lebar tab",
     "tab_width_unit": "spasi"
   },
-  "classic_editor_toolbar": {
-    "title": "Pemformatan"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -2631,12 +2531,10 @@
       "label": "Toolbar pemformatan",
       "toolbar_style": "Gaya toolbar",
       "floating": {
-        "title": "Mengambang",
-        "description": "alat pengeditan muncul di dekat kursor;"
+        "title": "Mengambang"
       },
       "fixed": {
-        "title": "Tetap",
-        "description": "alat pengeditan muncul di tab ribbon \"Pemformatan\"."
+        "title": "Tetap"
       },
       "multiline-toolbar": "Tampilkan toolbar dalam beberapa baris jika tidak muat"
     }
@@ -2801,17 +2699,10 @@
     "title_vertical": "Pindahkan panel pengeditan ke bawah",
     "title_horizontal": "Pindahkan panel pengeditan ke kiri"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "Buka kunci pengeditan",
-    "lock-editing": "Kunci pengeditan"
-  },
   "display_mode": {
     "source": "Tampilan source",
     "split": "Tampilan split",
     "preview": "Pratinjau"
-  },
-  "png_export_button": {
-    "button_title": "Ekspor diagram sebagai PNG"
   },
   "svg": {
     "export_to_png": "Diagram tidak dapat diekspor ke PNG.",
@@ -3106,9 +2997,6 @@
     "background_effects_title": "Efek latar belakang kini stabil",
     "background_effects_message": "Pada perangkat Windows dan macOS, efek latar belakang kini stabil. Efek latar belakang menambah sedikit warna pada antarmuka pengguna dengan membelakkan latar belakang di belakangnya.",
     "background_effects_button": "Aktifkan efek latar belakang",
-    "new_layout_title": "Tata letak baru",
-    "new_layout_message": "Kami telah memperkenalkan tata letak yang modern untuk Trilium. Ribbon telah dihapus dan secara mulus terintegrasi ke antarmuka utama, dengan status bar baru dan bagian yang dapat diperluas (seperti atribut yang dipromosikan) yang mengambil fungsi utama.\n\nTata letak baru diaktifkan secara default, dan dapat sementara dinonaktifkan melalui Opsi → Tampilan.",
-    "new_layout_button": "Info lebih lanjut",
     "scripting_disabled_title": "Scripting backend telah dinonaktifkan",
     "scripting_disabled_message": "Scripting backend kini dinonaktifkan secara default untuk keamanan. Catatan Anda berisi script backend (catatan dengan label #run) yang tidak akan dieksekusi secara otomatis lagi.\n\nJika Anda bergantung pada script ini, Anda dapat mengaktifkan kembali scripting backend di pengaturan keamanan.",
     "scripting_disabled_button": "Buka pengaturan keamanan",
@@ -3122,10 +3010,7 @@
     "related_code_blocks": "Skema warna untuk blok kode di catatan teks",
     "related_code_notes": "Skema warna untuk catatan kode",
     "ui": "Antarmuka pengguna",
-    "ui_layout_style": "Gaya tata letak",
-    "ui_layout_orientation": "Orientasi launch bar",
-    "ui_old_layout": "Tata letak lama",
-    "ui_new_layout": "Tata letak baru"
+    "ui_layout_orientation": "Orientasi launch bar"
   },
   "units": {
     "percentage": "%"

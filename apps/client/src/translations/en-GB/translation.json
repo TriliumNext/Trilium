@@ -37,9 +37,6 @@
     "color": "Coloured text",
     "bg_color": "Text with background colour"
   },
-  "table_of_contents": {
-    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customise this number:"
-  },
   "custom_date_time_format": {
     "description": "Customise the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens."
   },

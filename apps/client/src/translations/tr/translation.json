@@ -288,7 +288,6 @@
   "note_paths": {
     "clone_button": "Notu yeni bir konuma klonla...",
     "title": "Not Yolları",
-    "intro_placed": "Bu not aşağıdaki yollara yerleştirilmiştir:",
     "intro_not_placed": "Bu not henüz not ağacına yerleştirilmemiş.",
     "outside_hoisted": "Bu yol yükseltilmiş notun dışında ve yükseltmeyi kaldırmanız gerekir.",
     "archived": "Arşivlendi",
@@ -884,7 +883,6 @@
     "hide_relations": "Gizlenmesi gereken ilişki adlarının virgülle ayrılmış listesi. Diğer tümü görüntülenir.",
     "title_template": "Bu notun alt notu olarak oluşturulan notların varsayılan başlığı. Değer bir JavaScript dizesi olarak değerlendirilir\n                        ve bu nedenle enjekte edilen <code>now</code> ve <code>parentNote</code> değişkenleriyle dinamik içerikle zenginleştirilebilir. Örnekler:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Ayrıntılar için <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki sayfasına</a>, <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> ve <a href=\"https://day.js.org/docs/en/display/format\">now</a> için API belgelerine bakın.",
     "template": "Bu not, yeni not oluştururken kullanılabilir şablonlar seçiminde görünür.",
-    "toc": "<code>#toc</code> veya <code>#toc=show</code> İçindekiler'in gösterilmesini zorlar, <code>#toc=hide</code> gizlenmesini zorlar. Etiket yoksa genel ayar geçerlidir.",
     "color": "Not ağacında, bağlantılarda vb. notun rengini tanımlar. 'red' veya #a13d5f gibi geçerli herhangi bir CSS renk değeri kullanın.",
     "keyboard_shortcut": "Doğrudan bu nota atlayacak bir klavye kısayolu tanımlar. Örnek: 'ctrl+alt+e'. Değişikliğin etkili olması için önyüzün yeniden yüklenmesi gerekir.",
     "keep_current_hoisting": "Bu bağlantıyı açmak, not geçerli yükseltilmiş alt ağaçta görüntülenemese bile yükseltmeyi değiştirmez.",
@@ -892,7 +890,6 @@
     "execute_description": "Geçerli kod notunun çalıştır düğmesiyle birlikte gösterilen daha uzun açıklaması.",
     "exclude_from_note_map": "Bu etikete sahip notlar Not Haritası'ndan gizlenir.",
     "new_notes_on_top": "Yeni notlar üst notun altına değil, üstüne oluşturulur.",
-    "hide_highlight_widget": "Bu not için Vurgular Listesi'ni gizler, diğer tüm notlarda gösterilmeye devam eder.",
     "run_on_note_creation": "Not arka uçta oluşturulduğunda çalışır. Belirli bir alt ağaç altında oluşturulan tüm notlar için betiği çalıştırmak istiyorsanız bu ilişkiyi kullanın. Bu durumda, alt ağaç kök notunda oluşturun ve kalıtımlı yapın. Alt ağaç içinde (herhangi bir derinlikte) oluşturulan yeni bir not betiği tetikler.",
     "run_on_child_note_creation": "Bu ilişkinin tanımlandığı notun altında yeni bir not oluşturulduğunda çalışır.",
     "run_on_note_title_change": "Not başlığı değiştiğinde çalışır (not oluşturmayı da içerir).",
@@ -926,7 +923,6 @@
     "color_type": "Renk",
     "relation_type": "İlişki",
     "versioning_limit": "Bu notun sakladığı revizyon sayısını sınırlar, genel ayarı geçersiz kılar.",
-    "similar_notes_widget_disabled": "Bu not için Benzer Notlar şerit sekmesini devre dışı bırakır. Yalnızca eski düzen.",
     "llm_chat_home": "Yeni yapay zeka sohbetleri bu notun alt notu olarak oluşturulur.",
     "workspace_llm_chat_home": "Bu çalışma alanının bir üst notuna yükseltildiğinde, yeni yapay zeka sohbetleri bu notun alt notu olarak oluşturulur.",
     "date_pattern": "Bu takvim kökü altında oluşturulan gün notlarının başlıkları için kalıp, örn. <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -1384,15 +1380,6 @@
   "create_pane_button": {
     "create_new_split": "Yeni bölme oluştur"
   },
-  "edit_button": {
-    "edit_this_note": "Bu notu düzenle"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "İçindekiler'i göster"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Vurgular Listesi'ni göster"
-  },
   "options": {
     "title": "Seçenekler",
     "back": "Tüm seçeneklere geri dön"
@@ -1496,9 +1483,6 @@
     "active": "Güvenli oturum etkin. Güvenli oturumdan çıkmak için tıklayın.",
     "inactive": "Güvenli oturuma girmek için tıklayın"
   },
-  "revisions_button": {
-    "note_revisions": "Not Revizyonları"
-  },
   "update_available": {
     "update_available": "Güncelleme mevcut"
   },
@@ -1512,18 +1496,6 @@
     "save_to_note_button_title": "Nota kaydet",
     "opening_api_docs_message": "API belgeleri açılıyor...",
     "sql_console_saved_message": "SQL Konsolu notu {{note_path}} içine kaydedildi"
-  },
-  "copy_image_reference_button": {
-    "button_title": "Resim başvurusunu panoya kopyala, bir metin notuna yapıştırılabilir."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Düğmeleri gizle"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Düğmeleri göster"
-  },
-  "svg_export_button": {
-    "button_title": "Diyagramı SVG olarak dışa aktar"
   },
   "relation_map_buttons": {
     "create_child_note_title": "Alt not oluştur ve haritaya ekle"
@@ -1547,9 +1519,6 @@
     "esc_hint": "kapatmak için"
   },
   "zpetne_odkazy": {
-    "backlink_one": "{{count}} Geri Bağlantı",
-    "backlink_other": "{{count}} Geri Bağlantı",
-    "relation": "ilişki",
     "no_backlinks": "Buna bağlantı veren bir not yok."
   },
   "mobile_detail_menu": {
@@ -1577,8 +1546,6 @@
   "basic_properties": {
     "note_type": "Not türü",
     "editable": "Düzenlenebilir",
-    "basic_properties": "Temel Özellikler",
-    "language": "Dil",
     "configure_code_notes": "Kod notlarını yapılandır..."
   },
   "book_properties": {
@@ -1608,37 +1575,23 @@
     "open_all_confirm_other": "Bu, {{count}} notu yeni sekmelerde açacak. Devam edilsin mi?"
   },
   "edited_notes": {
-    "no_edited_notes_found": "Bu günde henüz düzenlenmiş not yok...",
-    "title": "Düzenlenmiş Notlar",
-    "deleted": "(silindi)"
+    "no_edited_notes_found": "Bu günde henüz düzenlenmiş not yok..."
   },
   "file_properties": {
-    "note_id": "Not Kimliği",
     "original_file_name": "Özgün dosya adı",
-    "file_type": "Dosya türü",
-    "file_size": "Dosya boyutu",
     "download": "İndir",
     "open": "Harici olarak aç",
-    "upload_new_revision": "Yeni revizyon yükle",
     "upload_success": "Yeni dosya revizyonu yüklendi.",
-    "upload_failed": "Yeni dosya revizyonu yüklenemedi.",
-    "title": "Dosya"
+    "upload_failed": "Yeni dosya revizyonu yüklenemedi."
   },
   "image_properties": {
-    "original_file_name": "Özgün dosya adı",
-    "file_type": "Dosya türü",
-    "file_size": "Dosya boyutu",
-    "download": "İndir",
-    "open": "Aç",
     "copy_reference_to_clipboard": "Başvuruyu panoya kopyala",
     "upload_new_revision": "Yeni revizyon yükle",
     "upload_success": "Yeni resim revizyonu yüklendi.",
-    "upload_failed": "Yeni resim revizyonu yüklenemedi: {{message}}",
-    "title": "Resim"
+    "upload_failed": "Yeni resim revizyonu yüklenemedi: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Kalıtımlı Özellikler",
-    "no_inherited_attributes": "Kalıtımlı özellik yok.",
     "none": "yok"
   },
   "note_info_widget": {
@@ -1656,22 +1609,13 @@
     "show_similar_notes": "Benzer notları göster"
   },
   "note_map": {
-    "open_full": "Tam boyuta genişlet",
     "expand": "Haritayı genişlet",
-    "collapse": "Normal boyuta daralt",
     "title": "Not Haritası",
     "fix-nodes": "Düğümleri sabitle",
     "link-distance": "Bağlantı uzaklığı",
     "too-many-notes_one": "Burada {{count}} not var. Gösterilmesi işleri yavaşlatabilir.",
     "too-many-notes_other": "Burada {{count}} not var. Hepsinin gösterilmesi işleri yavaşlatabilir.",
     "show-anyway": "Haritayı göster"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Bu not özgün olarak şuradan alınmıştır:",
-    "info": "Bilgi"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Sahip Olunan Özellikler"
   },
   "promoted_attributes": {
     "promoted_attributes": "Öne Çıkarılmış Özellikler",
@@ -1690,12 +1634,6 @@
     "select_values_placeholder": "Bir seçenek seçin veya oluşturun",
     "values_placeholder": "Bir değer yazın ve Enter'a basın",
     "add_value": "Bu değeri ekle"
-  },
-  "script_executor": {
-    "query": "Sorgu",
-    "script": "Betik",
-    "execute_query": "Sorguyu Çalıştır",
-    "execute_script": "Betiği Çalıştır"
   },
   "search_definition": {
     "add_search_option": "Arama seçeneği ekle:",
@@ -2041,8 +1979,6 @@
   "experimental_features": {
     "title": "Deneysel Seçenekler",
     "disclaimer": "Bu seçenekler deneyseldir ve kararsızlığa neden olabilir. Dikkatli kullanın.",
-    "new_layout_name": "Yeni Düzen",
-    "new_layout_description": "Daha modern bir görünüm ve gelişmiş kullanılabilirlik için yeni düzeni deneyin. Gelecek sürümlerde büyük değişikliklere tabidir.",
     "llm_name": "Yapay Zeka / LLM Sohbeti",
     "llm_description": "Büyük dil modelleri tarafından desteklenen yapay zeka sohbet kenar çubuğunu ve LLM sohbet notlarını etkinleştirir."
   },
@@ -2083,9 +2019,6 @@
     "title": "Yerel Başlık Çubuğu (uygulamanın yeniden başlatılmasını gerektirir)",
     "enabled": "etkin",
     "disabled": "devre dışı"
-  },
-  "ribbon": {
-    "edited_notes_message": "Düzenlenmiş Notlar şerit sekmesi gün notlarında otomatik olarak açılacaktır"
   },
   "theme": {
     "title": "Kullanıcı Arayüzü",
@@ -2287,17 +2220,7 @@
     "italic": "İtalik metin",
     "underline": "Altı çizili metin",
     "color": "Renkli metin",
-    "bg_color": "Arka plan renkli metin",
-    "visibility_title": "Vurgular Listesi görünürlüğü",
-    "visibility_description": "#hideHighlightWidget etiketi ekleyerek vurgular widget'ını not bazında gizleyebilirsiniz.",
-    "shortcut_info": "Sağ bölmeyi (Vurgular dahil) hızlıca açıp kapatmak için Seçenekler -> Kısayollar'da bir klavye kısayolu yapılandırabilirsiniz ('toggleRightPane' adıyla)."
-  },
-  "table_of_contents": {
-    "title": "İçindekiler",
-    "description": "İçindekiler, not belirlenen sayıdan fazla başlığa sahip olduğunda metin notlarında görünür. Bu sayıyı özelleştirebilirsiniz:",
-    "unit": "başlık",
-    "disable_info": "Bu seçeneği çok yüksek bir sayı ayarlayarak İçindekiler'i etkin bir şekilde devre dışı bırakmak için de kullanabilirsiniz.",
-    "shortcut_info": "Sağ bölmeyi (İçindekiler dahil) hızlıca açıp kapatmak için Seçenekler -> Kısayollar'da bir klavye kısayolu yapılandırabilirsiniz ('toggleRightPane' adıyla)."
+    "bg_color": "Arka plan renkli metin"
   },
   "text_auto_read_only_size": {
     "title": "Otomatik Salt Okunur Boyut",
@@ -2638,9 +2561,7 @@
     "importSource": "İçe aktarma kaynağı"
   },
   "bookmark_switch": {
-    "bookmark": "Yer imi",
-    "bookmark_this_note": "Bu notu sol yan panele yer imi olarak ekle",
-    "remove_bookmark": "Yer imini kaldır"
+    "bookmark": "Yer imi"
   },
   "editability_select": {
     "auto": "Otomatik",
@@ -2654,14 +2575,7 @@
     "button-link-map": "Bağlantı Haritası",
     "button-tree-map": "Ağaç haritası"
   },
-  "shared_info": {
-    "shared_publicly": "Bu not {{- link}} üzerinde herkese açık olarak paylaşılıyor.",
-    "shared_locally": "Bu not {{- link}} üzerinde yerel olarak paylaşılıyor.",
-    "help_link": "Yardım için <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki'yi</a> ziyaret edin."
-  },
   "read-only-info": {
-    "read-only-note": "Şu anda salt okunur bir not görüntüleniyor.",
-    "auto-read-only-note": "Bu not, daha hızlı yükleme için salt okunur modda gösteriliyor.",
     "edit-note": "Notu düzenle"
   },
   "note_types": {
@@ -2692,10 +2606,7 @@
     "spreadsheet": "E-tablo"
   },
   "protect_note": {
-    "toggle-on": "Notu koru",
-    "toggle-off": "Not korumasını kaldır",
-    "toggle-on-hint": "Not korunmuyor, korumak için tıklayın",
-    "toggle-off-hint": "Not korunuyor, korumayı kaldırmak için tıklayın"
+    "toggle-on": "Notu koru"
   },
   "llm_chat": {
     "placeholder": "Bir mesaj yazın...",
@@ -2784,15 +2695,11 @@
   },
   "shared_switch": {
     "shared": "Paylaşıldı",
-    "toggle-on-title": "Notu paylaş",
-    "toggle-off-title": "Not paylaşımını kaldır",
     "shared-branch": "Bu not yalnızca paylaşılan bir not olarak var, paylaşımı kaldırmak onu silecek. Devam etmek ve bu notu silmek istiyor musunuz?",
     "inherited": "Not, bir üst notundan kalıtım yoluyla paylaşıldığı için burada paylaşımı kaldırılamaz."
   },
   "template_switch": {
-    "template": "Şablon",
-    "toggle-on-hint": "Notu şablon yap",
-    "toggle-off-hint": "Notun şablon olma özelliğini kaldır"
+    "template": "Şablon"
   },
   "full_content_width_switch": {
     "title": "Tam genişlik"
@@ -2810,10 +2717,8 @@
     "replace_all": "Tümünü değiştir"
   },
   "highlights_list_2": {
-    "title": "Vurgular Listesi",
     "title_with_count_one": "{{count}} vurgu",
     "title_with_count_other": "{{count}} vurgu",
-    "options": "Seçenekler",
     "menu_configure": "Vurgular listesini yapılandır...",
     "no_highlights": "Vurgu bulunamadı."
   },
@@ -2892,7 +2797,6 @@
   },
   "toc": {
     "table_of_contents": "İçindekiler",
-    "options": "Seçenekler",
     "no_headings": "Başlık yok."
   },
   "watched_file_update_status": {
@@ -2984,9 +2888,6 @@
     "tab_width": "Sekme genişliği",
     "tab_width_unit": "boşluk"
   },
-  "classic_editor_toolbar": {
-    "title": "Biçimlendirme"
-  },
   "editor": {
     "title": "Düzenleyici"
   },
@@ -2995,12 +2896,10 @@
       "label": "Biçimlendirme araç çubuğu",
       "toolbar_style": "Araç çubuğu stili",
       "floating": {
-        "title": "Kayan",
-        "description": "düzenleme araçları imlecin yakınında görünür;"
+        "title": "Kayan"
       },
       "fixed": {
-        "title": "Sabit",
-        "description": "düzenleme araçları \"Biçimlendirme\" şerit sekmesinde görünür."
+        "title": "Sabit"
       },
       "multiline-toolbar": "Sığmıyorsa araç çubuğunu birden çok satırda göster"
     }
@@ -3320,17 +3219,10 @@
     "title_vertical": "Düzenleme bölmesini alta taşı",
     "title_horizontal": "Düzenleme bölmesini sola taşı"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "Düzenlemenin kilidini aç",
-    "lock-editing": "Düzenlemeyi kilitle"
-  },
   "display_mode": {
     "source": "Kaynak görünümü",
     "split": "Bölünmüş görünüm",
     "preview": "Önizleme"
-  },
-  "png_export_button": {
-    "button_title": "Diyagramı PNG olarak dışa aktar"
   },
   "svg": {
     "export_to_png": "Diyagram PNG olarak dışa aktarılamadı.",
@@ -3528,9 +3420,6 @@
     "background_effects_title": "Arka plan efektleri artık kararlı",
     "background_effects_message": "Windows ve macOS cihazlarda, arka plan efektleri artık kararlı. Arka plan efektleri, arkasındaki arka planı bulanıklaştırarak kullanıcı arayüzüne bir renk dokunuşu ekler.",
     "background_effects_button": "Arka plan efektlerini etkinleştir",
-    "new_layout_title": "Yeni düzen",
-    "new_layout_message": "Trilium için modernleştirilmiş bir düzen sunduk. Şerit kaldırıldı ve ana arayüze sorunsuz bir şekilde entegre edildi; yeni bir durum çubuğu ve genişletilebilir bölümler (öne çıkarılmış özellikler gibi) temel işlevleri devraldı.\n\nYeni düzen varsayılan olarak etkindir ve Seçenekler → Görünüm üzerinden geçici olarak devre dışı bırakılabilir.",
-    "new_layout_button": "Daha fazla bilgi",
     "scripting_disabled_title": "Arka uç betiklemesi devre dışı bırakıldı",
     "scripting_disabled_message": "Arka uç betiklemesi artık güvenlik nedeniyle varsayılan olarak devre dışı. Notlarınız artık otomatik olarak çalışmayacak arka uç betikleri içeriyor (bir #run etiketine sahip notlar).\n\nBu betiklere ihtiyacınız varsa, güvenlik ayarlarından arka uç betiklemesini tekrar etkinleştirebilirsiniz.",
     "scripting_disabled_button": "Güvenlik ayarlarını aç",
@@ -3548,10 +3437,7 @@
     "related_code_blocks": "Metin notlarındaki kod blokları için renk düzeni",
     "related_code_notes": "Kod notları için renk düzeni",
     "ui": "Kullanıcı arayüzü",
-    "ui_layout_style": "Düzen stili",
-    "ui_layout_orientation": "Başlatma çubuğu yönü",
-    "ui_old_layout": "Eski düzen",
-    "ui_new_layout": "Yeni düzen"
+    "ui_layout_orientation": "Başlatma çubuğu yönü"
   },
   "units": {
     "percentage": "%"

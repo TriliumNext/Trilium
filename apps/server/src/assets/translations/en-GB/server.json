@@ -48,8 +48,6 @@
     "attributes-labels-and-relations": "Attributes (labels & relations)",
     "add-new-label": "Create new label",
     "create-new-relation": "Create new relation",
-    "ribbon-tabs": "Ribbon tabs",
-    "toggle-link-map": "Toggle Link Map",
     "other": "Other",
     "toggle-right-pane": "Toggle the display of the right pane, which includes Table of Contents and Highlights",
     "open-note-externally": "Open note as a file with default application",
@@ -63,8 +61,6 @@
     "save-named-revision": "Save a named revision of the active note",
     "copy-without-formatting": "Copy selected text without formatting",
     "force-save-revision": "Force creating / saving new note revision of the active note",
-    "toggle-book-properties": "Toggle Collection Properties",
-    "toggle-classic-editor-toolbar": "Toggle the Formatting tab for the editor with fixed toolbar",
     "toggle-zen-mode": "Enables/disables the zen mode (minimal UI for more focused editing)"
   },
   "keyboard_action_names": {
