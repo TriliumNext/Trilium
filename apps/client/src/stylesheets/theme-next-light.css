@@ -453,11 +453,11 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
 }
 
-/* A calendar event and a map marker shown as a sheet are the same thing the quick editor is — a
+/* A calendar event and a map note shown as a sheet are the same thing the quick editor is — a
    whole note over whatever raised it — so they are tinted by the same colours. */
 .quick-edit-dialog-wrapper.with-hue,
 .calendar-event-sheet.with-hue,
-.geo-detail-sheet.with-hue,
+.tn-embedded-note-sheet.with-hue,
 .note-tooltip.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
     --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
@@ -476,10 +476,10 @@
 
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
-.geo-detail-pane.with-hue,
+.tn-embedded-note-panel.with-hue,
 .calendar-event-popover.with-hue,
 .calendar-event-sheet.with-hue,
-.geo-detail-sheet.with-hue,
+.tn-embedded-note-sheet.with-hue,
 .nested-note-list-item.with-hue,
 .note-book-card.with-hue .note-book-header,
 .ck-template-icon.with-hue,
@@ -505,7 +505,7 @@
 
 /*
  * The surfaces that show a note over something else and frost what they stand on: the calendar's
- * event card beside its chip, the geo map's marker pane over the map. Unlike the sheets and the
+ * event card beside its chip, the note panes over the maps. Unlike the sheets and the
  * tooltip, their tint is stated with the alpha the plain surface already carries — an opaque tint
  * would leave the blur nothing to show through, which is the whole of what they are dressed as.
  *
@@ -514,7 +514,7 @@
  * all of them reading the no-backdrop colour.
  */
 .calendar-event-popover.with-hue,
-.geo-detail-pane.with-hue {
+.tn-embedded-note-panel.with-hue {
     --menu-background-color: hsl(var(--custom-color-hue), 56%, 96%, 0.85);
     --menu-background-color-no-backdrop: hsl(var(--custom-color-hue), 56%, 97%);
     --dropdown-border-color: hsl(var(--custom-color-hue), 30%, 78%);
@@ -524,7 +524,7 @@
 /* A reader who turned backdrop effects off, which these must answer here rather than by the swap
    made on the body above: that swap is resolved where it is stated, so what reaches the surface is
    the plain opaque colour and not the tinted one the surface states on itself. */
-body.backdrop-effects-disabled :is(.calendar-event-popover, .geo-detail-pane).with-hue {
+body.backdrop-effects-disabled :is(.calendar-event-popover, .tn-embedded-note-panel).with-hue {
     --menu-background-color: var(--menu-background-color-no-backdrop);
 }
 
