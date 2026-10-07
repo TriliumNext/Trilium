@@ -34,6 +34,7 @@ export const LOCALES: Locale[] = [
     { id: "ru", name: "Русский" },
     { id: "ug", name: "ئۇيغۇرچە", rtl: true },
     { id: "uk", name: "Українська" },
+    { id: "vi", name: "Tiếng Việt" },
     { id: "zh-Hans", name: "简体中文" },
     { id: "zh-Hant", name: "繁體中文" }
 ].toSorted((a, b) => a.name.localeCompare(b.name));

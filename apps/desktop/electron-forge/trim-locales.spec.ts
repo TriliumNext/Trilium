@@ -43,8 +43,8 @@ describe("trimElectronLocales", () => {
 
         const { kept, removed } = trimElectronLocales([ dir ], false);
 
-        expect(kept.size).toBe(21);
-        expect(removed).toHaveLength(34);
+        expect(kept.size).toBe(22);
+        expect(removed).toHaveLength(33);
         expect(existsSync(join(dir, "en-US.pak"))).toBe(true);
         expect(existsSync(join(dir, "zh-CN.pak"))).toBe(true);
         // Hebrew is content-only, so its Chromium locale goes.
@@ -58,7 +58,7 @@ describe("trimElectronLocales", () => {
         const frameworkResources = makeLocaleDir(
             [ "en.lproj", "de.lproj", "es.lproj", "fr.lproj", "zh_TW.lproj", "ro.lproj", "cs.lproj",
                 "en_GB.lproj", "id.lproj", "it.lproj", "hi.lproj", "ja.lproj", "ko.lproj", "pt_BR.lproj",
-                "pt_PT.lproj", "pl.lproj", "ru.lproj", "tr.lproj", "uk.lproj", "ar.lproj" ],
+                "pt_PT.lproj", "pl.lproj", "ru.lproj", "tr.lproj", "uk.lproj", "vi.lproj", "ar.lproj" ],
             true
         );
 

@@ -92,6 +92,10 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
         languageCode: "tr",
         coreTranslation: () => import("ckeditor5/translations/tr.js"),
     },
+    vi: {
+        languageCode: "vi",
+        coreTranslation: () => import("ckeditor5/translations/vi.js"),
+    },
 };
 
 /**
