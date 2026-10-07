@@ -101,6 +101,7 @@ vi.mock("../react/Modal", () => ({
 vi.mock("../NoteDetail", () => ({ default: () => <div className="note-detail-stub" /> }));
 vi.mock("../collections/NoteList", () => ({ default: () => null }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
+vi.mock("../layout/NoteActions", () => ({ default: () => null }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
 vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />

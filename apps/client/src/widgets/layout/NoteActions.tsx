@@ -29,15 +29,20 @@ import NoteActionsCustom from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
 import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
 
-export default function NoteActions() {
+export default function NoteActions({ paneButtons = true }: {
+    /** Whether to show the buttons that move, close and create splits, which only a split has. */
+    paneButtons?: boolean;
+}) {
     const { note, ntxId, noteContext } = useNoteContext();
     return (
         <div className="note-actions-bar" style={{ contain: "none" }}>
             {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} />}
-            <MovePaneButton direction="left" />
-            <MovePaneButton direction="right" />
-            <ClosePaneButton />
-            <CreatePaneButton />
+            {paneButtons && <>
+                <MovePaneButton direction="left" />
+                <MovePaneButton direction="right" />
+                <ClosePaneButton />
+                <CreatePaneButton />
+            </>}
             {note && note.type !== "launcher" && <NoteContextMenu note={note as FNote} noteContext={noteContext} />}
         </div>
     );

@@ -11,6 +11,7 @@ import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FormattingToolbar from "../layout/FormattingToolbar";
+import NoteActions from "../layout/NoteActions";
 import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
 import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
@@ -147,6 +148,7 @@ export default function PopupEditor() {
                 <Modal
                     modalRef={modalRef}
                     title={<TitleRow />}
+                    header={<NoteActions paneButtons={false} />}
                     customTitleBarButtons={[{
                         iconClassName: "bx-expand-alt",
                         title: t("popup-editor.maximize"),
