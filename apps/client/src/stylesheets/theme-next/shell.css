@@ -1350,7 +1350,7 @@ body.desktop .title-row {
 
 #center-pane .note-split > div.alert {
     position: relative;
-    margin: 8px 0 0 0;
+    margin: 0;
     border: unset;
     border-radius: 0;
     padding: 8px 16px;
@@ -1359,10 +1359,6 @@ body.desktop .title-row {
     font-weight: normal;
     animation: alert-show 300ms ease-in;
     border-bottom: 2px solid #0000001c !important;
-}
-
-body.experimental-feature-new-layout #center-pane .note-split > div.alert {
-    margin-top: 0;
 }
 
 /*
@@ -1601,7 +1597,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     background: var(--right-pane-background-color);
 }
 
-/* New layout: status bar delimiter */
+/* Status bar delimiter */
 body.desktop .vertical-layout #right-pane {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
