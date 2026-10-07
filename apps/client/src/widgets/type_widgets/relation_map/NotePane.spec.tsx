@@ -148,14 +148,16 @@ describe("relation map NotePane", () => {
         expect(pane()).toBeNull();
     });
 
-    it("stays closed for a note that is not on the map, and closes once its note leaves it", async () => {
+    it("stays closed for a note that is not on the map, and closes once its note leaves it after asking the editor to save", async () => {
         await mount({ noteIdsOnMap: [ "second" ] });
         expect(pane()).toBeNull();
 
         await mount({ selection: { noteId: "second" } });
         expect(title()).toBe("Second");
 
+        editorAskedToSave.mockClear();
         await update({ noteIdsOnMap: [ "first" ] });
+        expect(editorAskedToSave).toHaveBeenCalledTimes(1);
         expect(pane()).toBeNull();
     });
 

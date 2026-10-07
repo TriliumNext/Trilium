@@ -1,7 +1,7 @@
 import "./NotePane.css";
 
 import { RefObject } from "preact";
-import { useCallback, useEffect, useImperativeHandle, useState } from "preact/hooks";
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
@@ -62,9 +62,10 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
         if (!selection) setMaximized(false);
     }, [ selection ]);
 
-    // Closes the pane when its note is removed from the map or deleted.
+    // Closes the pane when its note is removed from the map or deleted. A layout effect, so that
+    // the editor is still mounted, and saves, when `closePane()` asks it to.
     const isOnMap = !!selection && noteIdsOnMap.includes(selection.noteId);
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (selection && (!isOnMap || note === null)) {
             closePane();
         }
@@ -82,7 +83,7 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
         return () => window.removeEventListener("keydown", onKeyDown, true);
     }, [ selection?.noteId, closePane ]);
 
-    if (!note || !isOnMap) return null;
+    if (!note) return null;
 
     return (
         <EmbeddedNoteScope component={paneComponent} noteContext={noteContext}>
