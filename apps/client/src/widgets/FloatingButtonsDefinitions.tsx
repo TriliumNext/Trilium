@@ -10,12 +10,11 @@ import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import froca from "../services/froca";
 import { t } from "../services/i18n";
-import { copyImageReferenceToClipboard } from "../services/image";
 import { getHelpUrlForNote } from "../services/in_app_help";
 import LoadResults from "../services/load_results";
 import { sanitizeNoteContentHtml } from "../services/sanitize_content";
 import server from "../services/server";
-import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
+import { openInAppHelpFromUrl } from "../services/utils";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { useTriliumEvent, useWindowSize } from "./react/hooks";
 import NoItems from "./react/NoItems";
@@ -41,7 +40,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    CopyImageReferenceButton,
     ExportImageButtons,
     ExportSpreadsheetButton,
     InAppHelpButton,
@@ -54,35 +52,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
-    const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = (
-        ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
-        && note?.isContentAvailable() && isDefaultViewMode
-    );
-
-    return isEnabled && (
-        <>
-            <FloatingButton
-                icon="bx bx-copy"
-                text={t("copy_image_reference_button.button_title")}
-                onClick={() => {
-                    if (!hiddenImageCopyRef.current) return;
-                    const imageEl = document.createElement("img");
-                    imageEl.src = createImageSrcUrl(note);
-                    hiddenImageCopyRef.current.replaceChildren(imageEl);
-                    copyImageReferenceToClipboard($(hiddenImageCopyRef.current));
-                    hiddenImageCopyRef.current.removeChild(imageEl);
-                }}
-            />
-
-            <div ref={hiddenImageCopyRef} className="hidden-image-copy" style={{
-                position: "absolute" // Take out of the the hidden image from flexbox to prevent the layout being affected
-            }} />
-        </>
-    );
-}
 
 function ExportImageButtons({ note, triggerEvent, isDefaultViewMode }: FloatingButtonContext) {
     const isEnabled = ["mermaid", "mindMap"].includes(note?.type ?? "")
