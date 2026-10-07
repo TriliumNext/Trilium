@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes
@@ -314,11 +315,6 @@ Trilium は、その基盤となる技術なしには実現できませんでし
 * Tabulator](https://github.com/olifolkerd/tabulator) -
   コレクションで使用されるインタラクティブなテーブル。
 * [FancyTree](https://github.com/mar10/fancytree) - 他に類を見ない機能豊富なツリーライブラリ。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) -
-  視覚的な接続ライブラリ。[リレーションマップ](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  と
-  [リンクマップ](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  で使用されます
 
 ## 🤝 サポート
 

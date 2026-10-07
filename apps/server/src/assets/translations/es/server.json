@@ -79,7 +79,7 @@
     "title": "Iniciar sesión",
     "heading": "Iniciar sesión en Trilium",
     "incorrect-totp": "El TOTP es incorrecto. Por favor, intente de nuevo.",
-    "incorrect-password": "La contraseña es incorrecta. Por favor, inténtelo de nuevo.",
+    "incorrect-password": "La contraseña es incorrecta. Inténtelo de nuevo.",
     "password": "Contraseña",
     "remember-me": "Recordarme",
     "button": "Iniciar sesión",
@@ -90,7 +90,7 @@
   "set_password": {
     "title": "Establecer contraseña",
     "heading": "Establecer contraseña",
-    "description": "Antes de poder usar Trilium desde la web, debe establecer una contraseña. A continuación, utilizará esta contraseña para iniciar sesión.",
+    "description": "Antes de poder usar Trilium en la web, debe establecer una contraseña. A continuación, utilizará esta contraseña para iniciar sesión.",
     "password": "Contraseña",
     "password-confirmation": "Confirmación de contraseña",
     "button": "Establecer contraseña"

@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes ist eine freie, Open-Source, plattformübergreifende, hierarchische
@@ -384,11 +385,6 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
   Tabelle in Kollektionen.
 * [FancyTree](https://github.com/mar10/fancytree) – funktionsreiche
   Baum-Bibliothek ohne echte Konkurrenz.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) – visuelle
-  Verbindungsbibliothek. Verwendet in
-  [Beziehungskarten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
-  und
-  [Link-Karten](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Unterstützung
 
