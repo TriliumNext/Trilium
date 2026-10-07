@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTabs } from "./tabs_read_only.js";
+import { applyTabs, revealTab } from "./tabs_read_only.js";
 
 const PLACEHOLDER = "Tab title";
 
@@ -132,5 +132,23 @@ describe("applyTabs", () => {
 
         press(titleOf(container, "Inner 2"), "ArrowRight");
         expect(activeTitles(container)).toEqual(["Outer 1", "Inner 1"]);
+    });
+
+    it("reveals every tab that encloses an element", () => {
+        const inner = `<div class="trilium-tabs">${tab("Inner 1", "")}${tab("Inner 2", "<p id=\"target\">x</p>")}</div>`;
+        const container = renderTabs(
+            `<div class="trilium-tabs">${tab("Outer 1", "")}${tab("Outer 2", inner)}</div><p id="outside">y</p>`
+        );
+        expect(activeTitles(container)).toEqual(["Outer 1", "Inner 1"]);
+
+        const target = container.querySelector("#target");
+        expect(target).not.toBeNull();
+        revealTab(target as Element);
+        expect(activeTitles(container)).toEqual(["Outer 2", "Inner 2"]);
+        expect(titleOf(container, "Outer 1").getAttribute("aria-expanded")).toBe("false");
+
+        titleOf(container, "Outer 1").click();
+        revealTab(container.querySelector("#outside") as Element);
+        expect(activeTitles(container)).toEqual(["Outer 1", "Inner 2"]);
     });
 });

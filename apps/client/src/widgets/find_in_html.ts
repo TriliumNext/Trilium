@@ -1,7 +1,9 @@
 // ck-find-result and ck-find-result_selected are the styles ck-editor
 // uses for highlighting matches, use the same one on CodeMirror
 // for consistency
+import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import type Mark from "mark.js";
+
 import { expandAncestorDetails } from "../services/collapsible.js";
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
@@ -119,9 +121,10 @@ export default class FindInHtml {
         if (this.$results?.length) {
             const $current = this.$results.eq(this.currentIndex);
             this.$results.removeClass(FIND_RESULT_SELECTED_CSS_CLASSNAME);
-            // Reveal matches inside collapsed <details>, like native find-in-page.
+            // Reveal matches inside collapsed <details> and inactive tabs, like native find-in-page.
             // Must precede scrollIntoView so the target is laid out first (#10616).
             expandAncestorDetails($current[0]);
+            revealTab($current[0]);
             $current[0].scrollIntoView({ block: 'center', inline: 'center'});
             $current.addClass(FIND_RESULT_SELECTED_CSS_CLASSNAME);
         }

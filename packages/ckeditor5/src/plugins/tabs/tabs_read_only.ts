@@ -15,10 +15,9 @@ export interface ApplyTabsOptions {
  */
 export function applyTabs(container: ParentNode, { placeholder }: ApplyTabsOptions) {
     for (const block of container.querySelectorAll<HTMLElement>(`.${CLASSES.tabs}`)) {
-        if (appliedTabs.has(block)) {
+        if (activators.has(block)) {
             continue;
         }
-        appliedTabs.add(block);
 
         const titles: HTMLElement[] = [];
         for (const tab of block.querySelectorAll<HTMLElement>(`:scope > .${CLASSES.tab}`)) {
@@ -56,6 +55,7 @@ export function applyTabs(container: ParentNode, { placeholder }: ApplyTabsOptio
                 title.setAttribute("aria-expanded", String(isActive));
             }
         };
+        activators.set(block, activate);
         const focusAndActivate = (index: number) => {
             const title = titles[(index + titles.length) % titles.length];
             title.focus();
@@ -93,5 +93,22 @@ export function applyTabs(container: ParentNode, { placeholder }: ApplyTabsOptio
     }
 }
 
-const appliedTabs = new WeakSet<HTMLElement>();
+/**
+ * Shows every tab that encloses `element`, such as the one holding a find result, in blocks that
+ * {@link applyTabs} set up.
+ */
+export function revealTab(element: Element) {
+    let tab = element.closest(`.${CLASSES.tab}`);
+    while (tab) {
+        const block = tab.parentElement;
+        const title = tab.querySelector<HTMLElement>(`:scope > .${CLASSES.tabTitle}`);
+        if (block && title) {
+            activators.get(block)?.(title);
+        }
+        tab = block?.closest(`.${CLASSES.tab}`) ?? null;
+    }
+}
+
+/** Shows the tab of the given title, keyed by the tabs block that {@link applyTabs} set up. */
+const activators = new WeakMap<HTMLElement, (title: HTMLElement) => void>();
 let lastTabId = 0;

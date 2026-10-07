@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+
 import FindInHtml from "./find_in_html.js";
 
 /**
@@ -88,5 +90,24 @@ describe("FindInHtml", () => {
         const secondary = Array.from(container.querySelectorAll(".find-result-secondary")).map((el) => el.textContent);
         expect(secondary).toContain("a.c");
         expect(secondary).toContain("a+c");
+    });
+
+    it("shows the tab that holds the current match", async () => {
+        const { finder, container } = setup(
+            "<div class=\"trilium-tabs\">" +
+                "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">A</p>" +
+                    "<div class=\"trilium-tab-panel\"><p>first</p></div></section>" +
+                "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">B</p>" +
+                    "<div class=\"trilium-tab-panel\"><p>needle</p></div></section>" +
+            "</div>"
+        );
+        applyTabs(container, { placeholder: "" });
+        const activeTitle = () => container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent;
+        expect(activeTitle()).toBe("A");
+
+        const result = await finder.performFind("needle", false, false);
+
+        expect(result.totalFound).toBe(1);
+        expect(activeTitle()).toBe("B");
     });
 });
