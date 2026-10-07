@@ -1,12 +1,11 @@
 import "./TextEmbedEditor.css";
 
 import { createPortal, type RefObject } from "preact";
-import { useLayoutEffect, useRef, useState } from "preact/hooks";
+import { useLayoutEffect, useRef } from "preact/hooks";
 
 import type Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
 import type FNote from "../../../entities/fnote";
-import { randomString } from "../../../services/utils";
 import {
     announceEmbeddedNoteClosing, EmbeddedNoteScope, useEmbeddedNoteContext
 } from "../../EmbeddedNotePane";
@@ -36,13 +35,12 @@ export default function TextEmbedEditor({ note, hasFixedToolbar, onClose }: Text
     const closingSave = getClosingSave(note.noteId);
     if (closingSave) throw closingSave;
 
-    const [ ntxId ] = useState(() => `_embed_${randomString(10)}`);
     const rootRef = useRef<HTMLDivElement>(null);
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
     // Inside an editor with a fixed toolbar, that toolbar shows the buttons of this editor while
     // it has the focus.
-    const { noteContext, component } = useEmbeddedNoteContext(note, ntxId, {
+    const { noteContext, component, ntxId } = useEmbeddedNoteContext(note, "_embed", {
         floatingToolbar: !hasFixedToolbar,
         skipRecentNotes: true
     });

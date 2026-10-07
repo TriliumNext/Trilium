@@ -54,7 +54,7 @@ export default function EventPopover({ noteId, anchor, container, parentNote, is
     onFollowLink(noteId: string): boolean;
 }) {
     const note = useNote(noteId);
-    const { noteContext, component } = useEmbeddedNoteContext(note ?? undefined, POPOVER_NTX_ID);
+    const { noteContext, component, ntxId } = useEmbeddedNoteContext(note ?? undefined, POPOVER_NTX_ID_PREFIX);
 
     /**
      * Whether the card has been grown to the window (see the maximize in {@link EventDetails}, and
@@ -73,9 +73,9 @@ export default function EventPopover({ noteId, anchor, container, parentNote, is
      * mounted, and not waited on. Every way out leads through here.
      */
     const close = useCallback(() => {
-        void announceEmbeddedNoteClosing(component, POPOVER_NTX_ID);
+        void announceEmbeddedNoteClosing(component, ntxId);
         onClose();
-    }, [ component, onClose ]);
+    }, [ component, ntxId, onClose ]);
 
     if (!note) {
         return null;
@@ -219,8 +219,8 @@ function EventSheet({ note, parentNote, isEditable, onClose, onFollowLink }: {
     );
 }
 
-/** The popover's own ntxId, as the geo pane and the quick editor have one of their own. */
-const POPOVER_NTX_ID = "_calendar-event-popover";
+/** The start of the ntxId of the popover's own note context. */
+const POPOVER_NTX_ID_PREFIX = "_calendar-event-popover";
 
 /** The popover's contents: what heads it, and the event under that. */
 function EventDetails({ note, parentNote, isEditable, maximized, setMaximized, onClose, onFollowLink }: {
