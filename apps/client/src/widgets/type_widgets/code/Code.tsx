@@ -138,7 +138,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
                 await spacedUpdate.updateNowIfNecessary();
             }
 
-            return await parentComponent?.parent?.triggerCommand("runActiveNote", params);
+            return await parentComponent?.parent?.triggerCommand("runActiveNote", { ...params, noteId: note.noteId });
         }
     });
 

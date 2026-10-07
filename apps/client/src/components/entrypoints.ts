@@ -13,7 +13,7 @@ import server from "../services/server.js";
 import toastService from "../services/toast.js";
 import utils from "../services/utils.js";
 import ws from "../services/ws.js";
-import appContext, { type NoteCommandData } from "./app_context.js";
+import appContext, { type CommandListenerData, type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
 
 export default class Entrypoints extends Component {
@@ -171,12 +171,10 @@ export default class Entrypoints extends Component {
         await appContext.tabManager.openInSameTab(todayNote.noteId);
     }
 
-    async runActiveNoteCommand() {
-        const noteContext = appContext.tabManager.getActiveContext();
-        if (!noteContext) {
-            return;
-        }
-        const { ntxId, note } = noteContext;
+    async runActiveNoteCommand({ ntxId: requestedNtxId, noteId }: CommandListenerData<"runActiveNote"> = {}) {
+        const activeContext = appContext.tabManager.getActiveContext();
+        const note = noteId ? await froca.getNote(noteId) : activeContext?.note;
+        const ntxId = noteId ? requestedNtxId : activeContext?.ntxId;
 
         // ctrl+enter is also used elsewhere, so make sure we're running only when appropriate
         if (!note || note.type !== "code") {

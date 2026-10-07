@@ -1,7 +1,14 @@
 import type { ElectronApi } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import froca from "../services/froca.js";
+import server from "../services/server.js";
+import toastService from "../services/toast.js";
+import { buildNote } from "../test/easy-froca.js";
+import appContext from "./app_context.js";
 import Entrypoints from "./entrypoints.js";
+import type NoteContext from "./note_context.js";
+import type TabManager from "./tab_manager.js";
 
 describe("openInWindowCommand", () => {
     const entrypoints = new Entrypoints();
@@ -68,5 +75,32 @@ describe("logoutCommand", () => {
         expect(document.body.querySelector("form")?.action)
             .toBe("http://localhost:3000/trilium/logout");
         window.history.replaceState({}, "", "/");
+    });
+});
+
+describe("runActiveNoteCommand", () => {
+    const entrypoints = new Entrypoints();
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("runs the note the command names, in its own context, rather than the active tab's", async () => {
+        buildNote({ id: "tabNote", title: "Tab", type: "code", mime: "text/x-sqlite;schema=trilium" });
+        buildNote({ id: "popupQuery", title: "Popup", type: "code", mime: "text/x-sqlite;schema=trilium" });
+        const tabContext = { ntxId: "tab", note: froca.getNoteFromCache("tabNote") } as NoteContext;
+        appContext.tabManager = { getActiveContext: () => tabContext } as TabManager;
+        const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, results: [] });
+        const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
+
+        await entrypoints.runActiveNoteCommand({ ntxId: "_popup-editor", noteId: "popupQuery" });
+        expect(post).toHaveBeenCalledWith("sql/execute/popupQuery");
+        expect(triggerEvent).toHaveBeenCalledWith("sqlQueryResults", expect.objectContaining({ ntxId: "_popup-editor" }));
+
+        // Without a note named, as the badges trigger it, the active tab's note runs.
+        post.mockClear();
+        await entrypoints.runActiveNoteCommand();
+        expect(post).toHaveBeenCalledWith("sql/execute/tabNote");
     });
 });
