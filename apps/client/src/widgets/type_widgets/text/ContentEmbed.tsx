@@ -10,6 +10,7 @@ import { t } from "../../../services/i18n";
 import type { ViewScope } from "../../../services/link";
 import { removeIndividualBinding } from "../../../services/shortcuts";
 import ActionButton from "../../react/ActionButton";
+import { Badge } from "../../react/Badge";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
@@ -99,7 +100,9 @@ export default function ContentEmbed({
                 )}
                 <ContentEmbedTitle title={title} />
                 {/* The content of the embed puts badges here, such as its save status. */}
-                <div className="note-badges include-note-badges" />
+                <div className="note-badges include-note-badges">
+                    {viewScope?.block && <ExcerptBadge />}
+                </div>
                 <ContentEmbedActionButton
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
@@ -206,7 +209,7 @@ export function getNoteActions(notePath: string): ContentEmbedAction[] {
 function getOpenInNewTabAction(notePath: string, viewScope?: ViewScope): ContentEmbedAction {
     return {
         title: t("common.open_in_new_tab"),
-        icon: "bx bx-link-external",
+        icon: OPEN_IN_NEW_TAB_ICON,
         run: async () => {
             await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
                 viewScope,
@@ -215,6 +218,22 @@ function getOpenInNewTabAction(notePath: string, viewScope?: ViewScope): Content
             });
         }
     };
+}
+
+const OPEN_IN_NEW_TAB_ICON = "bx bx-link-external";
+
+/** Marks an embed that shows only some blocks of its note, a block reference. */
+function ExcerptBadge() {
+    return (
+        <Badge
+            className="excerpt-badge"
+            icon="bx bx-crop"
+            text={t("block_reference.excerpt")}
+            tooltip={t("block_reference.excerpt_description", {
+                icon: `<span class="${OPEN_IN_NEW_TAB_ICON}"></span>`
+            })}
+        />
+    );
 }
 
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "

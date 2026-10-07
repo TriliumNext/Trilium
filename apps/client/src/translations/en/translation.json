@@ -4600,6 +4600,8 @@
     "copy_other": "Copy reference to these {{count}} blocks",
     "broken": "Broken reference",
     "not_found": "A referenced block could not be found. It might have been deleted.",
-    "untitled": "Block"
+    "untitled": "Block",
+    "excerpt": "Excerpt",
+    "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab."
   }
 }

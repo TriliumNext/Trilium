@@ -21,7 +21,9 @@ const {
     removeIndividualBinding: vi.fn()
 }));
 
-vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
+vi.mock("../../../services/i18n", () => ({
+    t: (key: string, options?: { icon?: string }) => (options?.icon ? `${key} ${options.icon}` : key)
+}));
 vi.mock("../../../components/app_context", () => ({
     default: { tabManager: { openTabWithNoteWithHoisting }, triggerCommand }
 }));
@@ -255,6 +257,27 @@ describe("ContentEmbed", () => {
         expect(click(menu).isStopped).toBe(true);
         expect(openContextMenu)
             .toHaveBeenCalledWith("owner", { below: menu }, ATTACHMENT_SCOPE);
+    });
+
+    it("marks an excerpt, with the icon of the button that opens the whole note", () => {
+        renderBox({ viewScope: { block: "blockA:blockB" } });
+        const badge = container.querySelector<HTMLElement>(".include-note-badges > .excerpt-badge");
+        expect(badge?.textContent).toBe("block_reference.excerpt");
+        expect(titleRow()).toContain("include-note-badges");
+
+        const tooltip = badge ? Tooltip.getInstance(badge) : null;
+        act(() => tooltip?.show());
+        const tooltipText = document.querySelector(".tooltip-inner");
+        expect(tooltipText?.textContent?.trim()).toBe("block_reference.excerpt_description");
+        expect(tooltipText?.querySelector(".bx.bx-link-external")).not.toBeNull();
+        expect(button("include-note-open").className).toContain("bx-link-external");
+        act(() => tooltip?.hide());
+
+        for (const viewScope of [ undefined, ATTACHMENT_SCOPE ]) {
+            act(() => render(null, container));
+            renderBox({ viewScope });
+            expect(container.querySelector(".excerpt-badge")).toBeNull();
+        }
     });
 
     it("gives its content the screen, and takes it back from the overlay button", async () => {
