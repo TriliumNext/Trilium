@@ -14,7 +14,12 @@
 .relation-map-wrapper {
     position: relative;
     height: 100%;
-    outline: none; /* remove dotted outline on click */
+}
+
+.relation-map-viewport,
+.relation-map-viewport .relation-map-transform.react-transform-wrapper {
+    width: 100%;
+    height: 100%;
 }
 
 .note-detail-relation-map .relation-map-connections {

@@ -37,19 +37,21 @@ describe("relation map pointer drags", () => {
     function Harness() {
         const canvasRef = useRef<HTMLDivElement>(null);
         const mapApiRef = useRef({ moveNote, connect } as unknown as RelationMapApi);
-        const dragging = useBoxDragging({ containerRef: canvasRef, mapApiRef });
-        const drawing = useRelationDrawing({ containerRef: canvasRef, mapApiRef, askRelationName });
+        const dragging = useBoxDragging({ containerRef: canvasRef, mapApiRef, getScale });
+        const drawing = useRelationDrawing({ containerRef: canvasRef, mapApiRef, getScale, askRelationName });
         state = { dragged: dragging.dragged, pending: drawing.pending };
         startDrag = dragging.startDrag;
         startDrawing = drawing.startDrawing;
 
-        // Zoomed to 2x, as `panzoom` would transform it.
         return (
-            <div ref={canvasRef} className="canvas" style={{ transform: "matrix(2, 0, 0, 2, 0, 0)" }}>
+            <div ref={canvasRef} className="canvas">
                 <div id={noteIdToId("target")} className="note-box" />
             </div>
         );
     }
+
+    /** The map is zoomed to 2x. */
+    const getScale = () => 2;
 
     function pointer(type: string, clientX: number, clientY: number) {
         return new PointerEvent(type, { clientX, clientY, button: 0, isPrimary: true });

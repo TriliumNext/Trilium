@@ -85,53 +85,40 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
     if (!note || !isOnMap) return null;
 
     return (
-        // Stops wheel, double-click and touch events in the pane from reaching `panzoom`, which
-        // listens on the whole map.
-        <div
-            className="relation-map-note-pane-host"
-            onWheel={stopPropagation}
-            onDblClick={stopPropagation}
-            onTouchStart={stopPropagation}
-        >
-            <EmbeddedNoteScope component={paneComponent} noteContext={noteContext}>
-                <EmbeddedNoteSurface
-                    note={note}
-                    panelClassName="relation-map-note-pane"
-                    sheetClassName="relation-map-note-sheet"
-                    bodyClassName="relation-map-note-pane-body"
-                    closeText={t("relation_map.close_note_pane")}
-                    maximize={{
-                        maximized,
-                        onChange: setMaximized,
-                        expandText: t("relation_map.expand_note_pane"),
-                        restoreText: t("relation_map.restore_note_pane")
-                    }}
-                    onClose={closePane}
-                    onFollowLink={followLink}
-                >
-                    <EmbeddedNoteActions>
-                        <OpenNoteActions note={note} />
-                        {!isReadOnly && <>
-                            <NoteColorAction note={note} title={t("relation_map.note_color")} />
-                            <ActionButton
-                                className="tn-embedded-note-remove"
-                                icon="bx bx-trash"
-                                text={t("relation_map.remove_from_map")}
-                                onClick={() => void confirmRemoveFromMap(note, mapApiRef)}
-                            />
-                        </>}
-                    </EmbeddedNoteActions>
-                    <PromotedAttributes />
-                    <NoteDetail />
-                </EmbeddedNoteSurface>
-                {selection?.isNew && <SelectTitleOnFirstOpen />}
-            </EmbeddedNoteScope>
-        </div>
+        <EmbeddedNoteScope component={paneComponent} noteContext={noteContext}>
+            <EmbeddedNoteSurface
+                note={note}
+                panelClassName="relation-map-note-pane"
+                sheetClassName="relation-map-note-sheet"
+                bodyClassName="relation-map-note-pane-body"
+                closeText={t("relation_map.close_note_pane")}
+                maximize={{
+                    maximized,
+                    onChange: setMaximized,
+                    expandText: t("relation_map.expand_note_pane"),
+                    restoreText: t("relation_map.restore_note_pane")
+                }}
+                onClose={closePane}
+                onFollowLink={followLink}
+            >
+                <EmbeddedNoteActions>
+                    <OpenNoteActions note={note} />
+                    {!isReadOnly && <>
+                        <NoteColorAction note={note} title={t("relation_map.note_color")} />
+                        <ActionButton
+                            className="tn-embedded-note-remove"
+                            icon="bx bx-trash"
+                            text={t("relation_map.remove_from_map")}
+                            onClick={() => void confirmRemoveFromMap(note, mapApiRef)}
+                        />
+                    </>}
+                </EmbeddedNoteActions>
+                <PromotedAttributes />
+                <NoteDetail />
+            </EmbeddedNoteSurface>
+            {selection?.isNew && <SelectTitleOnFirstOpen />}
+        </EmbeddedNoteScope>
     );
 }
 
 const PANE_NTX_ID_PREFIX = "_relation-map-note-pane";
-
-function stopPropagation(e: Event) {
-    e.stopPropagation();
-}

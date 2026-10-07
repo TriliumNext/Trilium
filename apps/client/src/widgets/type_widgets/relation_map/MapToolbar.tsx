@@ -1,17 +1,14 @@
 import "./MapToolbar.css";
 
-import type { PanZoom } from "panzoom";
-import { useEffect, useState } from "preact/hooks";
-
 import { t } from "../../../services/i18n";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../../react/OverlayControlGroup";
 
-/** What the buttons ask for, which is what the map itself answers (see `usePanZoom` in RelationMap.tsx). */
+/** What the buttons ask for, which is what the map itself answers (see `useMapZoom` in RelationMap.tsx). */
 export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom";
 
 interface MapToolbarProps {
-    /** The map the scale is read from, or `undefined` while there is none yet. */
-    panZoom: PanZoom | undefined;
+    /** The scale the map is drawn at, and whether each zoom step has room left. */
+    zoom: { scale: number; canZoomIn: boolean; canZoomOut: boolean };
     onCommand: (command: MapCommand) => void;
 }
 
@@ -28,20 +25,15 @@ interface MapToolbarProps {
  * What the three do is asked for as commands rather than done here — the same commands a script can
  * trigger (`api.triggerCommand`), which is why they outlive the floating buttons that were the other
  * caller. The map itself is only read from: for the scale to show, and for the ends of its range,
- * which is what leaves a step with nothing left to give disabled. Absent until there is a map to
- * read.
+ * which is what leaves a step with nothing left to give disabled.
  */
-export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
-    const scale = useMapScale(panZoom);
-
-    if (!panZoom) return null;
-
+export default function MapToolbar({ zoom, onCommand }: MapToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-toolbar" placement="bottom-end">
             <ZoomControls
-                percent={scale * 100}
-                canZoomIn={scale < panZoom.getMaxZoom()}
-                canZoomOut={scale > panZoom.getMinZoom()}
+                percent={zoom.scale * 100}
+                canZoomIn={zoom.canZoomIn}
+                canZoomOut={zoom.canZoomOut}
                 onZoomIn={() => onCommand("relationMapResetZoomIn")}
                 onZoomOut={() => onCommand("relationMapResetZoomOut")}
                 onReset={() => onCommand("relationMapResetPanZoom")}
@@ -98,26 +90,3 @@ export function EditToolbar({ isReadOnly, placing, onTogglePlacement }: EditTool
     );
 }
 
-/**
- * The scale the map is drawn at, followed as it changes — by these buttons, by the wheel, or by the
- * saved view being restored.
- *
- * Read off the map's own transform, which it reports as it is panned as well as zoomed: a pan leaves
- * the scale where it was, and a state set to the number it already holds costs nothing.
- */
-function useMapScale(panZoom: PanZoom | undefined) {
-    const [ scale, setScale ] = useState(1);
-
-    useEffect(() => {
-        if (!panZoom) return;
-
-        const report = () => setScale(panZoom.getTransform().scale);
-        // The map may have been moved between being built and being listened to.
-        report();
-
-        panZoom.on("transform", report);
-        return () => panZoom.off("transform", report);
-    }, [ panZoom ]);
-
-    return scale;
-}

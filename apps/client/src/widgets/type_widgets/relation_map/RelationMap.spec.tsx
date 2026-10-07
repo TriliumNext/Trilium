@@ -1,10 +1,38 @@
-import type { PanZoom } from "panzoom";
-import { render } from "preact";
-import { useRef } from "preact/hooks";
+import { type ComponentChildren, render } from "preact";
+import { useRef, useState } from "preact/hooks";
+import { forwardRef } from "preact/compat";
+import { useImperativeHandle } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useCanvasClicks, useRevealSelectedBox } from "./RelationMap";
+// A stand-in for the zoom library, which needs real layout: it applies a transform at once and
+// reports it, as the library does once an animation ends.
+const { wrapperProps } = vi.hoisted(() => ({ wrapperProps: { current: null as Record<string, unknown> | null } }));
+vi.mock("react-zoom-pan-pinch", () => ({
+    TransformWrapper: forwardRef((props: { children?: ComponentChildren; onTransform?(ref: unknown, state: object): void }, ref) => {
+        wrapperProps.current = props;
+        useImperativeHandle(ref, () => {
+            const api = {
+                instance: { state: { positionX: 0, positionY: 0, scale: 1 } },
+                setTransform(positionX: number, positionY: number, scale: number) {
+                    api.instance.state = { positionX, positionY, scale };
+                    props.onTransform?.(api, api.instance.state);
+                },
+                zoomIn: (step: number) => api.setTransform(0, 0, api.instance.state.scale + step),
+                zoomOut: (step: number) => api.setTransform(0, 0, api.instance.state.scale - step)
+            };
+            return api;
+        }, []);
+        return <>{props.children}</>;
+    }),
+    TransformComponent: (props: { children?: ComponentChildren }) => <div>{props.children}</div>
+}));
+
+import Component from "../../../components/component";
+import { ParentComponent } from "../../react/react_utils";
+import type RelationMapApi from "./api";
+import type { MapTransform } from "./api";
+import { MapViewport, useCanvasClicks, useMapZoom, useRevealSelectedBox } from "./RelationMap";
 import { noteIdToId } from "./utils";
 
 describe("relation map canvas clicks", () => {
@@ -141,7 +169,7 @@ describe("relation map revealing the selected box", () => {
     function Harness({ noteId }: { noteId: string | undefined }) {
         const wrapperRef = useRef<HTMLDivElement>(null);
         const canvasRef = useRef<HTMLDivElement>(null);
-        useRevealSelectedBox({ wrapperRef, containerRef: canvasRef, panZoom: { moveBy } as unknown as PanZoom, noteId });
+        useRevealSelectedBox({ wrapperRef, containerRef: canvasRef, moveBy, noteId });
         return (
             <div ref={wrapperRef} className="wrapper">
                 <div ref={canvasRef} className="canvas" />
@@ -171,9 +199,9 @@ describe("relation map revealing the selected box", () => {
     it("pans a box out from under the pane, and leaves one alone that stands clear", () => {
         addBoxBeforeMount("under", 1000);
         expect(moveBy).toHaveBeenCalledTimes(1);
-        const [ dx, dy, smooth ] = moveBy.mock.calls[0];
+        const [ dx, dy ] = moveBy.mock.calls[0];
         expect(dx).toBeLessThan(0);
-        expect([ dy, smooth ]).toEqual([ 0, true ]);
+        expect(dy).toBe(0);
 
         moveBy.mockClear();
         addBoxBeforeMount("clear", 100);
@@ -196,4 +224,71 @@ describe("relation map revealing the selected box", () => {
         addBox(noteId, left);
         mount(noteId);
     }
+});
+
+describe("relation map zoom", () => {
+    let container: HTMLElement | undefined;
+    const setTransform = vi.fn();
+    let zoom: ReturnType<typeof useMapZoom> | undefined;
+    const component = new Component();
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+        setTransform.mockClear();
+    });
+
+    function Harness({ loadedTransform }: { loadedTransform: MapTransform }) {
+        const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
+        const mapApiRef = useRef({ setTransform } as unknown as RelationMapApi);
+        zoom = useMapZoom({ ntxId: "map", viewport, loadedTransform, mapApiRef });
+        return <MapViewport zoom={zoom} viewportRef={setViewport}><div className="note-box" /></MapViewport>;
+    }
+
+    function mount(loadedTransform: MapTransform) {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={component}><Harness loadedTransform={loadedTransform} /></ParentComponent.Provider>,
+            container as HTMLElement));
+    }
+
+    const state = () => zoom?.ref.current?.instance.state;
+    const trigger = (name: "relationMapResetPanZoom" | "relationMapResetZoomIn" | "relationMapResetZoomOut", ntxId: string) =>
+        act(() => { component.handleEvent(name, { ntxId }); });
+
+    it("pans an unbounded canvas, and leaves boxes, labels and relations to be dragged and clicked", () => {
+        mount({ x: 0, y: 0, scale: 1 });
+
+        expect(wrapperProps.current).toMatchObject({
+            limitToBounds: false,
+            panning: { excluded: [ "note-box", "connection-label", "relation-map-connection-hit" ] }
+        });
+    });
+
+    it("restores the saved view, saves every change and goes back to the origin on reset", () => {
+        mount({ x: -800, y: 600, scale: 1.5 });
+        expect(state()).toEqual({ positionX: -800, positionY: 600, scale: 1.5 });
+        expect(zoom?.scale).toBe(1.5);
+
+        trigger("relationMapResetPanZoom", "map");
+        expect(state()).toEqual({ positionX: 0, positionY: 0, scale: 1 });
+        expect(setTransform).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: 1 });
+    });
+
+    it("steps the zoom on the commands of its own map only", () => {
+        mount({ x: 0, y: 0, scale: 1 });
+
+        trigger("relationMapResetZoomIn", "other");
+        expect(state()?.scale).toBe(1);
+
+        trigger("relationMapResetZoomIn", "map");
+        expect(state()?.scale).toBeCloseTo(1.2);
+
+        trigger("relationMapResetZoomOut", "map");
+        expect(state()?.scale).toBeCloseTo(1);
+    });
 });

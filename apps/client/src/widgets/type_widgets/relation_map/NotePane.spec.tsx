@@ -186,18 +186,4 @@ describe("relation map NotePane", () => {
         expect(pane()?.querySelector(".tn-embedded-note-remove")).toBeNull();
         expect(pane()?.querySelector(".tn-embedded-note-color")).toBeNull();
     });
-
-    it("keeps wheel and double clicks inside the pane from reaching the map", async () => {
-        const reached = vi.fn();
-        container?.addEventListener("wheel", reached);
-        container?.addEventListener("dblclick", reached);
-        await mount();
-
-        const body = pane()?.querySelector(".relation-map-note-pane-body");
-        expect(body).toBeTruthy();
-        body?.dispatchEvent(new WheelEvent("wheel", { bubbles: true }));
-        body?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
-
-        expect(reached).not.toHaveBeenCalled();
-    });
 });

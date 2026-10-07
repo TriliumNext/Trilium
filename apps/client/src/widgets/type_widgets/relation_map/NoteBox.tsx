@@ -65,9 +65,6 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected, highlighted, dropTa
             style={{ left: `${x}px`, top: `${y}px` }}
             onContextMenu={contextMenuHandler}
             onPointerDown={onPointerDown}
-            // Keeps `panzoom` from panning the map while the box is dragged.
-            onMouseDown={stopPropagation}
-            onTouchStart={stopPropagation}
         >
             <span className={clsx("note-box-icon", icon)} />
             <span className="note-box-title">{title}</span>
@@ -87,8 +84,4 @@ export function GhostNoteBox({ elementRef }: { elementRef: RefObject<HTMLDivElem
             <span className="note-box-title">{t("relation_map.default_new_note_title")}</span>
         </div>
     );
-}
-
-function stopPropagation(e: Event) {
-    e.stopPropagation();
 }

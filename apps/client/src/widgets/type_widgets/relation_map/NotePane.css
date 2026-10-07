@@ -4,10 +4,6 @@
     --relation-map-pane-width: 380px;
 }
 
-.relation-map-note-pane-host {
-    display: contents;
-}
-
 .relation-map-wrapper .relation-map-note-pane {
     position: absolute;
     top: var(--relation-map-inset);

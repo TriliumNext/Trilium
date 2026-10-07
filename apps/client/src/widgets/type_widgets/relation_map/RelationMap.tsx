@@ -2,12 +2,9 @@ import "./RelationMap.css";
 
 import { RelationMapPostResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-// The library's own types rather than the hand-written `PanZoom` in types.d.ts, which stops at the
-// handful of calls the map made when it was written and knows nothing of the rest — the ends of the
-// zoom range, or unsubscribing from a report.
-import panzoom, { PanZoom, PanZoomOptions } from "panzoom";
-import { HTMLAttributes, RefObject } from "preact";
+import { ComponentChildren, HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { type ReactZoomPanPinchRef, TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -19,8 +16,10 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
+import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
+import { useZoomPanKeyboard, ZOOM_PAN_VIEWPORT_CLASS } from "../../react/zoom_pan_keyboard";
 import { TypeWidgetProps } from "../type_widget";
-import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry } from "./api";
+import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, MapTransform } from "./api";
 import Connections from "./Connections";
 import { showRelationContextMenu } from "./context_menu";
 import { useBoxDragging, useRelationDrawing } from "./drags";
@@ -29,7 +28,7 @@ import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { GhostNoteBox, NoteBox } from "./NoteBox";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
-import { CLICK_TOLERANCE, getMousePosition, getZoom, idToNoteId, noteIdToId, revealOffset } from "./utils";
+import { CLICK_TOLERANCE, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
 export default function RelationMap({ note, noteContext, ntxId, parentComponent }: TypeWidgetProps) {
     const [ data, setData ] = useState<MapData>();
@@ -38,6 +37,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);
+    const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
+    const [ loadedTransform, setLoadedTransform ] = useState<MapTransform>();
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -75,6 +76,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             }
 
             setData(newData as MapData);
+            setLoadedTransform({ ...(newData as MapData).transform });
             mapApiRef.current = new RelationMapApi(note, newData as MapData, (newData, refreshUi) => {
                 if (refreshUi) {
                     setData(newData);
@@ -87,16 +89,14 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         }
     });
 
-    const onTransform = useCallback((pzInstance: PanZoom) => {
-        if (!mapApiRef.current || !data) return;
-        mapApiRef.current.setTransform(pzInstance.getTransform());
-    }, [ data ]);
-
+    const mapZoom = useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef });
+    const { getScale } = mapZoom;
     const [ selection, setSelection ] = useState<PaneSelection | null>(null);
     const noteIdsOnMap = useMemo(() => data?.notes.map((entry) => entry.noteId) ?? [], [ data ]);
     const paneRef = useRef<NotePaneHandle>(null);
     const placement = useNotePlacement({
         containerRef,
+        getScale,
         note,
         ntxId,
         mapApiRef,
@@ -112,32 +112,14 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         onClickEmpty: () => paneRef.current?.close(),
         onOpenNote: openNoteFromBox
     });
-    const dragProps = useNoteDragging({ containerRef, mapApiRef });
+    const dragProps = useNoteDragging({ containerRef, mapApiRef, getScale });
 
     const relationNamePrompt = useRelationNamePrompt();
-    const { dragged, startDrag } = useBoxDragging({ containerRef, mapApiRef });
-    const { pending, startDrawing } = useRelationDrawing({ containerRef, mapApiRef, askRelationName: relationNamePrompt.ask });
+    const { dragged, startDrag } = useBoxDragging({ containerRef, mapApiRef, getScale });
+    const { pending, startDrawing } = useRelationDrawing({ containerRef, mapApiRef, getScale, askRelationName: relationNamePrompt.ask });
     const { boxes, onBoxResize } = useBoxes(data?.notes, dragged);
 
-    const panZoom = usePanZoom({
-        ntxId,
-        containerRef,
-        options: {
-            maxZoom: 2,
-            minZoom: 0.3,
-            smoothScroll: false,
-            //@ts-expect-error Upstream incorrectly mentions no arguments.
-            filterKey (e: KeyboardEvent) {
-                // if ALT is pressed, then panzoom should bubble the event up
-                // this is to preserve ALT-LEFT, ALT-RIGHT navigation working
-                return e.altKey;
-            }
-        },
-        transformData: data?.transform,
-        onTransform
-    });
-
-    useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId: selection?.noteId });
+    useRevealSelectedBox({ wrapperRef, containerRef, moveBy: mapZoom.moveBy, noteId: selection?.noteId });
     const hoveredNoteId = useHoveredBox(containerRef);
     const [ hoveredRelationId, setHoveredRelationId ] = useState<string | null>(null);
     const { relations, inverseRelations } = useRelationData(note.noteId, data, mapApiRef);
@@ -158,41 +140,43 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             {...clickProps}
             {...dragProps}
         >
-            <div ref={containerRef} className="relation-map-container">
-                <Connections
-                    relations={drawnRelations}
-                    inverseRelations={inverseRelations}
-                    boxes={boxes}
-                    hoveredNoteId={hoveredNoteId}
-                    hoveredRelationId={hoveredRelationId}
-                    pending={pending}
-                    onHoverRelation={setHoveredRelationId}
-                    onContextMenu={onRelationContextMenu}
-                />
-                {data?.notes.map((entry) => {
-                    const position = dragged?.noteId === entry.noteId ? dragged : entry;
-                    return (
-                        <NoteBox
-                            key={entry.noteId}
-                            {...position}
-                            mapApiRef={mapApiRef}
-                            selected={entry.noteId === selection?.noteId}
-                            highlighted={entry.noteId === hoveredRelation?.sourceNoteId || entry.noteId === hoveredRelation?.targetNoteId}
-                            dropTarget={entry.noteId === pending?.targetNoteId}
-                            isReadOnly={isReadOnly}
-                            onPointerDown={(e) => {
-                                if (e.target instanceof Element && e.target.closest(".endpoint")) {
-                                    startDrawing(e, entry.noteId);
-                                } else {
-                                    startDrag(e, position);
-                                }
-                            }}
-                            onResize={onBoxResize}
-                        />
-                    );
-                })}
-                {placement.placing && <GhostNoteBox elementRef={placement.ghostRef} />}
-            </div>
+            <MapViewport zoom={mapZoom} viewportRef={setViewport}>
+                <div ref={containerRef} className="relation-map-container">
+                    <Connections
+                        relations={drawnRelations}
+                        inverseRelations={inverseRelations}
+                        boxes={boxes}
+                        hoveredNoteId={hoveredNoteId}
+                        hoveredRelationId={hoveredRelationId}
+                        pending={pending}
+                        onHoverRelation={setHoveredRelationId}
+                        onContextMenu={onRelationContextMenu}
+                    />
+                    {data?.notes.map((entry) => {
+                        const position = dragged?.noteId === entry.noteId ? dragged : entry;
+                        return (
+                            <NoteBox
+                                key={entry.noteId}
+                                {...position}
+                                mapApiRef={mapApiRef}
+                                selected={entry.noteId === selection?.noteId}
+                                highlighted={entry.noteId === hoveredRelation?.sourceNoteId || entry.noteId === hoveredRelation?.targetNoteId}
+                                dropTarget={entry.noteId === pending?.targetNoteId}
+                                isReadOnly={isReadOnly}
+                                onPointerDown={(e) => {
+                                    if (e.target instanceof Element && e.target.closest(".endpoint")) {
+                                        startDrawing(e, entry.noteId);
+                                    } else {
+                                        startDrag(e, position);
+                                    }
+                                }}
+                                onResize={onBoxResize}
+                            />
+                        );
+                    })}
+                    {placement.placing && <GhostNoteBox elementRef={placement.ghostRef} />}
+                </div>
+            </MapViewport>
 
             {/* Both groups stand on the map whatever layout the note is read in: what is done to a
                 canvas belongs on the canvas, and the bar of buttons above the note is not where the
@@ -204,7 +188,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             />
 
             <MapToolbar
-                panZoom={panZoom}
+                zoom={mapZoom}
                 onCommand={(command) => parentComponent?.triggerEvent(command, { ntxId })}
             />
 
@@ -230,61 +214,94 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
 }
 
 /**
- * Sets the map up to be panned and zoomed, answers the commands that drive it, and hands the
- * instance back so that the controls over the map can read it — as state rather than as the ref the
- * commands are answered from, so that they are drawn afresh when the map is rebuilt under a new one.
+ * Pans and zooms the map with react-zoom-pan-pinch, as the image viewer does, on a canvas without
+ * bounds. Restores `loadedTransform` whenever the note's content loads, saves every change to the
+ * map's data, and answers the zoom commands, which scripts can trigger too. The wheel zooms without
+ * the map being focused, since the map fills its pane and has no page to scroll.
  */
-function usePanZoom({ ntxId, containerRef, options, transformData, onTransform }: {
+export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef }: {
     ntxId: string | null | undefined;
-    containerRef: RefObject<HTMLDivElement | null>;
-    options: PanZoomOptions;
-    transformData: MapData["transform"] | undefined;
-    onTransform: (pzInstance: PanZoom) => void
+    /** The focusable element the keyboard and the wheel act on. */
+    viewport: HTMLDivElement | null;
+    loadedTransform: MapTransform | undefined;
+    mapApiRef: RefObject<RelationMapApi | null>;
 }) {
-    const apiRef = useRef<PanZoom>(null);
-    const [ panZoom, setPanZoom ] = useState<PanZoom>();
+    const zoom = useZoomPanPinch({ minScale: MIN_SCALE, maxScale: MAX_SCALE });
+    const { ref } = zoom;
+    useZoomPanKeyboard(ref, viewport);
+    useZoomPanWheel(ref, viewport);
 
     useEffect(() => {
-        if (!containerRef.current) return;
-        const pzInstance = panzoom(containerRef.current, options);
-        apiRef.current = pzInstance;
-        setPanZoom(pzInstance);
+        if (!loadedTransform) return;
+        ref.current?.setTransform(loadedTransform.x, loadedTransform.y, loadedTransform.scale, 0);
+    }, [ ref, loadedTransform ]);
 
-        if (transformData) {
-            pzInstance.zoomTo(0, 0, transformData.scale);
-            pzInstance.moveTo(transformData.x, transformData.y);
-        } else {
-            // set to initial coordinates
-            pzInstance.moveTo(0, 0);
-        }
+    const onTransform = useCallback((api: ReactZoomPanPinchRef, state: { scale: number; positionX: number; positionY: number }) => {
+        zoom.onTransform(api, state);
+        mapApiRef.current?.setTransform({ x: state.positionX, y: state.positionY, scale: state.scale });
+    }, [ zoom.onTransform, mapApiRef ]);
 
-        if (onTransform) {
-            pzInstance.on("transform", () => onTransform(pzInstance));
-        }
+    const getScale = useCallback(() => ref.current?.instance.state.scale ?? 1, [ ref ]);
 
-        return () => {
-            setPanZoom(undefined);
-            pzInstance.dispose();
-        };
-    }, [ containerRef, onTransform ]);
+    const moveBy = useCallback((dx: number, dy: number) => {
+        const api = ref.current;
+        if (!api) return;
+        const { positionX, positionY, scale } = api.instance.state;
+        api.setTransform(positionX + dx, positionY + dy, scale, REVEAL_ANIMATION_MS);
+    }, [ ref ]);
 
     useTriliumEvents([ "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapResetZoomOut" ], ({ ntxId: eventNtxId }, eventName) => {
-        const pzInstance = apiRef.current;
-        if (eventNtxId !== ntxId || !pzInstance) return;
+        if (eventNtxId !== ntxId) return;
 
-        if (eventName === "relationMapResetPanZoom" && containerRef.current) {
-            const zoom = getZoom(containerRef.current);
-            pzInstance.zoomTo(0, 0, 1 / zoom);
-            pzInstance.moveTo(0, 0);
+        if (eventName === "relationMapResetPanZoom") {
+            ref.current?.setTransform(0, 0, 1);
         } else if (eventName === "relationMapResetZoomIn") {
-            pzInstance.zoomTo(0, 0, 1.2);
-        } else if (eventName === "relationMapResetZoomOut") {
-            pzInstance.zoomTo(0, 0, 0.8);
+            zoom.zoomIn();
+        } else {
+            zoom.zoomOut();
         }
     });
 
-    return panZoom;
+    return { ...zoom, onTransform, getScale, moveBy };
 }
+
+/**
+ * The focusable area of the map that pans and zooms its `children`. A press on a box, a label or a
+ * relation starts no pan, since those are dragged or clicked themselves.
+ */
+export function MapViewport({ zoom, viewportRef, children }: {
+    zoom: ReturnType<typeof useMapZoom>;
+    viewportRef(element: HTMLDivElement | null): void;
+    children: ComponentChildren;
+}) {
+    return (
+        <div ref={viewportRef} className={clsx("relation-map-viewport", ZOOM_PAN_VIEWPORT_CLASS)} tabIndex={0}>
+            <TransformWrapper
+                ref={zoom.ref}
+                minScale={MIN_SCALE}
+                maxScale={MAX_SCALE}
+                limitToBounds={false}
+                wheel={zoom.wheel}
+                panning={{ excluded: PAN_EXCLUDED }}
+                doubleClick={{ excluded: PAN_EXCLUDED }}
+                onTransform={zoom.onTransform}
+            >
+                <TransformComponent wrapperClass="relation-map-transform" contentClass="relation-map-content">
+                    {children}
+                </TransformComponent>
+            </TransformWrapper>
+        </div>
+    );
+}
+
+/** The zoom range of the map. */
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 2;
+
+const PAN_EXCLUDED = [ "note-box", "connection-label", "relation-map-connection-hit" ];
+
+/** How long panning a selected box into view takes. */
+const REVEAL_ANIMATION_MS = 300;
 
 function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi | null>) {
     const [ relations, setRelations ] = useState<ClientRelation[]>();
@@ -379,10 +396,11 @@ function useBoxes(notes: MapDataNoteEntry[] | undefined, dragged: MapDataNoteEnt
  * the default title (or the map's `#titleTemplate`), and the pane opens on it with the title
  * selected.
  */
-function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreated }: {
+function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onArm, onCreated }: {
     ntxId: string | null | undefined;
     note: FNote;
     containerRef: RefObject<HTMLDivElement | null>;
+    getScale(): number;
     mapApiRef: RefObject<RelationMapApi | null>;
     onArm(): void;
     onCreated(noteId: string): void;
@@ -425,12 +443,12 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
         const container = containerRef.current;
         if (!ghost || !container) return;
 
-        const { x, y } = boxPositionAt(e, container);
+        const { x, y } = boxPositionAt(e, container, getScale());
         ghost.style.left = `${x}px`;
         ghost.style.top = `${y}px`;
         // Hides the ghost over the toolbars, where a click does not place a note.
         ghost.classList.toggle("visible", isOnCanvas(e, container));
-    }, [ containerRef ]);
+    }, [ containerRef, getScale ]);
 
     const hideGhost = useCallback(() => ghostRef.current?.classList.remove("visible"), []);
 
@@ -440,7 +458,7 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
 
         // Leaves placement mode first, so the map does not stay in it if creating the note fails.
         setPlacing(false);
-        const position = boxPositionAt(e, container);
+        const position = boxPositionAt(e, container, getScale());
 
         const { note: created } = await note_create.createNote(note.noteId, {
             content: "",
@@ -452,7 +470,7 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
 
         mapApiRef.current.createItem({ noteId: created.noteId, ...position });
         onCreated(created.noteId);
-    }, [ note, containerRef, mapApiRef, onCreated ]);
+    }, [ note, containerRef, getScale, mapApiRef, onCreated ]);
 
     return { placing, ghostRef, followPointer, hideGhost, placeAt };
 }
@@ -530,23 +548,24 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
  * The box of a just-placed note is not in the DOM yet, because `NoteBox` renders only after the
  * note loads, so the hook waits for it with a `MutationObserver`.
  */
-export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId }: {
+export function useRevealSelectedBox({ wrapperRef, containerRef, moveBy, noteId }: {
     wrapperRef: RefObject<HTMLDivElement | null>;
     containerRef: RefObject<HTMLDivElement | null>;
-    panZoom: PanZoom | undefined;
+    /** Pans the map by a distance in page pixels, animated. */
+    moveBy(dx: number, dy: number): void;
     noteId: string | undefined;
 }) {
     useEffect(() => {
         const wrapper = wrapperRef.current;
         const container = containerRef.current;
-        if (!noteId || !wrapper || !container || !panZoom || isMobile()) return;
+        if (!noteId || !wrapper || !container || isMobile()) return;
 
         const id = noteIdToId(noteId);
         const findBox = () => [ ...container.children ].find((child) => child.id === id);
         const reveal = (box: Element) => {
             const offset = revealOffset(box.getBoundingClientRect(), wrapper.getBoundingClientRect(), glob.isRtl);
             if (offset) {
-                panZoom.moveBy(offset.dx, offset.dy, true);
+                moveBy(offset.dx, offset.dy);
             }
         };
 
@@ -564,7 +583,7 @@ export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId
         });
         observer.observe(container, { childList: true });
         return () => observer.disconnect();
-    }, [ wrapperRef, containerRef, panZoom, noteId ]);
+    }, [ wrapperRef, containerRef, moveBy, noteId ]);
 }
 
 /** The note of the box under the pointer, or `null` while the pointer is over no box. */
@@ -608,8 +627,8 @@ function openNoteFromBox(noteId: string, e: MouseEvent) {
 }
 
 /** The map position, in unzoomed map pixels, of a box placed under the pointer. */
-function boxPositionAt(e: MouseEvent, container: HTMLDivElement) {
-    const { x, y } = getMousePosition(e, container, getZoom(container));
+function boxPositionAt(e: MouseEvent, container: HTMLDivElement, scale: number) {
+    const { x, y } = getMousePosition(e, container, scale);
     return { x: x - PLACEMENT_OFFSET.x, y: y - PLACEMENT_OFFSET.y };
 }
 
@@ -618,8 +637,9 @@ function isOnCanvas(e: MouseEvent, container: HTMLDivElement) {
     return e.target === e.currentTarget || (e.target instanceof Node && container.contains(e.target));
 }
 
-function useNoteDragging({ containerRef, mapApiRef }: {
+function useNoteDragging({ containerRef, mapApiRef, getScale }: {
     containerRef: RefObject<HTMLDivElement | null>;
+    getScale(): number;
     mapApiRef: RefObject<RelationMapApi | null>;
 }): Pick<HTMLAttributes<HTMLDivElement>, "onDrop" | "onDragOver"> {
     const dragProps = useMemo(() => ({
@@ -631,7 +651,7 @@ function useNoteDragging({ containerRef, mapApiRef }: {
             if (!dragData) return;
             const notes = JSON.parse(dragData);
 
-            let { x, y } = getMousePosition(ev, container, getZoom(container));
+            let { x, y } = getMousePosition(ev, container, getScale());
             const entries: (MapDataNoteEntry & { title: string })[] = [];
 
             for (const note of notes) {
@@ -653,7 +673,7 @@ function useNoteDragging({ containerRef, mapApiRef }: {
         onDragOver(ev) {
             ev.preventDefault();
         }
-    }), [ containerRef, mapApiRef ]);
+    }), [ containerRef, mapApiRef, getScale ]);
 
     return dragProps;
 }

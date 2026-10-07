@@ -4,7 +4,7 @@ import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import { describe, expect, it, vi } from "vitest";
 
 import {
-    clampPan, useZoomPanWheel, wheelTargetScale, zoomStep, zoomToPointPosition
+    clampPan, panBounds, useZoomPanWheel, wheelTargetScale, zoomStep, zoomToPointPosition
 } from "./zoom_pan";
 
 describe("zoomStep", () => {
@@ -94,6 +94,16 @@ describe("clampPan", () => {
     it("clamps a position past either edge", () => {
         expect(clampPan(20, 20, bounds)).toEqual({ x: 0, y: 0 });
         expect(clampPan(-200, -200, bounds)).toEqual({ x: -100, y: -50 });
+    });
+});
+
+describe("panBounds", () => {
+    it("keeps a bounded instance to its bounds, and an unbounded one to none", () => {
+        const bounds = { minPositionX: -10, maxPositionX: 0, minPositionY: -10, maxPositionY: 0 };
+        const api = (limitToBounds: boolean) => ({ instance: { setup: { limitToBounds }, bounds } }) as unknown as ReactZoomPanPinchRef;
+
+        expect(panBounds(api(true))).toBe(bounds);
+        expect(panBounds(api(false))).toBeNull();
     });
 });
 

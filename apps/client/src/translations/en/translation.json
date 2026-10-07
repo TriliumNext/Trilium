@@ -1665,7 +1665,6 @@
     "connection_exists": "Connection '{{name}}' between these notes already exists.",
     "start_dragging_relations": "Start dragging relations from here and drop them on another note.",
     "note_not_found": "Note {{noteId}} not found!",
-    "cannot_match_transform": "Cannot match transform: {{transform}}",
     "note_already_in_diagram": "Note \"{{title}}\" is already in the diagram.",
     "default_new_note_title": "new note",
     "add_note_toast_title": "New note",

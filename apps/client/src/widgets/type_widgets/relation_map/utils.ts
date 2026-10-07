@@ -1,6 +1,3 @@
-import { t } from "../../../services/i18n";
-
-
 export function noteIdToId(noteId: string) {
     return `rel-map-note-${noteId}`;
 }
@@ -11,22 +8,6 @@ export function idToNoteId(id: string) {
 
 /** How far, in pixels, the pointer can move between press and release for the click to count. */
 export const CLICK_TOLERANCE = 4;
-
-export function getZoom(container: HTMLDivElement) {
-    const transform = window.getComputedStyle(container).transform;
-    if (transform === "none") {
-        return 1;
-    }
-
-    const matrixRegex = /matrix\((-?\d*\.?\d+),\s*0,\s*0,\s*-?\d*\.?\d+,\s*-?\d*\.?\d+,\s*-?\d*\.?\d+\)/;
-    const matches = transform.match(matrixRegex);
-
-    if (!matches) {
-        throw new Error(t("relation_map.cannot_match_transform", { transform }));
-    }
-
-    return parseFloat(matches[1]);
-}
 
 export function getMousePosition(evt: MouseEvent, container: HTMLDivElement, zoom: number) {
     const rect = container.getBoundingClientRect();
@@ -69,7 +50,7 @@ interface Rect {
  * an axis on which it fits is left alone.
  *
  * Both rectangles are in page coordinates, as `getBoundingClientRect()` gives them, which is also
- * what `PanZoom.moveBy()` takes.
+ * what a pan of the map is measured in.
  */
 export function revealOffset(box: Rect, map: Rect, isRtl: boolean) {
     const paneReach = map.right - map.left - PANE_REACH >= MIN_UNCOVERED_WIDTH ? PANE_REACH : 0;

@@ -91,29 +91,4 @@ declare global {
     var glob: CustomGlobals;
     //@ts-ignore
     var require: RequireMethod;
-
-    /*
-     * Panzoom
-     */
-
-    function panzoom(el: HTMLElement, opts: {
-        maxZoom: number,
-        minZoom: number,
-        smoothScroll: false,
-        filterKey: (e: { altKey: boolean }, dx: number, dy: number, dz: number) => void;
-    });
-
-    interface PanZoomTransform {
-        x: number;
-        y: number;
-        scale: number;
-    }
-
-    interface PanZoom {
-        zoomTo(x: number, y: number, scale: number);
-        moveTo(x: number, y: number);
-        on(event: string, callback: () => void);
-        getTransform(): PanZoomTransform;
-        dispose(): void;
-    }
 }

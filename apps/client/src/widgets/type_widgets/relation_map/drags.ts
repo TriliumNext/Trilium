@@ -6,16 +6,18 @@ import toast from "../../../services/toast";
 import RelationMapApi, { MapDataNoteEntry } from "./api";
 import { type PendingRelation, PENDING_CONNECTION_ID } from "./Connections";
 import type { AskRelationName } from "./RelationNamePopover";
-import { CLICK_TOLERANCE, getMousePosition, getZoom, idToNoteId } from "./utils";
+import { CLICK_TOLERANCE, getMousePosition, idToNoteId } from "./utils";
 
 /**
  * Moves a box with the pointer. The box follows the pointer once it has moved more than
  * `CLICK_TOLERANCE`, so a click still selects it, and the map saves the position on release.
  * `dragged` is the box's position while it is dragged, which overrides the saved one.
  */
-export function useBoxDragging({ containerRef, mapApiRef }: {
+export function useBoxDragging({ containerRef, mapApiRef, getScale }: {
     containerRef: RefObject<HTMLDivElement | null>;
     mapApiRef: RefObject<RelationMapApi | null>;
+    /** The scale the map is zoomed to. */
+    getScale(): number;
 }) {
     const [ dragged, setDragged ] = useState<MapDataNoteEntry | null>(null);
     const track = usePointerTracking();
@@ -24,7 +26,7 @@ export function useBoxDragging({ containerRef, mapApiRef }: {
         const container = containerRef.current;
         if (!container || e.button !== 0 || !e.isPrimary) return;
 
-        const zoom = getZoom(container);
+        const zoom = getScale();
         let position: MapDataNoteEntry | null = null;
         track({
             onMove(moveEvent) {
@@ -42,7 +44,7 @@ export function useBoxDragging({ containerRef, mapApiRef }: {
                 setDragged(null);
             }
         });
-    }, [ containerRef, mapApiRef, track ]);
+    }, [ containerRef, mapApiRef, getScale, track ]);
 
     return { dragged, startDrag };
 }
@@ -53,9 +55,11 @@ export function useBoxDragging({ containerRef, mapApiRef }: {
  * the relation is created with that name. A release within `CLICK_TOLERANCE` of the press creates
  * nothing, so a click on the endpoint does not start a relation from the box to itself.
  */
-export function useRelationDrawing({ containerRef, mapApiRef, askRelationName }: {
+export function useRelationDrawing({ containerRef, mapApiRef, getScale, askRelationName }: {
     containerRef: RefObject<HTMLDivElement | null>;
     mapApiRef: RefObject<RelationMapApi | null>;
+    /** The scale the map is zoomed to. */
+    getScale(): number;
     askRelationName: AskRelationName;
 }) {
     const [ pending, setPending ] = useState<PendingRelation | null>(null);
@@ -65,7 +69,7 @@ export function useRelationDrawing({ containerRef, mapApiRef, askRelationName }:
         const container = containerRef.current;
         if (!container || e.button !== 0 || !e.isPrimary) return;
 
-        const zoom = getZoom(container);
+        const zoom = getScale();
         const pendingAt = (event: PointerEvent): PendingRelation => ({
             sourceNoteId,
             targetNoteId: boxNoteIdAt(event, container),
@@ -94,7 +98,7 @@ export function useRelationDrawing({ containerRef, mapApiRef, askRelationName }:
                 setPending(null);
             }
         });
-    }, [ containerRef, mapApiRef, askRelationName, track ]);
+    }, [ containerRef, mapApiRef, getScale, askRelationName, track ]);
 
     return { pending, startDrawing };
 }
