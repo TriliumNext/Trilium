@@ -12,7 +12,7 @@ export const NOTE_TYPE_ICONS = {
     code: "bx bx-code",
     render: "bx bx-extension",
     search: "bx bx-file-find",
-    relationMap: "bx bxs-network-chart",
+    relationMap: "bx bx-shape-polygon",
     book: "bx bx-book",
     noteMap: "bx bxs-network-chart",
     mermaid: "bx bx-selection",

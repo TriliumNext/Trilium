@@ -1,18 +1,20 @@
 import "./MapToolbar.css";
 
-import type { PanZoom } from "panzoom";
-import { useEffect, useState } from "preact/hooks";
-
 import { t } from "../../../services/i18n";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../../react/OverlayControlGroup";
 
-/** What the buttons ask for, which is what the map itself answers (see `usePanZoom` in RelationMap.tsx). */
-export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom";
-
 interface MapToolbarProps {
-    /** The map the scale is read from, or `undefined` while there is none yet. */
-    panZoom: PanZoom | undefined;
-    onCommand: (command: MapCommand) => void;
+    /** The map's scale, whether each zoom step has room left, and the actions of the buttons (see
+     *  `useMapZoom` in RelationMap.tsx). */
+    zoom: {
+        scale: number;
+        canZoomIn: boolean;
+        canZoomOut: boolean;
+        zoomIn(): void;
+        zoomOut(): void;
+        reset(): void;
+        fit(): void;
+    };
 }
 
 /**
@@ -25,26 +27,24 @@ interface MapToolbarProps {
  * those do — a hundred being the map drawn at its own size — and pressed, takes the map back there
  * and to the corner it started in, which is what the button wearing a crop mark did.
  *
- * What the three do is asked for as commands rather than done here — the same commands a script can
- * trigger (`api.triggerCommand`), which is why they outlive the floating buttons that were the other
- * caller. The map itself is only read from: for the scale to show, and for the ends of its range,
- * which is what leaves a step with nothing left to give disabled. Absent until there is a map to
- * read.
+ * A step is disabled once the scale reaches the end of the map's zoom range, and the last button
+ * fits all the notes into the view.
  */
-export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
-    const scale = useMapScale(panZoom);
-
-    if (!panZoom) return null;
-
+export default function MapToolbar({ zoom }: MapToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-toolbar" placement="bottom-end">
             <ZoomControls
-                percent={scale * 100}
-                canZoomIn={scale < panZoom.getMaxZoom()}
-                canZoomOut={scale > panZoom.getMinZoom()}
-                onZoomIn={() => onCommand("relationMapResetZoomIn")}
-                onZoomOut={() => onCommand("relationMapResetZoomOut")}
-                onReset={() => onCommand("relationMapResetPanZoom")}
+                percent={zoom.scale * 100}
+                canZoomIn={zoom.canZoomIn}
+                canZoomOut={zoom.canZoomOut}
+                onZoomIn={zoom.zoomIn}
+                onZoomOut={zoom.zoomOut}
+                onReset={zoom.reset}
+            />
+            <OverlayControlButton
+                title={t("relation_map.fit_to_view")}
+                icon="bx-scan"
+                onClick={zoom.fit}
             />
         </OverlayControlGroup>
     );
@@ -53,9 +53,10 @@ export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
 interface EditToolbarProps {
     /** The map may not be edited, which is every one of these buttons refused at once. */
     isReadOnly: boolean;
-    /** Asks for a title and leaves the note waiting for a place to be clicked (see `useNoteCreation`
-     *  in RelationMap.tsx). */
-    onAddNote: () => void;
+    /** Whether the map is in placement mode. The button is shown as pressed while it is. */
+    placing: boolean;
+    /** Turns placement mode on or off (see `useNotePlacement` in RelationMap.tsx). */
+    onTogglePlacement: () => void;
 }
 
 /**
@@ -78,44 +79,22 @@ interface EditToolbarProps {
  * note-and-plus in the icon set, and that leaves the mark unlike the + of the zoom step opposite.
  *
  * It stands on the map rather than in the note's own bar of actions, where it was: what it starts is
- * finished by a click on the map, so it belongs beside the canvas that answers it — the toast that
- * follows says as much in words.
+ * finished by a click on the map, so it belongs beside the canvas that answers it. In placement mode
+ * the button is shown as pressed, and pressing it again turns placement mode off.
  */
-export function EditToolbar({ isReadOnly, onAddNote }: EditToolbarProps) {
+export function EditToolbar({ isReadOnly, placing, onTogglePlacement }: EditToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-edit-toolbar" placement="bottom-center">
             <OverlayControlButton
-                title={t("relation_map_buttons.create_child_note_title")}
+                title={placing ? t("relation_map_buttons.create_child_note_cancel_title") : t("relation_map_buttons.create_child_note_title")}
                 icon="bx-note"
-                text={t("relation_map_buttons.create_child_note_text")}
+                text={placing ? t("relation_map_buttons.create_child_note_cancel_text") : t("relation_map_buttons.create_child_note_text")}
                 className="relation-map-add-note-button"
                 disabled={isReadOnly}
-                onClick={onAddNote}
+                active={placing}
+                onClick={onTogglePlacement}
             />
         </OverlayControlGroup>
     );
 }
 
-/**
- * The scale the map is drawn at, followed as it changes — by these buttons, by the wheel, or by the
- * saved view being restored.
- *
- * Read off the map's own transform, which it reports as it is panned as well as zoomed: a pan leaves
- * the scale where it was, and a state set to the number it already holds costs nothing.
- */
-function useMapScale(panZoom: PanZoom | undefined) {
-    const [ scale, setScale ] = useState(1);
-
-    useEffect(() => {
-        if (!panZoom) return;
-
-        const report = () => setScale(panZoom.getTransform().scale);
-        // The map may have been moved between being built and being listened to.
-        report();
-
-        panZoom.on("transform", report);
-        return () => panZoom.off("transform", report);
-    }, [ panZoom ]);
-
-    return scale;
-}

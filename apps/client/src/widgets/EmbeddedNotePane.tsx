@@ -1,5 +1,6 @@
 import "./EmbeddedNotePane.css";
 
+import clsx from "clsx";
 import { ComponentChildren, RefObject } from "preact";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
@@ -11,19 +12,23 @@ import NoteColorPicker from "../menus/custom-items/NoteColorPicker";
 import linkContextMenu from "../menus/link_context_menu";
 import { t } from "../services/i18n";
 import link from "../services/link";
-import { randomString } from "../services/utils";
+import { isMobile, randomString } from "../services/utils";
+import TitleRow from "./layout/TitleRow";
 import ActionButton from "./react/ActionButton";
 import Dropdown, { DropdownPanel } from "./react/Dropdown";
 import { FormListItem } from "./react/FormList";
-import { useDetachedNoteContext, useNoteContext } from "./react/hooks";
+import { useDetachedNoteContext, useLegacyComponentElement, useNoteColorClass, useNoteContext } from "./react/hooks";
+import Modal from "./react/Modal";
+import OverlayPanel, { OverlayPanelBody } from "./react/OverlayPanel";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 /*
- * A note embedded in a pane of its host view — the geo map's marker pane, the calendar's detail
- * dock: the note-context wiring such a pane needs to hold the real note widgets (TitleRow,
- * PromotedAttributes, NoteDetail), and, in EmbeddedNotePane.css, the layout that fits them into a
- * third of the width they are written for. The pane itself — where it stands, how it opens and
- * closes, what it offers around the note — stays with the view that owns it.
+ * A note embedded in a pane of its host view — the geo map's marker pane, the relation map's note
+ * pane, the calendar's detail dock: the note-context wiring such a pane needs to hold the real note
+ * widgets (TitleRow, PromotedAttributes, NoteDetail), and, in EmbeddedNotePane.css, the layout that
+ * fits them into a third of the width they are written for. `EmbeddedNoteSurface` is the panel
+ * (desktop) or dialog (mobile) that the geo map and the relation map show the note in. The host view
+ * positions it, decides when it opens and closes, and supplies the actions around the note.
  */
 
 /**
@@ -357,5 +362,93 @@ export function NoteColorAction({ note, title }: { note: FNote; title: string })
         >
             <NoteColorPicker note={note} />
         </DropdownPanel>
+    );
+}
+
+interface EmbeddedNoteSurfaceProps {
+    note: FNote;
+    /** Class of the desktop panel, which the host's CSS positions. */
+    panelClassName: string;
+    /** Class of the mobile dialog. */
+    sheetClassName: string;
+    /** Class of the element that holds the note, added next to `tn-embedded-note-pane`. */
+    bodyClassName: string;
+    /** Tooltip of the panel's close button. */
+    closeText: string;
+    /** Adds a button that expands the desktop panel over the host view. Not used on mobile, where
+     *  the dialog fills the screen. */
+    maximize?: {
+        maximized: boolean;
+        onChange(maximized: boolean): void;
+        expandText: string;
+        restoreText: string;
+    };
+    onClose(): void;
+    /** See {@link useFollowLinksWithin}. */
+    onFollowLink(noteId: string): boolean;
+    /** Content of the pane, usually a row of actions, `PromotedAttributes` and `NoteDetail`. */
+    children: ComponentChildren;
+}
+
+/**
+ * Shows an embedded note in an {@link OverlayPanel} with the note's `TitleRow` as its header on
+ * desktop, or in a `Modal` on mobile, where a panel next to the host view does not fit. Render it
+ * inside the pane's {@link EmbeddedNoteScope}.
+ */
+export function EmbeddedNoteSurface(props: EmbeddedNoteSurfaceProps) {
+    return isMobile() ? <EmbeddedNoteSheet {...props} /> : <EmbeddedNotePanel {...props} />;
+}
+
+function EmbeddedNotePanel({ note, panelClassName, bodyClassName, closeText, maximize, onClose, onFollowLink, children }: EmbeddedNoteSurfaceProps) {
+    const paneRef = useRef<HTMLDivElement>(null);
+    // Applies the note's color class, so the panel does not inherit the color of the host's split.
+    const colorClass = useNoteColorClass(note);
+    // The text editor resolves its host component from the DOM. Without this, it resolves the widget
+    // that contains the host view, which does not implement calls such as `loadReferenceLinkTitle`.
+    useLegacyComponentElement(paneRef);
+    useFollowLinksWithin(paneRef, onFollowLink);
+    const maximized = !!maximize?.maximized;
+
+    return (
+        <OverlayPanel
+            containerRef={paneRef}
+            className={clsx("tn-embedded-note-panel", panelClassName, colorClass)}
+            header={<TitleRow compact />}
+            maximized={maximized}
+            headerActions={maximize && (
+                <MaximizeAction
+                    icon={maximized ? "bx bx-collapse-alt" : "bx bx-expand-alt"}
+                    text={maximized ? maximize.restoreText : maximize.expandText}
+                    onClick={() => maximize.onChange(!maximized)}
+                />
+            )}
+            close={{ text: closeText, onClick: onClose }}
+        >
+            <OverlayPanelBody className={clsx("tn-embedded-note-pane", bodyClassName, maximized && "tn-embedded-note-pane-wide")}>
+                {children}
+            </OverlayPanelBody>
+        </OverlayPanel>
+    );
+}
+
+function EmbeddedNoteSheet({ note, sheetClassName, bodyClassName, onClose, onFollowLink, children }: EmbeddedNoteSurfaceProps) {
+    const modalRef = useRef<HTMLDivElement>(null);
+    const colorClass = useNoteColorClass(note);
+    useLegacyComponentElement(modalRef);
+    useFollowLinksWithin(modalRef, onFollowLink);
+
+    return (
+        <Modal
+            className={clsx("tn-embedded-note-sheet", sheetClassName, colorClass)}
+            size="lg"
+            title={<TitleRow />}
+            modalRef={modalRef}
+            show
+            onHidden={onClose}
+        >
+            <div className={clsx("tn-embedded-note-pane", bodyClassName)}>
+                {children}
+            </div>
+        </Modal>
     );
 }

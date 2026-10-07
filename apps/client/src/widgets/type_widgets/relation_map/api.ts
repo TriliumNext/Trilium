@@ -1,4 +1,3 @@
-import { Connection } from "jsplumb";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -14,9 +13,16 @@ export interface MapDataNoteEntry {
     y: number;
 }
 
+/** The map's pan and zoom: the content is translated by `x`, `y` and scaled from its top-left corner. */
+export interface MapTransform {
+    x: number;
+    y: number;
+    scale: number;
+}
+
 export interface MapData {
     notes: MapDataNoteEntry[];
-    transform: PanZoomTransform;
+    transform: MapTransform;
 }
 
 export type RelationType = "uniDirectional" | "biDirectional" | "inverse";
@@ -88,8 +94,8 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
-    async removeRelation(connection: Connection) {
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+    async removeRelation(attributeId: string) {
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
 
         if (relation) {
             await server.remove(`notes/${relation.sourceNoteId}/relations/${relation.name}/to/${relation.targetNoteId}`);
@@ -98,9 +104,9 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
-    async renameRelation(connection: Connection, newName: string) {
+    async renameRelation(attributeId: string, newName: string) {
         newName = utils.filterAttributeName(newName);
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
 
         if (!relation) return false;
 
@@ -116,8 +122,8 @@ export default class RelationMapApi {
         return true;
     }
 
-    getRelationName(connection: Connection): string | undefined {
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+    getRelationName(attributeId: string): string | undefined {
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
         return relation?.name;
     }
 
@@ -128,10 +134,10 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
-    setTransform(transform: PanZoomTransform) {
-        if (this.data.transform.scale - transform.scale > DELTA
-            || this.data.transform.x - transform.x > DELTA
-            || this.data.transform.y - transform.y > DELTA) {
+    setTransform(transform: MapTransform) {
+        if (Math.abs(this.data.transform.scale - transform.scale) > DELTA
+            || Math.abs(this.data.transform.x - transform.x) > DELTA
+            || Math.abs(this.data.transform.y - transform.y) > DELTA) {
             this.data.transform = { ...transform };
             this.onDataChange(false);
         }

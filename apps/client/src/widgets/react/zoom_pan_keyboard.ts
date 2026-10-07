@@ -5,7 +5,7 @@ import type { ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 
 import type { ShortcutHintDefinition } from "../../services/shortcut_hints";
 import { isAppShortcutChord } from "../../services/shortcuts";
-import { clampPan, zoomToPointPosition } from "./zoom_pan";
+import { clampPan, panBounds, zoomToPointPosition } from "./zoom_pan";
 
 export type ZoomPanControl =
     | "zoomIn" | "zoomOut" | "reset"
@@ -152,9 +152,12 @@ export function useZoomPanKeyboard(
                 const { dx, dy } = getPanDelta(controls, shift, dt);
                 if (dx || dy) {
                     const { scale, positionX, positionY } = api.instance.state;
-                    const bounds = api.instance.bounds;
-                    if (bounds) {
-                        const next = clampPan(positionX + dx, positionY + dy, bounds);
+                    const bounds = panBounds(api);
+                    // A bounded instance has no bounds until its first layout.
+                    if (bounds || !api.instance.setup.limitToBounds) {
+                        const next = bounds
+                            ? clampPan(positionX + dx, positionY + dy, bounds)
+                            : { x: positionX + dx, y: positionY + dy };
                         api.setTransform(next.x, next.y, scale, 0);
                         // Keyboard panning shifts the image under a held mouse cursor; re-anchor the
                         // drag so the new point under the cursor becomes its grab point.

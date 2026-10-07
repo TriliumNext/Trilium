@@ -246,7 +246,6 @@ Trilium would not be possible without the technologies behind it:
 * [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical maps.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive table used in collections.
 * [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library without real competition. 
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library. Used in [relation maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and [link maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Support
 

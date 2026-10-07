@@ -1,6 +1,5 @@
 import "./RelationNamePopover.css";
 
-import type { Connection } from "jsplumb";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
@@ -14,19 +13,19 @@ import Popover from "../../react/Popover";
 interface RelationNameRequest {
     /** Tells requests apart, so a new one opens a fresh popover. */
     id: number;
-    connection: Connection;
+    anchor: RelationNameAnchor;
     /** The name the field opens with: the current one when renaming, empty for a new relation. */
     defaultValue: string;
     resolve(name: string | null): void;
 }
 
 /**
- * Asks for the name of the relation drawn by `connection`, next to the connection itself. Resolves
+ * Asks for the name of a relation, next to the relation's drawing (`anchor`). Resolves
  * with the name, or `null` when the request is canceled with Escape, the close button or a press
  * outside the popover.
  */
-export default function RelationNamePopover({ connection, defaultValue, onAnswer }: {
-    connection: Connection;
+export default function RelationNamePopover({ anchor, defaultValue, onAnswer }: {
+    anchor: RelationNameAnchor;
     defaultValue: string;
     onAnswer(name: string | null): void;
 }) {
@@ -54,7 +53,7 @@ export default function RelationNamePopover({ connection, defaultValue, onAnswer
         <Popover
             className="relation-name-popover"
             placement="bottom"
-            getAnchorRect={() => connectionAnchorRect(connection)}
+            getAnchorRect={() => anchorRect(anchor)}
             onDismiss={cancel}
             onPlaced={() => inputRef.current?.focus()}
         >
@@ -104,12 +103,15 @@ export default function RelationNamePopover({ connection, defaultValue, onAnswer
     );
 }
 
-/** Asks for a relation name next to `connection`; see {@link useRelationNamePrompt}. */
-export type AskRelationName = (connection: Connection, defaultValue?: string) => Promise<string | null>;
+/** Finds the drawing of the relation the popover asks about. */
+export type RelationNameAnchor = () => Element | null | undefined;
+
+/** Asks for a relation name next to `anchor`; see {@link useRelationNamePrompt}. */
+export type AskRelationName = (anchor: RelationNameAnchor, defaultValue?: string) => Promise<string | null>;
 
 /**
  * Holds the pending request for a relation name, for {@link RelationNamePopover} to answer. `ask`
- * keeps its identity across renders, so a jsPlumb handler bound once can call it; a new request
+ * keeps its identity across renders, so a handler bound once can call it; a new request
  * cancels the one still pending.
  */
 export function useRelationNamePrompt() {
@@ -118,9 +120,9 @@ export function useRelationNamePrompt() {
     requestRef.current = request;
     const nextId = useRef(0);
 
-    const ask: AskRelationName = useCallback((connection, defaultValue = "") => new Promise<string | null>((resolve) => {
+    const ask: AskRelationName = useCallback((anchor, defaultValue = "") => new Promise<string | null>((resolve) => {
         requestRef.current?.resolve(null);
-        requestRef.current = { id: nextId.current++, connection, defaultValue, resolve };
+        requestRef.current = { id: nextId.current++, anchor, defaultValue, resolve };
         setRequest(requestRef.current);
     }), []);
 
@@ -133,9 +135,9 @@ export function useRelationNamePrompt() {
     return { request, ask, answer };
 }
 
-/** The middle of the connection's drawing, read afresh so the popover follows the map's pan and zoom. */
-function connectionAnchorRect(connection: Connection) {
-    const rect = connection.canvas?.getBoundingClientRect();
+/** The middle of the relation's drawing, read afresh so the popover follows the map's pan and zoom. */
+function anchorRect(anchor: RelationNameAnchor) {
+    const rect = anchor()?.getBoundingClientRect();
     if (!rect) {
         return new DOMRect();
     }
