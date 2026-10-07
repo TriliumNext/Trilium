@@ -269,7 +269,8 @@
     "box_size_medium": "mittel (~ 30 Zeilen)",
     "box_size_full": "vollständig (Box zeigt vollständigen Text)",
     "button_include": "Notiz einbinden",
-    "box_size_expandable": "ausklappbar (standardmäßig eingeklappt)"
+    "box_size_expandable": "ausklappbar (standardmäßig eingeklappt)",
+    "box_size_tiny": "winzig (einzelne Zeile mit Titel und Aktionen)"
   },
   "info": {
     "modalTitle": "Infonachricht",
@@ -2999,7 +3000,11 @@
       "table_column": "Spalte {{number}}"
     },
     "page_break": "Seitenumbruch einfügen (zum Drucken)",
-    "table": "Tabelle einfügen"
+    "table": "Tabelle einfügen",
+    "titles": {
+      "date": "Datum/Zeit einfügen",
+      "include": "Notiz einfügen"
+    }
   },
   "revisions_snapshot": {
     "title": "Revisionsverlauf"
