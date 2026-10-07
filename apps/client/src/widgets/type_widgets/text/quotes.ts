@@ -41,6 +41,7 @@ const QUOTE_STYLES: Record<string, QuoteStyle> = {
     zh: { primary: ["“", "”"], secondary: ["‘", "’"] },
     "pt-br": { primary: ["“", "”"], secondary: ["‘", "’"] },
     es: { primary: ["“", "”"], secondary: ["‘", "’"] },
+    vi: { primary: ["“", "”"], secondary: ["‘", "’"] },
     // Listed although it now matches `en`, so that the agreement reads as a decision rather than an
     // omission: British usage traditionally inverts the two levels — which is what CKEditor's own
     // `quotesPrimaryEnGb` still does — but CLDR has en-GB on double quotes, following the publishers

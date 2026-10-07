@@ -24,5 +24,6 @@ export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] 
     ru: "ru-RU",
     tr: "tr-TR",
     tw: "zh-TW",
-    uk: "uk-UA"
+    uk: "uk-UA",
+    vi: "vi-VN"
 };
