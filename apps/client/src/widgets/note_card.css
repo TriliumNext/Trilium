@@ -16,12 +16,10 @@
   --board-item-hover-background-saturation: 100%;
   --board-item-hover-background-lightness: 98.5%;
 
-  /* Shadow of a card. */
   --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
   /* Shadow of a hovered card. A variable of its own, so a selected card can combine it with the
      selection ring. */
   --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
-  /* Selection ring of a selected card. */
   --board-selected-ring-color: var(--link-color);
 
   /* Text and muted text colors of a card without a hue. A card with a hue uses colors composed

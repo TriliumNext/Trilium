@@ -1,5 +1,4 @@
 .note-detail-relation-map .note-box {
-    /* Darker than on a board: the cards stand on the bare note background, not in a column. */
     --board-item-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     --board-item-hover-shadow: 0 2px 7px rgba(0, 0, 0, 0.22);
 
@@ -11,7 +10,6 @@
     box-sizing: border-box;
     min-width: 150px;
     max-width: 200px;
-    /* Room at the end for the `.endpoint` relation handle. */
     padding: 0.6em 1.8em 0.6em 0.6em;
     font-size: 0.9em;
     line-height: 1.2;
