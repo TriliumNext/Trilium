@@ -24,8 +24,8 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes là một ứng dụng ghi chú phân cấp miễn phí, mã nguồn mở, đa nền
 tảng tập trung vào việc xây dựng cơ sở tri thức cá nhân lớn.
 
-Looking for "Trillium Notes"? The project's canonical spelling is "Trilium
-Notes", with one `l`.
+Bạn đang tìm kiếm "Trillium Notes"? Cách viết chính xác của dự án là "Trilium
+Notes", với một `l`.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -92,8 +92,8 @@ Tài liệu của chúng tôi có sẵn ở nhiều định dạng:
   đăng nhập bảo mật hơn
 * [Đồng bộ hóa](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   với máy chủ đồng bộ tự triển khai
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * Có các [dịch vụ bên thứ ba để lưu trữ server đồng bộ
+    hóa](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Chia sẻ](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (công bố) các ghi chú lên mạng Internet công cộng
 * [Mã hóa ghi
@@ -101,10 +101,11 @@ Tài liệu của chúng tôi có sẵn ở nhiều định dạng:
   mạnh mẽ với mức chi tiết đến từng ghi chú
 * Phác thảo sơ đồ, dựa trên [Excalidraw](https://excalidraw.com/) (loại ghi chú
   "canvas")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+* [Sơ đồ quan
+  hệ](https://docs.triliumnotes.org/user-guide/note-types/relation-map) và [sơ
+  đồ ghi chú/liên
+  kết](https://docs.triliumnotes.org/user-guide/note-types/note-map) để trực
+  quan hóa các ghi chú và quan hệ của chúng
 * Sơ đồ tư duy, dựa trên [Mind Elixir](https://docs.mind-elixir.com/)
 * [Bản đồ địa lý](https://docs.triliumnotes.org/user-guide/collections/geomap)
   với các chấm chỉ vị trí và các đường GPX
@@ -127,8 +128,8 @@ Tài liệu của chúng tôi có sẵn ở nhiều định dạng:
 * [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) để
   lưu trữ nội dung web dễ dàng
 * Giao diện tùy biến (nút thanh bên, widget do người dùng tự tạo,...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* [Chỉ số](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  cùng với một Grafana Dashboard.
 
 ✨ Hãy xem thử các nguồn tài nguyên/cộng đồng bên thứ ba dưới đây để tìm thêm
 nhiều tiện ích liên quan đến TriliumNext:
@@ -187,129 +188,128 @@ của nó.
 [![Tình trạng đóng
 gói](https://repology.org/badge/vertical-allrepos/trilium.svg)](https://repology.org/project/trilium/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+Bạn cũng có thể tải xuống bản phát hành binary cho nền tảng của mình từ [trang
+phát hành mới nhất](https://github.com/TriliumNext/Trilium/releases/latest),
+giải nén gói và chạy tệp thực thi `trilium`.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+TriliumNext cũng được cung cấp dưới dạng Flatpak, nhưng chưa được phát hành trên
+FlatHub.
 
-### Browser (any OS)
+### Trình duyệt (mọi hệ điều hành)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+Nếu bạn sử dụng cài đặt server (xem bên dưới), bạn có thể truy cập trực tiếp vào
+giao diện web (gần như giống hệt ứng dụng desktop).
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+Hiện tại chỉ hỗ trợ (và đã kiểm tra) các phiên bản mới nhất của Chrome &
+Firefox.
 
 ### Di Động
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+Để sử dụng TriliumNext trên thiết bị di động, bạn có thể sử dụng trình duyệt web
+di động để truy cập vào giao diện di động của một cài đặt server (xem bên dưới).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+Xem issue https://github.com/TriliumNext/Trilium/issues/4962 để biết thêm thông
+tin về hỗ trợ ứng dụng di động.
 
 #### TriliumDroid
 
-If you prefer a native Android app, you can use
+Nếu bạn thích một ứng dụng Android native, bạn có thể sử dụng
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+Báo cáo lỗi và các tính năng thiếu tại [kho mã nguồn của
+họ](https://github.com/FliegendeWurst/TriliumDroid). Lưu ý: Tốt nhất là tắt cập
+nhật tự động trên cài đặt server của bạn (xem bên dưới) khi sử dụng TriliumDroid
+vì phiên bản đồng bộ hóa phải khớp giữa Trilium và TriliumDroid.
 
 #### Pocket Trilium
 
-If you want a full-featured native Android app, check out [Pocket
-Trilium](https://github.com/Nriver/pocket-trilium). It runs a complete Trilium
-instance on your phone, supports full offline use, and allows you to sync with
-your server.
+Nếu bạn muốn một ứng dụng Android native đầy đủ tính năng, hãy xem [Pocket
+Trilium](https://github.com/Nriver/pocket-trilium). Nó chạy một instance Trilium
+hoàn chỉnh trên điện thoại của bạn, hỗ trợ sử dụng ngoại tuyến đầy đủ và cho
+phép bạn đồng bộ hóa với server của mình.
 
 #### Trinote
 
-If you want a native iOS app, you can use
-[Trinote](https://apps.apple.com/us/app/trinote/id6761228249), an open-source
-client for your self-hosted Trilium / TriliumNext server. It lets you browse and
-organize your note tree, search for notes on the server, read and edit all note
-types (text, code, mindmap, spreadsheet, geomap, canvas, etc.), and keeps notes
-available and editable offline. Here's the
-[repo](https://github.com/StephenArg/Trinote) if you're interested in
-contributing and here's the [discord](https://discord.com/invite/ghjJG56EUS)
-server if you have any feedback or suggestions you want to discuss.
+Nếu bạn muốn có một ứng dụng iOS thuần (native), bạn có thể sử dụng
+[Trinote](https://apps.apple.com/us/app/trinote/id6761228249) — một ứng dụng mã
+nguồn mở dành cho máy chủ Trilium / TriliumNext tự lưu trữ (self-hosted). Ứng
+dụng này cho phép bạn duyệt và sắp xếp cây ghi chú, tìm kiếm ghi chú trên máy
+chủ, đọc và chỉnh sửa tất cả các loại ghi chú (văn bản, mã nguồn, sơ đồ tư duy,
+bảng tính, bản đồ địa lý, bản vẽ canvas, v.v.), đồng thời giữ cho các ghi chú
+luôn sẵn sàng để xem và chỉnh sửa ngay cả khi ngoại tuyến (offline).
 
 ### Server
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+Để cài đặt TriliumNext trên server của riêng bạn (bao gồm cả qua Docker từ
+[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), hãy làm theo [tài
+liệu cài đặt server](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
-## 💻 Contribute
+## 💻 Đóng góp
 
-### Translations
+### Bản dịch
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+Nếu bạn là người bản ngữ, hãy giúp chúng tôi dịch Trilium bằng cách truy cập
+[trang Weblate](https://hosted.weblate.org/engage/trilium/) của chúng tôi.
 
-Here's the language coverage we have so far:
+Dưới đây là mức độ bao phủ ngôn ngữ mà chúng tôi có cho đến nay:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Trạng thái bản
+dịch](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### Mã nguồn
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+Tải xuống kho mã nguồn, cài đặt các phụ thuộc bằng `pnpm` và sau đó chạy server
+(khả dụng tại http://localhost:8080):
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+Git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
 pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Tài liệu
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+Tải xuống kho mã nguồn, cài đặt các phụ thuộc bằng `pnpm` và sau đó chạy môi
+trường cần thiết để chỉnh sửa tài liệu:
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+Git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
 pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-Alternatively, if you have Nix installed:
+Hoặc, nếu bạn đã cài đặt Nix:
 ```shell
-# Run directly
+# Chạy trực tiếp
 nix run .#edit-docs
 
-# Or install to your profile
+# Hoặc cài đặt vào hồ sơ của bạn
 nix profile install .#edit-docs
 trilium-edit-docs
 ```
 
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### Dựng bản thực thi
+Tải xuống kho mã nguồn, cài đặt các phụ thuộc bằng `pnpm` và sau đó dựng ứng
+dụng desktop cho Windows:
 ```shell
-git clone https://github.com/TriliumNext/Trilium.git
+Git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
 pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+Để biết thêm chi tiết, hãy xem [tài liệu phát
+triển](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Tài liệu dành cho nhà phát triển
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+Vui lòng xem [hướng dẫn tài
+liệu](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
+để biết chi tiết. Nếu bạn có thêm câu hỏi, hãy liên hệ thông qua các liên kết
+được mô tả trong phần "Thảo luận với chúng tôi" ở trên.
 
-## 💖 Sponsors
+## 💖 Nhà tài trợ
 
 <table>
   <tr>
@@ -337,65 +337,64 @@ described in the "Discuss with us" section above.
   </tr>
 </table>
 
-## 👏 Shoutouts
+## 👏 Lời cảm ơn
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
-*   The application icons in the import dialog are from:
-    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) for
+* [Zadam](https://github.com/zadam) vì ý tưởng và việc triển khai ban đầu của
+  ứng dụng.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) vì đã thiết kế biểu tượng
+  ứng dụng.
+* [Nriver](https://github.com/nriver) vì công việc quốc tế hóa.
+* [Thomas Frei](https://github.com/thfrei) vì công việc ban đầu về Canvas.
+* [Antoniotejada](https://github.com/nriver) vì widget tô sáng cú pháp ban đầu.
+* [Tabler Icons](https://tabler.io/icons) vì các biểu tượng khay hệ thống.
+*   Các biểu tượng ứng dụng trong hộp thoại nhập có nguồn gốc từ:
+    *   [Material Design Icons](https://pictogrammers.com/library/mdi/) cho
         OneNote, Google Keep, Evernote.
-    *   [Font Awesome](https://fontawesome.com/) for Notion, Obsidian.
-    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) for Anytype.
-*  The LLM provider icons are from [Lobe Icons](https://lobehub.com/icons).
+    *   [Font Awesome](https://fontawesome.com/) cho Notion, Obsidian.
+    *   [SVGicons.com](https://svgicons.com/icon/187676/anytype) cho Anytype.
+*  Các biểu tượng nhà cung cấp LLM có nguồn gốc từ [Lobe
+   Icons](https://lobehub.com/icons).
 
-Trilium would not be possible without the technologies behind it:
+Trilium sẽ không thể tồn tại nếu không có các công nghệ đằng sau nó:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - trình soạn thảo trực
+  quan cho các ghi chú văn bản.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - trình soạn thảo mã
+  nguồn hỗ trợ một lượng lớn ngôn ngữ.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - bảng trắng vô hạn
+  được sử dụng trong các ghi chú Canvas.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - cung cấp chức
+  năng sơ đồ tư duy.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - để hiển thị bản đồ địa lý.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - cho bảng tương tác được
+  sử dụng trong các bộ sưu tập.
+* [FancyTree](https://github.com/mar10/fancytree) - thư viện cây phong phú tính
+  năng, không có đối thủ thực sự.
+* [JsPlumb](https://github.com/jsplumb/jsplumb) - thư viện kết nối trực quan.
+  Được sử dụng trong [sơ đồ quan
+  hệ](https://docs.triliumnotes.org/user-guide/note-types/relation-map) và [sơ
+  đồ liên
+  kết](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
-## 🤝 Support
+## 🤝 Hỗ trợ
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium được xây dựng và bảo trì bằng [hàng trăm giờ làm
+việc](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Sự hỗ trợ
+của bạn giúp duy trì mã nguồn mở, cải thiện tính năng và chi trả các chi phí như
+lưu trữ.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Hãy cân nhắc hỗ trợ nhà phát triển chính
+([eliandoran](https://github.com/eliandoran)) của ứng dụng thông qua:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Giấy phép
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Bản quyền 2017-2025 zadam, Elian Doran và các nhà đóng góp khác
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+Chương trình này là phần mềm tự do: bạn có thể phân phối lại và/hoặc sửa đổi nó
+theo các điều khoản của Giấy phép Công cộng Tổng quát GNU Affero do Free
+Software Foundation công bố, phiên bản 3 của Giấy phép hoặc (theo lựa chọn của
+bạn) bất kỳ phiên bản nào mới hơn.
