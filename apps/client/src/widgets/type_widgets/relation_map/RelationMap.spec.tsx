@@ -56,15 +56,22 @@ describe("relation map canvas clicks", () => {
         }
     });
 
-    /** Renders the wrapper, the panned canvas with one box, and a toolbar over the canvas. */
+    /**
+     * Renders the wrapper, the viewport with one box, and a toolbar over the viewport. As in the map,
+     * the boxes stand in a container without a size of its own, inside the zoom library's content, so
+     * a click on empty canvas lands on the content.
+     */
     function Harness({ placing }: { placing: boolean }) {
-        const containerRef = useRef<HTMLDivElement>(null);
-        const clickProps = useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote });
+        const clickProps = useCanvasClicks({ placing, onPlace, onSelectNote, onClickEmpty, onOpenNote });
         return (
             <div className="wrapper" {...clickProps}>
-                <div ref={containerRef} className="canvas">
-                    <div id={noteIdToId("boxnote")} className="note-box">
-                        <span className="title">Box</span>
+                <div className="relation-map-viewport">
+                    <div className="canvas">
+                        <div className="relation-map-container">
+                            <div id={noteIdToId("boxnote")} className="note-box">
+                                <span className="title">Box</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button className="toolbar" type="button" />
@@ -137,12 +144,13 @@ describe("relation map canvas clicks", () => {
     });
 
     it("places a note wherever an armed map is clicked, a box included", () => {
-        const { title, toolbar } = mount(true);
+        const { title, canvas, toolbar } = mount(true);
 
         const event = click(title);
+        click(canvas);
         click(toolbar);
 
-        expect(onPlace).toHaveBeenCalledTimes(1);
+        expect(onPlace).toHaveBeenCalledTimes(2);
         expect(event.defaultPrevented).toBe(true);
         expect(onSelectNote).not.toHaveBeenCalled();
     });

@@ -105,7 +105,6 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         onCreated: (noteId) => setSelection({ noteId, isNew: true })
     });
     const clickProps = useCanvasClicks({
-        containerRef,
         placing: placement.placing,
         onPlace: placement.placeAt,
         onSelectNote: (noteId) => setSelection({ noteId }),
@@ -447,7 +446,7 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
         ghost.style.left = `${x}px`;
         ghost.style.top = `${y}px`;
         // Hides the ghost over the toolbars, where a click does not place a note.
-        ghost.classList.toggle("visible", isOnCanvas(e, container));
+        ghost.classList.toggle("visible", isOnCanvas(e));
     }, [ containerRef, getScale ]);
 
     const hideGhost = useCallback(() => ghostRef.current?.classList.remove("visible"), []);
@@ -481,8 +480,7 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
  * opens its note as a link would (new tab or new window). Clicks that end a pan or a drag are
  * ignored, as are clicks on elements over the map (toolbars, the pane, the relation name popover).
  */
-export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote }: {
-    containerRef: RefObject<HTMLDivElement | null>;
+export function useCanvasClicks({ placing, onPlace, onSelectNote, onClickEmpty, onOpenNote }: {
     placing: boolean;
     onPlace(e: MouseEvent): void;
     onSelectNote(noteId: string): void;
@@ -493,9 +491,9 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
 
     /** Whether the click targets the map canvas, with the pointer moved no more than
      *  `CLICK_TOLERANCE` since the press. */
-    const isPlainClickOnCanvas = (e: MouseEvent, container: HTMLDivElement) => {
+    const isPlainClickOnCanvas = (e: MouseEvent) => {
         const pressed = pressedAt.current;
-        return isOnCanvas(e, container)
+        return isOnCanvas(e)
             && !(pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE);
     };
     const boxAt = (e: MouseEvent) => e.target instanceof Element ? e.target.closest<HTMLElement>(".note-box") : null;
@@ -505,17 +503,15 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
             pressedAt.current = { x: e.clientX, y: e.clientY };
         },
         onAuxClickCapture(e) {
-            const container = containerRef.current;
             const box = boxAt(e);
-            if (!container || e.button !== 1 || placing || !box || !isPlainClickOnCanvas(e, container)) return;
+            if (e.button !== 1 || placing || !box || !isPlainClickOnCanvas(e)) return;
 
             e.preventDefault();
             e.stopPropagation();
             onOpenNote(idToNoteId(box.id), e);
         },
         onClickCapture(e) {
-            const container = containerRef.current;
-            if (!container || e.button !== 0 || !isPlainClickOnCanvas(e, container)) return;
+            if (e.button !== 0 || !isPlainClickOnCanvas(e)) return;
 
             if (placing) {
                 e.preventDefault();
@@ -632,9 +628,15 @@ function boxPositionAt(e: MouseEvent, container: HTMLDivElement, scale: number) 
     return { x: x - PLACEMENT_OFFSET.x, y: y - PLACEMENT_OFFSET.y };
 }
 
-/** Whether the event target is the map canvas rather than an element over it. */
-function isOnCanvas(e: MouseEvent, container: HTMLDivElement) {
-    return e.target === e.currentTarget || (e.target instanceof Node && container.contains(e.target));
+/**
+ * Whether the event targets the map canvas, the area `MapViewport` pans, rather than an element over
+ * it. The boxes stand in a container without a size of its own, so empty canvas is outside it. The
+ * viewport must be the wrapper's own, not that of a relation map shown in the note pane.
+ */
+function isOnCanvas(e: MouseEvent) {
+    if (e.target === e.currentTarget) return true;
+    const viewport = e.target instanceof Element ? e.target.closest(".relation-map-viewport") : null;
+    return !!viewport && viewport.parentElement === e.currentTarget;
 }
 
 function useNoteDragging({ containerRef, mapApiRef, getScale }: {
