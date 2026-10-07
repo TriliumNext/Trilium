@@ -2,7 +2,7 @@ import "./RelationMap.css";
 
 import { RelationMapPostResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
+import { jsPlumbInstance, OnConnectionBindInfo, Overlay } from "jsplumb";
 // The library's own types rather than the hand-written `PanZoom` in types.d.ts, which stops at the
 // handful of calls the map made when it was written and knows nothing of the rest — the ends of the
 // zoom range, or unsubscribing from a report.
@@ -41,6 +41,8 @@ declare module "jsplumb" {
 
     interface Overlay {
         setLabel(label: string): void;
+        /** The element of a label overlay. */
+        getElement(): HTMLElement;
     }
 
     interface ConnectParams {
@@ -156,6 +158,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
 
     useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId: selection?.noteId });
+    useHoveredNoteRelations({ containerRef, jsPlumbApiRef: pbApiRef });
     useRelationData(note.noteId, data, mapApiRef, pbApiRef);
 
     return (
@@ -175,7 +178,6 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                     Endpoint: ["Dot", { radius: 2 }],
                     Connector: "StateMachine",
                     ConnectionOverlays: uniDirectionalOverlays,
-                    HoverPaintStyle: { stroke: "#777", strokeWidth: 1 },
                 }}
                 onInstanceCreated={setupOverlays}
                 onConnection={connectionCallback}
@@ -558,6 +560,74 @@ export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId
         return () => observer.disconnect();
     }, [ wrapperRef, containerRef, panZoom, noteId ]);
 }
+
+/**
+ * Highlights the relations of the hovered box and fades the other relations, as the note map does.
+ * The relations take the note's `color` label, or `--relation-map-highlight-color` without one.
+ */
+export function useHoveredNoteRelations({ containerRef, jsPlumbApiRef }: {
+    containerRef: RefObject<HTMLDivElement | null>;
+    jsPlumbApiRef: RefObject<jsPlumbInstance | null>;
+}) {
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        let hoveredBox: Element | null = null;
+        let litElements: HTMLElement[] = [];
+
+        const clear = () => {
+            container.classList.remove("relation-map-note-hovered");
+            for (const element of litElements) {
+                element.classList.remove("relation-map-lit");
+                element.style.removeProperty("--relation-map-lit-color");
+            }
+            litElements = [];
+        };
+
+        const onMouseOver = (e: MouseEvent) => {
+            const box = e.target instanceof Element
+                ? e.target.closest(".note-box:not(.relation-map-ghost-note)")
+                : null;
+            if (box === hoveredBox) return;
+
+            clear();
+            hoveredBox = box;
+            const connections = jsPlumbApiRef.current?.getAllConnections();
+            if (!box || !connections) return;
+
+            const color = froca.getNoteFromCache(idToNoteId(box.id))?.getLabelValue("color");
+            for (const connection of connections) {
+                if (connection.sourceId !== box.id && connection.targetId !== box.id) continue;
+
+                const labels = LABEL_OVERLAY_IDS
+                    .map((id) => connection.getOverlay(id) as Overlay | undefined)
+                    .filter((overlay) => overlay !== undefined)
+                    .map((overlay) => overlay.getElement());
+                for (const element of [ connection.canvas, ...labels ]) {
+                    element.classList.add("relation-map-lit");
+                    if (color) element.style.setProperty("--relation-map-lit-color", color);
+                    litElements.push(element);
+                }
+            }
+            container.classList.add("relation-map-note-hovered");
+        };
+        const onMouseLeave = () => {
+            hoveredBox = null;
+            clear();
+        };
+
+        container.addEventListener("mouseover", onMouseOver);
+        container.addEventListener("mouseleave", onMouseLeave);
+        return () => {
+            container.removeEventListener("mouseover", onMouseOver);
+            container.removeEventListener("mouseleave", onMouseLeave);
+            clear();
+        };
+    }, [ containerRef, jsPlumbApiRef ]);
+}
+
+const LABEL_OVERLAY_IDS = [ "label", "label-source", "label-target" ];
 
 /** Offset of the pointer from the top-left corner of a box being placed, near the box's top center. */
 const PLACEMENT_OFFSET = { x: 80, y: 15 };

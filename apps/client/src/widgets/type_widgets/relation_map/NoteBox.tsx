@@ -17,7 +17,7 @@ import { idToNoteId, noteIdToId } from "./utils";
 const NOTE_BOX_SOURCE_CONFIG = {
     filter: ".endpoint",
     anchor: "Continuous",
-    connectorStyle: { stroke: "#000", strokeWidth: 1 },
+    connectorStyle: { strokeWidth: 1 },
     connectionType: "basic",
     extract: {
         action: "the-action"

@@ -3,6 +3,9 @@
 }
 
 .note-detail-relation-map {
+    --relation-map-line-color: var(--muted-text-color);
+    --relation-map-highlight-color: var(--note-icon-background-color, var(--link-color));
+
     height: 100%;
     overflow: hidden !important;
     position: relative;
@@ -41,7 +44,26 @@
     cursor: crosshair;
 }
 
-.note-detail-relation-map .relation-map-arrow {
-    stroke-width: 1.2px;
-    stroke-linejoin: round;
+.note-detail-relation-map .jtk-connector {
+    transition: opacity 0.2s ease;
+
+    path {
+        stroke: var(--relation-map-line-color);
+        transition: stroke 0.2s ease, fill 0.2s ease;
+    }
+
+    .relation-map-arrow {
+        fill: var(--relation-map-line-color);
+        stroke-width: 1.2px;
+        stroke-linejoin: round;
+    }
+
+    &.jtk-hover,
+    &.relation-map-lit {
+        --relation-map-line-color: var(--relation-map-lit-color, var(--relation-map-highlight-color));
+    }
+}
+
+.relation-map-note-hovered :is(.jtk-connector, .connection-label):not(.relation-map-lit) {
+    opacity: 0.15;
 }
