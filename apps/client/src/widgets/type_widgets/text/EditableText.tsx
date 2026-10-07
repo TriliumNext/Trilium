@@ -67,7 +67,7 @@ interface EditableTextProps extends TypeWidgetProps {
 }
 
 export default function EditableText({
-    note, parentComponent, ntxId, noteContext, block, onBlockChange
+    note, parentComponent, ntxId, noteContext, isVisible, block, onBlockChange
 }: EditableTextProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
@@ -158,8 +158,9 @@ export default function EditableText({
     const templates = useTemplates();
 
     useSearchTermsConsumer(note, noteContext, ntxId);
+    // A hidden widget leaves the link target to the one on display.
     useSameNoteSwitch(note, ntxId, () => {
-        if (contentNoteIdRef.current === note?.noteId) {
+        if (isVisible !== false && contentNoteIdRef.current === note?.noteId) {
             revealLinkTarget();
         }
     });

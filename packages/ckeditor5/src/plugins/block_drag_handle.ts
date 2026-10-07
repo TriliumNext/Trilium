@@ -1,6 +1,6 @@
 import {
-    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator, Plugin,
-    Rect
+    BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator,
+    type ModelElement, Plugin, Rect
 } from "ckeditor5";
 
 /**
@@ -167,7 +167,7 @@ export default class BlockDragHandle extends Plugin {
     private startDrag(domEvent: DragEvent) {
         const editor = this.editor;
         const model = editor.model;
-        const blocks = Array.from(model.document.selection.getSelectedBlocks());
+        const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
         const firstBlock = blocks.at(0);
         const lastBlock = blocks.at(-1);
         if (editor.isReadOnly || !firstBlock || !lastBlock) {
@@ -177,7 +177,9 @@ export default class BlockDragHandle extends Plugin {
 
         const range = model.createRange(
             model.createPositionBefore(firstBlock),
-            model.createPositionAfter(lastBlock)
+            model.createPositionAfter(
+                lastBlock.getAncestors().includes(firstBlock) ? firstBlock : lastBlock
+            )
         );
         model.change((writer) => writer.setSelection(range));
 
@@ -187,20 +189,24 @@ export default class BlockDragHandle extends Plugin {
     }
 
     /**
-     * Passes a `dragover` or `drop` to the editing view, 100px into the content from the pointer,
-     * so the pointer can stay in the margin beside the blocks.
+     * Passes a `dragover` or `drop` to the editing view, 100px into the content from the pointer
+     * and within the editable, so the pointer can stay in the margin beside the blocks.
      */
     private forwardDrag(domEvent: DragEvent) {
-        if (!this.isDragging) {
+        const domEditable = this.editor.ui.getEditableElement();
+        if (!this.isDragging || !domEditable) {
             return;
         }
 
         const isLtr = this.editor.locale.contentLanguageDirection === "ltr";
-        const clientX = domEvent.clientX + (isLtr ? 100 : -100);
+        const editableRect = domEditable.getBoundingClientRect();
+        const clientX = Math.min(
+            Math.max(domEvent.clientX + (isLtr ? 100 : -100), editableRect.left + 1),
+            editableRect.right - 1
+        );
         const clientY = domEvent.clientY;
         const target = document.elementFromPoint(clientX, clientY);
-        const domEditable = this.editor.ui.getEditableElement();
-        if (!target || !domEditable?.contains(target)) {
+        if (!target || !domEditable.contains(target)) {
             return;
         }
 
@@ -220,6 +226,11 @@ export default class BlockDragHandle extends Plugin {
 interface BlockTarget {
     domBlock: HTMLElement;
     domEditable: HTMLElement;
+}
+
+/** The block that the handle drags for `block`: the whole collapsible for its title. */
+function getDraggedBlock(block: ModelElement) {
+    return block.is("element", "summary") ? block.parent as ModelElement : block;
 }
 
 declare module "ckeditor5" {

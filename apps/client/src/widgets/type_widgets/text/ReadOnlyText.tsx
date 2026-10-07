@@ -56,8 +56,9 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         renderedNoteIdRef.current = note.noteId;
         revealLinkTarget();
     }, [blob]);
+    // A hidden widget leaves the link target to the one on display.
     useSameNoteSwitch(note, ntxId, () => {
-        if (renderedNoteIdRef.current === note.noteId) {
+        if (isVisible !== false && renderedNoteIdRef.current === note.noteId) {
             revealLinkTarget();
         }
     });

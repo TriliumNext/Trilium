@@ -264,7 +264,7 @@ describe("ReadOnlyText ?block= handling", () => {
         }
     });
 
-    async function mountWithBlock(block: string) {
+    async function mountWithBlock(block: string | undefined, isVisible = true) {
         const scrollIntoView = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
         const note = buildNote({
@@ -290,7 +290,7 @@ describe("ReadOnlyText ?block= handling", () => {
                         ntxId={noteContext.ntxId}
                         parentComponent={parent}
                         viewScope={noteContext.viewScope}
-                        isVisible={true}
+                        isVisible={isVisible}
                     />
                 </ParentComponent.Provider>,
                 container
@@ -328,6 +328,21 @@ describe("ReadOnlyText ?block= handling", () => {
         expect(noteContext.viewScope?.block).toBeUndefined();
         expect(scrollIntoView.mock.contexts.at(-1))
             .toBe(container.querySelector("[data-trilium-block-id='b1']"));
+    });
+
+    it("leaves a link to a block of its note to the editor while hidden", async () => {
+        const { parent, noteContext, container, scrollIntoView } = await mountWithBlock(
+            undefined,
+            false
+        );
+        expect(container.querySelector("[data-trilium-block-id='b1']")).not.toBeNull();
+
+        noteContext.viewScope = { block: "b1" };
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBe("b1");
+        expect(scrollIntoView).not.toHaveBeenCalled();
     });
 });
 

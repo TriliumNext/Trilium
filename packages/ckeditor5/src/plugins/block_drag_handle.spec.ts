@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import BlockDragHandle from "./block_drag_handle.js";
+import Collapsible from "./collapsible/collapsible.js";
 
 describe("BlockDragHandle", () => {
     beforeAll(() => new Promise<void>((resolve, reject) => {
@@ -84,6 +85,46 @@ describe("BlockDragHandle", () => {
         expect(editor.getData()).toBe("<p>second</p><p>third</p><p>first</p>");
     });
 
+    it("drags a whole collapsible from its title, with or without its body selected", async () => {
+        for (const [ title, body ] of [ [ "Ti[]tle", "body" ], [ "Ti[tle", "bo]dy" ] ]) {
+            const { editor, button } = await createEditor(`<details open="true"><summary>${title}`
+                + `</summary><paragraph>${body}</paragraph><paragraph>more</paragraph></details>`
+                + "<paragraph>after</paragraph>");
+            const editableRect = getEditable(editor).getBoundingClientRect();
+            const lastBlockRect = getBlock(editor, 1).getBoundingClientRect();
+
+            drop(button, startDrag(button), {
+                clientX: editableRect.left - 50,
+                clientY: lastBlockRect.bottom - 2
+            });
+            expect(editor.getData()).toBe("<p>after</p>"
+                + "<details class=\"trilium-collapsible\" open=\"\"><summary>Title</summary>"
+                + "<p>body</p><p>more</p></details>");
+        }
+    });
+
+    it("takes drops beside a narrow editor or far out in a wide margin", async () => {
+        const layouts = [
+            { width: "90px", margin: "0 100px", distance: 10 },
+            { width: "200px", margin: "0 190px", distance: 150 }
+        ];
+        for (const { width, margin, distance } of layouts) {
+            const { editor, button } = await createEditor(
+                "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
+            );
+            editor.ui.view.element?.style.setProperty("width", width);
+            editor.ui.view.element?.style.setProperty("margin", margin);
+            const editableRect = getEditable(editor).getBoundingClientRect();
+            const lastBlockRect = getBlock(editor, 1).getBoundingClientRect();
+
+            drop(button, startDrag(button), {
+                clientX: editableRect.left - distance,
+                clientY: lastBlockRect.bottom - 2
+            });
+            expect(editor.getData()).toBe("<p>second</p><p>first</p>");
+        }
+    });
+
     it("mirrors the handle and its drops in a right-to-left editor", async () => {
         const { editor, button } = await createEditor(
             "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>",
@@ -144,7 +185,7 @@ async function createEditor(
     config: Parameters<typeof createTestEditor>[1] = {}
 ) {
     const editor = await createTestEditor(
-        [ Essentials, Paragraph, Table, TableCaption, BlockDragHandle ],
+        [ Essentials, Paragraph, Table, TableCaption, Collapsible, BlockDragHandle ],
         config
     );
     editor.ui.view.element?.style.setProperty("margin", "0 100px");
@@ -181,7 +222,7 @@ function startDrag(button: HTMLElement) {
     return dataTransfer;
 }
 
-/** Drags over `point`, drops there and ends the drag. Returns whether the drag over was accepted. */
+/** Drags over `point`, drops there and ends the drag. Returns whether the dragover was accepted. */
 function drop(
     button: HTMLElement,
     dataTransfer: DataTransfer,
