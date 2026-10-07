@@ -25,7 +25,7 @@ import {
 } from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { TypeWidgetProps } from "../type_widget";
-import { applyReferenceLinks } from "./read_only_helper";
+import { applyReferenceLinks, applyTabs } from "./read_only_helper";
 import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
@@ -104,7 +104,7 @@ interface ReadOnlyTextContentProps {
 /**
  * Renders arbitrary CKEditor-style HTML with the same pipeline as {@link ReadOnlyText}:
  * mermaid rewriting, inline mermaid, embed expansion, KaTeX math, reference-link
- * titles, code-block syntax highlighting, and image click handling. Transforms re-run
+ * titles, tabs, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
 export function ReadOnlyTextContent({
@@ -144,6 +144,7 @@ export function ReadOnlyTextContent({
         ]));
 
         applyMath(container);
+        applyTabs(container);
         setupImageOpening(container, true);
     }, [ html, noteId, ntxId, contentRef ]);
 
