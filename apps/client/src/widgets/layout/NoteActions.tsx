@@ -24,7 +24,7 @@ import { isAlwaysFullWidthByType } from "../note_wrapper";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
-import { ParentComponent, useCommandTrigger } from "../react/react_utils";
+import { ParentComponent, POPUP_EDITOR_NTX_ID, useCommandTrigger } from "../react/react_utils";
 import NoteActionsCustom from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
 import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
@@ -86,6 +86,8 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const [syncServerHost] = useTriliumOption("syncServerHost");
     const { isReadOnly, enableEditing } = useIsNoteReadOnly(note, noteContext);
     const isNormalViewMode = noteContext?.viewScope?.viewMode === "default";
+    // The quick edit popup has no find bar, and the note map and a converted attachment open in the tab behind it.
+    const isInPopup = !!noteContext?.ntxId?.startsWith(POPUP_EDITOR_NTX_ID);
     const itemToFocusRef = useRef<ItemToFocus>(null);
     // Keyboard shortcuts.
     useTriliumEvent("toggleRibbonTabBasicProperties", () => {
@@ -115,9 +117,9 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                     <FormDropdownDivider />
                 </>}
 
-                <CommandItem command="findInText" icon="bx bx-search" disabled={!isSearchable} text={t("note_actions.search_in_note")} />
+                {!isInPopup && <CommandItem command="findInText" icon="bx bx-search" disabled={!isSearchable} text={t("note_actions.search_in_note")} />}
                 <CommandItem command="showAttachments" icon="bx bx-paperclip" disabled={isInOptionsOrHelp} text={t("note_actions.note_attachments")} />
-                <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />
+                {!isInPopup && <CommandItem command="toggleRibbonTabNoteMap" icon="bx bxs-network-chart" disabled={isInOptionsOrHelp} text={t("note_actions.note_map")} />}
                 {/* The attributes panel is a right pane tab where there is a right pane; on a phone the
                     menu is where it is reached, and a modal is where it is shown. */}
                 {isMobile && <CommandItem command="showNoteAttributes" icon="bx bx-list-check" disabled={isInOptionsOrHelp} text={t("note_actions.note_attributes")} />}
@@ -125,7 +127,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 <FormDropdownDivider />
 
                 {isNormalViewMode && !isHelpPage && <>
-                    <NoteBasicProperties note={note} focus={itemToFocusRef} />
+                    <NoteBasicProperties note={note} focus={itemToFocusRef} isInPopup={isInPopup} />
                     <FormDropdownDivider />
                 </>}
 
@@ -165,7 +167,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
 
                 <FormDropdownDivider />
 
-                {canBeConvertedToAttachment && <ConvertToAttachment note={note} />}
+                {canBeConvertedToAttachment && !isInPopup && <ConvertToAttachment note={note} />}
                 {note.type === "render" && <CommandItem command="renderActiveNote" icon="bx bx-extension" text={t("note_actions.re_render_note")}
                 />}
 
@@ -223,9 +225,11 @@ function CodeProperties({ note }: { note: FNote }) {
     );
 }
 
-function NoteBasicProperties({ note, focus }: {
+function NoteBasicProperties({ note, focus, isInPopup }: {
     note: FNote;
     focus: RefObject<ItemToFocus | null>;
+    /** Whether the menu is in the quick edit popup, whose width the full content width label does not change. */
+    isInPopup: boolean;
 }) {
     const itemToFocusRef = useRef<HTMLLIElement>(null);
     const [ isBookmarked, setIsBookmarked ] = useNoteBookmarkState(note);
@@ -273,7 +277,7 @@ function NoteBasicProperties({ note, focus }: {
             helpPage="KC1HB96bqqHX"
             disabled={note?.noteId.startsWith("_options")}
         />
-        {!isAlwaysFullWidthByType(note) &&
+        {!isAlwaysFullWidthByType(note) && !isInPopup &&
             <FormListToggleableItem
                 icon="bx bx-expand-horizontal"
                 title={t("full_content_width_switch.title")}
