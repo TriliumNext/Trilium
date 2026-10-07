@@ -2412,7 +2412,7 @@ body.zen .note-badges > *:not(.read-only-badge),
 body.zen .note-actions-bar,
 body.zen .inline-title,
 body.zen .promoted-attributes-widget,
-body.zen .floating-buttons-children > *:not(.bx-edit-alt),
+body.zen .floating-buttons-children > *,
 body.zen .action-button,
 body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
 body.zen .note-split:not(.type-book) .note-list-widget {

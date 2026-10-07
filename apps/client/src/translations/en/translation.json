@@ -1081,9 +1081,6 @@
   "create_pane_button": {
     "create_new_split": "Create new split"
   },
-  "edit_button": {
-    "edit_this_note": "Edit this note"
-  },
   "options": {
     "title": "Options",
     "back": "Back to all options",

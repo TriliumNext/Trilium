@@ -1664,27 +1664,6 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
     gap: 0;
 }
 
-/* The highlight animation */
-
-@keyframes floating-button-highlight {
-    from {
-        background: var(--floating-button-background);
-        color: var(--floating-button-color);
-    } to {
-        background: var(--floating-button-hover-background);
-        color: var(--floating-button-hover-color);
-    }
-}
-
-.floating-buttons .bx-tada {
-    /* The class is applied for 1700ms */
-    animation: floating-button-highlight 425ms ease-in-out alternate infinite;
-}
-
-.floating-buttons .bx-tada::before {
-    font-size: var(--floating-button-icon-size);
-}
-
 /* Button groups */
 :root .floating-buttons .btn-group {
     --button-group-active-button-background-color: var(--low-profile-button-active-background-color);

@@ -19,7 +19,7 @@ import toast from "../services/toast";
 import tree from "../services/tree";
 import { createImageSrcUrl, isElectron, openInAppHelpFromUrl } from "../services/utils";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
-import { useIsNoteReadOnly, useTriliumEvent, useWindowSize } from "./react/hooks";
+import { useTriliumEvent, useWindowSize } from "./react/hooks";
 import NoItems from "./react/NoItems";
 import NoteLink from "./react/NoteLink";
 import RawHtml from "./react/RawHtml";
@@ -43,7 +43,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    EditButton,
     RunActiveNoteButton,
     OpenTriliumApiDocsButton,
     OpenElectronApiDocsButton,
@@ -61,29 +60,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function EditButton({ note, noteContext }: FloatingButtonContext) {
-    const [animationClass, setAnimationClass] = useState("");
-    const {isReadOnly, enableEditing} = useIsNoteReadOnly(note, noteContext);
-
-    const isReadOnlyInfoBarDismissed = false; // TODO
-
-    useEffect(() => {
-        if (isReadOnly) {
-            setAnimationClass("bx-tada bx-lg");
-            setTimeout(() => {
-                setAnimationClass("");
-            }, 1700);
-        }
-    }, [ isReadOnly ]);
-
-    return !!isReadOnly && isReadOnlyInfoBarDismissed && <FloatingButton
-        text={t("edit_button.edit_this_note")}
-        icon="bx bx-pencil"
-        className={animationClass}
-        onClick={() => enableEditing()}
-    />;
-}
 
 function RunActiveNoteButton({ note }: FloatingButtonContext) {
     const isEnabled = (note.mime.startsWith("application/javascript") || note.mime === "text/x-sqlite;schema=trilium");
