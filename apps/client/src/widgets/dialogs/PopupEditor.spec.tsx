@@ -14,7 +14,10 @@ const mocks = vi.hoisted(() => ({
     getAttachment: vi.fn(),
     /** Every context the popup created, newest last — one is built per open. */
     contexts: [] as { setNote: ReturnType<typeof vi.fn>, viewScope?: ViewScope, noteId: string, ntxId: string }[],
-    isMobile: vi.fn(() => false)
+    isMobile: vi.fn(() => false),
+    /** The note of every context the popup builds, read by the badges in its header. */
+    contextNote: undefined as unknown,
+    backlinkCount: vi.fn(() => 0)
 }));
 
 vi.mock("../../components/app_context", () => ({
@@ -36,7 +39,7 @@ vi.mock("../../components/note_context", () => ({
         noteId = "n1";
         hoistedNoteId = "root";
         viewScope: ViewScope | undefined;
-        note = undefined;
+        note = mocks.contextNote;
         triggerEvent = vi.fn();
         setNote = vi.fn(async (_notePath: string, opts?: { viewScope?: ViewScope }) => {
             this.viewScope = opts?.viewScope;
@@ -75,6 +78,7 @@ vi.mock("../../services/experimental_features", () => ({ isExperimentalFeatureEn
 // The modal itself is Bootstrap-driven; the popup's own state is what it hands over.
 interface ModalStubProps {
     title?: ComponentChildren;
+    header?: ComponentChildren;
     children?: ComponentChildren;
     show?: boolean;
     customTitleBarButtons?: { onClick: () => void }[];
@@ -84,7 +88,7 @@ interface ModalStubProps {
 }
 
 vi.mock("../react/Modal", () => ({
-    default: ({ title, children, show, customTitleBarButtons, modalRef, onShown, onHidden }: ModalStubProps) => (
+    default: ({ title, header, children, show, customTitleBarButtons, modalRef, onShown, onHidden }: ModalStubProps) => (
         <div ref={modalRef} className="modal-stub" data-shown={String(!!show)}>
             <button
                 className="maximize-stub"
@@ -94,6 +98,7 @@ vi.mock("../react/Modal", () => ({
             <button className="shown-stub" onClick={() => onShown?.()} />
             <button className="hidden-stub" onClick={() => onHidden?.()} />
             {title}
+            {header}
             {children}
         </div>
     )
@@ -104,6 +109,11 @@ vi.mock("../NoteDetail", () => ({ default: () => <div className="note-detail-stu
 vi.mock("../collections/NoteList", () => ({ default: () => null }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../layout/NoteActions", () => ({ default: () => null }));
+// `BacklinksWidget` has its own spec; this one covers where its links navigate.
+vi.mock("../sidebar/Backlinks", () => ({
+    useBacklinkCount: mocks.backlinkCount,
+    BacklinksWidget: () => <a className="backlink-stub" href="#root/source">Source</a>
+}));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
 vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />
@@ -469,6 +479,26 @@ describe("PopupEditor", () => {
         // And gone again for the next note opened without it.
         await openPopup({ noteIdOrPath: "n1" });
         expect(container.querySelector(".note-type-switcher-stub")).toBeNull();
+    });
+
+    it("offers the note's backlinks in its header, opening them in itself rather than the tab behind", async () => {
+        mocks.contextNote = { noteId: "n1", getLabelValue: () => null, getColorClass: () => "" };
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(container.querySelector(".popup-editor-backlinks")).toBeNull();
+
+        mocks.backlinkCount.mockReturnValue(2);
+        await openPopup({ noteIdOrPath: "root/n1" });
+        const toggle = container.querySelector<HTMLElement>(".popup-editor-backlinks button");
+        expect(toggle).not.toBeNull();
+        await act(async () => toggle?.click());
+        const link = document.querySelector<HTMLElement>(".backlink-stub");
+        expect(link).not.toBeNull();
+
+        const context = lastContext();
+        await act(async () => link?.click());
+        expect(context?.setNote).toHaveBeenLastCalledWith("root/source", { viewScope: { viewMode: "default" }, keepActiveDialog: true });
+        expect(document.querySelector(".backlink-stub")).toBeNull();
+        mocks.contextNote = undefined;
     });
 
     it("gives mobile its own toolbar and hides the buttons that make no sense in a popup", async () => {

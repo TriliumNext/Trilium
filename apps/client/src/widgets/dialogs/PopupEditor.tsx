@@ -5,8 +5,10 @@ import { useCallback, useContext, useEffect, useRef, useState } from "preact/hoo
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
+import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
+import type { ViewScope } from "../../services/link";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
@@ -16,9 +18,11 @@ import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
 import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
+import { DropdownPanel, type DropdownHandle } from "../react/Dropdown";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
+import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
 /** The layer the stylesheet gives this popup while it stands over another modal. */
@@ -85,14 +89,15 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
 
     // Keep navigation that follows internal links inside the popup, rather than letting the global
     // link handler open the target in the background tab. Settings links open the options dialog.
-    useContainedLinkNavigation(modalRef, useCallback((notePath, viewScope) => {
+    const navigateInPopup = useCallback((notePath: string, viewScope: ViewScope | undefined) => {
         const targetNoteId = notePath.split("/").at(-1);
         if (targetNoteId?.startsWith("_options")) {
             void appContext.triggerCommand("showOptions", { section: targetNoteId });
         } else {
             void noteContext.setNote(notePath, { viewScope, keepActiveDialog: true });
         }
-    }, [ noteContext ]));
+    }, [ noteContext ]);
+    useContainedLinkNavigation(modalRef, navigateInPopup);
 
     // Add a global class to be able to handle issues with z-index due to rendering in a popup.
     useEffect(() => {
@@ -163,7 +168,10 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                 <Modal
                     modalRef={modalRef}
                     title={<TitleRow />}
-                    header={<NoteActions paneButtons={false} />}
+                    header={<>
+                        <PopupBacklinks onNavigate={navigateInPopup} />
+                        <NoteActions paneButtons={false} />
+                    </>}
                     customTitleBarButtons={[{
                         iconClassName: "bx-expand-alt",
                         title: t("popup-editor.maximize"),
@@ -202,6 +210,50 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
                 </Modal>
             </DialogWrapper>
         </NoteContextContext.Provider>
+    );
+}
+
+/**
+ * The note's backlinks, in the dropdown of an icon button whose tooltip gives their count. The
+ * dropdown is rendered in the page's body, outside the modal, so `BacklinksInPopup` routes its links
+ * into the popup, and following one closes the dropdown.
+ */
+function PopupBacklinks({ onNavigate }: { onNavigate: (notePath: string, viewScope: ViewScope | undefined) => void }) {
+    const { note, viewScope } = useNoteContext();
+    const count = useBacklinkCount(note, viewScope?.viewMode === "default");
+    const dropdownRef = useRef<DropdownHandle>(null);
+
+    return (note && count > 0 &&
+        <DropdownPanel
+            dropdownRef={dropdownRef}
+            className="popup-editor-backlinks"
+            buttonClassName="bx bx-link"
+            title={t("status_bar.backlinks_title", { count })}
+            dropdownContainerClassName="dropdown-backlinks"
+            noSelectButtonStyle
+            hideToggleArrow
+            iconAction
+            scrollable
+        >
+            <BacklinksInPopup
+                note={note}
+                onNavigate={(notePath, scope) => {
+                    dropdownRef.current?.hide();
+                    onNavigate(notePath, scope);
+                }}
+            />
+        </DropdownPanel>
+    );
+}
+
+function BacklinksInPopup({ note, onNavigate }: { note: FNote, onNavigate: (notePath: string, viewScope: ViewScope | undefined) => void }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    useContainedLinkNavigation(containerRef, onNavigate);
+
+    return (
+        <div ref={containerRef}>
+            <BacklinksWidget note={note} />
+        </div>
     );
 }
 

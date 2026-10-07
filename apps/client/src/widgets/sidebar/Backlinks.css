@@ -100,3 +100,15 @@
         font-size: .85em;
     }
 }
+
+.dropdown-menu.dropdown-backlinks {
+    --menu-padding-size: .9em;
+
+    width: max-content;
+    min-width: 300px;
+    max-width: 500px;
+
+    > .tn-panel-scroll {
+        max-height: 60vh;
+    }
+}

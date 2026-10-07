@@ -124,17 +124,6 @@
             overflow-wrap: anywhere;
         }
     }
-
-    &.dropdown-backlinks {
-        --menu-padding-size: .9em;
-
-        min-width: 300px;
-        max-width: 500px;
-
-        > .tn-panel-scroll {
-            max-height: 60vh;
-        }
-    }
 }
 
 .note-info-content {
