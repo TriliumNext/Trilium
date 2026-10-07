@@ -7,7 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // A stand-in for the zoom library, which needs real layout: it applies a transform at once and
 // reports it, as the library does once an animation ends.
-const { wrapperProps } = vi.hoisted(() => ({ wrapperProps: { current: null as Record<string, unknown> | null } }));
+const { wrapperProps, pasteNotes } = vi.hoisted(() => ({
+    wrapperProps: { current: null as Record<string, unknown> | null },
+    pasteNotes: vi.fn<(note: unknown, data?: DataTransfer | null) => Promise<string[]>>()
+}));
+vi.mock("../../../services/note_paste", () => ({ pasteNotes }));
 vi.mock("react-zoom-pan-pinch", () => ({
     TransformWrapper: forwardRef((props: { children?: ComponentChildren; onTransform?(ref: unknown, state: object): void }, ref) => {
         wrapperProps.current = props;
@@ -29,10 +33,12 @@ vi.mock("react-zoom-pan-pinch", () => ({
 }));
 
 import Component from "../../../components/component";
+import type FNote from "../../../entities/fnote";
+import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import type RelationMapApi from "./api";
 import type { MapTransform } from "./api";
-import { MapViewport, useCanvasClicks, useMapZoom, useRevealSelectedBox } from "./RelationMap";
+import { MapViewport, useCanvasClicks, useMapPaste, useMapZoom, useRevealSelectedBox } from "./RelationMap";
 import { noteIdToId } from "./utils";
 
 describe("relation map canvas clicks", () => {
@@ -331,5 +337,119 @@ describe("relation map zoom", () => {
 
         run("zoomOut");
         expect(state()?.scale).toBeCloseTo(1);
+    });
+});
+
+describe("relation map paste", () => {
+    let container: HTMLElement | undefined;
+    let mapNote: FNote;
+    const addMultipleNotes = vi.fn();
+    let pasteAt: ReturnType<typeof useMapPaste>["pasteAt"] | undefined;
+
+    beforeEach(() => {
+        addMultipleNotes.mockClear();
+        pasteNotes.mockReset().mockResolvedValue([ "first", "second" ]);
+        mapNote = buildNote({ id: "map", title: "Map" });
+        buildNote({ id: "first", title: "First" });
+        buildNote({ id: "second", title: "Second" });
+    });
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    /** The map at 2x, with an editor over it as the note pane has. */
+    function Harness({ isReadOnly }: { isReadOnly: boolean }) {
+        const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
+        const containerRef = useRef<HTMLDivElement>(null);
+        const mapApiRef = useRef({ addMultipleNotes } as unknown as RelationMapApi);
+        const paste = useMapPaste({ note: mapNote, isReadOnly, viewport, containerRef, mapApiRef, getScale: () => 2 });
+        pasteAt = paste.pasteAt;
+        return (
+            <div className="wrapper" onMouseMove={paste.followPointer} onMouseLeave={paste.forgetPointer}>
+                <div ref={setViewport} className="relation-map-viewport" tabIndex={0}>
+                    <div ref={containerRef} className="relation-map-container" />
+                </div>
+                <div className="editor" contentEditable />
+            </div>
+        );
+    }
+
+    function mount(isReadOnly = false) {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(<Harness isReadOnly={isReadOnly} />, container as HTMLElement));
+        const find = (selector: string) => {
+            const element = container?.querySelector<HTMLElement>(selector);
+            if (!element) throw new Error(`${selector} was not rendered`);
+            return element;
+        };
+        const viewport = find(".relation-map-viewport");
+        viewport.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 200 });
+        return { wrapper: find(".wrapper"), viewport, editor: find(".editor") };
+    }
+
+    /**
+     * Focuses `focused` and pastes. As in Chromium, the event goes to the editable holding the
+     * selection, and otherwise to the body, whatever has the focus.
+     */
+    async function paste(focused: HTMLElement, clipboardData: object | null = null) {
+        focused.focus();
+        const target = focused.isContentEditable ? focused : document.body;
+        const event = new Event("paste", { bubbles: true, cancelable: true });
+        Object.defineProperty(event, "clipboardData", { value: clipboardData });
+        await act(async () => {
+            target.dispatchEvent(event);
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        return event;
+    }
+
+    const placed = (x: number, y: number) => [ [
+        { noteId: "first", title: "First", x, y },
+        { noteId: "second", title: "Second", x: x + 200, y }
+    ] ];
+
+    it("pastes onto the map under the pointer, or in the middle once the pointer leaves", async () => {
+        const { wrapper, viewport } = mount();
+        const data = { getData: () => "" };
+
+        act(() => { viewport.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, clientX: 300, clientY: 100 })); });
+        const event = await paste(viewport, data);
+        expect(event.defaultPrevented).toBe(true);
+        expect(pasteNotes).toHaveBeenCalledWith(mapNote, data);
+        expect(addMultipleNotes.mock.calls.at(-1)).toEqual(placed(70, 35));
+
+        act(() => { wrapper.dispatchEvent(new MouseEvent("mouseleave")); });
+        await paste(viewport);
+        expect(addMultipleNotes.mock.calls.at(-1)).toEqual(placed(20, 35));
+
+        await act(async () => {
+            pasteAt?.({ clientX: 200, clientY: 200 });
+            await new Promise((resolve) => setTimeout(resolve));
+        });
+        expect(addMultipleNotes.mock.calls.at(-1)).toEqual(placed(20, 85));
+    });
+
+    it("leaves a paste into the note pane to it, and pastes nothing onto a read-only map or from an empty clipboard", async () => {
+        const { editor } = mount();
+        const event = await paste(editor);
+        expect(event.defaultPrevented).toBe(false);
+        expect(pasteNotes).not.toHaveBeenCalled();
+
+        pasteNotes.mockResolvedValue([]);
+        await paste(container?.querySelector<HTMLElement>(".relation-map-viewport") ?? editor);
+        expect(pasteNotes).toHaveBeenCalledTimes(1);
+        expect(addMultipleNotes).not.toHaveBeenCalled();
+
+        act(() => render(null, container as HTMLElement));
+        container?.remove();
+        const { viewport } = mount(true);
+        await paste(viewport);
+        expect(pasteNotes).toHaveBeenCalledTimes(1);
     });
 });

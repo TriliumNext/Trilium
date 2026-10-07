@@ -1677,6 +1677,7 @@
     "fit_to_view": "Fit to view",
     "hints": {
       "title": "Relation map",
+      "paste_notes": "Paste the copied or cut notes",
       "cancel_adding_note": "Cancel adding a note",
       "close_note_pane": "Close the note panel"
     }
@@ -2842,7 +2843,8 @@
     "copied": "Note(s) have been copied into clipboard.",
     "copied_without_links": "Note(s) have been copied into clipboard, but the note links could not be placed on the system clipboard.",
     "copy_failed": "Cannot copy to clipboard due to permission issues.",
-    "copy_success": "Copied to clipboard."
+    "copy_success": "Copied to clipboard.",
+    "paste_notes": "Paste note(s)"
   },
   "entrypoints": {
     "note-revision-created": "Note revision has been created.",

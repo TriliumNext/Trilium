@@ -9,7 +9,7 @@ export function idToNoteId(id: string) {
 /** How far, in pixels, the pointer can move between press and release for the click to count. */
 export const CLICK_TOLERANCE = 4;
 
-export function getMousePosition(evt: MouseEvent, container: HTMLDivElement, zoom: number) {
+export function getMousePosition(evt: Pick<MouseEvent, "clientX" | "clientY">, container: HTMLDivElement, zoom: number) {
     const rect = container.getBoundingClientRect();
 
     return {

@@ -7,7 +7,7 @@ import link_context_menu from "../../../menus/link_context_menu";
 import froca from "../../../services/froca";
 import { buildNote } from "../../../test/easy-froca";
 import type RelationMapApi from "./api";
-import { buildNoteContextMenuHandler } from "./context_menu";
+import { buildNoteContextMenuHandler, showCanvasContextMenu } from "./context_menu";
 
 describe("relation map note context menu", () => {
     let container: HTMLElement | undefined;
@@ -55,5 +55,29 @@ describe("relation map note context menu", () => {
         const custom = openMenu(true).filter((item) => item && "kind" in item && item.kind === "custom");
 
         expect(custom).toHaveLength(0);
+    });
+});
+
+describe("relation map canvas context menu", () => {
+    it("pastes notes or adds one where it opened", () => {
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+        const onPaste = vi.fn();
+        const onAddNote = vi.fn();
+        const event = new MouseEvent("contextmenu", { cancelable: true });
+
+        showCanvasContextMenu(event, { onPaste, onAddNote });
+        expect(event.defaultPrevented).toBe(true);
+
+        const items = (show.mock.calls.at(-1)?.[0].items ?? []) as MenuItem<string>[];
+        const choose = (index: number) => {
+            const item = items[index];
+            if (item && "handler" in item) item.handler?.(item, event);
+        };
+        expect(items.map((item) => ("kind" in item ? item.kind : item.uiIcon))).toEqual([ "bx bx-paste", "separator", "bx bx-note" ]);
+
+        choose(0);
+        expect([ onPaste.mock.calls.length, onAddNote.mock.calls.length ]).toEqual([ 1, 0 ]);
+        choose(2);
+        expect(onAddNote).toHaveBeenCalledTimes(1);
     });
 });

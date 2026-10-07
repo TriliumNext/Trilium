@@ -12,6 +12,7 @@ import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import { goToLinkExt } from "../../../services/link";
 import note_create from "../../../services/note_create";
+import { pasteNotes } from "../../../services/note_paste";
 import server from "../../../services/server";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
@@ -23,7 +24,7 @@ import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, MapTransform } from "./api";
 import Connections from "./Connections";
-import { showRelationContextMenu } from "./context_menu";
+import { showCanvasContextMenu, showRelationContextMenu } from "./context_menu";
 import { useBoxDragging, useRelationDrawing } from "./drags";
 import type { Box } from "./geometry";
 import MapToolbar, { EditToolbar } from "./MapToolbar";
@@ -119,6 +120,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
         onOpenNote: openNoteFromBox
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef, getScale });
+    const paste = useMapPaste({ note, isReadOnly, viewport, containerRef, mapApiRef, getScale });
 
     const relationNamePrompt = useRelationNamePrompt();
     const { dragged, startDrag } = useBoxDragging({ containerRef, mapApiRef, getScale });
@@ -139,12 +141,28 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
         showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue));
     }, [ relationNamePrompt.ask ]);
 
+    const onCanvasContextMenu = useCallback((e: MouseEvent) => {
+        const isOnItem = e.target instanceof Element && e.target.closest(PAN_EXCLUDED.map((name) => `.${name}`).join(","));
+        if (isReadOnly || e.defaultPrevented || isOnItem || !isOnCanvas(e)) return;
+        showCanvasContextMenu(e, {
+            onPaste: () => paste.pasteAt(e),
+            onAddNote: () => placement.placeAt(e)
+        });
+    }, [ isReadOnly, paste.pasteAt, placement.placeAt ]);
+
     return (
         <div
             ref={wrapperRef}
             className={clsx("relation-map-wrapper", placement.placing && "placing-note")}
-            onMouseMove={placement.followPointer}
-            onMouseLeave={placement.hideGhost}
+            onMouseMove={(e) => {
+                placement.followPointer(e);
+                paste.followPointer(e);
+            }}
+            onMouseLeave={() => {
+                placement.hideGhost();
+                paste.forgetPointer();
+            }}
+            onContextMenu={onCanvasContextMenu}
             {...clickProps}
             {...dragProps}
         >
@@ -312,6 +330,7 @@ const RELATION_MAP_HINTS: ShortcutHintDefinition = [
     {
         titleKey: "relation_map.hints.title",
         hints: [
+            { keys: [ "Ctrl+V" ], labelKey: "relation_map.hints.paste_notes" },
             { keys: [ "Escape" ], labelKey: "relation_map.hints.cancel_adding_note" },
             { keys: [ "Escape" ], labelKey: "relation_map.hints.close_note_pane" }
         ]
@@ -499,6 +518,61 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
 }
 
 /**
+ * Pastes notes onto the map (see `pasteNotes`): with Ctrl+V while the map has the focus, under the
+ * pointer or in the middle of the view when the pointer is off the canvas, and from the context
+ * menu of empty canvas through `pasteAt`. Cut notes also move under the map's note.
+ *
+ * The paste event goes to the element holding the selection, or to the body, not to the focused
+ * element, so the hook listens on the document and checks the focus.
+ */
+export function useMapPaste({ note, isReadOnly, viewport, containerRef, mapApiRef, getScale }: {
+    note: FNote;
+    isReadOnly: boolean;
+    viewport: HTMLDivElement | null;
+    containerRef: RefObject<HTMLDivElement | null>;
+    mapApiRef: RefObject<RelationMapApi | null>;
+    getScale(): number;
+}) {
+    const pointerRef = useRef<{ clientX: number; clientY: number }>(null);
+
+    const paste = useCallback(async (at: { clientX: number; clientY: number } | null, data?: DataTransfer | null) => {
+        const noteIds = await pasteNotes(note, data);
+        const container = containerRef.current;
+        if (!noteIds.length || !container) return;
+
+        const rect = viewport?.getBoundingClientRect();
+        const point = at ?? (rect ? { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 } : null);
+        if (!point) return;
+
+        const notes = froca.getNotesFromCache(noteIds, true);
+        mapApiRef.current?.addMultipleNotes(layOutBoxes(notes, boxPositionAt(point, container, getScale())));
+    }, [ note, viewport, containerRef, mapApiRef, getScale ]);
+
+    useEffect(() => {
+        if (!viewport || isReadOnly) return;
+
+        const onPaste = (e: ClipboardEvent) => {
+            if (document.activeElement !== viewport) return;
+            e.preventDefault();
+            void paste(pointerRef.current, e.clipboardData);
+        };
+        document.addEventListener("paste", onPaste);
+        return () => document.removeEventListener("paste", onPaste);
+    }, [ viewport, isReadOnly, paste ]);
+
+    const pasteAt = useCallback((at: { clientX: number; clientY: number }) => void paste(at), [ paste ]);
+
+    const followPointer = useCallback((e: MouseEvent) => {
+        pointerRef.current = isOnCanvas(e) ? { clientX: e.clientX, clientY: e.clientY } : null;
+    }, []);
+    const forgetPointer = useCallback(() => {
+        pointerRef.current = null;
+    }, []);
+
+    return { pasteAt, followPointer, forgetPointer };
+}
+
+/**
  * Handles clicks on the map. In placement mode, a click places a new note. Otherwise a click on a
  * box selects it, and a click on empty canvas closes the pane. A Ctrl, Shift or middle click on a box
  * opens its note as a link would (new tab or new window). Clicks that end a pan or a drag are
@@ -646,8 +720,30 @@ function openNoteFromBox(noteId: string, e: MouseEvent) {
     goToLinkExt(e, `#${notePath || noteId}`);
 }
 
+/**
+ * Map entries for `notes`, laid out in rows from `start`: each box 200 pixels right of the last, and
+ * a new row 100 pixels down once a row passes 1000.
+ */
+function layOutBoxes(notes: { noteId: string; title: string }[], start: { x: number; y: number }) {
+    let { x, y } = start;
+    const entries: (MapDataNoteEntry & { title: string })[] = [];
+
+    for (const { noteId, title } of notes) {
+        entries.push({ noteId, title, x, y });
+
+        if (x > 1000) {
+            y += 100;
+            x = 0;
+        } else {
+            x += 200;
+        }
+    }
+
+    return entries;
+}
+
 /** The map position, in unzoomed map pixels, of a box placed under the pointer. */
-function boxPositionAt(e: MouseEvent, container: HTMLDivElement, scale: number) {
+function boxPositionAt(e: Pick<MouseEvent, "clientX" | "clientY">, container: HTMLDivElement, scale: number) {
     const { x, y } = getMousePosition(e, container, scale);
     return { x: x - PLACEMENT_OFFSET.x, y: y - PLACEMENT_OFFSET.y };
 }
@@ -657,7 +753,7 @@ function boxPositionAt(e: MouseEvent, container: HTMLDivElement, scale: number) 
  * it. The boxes stand in a container without a size of its own, so empty canvas is outside it. The
  * viewport must be the wrapper's own, not that of a relation map shown in the note pane.
  */
-function isOnCanvas(e: MouseEvent) {
+function isOnCanvas(e: Event) {
     if (e.target === e.currentTarget) return true;
     const viewport = e.target instanceof Element ? e.target.closest(".relation-map-viewport") : null;
     return !!viewport && viewport.parentElement === e.currentTarget;
@@ -675,26 +771,9 @@ function useNoteDragging({ containerRef, mapApiRef, getScale }: {
 
             const dragData = ev.dataTransfer?.getData("text");
             if (!dragData) return;
-            const notes = JSON.parse(dragData);
+            const notes: { noteId: string; title: string }[] = JSON.parse(dragData);
 
-            let { x, y } = getMousePosition(ev, container, getScale());
-            const entries: (MapDataNoteEntry & { title: string })[] = [];
-
-            for (const note of notes) {
-                entries.push({
-                    ...note,
-                    x, y
-                });
-
-                if (x > 1000) {
-                    y += 100;
-                    x = 0;
-                } else {
-                    x += 200;
-                }
-            }
-
-            mapApiRef.current?.addMultipleNotes(entries);
+            mapApiRef.current?.addMultipleNotes(layOutBoxes(notes, getMousePosition(ev, container, getScale())));
         },
         onDragOver(ev) {
             ev.preventDefault();

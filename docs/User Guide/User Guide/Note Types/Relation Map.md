@@ -9,6 +9,11 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   An existing note can also be dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. It will be placed at the position it's dragged on.
     *   Multiple notes can also be dragged via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Multiple%20selection.md">Multiple selection</a>. The notes will be positioned near the dragged position without overlapping.
     *   The dragged note can be a sub-child of the map, or it can be at any arbitrary position.
+*   Notes can also be pasted onto the map. Copy or cut them in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, then click the map and press <kbd>Ctrl</kbd>+<kbd>V</kbd>, or right click an empty part of the map and select _Paste note(s)_.
+    *   With <kbd>Ctrl</kbd>+<kbd>V</kbd>, the notes are placed under the mouse, or in the middle of the map if the mouse is not over it. From the right click menu, they are placed where the menu was opened.
+    *   Copied notes stay where they are in the tree. Cut notes are moved under the map, as if they had been pasted into it in the tree.
+    *   Links to notes, such as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> copied from a text note, can be pasted the same way. If the clipboard holds no link to a note, the notes last copied or cut in the tree are pasted.
+    *   The right click menu of an empty part of the map also has _Add note_, which creates a new note where the menu was opened.
 *   To create a relationship, hold the mouse on the dot on the right of a note and then:
     *   Drag it over another note to create a relationship pointing from the first note to the second one.
     *   Drag over the same note to create a self-referencing relationship (represented as a loop).

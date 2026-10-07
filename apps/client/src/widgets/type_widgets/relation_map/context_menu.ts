@@ -6,9 +6,10 @@ import contextMenu from "../../../menus/context_menu";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
 import dialog from "../../../services/dialog";
-import toast from "../../../services/toast";
 import { t } from "../../../services/i18n";
+import { pasteNotesMenuItem } from "../../../services/note_paste";
 import server from "../../../services/server";
+import toast from "../../../services/toast";
 import RelationMapApi, { type ClientRelation } from "./api";
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>, isReadOnly: boolean) {
@@ -73,6 +74,25 @@ export async function confirmRemoveFromMap(note: FNote, mapApiRef: RefObject<Rel
     if (typeof result !== "object" || !result.confirmed) return;
 
     await mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
+}
+
+/** Shows the context menu of empty canvas, which pastes notes or adds a new one where it opened. */
+export function showCanvasContextMenu(event: MouseEvent, { onPaste, onAddNote }: {
+    onPaste(): void;
+    onAddNote(): void;
+}) {
+    event.preventDefault();
+
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items: [
+            pasteNotesMenuItem(onPaste),
+            { kind: "separator" },
+            { title: t("relation_map_buttons.create_child_note_text"), uiIcon: "bx bx-note", handler: onAddNote }
+        ],
+        selectMenuItemHandler() {}
+    });
 }
 
 /**
