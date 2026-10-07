@@ -110,7 +110,7 @@ vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
 vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />
 }));
-vi.mock("../ribbon/FormattingToolbar", () => ({ default: () => null }));
+vi.mock("../layout/FormattingToolbar", () => ({ default: () => null }));
 vi.mock("../type_widgets/text/mobile_editor_toolbar", () => ({ default: () => <div className="mobile-toolbar-stub" /> }));
 vi.mock("../note_icon", () => ({ default: () => <div className="note-icon-stub" /> }));
 vi.mock("../note_title", () => ({ default: () => <div className="note-title-stub" /> }));

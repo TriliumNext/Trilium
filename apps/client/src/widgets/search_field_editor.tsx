@@ -23,7 +23,7 @@ export type SearchFieldEditorConfig = Omit<FieldEditorConfig, "extensions">;
 
 /**
  * Builds the editor a search string is written in: the query highlighter, the linter and the
- * completions over {@link createFieldEditor}. The quick search and the saved search's ribbon both
+ * completions over {@link createFieldEditor}. The quick search and the saved search's parameters both
  * use it, so a query reads and reports the same way in either field.
  *
  * The completions are the app's own lists: a note picked with `@` from the note autocomplete's, a

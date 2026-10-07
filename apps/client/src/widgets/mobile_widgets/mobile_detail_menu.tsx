@@ -9,6 +9,8 @@ import note_create from "../../services/note_create";
 import server from "../../services/server";
 import { useLanguageSwitcher } from "../dialogs/content_languages";
 import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
+import { NoteContextMenu } from "../layout/NoteActions";
+import NoteActionsCustom from "../layout/NoteActionsCustom";
 import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
 import { getLocaleName, NoteInfoContent, SimilarNotesList } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
@@ -17,8 +19,6 @@ import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react
 import { useNoteContext, useNoteProperty } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
-import { NoteContextMenu } from "../ribbon/NoteActions";
-import NoteActionsCustom from "../ribbon/NoteActionsCustom";
 import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 

@@ -21,8 +21,6 @@ import ClosePaneButton from "../buttons/close_pane_button";
 import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
-import { useShareState } from "../layout/NoteBadges";
-import { NoteTypeDropdownContent } from "../layout/NoteTypeSwitcher";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
 import ActionButton from "../react/ActionButton";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
@@ -30,13 +28,15 @@ import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem,
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import NoteActionsCustom from "./NoteActionsCustom";
+import { useShareState } from "./NoteBadges";
+import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 export default function NoteActions() {
     const { note, ntxId, noteContext } = useNoteContext();
     return (
-        <div className="ribbon-button-container" style={{ contain: "none" }}>
+        <div className="note-actions-bar" style={{ contain: "none" }}>
             {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} typeActionsOnly={!isNewLayout} />}
             {note && !isNewLayout && <RevisionsButton note={note} />}
             <MovePaneButton direction="left" />

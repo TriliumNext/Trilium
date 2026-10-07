@@ -26,7 +26,7 @@
 }
 
 .sidebar-note-map {
-    /* Anchors the map's floating buttons (map type, fix nodes), same as the ribbon wrapper. */
+    /* Anchors the map's floating buttons (map type, fix nodes). */
     position: relative;
     /* Fills the card, which is what takes a height (see NoteMap.tsx): the canvas is drawn to whatever
        this box is measured at, so the map follows the card without being told a size of its own. */

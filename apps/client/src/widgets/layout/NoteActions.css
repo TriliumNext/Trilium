@@ -1,4 +1,4 @@
-.title-row > .ribbon-button-container {
+.title-row > .note-actions-bar {
     --button-gap: 5px;
 
     display: flex;

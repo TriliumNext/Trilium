@@ -189,7 +189,7 @@ function parseDate(date: string | Date | number): Date {
 /**
  * The language a note is written in.
  *
- * A note carries its own language as a `#language` label, set from the Basic Properties ribbon, but
+ * A note carries its own language as a `#language` label, set from the status bar's language switcher, but
  * the label is opt-in and the picker that sets it stays empty until content languages are enabled —
  * so in practice almost no note has one. The `defaultContentLanguage` option answers for all of
  * them, and an empty value there means "follow the application's language" rather than "none".

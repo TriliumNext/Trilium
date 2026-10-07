@@ -12,6 +12,7 @@ import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FloatingButtons from "../FloatingButtons";
 import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
+import FormattingToolbar from "../layout/FormattingToolbar";
 import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
 import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
@@ -19,7 +20,6 @@ import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import FormattingToolbar from "../ribbon/FormattingToolbar";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
 /** The layer the stylesheet gives this popup while it stands over another modal. */

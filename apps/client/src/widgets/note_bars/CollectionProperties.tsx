@@ -15,7 +15,7 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import { useNoteLabel, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import { CheckBoxProperty, ViewProperty } from "../react/NotePropertyMenu";
-import { bookPropertiesConfig } from "../ribbon/collection-properties-config";
+import { bookPropertiesConfig } from "./collection-properties-config";
 
 export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
