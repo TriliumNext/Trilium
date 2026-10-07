@@ -25,6 +25,10 @@ describe("PdfViewer", () => {
         expect(viewerUrl({}).has("noteId")).toBe(false);
         expect(viewerUrl({ noteId: "abc123", ntxId: null }).has("ntxId")).toBe(false);
     });
+
+    it("hides pdf.js' own sidebar, since the right panel lists the document's contents", () => {
+        expect(viewerUrl({}).get("sidebar")).toBe("0");
+    });
 });
 
 describe("getPdfUrl", () => {
