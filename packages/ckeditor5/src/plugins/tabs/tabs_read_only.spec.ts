@@ -1,3 +1,4 @@
+import { ClassicEditor, Essentials, Paragraph } from "ckeditor5";
 import { describe, expect, it } from "vitest";
 
 import { applyTabs, revealFragment, revealTab } from "./tabs_read_only.js";
@@ -120,6 +121,37 @@ describe("applyTabs", () => {
         expect(titles[2].hasAttribute("aria-label")).toBe(false);
     });
 
+    it("reverses the arrow keys right to left and ignores other keys", () => {
+        const container = renderTabs(
+            `<div class="trilium-tabs" dir="rtl">${tab("A", "")}${tab("B", "")}${tab("C", "")}</div>`
+        );
+        document.body.appendChild(container);
+
+        press(titleOf(container, "A"), "ArrowLeft");
+        expect(activeTitles(container)).toEqual(["B"]);
+        press(titleOf(container, "B"), "ArrowRight");
+        expect(activeTitles(container)).toEqual(["A"]);
+
+        expect(press(titleOf(container, "A"), "a").defaultPrevented).toBe(false);
+        expect(activeTitles(container)).toEqual(["A"]);
+        container.remove();
+    });
+
+    it("skips a tab without a title or a panel, and a block left without tabs", () => {
+        const container = renderTabs(
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">Orphan</p></section>` +
+                `<section class="trilium-tab"><div class="trilium-tab-panel"><p id="untitled">x</p></div></section>` +
+            `</div>` +
+            `<div class="trilium-tabs">${tab("A", "")}${tab("B", "")}</div>`
+        );
+
+        expect(titleOf(container, "Orphan").hasAttribute("role")).toBe(false);
+        expect(activeTitles(container)).toEqual(["A"]);
+        revealTab(container.querySelector("#untitled") as Element);
+        expect(activeTitles(container)).toEqual(["A"]);
+    });
+
     it("keeps nested tabs blocks independent", () => {
         const inner = `<div class="trilium-tabs">${tab("Inner 1", "")}${tab("Inner 2", "")}</div>`;
         const container = renderTabs(
@@ -165,5 +197,22 @@ describe("applyTabs", () => {
         expect(revealFragment("#missing")).toBeNull();
         expect(revealFragment("#%E0%A4%A")).toBeNull();
         container.remove();
+    });
+
+    it("leaves an editor without the tabs plugin alone", async () => {
+        const domElement = document.createElement("div");
+        document.body.appendChild(domElement);
+        const editor = await ClassicEditor.create(domElement, {
+            licenseKey: "GPL",
+            plugins: [Essentials, Paragraph]
+        });
+        editor.setData("<p>x</p>");
+        const paragraph = editor.editing.view.getDomRoot()?.querySelector("p");
+        expect(paragraph).toBeTruthy();
+
+        expect(() => revealTab(paragraph as Element)).not.toThrow();
+
+        await editor.destroy();
+        domElement.remove();
     });
 });

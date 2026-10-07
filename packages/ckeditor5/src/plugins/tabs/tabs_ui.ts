@@ -1,5 +1,6 @@
 import {
     ButtonView,
+    type Command,
     IconNextArrow,
     IconPlus,
     IconPreviousArrow,
@@ -52,10 +53,9 @@ export default class TabsUI extends Plugin {
             const button = new ButtonView(locale);
             button.set({ label, icon, tooltip: true });
 
-            const command = editor.commands.get(name);
-            if (command) {
-                button.bind("isEnabled").to(command, "isEnabled");
-            }
+            // TabsEditing, which TabsUI requires, registers every command before this runs.
+            const command = editor.commands.get(name) as Command;
+            button.bind("isEnabled").to(command, "isEnabled");
 
             this.listenTo(button, "execute", () => {
                 editor.execute(name);

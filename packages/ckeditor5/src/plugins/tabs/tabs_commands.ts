@@ -29,7 +29,7 @@ export class InsertTabsCommand extends Command {
 }
 
 /**
- * Adds a tab next to the one holding the selection, numbered by its position, and selects its
+ * Adds a tab after the one holding the selection, numbered by its position, and selects its
  * title. With the whole block selected, the tab goes at the end.
  */
 export class InsertTabCommand extends Command {
@@ -38,22 +38,23 @@ export class InsertTabCommand extends Command {
         this.isEnabled = !!getSelectedTabs(this.editor);
     }
 
-    public override execute({ position = "after" }: { position?: "before" | "after" } = {}): void {
+    public override execute(): void {
         const editor = this.editor;
         const tabs = getSelectedTabs(editor);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tabs) {
             return;
         }
-        const currentTab = getSelectedTab(editor);
-
-        const index = currentTab
-            ? (currentTab.index ?? 0) + (position === "after" ? 1 : 0)
-            : tabs.childCount;
+        // With a nested block selected as a whole, the selection's tab belongs to the outer block.
+        const selectedTab = getSelectedTab(editor);
+        const currentTab = selectedTab?.parent === tabs ? selectedTab : null;
+        // A tabs block holds only elements, so the offset after a tab is its index plus one.
+        const index = currentTab ? editor.model.createPositionAfter(currentTab).offset : tabs.childCount;
 
         editor.model.change(writer => {
             const tab = createTab(writer, getDefaultTitle(editor, index));
             if (currentTab) {
-                writer.insert(tab, currentTab, position);
+                writer.insert(tab, currentTab, "after");
             } else {
                 writer.insert(tab, tabs, "end");
             }
@@ -76,6 +77,7 @@ export class RemoveTabCommand extends Command {
         const editor = this.editor;
         const tab = getSelectedTab(editor);
         const tabs = tab?.parent;
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tab || !tabs?.is("element", ELEMENTS.tabs)) {
             return;
         }
@@ -91,11 +93,7 @@ export class RemoveTabCommand extends Command {
 
             const neighbor = (tab.nextSibling ?? tab.previousSibling) as ModelElement;
             writer.remove(tab);
-
-            const title = getTitle(neighbor);
-            if (title) {
-                writer.setSelection(title, "end");
-            }
+            writer.setSelection(getTitle(neighbor), "end");
         });
     }
 }
@@ -119,6 +117,7 @@ export class MoveTabCommand extends Command {
         const editor = this.editor;
         const tab = getSelectedTab(editor);
         const neighbor = this.getNeighbor(tab);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
         if (!tab || !neighbor) {
             return;
         }
@@ -169,9 +168,9 @@ export function getSelectedTabs(editor: Editor): ModelElement | null {
     return (position?.findAncestor(ELEMENTS.tabs) as ModelElement | null) ?? null;
 }
 
-function getTitle(tab: ModelElement): ModelElement | null {
-    const title = tab.getChild(0);
-    return title?.is("element", ELEMENTS.tabTitle) ? title : null;
+/** Returns the title of `tab`, which the post-fixer keeps as its first child. */
+function getTitle(tab: ModelElement): ModelElement {
+    return tab.getChild(0) as ModelElement;
 }
 
 /** Returns "Tab N" for the tab at the zero-based `index`. */
@@ -181,8 +180,5 @@ function getDefaultTitle(editor: Editor, index: number): string {
 }
 
 function selectTitle(writer: ModelWriter, tab: ModelElement) {
-    const title = getTitle(tab);
-    if (title) {
-        writer.setSelection(writer.createRangeIn(title));
-    }
+    writer.setSelection(writer.createRangeIn(getTitle(tab)));
 }

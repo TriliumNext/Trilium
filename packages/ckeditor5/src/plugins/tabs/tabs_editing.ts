@@ -62,8 +62,7 @@ export default class TabsEditing extends Plugin {
         if (active?.parent === tabs) {
             return active;
         }
-        const first = tabs.getChild(0);
-        return first?.is("element", ELEMENTS.tab) ? first : null;
+        return tabs.getChild(0) as ModelElement | null;
     }
 
     /** Shows every tab that encloses `position`, without moving the selection. */
@@ -308,13 +307,11 @@ export default class TabsEditing extends Plugin {
         const editing = this.editor.editing;
         editing.view.change(writer => {
             for (const tabs of blocks) {
-                if (tabs.root.rootName === "$graveyard") {
-                    continue;
-                }
                 const active = this.getActiveTab(tabs);
                 for (const tab of tabs.getChildren() as IterableIterator<ModelElement>) {
                     const view = editing.mapper.toViewElement(tab);
                     const title = editing.mapper.toViewElement(tab.getChild(0) as ModelElement);
+                    /* v8 ignore next 3 -- only a tab outside the document, which no caller passes, has no view */
                     if (!view || !title) {
                         continue;
                     }
@@ -375,6 +372,7 @@ function collectTabsWithin(node: ModelNode | null, blocks: Set<ModelElement>) {
 }
 
 function fixTabs(writer: ModelWriter, tabs: ModelElement): boolean {
+    /* v8 ignore next 3 -- the differ reports no change inside a removed element */
     if (tabs.root.rootName === "$graveyard") {
         return false;
     }
@@ -386,6 +384,7 @@ function fixTabs(writer: ModelWriter, tabs: ModelElement): boolean {
 
     let changed = false;
     for (const tab of [...tabs.getChildren()]) {
+        /* v8 ignore next 3 -- the schema allows only tabs in a tabs block */
         if (!tab.is("element", ELEMENTS.tab)) {
             continue;
         }

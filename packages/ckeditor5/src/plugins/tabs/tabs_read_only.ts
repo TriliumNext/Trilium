@@ -141,13 +141,13 @@ export function revealFragment(hash: string): Element | null {
 
 /** Returns the editor whose editing view holds `element`; only the root editable carries it. */
 function getEditor(element: Element): Editor | null {
-    let editable = element.closest(".ck-editor__editable");
+    let editable: Element | null | undefined = element.closest(".ck-editor__editable");
     while (editable) {
         const editor = (editable as Element & { ckeditorInstance?: Editor | null }).ckeditorInstance;
         if (editor) {
             return editor;
         }
-        editable = editable.parentElement?.closest(".ck-editor__editable") ?? null;
+        editable = editable.parentElement?.closest(".ck-editor__editable");
     }
     return null;
 }
