@@ -12,7 +12,7 @@ import { getHelpUrlForNote } from "../../services/in_app_help";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import { createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../services/utils";
+import { clearBrowserCache, createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
 import { buildSaveSqlToNoteHandler } from "../FloatingButtonsDefinitions";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
@@ -23,7 +23,6 @@ import { FormListItem } from "../react/FormList";
 import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
-import { buildUploadNewImageRevisionListener } from "./ImagePropertiesTab";
 
 interface NoteActionsCustomProps {
     note: FNote;
@@ -121,6 +120,22 @@ function ImageActions(props: NoteActionsCustomInnerProps) {
             <CompressImageButton {...props} />
         </>
     );
+}
+
+function buildUploadNewImageRevisionListener(note: FNote) {
+    return async (files: FileList | null) => {
+        if (!files) return;
+        const fileToUpload = files[0]; // copy to allow reset below
+
+        const result = await server.upload(`images/${note.noteId}`, fileToUpload);
+
+        if (result.uploaded) {
+            toast.showMessage(t("image_properties.upload_success"));
+            await clearBrowserCache();
+        } else {
+            toast.showError(t("image_properties.upload_failed", { message: result.message }));
+        }
+    };
 }
 
 function buildUploadNewFileRevisionListener(note: FNote) {

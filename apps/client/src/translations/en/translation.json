@@ -1322,16 +1322,10 @@
     "upload_failed": "Upload of a new file revision failed."
   },
   "image_properties": {
-    "original_file_name": "Original file name",
-    "file_type": "File type",
-    "file_size": "File size",
-    "download": "Download",
-    "open": "Open",
     "copy_reference_to_clipboard": "Copy reference to clipboard",
     "upload_new_revision": "Upload new revision",
     "upload_success": "New image revision has been uploaded.",
-    "upload_failed": "Upload of a new image revision failed: {{message}}",
-    "title": "Image"
+    "upload_failed": "Upload of a new image revision failed: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Inherited Attributes",

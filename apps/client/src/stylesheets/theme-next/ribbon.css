@@ -38,33 +38,6 @@ div.promoted-attributes-container {
 }
 
 /*
- * Image Properties
- */
-
- /* The property label */
-.image-properties > div:first-child > span > strong {
-    opacity: 0.65;
-    font-weight: 500;
-    vertical-align: top;
-}
-
-/* The button bar */
-.image-properties > div:last-of-type {
-    padding: 0;
-    margin: 0;
-    justify-content: flex-start !important;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-/* The properties row for images */
-.image-properties > div:first-child {
-    justify-content: flex-start !important;
-    flex-wrap: wrap;
-    gap: 10px 40px;
-}
-
-/*
  * Owned attributes
  */
 
