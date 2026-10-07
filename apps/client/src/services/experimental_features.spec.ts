@@ -93,15 +93,4 @@ describe("experimental_features", () => {
         expect(mod.getEnabledExperimentalFeatureIds()).toEqual([]);
         expect(warn).toHaveBeenCalled();
     });
-
-    it("toggleExperimentalFeature adds/removes a feature and persists the set", async () => {
-        const { mod, options } = await freshModule([]);
-        const save = vi.spyOn(options, "save").mockResolvedValue(undefined);
-
-        await mod.toggleExperimentalFeature("llm", true);
-        expect(save).toHaveBeenLastCalledWith("experimentalFeatures", JSON.stringify(["llm"]));
-
-        await mod.toggleExperimentalFeature("llm", false);
-        expect(save).toHaveBeenLastCalledWith("experimentalFeatures", JSON.stringify([]));
-    });
 });
