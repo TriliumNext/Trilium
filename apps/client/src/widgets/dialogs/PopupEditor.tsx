@@ -223,7 +223,7 @@ function PopupBacklinks({ onNavigate }: { onNavigate: (notePath: string, viewSco
     const count = useBacklinkCount(note, viewScope?.viewMode === "default");
     const dropdownRef = useRef<DropdownHandle>(null);
 
-    return (note && count > 0 &&
+    return (note && viewScope?.viewMode === "default" && count > 0 &&
         <DropdownPanel
             dropdownRef={dropdownRef}
             className="popup-editor-backlinks"
