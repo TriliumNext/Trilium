@@ -1,0 +1,146 @@
+import {
+    _getModelData as getModelData,
+    _setModelData as setModelData,
+    ClassicEditor,
+    Essentials,
+    type ModelElement,
+    Paragraph
+} from "ckeditor5";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import Tabs from "./tabs.js";
+
+const TWO_TABS =
+    "<div class=\"trilium-tabs\">" +
+        "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">Windows</p>" +
+            "<div class=\"trilium-tab-panel\"><p>Run the installer.</p></div></section>" +
+        "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">Linux</p>" +
+            "<div class=\"trilium-tab-panel\"><p>Use the package.</p></div></section>" +
+    "</div>";
+
+describe("Tabs", () => {
+    let domElement: HTMLDivElement;
+    let editor: ClassicEditor;
+
+    beforeEach(async () => {
+        domElement = document.createElement("div");
+        document.body.appendChild(domElement);
+        editor = await ClassicEditor.create(domElement, {
+            licenseKey: "GPL",
+            plugins: [Essentials, Paragraph, Tabs]
+        });
+    });
+
+    afterEach(() => {
+        domElement.remove();
+        return editor.destroy();
+    });
+
+    function model() {
+        return getModelData(editor.model, { withoutSelection: true });
+    }
+
+    function activeTitles() {
+        const root = editor.editing.view.getDomRoot();
+        return [...root?.querySelectorAll(".trilium-tab--active > .trilium-tab-title") ?? []]
+            .map(title => title.textContent);
+    }
+
+    function tabsElement() {
+        const tabs = editor.model.document.getRoot()?.getChild(0);
+        expect(tabs?.is("element", "tabs")).toBe(true);
+        return tabs as ModelElement;
+    }
+
+    it("round-trips the saved HTML through the model", () => {
+        editor.setData(TWO_TABS);
+
+        expect(model()).toBe(
+            "<tabs>" +
+                "<tab><tabTitle>Windows</tabTitle><tabPanel><paragraph>Run the installer.</paragraph></tabPanel></tab>" +
+                "<tab><tabTitle>Linux</tabTitle><tabPanel><paragraph>Use the package.</paragraph></tabPanel></tab>" +
+            "</tabs>"
+        );
+        expect(editor.getData()).toBe(TWO_TABS);
+    });
+
+    it("inserts two empty tabs and places the caret in the first title", () => {
+        setModelData(editor.model, "<paragraph>[]</paragraph>");
+
+        editor.execute("tabs");
+
+        expect(getModelData(editor.model)).toBe(
+            "<tabs>" +
+                "<tab><tabTitle>[]</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+                "<tab><tabTitle></tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+            "</tabs>"
+        );
+    });
+
+    it("repairs tabs that lack a title or a panel and drops a block without tabs", () => {
+        editor.setData(
+            "<div class=\"trilium-tabs\">" +
+                "<section class=\"trilium-tab\"><div class=\"trilium-tab-panel\"><p>Body</p></div></section>" +
+                "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">Title</p></section>" +
+            "</div>" +
+            "<div class=\"trilium-tabs\"></div>"
+        );
+
+        expect(model()).toBe(
+            "<tabs>" +
+                "<tab><tabTitle></tabTitle><tabPanel><paragraph>Body</paragraph></tabPanel></tab>" +
+                "<tab><tabTitle>Title</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+            "</tabs>"
+        );
+    });
+
+    it("shows the first tab, then whichever tab holds the selection", () => {
+        editor.setData(TWO_TABS);
+        expect(activeTitles()).toEqual(["Windows"]);
+
+        const linux = tabsElement().getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(linux.getChild(1) as ModelElement, 0));
+        expect(activeTitles()).toEqual(["Linux"]);
+
+        editor.model.change(writer => writer.setSelection(editor.model.document.getRoot() as ModelElement, "end"));
+        expect(activeTitles()).toEqual(["Linux"]);
+    });
+
+    it("adds, moves and removes the tab holding the selection", () => {
+        editor.setData(TWO_TABS);
+        const windows = tabsElement().getChild(0) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windows.getChild(0) as ModelElement, 0));
+
+        editor.execute("insertTab");
+        editor.model.change(writer => writer.insertText("macOS", editor.model.document.selection.getFirstPosition()));
+        expect(activeTitles()).toEqual(["macOS"]);
+
+        editor.execute("moveTabRight");
+        expect(editor.commands.get("moveTabRight")?.isEnabled).toBe(false);
+        expect(editor.getData()).toContain("Windows</p>");
+        expect(editor.getData().indexOf("Linux")).toBeLessThan(editor.getData().indexOf("macOS"));
+
+        editor.execute("removeTab");
+        expect(model()).not.toContain("macOS");
+        expect(activeTitles()).toEqual(["Linux"]);
+
+        editor.execute("removeTab");
+        editor.execute("removeTab");
+        expect(model()).toBe("<paragraph></paragraph>");
+    });
+
+    it("moves the caret from a title into its panel on Enter", () => {
+        editor.setData(TWO_TABS);
+        const windows = tabsElement().getChild(0) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windows.getChild(0) as ModelElement, "end"));
+
+        editor.editing.view.document.fire("enter", {
+            preventDefault() {},
+            domEvent: new KeyboardEvent("keydown")
+        });
+
+        expect(getModelData(editor.model)).toContain(
+            "<tabTitle>Windows</tabTitle><tabPanel><paragraph>[]Run the installer.</paragraph></tabPanel>"
+        );
+    });
+});

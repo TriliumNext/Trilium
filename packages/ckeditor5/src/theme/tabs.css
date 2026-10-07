@@ -1,0 +1,52 @@
+.ck-editor__editable .trilium-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0 2px;
+    margin: 1em 0;
+
+    & > .trilium-tab {
+        display: contents;
+    }
+
+    & > .trilium-tab > .trilium-tab-title {
+        order: 0;
+        min-width: 4em;
+        max-width: 100%;
+        margin: 0;
+        padding: 4px 12px;
+        border: 1px solid var(--main-border-color, var(--ck-color-base-border));
+        border-bottom: 0;
+        border-radius: 6px 6px 0 0;
+        background: var(--accented-background-color, var(--ck-color-base-foreground));
+        color: var(--muted-text-color, inherit);
+        cursor: pointer;
+    }
+
+    & > .trilium-tab > .trilium-tab-panel {
+        display: none;
+        order: 1;
+        flex: 1 0 100%;
+        min-width: 0;
+        padding: 0 1em;
+        border: 1px solid var(--main-border-color, var(--ck-color-base-border));
+        border-radius: 0 6px 6px 6px;
+    }
+
+    & > .trilium-tab.trilium-tab--active {
+        & > .trilium-tab-title {
+            position: relative;
+            z-index: 1;
+            margin-bottom: -1px;
+            padding-bottom: 5px;
+            background: var(--main-background-color, var(--ck-color-base-background));
+            color: inherit;
+            font-weight: 600;
+            cursor: text;
+        }
+
+        & > .trilium-tab-panel {
+            display: block;
+        }
+    }
+}

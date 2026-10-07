@@ -31,6 +31,7 @@ import Kbd from "./plugins/keyboard_marker/keyboard_marker.js";
 import Mermaid from "./plugins/mermaid/mermaid.js";
 import Admonition from "./plugins/admonition/admonition.js";
 import Collapsible from "./plugins/collapsible/collapsible.js";
+import Tabs from "./plugins/tabs/tabs.js";
 import Footnotes from "./plugins/footnotes/footnotes.js";
 import Math from "./plugins/math/math.js";
 import AutoformatMath from "./plugins/math/autoformat_math.js";
@@ -134,6 +135,7 @@ const EXTERNAL_PLUGINS: typeof Plugin[] = [
     Mermaid,
     Admonition,
     Collapsible,
+    Tabs,
     Footnotes,
     Math,
 	AutoformatMath

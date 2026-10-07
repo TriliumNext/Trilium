@@ -4361,7 +4361,16 @@
       "more-actions": "More actions",
       "drawing-canvas": "Drawing canvas",
       "editable": "Editable",
-      "insert-a-canvas-to-draw-on": "Insert a canvas to draw on."
+      "insert-a-canvas-to-draw-on": "Insert a canvas to draw on.",
+      "tabs": "Tabs",
+      "tab-title": "Tab title",
+      "tab-content": "Tab content",
+      "add-tab": "Add tab",
+      "remove-tab": "Remove tab",
+      "move-tab-left": "Move tab left",
+      "move-tab-right": "Move tab right",
+      "tabs-toolbar": "Tabs toolbar",
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "Insert titled tabs that show one panel at a time."
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
