@@ -141,5 +141,5 @@ interface EmbedPlaceholderOptions {
 /** The box size the host gives an embed of `file`, `medium` when the host does not say. */
 function getEmbedBoxSize(editor: Editor, file: File) {
     const component = glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
-    return component.getEmbedBoxSize?.(file.type) ?? "medium";
+    return component.getEmbedBoxSize?.(file.type, file.size) ?? "medium";
 }

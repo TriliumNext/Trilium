@@ -455,8 +455,12 @@ describe("ContentEmbed", () => {
         expect(viewFocus).not.toHaveBeenCalled();
 
         const change = vi.spyOn(editor.model, "enqueueChange");
+        // The content hears its own focus, as the editor of an included note must.
+        const heard = vi.fn();
+        button?.addEventListener("focus", heard);
         button?.focus();
         expect(document.activeElement).toBe(button);
+        expect(heard).toHaveBeenCalledOnce();
         expect(change).not.toHaveBeenCalled();
     });
 

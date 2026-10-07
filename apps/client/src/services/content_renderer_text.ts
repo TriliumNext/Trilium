@@ -16,9 +16,21 @@ import { isHtmlEmpty } from "./utils.js";
 export default async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     // entity must be FNote
     const blob = await note.getBlob();
+    await renderTextContent(note, blob?.content, $renderedContent, options);
+}
 
-    if (blob && !isHtmlEmpty(blob.content)) {
-        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(blob.content)));
+/**
+ * Renders `content`, the HTML of `note`, which can differ from the saved content, as while the
+ * note is edited. An empty note shows the list of its children instead.
+ */
+export async function renderTextContent(
+    note: FNote | FAttachment,
+    content: string | undefined,
+    $renderedContent: JQuery<HTMLElement>,
+    options: RenderOptions = {}
+) {
+    if (content !== undefined && !isHtmlEmpty(content)) {
+        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(content)));
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);

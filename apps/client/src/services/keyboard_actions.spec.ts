@@ -143,6 +143,22 @@ describe("keyboard_actions", () => {
         spy!.mockRestore();
     });
 
+    it("setupWindowShortcutsForElement binds the window-scoped shortcuts on an element", async () => {
+        const { kb } = await loadModule([
+            action({ actionName: "winA", scope: "window", effectiveShortcuts: [ "ctrl+1" ] }),
+            action({ actionName: "treeA", scope: "note-tree", effectiveShortcuts: [ "ctrl+9" ] })
+        ]);
+        vi.mocked(appContext.triggerCommand).mockClear();
+
+        const $el = $("<div></div>");
+        const bindings = await kb.default.setupWindowShortcutsForElement($el as any);
+
+        expect(bindings.map((binding) => binding.shortcut)).toEqual([ "ctrl+1" ]);
+        expect(bindings[0].element).toBe($el[0]);
+        bindings[0].handler(new KeyboardEvent("keydown"));
+        expect(appContext.triggerCommand).toHaveBeenCalledWith("winA", { ntxId: "ntx-active" });
+    });
+
     it("setupActionsForElement returns [] for an empty jQuery element", async () => {
         const { kb } = await loadModule([action({ actionName: "a", scope: "text-detail", effectiveShortcuts: ["ctrl+a"] })]);
         const $empty = $(); // length 0 -> $el[0] undefined

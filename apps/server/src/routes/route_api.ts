@@ -101,6 +101,10 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
             });
 
             if (!resultHandler) {
+                // The handler writes its own response, but a rejection still needs one.
+                if (result instanceof Promise) {
+                    result.catch((e: unknown) => handleException(e, method, path, res));
+                }
                 return;
             }
 

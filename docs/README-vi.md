@@ -201,7 +201,7 @@ interface (which is almost identical to the desktop app).
 Currently only the latest versions of Chrome & Firefox are supported (and
 tested).
 
-### Mobile
+### Di Động
 
 To use TriliumNext on a mobile device, you can use a mobile web browser to
 access the mobile interface of a server installation (see below).

@@ -92,7 +92,7 @@
     "openid-client": "6.8.8",
     "rand-token": "1.0.1",
     "serve-favicon": "2.5.1",
-    "supertest": "7.3.0",
+    "supertest": "7.3.1",
     "tesseract.js": "7.0.0",
     "time2fa": "1.4.2",
     "tmp": "0.2.7",

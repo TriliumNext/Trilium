@@ -4,18 +4,19 @@ import { exportToSvg } from "@excalidraw/excalidraw";
 import type { AppState, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import clsx from "clsx";
 import type { RefObject } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import { bindAttachmentEditor, type ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { getEffectiveThemeStyle } from "../../../services/theme";
 import { isDesktop } from "../../../services/utils";
 import { useColorScheme, useEffectiveReadOnly } from "../../react/hooks";
 import { useAttachmentEditor } from "../text/attachment_saves";
-import { useContentEmbedEvent, useIsContentEmbedEditable } from "../text/content_embed_tools";
+import { useContentEmbedEvent } from "../text/content_embed_tools";
+import { useEditableEmbed } from "../text/editable_embed";
 import { CanvasEditor } from "./Canvas";
 import CanvasDrawingMenu from "./CanvasDrawingMenu";
 import CanvasEmbedTools from "./CanvasEmbedTools";
@@ -24,7 +25,7 @@ import { getInlineFiles, parseContent, useCanvasDrawingPersistence } from "./per
 interface CanvasDrawingProps {
     attachment: FAttachment;
     /** Saves the changes. Without it, or for an attachment of another note, it is read-only. */
-    editor?: AttachmentEditor;
+    editor?: ContentEditor;
 }
 
 /**
@@ -35,9 +36,13 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
     const rootRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
     const colorScheme = useColorScheme();
-    const canEdit = !!editor?.canEdit(attachment) && !options.is("databaseReadonly");
-    const isEmbedEditable = useIsContentEmbedEditable(rootRef);
-    const isEditable = canEdit && isEmbedEditable;
+    // `CanvasEmbedTools` adds the buttons of the drawing to the toolbar of the embed.
+    const { canEdit, isEditing: isEditable } = useEditableEmbed(rootRef, {
+        editor,
+        note: null,
+        tools: null,
+        focusTarget: ".excalidraw"
+    });
     // Follows `canEdit` rather than the toggle, so that turning editing off keeps a pending save.
     const persistence = useCanvasDrawingPersistence(
         attachment,
@@ -46,7 +51,6 @@ export default function CanvasDrawing({ attachment, editor }: CanvasDrawingProps
         colorScheme
     );
     const isToolbarOverPanel = useIsToolbarOverPanel(rootRef);
-    useFocusFromEmbedBox(rootRef);
     const isRecentering = useRecenteringOnFullscreen(rootRef, apiRef);
     useSidePanels(rootRef, isEditable);
     useTopLayerContextMenu(rootRef, apiRef);
@@ -118,7 +122,11 @@ export function CanvasDrawingDetail({
     attachment, note, noteContext, revision
 }: CanvasDrawingDetailProps) {
     // Outlives the drawing loaded again for each revision, which starts from its unsaved changes.
-    const editor = useAttachmentEditor(note, noteContext);
+    const attachmentEditor = useAttachmentEditor(note, noteContext);
+    const editor = useMemo(
+        () => bindAttachmentEditor(attachmentEditor, attachment),
+        [ attachmentEditor, attachment ]
+    );
 
     return (
         <DetailDrawing
@@ -132,7 +140,7 @@ export function CanvasDrawingDetail({
 }
 
 interface DetailDrawingProps extends Omit<CanvasDrawingDetailProps, "revision"> {
-    editor: AttachmentEditor;
+    editor: ContentEditor;
 }
 
 /** The drawing of `CanvasDrawingDetail`, saved by `editor`. */
@@ -140,7 +148,7 @@ function DetailDrawing({ attachment, note, noteContext, editor }: DetailDrawingP
     const apiRef = useRef<ExcalidrawImperativeAPI>(null);
     const colorScheme = useColorScheme();
     const isNoteReadOnly = useEffectiveReadOnly(note, noteContext);
-    const canEdit = editor.canEdit(attachment) && !isNoteReadOnly
+    const canEdit = editor.canEdit() && !isNoteReadOnly
         && !options.is("databaseReadonly");
     const persistence = useCanvasDrawingPersistence(
         attachment,
@@ -189,35 +197,6 @@ function useRecenteringOnFullscreen(
     useEffect(() => () => cancelAnimationFrame(frameRef.current), []);
 
     return isRecentering;
-}
-
-/**
- * Moves the focus into Excalidraw when the embed box around the drawing holds it. Excalidraw
- * renders its container only once its language loads, which can be after the box took the focus.
- */
-function useFocusFromEmbedBox(rootRef: RefObject<HTMLElement | null>) {
-    useEffect(() => {
-        const root = rootRef.current;
-        if (!root) return;
-
-        // Returns whether the container exists, after which there is nothing left to wait for.
-        const forwardFocus = () => {
-            const container = root.querySelector<HTMLElement>(".excalidraw");
-            if (container && document.activeElement === container.closest(".include-note-content")) {
-                container.focus();
-            }
-            return !!container;
-        };
-        if (forwardFocus()) return;
-
-        const observer = new MutationObserver(() => {
-            if (forwardFocus()) {
-                observer.disconnect();
-            }
-        });
-        observer.observe(root, { childList: true, subtree: true });
-        return () => observer.disconnect();
-    }, [ rootRef ]);
 }
 
 /**

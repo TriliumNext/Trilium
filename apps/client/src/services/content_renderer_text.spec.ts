@@ -55,6 +55,7 @@ import renderText, {
     applyInlineMermaid,
     postProcessRichContent,
     renderChildrenList,
+    renderTextContent,
     rewriteMermaidDiagramsInContainer
 } from "./content_renderer_text";
 
@@ -247,6 +248,22 @@ describe("Text content renderer", () => {
         expect(items.length).toBe(2);
         expect(items[0].textContent).toBe("Child note 1");
         expect(items[1].textContent).toBe("Child note 3");
+    });
+
+    it("renders given content in place of the saved one, and the children list when empty", async () => {
+        const note = buildNote({
+            title: "Edited note",
+            content: "<p>Saved</p>",
+            children: [ { title: "Child note" } ]
+        });
+
+        const edited = document.createElement("div");
+        await renderTextContent(note, "<p>Edited</p>", $(edited));
+        expect(edited.querySelector(".ck-content")?.innerHTML).toBe("<p>Edited</p>");
+
+        const emptied = document.createElement("div");
+        await renderTextContent(note, "<p>&nbsp;</p>", $(emptied));
+        expect(emptied.querySelector("a")?.textContent).toBe("Child note");
     });
 
     it("renders nothing for an empty note with no children when noChildrenList is set", async () => {

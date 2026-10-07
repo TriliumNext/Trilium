@@ -69,7 +69,7 @@
     "cross-env": "10.1.0",
     "dpdm": "4.3.0",
     "esbuild": "0.28.2",
-    "eslint": "10.11.0",
+    "eslint": "10.12.0",
     "eslint-config-preact": "2.0.0",
     "eslint-plugin-playwright": "2.12.0",
     "eslint-plugin-simple-import-sort": "14.0.0",
@@ -99,5 +99,5 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@12.8.2"
+  "packageManager": "pnpm@12.9.1"
 }

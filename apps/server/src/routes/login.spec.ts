@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { cls, options } from "@triliumnext/core";
 import { refreshAuth } from "../services/auth.js";
 import config from "../services/config.js";
+import totp from "../services/totp.js";
 import { createLoginRateLimiter } from "./login.js";
 import { type SQLiteSessionStore } from "./session_parser.js";
 
@@ -69,6 +70,32 @@ describe("Login Route test", () => {
             .send({ password: "fakePassword" })
             .expect(401);
 
+    });
+
+    it("returns a 401 status, when the password field is missing or not a string", async () => {
+        for (const body of [{}, { password: ["a"] }]) {
+            await supertest(app)
+                .post("/login")
+                .send(body)
+                .expect(401);
+        }
+    });
+
+    it("rejects a TOTP token that is not a string without verifying it", async () => {
+        vi.spyOn(totp, "isTotpEnabled").mockReturnValue(true);
+        const verifyTOTP = vi.spyOn(totp, "verifyTOTP");
+
+        try {
+            const res = await supertest(app)
+                .post("/login")
+                .send({ password: "demo1234", totpToken: ["123456"] })
+                .expect(401);
+
+            expect(res.body).toEqual({ success: false, factor: "totp" });
+            expect(verifyTOTP).not.toHaveBeenCalled();
+        } finally {
+            vi.restoreAllMocks();
+        }
     });
 
     describe("login stays reachable with redirectBareDomain enabled (#10552)", () => {

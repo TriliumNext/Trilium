@@ -8,13 +8,17 @@ const {
     triggerCommand,
     openContextMenu,
     getOriginBelow,
-    disposeInteractiveContent
+    disposeInteractiveContent,
+    setupWindowShortcutsForElement,
+    removeIndividualBinding
 } = vi.hoisted(() => ({
     openTabWithNoteWithHoisting: vi.fn(),
     triggerCommand: vi.fn(),
     openContextMenu: vi.fn(),
     getOriginBelow: vi.fn((anchor: Element) => ({ below: anchor })),
-    disposeInteractiveContent: vi.fn()
+    disposeInteractiveContent: vi.fn(),
+    setupWindowShortcutsForElement: vi.fn(async (_$el: JQuery<HTMLElement>) => [ { shortcut: "ctrl+j" } ]),
+    removeIndividualBinding: vi.fn()
 }));
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
@@ -25,6 +29,13 @@ vi.mock("../../../menus/link_context_menu", () => ({
     default: { openContextMenu, getOriginBelow }
 }));
 vi.mock("../../../services/content_renderer", () => ({ default: { disposeInteractiveContent } }));
+vi.mock("../../../services/keyboard_actions", () => ({
+    default: { setupWindowShortcutsForElement }
+}));
+vi.mock("../../../services/shortcuts", async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    removeIndividualBinding
+}));
 
 import ContentEmbed, {
     getNoteActions,
@@ -157,14 +168,14 @@ function click(target: HTMLElement) {
 
 describe("ContentEmbed", () => {
     it("lays out the title row for each box size", () => {
-        const plain = [ "title", "open", "menu" ];
-        const withFullscreen = [ "title", "open", "fullscreen", "menu" ];
+        const plain = [ "title", "badges", "open", "menu" ];
+        const withFullscreen = [ "title", "badges", "open", "fullscreen", "menu" ];
         const layouts: [ string | undefined, string[] ][] = [
             [ undefined, plain ],
             [ "small", plain ],
             [ "medium", withFullscreen ],
             [ "full", withFullscreen ],
-            [ "expandable", [ "toggle", "title", "open", "menu" ] ]
+            [ "expandable", [ "toggle", "title", "badges", "open", "menu" ] ]
         ];
 
         for (const [ boxSize, expected ] of layouts) {
@@ -408,6 +419,50 @@ describe("ContentEmbed", () => {
         click(secondBackdrop);
         expect(document.activeElement).toBe(box);
         expect(isActive()).toBe(true);
+    });
+
+    it("runs the window shortcuts from its content, whose keys the editor keeps to itself", async () => {
+        renderBox();
+        const box = contentBox();
+        expect(setupWindowShortcutsForElement).toHaveBeenCalledOnce();
+        expect(setupWindowShortcutsForElement.mock.calls[0][0][0]).toBe(box);
+
+        await act(async () => render(null, container));
+        await vi.waitFor(() => {
+            expect(removeIndividualBinding).toHaveBeenCalledWith({ shortcut: "ctrl+j" });
+        });
+    });
+
+    it("lets a drag reach its content, with the backdrop back once the drag leaves or ends", () => {
+        renderBox();
+        const box = contentBox();
+        const body = box.parentElement;
+        const backdrop = () => container.querySelector<HTMLElement>(".include-note-backdrop");
+        if (!body) throw new Error("Expected the body of the embed.");
+        body.getBoundingClientRect = () => new DOMRect(0, 0, 100, 100);
+        const drag = (target: EventTarget, type: string, clientX = 50) => act(() => {
+            target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX, clientY: 50 }));
+        });
+
+        const firstBackdrop = backdrop();
+        expect(firstBackdrop).not.toBeNull();
+        if (!firstBackdrop) return;
+        drag(firstBackdrop, "dragenter");
+        expect(backdrop()).toBeNull();
+        // Moving between the elements of the content keeps the drag inside.
+        drag(box, "dragleave");
+        expect(backdrop()).toBeNull();
+        drag(box, "dragleave", 150);
+        expect(backdrop()).not.toBeNull();
+
+        for (const [ target, end ] of [ [ box, "drop" ], [ document, "dragend" ] ] as const) {
+            const shown = backdrop();
+            if (!shown) return;
+            drag(shown, "dragenter");
+            expect(backdrop()).toBeNull();
+            drag(target, end);
+            expect(backdrop()).not.toBeNull();
+        }
     });
 });
 

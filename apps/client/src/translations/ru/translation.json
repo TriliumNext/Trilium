@@ -1337,14 +1337,16 @@
     "llm-chat": "Чат с ИИ",
     "markdown": "Markdown",
     "note-types": "Типы заметок",
-    "built-in-templates": "Встроенные шаблоны"
+    "built-in-templates": "Встроенные шаблоны",
+    "more": "Больше",
+    "widget-preset-sample": "Привет от виджета"
   },
   "tree-context-menu": {
     "open-in-popup": "Быстрое редактирование",
     "delete": "Удалить",
     "advanced": "Дополнительно",
     "cut": "Вырезать",
-    "duplicate": "Создать дубликат",
+    "duplicate": "Дублировать",
     "export": "Экспорт",
     "open-in-a-new-tab": "Открыть в новой вкладке",
     "open-in-a-new-split": "Открыть в новой панели",
@@ -1376,7 +1378,11 @@
     "unarchive": "Разархивировать",
     "open-in-a-new-window": "Открыть в новом окне",
     "hide-subtree": "Скрыть поддерево",
-    "show-subtree": "Показать поддерево"
+    "show-subtree": "Показать поддерево",
+    "clone": "Клонировать",
+    "clone-tooltip": "Клонировать, чтобы одна и та же заметка была сразу в двух местах",
+    "duplicate-with-children": "Заметку и её дочерние заметки",
+    "duplicate-note-only": "Только эту заметку"
   },
   "info": {
     "closeButton": "Закрыть",
@@ -2710,7 +2716,8 @@
     "note_type_switcher_label": "Переключить с {{type}} на:",
     "last_modified": "Изменена <Value />",
     "created_on": "Создана в <Value />",
-    "promoted_attributes": "Закреплённые атрибуты"
+    "promoted_attributes": "Закреплённые атрибуты",
+    "note_type_switcher_all": "Все типы"
   },
   "units": {
     "percentage": "%"
@@ -4656,5 +4663,11 @@
   },
   "split_button": {
     "more_actions": "Другие действия"
+  },
+  "menu": {
+    "no_matches": "Нет совпадений",
+    "filter": "Фильтр",
+    "filter_placeholder": "Введите текст для фильтрации…",
+    "back": "Назад"
   }
 }

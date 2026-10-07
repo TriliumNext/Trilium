@@ -146,12 +146,10 @@ describe("FileUploadCommand", () => {
         ));
     });
 
-    it("inserts an embed placeholder per file, in the size the host gives its type", () => {
-        installGlobMock({
-            getComponentByEl: () => ({
-                getEmbedBoxSize: (mime: string) => (mime === "image/png" ? "medium" : "tiny")
-            })
-        });
+    it("inserts an embed placeholder per file, in the size the host gives its type and size", () => {
+        const getEmbedBoxSize = vi.fn((mime: string, _size: number) =>
+            (mime === "image/png" ? "medium" : "tiny"));
+        installGlobMock({ getComponentByEl: () => ({ getEmbedBoxSize }) });
         setModelData(editor.model, "<paragraph>foo[]bar</paragraph>");
 
         editor.execute("fileUpload", {
@@ -170,6 +168,7 @@ describe("FileUploadCommand", () => {
             "</contentEmbed>" +
             "<paragraph>\\[\\]bar</paragraph>$"
         ));
+        expect(getEmbedBoxSize.mock.calls).toEqual([ [ "text/plain", 1 ], [ "image/png", 1 ] ]);
     });
 
     it("sizes the embeds medium for a host that names no size", () => {

@@ -94,10 +94,10 @@ function serializeSimpleRule({ frequency, interval, weekdays, ends }: SimpleRecu
     }
 
     if (ends.type === "until" && ends.date) {
-        // The end of the picked day rather than its midnight, so "until June 5th" keeps June 5th:
-        // the builder's DTSTART is written floating (see event_builder.ts), which the rrule library
-        // reads as UTC, and a bare date would cut off before the day's own occurrence.
-        parts.push(`UNTIL=${ends.date.replaceAll("-", "")}T235959Z`);
+        // The end of the picked day rather than its midnight, so "until June 5th" keeps June 5th.
+        // Local time, like the DTSTART that `buildEvent()` writes: RFC 5545 requires the two to
+        // match, and FullCalendar reads the whole rule as UTC when UNTIL is in UTC.
+        parts.push(`UNTIL=${ends.date.replaceAll("-", "")}T235959`);
     } else if (ends.type === "count") {
         parts.push(`COUNT=${ends.count}`);
     }

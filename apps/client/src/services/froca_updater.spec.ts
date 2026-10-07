@@ -603,6 +603,8 @@ describe("froca_updater - attachment changes", () => {
             contentLength: 0
         });
         froca.attachments[att.attachmentId] = att;
+        froca.blobPromises["attachments-att-upd"] = Promise.resolve(null);
+        froca.blobPromises["attachments-other"] = Promise.resolve(null);
 
         await process([ec({
             entityName: "attachments",
@@ -620,6 +622,9 @@ describe("froca_updater - attachment changes", () => {
             } as any
         })]);
         expect(froca.attachments["att-upd"].title).toBe("new");
+        // The next read of its content fetches it again.
+        expect("attachments-att-upd" in froca.blobPromises).toBe(false);
+        expect("attachments-other" in froca.blobPromises).toBe(true);
     });
 
     it("creates a new attachment on its owner note when not previously loaded", async () => {

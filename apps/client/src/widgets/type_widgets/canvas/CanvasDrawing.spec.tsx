@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import type { ContentEditor } from "../../../services/content_renderer";
 import { buildNote } from "../../../test/easy-froca";
+import { getContentEmbedTools } from "../text/content_embed_tools";
 
 vi.mock("@excalidraw/excalidraw", () => ({ exportToSvg: vi.fn() }));
 vi.mock("./Canvas", () => ({ CanvasEditor: MockCanvasEditor }));
@@ -19,7 +20,7 @@ vi.mock("./persistence", () => ({
     getInlineFiles: () => ({})
 }));
 const { detailEditor, attachmentEditorMounts, canvasEditorMounts } = vi.hoisted(() => ({
-    detailEditor: { canEdit: () => true, release: () => {} },
+    detailEditor: { canEdit: () => true, release: vi.fn() },
     attachmentEditorMounts: vi.fn(),
     canvasEditorMounts: vi.fn()
 }));
@@ -500,7 +501,7 @@ describe("CanvasDrawing", () => {
         box.remove();
     });
 
-    async function mount(editor?: AttachmentEditor) {
+    async function mount(editor?: ContentEditor) {
         await act(async () => {
             render(<CanvasDrawing attachment={ATTACHMENT} editor={editor} />, box);
         });
@@ -533,7 +534,7 @@ describe("CanvasDrawing", () => {
     }
 
     it("follows the Editable toggle of its embed, saving all along", async () => {
-        const editor = { canEdit: () => true, release: vi.fn() } as unknown as AttachmentEditor;
+        const editor = { canEdit: () => true, release: vi.fn() } as unknown as ContentEditor;
         const embed = document.createElement("figure");
         embed.className = "include-note";
         embed.setAttribute("data-editable", "true");
@@ -542,6 +543,8 @@ describe("CanvasDrawing", () => {
 
         await mount(editor);
         expect(getEditingState()).toEqual({ isReadOnly: false, menu: true, tools: true });
+        // `CanvasEmbedTools`, not rendered by the mock editor, adds the only buttons.
+        expect(getContentEmbedTools(embed)).toBeNull();
 
         await setEmbedEditable(embed, false);
         expect(getEditingState()).toEqual({ isReadOnly: true, menu: false, tools: false });
@@ -554,7 +557,7 @@ describe("CanvasDrawing", () => {
 
         // An attachment that the note cannot save is read-only, with no toggle to offer.
         render(null, box);
-        await mount({ canEdit: () => false } as unknown as AttachmentEditor);
+        await mount({ canEdit: () => false } as unknown as ContentEditor);
         expect(getEditingState()).toEqual({ isReadOnly: true, menu: false, tools: undefined });
         expect(persistenceArgs).toHaveBeenLastCalledWith(
             ATTACHMENT, undefined, expect.anything(), expect.anything()
@@ -563,7 +566,7 @@ describe("CanvasDrawing", () => {
     });
 
     it("is editable outside an embed, which has no Editable toggle", async () => {
-        await mount({ canEdit: () => true, release: vi.fn() } as unknown as AttachmentEditor);
+        await mount({ canEdit: () => true, release: vi.fn() } as unknown as ContentEditor);
         expect(getEditingState()).toEqual({ isReadOnly: false, menu: true, tools: true });
     });
 
@@ -649,9 +652,9 @@ describe("CanvasDrawing", () => {
 
         await mountDetail("Owner");
         expect(getEditingState()).toEqual({ isReadOnly: false, menu: true, tools: undefined });
-        expect(persistenceArgs).toHaveBeenLastCalledWith(
-            ATTACHMENT, detailEditor, expect.anything(), expect.anything()
-        );
+        const detailDrawingEditor = persistenceArgs.mock.lastCall?.[1] as ContentEditor;
+        detailDrawingEditor.release();
+        expect(detailEditor.release).toHaveBeenCalledWith("a1");
 
         render(null, box);
         await mountDetail("Locked owner", { "#readOnly": "" });

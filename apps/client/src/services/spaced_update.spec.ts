@@ -270,6 +270,39 @@ describe("SpacedUpdate", () => {
             ]);
         });
 
+        it("reads a pending change at once when a save is asked for while another one runs", async () => {
+            const editor = { content: "first" };
+            const commits: string[] = [];
+            let finishFirstCommit = () => {};
+            const firstCommitDone = new Promise<void>((resolve) => {
+                finishFirstCommit = resolve;
+            });
+            const spacedUpdate = new SpacedUpdate<string>({
+                key: "A",
+                prepare: () => editor.content,
+                commit: async (data) => {
+                    commits.push(data);
+                    if (commits.length === 1) await firstCommitDone;
+                }
+            }, 50);
+
+            spacedUpdate.scheduleUpdate();
+            const firstSave = spacedUpdate.updateNowIfNecessary();
+            editor.content = "second";
+            spacedUpdate.scheduleUpdate();
+            const secondSave = spacedUpdate.updateNowIfNecessary();
+            // The editor goes away right after asking, as an unmounted one does.
+            editor.content = "gone";
+
+            // Unsaved until the commit that holds the change lands.
+            expect(spacedUpdate.hasUnsavedChanges()).toBe(true);
+            finishFirstCommit();
+            await firstSave;
+            await secondSave;
+            expect(commits).toEqual([ "first", "second" ]);
+            expect(spacedUpdate.hasUnsavedChanges()).toBe(false);
+        });
+
         it("retries a failed commit with the frozen snapshot, not the live state", async () => {
             const editor = { content: "typed into A" };
             const commits: string[] = [];
