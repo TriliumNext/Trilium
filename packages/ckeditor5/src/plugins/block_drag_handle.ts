@@ -1,6 +1,6 @@
 import {
     BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator,
-    type ModelElement, Plugin, Rect
+    type ModelElement, ModelLiveRange, type ModelRange, Plugin, Rect
 } from "ckeditor5";
 
 /**
@@ -167,34 +167,40 @@ export default class BlockDragHandle extends Plugin {
     private startDrag(domEvent: DragEvent) {
         const editor = this.editor;
         const model = editor.model;
+        const dragDrop = editor.plugins.get(DragDrop);
         const blocks = Array.from(model.document.selection.getSelectedBlocks(), getDraggedBlock);
         const firstBlock = blocks.at(0);
-        const lastBlock = blocks.at(-1);
-        if (editor.isReadOnly || !firstBlock || !lastBlock) {
+        // The outermost block that holds the last one, so that a collapsible moves whole even when
+        // the selection ends in its body.
+        const lastAncestors = blocks.at(-1)?.getAncestors({ includeSelf: true });
+        const lastBlock = blocks.find((block) => lastAncestors?.includes(block));
+        if (!dragDrop.isEnabled || !firstBlock || !lastBlock) {
             domEvent.preventDefault();
             return;
         }
 
         const range = model.createRange(
             model.createPositionBefore(firstBlock),
-            model.createPositionAfter(
-                lastBlock.getAncestors().includes(firstBlock) ? firstBlock : lastBlock
-            )
+            model.createPositionAfter(lastBlock)
         );
         model.change((writer) => writer.setSelection(range));
 
         this.isDragging = true;
         editor.editing.view.focus();
         editor.editing.view.getObserver(ClipboardObserver)?.onDomEvent(domEvent);
+        setDraggedRange(dragDrop, range);
     }
 
     /**
-     * Passes a `dragover` or `drop` to the editing view, 100px into the content from the pointer
-     * and within the editable, so the pointer can stay in the margin beside the blocks.
+     * Passes a `dragover` or `drop` in the margin beside the blocks, over an element that holds
+     * the editable, to the editing view: 100px into the content from the pointer and within the
+     * editable. The editing view takes a drop over the content itself, and another pane its own.
      */
     private forwardDrag(domEvent: DragEvent) {
         const domEditable = this.editor.ui.getEditableElement();
-        if (!this.isDragging || !domEditable) {
+        const pointedNode = domEvent.target;
+        if (!this.isDragging || !domEditable || !(pointedNode instanceof Node)
+            || !pointedNode.contains(domEditable)) {
             return;
         }
 
@@ -231,6 +237,16 @@ interface BlockTarget {
 /** The block that the handle drags for `block`: the whole collapsible for its title. */
 function getDraggedBlock(block: ModelElement) {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
+}
+
+/**
+ * Makes the drag that `dragDrop` started move `range`, which can span several containers.
+ * `DragDrop` widens the selection only to a parent that holds both of its ends.
+ */
+function setDraggedRange(dragDrop: DragDrop, range: ModelRange) {
+    const state = dragDrop as unknown as { _draggedRange: ModelLiveRange | null };
+    state._draggedRange?.detach();
+    state._draggedRange = ModelLiveRange.fromRange(range);
 }
 
 declare module "ckeditor5" {

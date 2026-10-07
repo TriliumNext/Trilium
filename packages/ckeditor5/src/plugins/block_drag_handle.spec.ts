@@ -1,9 +1,9 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor, env,
-    Essentials, Paragraph, Table, TableCaption
+    _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor, DragDrop,
+    env, Essentials, Paragraph, Table, TableCaption
 } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
 import BlockDragHandle from "./block_drag_handle.js";
@@ -83,23 +83,47 @@ describe("BlockDragHandle", () => {
         });
         expect(isAccepted).toBe(true);
         expect(editor.getData()).toBe("<p>second</p><p>third</p><p>first</p>");
+
+        // The editing view takes a drop over the content itself.
+        const firstBlockRect = getBlock(editor, 0).getBoundingClientRect();
+        drop(button, startDrag(button), {
+            clientX: firstBlockRect.left + 5,
+            clientY: firstBlockRect.top + 2
+        });
+        expect(editor.getData()).toBe("<p>first</p><p>second</p><p>third</p>");
     });
 
-    it("drags a whole collapsible from its title, with or without its body selected", async () => {
-        for (const [ title, body ] of [ [ "Ti[]tle", "body" ], [ "Ti[tle", "bo]dy" ] ]) {
-            const { editor, button } = await createEditor(`<details open="true"><summary>${title}`
-                + `</summary><paragraph>${body}</paragraph><paragraph>more</paragraph></details>`
-                + "<paragraph>after</paragraph>");
-            const editableRect = getEditable(editor).getBoundingClientRect();
-            const lastBlockRect = getBlock(editor, 1).getBoundingClientRect();
+    it("drags whole collapsibles from their titles, wherever the selection ends", async () => {
+        const toModel = (title: string, body: string) => (
+            `<details open="true"><summary>${title}</summary>${body}</details>`
+        );
+        const toData = (title: string, body: string) => "<details class=\"trilium-collapsible\""
+            + ` open=""><summary>${title}</summary>${body}</details>`;
+        const cases = [ {
+            modelData: toModel("Ti[]tle", "<paragraph>body</paragraph><paragraph>more</paragraph>"),
+            data: toData("Title", "<p>body</p><p>more</p>")
+        }, {
+            modelData: toModel("Ti[tle", "<paragraph>bo]dy</paragraph><paragraph>more</paragraph>"),
+            data: toData("Title", "<p>body</p><p>more</p>")
+        }, {
+            modelData: toModel("On[e", "<paragraph>first</paragraph>")
+                + toModel("Two", "<paragraph>sec]ond</paragraph><paragraph>more</paragraph>"),
+            data: toData("One", "<p>first</p>") + toData("Two", "<p>second</p><p>more</p>")
+        } ];
+        for (const { modelData, data } of cases) {
+            const { editor, button } = await createEditor(
+                `${modelData}<paragraph>after</paragraph>`
+            );
+            const editable = getEditable(editor);
+            const editableRect = editable.getBoundingClientRect();
+            const lastBlockRect = getBlock(editor, editable.childElementCount - 1)
+                .getBoundingClientRect();
 
             drop(button, startDrag(button), {
                 clientX: editableRect.left - 50,
                 clientY: lastBlockRect.bottom - 2
             });
-            expect(editor.getData()).toBe("<p>after</p>"
-                + "<details class=\"trilium-collapsible\" open=\"\"><summary>Title</summary>"
-                + "<p>body</p><p>more</p></details>");
+            expect(editor.getData()).toBe(`<p>after</p>${data}`);
         }
     });
 
@@ -125,6 +149,30 @@ describe("BlockDragHandle", () => {
         }
     });
 
+    it("leaves drops over another pane on either side to that pane", async () => {
+        const { editor, button } = await createEditor(
+            "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
+        );
+        const editableRect = getEditable(editor).getBoundingClientRect();
+        const lastBlockRect = getBlock(editor, 1).getBoundingClientRect();
+        const pane = document.createElement("div");
+        pane.style.setProperty("position", "fixed");
+        pane.style.setProperty("inset", "0 auto 0 0");
+        pane.style.setProperty("width", "40px");
+        document.body.append(pane);
+        onTestFinished(() => pane.remove());
+
+        for (const paneLeft of [ editableRect.left - 60, editableRect.right + 20 ]) {
+            pane.style.setProperty("left", `${paneLeft}px`);
+            const isAccepted = drop(button, startDrag(button), {
+                clientX: paneLeft + 20,
+                clientY: lastBlockRect.bottom - 2
+            });
+            expect(isAccepted).toBe(false);
+        }
+        expect(editor.getData()).toBe("<p>first</p><p>second</p>");
+    });
+
     it("mirrors the handle and its drops in a right-to-left editor", async () => {
         const { editor, button } = await createEditor(
             "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>",
@@ -141,7 +189,7 @@ describe("BlockDragHandle", () => {
         expect(editor.getData()).toBe("<p>second</p><p>first</p>");
     });
 
-    it("ignores other drags, and drags that start read-only or end off the editable", async () => {
+    it("ignores other drags, and drags that start disabled or end off the editable", async () => {
         const { editor, button } = await createEditor(
             "<paragraph>fi[]rst</paragraph><paragraph>second</paragraph>"
         );
@@ -155,13 +203,20 @@ describe("BlockDragHandle", () => {
         document.dispatchEvent(new DragEvent("dragover", textInit));
         document.dispatchEvent(new DragEvent("drop", textInit));
 
-        editor.enableReadOnlyMode("spec");
-        const readOnlyStart = new DragEvent("dragstart", {
-            bubbles: true, cancelable: true, dataTransfer: new DataTransfer()
-        });
-        button.dispatchEvent(readOnlyStart);
-        expect(readOnlyStart.defaultPrevented).toBe(true);
-        editor.disableReadOnlyMode("spec");
+        const dragDrop = editor.plugins.get(DragDrop);
+        const switches = [
+            [ () => editor.enableReadOnlyMode("spec"), () => editor.disableReadOnlyMode("spec") ],
+            [ () => dragDrop.forceDisabled("spec"), () => dragDrop.clearForceDisabled("spec") ]
+        ];
+        for (const [ disable, enable ] of switches) {
+            disable();
+            const disabledStart = new DragEvent("dragstart", {
+                bubbles: true, cancelable: true, dataTransfer: new DataTransfer()
+            });
+            button.dispatchEvent(disabledStart);
+            expect(disabledStart.defaultPrevented).toBe(true);
+            enable();
+        }
 
         const offEditable = { ...margin, clientY: editableRect.bottom + 50 };
         expect(drop(button, startDrag(button), offEditable)).toBe(false);
@@ -222,16 +277,20 @@ function startDrag(button: HTMLElement) {
     return dataTransfer;
 }
 
-/** Drags over `point`, drops there and ends the drag. Returns whether the dragover was accepted. */
+/**
+ * Drags over `point`, drops there and ends the drag, with the events on the element at `point`.
+ * Returns whether the dragover was accepted.
+ */
 function drop(
     button: HTMLElement,
     dataTransfer: DataTransfer,
     point: { clientX: number; clientY: number }
 ) {
+    const target = document.elementFromPoint(point.clientX, point.clientY) ?? document;
     const dropInit = { bubbles: true, cancelable: true, dataTransfer, ...point };
     const dragover = new DragEvent("dragover", dropInit);
-    document.dispatchEvent(dragover);
-    document.dispatchEvent(new DragEvent("drop", dropInit));
+    target.dispatchEvent(dragover);
+    target.dispatchEvent(new DragEvent("drop", dropInit));
     button.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer }));
     return dragover.defaultPrevented;
 }
