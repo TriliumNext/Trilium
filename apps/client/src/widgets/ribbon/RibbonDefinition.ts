@@ -4,16 +4,8 @@ import EditedNotesTab from "./EditedNotesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
-import SearchDefinitionTab from "./SearchDefinitionTab";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
-    {
-        title: t("search_definition.search_parameters"),
-        icon: "bx bx-search",
-        content: SearchDefinitionTab,
-        activate: true,
-        show: ({ note }) => note?.type === "search"
-    },
     {
         title: t("edited_notes.title"),
         icon: "bx bx-calendar-edit",

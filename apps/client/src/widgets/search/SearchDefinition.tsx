@@ -1,4 +1,4 @@
-import "./SearchDefinitionTab.css";
+import "./SearchDefinition.css";
 
 import { SaveSearchNoteResponse } from "@triliumnext/commons";
 import { useContext, useEffect, useState } from "preact/hooks";
@@ -22,10 +22,12 @@ import { useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import { ParentComponent } from "../react/react_utils";
 import ResponsiveContainer from "../react/ResponsiveContainer";
-import { TabContext } from "./ribbon-interface";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";
 
-export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabContext, "note" | "ntxId" | "hidden">) {
+export default function SearchDefinition({ note, ntxId }: {
+    note: FNote | null | undefined;
+    ntxId: string | null | undefined;
+}) {
     const parentComponent = useContext(ParentComponent);
     const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
     const [ error, setError ] = useState<{ message: string }>();
@@ -71,7 +73,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
     return (
         <div className="search-definition-widget">
             <div className="search-settings">
-                {note && !hidden && (
+                {note && (
                     <table className="search-setting-table">
                         <tbody>
                             <tr>

@@ -13,7 +13,7 @@ import server from "../services/server";
 import { AttributeNameSuggestion, fetchAttributeNames } from "./attribute_widgets/attribute_detail";
 import { AutocompleteList } from "./react/FormAutocomplete";
 import { CommandMentionList, createHostedList, filterCommandEntries, NoteMentionList } from "./react/NoteAutocomplete";
-import { type SearchCompletion, searchCompletionAt, type SearchEntry } from "./ribbon/search_completions";
+import { type SearchCompletion, searchCompletionAt, type SearchEntry } from "./search/search_completions";
 
 /** The class the styles in `search_field_editor.css` are scoped under. */
 export const SEARCH_FIELD_EDITOR_CLASS = "search-string-editor";

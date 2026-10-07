@@ -11,7 +11,7 @@ import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsib
 import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import { NewNoteLink } from "../react/NoteLink";
 import { useEditedNotes } from "../ribbon/EditedNotesTab";
-import SearchDefinitionTab from "../ribbon/SearchDefinitionTab";
+import SearchDefinition from "../search/SearchDefinition";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
 
 export default function NoteTitleActions() {
@@ -34,7 +34,7 @@ function SearchProperties({ note, ntxId }: { note: FNote | null | undefined, ntx
             title={t("search_definition.search_parameters")}
             initiallyExpanded={note.isInHiddenSubtree()} // not saved searches
         >
-            <SearchDefinitionTab note={note} ntxId={ntxId} hidden={false} />
+            <SearchDefinition note={note} ntxId={ntxId} />
         </Collapsible>
     );
 }

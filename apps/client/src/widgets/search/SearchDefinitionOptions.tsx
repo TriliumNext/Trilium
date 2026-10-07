@@ -165,7 +165,7 @@ function SearchStringOption({ note, refreshResults, error, ...restProps }: Searc
     }
     const spacedUpdate = spacedUpdateRef.current;
 
-    // The ribbon reuses this component across note switches, so rebind on every render: `rebind`
+    // `SearchDefinition` stays mounted across note switches, so rebind on every render: `rebind`
     // snapshots a still-pending change against the previous note rather than the new one (#9614).
     useEffect(() => {
         spacedUpdate.rebind(note.noteId, prepare, commit);

@@ -14,7 +14,7 @@ vi.mock("./search_completions", () => ({
 }));
 
 describe("SearchStringEditor", () => {
-    it("replaces the document when the ribbon switches notes, focused or not", async () => {
+    it("replaces the document when the search definition switches notes, focused or not", async () => {
         const onChange = vi.fn();
         const { container, editor } = await mount({ noteId: "search1", currentValue: "#book", onChange });
 
