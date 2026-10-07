@@ -4,8 +4,6 @@ import { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
 import { VNode } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import { EventData, EventNames } from "../components/app_context";
-import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import froca from "../services/froca";
@@ -23,10 +21,7 @@ import RawHtml from "./react/RawHtml";
 
 export interface FloatingButtonContext {
     note: FNote;
-    noteContext: NoteContext;
     isDefaultViewMode: boolean;
-    /** Shorthand for triggering an event from the parent component. The `ntxId` is automatically handled for convenience. */
-    triggerEvent<T extends EventNames>(name: T, data?: Omit<EventData<T>, "ntxId">): void;
 }
 
 function FloatingButton({ className, ...props }: ActionButtonProps) {
@@ -40,7 +35,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    ExportSpreadsheetButton,
     InAppHelpButton,
     Backlinks
 ];
@@ -51,24 +45,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function ExportSpreadsheetButton({ note, triggerEvent, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = note?.type === "spreadsheet" && note?.isContentAvailable() && isDefaultViewMode;
-    return isEnabled && (
-        <>
-            <FloatingButton
-                icon="bx bxs-spreadsheet"
-                text={t("spreadsheet.export-xlsx")}
-                onClick={() => triggerEvent("exportXlsx")}
-            />
-            <FloatingButton
-                icon="bx bxs-spreadsheet"
-                text={t("spreadsheet.export-csv")}
-                onClick={() => triggerEvent("exportCsv")}
-            />
-        </>
-    );
-}
 
 function InAppHelpButton({ note }: FloatingButtonContext) {
     const helpUrl = getHelpUrlForNote(note);
