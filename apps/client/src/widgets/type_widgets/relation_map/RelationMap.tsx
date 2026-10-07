@@ -16,7 +16,7 @@ import server from "../../../services/server";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useContextualShortcutHints, useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks";
+import { useContextualShortcutHints, useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard, ZOOM_PAN_HINTS } from "../../react/zoom_pan_keyboard";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
@@ -92,7 +92,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
     });
 
     const boxesRef = useRef<Map<string, Box>>(new Map());
-    const mapZoom = useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes: () => boxesRef.current.values() });
+    const mapZoom = useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes: () => boxesRef.current.values() });
     const { getScale } = mapZoom;
     const [ selection, setSelection ] = useState<PaneSelection | null>(null);
     const noteIdsOnMap = useMemo(() => data?.notes.map((entry) => entry.noteId) ?? [], [ data ]);
@@ -103,8 +103,12 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
         note,
         ntxId,
         mapApiRef,
-        // Closes the pane, which covers part of the map where the note might be placed.
-        onArm: () => paneRef.current?.close(),
+        // Closes the pane, which covers part of the map where the note might be placed, and takes
+        // the focus from the toolbar button so the keyboard still pans and zooms the map.
+        onArm: () => {
+            paneRef.current?.close();
+            mapZoom.focus();
+        },
         onCreated: (noteId) => setSelection({ noteId, isNew: true })
     });
     const clickProps = useCanvasClicks({
@@ -224,7 +228,8 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
  * 100%, and `fit` shows all of `getBoxes()` at once. The wheel zooms without the map being
  * focused, since the map fills its pane and has no page to scroll.
  */
-export function useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes }: {
+export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes }: {
+    ntxId: string | null | undefined;
     /** The focusable element the keyboard and the wheel act on. */
     viewport: HTMLDivElement | null;
     loadedTransform: MapTransform | undefined;
@@ -263,7 +268,13 @@ export function useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes }: {
         if (fitted) ref.current?.setTransform(fitted.x, fitted.y, fitted.scale, REVEAL_ANIMATION_MS);
     }, [ ref, viewport, getBoxes ]);
 
-    return { ...zoom, onTransform, getScale, moveBy, reset, fit };
+    // Focuses the viewport, so the keyboard pans and zooms the map.
+    const focus = useCallback(() => viewport?.focus({ preventScroll: true }), [ viewport ]);
+    useTriliumEvent("focusOnDetail", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId === ntxId) focus();
+    });
+
+    return { ...zoom, onTransform, getScale, moveBy, reset, fit, focus };
 }
 
 /**

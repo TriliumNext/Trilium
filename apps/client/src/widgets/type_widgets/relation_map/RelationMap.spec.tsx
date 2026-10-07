@@ -28,6 +28,8 @@ vi.mock("react-zoom-pan-pinch", () => ({
     TransformComponent: (props: { children?: ComponentChildren }) => <div>{props.children}</div>
 }));
 
+import Component from "../../../components/component";
+import { ParentComponent } from "../../react/react_utils";
 import type RelationMapApi from "./api";
 import type { MapTransform } from "./api";
 import { MapViewport, useCanvasClicks, useMapZoom, useRevealSelectedBox } from "./RelationMap";
@@ -237,6 +239,7 @@ describe("relation map zoom", () => {
     const setTransform = vi.fn();
     let boxes = [ { x: 0, y: 0, width: 1840, height: 100 } ];
     let zoom: ReturnType<typeof useMapZoom> | undefined;
+    const component = new Component();
 
     afterEach(() => {
         if (container) {
@@ -250,7 +253,7 @@ describe("relation map zoom", () => {
     function Harness({ loadedTransform }: { loadedTransform: MapTransform }) {
         const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
         const mapApiRef = useRef({ setTransform } as unknown as RelationMapApi);
-        zoom = useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes: () => boxes });
+        zoom = useMapZoom({ ntxId: "map", viewport, loadedTransform, mapApiRef, getBoxes: () => boxes });
         return <MapViewport zoom={zoom} viewportRef={setViewport}><div className="note-box" /></MapViewport>;
     }
 
@@ -258,7 +261,7 @@ describe("relation map zoom", () => {
         container = document.createElement("div");
         document.body.appendChild(container);
         act(() => render(
-            <Harness loadedTransform={loadedTransform} />,
+            <ParentComponent.Provider value={component}><Harness loadedTransform={loadedTransform} /></ParentComponent.Provider>,
             container as HTMLElement));
     }
 
@@ -302,6 +305,22 @@ describe("relation map zoom", () => {
         boxes = [];
         run("fit");
         expect(state()).toEqual({ positionX: 40, positionY: 251, scale: 0.5 });
+    });
+
+    it("takes the focus when its own note context asks for it, and when told to", () => {
+        mount({ x: 0, y: 0, scale: 1 });
+        const viewport = container?.querySelector(".relation-map-viewport");
+        const blur = () => act(() => { (document.activeElement as HTMLElement | null)?.blur(); });
+
+        act(() => { component.handleEvent("focusOnDetail", { ntxId: "other" }); });
+        expect(document.activeElement).not.toBe(viewport);
+
+        act(() => { component.handleEvent("focusOnDetail", { ntxId: "map" }); });
+        expect(document.activeElement).toBe(viewport);
+
+        blur();
+        act(() => zoom?.focus());
+        expect(document.activeElement).toBe(viewport);
     });
 
     it("steps the zoom", () => {
