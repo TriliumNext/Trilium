@@ -1,8 +1,12 @@
-.ck-editor__editable .trilium-tabs {
+/* Saved HTML without a marked tab, such as a preview, reads as a sequence of titled sections. */
+:is(.ck-editor__editable, .ck-content) .trilium-tabs:has(> .trilium-tab--active) {
     --_tabs-background: var(--card-background-color,
                             var(--accented-background-color, var(--ck-color-base-foreground)));
+    --_tabs-inactive-background: color-mix(in srgb, var(--_tabs-background), transparent 80%);
     --_tabs-delimiter-width: 2px;
     --_tabs-border-radius: 8px;
+    --_tabs-active-title-color: var(--main-text-color, currentColor);
+    --_tabs-title-color: color-mix(in srgb, var(--_tabs-active-title-color), transparent 50%);
 
     display: flex;
     flex-wrap: wrap;
@@ -22,23 +26,14 @@
         margin: 0 0 var(--_tabs-delimiter-width);
         padding: 6px 1rem;
         border-radius: var(--_tabs-border-radius) var(--_tabs-border-radius) 0 0;
-        background: var(--_tabs-background);
-        color: var(--muted-text-color, inherit);
+        background: var(--_tabs-inactive-background);
+        color: var(--_tabs-title-color);
+        font-weight: 500;
         cursor: pointer;
-        transition: color 200ms ease-out;
+        transition: color 200ms ease-out, background-color 200ms ease-out;
 
         &:hover {
-            color: inherit;
-        }
-
-        /* CKEditor positions the placeholder absolutely, so it does not size the title. */
-        &.ck-placeholder::after {
-            content: attr(data-placeholder);
-            display: block;
-            height: 0;
-            overflow: hidden;
-            visibility: hidden;
-            white-space: nowrap;
+            color: var(--_tabs-active-title-color);
         }
     }
 
@@ -51,6 +46,10 @@
         border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
         background: var(--_tabs-background);
 
+        & > :first-child {
+            margin-top: 0;
+        }
+
         & > :last-child {
             margin-bottom: 0;
         }
@@ -60,8 +59,8 @@
         & > .trilium-tab-title {
             margin-bottom: 0;
             padding-bottom: calc(6px + var(--_tabs-delimiter-width));
-            color: inherit;
-            font-weight: 600;
+            background: var(--_tabs-background);
+            color: var(--_tabs-active-title-color);
             cursor: text;
         }
 
@@ -69,4 +68,21 @@
             display: block;
         }
     }
+}
+
+.ck-editor__editable .trilium-tabs > .trilium-tab > .trilium-tab-title {
+    /* CKEditor positions the placeholder absolutely, so it does not size the title. */
+    &.ck-placeholder::after {
+        content: attr(data-placeholder);
+        display: block;
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+        white-space: nowrap;
+    }
+}
+
+.ck-content:not(.ck-editor__editable) .trilium-tabs > .trilium-tab > .trilium-tab-title:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color, var(--ck-color-focus-border));
+    outline-offset: -2px;
 }
