@@ -5,10 +5,10 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import froca from "../services/froca.js";
-import server from "../services/server.js";
-import { buildNote } from "../test/easy-froca.js";
-import { BacklinksList } from "./FloatingButtonsDefinitions.js";
+import froca from "../../services/froca.js";
+import server from "../../services/server.js";
+import { buildNote } from "../../test/easy-froca.js";
+import { BacklinksList } from "./Backlinks.js";
 
 let container: HTMLDivElement;
 

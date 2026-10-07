@@ -10,8 +10,6 @@ import { t } from "../../services/i18n";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
-import FloatingButtons from "../FloatingButtons";
-import { DESKTOP_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
 import FormattingToolbar from "../layout/FormattingToolbar";
 import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
 import TitleRow from "../layout/TitleRow";
@@ -181,7 +179,6 @@ export default function PopupEditor() {
                         ? <MobileEditorToolbar inPopupEditor />
                         : <FormattingToolbar />}
 
-                    <FloatingButtons items={isMobile ? [] : DESKTOP_FLOATING_BUTTONS} />
                     <NoteDetail />
                     <NoteList media="screen" displayOnlyCollections />
                     {switchable && <NoteTypeSwitcher note={noteContext.note} />}

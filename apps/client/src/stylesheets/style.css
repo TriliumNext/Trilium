@@ -2388,12 +2388,6 @@ body.electron:not(.platform-darwin) .tab-row-container {
     color: var(--hover-item-text-color);
 }
 
-.note-split.type-geoMap .floating-buttons-children {
-    background: var(--main-background-color);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    border-radius: 4px;
-}
-
 body.zen {
     --tab-bar-height: 0;
 }
@@ -2412,7 +2406,6 @@ body.zen .note-badges > *:not(.read-only-badge),
 body.zen .note-actions-bar,
 body.zen .inline-title,
 body.zen .promoted-attributes-widget,
-body.zen .floating-buttons-children > *,
 body.zen .action-button,
 body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
 body.zen .note-split:not(.type-book) .note-list-widget {
@@ -2444,20 +2437,6 @@ body.zen .title-row {
     padding-inline-start: env(titlebar-area-x);
     padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
     border-bottom: none !important;
-}
-
-body.zen .floating-buttons {
-    top: -10px;
-}
-
-body.zen .floating-buttons-children {
-    inset-inline-end: 0;
-}
-
-body.zen .floating-buttons-children .button-widget {
-    width: var(--zen-button-size);
-    height: var(--zen-button-size);
-    padding: 0;
 }
 
 body.zen .note-title-widget,

@@ -21,7 +21,6 @@ import AttributeEditor, { AttributeEditorImperativeHandlers } from "../attribute
 import AttributeHelp from "../attribute_widgets/AttributeHelp";
 import InheritedAttributes from "../attribute_widgets/InheritedAttributes";
 import { ContentLanguagesModal, useLanguageSwitcher } from "../dialogs/content_languages";
-import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import Dropdown, { type DropdownHandle, DropdownPanel, type DropdownPanelProps } from "../react/Dropdown";
 import { FormDropdownDivider, FormListHeader, FormListItem } from "../react/FormList";
 import HelpDropdown from "../react/HelpDropdown";
@@ -31,6 +30,7 @@ import LinkButton from "../react/LinkButton";
 import NoItems from "../react/NoItems";
 import NoteLink from "../react/NoteLink";
 import { ParentComponent } from "../react/react_utils";
+import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
 import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import type { RightPaneTabId } from "../sidebar/RightPaneTabs";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";

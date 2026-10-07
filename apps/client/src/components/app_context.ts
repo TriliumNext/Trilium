@@ -180,7 +180,6 @@ export type CommandMappings = {
     openNoteInNewSplit: CommandData;
     openNoteInNewWindow: CommandData;
     openAboutDialog: CommandData;
-    hideFloatingButtons: {};
     hideLeftPane: CommandData;
     showCpuArchWarning: CommandData;
     showLeftPane: CommandData;

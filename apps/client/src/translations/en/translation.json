@@ -1239,9 +1239,6 @@
     "esc_hint": "to close"
   },
   "zpetne_odkazy": {
-    "backlink_one": "{{count}} Backlink",
-    "backlink_other": "{{count}} Backlinks",
-    "relation": "relation",
     "no_backlinks": "No notes link to this one."
   },
   "mobile_detail_menu": {

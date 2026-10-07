@@ -100,10 +100,6 @@ vi.mock("../react/Modal", () => ({
 // The popup's body: each is exercised by its own spec, and none of it decides what the popup shows.
 vi.mock("../NoteDetail", () => ({ default: () => <div className="note-detail-stub" /> }));
 vi.mock("../collections/NoteList", () => ({ default: () => null }));
-vi.mock("../FloatingButtons", () => ({ default: () => null }));
-vi.mock("../FloatingButtonsDefinitions", () => ({
-    DESKTOP_FLOATING_BUTTONS: []
-}));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
 vi.mock("../layout/NoteTypeSwitcher", () => ({

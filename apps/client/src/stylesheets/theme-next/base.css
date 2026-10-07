@@ -66,11 +66,6 @@
 
     --center-pane-border-radius: 10px;
 
-    --floating-button-height: 34px;
-    --floating-button-width: 40px;
-    --floating-button-icon-size: 20px;
-    --floating-button-show-hide-button-size: 26px;
-
     --overlay-button-height: 28px;
     --overlay-button-border-radius: 6px;
     --overlay-button-background: var(--opaque-icon-button-background);
