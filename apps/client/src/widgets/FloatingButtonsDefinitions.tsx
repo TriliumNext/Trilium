@@ -8,12 +8,9 @@ import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import froca from "../services/froca";
 import { t } from "../services/i18n";
-import { getHelpUrlForNote } from "../services/in_app_help";
 import LoadResults from "../services/load_results";
 import { sanitizeNoteContentHtml } from "../services/sanitize_content";
 import server from "../services/server";
-import { openInAppHelpFromUrl } from "../services/utils";
-import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { useTriliumEvent, useWindowSize } from "./react/hooks";
 import NoItems from "./react/NoItems";
 import NoteLink from "./react/NoteLink";
@@ -24,40 +21,11 @@ export interface FloatingButtonContext {
     isDefaultViewMode: boolean;
 }
 
-function FloatingButton({ className, ...props }: ActionButtonProps) {
-    return <ActionButton
-        className={`floating-button ${className ?? ""}`}
-        noIconActionClass
-        {...props}
-    />;
-}
-
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    InAppHelpButton,
     Backlinks
 ];
-
-/**
- * Floating buttons that should be hidden in popup editor (Quick edit).
- */
-export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
-    InAppHelpButton
-];
-
-function InAppHelpButton({ note }: FloatingButtonContext) {
-    const helpUrl = getHelpUrlForNote(note);
-    const isEnabled = note.type !== "book" && !!helpUrl;
-
-    return isEnabled && (
-        <FloatingButton
-            icon="bx bx-help-circle"
-            text={t("help-button.title")}
-            onClick={() => helpUrl && openInAppHelpFromUrl(helpUrl)}
-        />
-    );
-}
 
 function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
     const [ popupOpen, setPopupOpen ] = useState(false);

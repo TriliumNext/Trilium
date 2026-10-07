@@ -1,7 +1,7 @@
 import "./PopupEditor.css";
 
 import { ComponentChildren } from "preact";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
@@ -11,7 +11,7 @@ import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FloatingButtons from "../FloatingButtons";
-import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
+import { DESKTOP_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
 import FormattingToolbar from "../layout/FormattingToolbar";
 import NoteTypeSwitcher from "../layout/NoteTypeSwitcher";
 import TitleRow from "../layout/TitleRow";
@@ -36,10 +36,6 @@ export default function PopupEditor() {
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_popup-editor"));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
-    const items = useMemo(() => {
-        const baseItems = isMobile ? [] : DESKTOP_FLOATING_BUTTONS;
-        return baseItems.filter(item => !POPUP_HIDDEN_FLOATING_BUTTONS.includes(item));
-    }, [ isMobile ]);
 
     useTriliumEvent("openInPopup", async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
@@ -185,7 +181,7 @@ export default function PopupEditor() {
                         ? <MobileEditorToolbar inPopupEditor />
                         : <FormattingToolbar />}
 
-                    <FloatingButtons items={items} />
+                    <FloatingButtons items={isMobile ? [] : DESKTOP_FLOATING_BUTTONS} />
                     <NoteDetail />
                     <NoteList media="screen" displayOnlyCollections />
                     {switchable && <NoteTypeSwitcher note={noteContext.note} />}

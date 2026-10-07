@@ -102,8 +102,7 @@ vi.mock("../NoteDetail", () => ({ default: () => <div className="note-detail-stu
 vi.mock("../collections/NoteList", () => ({ default: () => null }));
 vi.mock("../FloatingButtons", () => ({ default: () => null }));
 vi.mock("../FloatingButtonsDefinitions", () => ({
-    DESKTOP_FLOATING_BUTTONS: [ "kept", "hidden" ],
-    POPUP_HIDDEN_FLOATING_BUTTONS: [ "hidden" ]
+    DESKTOP_FLOATING_BUTTONS: []
 }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
