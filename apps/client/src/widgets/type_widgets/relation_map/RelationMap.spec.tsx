@@ -7,11 +7,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // A stand-in for the zoom library, which needs real layout: it applies a transform at once and
 // reports it, as the library does once an animation ends.
-const { wrapperProps, pasteNotes } = vi.hoisted(() => ({
+const { wrapperProps, pasteNotes, createNote } = vi.hoisted(() => ({
     wrapperProps: { current: null as Record<string, unknown> | null },
-    pasteNotes: vi.fn<(note: unknown, data?: DataTransfer | null) => Promise<string[]>>()
+    pasteNotes: vi.fn<(note: unknown, data?: DataTransfer | null) => Promise<string[]>>(),
+    createNote: vi.fn<(parentNotePath: string, options: object) => Promise<{ note: { noteId: string } | null }>>()
 }));
 vi.mock("../../../services/note_paste", () => ({ pasteNotes }));
+vi.mock("../../../services/note_create", () => ({ default: { createNote } }));
 vi.mock("react-zoom-pan-pinch", () => ({
     TransformWrapper: forwardRef((props: { children?: ComponentChildren; onTransform?(ref: unknown, state: object): void }, ref) => {
         wrapperProps.current = props;
@@ -38,7 +40,7 @@ import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import type RelationMapApi from "./api";
 import type { MapTransform } from "./api";
-import { MapViewport, useCanvasClicks, useMapPaste, useMapZoom, useRevealSelectedBox } from "./RelationMap";
+import { MapViewport, useCanvasClicks, useMapPaste, useMapZoom, useNotePlacement, useRevealSelectedBox } from "./RelationMap";
 import { noteIdToId } from "./utils";
 
 describe("relation map canvas clicks", () => {
@@ -345,6 +347,7 @@ describe("relation map paste", () => {
     let mapNote: FNote;
     const addMultipleNotes = vi.fn();
     let pasteAt: ReturnType<typeof useMapPaste>["pasteAt"] | undefined;
+    let mapApiRef: { current: RelationMapApi | null } = { current: null };
 
     beforeEach(() => {
         addMultipleNotes.mockClear();
@@ -366,8 +369,9 @@ describe("relation map paste", () => {
     function Harness({ isReadOnly }: { isReadOnly: boolean }) {
         const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
         const containerRef = useRef<HTMLDivElement>(null);
-        const mapApiRef = useRef({ addMultipleNotes } as unknown as RelationMapApi);
-        const paste = useMapPaste({ note: mapNote, isReadOnly, viewport, containerRef, mapApiRef, getScale: () => 2 });
+        const apiRef = useRef({ addMultipleNotes } as unknown as RelationMapApi);
+        mapApiRef = apiRef;
+        const paste = useMapPaste({ note: mapNote, isReadOnly, viewport, containerRef, mapApiRef: apiRef, getScale: () => 2 });
         pasteAt = paste.pasteAt;
         return (
             <div className="wrapper" onMouseMove={paste.followPointer} onMouseLeave={paste.forgetPointer}>
@@ -435,6 +439,20 @@ describe("relation map paste", () => {
         expect(addMultipleNotes.mock.calls.at(-1)).toEqual(placed(20, 85));
     });
 
+    it("drops a paste whose map was replaced by another while the clipboard was read", async () => {
+        const { viewport } = mount();
+        const otherMap = vi.fn();
+        let finish: (noteIds: string[]) => void = () => {};
+        pasteNotes.mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+
+        const pasted = paste(viewport);
+        mapApiRef.current = { addMultipleNotes: otherMap } as unknown as RelationMapApi;
+        finish([ "first" ]);
+        await pasted;
+
+        expect([ addMultipleNotes, otherMap ].map((mock) => mock.mock.calls.length)).toEqual([ 0, 0 ]);
+    });
+
     it("leaves a paste into the note pane to it, and pastes nothing onto a read-only map or from an empty clipboard", async () => {
         const { editor } = mount();
         const event = await paste(editor);
@@ -451,5 +469,61 @@ describe("relation map paste", () => {
         const { viewport } = mount(true);
         await paste(viewport);
         expect(pasteNotes).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("relation map placement", () => {
+    let container: HTMLElement | undefined;
+    let placement: ReturnType<typeof useNotePlacement> | undefined;
+    let mapApiRef: { current: RelationMapApi | null } = { current: null };
+    const createItem = vi.fn();
+    const onCreated = vi.fn();
+
+    beforeEach(() => {
+        for (const mock of [ createItem, onCreated, createNote ]) mock.mockReset();
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        const note = buildNote({ id: "map", title: "Map" });
+
+        function Harness() {
+            const containerRef = useRef<HTMLDivElement>(null);
+            const apiRef = useRef({ createItem } as unknown as RelationMapApi);
+            mapApiRef = apiRef;
+            placement = useNotePlacement({
+                ntxId: "map", note, containerRef, getScale: () => 1, mapApiRef: apiRef, onArm: () => {}, onCreated
+            });
+            return <div ref={containerRef} />;
+        }
+        act(() => render(<Harness />, container as HTMLElement));
+    });
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    /** Places a note, with the map replaced by another while the note is created when `switchMap`. */
+    async function place(switchMap: boolean) {
+        let finish: (result: { note: { noteId: string } }) => void = () => {};
+        createNote.mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+        await act(async () => {
+            const placed = placement?.placeAt(new MouseEvent("click", { clientX: 200, clientY: 100 }));
+            if (switchMap) mapApiRef.current = { createItem: vi.fn() } as unknown as RelationMapApi;
+            finish({ note: { noteId: "created" } });
+            await placed;
+        });
+    }
+
+    it("puts the created note on the map, unless the map was replaced by another meanwhile", async () => {
+        await place(false);
+        expect(createItem).toHaveBeenCalledWith({ noteId: "created", x: 120, y: 85 });
+        expect(onCreated).toHaveBeenCalledWith("created");
+
+        await place(true);
+        expect(createItem).toHaveBeenCalledTimes(1);
+        expect(onCreated).toHaveBeenCalledTimes(1);
     });
 });

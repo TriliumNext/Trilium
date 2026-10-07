@@ -439,7 +439,7 @@ function useBoxes(notes: MapDataNoteEntry[] | undefined, dragged: MapDataNoteEnt
  * the default title (or the map's `#titleTemplate`), and the pane opens on it with the title
  * selected.
  */
-function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onArm, onCreated }: {
+export function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onArm, onCreated }: {
     ntxId: string | null | undefined;
     note: FNote;
     containerRef: RefObject<HTMLDivElement | null>;
@@ -501,6 +501,8 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
         // Leaves placement mode first, so the map does not stay in it if creating the note fails.
         setPlacing(false);
         const position = boxPositionAt(e, container, getScale());
+        // Another map loaded into this component while the note is created replaces the API.
+        const mapApi = mapApiRef.current;
 
         const { note: created } = await note_create.createNote(note.noteId, {
             content: "",
@@ -508,9 +510,9 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
             activate: false,
             isProtected: note.isProtected
         });
-        if (!created || !mapApiRef.current) return;
+        if (!created || !mapApi || mapApiRef.current !== mapApi) return;
 
-        mapApiRef.current.createItem({ noteId: created.noteId, ...position });
+        mapApi.createItem({ noteId: created.noteId, ...position });
         onCreated(created.noteId);
     }, [ note, containerRef, getScale, mapApiRef, onCreated ]);
 
@@ -536,16 +538,17 @@ export function useMapPaste({ note, isReadOnly, viewport, containerRef, mapApiRe
     const pointerRef = useRef<{ clientX: number; clientY: number }>(null);
 
     const paste = useCallback(async (at: { clientX: number; clientY: number } | null, data?: DataTransfer | null) => {
+        const mapApi = mapApiRef.current;
         const noteIds = await pasteNotes(note, data);
         const container = containerRef.current;
-        if (!noteIds.length || !container) return;
+        if (!noteIds.length || !container || !mapApi || mapApiRef.current !== mapApi) return;
 
         const rect = viewport?.getBoundingClientRect();
         const point = at ?? (rect ? { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 } : null);
         if (!point) return;
 
         const notes = froca.getNotesFromCache(noteIds, true);
-        mapApiRef.current?.addMultipleNotes(layOutBoxes(notes, boxPositionAt(point, container, getScale())));
+        mapApi.addMultipleNotes(layOutBoxes(notes, boxPositionAt(point, container, getScale())));
     }, [ note, viewport, containerRef, mapApiRef, getScale ]);
 
     useEffect(() => {
