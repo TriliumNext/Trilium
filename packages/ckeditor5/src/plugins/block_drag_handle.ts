@@ -37,15 +37,17 @@ export default class BlockDragHandle extends Plugin {
             tooltip: true,
             isToggleable: false
         });
+        buttonView.extendTemplate({
+            attributes: { draggable: "true" },
+            on: {
+                dragstart: buttonView.bindTemplate.to((domEvent) => {
+                    this.startDrag(domEvent as DragEvent);
+                })
+            }
+        });
         buttonView.on("execute", () => editor.editing.view.focus());
         editor.ui.view.body.add(buttonView);
         this.buttonView = buttonView;
-
-        const element = buttonView.element;
-        if (!element) {
-            return;
-        }
-        element.setAttribute("draggable", "true");
 
         this.listenTo(editor.ui, "update", () => this.update());
         this.listenTo(editor, "change:isReadOnly", () => this.update(), { priority: "low" });
@@ -57,9 +59,6 @@ export default class BlockDragHandle extends Plugin {
             usePassive: true
         });
 
-        this.domEmitter.listenTo(element, "dragstart", (_evt, domEvent: DragEvent) => {
-            this.startDrag(domEvent);
-        });
         this.domEmitter.listenTo(document, "dragover", (_evt, domEvent: DragEvent) => {
             this.forwardDrag(domEvent);
         });
