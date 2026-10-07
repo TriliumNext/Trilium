@@ -1,4 +1,8 @@
 .note-detail-relation-map .note-box {
+    /* Darker than on a board: the cards stand on the bare note background, not in a column. */
+    --board-item-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --board-item-hover-shadow: 0 2px 7px rgba(0, 0, 0, 0.22);
+
     position: absolute !important;
     z-index: 4;
     display: flex;
