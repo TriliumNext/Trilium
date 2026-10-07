@@ -66,6 +66,25 @@ export default class TabsEditing extends Plugin {
         return first?.is("element", ELEMENTS.tab) ? first : null;
     }
 
+    /** Shows every tab that encloses `position`, without moving the selection. */
+    public showTabsAround(position: ModelPosition | null | undefined) {
+        const blocks = new Set<ModelElement>();
+        this.activateTabsAround(position, blocks);
+        if (blocks.size) {
+            this.updateActiveClasses(blocks);
+        }
+    }
+
+    /**
+     * Shows every tab that encloses `domNode`, a node of the editing view such as a link target,
+     * without moving the selection.
+     */
+    public showTabsAroundDomNode(domNode: Node) {
+        const editing = this.editor.editing;
+        const viewPosition = editing.view.domConverter.domPositionToView(domNode, 0);
+        this.showTabsAround(viewPosition ? editing.mapper.toModelPosition(viewPosition) : null);
+    }
+
     private isActiveTab(tab: ModelElement) {
         const tabs = tab.parent;
         return !!tabs?.is("element", ELEMENTS.tabs) && this.getActiveTab(tabs) === tab;
@@ -271,11 +290,7 @@ export default class TabsEditing extends Plugin {
         }
 
         this.listenTo(state, "change:highlightedResult", (_evt, _name, highlighted) => {
-            const blocks = new Set<ModelElement>();
-            this.activateTabsAround(highlighted?.marker?.getStart(), blocks);
-            if (blocks.size) {
-                this.updateActiveClasses(blocks);
-            }
+            this.showTabsAround(highlighted?.marker?.getStart());
         });
     }
 

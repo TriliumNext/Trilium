@@ -1,6 +1,7 @@
 import {
     _getModelData as getModelData,
     _setModelData as setModelData,
+    Bookmark,
     ClassicEditor,
     Essentials,
     FindAndReplaceEditing,
@@ -10,6 +11,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import Tabs from "./tabs.js";
+import { revealTab } from "./tabs_read_only.js";
 
 const TWO_TABS =
     "<div class=\"trilium-tabs\">" +
@@ -28,7 +30,7 @@ describe("Tabs", () => {
         document.body.appendChild(domElement);
         editor = await ClassicEditor.create(domElement, {
             licenseKey: "GPL",
-            plugins: [Essentials, FindAndReplaceEditing, Paragraph, Tabs]
+            plugins: [Bookmark, Essentials, FindAndReplaceEditing, Paragraph, Tabs]
         });
     });
 
@@ -153,6 +155,31 @@ describe("Tabs", () => {
 
         editor.execute("findPrevious");
         expect(activeTitles()).toEqual(["Linux"]);
+    });
+
+    it("shows the tab holding a link target without moving the caret", () => {
+        editor.setData(TWO_TABS);
+        const windowsPanel = (tabsElement().getChild(0) as ModelElement).getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windowsPanel, 0));
+        const caret = getModelData(editor.model);
+
+        const target = [...editor.editing.view.getDomRoot()?.querySelectorAll("p") ?? []]
+            .find(paragraph => paragraph.textContent === "Use the package.");
+        expect(target).toBeDefined();
+        revealTab(target as Element);
+
+        expect(activeTitles()).toEqual(["Linux"]);
+        expect(getModelData(editor.model)).toBe(caret);
+
+        editor.setData(TWO_TABS.replace("Run the installer.", "<a id=\"install\"></a>Run the installer."));
+        const linux = tabsElement().getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(linux.getChild(1) as ModelElement, 0));
+        expect(activeTitles()).toEqual(["Linux"]);
+
+        const bookmark = editor.editing.view.getDomRoot()?.querySelector("#install");
+        expect(bookmark).toBeTruthy();
+        revealTab(bookmark as Element);
+        expect(activeTitles()).toEqual(["Windows"]);
     });
 
     it("exposes the active tab and each panel's title to assistive technology", () => {

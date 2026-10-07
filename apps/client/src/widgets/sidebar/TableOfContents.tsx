@@ -4,6 +4,7 @@ import type { CKTextEditor, ModelElement, ModelNode } from "@triliumnext/ckedito
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { revealElement } from "../../services/collapsible";
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
 import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useMathRendering, useNoteProperty, useTextEditor } from "../react/hooks";
@@ -293,7 +294,10 @@ function EditableTextTableOfContents() {
         if (!viewEl) return;
 
         const domEl = textEditor.editing.view.domConverter.mapViewToDom(viewEl);
-        domEl?.scrollIntoView();
+        if (domEl) {
+            revealElement(domEl);
+            domEl.scrollIntoView();
+        }
     }, [ textEditor ]);
 
     return <AbstractTableOfContents
@@ -392,6 +396,7 @@ function ReadOnlyTextTableOfContents() {
     }, [contentEl]);
 
     const scrollToHeading = useCallback((heading: DomHeading) => {
+        revealElement(heading.element);
         heading.element.scrollIntoView();
     }, []);
 
