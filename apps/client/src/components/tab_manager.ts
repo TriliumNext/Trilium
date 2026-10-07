@@ -228,6 +228,11 @@ export default class TabManager extends Component {
         return this.activeNtxId ? this.getNoteContextById(this.activeNtxId).getMainContext() : null;
     }
 
+    /** Returns the note context with the given `ntxId`, or the active one when `ntxId` is empty. */
+    getCommandContext(ntxId: string | null | undefined): NoteContext | null {
+        return ntxId ? this.getNoteContextById(ntxId) : this.getActiveContext();
+    }
+
     getActiveContextNotePath(): string | null {
         const activeContext = this.getActiveContext();
         return activeContext?.notePath ?? null;

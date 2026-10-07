@@ -176,8 +176,8 @@ export default function NoteDetail() {
         resolve(component);
     });
 
-    useTriliumEvent("printActiveNote", () => {
-        if (!noteContext?.isActive() || !note) return;
+    useTriliumEvent("printActiveNote", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId) || !note) return;
 
         // PDF printing is handled by the PDF viewer's own print mechanism.
         if (note.type === "file" && note.mime === "application/pdf") return;

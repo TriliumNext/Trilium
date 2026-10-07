@@ -333,6 +333,11 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         return appContext.tabManager.activeNtxId === this.ntxId;
     }
 
+    /** Whether a command with the given `ntxId` targets this context: `ntxId` is this context's, or is empty while this context is active. */
+    isCommandTarget(ntxId: string | null | undefined) {
+        return ntxId ? ntxId === this.ntxId : this.isActive();
+    }
+
     getPojoState() {
         if (this.hoistedNoteId !== "root") {
             // keeping empty hoisted tab is esp. important for mobile (e.g. opened launcher config)

@@ -1,6 +1,7 @@
 import type { ElectronApi } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import dialog from "../services/dialog.js";
 import froca from "../services/froca.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
@@ -91,8 +92,7 @@ describe("runActiveNoteCommand", () => {
         const tabContext = { ntxId: "tab", note: froca.getNoteFromCache("tabNote") } as NoteContext;
         const popupContext = { ntxId: "_popup-editor", note: froca.getNoteFromCache("popupQuery") } as NoteContext;
         appContext.tabManager = {
-            getActiveContext: () => tabContext,
-            getNoteContextById: (ntxId: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
+            getCommandContext: (ntxId?: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
         } as TabManager;
         const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, results: [] });
         const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
@@ -106,5 +106,33 @@ describe("runActiveNoteCommand", () => {
         post.mockClear();
         await entrypoints.runActiveNoteCommand();
         expect(post).toHaveBeenCalledWith("sql/execute/tabNote");
+    });
+});
+
+describe("revision commands", () => {
+    const entrypoints = new Entrypoints();
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("save a revision of the note in the context with the command's ntxId, rather than the active tab's", async () => {
+        const tabContext = { ntxId: "tab", noteId: "tabNote" } as NoteContext;
+        const popupContext = { ntxId: "_popup-editor", noteId: "popupNote" } as NoteContext;
+        appContext.tabManager = {
+            getCommandContext: (ntxId?: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
+        } as TabManager;
+        const post = vi.spyOn(server, "post").mockResolvedValue({});
+        vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
+        vi.spyOn(dialog, "prompt").mockResolvedValue("Milestone");
+
+        await entrypoints.forceSaveRevisionCommand({ ntxId: "_popup-editor" });
+        expect(post).toHaveBeenLastCalledWith("notes/popupNote/revision");
+
+        await entrypoints.saveNamedRevisionCommand({ ntxId: "_popup-editor" });
+        expect(post).toHaveBeenLastCalledWith("notes/popupNote/revision", { description: "Milestone" });
+
+        await entrypoints.forceSaveRevisionCommand();
+        expect(post).toHaveBeenLastCalledWith("notes/tabNote/revision");
     });
 });

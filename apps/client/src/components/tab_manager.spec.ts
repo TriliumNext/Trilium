@@ -263,5 +263,11 @@ describe("note contexts outside the tab row", () => {
         tm.registerDetachedContext(popupContext);
         expect(tm.getNoteContextById("_popup-editor")).toBe(popupContext);
         expect(tm.getNoteContexts()).not.toContain(popupContext);
+
+        // `getCommandContext()` returns the context with the given `ntxId`, or the active one without it.
+        const [ tab ] = tm.getNoteContexts();
+        tm.activeNtxId = tab.ntxId;
+        expect(tm.getCommandContext("_popup-editor")).toBe(popupContext);
+        expect(tm.getCommandContext(undefined)).toBe(tab);
     });
 });

@@ -172,9 +172,7 @@ export default class Entrypoints extends Component {
     }
 
     async runActiveNoteCommand({ ntxId: requestedNtxId }: CommandListenerData<"runActiveNote"> = {}) {
-        const noteContext = requestedNtxId
-            ? appContext.tabManager.getNoteContextById(requestedNtxId)
-            : appContext.tabManager.getActiveContext();
+        const noteContext = appContext.tabManager.getCommandContext(requestedNtxId);
         if (!noteContext) {
             return;
         }
@@ -215,16 +213,16 @@ export default class Entrypoints extends Component {
         toastService.showMessage(t("entrypoints.note-executed"));
     }
 
-    async forceSaveRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async forceSaveRevisionCommand({ ntxId }: CommandListenerData<"forceSaveRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
 
         await server.post(`notes/${noteId}/revision`);
 
         toastService.showMessage(t("entrypoints.note-revision-created"));
     }
 
-    async saveNamedRevisionCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    async saveNamedRevisionCommand({ ntxId }: CommandListenerData<"saveNamedRevision"> = {}) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (!noteId) return;
 
         const name = await dialog.prompt({

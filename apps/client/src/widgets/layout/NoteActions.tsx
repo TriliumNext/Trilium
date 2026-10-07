@@ -24,7 +24,7 @@ import { isAlwaysFullWidthByType } from "../note_wrapper";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
-import { ParentComponent } from "../react/react_utils";
+import { ParentComponent, useCommandTrigger } from "../react/react_utils";
 import NoteActionsCustom from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
 import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
@@ -342,11 +342,11 @@ function DevelopmentActions({ note, noteContext }: { note: FNote, noteContext?: 
 }
 
 export function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
-    const parentComponent = useContext(ParentComponent);
+    const triggerOwnCommand = useCommandTrigger(typeof command === "string" ? command : undefined);
     return <FormListItem
         icon={icon}
         title={title}
-        onClick={typeof command === "function" ? command : () => void parentComponent?.triggerCommand(command)}
+        onClick={typeof command === "function" ? command : triggerOwnCommand}
         disabled={disabled}
     >{text}</FormListItem>;
 }

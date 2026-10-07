@@ -54,24 +54,22 @@ export default class RootCommandExecutor extends Component {
         this.searchNotesCommand({ ancestorNoteId: noteId });
     }
 
-    openNoteExternallyCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
-        const mime = appContext.tabManager.getActiveContextNoteMime();
-        if (noteId) {
-            openService.openNoteExternally(noteId, mime || "");
+    openNoteExternallyCommand({ ntxId }: CommandListenerData<"openNoteExternally">) {
+        const note = appContext.tabManager.getCommandContext(ntxId)?.note;
+        if (note) {
+            openService.openNoteExternally(note.noteId, note.mime);
         }
     }
 
-    openNoteCustomCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
-        const mime = appContext.tabManager.getActiveContextNoteMime();
-        if (noteId) {
-            openService.openNoteCustom(noteId, mime || "");
+    openNoteCustomCommand({ ntxId }: CommandListenerData<"openNoteCustom">) {
+        const note = appContext.tabManager.getCommandContext(ntxId)?.note;
+        if (note) {
+            openService.openNoteCustom(note.noteId, note.mime);
         }
     }
 
-    openNoteOnServerCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    openNoteOnServerCommand({ ntxId }: CommandListenerData<"openNoteOnServer">) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (noteId) {
             openService.openNoteOnServer(noteId);
         }
@@ -137,8 +135,8 @@ export default class RootCommandExecutor extends Component {
         });
     }
 
-    async showNoteSourceCommand() {
-        const notePath = appContext.tabManager.getActiveContextNotePath();
+    async showNoteSourceCommand({ ntxId }: CommandListenerData<"showNoteSource">) {
+        const notePath = appContext.tabManager.getCommandContext(ntxId)?.notePath;
 
         if (notePath) {
             await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
@@ -150,8 +148,8 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    showNoteOCRTextCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    showNoteOCRTextCommand({ ntxId }: CommandListenerData<"showNoteOCRText">) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (noteId) {
             appContext.triggerCommand("showOcrTextDialog", {
                 textUrl: `ocr/notes/${noteId}/text`,
@@ -160,8 +158,8 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    async showAttachmentsCommand() {
-        const notePath = appContext.tabManager.getActiveContextNotePath();
+    async showAttachmentsCommand({ ntxId }: CommandListenerData<"showAttachments">) {
+        const notePath = appContext.tabManager.getCommandContext(ntxId)?.notePath;
 
         if (notePath) {
             await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {

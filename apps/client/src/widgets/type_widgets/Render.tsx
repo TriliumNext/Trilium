@@ -59,8 +59,8 @@ function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     useEffect(refresh, [ note ]);
 
     // Keyboard shortcut.
-    useTriliumEvent("renderActiveNote", () => {
-        if (!noteContext?.isActive()) return;
+    useTriliumEvent("renderActiveNote", ({ ntxId: eventNtxId }) => {
+        if (!noteContext?.isCommandTarget(eventNtxId)) return;
         refresh();
     });
 
