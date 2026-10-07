@@ -940,11 +940,8 @@
     "connection_exists": "A conexão '{{name}}' já existe entre estas notas.",
     "start_dragging_relations": "Comece a arrastar as relações daqui e solte-as noutra nota.",
     "note_not_found": "Nota {{noteId}} não encontrada!",
-    "cannot_match_transform": "Não foi possível combinar a transformação: {{transform}}",
     "note_already_in_diagram": "A nota \"{{title}}\" já está no diagrama.",
-    "enter_title_of_new_note": "Digite o título da nova nota",
-    "default_new_note_title": "nova nota",
-    "click_on_canvas_to_place_new_note": "Clique no quadro para incluir uma nova nota"
+    "default_new_note_title": "nova nota"
   },
   "backend_log": {
     "refresh": "Recarregar"

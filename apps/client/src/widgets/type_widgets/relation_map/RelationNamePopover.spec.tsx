@@ -1,4 +1,3 @@
-import type { Connection } from "jsplumb";
 import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -86,8 +85,8 @@ describe("useRelationNamePrompt", () => {
         await act(async () => { renderInto(<Probe />); });
         const ask = prompt?.ask as AskRelationName;
 
-        const first = ask(fakeConnection());
-        const second = ask(fakeConnection(), "author");
+        const first = ask(fakeAnchor());
+        const second = ask(fakeAnchor(), "author");
         await act(async () => undefined);
         expect(await first).toBeNull();
         expect(prompt?.request?.defaultValue).toBe("author");
@@ -102,7 +101,7 @@ async function mount(defaultValue = "") {
     const onAnswer = vi.fn();
     await act(async () => {
         renderInto(
-            <RelationNamePopover connection={fakeConnection()} defaultValue={defaultValue} onAnswer={onAnswer} />);
+            <RelationNamePopover anchor={fakeAnchor()} defaultValue={defaultValue} onAnswer={onAnswer} />);
     });
     // Lets `placeFloating()` resolve, which is when the popover focuses its field.
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
@@ -112,10 +111,10 @@ async function mount(defaultValue = "") {
     return { input, onAnswer };
 }
 
-function fakeConnection() {
-    const canvas = document.createElement("div");
-    document.body.appendChild(canvas);
-    return { canvas } as unknown as Connection;
+function fakeAnchor() {
+    const drawing = document.createElement("div");
+    document.body.appendChild(drawing);
+    return () => drawing;
 }
 
 async function type(input: HTMLInputElement, value: string) {

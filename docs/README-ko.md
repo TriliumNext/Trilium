@@ -19,6 +19,7 @@
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층형 노트 작성 애플리케이션입니다.
@@ -322,10 +323,6 @@ Trilium은 다음 기반 기술이 있었기에 만들어질 수 있었습니다
 * [Leaflet](https://github.com/Leaflet/Leaflet) - 지리 지도를 렌더링합니다.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - 컬렉션에서 사용하는 대화형 표입니다.
 * [FancyTree](https://github.com/mar10/fancytree) - 독보적으로 기능이 풍부한 트리 라이브러리입니다.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - 시각적 연결 라이브러리입니다. [관계
-  맵](https://docs.triliumnotes.org/user-guide/note-types/relation-map)과 [링크
-  맵](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)에
-  사용됩니다
 
 ## 🤝 후원
 

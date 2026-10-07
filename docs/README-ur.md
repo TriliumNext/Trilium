@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes ایک مفت اور اوپن سورس، کراس پلیٹ فارم، درجہ بندی پر مبنی نوٹ لینے
@@ -365,12 +366,6 @@ Trilium اس کے پیچھے موجود ٹیکنالوجیز کے بغیر مم�
   ہونے والی انٹریکٹو ٹیبل کے لیے۔
 * [FancyTree](https://github.com/mar10/fancytree) - بھرپور فیچرز والی ٹری
   لائبریری جس کا کوئی حقیقی مقابلہ نہیں۔
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - بصری کنیکٹیویٹی لائبریری۔
-  [ریلیشن
-  میپس](https://docs.triliumnotes.org/user-guide/note-types/relation-map) اور
-  [لنک
-  میپس](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  میں استعمال کیا جاتا ہے
 
 ## 🤝 سپورٹ
 

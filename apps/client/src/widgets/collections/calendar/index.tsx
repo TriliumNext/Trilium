@@ -114,6 +114,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     "pt_br": () => import("fullcalendar/locales/pt-br"),
     tr: () => import("fullcalendar/locales/tr"),
     uk: () => import("fullcalendar/locales/uk"),
+    vi: () => import("fullcalendar/locales/vi"),
     en: null,
     "en-GB": () => import("fullcalendar/locales/en-gb"),
     "en_rtl": null,

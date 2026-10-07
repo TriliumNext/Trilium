@@ -1184,11 +1184,8 @@
     "connection_exists": "Połączenie '{{name}}' między tymi notatkami już istnieje.",
     "start_dragging_relations": "Zacznij przeciągać relacje stąd i upuść je na innej notatce.",
     "note_not_found": "Notatka {{noteId}} nie znaleziona!",
-    "cannot_match_transform": "Nie można dopasować transformacji: {{transform}}",
     "note_already_in_diagram": "Notatka \"{{title}}\" jest już na diagramie.",
-    "enter_title_of_new_note": "Wprowadź tytuł nowej notatki",
-    "default_new_note_title": "nowa notatka",
-    "click_on_canvas_to_place_new_note": "Kliknij na płótnie, aby umieścić nową notatkę"
+    "default_new_note_title": "nowa notatka"
   },
   "backend_log": {
     "refresh": "Odśwież"

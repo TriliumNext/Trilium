@@ -298,7 +298,7 @@ function Card({
     return (<>
         <div
             ref={cardRef}
-            className={clsx("board-note", colorClass, {
+            className={clsx("board-note tn-note-card", colorClass, {
                 shortcut: !!(redirectTo ?? legacyRedirectTo),
                 dragging: isDragging,
                 editing: isEditing,

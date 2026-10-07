@@ -855,7 +855,7 @@ function lift(held: Gesture, container: HTMLElement) {
  */
 function countPreview(count: number) {
     const preview = document.createElement("div");
-    preview.className = "board-note board-drag-count";
+    preview.className = "board-note tn-note-card board-drag-count";
     preview.dataset.layers = String(Math.min(count, STACK_LAYERS));
     preview.textContent = String(count);
     return preview;

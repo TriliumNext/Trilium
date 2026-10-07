@@ -7,7 +7,7 @@
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
-[Arabic](./docs/README-ar.md) | [Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [Czech](./docs/README-cs.md) | [English (United Kingdom)](./docs/README-en_GB.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Indonesian](./docs/README-id.md) | [Irish](./docs/README-ga.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Korean](./docs/README-ko.md) | [Polish](./docs/README-pl.md) | [Romanian](./docs/README-ro.md) | [Russian](./docs/README-ru.md) | [Spanish](./docs/README-es.md) | [Ukrainian](./docs/README-uk.md) | [Urdu](./docs/README-ur.md) | [Uyghur](./docs/README-ug.md)
+[Arabic](./docs/README-ar.md) | [Chinese (Simplified Han script)](./docs/README-ZH_CN.md) | [Chinese (Traditional Han script)](./docs/README-ZH_TW.md) | [Czech](./docs/README-cs.md) | [English (United Kingdom)](./docs/README-en_GB.md) | [English](./docs/README.md) | [French](./docs/README-fr.md) | [German](./docs/README-de.md) | [Greek](./docs/README-el.md) | [Indonesian](./docs/README-id.md) | [Irish](./docs/README-ga.md) | [Italian](./docs/README-it.md) | [Japanese](./docs/README-ja.md) | [Korean](./docs/README-ko.md) | [Polish](./docs/README-pl.md) | [Romanian](./docs/README-ro.md) | [Russian](./docs/README-ru.md) | [Spanish](./docs/README-es.md) | [Ukrainian](./docs/README-uk.md) | [Urdu](./docs/README-ur.md) | [Uyghur](./docs/README-ug.md) | [Vietnamese](./docs/README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes is a free and open-source, cross-platform hierarchical note taking application with focus on building large personal knowledge bases.
@@ -246,7 +246,6 @@ Trilium would not be possible without the technologies behind it:
 * [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical maps.
 * [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive table used in collections.
 * [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library without real competition. 
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library. Used in [relation maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and [link maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Support
 

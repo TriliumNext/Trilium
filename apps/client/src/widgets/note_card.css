@@ -1,0 +1,84 @@
+/*
+ * Card styling shared by board collection items and relation map boxes. The variables keep their
+ * `--board-*` names because themes already set them.
+ *
+ * The card color comes from `--board-item-hue` and the two saturations. A card with the `with-hue`
+ * class (see `FNote.getColorClass()`) uses its note's hue; any other card is gray. A host can set
+ * these variables itself, as the board does to tint a card with its column's color. The defaults are
+ * wrapped in `:where()` so that any host rule overrides them.
+ */
+
+/* Defaults for themes that do not set these variables. They match the light theme. */
+:where(:root) {
+  --board-item-background-saturation: 100%;
+  --board-item-background-lightness: 96%;
+
+  --board-item-hover-background-saturation: 100%;
+  --board-item-hover-background-lightness: 98.5%;
+
+  --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+  /* Shadow of a hovered card. A variable of its own, so a selected card can combine it with the
+     selection ring. */
+  --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
+  --board-selected-ring-color: var(--link-color);
+
+  /* Text and muted text colors of a card without a hue. A card with a hue uses colors composed
+     from the values below instead. */
+  --board-text-color: var(--main-text-color);
+  --board-muted-text-color: var(--muted-text-color);
+  /* Saturation and lightness of the text colors of a card with a hue. Only the hue comes from the
+     note's color, and the theme sets the lightness, so a colored card is as readable as a plain one. */
+  --board-text-saturation: 30%;
+  --board-text-lightness: 8%;
+  --board-muted-text-saturation: 20%;
+  --board-muted-text-lightness: 40%;
+}
+
+:where(.tn-note-card) {
+  --board-item-hue: 0;
+  --board-item-saturation: 0%;
+  --board-item-hover-saturation: 0%;
+
+  color: var(--board-text-color);
+  background-color: var(--note-card-background);
+  box-shadow: var(--board-item-shadow);
+  border-radius: 5px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:where(.tn-note-card:hover) {
+  background-color: var(--note-card-hover-background);
+  box-shadow: var(--board-item-hover-shadow);
+}
+
+:where(.tn-note-card.with-hue) {
+  --board-item-hue: var(--custom-color-hue);
+  --board-item-saturation: var(--board-item-background-saturation);
+  --board-item-hover-saturation: var(--board-item-hover-background-saturation);
+  --board-text-color: var(--note-card-text-color);
+  --board-muted-text-color: var(--note-card-muted-text-color);
+}
+
+/* Declared on the card element, so they use the hue set on the card, including a host's. */
+.tn-note-card {
+  --note-card-background: hsl(
+    var(--board-item-hue),
+    var(--board-item-saturation),
+    var(--board-item-background-lightness)
+  );
+  --note-card-hover-background: hsl(
+    var(--board-item-hue),
+    var(--board-item-hover-saturation),
+    var(--board-item-hover-background-lightness)
+  );
+  --note-card-text-color: hsl(
+    var(--board-item-hue),
+    var(--board-text-saturation),
+    var(--board-text-lightness)
+  );
+  --note-card-muted-text-color: hsl(
+    var(--board-item-hue),
+    var(--board-muted-text-saturation),
+    var(--board-muted-text-lightness)
+  );
+}

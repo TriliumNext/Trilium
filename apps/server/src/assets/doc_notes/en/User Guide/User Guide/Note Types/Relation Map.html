@@ -2,11 +2,15 @@
   href="#root/_help_zEY4DaJG4YT5">relations</a>.</p>
 <h2>Interaction</h2>
 <ul>
-  <li>To create a new note and add it to the board, press the plus button in
-    the&nbsp;<a class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>.
+  <li>To create a new note and add it to the map, press the <span class="tn-icon bx bx-note"></span>  <em>Add note</em> button
+    at the bottom of the map, then click anywhere on the map to place it there.
     <ul>
-      <li>Afterwards, click anywhere on the map to place it there.</li>
-      <li>The note will be placed as a sub-child of the map.</li>
+      <li>While the map waits for the click, a translucent box follows the mouse
+        to show where the note will go. To cancel, press the button again (now
+        labeled <em>Cancel</em>) or press <kbd>Esc</kbd>.</li>
+      <li>The note is created as a child of the map, with the default title of a
+        new note. It opens in the note panel (see below) with its title selected,
+        so you can type its name straight away.</li>
     </ul>
   </li>
   <li>An existing note can also be dragged from the&nbsp;<a class="reference-link"
@@ -20,7 +24,23 @@
         position.</li>
     </ul>
   </li>
-  <li>To create a relationship, hold the mouse on the box on the right of a
+  <li>Notes can also be pasted onto the map. Copy or cut them in the <a class="reference-link"
+    href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>, then click the map and press <kbd>Ctrl</kbd>+<kbd>V</kbd>,
+    or right click an empty part of the map and select <em>Paste note(s)</em>.
+    <ul>
+      <li>With <kbd>Ctrl</kbd>+<kbd>V</kbd>, the notes are placed under the mouse,
+        or in the middle of the map if the mouse is not over it. From the right
+        click menu, they are placed where the menu was opened.</li>
+      <li>Copied notes stay where they are in the tree. Cut notes are moved under
+        the map, as if they had been pasted into it in the tree.</li>
+      <li>Links to notes, such as an <a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a> copied
+        from a text note, can be pasted the same way. If the clipboard holds no
+        link to a note, the notes last copied or cut in the tree are pasted.</li>
+      <li>The right click menu of an empty part of the map also has <em>Add note</em>,
+        which creates a new note where the menu was opened.</li>
+    </ul>
+  </li>
+  <li>To create a relationship, hold the mouse on the dot on the right of a
     note and then:
     <ul>
       <li>Drag it over another note to create a relationship pointing from the first
@@ -33,13 +53,63 @@
         or click elsewhere on the map.</li>
     </ul>
   </li>
-  <li>To open a note, either click on the note (opening it in the current view)
-    or use the right click menu to open in a new tab.</li>
-  <li>To edit the title of a note or to delete it (either from the map, or delete
-    it completely), right click the note.</li>
+  <li>Each note is shown as a card with its icon and title, colored in the note's
+    color the same way as the cards of a <a class="reference-link" href="#root/_help_CtBQqbwXDx1w">Kanban Board</a>.</li>
+  <li>Hovering a note highlights its relationships, in the note's color if it
+    has one, and fades the other relationships.</li>
+  <li>To view or edit a note, click it on the map. This opens the note panel
+    (see below).
+    <ul>
+      <li>To open the note in a new tab instead, <kbd>Ctrl</kbd>+click it or click
+        it with the middle mouse button. <kbd>Shift</kbd>+click opens it in a new
+        window. The right click menu offers the same options.</li>
+    </ul>
+  </li>
+  <li>To edit the title of a note, change its color or delete it (either from
+    the map, or delete it completely), right click the note. The color picker
+    is not shown if the map is read-only.</li>
   <li>To rename or delete a relationship, right click it and select the corresponding
     option.</li>
+  <li>To move around the map, drag an empty part of it, and zoom with the mouse
+    wheel or the buttons at the bottom-right corner. Clicking the zoom percentage
+    goes back to 100%, and <span class="tn-icon bx bx-scan"></span>  <em>Fit to view</em> zooms
+    and pans so that all the notes are visible.
+    <ul>
+      <li>Once the map has been clicked, the arrow keys or <kbd>W</kbd>  <kbd>A</kbd>  <kbd>S</kbd>  <kbd>D</kbd> pan
+        it, and <kbd>+</kbd> and <kbd>-</kbd> zoom it. The <kbd>?</kbd> button at the
+        top-right corner of the map lists all its keyboard shortcuts.</li>
+    </ul>
+  </li>
 </ul>
+<h2>Note panel</h2>
+<p>When a note on the map is clicked, a panel opens to the right of the map
+  and the note is highlighted. If the panel would cover the note, or the
+  note is partly off-screen, the map pans to bring it into view. The panel
+  contains:</p>
+<ul>
+  <li>The title and icon of the note, both editable.</li>
+  <li>A button to expand the panel over the whole map, and to restore it afterwards.</li>
+  <li>Buttons to interact with the note:
+    <ul>
+      <li>Open the note in the current tab, or, through the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu,
+        in a new tab, split, window or the quick edit popup.</li>
+      <li>A color picker to change the color of the note.</li>
+      <li>A button to remove the note from the map, which can optionally delete
+        the note as well.</li>
+    </ul>
+  </li>
+  <li>The <a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a> of
+    the note, if any.</li>
+  <li>The note's content, which can be edited directly from the panel.</li>
+</ul>
+<p>The color picker and the remove button are not shown if the map is read-only.</p>
+<p>Clicking another note on the map switches the panel to it. Similarly,
+  clicking an <a class="reference-link" href="#root/_help_hrZ1D00cLbal">Internal (reference) links</a> inside
+  the panel switches the panel to that note, as long as it is on the map.</p>
+<p>To close the panel, press the X button at its top-right, click an empty
+  part of the map, or press <kbd>Esc</kbd>.</p>
+<p>On mobile, the note opens as a dialog over the whole screen instead of
+  a panel.</p>
 <h2>Development process demo</h2>
 <p>This is a basic example how you can create simple diagram using relation
   maps:</p>

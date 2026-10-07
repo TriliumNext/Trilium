@@ -54,6 +54,7 @@ export const DAYJS_LOADER: Record<DISPLAYABLE_LOCALE_IDS, () => Promise<typeof i
     "tr": () => import("dayjs/locale/tr.js"),
     "tw": () => import("dayjs/locale/zh-tw.js"),
     "uk": () => import("dayjs/locale/uk.js"),
+    "vi": () => import("dayjs/locale/vi.js"),
 }
 
 async function setDayjsLocale(locale: LOCALE_IDS) {

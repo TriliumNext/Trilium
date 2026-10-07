@@ -6737,7 +6737,7 @@
                                 {
                                     "type": "label",
                                     "name": "iconClass",
-                                    "value": "bx bxs-network-chart",
+                                    "value": "bx bx-shape-polygon",
                                     "isInheritable": false,
                                     "position": 20
                                 }

@@ -1,6 +1,5 @@
 import "./DetailPane.css";
 
-import clsx from "clsx";
 import type { EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "preact/hooks";
 
@@ -9,14 +8,11 @@ import { copyTextWithToast } from "../../../services/clipboard_ext";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { isMobile } from "../../../services/utils";
-import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, MaximizeAction, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext, useFollowLinksWithin } from "../../EmbeddedNotePane";
-import TitleRow from "../../layout/TitleRow";
+import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, EmbeddedNoteSurface, NoteColorAction, OpenNoteActions, SelectTitleOnFirstOpen, useEmbeddedNoteContext } from "../../EmbeddedNotePane";
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useLegacyComponentElement, useNoteColorClass, useNoteLabel, useStaticTooltip } from "../../react/hooks";
-import Modal from "../../react/Modal";
-import OverlayPanel, { OverlayPanelBody } from "../../react/OverlayPanel";
+import { useNoteLabel, useStaticTooltip } from "../../react/hooks";
 import { removeFromMap } from "./api";
 import { type Bounds, boundsOf } from "./coordinates";
 import { GPX_MIME, trackSourceId } from "./GpxTrack";
@@ -77,7 +73,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     /** Arms this map for the selected marker to be put somewhere else, the next click being where. */
     onRelocate: (noteId: string) => void;
     /**
-     * The pane has been grown to cover the map (see {@link MaximizeAction} in the header below).
+     * The pane has been grown to cover the map (see the maximize in `EmbeddedNoteSurface`).
      * Owned by the map view rather than by the pane for the reason the selection is: the map places
      * what it draws around the pane, and a pane covering the whole of it leaves nothing to place
      * around — the marker previews have nowhere to stand clear to (see Tooltips), and the camera
@@ -123,7 +119,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
      * Follows a link inside the pane whose note stands on this map: the pane switches to it — the
      * map panning along, through the easing effect below — the same as if its marker had been
      * clicked. Answers whether the note stands on the map at all, a link to anything else keeping
-     * its ordinary meaning (see the interception in MarkerDetails).
+     * its ordinary meaning (see `useFollowLinksWithin`).
      */
     const followLink = useCallback((noteId: string) => {
         const target = notes.find((n) => n.noteId === noteId);
@@ -285,18 +281,23 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         // EmbeddedNotePane) — the map would otherwise rebind to the marker's note, tear the map
         // down and take the WebGL context with it.
         <EmbeddedNoteScope component={paneComponent} noteContext={noteContext}>
-            {isMobile() ? (
-                <MarkerSheet
-                    note={note} parentNote={parentNote} isReadOnly={isReadOnly}
-                    onClose={closePane} onRelocate={relocate} onFollowLink={followLink}
-                />
-            ) : (
-                <MarkerDetails
-                    note={note} parentNote={parentNote} isReadOnly={isReadOnly}
-                    maximized={maximized} onMaximizedChange={onMaximizedChange}
-                    onClose={closePane} onRelocate={relocate} onFollowLink={followLink}
-                />
-            )}
+            <EmbeddedNoteSurface
+                note={note}
+                panelClassName="geo-detail-pane"
+                sheetClassName="geo-detail-sheet"
+                bodyClassName="geo-detail-pane-body"
+                closeText={t("geo-map.close-details")}
+                maximize={{
+                    maximized,
+                    onChange: onMaximizedChange,
+                    expandText: t("geo-map.expand-details"),
+                    restoreText: t("geo-map.restore-details")
+                }}
+                onClose={closePane}
+                onFollowLink={followLink}
+            >
+                <MarkerContents note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={relocate} />
+            </EmbeddedNoteSurface>
             {selection?.isNew && <SelectTitleOnFirstOpen />}
         </EmbeddedNoteScope>
     );
@@ -422,111 +423,6 @@ function fitPadding(map: MapLibreGLMap) {
     }
 
     return padding;
-}
-
-/** The pane itself, for a marker there is one to draw. */
-function MarkerDetails({ note, parentNote, isReadOnly, maximized, onMaximizedChange, onClose, onRelocate, onFollowLink }: {
-    note: FNote;
-    parentNote: FNote;
-    isReadOnly: boolean;
-    maximized: boolean;
-    onMaximizedChange(maximized: boolean): void;
-    onClose(): void;
-    onRelocate(): void;
-    /** Offered a link's note; answers whether the map took the navigation over. */
-    onFollowLink(noteId: string): boolean;
-}) {
-    // The marker's own colour, which is what dresses its icon (see DetailPane.css) — as the quick
-    // editor's wrapper carries it. Without it the pane would inherit the hue of the note split it
-    // stands in, which is the map's colour and not the marker's.
-    const colorClass = useNoteColorClass(note);
-
-    /*
-     * The pane stands for its component in the DOM, which is how the text editor finds its host:
-     * every call it makes back into the app resolves one from the element it is mounted in (see
-     * `useLegacyComponentElement`). The pane provides a component of its own — the whole point of it
-     * being a component is that the map does not hear the pane's note switches — so without this the
-     * editor arrives at the widget enclosing the map instead, which answers to none of what it asks
-     * for: a note carrying a reference link died on `loadReferenceLinkTitle is not a function`.
-     */
-    const paneRef = useRef<HTMLDivElement>(null);
-    useLegacyComponentElement(paneRef);
-
-    // Links followed within the pane: one pointing at another marker of this map switches the pane
-    // to it, the map panning along, instead of navigating the whole tab away (see the shared hook).
-    useFollowLinksWithin(paneRef, onFollowLink);
-
-    return (
-        <OverlayPanel
-            containerRef={paneRef}
-            className={clsx("geo-detail-pane", colorClass)}
-            header={<TitleRow compact />}
-            maximized={maximized}
-            headerActions={
-                <MaximizeAction
-                    icon={maximized ? "bx bx-collapse-alt" : "bx bx-expand-alt"}
-                    text={maximized ? t("geo-map.restore-details") : t("geo-map.expand-details")}
-                    onClick={() => onMaximizedChange(!maximized)}
-                />
-            }
-            close={{ text: t("geo-map.close-details"), onClick: onClose }}
-        >
-            {/* Grown over the map, the pane has a note's width, so what it holds is laid out for one
-                (see `tn-embedded-note-pane-wide` in EmbeddedNotePane.css). */}
-            <OverlayPanelBody className={clsx("geo-detail-pane-body tn-embedded-note-pane", maximized && "tn-embedded-note-pane-wide")}>
-                <MarkerContents note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
-            </OverlayPanelBody>
-        </OverlayPanel>
-    );
-}
-
-/**
- * The marker as a phone shows it: the sheet the app raises its dialogs as, rather than a pane laid
- * over the map. A pane holding a whole note takes most of a phone's screen whatever is done to it,
- * so one drawn over the map leaves the map neither readable nor reachable — and the maximize that
- * would give it the rest of the screen has nothing left to give. The note is shown as a note
- * instead, and the map is left alone behind it (see the camera above).
- *
- * Dressed as the quick editor and the calendar's own sheet are, those being the app's ways of
- * showing a whole note over whatever raised it (see the shared rules in PopupEditor.css).
- *
- * `show` is not a state because every way out of this dialog is also a way out of the selection:
- * what answers `onHidden` clears it, and the sheet goes with it. Bootstrap is told to hide as the
- * element leaves the tree, so nothing is left dimming the page behind it (see Modal).
- */
-function MarkerSheet({ note, parentNote, isReadOnly, onClose, onRelocate, onFollowLink }: {
-    note: FNote;
-    parentNote: FNote;
-    isReadOnly: boolean;
-    onClose(): void;
-    onRelocate(): void;
-    onFollowLink(noteId: string): boolean;
-}) {
-    // Marked on the dialog rather than on its body, so that what heads it — the note's own title
-    // row, handed to the dialog — is inside the marked element too (see the pane above).
-    const modalRef = useRef<HTMLDivElement>(null);
-    useLegacyComponentElement(modalRef);
-    useFollowLinksWithin(modalRef, onFollowLink);
-
-    // Tinted by the marker's own colour as the pane over the map is, and by the same means the
-    // quick editor is (see the `.with-hue` rules in theme-next-{light,dark}.css) — a sheet being
-    // opaque, it takes the dialog's colours rather than the pane's.
-    const colorClass = useNoteColorClass(note);
-
-    return (
-        <Modal
-            className={clsx("geo-detail-sheet", colorClass)}
-            size="lg"
-            title={<TitleRow />}
-            modalRef={modalRef}
-            show
-            onHidden={onClose}
-        >
-            <div className="geo-detail-pane-body tn-embedded-note-pane">
-                <MarkerContents note={note} parentNote={parentNote} isReadOnly={isReadOnly} onRelocate={onRelocate} />
-            </div>
-        </Modal>
-    );
 }
 
 /** What is shown of the marker, under whatever heads it. Shared by the pane and the sheet, which

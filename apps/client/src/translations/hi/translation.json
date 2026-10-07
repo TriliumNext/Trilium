@@ -996,11 +996,8 @@
     "connection_exists": "इन नोट्स के बीच '{{name}}' नाम का संबंध पहले से मौजूद है।",
     "start_dragging_relations": "यहाँ से रिलेशंस ड्रैग करना शुरू करें और उन्हें किसी दूसरे नोट पर छोड़ दें।",
     "note_not_found": "नोट {{noteId}} नहीं मिला!",
-    "cannot_match_transform": "ट्रांसफ़ॉर्म (transform) मैच नहीं हो सका: {{transform}}",
     "note_already_in_diagram": "नोट \"{{title}}\" पहले से डायग्राम में है।",
-    "enter_title_of_new_note": "नए नोट का टाइटल लिखें",
     "default_new_note_title": "नया नोट",
-    "click_on_canvas_to_place_new_note": "नया नोट रखने के लिए कैनवस (canvas) पर क्लिक करें",
     "rename_relation": "रिलेशन का नाम बदलें"
   },
   "render": {

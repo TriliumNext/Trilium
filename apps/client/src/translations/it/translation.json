@@ -1932,11 +1932,8 @@
     "connection_exists": "La connessione '{{name}}' tra queste note esiste già.",
     "start_dragging_relations": "Inizia a trascinare le relazioni da qui e rilasciale su un'altra nota.",
     "note_not_found": "Nota {{noteId}} non trovata!",
-    "cannot_match_transform": "Impossibile abbinare la trasformazione: {{transform}}",
     "note_already_in_diagram": "Nota che \"{{title}}\" è già presente nel diagramma.",
-    "enter_title_of_new_note": "Inserisci il titolo della nuova nota",
     "default_new_note_title": "nuova nota",
-    "click_on_canvas_to_place_new_note": "Clicca sulla tela per inserire una nuova nota",
     "rename_relation": "Rinomina relazione"
   },
   "vacuum_database": {

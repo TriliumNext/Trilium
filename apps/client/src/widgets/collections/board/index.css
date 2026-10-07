@@ -4,12 +4,6 @@
   --board-column-background-saturation: 26%;
   --board-column-background-lightness: 86%;
 
-  --board-item-background-saturation: 100%;
-  --board-item-background-lightness: 96%;
-
-  --board-item-hover-background-saturation: 100%;
-  --board-item-hover-background-lightness: 98.5%;
-
   /* The background of a card being edited. Set to the hover lightness so the colour does not
      change when the pointer leaves the card. */
   --board-item-editing-background-lightness: var(--board-item-hover-background-lightness);
@@ -42,11 +36,6 @@
   --board-collapse-duration-quick: 0.3s;
   --board-expand-duration: 0.2s;
 
-  /* What a card at rest casts on the column it stands in. */
-  --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-  /* The lift a card takes under the pointer, named so that a picked-out card can carry its ring
-     and this shadow together. */
-  --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
   /* What a carried card casts, which the stack of a carried selection is drawn behind. */
   --board-drag-shadow: 4px 8px 16px rgba(0, 0, 0, 0.5);
   /* What a carried copy is drawn at, and what it fades to once it stands against the board's
@@ -61,8 +50,6 @@
      carry less weight than the values alone suggest. */
   --board-drop-placeholder-background: rgba(0, 0, 0, 0.15);
   --board-column-drop-placeholder-background: rgba(0, 0, 0, 0.1);
-  /* The ring a picked-out card carries. */
-  --board-selected-ring-color: var(--link-color);
   /* The wedge in a card's foot corner while cards are being selected, until the card is. */
   --board-selection-wedge-size: 14px;
   --board-selection-wedge-color: var(--main-border-color);
@@ -75,19 +62,12 @@
      than hiding what is behind it. */
   --board-edit-backdrop: rgba(0, 0, 0, 0.15);
 
-  /* What the board writes its text and icons in, and what it marks the quieter ones with. A
-     column's heading has a pair of its own, standing as it does on the column rather than on a
-     card. These are what a plain board paints; on a coloured one the pairs below replace them. */
-  --board-text-color: var(--main-text-color);
-  --board-muted-text-color: var(--muted-text-color);
+  /* Text colors of a column heading; the card text colors are in note_card.css. On a column with a
+     hue, colors composed from the values below replace these. */
   --board-column-header-text-color: var(--main-text-color);
   --board-column-header-muted-text-color: var(--muted-text-color);
-  /* How each is composed where something around carries a hue. The colour lends its hue alone:
-     the lightness is the theme's, so a coloured board reads as light as a plain one. */
-  --board-text-saturation: 30%;
-  --board-text-lightness: 8%;
-  --board-muted-text-saturation: 20%;
-  --board-muted-text-lightness: 40%;
+  /* Saturation and lightness of the heading colors on a column with a hue. Only the hue comes from
+     the note's color, and the theme sets the lightness, so a colored board is as light as a plain one. */
   --board-column-header-text-saturation: 30%;
   --board-column-header-text-lightness: 8%;
   --board-column-header-muted-text-saturation: 20%;
@@ -469,25 +449,13 @@ body.mobile .board-view-container .board-add-column {
   --board-item-hover-saturation: var(--board-item-hover-background-saturation);
 }
 
+/* note_card.css computes these colors from the hue set above. */
 .board-view-container .board-note {
-  /* Overridden above by anything carrying a hue; without one the item is drained of colour. */
-  --board-item-hue: 0;
-  --board-item-saturation: 0%;
-  --board-item-hover-saturation: 0%;
-
-  background-color: hsl(
-    var(--board-item-hue),
-    var(--board-item-saturation),
-    var(--board-item-background-lightness)
-  );
+  background-color: var(--note-card-background);
 }
 
 .board-view-container .board-note:hover {
-  background-color: hsl(
-    var(--board-item-hue),
-    var(--board-item-hover-saturation),
-    var(--board-item-hover-background-lightness)
-  );
+  background-color: var(--note-card-hover-background);
 }
 
 /* Stated after the rule above, which it shares a specificity with, so a card being edited keeps
@@ -534,16 +502,8 @@ body.mobile .board-view-container .board-add-column {
 
 .board-view-container .board-column.with-hue .board-note,
 .board-view-container .board-note.with-hue {
-  --board-text-color: hsl(
-    var(--board-item-hue),
-    var(--board-text-saturation),
-    var(--board-text-lightness)
-  );
-  --board-muted-text-color: hsl(
-    var(--board-item-hue),
-    var(--board-muted-text-saturation),
-    var(--board-muted-text-lightness)
-  );
+  --board-text-color: var(--note-card-text-color);
+  --board-muted-text-color: var(--note-card-muted-text-color);
   --board-focus-outline-color: hsl(
     var(--board-item-hue),
     var(--board-focus-outline-saturation),
@@ -562,7 +522,7 @@ body.mobile .board-view-container .board-add-column {
   /* Below only: a top margin would be the first card's to drop, and a drop placeholder standing
      above it takes that place and moves the card down by it. */
   margin-block: 0 0.65em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
 
   .board-note-outside-filter {
     color: var(--board-muted-text-color);

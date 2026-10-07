@@ -1884,11 +1884,8 @@
     "connection_exists": "Bu notlar arasında '{{name}}' bağlantısı zaten var.",
     "start_dragging_relations": "İlişkileri buradan sürüklemeye başlayın ve başka bir nota bırakın.",
     "note_not_found": "{{noteId}} notu bulunamadı!",
-    "cannot_match_transform": "Dönüşüm eşleştirilemiyor: {{transform}}",
     "note_already_in_diagram": "\"{{title}}\" notu zaten diyagramda.",
-    "enter_title_of_new_note": "Yeni notun başlığını girin",
-    "default_new_note_title": "yeni not",
-    "click_on_canvas_to_place_new_note": "Yeni notu yerleştirmek için tuvale tıklayın"
+    "default_new_note_title": "yeni not"
   },
   "render": {
     "setup_title": "Bu nota özel HTML veya Preact JSX görüntüle",

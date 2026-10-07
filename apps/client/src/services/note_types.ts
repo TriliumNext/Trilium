@@ -52,7 +52,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     // Map notes
     { type: "mindMap", mime: "application/json", title: t("note_types.mind-map"), icon: "bx-sitemap" },
     { type: "noteMap", mime: "", title: t("note_types.note-map"), icon: "bxs-network-chart", static: true },
-    { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), icon: "bxs-network-chart" },
+    { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), icon: "bx-shape-polygon" },
 
     // Misc note types
     { type: "llmChat", mime: "application/json", title: t("note_types.llm-chat"), icon: "bx-message-square-dots" },

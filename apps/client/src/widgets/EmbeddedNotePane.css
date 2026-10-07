@@ -77,3 +77,41 @@
 
     border-radius: 50%;
 }
+
+.tn-overlay-panel.tn-embedded-note-panel {
+    &:not(.with-hue) {
+        --note-icon-custom-color: initial;
+        --note-icon-custom-background-color: initial;
+        --note-icon-hover-custom-background-color: initial;
+    }
+
+    .tn-overlay-panel-header > .title-row {
+        box-sizing: content-box;
+        padding-block: 9px;
+        padding-inline-start: 9px;
+        /* Room for the maximize and close buttons at the end of the row (see OverlayPanel.css). */
+        padding-inline-end: 64px;
+    }
+
+    .tn-embedded-note-pane {
+        padding-top: 0;
+    }
+}
+
+.modal.tn-embedded-note-sheet {
+    .modal-dialog {
+        max-height: var(--tn-modal-max-height);
+        height: 100%;
+    }
+
+    .modal-content {
+        overflow: hidden;
+    }
+
+    .modal-body {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: auto;
+    }
+}
