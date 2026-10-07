@@ -1203,12 +1203,6 @@
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
   },
-  "hide_floating_buttons_button": {
-    "button_title": "Hide buttons"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Show buttons"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Create child note and add it to map",
     "create_child_note_text": "Add note"

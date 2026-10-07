@@ -505,8 +505,6 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
                 api={api}
                 notePath={noteContext.notePath}
                 ntxId={noteContext.ntxId}
-                // The panel's title bar already carries the same help.
-                hideHelpButton
             />}
         </BottomPanel>
     );

@@ -15,18 +15,15 @@ import attribute_renderer from "../../services/attribute_renderer";
 import attributes from "../../services/attributes";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
-import { ATTRIBUTE_HELP_PAGE } from "../../services/in_app_help";
 import link from "../../services/link";
 import server from "../../services/server";
 import { isIMEComposing } from "../../services/shortcuts";
 import { escapeQuotes, getErrorMessage } from "../../services/utils";
 import ActionButton from "../react/ActionButton";
 import CKEditor, { CKEditorApi } from "../react/CKEditor";
-import HelpDropdown from "../react/HelpDropdown";
 import { useLegacyImperativeHandlers, useLegacyWidget, useTriliumEvent } from "../react/hooks";
 import { createAutocompleteMentionList, createNoteMentionList } from "../type_widgets/text/mention_list_view";
 import AttributeDetailWidget, { AttributeNameSuggestion, fetchAttributeNames } from "./attribute_detail";
-import AttributeHelp from "./AttributeHelp";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
@@ -43,11 +40,6 @@ interface AttributeEditorProps {
     notePath?: string | null;
     ntxId?: string | null;
     hidden?: boolean;
-    /**
-     * Suppresses the editor's own `?` button, for hosts that already offer the same help elsewhere
-     * (the new layout's attributes panel carries it in its title bar).
-     */
-    hideHelpButton?: boolean;
 }
 
 export interface AttributeEditorImperativeHandlers {
@@ -57,7 +49,7 @@ export interface AttributeEditorImperativeHandlers {
     renderOwnedAttributes(ownedAttributes: FAttribute[]): Promise<void>;
 }
 
-export default function AttributeEditor({ api, note, componentId, notePath, ntxId, hidden, hideHelpButton }: AttributeEditorProps) {
+export default function AttributeEditor({ api, note, componentId, notePath, ntxId, hidden }: AttributeEditorProps) {
     const [ currentValue, setCurrentValue ] = useState("");
     const [ error, setError ] = useState<unknown>();
     const [ needsSaving, setNeedsSaving ] = useState(false);
@@ -328,18 +320,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             text={escapeQuotes(t("attribute_editor.save_attributes"))}
                             onClick={save}
                         /> }
-
-                        { !hideHelpButton && (
-                            // This button lives inside the wrapper the detail popup treats as its
-                            // spawner, so its outside-click dismissal exempts it. Close it by hand to
-                            // match the hosts whose help button sits outside (the attributes panel).
-                            <HelpDropdown
-                                helpPage={ATTRIBUTE_HELP_PAGE}
-                                onShown={() => attributeDetailWidget.hide()}
-                            >
-                                <AttributeHelp />
-                            </HelpDropdown>
-                        ) }
 
                         <ActionButton
                             icon="bx bx-plus"

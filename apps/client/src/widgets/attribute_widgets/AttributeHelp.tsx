@@ -5,7 +5,7 @@ import { RawHtmlBlock } from "../react/RawHtml";
 
 /**
  * Quick reference on how to type attributes into the attribute editor. Rendered inside a
- * `HelpDropdown`, either the editor's own `?` button or the attributes panel's one in the new layout.
+ * `HelpDropdown` in the title bar of the status bar's attributes panel.
  */
 export default function AttributeHelp() {
     return (

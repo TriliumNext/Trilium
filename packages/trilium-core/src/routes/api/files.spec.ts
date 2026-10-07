@@ -156,7 +156,7 @@ describe("Files API (core)", () => {
         });
 
         it("sanitizes an image note opened inline, and the unregistered `image/svg` spelling too", async () => {
-            // An ordinary `.svg` upload lands as an image note, whose ribbon has the same Open
+            // An ordinary `.svg` upload lands as an image note, whose note actions have the same Open
             // button — the sink is reachable without an import at all.
             for (const mime of [ "image/svg+xml", "image/svg" ]) {
                 const noteId = await createSvgNote(mime, "image");

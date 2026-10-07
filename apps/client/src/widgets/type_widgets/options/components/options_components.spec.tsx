@@ -56,23 +56,23 @@ describe("CheckboxList", () => {
 
 describe("RadioWithIllustration", () => {
     const VALUES = [
-        { key: "old", text: "Old layout", illustration: <span className="old-picture" /> },
-        { key: "new", text: "New layout", illustration: <span className="new-picture" /> }
+        { key: "vertical", text: "Vertical", illustration: <span className="vertical-picture" /> },
+        { key: "horizontal", text: "Horizontal", illustration: <span className="horizontal-picture" /> }
     ];
 
     it("marks the choice in force and reports the other when its picture is pressed", () => {
         const onChange = vi.fn();
         const container = renderInto(
-            <RadioWithIllustration values={VALUES} currentValue="old" onChange={onChange} />
+            <RadioWithIllustration values={VALUES} currentValue="vertical" onChange={onChange} />
         );
 
         const items = [ ...container.querySelectorAll("li") ];
         expect(items.map((item) => item.className)).toEqual([ "selected", "" ]);
         // The picture is what is pressed, the caption naming it beneath.
-        expect(items[1].querySelector("figcaption")?.textContent).toBe("New layout");
+        expect(items[1].querySelector("figcaption")?.textContent).toBe("Horizontal");
 
         items[1].querySelector<HTMLElement>(".illustration")?.click();
-        expect(onChange).toHaveBeenCalledWith("new");
+        expect(onChange).toHaveBeenCalledWith("horizontal");
     });
 });
 

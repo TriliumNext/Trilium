@@ -353,7 +353,7 @@ const defaultOptions: DefaultOption[] = [
     {
         name: "seenCallToActions",
         value: JSON.stringify([
-            "new_layout", "background_effects", "next_theme"
+            "background_effects", "next_theme"
         ]),
         isSynced: true
     },
