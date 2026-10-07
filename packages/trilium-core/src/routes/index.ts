@@ -103,6 +103,8 @@ export function buildSharedApiRoutes({ route, asyncRoute, asyncRouteWithoutTrans
     apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
     apiRoute(PST, "/api/notes/metadata", notesApiRoute.getNotesMetadata);
     apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
+    apiRoute(GET, "/api/notes/:noteId/blocks", notesApiRoute.getNoteBlocks);
+    apiRoute(PUT, "/api/notes/:noteId/blocks", notesApiRoute.updateNoteBlocks);
     apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
     apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
     apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);

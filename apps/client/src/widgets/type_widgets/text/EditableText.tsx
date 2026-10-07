@@ -9,7 +9,7 @@ import {
     type FileUploadEvent,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
-import { deferred } from "@triliumnext/commons";
+import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
 import { createPortal } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -59,7 +59,16 @@ import {
  * - Ballon block mode, in which there is a floating toolbar for the selected text, but another floating button for the entire block (i.e. paragraph).
  * - Decoupled mode, in which the editing toolbar is actually added on the client side (in {@link ClassicEditorToolbar}), see https://ckeditor.com/docs/ckeditor5/latest/examples/framework/bottom-toolbar-editor.html for an example on how the decoupled editor works.
  */
-export default function EditableText({ note, parentComponent, ntxId, noteContext }: TypeWidgetProps) {
+interface EditableTextProps extends TypeWidgetProps {
+    /** The blocks of the note to edit instead of the whole note, a `block` link parameter. */
+    block?: string;
+    /** Receives the blocks that the editor of `block` holds, each time they change. */
+    onBlockChange?: (block: string) => void;
+}
+
+export default function EditableText({
+    note, parentComponent, ntxId, noteContext, block, onBlockChange
+}: EditableTextProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<string>("");
     /** The note `contentRef` holds the content of, so a restarted editor can be marked as holding it. */
@@ -82,6 +91,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         textNoteEditorType
     });
     const initialized = useRef(deferred<void>());
+    const [ reportBlocks ] = useState(() => (block !== undefined && onBlockChange
+        ? watchEditorBlocks(block, onBlockChange)
+        : undefined));
     const [ attachmentSaves ] = useState(() =>
         new AttachmentSaves(() => spacedUpdate.scheduleUpdate()));
     const noteEditor = useNoteEditor(noteContext);
@@ -91,6 +103,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         note,
         noteContext,
         noteType: "text",
+        block,
         getData() {
             const editor = watchdogRef.current?.editor;
             if (!editor) {
@@ -98,14 +111,18 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 return;
             }
 
-            const content = editor.getData() ?? "";
             const attachments = attachmentSaves.collect();
+            const savedAttachments = attachments.length ? { attachments } : {};
+            if (block !== undefined) {
+                return { ...getBlockData(editor as CKTextEditor, block), ...savedAttachments };
+            }
 
+            const content = editor.getData() ?? "";
             // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
             // this is important when setting a new note to code
             return {
                 content: utils.isHtmlEmpty(content) ? "" : content,
-                ...(attachments.length ? { attachments } : {})
+                ...savedAttachments
             };
         },
         onContentChange(newContent) {
@@ -224,9 +241,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             noteId: string,
             $el: JQuery<HTMLElement>,
             boxSize?: string,
-            block?: string
+            embedBlock?: string,
+            onBlockChange?: (block: string) => void
         ) {
-            return loadEmbeddedNote(noteId, $el, boxSize, { noteEditor: embedNoteEditor, block });
+            return loadEmbeddedNote(noteId, $el, boxSize, {
+                noteEditor: embedNoteEditor,
+                block: embedBlock,
+                onBlockChange
+            });
         },
         loadEmbeddedAttachment(attachmentId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
             const isFocused = focusedAttachmentIdRef.current === attachmentId;
@@ -577,7 +599,13 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 onNotificationWarning={onNotificationWarning}
                 onNotificationInfo={onNotificationInfo}
                 onWatchdogStateChange={onWatchdogStateChange}
-                onChange={() => spacedUpdate.scheduleUpdate()}
+                onChange={() => {
+                    spacedUpdate.scheduleUpdate();
+                    const editor = watchdogRef.current?.editor;
+                    if (editor) {
+                        reportBlocks?.(editor as CKTextEditor);
+                    }
+                }}
                 onEditorInitialized={(editor) => {
                     if (containerRef.current) {
                         setupImageOpening(containerRef.current, false);
@@ -591,6 +619,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     editor.plugins.get("FileUploadEditing")
                         .on<FileUploadEvent>("upload", showFileUploadProgress);
 
+                    if (block !== undefined) {
+                        editor.plugins.get("BlockReferenceEditing").editRange();
+                    }
                     initialized.current.resolve();
                     // Restore the data, either on the first render or if the editor crashes.
                     // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
@@ -613,6 +644,40 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             )}
         </>
     );
+}
+
+/**
+ * The content of an editor of the blocks of a note that `block` points at, and the blocks it holds
+ * now. An empty editor still holds a block, whose id keeps the place of the blocks in the note.
+ */
+export function getBlockData(editor: CKTextEditor, block: string) {
+    return {
+        content: editor.getData({ trim: "none" }),
+        block: getEditorBlocks(editor, block)
+    };
+}
+
+/**
+ * Calls `onBlockChange()` with the blocks that an editor of the blocks `block` holds, each time
+ * they differ from the blocks it reported last.
+ *
+ * Exported for testing.
+ */
+export function watchEditorBlocks(block: string, onBlockChange: (block: string) => void) {
+    let reportedBlock = block;
+    return (editor: CKTextEditor) => {
+        const editorBlock = getEditorBlocks(editor, block);
+        if (editorBlock && editorBlock !== reportedBlock) {
+            reportedBlock = editorBlock;
+            onBlockChange(editorBlock);
+        }
+    };
+}
+
+/** The blocks that an editor of the blocks `block` holds, preferring the ids of `block`. */
+function getEditorBlocks(editor: CKTextEditor, block: string) {
+    const range = editor.plugins.get("BlockReferenceEditing").getRange(parseBlockRange(block));
+    return range ? formatBlockRange(range) : undefined;
 }
 
 /** The number of icons per row of the picker in the editor's balloon. */

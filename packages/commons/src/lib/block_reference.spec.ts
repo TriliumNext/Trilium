@@ -5,6 +5,7 @@ import {
     type BlockNode,
     encodeBlockParameter,
     formatBlockRange,
+    getEditableBlockRun,
     isValidBlockId,
     parseBlockRange,
     resolveBlockRange,
@@ -166,6 +167,75 @@ describe("sliceToBlockReference", () => {
     });
 });
 
+describe("getEditableBlockRun", () => {
+    it("finds a single block, and the blocks of a range with their nested ancestors", () => {
+        const single = block("p", "a");
+        const quote = el("blockquote", {}, el("p", {}), single, el("p", {}));
+        const start = el("blockquote", {}, text(" "), block("p", "b"));
+        const end = el("ul", {}, el("li", {}, block("p", "c")), text("\n"));
+        const root = el("div", {}, quote, start, el("p", {}), end, el("p", {}));
+
+        expect(getEditableBlockRun(root, "a")).toEqual({
+            parent: quote, first: single, last: single
+        });
+        expect(getEditableBlockRun(root, "c:b")).toEqual({
+            parent: root, first: start, last: end
+        });
+    });
+
+    it("finds the items of a list, and a block that holds the end of the range", () => {
+        const firstItem = el("li", {}, block("p", "a"));
+        const lastItem = el("li", {}, block("p", "b"));
+        const list = el("ol", {}, el("li", {}), firstItem, el("li", {}), lastItem);
+        const quote = block("blockquote", "c", el("p", {}), block("p", "d"));
+        const root = el("div", {}, list, quote);
+
+        expect(getEditableBlockRun(root, "a:b")).toEqual({
+            parent: list, first: firstItem, last: lastItem
+        });
+        expect(getEditableBlockRun(root, "a")).toEqual({
+            parent: list, first: firstItem, last: firstItem
+        });
+        expect(getEditableBlockRun(root, "c:d")).toEqual({
+            parent: root, first: quote, last: quote
+        });
+    });
+
+    it("finds to-do items past their checkbox, and a block beside a nested list", () => {
+        const todo = (id: string) => el("li", {}, el("label", {}, el("input", {})), block("p", id));
+        const firstTask = todo("t1");
+        const lastTask = todo("t2");
+        const todoList = el("ul", { class: "todo-list" }, firstTask, lastTask);
+        const paragraph = block("p", "p");
+        const item = el("li", {}, paragraph, el("ul", {}, el("li", {})));
+        const root = el("div", {}, todoList, el("ul", {}, item));
+
+        expect(getEditableBlockRun(root, "t1:t2")).toEqual({
+            parent: todoList, first: firstTask, last: lastTask
+        });
+        expect(getEditableBlockRun(root, "p")).toEqual({
+            parent: item, first: paragraph, last: paragraph
+        });
+    });
+
+    it("finds nothing for a missing block, or an ancestor that holds other content", () => {
+        const root = el("div", {},
+            el("ul", {},
+                el("li", {}, el("p", {}), block("p", "a")),
+                el("li", {}, block("p", "s")),
+                el("li", {}, block("p", "b"), el("ul", {}))
+            ),
+            el("p", {}, block("span", "c"), text("after")),
+            el("table", {}, el("tr", {}, block("td", "d"), block("td", "e")))
+        );
+
+        for (const value of [ "a:x", "a:s", "s:b", "c", "d:e" ]) {
+            expect(getEditableBlockRun(root, value), value).toBeNull();
+        }
+        expect(getEditableBlockRun(root, "s")).not.toBeNull();
+    });
+});
+
 class TestElement implements BlockNode {
     parentNode: BlockNode | null = null;
     childNodes: BlockNode[] = [];
@@ -206,6 +276,10 @@ class TestText implements BlockNode {
     childNodes: BlockNode[] = [];
 
     constructor(readonly text: string) {}
+
+    get textContent() {
+        return this.text;
+    }
 
     remove() {
         removeFromParent(this);

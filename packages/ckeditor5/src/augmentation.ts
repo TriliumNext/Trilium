@@ -83,12 +83,16 @@ declare global {
          */
         formatDateTime(date: Date, format?: string): string;
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
-        /** Fills an embed with the note, or with the `block` of it, a `block` link parameter. */
+        /**
+         * Fills an embed with the note, or with the `block` of it, a `block` link parameter. An
+         * editor of those blocks calls `onBlockChange()` once the blocks at its edges change.
+         */
         loadEmbeddedNote(
             noteId: string,
             $el: JQuery<HTMLElement>,
             boxSize?: string,
-            block?: string
+            block?: string,
+            onBlockChange?: (block: string) => void
         ): void;
         loadEmbeddedAttachment(
             attachmentId: string,

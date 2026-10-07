@@ -19,6 +19,8 @@ interface EmbeddedNoteOptions {
     noteEditor?: NoteEditor;
     /** The blocks of the note to show, a `block` link parameter. The whole note when left out. */
     block?: string;
+    /** Points the embed at the blocks that its editor holds, once they change. */
+    onBlockChange?: (block: string) => void;
 }
 
 /**
@@ -29,7 +31,7 @@ export async function loadEmbeddedNote(
     noteId: string,
     $el: JQuery<HTMLElement>,
     boxSize?: string,
-    { noteEditor, block }: EmbeddedNoteOptions = {}
+    { noteEditor, block, onBlockChange }: EmbeddedNoteOptions = {}
 ) {
     const note = await froca.getNote(noteId);
     if (!note) return;
@@ -67,7 +69,8 @@ export async function loadEmbeddedNote(
         embedsAsReferenceLinks: true,
         mediaEnvironment: "embedded",
         noteEditor,
-        block
+        block,
+        onBlockChange
     });
 
     const box = h(ContentEmbed, {

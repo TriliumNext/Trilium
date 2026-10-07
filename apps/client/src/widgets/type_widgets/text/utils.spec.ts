@@ -182,13 +182,14 @@ describe("loadEmbeddedNote of blocks", () => {
         figure.className = "include-note";
         figure.dataset.boxSize = "tiny";
 
-        await loadEmbeddedNote("noteY", $(wrapper), "medium", { block: "b1:b2" });
+        const onBlockChange = vi.fn();
+        await loadEmbeddedNote("noteY", $(wrapper), "medium", { block: "b1:b2", onBlockChange });
 
         const viewScope = { block: "b1:b2" };
         expect(link.createLink)
             .toHaveBeenCalledWith("noteY", expect.objectContaining({ viewScope }));
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(note,
-            expect.objectContaining({ block: "b1:b2" }));
+            expect.objectContaining({ block: "b1:b2", onBlockChange }));
         expect(lastMount().props.viewScope).toEqual(viewScope);
 
         await loadEmbeddedNote("noteY", $(figure), undefined, { block: "b1" });

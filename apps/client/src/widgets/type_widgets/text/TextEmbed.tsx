@@ -17,10 +17,14 @@ interface TextEmbedProps {
     editor: ContentEditor | undefined;
     /** The content of the note that `preview` shows. */
     content: string;
+    /** The blocks of the note that the embed shows, a `block` link parameter. */
+    block?: string;
     /** The rendered note. */
     preview: HTMLElement;
-    /** Renders the note with `content`, after a change. */
-    renderPreview: (content: string) => Promise<HTMLElement>;
+    /** Renders `content`, or its blocks that `block` points at, after a change. */
+    renderPreview: (content: string, block?: string) => Promise<HTMLElement>;
+    /** Points the embed at the blocks that its editor holds, each time they change. */
+    onBlockChange?: (block: string) => void;
 }
 
 /**
@@ -28,7 +32,8 @@ interface TextEmbedProps {
  * Editable toggle of its embed is on.
  */
 export default function TextEmbed({
-    note, editor, content: initialContent, preview, renderPreview
+    note, editor, content: initialContent, block: initialBlock, preview, renderPreview,
+    onBlockChange
 }: TextEmbedProps) {
     const rootRef = useRef<HTMLDivElement>(null);
     const { isEditing } = useEditableEmbed(rootRef, {
@@ -37,8 +42,13 @@ export default function TextEmbed({
         focusTarget: ".ck-editor__editable"
     });
     const [ content, onEditorClose ] = useShownContent(note, initialContent);
+    const [ block, setBlock ] = useState(initialBlock);
+    const onEditorBlockChange = useCallback((editorBlock: string) => {
+        setBlock(editorBlock);
+        onBlockChange?.(editorBlock);
+    }, [ onBlockChange ]);
     const shownPreview =
-        useEmbedPreview(preview, content, () => renderPreview(content), isEditing);
+        useEmbedPreview(preview, content, () => renderPreview(content, block), isEditing);
 
     return (
         <EditableEmbedContent
@@ -49,6 +59,8 @@ export default function TextEmbed({
         >
             <TextEmbedEditor
                 note={note}
+                block={block}
+                onBlockChange={onEditorBlockChange}
                 hasFixedToolbar={isEditing && hasFixedToolbarAround(rootRef.current)}
                 onClose={onEditorClose}
             />

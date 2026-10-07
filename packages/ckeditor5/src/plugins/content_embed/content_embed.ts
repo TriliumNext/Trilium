@@ -1126,7 +1126,7 @@ function showEmbeddedContent( editor: Editor, element: ModelElement, wrapper: HT
 		wrapper.replaceChildren();
 	}
 	const boxSize = element.getAttribute( 'boxSize' ) as string | undefined;
-	loadEmbeddedContent( editor, element, $( wrapper ), boxSize );
+	loadEmbeddedContent( editor, element, wrapper, boxSize );
 }
 
 /** Updates the `data-*` attribute of an embed's view to what it shows, and redraws it. */
@@ -1165,9 +1165,10 @@ function getWrapperDom( editor: Editor, viewElement: ViewElement ) {
 function loadEmbeddedContent(
 	editor: Editor,
 	element: ModelElement,
-	$wrapper: JQuery<HTMLElement>,
+	wrapper: HTMLElement,
 	boxSize: string | undefined
 ) {
+	const $wrapper = $( wrapper );
 	const editorEl = editor.editing.view.getDomRoot();
 	const component = glob.getComponentByEl<EditorComponent>( editorEl );
 	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
@@ -1177,8 +1178,25 @@ function loadEmbeddedContent(
 		component.loadEmbeddedAttachment( attachmentId, $wrapper, boxSize );
 	} else if ( noteId ) {
 		const block = element.getAttribute( 'block' ) as string | undefined;
-		component.loadEmbeddedNote( noteId, $wrapper, boxSize, block );
+		component.loadEmbeddedNote( noteId, $wrapper, boxSize, block, newBlock => {
+			setEmbedBlock( editor, element, wrapper, newBlock );
+		} );
 	}
+}
+
+/**
+ * Points the embed at other blocks of its note, unless it has left the document. Its `wrapper`
+ * keeps what it shows, the editor that holds those blocks.
+ */
+function setEmbedBlock( editor: Editor, embed: ModelElement, wrapper: HTMLElement, block: string ) {
+	if ( editor.state === 'destroyed' || embed.root !== editor.model.document.getRoot() ) {
+		return;
+	}
+
+	editor.model.enqueueChange( { isUndoable: false }, writer => {
+		writer.setAttribute( 'block', block, embed );
+		shownContents.set( wrapper, JSON.stringify( getEmbeddedEntityAttributes( embed ) ) );
+	} );
 }
 
 /**
@@ -1196,7 +1214,7 @@ function reloadEmbeddedContent( editor: Editor, viewElement: ViewElement, modelE
 	const wrapperDom = getWrapperDom( editor, viewElement );
 
 	if ( wrapperDom ) {
-		loadEmbeddedContent( editor, modelElement, $( wrapperDom ), boxSize );
+		loadEmbeddedContent( editor, modelElement, wrapperDom, boxSize );
 	}
 }
 

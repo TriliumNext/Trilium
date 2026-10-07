@@ -112,6 +112,7 @@ An included text note, an included code note and an embedded code file such as a
 *   While an included text note has the focus, the formatting toolbar applies to it. The notes it includes in turn stay read-only.
 *   Code is edited in the same code editor as a <a class="reference-link" href="../Code.md">Code</a> note, with its theme, indentation and line wrapping settings.
 *   The changes are saved as you type, to the included note or to the attachment, as they would be in its own tab.
+*   An include of <a class="reference-link" href="Block%20references.md">Block references</a> edits only the referenced blocks.
 *   Editing is not available in a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), for an included note marked `#readOnly`, or for an attachment of another note.
 
 ## Drawing canvases

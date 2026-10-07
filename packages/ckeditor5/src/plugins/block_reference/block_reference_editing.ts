@@ -1,4 +1,4 @@
-import { BLOCK_ID_ATTRIBUTE, isValidBlockId } from "@triliumnext/commons";
+import { BLOCK_ID_ATTRIBUTE, type BlockRange, isValidBlockId } from "@triliumnext/commons";
 import {
     Command, type Model, type ModelElement, type ModelWriter, Plugin, type ViewElement
 } from "ckeditor5";
@@ -8,6 +8,9 @@ export const BLOCK_ID = "blockId";
 
 const BLOCK_ID_LENGTH = 12;
 const BLOCK_ID_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const EDGES = [ "first", "last" ] as const;
+
+type Edge = typeof EDGES[number];
 
 /** The blocks that a reference made from the selection points at. */
 export interface BlockReferenceTarget {
@@ -21,6 +24,8 @@ export interface BlockReferenceTarget {
  * document.
  */
 export default class BlockReferenceEditing extends Plugin {
+
+    private isRangeEditor = false;
 
     static get pluginName() {
         return "BlockReferenceEditing" as const;
@@ -54,7 +59,29 @@ export default class BlockReferenceEditing extends Plugin {
 
         editor.model.document.registerPostFixer((writer) =>
             removeDuplicateBlockIds(editor.model, writer));
+        editor.model.document.registerPostFixer((writer) =>
+            this.isRangeEditor && giveIdsToEdgeBlocks(editor.model, writer));
         editor.commands.add("assignBlockReference", new AssignBlockReferenceCommand(editor));
+    }
+
+    /**
+     * Makes the editor hold a range of blocks of a note. Its first and its last block then always
+     * have an id, which `getRange()` returns.
+     */
+    editRange() {
+        this.isRangeEditor = true;
+    }
+
+    /**
+     * The range from the first to the last block of the editor, or `null` while an edge has no
+     * id. A block at an edge can start or end with other blocks, as a block quote does, and the
+     * ids of `preferred` win among theirs.
+     */
+    getRange(preferred?: BlockRange | null): BlockRange | null {
+        const model = this.editor.model;
+        const startId = getEdgeId(model, "first", preferred?.startId);
+        const endId = getEdgeId(model, "last", preferred?.endId);
+        return startId && endId ? { startId, endId } : null;
     }
 }
 
@@ -136,6 +163,41 @@ function removeDuplicateBlockIds(model: Model, writer: ModelWriter) {
     }
 
     return isChanged;
+}
+
+function giveIdsToEdgeBlocks(model: Model, writer: ModelWriter) {
+    let isChanged = false;
+    for (const edge of EDGES) {
+        const blocks = getEdgeBlocks(model, edge);
+        if (blocks.length && !blocks.some((block) => block.hasAttribute(BLOCK_ID))) {
+            writer.setAttribute(BLOCK_ID, generateBlockId(), blocks[0]);
+            isChanged = true;
+        }
+    }
+
+    return isChanged;
+}
+
+function getEdgeId(model: Model, edge: Edge, preferred: string | undefined) {
+    const ids = getEdgeBlocks(model, edge).flatMap((block) =>
+        block.hasAttribute(BLOCK_ID) ? [ block.getAttribute(BLOCK_ID) as string ] : []);
+    return ids.find((id) => id === preferred) ?? ids[0];
+}
+
+/** The block at an edge of the root, then the blocks inside that it starts or ends with. */
+function getEdgeBlocks(model: Model, edge: Edge) {
+    const blocks: ModelElement[] = [];
+    let node = getEdgeChild(model.document.getRoot() as ModelElement, edge);
+    while (node?.is("element") && model.schema.checkAttribute(node, BLOCK_ID)) {
+        blocks.push(node);
+        node = model.schema.isObject(node) ? null : getEdgeChild(node, edge);
+    }
+
+    return blocks;
+}
+
+function getEdgeChild(element: ModelElement, edge: Edge) {
+    return element.getChild(edge === "first" ? 0 : element.childCount - 1);
 }
 
 function getInsertedBlocksWithId(model: Model) {

@@ -215,6 +215,69 @@ describe("BlockReference", () => {
         });
     });
 
+    describe("range editor", () => {
+        it("gives an id to a new block at either edge, and returns the range", async () => {
+            const editor = await createRangeEditor(
+                "<p data-trilium-block-id=\"a\">one</p><p data-trilium-block-id=\"b\">two</p>"
+            );
+            const plugin = editor.plugins.get("BlockReferenceEditing");
+            expect(plugin.getRange()).toEqual({ startId: "a", endId: "b" });
+
+            editor.model.change((writer) => writer.setSelection(getBlock(editor, 1), "end"));
+            editor.execute("enter");
+            const endId = getBlock(editor, 2).getAttribute("blockId");
+            expect(endId).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(plugin.getRange()).toEqual({ startId: "a", endId });
+
+            editor.model.change((writer) => writer.setSelection(getBlock(editor, 0), 0));
+            editor.execute("enter");
+            const startId = getBlock(editor, 0).getAttribute("blockId");
+            expect(getBlock(editor, 1).getAttribute("blockId")).toBe("a");
+            expect(getBlock(editor, 2).getAttribute("blockId")).toBe("b");
+            expect(plugin.getRange()).toEqual({ startId, endId });
+            expect(new Set([ startId, endId, "a", "b" ]).size).toBe(4);
+        });
+
+        it("prefers the given ids at an edge whose blocks have several", async () => {
+            const editor = await createRangeEditor(
+                "<blockquote data-trilium-block-id=\"q\"><p data-trilium-block-id=\"a\">one</p>"
+                + "<p data-trilium-block-id=\"b\">two</p></blockquote>"
+            );
+            const plugin = editor.plugins.get("BlockReferenceEditing");
+
+            expect(plugin.getRange()).toEqual({ startId: "q", endId: "q" });
+            expect(plugin.getRange({ startId: "a", endId: "b" }))
+                .toEqual({ startId: "a", endId: "b" });
+            expect(plugin.getRange({ startId: "x", endId: "y" }))
+                .toEqual({ startId: "q", endId: "q" });
+        });
+
+        it("gives an id to a table rather than to its cells", async () => {
+            const editor = await createRangeEditor(
+                "<figure class=\"table\"><table><tbody><tr><td>"
+                + "<p data-trilium-block-id=\"c\">Cell</p></td></tr></tbody></table></figure>"
+            );
+
+            const tableId = getBlock(editor, 0).getAttribute("blockId");
+            expect(tableId).toMatch(/^[A-Za-z0-9]{12}$/);
+            expect(editor.plugins.get("BlockReferenceEditing").getRange())
+                .toEqual({ startId: tableId, endId: tableId });
+        });
+
+        it("leaves an edge that cannot have an id, and a regular editor, without one", async () => {
+            const editor = await createRangeEditor("<p>one</p>");
+            editor.model.schema.register("divider", { allowIn: "$root" });
+            editor.conversion.elementToElement({ model: "divider", view: "hr" });
+            setModelData(editor.model, "<divider></divider>");
+            expect(editor.plugins.get("BlockReferenceEditing").getRange()).toBeNull();
+
+            const regularEditor = await createTestEditor(PLUGINS);
+            regularEditor.setData("<p>one</p>");
+            expect(regularEditor.getData()).toBe("<p>one</p>");
+            expect(regularEditor.plugins.get("BlockReferenceEditing").getRange()).toBeNull();
+        });
+    });
+
     describe("block handle menu", () => {
         it("asks the host to open the menu for the selected blocks", async () => {
             const openBlockHandleMenu = vi.fn();
@@ -269,6 +332,13 @@ function getEditable(editor: ClassicEditor) {
     }
 
     return editable;
+}
+
+async function createRangeEditor(data: string) {
+    const editor = await createTestEditor(PLUGINS);
+    editor.plugins.get("BlockReferenceEditing").editRange();
+    editor.setData(data);
+    return editor;
 }
 
 function getBlock(editor: ClassicEditor, index: number) {

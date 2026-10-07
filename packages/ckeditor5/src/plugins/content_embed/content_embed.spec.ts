@@ -994,7 +994,7 @@ describe("ContentEmbed with attachments", () => {
         expect(findContentEmbed(editor)?.getAttribute("attachmentId")).toBe("att1");
     });
 
-    it("stores, saves and renders an embed of blocks, and redraws it when they change", () => {
+    it("stores, saves and renders an embed of blocks, and points it at other blocks", async () => {
         const html = "<figure class=\"include-note\" data-note-id=\"noteAbc\" data-block=\"a1:b2\""
             + " data-box-size=\"small\">&nbsp;</figure>";
         editor.setData(html);
@@ -1002,21 +1002,33 @@ describe("ContentEmbed with attachments", () => {
 
         expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b2");
         expect(editor.getData()).toBe(html);
-        expect(loadEmbeddedNote)
-            .toHaveBeenLastCalledWith("noteAbc", expect.anything(), "small", "a1:b2");
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "small", "a1:b2", expect.any(Function)
+        );
 
-        editor.model.change((writer) => {
-            const embed = findContentEmbed(editor);
-            if (embed) {
-                writer.setAttribute("block", "c3", embed);
-            }
-        });
+        // The editor in the embed points it at other blocks, and keeps showing them.
+        const setBlock = loadEmbeddedNote.mock.lastCall?.[4] as (block: string) => void;
+        setBlock("c3");
         renderEmbeds();
 
-        expect(loadEmbeddedNote)
-            .toHaveBeenLastCalledWith("noteAbc", expect.anything(), "small", "c3");
+        expect(loadEmbeddedNote).toHaveBeenCalledOnce();
+        expect(editor.getData()).toBe(html.replace("a1:b2", "c3"));
         expect(editor.editing.view.getDomRoot()?.querySelector(".include-note")
             ?.getAttribute("data-block")).toBe("c3");
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+
+        editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "medium", "c3", expect.any(Function)
+        );
+
+        editor.setData("<p>Removed</p>");
+        setBlock("d4");
+        expect(editor.getData()).toBe("<p>Removed</p>");
+
+        await editor.destroy();
+        expect(() => setBlock("e5")).not.toThrow();
     });
 
     it("turns a link to blocks into an embed of them, and the embed back into a link", async () => {

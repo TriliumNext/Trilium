@@ -12,9 +12,17 @@ export interface BlockNode {
     parentNode: BlockNode | null;
     childNodes: ArrayLike<BlockNode>;
     tagName?: string;
+    textContent?: string | null;
     getAttribute?(name: string): string | null | undefined;
     setAttribute?(name: string, value: string): unknown;
     remove?(): unknown;
+}
+
+/** Sibling nodes, children of `parent`, from `first` to `last`. */
+export interface BlockRun<T extends BlockNode> {
+    parent: T;
+    first: T;
+    last: T;
 }
 
 /** Whether `id` can be a block id. An id can be any text without `:`, the range separator. */
@@ -89,6 +97,73 @@ export function sliceToBlockReference(root: BlockNode, value: string) {
 
     sliceToBlockRange(root, start, end);
     return true;
+}
+
+/**
+ * The sibling nodes under `root` that hold exactly the blocks that `value`, a `block` link
+ * parameter, points at, so that they can be edited apart from the rest. Blocks that fill a list
+ * item are its item. `null` when a block is missing, or when an ancestor of the blocks also holds
+ * other content, as a list item does for a paragraph before the first block.
+ */
+export function getEditableBlockRun<T extends BlockNode>(
+    root: T,
+    value: string
+): BlockRun<T> | null {
+    const { start, end } = resolveBlockReference<T>(root, value);
+    if (!start || !end) {
+        return null;
+    }
+
+    const startPath = getPath(start, root);
+    const endPath = getPath(end, root);
+    let depth = 0;
+    while (depth < startPath.length && startPath[depth] === endPath[depth]) {
+        depth++;
+    }
+
+    const isNested = depth === startPath.length;
+    const first = isNested ? start : startPath[depth];
+    const last = isNested ? start : endPath[depth];
+    const parent = first.parentNode as T;
+    if (!isAtEdge(start, first, "first") || !isAtEdge(end, last, "last")) {
+        return null;
+    }
+
+    if (isTag(parent, "LI") && isAtEdge(first, parent, "first") && isAtEdge(last, parent, "last")) {
+        return { parent: parent.parentNode as T, first: parent, last: parent };
+    }
+    const isContainer = parent === root || RUN_CONTAINERS.has(String(parent.tagName).toUpperCase());
+    return isContainer ? { parent, first, last } : null;
+}
+
+const RUN_CONTAINERS = new Set([
+    "ASIDE", "BLOCKQUOTE", "DETAILS", "DIV", "LI", "OL", "SECTION", "UL"
+]);
+
+function getPath<T extends BlockNode>(node: T, root: BlockNode) {
+    const path: T[] = [];
+    for (let current: BlockNode = node; current !== root;) {
+        path.unshift(current as T);
+        current = current.parentNode as BlockNode;
+    }
+    return path;
+}
+
+function isAtEdge(node: BlockNode, ancestor: BlockNode, edge: "first" | "last") {
+    for (let current = node; current !== ancestor;) {
+        const parent = current.parentNode as BlockNode;
+        const siblings = Array.from(parent.childNodes).filter(isContent);
+        if (siblings.at(edge === "first" ? 0 : -1) !== current) {
+            return false;
+        }
+        current = parent;
+    }
+    return true;
+}
+
+/** Whether `node` has text, or is an element other than a label, such as a to-do checkbox. */
+function isContent(node: BlockNode) {
+    return !!node.textContent?.trim() || (!!node.tagName && !isTag(node, "LABEL"));
 }
 
 function sliceToBlockRange(root: BlockNode, start: BlockNode, end: BlockNode) {
