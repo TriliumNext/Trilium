@@ -91,7 +91,6 @@
         padding-inline-start: 9px;
         /* Clear of the maximize and close buttons laid over the end of the row (OverlayPanel.css). */
         padding-inline-end: 64px;
-        border-bottom: 1px solid var(--main-border-color);
     }
 
     .tn-embedded-note-pane {
