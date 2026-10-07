@@ -104,6 +104,8 @@ const typeMappings: Record<ActiveContentInfo["type"], {
         title: t("active_content_badges.type_widget"),
         icon: "bx bxs-widget",
         helpPage: "MgibgPcfeuGz",
+        apiDocsPage: "Q2z6av6JZVWm",
+        electronApiDocsPage: "GFXVHyblVN3d",
         additionalOptions: [
             {
                 type: "button",
