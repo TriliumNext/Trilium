@@ -134,7 +134,7 @@ export default class DesktopLayout {
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
-                                                                .optChild(isNewLayout, <InlineTitle />)
+                                                                .child(<InlineTitle />)
                                                                 .child(<NoteTitleActions />)
                                                                 .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)

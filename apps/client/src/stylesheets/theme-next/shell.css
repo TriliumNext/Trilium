@@ -1314,20 +1314,8 @@ body.desktop .title-row {
 
 /* The "Change note icon" button */
 
-:root .note-icon-widget button.note-icon,
-:root .note-icon-widget button.note-icon:hover {
+:root .note-icon-widget button.note-icon {
     border: none;
-    border-radius: 8px;
-}
-
-/* Dropdown open */
-:root .note-icon-widget button.note-icon.show {
-    background: var(--ck-editor-toolbar-dropdown-button-open-background);
-}
-
-:root .note-icon-widget button.note-icon:not(:disabled):hover {
-    background: var(--icon-button-hover-background);
-    color: var(--icon-button-hover-color);
 }
 
 .note-actions {
