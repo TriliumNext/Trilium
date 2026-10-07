@@ -1369,14 +1369,11 @@
     "undelete_failed": "Notița nu a putut fi restaurată — este posibil să fi fost eliminată definitiv."
   },
   "relation_map": {
-    "cannot_match_transform": "Nu s-a putut identifica transformarea: {{transform}}",
-    "click_on_canvas_to_place_new_note": "Clic pentru a plasa o nouă notiță",
     "confirm_remove_relation": "Doriți ștergerea relației?",
     "connection_exists": "Deja există conexiunea „{{name}}” dintre aceste notițe.",
     "default_new_note_title": "notiță nouă",
     "edit_title": "Editare titlu",
     "enter_new_title": "Introduceți noul titlu:",
-    "enter_title_of_new_note": "Introduceți titlul noii notițe",
     "note_already_in_diagram": "Notița „{{title}}” deja se află pe diagramă.",
     "note_not_found": "Notița „{{noteId}}” nu a putut fi găsită!",
     "remove_note": "Șterge notița",

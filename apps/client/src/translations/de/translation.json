@@ -1252,11 +1252,8 @@
     "connection_exists": "Die Verbindung „{{name}}“ zwischen diesen Notizen besteht bereits.",
     "start_dragging_relations": "Beginnen Sie hier mit dem Ziehen von Relationen und legen Sie sie auf einer anderen Notiz ab.",
     "note_not_found": "Notiz {{noteId}} nicht gefunden!",
-    "cannot_match_transform": "Transformation kann nicht übereinstimmen: {{transform}}",
     "note_already_in_diagram": "Die Notiz „{{title}}“ ist schon im Diagramm.",
-    "enter_title_of_new_note": "Geben Sie den Titel der neuen Notiz ein",
     "default_new_note_title": "neue Notiz",
-    "click_on_canvas_to_place_new_note": "Klicken Sie auf den Canvas, um eine neue Notiz zu platzieren",
     "rename_relation": "Relation umbenennen"
   },
   "backend_log": {

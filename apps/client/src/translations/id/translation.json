@@ -1407,11 +1407,8 @@
     "connection_exists": "Koneksi '{{name}}' antara catatan-catatan ini sudah ada.",
     "start_dragging_relations": "Mulai seret relasi dari sini dan lepaskan pada catatan lain.",
     "note_not_found": "Catatan {{noteId}} tidak ditemukan!",
-    "cannot_match_transform": "Tidak dapat mencocokkan transform: {{transform}}",
     "note_already_in_diagram": "Catatan \"{{title}}\" sudah ada di diagram.",
-    "enter_title_of_new_note": "Masukkan judul catatan baru",
-    "default_new_note_title": "catatan baru",
-    "click_on_canvas_to_place_new_note": "Klik pada canvas untuk menempatkan catatan baru"
+    "default_new_note_title": "catatan baru"
   },
   "render": {
     "setup_title": "Tampilkan HTML kustom atau Preact JSX di dalam catatan ini",

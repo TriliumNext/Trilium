@@ -1306,11 +1306,8 @@
     "connection_exists": "Tá nasc '{{name}}' idir na nótaí seo ann cheana féin.",
     "start_dragging_relations": "Tosaigh ag tarraingt caidrimh as seo agus scaoil iad ar nóta eile.",
     "note_not_found": "Nóta {{noteId}} gan aimsiú!",
-    "cannot_match_transform": "Ní féidir an claochlú a mheaitseáil: {{transform}}",
     "note_already_in_diagram": "Tabhair faoi deara go bhfuil \"{{title}}\" sa léaráid cheana féin.",
-    "enter_title_of_new_note": "Cuir isteach teideal an nóta nua",
     "default_new_note_title": "nóta nua",
-    "click_on_canvas_to_place_new_note": "Cliceáil ar chanbhás chun nóta nua a chur",
     "rename_relation": "Athainmnigh an gaol"
   },
   "backend_log": {

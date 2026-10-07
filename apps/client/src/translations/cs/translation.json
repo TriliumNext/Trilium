@@ -993,11 +993,8 @@
     "connection_exists": "Připojení '{{name}}' mezi těmito poznámkami již existuje.",
     "start_dragging_relations": "Začněte táhnout vazby odsud a přetáhněte je na jinou poznámku.",
     "note_not_found": "Poznámka {{noteId}} nebyla nalezena!",
-    "cannot_match_transform": "Nelze porovnat transformaci: {{transform}}",
     "note_already_in_diagram": "Poznámka \"{{title}}\" je již v diagramu.",
-    "enter_title_of_new_note": "Zadejte název nové poznámky",
-    "default_new_note_title": "nová poznámka",
-    "click_on_canvas_to_place_new_note": "Klikněte na plátno pro umístění nové poznámky"
+    "default_new_note_title": "nová poznámka"
   },
   "render": {
     "setup_title": "Zobrazit vlastní HTML nebo Preact JSX uvnitř této poznámky",

@@ -1016,11 +1016,8 @@
     "connection_exists": "Зв'язок '{{name}}' між цими нотатками вже існує.",
     "start_dragging_relations": "Почніть перетягувати зв'язки звідси та перемістіть їх на іншу нотатку.",
     "note_not_found": "Нотатка {{noteId}} не знайдена!",
-    "cannot_match_transform": "Неможливо порівняти перетворення: {{transform}}",
     "note_already_in_diagram": "Нотатка\"{{title}}\" вже є на діаграмі.",
-    "enter_title_of_new_note": "Введіть заголовок нової нотатки",
-    "default_new_note_title": "нова нотатка",
-    "click_on_canvas_to_place_new_note": "Натисніть на полотно, щоб розмістити нову нотатку"
+    "default_new_note_title": "нова нотатка"
   },
   "backend_log": {
     "refresh": "Оновити"

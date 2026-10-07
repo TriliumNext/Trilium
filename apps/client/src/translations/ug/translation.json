@@ -991,9 +991,7 @@
     "connection_exists": "بۇ خاتىرىلەر ئارىسىدا '{{name}}' ناملىق باغلىنىش ئاللىبۇرۇن مەۋجۇت.",
     "start_dragging_relations": "مۇناسىۋەتلەرنى بۇ يەردىن سۆرەپ، باشقا بىر خاتىرىنىڭ ئۈستىگە قويۇپ بېرىڭ.",
     "note_not_found": "{{noteId}} كىملىكلىك خاتىرە تېپىلمىدى!",
-    "cannot_match_transform": "تەڭشەش ئۇسۇلىنى ماسلاشتۇرغىلى بولمىدى: {{transform}}",
     "note_already_in_diagram": "\"{{title}}\" ناملىق خاتىرە دىئاگراممىدا ئاللىبۇرۇن مەۋجۇت.",
-    "enter_title_of_new_note": "يېڭى خاتىرىنىڭ تېمىسىنى كىرگۈزۈڭ",
     "default_new_note_title": "يېڭى خاتىرە"
   },
   "render": {
