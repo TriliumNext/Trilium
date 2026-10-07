@@ -5,7 +5,6 @@ import { VNode } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { EventData, EventNames } from "../components/app_context";
-import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
@@ -29,7 +28,6 @@ import RawHtml from "./react/RawHtml";
 import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "./type_widgets/helpers/split_editor_mode";
 
 export interface FloatingButtonContext {
-    parentComponent: Component;
     note: FNote;
     noteContext: NoteContext;
     isDefaultViewMode: boolean;
@@ -50,7 +48,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    RefreshBackendLogButton,
     ToggleReadOnlyButton,
     SwitchSplitOrientationButton,
     DisplayModeSwitcher,
@@ -73,15 +70,6 @@ export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton,
     ToggleReadOnlyButton
 ];
-
-function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = (note.noteId === "_backendLog" || note.type === "render") && isDefaultViewMode;
-    return isEnabled && <FloatingButton
-        text={t("backend_log.refresh")}
-        icon="bx bx-refresh"
-        onClick={() => parentComponent.triggerEvent("refreshData", { ntxId: noteContext.ntxId })}
-    />;
-}
 
 function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: FloatingButtonContext) {
     const [ displayMode ] = useNoteLabel(note, "displayMode");

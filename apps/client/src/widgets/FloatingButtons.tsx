@@ -30,7 +30,6 @@ export default function FloatingButtons({ items }: FloatingButtonsProps) {
         return {
             note,
             noteContext,
-            parentComponent,
             isDefaultViewMode: noteContext.viewScope?.viewMode === "default",
             viewType: viewType as ViewTypeOptions,
             isReadOnly,
