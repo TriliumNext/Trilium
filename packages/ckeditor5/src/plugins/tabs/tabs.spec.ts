@@ -64,15 +64,15 @@ describe("Tabs", () => {
         expect(editor.getData()).toBe(TWO_TABS);
     });
 
-    it("inserts two empty tabs and places the caret in the first title", () => {
+    it("inserts two numbered tabs and selects the first title", () => {
         setModelData(editor.model, "<paragraph>[]</paragraph>");
 
         editor.execute("tabs");
 
         expect(getModelData(editor.model)).toBe(
             "<tabs>" +
-                "<tab><tabTitle>[]</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
-                "<tab><tabTitle></tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+                "<tab><tabTitle>[Tab 1]</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
+                "<tab><tabTitle>Tab 2</tabTitle><tabPanel><paragraph></paragraph></tabPanel></tab>" +
             "</tabs>"
         );
     });
@@ -135,7 +135,8 @@ describe("Tabs", () => {
         editor.model.change(writer => writer.setSelection(windows.getChild(0) as ModelElement, 0));
 
         editor.execute("insertTab");
-        editor.model.change(writer => writer.insertText("macOS", editor.model.document.selection.getFirstPosition()));
+        expect(getModelData(editor.model)).toContain("<tabTitle>[Tab 2]</tabTitle>");
+        editor.model.change(writer => editor.model.insertContent(writer.createText("macOS")));
         expect(activeTitles()).toEqual(["macOS"]);
 
         editor.execute("moveTabRight");

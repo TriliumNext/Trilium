@@ -4378,6 +4378,7 @@
       "insert-a-canvas-to-draw-on": "Insert a canvas to draw on.",
       "tabs": "Tabs",
       "tab-title": "Tab title",
+      "tab-0": "Tab %0",
       "tab-content": "Tab content",
       "add-tab": "Add tab",
       "remove-tab": "Remove tab",

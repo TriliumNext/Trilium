@@ -3,8 +3,8 @@ import { Command, type Editor, type ModelElement, type ModelWriter } from "ckedi
 import { ELEMENTS } from "./constants.js";
 
 /**
- * Inserts a tabs block with two empty tabs at the selection and places the caret in the first
- * tab's title.
+ * Inserts a tabs block with two numbered tabs at the selection and selects the first tab's title,
+ * so typing replaces it.
  */
 export class InsertTabsCommand extends Command {
 
@@ -19,21 +19,18 @@ export class InsertTabsCommand extends Command {
 
         model.change(writer => {
             const tabs = writer.createElement(ELEMENTS.tabs);
-            writer.append(createTab(writer), tabs);
-            writer.append(createTab(writer), tabs);
+            const firstTab = createTab(writer, getDefaultTitle(this.editor, 0));
+            writer.append(firstTab, tabs);
+            writer.append(createTab(writer, getDefaultTitle(this.editor, 1)), tabs);
             model.insertObject(tabs, null, null, { setSelection: "on" });
-
-            const firstTitle = getTitle(tabs.getChild(0) as ModelElement);
-            if (firstTitle) {
-                writer.setSelection(firstTitle, 0);
-            }
+            selectTitle(writer, firstTab);
         });
     }
 }
 
 /**
- * Adds a tab next to the one holding the selection and places the caret in its title. With
- * the whole block selected, the tab goes at the end.
+ * Adds a tab next to the one holding the selection, numbered by its position, and selects its
+ * title. With the whole block selected, the tab goes at the end.
  */
 export class InsertTabCommand extends Command {
 
@@ -49,18 +46,18 @@ export class InsertTabCommand extends Command {
         }
         const currentTab = getSelectedTab(editor);
 
+        const index = currentTab
+            ? (currentTab.index ?? 0) + (position === "after" ? 1 : 0)
+            : tabs.childCount;
+
         editor.model.change(writer => {
-            const tab = createTab(writer);
+            const tab = createTab(writer, getDefaultTitle(editor, index));
             if (currentTab) {
                 writer.insert(tab, currentTab, position);
             } else {
                 writer.insert(tab, tabs, "end");
             }
-
-            const title = getTitle(tab);
-            if (title) {
-                writer.setSelection(title, 0);
-            }
+            selectTitle(writer, tab);
         });
     }
 }
@@ -140,10 +137,12 @@ export class MoveTabCommand extends Command {
     }
 }
 
-/** Creates a tab with an empty title and a panel holding one empty paragraph. */
-export function createTab(writer: ModelWriter): ModelElement {
+/** Creates a tab with the given title and a panel holding one empty paragraph. */
+export function createTab(writer: ModelWriter, titleText: string): ModelElement {
     const tab = writer.createElement(ELEMENTS.tab);
-    writer.append(writer.createElement(ELEMENTS.tabTitle), tab);
+    const title = writer.createElement(ELEMENTS.tabTitle);
+    writer.appendText(titleText, title);
+    writer.append(title, tab);
     const panel = writer.createElement(ELEMENTS.tabPanel);
     writer.append(writer.createElement("paragraph"), panel);
     writer.append(panel, tab);
@@ -173,4 +172,17 @@ export function getSelectedTabs(editor: Editor): ModelElement | null {
 function getTitle(tab: ModelElement): ModelElement | null {
     const title = tab.getChild(0);
     return title?.is("element", ELEMENTS.tabTitle) ? title : null;
+}
+
+/** Returns "Tab N" for the tab at the zero-based `index`. */
+function getDefaultTitle(editor: Editor, index: number): string {
+    const t = editor.t;
+    return t("Tab %0", index + 1);
+}
+
+function selectTitle(writer: ModelWriter, tab: ModelElement) {
+    const title = getTitle(tab);
+    if (title) {
+        writer.setSelection(writer.createRangeIn(title));
+    }
 }
