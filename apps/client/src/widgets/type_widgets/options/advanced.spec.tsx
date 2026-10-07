@@ -41,7 +41,6 @@ let host: HTMLElement;
 
 beforeEach(() => {
     mocks.features = [
-        { id: "new-layout", name: "New layout", description: "…" },
         { id: "llm", name: "AI", description: "…" },
         { id: "spreadsheets", name: "Spreadsheets", description: "…" }
     ];
@@ -69,7 +68,7 @@ describe("the experimental features card", () => {
     it("leaves out the features that are switched somewhere better suited to them", () => {
         open();
 
-        // The layout has its own illustrated choice on Appearance, and the AI switch heads its own page.
+        // The AI switch heads its own page.
         expect(featureSwitches()).toHaveLength(1);
         expect(host.querySelector(".tn-card-option-label")?.firstChild?.textContent).toBe("Spreadsheets");
     });

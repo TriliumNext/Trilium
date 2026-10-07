@@ -133,7 +133,7 @@ function KeyboardActionMenuItem({ command, ...props }: MenuItemProps<KeyboardAct
     return <MenuItem {...props} command={command} keyboardShortcut={command} />;
 }
 
-export function VerticalLayoutIcon({ logoRef }: { logoRef?: RefObject<SVGSVGElement | null> }) {
+function VerticalLayoutIcon({ logoRef }: { logoRef?: RefObject<SVGSVGElement | null> }) {
     return (
         <svg ref={logoRef} viewBox="0 0 256 256" title={t("global_menu.menu")}>
             <g>

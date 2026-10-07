@@ -1795,8 +1795,6 @@
   "experimental_features": {
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",
-    "new_layout_name": "New Layout",
-    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases.",
     "llm_name": "AI / LLM Chat",
     "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models."
   },
@@ -3736,10 +3734,7 @@
     "related_code_blocks": "Color scheme for code blocks in text notes",
     "related_code_notes": "Color scheme for code notes",
     "ui": "User interface",
-    "ui_layout_style": "Layout style",
-    "ui_layout_orientation": "Launcher bar orientation",
-    "ui_old_layout": "Old layout",
-    "ui_new_layout": "New layout"
+    "ui_layout_orientation": "Launcher bar orientation"
   },
   "units": {
     "percentage": "%"

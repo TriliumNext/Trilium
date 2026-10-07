@@ -1,6 +1,5 @@
 import { t } from "./i18n";
 import options from "./options";
-import { isMobile } from "./utils";
 
 export interface ExperimentalFeature {
     id: string;
@@ -9,11 +8,6 @@ export interface ExperimentalFeature {
 }
 
 export const experimentalFeatures = [
-    {
-        id: "new-layout",
-        name: t("experimental_features.new_layout_name"),
-        description: t("experimental_features.new_layout_description"),
-    },
     {
         id: "llm",
         name: t("experimental_features.llm_name"),
@@ -31,10 +25,6 @@ export function getAvailableExperimentalFeatures() {
 let enabledFeatures: Set<ExperimentalFeatureId> | null = null;
 
 export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): boolean {
-    if (featureId === "new-layout") {
-        return (isMobile() || options.is("newLayout"));
-    }
-
     if (featureId === "llm") {
         return options.is("aiEnabled");
     }
@@ -44,9 +34,6 @@ export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): 
 
 export function getEnabledExperimentalFeatureIds() {
     const values = [ ...getEnabledFeatures().values() ];
-    if (isMobile() || options.is("newLayout")) {
-        values.push("new-layout");
-    }
     if (options.is("aiEnabled")) {
         values.push("llm");
     }
@@ -62,7 +49,6 @@ function getEnabledFeatures() {
             console.warn("Failed to parse experimental features from options:", e);
         }
         enabledFeatures = new Set(features);
-        enabledFeatures.delete("new-layout"); // handled separately.
         enabledFeatures.delete("llm"); // handled separately, via the aiEnabled option.
     }
     return enabledFeatures;

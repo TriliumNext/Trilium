@@ -151,7 +151,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "splitEditorOrientation",
     "seenCallToActions",
     "experimentalFeatures",
-    "newLayout",
     "mfaMethod",
     // LLM options
     "aiEnabled",

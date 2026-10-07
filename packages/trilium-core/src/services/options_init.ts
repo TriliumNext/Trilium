@@ -267,7 +267,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "backdropEffectsEnabled", value: "true", isSynced: false },
     { name: "smoothScrollEnabled", value: "true", isSynced: false },
     { name: "hardwareAccelerationEnabled", value: "true", isSynced: false },
-    { name: "newLayout", value: "true", isSynced: true },
 
     // PDF
     { name: "pdfSignatures", value: "{}", isSynced: true },
