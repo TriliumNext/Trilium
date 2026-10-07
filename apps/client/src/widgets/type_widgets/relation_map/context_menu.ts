@@ -57,13 +57,12 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
 }
 
 /**
- * Asks whether to take the note off the map, and whether to delete it from the tree as well, then
- * does so. Serves the box's context menu and the note pane.
+ * Asks whether to remove the note from the map, and whether to also delete it from the tree, then
+ * does so. Used by the box's context menu and by the note pane.
  */
 export async function confirmRemoveFromMap(note: FNote, mapApiRef: RefObject<RelationMapApi | null>) {
-    // The branch is all the dialog is told: from it, it works out for itself whether ticking the
-    // box would delete the note or merely unfile it here, and says so (see
-    // confirmDeleteNoteBoxWithNote).
+    // `confirmDeleteNoteBoxWithNote` receives only the branch, and uses it to tell whether ticking
+    // the checkbox deletes the note or only removes it from this parent.
     const result = await dialog.confirmDeleteNoteBoxWithNote(note.title, {
         noteId: note.noteId,
         branchId: mapApiRef.current?.branchIdFor(note.noteId)

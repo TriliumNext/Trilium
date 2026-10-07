@@ -12,7 +12,7 @@ import { ParentComponent } from "../../react/react_utils";
 import type RelationMapApi from "./api";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 
-/** Stands in for the note's editor, listening for what a real editor listens for. */
+/** Stub for the note's editor, listening for `beforeNoteContextRemove` as the real editor does. */
 const editorAskedToSave = vi.fn();
 vi.mock("../../NoteDetail", () => ({
     default: () => {
@@ -30,7 +30,7 @@ vi.mock("../../../services/dialog", async (importOriginal) => ({
     }
 }));
 
-// A promoted text field asks the server for the values other notes hold under its name.
+// Promoted text fields request autocomplete values from the server.
 server.get = (async () => []) as unknown as typeof server.get;
 
 interface MountOptions {
@@ -76,7 +76,7 @@ describe("relation map NotePane", () => {
         (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
     });
 
-    /** Stands in for `RelationMap`, which owns the selection and the notes on the map. */
+    /** Stub for `RelationMap`, which owns the selection and the list of notes on the map. */
     function Harness({ noteIdsOnMap, isReadOnly, initialSelection }: {
         noteIdsOnMap: string[]; isReadOnly: boolean; initialSelection: PaneSelection | null;
     }) {

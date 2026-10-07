@@ -62,12 +62,12 @@
      than hiding what is behind it. */
   --board-edit-backdrop: rgba(0, 0, 0, 0.15);
 
-  /* What a column's heading writes its text in, standing as it does on the column rather than on a
-     card (see note_card.css for the card's own). On a coloured column the pairs below replace them. */
+  /* Text colors of a column heading; the card text colors are in note_card.css. On a column with a
+     hue, colors composed from the values below replace these. */
   --board-column-header-text-color: var(--main-text-color);
   --board-column-header-muted-text-color: var(--muted-text-color);
-  /* How each is composed where the column carries a hue. The colour lends its hue alone: the
-     lightness is the theme's, so a coloured board reads as light as a plain one. */
+  /* Saturation and lightness of the heading colors on a column with a hue. Only the hue comes from
+     the note's color, and the theme sets the lightness, so a colored board is as light as a plain one. */
   --board-column-header-text-saturation: 30%;
   --board-column-header-text-lightness: 8%;
   --board-column-header-muted-text-saturation: 20%;
@@ -449,7 +449,7 @@ body.mobile .board-view-container .board-add-column {
   --board-item-hover-saturation: var(--board-item-hover-background-saturation);
 }
 
-/* The colours are composed in note_card.css, from the hue set above. */
+/* note_card.css computes these colors from the hue set above. */
 .board-view-container .board-note {
   background-color: var(--note-card-background);
 }

@@ -1,14 +1,14 @@
 /*
- * The surface a note is drawn on as a card: an item of a board collection, a box on a relation
- * map. The tokens keep the board's names, which themes already set.
+ * Card styling shared by board collection items and relation map boxes. The variables keep their
+ * `--board-*` names because themes already set them.
  *
- * A card is coloured by `--board-item-hue` and the two saturations: its own note's colour where it
- * has one (`with-hue`, from `FNote.getColorClass()`), otherwise grey. A host can set them from
- * something else as well, as the board does for the column a card stands in. The defaults below are
- * wrapped in `:where()` so that any host rule outweighs them.
+ * The card color comes from `--board-item-hue` and the two saturations. A card with the `with-hue`
+ * class (see `FNote.getColorClass()`) uses its note's hue; any other card is gray. A host can set
+ * these variables itself, as the board does to tint a card with its column's color. The defaults are
+ * wrapped in `:where()` so that any host rule overrides them.
  */
 
-/* Defaults for a theme that sets none of its own; the light values, the app's own default look. */
+/* Defaults for themes that do not set these variables. They match the light theme. */
 :where(:root) {
   --board-item-background-saturation: 100%;
   --board-item-background-lightness: 96%;
@@ -16,20 +16,20 @@
   --board-item-hover-background-saturation: 100%;
   --board-item-hover-background-lightness: 98.5%;
 
-  /* What a card at rest casts on what it stands on. */
+  /* Shadow of a card. */
   --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-  /* The lift a card takes under the pointer, named so that a picked-out card can carry its ring
-     and this shadow together. */
+  /* Shadow of a hovered card. A variable of its own, so a selected card can combine it with the
+     selection ring. */
   --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
-  /* The ring a picked-out card carries. */
+  /* Selection ring of a selected card. */
   --board-selected-ring-color: var(--link-color);
 
-  /* What a card writes its text and icons in, and what it marks the quieter ones with. These are
-     what a card without a hue paints; with one, the pairs below replace them. */
+  /* Text and muted text colors of a card without a hue. A card with a hue uses colors composed
+     from the values below instead. */
   --board-text-color: var(--main-text-color);
   --board-muted-text-color: var(--muted-text-color);
-  /* How each is composed where the card carries a hue. The colour lends its hue alone: the
-     lightness is the theme's, so a coloured card reads as light as a plain one. */
+  /* Saturation and lightness of the text colors of a card with a hue. Only the hue comes from the
+     note's color, and the theme sets the lightness, so a colored card is as readable as a plain one. */
   --board-text-saturation: 30%;
   --board-text-lightness: 8%;
   --board-muted-text-saturation: 20%;
@@ -60,7 +60,7 @@
   --board-muted-text-color: var(--note-card-muted-text-color);
 }
 
-/* Composed on the card itself, so they read the hue the card ends up with. */
+/* Declared on the card element, so they use the hue set on the card, including a host's. */
 .tn-note-card {
   --note-card-background: hsl(
     var(--board-item-hue),

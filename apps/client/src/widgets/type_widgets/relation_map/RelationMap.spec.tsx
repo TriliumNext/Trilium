@@ -28,7 +28,7 @@ describe("relation map canvas clicks", () => {
         }
     });
 
-    /** The wrapper, the panned canvas with a box on it, and a toolbar standing over the canvas. */
+    /** Renders the wrapper, the panned canvas with one box, and a toolbar over the canvas. */
     function Harness({ placing }: { placing: boolean }) {
         const containerRef = useRef<HTMLDivElement>(null);
         const clickProps = useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote });
@@ -149,7 +149,7 @@ describe("relation map revealing the selected box", () => {
         );
     }
 
-    /** Lays the map out at 1200 × 800, which happy-dom does not do by itself. */
+    /** Gives the map a 1200 × 800 layout, which happy-dom does not compute. */
     function mount(noteId: string | undefined) {
         act(() => render(<Harness noteId={noteId} />, container as HTMLElement));
         const wrapper = container?.querySelector<HTMLElement>(".wrapper");
@@ -189,7 +189,7 @@ describe("relation map revealing the selected box", () => {
         expect(moveBy).toHaveBeenCalledTimes(1);
     });
 
-    /** The box is on the map before the note is selected, as for a box that is clicked. */
+    /** Adds the box before selecting its note, as when the user clicks an existing box. */
     function addBoxBeforeMount(noteId: string, left: number) {
         if (container) render(null, container);
         mount(undefined);

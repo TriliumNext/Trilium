@@ -53,10 +53,9 @@ export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
 interface EditToolbarProps {
     /** The map may not be edited, which is every one of these buttons refused at once. */
     isReadOnly: boolean;
-    /** The map is armed for the next click to place a new note, which the button shows as pressed. */
+    /** Whether the map is in placement mode. The button is shown as pressed while it is. */
     placing: boolean;
-    /** Arms the map for a note to be placed, or disarms it (see `useNotePlacement` in
-     *  RelationMap.tsx). */
+    /** Turns placement mode on or off (see `useNotePlacement` in RelationMap.tsx). */
     onTogglePlacement: () => void;
 }
 
@@ -80,8 +79,8 @@ interface EditToolbarProps {
  * note-and-plus in the icon set, and that leaves the mark unlike the + of the zoom step opposite.
  *
  * It stands on the map rather than in the note's own bar of actions, where it was: what it starts is
- * finished by a click on the map, so it belongs beside the canvas that answers it. While the map is
- * armed the button shows as pressed, and a second press disarms it.
+ * finished by a click on the map, so it belongs beside the canvas that answers it. In placement mode
+ * the button is shown as pressed, and pressing it again turns placement mode off.
  */
 export function EditToolbar({ isReadOnly, placing, onTogglePlacement }: EditToolbarProps) {
     return (

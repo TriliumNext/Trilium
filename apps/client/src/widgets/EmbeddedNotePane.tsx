@@ -26,9 +26,9 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
  * A note embedded in a pane of its host view — the geo map's marker pane, the relation map's note
  * pane, the calendar's detail dock: the note-context wiring such a pane needs to hold the real note
  * widgets (TitleRow, PromotedAttributes, NoteDetail), and, in EmbeddedNotePane.css, the layout that
- * fits them into a third of the width they are written for. `EmbeddedNoteSurface` is the panel or
- * phone dialog both maps show the note on; where it stands, when it opens and closes and what it
- * offers around the note stay with the view that owns it.
+ * fits them into a third of the width they are written for. `EmbeddedNoteSurface` is the panel
+ * (desktop) or dialog (mobile) that the geo map and the relation map show the note in. The host view
+ * positions it, decides when it opens and closes, and supplies the actions around the note.
  */
 
 /**
@@ -363,15 +363,16 @@ export function NoteColorAction({ note, title }: { note: FNote; title: string })
 
 interface EmbeddedNoteSurfaceProps {
     note: FNote;
-    /** The panel's class on desktop, which places it over the host view. */
+    /** Class of the desktop panel, which the host's CSS positions. */
     panelClassName: string;
-    /** The dialog's class on a phone. */
+    /** Class of the mobile dialog. */
     sheetClassName: string;
-    /** The class of the body that holds the note, next to the shared `tn-embedded-note-pane`. */
+    /** Class of the element that holds the note, added next to `tn-embedded-note-pane`. */
     bodyClassName: string;
-    /** The tooltip of the panel's close button. */
+    /** Tooltip of the panel's close button. */
     closeText: string;
-    /** Lets the desktop panel grow over the host view. A phone always shows the whole dialog. */
+    /** Adds a button that expands the desktop panel over the host view. Not used on mobile, where
+     *  the dialog fills the screen. */
     maximize?: {
         maximized: boolean;
         onChange(maximized: boolean): void;
@@ -381,14 +382,14 @@ interface EmbeddedNoteSurfaceProps {
     onClose(): void;
     /** See {@link useFollowLinksWithin}. */
     onFollowLink(noteId: string): boolean;
-    /** The pane's contents, usually a row of actions, `PromotedAttributes` and `NoteDetail`. */
+    /** Content of the pane, usually a row of actions, `PromotedAttributes` and `NoteDetail`. */
     children: ComponentChildren;
 }
 
 /**
- * The surface an embedded note is shown on: an {@link OverlayPanel} headed by the note's
- * `TitleRow` on desktop, or a `Modal` on a phone, which has no room for a panel beside the host
- * view. Render it inside the pane's {@link EmbeddedNoteScope}.
+ * Shows an embedded note in an {@link OverlayPanel} with the note's `TitleRow` as its header on
+ * desktop, or in a `Modal` on mobile, where a panel next to the host view does not fit. Render it
+ * inside the pane's {@link EmbeddedNoteScope}.
  */
 export function EmbeddedNoteSurface(props: EmbeddedNoteSurfaceProps) {
     return isMobile() ? <EmbeddedNoteSheet {...props} /> : <EmbeddedNotePanel {...props} />;
@@ -396,10 +397,10 @@ export function EmbeddedNoteSurface(props: EmbeddedNoteSurfaceProps) {
 
 function EmbeddedNotePanel({ note, panelClassName, bodyClassName, closeText, maximize, onClose, onFollowLink, children }: EmbeddedNoteSurfaceProps) {
     const paneRef = useRef<HTMLDivElement>(null);
-    // The note's own colour, not the hue of the split the host view stands in.
+    // Applies the note's color class, so the panel does not inherit the color of the host's split.
     const colorClass = useNoteColorClass(note);
-    // The text editor resolves its host component from the DOM. Without this mark it reaches the
-    // widget around the host view, which does not answer calls such as `loadReferenceLinkTitle`.
+    // The text editor resolves its host component from the DOM. Without this, it resolves the widget
+    // that contains the host view, which does not implement calls such as `loadReferenceLinkTitle`.
     useLegacyComponentElement(paneRef);
     useFollowLinksWithin(paneRef, onFollowLink);
     const maximized = !!maximize?.maximized;

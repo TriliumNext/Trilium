@@ -11,7 +11,7 @@
 .relation-map-wrapper .relation-map-note-pane {
     position: absolute;
     top: var(--relation-map-inset);
-    /* Clear of the toolbars along the foot of the map. */
+    /* Room for the toolbars at the bottom of the map. */
     bottom: calc(2 * var(--relation-map-inset) + var(--overlay-button-height, 28px));
     inset-inline-end: var(--relation-map-inset);
     width: var(--relation-map-pane-width);

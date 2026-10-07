@@ -76,9 +76,8 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
 }
 
 /**
- * The translucent box that follows the pointer while the map waits for a click to place a new
- * note. `RelationMap` moves it by writing `left`/`top` straight onto the element, so a pointer
- * moving across the map does not render on every event.
+ * Translucent box that follows the pointer while the map is in placement mode. `useNotePlacement`
+ * sets its `left`/`top` directly on the element, so moving the pointer does not re-render.
  */
 export function GhostNoteBox({ elementRef }: { elementRef: RefObject<HTMLDivElement | null> }) {
     return (

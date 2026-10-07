@@ -89,7 +89,7 @@
         box-sizing: content-box;
         padding-block: 9px;
         padding-inline-start: 9px;
-        /* Clear of the maximize and close buttons laid over the end of the row (OverlayPanel.css). */
+        /* Room for the maximize and close buttons at the end of the row (see OverlayPanel.css). */
         padding-inline-end: 64px;
     }
 

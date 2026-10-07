@@ -7,7 +7,7 @@
     box-sizing: border-box;
     min-width: 150px;
     max-width: 200px;
-    /* Room at the end for the relation handle. */
+    /* Room at the end for the `.endpoint` relation handle. */
     padding: 0.6em 1.8em 0.6em 0.6em;
     font-size: 0.9em;
     line-height: 1.2;
@@ -67,7 +67,7 @@
     }
 }
 
-/* The two ends of the relation under the pointer. */
+/* jsPlumb adds these classes to both boxes of the hovered relation. */
 .note-detail-relation-map .note-box:is(.jtk-source-hover, .jtk-target-hover) {
     background-color: var(--note-card-hover-background);
     box-shadow: var(--board-item-hover-shadow);

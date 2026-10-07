@@ -46,10 +46,11 @@ const PANE_REACH = PANE_WIDTH + MAP_INSET;
 /** Must agree with the pane's `bottom` in NotePane.css, which clears the toolbars at the foot. */
 const MAP_FOOT = 2 * MAP_INSET + 28;
 
-/** The room kept between a revealed box and whatever bounds the visible part of the map. */
+/** Minimum gap between a revealed box and the edges of the visible area. */
 const AIR = 20;
 
-/** Below this much room beside the pane, the pane is treated as covering the whole map. */
+/** If the map leaves less than this width beside the pane, the pane is ignored and the box is only
+ *  kept within the map. */
 const MIN_UNCOVERED_WIDTH = 200;
 
 interface Rect {
@@ -60,8 +61,8 @@ interface Rect {
 }
 
 /**
- * How far to pan the map so that `box` stands in the part of it the note pane leaves uncovered,
- * or `null` when it already does. Each axis on which the box does not fit is centred in that part;
+ * How far to pan the map so that `box` is in the part of the map not covered by the note pane, or
+ * `null` when it already is. Each axis on which the box does not fit is centred in that part;
  * an axis on which it fits is left alone.
  *
  * Both rectangles are in page coordinates, as `getBoundingClientRect()` gives them, which is also

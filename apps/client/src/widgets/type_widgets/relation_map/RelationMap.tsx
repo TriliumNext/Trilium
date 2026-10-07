@@ -120,7 +120,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         note,
         ntxId,
         mapApiRef,
-        // The click that places the note has to reach the map, which the pane partly covers.
+        // Closes the pane, which covers part of the map where the note might be placed.
         onArm: () => paneRef.current?.close(),
         onCreated: (noteId) => setSelection({ noteId, isNew: true })
     });
@@ -364,12 +364,12 @@ async function useRelationData(noteId: string, mapData: MapData | undefined, map
 }
 
 /**
- * Arms the map for the next click to place a new note, and creates the note where it lands.
+ * Puts the map in placement mode, where the next click creates a note at the clicked position.
  *
- * Pressing the button again disarms the map, as Escape does. A translucent box follows the pointer
- * while the map is armed (see {@link GhostNoteBox}). The note is created without a title, so it takes
- * the name any new note takes (or the map's `#titleTemplate`), and the pane opens on it with that
- * name selected.
+ * Pressing the button again or Escape leaves placement mode. While it is on, a translucent box
+ * follows the pointer (see {@link GhostNoteBox}). The note is created without a title, so it gets
+ * the default title (or the map's `#titleTemplate`), and the pane opens on it with the title
+ * selected.
  */
 function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreated }: {
     ntxId: string | null | undefined;
@@ -388,8 +388,8 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
         setPlacing(!placing);
     });
 
-    // Tied to the state rather than to what armed it, so the toast and the listener go on cancel,
-    // on placement and on unmount alike.
+    // Depends on `placing` rather than on the code that turned placement mode on, so the toast and
+    // the listener are removed on cancel, after placement and on unmount.
     useEffect(() => {
         if (!placing) return;
 
@@ -420,7 +420,7 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
         const { x, y } = boxPositionAt(e, container);
         ghost.style.left = `${x}px`;
         ghost.style.top = `${y}px`;
-        // Hidden over the toolbars, which a click does not place a note through.
+        // Hides the ghost over the toolbars, where a click does not place a note.
         ghost.classList.toggle("visible", isOnCanvas(e, container));
     }, [ containerRef ]);
 
@@ -430,7 +430,7 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
         const container = containerRef.current;
         if (!container) return;
 
-        // Disarmed first, so a failure to create the note does not leave the map armed.
+        // Leaves placement mode first, so the map does not stay in it if creating the note fails.
         setPlacing(false);
         const position = boxPositionAt(e, container);
 
@@ -450,11 +450,10 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
 }
 
 /**
- * Routes a click on the map: it places a new note while the map is armed, selects the box it lands
- * on, or closes the pane when it lands on empty canvas. A modified or middle click on a box opens its
- * note the way a link would (a new tab, a new window). A click that ends a pan or a drag counts as
- * none of these, and clicks on whatever stands over the map (toolbars, the pane, the relation name
- * popover) are left alone.
+ * Handles clicks on the map. In placement mode, a click places a new note. Otherwise a click on a
+ * box selects it, and a click on empty canvas closes the pane. A Ctrl, Shift or middle click on a box
+ * opens its note as a link would (new tab or new window). Clicks that end a pan or a drag are
+ * ignored, as are clicks on elements over the map (toolbars, the pane, the relation name popover).
  */
 export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote }: {
     containerRef: RefObject<HTMLDivElement | null>;
@@ -466,7 +465,8 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
 }): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onClickCapture" | "onAuxClickCapture"> {
     const pressedAt = useRef<{ x: number; y: number }>(null);
 
-    /** Whether the click happened on the map itself, without the pointer moving since the press. */
+    /** Whether the click targets the map canvas, with the pointer moved no more than
+     *  `CLICK_TOLERANCE` since the press. */
     const isPlainClickOnCanvas = (e: MouseEvent, container: HTMLDivElement) => {
         const pressed = pressedAt.current;
         return isOnCanvas(e, container)
@@ -516,12 +516,11 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
 }
 
 /**
- * Pans the map so the box of the selected note stands clear of the note pane and the edges of the
- * map (see {@link revealOffset}). A phone shows the note as a dialog over the whole screen, so the
- * map is left where it is there.
+ * Pans the map so that the note pane and the map's edges do not cover the selected note's box (see
+ * {@link revealOffset}). Does nothing on mobile, where the note opens in a full-screen dialog.
  *
- * The box of a note placed a moment ago is not on the map yet: `NoteBox` renders it once the note
- * has loaded, so the pan waits for it to appear in the container.
+ * The box of a just-placed note is not in the DOM yet, because `NoteBox` renders only after the
+ * note loads, so the hook waits for it with a `MutationObserver`.
  */
 export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId }: {
     wrapperRef: RefObject<HTMLDivElement | null>;
@@ -560,7 +559,7 @@ export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId
     }, [ wrapperRef, containerRef, panZoom, noteId ]);
 }
 
-/** Where the pointer stands on a box being placed: the top centre of its title. */
+/** Offset of the pointer from the top-left corner of a box being placed, near the box's top center. */
 const PLACEMENT_OFFSET = { x: 80, y: 15 };
 
 /** How far, in pixels, the pointer can move between press and release for the click to count. */
@@ -582,7 +581,7 @@ function boxPositionAt(e: MouseEvent, container: HTMLDivElement) {
     return { x: x - PLACEMENT_OFFSET.x, y: y - PLACEMENT_OFFSET.y };
 }
 
-/** Whether the event happened on the map itself, rather than on something standing over it. */
+/** Whether the event target is the map canvas rather than an element over it. */
 function isOnCanvas(e: MouseEvent, container: HTMLDivElement) {
     return e.target === e.currentTarget || (e.target instanceof Node && container.contains(e.target));
 }

@@ -13,10 +13,10 @@ import { useNote } from "../../react/hooks";
 import RelationMapApi from "./api";
 import { confirmRemoveFromMap } from "./context_menu";
 
-/** Which note the pane shows. Owned by the map, which opens the pane on a note it has just created. */
+/** The note shown in the pane. `RelationMap` owns it, so it can open the pane on a note it created. */
 export interface PaneSelection {
     noteId: string;
-    /** The note was just created, so the pane opens with its stock title selected. */
+    /** The note was just created; the pane opens with its default title selected. */
     isNew?: boolean;
 }
 
@@ -26,15 +26,16 @@ export interface NotePaneHandle {
 }
 
 /**
- * The note pane standing against the trailing edge of a relation map while a box is selected: the
- * note's title, promoted attributes and content, editable in place.
+ * Panel at the trailing edge of a relation map that shows the selected note's title, promoted
+ * attributes and content for editing.
  */
 export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly, selection, onSelect }: {
     paneRef: RefObject<NotePaneHandle | null>;
-    /** The notes the map shows, which keep the pane open and which a link inside it can switch to. */
+    /** IDs of the notes on the map. The pane closes when its note is not among them, and a link in
+     *  the pane switches the pane only to a note among them. */
     noteIdsOnMap: string[];
     mapApiRef: RefObject<RelationMapApi | null>;
-    /** The map cannot be edited, so the pane offers only the ways of opening the note. */
+    /** Hides the color and remove buttons, leaving only the buttons that open the note. */
     isReadOnly: boolean;
     /** The note the pane shows, or `null` while the pane is closed. */
     selection: PaneSelection | null;
@@ -58,12 +59,12 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
         return true;
     }, [ noteIdsOnMap, onSelect ]);
 
-    // The pane opens beside the map each time, however it was left.
+    // Resets the maximized state when the pane closes, so the pane reopens at its normal width.
     useEffect(() => {
         if (!selection) setMaximized(false);
     }, [ selection ]);
 
-    // A note taken off the map, or deleted, closes the pane.
+    // Closes the pane when its note is removed from the map or deleted.
     const isOnMap = !!selection && noteIdsOnMap.includes(selection.noteId);
     useEffect(() => {
         if (selection && (!isOnMap || note === null)) {
@@ -71,14 +72,14 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
         }
     }, [ selection, isOnMap, note, closePane ]);
 
-    // A phone's dialog answers Escape itself.
+    // On mobile, the `Modal` handles Escape itself.
     useEffect(() => {
         if (!selection || isMobile()) return;
 
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape") closePane();
         };
-        // Captured, since `OverlayPanel` stops key presses made inside it from bubbling.
+        // Capture phase, because `OverlayPanel` stops key presses inside it from bubbling.
         window.addEventListener("keydown", onKeyDown, true);
         return () => window.removeEventListener("keydown", onKeyDown, true);
     }, [ selection?.noteId, closePane ]);
@@ -86,8 +87,8 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
     if (!note || !isOnMap) return null;
 
     return (
-        // `relation-map-note-pane-host` keeps the wheel, double clicks and touches made in the pane
-        // from reaching `panzoom`, which listens on the whole map.
+        // Stops wheel, double-click and touch events in the pane from reaching `panzoom`, which
+        // listens on the whole map.
         <div
             className="relation-map-note-pane-host"
             onWheel={stopPropagation}
