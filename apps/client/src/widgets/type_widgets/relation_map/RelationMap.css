@@ -40,3 +40,8 @@
 .relation-map-wrapper.placing-note {
     cursor: crosshair;
 }
+
+.note-detail-relation-map .relation-map-arrow {
+    stroke-width: 1.2px;
+    stroke-linejoin: round;
+}
