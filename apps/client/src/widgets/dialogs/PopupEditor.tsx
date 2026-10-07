@@ -18,7 +18,7 @@ import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
-import { NoteContextContext, ParentComponent } from "../react/react_utils";
+import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
 /** The layer the stylesheet gives this popup while it stands over another modal. */
@@ -27,16 +27,24 @@ const STACKED_LAYER = 1100;
 /** Where a dialog this popup stands over is held while it is up, which is under its backdrop. */
 const COVERED_LAYER = 1090;
 
-export default function PopupEditor() {
+/** The `ntxId`s of the popups on show, and of those stacked over another modal, which the page's classes reflect. */
+const shownPopups = new Set<string>();
+const stackedPopups = new Set<string>();
+
+export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand = "openInPopup" }: {
+    ntxId?: string;
+    /** The command this popup opens on. */
+    openCommand?: "openInPopup" | "openInNestedPopup";
+}) {
     const [ shown, setShown ] = useState(false);
     const [ stacked, setStacked ] = useState(false);
     const [ switchable, setSwitchable ] = useState(false);
     const parentComponent = useContext(ParentComponent);
-    const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_popup-editor"));
+    const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
 
-    useTriliumEvent("openInPopup", async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
+    useTriliumEvent(openCommand, async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
         if (!noteId.noteId) return;
         const note = await froca.getNote(noteId.noteId);
@@ -48,7 +56,7 @@ export default function PopupEditor() {
             return;
         }
 
-        const noteContext = new NoteContext("_popup-editor");
+        const noteContext = new NoteContext(ntxId);
         setStacked(!!document.querySelector(".modal.show"));
         setSwitchable(!!showNoteTypeSwitcher);
 
@@ -88,9 +96,15 @@ export default function PopupEditor() {
 
     // Add a global class to be able to handle issues with z-index due to rendering in a popup.
     useEffect(() => {
-        document.body.classList.toggle("popup-editor-open", shown);
-        document.body.classList.toggle("popup-editor-stacked", shown && stacked);
-    }, [shown, stacked]);
+        if (shown) shownPopups.add(ntxId);
+        if (shown && stacked) stackedPopups.add(ntxId);
+        syncPopupClasses();
+        return () => {
+            shownPopups.delete(ntxId);
+            stackedPopups.delete(ntxId);
+            syncPopupClasses();
+        };
+    }, [ shown, stacked, ntxId ]);
 
     // A CKEditor dialog — the AI assistant — stacks at `--ck-z-dialog` (9999), far above the 999
     // this popup is deliberately held at so the editor's own panels can float over it. One already
@@ -189,6 +203,11 @@ export default function PopupEditor() {
             </DialogWrapper>
         </NoteContextContext.Provider>
     );
+}
+
+function syncPopupClasses() {
+    document.body.classList.toggle("popup-editor-open", shownPopups.size > 0);
+    document.body.classList.toggle("popup-editor-stacked", stackedPopups.size > 0);
 }
 
 export function DialogWrapper({ children }: { children: ComponentChildren }) {

@@ -9,6 +9,9 @@ export const ParentComponent = createContext<Component | null>(null);
 
 export const NoteContextContext = createContext<NoteContext | null>(null);
 
+/** The `ntxId` of the quick-edit popup's note context. A nested popup's starts with it too. */
+export const POPUP_EDITOR_NTX_ID = "_popup-editor";
+
 /**
  * A click handler that triggers `command` from the surrounding component with the `ntxId` of the
  * surrounding `NoteContextContext`, so a handler can act on the note of a context that is not the

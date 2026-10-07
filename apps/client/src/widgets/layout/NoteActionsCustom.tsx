@@ -14,13 +14,14 @@ import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import tree from "../../services/tree";
-import { clearBrowserCache, createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../services/utils";
+import { clearBrowserCache, createImageSrcUrl, isMobile } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import { ButtonGroup } from "../react/Button";
 import { FormFileUploadActionButton, FormFileUploadFormListItem, FormFileUploadProps } from "../react/FormFileUpload";
 import { FormListItem } from "../react/FormList";
+import { openHelpPageFor } from "../react/HelpButton";
 import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
@@ -349,7 +350,7 @@ function buildSaveSqlToNoteHandler(note: FNote) {
     };
 }
 
-function InAppHelpButton({ note }: NoteActionsCustomInnerProps) {
+function InAppHelpButton({ note, ntxId }: NoteActionsCustomInnerProps) {
     const helpUrl = getHelpUrlForNote(note);
     const isEnabled = !!helpUrl;
 
@@ -357,7 +358,7 @@ function InAppHelpButton({ note }: NoteActionsCustomInnerProps) {
         <NoteAction
             icon="bx bx-help-circle"
             text={t("help-button.title")}
-            onClick={() => helpUrl && openInAppHelpFromUrl(helpUrl)}
+            onClick={() => helpUrl && openHelpPageFor(helpUrl, ntxId)}
         />
     );
 }

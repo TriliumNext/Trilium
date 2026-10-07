@@ -13,6 +13,8 @@ This feature is also well integrated with <a class="reference-link" href="../..
 *   Note that the <a class="reference-link" href="../Notes/Note%20List.md">Note List</a> will not be displayed, except for notes of type <a class="reference-link" href="../../Collections.md">Collections</a>.
 *   For <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, depending on user preference, both the floating and classic editors are supported. See <a class="reference-link" href="../../Note%20Types/Text/Formatting%20toolbar.md">Formatting toolbar</a>.
 *   The title and the note and the icon are editable, just like a normal tab.
+*   The note's actions and its menu are shown in the header of the popup, as in the title row of a tab.
+    *   A help page opened from the popup, such as through the help button of the note type, opens in a second popup on top of it. Closing that popup returns to the note being edited.
 *   The <a class="reference-link" href="../../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> are also displayed.
     *   This integrates well with <a class="reference-link" href="../../Collections.md">Collections</a> where there are predefined attributes such as the _Start date_ and _End date_, allowing for easy editing.
 

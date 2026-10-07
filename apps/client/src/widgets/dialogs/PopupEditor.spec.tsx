@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
     getNote: vi.fn(),
     getAttachment: vi.fn(),
     /** Every context the popup created, newest last — one is built per open. */
-    contexts: [] as { setNote: ReturnType<typeof vi.fn>, viewScope?: ViewScope, noteId: string }[],
+    contexts: [] as { setNote: ReturnType<typeof vi.fn>, viewScope?: ViewScope, noteId: string, ntxId: string }[],
     isMobile: vi.fn(() => false)
 }));
 
@@ -365,6 +365,41 @@ describe("PopupEditor", () => {
         await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
         expect(modal()?.dataset.shown).toBe("false");
         expect(document.body.classList.contains("popup-editor-open")).toBe(false);
+    });
+
+    it("opens a nested popup over itself, which answers only its own command and context", async () => {
+        const nestedContainer = document.body.appendChild(document.createElement("div"));
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <PopupEditor ntxId="_popup-editor-nested" openCommand="openInNestedPopup" />
+                </ParentComponent.Provider>,
+                nestedContainer
+            );
+        });
+        const nestedModal = nestedContainer.querySelector<HTMLElement>(".modal-stub");
+        expect(nestedModal).not.toBeNull();
+        const isOpen = () => document.body.classList.contains("popup-editor-open");
+
+        await openPopup({ noteIdOrPath: "root/n1" });
+        expect(modal()?.dataset.shown).toBe("true");
+        expect(nestedModal?.dataset.shown).toBe("false");
+
+        await act(async () => {
+            await parent.handleEvent("openInNestedPopup", { noteIdOrPath: "_help_abc" } as never);
+        });
+        expect(nestedModal?.dataset.shown).toBe("true");
+        expect(lastContext()?.ntxId).toBe("_popup-editor-nested");
+        expect(lastContext()?.setNote).toHaveBeenCalledWith("_help_abc", expect.anything());
+
+        // Closing one popup keeps the page's popup layering for the one still open.
+        await act(async () => nestedContainer.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(isOpen()).toBe(true);
+        await act(async () => container.querySelector<HTMLElement>(".hidden-stub")?.click());
+        expect(isOpen()).toBe(false);
+
+        render(null, nestedContainer);
+        nestedContainer.remove();
     });
 
     /**
