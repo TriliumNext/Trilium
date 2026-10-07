@@ -28,7 +28,7 @@ import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { GhostNoteBox, NoteBox } from "./NoteBox";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
-import { CLICK_TOLERANCE, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
+import { CLICK_TOLERANCE, fitTransform, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
 export default function RelationMap({ note, noteContext, ntxId, parentComponent }: TypeWidgetProps) {
     const [ data, setData ] = useState<MapData>();
@@ -89,7 +89,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         }
     });
 
-    const mapZoom = useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef });
+    const boxesRef = useRef<Map<string, Box>>(new Map());
+    const mapZoom = useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes: () => boxesRef.current.values() });
     const { getScale } = mapZoom;
     const [ selection, setSelection ] = useState<PaneSelection | null>(null);
     const noteIdsOnMap = useMemo(() => data?.notes.map((entry) => entry.noteId) ?? [], [ data ]);
@@ -117,6 +118,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const { dragged, startDrag } = useBoxDragging({ containerRef, mapApiRef, getScale });
     const { pending, startDrawing } = useRelationDrawing({ containerRef, mapApiRef, getScale, askRelationName: relationNamePrompt.ask });
     const { boxes, onBoxResize } = useBoxes(data?.notes, dragged);
+    boxesRef.current = boxes;
 
     useRevealSelectedBox({ wrapperRef, containerRef, moveBy: mapZoom.moveBy, noteId: selection?.noteId });
     const hoveredNoteId = useHoveredBox(containerRef);
@@ -215,15 +217,18 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
 /**
  * Pans and zooms the map with react-zoom-pan-pinch, as the image viewer does, on a canvas without
  * bounds. Restores `loadedTransform` whenever the note's content loads, saves every change to the
- * map's data, and answers the zoom commands, which scripts can trigger too. The wheel zooms without
+ * map's data, and answers the zoom commands, which scripts can trigger too. Fitting shows all of
+ * `getBoxes()` at once. The wheel zooms without
  * the map being focused, since the map fills its pane and has no page to scroll.
  */
-export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef }: {
+export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes }: {
     ntxId: string | null | undefined;
     /** The focusable element the keyboard and the wheel act on. */
     viewport: HTMLDivElement | null;
     loadedTransform: MapTransform | undefined;
     mapApiRef: RefObject<RelationMapApi | null>;
+    /** The boxes on the map, in unzoomed map pixels. */
+    getBoxes(): Iterable<Box>;
 }) {
     const zoom = useZoomPanPinch({ minScale: MIN_SCALE, maxScale: MAX_SCALE });
     const { ref } = zoom;
@@ -249,11 +254,14 @@ export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef }: {
         api.setTransform(positionX + dx, positionY + dy, scale, REVEAL_ANIMATION_MS);
     }, [ ref ]);
 
-    useTriliumEvents([ "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapResetZoomOut" ], ({ ntxId: eventNtxId }, eventName) => {
+    useTriliumEvents([ "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapResetZoomOut", "relationMapFitToView" ], ({ ntxId: eventNtxId }, eventName) => {
         if (eventNtxId !== ntxId) return;
 
         if (eventName === "relationMapResetPanZoom") {
             ref.current?.setTransform(0, 0, 1);
+        } else if (eventName === "relationMapFitToView") {
+            const fitted = viewport && fitTransform(getBoxes(), { width: viewport.clientWidth, height: viewport.clientHeight }, MIN_SCALE);
+            if (fitted) ref.current?.setTransform(fitted.x, fitted.y, fitted.scale, REVEAL_ANIMATION_MS);
         } else if (eventName === "relationMapResetZoomIn") {
             zoom.zoomIn();
         } else {
@@ -299,7 +307,7 @@ const MAX_SCALE = 2;
 
 const PAN_EXCLUDED = [ "note-box", "connection-label", "relation-map-connection-hit" ];
 
-/** How long panning a selected box into view takes. */
+/** How long panning a selected box into view, or fitting the map to the view, takes. */
 const REVEAL_ANIMATION_MS = 300;
 
 function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi | null>) {

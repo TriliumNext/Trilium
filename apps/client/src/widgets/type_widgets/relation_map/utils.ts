@@ -70,3 +70,33 @@ export function revealOffset(box: Rect, map: Rect, isRtl: boolean) {
 
     return dx || dy ? { dx, dy } : null;
 }
+
+/** Gap between the boxes and the edges of the view after a fit. */
+const FIT_PADDING = 40;
+
+/**
+ * The transform that shows all of `boxes` (in unzoomed map pixels) centered in a viewport of the
+ * given size, above the toolbars at its foot, or `null` when there are no boxes. The map is never
+ * enlarged past its own size, and never shrunk below `minScale`.
+ */
+export function fitTransform(boxes: Iterable<{ x: number; y: number; width: number; height: number }>, viewport: { width: number; height: number }, minScale: number) {
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    for (const box of boxes) {
+        left = Math.min(left, box.x);
+        top = Math.min(top, box.y);
+        right = Math.max(right, box.x + box.width);
+        bottom = Math.max(bottom, box.y + box.height);
+    }
+    if (left === Infinity) return null;
+
+    const height = viewport.height - MAP_FOOT;
+    const scale = Math.max(minScale, Math.min(1,
+        (viewport.width - 2 * FIT_PADDING) / (right - left),
+        (height - 2 * FIT_PADDING) / (bottom - top)));
+
+    return {
+        x: (viewport.width - (right - left) * scale) / 2 - left * scale,
+        y: (height - (bottom - top) * scale) / 2 - top * scale,
+        scale
+    };
+}

@@ -31,13 +31,14 @@ describe("relation map MapToolbar", () => {
     });
 
     it("asks for what each button stands for rather than moving the map itself", () => {
-        const { commands, readout, zoomIn, zoomOut } = renderToolbar();
+        const { commands, readout, zoomIn, zoomOut, fit } = renderToolbar();
 
         act(() => zoomOut()?.click());
         act(() => readout()?.click());
         act(() => zoomIn()?.click());
+        act(() => fit()?.click());
 
-        expect(commands).toEqual([ "relationMapResetZoomOut", "relationMapResetPanZoom", "relationMapResetZoomIn" ]);
+        expect(commands).toEqual([ "relationMapResetZoomOut", "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapFitToView" ]);
     });
 });
 
@@ -90,7 +91,8 @@ function renderToolbar() {
         rerender,
         zoomOut: () => all()[0],
         readout: () => all()[1],
-        zoomIn: () => all()[2]
+        zoomIn: () => all()[2],
+        fit: () => all()[3]
     };
 }
 

@@ -237,6 +237,7 @@ describe("relation map revealing the selected box", () => {
 describe("relation map zoom", () => {
     let container: HTMLElement | undefined;
     const setTransform = vi.fn();
+    let boxes = [ { x: 0, y: 0, width: 1840, height: 100 } ];
     let zoom: ReturnType<typeof useMapZoom> | undefined;
     const component = new Component();
 
@@ -252,7 +253,7 @@ describe("relation map zoom", () => {
     function Harness({ loadedTransform }: { loadedTransform: MapTransform }) {
         const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
         const mapApiRef = useRef({ setTransform } as unknown as RelationMapApi);
-        zoom = useMapZoom({ ntxId: "map", viewport, loadedTransform, mapApiRef });
+        zoom = useMapZoom({ ntxId: "map", viewport, loadedTransform, mapApiRef, getBoxes: () => boxes });
         return <MapViewport zoom={zoom} viewportRef={setViewport}><div className="note-box" /></MapViewport>;
     }
 
@@ -265,6 +266,14 @@ describe("relation map zoom", () => {
     }
 
     const state = () => zoom?.ref.current?.instance.state;
+
+    /** Gives the viewport a 1000 × 600 layout, which happy-dom does not compute. */
+    function sizeViewport() {
+        const viewport = container?.querySelector(".relation-map-viewport");
+        if (!viewport) throw new Error("no viewport");
+        Object.defineProperty(viewport, "clientWidth", { value: 1000 });
+        Object.defineProperty(viewport, "clientHeight", { value: 600 });
+    }
     const trigger = (name: "relationMapResetPanZoom" | "relationMapResetZoomIn" | "relationMapResetZoomOut", ntxId: string) =>
         act(() => { component.handleEvent(name, { ntxId }); });
 
@@ -285,6 +294,18 @@ describe("relation map zoom", () => {
         trigger("relationMapResetPanZoom", "map");
         expect(state()).toEqual({ positionX: 0, positionY: 0, scale: 1 });
         expect(setTransform).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: 1 });
+    });
+
+    it("fits all the boxes into the view, and does nothing on an empty map", () => {
+        mount({ x: -800, y: 600, scale: 2 });
+        sizeViewport();
+
+        act(() => { component.handleEvent("relationMapFitToView", { ntxId: "map" }); });
+        expect(state()).toEqual({ positionX: 40, positionY: 251, scale: 0.5 });
+
+        boxes = [];
+        act(() => { component.handleEvent("relationMapFitToView", { ntxId: "map" }); });
+        expect(state()).toEqual({ positionX: 40, positionY: 251, scale: 0.5 });
     });
 
     it("steps the zoom on the commands of its own map only", () => {

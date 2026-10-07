@@ -4,7 +4,7 @@ import { t } from "../../../services/i18n";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../../react/OverlayControlGroup";
 
 /** What the buttons ask for, which is what the map itself answers (see `useMapZoom` in RelationMap.tsx). */
-export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom";
+export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom" | "relationMapFitToView";
 
 interface MapToolbarProps {
     /** The scale the map is drawn at, and whether each zoom step has room left. */
@@ -37,6 +37,11 @@ export default function MapToolbar({ zoom, onCommand }: MapToolbarProps) {
                 onZoomIn={() => onCommand("relationMapResetZoomIn")}
                 onZoomOut={() => onCommand("relationMapResetZoomOut")}
                 onReset={() => onCommand("relationMapResetPanZoom")}
+            />
+            <OverlayControlButton
+                title={t("relation_map.fit_to_view")}
+                icon="bx-scan"
+                onClick={() => onCommand("relationMapFitToView")}
             />
         </OverlayControlGroup>
     );

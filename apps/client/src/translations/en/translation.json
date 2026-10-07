@@ -1673,7 +1673,8 @@
     "expand_note_pane": "Expand the note to fill the map",
     "restore_note_pane": "Put the note back beside the map",
     "note_color": "Note color",
-    "remove_from_map": "Remove from map"
+    "remove_from_map": "Remove from map",
+    "fit_to_view": "Fit to view"
   },
   "render": {
     "setup_title": "Display custom HTML or Preact JSX inside this note",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { PANE_WIDTH, revealOffset } from "./utils";
+import { fitTransform, PANE_WIDTH, revealOffset } from "./utils";
 
 /** A map 1200 × 800 at the origin of the page, with room for the pane beside the boxes. */
 const MAP = { left: 0, top: 0, right: 1200, bottom: 800 };
@@ -40,5 +40,24 @@ describe("revealOffset", () => {
 
         expect(revealOffset(box(250, 100), narrow, false)).toBeNull();
         expect(revealOffset(box(-100, 100), narrow, false)?.dx).toBeGreaterThan(0);
+    });
+});
+
+describe("fitTransform", () => {
+    const viewport = { width: 1000, height: 600 };
+
+    it("centers a map that fits at its own size above the toolbars, without enlarging it", () => {
+        const boxes = [ { x: 100, y: 100, width: 100, height: 40 }, { x: 300, y: 200, width: 100, height: 40 } ];
+
+        expect(fitTransform(boxes, viewport, 0.3)).toEqual({ x: 250, y: 106, scale: 1 });
+    });
+
+    it("shrinks a map too large for the view, down to the smallest scale", () => {
+        expect(fitTransform([ { x: 0, y: 0, width: 1840, height: 100 } ], viewport, 0.3)).toEqual({ x: 40, y: 251, scale: 0.5 });
+        expect(fitTransform([ { x: 0, y: 0, width: 92000, height: 100 } ], viewport, 0.3)?.scale).toBe(0.3);
+    });
+
+    it("has nothing to fit on an empty map", () => {
+        expect(fitTransform([], viewport, 0.3)).toBeNull();
     });
 });

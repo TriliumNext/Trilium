@@ -585,6 +585,7 @@ type EventMappings = {
     relationMapResetPanZoom: { ntxId: string | null | undefined };
     relationMapResetZoomIn: { ntxId: string | null | undefined };
     relationMapResetZoomOut: { ntxId: string | null | undefined };
+    relationMapFitToView: { ntxId: string | null | undefined };
     activeNoteChanged: {ntxId: string | null | undefined};
     showAddLinkDialog: AddLinkOpts;
     showContentEmbedDialog: ContentEmbedOpts;
