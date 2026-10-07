@@ -670,7 +670,15 @@ function linkContextMenu(e: PointerEvent) {
     linkContextMenuService.openContextMenu(notePath, e, viewScope, null);
 }
 
-async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | null | undefined = null) {
+/**
+ * Fills `$el` with the label of the reference link to `href`. A link to blocks of `hostNoteId`, the
+ * note the link is in, shows only the text of the blocks.
+ */
+async function loadReferenceLinkTitle(
+    $el: JQuery<HTMLElement>,
+    href: string | null | undefined = null,
+    hostNoteId?: string
+) {
     const $link = $el[0].tagName === "A" ? $el : $el.find("a");
 
     href = href || $link.attr("href");
@@ -694,6 +702,16 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
     // card; the path is what it opens.
     const subjectId = viewScope?.card || noteId;
     const note = subjectId ? await froca.getNote(subjectId, true) : null;
+
+    if (viewScope?.block && note && noteId === hostNoteId) {
+        const label = await loadBlockReferenceLabel(note, viewScope.block);
+        if (label) {
+            $el.text(label.text)
+                .toggleClass("block-reference-broken", label.isBroken)
+                .prepend($("<span>").addClass("tn-icon bx bx-paragraph"));
+            return;
+        }
+    }
 
     if (note) {
         $el.addClass(note.getColorClass());

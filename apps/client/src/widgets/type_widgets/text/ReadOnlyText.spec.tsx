@@ -330,6 +330,20 @@ describe("ReadOnlyText ?block= handling", () => {
             .toBe(container.querySelector("[data-trilium-block-id='b1']"));
     });
 
+    it("labels a link to a block of its note by the text of the block", async () => {
+        const harness = setupHarness({ isVisible: true });
+        cleanupContainer = harness.container;
+        const content = "<p data-trilium-block-id=\"b1\">Opening words</p>"
+            + `<p><a class="reference-link" href="#root/${harness.note.noteId}?block=b1">x</a></p>`;
+        harness.note.getBlob = async () => ({ content }) as never;
+
+        await harness.mount();
+
+        const link = harness.container.querySelector("a.reference-link");
+        expect(link).not.toBeNull();
+        await vi.waitFor(() => expect(link?.textContent).toBe("Opening words"));
+    });
+
     it("leaves a link to a block of its note to the editor while hidden", async () => {
         const { parent, noteContext, container, scrollIntoView } = await mountWithBlock(
             undefined,

@@ -81,9 +81,10 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
     await froca.getNotes(noteIdsToPrefetch);
 
+    const hostNoteId = note instanceof FNote ? note.noteId : undefined;
     await Promise.all(referenceLinks.toArray().map(async (el) => {
         const innerSpan = document.createElement("span");
-        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"));
+        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"), hostNoteId);
         el.replaceChildren(innerSpan);
     }));
 

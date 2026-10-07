@@ -78,6 +78,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         <>
             <ReadOnlyTextContent
                 html={blob?.content ?? ""}
+                noteId={note.noteId}
                 ntxId={ntxId}
                 dir={isRtl ? "rtl" : "ltr"}
                 contentRef={readOnlyContentRef}
@@ -89,6 +90,8 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
 interface ReadOnlyTextContentProps {
     /** CKEditor-compatible HTML to render. */
     html: string;
+    /** The note `html` belongs to. Reference links to its own blocks show only their text. */
+    noteId?: string;
     /** Note context id — enables `contentElRefreshed` / `executeWithContentElement` integrations when provided. */
     ntxId?: string | null;
     dir?: "ltr" | "rtl";
@@ -104,7 +107,9 @@ interface ReadOnlyTextContentProps {
  * titles, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
-export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: externalContentRef }: ReadOnlyTextContentProps) {
+export function ReadOnlyTextContent({
+    html, noteId, ntxId, dir, className, contentRef: externalContentRef
+}: ReadOnlyTextContentProps) {
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -134,13 +139,13 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
             applyInlineMermaid(container),
             applyContentEmbeds(container),
             applyLinkEmbeds(container),
-            applyReferenceLinks(container),
+            applyReferenceLinks(container, noteId),
             formatCodeBlocks($(container))
         ]));
 
         applyMath(container);
         setupImageOpening(container, true);
-    }, [ html, ntxId, contentRef ]);
+    }, [ html, noteId, ntxId, contentRef ]);
 
     useEffect(() => {
         if (!contentRef.current) return;

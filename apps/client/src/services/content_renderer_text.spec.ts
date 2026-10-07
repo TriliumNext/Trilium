@@ -317,6 +317,20 @@ describe("Text content renderer", () => {
         expect(refLink?.textContent).toContain("Referenced Title");
     });
 
+    it("labels a reference to a block of the rendered note by the text of the block", async () => {
+        const contentEl = document.createElement("div");
+        const note = buildNote({
+            id: "selfRef1",
+            title: "Self",
+            content: "<p data-trilium-block-id=\"b1\">Opening words</p>"
+                + "<p><a class=\"reference-link\" href=\"#root/selfRef1?block=b1\">stale</a></p>"
+        });
+        await renderText(note, $(contentEl));
+        const refLink = contentEl.querySelector("a.reference-link");
+        expect(refLink).not.toBeNull();
+        expect(refLink?.textContent).toBe("Opening words");
+    });
+
     it("tolerates reference links without an href", async () => {
         const contentEl = document.createElement("div");
         const note = buildNote({
