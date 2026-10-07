@@ -1657,13 +1657,6 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
     padding-inline-start: 8px;
 }
 
-/* Code, relation map buttons */
-
-.floating-buttons .code-buttons-widget,
-.floating-buttons .relation-map-buttons {
-    gap: 0;
-}
-
 /* Button groups */
 :root .floating-buttons .btn-group {
     --button-group-active-button-background-color: var(--low-profile-button-active-background-color);

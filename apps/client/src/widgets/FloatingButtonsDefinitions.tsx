@@ -43,7 +43,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    RunActiveNoteButton,
     OpenTriliumApiDocsButton,
     OpenElectronApiDocsButton,
     SaveToNoteButton,
@@ -60,15 +59,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function RunActiveNoteButton({ note }: FloatingButtonContext) {
-    const isEnabled = (note.mime.startsWith("application/javascript") || note.mime === "text/x-sqlite;schema=trilium");
-    return isEnabled && <FloatingButton
-        icon="bx bx-play"
-        text={t("code_buttons.execute_button_title")}
-        triggerCommand="runActiveNote"
-    />;
-}
 
 function OpenTriliumApiDocsButton({ note }: FloatingButtonContext) {
     const isEnabled = note.mime.startsWith("application/javascript;env=");
