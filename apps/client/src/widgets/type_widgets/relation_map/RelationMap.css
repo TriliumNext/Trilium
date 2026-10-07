@@ -62,19 +62,28 @@
 .note-detail-relation-map .connection-label {
     position: absolute;
     z-index: 2;
-    translate: -50% -50%;
+    transform-origin: 0 0;
+    transform: rotate(var(--relation-map-label-angle, 0deg)) translate(-50%, 0.1em);
     white-space: nowrap;
-    background-color: var(--accented-background-color);
-    color: var(--main-text-color);
-    opacity: 0.8;
-    padding: 0.3em;
-    border-radius: 0.5em;
-    border: 1px solid #666;
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: var(--muted-text-color);
+    text-shadow:
+        0 0 2px var(--main-background-color),
+        0 0 4px var(--main-background-color);
     cursor: pointer;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, color 0.2s ease;
+
+    &.above {
+        transform: rotate(var(--relation-map-label-angle, 0deg)) translate(-50%, calc(-100% - 0.1em));
+    }
+
+    &.end {
+        transform: rotate(var(--relation-map-label-angle, 0deg)) translate(0.4em, -50%);
+    }
 
     &.hovered {
-        background-color: var(--more-accented-background-color);
+        color: var(--main-text-color);
     }
 }
 

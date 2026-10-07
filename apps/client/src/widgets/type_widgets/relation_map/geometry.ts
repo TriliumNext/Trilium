@@ -22,13 +22,23 @@ export interface ConnectionShape {
     labelAt: number[];
 }
 
+/**
+ * Where a label goes: at `x`, `y` on the line, turned by `angle` degrees to run along it and kept
+ * upright, as on the note map. `side` places the text below or above the line, or after the point
+ * (`end`), all in the turned frame.
+ */
+export interface LabelPlacement extends Point {
+    angle: number;
+    side: "below" | "above" | "end";
+}
+
 export interface ConnectionLayout {
     /** SVG path data of the line. */
     path: string;
     /** Outlines of the arrowheads, as SVG `points`. */
     arrows: string[];
-    /** Centers of the labels, in the order of `ConnectionShape.labelAt`. */
-    labels: Point[];
+    /** The labels, in the order of `ConnectionShape.labelAt`. */
+    labels: LabelPlacement[];
 }
 
 /** Length of an arrowhead. The rounded stroke of `.relation-map-arrow` adds about half a pixel on every side. */
@@ -100,13 +110,14 @@ export function layoutLine(source: Box, target: Box | Point, { bend = 0, arrowAt
     return {
         path: `M ${round(start.x)} ${round(start.y)} Q ${round(control.x)} ${round(control.y)} ${round(end.x)} ${round(end.y)}`,
         arrows: arrowsAt([ [ control, end ], ...(arrowAtSource ? [ [ control, start ] as const ] : []) ]),
-        labels: labelAt.map((t) => quadraticAt(start, control, end, t))
+        labels: labelAt.map((t) => placeLabel(start, control, end, t, bend))
     };
 }
 
 /**
  * Lays out a relation from a box to itself: an arc around the box's top-right corner, from its top
  * edge to its right edge. `index` makes each further loop of the box wider than the one before.
+ * Its labels are level and start at the arc, outside it.
  */
 function layoutLoop(box: Box, index: number, { arrowAtSource, labelAt }: ConnectionShape): ConnectionLayout {
     const radius = LOOP_RADIUS + index * LOOP_SPACING;
@@ -114,9 +125,9 @@ function layoutLoop(box: Box, index: number, { arrowAtSource, labelAt }: Connect
     const start = { x: corner.x - radius, y: corner.y };
     const end = { x: corner.x, y: corner.y + radius };
     // The arc runs three quarters of a circle clockwise, from the left of the corner to below it.
-    const pointAt = (t: number) => {
+    const pointAt = (t: number): LabelPlacement => {
         const angle = Math.PI + t * 1.5 * Math.PI;
-        return { x: corner.x + radius * Math.cos(angle), y: corner.y + radius * Math.sin(angle) };
+        return { x: corner.x + radius * Math.cos(angle), y: corner.y + radius * Math.sin(angle), angle: 0, side: "end" };
     };
 
     return {
@@ -166,6 +177,32 @@ function arrowsAt(directions: (readonly [ Point, Point ])[]) {
         .map(([ from, tip ]) => getArrowOutline(from, tip, 0, ARROW_LENGTH_PX))
         .filter((outline) => outline !== null)
         .map((outline) => outline.map(([ x, y ]) => `${round(x)},${round(y)}`).join(" "));
+}
+
+/**
+ * Places a label at `t` along the curve, turned along it and kept upright. On a bowed line the text
+ * goes on the outer side of the bow, so that the labels of relations between the same boxes move
+ * apart; on a straight line it goes below.
+ */
+function placeLabel(start: Point, control: Point, end: Point, t: number, bend: number): LabelPlacement {
+    const point = quadraticAt(start, control, end, t);
+    const tangentX = (1 - t) * (control.x - start.x) + t * (end.x - control.x);
+    const tangentY = (1 - t) * (control.y - start.y) + t * (end.y - control.y);
+    let angle = Math.atan2(tangentY, tangentX);
+    if (angle > Math.PI / 2) angle -= Math.PI;
+    if (angle < -Math.PI / 2) angle += Math.PI;
+
+    let side: LabelPlacement["side"] = "below";
+    if (bend) {
+        // "Below" in the turned frame, against the direction the middle of the curve is pushed to.
+        const belowX = -Math.sin(angle);
+        const belowY = Math.cos(angle);
+        const pushX = control.x - (start.x + end.x) / 2;
+        const pushY = control.y - (start.y + end.y) / 2;
+        side = belowX * pushX + belowY * pushY >= 0 ? "below" : "above";
+    }
+
+    return { ...point, angle: round(angle * 180 / Math.PI), side };
 }
 
 function quadraticAt(start: Point, control: Point, end: Point, t: number): Point {

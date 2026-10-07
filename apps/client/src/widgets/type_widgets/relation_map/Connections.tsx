@@ -19,7 +19,7 @@ export const PENDING_CONNECTION_ID = "pending";
 
 /**
  * Draws the relations between the boxes of a relation map: an SVG layer under the boxes for the
- * lines and arrowheads, and HTML labels over the lines.
+ * lines and arrowheads, and HTML labels along the lines.
  *
  * While a box is hovered, its relations take the note's `color` label (or
  * `--relation-map-highlight-color`) and the other relations fade, as on the note map.
@@ -92,8 +92,13 @@ export default function Connections({ relations, inverseRelations, boxes, hovere
                 return labelsOf(relation, inverseRelations).map((text, index) => text ? (
                     <div
                         key={`${relation.attributeId}-${index}`}
-                        className={clsx("connection-label", className)}
-                        style={{ ...style, left: layout.labels[index].x, top: layout.labels[index].y }}
+                        className={clsx("connection-label", layout.labels[index].side, className)}
+                        style={{
+                            ...style,
+                            left: layout.labels[index].x,
+                            top: layout.labels[index].y,
+                            "--relation-map-label-angle": `${layout.labels[index].angle}deg`
+                        }}
                         {...hoverProps(relation)}
                     >
                         {text}
