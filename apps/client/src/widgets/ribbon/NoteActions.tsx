@@ -37,17 +37,12 @@ export default function NoteActions() {
     const { note, ntxId, noteContext } = useNoteContext();
     return (
         <div className="ribbon-button-container" style={{ contain: "none" }}>
-            {isNewLayout && (
-                <>
-                    {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} />}
-                    <MovePaneButton direction="left" />
-                    <MovePaneButton direction="right" />
-                    <ClosePaneButton />
-                    <CreatePaneButton />
-                </>
-            )}
-            {!isNewLayout && note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} typeActionsOnly />}
+            {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} typeActionsOnly={!isNewLayout} />}
             {note && !isNewLayout && <RevisionsButton note={note} />}
+            <MovePaneButton direction="left" />
+            <MovePaneButton direction="right" />
+            <ClosePaneButton />
+            <CreatePaneButton />
             {note && note.type !== "launcher" && <NoteContextMenu note={note as FNote} noteContext={noteContext} />}
         </div>
     );

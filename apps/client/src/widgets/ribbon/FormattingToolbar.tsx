@@ -6,8 +6,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import options from "../../services/options";
-import { useActiveNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
-import { TabConfiguration, TabContext } from "./ribbon-interface";
+import { useActiveNoteContext, useNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 
 /**
  * Handles the editing toolbar of a single note context when the CKEditor is in decoupled mode, as
@@ -17,9 +16,24 @@ import { TabConfiguration, TabContext } from "./ribbon-interface";
  *
  * The mobile toolbar is handled separately (see `MobileEditorToolbar`).
  */
-export default function FormattingToolbar({ hidden, ntxId }: TabContext) {
+export default function FormattingToolbar() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const { note, noteContext, ntxId } = useNoteContext();
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
+    const [ shown, setShown ] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        void showFormattingToolbar(note, noteContext).then((result) => {
+            // Ignore a stale resolution if the note changed while the check was pending.
+            if (active) {
+                setShown(result);
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [ note, noteContext ]);
 
     // Attach the toolbar from the CKEditor.
     useTriliumEvent("textEditorRefreshed", ({ ntxId: eventNtxId, editor }) => {
@@ -36,16 +50,16 @@ export default function FormattingToolbar({ hidden, ntxId }: TabContext) {
     return (textNoteEditorType === "ckeditor-classic" &&
         <div
             ref={containerRef}
-            className={`classic-toolbar-widget ${hidden ? "hidden-ext" : ""}`}
+            className={`classic-toolbar-widget ${!shown ? "hidden-ext" : ""}`}
         />
     );
 };
 
-/** Visibility predicate for the quick edit popup's formatting toolbar. */
-export const showFormattingToolbar: TabConfiguration["show"] = async ({ note, noteContext }) =>
-    note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
-    && options.get("textNoteEditorType") === "ckeditor-classic"
-    && !(await noteContext?.isReadOnly());
+async function showFormattingToolbar(note: FNote | null | undefined, noteContext: NoteContext | undefined) {
+    return note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
+        && options.get("textNoteEditorType") === "ckeditor-classic"
+        && !(await noteContext?.isReadOnly());
+}
 
 const toolbarCache = new Map<string, HTMLElement | null | undefined>();
 

@@ -19,8 +19,7 @@ import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import StandaloneRibbonAdapter from "../ribbon/components/StandaloneRibbonAdapter";
-import FormattingToolbar, { showFormattingToolbar } from "../ribbon/FormattingToolbar";
+import FormattingToolbar from "../ribbon/FormattingToolbar";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
 /** The layer the stylesheet gives this popup while it stands over another modal. */
@@ -184,7 +183,7 @@ export default function PopupEditor() {
 
                     {isMobile
                         ? <MobileEditorToolbar inPopupEditor />
-                        : <StandaloneRibbonAdapter component={FormattingToolbar} show={showFormattingToolbar} />}
+                        : <FormattingToolbar />}
 
                     <FloatingButtons items={items} />
                     <NoteDetail />

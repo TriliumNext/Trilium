@@ -1,32 +1,3 @@
-@container info-section (max-width: 800px) {
-    table, tbody, tr, td, th {
-        display: block;
-        padding: 0 !important;
-    }
-
-    tbody {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    tr {
-        flex-grow: 1;
-    }
-
-    tr:has(.file-buttons) {
-        width: 100%;
-    }
-
-    th {
-        font-size: .85em;
-    }
-
-    td {
-        margin-bottom: .5em;
-    }
-}
-
 /*
  * Promoted attributes
  */

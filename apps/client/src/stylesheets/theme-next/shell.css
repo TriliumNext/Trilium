@@ -1272,14 +1272,6 @@ body:not(.background-effects) #center-pane .note-split {
     animation: note-entrance 100ms linear;
 }
 
-/*
- * Ribbon & note header
- */
-
-.ribbon-container {
-    margin-bottom: 0 !important;
-}
-
 @keyframes note-entrance {
     from {
         filter: opacity(0);

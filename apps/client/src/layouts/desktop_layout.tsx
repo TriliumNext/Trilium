@@ -4,11 +4,8 @@ import { isExperimentalFeatureEnabled } from "../services/experimental_features.
 import options from "../services/options.js";
 import utils from "../services/utils.js";
 import ApiLog from "../widgets/api_log.jsx";
-import ClosePaneButton from "../widgets/buttons/close_pane_button.js";
-import CreatePaneButton from "../widgets/buttons/create_pane_button.js";
 import GlobalMenu from "../widgets/buttons/global_menu.jsx";
 import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
-import MovePaneButton from "../widgets/buttons/move_pane_button.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.jsx";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
@@ -35,7 +32,6 @@ import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
 import QuickSearch from "../widgets/quick_search.jsx";
 import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
-import LazyComponent from "../widgets/react/LazyComponent.jsx";
 import NoteActions from "../widgets/ribbon/NoteActions.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
@@ -132,12 +128,7 @@ export default class DesktopLayout {
                                                             .child(<NoteTitleWidget />)
                                                             .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
-                                                            .optChild(!isNewLayout, <MovePaneButton direction="left" />)
-                                                            .optChild(!isNewLayout, <MovePaneButton direction="right" />)
-                                                            .optChild(!isNewLayout, <ClosePaneButton />)
-                                                            .optChild(!isNewLayout, <CreatePaneButton />)
-                                                            .optChild(isNewLayout, <NoteActions />))
-                                                        .optChild(!isNewLayout, <LazyComponent loader={() => import("../widgets/ribbon/Ribbon.jsx")} />)
+                                                            .child(<NoteActions />))
                                                         .child(new WatchedFileUpdateStatusWidget())
                                                         .optChild(!isNewLayout, <FloatingButtons items={DESKTOP_FLOATING_BUTTONS} />)
                                                         .child(
