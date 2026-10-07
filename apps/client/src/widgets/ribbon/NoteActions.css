@@ -38,15 +38,15 @@ body.experimental-feature-new-layout .ribbon-button-container {
             opacity: 0.4;
         }
     }
+}
 
-    .note-actions-custom {
-        display: flex;
-        align-items: center;
-        height: 36px;
-        gap: var(--button-gap);
+.ribbon-button-container .note-actions-custom {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    gap: var(--button-gap, 10px);
 
-        &> button:last-of-type {
-            margin-inline-end: 0.5em;
-        }
+    &> button:last-of-type {
+        margin-inline-end: 0.5em;
     }
 }

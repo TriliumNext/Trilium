@@ -1,7 +1,6 @@
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import EditedNotesTab from "./EditedNotesTab";
-import FilePropertiesTab from "./FilePropertiesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
@@ -38,14 +37,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         content: NotePropertiesTab,
         show: ({ note }) => !!note?.getLabelValue("pageUrl"),
         activate: true
-    },
-    {
-        title: t("file_properties.title"),
-        icon: "bx bx-file",
-        content: FilePropertiesTab,
-        show: ({ note }) => note?.type === "file",
-        toggleCommand: "toggleRibbonTabFileProperties",
-        activate: ({ note }) => note?.mime !== "application/pdf"
     },
     {
         title: t("image_properties.title"),

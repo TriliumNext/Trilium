@@ -10,6 +10,8 @@ import { t } from "../../services/i18n";
 import { copyImageReferenceToClipboard } from "../../services/image";
 import { getHelpUrlForNote } from "../../services/in_app_help";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
+import server from "../../services/server";
+import toast from "../../services/toast";
 import { createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
 import { buildSaveSqlToNoteHandler } from "../FloatingButtonsDefinitions";
@@ -21,16 +23,17 @@ import { FormListItem } from "../react/FormList";
 import { useEffectiveReadOnly, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { isSplitEditorForcedReadOnly, resolveDisplayMode } from "../type_widgets/helpers/split_editor_mode";
 import { ParentComponent } from "../react/react_utils";
-import { buildUploadNewFileRevisionListener } from "./FilePropertiesTab";
 import { buildUploadNewImageRevisionListener } from "./ImagePropertiesTab";
 
 interface NoteActionsCustomProps {
     note: FNote;
     ntxId: string;
     noteContext: NoteContext;
+    /** Renders only the note type's own actions, leaving out those `FloatingButtons` shows on the old layout. */
+    typeActionsOnly?: boolean;
 }
 
-interface NoteActionsCustomInnerProps extends NoteActionsCustomProps {
+interface NoteActionsCustomInnerProps extends Omit<NoteActionsCustomProps, "typeActionsOnly"> {
     noteMime: string;
     noteType: NoteType;
     isReadOnly: boolean;
@@ -42,10 +45,10 @@ interface NoteActionsCustomInnerProps extends NoteActionsCustomProps {
 const cachedIsMobile = isMobile();
 
 /**
- * Part of {@link NoteActions} on the new layout, but are rendered with a slight spacing
+ * Part of {@link NoteActions}, but are rendered with a slight spacing
  * from the rest of the note items and the buttons differ based on the note type.
  */
-export default function NoteActionsCustom(props: NoteActionsCustomProps) {
+export default function NoteActionsCustom({ typeActionsOnly, ...props }: NoteActionsCustomProps) {
     const { note } = props;
     const containerRef = useRef<HTMLDivElement>(null);
     const noteType = useNoteProperty(note, "type");
@@ -72,14 +75,16 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
             ref={containerRef}
             className="note-actions-custom"
         >
-            <RunActiveNoteButton {...innerProps } />
-            <SwitchSplitOrientationButton {...innerProps} />
-            <DisplayModeSwitcher {...innerProps} />
-            <SaveToNoteButton {...innerProps} />
-            <RefreshButton {...innerProps} />
-            {innerProps.note.noteId === "_backendLog" && <DownloadFileButton {...innerProps} />}
-            <CopyReferenceToClipboardButton {...innerProps} />
-            <InAppHelpButton {...innerProps} />
+            {!typeActionsOnly && <>
+                <RunActiveNoteButton {...innerProps } />
+                <SwitchSplitOrientationButton {...innerProps} />
+                <DisplayModeSwitcher {...innerProps} />
+                <SaveToNoteButton {...innerProps} />
+                <RefreshButton {...innerProps} />
+                {innerProps.note.noteId === "_backendLog" && <DownloadFileButton {...innerProps} />}
+                <CopyReferenceToClipboardButton {...innerProps} />
+                <InAppHelpButton {...innerProps} />
+            </>}
             <NoteActionsCustomInner {...innerProps} />
         </div>
     );
@@ -116,6 +121,22 @@ function ImageActions(props: NoteActionsCustomInnerProps) {
             <CompressImageButton {...props} />
         </>
     );
+}
+
+function buildUploadNewFileRevisionListener(note: FNote) {
+    return (fileToUpload: FileList | null) => {
+        if (!fileToUpload) {
+            return;
+        }
+
+        server.upload(`notes/${note.noteId}/file`, fileToUpload[0]).then((result) => {
+            if (result.uploaded) {
+                toast.showMessage(t("file_properties.upload_success"));
+            } else {
+                toast.showError(t("file_properties.upload_failed"));
+            }
+        });
+    };
 }
 //#endregion
 

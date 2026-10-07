@@ -38,46 +38,23 @@ div.promoted-attributes-container {
 }
 
 /*
- * File/Image Properties and Note Info
+ * Image Properties
  */
 
  /* The property label */
-.file-properties-widget .file-table th,
 .image-properties > div:first-child > span > strong {
     opacity: 0.65;
     font-weight: 500;
     vertical-align: top;
 }
 
-.file-properties-widget .file-table td {
-    vertical-align: top;
-}
-
-.file-properties-widget {
-    container: info-section / inline-size;
-}
-
-.file-properties-widget .file-table {
-    margin: 12px;
-    width: unset;
-}
-
-.file-properties-widget td:has(.file-buttons) {
-    padding: 8px 0 0 0;
-}
-
 /* The button bar */
-.file-properties-widget .file-buttons,
 .image-properties > div:last-of-type {
     padding: 0;
     margin: 0;
     justify-content: flex-start !important;
     flex-wrap: wrap;
     gap: 12px;
-}
-
-.file-properties-widget .file-buttons button {
-    white-space: nowrap;
 }
 
 /* The properties row for images */

@@ -46,6 +46,7 @@ export default function NoteActions() {
                     <CreatePaneButton />
                 </>
             )}
+            {!isNewLayout && note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} typeActionsOnly />}
             {note && !isNewLayout && <RevisionsButton note={note} />}
             {note && note.type !== "launcher" && <NoteContextMenu note={note as FNote} noteContext={noteContext} />}
         </div>
