@@ -28,11 +28,9 @@ interface NoteActionsCustomProps {
     note: FNote;
     ntxId: string;
     noteContext: NoteContext;
-    /** Renders only the note type's own actions, leaving out those `FloatingButtons` shows on the old layout. */
-    typeActionsOnly?: boolean;
 }
 
-interface NoteActionsCustomInnerProps extends Omit<NoteActionsCustomProps, "typeActionsOnly"> {
+interface NoteActionsCustomInnerProps extends NoteActionsCustomProps {
     noteMime: string;
     noteType: NoteType;
     isReadOnly: boolean;
@@ -47,7 +45,7 @@ const cachedIsMobile = isMobile();
  * Part of {@link NoteActions}, but are rendered with a slight spacing
  * from the rest of the note items and the buttons differ based on the note type.
  */
-export default function NoteActionsCustom({ typeActionsOnly, ...props }: NoteActionsCustomProps) {
+export default function NoteActionsCustom(props: NoteActionsCustomProps) {
     const { note } = props;
     const containerRef = useRef<HTMLDivElement>(null);
     const noteType = useNoteProperty(note, "type");
@@ -74,16 +72,14 @@ export default function NoteActionsCustom({ typeActionsOnly, ...props }: NoteAct
             ref={containerRef}
             className="note-actions-custom"
         >
-            {!typeActionsOnly && <>
-                <RunActiveNoteButton {...innerProps } />
-                <SwitchSplitOrientationButton {...innerProps} />
-                <DisplayModeSwitcher {...innerProps} />
-                <SaveToNoteButton {...innerProps} />
-                <RefreshButton {...innerProps} />
-                {innerProps.note.noteId === "_backendLog" && <DownloadFileButton {...innerProps} />}
-                <CopyReferenceToClipboardButton {...innerProps} />
-                <InAppHelpButton {...innerProps} />
-            </>}
+            <RunActiveNoteButton {...innerProps } />
+            <SwitchSplitOrientationButton {...innerProps} />
+            <DisplayModeSwitcher {...innerProps} />
+            <SaveToNoteButton {...innerProps} />
+            <RefreshButton {...innerProps} />
+            {innerProps.note.noteId === "_backendLog" && <DownloadFileButton {...innerProps} />}
+            <CopyReferenceToClipboardButton {...innerProps} />
+            <InAppHelpButton {...innerProps} />
             <NoteActionsCustomInner {...innerProps} />
         </div>
     );

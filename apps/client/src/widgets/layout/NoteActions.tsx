@@ -10,7 +10,6 @@ import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import branches from "../../services/branches";
 import dialog from "../../services/dialog";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
@@ -22,7 +21,6 @@ import CreatePaneButton from "../buttons/create_pane_button";
 import MovePaneButton from "../buttons/move_pane_button";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import { isAlwaysFullWidthByType } from "../note_wrapper";
-import ActionButton from "../react/ActionButton";
 import Dropdown, { type DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
 import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelOptionalBool, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
@@ -31,33 +29,17 @@ import NoteActionsCustom from "./NoteActionsCustom";
 import { useShareState } from "./NoteBadges";
 import { NoteTypeDropdownContent } from "./NoteTypeSwitcher";
 
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
-
 export default function NoteActions() {
     const { note, ntxId, noteContext } = useNoteContext();
     return (
         <div className="note-actions-bar" style={{ contain: "none" }}>
-            {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} typeActionsOnly={!isNewLayout} />}
-            {note && !isNewLayout && <RevisionsButton note={note} />}
+            {note && ntxId && noteContext && <NoteActionsCustom note={note} ntxId={ntxId} noteContext={noteContext} />}
             <MovePaneButton direction="left" />
             <MovePaneButton direction="right" />
             <ClosePaneButton />
             <CreatePaneButton />
             {note && note.type !== "launcher" && <NoteContextMenu note={note as FNote} noteContext={noteContext} />}
         </div>
-    );
-}
-
-function RevisionsButton({ note }: { note: FNote }) {
-    const isEnabled = !["launcher", "doc"].includes(note?.type ?? "");
-
-    return (isEnabled &&
-        <ActionButton
-            icon="bx bx-history"
-            text={t("revisions_button.note_revisions")}
-            triggerCommand="showRevisions"
-            titlePosition="bottom"
-        />
     );
 }
 
@@ -102,7 +84,6 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const itemToFocusRef = useRef<ItemToFocus>(null);
     // Keyboard shortcuts.
     useTriliumEvent("toggleRibbonTabBasicProperties", () => {
-        if (!isNewLayout) return;
         itemToFocusRef.current = "basic-properties";
         dropdownRef.current?.toggle();
     });
@@ -111,7 +92,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
         <>
             <Dropdown
                 dropdownRef={dropdownRef}
-                buttonClassName={ isNewLayout ? "bx bx-dots-horizontal-rounded" : "bx bx-dots-vertical-rounded" }
+                buttonClassName="bx bx-dots-horizontal-rounded"
                 className="note-actions"
                 mobileBottomSheet
                 hideToggleArrow
@@ -138,7 +119,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
 
                 <FormDropdownDivider />
 
-                {isNewLayout && isNormalViewMode && !isHelpPage && <>
+                {isNormalViewMode && !isHelpPage && <>
                     <NoteBasicProperties note={note} focus={itemToFocusRef} />
                     <FormDropdownDivider />
                 </>}

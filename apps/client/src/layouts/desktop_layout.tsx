@@ -1,6 +1,5 @@
 import type { AppContext } from "../components/app_context.js";
 import type { WidgetsByParent } from "../services/bundle.js";
-import { isExperimentalFeatureEnabled } from "../services/experimental_features.js";
 import options from "../services/options.js";
 import utils from "../services/utils.js";
 import ApiLog from "../widgets/api_log.jsx";
@@ -17,8 +16,6 @@ import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import PasswordNoteSetDialog from "../widgets/dialogs/password_not_set.js";
 import UploadAttachmentsDialog from "../widgets/dialogs/upload_attachments.js";
 import FindWidget from "../widgets/find.js";
-import FloatingButtons from "../widgets/FloatingButtons.jsx";
-import { DESKTOP_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import { FixedFormattingToolbar } from "../widgets/layout/FormattingToolbar.jsx";
@@ -64,7 +61,6 @@ export default class DesktopLayout {
          * cannot give those controls room, and they end up drawn over the launcher pane instead.
          */
         const fullWidthTabBar = launcherPaneIsHorizontal || (isElectron && !hasNativeTitleBar && utils.areWindowControlsOnLeft());
-        const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
@@ -130,7 +126,6 @@ export default class DesktopLayout {
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
                                                             .child(<NoteActions />))
                                                         .child(new WatchedFileUpdateStatusWidget())
-                                                        .optChild(!isNewLayout, <FloatingButtons items={DESKTOP_FLOATING_BUTTONS} />)
                                                         .child(
                                                             new ScrollingContainer()
                                                                 .filling()
