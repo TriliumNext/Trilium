@@ -45,6 +45,7 @@
   background-color: var(--note-card-background);
   box-shadow: var(--board-item-shadow);
   border-radius: 5px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 :where(.tn-note-card:hover) {

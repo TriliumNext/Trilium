@@ -522,7 +522,7 @@ body.mobile .board-view-container .board-add-column {
   /* Below only: a top margin would be the first card's to drop, and a drop placeholder standing
      above it takes that place and moves the card down by it. */
   margin-block: 0 0.65em;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.15s ease;
 
   .board-note-outside-filter {
     color: var(--board-muted-text-color);
