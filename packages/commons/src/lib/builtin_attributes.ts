@@ -103,7 +103,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "customRequestHandler", valueType: "text", isDangerous: true },
     { type: "label", name: "customResourceProvider", valueType: "text", isDangerous: true },
     { type: "label", name: "widget", valueType: "boolean", isDangerous: true },
-    { type: "label", name: "similarNotesWidgetDisabled", valueType: "boolean" },
     { type: "label", name: "workspace", valueType: "boolean" },
     { type: "label", name: "workspaceIconClass", valueType: "text" },
     { type: "label", name: "workspaceTabBackgroundColor", valueType: "color" },
@@ -187,8 +186,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "textSnippetDescription", valueType: "text", hasUserValue: true },
     // Offers the note's content as an instruction in the text editor's AI assistant menu.
     { type: "label", name: "aiQuickAction", valueType: "boolean" },
-    // Forces the table of contents open or shut; without the label the heading count decides.
-    { type: "label", name: "toc", valueType: "select", selectOptions: [ "show", "hide" ] },
     { type: "label", name: "color", valueType: "color" },
     { type: "label", name: "keepCurrentHoisting", valueType: "boolean" },
     { type: "label", name: "executeButton", valueType: "boolean" },
@@ -207,7 +204,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "mediaNotesPlayMode", valueType: "select", selectOptions: [ "loop", "next" ] },
     { type: "label", name: "collection", valueType: "boolean" },
     { type: "label", name: "webViewSrc", valueType: "url", isDangerous: true },
-    { type: "label", name: "hideHighlightWidget", valueType: "boolean" },
     { type: "label", name: "iconPack", valueType: "text", isDangerous: true },
     { type: "label", name: "docName", valueType: "text", isDangerous: true },
     { type: "label", name: "docUrl", valueType: "url", isDangerous: true },

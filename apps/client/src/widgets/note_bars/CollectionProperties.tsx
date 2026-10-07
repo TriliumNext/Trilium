@@ -12,10 +12,10 @@ import { ViewTypeOptions } from "../collections/interface";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useNoteLabel, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import { CheckBoxProperty, ViewProperty } from "../react/NotePropertyMenu";
-import { bookPropertiesConfig } from "../ribbon/collection-properties-config";
+import { bookPropertiesConfig } from "./collection-properties-config";
 
 export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
@@ -131,7 +131,9 @@ export function useViewType(note: FNote | null | undefined) {
 function ViewTypeSwitcher({ viewType, setViewType }: { viewType: ViewTypeOptions, setViewType: (newValue: ViewTypeOptions) => void }) {
     // Keyboard shortcut
     const dropdownContainerRef = useRef<HTMLDivElement>(null);
-    useTriliumEvent("toggleRibbonTabBookProperties", () => {
+    const { ntxId: ownNtxId } = useNoteContext();
+    useTriliumEvent("toggleRibbonTabBookProperties", ({ ntxId }) => {
+        if (!ownNtxId || ntxId !== ownNtxId) return;
         dropdownContainerRef.current?.querySelector("button")?.focus();
     });
 

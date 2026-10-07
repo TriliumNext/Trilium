@@ -7,8 +7,6 @@ let leftPaneWidth: number;
 let reservedPx: number;
 let layoutOrientation: string;
 let leftInstance: ReturnType<typeof Split> | null;
-let rightPaneWidth: number;
-let rightInstance: ReturnType<typeof Split> | null;
 
 const noteSplitMap = new Map<string[], ReturnType<typeof Split> | undefined>(); // key: a group of ntxIds, value: the corresponding Split instance
 const noteSplitRafMap = new Map<string[], number>();
@@ -53,40 +51,6 @@ function setupLeftPaneResizer(leftPaneVisible: boolean) {
                     options.save("leftPaneWidth", Math.round(sizes[0]));
                 }
             });
-        });
-    }
-}
-
-function setupRightPaneResizer() {
-    if (rightInstance) {
-        rightInstance.destroy();
-        rightInstance = null;
-    }
-
-    const rightPaneVisible = $("#right-pane").is(":visible");
-
-    if (!rightPaneVisible) {
-        $("#center-pane").css("width", "100%");
-
-        return;
-    }
-
-    rightPaneWidth = rightPaneWidth ?? (options.getInt("rightPaneWidth") ?? 0);
-    if (!rightPaneWidth || rightPaneWidth < 5) {
-        rightPaneWidth = 5;
-    }
-
-    /* v8 ignore next -- redundant guard: a falsy rightPaneVisible already returned above */
-    if (rightPaneVisible) {
-        rightInstance = Split(["#center-pane", "#right-pane"], {
-            sizes: [100 - rightPaneWidth, rightPaneWidth],
-            gutterSize: DEFAULT_GUTTER_SIZE,
-            minSize: [300, 180],
-            rtl: glob.isRtl,
-            onDragEnd: (sizes) => {
-                rightPaneWidth = Math.round(sizes[1]);
-                options.save("rightPaneWidth", Math.round(sizes[1]));
-            }
         });
     }
 }
@@ -170,7 +134,6 @@ function createSplitInstance(targetNtxIds: string[]) {
 
 export default {
     setupLeftPaneResizer,
-    setupRightPaneResizer,
     setupNoteSplitResizer,
     delNoteSplitResizer,
     moveNoteSplitResizer

@@ -1,3 +1,4 @@
+import type { MimeType } from "@triliumnext/commons";
 import { type ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -12,7 +13,7 @@ import server from "../../services/server.js";
 import { buildNote } from "../../test/easy-froca.js";
 import { noteSavedDataStore } from "../react/NoteStore.js";
 import { NoteContextContext, ParentComponent } from "../react/react_utils.js";
-import NoteTypeSwitcher, { NoteTypeBadges, toSwitcherItems, useNoteTypeData } from "./NoteTypeSwitcher.js";
+import NoteTypeSwitcher, { codeLanguageItems, NoteTypeBadges, toSwitcherItems, useNoteTypeData } from "./NoteTypeSwitcher.js";
 
 vi.mock("../../services/i18n.js", () => ({
     t: (key: string) => key
@@ -150,6 +151,38 @@ describe("useNoteTypeData", () => {
         await flush();
         expect(serverGet).toHaveBeenCalledWith("search-templates");
         expect(data?.userTemplateNotes.map((note) => note.title)).toEqual([ "Meeting Notes" ]);
+    });
+});
+
+describe("codeLanguageItems", () => {
+    const mimeTypes = [
+        { title: "Plain text", mime: "text/plain", icon: "bx bx-file" },
+        { title: "C++ <templates>", mime: "text/x-c++src" }
+    ] as MimeType[];
+
+    it("lists the languages, ticks the note's own, and ends with the options when asked", () => {
+        const changeNoteType = vi.fn();
+        const onConfigure = vi.fn();
+        const items = codeLanguageItems({ currentMimeType: "text/x-c++src", mimeTypes, changeNoteType, onConfigure });
+
+        // Titles are HTML in a menu, so a language's name is escaped.
+        expect(items.map((item) => ("kind" in item ? item.kind : item.title))).toEqual([
+            "Plain text", "C++ &lt;templates&gt;", "separator", "basic_properties.configure_code_notes"
+        ]);
+        expect(items.map((item) => "checked" in item && item.checked)).toEqual([ false, true, false, false ]);
+        // A language's own icon, or the code note type's when it has none, as the note tree shows it.
+        expect(items.slice(0, 2).map((item) => "uiIcon" in item && item.uiIcon)).toEqual([ "bx bx-file", "bx bx-code" ]);
+
+        const [ plain, , , configure ] = items;
+        if ("kind" in plain || "kind" in configure) throw new Error("expected rows");
+        plain.handler?.(plain, new MouseEvent("click"));
+        expect(changeNoteType).toHaveBeenCalledWith("code", "text/plain");
+        configure.handler?.(configure, new MouseEvent("click"));
+        expect(onConfigure).toHaveBeenCalledTimes(1);
+        expect(configure.uiIcon).toBe("bx bx-cog");
+
+        // Without a way to open the options, there is no row for them.
+        expect(codeLanguageItems({ mimeTypes, changeNoteType })).toHaveLength(2);
     });
 });
 

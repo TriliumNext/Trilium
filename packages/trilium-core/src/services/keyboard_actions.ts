@@ -646,93 +646,92 @@ function getDefaultKeyboardActions() {
         },
 
         {
-            separator: t("keyboard_actions.ribbon-tabs")
+            separator: t("keyboard_actions.note-panels")
         },
 
         {
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-classic-editor"),
+            friendlyName: t("keyboard_action_names.focus-formatting-toolbar"),
             actionName: "toggleRibbonTabClassicEditor",
             iconClass: "bx bx-text",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-classic-editor-toolbar"),
+            description: t("keyboard_actions.focus-formatting-toolbar"),
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabBasicProperties",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-basic-properties"),
+            friendlyName: t("keyboard_action_names.show-basic-properties"),
             iconClass: "bx bx-slider",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabBookProperties",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-book-properties"),
+            friendlyName: t("keyboard_action_names.focus-collection-properties"),
             iconClass: "bx bx-book",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-book-properties"),
+            description: t("keyboard_actions.focus-collection-properties"),
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabFileProperties",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-file-properties"),
+            friendlyName: t("keyboard_action_names.focus-file-actions"),
             iconClass: "bx bx-file",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabImageProperties",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-image-properties"),
+            friendlyName: t("keyboard_action_names.focus-image-actions"),
             iconClass: "bx bx-image",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabOwnedAttributes",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-owned-attributes"),
+            friendlyName: t("keyboard_action_names.toggle-owned-attributes"),
             iconClass: "bx bx-list-check",
             defaultShortcuts: ["Alt+A"],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabInheritedAttributes",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-inherited-attributes"),
+            friendlyName: t("keyboard_action_names.toggle-inherited-attributes"),
             iconClass: "bx bx-list-plus",
             defaultShortcuts: [],
             scope: "window"
         },
-        // TODO: Remove or change since promoted attributes have been changed.
         {
             actionName: "toggleRibbonTabPromotedAttributes",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-promoted-attributes"),
+            friendlyName: t("keyboard_action_names.toggle-promoted-attributes"),
             iconClass: "bx bx-star",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabNoteMap",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-note-map"),
+            friendlyName: t("keyboard_action_names.show-note-map"),
             iconClass: "bx bxs-network-chart",
             defaultShortcuts: [],
-            description: t("keyboard_actions.toggle-link-map"),
+            description: t("keyboard_actions.show-note-map"),
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabNoteInfo",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-note-info"),
+            friendlyName: t("keyboard_action_names.show-note-info"),
             iconClass: "bx bx-info-circle",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabNotePaths",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-note-paths"),
+            friendlyName: t("keyboard_action_names.show-note-paths"),
             iconClass: "bx bx-collection",
             defaultShortcuts: [],
             scope: "window"
         },
         {
             actionName: "toggleRibbonTabSimilarNotes",
-            friendlyName: t("keyboard_action_names.toggle-ribbon-tab-similar-notes"),
+            friendlyName: t("keyboard_action_names.toggle-similar-notes"),
             iconClass: "bx bx-bar-chart",
             defaultShortcuts: [],
             scope: "window"

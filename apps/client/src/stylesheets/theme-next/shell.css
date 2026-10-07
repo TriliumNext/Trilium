@@ -128,30 +128,13 @@ body.background-effects.theme-supports-background-effects #center-pane .note-spl
 }
 
 /* Matches when a status bar panel is open */
-body.experimental-feature-new-layout #horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
+#horizontal-main-container:has(#rest-pane > .status-bar.status-bar-panel-open) {
     --note-split-bottom-border-radius: 0;
 }
 
 /* Add a border to the vertical launch bar if collapsed. */
 body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.vertical {
     border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
-}
-
-/*
- * Zen mode
- */
-
-@keyframes zen-formatting-toolbar-entrance {
-    from {
-        transform: translateY(200%);
-    } to {
-        transform: translateY(0);
-    }
-}
-
-body.zen .note-split .ribbon-container .classic-toolbar-widget {
-    position: relative;
-    animation: zen-formatting-toolbar-entrance 300ms ease-out;
 }
 
 /*
@@ -1247,7 +1230,7 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
  */
 
  /* Note split */
- body.desktop.experimental-feature-new-layout .vertical-layout #center-pane .note-split {
+ body.desktop .vertical-layout #center-pane .note-split {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 
@@ -1255,7 +1238,7 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-start-start-radius: var(--note-split-top-border-radius);
 
-    body.desktop.experimental-feature-new-layout & {
+    body.desktop & {
         border-end-start-radius: var(--note-split-bottom-border-radius);
 
         > .scrolling-container {
@@ -1287,14 +1270,6 @@ body.mobile #detail-container > .split-note-container-widget:has(> .note-split.v
 
 body:not(.background-effects) #center-pane .note-split {
     animation: note-entrance 100ms linear;
-}
-
-/*
- * Ribbon & note header
- */
-
-.ribbon-container {
-    margin-bottom: 0 !important;
 }
 
 @keyframes note-entrance {
@@ -1339,20 +1314,8 @@ body.desktop .title-row {
 
 /* The "Change note icon" button */
 
-:root .note-icon-widget button.note-icon,
-:root .note-icon-widget button.note-icon:hover {
+:root .note-icon-widget button.note-icon {
     border: none;
-    border-radius: 8px;
-}
-
-/* Dropdown open */
-:root .note-icon-widget button.note-icon.show {
-    background: var(--ck-editor-toolbar-dropdown-button-open-background);
-}
-
-:root .note-icon-widget button.note-icon:not(:disabled):hover {
-    background: var(--icon-button-hover-background);
-    color: var(--icon-button-hover-color);
 }
 
 .note-actions {
@@ -1387,7 +1350,7 @@ body.desktop .title-row {
 
 #center-pane .note-split > div.alert {
     position: relative;
-    margin: 8px 0 0 0;
+    margin: 0;
     border: unset;
     border-radius: 0;
     padding: 8px 16px;
@@ -1396,10 +1359,6 @@ body.desktop .title-row {
     font-weight: normal;
     animation: alert-show 300ms ease-in;
     border-bottom: 2px solid #0000001c !important;
-}
-
-body.experimental-feature-new-layout #center-pane .note-split > div.alert {
-    margin-top: 0;
 }
 
 /*
@@ -1530,213 +1489,6 @@ div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
 }
 
 /*
- * Floating buttons
- */
-
- /* Floating buttons container */
-.floating-buttons-children {
-    opacity: 1;
-    min-height: var(--floating-button-height);
-    transform-origin: right;
-    box-shadow: 1px 1px 1px var(--floating-button-shadow-color);
-    background: var(--floating-button-background-color);
-    backdrop-filter: blur(10px) saturate(6);
-    border-radius: 6px;
-    transition: transform 250ms ease-out,
-                opacity 250ms ease-out;
-}
-
-body[dir=rtl] .floating-buttons-children {
-    transform-origin: left;
-}
-
- /* Floating buttons container (collapsed) */
- .floating-buttons-children.temporarily-hidden {
-    display: flex !important;
-    opacity: 0;
-    transform: scaleX(0);
-    pointer-events: none;
-}
-
-/* Floating buttons */
-
-.floating-buttons-children {
-    --border-radius-size: 6px;
-}
-
-.floating-buttons-children > * {
-    margin: 0 !important;
-}
-
-div.floating-buttons-children > button,
-div.floating-buttons-children .floating-button {
-    width: var(--floating-button-width);
-    height: var(--floating-button-height);
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    font-size: var(--floating-button-icon-size);
-    align-items: center;
-    color: var(--floating-button-color);
-}
-
-div.floating-buttons-children > button:hover,
-div.floating-buttons-children .floating-button:hover {
-    background: var(--floating-button-hover-background);
-    color: var(--floating-button-hover-color);
-}
-
-div.floating-buttons-children > button:active,
-div.floating-buttons-children .floating-button:active {
-    font-size: calc(var(--floating-button-icon-size) * 0.85);
-}
-
-/* The first visible floating button */
-div.floating-buttons-children > *:first-child {
-    --border-radius: var(--border-radius-size) 0 0 var(--border-radius-size);
-    border-radius: var(--border-radius);
-}
-
- /* "Show / hide floating buttons" buttons */
-
- @keyframes floating-buttons-show-hide-button-animation {
-    from {
-        transform: rotate(180deg);
-    } to {
-        transform: rotate(0);
-    }
-}
-
-div.floating-buttons-children .close-floating-buttons-button,
-div.floating-buttons .show-floating-buttons-button {
-    margin-top: calc((var(--floating-button-height) - var(--floating-button-show-hide-button-size)) / 2);
-    width: var(--floating-button-show-hide-button-size);
-    height: var(--floating-button-show-hide-button-size);
-    padding: 0;
-    border: 0;
-    font-size: calc(var(--floating-button-show-hide-button-size) * .8);
-}
-
-div.floating-buttons-children .close-floating-buttons-button:active,
-div.floating-buttons .show-floating-buttons-button:active {
-    font-size: calc(var(--floating-button-show-hide-button-size) * .65);
-    background: transparent!important;
-}
-
-div.floating-buttons-children .close-floating-buttons-button::before,
-div.floating-buttons .show-floating-buttons-button::before {
-    display: block;
-    line-height: 1;
-}
-
-/* "Show buttons" button */
-
-div.floating-buttons .show-floating-buttons-button {
-    box-shadow: var(--floating-button-show-button-shadow);
-    background: var(--floating-button-show-button-background);
-    color: var(--floating-button-show-button-color);
-    backdrop-filter: blur(10px);
-}
-
-div.floating-buttons .show-floating-buttons-button::before {
-    animation: floating-buttons-show-hide-button-animation 400ms ease-out;
-}
-
-div.floating-buttons .show-floating-buttons-button:hover,
-div.floating-buttons .show-floating-buttons-button:active {
-    box-shadow: var(--floating-button-show-button-hover-shadow);
-    background: var(--floating-button-show-button-hover-background) !important;
-    color: var(--floating-button-show-button-color) !important;
-}
-
-/* "Hide buttons" button */
-
-div.floating-buttons-children:not(.temporarily-hidden) .close-floating-buttons-button::before {
-    animation: floating-buttons-show-hide-button-animation 400ms ease-out;
-}
-
-div.floating-buttons-children .close-floating-buttons {
-    border-radius: 0 var(--border-radius-size) var(--border-radius-size) 0;
-    overflow: hidden;
-}
-
-div.floating-buttons-children .close-floating-buttons {
-    margin-inline-start: 0 !important;
-    background: var(--floating-button-hide-button-background);
-    color: var(--floating-button-hide-button-color);
-}
-
-div.floating-buttons-children .close-floating-buttons:has(.close-floating-buttons-button:hover) {
-    background: var(--floating-button-hover-background);
-    color: var(--floating-button-hover-color);
-}
-
-/* Backlink count */
-
-.backlinks-widget .backlinks-ticker {
-    height: 100%;
-    padding: 0 10px;
-    border-radius: var(--border-radius);
-    background: transparent;
-    user-select: none;
-}
-
-.backlinks-widget .backlinks-ticker:hover {
-    background: var(--floating-button-hover-background);
-}
-
-.backlinks-widget .backlinks-items {
-    --menu-padding-size: 20px;
-}
-
-/* TODO: Restyle the path */
-.backlinks-widget .backlinks-items .note-path {
-    padding-inline-start: 8px;
-}
-
-/* Code, relation map buttons */
-
-.floating-buttons .code-buttons-widget,
-.floating-buttons .relation-map-buttons {
-    gap: 0;
-}
-
-/* The highlight animation */
-
-@keyframes floating-button-highlight {
-    from {
-        background: var(--floating-button-background);
-        color: var(--floating-button-color);
-    } to {
-        background: var(--floating-button-hover-background);
-        color: var(--floating-button-hover-color);
-    }
-}
-
-.floating-buttons .bx-tada {
-    /* The class is applied for 1700ms */
-    animation: floating-button-highlight 425ms ease-in-out alternate infinite;
-}
-
-.floating-buttons .bx-tada::before {
-    font-size: var(--floating-button-icon-size);
-}
-
-/* Button groups */
-:root .floating-buttons .btn-group {
-    --button-group-active-button-background-color: var(--low-profile-button-active-background-color);
-    --button-group-active-button-color: var(--low-profile-button-active-color);
-
-    background: transparent;
-    padding: 0;
-
-    button.btn.floating-button.btn {
-        border-radius: 0;
-        box-shadow: unset;
-    }
-}
-
-/*
  * Find and replace bar
  */
 
@@ -1845,8 +1597,8 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     background: var(--right-pane-background-color);
 }
 
-/* New layout: status bar delimiter */
-body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
+/* Status bar delimiter */
+body.desktop .vertical-layout #right-pane {
     border-bottom: 1px solid var(--status-bar-border-color);
  }
 
@@ -1870,11 +1622,6 @@ body.desktop.experimental-feature-new-layout .vertical-layout #right-pane {
 #right-pane .card-header-buttons {
     align-items: center;
     top: 0;
-}
-
-#right-pane .toc-widget,
-#right-pane .highlights-list-widget {
-    padding: 0 0 0 10px;
 }
 
 #right-pane .toc li,

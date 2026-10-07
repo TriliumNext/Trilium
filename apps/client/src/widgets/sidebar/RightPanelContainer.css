@@ -16,7 +16,7 @@
    absolutely positioned within it (see RightPanePeekButton.css). Split sizes the panes
    inside the padded content box, so they never sit under the button, and the button stays put
    regardless of whether the right pane is open. */
-body.experimental-feature-new-layout #vertical-main-container {
+#vertical-main-container {
     --right-pane-peek-button-width: 12px;
     /* +4px leaves a small gap between the right pane (and #center-pane) and the peek button. */
     --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 4px);
@@ -24,26 +24,26 @@ body.experimental-feature-new-layout #vertical-main-container {
     padding-inline-end: var(--right-pane-peek-button-gutter);
 }
 
-body.experimental-feature-new-layout.layout-horizontal #vertical-main-container {
+body.layout-horizontal #vertical-main-container {
     --right-pane-peek-button-gutter: calc(var(--right-pane-peek-button-width) + 2px);
 }
 
 /* Persistent host wrapping the spacer + #right-pane (see RightPanelContainer.tsx), so #right-pane
    never reparents between modes. A flex row: docked it fills with the pane (spacer hidden); peek
    it lays out [spacer | gutter | pane]. */
-body.experimental-feature-new-layout #right-pane-host {
+#right-pane-host {
     display: flex;
     flex-direction: row;
 }
 
 /* A soft-dismissed peek keeps its content mounted (so re-peeking is instant and stateful); this
    takes it out of layout/paint without unmounting it. Applied whenever the pane isn't shown. */
-body.experimental-feature-new-layout #right-pane-host.hidden {
+#right-pane-host.hidden {
     display: none;
 }
 
 /* Docked: #right-pane fills the host (which Split sizes against #center-pane). */
-body.experimental-feature-new-layout #right-pane-host:not(.peek) > #right-pane {
+#right-pane-host:not(.peek) > #right-pane {
     flex: 1 1 0;
     min-width: 0;
 }
@@ -51,12 +51,12 @@ body.experimental-feature-new-layout #right-pane-host:not(.peek) > #right-pane {
 /* When closing the peek, the host goes in-flow a frame before Split.destroy (run in an effect)
    removes its resize gutter. Keep any gutter inside a non-peek host out of the flow so that
    lingering 5px gutter can't briefly widen the host and reflow the content. */
-body.experimental-feature-new-layout #right-pane-host:not(.peek) > .gutter {
+#right-pane-host:not(.peek) > .gutter {
     display: none;
 }
 
 /* Peek: float the host above the content as an absolute layer, so the content never reflows. */
-body.experimental-feature-new-layout #right-pane-host.peek {
+#right-pane-host.peek {
     position: absolute;
     inset-block: 0;
     inset-inline-start: 0;
@@ -72,27 +72,27 @@ body.experimental-feature-new-layout #right-pane-host.peek {
 }
 
 /* Peek: Split sizes the spacer and the pane via inline widths, so flex must not override them. */
-body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-spacer,
-body.experimental-feature-new-layout #right-pane-host.peek > #right-pane {
+#right-pane-host.peek > .right-pane-peek-spacer,
+#right-pane-host.peek > #right-pane {
     flex: 0 0 auto;
 }
 
-body.experimental-feature-new-layout #right-pane-host.peek > #right-pane {
+#right-pane-host.peek > #right-pane {
     box-shadow: calc(-1 * var(--peek-pane-shadow-depth)) 0 var(--peek-pane-shadow-depth) calc(-1 * var(--peek-pane-shadow-depth)) var(--peek-pane-shadow-color) ;
 }
 
 /* The spacer is the left Split target and, in peek mode, the faint click-to-dismiss backdrop
    over the content (it also shields the PDF iframe during a resize drag). Hidden when docked. */
-body.experimental-feature-new-layout .right-pane-peek-spacer {
+.right-pane-peek-spacer {
     display: none;
 }
 
-body.experimental-feature-new-layout #right-pane-host.peek > .right-pane-peek-spacer {
+#right-pane-host.peek > .right-pane-peek-spacer {
     display: block;
     min-width: 0;
 }
 
-body.experimental-feature-new-layout #right-pane {
+#right-pane {
     display: flex;
     flex-direction: column;
     /* The scrolling belongs to the shown tab's body rather than to the pane, which would carry the
@@ -338,6 +338,6 @@ body.experimental-feature-new-layout #right-pane {
 }
 
 /* Backdrop effects are disabled, so peek mode needs a solid background. */
-body.experimental-feature-new-layout.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
+body.backdrop-effects-disabled #right-pane.right-pane-mode-peek {
     background: var(--right-pane-background-color);
 }

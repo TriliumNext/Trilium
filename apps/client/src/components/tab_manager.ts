@@ -70,6 +70,22 @@ export default class TabManager extends Component {
         return this.children;
     }
 
+    /** Note contexts outside the tab row, such as the quick edit popup's, which commands can still name by `ntxId`. */
+    private detachedContexts = new Map<string, NoteContext>();
+
+    registerDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId) {
+            this.detachedContexts.set(noteContext.ntxId, noteContext);
+        }
+    }
+
+    /** Removes `noteContext`, unless another context has since been registered under its `ntxId`. */
+    unregisterDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId && this.detachedContexts.get(noteContext.ntxId) === noteContext) {
+            this.detachedContexts.delete(noteContext.ntxId);
+        }
+    }
+
     get mainNoteContexts(): NoteContext[] {
         return this.noteContexts.filter((nc) => !nc.mainNtxId);
     }
@@ -201,7 +217,8 @@ export default class TabManager extends Component {
     }
 
     getNoteContextById(ntxId: string | null): NoteContext {
-        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId);
+        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId)
+            ?? (ntxId ? this.detachedContexts.get(ntxId) : undefined);
 
         if (!noteContext) {
             throw new Error(`Cannot find noteContext id='${ntxId}'`);
@@ -216,6 +233,15 @@ export default class TabManager extends Component {
 
     getActiveMainContext(): NoteContext | null {
         return this.activeNtxId ? this.getNoteContextById(this.activeNtxId).getMainContext() : null;
+    }
+
+    /** Returns the note context with the given `ntxId`, or the active one when `ntxId` is empty. Returns `null` for an unknown `ntxId`. */
+    getCommandContext(ntxId: string | null | undefined): NoteContext | null {
+        if (!ntxId) {
+            return this.getActiveContext();
+        }
+
+        return this.noteContexts.find((nc) => nc.ntxId === ntxId) ?? this.detachedContexts.get(ntxId) ?? null;
     }
 
     getActiveContextNotePath(): string | null {

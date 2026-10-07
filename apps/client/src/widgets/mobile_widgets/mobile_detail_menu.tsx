@@ -7,19 +7,19 @@ import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
 import server from "../../services/server";
-import { BacklinksWidget, useBacklinkCount } from "../FloatingButtonsDefinitions";
-import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
+import { useLanguageSwitcher } from "../dialogs/content_languages";
+import { NoteContextMenu } from "../layout/NoteActions";
+import NoteActionsCustom from "../layout/NoteActionsCustom";
+import { codeLanguageItems, useMimeTypes } from "../layout/NoteTypeSwitcher";
+import { getLocaleName, NoteInfoContent, SimilarNotesList } from "../layout/StatusBar";
 import ActionButton from "../react/ActionButton";
 import type { DropdownHandle } from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
 import { useNoteContext, useNoteProperty } from "../react/hooks";
 import { MenuItemRows } from "../react/Menu";
 import Modal from "../react/Modal";
-import { codeLanguageItems, useLanguageSwitcher, useMimeTypes } from "../ribbon/BasicPropertiesTab";
-import { NoteContextMenu } from "../ribbon/NoteActions";
-import NoteActionsCustom from "../ribbon/NoteActionsCustom";
-import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
-import SimilarNotesTab from "../ribbon/SimilarNotesTab";
+import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
+import { NotePathsWidget, useSortedNotePaths } from "../sidebar/NotePaths";
 import { useProcessedLocales } from "../type_widgets/options/components/LocaleSelector";
 
 export default function MobileDetailMenu() {
@@ -222,7 +222,7 @@ function SimilarNotesModal({ note, modalShown, setModalShown }: { note: FNote | 
             show={modalShown}
             onHidden={() => setModalShown(false)}
         >
-            <SimilarNotesTab note={note} />
+            <SimilarNotesList note={note} />
         </Modal>
     );
 }

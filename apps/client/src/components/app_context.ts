@@ -91,6 +91,14 @@ export interface NoteCommandData extends CommandData {
     activeSplit?: number;
 }
 
+/** The note a quick-edit popup opens, and how. */
+export interface OpenInPopupData extends CommandData {
+    noteIdOrPath: string;
+    viewScope?: ViewScope;
+    /** Offers the note type switcher while the note is still blank, as the tab layout does. */
+    showNoteTypeSwitcher?: boolean;
+}
+
 export interface ExecuteCommandData<T> extends CommandData {
     resolve: (data: T) => void;
 }
@@ -167,12 +175,9 @@ export type CommandMappings = {
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
     /** Opens a note in the quick-edit popup. A `viewScope` carrying an `attachmentId` opens that attachment instead of the note itself. */
-    openInPopup: CommandData & {
-        noteIdOrPath: string;
-        viewScope?: ViewScope;
-        /** Offers the note type switcher while the note is still blank, as the tab layout does. */
-        showNoteTypeSwitcher?: boolean;
-    };
+    openInPopup: OpenInPopupData;
+    /** Opens a note in a second quick-edit popup, over the first one, such as a help page asked for from within it. */
+    openInNestedPopup: OpenInPopupData;
     /** Dismisses the quick-edit popup, for something within it that has sent the reader elsewhere. Does nothing if it isn't open. */
     closePopupEditor: CommandData;
     openInTreePopup: CommandData & { noteIdOrPath: string; hoistedNoteId: string; };
@@ -180,7 +185,6 @@ export type CommandMappings = {
     openNoteInNewSplit: CommandData;
     openNoteInNewWindow: CommandData;
     openAboutDialog: CommandData;
-    hideFloatingButtons: {};
     hideLeftPane: CommandData;
     showCpuArchWarning: CommandData;
     showLeftPane: CommandData;
@@ -314,7 +318,6 @@ export type CommandMappings = {
         zoomFactor: string;
     };
 
-    reEvaluateRightPaneVisibility: CommandData;
     runActiveNote: CommandData;
     scrollContainerTo: CommandData & {
         position: number;
@@ -522,18 +525,6 @@ type EventMappings = {
     setNoteContext: {
         noteContext: NoteContext;
     };
-    reEvaluateHighlightsListWidgetVisibility: {
-        noteId: string | undefined;
-    };
-    reEvaluateTocWidgetVisibility: {
-        noteId: string | undefined;
-    };
-    showHighlightsListWidget: {
-        noteId: string;
-    };
-    showTocWidget: {
-        noteId: string;
-    };
     showSearchError: {
         error: string;
     };
@@ -604,10 +595,6 @@ type EventMappings = {
         noteIds: string[];
     };
     refreshData: { ntxId: string | null | undefined };
-    contentSafeMarginChanged: {
-        top: number;
-        noteContext: NoteContext;
-    };
 };
 
 export type EventListener<T extends EventNames> = {

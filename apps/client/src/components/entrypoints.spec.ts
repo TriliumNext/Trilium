@@ -1,7 +1,15 @@
 import type { ElectronApi } from "@triliumnext/commons";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import dialog from "../services/dialog.js";
+import froca from "../services/froca.js";
+import server from "../services/server.js";
+import toastService from "../services/toast.js";
+import { buildNote } from "../test/easy-froca.js";
+import appContext from "./app_context.js";
 import Entrypoints from "./entrypoints.js";
+import type NoteContext from "./note_context.js";
+import type TabManager from "./tab_manager.js";
 
 describe("openInWindowCommand", () => {
     const entrypoints = new Entrypoints();
@@ -68,5 +76,63 @@ describe("logoutCommand", () => {
         expect(document.body.querySelector("form")?.action)
             .toBe("http://localhost:3000/trilium/logout");
         window.history.replaceState({}, "", "/");
+    });
+});
+
+describe("runActiveNoteCommand", () => {
+    const entrypoints = new Entrypoints();
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("runs the note of the context the command names, rather than the active tab's", async () => {
+        buildNote({ id: "tabNote", title: "Tab", type: "code", mime: "text/x-sqlite;schema=trilium" });
+        buildNote({ id: "popupQuery", title: "Popup", type: "code", mime: "text/x-sqlite;schema=trilium" });
+        const tabContext = { ntxId: "tab", note: froca.getNoteFromCache("tabNote") } as NoteContext;
+        const popupContext = { ntxId: "_popup-editor", note: froca.getNoteFromCache("popupQuery") } as NoteContext;
+        appContext.tabManager = {
+            getCommandContext: (ntxId?: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
+        } as TabManager;
+        const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, results: [] });
+        const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
+        vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
+
+        await entrypoints.runActiveNoteCommand({ ntxId: "_popup-editor" });
+        expect(post).toHaveBeenCalledWith("sql/execute/popupQuery");
+        expect(triggerEvent).toHaveBeenCalledWith("sqlQueryResults", expect.objectContaining({ ntxId: "_popup-editor" }));
+
+        // Without a context named, the active tab's note runs.
+        post.mockClear();
+        await entrypoints.runActiveNoteCommand();
+        expect(post).toHaveBeenCalledWith("sql/execute/tabNote");
+    });
+});
+
+describe("revision commands", () => {
+    const entrypoints = new Entrypoints();
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("save a revision of the note in the context with the command's ntxId, rather than the active tab's", async () => {
+        const tabContext = { ntxId: "tab", noteId: "tabNote" } as NoteContext;
+        const popupContext = { ntxId: "_popup-editor", noteId: "popupNote" } as NoteContext;
+        appContext.tabManager = {
+            getCommandContext: (ntxId?: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
+        } as TabManager;
+        const post = vi.spyOn(server, "post").mockResolvedValue({});
+        vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
+        vi.spyOn(dialog, "prompt").mockResolvedValue("Milestone");
+
+        await entrypoints.forceSaveRevisionCommand({ ntxId: "_popup-editor" });
+        expect(post).toHaveBeenLastCalledWith("notes/popupNote/revision");
+
+        await entrypoints.saveNamedRevisionCommand({ ntxId: "_popup-editor" });
+        expect(post).toHaveBeenLastCalledWith("notes/popupNote/revision", { description: "Milestone" });
+
+        await entrypoints.forceSaveRevisionCommand();
+        expect(post).toHaveBeenLastCalledWith("notes/tabNote/revision");
     });
 });

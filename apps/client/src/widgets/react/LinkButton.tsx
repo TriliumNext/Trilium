@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { ComponentChild, HTMLAttributes } from "preact";
 import { CommandNames } from "../../components/app_context";
+import { useCommandTrigger } from "./react_utils";
 
 interface LinkButtonProps {
     onClick?: () => void;
@@ -10,18 +11,20 @@ interface LinkButtonProps {
 }
 
 export default function LinkButton({ onClick, text, triggerCommand, className }: LinkButtonProps) {
+    const triggerOwnCommand = useCommandTrigger(triggerCommand);
+    const handleClick = onClick ?? triggerOwnCommand;
+
     return (
         <a class={clsx("tn-link", className)} href="#"
-           data-trigger-command={triggerCommand}
            role="button"
            onKeyDown={(e)=> {
                 if (e.code === "Space") {
-                    onClick?.();
+                    handleClick?.();
                 }
            }}
            onClick={(e) => {
                 e.preventDefault();
-                onClick?.();
+                handleClick?.();
            }}>
             {text}
         </a>

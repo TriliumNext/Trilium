@@ -637,7 +637,6 @@
     "hide_relations": "Comma delimited names of relations which should be hidden. All other ones will be displayed.",
     "title_template": "Default title of notes created as children of this note. The value is evaluated as JavaScript string \n                        and thus can be enriched with dynamic content via the injected <code>now</code> and <code>parentNote</code> variables. Examples:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        See <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki with details</a>, API docs for <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> and <a href=\"https://day.js.org/docs/en/display/format\">now</a> for details.",
     "template": "This note will appear in the selection of available template when creating new note.",
-    "toc": "<code>#toc</code> or <code>#toc=show</code> will force the Table of Contents to be shown, <code>#toc=hide</code> will force hiding it. If the label doesn't exist, the global setting is observed.",
     "color": "Defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f.",
     "keyboard_shortcut": "Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect.",
     "keep_current_hoisting": "Opening this link won't change hoisting even if the note is not displayable in the current hoisted subtree.",
@@ -645,7 +644,6 @@
     "execute_description": "Longer description of the current code note displayed together with the execute button.",
     "exclude_from_note_map": "Notes with this label will be hidden from the Note Map.",
     "new_notes_on_top": "New notes will be created at the top of the parent note, not on the bottom.",
-    "hide_highlight_widget": "Hides the Highlights List for this note, leaving it shown on every other.",
     "run_on_note_creation": "Executes when note is created on backend. Use this relation if you want to run the script for all notes created under a specific subtree. In that case, create it on the subtree root note and make it inheritable. A new note created within the subtree (any depth) will trigger the script.",
     "run_on_child_note_creation": "Executes when new note is created under the note where this relation is defined.",
     "run_on_note_title_change": "Executes when note title is changed (includes note creation as well).",
@@ -680,7 +678,6 @@
     "color_type": "Color",
     "relation_type": "Relation",
     "versioning_limit": "Limits how many revisions this note keeps, overriding the global setting.",
-    "similar_notes_widget_disabled": "Disables the Similar Notes ribbon tab for this note. Old layout only.",
     "llm_chat_home": "New AI chats are created as children of this note.",
     "workspace_llm_chat_home": "New AI chats are created as children of this note while hoisted to an ancestor of this workspace.",
     "date_pattern": "Pattern for the titles of the day notes generated under this calendar root, e.g. <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -1083,15 +1080,6 @@
   "create_pane_button": {
     "create_new_split": "Create new split"
   },
-  "edit_button": {
-    "edit_this_note": "Edit this note"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Show Table of Contents"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Show Highlights List"
-  },
   "options": {
     "title": "Options",
     "back": "Back to all options",
@@ -1201,9 +1189,6 @@
     "active": "Protected session is active. Click to leave protected session.",
     "inactive": "Click to enter protected session"
   },
-  "revisions_button": {
-    "note_revisions": "Note Revisions"
-  },
   "update_available": {
     "update_available": "Update available"
   },
@@ -1217,18 +1202,6 @@
     "save_to_note_button_title": "Save to note",
     "opening_api_docs_message": "Opening API docs...",
     "sql_console_saved_message": "SQL Console note has been saved into {{note_path}}"
-  },
-  "copy_image_reference_button": {
-    "button_title": "Copy image reference to the clipboard, can be pasted into a text note."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Hide buttons"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Show buttons"
-  },
-  "svg_export_button": {
-    "button_title": "Export diagram as SVG"
   },
   "relation_map_buttons": {
     "create_child_note_title": "Create child note and add it to map",
@@ -1259,9 +1232,6 @@
     "esc_hint": "to close"
   },
   "zpetne_odkazy": {
-    "backlink_one": "{{count}} Backlink",
-    "backlink_other": "{{count}} Backlinks",
-    "relation": "relation",
     "no_backlinks": "No notes link to this one."
   },
   "mobile_detail_menu": {
@@ -1290,8 +1260,6 @@
   "basic_properties": {
     "note_type": "Note type",
     "editable": "Editable",
-    "basic_properties": "Basic Properties",
-    "language": "Language",
     "configure_code_notes": "Configure code notes..."
   },
   "book_properties": {
@@ -1322,37 +1290,23 @@
     "open_all_limit_exceeded": "Too many notes to open at once ({{count}}). The maximum is {{max}}, try narrowing the results first."
   },
   "edited_notes": {
-    "no_edited_notes_found": "No edited notes on this day yet...",
-    "title": "Edited Notes",
-    "deleted": "(deleted)"
+    "no_edited_notes_found": "No edited notes on this day yet..."
   },
   "file_properties": {
-    "note_id": "Note ID",
     "original_file_name": "Original file name",
-    "file_type": "File type",
-    "file_size": "File size",
     "download": "Download",
     "open": "Open externally",
-    "upload_new_revision": "Upload new revision",
     "upload_success": "New file revision has been uploaded.",
-    "upload_failed": "Upload of a new file revision failed.",
-    "title": "File"
+    "upload_failed": "Upload of a new file revision failed."
   },
   "image_properties": {
-    "original_file_name": "Original file name",
-    "file_type": "File type",
-    "file_size": "File size",
-    "download": "Download",
-    "open": "Open",
     "copy_reference_to_clipboard": "Copy reference to clipboard",
     "upload_new_revision": "Upload new revision",
     "upload_success": "New image revision has been uploaded.",
-    "upload_failed": "Upload of a new image revision failed: {{message}}",
-    "title": "Image"
+    "upload_failed": "Upload of a new image revision failed: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Inherited Attributes",
-    "no_inherited_attributes": "No inherited attributes.",
     "none": "none"
   },
   "note_info_widget": {
@@ -1370,9 +1324,7 @@
     "show_similar_notes": "Show similar notes"
   },
   "note_map": {
-    "open_full": "Expand to full",
     "expand": "Expand map",
-    "collapse": "Collapse to normal size",
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
@@ -1388,18 +1340,10 @@
   "note_paths": {
     "title": "Note Paths",
     "clone_button": "Clone note to new location...",
-    "intro_placed": "This note is placed into the following paths:",
     "intro_not_placed": "This note is not yet placed into the note tree.",
     "outside_hoisted": "This path is outside of hoisted note and you would have to unhoist.",
     "archived": "Archived",
     "search": "Search"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "This note was originally taken from:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Owned Attributes"
   },
   "promoted_attributes": {
     "promoted_attributes": "Promoted Attributes",
@@ -1428,12 +1372,6 @@
     "display_on_items": "Display the attribute on the collection items",
     "conflicting": "Multiple definitions",
     "conflicting_tooltip": "The items define this attribute in more than one way, so it is sorted as text and cannot be set from the item menu."
-  },
-  "script_executor": {
-    "query": "Query",
-    "script": "Script",
-    "execute_query": "Execute Query",
-    "execute_script": "Execute Script"
   },
   "search_definition": {
     "add_search_option": "Add search option:",
@@ -1851,8 +1789,6 @@
   "experimental_features": {
     "title": "Experimental Options",
     "disclaimer": "These options are experimental and may cause instability. Use with caution.",
-    "new_layout_name": "New Layout",
-    "new_layout_description": "Try out the new layout for a more modern look and improved usability. Subject to heavy change in the upcoming releases.",
     "llm_name": "AI / LLM Chat",
     "llm_description": "Enable the AI chat sidebar and LLM chat notes powered by large language models."
   },
@@ -1905,9 +1841,6 @@
     "enabled": "enabled",
     "disabled": "disabled"
   },
-  "ribbon": {
-    "edited_notes_message": "Edited Notes ribbon tab will automatically open on day notes"
-  },
   "theme": {
     "title": "User Interface",
     "theme_label": "Application theme",
@@ -1936,7 +1869,8 @@
     "layout-vertical-title": "Vertical",
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "launcher bar is on the left (default)",
-    "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width."
+    "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width.",
+    "edited_notes_expanded": "Expand \"Notes edited on this day\" on day notes"
   },
   "ui-performance": {
     "title": "Performance",
@@ -2108,17 +2042,7 @@
     "italic": "Italic text",
     "underline": "Underlined text",
     "color": "Colored text",
-    "bg_color": "Text with background color",
-    "visibility_title": "Highlights List visibility",
-    "visibility_description": "You can hide the highlights widget per-note by adding a #hideHighlightWidget label.",
-    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including Highlights) in the Options -> Shortcuts (name 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Table of Contents",
-    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customize this number:",
-    "unit": "headings",
-    "disable_info": "You can also use this option to effectively disable TOC by setting a very high number.",
-    "shortcut_info": "You can configure a keyboard shortcut for quickly toggling the right pane (including TOC) in the Options -> Shortcuts (name 'toggleRightPane')."
+    "bg_color": "Text with background color"
   },
   "text_auto_read_only_size": {
     "title": "Automatic Read-Only Size",
@@ -2485,9 +2409,7 @@
     "importSource": "Import source"
   },
   "bookmark_switch": {
-    "bookmark": "Bookmark",
-    "bookmark_this_note": "Bookmark this note to the left side panel",
-    "remove_bookmark": "Remove bookmark"
+    "bookmark": "Bookmark"
   },
   "editability_select": {
     "auto": "Auto",
@@ -2543,16 +2465,7 @@
     "clone": "Clone",
     "clone-tooltip": "Clone, to have the same note in two places at once"
   },
-  "shared_info": {
-    "shared_publicly": "This note is shared publicly on {{- link}}.",
-    "shared_locally": "This note is shared locally on {{- link}}.",
-    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "This note is shared on {{- link}}, but only this browser can open that page, and only while Trilium is open in it. Publishing it for others needs a Trilium server.",
-    "shared_export_only": "This note is shared, but the mobile app cannot open shared pages. To publish it, export the subtree as \"{{format}}\" and host the files on any web server, or use a Trilium server."
-  },
   "read-only-info": {
-    "read-only-note": "Currently viewing a read-only note.",
-    "auto-read-only-note": "This note is shown in a read-only mode for faster loading.",
     "edit-note": "Edit note"
   },
   "note_types": {
@@ -2603,10 +2516,7 @@
     "reorder": "Drag to reorder"
   },
   "protect_note": {
-    "toggle-on": "Protect the note",
-    "toggle-off": "Unprotect the note",
-    "toggle-on-hint": "Note is not protected, click to make it protected",
-    "toggle-off-hint": "Note is protected, click to make it unprotected"
+    "toggle-on": "Protect the note"
   },
   "llm_chat": {
     "placeholder": "Type a message...",
@@ -2753,15 +2663,11 @@
   },
   "shared_switch": {
     "shared": "Shared",
-    "toggle-on-title": "Share the note",
-    "toggle-off-title": "Unshare the note",
     "shared-branch": "This note exists only as a shared note, unsharing would delete it. Do you want to continue and thus delete this note?",
     "inherited": "Note cannot be unshared here because it is shared through inheritance from an ancestor."
   },
   "template_switch": {
-    "template": "Template",
-    "toggle-on-hint": "Make the note a template",
-    "toggle-off-hint": "Remove the note as a template"
+    "template": "Template"
   },
   "full_content_width_switch": {
     "title": "Full width"
@@ -2779,10 +2685,8 @@
     "replace_all": "Replace all"
   },
   "highlights_list_2": {
-    "title": "Highlights List",
     "title_with_count_one": "{{count}} highlight",
     "title_with_count_other": "{{count}} highlights",
-    "options": "Options",
     "menu_configure": "Configure highlights list...",
     "no_highlights": "No highlights found."
   },
@@ -2901,7 +2805,6 @@
   },
   "toc": {
     "table_of_contents": "Table of Contents",
-    "options": "Options",
     "no_headings": "No headings."
   },
   "watched_file_update_status": {
@@ -2998,9 +2901,6 @@
     "tab_width": "Tab width",
     "tab_width_unit": "spaces"
   },
-  "classic_editor_toolbar": {
-    "title": "Formatting"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -3009,12 +2909,10 @@
       "label": "Formatting toolbar",
       "toolbar_style": "Toolbar style",
       "floating": {
-        "title": "Floating",
-        "description": "editing tools appear near the cursor;"
+        "title": "Floating"
       },
       "fixed": {
-        "title": "Fixed",
-        "description": "editing tools appear in the \"Formatting\" ribbon tab."
+        "title": "Fixed"
       },
       "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit"
     }
@@ -3451,17 +3349,10 @@
     "title_vertical": "Move editing pane to the bottom",
     "title_horizontal": "Move editing pane to the left"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "Unlock editing",
-    "lock-editing": "Lock editing"
-  },
   "display_mode": {
     "source": "Source view",
     "split": "Split view",
     "preview": "Preview"
-  },
-  "png_export_button": {
-    "button_title": "Export diagram as PNG"
   },
   "svg": {
     "export_to_png": "The diagram could not be exported to PNG.",
@@ -3818,9 +3709,6 @@
     "background_effects_title": "Background effects are now stable",
     "background_effects_message": "On Windows and macOS devices, background effects are now stable. The background effects adds a touch of color to the user interface by blurring the background behind it.",
     "background_effects_button": "Enable background effects",
-    "new_layout_title": "New layout",
-    "new_layout_message": "We’ve introduced a modernized layout for Trilium. The ribbon has been removed and seamlessly integrated into the main interface, with a new status bar and expandable sections (such as promoted attributes) taking over key functions.\n\nThe new layout is enabled by default, and can be temporarily disabled via Options → Appearance.",
-    "new_layout_button": "More info",
     "scripting_disabled_title": "Backend scripting has been disabled",
     "scripting_disabled_message": "Backend scripting is now disabled by default for security. Your notes contain backend scripts (notes with a #run label) that will no longer execute automatically.\n\nIf you rely on these scripts, you can re-enable backend scripting in the security settings.",
     "scripting_disabled_button": "Open security settings",
@@ -3838,10 +3726,7 @@
     "related_code_blocks": "Color scheme for code blocks in text notes",
     "related_code_notes": "Color scheme for code notes",
     "ui": "User interface",
-    "ui_layout_style": "Layout style",
-    "ui_layout_orientation": "Launcher bar orientation",
-    "ui_old_layout": "Old layout",
-    "ui_new_layout": "New layout"
+    "ui_layout_orientation": "Launcher bar orientation"
   },
   "units": {
     "percentage": "%"

@@ -48,41 +48,39 @@ div.note-icon-widget {
     padding: 10px 15px 10px 15px !important;
 }
 
-body.experimental-feature-new-layout {
-    .note-icon-widget button.note-icon {
-        --input-focus-outline-color: var(--note-icon-hover-background-color);
+.note-icon-widget button.note-icon {
+    --input-focus-outline-color: var(--note-icon-hover-background-color);
 
+    position: relative;
+    background: transparent !important;
+
+    &, &:hover {
+        border-radius: 50%;
+    }
+
+    /* The icon */
+    &::before {
         position: relative;
-        background: transparent !important;
+        z-index: 1;
+        color: var(--note-icon-custom-color, var(--note-icon-color));
+    }
 
-        &, &:hover {
-            border-radius: 50%;
-        }
+    /* The background circle */
+    &:not(.bx-empty:disabled)::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: var(--note-icon-custom-background-color, var(--note-icon-background-color));
+    }
 
-        /* The icon */
-        &::before {
-            position: relative;
-            z-index: 1;
-            color: var(--note-icon-custom-color, var(--note-icon-color));
-        }
+    &:focus-visible {
+        outline: 2px solid var(--note-icon-custom-color, var(--note-icon-color));
+    }
 
-        /* The background circle */
-        &:not(.bx-empty:disabled)::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: var(--note-icon-custom-background-color, var(--note-icon-background-color));
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--note-icon-custom-color, var(--note-icon-color));
-        }
-
-        &:hover:not(.bx-empty:disabled)::after {
-            background: var(--note-icon-hover-custom-background-color, var(--note-icon-hover-background-color));
-            transition: background 200ms ease-out;
-        }
+    &:hover:not(.bx-empty:disabled)::after {
+        background: var(--note-icon-hover-custom-background-color, var(--note-icon-hover-background-color));
+        transition: background 200ms ease-out;
     }
 }
 

@@ -37,7 +37,7 @@ body.desktop.background-effects #center-pane:has(.note-split.last-visible.bgfx) 
     color: var(--peek-button-arrow-color);
     transition: background 250ms ease-in, color 250ms ease-in;
 
-    body.experimental-feature-new-layout.layout-vertical & {
+    body.layout-vertical & {
         border-bottom: 1px solid var(--status-bar-border-color);
     }
 

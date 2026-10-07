@@ -13,13 +13,8 @@ body.mobile .promoted-attributes-widget {
 .promoted-attributes-container {
     margin: 0 1.5em;
     overflow: auto;
-    max-height: 400px;
     display: flex;
     flex-wrap: wrap;
-}
-
-body.experimental-feature-new-layout .promoted-attributes-container {
-    max-height: unset;
 }
 
 .promoted-attribute-cell {

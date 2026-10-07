@@ -263,7 +263,7 @@ export function openNoteInNewTab(noteId: string) {
     });
 }
 
-/** Note types whose content is a saveable file — the same ones the ribbon offers Download for. */
+/** Note types whose content is a saveable file — the same ones the note actions offer Download for. */
 function isDownloadable(note: FNote) {
     return note.type === "file" || note.type === "image";
 }

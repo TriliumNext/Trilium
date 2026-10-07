@@ -62,7 +62,6 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
             allAttributes: [ definition ],
             isOwned: true,
             x: event.pageX,
-            y: event.pageY,
             focus: "name",
             // The board answers for all four: a grouping is a promoted, inheritable select whose
             // options are the columns the board makes, and a card stands in one column at a time.

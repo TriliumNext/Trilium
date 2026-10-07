@@ -63,13 +63,6 @@
     z-index: -1;
 }
 
-/* Note's root */
-
-:root .type-canvas {
-    --floating-buttons-vert-offset: 20px;
-}
-
-
 /* Context menus */
 
 /* Context menu - outer wrapper */
@@ -248,13 +241,6 @@ body[dir=ltr] .excalidraw .exc-stats {
 
 body[dir=rtl] .excalidraw .exc-stats {
     right: 0;
-}
-
-/* Sidebar */
-
-.split-note-container-widget > .component.type-canvas:has(.excalidraw-container > .Island.default-sidebar) > .floating-buttons {
-    /* Hide the floating buttons when the sidebar is open */
-    display: none;
 }
 
 /* Pickers */

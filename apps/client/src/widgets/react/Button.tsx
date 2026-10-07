@@ -11,6 +11,7 @@ import ActionButton from "./ActionButton";
 import Dropdown from "./Dropdown";
 import { useStaticTooltip } from "./hooks";
 import Icon from "./Icon";
+import { useCommandTrigger } from "./react_utils";
 import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
@@ -42,6 +43,7 @@ export interface ButtonProps {
 }
 
 function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, kind, disabled, disabledTooltip, size, style, triggerCommand, ...restProps }: ButtonProps) {
+    const triggerOwnCommand = useCommandTrigger(triggerCommand);
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
@@ -86,11 +88,10 @@ function Button({ name, buttonRef, className, text, onClick, keyboardShortcut, i
             name={name}
             className={classes}
             type={onClick || triggerCommand ? "button" : "submit"}
-            onClick={onClick}
+            onClick={onClick ?? triggerOwnCommand}
             ref={buttonRef}
             disabled={disabled}
             style={style}
-            data-trigger-command={triggerCommand}
             {...restProps}
         >
             {icon && <Icon icon={`bx ${icon}`} />}

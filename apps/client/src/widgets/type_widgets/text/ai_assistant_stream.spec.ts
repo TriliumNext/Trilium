@@ -469,7 +469,7 @@ describe("buildAiAssistantQuickActions", () => {
     });
 
     // The list is configurable, so what configures it closes the submenu — the same row the status
-    // bar and the ribbon end their language pickers with, raising the same modal.
+    // bar's language picker ends with, raising the same modal.
     it("closes the Translate submenu with the row that configures the list", () => {
         const group = buildAiAssistantQuickActions().find((candidate) => candidate.id === "translate");
         expect(group?.footer?.label).toBe("note_language.configure-languages");

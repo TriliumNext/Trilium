@@ -12,14 +12,6 @@ vi.mock("../../services/i18n", async (importOriginal) => ({
     t: (key: string) => key
 }));
 
-// The popup docks differently under the new layout, and the flag behind that is read once when the
-// module loads — so the two are exercised by loading it twice.
-const newLayout = vi.hoisted(() => ({ enabled: false }));
-vi.mock("../../services/experimental_features", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("../../services/experimental_features")>()),
-    isExperimentalFeatureEnabled: () => newLayout.enabled
-}));
-
 // The form fetches the names a definition can complete against and the notes already carrying the
 // attribute. Neither is what these tests are about, and an unanswered request rejects into the run.
 vi.mock("../../services/server", () => ({
@@ -57,7 +49,7 @@ describe("attribute detail popup positioning", () => {
         const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
         const popup = sized(document.createElement("div"), 0, 0);
 
-        (await load()).positionPopup(popup, opts({ x: 100, y: 100 }), { top: 0, left: 0 });
+        (await import("./attribute_detail")).positionPopup(popup, opts({ x: 100 }));
 
         expect(popup.style.left).toBe("");
         expect(warn).toHaveBeenCalledWith(expect.stringContaining("position popup"));
@@ -65,49 +57,29 @@ describe("attribute detail popup positioning", () => {
     });
 
     it("puts an anchored popup on whichever side of its anchor has the room for it", async () => {
-        const { positionPopup } = await load();
+        const { positionPopup } = await import("./attribute_detail");
         const popup = sized(document.createElement("div"), 300, 400);
 
         // Room to the left of the anchor: 300 wide plus the gap and the margin fit before it.
-        positionPopup(popup, opts({ anchor: anchoredAt({ left: 900, right: 1100, top: 120 }) }), NO_OFFSET);
+        positionPopup(popup, opts({ anchor: anchoredAt({ left: 900, right: 1100, top: 120 }) }));
         expect(popup.style.left).toBe("592px"); // 900 - 300 - 8
         expect(popup.style.top).toBe("120px");
         expect(popup.style.right).toBe("");
         expect(popup.style.maxHeight).toBe("780px"); // the viewport less a margin above and below
 
         // No room to the left, so it takes the right — and slides up to stay wholly on screen.
-        positionPopup(popup, opts({ anchor: anchoredAt({ left: 40, right: 200, top: 700 }) }), NO_OFFSET);
+        positionPopup(popup, opts({ anchor: anchoredAt({ left: 40, right: 200, top: 700 }) }));
         expect(popup.style.left).toBe("208px"); // 200 + 8
         expect(popup.style.top).toBe("390px"); // 800 - 400 - 10
 
         // Narrower than the popup on either side: it keeps to the viewport's left margin.
         sizeViewport(305, VIEWPORT.height);
-        positionPopup(popup, opts({ anchor: anchoredAt({ left: 10, right: 300, top: 40 }) }), NO_OFFSET);
+        positionPopup(popup, opts({ anchor: anchoredAt({ left: 10, right: 300, top: 40 }) }));
         expect(popup.style.left).toBe("10px");
     });
 
-    it("places an unanchored popup below the click, against whichever edge it falls nearest", async () => {
-        const { positionPopup } = await load();
-        const popup = sized(document.createElement("div"), 300, 200);
-
-        // A press far enough left that the popup would run off the edge is held against it.
-        positionPopup(popup, opts({ x: 100, y: 100 }), { top: 30, left: 0 });
-        expect(popup.style.left).toBe("10px");
-        expect(popup.style.right).toBe("");
-        expect(popup.style.top).toBe("140px"); // 100 - 30 + 70
-        // Room enough below the click for the whole popup, so it is left uncapped.
-        expect(popup.style.maxHeight).toBe("10000px");
-
-        // Anywhere else the popup pins to the right edge, and a press low down caps its height.
-        positionPopup(popup, opts({ x: 600, y: 700 }), NO_OFFSET);
-        expect(popup.style.left).toBe("");
-        expect(popup.style.right).toBe("10px");
-        expect(popup.style.maxHeight).toBe("50px"); // 800 - 700 - 50
-    });
-
-    it("sits above the attributes pane under the new layout, and above the status bar without one", async () => {
-        newLayout.enabled = true;
-        const { positionPopup } = await load();
+    it("sits above the attributes pane, and above the status bar without one", async () => {
+        const { positionPopup } = await import("./attribute_detail");
         const popup = sized(document.createElement("div"), 300, 200);
         sizeBody(VIEWPORT.height);
 
@@ -116,7 +88,7 @@ describe("attribute detail popup positioning", () => {
         pane.getBoundingClientRect = (() => ({ top: 600 })) as Element["getBoundingClientRect"];
         document.body.append(pane);
 
-        positionPopup(popup, opts({ x: 500, y: 100 }), NO_OFFSET);
+        positionPopup(popup, opts({ x: 500 }));
         expect(popup.style.top).toBe("unset");
         expect(popup.style.bottom).toBe("200px"); // the body's height down to the pane
         expect(popup.style.maxHeight).toBe("600px");
@@ -129,19 +101,11 @@ describe("attribute detail popup positioning", () => {
         document.body.append(statusBar);
 
         // A press near the left edge is held a margin away from it rather than centred.
-        positionPopup(popup, opts({ x: 100, y: 100 }), NO_OFFSET);
+        positionPopup(popup, opts({ x: 100 }));
         expect(popup.style.bottom).toBe("40px");
         expect(popup.style.maxHeight).toBe("760px");
         expect(popup.style.left).toBe("10px");
-
-        newLayout.enabled = false;
     });
-
-    /** Re-imports the module so the layout flag above is read afresh. */
-    async function load() {
-        vi.resetModules();
-        return await import("./attribute_detail");
-    }
 });
 
 describe("attribute detail popup naming", () => {
@@ -220,7 +184,7 @@ describe("attribute detail popup naming", () => {
 
         // The same row pressed again: a fresh opts object around an equal attribute is the same show,
         // whether or not the attribute object itself survived.
-        expect(isSameShow(shown, { ...shown, x: 40, y: 90 })).toBe(true);
+        expect(isSameShow(shown, { ...shown, x: 40 })).toBe(true);
         expect(isSameShow(shown, opts({ attribute: { type: "label", name: "author", value: "Tolkien" } }))).toBe(true);
 
         // Anything the form would show differently is another show.
@@ -454,14 +418,12 @@ describe("dismissing the attribute detail popup", () => {
     });
 });
 
-const NO_OFFSET = { top: 0, left: 0 };
 
 function opts(overrides: Partial<AttributeDetailOpts>): AttributeDetailOpts {
     return {
         attribute: { type: "label", name: "author", value: "" },
         isOwned: true,
         x: 0,
-        y: 0,
         ...overrides
     };
 }

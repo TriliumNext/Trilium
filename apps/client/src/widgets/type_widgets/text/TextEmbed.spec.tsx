@@ -47,11 +47,14 @@ vi.mock("./EditableText", () => ({
 const figures: HTMLElement[] = [];
 
 beforeEach(() => {
-    // `useEmbeddedNoteContext()` asks the tab manager where the reader is hoisted.
+    // `useEmbeddedNoteContext()` asks the tab manager where the reader is hoisted, and registers
+    // its note context with it.
     (appContext as unknown as { tabManager: unknown }).tabManager = {
         getActiveContext: () => undefined,
         getActiveContextNotePath: () => undefined,
-        openContextWithNote: async () => undefined
+        openContextWithNote: async () => undefined,
+        registerDetachedContext: () => undefined,
+        unregisterDetachedContext: () => undefined
     };
     editorAskedToSave.mockClear();
     editorProps.mockClear();

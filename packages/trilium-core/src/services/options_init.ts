@@ -221,7 +221,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "centerContent", value: "false", isSynced: false },
     { name: "compressImages", value: "true", isSynced: true },
     { name: "downloadImagesAutomatically", value: "true", isSynced: true },
-    { name: "minTocHeadings", value: "5", isSynced: true },
     { name: "highlightsList", value: '["underline","color","bgColor"]', isSynced: true },
     { name: "checkForUpdates", value: "true", isSynced: true },
     { name: "disableTray", value: "false", isSynced: false },
@@ -268,7 +267,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "backdropEffectsEnabled", value: "true", isSynced: false },
     { name: "smoothScrollEnabled", value: "true", isSynced: false },
     { name: "hardwareAccelerationEnabled", value: "true", isSynced: false },
-    { name: "newLayout", value: "true", isSynced: true },
 
     // PDF
     { name: "pdfSignatures", value: "{}", isSynced: true },
@@ -355,7 +353,7 @@ const defaultOptions: DefaultOption[] = [
     {
         name: "seenCallToActions",
         value: JSON.stringify([
-            "new_layout", "background_effects", "next_theme"
+            "background_effects", "next_theme"
         ]),
         isSynced: true
     },

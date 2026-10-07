@@ -1,0 +1,41 @@
+/*
+ * Promoted attributes
+ */
+
+div.promoted-attributes-container {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-inline-start: 12px;
+}
+
+/*
+ * Attribute list
+ */
+
+.attribute-list .add-new-attribute-button,
+.attribute-list .save-attributes-button {
+    bottom: 0.3em;
+}
+
+.attribute-list .save-attributes-button {
+    inset-inline-end: 30px;
+}
+
+/* Note path in attribute detail dialog */
+.attr-detail .note-path {
+    margin-inline-start: 8px;
+}
+
+/*
+ * Similar notes
+ */
+
+:root .similar-notes-widget a {
+    color: var(--cmd-button-text-color);
+    background: var(--cmd-button-background-color);
+}
+
+:root .similar-notes-widget a:hover {
+    color: var(--cmd-button-hover-text-color);
+    background: var(--cmd-button-hover-background-color);
+}

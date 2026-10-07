@@ -1,9 +1,13 @@
 import $ from "jquery";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../components/app_context.js";
+import type TabManager from "../components/tab_manager.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import noteCreateService from "../services/note_create.js";
+import server from "../services/server.js";
 import treeService from "../services/tree.js";
+import ws from "../services/ws.js";
 import NoteTreeWidget, { publishDropMarkerShift } from "./note_tree.js";
 
 vi.mock("../services/import.js", () => ({ uploadFiles: vi.fn() }));
@@ -89,6 +93,26 @@ describe("NoteTreeWidget", () => {
             isProtected: true,
             noteContext
         });
+    });
+
+    it("opens a new launcher in the tree's own note context, keeping the dialog that holds the tree open", async () => {
+        const widget = await renderWidget();
+        const treeContext = { ntxId: "_tree-popup", setNote: vi.fn() };
+        const activeContext = { ntxId: "tab", setNote: vi.fn() };
+        (widget as { noteContext?: unknown }).noteContext = treeContext;
+        vi.spyOn(server, "post").mockResolvedValue({ success: true, note: { noteId: "newLauncher" } });
+        vi.spyOn(ws, "waitForMaxKnownEntityChangeId").mockResolvedValue(undefined);
+
+        const tabManager = appContext.tabManager;
+        appContext.tabManager = { getActiveContext: () => activeContext } as unknown as TabManager;
+        try {
+            await widget.createLauncherNote({ data: { noteId: "_lbVisibleLaunchers" } } as unknown as Fancytree.FancytreeNode, "note");
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+
+        expect(treeContext.setNote).toHaveBeenCalledWith("newLauncher", { keepActiveDialog: true });
+        expect(activeContext.setNote).not.toHaveBeenCalled();
     });
 
     it("refresh() consults hoisting with the tree's own hoistedNoteId for hidden-subtree paths", async () => {

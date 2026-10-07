@@ -23,7 +23,7 @@ import { pointerMoved } from "./react/menu_context";
 import OverlayControlGroup from "./react/OverlayControlGroup";
 import Popup from "./react/Popup";
 import RawHtml, { RawHtmlBlock } from "./react/RawHtml";
-import SearchStringEditor from "./ribbon/SearchStringEditor";
+import SearchStringEditor from "./search/SearchStringEditor";
 import { ShortcutHintOverlayButton } from "./shortcut_hints/shortcut_hint_button";
 
 /** The keys the results answer, beside the field's own, for the shortcut-hints pane. */

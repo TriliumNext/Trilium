@@ -124,20 +124,9 @@
             overflow-wrap: anywhere;
         }
     }
-
-    &.dropdown-backlinks {
-        --menu-padding-size: .9em;
-
-        min-width: 300px;
-        max-width: 500px;
-
-        > .tn-panel-scroll {
-            max-height: 60vh;
-        }
-    }
 }
 
-body.experimental-feature-new-layout .note-info-content {
+.note-info-content {
     ul {
                 --row-block-margin: .2em;
 
@@ -227,3 +216,26 @@ body.experimental-feature-new-layout .note-info-content {
     }
 }
 
+.similar-notes-widget > .similar-notes-wrapper {
+    /* The font size of the links with the highest similarity score */
+    font-size: 17px;
+}
+
+.similar-notes-wrapper {
+    max-height: 200px;
+    overflow: auto;
+    padding: 12px;
+}
+
+.similar-notes-wrapper a {
+    display: inline-block;
+    border: 1px dotted var(--main-border-color);
+    border-radius: 20px;
+    background-color: var(--accented-background-color);
+    padding: 0 10px 0 10px;
+    margin: 0 3px 0 3px;
+    max-width: 10em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}

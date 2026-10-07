@@ -55,7 +55,6 @@ export default function useColTableEditing(api: RefObject<Tabulator | null>, att
                 allAttributes: [ attr ],
                 isOwned: true,
                 x: 0,
-                y: 150,
                 focus: "name",
                 hideMultiplicity: true
             });

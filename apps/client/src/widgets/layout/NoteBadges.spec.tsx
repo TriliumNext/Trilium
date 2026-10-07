@@ -22,7 +22,7 @@ vi.mock("../../services/i18n", () => ({
 
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { OfficePreviewBadge } from "./NoteBadges";
+import { ExecuteBadge, getShareScope, OfficePreviewBadge } from "./NoteBadges";
 
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -51,4 +51,36 @@ describe("OfficePreviewBadge", () => {
         shownNote.viewScope = viewScope;
         return renderInto(<OfficePreviewBadge />).querySelector(".office-preview-badge");
     }
+});
+
+describe("ExecuteBadge", () => {
+    it("titles the button with #executeTitle or the value of #executeButton, falling back to the wording for the note's language", () => {
+        expect(renderBadge({ "#executeButton": "", "#executeTitle": "Deploy" })?.textContent).toBe("Deploy");
+        expect(renderBadge({ "#executeButton": "Create launcher" })?.textContent).toBe("Create launcher");
+        expect(renderBadge({ "#executeButton": "true", "#executeTitle": "Deploy" })?.textContent).toBe("Deploy");
+        expect(renderBadge({ "#executeButton": "true" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({ "#executeButton": "" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({ "#executeDescription": "Rebuilds the index" })?.textContent).toBe("breadcrumb_badges.execute_script");
+        expect(renderBadge({})).toBeNull();
+    });
+
+    function renderBadge(labels: Record<`#${string}`, string>) {
+        shownNote.current = buildNote({ title: "Script", type: "code", mime: "application/javascript;env=frontend", ...labels });
+        return renderInto(<ExecuteBadge />).querySelector(".execute-badge .text");
+    }
+});
+
+describe("getShareScope", () => {
+    it("tells a public share from a local one, a standalone preview and one only an export publishes", () => {
+        const syncServerHost = "https://sync.example.com";
+        const platform = { isElectron: false, isStandalone: false, isMobileApp: false };
+
+        expect(getShareScope({ ...platform, syncServerHost: "" })).toBe("public");
+        expect(getShareScope({ ...platform, isElectron: true, syncServerHost: "" })).toBe("local");
+        expect(getShareScope({ ...platform, isElectron: true, syncServerHost })).toBe("public");
+        expect(getShareScope({ ...platform, isStandalone: true, syncServerHost: "" })).toBe("preview");
+        expect(getShareScope({ ...platform, isStandalone: true, syncServerHost })).toBe("public");
+        expect(getShareScope({ ...platform, isStandalone: true, isMobileApp: true, syncServerHost: "" })).toBe("export-only");
+        expect(getShareScope({ ...platform, isStandalone: true, isMobileApp: true, syncServerHost })).toBe("public");
+    });
 });

@@ -11,10 +11,11 @@ import NoteColorPicker from "../menus/custom-items/NoteColorPicker";
 import linkContextMenu from "../menus/link_context_menu";
 import { t } from "../services/i18n";
 import link from "../services/link";
+import { randomString } from "../services/utils";
 import ActionButton from "./react/ActionButton";
 import Dropdown, { DropdownPanel } from "./react/Dropdown";
 import { FormListItem } from "./react/FormList";
-import { useNoteContext } from "./react/hooks";
+import { useDetachedNoteContext, useNoteContext } from "./react/hooks";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 /*
@@ -30,7 +31,8 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
  * the quick editor makes, so that the icon and title widgets work and a rename saves the usual way.
  *
  * One context for the pane rather than one per note: moving between notes is a note switch within a
- * standing pane, not a new pane.
+ * standing pane, not a new pane. Its ntxId is `ntxIdPrefix` plus a random suffix, so that two panes
+ * of one kind (two maps in two splits) register two contexts with the tab manager.
  *
  * The returned component stands between the host view's component and the pane's contents. The
  * context was built here rather than by the tab manager, so it has no parent to raise events
@@ -44,12 +46,14 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
  */
 export function useEmbeddedNoteContext(
     note: FNote | undefined,
-    ntxId: string,
+    ntxIdPrefix: string,
     { floatingToolbar = true, skipRecentNotes = false }: EmbeddedNoteContextOptions = {}
 ) {
     const parentComponent = useContext(ParentComponent);
+    const [ ntxId ] = useState(() => `${ntxIdPrefix}_${randomString(10)}`);
     const [ noteContext ] = useState(() => new NoteContext(ntxId));
     const [ component ] = useState(() => new Component());
+    useDetachedNoteContext(noteContext);
 
     useEffect(() => {
         if (!parentComponent) return;
@@ -82,7 +86,7 @@ export function useEmbeddedNoteContext(
         });
     }, [ noteContext, note?.noteId ]);
 
-    return { noteContext, component };
+    return { noteContext, component, ntxId };
 }
 
 interface EmbeddedNoteContextOptions {
