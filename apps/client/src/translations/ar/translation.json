@@ -1463,15 +1463,12 @@
     "default_new_note_title": "ملاحظة جديدة",
     "enter_new_title": "ادخل عنوان ملاحظة جديدة:",
     "note_not_found": "الملاحظة {{noteId}} غير موجودة!",
-    "cannot_match_transform": "تعذر مطابقة التحويل: {{transform}}",
     "rename_relation": "إعادة تسمية العلاقة",
     "confirm_remove_relation": "هل أنت متأكد أنك تريد إزالة العلاقة؟",
     "specify_new_relation_name": "حدد اسم العلاقة الجديد (الأحرف المسموح بها: أحرف أبجدية رقمية، النقطتان الرأسيتان (:)، والشرطة السفلية (_)):",
-    "enter_title_of_new_note": "أدخل عنوان الملاحظة الجديدة",
     "start_dragging_relations": "ابدأ بسحب العلاقات من هنا وأسقطها على ملاحظة أخرى.",
     "connection_exists": "الاتصال \"{{name}}\" بين هذه الملاحظات موجود بالفعل.",
-    "note_already_in_diagram": "الملاحظة \"{{title}}\" موجودة بالفعل في المخطط.",
-    "click_on_canvas_to_place_new_note": "انقر على اللوحة لوضع ملاحظة جديدة"
+    "note_already_in_diagram": "الملاحظة \"{{title}}\" موجودة بالفعل في المخطط."
   },
   "consistency_checks": {
     "title": "فحوصات التناسق",

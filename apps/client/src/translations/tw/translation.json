@@ -1061,11 +1061,8 @@
     "connection_exists": "筆記之間的連接 '{{name}}' 已經存在。",
     "start_dragging_relations": "從這裡開始拖動關聯，並將其放置到另一個筆記上。",
     "note_not_found": "筆記 {{noteId}} 未找到！",
-    "cannot_match_transform": "無法匹配變換：{{transform}}",
     "note_already_in_diagram": "筆記 \"{{title}}\" 已經在圖中。",
-    "enter_title_of_new_note": "輸入新筆記的標題",
     "default_new_note_title": "新筆記",
-    "click_on_canvas_to_place_new_note": "點擊畫布以放置新筆記",
     "rename_relation": "重新命名關聯"
   },
   "backend_log": {
