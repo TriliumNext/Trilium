@@ -57,7 +57,7 @@ Tabs use the syntax of [Material for MkDocs](https://squidfunk.github.io/mkdocs-
     This tab starts a separate tabs block.
 ```
 
-Tabs can be nested by indenting the inner tabs inside the content of a tab. A tab title is plain text, so its formatting is not kept on export.
+Tabs can be nested by indenting the inner tabs inside the content of a tab. A tab title is plain text, so its formatting is not kept on export. For how tabs blocks work in a text note, see <a class="reference-link" href="../../../Note%20Types/Text/Content%20tabs.md">Content tabs</a>.
 
 ## Wikilinks
 

@@ -1,0 +1,74 @@
+<p>Content tabs group several titled panels of content into one block that
+  shows a single panel at a time. They suit content that comes in variants
+  (such as installation steps for each operating system or the same snippet
+  in several programming languages).</p>
+<p>A tabs block consists of:</p>
+<ul>
+  <li><strong>A row of tab titles.</strong> The title of the panel that is showing
+    is highlighted.</li>
+  <li><strong>The panel of the active tab</strong>, below the titles. A panel
+    can hold any kind of content (including nested tabs blocks).</li>
+</ul>
+<h2>Inserting a tabs block</h2>
+<ul>
+  <li>In the formatting bar, go to <em>Insert</em> → <em>Tabs</em>.</li>
+  <li>Alternatively, type <code>/tabs</code> and press <kbd>Enter</kbd>, as described
+    in&nbsp;<a class="reference-link" href="#root/_help_ZlN4nump6EbW">Slash Commands</a>.</li>
+</ul>
+<p>A new block contains two tabs, named “Tab 1” and “Tab 2”. The title of
+  the first tab is selected, so typing replaces it.</p>
+<h2>Editing tabs</h2>
+<ul>
+  <li>To show a tab, click its title or move the cursor into it.</li>
+  <li>To move from a title into its panel, press <kbd>Enter</kbd>.</li>
+</ul>
+<p>While the cursor is inside a tabs block, a toolbar appears above it with
+  the following buttons:</p>
+<ul>
+  <li><em>Add tab</em> inserts a tab after the current one and selects its title.</li>
+  <li><em>Remove tab</em> removes the current tab. Removing the last tab removes
+    the whole block.</li>
+  <li><em>Move tab left</em> and <em>Move tab right</em> change the order of the
+    tabs.</li>
+</ul>
+<p>The tab that is showing is not saved with the note: every tabs block opens
+  on its first tab.</p>
+<h2>Reading tabs</h2>
+<p>In&nbsp;<a class="reference-link" href="#root/_help_CoFPLs3dRlXc">Read-Only Notes</a> and
+  on&nbsp;<a class="reference-link" href="#root/_help_R9pX4DGra2Vt">shared pages</a>,
+  tabs blocks work as tabs as well:</p>
+<ul>
+  <li>To show a tab, click its title, or focus it and press <kbd>Enter</kbd> or <kbd>Space</kbd>.</li>
+  <li>To move between the titles of a block, use the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>.</li>
+</ul>
+<p>A tab without a title shows “Tab title” in place of one.</p>
+<h2>Content in hidden tabs</h2>
+<p>Content inside a tab that is not showing is still reachable (both while
+  editing and while reading). The tab that holds it is shown when:</p>
+<ul>
+  <li>searching the note with <kbd>Ctrl</kbd>+<kbd>F</kbd> highlights a match
+    inside it;</li>
+  <li>a link points to an anchor or a block inside it (see&nbsp;<a class="reference-link"
+    href="#root/_help_oSuaNgyyKnhu">Anchors</a> and&nbsp;<a class="reference-link"
+    href="#root/_help_klC3ilXa9kUE">Block references</a>);</li>
+  <li>an entry of the&nbsp;<a class="reference-link" href="#root/_help_BFvAtE74rbP6">Table of contents</a> or
+    the&nbsp;<a class="reference-link" href="#root/_help_AxshuNRegLAv">Highlights list</a> points
+    inside it;</li>
+  <li>on a shared page, the address of the page points to a heading or an anchor
+    inside it.</li>
+</ul>
+<p>Tab titles are not headings, so they do not appear in the table of contents;
+  headings inside a panel do.</p>
+<h2>Printing and exporting</h2>
+<ul>
+  <li>When printing or <a href="#root/_help_NRnIZmSMc5sj">exporting to PDF</a>,
+    every tab is printed, one after another, each with its title above its
+    panel.</li>
+  <li>Markdown export and import write tabs blocks in the content tabs syntax
+    of Material for MkDocs, described in&nbsp;<a class="reference-link" href="#root/_help_rJ9grSgoExl9">Supported syntax</a>.&nbsp;<a
+    class="reference-link" href="#root/_help_6RM1Q7ppFVoj">Markdown</a>&nbsp;notes
+    use the same syntax, show the blocks as tabs in their preview and insert
+    them with <code>/tabs</code>.</li>
+  <li>Anywhere the tabs cannot work as tabs (such as an HTML export opened elsewhere),
+    a tabs block reads as a sequence of titled sections.</li>
+</ul>
