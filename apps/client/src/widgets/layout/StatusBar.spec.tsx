@@ -18,10 +18,16 @@ vi.mock("../react/hooks", async (importOriginal) => ({
 
 // The attributes panel builds its editor on CKEditor, which is a legacy widget wanting a real parent
 // component to be a child of. What the panel is here is a panel that is up or is not.
+const editorProps = vi.hoisted(() => ({ current: null as Record<string, unknown> | null }));
 vi.mock("../attribute_widgets/AttributeEditor", async () => {
     const { h } = await import("preact");
 
-    return { default: () => h("div", { class: "attribute-editor-stub" }) };
+    return {
+        default: (props: Record<string, unknown>) => {
+            editorProps.current = props;
+            return h("div", { class: "attribute-editor-stub" });
+        }
+    };
 });
 
 import appContext from "../../components/app_context";
@@ -73,6 +79,14 @@ describe("StatusBar panels", () => {
         fire("toggleRibbonTabSimilarNotes");
         expect(container.querySelector(".similar-notes-pane")).not.toBeNull();
         expect(isShown(".attribute-list")).toBe(false);
+    });
+
+    it("hands the shortcut that opens the attributes panel to the editor it mounts", () => {
+        renderBar();
+        fire("addNewRelation");
+
+        expect(isShown(".attribute-list")).toBe(true);
+        expect(editorProps.current?.initialCommand).toBe("addNewRelation");
     });
 
     it("offers the attributes panel a way to the sidebar's own, and steps aside once taken", () => {

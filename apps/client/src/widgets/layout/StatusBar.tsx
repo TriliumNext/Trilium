@@ -470,8 +470,14 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
         hidden: !note
     };
 
-    // Show on keyboard shortcuts.
-    useTriliumEvents([ "addNewLabel", "addNewRelation" ], () => setAttributesShown(true));
+    // Show on keyboard shortcuts. The editor is not listening until it mounts, so it is handed the first one.
+    const [ initialCommand, setInitialCommand ] = useState<"addNewLabel" | "addNewRelation">();
+    useTriliumEvents([ "addNewLabel", "addNewRelation" ], (_, eventName) => {
+        if (!editorMounted) {
+            setInitialCommand(eventName);
+        }
+        setAttributesShown(true);
+    });
     useTriliumEvents([ "toggleRibbonTabOwnedAttributes", "toggleRibbonTabInheritedAttributes" ], () => setAttributesShown(!attributesShown));
 
     // Auto-focus the owned attributes.
@@ -505,6 +511,7 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
                 api={api}
                 notePath={noteContext.notePath}
                 ntxId={noteContext.ntxId}
+                initialCommand={initialCommand}
             />}
         </BottomPanel>
     );

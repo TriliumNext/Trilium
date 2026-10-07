@@ -40,6 +40,8 @@ interface AttributeEditorProps {
     notePath?: string | null;
     ntxId?: string | null;
     hidden?: boolean;
+    /** Runs once the editor is ready, for the shortcut that caused it to be mounted. */
+    initialCommand?: "addNewLabel" | "addNewRelation";
 }
 
 export interface AttributeEditorImperativeHandlers {
@@ -49,7 +51,7 @@ export interface AttributeEditorImperativeHandlers {
     renderOwnedAttributes(ownedAttributes: FAttribute[]): Promise<void>;
 }
 
-export default function AttributeEditor({ api, note, componentId, notePath, ntxId, hidden }: AttributeEditorProps) {
+export default function AttributeEditor({ api, note, componentId, notePath, ntxId, hidden, initialCommand }: AttributeEditorProps) {
     const [ currentValue, setCurrentValue ] = useState("");
     const [ error, setError ] = useState<unknown>();
     const [ needsSaving, setNeedsSaving ] = useState(false);
@@ -309,7 +311,12 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                         }}
                         onKeyDown={() => attributeDetailWidget.hide()}
                         onBlur={() => save()}
-                        onInitialized={() => editorRef.current?.focus()}
+                        onInitialized={() => {
+                            editorRef.current?.focus();
+                            if (initialCommand) {
+                                void handleAddNewAttributeCommand(initialCommand);
+                            }
+                        }}
                         disableNewlines disableSpellcheck
                     />}
 
