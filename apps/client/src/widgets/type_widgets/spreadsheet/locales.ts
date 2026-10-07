@@ -185,15 +185,15 @@ export const UNIVER_LOCALES: Record<DISPLAYABLE_LOCALE_IDS, UniverLocaleSource |
     vi: {
         type: LocaleType.VI_VN,
         load: () => Promise.all([
-            import('@univerjs/preset-sheets-core/locales/vi-VN'),
-            import('@univerjs/preset-sheets-drawing/locales/vi-VN'),
-            import('@univerjs/preset-sheets-find-replace/locales/vi-VN'),
-            import('@univerjs/preset-sheets-note/locales/vi-VN'),
-            import('@univerjs/preset-sheets-filter/locales/vi-VN'),
-            import('@univerjs/preset-sheets-sort/locales/vi-VN'),
-            import('@univerjs/preset-sheets-data-validation/locales/vi-VN'),
-            import('@univerjs/preset-sheets-conditional-formatting/locales/vi-VN'),
-            import('@univerjs/preset-sheets-hyper-link/locales/vi-VN')
+            import("@univerjs/preset-sheets-core/locales/vi-VN"),
+            import("@univerjs/preset-sheets-drawing/locales/vi-VN"),
+            import("@univerjs/preset-sheets-find-replace/locales/vi-VN"),
+            import("@univerjs/preset-sheets-note/locales/vi-VN"),
+            import("@univerjs/preset-sheets-filter/locales/vi-VN"),
+            import("@univerjs/preset-sheets-sort/locales/vi-VN"),
+            import("@univerjs/preset-sheets-data-validation/locales/vi-VN"),
+            import("@univerjs/preset-sheets-conditional-formatting/locales/vi-VN"),
+            import("@univerjs/preset-sheets-hyper-link/locales/vi-VN")
         ])
     }
 };

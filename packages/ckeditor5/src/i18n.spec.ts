@@ -216,6 +216,7 @@ describe("getCkLocale", () => {
         [ "tr", "tr" ],
         [ "tw", "zh-tw" ],
         [ "uk", "uk" ],
+        [ "vi", "vi" ],
         [ "ru", "ru" ]
     ])("maps '%s' to CKEditor language '%s' and loads its translation", async (locale, languageCode) => {
         const result = await getCkLocale(locale);
