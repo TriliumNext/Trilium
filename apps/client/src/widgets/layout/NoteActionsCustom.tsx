@@ -1,8 +1,9 @@
 import "./NoteActionsCustom.css";
 
-import { NoteType } from "@triliumnext/commons";
+import { NoteType, SaveSqlConsoleResponse } from "@triliumnext/commons";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
@@ -12,9 +13,9 @@ import { getHelpUrlForNote } from "../../services/in_app_help";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
 import server from "../../services/server";
 import toast from "../../services/toast";
+import tree from "../../services/tree";
 import { clearBrowserCache, createImageSrcUrl, isMobile, openInAppHelpFromUrl } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
-import { buildSaveSqlToNoteHandler } from "../FloatingButtonsDefinitions";
 import { showImageCompressionDialog } from "../dialogs/image_compression/image_compression_dialog";
 import ActionButton, { ActionButtonProps } from "../react/ActionButton";
 import { ButtonGroup } from "../react/Button";
@@ -332,6 +333,19 @@ function SaveToNoteButton({ note, noteMime }: NoteActionsCustomInnerProps) {
         text={t("code_buttons.save_to_note_button_title")}
         onClick={buildSaveSqlToNoteHandler(note)}
     />;
+}
+
+function buildSaveSqlToNoteHandler(note: FNote) {
+    return async (e: MouseEvent) => {
+        e.preventDefault();
+        const { notePath } = await server.post<SaveSqlConsoleResponse>("special-notes/save-sql-console", { sqlConsoleNoteId: note.noteId });
+        if (notePath) {
+            toast.showMessage(t("code_buttons.sql_console_saved_message", { "note_path": await tree.getNotePathTitle(notePath) }));
+            // TODO: This hangs the navigation, for some reason.
+            //await ws.waitForMaxKnownEntityChangeId();
+            await appContext.tabManager.getActiveContext()?.setNote(notePath);
+        }
+    };
 }
 
 function InAppHelpButton({ note }: NoteActionsCustomInnerProps) {

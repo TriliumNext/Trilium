@@ -1,10 +1,10 @@
 import "./Backlinks.css";
 
-import { BacklinkCountResponse, BacklinksResponse, SaveSqlConsoleResponse } from "@triliumnext/commons";
+import { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
 import { VNode } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
-import appContext, { EventData, EventNames } from "../components/app_context";
+import { EventData, EventNames } from "../components/app_context";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
@@ -15,8 +15,6 @@ import { getHelpUrlForNote } from "../services/in_app_help";
 import LoadResults from "../services/load_results";
 import { sanitizeNoteContentHtml } from "../services/sanitize_content";
 import server from "../services/server";
-import toast from "../services/toast";
-import tree from "../services/tree";
 import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { useTriliumEvent, useWindowSize } from "./react/hooks";
@@ -43,7 +41,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    SaveToNoteButton,
     CopyImageReferenceButton,
     ExportImageButtons,
     ExportSpreadsheetButton,
@@ -57,28 +54,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function SaveToNoteButton({ note }: FloatingButtonContext) {
-    const isEnabled = note.mime === "text/x-sqlite;schema=trilium" && note.isHiddenCompletely();
-    return isEnabled && <FloatingButton
-        icon="bx bx-save"
-        text={t("code_buttons.save_to_note_button_title")}
-        onClick={buildSaveSqlToNoteHandler(note)}
-    />;
-}
-
-export function buildSaveSqlToNoteHandler(note: FNote) {
-    return async (e: MouseEvent) => {
-        e.preventDefault();
-        const { notePath } = await server.post<SaveSqlConsoleResponse>("special-notes/save-sql-console", { sqlConsoleNoteId: note.noteId });
-        if (notePath) {
-            toast.showMessage(t("code_buttons.sql_console_saved_message", { "note_path": await tree.getNotePathTitle(notePath) }));
-            // TODO: This hangs the navigation, for some reason.
-            //await ws.waitForMaxKnownEntityChangeId();
-            await appContext.tabManager.getActiveContext()?.setNote(notePath);
-        }
-    };
-}
 
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
