@@ -2909,12 +2909,10 @@
       "label": "Formatting toolbar",
       "toolbar_style": "Toolbar style",
       "floating": {
-        "title": "Floating",
-        "description": "editing tools appear near the cursor;"
+        "title": "Floating"
       },
       "fixed": {
-        "title": "Fixed",
-        "description": "editing tools appear in the \"Formatting\" ribbon tab."
+        "title": "Fixed"
       },
       "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit"
     }
