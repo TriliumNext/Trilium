@@ -70,6 +70,8 @@ export interface RenderOptions {
     block?: string;
     /** Points the embed of `block` at the blocks that its editor holds, once they change. */
     onBlockChange?: (block: string) => void;
+    /** The blocks of a text note to highlight, a `block` link parameter. Embeds are left out. */
+    highlightBlock?: string;
     showTextRepresentation?: boolean;
     /**
      * If enabled, note types that have a richer live representation (currently only web views) are

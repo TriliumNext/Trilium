@@ -21,6 +21,12 @@
     }
 }
 
+.block-reference-highlight {
+    box-shadow:
+        0 0 0 4px var(--block-reference-flash-color),
+        inset 0 0 0 100vmax var(--block-reference-flash-color);
+}
+
 .block-reference-broken {
     color: var(--block-reference-broken-color);
     font-style: italic;

@@ -2,6 +2,7 @@ import appContext from "../components/app_context.js";
 import type FAttachment from "../entities/fattachment.js";
 import type FNote from "../entities/fnote.js";
 import attributeRenderer from "./attribute_renderer.js";
+import { revealHighlightedBlocks } from "./block_reference.js";
 import contentRenderer from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -114,7 +115,7 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
         // Default route: a live note. A missing note (deleted/erased) renders the "note has been
         // deleted" placeholder — content previews of deleted notes are opt-in via `data-note-deleted`.
         note = await froca.getNote(noteId);
-        renderPromise = renderTooltip(note, detail);
+        renderPromise = renderTooltip(note, detail, viewScope?.block);
     }
 
     const [content] = await Promise.all([
@@ -164,6 +165,11 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
 
         openTooltipElements.push($link);
 
+        const tooltipContent = $(`.${linkId} .note-tooltip-content`).get(0);
+        if (viewScope?.block && tooltipContent) {
+            revealHighlightedBlocks(tooltipContent);
+        }
+
         // Dismiss the tooltip immediately if a link was clicked inside the tooltip.
         $(`.${tooltipClass} a`).on("click", (e) => {
             dismissAllTooltips();
@@ -192,8 +198,13 @@ export async function mouseEnterHandler<T>(this: HTMLElement, e: JQuery.Triggere
  * @param detail plain text the trigger element contributed about this note (see the `data-tooltip-detail`
  *               attribute), shown under the title. Absent on the vast majority of links, which say
  *               nothing beyond the note itself.
+ * @param block the blocks of the note to highlight, a `block` link parameter.
  */
-export async function renderTooltip(entity: FNote | FAttachment | null, detail?: string) {
+export async function renderTooltip(
+    entity: FNote | FAttachment | null,
+    detail?: string,
+    block?: string
+) {
     const attachment = entity && "attachmentId" in entity ? entity : null;
     const note = attachment ? attachment.getNote() : entity as FNote | null;
     if (!entity || !note) {
@@ -223,7 +234,8 @@ export async function renderTooltip(entity: FNote | FAttachment | null, detail?:
 
     const { $renderedContent } = await contentRenderer.getRenderedContent(entity, {
         tooltip: true,
-        trim: true
+        trim: true,
+        highlightBlock: block
     });
     const isContentEmpty = $renderedContent[0].innerHTML.length === 0;
 

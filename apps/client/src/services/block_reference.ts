@@ -12,6 +12,7 @@ import toast from "./toast.js";
 const FLASH_CLASS = "block-reference-flash";
 /** The duration of the `block-reference-flash` animation in `block_reference.css`. */
 const FLASH_DURATION_MS = 1500;
+const HIGHLIGHT_CLASS = "block-reference-highlight";
 
 /** Opens the menu of the block handle at `event`, which copies a reference to `count` blocks. */
 export function openBlockHandleMenu(event: MouseEvent, count: number, copyReference: () => void) {
@@ -78,6 +79,45 @@ export function consumeBlockReference(
     if (!start || !end) {
         toast.showError(t("block_reference.not_found"));
     }
+}
+
+/**
+ * Highlights the blocks that `value`, a `block` link parameter, points at in `container`, and opens
+ * the collapsed blocks around its first and last block. Of a broken range, the block found is
+ * highlighted.
+ */
+export function highlightBlockReference(container: HTMLElement, value: string) {
+    const { start, end } = resolveBlockReference<HTMLElement>(container, value);
+    const first = start ?? end;
+    if (!first) {
+        return;
+    }
+
+    for (const block of [ start, end ]) {
+        if (block) {
+            expandAncestorDetails(block);
+        }
+    }
+    const elements = start && end ? getBlockRangeElements(start, end) : [ first ];
+    for (const element of elements) {
+        element.classList.add(HIGHLIGHT_CLASS);
+    }
+}
+
+/** Scrolls `container` to center its highlighted blocks, or to their top if they do not fit. */
+export function revealHighlightedBlocks(container: HTMLElement) {
+    const blocks = Array.from(container.querySelectorAll(`.${HIGHLIGHT_CLASS}`));
+    const first = blocks.at(0);
+    const last = blocks.at(-1);
+    if (!first || !last) {
+        return;
+    }
+
+    const top = first.getBoundingClientRect().top;
+    const height = last.getBoundingClientRect().bottom - top;
+    const viewportTop = container.getBoundingClientRect().top + container.clientTop;
+    const margin = Math.max(0, (container.clientHeight - height) / 2);
+    container.scrollTop += top - viewportTop - margin;
 }
 
 /** The outermost elements inside the range from `start` to `end`, both included. */

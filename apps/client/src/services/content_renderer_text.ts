@@ -2,6 +2,7 @@ import { encodeBlockParameter, KATEX_MACROS, sliceToBlockReference } from "@tril
 
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
+import { highlightBlockReference } from "./block_reference.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -39,6 +40,10 @@ export async function renderTextContent(
             .addClass("block-reference-broken")
             .text(t("block_reference.broken")));
     } else if (hasContent) {
+        // Runs before `postProcessRichContent()` renders embeds, so their blocks are not searched.
+        if (options.highlightBlock) {
+            highlightBlockReference($content[0], options.highlightBlock);
+        }
         $renderedContent.append($content);
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {

@@ -2,7 +2,8 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-    consumeBlockReference, copyBlockReference, getBlockRangeElements, openBlockHandleMenu
+    consumeBlockReference, copyBlockReference, getBlockRangeElements, highlightBlockReference,
+    openBlockHandleMenu, revealHighlightedBlocks
 } from "./block_reference.js";
 import type { ViewScope } from "./link.js";
 
@@ -109,6 +110,64 @@ describe("getBlockRangeElements", () => {
     });
 });
 
+describe("highlightBlockReference", () => {
+    it("highlights a range and opens the collapsed blocks at its ends", () => {
+        const container = buildContainer(
+            "<details><summary>s1</summary><p data-trilium-block-id=\"a\">A</p></details>"
+            + "<blockquote><p>quote</p></blockquote>"
+            + "<details><summary>s2</summary><p data-trilium-block-id=\"b\">B</p></details>"
+        );
+
+        highlightBlockReference(container, "a:b");
+
+        expect(getHighlighted(container)).toEqual([ "A", "quote", "s2", "B" ]);
+        expect([ ...container.querySelectorAll("details") ].map((details) => details.open))
+            .toEqual([ true, true ]);
+    });
+
+    it("highlights the block found of a broken range, and nothing for a missing block", () => {
+        const container = buildContainer("<p data-trilium-block-id=\"b\">B</p><p>other</p>");
+
+        highlightBlockReference(container, "gone");
+        highlightBlockReference(container, "a:b:c");
+        expect(getHighlighted(container)).toEqual([]);
+
+        highlightBlockReference(container, "gone:b");
+        expect(getHighlighted(container)).toEqual([ "B" ]);
+    });
+});
+
+describe("revealHighlightedBlocks", () => {
+    it("centers the highlighted blocks, or scrolls to their top when they don't fit", () => {
+        const container = buildContainer(
+            "<p>before</p><p class=\"block-reference-highlight\">A</p>"
+            + "<p class=\"block-reference-highlight\">B</p>"
+        );
+        const [ , first, last ] = container.querySelectorAll("p");
+        Object.defineProperty(container, "clientHeight", { value: 300 });
+        stubRect(container, 100, 400);
+        stubRect(first, 600, 650);
+        stubRect(last, 650, 700);
+
+        revealHighlightedBlocks(container);
+        expect(container.scrollTop).toBe(400);
+
+        container.scrollTop = 0;
+        stubRect(last, 650, 1200);
+        revealHighlightedBlocks(container);
+        expect(container.scrollTop).toBe(500);
+    });
+
+    it("leaves the scroll position alone without highlighted blocks", () => {
+        const container = buildContainer("<p>A</p>");
+        container.scrollTop = 20;
+
+        revealHighlightedBlocks(container);
+
+        expect(container.scrollTop).toBe(20);
+    });
+});
+
 describe("copyBlockReference", () => {
     it("copies a link to the selected blocks, named by their text, and flashes them", async () => {
         const root = buildContainer(
@@ -166,6 +225,15 @@ function buildContainer(html: string) {
 function getFlashed(container: HTMLElement) {
     return [ ...container.querySelectorAll(".block-reference-flash") ]
         .map((element) => element.textContent);
+}
+
+function getHighlighted(container: HTMLElement) {
+    return [ ...container.querySelectorAll(".block-reference-highlight") ]
+        .map((element) => element.textContent);
+}
+
+function stubRect(element: Element, top: number, bottom: number) {
+    vi.spyOn(element, "getBoundingClientRect").mockReturnValue({ top, bottom } as DOMRect);
 }
 
 function buildEditor(root: HTMLElement, target: unknown) {

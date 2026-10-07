@@ -827,6 +827,26 @@ describe("Block embeds", () => {
         expect(contentEl.querySelectorAll(".include-note[data-block='loop']")).toHaveLength(1);
     });
 
+    it("highlights the referenced blocks of the note, not those of its embeds", async () => {
+        buildNote({
+            id: "hlSource",
+            title: "Source",
+            content: "<p data-trilium-block-id=\"b1\">Embedded</p>"
+        });
+        const note = buildNote({
+            title: "Host",
+            content: blockEmbed("hlSource", "b1")
+                + "<p data-trilium-block-id=\"b1\">Own</p><p data-trilium-block-id=\"b2\">Next</p>"
+                + "<p>Outro</p>"
+        });
+        const contentEl = document.createElement("div");
+
+        await renderText(note, $(contentEl), { highlightBlock: "b1:b2" });
+
+        expect([ ...contentEl.querySelectorAll(".block-reference-highlight") ]
+            .map((element) => element.textContent)).toEqual([ "Own", "Next" ]);
+    });
+
     it("links to the blocks of an embed one level down", async () => {
         const note = buildNote({ title: "Host", content: blockEmbed("blkSource", "b1:b 2") });
         const contentEl = document.createElement("div");
