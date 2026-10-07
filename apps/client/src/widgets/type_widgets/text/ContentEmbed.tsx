@@ -14,7 +14,11 @@ import { Badge } from "../../react/Badge";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
-import { type ContentEmbedEvent, showContentEmbedFullscreen } from "./content_embed_tools";
+import {
+    type ContentEmbedEvent, getContentEmbedTools, showContentEmbedFullscreen,
+    useIsContentEmbedEditable, watchContentEmbedTools
+} from "./content_embed_tools";
+import { findTextEditorAround } from "./editable_embed";
 
 /** An action on the embedded note or attachment, offered as a button in the title row. */
 export interface ContentEmbedAction {
@@ -33,6 +37,8 @@ export interface ContentEmbedProps {
     /** The note opened by the buttons in the title row. */
     notePath: string;
     viewScope?: ViewScope;
+    /** Whether the embed shows only some blocks of its note, from a block reference. */
+    isExcerpt?: boolean;
     /** Gives the focus to the content once mounted, as for a canvas drawing just added. */
     isFocusedOnMount?: boolean;
 }
@@ -52,7 +58,7 @@ export interface TinyContentEmbedProps {
 
 /** The title row and the content of an embedded note or attachment. */
 export default function ContentEmbed({
-    boxSize, title, content, contentType, notePath, viewScope, isFocusedOnMount
+    boxSize, title, content, contentType, notePath, viewScope, isExcerpt, isFocusedOnMount
 }: ContentEmbedProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
@@ -62,7 +68,7 @@ export default function ContentEmbed({
     useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
     const isExpandable = boxSize === "expandable";
-    const hasFullscreen = boxSize === "medium" || boxSize === "full";
+    const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
 
     useLayoutEffect(() => {
         contentRef.current?.append(content);
@@ -101,12 +107,19 @@ export default function ContentEmbed({
                 <ContentEmbedTitle title={title} />
                 {/* The content of the embed puts badges here, such as its save status. */}
                 <div className="note-badges include-note-badges">
-                    {viewScope?.block && <ExcerptBadge />}
+                    {isExcerpt && <ExcerptBadge />}
                 </div>
                 <ContentEmbedActionButton
                     className="include-note-open"
                     action={getOpenInNewTabAction(notePath, viewScope)}
                 />
+                {isExcerpt && (
+                    <ExcerptEditButton
+                        contentRef={contentRef}
+                        content={content}
+                        onEdit={() => setIsExpanded(true)}
+                    />
+                )}
                 {hasFullscreen && (
                     <ActionButton
                         className="include-note-fullscreen"
@@ -234,6 +247,67 @@ function ExcerptBadge() {
             })}
         />
     );
+}
+
+/**
+ * Turns the editing of an excerpt on and off, as the Editable toggle of its embed does. Disabled
+ * while the content has no editable mode, as in a read-only note or for blocks that cannot be
+ * edited in place. Opening the editor gives it the focus, and `onEdit` runs first.
+ */
+function ExcerptEditButton({ contentRef, content, onEdit }: {
+    contentRef: RefObject<HTMLDivElement | null>;
+    content: HTMLElement;
+    onEdit: () => void;
+}) {
+    const isEditing = useIsContentEmbedEditable(contentRef);
+    const hasEditableMode = useHasEditableMode(contentRef, content);
+
+    return (
+        <ActionButton
+            className="include-note-edit"
+            icon="bx bx-pencil"
+            text={t("block_reference.edit_excerpt")}
+            active={hasEditableMode && isEditing}
+            disabled={!hasEditableMode}
+            onClick={(e) => {
+                e.stopPropagation();
+                const box = contentRef.current;
+                const editor = findTextEditorAround(box);
+                if (!box || !editor?.plugins.get("ContentEmbed").selectEmbedAt(box)) return;
+
+                editor.execute("toggleContentEmbedEditable");
+                if (isEditing) {
+                    editor.editing.view.focus();
+                } else {
+                    onEdit();
+                    // `useEditableEmbed()` moves the focus on to the editor once it renders.
+                    box.focus({ preventScroll: true });
+                }
+            }}
+        />
+    );
+}
+
+/**
+ * Whether the content in `contentRef` has an editable mode, which it tells by adding the Editable
+ * toggle to its embed, and a text editor holds the embed to turn it on. Checked again for new
+ * `content`, which can add the toggle before it is in the box.
+ */
+function useHasEditableMode(contentRef: RefObject<HTMLElement | null>, content: HTMLElement) {
+    const [ hasEditableMode, setHasEditableMode ] = useState(false);
+
+    useEffect(() => {
+        const box = contentRef.current;
+        if (!box) return;
+
+        const update = () => setHasEditableMode(
+            !!getContentEmbedTools(box)?.hasEditableFlag && !!findTextEditorAround(box)
+        );
+        update();
+        return watchContentEmbedTools(box, update);
+    }, [ contentRef, content ]);
+
+    return hasEditableMode;
 }
 
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "

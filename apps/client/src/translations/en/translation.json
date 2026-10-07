@@ -4606,6 +4606,7 @@
     "not_found": "A referenced block could not be found. It might have been deleted.",
     "untitled": "Block",
     "excerpt": "Excerpt",
-    "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab."
+    "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
+    "edit_excerpt": "Edit excerpt"
   }
 }

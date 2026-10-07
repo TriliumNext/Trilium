@@ -1,7 +1,7 @@
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 const {
     openTabWithNoteWithHoisting,
@@ -39,6 +39,7 @@ vi.mock("../../../services/shortcuts", async (importOriginal) => ({
     removeIndividualBinding
 }));
 
+import { registerContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, {
     getNoteActions,
     type ContentEmbedProps,
@@ -158,6 +159,41 @@ function rightClick(target: Element | null) {
     return { opened, isTaken: event.defaultPrevented && stopPropagation.mock.calls.length > 0 };
 }
 
+/** Tools of content with an editable mode, which adds the Editable toggle to its embed. */
+const EDITABLE_TOOLS = {
+    hasEditableFlag: true,
+    getTools: () => [],
+    execute: () => {},
+    subscribe: () => () => {}
+};
+
+/**
+ * Moves the box into an embed of a text editor, whose `ContentEmbed` plugin selects the embed for
+ * the commands it runs.
+ */
+function placeInHostEditor() {
+    const selectEmbedAt = vi.fn((_element: Element) => true);
+    const execute = vi.fn();
+    const focus = vi.fn();
+    const editable = document.createElement("div");
+    editable.className = "ck-editor__editable";
+    Object.assign(editable, {
+        ckeditorInstance: {
+            plugins: { get: () => ({ selectEmbedAt }) },
+            execute,
+            editing: { view: { focus } }
+        }
+    });
+    const embed = document.createElement("figure");
+    embed.className = "include-note";
+    editable.append(embed);
+    embed.append(container);
+    document.body.append(editable);
+    onTestFinished(() => editable.remove());
+
+    return { editor: { selectEmbedAt, execute, focus }, embed };
+}
+
 /** Clicks `target` and tells whether the click was kept from what surrounds the box. */
 function click(target: HTMLElement) {
     const event = new MouseEvent("click", { bubbles: true, cancelable: true });
@@ -184,6 +220,23 @@ describe("ContentEmbed", () => {
             act(() => render(null, container));
             renderBox({ boxSize });
             expect(titleRow(), boxSize).toEqual(expected.map((name) => `include-note-${name}`));
+        }
+    });
+
+    it("lays out an excerpt with an edit button in place of fullscreen", () => {
+        const excerpt = [ "title", "badges", "open", "edit", "menu" ];
+        const layouts: [ string, string[] ][] = [
+            [ "small", excerpt ],
+            [ "medium", excerpt ],
+            [ "full", excerpt ],
+            [ "expandable", [ "toggle", ...excerpt ] ]
+        ];
+
+        for (const [ boxSize, expected ] of layouts) {
+            act(() => render(null, container));
+            renderBox({ boxSize, isExcerpt: true });
+            expect(titleRow(), boxSize).toEqual(expected.map((name) => `include-note-${name}`));
+            expect(container.querySelector(".include-note-fullscreen-controls")).toBeNull();
         }
     });
 
@@ -260,7 +313,7 @@ describe("ContentEmbed", () => {
     });
 
     it("marks an excerpt, with the icon of the button that opens the whole note", () => {
-        renderBox({ viewScope: { block: "blockA:blockB" } });
+        renderBox({ viewScope: { block: "blockA:blockB" }, isExcerpt: true });
         const badge = container.querySelector<HTMLElement>(".include-note-badges > .excerpt-badge");
         expect(badge?.textContent).toBe("block_reference.excerpt");
         expect(titleRow()).toContain("include-note-badges");
@@ -278,6 +331,61 @@ describe("ContentEmbed", () => {
             renderBox({ viewScope });
             expect(container.querySelector(".excerpt-badge")).toBeNull();
         }
+    });
+
+    it("turns the editing of an excerpt on and off through the editor around it", async () => {
+        const { editor, embed } = placeInHostEditor();
+        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        const edit = button("include-note-edit");
+        expect(edit.className).toContain("bx-pencil");
+        expect(tooltipOf(edit)).toBe("block_reference.edit_excerpt");
+        expect(edit.disabled).toBe(true);
+
+        let unregister = () => {};
+        act(() => {
+            unregister = registerContentEmbedTools(content, EDITABLE_TOOLS);
+        });
+        expect(edit.disabled).toBe(false);
+        expect(edit.classList.contains("active")).toBe(false);
+
+        expect(click(edit).isStopped).toBe(true);
+        expect(editor.selectEmbedAt).toHaveBeenCalledWith(contentBox());
+        expect(editor.execute).toHaveBeenCalledWith("toggleContentEmbedEditable");
+        expect(document.activeElement).toBe(contentBox());
+
+        await act(async () => {
+            embed.dataset.editable = "true";
+        });
+        expect(edit.classList.contains("active")).toBe(true);
+        click(edit);
+        expect(editor.execute).toHaveBeenCalledTimes(2);
+        expect(editor.focus).toHaveBeenCalledOnce();
+
+        act(() => unregister());
+        expect(edit.disabled).toBe(true);
+        expect(edit.classList.contains("active")).toBe(false);
+    });
+
+    it("keeps the edit button of an excerpt disabled without an editor around it", () => {
+        const { content } = renderBox({ boxSize: "medium", isExcerpt: true });
+        act(() => {
+            onTestFinished(registerContentEmbedTools(content, EDITABLE_TOOLS));
+        });
+
+        expect(button("include-note-edit").disabled).toBe(true);
+    });
+
+    it("opens an expandable excerpt to edit it", () => {
+        placeInHostEditor();
+        const { content } = renderBox({ boxSize: "expandable", isExcerpt: true });
+        act(() => {
+            onTestFinished(registerContentEmbedTools(content, EDITABLE_TOOLS));
+        });
+        expect(contentBox().hidden).toBe(true);
+
+        click(button("include-note-edit"));
+
+        expect(contentBox().hidden).toBe(false);
     });
 
     it("gives its content the screen, and takes it back from the overlay button", async () => {

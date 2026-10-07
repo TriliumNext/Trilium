@@ -27,7 +27,10 @@ vi.mock("./text_editor_context_menu", () => ({
     getTextEditorContaining: mocks.getTextEditorContaining
 }));
 
-vi.mock("../services/content_renderer", () => ({ getEmbedBoxSize: mocks.getEmbedBoxSize }));
+vi.mock("../services/content_renderer", () => ({
+    EXCERPT_BOX_SIZE: "full",
+    getEmbedBoxSize: mocks.getEmbedBoxSize
+}));
 
 vi.mock("./context_menu", () => ({ default: { show: mocks.show } }));
 
@@ -379,11 +382,14 @@ describe("openContextMenu", () => {
         expect(mocks.show.mock.calls[1][0].items).toHaveLength(4);
     });
 
-    it("offers converting a link to blocks of a note to an excerpt", async () => {
+    it("offers converting a link to blocks of a note to an excerpt of full size", async () => {
+        const execute = vi.fn();
+        mocks.getNote.mockResolvedValue({ noteId: "n1" });
+        mocks.getEmbedBoxSize.mockReturnValue("medium");
         mocks.getTextEditorContaining.mockResolvedValue({
             commands: { get: () => ({ isEnabled: true }) },
             plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
-            execute: vi.fn()
+            execute
         });
         const editable = document.createElement("div");
         editable.className = "ck-editor__editable";
@@ -396,9 +402,15 @@ describe("openContextMenu", () => {
             "root/n1", contextMenuEvent(link ?? undefined), { block: "b1" }
         );
 
-        expect(mocks.show.mock.calls[0][0].items.at(-1)).toMatchObject({
+        const item = mocks.show.mock.calls[0][0].items.at(-1);
+        expect(item).toMatchObject({
             title: "link_context_menu.convert_link_to_note_excerpt",
             uiIcon: "bx bx-window-alt"
+        });
+        item.handler();
+        expect(execute).toHaveBeenCalledWith("convertLinkToEmbed", {
+            domElement: link,
+            boxSize: "full"
         });
     });
 

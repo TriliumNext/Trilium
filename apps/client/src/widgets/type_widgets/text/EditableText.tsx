@@ -21,7 +21,7 @@ import { consumeBookmark } from "../../../services/bookmark_jump";
 import { getUploadBoxSize } from "../../../services/content_renderer";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import link, { parseNavigationStateFromUrl } from "../../../services/link";
+import link, { parseNavigationStateFromUrl, type ViewScope } from "../../../services/link";
 import type LoadResults from "../../../services/load_results";
 import note_create from "../../../services/note_create";
 import options from "../../../services/options";
@@ -143,10 +143,9 @@ export default function EditableText({
             consumeSearchTerms(noteContext, ntxId, initialized.current);
 
             // Scroll to the bookmark or the blocks a link points at.
-            const viewScope = noteContext?.viewScope;
-            if (viewScope?.bookmark || viewScope?.block) {
-                requestAnimationFrame(revealLinkTarget);
-            }
+            revealLinkTargetWhenReady(
+                noteContext?.viewScope, initialized.current, revealLinkTarget
+            );
         },
         dataSaved(savedData) {
             // Store back the saved data in order to retrieve it in case the CKEditor crashes.
@@ -676,6 +675,22 @@ export function watchEditorBlocks(block: string, onBlockChange: (block: string) 
             onBlockChange(editorBlock);
         }
     };
+}
+
+/**
+ * Calls `reveal()` to scroll to the bookmark or the blocks that `viewScope` points at, once
+ * `ready` resolves. The editor of a new tab can still be starting when the content arrives.
+ *
+ * Exported for testing.
+ */
+export function revealLinkTargetWhenReady(
+    viewScope: ViewScope | undefined,
+    ready: Promise<unknown>,
+    reveal: () => void
+) {
+    if (viewScope?.bookmark || viewScope?.block) {
+        void ready.then(() => requestAnimationFrame(reveal));
+    }
 }
 
 /** The blocks that an editor of the blocks `block` holds, preferring the ids of `block`. */

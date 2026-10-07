@@ -33,6 +33,7 @@ const {
     notifyAttachmentChanges,
     onNotificationInfo,
     onNotificationWarning,
+    revealLinkTargetWhenReady,
     showFileUploadProgress,
     watchEditorBlocks
 } = await import("./EditableText");
@@ -252,5 +253,30 @@ describe("watchEditorBlocks", () => {
 
         expect(onBlockChange.mock.calls).toEqual([ [ "a:n" ], [ "a:b" ] ]);
         expect(getRange).toHaveBeenCalledWith({ startId: "a", endId: "b" });
+    });
+});
+
+describe("revealLinkTargetWhenReady", () => {
+    it("reveals a bookmark or blocks once the editor is ready, as in a new tab", async () => {
+        vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+            callback(0);
+            return 0;
+        });
+        const reveal = vi.fn();
+        let markReady = () => {};
+        const ready = new Promise<void>((resolve) => {
+            markReady = resolve;
+        });
+
+        revealLinkTargetWhenReady({ block: "a:b" }, ready, reveal);
+        revealLinkTargetWhenReady({ bookmark: "intro" }, ready, reveal);
+        revealLinkTargetWhenReady({ viewMode: "default" }, ready, reveal);
+        await Promise.resolve();
+        expect(reveal).not.toHaveBeenCalled();
+
+        markReady();
+        await ready;
+        await Promise.resolve();
+        expect(reveal).toHaveBeenCalledTimes(2);
     });
 });

@@ -134,7 +134,8 @@ describe("loadEmbeddedNote", () => {
             title,
             content,
             contentType: "pdf",
-            notePath: "noteY"
+            notePath: "noteY",
+            isExcerpt: false
         });
     });
 
@@ -190,12 +191,24 @@ describe("loadEmbeddedNote of blocks", () => {
             .toHaveBeenCalledWith("noteY", expect.objectContaining({ viewScope }));
         expect(content_renderer.getRenderedContent).toHaveBeenCalledWith(note,
             expect.objectContaining({ block: "b1:b2", onBlockChange }));
-        expect(lastMount().props.viewScope).toEqual(viewScope);
+        expect(lastMount().props).toMatchObject({ viewScope, isExcerpt: true });
 
         await loadEmbeddedNote("noteY", $(figure), undefined, { block: "b1" });
 
         expect(lastMount().type).toBe(TinyContentEmbed);
         expect(lastMount().props.viewScope).toEqual({ block: "b1" });
+        expect(lastMount().container.classList.contains("excerpt")).toBe(true);
+    });
+
+    it("marks the wrapper of an excerpt, and unmarks it for a whole note", async () => {
+        const wrapper = createWrapper();
+
+        await loadEmbeddedNote("noteY", $(wrapper), "medium", { block: "b1" });
+        expect(wrapper.className).toBe("include-note-wrapper excerpt");
+
+        await loadEmbeddedNote("noteY", $(wrapper), "medium");
+        expect(wrapper.className).toBe("include-note-wrapper");
+        expect(lastMount().props.isExcerpt).toBe(false);
     });
 });
 
@@ -430,7 +443,7 @@ describe("watchContentEmbeds", () => {
         expect(disposed()).toHaveLength(2);
     });
 
-    it("updates the editor when content in an embed adds buttons to its toolbar", () => {
+    it("updates the editor when content in an embed adds or removes toolbar buttons", () => {
         const provider = { getTools: () => [], execute: vi.fn(), subscribe: () => () => {} };
         const [ inside, outside ] = [ container, document.body ].map((parent) => {
             const element = document.createElement("div");
@@ -440,16 +453,16 @@ describe("watchContentEmbeds", () => {
         update.mockClear();
         const stop = watchContentEmbeds(container, editor);
 
-        const unregister = [ registerContentEmbedTools(inside, provider) ];
+        const unregisterInside = registerContentEmbedTools(inside, provider);
         expect(update).toHaveBeenCalledTimes(1);
-        unregister.push(registerContentEmbedTools(outside, provider));
-        stop();
-        unregister.push(registerContentEmbedTools(inside, provider));
+        registerContentEmbedTools(outside, provider)();
         expect(update).toHaveBeenCalledTimes(1);
+        unregisterInside();
+        expect(update).toHaveBeenCalledTimes(2);
 
-        for (const stopRegistration of unregister) {
-            stopRegistration();
-        }
+        stop();
+        registerContentEmbedTools(inside, provider)();
+        expect(update).toHaveBeenCalledTimes(2);
         outside.remove();
     });
 });

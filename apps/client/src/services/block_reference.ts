@@ -299,7 +299,7 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
 async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
     // Imported on demand: `content_renderer` imports `content_renderer_text`, which imports this
     // module.
-    const [ note, { getEmbedBoxSize } ] = await Promise.all([
+    const [ note, { EXCERPT_BOX_SIZE } ] = await Promise.all([
         froca.getNote(noteId, true),
         import("./content_renderer.js")
     ]);
@@ -312,7 +312,7 @@ async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
     embed.className = "include-note";
     embed.dataset.noteId = noteId;
     embed.dataset.block = block;
-    embed.dataset.boxSize = getEmbedBoxSize(note);
+    embed.dataset.boxSize = EXCERPT_BOX_SIZE;
     return embed.outerHTML;
 }
 

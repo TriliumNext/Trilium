@@ -26,7 +26,7 @@ A new include gets the size that suits what it shows:
 
 *   _Tiny_ for a note or an attachment that has no preview, such as a relation map or an archive.
 *   _Small_ for audio.
-*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment.
+*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
 *   _Medium_ for anything else.
 
 The dialog that includes a note selects that size once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu.
@@ -68,7 +68,7 @@ The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ but
 
 In a note being edited, the menu also has the commands of the include's toolbar: the _Size_ submenu, _Show title_ and _Show caption_, each checked while it is in effect, and _Convert to link_ at the end. A drawing canvas, an included text or code note and an embedded code file also have _Editable_, above _Size_. For an embedded attachment they follow its first group of actions; for an included note they end the menu.
 
-To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
+To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
 A _Tiny_ include has these buttons instead, followed by the same _More actions_ button:
 

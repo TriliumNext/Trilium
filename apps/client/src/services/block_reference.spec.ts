@@ -28,7 +28,10 @@ vi.mock("../menus/context_menu.js", () => ({ default: { show: showMenu } }));
 vi.mock("../menus/text_editor_context_menu.js", () => ({ getTextEditorContaining }));
 vi.mock("./clipboard_ext.js", () => ({ copyHtmlWithToast }));
 vi.mock("./froca.js", () => ({ default: { getNote } }));
-vi.mock("./content_renderer.js", () => ({ getEmbedBoxSize: () => "medium" }));
+vi.mock("./content_renderer.js", () => ({
+    EXCERPT_BOX_SIZE: "full",
+    getEmbedBoxSize: () => "medium"
+}));
 
 const scrollIntoView = vi.fn();
 const getComponentByEl = vi.fn();
@@ -322,7 +325,7 @@ describe("buildBlockReferenceMenuItems", () => {
         expect(getNote).toHaveBeenCalledWith("note1", true);
         expect(pasteTarget.paste).toHaveBeenLastCalledWith(
             "<figure class=\"include-note\" data-note-id=\"note1\" data-block=\"s1:e1\""
-            + " data-box-size=\"medium\"></figure>",
+            + " data-box-size=\"full\"></figure>",
             href
         );
     });

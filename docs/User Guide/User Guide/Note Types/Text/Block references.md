@@ -23,9 +23,9 @@ Clicking a block reference opens the note, scrolls to the referenced blocks and 
 
 ## Including the referenced blocks
 
-To show the referenced blocks inside another note, right-click the link in a note being edited and select _Convert link to note excerpt_, or paste the copied reference with _Paste_ → _Paste reference as an excerpt_. The include shows only the referenced blocks, not the rest of the note, and marks them with an _Excerpt_ badge in its title. To see the whole note, press the <span class="tn-icon bx bx-link-external"></span> button in the same title, which opens the note in a new tab. Converting the include back to a link keeps the reference.
+To show the referenced blocks inside another note, right-click the link in a note being edited and select _Convert link to note excerpt_, or paste the copied reference with _Paste_ → _Paste reference as an excerpt_. The include shows only the referenced blocks, not the rest of the note, and marks them with an _Excerpt_ badge in its title. It starts at the _Full_ box size, so all the referenced blocks are visible. To see the whole note, press the <span class="tn-icon bx bx-link-external"></span> button in the same title, which opens the note in a new tab. Converting the include back to a link keeps the reference.
 
-To edit the referenced blocks without leaving the note, turn on _Editable_ in the toolbar of the include, as for any <a class="reference-link" href="Include%20Note.md">Include Note</a>. The changes are saved to the referenced blocks, and the rest of the note stays as it is.
+To edit the referenced blocks without leaving the note, press the <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button in the title of the include, or turn on _Editable_ in its toolbar, as for any <a class="reference-link" href="Include%20Note.md">Include Note</a>. Press the button again to stop editing. The changes are saved to the referenced blocks, and the rest of the note stays as it is. The button is grayed out where the blocks cannot be edited, such as in a read-only note. An excerpt has no _Fullscreen_ button.
 
 If a referenced block was deleted, the include shows _Broken reference_.
 

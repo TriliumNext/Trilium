@@ -39,6 +39,7 @@ export async function loadEmbeddedNote(
     const el = $el[0];
     const size = boxSize ?? getEmbedBoxSize(el);
     const viewScope: ViewScope | undefined = block ? { block } : undefined;
+    const isExcerpt = !!block;
     if (size === "tiny") {
         const $link = await link.createLink(note.noteId, {
             showTooltip: false,
@@ -52,7 +53,7 @@ export async function loadEmbeddedNote(
             viewScope,
             actions: getNoteActions(note.noteId)
         });
-        await mountEmbedBox(el, box);
+        await mountEmbedBox(el, box, undefined, isExcerpt);
         return;
     }
 
@@ -79,9 +80,10 @@ export async function loadEmbeddedNote(
         content: $renderedContent[0],
         contentType: type,
         notePath: note.noteId,
-        viewScope
+        viewScope,
+        isExcerpt
     });
-    await mountEmbedBox(el, box, $renderedContent);
+    await mountEmbedBox(el, box, $renderedContent, isExcerpt);
 }
 
 interface EmbeddedAttachmentOptions {
@@ -151,7 +153,16 @@ export async function loadEmbeddedAttachment(
  * Mounts `box` in the embed `el`. An embed that left the page while it loaded gets no box,
  * and `content` rendered for it is disposed: `watchContentEmbeds()` has already passed it.
  */
-async function mountEmbedBox(el: HTMLElement, box: JSX.Element, content?: JQuery<HTMLElement>) {
+/**
+ * Mounts `box` in the wrapper of the embed `el`, which carries the `excerpt` class while
+ * `isExcerpt`. The class is not saved with the note.
+ */
+async function mountEmbedBox(
+    el: HTMLElement,
+    box: JSX.Element,
+    content?: JQuery<HTMLElement>,
+    isExcerpt = false
+) {
     if (!el.isConnected) {
         if (content) {
             content_renderer.disposeInteractiveContent(content);
@@ -159,7 +170,9 @@ async function mountEmbedBox(el: HTMLElement, box: JSX.Element, content?: JQuery
         return;
     }
 
-    await content_renderer.mountInteractiveWidget(box, getWrapper(el));
+    const wrapper = getWrapper(el);
+    wrapper.classList.toggle("excerpt", isExcerpt);
+    await content_renderer.mountInteractiveWidget(box, wrapper);
 }
 
 function getEmbedBoxSize(el: HTMLElement) {

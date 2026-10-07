@@ -161,6 +161,9 @@ const PREVIEWED_TYPES = new Set([
     "llmChat"
 ]);
 
+/** The box size a new embed of blocks of a note, an excerpt, starts with. */
+export const EXCERPT_BOX_SIZE: BoxSize = "full";
+
 export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
 
     options = Object.assign(

@@ -210,7 +210,8 @@ async function getNoteItems(
             e, editor, isBlockReference
                 ? t("link_context_menu.convert_link_to_note_excerpt")
                 : t("link_context_menu.convert_link_to_included_note"),
-            () => froca.getNote(noteId)
+            () => froca.getNote(noteId),
+            isBlockReference
         );
         return embedItem ? [ { kind: "separator" }, embedItem ] : [];
     }
@@ -298,13 +299,15 @@ function runEmbedCommand(
 
 /**
  * The item titled `title` that converts a link to a note or an attachment into an embed, in a
- * text note open for editing, for a link that the editor can convert.
+ * text note open for editing, for a link that the editor can convert. `isExcerpt` is set for a
+ * link to blocks of a note.
  */
 async function getConvertToEmbedItem(
     e: LinkMenuOrigin,
     editor: CKTextEditor | null,
     title: string,
-    getLinkedEntity: () => Promise<FNote | FAttachment | null>
+    getLinkedEntity: () => Promise<FNote | FAttachment | null>,
+    isExcerpt = false
 ): Promise<MenuItem<CommandNames> | null> {
     const link = getTarget(e)?.closest<HTMLElement>("a.reference-link");
     if (!link || !editor?.commands.get("convertLinkToEmbed")?.isEnabled
@@ -313,7 +316,7 @@ async function getConvertToEmbedItem(
     }
 
     // Imported on demand: `content_renderer` imports `link`, which imports this module.
-    const [ entity, { getEmbedBoxSize } ] = await Promise.all([
+    const [ entity, { EXCERPT_BOX_SIZE, getEmbedBoxSize } ] = await Promise.all([
         getLinkedEntity(),
         import("../services/content_renderer.js")
     ]);
@@ -326,7 +329,7 @@ async function getConvertToEmbedItem(
         uiIcon: "bx bx-window-alt",
         handler: () => editor.execute("convertLinkToEmbed", {
             domElement: link,
-            boxSize: getEmbedBoxSize(entity)
+            boxSize: isExcerpt ? EXCERPT_BOX_SIZE : getEmbedBoxSize(entity)
         })
     };
 }

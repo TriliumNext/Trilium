@@ -193,8 +193,12 @@ export function useEmbedBadgeSlot(rootRef: RefObject<HTMLElement | null>, isShow
  * rather than in a floating one.
  */
 export function hasFixedToolbarAround(element: HTMLElement | null) {
-    const editable = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR);
-    return !!editable?.ckeditorInstance?.ui.view.toolbar;
+    return !!findTextEditorAround(element)?.ui.view.toolbar;
+}
+
+/** The text editor whose editable root contains `element`, as the editor around an embed. */
+export function findTextEditorAround(element: HTMLElement | null) {
+    return element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
 }
 
 /** The text editor whose editable root is in `element`, as the editor of an included note. */
