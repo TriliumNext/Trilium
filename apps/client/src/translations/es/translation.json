@@ -453,7 +453,6 @@
     "hide_relations": "nombres de relaciones delimitados por comas que deben ocultarse. Se mostrarán todos los demás.",
     "title_template": "título por defecto de notas creadas como subnota de esta nota. El valor es evaluado como una cadena de JavaScript \n                        y por lo tanto puede ser enriquecida con contenido dinámico vía las variables inyectadas <code>now</code> y <code>parentNote</code>. Ejemplos:\n                        \n                        <ul>\n                            <li><code>trabajos literarios de ${parentNote.getLabelValue('authorName')}</code></li>\n                            <li><code>Registro para ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Consulte la <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki para obtener más detalles</a>, documentación de la API para <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> y <a href=\"https://day.js.org/docs/en/display/format\">now</a> para más detalles.",
     "template": "Esta nota aparecerá en la selección de plantillas disponibles al crear una nueva nota.",
-    "toc": "<code>#toc</code> o <code>#toc=show</code> forzará que se muestre la tabla de contenido, <code>#toc=hide</code> forzará a ocultarla. Si la etiqueta no existe, se observa la configuración global.",
     "color": "define el color de la nota en el árbol de notas, enlaces, etc. Utilice cualquier valor de color CSS válido como 'red' o #a13d5f.",
     "keyboard_shortcut": "Define un atajo de teclado que saltará inmediatamente a esta nota. Ejemplo: 'ctrl+alt+e'. Es necesario recargar la interfaz para que el cambio surta efecto.",
     "keep_current_hoisting": "Abrir este enlace no cambiará el anclaje incluso si la nota no se puede mostrar en el subárbol anclado actualmente.",
@@ -461,7 +460,6 @@
     "execute_description": "Descripción más larga de la nota de código actual que se muestra junto con el botón de ejecución.",
     "exclude_from_note_map": "Las notas con esta etiqueta se ocultarán del Mapa de notas.",
     "new_notes_on_top": "Las notas nuevas se crearán en la parte superior de la nota principal, no en la parte inferior.",
-    "hide_highlight_widget": "Ocultar widget de lista destacada.",
     "run_on_note_creation": "se ejecuta cuando se crea la nota en el backend. Utilice esta relación si desea ejecutar el script para todas las notas creadas en un subárbol específico. En ese caso, créela en la nota raíz del subárbol y hágala heredable. Una nueva nota creada dentro del subárbol (cualquier profundidad) activará el script.",
     "run_on_child_note_creation": "se ejecuta cuando se crea una nueva nota bajo la nota donde se define esta relación.",
     "run_on_note_title_change": "se ejecuta cuando se cambia el título de la nota (también incluye la creación de notas).",
@@ -507,7 +505,6 @@
     "show_all_in_search": "Mostrar todo en la búsqueda",
     "relation_type": "Relación",
     "versioning_limit": "Limita el número de revisiones que conserva esta nota, sustituyendo la configuración global.",
-    "similar_notes_widget_disabled": "Desactiva la pestaña de la cinta «Notas similares» para esta nota. Solo en el diseño antiguo.",
     "llm_chat_home": "Los nuevos chats de IA se crean como notas hijas de esta nota.",
     "workspace_llm_chat_home": "Los nuevos chats de IA se crean como notas hijas de esta nota cuando se eleva la vista a una nota antecesora de este espacio de trabajo.",
     "date_pattern": "Patrón para los títulos de las notas diarias generadas bajo esta raíz del calendario; por ejemplo, <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -861,15 +858,6 @@
   "create_pane_button": {
     "create_new_split": "Crear nueva división"
   },
-  "edit_button": {
-    "edit_this_note": "Editar esta nota"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Mostrar tabla de contenido"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Mostrar lista de destacados"
-  },
   "global_menu": {
     "menu": "Menú",
     "options": "Opciones",
@@ -970,9 +958,6 @@
     "active": "La sesión protegida está activa. Dé clic para salir de la sesión protegida.",
     "inactive": "Dé clic para ingresar a la sesión protegida"
   },
-  "revisions_button": {
-    "note_revisions": "Revisiones de nota"
-  },
   "update_available": {
     "update_available": "Actualización disponible"
   },
@@ -987,27 +972,11 @@
     "sql_console_saved_message": "La nota de la consola SQL se ha guardado en {{note_path}}",
     "electron_api_docs_button_title": "Abrir la documentación de la API de Electron"
   },
-  "copy_image_reference_button": {
-    "button_title": "Copiar la referencia de la imagen al portapapeles; se puede pegar en una nota de texto."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Ocultar botones"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Mostrar botones"
-  },
-  "svg_export_button": {
-    "button_title": "Exportar diagrama como SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Crear una subnota y agregarla al mapa",
     "create_child_note_text": "Agregar nota"
   },
   "zpetne_odkazy": {
-    "relation": "relación",
-    "backlink_one": "{{count}} Vínculo de retroceso",
-    "backlink_many": "",
-    "backlink_other": "{{count}} Vínculos de retroceso",
     "no_backlinks": "No hay notas asociadas a este elemento."
   },
   "mobile_detail_menu": {
@@ -1037,8 +1006,6 @@
   "basic_properties": {
     "note_type": "Tipo de nota",
     "editable": "Editable",
-    "basic_properties": "Propiedades básicas",
-    "language": "Idioma",
     "configure_code_notes": "Configurar notas de código..."
   },
   "book_properties": {
@@ -1070,37 +1037,23 @@
     "dashboard": "Panel"
   },
   "edited_notes": {
-    "no_edited_notes_found": "Aún no hay notas editadas en este día...",
-    "title": "Notas editadas",
-    "deleted": "(eliminado)"
+    "no_edited_notes_found": "Aún no hay notas editadas en este día..."
   },
   "file_properties": {
-    "note_id": "ID de nota",
     "original_file_name": "Nombre del archivo original",
-    "file_type": "Tipo de archivo",
-    "file_size": "Tamaño del archivo",
     "download": "Descargar",
     "open": "Abrir externamente",
-    "upload_new_revision": "Subir nueva revisión",
     "upload_success": "Se ha subido una nueva revisión de archivo.",
-    "upload_failed": "Error al cargar una nueva revisión de archivo.",
-    "title": "Archivo"
+    "upload_failed": "Error al cargar una nueva revisión de archivo."
   },
   "image_properties": {
-    "original_file_name": "Nombre del archivo original",
-    "file_type": "Tipo de archivo",
-    "file_size": "Tamaño del archivo",
-    "download": "Descargar",
-    "open": "Abrir",
     "copy_reference_to_clipboard": "Copiar referencia al portapapeles",
     "upload_new_revision": "Subir nueva revisión",
     "upload_success": "Se ha subido una nueva revisión de imagen.",
-    "upload_failed": "Error al cargar una nueva revisión de imagen: {{message}}",
-    "title": "Imagen"
+    "upload_failed": "Error al cargar una nueva revisión de imagen: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Atributos heredados",
-    "no_inherited_attributes": "Sin atributos heredados.",
     "none": "ninguno"
   },
   "note_info_widget": {
@@ -1119,8 +1072,6 @@
     "show_similar_notes": "Mostrar notas similares"
   },
   "note_map": {
-    "open_full": "Ampliar al máximo",
-    "collapse": "Contraer al tamaño normal",
     "title": "Mapa de notas",
     "fix-nodes": "Fijar nodos",
     "link-distance": "Distancia de enlace",
@@ -1133,18 +1084,10 @@
   "note_paths": {
     "title": "Rutas de nota",
     "clone_button": "Clonar nota a nueva ubicación...",
-    "intro_placed": "Esta nota está colocada en las siguientes rutas:",
     "intro_not_placed": "Esta nota aún no se ha colocado en el árbol de notas.",
     "outside_hoisted": "Esta ruta está fuera de la nota anclada y habría que bajarla.",
     "archived": "Archivado",
     "search": "Buscar"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Esta nota fue tomada originalmente de:",
-    "info": "Información"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Atributos propios"
   },
   "promoted_attributes": {
     "promoted_attributes": "Atributos promovidos",
@@ -1171,12 +1114,6 @@
     "delete_confirmation": "¿Desea eliminar <strong>{{name}}</strong> y sus valores de todas las notas de esta colección? Esta acción no se puede deshacer.",
     "drawn_by_collection": "La colección se organiza por esto, por lo que sus elementos no lo repiten",
     "display_on_items": "Mostrar el atributo en los elementos de la colección"
-  },
-  "script_executor": {
-    "query": "Consulta",
-    "script": "Script",
-    "execute_query": "Ejecutar consulta",
-    "execute_script": "Ejecutar script"
   },
   "search_definition": {
     "add_search_option": "Agregar opción de búsqueda:",
@@ -1473,9 +1410,6 @@
     "enabled": "activado",
     "disabled": "desactivado"
   },
-  "ribbon": {
-    "edited_notes_message": "La pestaña de la cinta Notas editadas se abrirá automáticamente en las notas del día"
-  },
   "theme": {
     "title": "Interfaz de usuario",
     "theme_label": "Tema de aplicación",
@@ -1642,17 +1576,7 @@
     "italic": "Texto en cursiva",
     "underline": "Texto subrayado",
     "color": "Texto con color",
-    "bg_color": "Texto con color de fondo",
-    "visibility_title": "Visibilidad de la lista de puntos destacados",
-    "visibility_description": "Puede ocultar el widget de puntos destacados por nota agregando la etiqueta #hideHighlightWidget.",
-    "shortcut_info": "Puede configurar un método abreviado de teclado para alternar rápidamente el panel derecho (incluidos los puntos destacados) en Opciones -> Atajos (nombre 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Tabla de contenido",
-    "description": "La tabla de contenido aparecerá en las notas de texto cuando la nota tenga más de un número definido de títulos. Puede personalizar este número:",
-    "unit": "títulos",
-    "disable_info": "También puede utilizar esta opción para desactivar la TDC (TOC) de forma efectiva estableciendo un número muy alto.",
-    "shortcut_info": "Puede configurar un atajo de teclado para alternar rápidamente el panel derecho (incluido el TDC) en Opciones -> Atajos (nombre 'toggleRightPane')."
+    "bg_color": "Texto con color de fondo"
   },
   "text_auto_read_only_size": {
     "title": "Tamaño para modo de solo lectura automático",
@@ -1953,9 +1877,7 @@
     "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
-    "bookmark": "Marcador",
-    "bookmark_this_note": "Agregar esta nota a marcadores en el panel lateral izquierdo",
-    "remove_bookmark": "Eliminar marcador"
+    "bookmark": "Marcador"
   },
   "editability_select": {
     "auto": "Automático",
@@ -2008,13 +1930,6 @@
     "hide-subtree": "Ocultar subárbol",
     "show-subtree": "Mostrar subárbol"
   },
-  "shared_info": {
-    "shared_publicly": "Esta nota está compartida públicamente en {{- link}}.",
-    "shared_locally": "Esta nota está compartida localmente en {{- link}}.",
-    "help_link": "Para obtener ayuda visite <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "Esta nota está compartida en {{- link}}, pero solo este navegador puede abrir esa página, y solo mientras Trilium esté abierto en él. Publicarla para otros requiere un servidor Trilium.",
-    "shared_export_only": "Esta nota está compartida, pero la aplicación móvil no puede abrir páginas compartidas. Para publicarla, exporte el subárbol como \"{{format}}\" y aloje los archivos en cualquier servidor web, o utilice un servidor Trilium."
-  },
   "note_types": {
     "text": "Texto",
     "code": "Código",
@@ -2045,22 +1960,15 @@
     "built-in-templates": "Plantillas integradas"
   },
   "protect_note": {
-    "toggle-on": "Proteger la nota",
-    "toggle-off": "Desproteger la nota",
-    "toggle-on-hint": "La nota no está protegida, dé clic para protegerla",
-    "toggle-off-hint": "La nota está protegida, dé clic para desprotegerla"
+    "toggle-on": "Proteger la nota"
   },
   "shared_switch": {
     "shared": "Compartida",
-    "toggle-on-title": "Compartir la nota",
-    "toggle-off-title": "Descompartir la nota",
     "shared-branch": "Esta nota sólo existe como una nota compartida, si la deja de compartir será eliminada. ¿Quiere continuar y eliminar esta nota?",
     "inherited": "No puede dejar de compartir la nota aquí porque es compartida a través de la herencia de un ancestro."
   },
   "template_switch": {
-    "template": "Plantilla",
-    "toggle-on-hint": "Hacer de la nota una plantilla",
-    "toggle-off-hint": "Eliminar la nota como una plantilla"
+    "template": "Plantilla"
   },
   "open-help-page": "Abrir página de ayuda",
   "find": {
@@ -2072,8 +1980,6 @@
     "replace_all": "Reemplazar todo"
   },
   "highlights_list_2": {
-    "title": "Lista de destacados",
-    "options": "Opciones",
     "title_with_count_one": "{{count}} punto destacado",
     "title_with_count_many": "",
     "title_with_count_other": "{{count}} puntos destacados",
@@ -2181,7 +2087,6 @@
   },
   "toc": {
     "table_of_contents": "Tabla de contenido",
-    "options": "Opciones",
     "no_headings": "Sin encabezados."
   },
   "watched_file_update_status": {
@@ -2272,9 +2177,6 @@
     "tab_width_unit": "espacios",
     "click_to_copy": "Haga clic para copiar"
   },
-  "classic_editor_toolbar": {
-    "title": "Formato"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -2282,12 +2184,10 @@
     "editor_type": {
       "label": "Barra de herramientas de formato",
       "floating": {
-        "title": "Flotante",
-        "description": "las herramientas de edición aparecen cerca del cursor;"
+        "title": "Flotante"
       },
       "fixed": {
-        "title": "Fijo",
-        "description": "las herramientas de edición aparecen en la pestaña de la cinta \"Formato\")."
+        "title": "Fijo"
       },
       "multiline-toolbar": "Mostrar la barra de herramientas en múltiples líneas si no cabe",
       "toolbar_style": "Estilo de barra de herramientas"
@@ -2449,13 +2349,6 @@
   "switch_layout_button": {
     "title_vertical": "Mover el panel de edición hacia abajo",
     "title_horizontal": "Mover el panel de edición a la izquierda"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "Desbloquear la edición",
-    "lock-editing": "Bloquear la edición"
-  },
-  "png_export_button": {
-    "button_title": "Exportar diagrama como PNG"
   },
   "svg": {
     "export_to_png": "El diagrama no pudo ser exportado a PNG.",
@@ -2718,9 +2611,6 @@
     "background_effects_message": "En los dispositivos Windows y macOS, los efectos de fondo ya son estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás.",
     "background_effects_button": "Activar efectos de fondo",
     "dismiss": "Desestimar",
-    "new_layout_title": "Nuevo diseño",
-    "new_layout_message": "Hemos introducido un diseño modernizado para Trilium. La cinta se ha eliminado y se ha integrado perfectamente en la interfaz principal, con una nueva barra de estado y secciones ampliables (como los atributos promovidos) que tienen funciones clave.\n\nEl nuevo diseño está habilitado por defecto, y puede ser deshabilitado temporalmente a través de Opciones → Apariencia.",
-    "new_layout_button": "Más información",
     "scripting_disabled_title": "Se han deshabilitado los scripts de backend",
     "scripting_disabled_message": "Los scripts de backend están ahora deshabilitados de forma predeterminada por seguridad. Sus notas contienen scripts de backend (notas con una etiqueta #run) que ya no se ejecutarán automáticamente.\n\nSi depende de estos scripts, puede volver a habilitar los scripts de backend en los ajustes de seguridad.",
     "scripting_disabled_button": "Abrir ajustes de seguridad"
@@ -2743,9 +2633,6 @@
     "related_code_blocks": "Esquema de colores para bloques de código en notas de texto",
     "related_code_notes": "Esquema de colores para notas de código",
     "ui": "Interfaz de usuario",
-    "ui_old_layout": "Antiguo diseño",
-    "ui_new_layout": "Nuevo diseño",
-    "ui_layout_style": "Estilo de diseño",
     "ui_layout_orientation": "Orientación de la barra de lanzamiento"
   },
   "units": {
@@ -2767,8 +2654,6 @@
     "rendering_error": "No se puede mostrar contenido debido a un error."
   },
   "read-only-info": {
-    "read-only-note": "Actualmente, está viendo una nota de solo lectura.",
-    "auto-read-only-note": "Esta nota se muestra en modo de solo lectura para una carga más rápida.",
     "edit-note": "Editar nota"
   },
   "calendar_view": {
@@ -2856,8 +2741,6 @@
   "experimental_features": {
     "title": "Opciones experimentales",
     "disclaimer": "Estas opciones son experimentales y pueden causar inestabilidad. Úselas con precaución.",
-    "new_layout_name": "Nuevo diseño",
-    "new_layout_description": "Pruebe el nuevo diseño para tener un aspecto más moderno y usabilidad mejorada. Sujeto a grandes cambios en las próximas versiones.",
     "llm_name": "Chat de IA / LLM",
     "llm_description": "Habilitar la barra lateral de chat de IA y las notas de chat LLM alimentadas por grandes modelos de lenguaje."
   },

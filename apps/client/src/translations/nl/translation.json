@@ -111,12 +111,6 @@
   "create_pane_button": {
     "create_new_split": "Maak nieuwe split"
   },
-  "edit_button": {
-    "edit_this_note": "Notitie bewerken"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Laat Inhoudsopgave zien"
-  },
   "status_bar": {
     "note_paths_one": "{{count}} pad",
     "note_paths_other": "{{count}} paden",

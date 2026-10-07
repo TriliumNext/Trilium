@@ -490,7 +490,6 @@
     "hide_relations": "Ainmneacha caidrimh atá scartha le camóga agus ba chóir iad a cheilt. Taispeánfar na cinn eile go léir.",
     "title_template": "Teideal réamhshocraithe nótaí a cruthaíodh mar leanaí an nóta seo. Déantar an luach a mheas mar theaghrán JavaScript\n                       agus dá bhrí sin is féidir é a shaibhriú le hábhar dinimiciúil trí na hathróga <code>now</code> agus <code>parentNote</code> insteallta. Samplaí:\n                       \n                       <ul>\n                       <li><code>Saothair liteartha ${parentNote.getLabelValue('authorName')}</code></li>\n                       <li><code>Log le haghaidh ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                       </ul>\n\n                       Féach <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">vicí le sonraí</a>, doiciméid API le haghaidh <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> agus <a href=\"https://day.js.org/docs/en/display/format\">now</a> le haghaidh sonraí.",
     "template": "Beidh an nóta seo le feiceáil i rogha na dteimpléad atá ar fáil agus nóta nua á chruthú.",
-    "toc": "Cuirfidh <code>#toc</code> nó <code>#toc=show</code> iallach ar an gClár Ábhair a bheith le feiceáil, cuirfidh <code>#toc=hide</code> iallach air é a cheilt. Mura bhfuil an lipéad ann, breathnaítear ar an socrú domhanda.",
     "color": "Sainmhíníonn sé dath an nóta sa chrann nótaí, snaisc srl. Bain úsáid as aon luach datha CSS bailí cosúil le 'dearg' nó #a13d5f.",
     "keyboard_shortcut": "Sainmhíníonn sé seo aicearra méarchláir a léimfidh láithreach chuig an nóta seo. Sampla: 'ctrl+alt+e'. Éilítear athlódáil an tosaigh chun go dtiocfaidh an t-athrú i bhfeidhm.",
     "keep_current_hoisting": "Ní athróidh oscailt an naisc seo an t-ardú fiú mura bhfuil an nóta inléite sa fho-chrann ardaithe reatha.",
@@ -498,7 +497,6 @@
     "execute_description": "Cur síos níos faide ar an nóta cóid reatha a thaispeántar in éineacht leis an gcnaipe forghníomhaithe.",
     "exclude_from_note_map": "Beidh nótaí leis an lipéad seo i bhfolach ón Léarscáil Nótaí.",
     "new_notes_on_top": "Cruthófar nótaí nua ag barr an nóta tuismitheora, ní ag an mbun.",
-    "hide_highlight_widget": "Folaíonn sé seo an Liosta Buaicphointí don nóta seo, agus fágann sé le feiceáil ar gach ceann eile é.",
     "run_on_note_creation": "Ritheann sé seo nuair a chruthaítear nóta ar an gcúltaca. Úsáid an gaol seo más mian leat an script a rith do gach nóta a cruthaíodh faoi fho-chrann ar leith. Sa chás sin, cruthaigh é ar fhréamhnóta an fho-chrainn agus déan é inoidhreachta. Cuirfidh nóta nua a chruthaítear laistigh den fho-chrann (aon doimhneacht) an script i ngníomh.",
     "run_on_child_note_creation": "Déantar é a fhorghníomhú nuair a chruthaítear nóta nua faoin nóta ina bhfuil an gaol seo sainmhínithe.",
     "run_on_note_title_change": "Déantar é a fhorghníomhú nuair a athraítear teideal an nóta (lena n-áirítear cruthú nótaí chomh maith).",
@@ -546,7 +544,6 @@
     "show_all_in_search": "Taispeáin gach rud sa chuardach",
     "relation_type": "Gaol",
     "versioning_limit": "Cuireann sé teorainn le líon na n-athbhreithnithe a choinníonn an nóta seo, ag sárú an socraithe dhomhanda.",
-    "similar_notes_widget_disabled": "Díchumasaíonn sé seo an cluaisín ribín Nótaí Cosúla don nóta seo. Seanleagan amach amháin.",
     "llm_chat_home": "Cruthaítear comhráite nua AI mar leanaí den nóta seo.",
     "workspace_llm_chat_home": "Cruthaítear comhráite nua AI mar leanaí den nóta seo agus iad ardaithe chuig sinsear den spás oibre seo.",
     "date_pattern": "Patrún do theidil na nótaí lae a ghintear faoin bhfréamh féilire seo, m.sh. <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -900,15 +897,6 @@
   "create_pane_button": {
     "create_new_split": "Cruthaigh scoilt nua"
   },
-  "edit_button": {
-    "edit_this_note": "Cuir an nóta seo in eagar"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Taispeáin Clár Ábhair"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Taispeáin Liosta Buaicphointí"
-  },
   "zen_mode": {
     "button_exit": "Scoir Mód Zen"
   },
@@ -976,9 +964,6 @@
     "active": "Tá an seisiún cosanta gníomhach. Cliceáil chun an seisiún cosanta a fhágáil.",
     "inactive": "Cliceáil chun dul isteach i seisiún faoi chosaint"
   },
-  "revisions_button": {
-    "note_revisions": "Athbhreithnithe Nótaí"
-  },
   "update_available": {
     "update_available": "Nuashonrú ar fáil"
   },
@@ -993,29 +978,11 @@
     "sql_console_saved_message": "Tá nóta Consól SQL sábháilte i {{note_path}}",
     "electron_api_docs_button_title": "Doiciméid API Open Electron"
   },
-  "copy_image_reference_button": {
-    "button_title": "Cóipeáil tagairt íomhá chuig an ghearrthaisce, is féidir é a ghreamú i nóta téacs."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Folaigh cnaipí"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Taispeáin cnaipí"
-  },
-  "svg_export_button": {
-    "button_title": "Easpórtáil léaráid mar SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Cruthaigh nóta linbh agus cuir leis an léarscáil é",
     "create_child_note_text": "Cuir nóta leis"
   },
   "zpetne_odkazy": {
-    "backlink_one": "{{count}} Nasc siar",
-    "backlink_two": "{{count}} Naisc siar",
-    "backlink_few": "{{count}} Naisc siar",
-    "backlink_many": "{{count}} Naisc siar",
-    "backlink_other": "{{count}} Naisc siar",
-    "relation": "gaol",
     "no_backlinks": "Níl aon nasc nótaí leis an gceann seo."
   },
   "mobile_detail_menu": {
@@ -1047,8 +1014,6 @@
   "basic_properties": {
     "note_type": "Cineál nóta",
     "editable": "In-eagarthóireacht",
-    "basic_properties": "Airíonna Bunúsacha",
-    "language": "Teanga",
     "configure_code_notes": "Cumraigh nótaí cóid..."
   },
   "book_properties": {
@@ -1082,37 +1047,23 @@
     "open_all_limit_exceeded": "An iomarca nótaí le hoscailt ag an am céanna ({{count}}). Is é {{max}} an t-uasmhéid, déan iarracht na torthaí a chúngú ar dtús."
   },
   "edited_notes": {
-    "no_edited_notes_found": "Gan aon nótaí eagarthóireachta ar an lá seo go fóill...",
-    "title": "Nótaí Eagarthóireachta",
-    "deleted": "(scriosta)"
+    "no_edited_notes_found": "Gan aon nótaí eagarthóireachta ar an lá seo go fóill..."
   },
   "file_properties": {
-    "note_id": "Aitheantas Nóta",
     "original_file_name": "Ainm comhaid bunaidh",
-    "file_type": "Cineál comhaid",
-    "file_size": "Méid comhaid",
     "download": "Íoslódáil",
     "open": "Oscail go seachtrach",
-    "upload_new_revision": "Uaslódáil athbhreithniú nua",
     "upload_success": "Tá athbhreithniú comhaid nua uaslódáilte.",
-    "upload_failed": "Theip ar uaslódáil athbhreithniú comhaid nua.",
-    "title": "Comhad"
+    "upload_failed": "Theip ar uaslódáil athbhreithniú comhaid nua."
   },
   "image_properties": {
-    "original_file_name": "Ainm comhaid bunaidh",
-    "file_type": "Cineál comhaid",
-    "file_size": "Méid comhaid",
-    "download": "Íoslódáil",
-    "open": "Oscail",
     "copy_reference_to_clipboard": "Cóipeáil tagairt chuig an ghearrthaisce",
     "upload_new_revision": "Uaslódáil athbhreithniú nua",
     "upload_success": "Tá athbhreithniú nua íomhá uaslódáilte.",
-    "upload_failed": "Theip ar uaslódáil athbhreithniú íomhá nua: {{message}}",
-    "title": "Íomhá"
+    "upload_failed": "Theip ar uaslódáil athbhreithniú íomhá nua: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Tréithe Oidhreachta",
-    "no_inherited_attributes": "Gan aon tréithe oidhreachta.",
     "none": "aon cheann"
   },
   "note_info_widget": {
@@ -1133,8 +1084,6 @@
     "show_similar_notes": "Taispeáin nótaí comhchosúla"
   },
   "note_map": {
-    "open_full": "Leathnaigh go hiomlán",
-    "collapse": "Laghdaigh go dtí an gnáthmhéid",
     "title": "Léarscáil Nótaí",
     "fix-nodes": "Deisigh nóid",
     "link-distance": "Fad naisc",
@@ -1149,18 +1098,10 @@
   "note_paths": {
     "title": "Cosáin Nótaí",
     "clone_button": "Nóta clónáilte chuig suíomh nua...",
-    "intro_placed": "Cuirtear an nóta seo sna cosáin seo a leanas:",
     "intro_not_placed": "Níl an nóta seo curtha sa chrann nótaí go fóill.",
     "outside_hoisted": "Tá an cosán seo lasmuigh den nóta ardaithe agus bheadh ort é a dhíardú.",
     "archived": "Cartlannaithe",
     "search": "Cuardaigh"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Tógadh an nóta seo ar dtús ó:",
-    "info": "Eolas"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Tréithe faoi Úinéireacht"
   },
   "promoted_attributes": {
     "promoted_attributes": "Tréithe Curtha Chun Cinn",
@@ -1187,12 +1128,6 @@
     "delete_confirmation": "An scriosfar <strong>{{name}}</strong> agus a luachanna as gach nóta sa bhailiúchán seo? Ní féidir é seo a chealú.",
     "drawn_by_collection": "Tá an bailiúchán eagraithe de réir an méid sin, agus mar sin ní dhéantar é a athrá sna míreanna ann",
     "display_on_items": "Taispeáin an tréith ar mhíreanna an bhailiúcháin"
-  },
-  "script_executor": {
-    "query": "Iarratas",
-    "script": "Script",
-    "execute_query": "Cuir Iarratas i bhFeidhm",
-    "execute_script": "Rith an Script"
   },
   "search_definition": {
     "add_search_option": "Cuir rogha cuardaigh leis:",
@@ -1445,8 +1380,6 @@
   "experimental_features": {
     "title": "Roghanna Turgnamhacha",
     "disclaimer": "Is roghanna turgnamhacha iad seo agus d’fhéadfadh éagobhsaíocht a bheith mar thoradh orthu. Bain úsáid astu go cúramach.",
-    "new_layout_name": "Leagan Amach Nua",
-    "new_layout_description": "Bain triail as an leagan amach nua le haghaidh cuma níos nua-aimseartha agus inúsáidteachta feabhsaithe. Tá sé faoi réir athruithe móra sna heisiúintí atá le teacht.",
     "llm_name": "Comhrá AI / LLM",
     "llm_description": "Cumasaigh an taobhbharra comhrá AI agus nótaí comhrá LLM faoi thiomáint ag samhlacha teanga móra."
   },
@@ -1498,9 +1431,6 @@
     "title": "Barra Teidil Dúchasach (éilíonn atosú an aip)",
     "enabled": "cumasaithe",
     "disabled": "díchumasaithe"
-  },
-  "ribbon": {
-    "edited_notes_message": "Osclófar an cluaisín ribín Nótaí Eagarthóireachta go huathoibríoch ar nótaí lae"
   },
   "theme": {
     "title": "Comhéadan Úsáideora",
@@ -1678,17 +1608,7 @@
     "italic": "Téacs iodálach",
     "underline": "Téacs faoi líne",
     "color": "Téacs daite",
-    "bg_color": "Téacs le dath cúlra",
-    "visibility_title": "Infheictheacht an Liosta Buaicphointí",
-    "visibility_description": "Is féidir leat an giuirléid buaicphointí a cheilt in aghaidh an nóta trí lipéad #hideHighlightWidget a chur leis.",
-    "shortcut_info": "Is féidir leat aicearra méarchláir a chumrú chun an painéal ar dheis (lena n-áirítear Buaicphointí) a athrú go tapa sna Roghanna -> Aicearraí (ainm 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Clár Ábhair",
-    "description": "Beidh clár ábhair le feiceáil i nótaí téacs nuair a bhíonn níos mó ná líon sainithe ceannteidil sa nóta. Is féidir leat an líon seo a shaincheapadh:",
-    "unit": "ceannteidil",
-    "disable_info": "Is féidir leat an rogha seo a úsáid freisin chun TOC a dhíchumasú go héifeachtach trí uimhir an-ard a shocrú.",
-    "shortcut_info": "Is féidir leat aicearra méarchláir a chumrú chun an painéal ar dheis (lena n-áirítear an tÁbhar Ábhar) a athrú go tapa sna Roghanna -> Aicearraí (ainm 'toggleRightPane')."
+    "bg_color": "Téacs le dath cúlra"
   },
   "text_auto_read_only_size": {
     "title": "Méid Uathoibríoch Léite Amháin",
@@ -1993,9 +1913,7 @@
     "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
-    "bookmark": "Leabharmharc",
-    "bookmark_this_note": "Cuir an nóta seo i leabharmharcanna ar an bpainéal taobh clé",
-    "remove_bookmark": "Bain leabharmharc"
+    "bookmark": "Leabharmharc"
   },
   "editability_select": {
     "auto": "Uathoibríoch",
@@ -2050,16 +1968,7 @@
     "convert-to-attachment-confirm": "An bhfuil tú cinnte gur mian leat na nótaí roghnaithe a thiontú ina gceangaltáin dá nótaí tuismitheora? Ní bhaineann an oibríocht seo ach le nótaí Íomhá, scipeálfar nótaí eile.",
     "open-in-popup": "Eagarthóireacht thapa"
   },
-  "shared_info": {
-    "shared_publicly": "Tá an nóta seo roinnte go poiblí ar {{- link}}.",
-    "shared_locally": "Tá an nóta seo roinnte go háitiúil ar {{- link}}.",
-    "help_link": "Chun cabhair a fháil, tabhair cuairt ar <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "Tá an nóta seo á roinnt ag {{- link}}, ach ní féidir an leathanach sin a oscailt ach leis an mbrabhsálaí seo, agus gan ach Trilium a bheith ar oscailt ann. Teastaíonn freastalaí Trilium chun é a fhoilsiú do dhaoine eile.",
-    "shared_export_only": "Tá an nóta seo á roinnt, ach ní féidir leis an aip mhóibíleach leathanaigh roinnte a oscailt. Chun é a fhoilsiú, easpórtáil an fho-chrann mar \"{{format}}\" agus óstaigh na comhaid ar fhreastalaí gréasáin ar bith, nó bain úsáid as freastalaí Trilium."
-  },
   "read-only-info": {
-    "read-only-note": "Ag féachaint ar nóta inléite amháin faoi láthair.",
-    "auto-read-only-note": "Taispeántar an nóta seo i mód léite amháin le haghaidh luchtú níos tapúla.",
     "edit-note": "Cuir nóta in eagar"
   },
   "note_types": {
@@ -2092,22 +2001,15 @@
     "built-in-templates": "Teimpléid ionsuite"
   },
   "protect_note": {
-    "toggle-on": "Cosain an nóta",
-    "toggle-off": "Díchosaint an nóta",
-    "toggle-on-hint": "Níl an nóta cosanta, cliceáil chun é a chosaint",
-    "toggle-off-hint": "Tá an nóta cosanta, cliceáil chun é a dhéanamh neamhchosanta"
+    "toggle-on": "Cosain an nóta"
   },
   "shared_switch": {
     "shared": "Roinnte",
-    "toggle-on-title": "Roinn an nóta",
-    "toggle-off-title": "Díroinn an nóta",
     "shared-branch": "Níl an nóta seo ann ach mar nóta comhroinnte, scriosfar é má dhíroinntear é. Ar mhaith leat leanúint ar aghaidh agus an nóta seo a scriosadh dá bharr?",
     "inherited": "Ní féidir an nóta a dhíroinnt anseo mar go roinntear é trí oidhreacht ó shinsear."
   },
   "template_switch": {
-    "template": "Teimpléad",
-    "toggle-on-hint": "Déan teimpléad den nóta",
-    "toggle-off-hint": "Bain an nóta mar theimpléad"
+    "template": "Teimpléad"
   },
   "open-help-page": "Oscail leathanach cabhrach",
   "find": {
@@ -2119,13 +2021,11 @@
     "replace_all": "Cuir gach rud in ionad"
   },
   "highlights_list_2": {
-    "title": "Liosta Buaicphointí",
     "title_with_count_one": "{{count}} buaicphointe",
     "title_with_count_two": "{{count}} buaicphointí",
     "title_with_count_few": "{{count}} buaicphointí",
     "title_with_count_many": "{{count}} buaicphointí",
     "title_with_count_other": "{{count}} buaicphointí",
-    "options": "Roghanna",
     "menu_configure": "Cumraigh liosta buaicphointí...",
     "no_highlights": "Níor aimsíodh aon bhuaicphointí."
   },
@@ -2236,7 +2136,6 @@
   },
   "toc": {
     "table_of_contents": "Clár Ábhair",
-    "options": "Roghanna",
     "no_headings": "Gan ceannteidil."
   },
   "watched_file_update_status": {
@@ -2327,9 +2226,6 @@
     "tab_width": "Leithead an chluaisín",
     "tab_width_unit": "spásanna"
   },
-  "classic_editor_toolbar": {
-    "title": "Formáidiú"
-  },
   "editor": {
     "title": "Eagarthóir"
   },
@@ -2337,12 +2233,10 @@
     "editor_type": {
       "label": "Barra uirlisí formáidithe",
       "floating": {
-        "title": "Ar snámh",
-        "description": "feictear uirlisí eagarthóireachta in aice leis an gcúrsóir;"
+        "title": "Ar snámh"
       },
       "fixed": {
-        "title": "Seasta",
-        "description": "Feictear uirlisí eagarthóireachta sa chluaisín ribín \"Formáidiú\"."
+        "title": "Seasta"
       },
       "multiline-toolbar": "Taispeáin an barra uirlisí ar illínte mura n-oireann sé",
       "toolbar_style": "Stíl an bharra uirlisí"
@@ -2504,13 +2398,6 @@
   "switch_layout_button": {
     "title_vertical": "Bog an painéal eagarthóireachta go dtí an bun",
     "title_horizontal": "Bog an painéal eagarthóireachta ar chlé"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "Díghlasáil eagarthóireacht",
-    "lock-editing": "Eagarthóireacht glasála"
-  },
-  "png_export_button": {
-    "button_title": "Easpórtáil léaráid mar PNG"
   },
   "svg": {
     "export_to_png": "Níorbh fhéidir an léaráid a easpórtáil go PNG.",
@@ -2807,9 +2694,6 @@
     "background_effects_title": "Tá éifeachtaí cúlra cobhsaí anois",
     "background_effects_message": "Ar fheistí Windows agus macOS, tá éifeachtaí cúlra cobhsaí anois. Cuireann na héifeachtaí cúlra teagmháil datha leis an gcomhéadan úsáideora tríd an gcúlra taobh thiar de a dhéanamh doiléir.",
     "background_effects_button": "Cumasaigh éifeachtaí cúlra",
-    "new_layout_title": "Leagan amach nua",
-    "new_layout_message": "Thugamar leagan amach nuachóirithe isteach do Trilium. Baineadh an ribín agus comhtháthaíodh go gan uaim é sa phríomh-chomhéadan, le barra stádais nua agus rannóga inleathnaithe (amhail tréithe cur chun cinn) ag glacadh seilbhe ar phríomhfheidhmeanna.\n\nTá an leagan amach nua cumasaithe de réir réamhshocraithe, agus is féidir é a dhíchumasú go sealadach trí Roghanna → Dealramh.",
-    "new_layout_button": "Tuilleadh eolais",
     "dismiss": "Díbhe",
     "scripting_disabled_title": "Tá scriptiú cúil díchumasaithe",
     "scripting_disabled_message": "Tá scriptiú cúil díchumasaithe anois de réir réamhshocraithe ar mhaithe le slándáil. Tá scripteanna cúil (nótaí le lipéad #run) i do nótaí nach mbeidh á bhforghníomhú go huathoibríoch a thuilleadh.\n\nMá bhraitheann tú ar na scripteanna seo, is féidir leat scriptiú cúil a athchumasú sna socruithe slándála.",
@@ -2823,9 +2707,6 @@
     "related_code_blocks": "Scéim dathanna do bhloic chóid i nótaí téacs",
     "related_code_notes": "Scéim dathanna le haghaidh nótaí cóid",
     "ui": "Comhéadan úsáideora",
-    "ui_old_layout": "Leagan amach sean",
-    "ui_new_layout": "Leagan amach nua",
-    "ui_layout_style": "Stíl leagan amach",
     "ui_layout_orientation": "Treoshuíomh an bharra lainseálaí"
   },
   "units": {

@@ -263,10 +263,7 @@
     "background_effects_title": "Efekty tła są teraz stabilne",
     "dismiss": "Odrzuć",
     "background_effects_button": "Włącz efekty tła",
-    "background_effects_message": "Na urządzeniach z systemem Windows i macOS efekty tła są stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika poprzez rozmycie tła za nim.",
-    "new_layout_title": "Nowy układ",
-    "new_layout_message": "Wprowadziliśmy zmodernizowany układ interfejsu dla Trilium. Wstążka została usunięta i płynnie zintegrowana z głównym interfejsem, a jej kluczowe funkcje przejęły nowy pasek stanu i rozwijane sekcje (takie jak promowane atrybuty).\n\nNowy układ jest domyślnie włączony i można go tymczasowo wyłączyć w Ustawienia → Wygląd.",
-    "new_layout_button": "Szczegóły"
+    "background_effects_message": "Na urządzeniach z systemem Windows i macOS efekty tła są stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika poprzez rozmycie tła za nim."
   },
   "settings": {
     "related_settings": "Powiązane ustawienia"
@@ -274,9 +271,7 @@
   "settings_appearance": {
     "related_code_blocks": "Schemat kolorów dla bloków kodu w notatkach tekstowych",
     "related_code_notes": "Schemat kolorów dla notatek kodu",
-    "ui": "Interfejs użytkownika",
-    "ui_old_layout": "Stary układ",
-    "ui_new_layout": "Nowy układ"
+    "ui": "Interfejs użytkownika"
   },
   "units": {
     "percentage": "%"
@@ -384,7 +379,6 @@
     "hide_relations": "oddzielone przecinkami nazwy relacji, które powinny być ukryte. Wszystkie inne zostaną wyświetlone.",
     "title_template": "domyślny tytuł notatek utworzonych jako dzieci tej notatki. Wartość jest ewaluowana jako ciąg JavaScript \n                        i dzięki temu może być wzbogacona o dynamiczną zawartość za pomocą wstrzykniętych zmiennych <code>now</code> i <code>parentNote</code>. Przykłady:\n                        \n                        <ul>\n                            <li><code>Dzieła literackie ${parentNote.getLabelValue('authorName')}</code></li>\n                            <li><code>Log z ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Zobacz <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki ze szczegółami</a>, dokumentację API dla <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> oraz <a href=\"https://day.js.org/docs/en/display/format\">now</a> po więcej szczegółów.",
     "template": "Ta notatka pojawi się w wyborze dostępnych szablonów podczas tworzenia nowej notatki",
-    "toc": "<code>#toc</code> lub <code>#toc=show</code> wymusi pokazanie spisu treści, <code>#toc=hide</code> wymusi jego ukrycie. Jeśli etykieta nie istnieje, przestrzegane jest ustawienie globalne",
     "color": "definiuje kolor notatki w drzewie notatek, linkach itp. Użyj dowolnej poprawnej wartości koloru CSS, np. 'red' lub #a13d5f",
     "keyboard_shortcut": "Definiuje skrót klawiszowy, który natychmiast przeskoczy do tej notatki. Przykład: 'ctrl+alt+e'. Wymaga przeładowania frontendu, aby zmiana weszła w życie.",
     "keep_current_hoisting": "Otwarcie tego linku nie zmieni zawężenia widoku (hoisting), nawet jeśli notatka nie jest widoczna w obecnie zawężonym poddrzewie.",
@@ -392,7 +386,6 @@
     "execute_description": "Dłuższy opis bieżącej notatki kodu wyświetlany razem z przyciskiem wykonania",
     "exclude_from_note_map": "Notatki z tą etykietą będą ukryte na Mapie notatek",
     "new_notes_on_top": "Nowe notatki będą tworzone na górze notatki nadrzędnej, a nie na dole.",
-    "hide_highlight_widget": "Ukryj widżet listy wyróżnień",
     "run_on_note_creation": "wykonuje się, gdy notatka jest tworzona na backendzie. Użyj tej relacji, jeśli chcesz uruchomić skrypt dla wszystkich notatek utworzonych w określonym poddrzewie. W takim przypadku utwórz go w notatce korzenia poddrzewa i uczyń go dziedziczonym. Nowa notatka utworzona w poddrzewie (na dowolnej głębokości) wyzwoli skrypt.",
     "run_on_child_note_creation": "wykonuje się, gdy nowa notatka jest tworzona pod notatką, w której zdefiniowana jest ta relacja",
     "run_on_note_title_change": "wykonuje się, gdy tytuł notatki zostanie zmieniony (obejmuje również utworzenie notatki)",
@@ -445,12 +438,6 @@
     "importZipRecommendation": "Podczas importowania pliku ZIP hierarchia notatek będzie odzwierciedlać strukturę podkatalogów w archiwum."
   },
   "image_properties": {
-    "title": "Obraz",
-    "original_file_name": "Oryginalna nazwa pliku",
-    "file_type": "Typ pliku",
-    "file_size": "Rozmiar pliku",
-    "download": "Pobierz",
-    "open": "Otwórz",
     "copy_reference_to_clipboard": "Kopiuj odniesienie do schowka",
     "upload_new_revision": "Prześlij nową wersję",
     "upload_success": "Nowa wersja obrazu została przesłana.",
@@ -458,7 +445,6 @@
   },
   "inherited_attribute_list": {
     "title": "Dziedziczone atrybuty",
-    "no_inherited_attributes": "Brak dziedziczonych atrybutów.",
     "none": "brak"
   },
   "note_info_widget": {
@@ -477,8 +463,6 @@
     "mime": "Typ MIME"
   },
   "note_map": {
-    "open_full": "Rozwiń do pełnego",
-    "collapse": "Zwiń do normalnego rozmiaru",
     "title": "Mapa notatek",
     "fix-nodes": "Zablokuj węzły",
     "link-distance": "Dystans łączy"
@@ -486,18 +470,10 @@
   "note_paths": {
     "title": "Ścieżki notatki",
     "clone_button": "Sklonuj notatkę do nowej lokalizacji...",
-    "intro_placed": "Ta notatka jest umieszczona w następujących ścieżkach:",
     "intro_not_placed": "Ta notatka nie jest jeszcze umieszczona w drzewie notatek.",
     "outside_hoisted": "Ta ścieżka znajduje się poza zawężonym widokiem (hoisted note) i musisz cofnąć zawężenie.",
     "archived": "Zarchiwizowana",
     "search": "Szukaj"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Ta notatka została pierwotnie pobrana z:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Posiadane atrybuty"
   },
   "promoted_attributes": {
     "promoted_attributes": "Wyróżnione atrybuty",
@@ -509,12 +485,6 @@
     "add_new_attribute": "Dodaj nowy atrybut",
     "remove_this_attribute": "Usuń ten atrybut",
     "remove_color": "Usuń etykietę koloru"
-  },
-  "script_executor": {
-    "query": "Zapytanie",
-    "script": "Skrypt",
-    "execute_query": "Wykonaj zapytanie",
-    "execute_script": "Wykonaj skrypt"
   },
   "search_definition": {
     "add_search_option": "Dodaj opcję wyszukiwania:",
@@ -571,14 +541,9 @@
   "file_properties": {
     "download": "Pobierz",
     "open": "Otwórz zewnętrznie",
-    "upload_new_revision": "Prześlij nową wersję",
     "upload_success": "Nowa wersja pliku została przesłana.",
     "upload_failed": "Przesłanie nowej wersji pliku nie powiodło się.",
-    "title": "Plik",
-    "note_id": "ID notatki",
-    "original_file_name": "Oryginalna nazwa pliku",
-    "file_type": "Typ pliku",
-    "file_size": "Rozmiar pliku"
+    "original_file_name": "Oryginalna nazwa pliku"
   },
   "include_note": {
     "label_note": "Notatka",
@@ -688,13 +653,6 @@
   "switch_layout_button": {
     "title_vertical": "Przenieś panel edycji na dół",
     "title_horizontal": "Przenieś panel edycji na lewo"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "Odblokuj edycję",
-    "lock-editing": "Zablokuj edycję"
-  },
-  "png_export_button": {
-    "button_title": "Eksportuj diagram jako PNG"
   },
   "svg": {
     "export_to_png": "Diagram nie mógł zostać wyeksportowany do PNG.",
@@ -989,15 +947,6 @@
   "create_pane_button": {
     "create_new_split": "Utwórz nowy podział"
   },
-  "edit_button": {
-    "edit_this_note": "Edytuj tę notatkę"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Pokaż Spis Treści"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Pokaż Listę Wyróżnień"
-  },
   "global_menu": {
     "menu": "Menu",
     "options": "Opcje",
@@ -1081,9 +1030,6 @@
     "active": "Sesja chroniona jest aktywna. Kliknij, aby opuścić sesję chronioną.",
     "inactive": "Kliknij, aby wejść w sesję chronioną"
   },
-  "revisions_button": {
-    "note_revisions": "Wersje notatki"
-  },
   "update_available": {
     "update_available": "Dostępna aktualizacja"
   },
@@ -1097,26 +1043,8 @@
     "opening_api_docs_message": "Otwieranie dokumentacji API...",
     "sql_console_saved_message": "Notatka konsoli SQL została zapisana w {{note_path}}"
   },
-  "copy_image_reference_button": {
-    "button_title": "Skopiuj odniesienie do obrazu do schowka, można je wkleić w notatce tekstowej."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Ukryj przyciski"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Pokaż przyciski"
-  },
-  "svg_export_button": {
-    "button_title": "Eksportuj diagram jako SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy"
-  },
-  "zpetne_odkazy": {
-    "relation": "relacja",
-    "backlink_one": "{{count}} Link zwrotny",
-    "backlink_few": "{{count}} Linki zwrotne",
-    "backlink_many": "{{count}} Linki zwrotne"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Wstaw notatkę podrzędną",
@@ -1144,14 +1072,10 @@
   "basic_properties": {
     "note_type": "Typ notatki",
     "editable": "Edytowalna",
-    "basic_properties": "Właściwości podstawowe",
-    "language": "Język",
     "configure_code_notes": "Konfiguruj notatki kodu..."
   },
   "edited_notes": {
-    "no_edited_notes_found": "Brak edytowanych notatek w tym dniu...",
-    "title": "Edytowane notatki",
-    "deleted": "(usunięta)"
+    "no_edited_notes_found": "Brak edytowanych notatek w tym dniu..."
   },
   "include_archived_notes": {
     "include_archived_notes": "Uwzględnij zarchiwizowane notatki"
@@ -1347,9 +1271,6 @@
     "enabled": "włączony",
     "disabled": "wyłączony"
   },
-  "ribbon": {
-    "edited_notes_message": "Karta wstążki Edytowane Notatki otworzy się automatycznie na notatkach dziennych"
-  },
   "theme": {
     "title": "Motyw aplikacji",
     "theme_label": "Motyw",
@@ -1471,17 +1392,7 @@
     "italic": "Tekst pochylony",
     "underline": "Tekst podkreślony",
     "color": "Tekst kolorowy",
-    "bg_color": "Tekst z kolorem tła",
-    "visibility_title": "Widoczność Listy wyróżnień",
-    "visibility_description": "Możesz ukryć widżet wyróżnień dla poszczególnych notatek, dodając etykietę #hideHighlightWidget.",
-    "shortcut_info": "Możesz skonfigurować skrót klawiszowy do szybkiego przełączania prawego panelu (w tym Wyróżnień) w Opcje -> Skróty (nazwa 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Spis treści",
-    "description": "Spis treści pojawi się w notatkach tekstowych, gdy notatka ma więcej niż zdefiniowaną liczbę nagłówków. Możesz dostosować tę liczbę:",
-    "unit": "nagłówków",
-    "disable_info": "Możesz również użyć tej opcji, aby skutecznie wyłączyć spis treści, ustawiając bardzo wysoką liczbę.",
-    "shortcut_info": "Możesz skonfigurować skrót klawiszowy do szybkiego przełączania prawego panelu (w tym Spisu treści) w Opcje -> Skróty (nazwa 'toggleRightPane')."
+    "bg_color": "Tekst z kolorem tła"
   },
   "text_auto_read_only_size": {
     "title": "Automatyczny rozmiar tylko do odczytu",
@@ -1620,9 +1531,7 @@
     "unrecognized_role": "Nierozpoznana rola załącznika '{{role}}'."
   },
   "bookmark_switch": {
-    "bookmark": "Zakładka",
-    "bookmark_this_note": "Dodaj tę notatkę do zakładek w lewym panelu",
-    "remove_bookmark": "Usuń zakładkę"
+    "bookmark": "Zakładka"
   },
   "editability_select": {
     "auto": "Auto",
@@ -1675,11 +1584,6 @@
     "hide-subtree": "Ukryj gałąź",
     "show-subtree": "Rozwiń gałąź"
   },
-  "shared_info": {
-    "shared_publicly": "Ta notatka jest udostępniona publicznie pod adresem {{- link}}.",
-    "shared_locally": "Ta notatka jest udostępniona lokalnie pod adresem {{- link}}.",
-    "help_link": "Aby uzyskać pomoc, odwiedź <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
-  },
   "note_types": {
     "text": "Tekst",
     "code": "Kod",
@@ -1706,22 +1610,15 @@
     "spreadsheet": "Arkusz"
   },
   "protect_note": {
-    "toggle-on": "Chroń notatkę",
-    "toggle-off": "Zdejmij ochronę z notatki",
-    "toggle-on-hint": "Notatka nie jest chroniona, kliknij, aby włączyć ochronę",
-    "toggle-off-hint": "Notatka jest chroniona, kliknij, aby zdjąć ochronę"
+    "toggle-on": "Chroń notatkę"
   },
   "shared_switch": {
     "shared": "Udostępniona",
-    "toggle-on-title": "Udostępnij notatkę",
-    "toggle-off-title": "Przestań udostępniać notatkę",
     "shared-branch": "Ta notatka istnieje tylko jako notatka udostępniona, zaprzestanie udostępniania spowoduje jej usunięcie. Czy chcesz kontynuować i usunąć tę notatkę?",
     "inherited": "Nie można przestać udostępniać notatki w tym miejscu, ponieważ jest ona udostępniona poprzez dziedziczenie od przodka."
   },
   "template_switch": {
-    "template": "Szablon",
-    "toggle-on-hint": "Uczyń notatkę szablonem",
-    "toggle-off-hint": "Usuń notatkę z szablonów"
+    "template": "Szablon"
   },
   "open-help-page": "Otwórz stronę pomocy",
   "find": {
@@ -1733,8 +1630,6 @@
     "replace_all": "Zamień wszystko"
   },
   "highlights_list_2": {
-    "title": "Lista wyróżnień",
-    "options": "Opcje",
     "menu_configure": "Konfiguracja listy wyróżnień...",
     "no_highlights": "Nie znaleziono wyróżnień.",
     "title_with_count_one": "{{count}} wyróżnienie",
@@ -1829,7 +1724,6 @@
   },
   "toc": {
     "table_of_contents": "Spis treści",
-    "options": "Opcje",
     "no_headings": "Brak nagłówków."
   },
   "watched_file_update_status": {
@@ -1902,9 +1796,6 @@
     "theme_group_dark": "Ciemne motywy",
     "copy_title": "Kopiuj do schowka"
   },
-  "classic_editor_toolbar": {
-    "title": "Formatowanie"
-  },
   "editor": {
     "title": "Edytor"
   },
@@ -1912,12 +1803,10 @@
     "editor_type": {
       "label": "Pasek narzędzi formatowania",
       "floating": {
-        "title": "Pływający",
-        "description": "narzędzia edycji pojawiają się w pobliżu kursora;"
+        "title": "Pływający"
       },
       "fixed": {
-        "title": "Stały",
-        "description": "narzędzia edycji pojawiają się w karcie wstążki \"Formatowanie\"."
+        "title": "Stały"
       },
       "multiline-toolbar": "Wyświetl pasek narzędzi w wielu wierszach, jeśli się nie mieści."
     }
@@ -1946,13 +1835,9 @@
   },
   "experimental_features": {
     "title": "Opcje eksperymentalne",
-    "disclaimer": "Te opcje są eksperymentalne i mogą powodować niestabilność. Używaj z ostrożnością.",
-    "new_layout_name": "Nowy układ",
-    "new_layout_description": "Wypróbuj nowy układ dla nowocześniejszego wyglądu i lepszej użyteczności. Podlega znacznym zmianom w nadchodzących wydaniach."
+    "disclaimer": "Te opcje są eksperymentalne i mogą powodować niestabilność. Używaj z ostrożnością."
   },
   "read-only-info": {
-    "read-only-note": "Obecnie przeglądasz notatkę tylko do odczytu.",
-    "auto-read-only-note": "Ta notatka jest wyświetlana w trybie tylko do odczytu dla szybszego ładowania.",
     "edit-note": "Edytuj notatkę"
   },
   "calendar_view": {

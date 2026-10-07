@@ -155,7 +155,6 @@
     "exclude_from_note_map": "Notițele cu această etichetă vor fi ascunse din Harta notițelor",
     "execute_button": "Titlul butonului ce va executa notița curentă de tip cod",
     "execute_description": "O descriere mai lungă a notiței curente de tip cod afișată împreună cu butonul de executare",
-    "hide_highlight_widget": "Ascunde lista de evidențieri",
     "hide_promoted_attributes": "Ascunde lista atributelor promovate pentru această notiță",
     "hide_relations": "lista denumirilor relațiilor ce trebuie ascunse, delimitate prin virgulă. Toate celelalte vor fi afișate.",
     "icon_class": "valoarea acestei etichete este adăugată ca o clasă CSS la iconița notiței din ierarhia notițelor, fapt ce poate ajuta la identificarea vizuală mai rapidă a notițelor. Un exemplu ar fi „bx bx-home” pentru iconițe preluate din boxicons. Poate fi folosită în notițe de tip șablon.",
@@ -228,7 +227,6 @@
     "template": "Șablon",
     "text": "Text",
     "title_template": "titlul implicit al notițelor create în interiorul acestei notițe. Valoarea este evaluată ca un șir de caractere JavaScript\n                        și poate fi astfel îmbogățită cu un conținut dinamic prin intermediul variabilelor <code>now</code> și <code>parentNote</code>. Exemple:\n                        \n                        <ul>\n                            <li><code>Lucrările lui ${parentNote.getLabelValue('autor')}</code></li>\n                            <li><code>Jurnal pentru ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        A se vedea <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki-ul pentru detalii</a>, documentația API pentru <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> și <a href=\"https://day.js.org/docs/en/display/format\">now</a> pentru mai multe informații.",
-    "toc": "<code>#toc</code> sau <code>#toc=show</code> forțează afișarea tabelei de conținut, <code>#toc=hide</code> forțează ascunderea ei. Dacă eticheta nu există, se utilizează setările globale",
     "top": "păstrează notița la începutul listei (se aplică doar pentru notițe sortate automat)",
     "url": "URL",
     "value": "Valoare",
@@ -266,7 +264,6 @@
     "show_all_in_search": "Afișează toate în căutare",
     "relation_type": "Relație",
     "versioning_limit": "Limitează numărul de revizii păstrate de această notiță, înlocuind setarea globală.",
-    "similar_notes_widget_disabled": "Dezactivează fila „Notițe similare” din panglică pentru această notiță. Doar pentru aspectul vechi.",
     "llm_chat_home": "Conversațiile AI noi sunt create ca subnotițe ale acestei notițe.",
     "workspace_llm_chat_home": "Conversațiile AI noi sunt create ca subnotițe ale acestei notițe cât timp este focalizat un strămoș al acestui spațiu de lucru.",
     "date_pattern": "Tiparul titlurilor notițelor zilnice generate sub această rădăcină de calendar, de exemplu <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -465,10 +462,8 @@
     "encrypted": "Criptată"
   },
   "basic_properties": {
-    "basic_properties": "Proprietăți de bază",
     "editable": "Editabil",
     "note_type": "Tipul notiței",
-    "language": "Limbă",
     "configure_code_notes": "Configurează notițele de tip cod..."
   },
   "book": {
@@ -508,9 +503,7 @@
     "open_all_limit_exceeded": "Prea multe notițe pentru a fi deschise deodată ({{count}}). Maximul este {{max}}; încercați mai întâi să restrângeți rezultatele."
   },
   "bookmark_switch": {
-    "bookmark": "Semn de carte",
-    "bookmark_this_note": "Crează un semn de carte către această notiță în panoul din stânga",
-    "remove_bookmark": "Șterge semnul de carte"
+    "bookmark": "Semn de carte"
   },
   "branch_prefix": {
     "branch_prefix_saved": "Prefixul ramurii a fost salvat.",
@@ -671,9 +664,6 @@
     "find_and_fix_label": "Găsește și repară problemele de consistență",
     "find_and_fix_description": "Scanează și repară automat orice probleme de consistență a datelor din baza de date."
   },
-  "copy_image_reference_button": {
-    "button_title": "Copiază o referință către imagine în clipboard, poate fi inserată într-o notiță text."
-  },
   "create_pane_button": {
     "create_new_split": "Crează o nouă diviziune"
   },
@@ -752,9 +742,6 @@
     "all_past_note_revisions": "Toate reviziile anterioare ale notițelor găsite vor fi șterse. Notița propriu-zisă va fi intactă. În alte cuvinte, istoricul notiței va fi șters.",
     "delete_note_revisions": "Șterge toate reviziile notițelor"
   },
-  "edit_button": {
-    "edit_this_note": "Editează această notiță"
-  },
   "editability_select": {
     "always_editable": "Întotdeauna editabil",
     "auto": "Automat",
@@ -778,9 +765,7 @@
     "nothing_selected_to_cut": "Selectați mai întâi un text pentru a-l decupa într-o subnotiță."
   },
   "edited_notes": {
-    "deleted": "(șters)",
-    "no_edited_notes_found": "Nu sunt încă notițe editate pentru această zi...",
-    "title": "Notițe editate"
+    "no_edited_notes_found": "Nu sunt încă notițe editate pentru această zi..."
   },
   "empty": {
     "enter_workspace": "Intrare spațiu de lucru „{{title}}”",
@@ -853,14 +838,9 @@
   },
   "file_properties": {
     "download": "Descarcă",
-    "file_size": "Dimensiunea fișierului",
-    "file_type": "Tipul fișierului",
-    "note_id": "ID-ul notiței",
     "open": "Deschide în exterior",
     "original_file_name": "Denumirea originală a fișierului",
-    "title": "Fișier",
     "upload_failed": "Încărcarea a unei noi revizii ale fișierului a eșuat.",
-    "upload_new_revision": "Încarcă o nouă revizie",
     "upload_success": "Noua revizie a fișierului a fost încărcată cu succes."
   },
   "fonts": {
@@ -984,20 +964,14 @@
     "title": "Ghid rapid",
     "editShortcuts": "Editează scurtăturile de la tastatură"
   },
-  "hide_floating_buttons_button": {
-    "button_title": "Ascunde butoanele"
-  },
   "highlights_list": {
     "bg_color": "Text cu o culoare de fundal",
     "bold": "Text îngroșat",
     "color": "Text colorat",
     "description": "Se pot personaliza elementele ce vor fi afișate în lista de evidențieri din panoul din dreapta:",
     "italic": "Text italic (înclinat)",
-    "shortcut_info": "Se poate configura o scurtatură la tastatură pentru comutarea rapidă a panoului din dreapta (inclusiv lista de evidențieri) în Opțiuni -> Scurtături (denumirea „toggleRightPane”).",
     "title": "Lista de evidențieri",
-    "underline": "Text subliniat",
-    "visibility_description": "Se poate ascunde lista de evidențieri la nivel de notiță prin adăugarea etichetei #hideHighlightWidget.",
-    "visibility_title": "Vizibilitatea listei de evidențieri"
+    "underline": "Text subliniat"
   },
   "i18n": {
     "first-day-of-the-week": "Prima zi a săptămânii",
@@ -1024,12 +998,6 @@
   },
   "image_properties": {
     "copy_reference_to_clipboard": "Copiază referință în clipboard",
-    "download": "Descarcă",
-    "file_size": "Dimensiune fișier",
-    "file_type": "Tip fișier",
-    "open": "Deschide",
-    "original_file_name": "Denumirea originală a fișierului",
-    "title": "Imagine",
     "upload_failed": "Încărcarea a unei noi revizii ale imaginii a eșuat: {{message}}",
     "upload_new_revision": "Încarcă o nouă revizie",
     "upload_success": "O nouă revizie a fost încărcată cu succes."
@@ -1118,7 +1086,6 @@
     "copy_to_clipboard": "Copiază în clipboard"
   },
   "inherited_attribute_list": {
-    "no_inherited_attributes": "Niciun atribut moștenit.",
     "title": "Atribute moștenite",
     "none": "niciunul"
   },
@@ -1257,8 +1224,6 @@
     "this_launcher_doesnt_define_target_note": "Acesată scurtătură nu definește o notiță-destinație."
   },
   "note_map": {
-    "collapse": "Micșorează la dimensiunea normală",
-    "open_full": "Expandează la maximum",
     "title": "Harta notițelor",
     "fix-nodes": "Fixează nodurile",
     "link-distance": "Distanța dintre legături",
@@ -1272,14 +1237,9 @@
     "archived": "Arhivat",
     "clone_button": "Clonează notița într-o nouă locație...",
     "intro_not_placed": "Notița n-a fost plasată încă în arborele de notițe.",
-    "intro_placed": "Notița este plasată în următoarele căi:",
     "outside_hoisted": "Această cale se află în afara notiței focalizate și este necesară defocalizarea.",
     "search": "Caută",
     "title": "Căile notiței"
-  },
-  "note_properties": {
-    "info": "Informații",
-    "this_note_was_originally_taken_from": "Această notiță a fost preluată original de la:"
   },
   "note_type_chooser": {
     "modal_body": "Selectați tipul notiței/șablonul pentru noua notiță:",
@@ -1313,9 +1273,6 @@
     "revision_count": "Numărul de revizii",
     "target_relation_count": "Numărul de relații către notiță",
     "title": "Titlu"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Atribute proprii"
   },
   "password": {
     "alert_message": "Aveți grijă să nu uitați parola. Parola este utilizată pentru a accesa interfața web și pentru a cripta notițele protejate. Dacă uitați parola, toate notițele protejate se vor pierde pentru totdeauna.",
@@ -1459,23 +1416,11 @@
     "rename_relation_from": "Redenumește relația din",
     "to": "În"
   },
-  "revisions_button": {
-    "note_revisions": "Revizii ale notiței"
-  },
   "revisions_snapshot_interval": {
     "note_revisions_snapshot_description": "Intervalul de salvare a reviziilor este timpul după care se crează o nouă revizie a unei notițe. Vedeți <doc>wiki-ul</doc> pentru mai multe informații.",
     "note_revisions_snapshot_interval_title": "Intervalul de salvare a reviziilor",
     "snapshot_time_interval_label": "Intervalul de salvare a reviziilor:",
     "note_revisions_snapshot_description_short": "Timpul după care va fi creată o nouă revizie a notiței."
-  },
-  "ribbon": {
-    "edited_notes_message": "Tab-ul panglicii „Notițe editate” se va deschide automat pentru notițele zilnice"
-  },
-  "script_executor": {
-    "execute_query": "Execută interogarea",
-    "execute_script": "Execută scriptul",
-    "query": "Interogare",
-    "script": "Script"
   },
   "search_definition": {
     "action": "acțiune",
@@ -1640,13 +1585,6 @@
     "timeout_description": "Timpul de așteptare înainte de a renunța la o conexiune lentă.",
     "proxy_description": "Lăsați gol pentru a folosi proxy-ul sistemului (doar desktop). Folosiți „noproxy” pentru a ocoli toate proxy-urile."
   },
-  "table_of_contents": {
-    "description": "Cuprinsul va apărea în notițele de tip text atunci când notița are un număr de titluri mai mare decât cel definit. Acest număr se poate personaliza:",
-    "unit": "titluri",
-    "disable_info": "De asemenea se poate dezactiva cuprinsul setând o valoare foarte mare.",
-    "shortcut_info": "Se poate configura și o scurtatură pentru a comuta rapid vizibilitatea panoului din dreapta (inclusiv cuprinsul) în Opțiuni -> Scurtături (denumirea „toggleRightPane”).",
-    "title": "Cuprins"
-  },
   "text_auto_read_only_size": {
     "description": "Marchează pragul în care o notiță de o anumită dimensiune va fi afișată în mod de citire (pentru motive de performanță).",
     "label": "Pragul de dimensiune pentru setarea modului de citire automat (la notițe text)",
@@ -1773,14 +1711,7 @@
     "title": "Factorul de zoom (doar pentru versiunea desktop)"
   },
   "zpetne_odkazy": {
-    "backlink_one": "{{count}} legătură de retur",
-    "backlink_few": "{{count}} legături de retur",
-    "backlink_other": "{{count}} de legături de retur",
-    "relation": "relație",
     "no_backlinks": "Nicio notiță nu are legături către aceasta."
-  },
-  "svg_export_button": {
-    "button_title": "Exportă diagrama ca SVG"
   },
   "note-map": {
     "button-link-map": "Harta legăturilor",
@@ -1825,11 +1756,6 @@
     "hide-subtree": "Ascunde subnotițele",
     "show-subtree": "Afișează subnotițele"
   },
-  "shared_info": {
-    "help_link": "Pentru informații vizitați <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki-ul</a>.",
-    "shared_locally": "Această notiță este partajată local la {{- link}}.",
-    "shared_publicly": "Această notiță este partajată public la {{- link}}."
-  },
   "note_types": {
     "book": "Colecție",
     "canvas": "Schiță",
@@ -1858,22 +1784,15 @@
     "spreadsheet": "Foaie de calcul"
   },
   "protect_note": {
-    "toggle-off": "Deprotejează notița",
-    "toggle-off-hint": "Notița este protejată, click pentru a o deproteja",
-    "toggle-on": "Protejează notița",
-    "toggle-on-hint": "Notița nu este protejată, clic pentru a o proteja"
+    "toggle-on": "Protejează notița"
   },
   "shared_switch": {
     "inherited": "Nu se poate înlătura partajarea deoarece notița este partajată prin moștenirea de la o notiță părinte.",
     "shared": "Partajată",
-    "shared-branch": "Această notiță există doar ca o notiță partajată, anularea partajării ar cauza ștergerea ei. Sigur doriți ștergerea notiței?",
-    "toggle-off-title": "Anulează partajarea notițeii",
-    "toggle-on-title": "Partajează notița"
+    "shared-branch": "Această notiță există doar ca o notiță partajată, anularea partajării ar cauza ștergerea ei. Sigur doriți ștergerea notiței?"
   },
   "template_switch": {
-    "template": "Șablon",
-    "toggle-off-hint": "Înlătură notița ca șablon",
-    "toggle-on-hint": "Marchează notița drept șablon"
+    "template": "Șablon"
   },
   "open-help-page": "Deschide pagina de informații",
   "find": {
@@ -1885,8 +1804,6 @@
     "find_placeholder": "Căutați în text..."
   },
   "highlights_list_2": {
-    "options": "Setări",
-    "title": "Listă de evidențieri",
     "title_with_count_one": "{{count}} evidențiere",
     "title_with_count_few": "{{count}} evidențieri",
     "title_with_count_other": "{{count}} de evidențieri",
@@ -1906,12 +1823,6 @@
     "filter-default": "Iconițele implicite",
     "icon_tooltip": "{{name}}\nPachet iconițe: {{iconPack}}",
     "no_results": "Nu s-a găsit nicio iconiță."
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Afișează lista de evidențieri"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Afișează cuprinsul"
   },
   "sync_status": {
     "connected_no_changes": "<p>Conectat la server-ul de sincronizare.<br>Toate modificările au fost deja sincronizate.</p><p>Clic pentru a forța o sincronizare.</p>",
@@ -2003,9 +1914,6 @@
     "search_not_executed": "Căutarea n-a fost rulată încă. Clic pe butonul „Căutare” de deasupra pentru a vedea rezultatele.",
     "search_now": "Caută acum"
   },
-  "show_floating_buttons_button": {
-    "button_title": "Afișează butoanele"
-  },
   "sql_result": {
     "no_rows": "Nu s-a găsit niciun rând pentru această interogare",
     "not_executed": "Această interogare nu a fost executată încă.",
@@ -2035,7 +1943,6 @@
     "pinned_prefix": "Fixat: "
   },
   "toc": {
-    "options": "Setări",
     "table_of_contents": "Cuprins",
     "no_headings": "Niciun titlu."
   },
@@ -2121,19 +2028,14 @@
     "tab_width": "Lățimea tab-ului",
     "tab_width_unit": "spații"
   },
-  "classic_editor_toolbar": {
-    "title": "Formatare"
-  },
   "editing": {
     "editor_type": {
       "label": "Bară de formatare",
       "floating": {
-        "title": "Editor cu bară flotantă",
-        "description": "uneltele de editare vor apărea lângă cursor;"
+        "title": "Editor cu bară flotantă"
       },
       "fixed": {
-        "title": "Editor cu bară fixă",
-        "description": "uneltele de editare vor apărea în tab-ul „Formatare” din panglică."
+        "title": "Editor cu bară fixă"
       },
       "multiline-toolbar": "Afișează bara de unelte pe mai multe rânduri dacă nu încape.",
       "toolbar_style": "Stilul barei de instrumente"
@@ -2263,16 +2165,9 @@
     "help-on-languages": "Informații despre limba conținutului...",
     "not_set_with_default": "Nicio limbă stabilită — {{- language}}"
   },
-  "png_export_button": {
-    "button_title": "Exportă diagrama ca PNG"
-  },
   "switch_layout_button": {
     "title_horizontal": "Mută panoul de editare la stânga",
     "title_vertical": "Mută panoul de editare în jos"
-  },
-  "toggle_read_only_button": {
-    "lock-editing": "Blochează editarea",
-    "unlock-editing": "Deblochează editarea"
   },
   "custom_date_time_format": {
     "title": "Format dată/timp personalizat",
@@ -2495,9 +2390,6 @@
     "next_theme_message": "Utilizați tema clasică, doriți să încercați noua temă?",
     "next_theme_button": "Testează noua temă",
     "dismiss": "Treci peste",
-    "new_layout_title": "Aspect nou",
-    "new_layout_message": "Am introdus un aspect modernizat pentru Trilium. Panglică a fost integrată în restul interfeței, cu o bară de stare nouă și secțiuni expandabile (precum atributele promovate) ce preiau funcționalitatea de bază.\n\nNoul aspect este activat în mod implicit, și se poate dezactiva momentan din Opțiuni → Aspect.",
-    "new_layout_button": "Mai multe informații",
     "scripting_disabled_title": "Scripturile backend au fost dezactivate",
     "scripting_disabled_message": "Scripturile backend sunt acum dezactivate implicit din motive de securitate. Notițele dvs. conțin scripturi backend (notițe cu o etichetă #run) care nu se vor mai executa automat.\n\nDacă vă bazați pe aceste scripturi, le puteți reactiva în setările de securitate.",
     "scripting_disabled_button": "Deschide setările de securitate"
@@ -2520,9 +2412,6 @@
     "related_code_blocks": "Tema de culori pentru blocuri de cod în notițe de tip text",
     "related_code_notes": "Tema de culori pentru notițele de tip cod",
     "ui": "Interfață grafică",
-    "ui_old_layout": "Aspect vechi",
-    "ui_new_layout": "Aspect nou",
-    "ui_layout_style": "Stilul aranjamentului",
     "ui_layout_orientation": "Orientarea barei de lansare"
   },
   "units": {
@@ -2544,8 +2433,6 @@
     "slide-overview": "Afișați o imagine de ansamblu a slide-urilor"
   },
   "read-only-info": {
-    "read-only-note": "Vizualizați o notiță în modul doar în citire.",
-    "auto-read-only-note": "Această notiță este afișată în modul doar în citire din motive de performanță.",
     "edit-note": "Editează notița"
   },
   "calendar_view": {
@@ -2578,8 +2465,6 @@
   "experimental_features": {
     "title": "Opțiuni experimentale",
     "disclaimer": "Aceste opțiuni sunt experimentale și pot cauza instabilitate. Folosiți cu prudență.",
-    "new_layout_name": "Aspect nou",
-    "new_layout_description": "Încercați noul aspect pentru un design mai modern și mai ușor de utilizat. Poate surveni modificări semnificative în următoarele release-uri.",
     "llm_name": "Chat AI / LLM",
     "llm_description": "Activează bara laterală de chat AI și notițele de chat LLM bazate pe modele lingvistice mari."
   },

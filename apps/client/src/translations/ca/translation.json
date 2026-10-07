@@ -163,15 +163,11 @@
     "advanced": "Avançat",
     "logout": "Tanca la sessió"
   },
-  "zpetne_odkazy": {
-    "relation": "relació"
-  },
   "note_icon": {
     "search": "Cerca:"
   },
   "basic_properties": {
-    "editable": "Editable",
-    "language": "Llengua"
+    "editable": "Editable"
   },
   "book_properties": {
     "grid": "Graella",
@@ -182,18 +178,9 @@
     "table": "Taula",
     "board": "Tauler"
   },
-  "edited_notes": {
-    "deleted": "(suprimit)"
-  },
   "file_properties": {
     "download": "Descarrega",
-    "open": "Obre",
-    "title": "Fitxer"
-  },
-  "image_properties": {
-    "download": "Descarrega",
-    "open": "Obre",
-    "title": "Imatge"
+    "open": "Obre"
   },
   "note_info_widget": {
     "created": "Creat",

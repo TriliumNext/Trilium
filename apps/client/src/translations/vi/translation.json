@@ -376,7 +376,6 @@
     "hide_relations": "Tên các quan hệ được phân tách bằng dấu phẩy sẽ bị ẩn. Tất cả các quan hệ khác sẽ được hiển thị.",
     "title_template": "Tiêu đề mặc định của các ghi chú được tạo dưới dạng ghi chú con của ghi chú này. Giá trị được đánh giá dưới dạng chuỗi JavaScript\n                        và do đó có thể được làm phong phú bằng nội dung động thông qua các biến <code>now</code> và <code>parentNote</code> được chèn vào. Ví dụ:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')} tác phẩm văn học</code></li>\n                            <li><code>Nhật ký cho ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Xem <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki để biết chi tiết</a>, tài liệu API cho <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> và <a href=\"https://day.js.org/docs/en/display/format\">now</a> để biết chi tiết.",
     "template": "Ghi chú này sẽ xuất hiện trong danh sách chọn mẫu có sẵn khi tạo ghi chú mới.",
-    "toc": "<code>#Toc</code> hoặc <code>#toc=show</code> sẽ bắt buộc hiển thị Mục lục, <code>#toc=hide</code> sẽ bắt buộc ẩn nó. Nếu nhãn không tồn tại, cài đặt toàn cục sẽ được áp dụng.",
     "color": "Định nghĩa màu sắc của ghi chú trong cây ghi chú, liên kết, v.v. Sử dụng bất kỳ giá trị màu CSS hợp lệ nào như 'red' hoặc #a13d5f.",
     "keyboard_shortcut": "Định nghĩa một phím tắt bàn phím để nhảy ngay lập tức tới ghi chú này. Ví dụ: 'ctrl+alt+e'. Yêu cầu tải lại frontend để thay đổi có hiệu lực.",
     "keep_current_hoisting": "Mở liên kết này sẽ không thay đổi việc đặt ghi chú làm gốc ngay cả khi ghi chú đó không thể hiển thị trong cây con được đặt làm gốc hiện tại.",
@@ -384,7 +383,6 @@
     "execute_description": "Mô tả dài hơn của ghi chú mã nguồn hiện tại được hiển thị cùng với nút thực thi.",
     "exclude_from_note_map": "Các ghi chú có nhãn này sẽ bị ẩn khỏi Sơ đồ ghi chú.",
     "new_notes_on_top": "Các ghi chú mới sẽ được tạo ở trên cùng của ghi chú cha, không phải ở dưới cùng.",
-    "hide_highlight_widget": "Ẩn Danh sách Đánh dấu cho ghi chú này, vẫn hiển thị trên tất cả các ghi chú khác.",
     "run_on_note_creation": "Thực thi khi ghi chú được tạo trên backend. Sử dụng quan hệ này nếu bạn muốn chạy tập lệnh cho tất cả các ghi chú được tạo dưới một cây con cụ thể. Trong trường hợp đó, hãy tạo nó trên ghi chú gốc của cây con và đặt nó ở chế độ có thể kế thừa. Một ghi chú mới được tạo trong cây con (ở bất kỳ cấp độ nào) sẽ kích hoạt tập lệnh.",
     "run_on_child_note_creation": "Thực thi khi ghi chú mới được tạo dưới ghi chú nơi quan hệ này được định nghĩa.",
     "run_on_note_title_change": "Thực thi khi tiêu đề ghi chú bị thay đổi (bao gồm cả khi tạo ghi chú).",
@@ -418,7 +416,6 @@
     "color_type": "Màu sắc",
     "relation_type": "Quan hệ",
     "versioning_limit": "Giới hạn số lượng phiên bản lịch sử mà ghi chú này giữ lại, ghi đè thiết lập toàn cục.",
-    "similar_notes_widget_disabled": "Vô hiệu hóa tab Ribbon Ghi chú tương tự cho ghi chú này. Chỉ áp dụng cho bố cục cũ.",
     "llm_chat_home": "Các cuộc trò chuyện AI mới được tạo dưới dạng ghi chú con của ghi chú này.",
     "workspace_llm_chat_home": "Các cuộc trò chuyện AI mới được tạo dưới dạng ghi chú con của ghi chú này trong khi đặt ghi chú làm gốc cho một tổ tiên của không gian làm việc này.",
     "date_pattern": "Định dạng cho tiêu đề của các ghi chú ngày được tạo dưới gốc lịch này, ví dụ: <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -594,9 +591,6 @@
     "background_effects_title": "Hiệu ứng nền hiện đã ổn định",
     "background_effects_message": "Trên các thiết bị Windows và macOS, hiệu ứng nền hiện đã ổn định. Hiệu ứng nền thêm một chút màu sắc cho giao diện người dùng bằng cách làm mờ nền phía sau nó.",
     "background_effects_button": "Bật hiệu ứng nền",
-    "new_layout_title": "Bố cục mới",
-    "new_layout_message": "Chúng tôi đã giới thiệu một bố cục hiện đại hóa cho Trilium. Ribbon đã được loại bỏ và tích hợp liền mạch vào giao diện chính, với một thanh trạng thái mới và các phần có thể mở rộng (chẳng hạn như thuộc tính nổi bật) đảm nhận các chức năng chính.\n\nBố cục mới được bật theo mặc định và có thể tạm thời tắt thông qua Tùy chọn → Giao diện.",
-    "new_layout_button": "Thêm thông tin",
     "scripting_disabled_title": "Việc chạy script backend đã bị vô hiệu hóa",
     "scripting_disabled_message": "Việc chạy script backend hiện đã bị vô hiệu hóa theo mặc định vì lý do bảo mật. Các ghi chú của bạn chứa các script backend (các ghi chú có nhãn #run) sẽ không còn tự động thực thi nữa.\n\nNếu bạn phụ thuộc vào các script này, bạn có thể bật lại việc chạy script backend trong cài đặt bảo mật.",
     "scripting_disabled_button": "Mở cài đặt bảo mật"
@@ -1119,15 +1113,6 @@
   "create_pane_button": {
     "create_new_split": "Tạo phân tách mới"
   },
-  "edit_button": {
-    "edit_this_note": "Chỉnh sửa ghi chú này"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Hiển thị mục lục"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Hiển thị danh sách nổi bật"
-  },
   "options": {
     "title": "Tuỳ chọn",
     "back": "Quay lại tất cả tùy chọn",
@@ -1237,9 +1222,6 @@
     "active": "Phiên làm việc được bảo vệ đang hoạt động. Nhấp để rời khỏi phiên làm việc được bảo vệ.",
     "inactive": "Nhấp để vào phiên làm việc được bảo vệ"
   },
-  "revisions_button": {
-    "note_revisions": "Các phiên bản lịch sử ghi chú"
-  },
   "update_available": {
     "update_available": "Có bản cập nhật"
   },
@@ -1253,18 +1235,6 @@
     "save_to_note_button_title": "Lưu vào ghi chú",
     "opening_api_docs_message": "Đang mở tài liệu API...",
     "sql_console_saved_message": "Ghi chú bảng điều khiển SQL đã được lưu vào {{note_path}}"
-  },
-  "copy_image_reference_button": {
-    "button_title": "Sao chép tham chiếu hình ảnh vào khay nhớ tạm, có thể dán vào một ghi chú văn bản."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Ẩn các nút"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Hiển thị các nút"
-  },
-  "svg_export_button": {
-    "button_title": "Xuất sơ đồ dưới dạng SVG"
   },
   "relation_map_buttons": {
     "create_child_note_title": "Tạo ghi chú con và thêm vào sơ đồ",
@@ -1295,8 +1265,6 @@
     "esc_hint": "Để đóng"
   },
   "zpetne_odkazy": {
-    "backlink_other": "{{count}} Liên kết ngược",
-    "relation": "Quan hệ",
     "no_backlinks": "Không có ghi chú nào liên kết đến ghi chú này."
   },
   "mobile_detail_menu": {
@@ -1324,8 +1292,6 @@
   "basic_properties": {
     "note_type": "Loại ghi chú",
     "editable": "Có thể chỉnh sửa",
-    "basic_properties": "Thuộc tính cơ bản",
-    "language": "Ngôn ngữ",
     "configure_code_notes": "Cấu hình ghi chú mã nguồn..."
   },
   "book_properties": {
@@ -1355,37 +1321,23 @@
     "open_all_limit_exceeded": "Quá nhiều ghi chú để mở cùng lúc ({{count}}). Tối đa là {{max}}, hãy thu hẹp kết quả trước."
   },
   "edited_notes": {
-    "no_edited_notes_found": "Chưa có ghi chú nào được chỉnh sửa trong ngày này...",
-    "title": "Ghi chú đã chỉnh sửa",
-    "deleted": "(Đã xóa)"
+    "no_edited_notes_found": "Chưa có ghi chú nào được chỉnh sửa trong ngày này..."
   },
   "file_properties": {
-    "note_id": "ID ghi chú",
     "original_file_name": "Tên tệp gốc",
-    "file_type": "Loại tệp",
-    "file_size": "Kích thước tệp",
     "download": "Tải xuống",
     "open": "Mở bằng ứng dụng ngoài",
-    "upload_new_revision": "Tải lên phiên bản lịch sử mới",
     "upload_success": "Đã tải lên phiên bản tệp mới.",
-    "upload_failed": "Tải lên phiên bản tệp mới thất bại.",
-    "title": "Tệp"
+    "upload_failed": "Tải lên phiên bản tệp mới thất bại."
   },
   "image_properties": {
-    "original_file_name": "Tên tệp gốc",
-    "file_type": "Loại tệp",
-    "file_size": "Kích thước tệp",
-    "download": "Tải xuống",
-    "open": "Mở",
     "copy_reference_to_clipboard": "Sao chép tham chiếu vào khay nhớ tạm",
     "upload_new_revision": "Tải lên phiên bản lịch sử mới",
     "upload_success": "Đã tải lên phiên bản hình ảnh mới.",
-    "upload_failed": "Tải lên phiên bản hình ảnh mới thất bại: {{message}}",
-    "title": "Hình ảnh"
+    "upload_failed": "Tải lên phiên bản hình ảnh mới thất bại: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Thuộc tính kế thừa",
-    "no_inherited_attributes": "Không có thuộc tính kế thừa.",
     "none": "Không có"
   },
   "note_info_widget": {
@@ -1402,9 +1354,7 @@
     "show_similar_notes": "Hiển thị các ghi chú tương tự"
   },
   "note_map": {
-    "open_full": "Mở rộng toàn bộ",
     "expand": "Mở rộng sơ đồ",
-    "collapse": "Thu gọn về kích thước bình thường",
     "title": "Sơ đồ ghi chú",
     "fix-nodes": "Sửa các nút",
     "link-distance": "Khoảng cách liên kết",
@@ -1419,18 +1369,10 @@
   "note_paths": {
     "title": "Đường dẫn ghi chú",
     "clone_button": "Nhân bản ghi chú đến vị trí mới...",
-    "intro_placed": "Ghi chú này được đặt vào các đường dẫn sau:",
     "intro_not_placed": "Ghi chú này chưa được đặt vào cây ghi chú.",
     "outside_hoisted": "Đường dẫn này nằm ngoài ghi chú được đặt làm gốc và bạn sẽ phải hủy đặt làm gốc.",
     "archived": "Đã lưu trữ",
     "search": "Tìm kiếm"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Ghi chú này ban đầu được lấy từ:",
-    "info": "Thông tin"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Thuộc tính của ghi chú"
   },
   "promoted_attributes": {
     "promoted_attributes": "Thuộc tính nổi bật",
@@ -1459,12 +1401,6 @@
     "display_on_items": "Hiển thị thuộc tính trên các mục của bộ sưu tập",
     "conflicting": "Định nghĩa nhiều lần",
     "conflicting_tooltip": "Các mục định nghĩa thuộc tính này theo nhiều hơn một cách, vì vậy nó được sắp xếp như văn bản và không thể được đặt từ menu mục."
-  },
-  "script_executor": {
-    "query": "Truy vấn",
-    "script": "Mã kịch bản",
-    "execute_query": "Thực thi truy vấn",
-    "execute_script": "Thực thi mã kịch bản"
   },
   "search_definition": {
     "add_search_option": "Thêm tùy chọn tìm kiếm:",
@@ -1874,8 +1810,6 @@
   "experimental_features": {
     "title": "Tùy chọn thử nghiệm",
     "disclaimer": "Các tùy chọn này mang tính thử nghiệm và có thể gây ra sự bất ổn. Hãy sử dụng cẩn thận.",
-    "new_layout_name": "Bố cục mới",
-    "new_layout_description": "Thử nghiệm bố cục mới để có ngoại hình hiện đại hơn và khả năng sử dụng được cải thiện. Có thể thay đổi đáng kể trong các bản phát hành sắp tới.",
     "llm_name": "Trò chuyện AI / LLM",
     "llm_description": "Bật thanh bên trò chuyện AI và các ghi chú trò chuyện LLM được hỗ trợ bởi các mô hình ngôn ngữ lớn."
   },
@@ -1927,9 +1861,6 @@
     "title": "Thanh tiêu đề gốc (yêu cầu khởi động lại ứng dụng)",
     "enabled": "Bật",
     "disabled": "Tắt"
-  },
-  "ribbon": {
-    "edited_notes_message": "Tab Ribbon Ghi chú đã chỉnh sửa sẽ tự động mở trên các ghi chú ngày"
   },
   "theme": {
     "title": "Giao diện người dùng",
@@ -2131,17 +2062,7 @@
     "italic": "Văn bản in nghiêng",
     "underline": "Văn bản gạch chân",
     "color": "Văn bản có màu",
-    "bg_color": "Văn bản có màu nền",
-    "visibility_title": "Hiển thị danh sách nổi bật",
-    "visibility_description": "Bạn có thể ẩn widget nổi bật cho từng ghi chú bằng cách thêm nhãn #hideHighlightWidget.",
-    "shortcut_info": "Bạn có thể cấu hình phím tắt để nhanh chóng chuyển đổi bảng điều khiển bên phải (bao gồm Nổi bật) trong Tùy chọn -> Phím tắt (tên 'toggleRightPane')."
-  },
-  "table_of_contents": {
-    "title": "Mục lục",
-    "description": "Mục lục sẽ xuất hiện trong ghi chú văn bản khi ghi chú có nhiều hơn một số lượng tiêu đề được xác định. Bạn có thể tùy chỉnh số lượng này:",
-    "unit": "Tiêu đề",
-    "disable_info": "Bạn cũng có thể sử dụng tùy chọn này để vô hiệu hóa TOC một cách hiệu quả bằng cách đặt một số rất cao.",
-    "shortcut_info": "Bạn có thể cấu hình phím tắt để nhanh chóng chuyển đổi bảng điều khiển bên phải (bao gồm TOC) trong Tùy chọn -> Phím tắt (tên 'toggleRightPane')."
+    "bg_color": "Văn bản có màu nền"
   },
   "text_auto_read_only_size": {
     "title": "Kích thước chỉ đọc tự động",
@@ -2701,24 +2622,13 @@
     "importSource": "Nguồn nhập"
   },
   "bookmark_switch": {
-    "bookmark": "Dấu trang",
-    "bookmark_this_note": "Đặt dấu trang cho ghi chú này vào bảng điều khiển bên trái",
-    "remove_bookmark": "Xóa dấu trang"
+    "bookmark": "Dấu trang"
   },
   "note-map": {
     "button-link-map": "Sơ đồ liên kết",
     "button-tree-map": "Sơ đồ cây"
   },
-  "shared_info": {
-    "shared_publicly": "Ghi chú này được chia sẻ công khai trên {{- link}}.",
-    "shared_locally": "Ghi chú này được chia sẻ cục bộ trên {{- link}}.",
-    "help_link": "Để được hỗ trợ, hãy truy cập <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "Ghi chú này được chia sẻ trên {{- link}}, nhưng chỉ trình duyệt này mới có thể mở trang đó, và chỉ khi Trilium đang mở trong trình duyệt. Để công khai cho người khác, bạn cần một server Trilium.",
-    "shared_export_only": "Ghi chú này được chia sẻ, nhưng ứng dụng di động không thể mở các trang đã chia sẻ. Để công khai, hãy xuất cây con dưới dạng \"{{format}}\" và lưu trữ các tệp trên bất kỳ web server nào, hoặc sử dụng một server Trilium."
-  },
   "read-only-info": {
-    "read-only-note": "Đang xem một ghi chú chỉ đọc.",
-    "auto-read-only-note": "Ghi chú này được hiển thị ở chế độ chỉ đọc để tải nhanh hơn.",
     "edit-note": "Chỉnh sửa ghi chú"
   },
   "template_selection": {
@@ -2738,10 +2648,7 @@
     "reorder": "Kéo để sắp xếp lại"
   },
   "protect_note": {
-    "toggle-on": "Bảo vệ ghi chú",
-    "toggle-off": "Bỏ bảo vệ ghi chú",
-    "toggle-on-hint": "Ghi chú không được bảo vệ, bấm để bảo vệ",
-    "toggle-off-hint": "Ghi chú đã được bảo vệ, bấm để bỏ bảo vệ"
+    "toggle-on": "Bảo vệ ghi chú"
   },
   "sidebar_chat": {
     "title": "Trò chuyện AI",
@@ -2763,15 +2670,11 @@
   },
   "shared_switch": {
     "shared": "Đã chia sẻ",
-    "toggle-on-title": "Chia sẻ ghi chú",
-    "toggle-off-title": "Hủy chia sẻ ghi chú",
     "shared-branch": "Ghi chú này chỉ tồn tại dưới dạng ghi chú đã chia sẻ, việc hủy chia sẻ sẽ xóa nó. Bạn có muốn tiếp tục và xóa ghi chú này không?",
     "inherited": "Không thể hủy chia sẻ ghi chú ở đây vì nó được chia sẻ thông qua kế thừa từ một tổ tiên."
   },
   "template_switch": {
-    "template": "Mẫu",
-    "toggle-on-hint": "Đặt ghi chú làm mẫu",
-    "toggle-off-hint": "Gỡ bỏ ghi chú khỏi danh sách mẫu"
+    "template": "Mẫu"
   },
   "full_content_width_switch": {
     "title": "Độ rộng đầy đủ"
@@ -2789,9 +2692,7 @@
     "replace_all": "Thay thế tất cả"
   },
   "highlights_list_2": {
-    "title": "Danh sách nổi bật",
     "title_with_count_other": "{{count}} Điểm nhấn",
-    "options": "Tuỳ chọn",
     "menu_configure": "Cấu hình danh sách điểm nhấn...",
     "no_highlights": "Không tìm thấy điểm nhấn nào."
   },
@@ -2906,7 +2807,6 @@
   },
   "toc": {
     "table_of_contents": "Mục lục",
-    "options": "Tuỳ chọn",
     "no_headings": "Không có tiêu đề mục."
   },
   "watched_file_update_status": {
@@ -4191,20 +4091,15 @@
     "description": "Kiểm soát tô sáng cú pháp cho các khối mã bên trong ghi chú văn bản, ghi chú mã sẽ không bị ảnh hưởng.",
     "color-scheme": "Bảng màu"
   },
-  "classic_editor_toolbar": {
-    "title": "Định dạng"
-  },
   "editing": {
     "editor_type": {
       "label": "Thanh công cụ định dạng",
       "toolbar_style": "Phong cách thanh công cụ",
       "floating": {
-        "title": "Nổi",
-        "description": "Công cụ chỉnh sửa xuất hiện gần con trỏ;"
+        "title": "Nổi"
       },
       "fixed": {
-        "title": "Cố định",
-        "description": "Công cụ chỉnh sửa xuất hiện trong tab Ribbon \"Định dạng\"."
+        "title": "Cố định"
       },
       "multiline-toolbar": "Hiển thị thanh công cụ trên nhiều dòng nếu không đủ chỗ"
     }
@@ -4279,13 +4174,6 @@
   "switch_layout_button": {
     "title_vertical": "Di chuyển bảng chỉnh sửa xuống dưới",
     "title_horizontal": "Di chuyển bảng chỉnh sửa sang trái"
-  },
-  "toggle_read_only_button": {
-    "unlock-editing": "Mở khóa chỉnh sửa",
-    "lock-editing": "Khóa chỉnh sửa"
-  },
-  "png_export_button": {
-    "button_title": "Xuất sơ đồ dưới dạng PNG"
   },
   "svg": {
     "export_to_png": "Không thể xuất sơ đồ sang PNG.",
@@ -4405,10 +4293,7 @@
     "related_code_blocks": "Bảng màu cho khối mã trong ghi chú văn bản",
     "related_code_notes": "Bảng màu cho ghi chú mã",
     "ui": "Giao diện người dùng",
-    "ui_layout_style": "Phong cách bố cục",
-    "ui_layout_orientation": "Hướng thanh khởi chạy",
-    "ui_old_layout": "Bố cục cũ",
-    "ui_new_layout": "Bố cục mới"
+    "ui_layout_orientation": "Hướng thanh khởi chạy"
   },
   "collections": {
     "rendering_error": "Không thể hiển thị nội dung do lỗi."

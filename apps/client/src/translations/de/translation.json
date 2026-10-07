@@ -445,7 +445,6 @@
     "hide_relations": "Durch Kommas getrennte Namen von Relationen, die ausgeblendet werden sollen. Alle anderen werden angezeigt.",
     "title_template": "Standardtitel von Notizen, die als untergeordnete Notizen dieser Notiz erstellt werden. Der Wert wird als JavaScript-String ausgewertet \n                        und kann daher mit dynamischen Inhalten über die injizierten <code>now</code> und <code>parentNote</code>-Variablen angereichert werden. Beispiele:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literarische Werke</code></li>\n                            <li><code>Logbuch für ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">Wiki mit Details</a>, API-Dokumentation für <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> und <a href=\"https://day.js.org/docs/en/display/format\">now</a> für Details.",
     "template": "Diese Notiz wird beim Erstellen einer neuen Notiz in der Auswahl der verfügbaren Vorlagen angezeigt.",
-    "toc": "<code>#toc</code> oder <code>#toc=show</code> erzwingen die Anzeige des Inhaltsverzeichnisses, <code>#toc=hide</code> erzwingt das Ausblenden. Wenn das Label nicht vorhanden ist, wird die globale Einstellung beachtet",
     "color": "Definiert die Farbe der Notiz im Notizbaum, in Links usw. Verwenden Sie einen beliebigen gültigen CSS-Farbwert wie 'red' oder #a13d5f",
     "keyboard_shortcut": "Definiert eine Tastenkombination, die sofort zu dieser Notiz springt. Beispiel: 'ctrl+alt+e'. Erfordert ein Neuladen des Frontends, damit die Änderung wirksam wird.",
     "keep_current_hoisting": "Das Öffnen dieses Links ändert den Fokus nicht, selbst wenn die Notiz im aktuell fokussierten Zweig nicht angezeigt werden kann.",
@@ -453,7 +452,6 @@
     "execute_description": "Längere Beschreibung der aktuellen Codenotiz, die zusammen mit der Schaltfläche „Ausführen“ angezeigt wird",
     "exclude_from_note_map": "Notizen mit diesem Label werden in der Notizkarte ausgeblendet",
     "new_notes_on_top": "Neue Notizen werden oben in der übergeordneten Notiz erstellt, nicht unten.",
-    "hide_highlight_widget": "Widget „Markierungsliste“ ausblenden",
     "run_on_note_creation": "Wird ausgeführt, wenn eine Notiz im Backend erstellt wird. Verwenden Sie diese Relation, wenn Sie das Skript für alle Notizen ausführen möchten, die unter einem bestimmten Zweig erstellt wurden. Erstellen Sie es in diesem Fall auf der Stammnotiz und machen Sie es vererbbar. Eine neue Notiz, die innerhalb des Zweigs (beliebige Tiefe) erstellt wird, löst das Skript aus.",
     "run_on_child_note_creation": "Wird ausgeführt, wenn eine neue Notiz unter der Notiz erstellt wird, in der diese Relation definiert ist",
     "run_on_note_title_change": "Wird ausgeführt, wenn der Notiztitel geändert wird (einschließlich der Notizerstellung)",
@@ -499,7 +497,6 @@
     "show_all_in_search": "Zeige alle in der Suche an",
     "relation_type": "Beziehung",
     "versioning_limit": "Begrenzt die Anzahl der Versionen, die für diese Notiz gespeichert werden, und überschreibt dabei die globale Einstellung.",
-    "similar_notes_widget_disabled": "Deaktiviert für diese Notiz den Reiter „Ähnliche Notizen“ im Menüband. Nur im alten Layout verfügbar.",
     "llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt.",
     "workspace_llm_chat_home": "Neue KI-Chats werden als untergeordnete Notizen dieser Notiz erstellt, während ein übergeordneter Knoten dieses Arbeitsbereichs als Wurzel festgelegt ist.",
     "date_pattern": "Muster für die Titel der unter diesem Kalender-Stamm erstellten Tagesnotizen, z. B. <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -849,15 +846,6 @@
   "create_pane_button": {
     "create_new_split": "Neuen Split erstellen"
   },
-  "edit_button": {
-    "edit_this_note": "Diese Notiz bearbeiten"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "Inhaltsverzeichnis anzeigen"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "Markierungsliste anzeigen"
-  },
   "global_menu": {
     "menu": "Menü",
     "options": "Optionen",
@@ -955,9 +943,6 @@
     "active": "Die geschützte Sitzung ist aktiv. Klicken Sie hier, um die geschützte Sitzung zu verlassen.",
     "inactive": "Klicken Sie hier, um die geschützte Sitzung aufzurufen"
   },
-  "revisions_button": {
-    "note_revisions": "Revisionsverlauf"
-  },
   "update_available": {
     "update_available": "Update verfügbar"
   },
@@ -972,26 +957,11 @@
     "sql_console_saved_message": "SQL-Konsolennotiz wurde in {{note_path}} gespeichert",
     "electron_api_docs_button_title": "Electron-API-Dokumentation öffnen"
   },
-  "copy_image_reference_button": {
-    "button_title": "Bildreferenz in die Zwischenablage kopieren, kann in eine Textnotiz eingefügt werden."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "Schaltflächen ausblenden"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "Schaltflächen einblenden"
-  },
-  "svg_export_button": {
-    "button_title": "Diagramm als SVG exportieren"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Untergeordnete Notiz erstellen und zur Karte hinzufügen",
     "create_child_note_text": "Notiz hinzufügen"
   },
   "zpetne_odkazy": {
-    "relation": "Relation",
-    "backlink_one": "{{count}} Rücklink",
-    "backlink_other": "{{count}} Rücklinks",
     "no_backlinks": "Keine Notizen verlinken auf diese Notiz."
   },
   "mobile_detail_menu": {
@@ -1019,8 +989,6 @@
   "basic_properties": {
     "note_type": "Notiztyp",
     "editable": "Bearbeitbar",
-    "basic_properties": "Grundlegende Eigenschaften",
-    "language": "Sprache",
     "configure_code_notes": "Code-Notizen konfigurieren..."
   },
   "book_properties": {
@@ -1051,37 +1019,23 @@
     "open_all_limit_exceeded": "Zu viele Notizen, um sie gleichzeitig zu öffnen ({{count}}). Das Maximum beträgt {{max}} – bitte grenzen Sie die Ergebnisse zuerst weiter ein."
   },
   "edited_notes": {
-    "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
-    "title": "Bearbeitete Notizen",
-    "deleted": "(gelöscht)"
+    "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet..."
   },
   "file_properties": {
-    "note_id": "Notiz-ID",
     "original_file_name": "Ursprünglicher Dateiname",
-    "file_type": "Dateityp",
-    "file_size": "Dateigröße",
     "download": "Herunterladen",
     "open": "Extern öffnen",
-    "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Dateirevision wurde hochgeladen.",
-    "upload_failed": "Das Hochladen einer neuen Dateirevision ist fehlgeschlagen.",
-    "title": "Datei"
+    "upload_failed": "Das Hochladen einer neuen Dateirevision ist fehlgeschlagen."
   },
   "image_properties": {
-    "original_file_name": "Ursprünglicher Dateiname",
-    "file_type": "Dateityp",
-    "file_size": "Dateigröße",
-    "download": "Herunterladen",
-    "open": "Öffnen",
     "copy_reference_to_clipboard": "Verweis in die Zwischenablage kopieren",
     "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Bildrevision wurde hochgeladen.",
-    "upload_failed": "Das Hochladen einer neuen Bildrevision ist fehlgeschlagen: {{message}}",
-    "title": "Bild"
+    "upload_failed": "Das Hochladen einer neuen Bildrevision ist fehlgeschlagen: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "Geerbte Attribute",
-    "no_inherited_attributes": "Keine geerbten Attribute.",
     "none": "Keine"
   },
   "note_info_widget": {
@@ -1099,8 +1053,6 @@
     "show_similar_notes": "Ähnliche Notizen anzeigen"
   },
   "note_map": {
-    "open_full": "Vollständig erweitern",
-    "collapse": "Auf normale Größe reduzieren",
     "title": "Notizkarte",
     "fix-nodes": "Knoten fixieren",
     "link-distance": "Verbindungslänge",
@@ -1112,18 +1064,10 @@
   "note_paths": {
     "title": "Notizpfade",
     "clone_button": "Notiz an neuen Speicherort klonen...",
-    "intro_placed": "Diese Notiz wird in den folgenden Pfaden abgelegt:",
     "intro_not_placed": "Diese Notiz ist noch nicht im Notizbaum platziert.",
     "outside_hoisted": "Dieser Pfad liegt außerhalb der fokussierten Notiz. Sie müssten den Fokus aufheben.",
     "archived": "Archiviert",
     "search": "Suchen"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "Diese Notiz stammt ursprünglich aus:",
-    "info": "Info"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "Eigene Attribute"
   },
   "promoted_attributes": {
     "promoted_attributes": "Hervorgehobene Attribute",
@@ -1142,12 +1086,6 @@
     "select_values_placeholder": "Option auswählen oder neu erstellen",
     "values_placeholder": "Wert eingeben und Eingabetaste drücken",
     "add_value": "Diesen Wert hinzufügen"
-  },
-  "script_executor": {
-    "query": "Abfrage",
-    "script": "Skript",
-    "execute_query": "Abfrage ausführen",
-    "execute_script": "Skript ausführen"
   },
   "search_definition": {
     "add_search_option": "Suchoption hinzufügen:",
@@ -1420,9 +1358,6 @@
     "enabled": "aktiviert",
     "disabled": "deaktiviert"
   },
-  "ribbon": {
-    "edited_notes_message": "Die Multifunktionsleisten-Registerkarte „Bearbeitete Notizen“ wird bei Tagesnotizen automatisch geöffnet"
-  },
   "theme": {
     "title": "Benutzeroberfläche",
     "theme_label": "Design",
@@ -1581,17 +1516,7 @@
     "italic": "Kursiver Text",
     "underline": "Unterstrichener Text",
     "color": "Farbiger Text",
-    "bg_color": "Text mit Hintergrundfarbe",
-    "visibility_title": "Sichtbarkeit der Markierungsliste",
-    "visibility_description": "Sie können das Markierungs-Widget pro Notiz ausblenden, indem Sie das Label #hideHighlightWidget hinzufügen.",
-    "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Markierungen) in den Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“)."
-  },
-  "table_of_contents": {
-    "title": "Inhaltsverzeichnis",
-    "description": "Das Inhaltsverzeichnis wird in Textnotizen angezeigt, wenn die Notiz mehr als eine definierte Anzahl von Überschriften enthält. Sie können diese Zahl anpassen:",
-    "disable_info": "Sie können diese Option auch verwenden, um TOC effektiv zu deaktivieren, indem Sie eine sehr hohe Zahl festlegen.",
-    "shortcut_info": "Sie können eine Tastenkombination zum schnellen Umschalten des rechten Bereichs (einschließlich Inhaltsverzeichnis) unter Optionen -> Tastenkombinationen konfigurieren (Name „toggleRightPane“).",
-    "unit": "Überschriften"
+    "bg_color": "Text mit Hintergrundfarbe"
   },
   "text_auto_read_only_size": {
     "title": "Automatische schreibgeschützte Größe",
@@ -1753,9 +1678,7 @@
     "unrecognized_role": "Unbekannte Anhangsrolle „{{role}}“."
   },
   "bookmark_switch": {
-    "bookmark": "Lesezeichen",
-    "bookmark_this_note": "Diese Notiz im linken Seitenbereich als Lesezeichen speichern",
-    "remove_bookmark": "Lesezeichen entfernen"
+    "bookmark": "Lesezeichen"
   },
   "editability_select": {
     "auto": "Automatisch",
@@ -1807,11 +1730,6 @@
     "hide-subtree": "Zweig ausblenden",
     "show-subtree": "Zweig anzeigen"
   },
-  "shared_info": {
-    "shared_publicly": "Diese Notiz ist öffentlich freigegeben über {{- link}}.",
-    "shared_locally": "Diese Notiz ist lokal freigegeben über {{- link}}.",
-    "help_link": "Für Hilfe <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">Wiki</a> besuchen."
-  },
   "note_types": {
     "text": "Text",
     "code": "Code",
@@ -1840,22 +1758,15 @@
     "markdown": "Markdown"
   },
   "protect_note": {
-    "toggle-on": "Notiz schützen",
-    "toggle-off": "Notizschutz aufheben",
-    "toggle-on-hint": "Notiz ist ungeschützt, klicken, um sie zu schützen",
-    "toggle-off-hint": "Notiz ist geschützt, klicken, um den Schutz aufzuheben"
+    "toggle-on": "Notiz schützen"
   },
   "shared_switch": {
     "shared": "Freigegeben",
-    "toggle-on-title": "Notiz freigeben",
-    "toggle-off-title": "Notiz-Freigabe aufheben",
     "shared-branch": "Diese Notiz existiert nur als freigegebene Notiz, das Aufheben der Freigabe würde sie löschen. Möchten Sie fortfahren und die Notiz damit löschen?",
     "inherited": "Die Notiz kann hier nicht von der Freigabe entfernt werden, da sie über Vererbung von einer übergeordneten Notiz geteilt wird."
   },
   "template_switch": {
-    "template": "Vorlage",
-    "toggle-on-hint": "Notiz zu einer Vorlage machen",
-    "toggle-off-hint": "Die Notiz als Vorlage entfernen"
+    "template": "Vorlage"
   },
   "open-help-page": "Hilfeseite öffnen",
   "find": {
@@ -1867,8 +1778,6 @@
     "replace_all": "Alle ersetzen"
   },
   "highlights_list_2": {
-    "title": "Markierungsliste",
-    "options": "Optionen",
     "title_with_count_one": "{{count}} Markierung",
     "title_with_count_other": "{{count}} Markierungen",
     "menu_configure": "Markierungsliste konfigurieren...",
@@ -1968,7 +1877,6 @@
   },
   "toc": {
     "table_of_contents": "Inhaltsverzeichnis",
-    "options": "Optionen",
     "no_headings": "Keine Überschriften."
   },
   "watched_file_update_status": {
@@ -2054,9 +1962,6 @@
     "tab_width_unit": "Leerzeichen",
     "tab_width": "Tab-Breite"
   },
-  "classic_editor_toolbar": {
-    "title": "Format"
-  },
   "editor": {
     "title": "Editor"
   },
@@ -2064,12 +1969,10 @@
     "editor_type": {
       "label": "Format Toolbar",
       "floating": {
-        "title": "Schwebend",
-        "description": "Werkzeuge erscheinen in Cursornähe;"
+        "title": "Schwebend"
       },
       "fixed": {
-        "title": "Fixiert",
-        "description": "Werkzeuge erscheinen im „Format“-Tab."
+        "title": "Fixiert"
       },
       "multiline-toolbar": "Toolbar wenn nötig in mehreren Zeilen darstellen",
       "toolbar_style": "Symbolleistenstil"
@@ -2288,13 +2191,6 @@
     "title_vertical": "Bearbeitungsbereich nach unten verschieben",
     "title_horizontal": "Bearbeitungsbereich nach links verschieben"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "Bearbeitung freischalten",
-    "lock-editing": "Bearbeitung sperren"
-  },
-  "png_export_button": {
-    "button_title": "Diagramm als PNG exportieren"
-  },
   "svg": {
     "export_to_png": "Das Diagramm konnte als PNG nicht exportiert werden.",
     "export_to_svg": "Das Diagramm konnte nicht als SVG exportiert werden."
@@ -2412,9 +2308,6 @@
     "background_effects_message": "Auf Windows- und macOS-Geräten sind die Hintergrundeffekte nun stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird.",
     "background_effects_button": "Hintergrundeffekte aktivieren",
     "dismiss": "Ablehnen",
-    "new_layout_title": "Neues Layout",
-    "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und nahtlos in die Hauptoberfläche integriert – eine neue Statusleiste und ausklappbare Bereiche (wie hervorgehobene Attribute) übernehmen nun die wichtigsten Funktionen.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär über Optionen → Anzeige deaktiviert werden.",
-    "new_layout_button": "Weitere Informationen",
     "scripting_disabled_title": "Backend-Skripting wurde deaktiviert",
     "scripting_disabled_button": "Sicherheitseinstellungen öffnen",
     "scripting_disabled_message": "Backend-Skripting ist aus Sicherheitsgründen jetzt standardmäßig deaktiviert. Ihre Notizen enthalten Backend-Skripte (Notizen mit dem Label #run), die nicht mehr automatisch ausgeführt werden.\n\nWenn Sie auf diese Skripte angewiesen sind, können Sie Backend-Skripting in den Sicherheitseinstellungen wieder aktivieren."
@@ -2426,10 +2319,7 @@
     "related_code_blocks": "Farbschema für Code-Blöcke in Textnotizen",
     "related_code_notes": "Farbschema für Code-Notizen",
     "ui": "Benutzeroberfläche",
-    "ui_old_layout": "Altes Layout",
-    "ui_new_layout": "Neues Layout",
-    "ui_layout_orientation": "Ausrichtung der Startleiste",
-    "ui_layout_style": "Layout-Stil"
+    "ui_layout_orientation": "Ausrichtung der Startleiste"
   },
   "units": {
     "percentage": "%"
@@ -2449,8 +2339,6 @@
     "slide-overview": "Übersicht der Folien ein-/ausblenden"
   },
   "read-only-info": {
-    "read-only-note": "Aktuelle Notiz wird im Lese-Modus angezeigt.",
-    "auto-read-only-note": "Diese Notiz wird im Nur-Lesen-Modus angezeigt, um ein schnelleres Laden zu ermöglichen.",
     "edit-note": "Notiz bearbeiten"
   },
   "calendar_view": {
@@ -2474,8 +2362,6 @@
   "experimental_features": {
     "title": "Experimentelle Optionen",
     "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Mit Vorsicht verwenden.",
-    "new_layout_name": "Neues Layout",
-    "new_layout_description": "Das neue Layout für eine modernere Darstellung und verbesserte Benutzbarkeit ausprobieren. Kann sich in Zukunft stark ändern.",
     "llm_name": "KI- / LLM-Chat",
     "llm_description": "Aktiviert die KI-Chat Seitenleiste sowie LLM-Chat Notizen die von einem Sprachmodell betrieben werden."
   },
