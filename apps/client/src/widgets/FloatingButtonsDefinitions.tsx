@@ -21,7 +21,7 @@ import { createImageSrcUrl, isElectron, openInAppHelpFromUrl } from "../services
 import { ViewTypeOptions } from "./collections/interface";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { ButtonGroup } from "./react/Button";
-import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteLabel, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
+import { useEffectiveReadOnly, useIsNoteReadOnly, useNoteLabel, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
 import NoItems from "./react/NoItems";
 import NoteLink from "./react/NoteLink";
 import RawHtml from "./react/RawHtml";
@@ -48,7 +48,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    ToggleReadOnlyButton,
     SwitchSplitOrientationButton,
     DisplayModeSwitcher,
     EditButton,
@@ -67,8 +66,7 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
  * Floating buttons that should be hidden in popup editor (Quick edit).
  */
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
-    InAppHelpButton,
-    ToggleReadOnlyButton
+    InAppHelpButton
 ];
 
 function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: FloatingButtonContext) {
@@ -84,19 +82,6 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
         icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}
         onClick={() => setSplitEditorOrientation(upcomingOrientation)}
-    />;
-}
-
-function ToggleReadOnlyButton({ note, isDefaultViewMode }: FloatingButtonContext) {
-    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-    const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
-    const isEnabled = ([ "mindMap", "canvas", "spreadsheet" ].includes(note.type) || isSavedSqlite)
-            && note.isContentAvailable() && isDefaultViewMode;
-
-    return isEnabled && <FloatingButton
-        text={isReadOnly ? t("toggle_read_only_button.unlock-editing") : t("toggle_read_only_button.lock-editing")}
-        icon={isReadOnly ? "bx bx-lock-open-alt" : "bx bx-lock-alt"}
-        onClick={() => setReadOnly(!isReadOnly)}
     />;
 }
 
