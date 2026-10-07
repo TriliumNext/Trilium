@@ -375,17 +375,22 @@ describe("ContentEmbed", () => {
         expect(button("include-note-edit").disabled).toBe(true);
     });
 
-    it("opens an expandable excerpt to edit it", () => {
+    it("opens an expandable excerpt to edit it, and focuses it once shown", () => {
         placeInHostEditor();
         const { content } = renderBox({ boxSize: "expandable", isExcerpt: true });
         act(() => {
             onTestFinished(registerContentEmbedTools(content, EDITABLE_TOOLS));
         });
-        expect(contentBox().hidden).toBe(true);
+        const box = contentBox();
+        const isHiddenOnFocus: boolean[] = [];
+        box.addEventListener("focus", () => isHiddenOnFocus.push(box.hasAttribute("hidden")));
+        expect(box.hidden).toBe(true);
 
         click(button("include-note-edit"));
 
-        expect(contentBox().hidden).toBe(false);
+        expect(box.hidden).toBe(false);
+        expect(document.activeElement).toBe(box);
+        expect(isHiddenOnFocus).toEqual([ false ]);
     });
 
     it("gives its content the screen, and takes it back from the overlay button", async () => {

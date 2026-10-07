@@ -359,10 +359,16 @@ describe("buildBlockReferenceMenuItems", () => {
         expect(showMessage).toHaveBeenCalledWith(
             "block_reference.no_reference_on_clipboard", 3000, "bx bx-info-circle");
 
-        clipboard.read.mockResolvedValue({ html: "", text: href });
-        runItem(paste[1]);
+        // A reference copied from another instance is to a note this one does not have.
+        clipboard.read.mockResolvedValue({ html: "", text: `https://other.example/${href}` });
+        runItem(paste[0]);
         await vi.waitFor(() => expect(pasteTarget.release).toHaveBeenCalledTimes(2));
-        expect(showError).toHaveBeenCalledWith("block_reference.not_found");
+        runItem(paste[1]);
+        await vi.waitFor(() => expect(pasteTarget.release).toHaveBeenCalledTimes(3));
+        expect(getNote.mock.calls).toEqual([ [ "note1", true ], [ "note1", true ] ]);
+        expect(showError.mock.calls).toEqual([
+            [ "block_reference.not_found" ], [ "block_reference.not_found" ]
+        ]);
         expect(pasteTarget.paste).not.toHaveBeenCalled();
     });
 });

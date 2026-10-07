@@ -260,12 +260,13 @@ function getPasteMenuItems(
 /**
  * Reads the clipboard and pastes the HTML that `toHtml` makes of the block reference on it, at
  * the selection the menu was opened on. The selection is pinned before the read, which can wait
- * on a permission prompt. `toHtml` returns `null` for a reference it cannot paste.
+ * on a permission prompt. Pastes nothing for a reference to a note that `froca` cannot find, as
+ * one copied from another Trilium instance.
  */
 async function pasteBlockReference(
     editor: CKTextEditor,
     clipboard: ClipboardAccess,
-    toHtml: (reference: ClipboardBlockReference) => string | Promise<string | null>
+    toHtml: (reference: ClipboardBlockReference) => string | Promise<string>
 ) {
     const target = editor.capturePasteTarget();
     try {
@@ -275,11 +276,12 @@ async function pasteBlockReference(
                 "bx bx-info-circle");
             return;
         }
-
-        const html = await toHtml(reference);
-        if (html) {
-            target.paste(html, reference.href);
+        if (!await froca.getNote(reference.noteId, true)) {
+            toast.showError(t("block_reference.not_found"));
+            return;
         }
+
+        target.paste(await toHtml(reference), reference.href);
     } catch (error) {
         console.warn("Failed to paste a block reference:", error);
     } finally {
@@ -295,19 +297,11 @@ function getLinkHtml({ href }: ClipboardBlockReference) {
     return link.outerHTML;
 }
 
-/** The HTML of an embed of the referenced blocks, or `null` when their note is gone. */
+/** The HTML of an embed of the referenced blocks. */
 async function getExcerptHtml({ noteId, block }: ClipboardBlockReference) {
     // Imported on demand: `content_renderer` imports `content_renderer_text`, which imports this
     // module.
-    const [ note, { EXCERPT_BOX_SIZE } ] = await Promise.all([
-        froca.getNote(noteId, true),
-        import("./content_renderer.js")
-    ]);
-    if (!note) {
-        toast.showError(t("block_reference.not_found"));
-        return null;
-    }
-
+    const { EXCERPT_BOX_SIZE } = await import("./content_renderer.js");
     const embed = document.createElement("figure");
     embed.className = "include-note";
     embed.dataset.noteId = noteId;

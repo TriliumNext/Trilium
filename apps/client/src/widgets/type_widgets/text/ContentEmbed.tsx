@@ -67,6 +67,7 @@ export default function ContentEmbed({
     useFullscreenEvents(contentRef);
     useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
+    const focusContentAfterRender = useFocusAfterRender(contentRef);
     const isExpandable = boxSize === "expandable";
     const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
 
@@ -117,7 +118,11 @@ export default function ContentEmbed({
                     <ExcerptEditButton
                         contentRef={contentRef}
                         content={content}
-                        onEdit={() => setIsExpanded(true)}
+                        onEdit={() => {
+                            setIsExpanded(true);
+                            // `useEditableEmbed()` focuses the editor once it renders.
+                            focusContentAfterRender();
+                        }}
                     />
                 )}
                 {hasFullscreen && (
@@ -252,7 +257,7 @@ function ExcerptBadge() {
 /**
  * Turns the editing of an excerpt on and off, as the Editable toggle of its embed does. Disabled
  * while the content has no editable mode, as in a read-only note or for blocks that cannot be
- * edited in place. Opening the editor gives it the focus, and `onEdit` runs first.
+ * edited in place. Turning editing on runs `onEdit`, and turning it off focuses the editor around.
  */
 function ExcerptEditButton({ contentRef, content, onEdit }: {
     contentRef: RefObject<HTMLDivElement | null>;
@@ -280,8 +285,6 @@ function ExcerptEditButton({ contentRef, content, onEdit }: {
                     editor.editing.view.focus();
                 } else {
                     onEdit();
-                    // `useEditableEmbed()` moves the focus on to the editor once it renders.
-                    box.focus({ preventScroll: true });
                 }
             }}
         />
@@ -308,6 +311,22 @@ function useHasEditableMode(contentRef: RefObject<HTMLElement | null>, content: 
     }, [ contentRef, content ]);
 
     return hasEditableMode;
+}
+
+/**
+ * Returns a function that focuses the element in `ref` once the render it schedules is committed,
+ * so that a state change made with it, such as one that shows the element, applies first.
+ */
+function useFocusAfterRender(ref: RefObject<HTMLElement | null>) {
+    const [ requestCount, setRequestCount ] = useState(0);
+
+    useLayoutEffect(() => {
+        if (requestCount) {
+            ref.current?.focus({ preventScroll: true });
+        }
+    }, [ ref, requestCount ]);
+
+    return () => setRequestCount((count) => count + 1);
 }
 
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
@@ -349,10 +368,6 @@ function ContentEmbedActionButton({ className, action }: {
     );
 }
 
-/**
- * Opens the menu of the embed for a right click on its title row. The title link is left to the
- * handler of every link, which opens the same menu, or a quick edit with Ctrl.
- */
 /**
  * Runs the window shortcuts, such as switching tabs, from inside the content. The text editor
  * keeps the keys pressed in an embed from the document, where these shortcuts listen.
@@ -444,6 +459,10 @@ function useFullscreenEvents(contentRef: RefObject<HTMLElement | null>) {
     }, [ contentRef ]);
 }
 
+/**
+ * Opens the menu of the embed for a right click on its title row. The title link is left to the
+ * handler of every link, which opens the same menu, or a quick edit with Ctrl.
+ */
 function openMenuOnRightClick(e: MouseEvent, notePath: string, viewScope?: ViewScope) {
     if (e.target instanceof Element && e.target.closest("a")) {
         return;
