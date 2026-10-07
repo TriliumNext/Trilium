@@ -678,7 +678,6 @@
     "color_type": "Color",
     "relation_type": "Relation",
     "versioning_limit": "Limits how many revisions this note keeps, overriding the global setting.",
-    "similar_notes_widget_disabled": "Disables the Similar Notes ribbon tab for this note. Old layout only.",
     "llm_chat_home": "New AI chats are created as children of this note.",
     "workspace_llm_chat_home": "New AI chats are created as children of this note while hoisted to an ancestor of this workspace.",
     "date_pattern": "Pattern for the titles of the day notes generated under this calendar root, e.g. <code>{dateNumberPadded} - {weekDay}</code>.",

@@ -71,7 +71,6 @@ export const ATTR_HELP: AttrHelpMap = {
         printScale: t("attribute_detail.print_scale"),
         printMargins: t("attribute_detail.print_margins"),
         versioningLimit: t("attribute_detail.versioning_limit"),
-        similarNotesWidgetDisabled: t("attribute_detail.similar_notes_widget_disabled"),
         llmChatHome: t("attribute_detail.llm_chat_home"),
         workspaceLlmChatHome: t("attribute_detail.workspace_llm_chat_home"),
         datePattern: t("attribute_detail.date_pattern"),

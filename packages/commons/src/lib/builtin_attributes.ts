@@ -103,7 +103,6 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "customRequestHandler", valueType: "text", isDangerous: true },
     { type: "label", name: "customResourceProvider", valueType: "text", isDangerous: true },
     { type: "label", name: "widget", valueType: "boolean", isDangerous: true },
-    { type: "label", name: "similarNotesWidgetDisabled", valueType: "boolean" },
     { type: "label", name: "workspace", valueType: "boolean" },
     { type: "label", name: "workspaceIconClass", valueType: "text" },
     { type: "label", name: "workspaceTabBackgroundColor", valueType: "color" },
