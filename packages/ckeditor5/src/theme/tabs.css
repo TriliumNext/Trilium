@@ -37,13 +37,13 @@
         order: 1;
         flex: 1 0 100%;
         min-width: 0;
-        padding: 0 1rem;
+        padding: .75rem 1rem;
         border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
         background: var(--_tabs-background);
-    }
 
-    & > .trilium-tab:not(:first-child) > .trilium-tab-panel {
-        border-start-start-radius: var(--_tabs-border-radius);
+        & > :last-child {
+            margin-bottom: 0;
+        }
     }
 
     & > .trilium-tab.trilium-tab--active {
