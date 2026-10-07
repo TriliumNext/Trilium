@@ -1,6 +1,6 @@
 .relation-map-wrapper {
     --relation-map-inset: var(--overlay-button-inset, 10px);
-    /* Must agree with `PANE_WIDTH` in RelationMap.tsx. */
+    /* Must agree with `PANE_WIDTH` in utils.ts. */
     --relation-map-pane-width: 380px;
 }
 

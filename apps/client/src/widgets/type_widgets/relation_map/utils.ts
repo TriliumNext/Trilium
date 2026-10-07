@@ -33,3 +33,55 @@ export function getMousePosition(evt: MouseEvent, container: HTMLDivElement, zoo
         y: ((evt.clientY ?? 0) - rect.top) / zoom
     };
 }
+
+/** Must agree with `--relation-map-pane-width` in NotePane.css. */
+export const PANE_WIDTH = 380;
+
+/** Must agree with `--relation-map-inset` in NotePane.css. */
+const MAP_INSET = 10;
+
+/** How far into the map the pane reaches from its trailing edge: its width plus the inset. */
+const PANE_REACH = PANE_WIDTH + MAP_INSET;
+
+/** Must agree with the pane's `bottom` in NotePane.css, which clears the toolbars at the foot. */
+const MAP_FOOT = 2 * MAP_INSET + 28;
+
+/** The room kept between a revealed box and whatever bounds the visible part of the map. */
+const AIR = 20;
+
+/** Below this much room beside the pane, the pane is treated as covering the whole map. */
+const MIN_UNCOVERED_WIDTH = 200;
+
+interface Rect {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+}
+
+/**
+ * How far to pan the map so that `box` stands in the part of it the note pane leaves uncovered,
+ * or `null` when it already does. Each axis on which the box does not fit is centred in that part;
+ * an axis on which it fits is left alone.
+ *
+ * Both rectangles are in page coordinates, as `getBoundingClientRect()` gives them, which is also
+ * what `PanZoom.moveBy()` takes.
+ */
+export function revealOffset(box: Rect, map: Rect, isRtl: boolean) {
+    const paneReach = map.right - map.left - PANE_REACH >= MIN_UNCOVERED_WIDTH ? PANE_REACH : 0;
+    const visible = {
+        left: map.left + (isRtl ? paneReach : 0) + AIR,
+        right: map.right - (isRtl ? 0 : paneReach) - AIR,
+        top: map.top + AIR,
+        bottom: map.bottom - MAP_FOOT - AIR
+    };
+
+    const dx = box.left >= visible.left && box.right <= visible.right
+        ? 0
+        : (visible.left + visible.right) / 2 - (box.left + box.right) / 2;
+    const dy = box.top >= visible.top && box.bottom <= visible.bottom
+        ? 0
+        : (visible.top + visible.bottom) / 2 - (box.top + box.bottom) / 2;
+
+    return dx || dy ? { dx, dy } : null;
+}

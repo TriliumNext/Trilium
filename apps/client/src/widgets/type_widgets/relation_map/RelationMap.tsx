@@ -15,6 +15,7 @@ import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, RelationType } from "./api";
@@ -25,7 +26,7 @@ import { GhostNoteBox, NoteBox } from "./NoteBox";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import setupOverlays, { uniDirectionalOverlays } from "./overlays";
 import RelationNamePopover, { type AskRelationName, useRelationNamePrompt } from "./RelationNamePopover";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
+import { getMousePosition, getZoom, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
 declare module "jsplumb" {
 
@@ -48,6 +49,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const [ data, setData ] = useState<MapData>();
     // The same read-only the note's own bar of actions read while the + stood there.
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);
     const pbApiRef = useRef<jsPlumbInstance>(null);
@@ -149,10 +151,12 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         onTransform
     });
 
+    useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId: selection?.noteId });
     useRelationData(note.noteId, data, mapApiRef, pbApiRef);
 
     return (
         <div
+            ref={wrapperRef}
             className={clsx("relation-map-wrapper", placement.placing && "placing-note")}
             onMouseMove={placement.followPointer}
             onMouseLeave={placement.hideGhost}
@@ -488,6 +492,51 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
             onSelectNote(idToNoteId(box.id));
         }
     };
+}
+
+/**
+ * Pans the map so the box of the selected note stands clear of the note pane and the edges of the
+ * map (see {@link revealOffset}). A phone shows the note as a dialog over the whole screen, so the
+ * map is left where it is there.
+ *
+ * The box of a note placed a moment ago is not on the map yet: `NoteBox` renders it once the note
+ * has loaded, so the pan waits for it to appear in the container.
+ */
+export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId }: {
+    wrapperRef: RefObject<HTMLDivElement | null>;
+    containerRef: RefObject<HTMLDivElement | null>;
+    panZoom: PanZoom | undefined;
+    noteId: string | undefined;
+}) {
+    useEffect(() => {
+        const wrapper = wrapperRef.current;
+        const container = containerRef.current;
+        if (!noteId || !wrapper || !container || !panZoom || isMobile()) return;
+
+        const id = noteIdToId(noteId);
+        const findBox = () => [ ...container.children ].find((child) => child.id === id);
+        const reveal = (box: Element) => {
+            const offset = revealOffset(box.getBoundingClientRect(), wrapper.getBoundingClientRect(), glob.isRtl);
+            if (offset) {
+                panZoom.moveBy(offset.dx, offset.dy, true);
+            }
+        };
+
+        const box = findBox();
+        if (box) {
+            reveal(box);
+            return;
+        }
+
+        const observer = new MutationObserver(() => {
+            const box = findBox();
+            if (!box) return;
+            observer.disconnect();
+            reveal(box);
+        });
+        observer.observe(container, { childList: true });
+        return () => observer.disconnect();
+    }, [ wrapperRef, containerRef, panZoom, noteId ]);
 }
 
 /** Where the pointer stands on a box being placed: the top centre of its title. */

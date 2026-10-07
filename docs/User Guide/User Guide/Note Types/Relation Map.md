@@ -20,7 +20,7 @@ Relation map is a type of note which visualizes notes and their [relations](..
 
 ## Note panel
 
-When a note on the map is clicked, a panel opens to the right of the map and the note is highlighted. The panel contains:
+When a note on the map is clicked, a panel opens to the right of the map and the note is highlighted. If the panel would cover the note, or the note is partly off-screen, the map pans to bring it into view. The panel contains:
 
 *   The title and icon of the note, both editable.
 *   A button to expand the panel over the whole map, and to restore it afterwards.

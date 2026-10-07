@@ -1,9 +1,10 @@
+import type { PanZoom } from "panzoom";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useCanvasClicks } from "./RelationMap";
+import { useCanvasClicks, useRevealSelectedBox } from "./RelationMap";
 import { noteIdToId } from "./utils";
 
 describe("relation map canvas clicks", () => {
@@ -111,4 +112,82 @@ describe("relation map canvas clicks", () => {
         expect(event.defaultPrevented).toBe(true);
         expect(onSelectNote).not.toHaveBeenCalled();
     });
+});
+
+describe("relation map revealing the selected box", () => {
+    let container: HTMLElement | undefined;
+    const moveBy = vi.fn();
+
+    beforeEach(() => {
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        moveBy.mockClear();
+    });
+
+    afterEach(() => {
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    function Harness({ noteId }: { noteId: string | undefined }) {
+        const wrapperRef = useRef<HTMLDivElement>(null);
+        const canvasRef = useRef<HTMLDivElement>(null);
+        useRevealSelectedBox({ wrapperRef, containerRef: canvasRef, panZoom: { moveBy } as unknown as PanZoom, noteId });
+        return (
+            <div ref={wrapperRef} className="wrapper">
+                <div ref={canvasRef} className="canvas" />
+            </div>
+        );
+    }
+
+    /** Lays the map out at 1200 × 800, which happy-dom does not do by itself. */
+    function mount(noteId: string | undefined) {
+        act(() => render(<Harness noteId={noteId} />, container as HTMLElement));
+        const wrapper = container?.querySelector<HTMLElement>(".wrapper");
+        if (wrapper) placeAt(wrapper, { left: 0, top: 0, right: 1200, bottom: 800 });
+    }
+
+    /** Adds a box to the canvas at the given page position, as `NoteBox` would render it. */
+    function addBox(noteId: string, left: number) {
+        const box = document.createElement("div");
+        box.id = noteIdToId(noteId);
+        placeAt(box, { left, top: 100, right: left + 160, bottom: 150 });
+        act(() => { container?.querySelector(".canvas")?.appendChild(box); });
+    }
+
+    function placeAt(element: HTMLElement, rect: { left: number; top: number; right: number; bottom: number }) {
+        element.getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, width: rect.right - rect.left, height: rect.bottom - rect.top, toJSON: () => rect });
+    }
+
+    it("pans a box out from under the pane, and leaves one alone that stands clear", () => {
+        addBoxBeforeMount("under", 1000);
+        expect(moveBy).toHaveBeenCalledTimes(1);
+        const [ dx, dy, smooth ] = moveBy.mock.calls[0];
+        expect(dx).toBeLessThan(0);
+        expect([ dy, smooth ]).toEqual([ 0, true ]);
+
+        moveBy.mockClear();
+        addBoxBeforeMount("clear", 100);
+        expect(moveBy).not.toHaveBeenCalled();
+    });
+
+    it("waits for the box of a note placed a moment ago", async () => {
+        mount("placed");
+        expect(moveBy).not.toHaveBeenCalled();
+
+        addBox("placed", 1000);
+        await act(async () => { await new Promise((resolve) => setTimeout(resolve)); });
+        expect(moveBy).toHaveBeenCalledTimes(1);
+    });
+
+    /** The box is on the map before the note is selected, as for a box that is clicked. */
+    function addBoxBeforeMount(noteId: string, left: number) {
+        if (container) render(null, container);
+        mount(undefined);
+        addBox(noteId, left);
+        mount(noteId);
+    }
 });
