@@ -123,7 +123,6 @@
     "date_time": "التاريخ والوقت",
     "close_button_title": "الغاء التغييرات و اغلاق",
     "workspace_calendar_root": "‎تحديد جذر التقويم لكل مساحة عمل",
-    "hide_highlight_widget": "اخفاء عنصر واجهة قائمة التمييزات",
     "is_owned_by_note": "تخص الملاحظة",
     "related_notes_title": "ملاحظات اخرى بنفس التسمية",
     "target_note_title": "العلاقة هي اتصال مُسمّى بين ملاحظة مصدر وملاحظة هدف.",
@@ -178,7 +177,6 @@
     "display_relations": "أسماء العلاقات مفصولة بفواصل والتي يجب عرضها. سيتم إخفاء جميع العلاقات الأخرى.",
     "hide_relations": "أسماء العلاقات مفصولة بفواصل والتي يجب إخفاؤها. سيتم عرض جميع العلاقات الأخرى.",
     "template": "ستظهر هذه الملاحظة ضمن قائمة القوالب المتاحة عند إنشاء ملاحظة جديدة",
-    "toc": "<code>#toc</code> أو <code>#toc=show</code> سيجبر عرض جدول المحتويات، بينما <code>#toc=hide</code> سيجبر إخفاءه. إذا لم يكن الوسم موجودًا، سيتم اتباع الإعداد العام",
     "color": "يحدد لون الملاحظة في شجرة الملاحظات والروابط وغيرها. يمكن استخدام أي قيمة لون CSS صالحة مثل 'red' أو ‎#a13d5f‎",
     "keyboard_shortcut": "يحدد اختصار لوحة مفاتيح يؤدي مباشرة إلى الانتقال إلى هذه الملاحظة. مثال: 'ctrl+alt+e'. يتطلب إعادة تحميل الواجهة الأمامية لتطبيق التغيير.",
     "keep_current_hoisting": "لن يؤدي فتح هذا الرابط إلى تغيير حالة التركيز (hoisting)، حتى إذا كانت الملاحظة غير قابلة للعرض ضمن الشجرة الحالية المُركّز عليها.",
@@ -343,15 +341,6 @@
     "search_notes": "بحث في الملاحظات",
     "reload_hint": "يمكن أن يساعد إعادة التحميل في إصلاح بعض مشاكل العرض البصري دون الحاجة لإعادة تشغيل التطبيق بالكامل."
   },
-  "zpetne_odkazy": {
-    "relation": "العلاقة",
-    "backlink_zero": "",
-    "backlink_one": "{{count}} رابط راجع",
-    "backlink_two": "",
-    "backlink_few": "",
-    "backlink_many": "{{count}} روابط راجعة",
-    "backlink_other": ""
-  },
   "note_icon": {
     "search": "بحث:",
     "change_note_icon": "تغيير ايقونة الملاحظة",
@@ -370,10 +359,8 @@
     "search_placeholder_other": "البحث عن {{number}} من الأيقونات عبر {{count}} حزمة."
   },
   "basic_properties": {
-    "language": "اللغة",
     "editable": "قابل للتعديل",
     "note_type": "نوع الملاحظة",
-    "basic_properties": "الخصائص الاساسية",
     "configure_code_notes": "اعداد ملاحظات الكود..."
   },
   "book_properties": {
@@ -408,22 +395,11 @@
   "file_properties": {
     "download": "تنزيل",
     "open": "فتح خارجيًا.",
-    "title": "ملف",
-    "note_id": "معرف الملاحظة",
-    "file_type": "نوع الملف",
-    "file_size": "حجم الملف",
     "original_file_name": "اسم الملف الاصلي",
-    "upload_new_revision": "رفع مراجعة جديدة",
     "upload_success": "تم رفع نسخة جديدة من الملف.",
     "upload_failed": "فشل رفع نسخة جديدة من الملف."
   },
   "image_properties": {
-    "download": "تنزيل",
-    "open": "فتح",
-    "title": "صورة",
-    "file_type": "نوع الملف",
-    "file_size": "حجم الملف",
-    "original_file_name": "اسم الملف الاصلي",
     "upload_new_revision": "رفع مراجعة جديدة",
     "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة",
     "upload_success": "تم رفع نسخة جديدة من الصورة.",
@@ -453,14 +429,7 @@
     "title": "مسارات الملاحظة",
     "clone_button": "جار نسخ الملاحظة الى مكان جديد...",
     "intro_not_placed": "هذه الملاحظة لم يتم وضعها بعد في شجرة الملاحظات.",
-    "intro_placed": "تم وضع هذه الملاحظة في المسارات التالية:",
     "outside_hoisted": "هذا المسار يقع خارج الملاحظة المُثبّتة، وستحتاج إلى إلغاء التثبيت للوصول إليه."
-  },
-  "script_executor": {
-    "query": "استعلام",
-    "script": "برنامج نصي",
-    "execute_query": "تنفيذ الاستعلام",
-    "execute_script": "تنفيذ السكربت"
   },
   "search_definition": {
     "ancestor": "السلف",
@@ -766,13 +735,7 @@
     "confirm_undelete": "هل تريد استعادة هذه الملاحظة وجميع الملاحظات الفرعية التابعة لها؟"
   },
   "edited_notes": {
-    "deleted": "(حذف)",
-    "title": "الملاحظات المعدلة",
     "no_edited_notes_found": "لا توجد ملاحظات تم تعديلها في هذا اليوم حتى الآن..."
-  },
-  "note_properties": {
-    "info": "معلومات",
-    "this_note_was_originally_taken_from": "تم أخذ هذه الملاحظة في الأصل من:"
   },
   "backend_log": {
     "refresh": "تحديث"
@@ -1003,9 +966,7 @@
     "close": "أغلاق"
   },
   "bookmark_switch": {
-    "bookmark": "علامة مرجعية",
-    "remove_bookmark": "ازالة الاشارة المرجعية",
-    "bookmark_this_note": "إضافة إشارة مرجعية لهذه الملاحظة إلى اللوحة الجانبية اليسرى"
+    "bookmark": "علامة مرجعية"
   },
   "editability_select": {
     "auto": "تلقائي",
@@ -1028,7 +989,6 @@
     "copy_tab_to_new_window": "نسخ هذا التبويب إلى نافذة جديدة"
   },
   "toc": {
-    "options": "خيارات",
     "table_of_contents": "جدول المحتويات",
     "no_headings": "بدون عناوين."
   },
@@ -1077,13 +1037,10 @@
     "dismiss": "تجاهل",
     "background_effects_button": "تفعيل مؤثرات الخلفية",
     "next_theme_button": "جرب النسق الجديد",
-    "new_layout_title": "تخطيط جديد",
-    "new_layout_button": "مزيد من المعلومات",
     "next_theme_title": "جرّب سمة Trilium الجديدة",
     "background_effects_title": "أصبحت تأثيرات الخلفية الآن مستقرة",
     "next_theme_message": "أنت تستخدم حاليًا السمة القديمة، هل ترغب في تجربة السمة الجديدة؟",
-    "background_effects_message": "على أجهزة Windows وmacOS، أصبحت تأثيرات الخلفية الآن مستقرة. تضيف هذه التأثيرات لمسة من اللون إلى واجهة المستخدم من خلال تشويش الخلفية خلفها.",
-    "new_layout_message": "لقد قدمنا تخطيطًا مُحدَّثًا لـ Trilium Notes. تمت إزالة الشريط (Ribbon) ودمجه بسلاسة داخل الواجهة الرئيسية، مع شريط حالة جديد وأقسام قابلة للتوسيع (مثل السمات المروّجة) لتولي الوظائف الأساسية.\n\nيتم تمكين التخطيط الجديد افتراضيًا، ويمكن تعطيله مؤقتًا من خلال: الخيارات → المظهر."
+    "background_effects_message": "على أجهزة Windows وmacOS، أصبحت تأثيرات الخلفية الآن مستقرة. تضيف هذه التأثيرات لمسة من اللون إلى واجهة المستخدم من خلال تشويش الخلفية خلفها."
   },
   "units": {
     "percentage": "%"
@@ -1099,13 +1056,6 @@
     "search_for_note_by_its_name": "البحث عن ملاحظة باسمها",
     "cloned_note_prefix_title": "سيتم عرض الملاحظة المستنسخة في شجرة الملاحظات مع البادئة المحددة",
     "note_cloned": "تم استنساخ الملاحظة \"{{clonedTitle}}\" إلى \"{{targetTitle}}\""
-  },
-  "table_of_contents": {
-    "unit": "عناوين",
-    "title": "جدول المحتويات",
-    "disable_info": "يمكنك أيضًا استخدام هذا الخيار لتعطيل جدول المحتويات (TOC) بشكل فعّال عبر تعيين قيمة كبيرة جدًا.",
-    "shortcut_info": "يمكنك إعداد اختصار لوحة مفاتيح للتبديل السريع للوحة اليمنى (بما في ذلك جدول المحتويات TOC) من خلال: الخيارات → الاختصارات (بالاسم ‎'toggleRightPane'‎).",
-    "description": "سيظهر جدول المحتويات في الملاحظات النصية عندما يتجاوز عدد العناوين حدًا محددًا. يمكنك تخصيص هذا الرقم:"
   },
   "tree-context-menu": {
     "archive": "أرشفة",
@@ -1178,15 +1128,11 @@
   },
   "shared_switch": {
     "shared": "مشترك",
-    "toggle-on-title": "مشاركة الملاحظة",
-    "toggle-off-title": "إلغاء مشاركة الملاحظة",
     "shared-branch": "هذه الملاحظة موجودة فقط كملاحظة مشتركة، وإلغاء المشاركة سيؤدي إلى حذفها. هل تريد المتابعة وبالتالي حذف هذه الملاحظة؟",
     "inherited": "لا يمكن إلغاء مشاركة هذه الملاحظة هنا لأنها تتم مشاركتها عبر الوراثة من ملاحظة أصل."
   },
   "template_switch": {
-    "template": "قالب",
-    "toggle-on-hint": "جعل الملاحظة قالبًا",
-    "toggle-off-hint": "إزالة الملاحظة كقالب"
+    "template": "قالب"
   },
   "find": {
     "replace": "استبدال",
@@ -1197,8 +1143,6 @@
     "find_placeholder": "البحث في النص..."
   },
   "highlights_list_2": {
-    "options": "خيارات",
-    "title": "قائمة التضليلات",
     "menu_configure": "تهيئة قائمة التمييزات...",
     "no_highlights": "لا توجد عناصر مميزة.",
     "title_with_count_zero": "{{count}} تمييز",
@@ -1269,21 +1213,16 @@
     "editor_crashed_details_title": "معلومات تقنية",
     "keeps-crashing": "مكوّن التحرير يتعطّل باستمرار. يُرجى محاولة إعادة تشغيل Trilium. إذا استمرت المشكلة، ففكّر في إنشاء تقرير خطأ."
   },
-  "classic_editor_toolbar": {
-    "title": "تنسيق"
-  },
   "editor": {
     "title": "محرر"
   },
   "editing": {
     "editor_type": {
       "floating": {
-        "title": "عائم",
-        "description": "تظهر أدوات التحرير بالقرب من المؤشر؛"
+        "title": "عائم"
       },
       "fixed": {
-        "title": "مثبت",
-        "description": "تظهر أدوات التحرير في تبويب \"التنسيق\" ضمن الشريط."
+        "title": "مثبت"
       },
       "label": "شريط ادوات التنسيق",
       "toolbar_style": "نمط شريط الأدوات",
@@ -1457,26 +1396,17 @@
     "electron_api_docs_button_title": "فتح توثيق واجهة برمجة تطبيقات Electron",
     "sql_console_saved_message": "تم حفظ ملاحظة وحدة تحكم SQL في ‎{{note_path}}‎"
   },
-  "hide_floating_buttons_button": {
-    "button_title": "اخفاء الازرار"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "عرض الازرار"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "إنشاء ملاحظة فرعية وإضافتها إلى الخريطة"
   },
   "inherited_attribute_list": {
     "title": "السمات الموروثة",
-    "no_inherited_attributes": "لاتوجد سمات موروثة.",
     "none": "لاشيء"
   },
   "note_map": {
     "title": "خريطة الملاحظة",
     "fix-nodes": "اصلاح العقد",
     "link-distance": "مسافة الرابط",
-    "open_full": "توسيع للعرض الكامل",
-    "collapse": "طي الى الحجم الطبيعي",
     "show-anyway": "عرض الخريطة",
     "too-many-notes_zero": "يوجد {{count}} ملاحظة هنا. عرضها جميعًا قد يؤدي إلى بطء الأداء.",
     "too-many-notes_one": "",
@@ -1484,9 +1414,6 @@
     "too-many-notes_few": "",
     "too-many-notes_many": "",
     "too-many-notes_other": ""
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "السمات المملوكة"
   },
   "similar_notes": {
     "title": "ملاحظات مشابهة",
@@ -1581,9 +1508,6 @@
     "description": "سيؤدي هذا إلى إعادة بناء قاعدة البيانات، مما يؤدي عادةً إلى تقليل حجم ملف قاعدة البيانات. لن يتم تغيير أي بيانات فعليًا.",
     "vacuum_description": "إعادة بناء قاعدة البيانات لتقليل حجم الملف. لن يتم تغيير أي بيانات."
   },
-  "ribbon": {
-    "edited_notes_message": "سيتم فتح تبويب الشريط \"الملاحظات المعدلة\" تلقائيًا عند ملاحظات اليوم"
-  },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "اختصارات لوحة المفاتيح باسلوب Vim",
     "enable_vim_keybindings": "تفعيل اختصارات Vim في ملاحظات الكود (بدون وضع ex)"
@@ -1604,14 +1528,8 @@
     "italic": "نص مائل",
     "underline": "خط تحت النص",
     "color": "نص ملون",
-    "visibility_title": "اظهار قائمة التضليلات",
     "bg_color": "نص مع لون خلفية",
-    "description": "يمكنك تخصيص قائمة التمييزات المعروضة في اللوحة اليمنى:",
-    "shortcut_info": "يمكنك إعداد اختصار لوحة مفاتيح للتبديل السريع للوحة اليمنى (بما في ذلك التمييزات) من خلال: الخيارات → الاختصارات (باسم ‎'toggleRightPane'‎).",
-    "visibility_description": "يمكنك إخفاء أداة التمييز (Highlights widget) لكل ملاحظة على حدة عبر إضافة الوسم ‎#hideHighlightWidget‎."
-  },
-  "revisions_button": {
-    "note_revisions": "مراجعات الملاحظة"
+    "description": "يمكنك تخصيص قائمة التمييزات المعروضة في اللوحة اليمنى:"
   },
   "custom_date_time_format": {
     "format_string": "سلسلة التنسيق",
@@ -1715,10 +1633,6 @@
     "title": "لغات المحتوى",
     "description": "اختر لغة واحدة أو أكثر لعرضها في قائمة اختيار اللغة ضمن قسم الخصائص الأساسية في الملاحظة النصية (سواء كانت للقراءة فقط أو قابلة للتعديل). سيسمح ذلك بتفعيل ميزات مثل التدقيق الإملائي، ودعم الكتابة من اليمين إلى اليسار، واستخراج النص (OCR)."
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "الغاء قفل التحرير",
-    "lock-editing": "قفل التحرير"
-  },
   "cpu_arch_warning": {
     "continue_anyway": "المتابعة على اي حال",
     "download_link": "تنزيل النسخة الاصلية",
@@ -1806,9 +1720,6 @@
   "create_pane_button": {
     "create_new_split": "انشاء تقسيم جديد"
   },
-  "edit_button": {
-    "edit_this_note": "تعديل هذه الملاحظة"
-  },
   "include_archived_notes": {
     "include_archived_notes": "تضمين الملاحظات المؤرشفة"
   },
@@ -1843,10 +1754,7 @@
     "create-note": "إنشاء ملاحظة فرعية وربطها \"{{term}}\""
   },
   "protect_note": {
-    "toggle-off": "إزالة الحماية عن الملاحظة",
-    "toggle-on": "حماية الملاحظة",
-    "toggle-on-hint": "الملاحظة غير محمة، انقر لحمايتها",
-    "toggle-off-hint": "الملاحظة محمية، انقر لإزالة الحماية منها"
+    "toggle-on": "حماية الملاحظة"
   },
   "open-help-page": "فتح صفحة المساعدة",
   "empty": {
@@ -1893,9 +1801,6 @@
     "consistency-checks-failed": "فشل التحقق من الاتساق! راجع السجلات للتفاصيل.",
     "encountered-error": "تمت مواجهة خطأ \"{{message}}\"، تحقق من وحدة التحكم."
   },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "عرض قائمة التضليلات"
-  },
   "presentation_view": {
     "start-presentation": "بدء العرض التقديمي",
     "edit-slide": "تعديل هذه الشريحة",
@@ -1912,12 +1817,6 @@
   },
   "abstract_bulk_action": {
     "remove_this_search_action": "حذف اجراء البحث هذا"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "عرض جدول المحتويات"
-  },
-  "svg_export_button": {
-    "button_title": "تصدير المخطط ك SVG"
   },
   "abstract_search_option": {
     "remove_this_search_option": "حذف خيار البحث هذا",
@@ -1973,9 +1872,6 @@
   },
   "content_widget": {
     "unknown_widget": "عنصر واجهة غير معروف للمعرف \"{{id}}\"."
-  },
-  "png_export_button": {
-    "button_title": "تصدير المخطط كملف PNG"
   },
   "protected_session_status": {
     "inactive": "انقر للدخول الى جلسة محمية",
@@ -2433,9 +2329,7 @@
     "delete_note": "جار حذف الملاحظة..."
   },
   "read-only-info": {
-    "edit-note": "تحرير الملاحظة",
-    "read-only-note": "أنت حاليًا تعرض ملاحظة للقراءة فقط.",
-    "auto-read-only-note": "هذه الملاحظة معروضة في وضع القراءة فقط لتحميل أسرع."
+    "edit-note": "تحرير الملاحظة"
   },
   "code_mime_types": {
     "tooltip_syntax_highlighting": "تلوين بناء الجمل",
@@ -2445,18 +2339,13 @@
   },
   "experimental_features": {
     "title": "الخيارات التجريبية",
-    "new_layout_name": "تخطيط جديد",
     "llm_name": "دردشة الذكاء الاصطناعي / نموذج اللغة الكبير",
-    "new_layout_description": "جرّب التخطيط الجديد للحصول على مظهر أكثر حداثة وتحسين في سهولة الاستخدام. قد يخضع لتغييرات كبيرة في الإصدارات القادمة.",
     "disclaimer": "هذه الخيارات تجريبية وقد تسبب عدم استقرار. استخدمها بحذر.",
     "llm_description": "تفعيل الشريط الجانبي للدردشة بالذكاء الاصطناعي وملاحظات الدردشة المعتمدة على نماذج اللغة الكبيرة (LLMs)."
   },
   "settings_appearance": {
     "ui": "واجهة المستخدم",
-    "ui_old_layout": "التخطيط القديم",
-    "ui_new_layout": "التخطيط الجديد",
     "ui_layout_orientation": "اتجاه شريط الإطلاق",
-    "ui_layout_style": "نمط التخطيط",
     "related_code_notes": "نظام ألوان لملاحظات الكود",
     "related_code_blocks": "نظام الألوان لمقاطع الشيفرة في الملاحظات النصية"
   },
@@ -2613,14 +2502,6 @@
   },
   "onclick_button": {
     "no_click_handler": "أداة الزر \"{{componentId}}\" لا تحتوي على معالج نقر (click handler) محدد."
-  },
-  "copy_image_reference_button": {
-    "button_title": "نسخ مرجع الصورة إلى الحافظة، ويمكن لصقه في ملاحظة نصية."
-  },
-  "shared_info": {
-    "shared_publicly": "هذه الملاحظة مُشارَكة بشكل عام على {{- link}}.",
-    "help_link": "للمساعدة، قم بزيارة <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">الويكي</a>.",
-    "shared_locally": "هذه الملاحظة مشتركة محليًا على {{- link}}."
   },
   "switch_layout_button": {
     "title_vertical": "نقل لوحة التحرير إلى الأسفل",

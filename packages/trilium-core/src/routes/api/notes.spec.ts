@@ -172,6 +172,49 @@ describe("Notes API (core)", () => {
         });
     });
 
+    describe("editing blocks", () => {
+        const blocks = `<p data-trilium-block-id="a">A</p><p data-trilium-block-id="b">B</p>`;
+
+        it("reads and replaces the blocks of a text note", async () => {
+            const { noteId } = await createTextNote(api, {
+                content: `<p>Before</p>${blocks}<p>After</p>`
+            });
+
+            const read = await api.get<{ content: string }>(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" }
+            });
+            expect(read.status).toBe(200);
+            expect(read.body.content).toBe(blocks);
+
+            const update = await api.put(`/api/notes/${noteId}/blocks`, {
+                query: { block: "a:b" },
+                body: { content: `<p data-trilium-block-id="a">New</p>` }
+            });
+            expect(update.status).toBe(204);
+
+            const blob = await api.get<{ content: string }>(`/api/notes/${noteId}/blob`);
+            expect(blob.body.content)
+                .toBe(`<p>Before</p><p data-trilium-block-id="a">New</p><p>After</p>`);
+        });
+
+        it("rejects missing blocks and malformed requests", async () => {
+            const { noteId } = await createTextNote(api, { content: blocks });
+            const url = `/api/notes/${noteId}/blocks`;
+            const codeNote = await api.post<{ note: { noteId: string } }>(
+                "/api/notes/root/children?target=into",
+                { body: { title: "Code", type: "code", mime: "text/plain", content: blocks } }
+            );
+            const codeUrl = `/api/notes/${codeNote.body.note.noteId}/blocks`;
+
+            expect((await api.get(url, { query: { block: "a:x" } })).status).toBe(404);
+            expect((await api.get(url)).status).toBe(400);
+            expect((await api.get(codeUrl, { query: { block: "a" } })).status).toBe(400);
+            expect((await api.put(url, { query: { block: "a:x" }, body: { content: "" } })).status)
+                .toBe(404);
+            expect((await api.put(url, { query: { block: "a" }, body: {} })).status).toBe(400);
+        });
+    });
+
     describe("deleting and undeleting", () => {
         it("soft-deletes a note, then undeletes it", async () => {
             const { noteId } = await createTextNote(api, { title: "To delete" });

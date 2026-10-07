@@ -1,6 +1,7 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 
 import appContext, { type CommandNames } from "../components/app_context.js";
+import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import { t } from "../services/i18n.js";
 import options from "../services/options.js";
@@ -135,6 +136,9 @@ export async function buildNoteContextMenuItems(
     // A cell selection supersedes `selectionText`: over one, Electron reports the hidden
     // fake-selection label as the selected text, which no row should act on.
     const hasCellSelection = tableSections !== null && await hasTableCellSelection(target.element);
+    const blockReferenceItems = target.isEditable
+        ? await buildBlockReferenceMenuItems(target.element, host.paste)
+        : null;
     const hasText = !hasCellSelection && target.selectionText.trim().length > 0;
     const hasClipboardContent = hasText || hasCellSelection;
 
@@ -186,6 +190,9 @@ export async function buildNoteContextMenuItems(
                 handler: copySelectionAsMarkdown
             }
         ];
+        if (blockReferenceItems?.copy) {
+            copyVariants.push({ kind: "separator" }, blockReferenceItems.copy);
+        }
 
         items.push(splitMenuItem({
             enabled: host.canCopy && hasClipboardContent,
@@ -220,6 +227,9 @@ export async function buildNoteContextMenuItems(
                 handler: runAsPlainText
             }
         ];
+        if (blockReferenceItems?.paste.length) {
+            pasteVariants.push({ kind: "separator" }, ...blockReferenceItems.paste);
+        }
         if (tableSections?.pasteRows.length) {
             pasteVariants.push({ kind: "separator" }, ...tableSections.pasteRows);
         }

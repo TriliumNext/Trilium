@@ -101,7 +101,7 @@ const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
 const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? sanitizeUrl(subRoot.note.getLabelValue("shareRootLink") ?? "") : `./${subRoot.note.noteId}`;
-const headingRe = /(<h[1-6]>)(.+?)(<\/h[1-6]>)/g;
+const headingRe = /(<h[1-6](?:\s[^>]*)?>)(.+?)(<\/h[1-6]>)/g;
 const headingMatches = [...content.matchAll(headingRe)];
 // Unique slug per heading (in document order) so duplicate titles get distinct
 // anchor IDs and the ToC links point to the right occurrence.

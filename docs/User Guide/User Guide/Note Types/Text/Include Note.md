@@ -11,6 +11,8 @@ To include a note that is already linked, right-click a reference link to it in 
 
 An [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) can be included the same way, from the context menu of a link to it (see _Embedding an attachment_ there).
 
+A link to blocks of a text note is converted the same way, with _Convert link to note excerpt_, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
+
 ## Box sizes
 
 The box size sets how much of the included note is shown.
@@ -24,7 +26,7 @@ A new include gets the size that suits what it shows:
 
 *   _Tiny_ for a note or an attachment that has no preview, such as a relation map or an archive.
 *   _Small_ for audio.
-*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment.
+*   _Full_ for a code note or a code file, such as a `.js`, `.py` or `.txt` attachment, and for an excerpt of the blocks of a text note.
 *   _Medium_ for anything else.
 
 The dialog that includes a note selects that size once the note is picked, and you can choose another one there. To change the size later, select the include and use the _Box size_ menu in its toolbar, or the _Size_ submenu of its _More actions_ menu.
@@ -66,7 +68,7 @@ The <span class="tn-icon bx bx-dots-vertical-rounded"></span> _More actions_ but
 
 In a note being edited, the menu also has the commands of the include's toolbar: the _Size_ submenu, _Show title_ and _Show caption_, each checked while it is in effect, and _Convert to link_ at the end. A drawing canvas, an included text or code note and an embedded code file also have _Editable_, above _Size_. For an embedded attachment they follow its first group of actions; for an included note they end the menu.
 
-To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
+To show an include of size _Medium_ or _Full_ on the whole screen, press the <span class="tn-icon bx bx-fullscreen"></span> _Fullscreen_ button at the end of its title. An excerpt of the blocks of a note has an <span class="tn-icon bx bx-pencil"></span> _Edit excerpt_ button there instead; see <a class="reference-link" href="Block%20references.md">Block references</a>. To return, press <span class="tn-icon bx bx-exit"></span> _Exit fullscreen_ in the top-right corner, or <kbd>Esc</kbd>.
 
 A _Tiny_ include has these buttons instead, followed by the same _More actions_ button:
 
@@ -110,6 +112,7 @@ An included text note, an included code note and an embedded code file such as a
 *   While an included text note has the focus, the formatting toolbar applies to it. The notes it includes in turn stay read-only.
 *   Code is edited in the same code editor as a <a class="reference-link" href="../Code.md">Code</a> note, with its theme, indentation and line wrapping settings.
 *   The changes are saved as you type, to the included note or to the attachment, as they would be in its own tab.
+*   An include of <a class="reference-link" href="Block%20references.md">Block references</a> edits only the referenced blocks.
 *   Editing is not available in a [read-only note](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), for an included note marked `#readOnly`, or for an attachment of another note.
 
 ## Drawing canvases

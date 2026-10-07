@@ -35,6 +35,14 @@ describe( 'MermaidEditing', () => {
 			return editor.destroy();
 		} );
 
+		it( 'makes a selected mermaid one of the selected blocks', () => {
+			expect( model.schema.isBlock( 'mermaid' ) ).to.equal( true );
+
+			setModelData( model, '[<mermaid displayMode="split" source="flowchart TB"></mermaid>]' );
+			const blocks = Array.from( model.document.selection.getSelectedBlocks() );
+			expect( blocks.map( block => block.name ) ).to.deep.equal( [ 'mermaid' ] );
+		} );
+
 		describe( 'conversion', () => {
 			describe( 'upcast', () => {
 				it( 'works correctly', () => {

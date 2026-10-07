@@ -1,9 +1,8 @@
 import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup, CKTextEditor } from "@triliumnext/ckeditor5";
 
 import type { CommandNames } from "../components/app_context.js";
-import appContext from "../components/app_context.js";
-import type NoteContext from "../components/note_context.js";
 import { t } from "../services/i18n.js";
+import { getEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuItem } from "./context_menu.js";
 
 /**
@@ -144,58 +143,23 @@ export async function getTextEditorAtSelection(): Promise<CKTextEditor | null> {
 }
 
 /**
- * Returns the text editor whose editable contains `node`, or `null` when no text editor does.
- * Takes the right-click target instead of the DOM selection, because a right-click does not move
- * the selection in every browser.
+ * Returns the text editor of a note whose editable contains `node`, or `null` when no such editor
+ * does. Takes the right-click target instead of the DOM selection, because a right-click does not
+ * move the selection in every browser.
  *
- * Looks up the editor in the split pane that contains `node`, because a right-click does not
- * activate that pane. Inside an included note edited in place, the editor of that note answers.
+ * Reads the editor off the innermost editable root around `node`, so it finds the editor of a split
+ * pane the right-click did not activate, of a dialog such as the quick edit, and of an included
+ * note edited in place. An editor that holds no note, such as the attribute editor, does not count.
  */
 export async function getTextEditorContaining(
     node: Node | null | undefined
 ): Promise<CKTextEditor | null> {
-    const noteContext = node ? getNoteContextContaining(node) : null;
-    if (!node || noteContext?.note?.type !== "text") {
-        return null;
-    }
-
-    try {
-        const editor = await noteContext.getTextEditor();
-        const domRoot = editor?.editing.view.getDomRoot();
-
-        if (editor && domRoot && domRoot.contains(node)) {
-            return getNestedEditor(node, domRoot) ?? editor;
-        }
-    } catch (error) {
-        // Editor not ready or the request timed out.
-        console.error("Failed to read the text editor at the selection:", error);
-    }
-
-    return null;
+    const element = node instanceof Element ? node : node?.parentElement;
+    const editor = element?.closest<EditorRootElement>(EDITOR_ROOT_SELECTOR)?.ckeditorInstance;
+    return editor && getEditorNoteId(editor) ? editor : null;
 }
 
-/** The editor of an included note edited inside the editable `domRoot`, which contains `node`. */
-function getNestedEditor(node: Node, domRoot: HTMLElement) {
-    const element = node instanceof Element ? node : node.parentElement;
-    const editable = element?.closest<HTMLElement & { ckeditorInstance?: CKTextEditor }>(
-        ".ck-editor__editable:not(.ck-editor__nested-editable)"
-    );
-    return editable && editable !== domRoot && domRoot.contains(editable)
-        ? editable.ckeditorInstance ?? null
-        : null;
-}
+/** The editable root of a text editor, which CKEditor gives a reference to the editor. */
+type EditorRootElement = HTMLElement & { ckeditorInstance?: CKTextEditor | null };
 
-/**
- * Returns the note context whose `ntxId` matches the `data-ntx-id` of the split pane that contains
- * `node`, or the active note context when `node` is outside every pane, e.g. in a dialog.
- */
-function getNoteContextContaining(node: Node): NoteContext | null {
-    const { tabManager } = appContext;
-    const element = node instanceof Element ? node : node.parentElement;
-    const ntxId = element?.closest<HTMLElement>("[data-ntx-id]")?.dataset.ntxId;
-    if (!ntxId) {
-        return tabManager.getActiveContext();
-    }
-
-    return tabManager.getNoteContexts().find((noteContext) => noteContext.ntxId === ntxId) ?? null;
-}
+const EDITOR_ROOT_SELECTOR = ".ck-editor__editable:not(.ck-editor__nested-editable)";

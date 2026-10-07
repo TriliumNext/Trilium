@@ -14,6 +14,8 @@ The first popup is the block-level popup. This will appear to the left of the cu
 
 Clicking this popup will reveal the formatting options that are specific to the entire paragraph, such as setting a heading, lists, tables, etc.
 
+The dots are also a drag handle: drag them to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Right-clicking them copies a reference to the paragraph or to the selected paragraphs, see <a class="reference-link" href="Block%20references.md">Block references</a>.
+
 ![](3_Formatting%20toolbar_image.png)
 
 ### Inline popup
@@ -29,6 +31,8 @@ All the options here apply only to the selected portion of text, such as changin
 The fixed formatting offers a more traditional editing paradigm, usually useful if a lot of formatting is needed.
 
 All the options are combined into a single toolbar that will appear as part of the [Ribbon](../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md).
+
+The sequence of dots to the left of the current paragraph is still shown, but only as a drag handle: drag it to move the paragraph, all the selected paragraphs, or a selected element such as an image, a table or an included note to another place in the note. Clicking it does not open a popup, and right-clicking it copies a reference to the block, see <a class="reference-link" href="Block%20references.md">Block references</a>. The drag handle is not shown in the mobile layout.
 
 ![](2_Formatting%20toolbar_image.png)
 

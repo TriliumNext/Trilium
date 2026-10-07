@@ -1,30 +1,11 @@
 import type { AiQuickAction, AiQuickActionFooter, AiQuickActionGroup } from "@triliumnext/ckeditor5";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const h = vi.hoisted(() => {
-    interface FakeContext {
-        ntxId?: string;
-        note?: { type: string } | null;
-        getTextEditor: () => Promise<unknown>;
-    }
-    const tabManager = {
-        activeNote: null as { type: string } | null,
-        activeContext: null as FakeContext | null,
-        contexts: [] as FakeContext[],
-        getActiveContext: () => tabManager.activeContext
-            && { note: tabManager.activeNote, ...tabManager.activeContext },
-        getNoteContexts: () => tabManager.contexts
-    };
-    return { tabManager };
-});
-
-vi.mock("../components/app_context.js", () => ({ default: { tabManager: h.tabManager } }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
 
+import { setEditorNoteId } from "../widgets/react/NoteStore.js";
 import type { MenuCommandItem, MenuItem } from "./context_menu.js";
 import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
-
-const { tabManager } = h;
 
 const GROUPS: AiQuickActionGroup[] = [
     {
@@ -63,7 +44,7 @@ function fakeEditor({
     isEnabled = true,
     hasPlugin = true
 }: {
-    domRoot: Node | null;
+    domRoot: HTMLElement;
     groups?: AiQuickActionGroup[];
     menuFooter?: AiQuickActionFooter[];
     hasContext?: boolean;
@@ -79,9 +60,26 @@ function fakeEditor({
         commands: { get: () => ({ isEnabled }) },
         execute: vi.fn()
     };
-    tabManager.activeNote = { type: "text" };
-    tabManager.activeContext = { getTextEditor: () => Promise.resolve(editor) };
+    makeNoteEditorRoot(domRoot, editor, "note1");
     return { editor, ui };
+}
+
+/**
+ * An editable root of `editor`, as CKEditor renders it, in a text editor that holds the content
+ * of `noteId`.
+ */
+function noteEditorRoot(editor: object, noteId?: string) {
+    return makeNoteEditorRoot(document.createElement("div"), editor, noteId);
+}
+
+/** Turns `element` into an editable root of `editor`, which holds the content of `noteId`. */
+function makeNoteEditorRoot(element: HTMLElement, editor: object, noteId?: string) {
+    element.classList.add("ck-editor__editable");
+    Object.assign(element, { ckeditorInstance: editor });
+    if (noteId) {
+        setEditorNoteId(editor, noteId);
+    }
+    return element;
 }
 
 /** Points `window.getSelection()` at `anchorNode`. */
@@ -100,34 +98,31 @@ function commandItems(items: MenuItem<string>[]) {
 describe("getTextEditorAtSelection", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
-        tabManager.activeNote = null;
-        tabManager.activeContext = null;
-        tabManager.contexts = [];
     });
 
-    it("returns the editor only when the selection is inside its DOM root", async () => {
-        const root = document.createElement("div");
-        const inside = document.createTextNode("hello");
-        root.appendChild(inside);
+    it("finds the editor of the note holding the selection, wherever it is", async () => {
+        for (const holder of [ "note-split", "modal popup-editor-dialog" ]) {
+            const container = document.createElement("div");
+            container.className = holder;
+            const editor = {};
+            const root = container.appendChild(noteEditorRoot(editor, "note1"));
+            const inside = root.appendChild(document.createTextNode("hello"));
 
-        const { editor } = fakeEditor({ domRoot: root });
-        setSelection(inside);
-        expect(await getTextEditorAtSelection()).toBe(editor);
+            setSelection(inside);
+            expect(await getTextEditorAtSelection(), holder).toBe(editor);
+        }
 
-        // Same editor, but the click landed in a dialog rather than in the note.
         setSelection(document.createTextNode("elsewhere"));
+        expect(await getTextEditorAtSelection()).toBeNull();
+        setSelection(null);
         expect(await getTextEditorAtSelection()).toBeNull();
     });
 
     it("returns the editor of an included note that is edited inside the note", async () => {
-        const root = document.createElement("div");
-        root.className = "ck-editor__editable";
-        const { editor } = fakeEditor({ domRoot: root });
-        const nestedEditor = { editing: { view: {} } };
-        const nestedRoot = Object.assign(document.createElement("div"), {
-            className: "ck-editor__editable",
-            ckeditorInstance: nestedEditor
-        });
+        const editor = {};
+        const root = noteEditorRoot(editor, "note1");
+        const nestedEditor = {};
+        const nestedRoot = noteEditorRoot(nestedEditor, "note2");
         const caption = document.createElement("div");
         caption.className = "ck-editor__editable ck-editor__nested-editable";
         root.append(nestedRoot, caption);
@@ -143,43 +138,10 @@ describe("getTextEditorAtSelection", () => {
         expect(await getTextEditorAtSelection()).toBe(editor);
     });
 
-    it("returns null for a non-text note, and swallows a failing editor lookup", async () => {
-        setSelection(document.createTextNode("hello"));
+    it("leaves out an editor that holds no note, such as the attribute editor", async () => {
+        const root = noteEditorRoot({});
+        setSelection(root.appendChild(document.createTextNode("#label")));
 
-        tabManager.activeNote = { type: "code" };
-        tabManager.activeContext = { getTextEditor: () => Promise.reject(new Error("timed out")) };
-        expect(await getTextEditorAtSelection()).toBeNull();
-
-        tabManager.activeNote = { type: "text" };
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        expect(await getTextEditorAtSelection()).toBeNull();
-    });
-
-    it("looks the editor up in the split pane holding the node, active or not", async () => {
-        const pane = document.createElement("div");
-        pane.dataset.ntxId = "ntx-right";
-        const root = document.createElement("div");
-        const inside = document.createTextNode("cell");
-        root.appendChild(inside);
-        pane.appendChild(root);
-
-        const editor = { editing: { view: { getDomRoot: () => root } } };
-        tabManager.activeNote = { type: "code" };
-        tabManager.activeContext = { ntxId: "ntx-left", getTextEditor: () => Promise.reject() };
-        tabManager.contexts = [
-            { ntxId: "ntx-left", note: { type: "code" }, getTextEditor: () => Promise.reject() },
-            { ntxId: "ntx-right", note: { type: "text" }, getTextEditor: async () => editor }
-        ];
-
-        setSelection(inside);
-        expect(await getTextEditorAtSelection()).toBe(editor);
-
-        // A pane whose note context is gone, or holds another note type.
-        tabManager.contexts = [];
-        expect(await getTextEditorAtSelection()).toBeNull();
-        tabManager.contexts = [
-            { ntxId: "ntx-right", note: { type: "code" }, getTextEditor: async () => editor }
-        ];
         expect(await getTextEditorAtSelection()).toBeNull();
     });
 });

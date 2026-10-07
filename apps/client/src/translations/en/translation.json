@@ -3007,6 +3007,7 @@
     "open_note_in_popup": "Quick edit",
     "convert_link_to_embed": "Convert link to an embed",
     "convert_link_to_included_note": "Convert link to an included note",
+    "convert_link_to_note_excerpt": "Convert link to note excerpt",
     "convert_embed_to_link": "Convert to link",
     "include_size": "Size",
     "show_title": "Show title",
@@ -4493,5 +4494,18 @@
     "filter": "Filter",
     "filter_placeholder": "Type to filter…",
     "back": "Back"
+  },
+  "block_reference": {
+    "copy_one": "Copy reference to this block",
+    "copy_other": "Copy reference to these {{count}} blocks",
+    "paste_as_link": "Paste reference as a link",
+    "paste_as_excerpt": "Paste reference as an excerpt",
+    "no_reference_on_clipboard": "The clipboard does not contain a block reference.",
+    "broken": "Broken reference",
+    "not_found": "A referenced block could not be found. It might have been deleted.",
+    "untitled": "Block",
+    "excerpt": "Excerpt",
+    "excerpt_description": "You are currently seeing just a fragment of this note. Press the {{icon}} button to open the entire note in a new tab.",
+    "edit_excerpt": "Edit excerpt"
   }
 }

@@ -10,6 +10,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "pre
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
 import { applyLinkEmbeds } from "../../../services/link_embed";
@@ -18,7 +19,10 @@ import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
-import { useNoteBlob, useNoteLabel, useSearchTermsConsumer, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import {
+    useNoteBlob, useNoteLabel, useSameNoteSwitch, useSearchTermsConsumer, useSyncedRef,
+    useTriliumEvent, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
 import { RawHtmlBlock } from "../../react/RawHtml";
 import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
@@ -43,13 +47,26 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
     });
     const { isRtl } = useNoteLanguage(note);
     const readOnlyContentRef = usePreactRef<HTMLDivElement>(null);
+    const renderedNoteIdRef = usePreactRef<string | undefined>(undefined);
 
-    // Scroll to bookmark anchor if navigated with ?bookmark=... The blob gate skips the mount run,
+    // Scroll to the bookmark or the blocks a link points at. The blob gate skips the mount run,
     // which fires against an empty container while the content is still loading.
     useEffect(() => {
         if (!blob) return;
-        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
+        renderedNoteIdRef.current = note.noteId;
+        revealLinkTarget();
     }, [blob]);
+    // A hidden widget leaves the link target to the one on display.
+    useSameNoteSwitch(note, ntxId, () => {
+        if (isVisible !== false && renderedNoteIdRef.current === note.noteId) {
+            revealLinkTarget();
+        }
+    });
+
+    function revealLinkTarget() {
+        consumeBookmark(readOnlyContentRef.current, noteContext?.viewScope);
+        consumeBlockReference(readOnlyContentRef.current, noteContext?.viewScope);
+    }
 
     // Jump to the first search match when navigated from search results.
     useEffect(() => {
@@ -61,6 +78,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
         <>
             <ReadOnlyTextContent
                 html={blob?.content ?? ""}
+                noteId={note.noteId}
                 ntxId={ntxId}
                 dir={isRtl ? "rtl" : "ltr"}
                 contentRef={readOnlyContentRef}
@@ -72,6 +90,8 @@ export default function ReadOnlyText({ note, noteContext, ntxId, parentComponent
 interface ReadOnlyTextContentProps {
     /** CKEditor-compatible HTML to render. */
     html: string;
+    /** The note `html` belongs to. Reference links to its own blocks show only their text. */
+    noteId?: string;
     /** Note context id — enables `contentElRefreshed` / `executeWithContentElement` integrations when provided. */
     ntxId?: string | null;
     dir?: "ltr" | "rtl";
@@ -87,7 +107,9 @@ interface ReadOnlyTextContentProps {
  * titles, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
-export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: externalContentRef }: ReadOnlyTextContentProps) {
+export function ReadOnlyTextContent({
+    html, noteId, ntxId, dir, className, contentRef: externalContentRef
+}: ReadOnlyTextContentProps) {
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -117,13 +139,13 @@ export function ReadOnlyTextContent({ html, ntxId, dir, className, contentRef: e
             applyInlineMermaid(container),
             applyContentEmbeds(container),
             applyLinkEmbeds(container),
-            applyReferenceLinks(container),
+            applyReferenceLinks(container, noteId),
             formatCodeBlocks($(container))
         ]));
 
         applyMath(container);
         setupImageOpening(container, true);
-    }, [ html, ntxId, contentRef ]);
+    }, [ html, noteId, ntxId, contentRef ]);
 
     useEffect(() => {
         if (!contentRef.current) return;
@@ -168,11 +190,11 @@ function applyContentEmbeds(container: HTMLDivElement) {
     const loaded: Promise<unknown>[] = [];
     const embeddedNotes = container.querySelectorAll<HTMLElement>(".include-note");
     for (const embeddedNote of embeddedNotes) {
-        const { attachmentId, noteId } = embeddedNote.dataset;
+        const { attachmentId, noteId, block } = embeddedNote.dataset;
         if (attachmentId) {
             loaded.push(loadEmbeddedAttachment(attachmentId, $(embeddedNote)));
         } else if (noteId) {
-            loaded.push(loadEmbeddedNote(noteId, $(embeddedNote)));
+            loaded.push(loadEmbeddedNote(noteId, $(embeddedNote), undefined, { block }));
         }
     }
     return Promise.all(loaded);

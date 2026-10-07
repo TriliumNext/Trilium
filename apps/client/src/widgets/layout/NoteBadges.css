@@ -24,6 +24,10 @@
         &.doc-url-badge {--color: var(--badge-doc-url-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
         &.snippet-badge {--color: var(--badge-snippet-background-color);}
+        &.excerpt-badge {
+            --color: var(--main-border-color);
+            color: var(--main-text-color);
+        }
         &.save-status-badge {
             --default-opacity: 0.4;
             opacity: var(--default-opacity);

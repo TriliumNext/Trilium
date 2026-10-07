@@ -24,6 +24,7 @@ import {
 import editIcon from 'boxicons/svg/regular/bx-edit-alt.svg?raw';
 import windowIcon from 'boxicons/svg/regular/bx-window-alt.svg?raw';
 import noteIcon from '../../icons/note.svg?raw';
+import { encodeBlockParameter, parseBlockRange } from '@triliumnext/commons';
 import { getAttachmentId, getNoteId } from '../referencelink.js';
 import ResizableWidgets, { SIZE_ATTRIBUTES } from '../resizable_widgets/resizable_widgets.js';
 import './nested_editor_events.js';
@@ -397,11 +398,12 @@ class ContentEmbedEditing extends Plugin {
 		schema.register( 'contentEmbed', {
 			// Behaves like a self-contained object (e.g. an image).
 			isObject: true,
+			isBlock: true,
 
 			// An embed shows either a note or an attachment. An embed that
 			// `FileUploadEditing` is uploading carries the upload attributes instead of its id.
 			allowAttributes: [
-				'noteId', 'attachmentId', 'boxSize', 'hideTitle', 'editable', 'uploadId',
+				'noteId', 'block', 'attachmentId', 'boxSize', 'hideTitle', 'editable', 'uploadId',
 				'uploadStatus', 'uploadFileName'
 			],
 
@@ -430,9 +432,10 @@ class ContentEmbedEditing extends Plugin {
 		conversion.for( 'upcast' ).elementToElement( {
 			model: ( viewElement, { writer: modelWriter } ) => {
 				const attachmentId = viewElement.getAttribute( 'data-attachment-id' );
+				const block = viewElement.getAttribute( 'data-block' );
 				const embedded = attachmentId
 					? { attachmentId }
-					: { noteId: viewElement.getAttribute( 'data-note-id' ) };
+					: { noteId: viewElement.getAttribute( 'data-note-id' ), ...( block ? { block } : {} ) };
 
 				return modelWriter.createElement( 'contentEmbed', {
 					...embedded,
@@ -545,7 +548,7 @@ class ContentEmbedEditing extends Plugin {
 			// Redraws the content in place when an upload ends. A converter that lists
 			// `attributes` also reconverts the embed on every change of its children, such as
 			// a caption toggle.
-			for ( const attribute of [ 'attachmentId', 'uploadFileName' ] ) {
+			for ( const attribute of [ 'attachmentId', 'block', 'uploadFileName' ] ) {
 				dispatcher.on( `attribute:${ attribute }:contentEmbed`, ( _evt, data, api ) => {
 					redrawEmbeddedEntity( editor, data.item as ModelElement, api );
 				} );
@@ -836,15 +839,17 @@ class ConvertEmbedToLinkCommand extends Command {
 		const embed = getSelectedContentEmbed( editor );
 		const attachmentId = embed?.getAttribute( 'attachmentId' ) as string | undefined;
 		const noteId = embed?.getAttribute( 'noteId' ) as string | undefined;
+		const block = embed?.getAttribute( 'block' ) as string | undefined;
 		if ( !embed || ( !attachmentId && !noteId ) ) {
 			return;
 		}
 
 		const editorEl = editor.editing.view.getDomRoot();
 		const component = glob.getComponentByEl<EditorComponent>( editorEl );
+		const blockQuery = block ? `?block=${ encodeBlockParameter( block ) }` : '';
 		const href = attachmentId
 			? await component.getAttachmentHref( attachmentId )
-			: `#root/${ noteId }`;
+			: `#root/${ noteId }${ blockQuery }`;
 
 		// The embed can be removed while the host looks the link up.
 		const root = embed.root;
@@ -865,8 +870,7 @@ class ConvertEmbedToLinkCommand extends Command {
 
 /**
  * The reference link that `domElement` renders, and the attributes of an embed showing what it
- * points to, or `null`. A link to a note with a query points to a part of the note, such as a
- * board card, which an embed does not show.
+ * points to, or `null`. Of the links to a part of a note, an embed shows only blocks.
  */
 function getLinkToEmbed( editor: Editor, domElement: HTMLElement ) {
 	const viewElement = editor.editing.view.domConverter.mapDomToView( domElement );
@@ -883,8 +887,26 @@ function getLinkToEmbed( editor: Editor, domElement: HTMLElement ) {
 		return { reference, embedded: { attachmentId } };
 	}
 
-	const noteId = typeof href === 'string' && !href.includes( '?' ) ? getNoteId( href ) : null;
-	return noteId ? { reference, embedded: { noteId } } : null;
+	const embedded = getEmbeddedNote( href );
+	return embedded ? { reference, embedded } : null;
+}
+
+/** The note that `href` points to, and its blocks, or `null` for a link to another part of it. */
+function getEmbeddedNote( href: unknown ) {
+	const noteId = getNoteId( href );
+	if ( !noteId ) {
+		return null;
+	}
+
+	const query = String( href ).split( '?' )[ 1 ];
+	if ( !query ) {
+		return { noteId };
+	}
+
+	const params = new URLSearchParams( query );
+	const block = params.get( 'block' );
+	const isBlockOnly = [ ...params.keys() ].every( key => key === 'block' );
+	return isBlockOnly && block && parseBlockRange( block ) ? { noteId, block } : null;
 }
 
 /** The embed the selection is on or inside, or `null`. */
@@ -972,18 +994,22 @@ function addContentEmbeds(
 }
 
 /**
- * The `data-*` attribute naming what an embed shows: an attachment, or a note. An embed whose
- * upload has not ended names nothing.
+ * The `data-*` attributes naming what an embed shows: an attachment, or a note and the blocks of
+ * it. An embed whose upload has not ended names nothing.
  */
 function getEmbeddedEntityAttributes( element: ModelElement ): Record<string, string> {
 	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
 	const noteId = element.getAttribute( 'noteId' ) as string | undefined;
+	const block = element.getAttribute( 'block' ) as string | undefined;
 
 	if ( attachmentId ) {
 		return { 'data-attachment-id': attachmentId };
 	}
+	if ( !noteId ) {
+		return {};
+	}
 
-	return noteId ? { 'data-note-id': noteId } : {};
+	return block ? { 'data-note-id': noteId, 'data-block': block } : { 'data-note-id': noteId };
 }
 
 /** The `data-*` attributes of the flags that are on in `element`. */
@@ -1100,7 +1126,7 @@ function showEmbeddedContent( editor: Editor, element: ModelElement, wrapper: HT
 		wrapper.replaceChildren();
 	}
 	const boxSize = element.getAttribute( 'boxSize' ) as string | undefined;
-	loadEmbeddedContent( editor, element, $( wrapper ), boxSize );
+	loadEmbeddedContent( editor, element, wrapper, boxSize );
 }
 
 /** Updates the `data-*` attribute of an embed's view to what it shows, and redraws it. */
@@ -1118,6 +1144,7 @@ function redrawEmbeddedEntity(
 	const viewWriter = conversionApi.writer;
 	viewWriter.removeAttribute( 'data-attachment-id', viewElement );
 	viewWriter.removeAttribute( 'data-note-id', viewElement );
+	viewWriter.removeAttribute( 'data-block', viewElement );
 	for ( const [ key, value ] of Object.entries( getEmbeddedEntityAttributes( embed ) ) ) {
 		viewWriter.setAttribute( key, value, viewElement );
 	}
@@ -1138,9 +1165,10 @@ function getWrapperDom( editor: Editor, viewElement: ViewElement ) {
 function loadEmbeddedContent(
 	editor: Editor,
 	element: ModelElement,
-	$wrapper: JQuery<HTMLElement>,
+	wrapper: HTMLElement,
 	boxSize: string | undefined
 ) {
+	const $wrapper = $( wrapper );
 	const editorEl = editor.editing.view.getDomRoot();
 	const component = glob.getComponentByEl<EditorComponent>( editorEl );
 	const attachmentId = element.getAttribute( 'attachmentId' ) as string | undefined;
@@ -1149,8 +1177,26 @@ function loadEmbeddedContent(
 	if ( attachmentId ) {
 		component.loadEmbeddedAttachment( attachmentId, $wrapper, boxSize );
 	} else if ( noteId ) {
-		component.loadEmbeddedNote( noteId, $wrapper, boxSize );
+		const block = element.getAttribute( 'block' ) as string | undefined;
+		component.loadEmbeddedNote( noteId, $wrapper, boxSize, block, newBlock => {
+			setEmbedBlock( editor, element, wrapper, newBlock );
+		} );
 	}
+}
+
+/**
+ * Points the embed at other blocks of its note, unless it has left the document. Its `wrapper`
+ * keeps what it shows, the editor that holds those blocks.
+ */
+function setEmbedBlock( editor: Editor, embed: ModelElement, wrapper: HTMLElement, block: string ) {
+	if ( editor.state === 'destroyed' || embed.root !== editor.model.document.getRoot() ) {
+		return;
+	}
+
+	editor.model.enqueueChange( { isUndoable: false }, writer => {
+		writer.setAttribute( 'block', block, embed );
+		shownContents.set( wrapper, JSON.stringify( getEmbeddedEntityAttributes( embed ) ) );
+	} );
 }
 
 /**
@@ -1168,7 +1214,7 @@ function reloadEmbeddedContent( editor: Editor, viewElement: ViewElement, modelE
 	const wrapperDom = getWrapperDom( editor, viewElement );
 
 	if ( wrapperDom ) {
-		loadEmbeddedContent( editor, modelElement, $( wrapperDom ), boxSize );
+		loadEmbeddedContent( editor, modelElement, wrapperDom, boxSize );
 	}
 }
 

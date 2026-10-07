@@ -1,6 +1,7 @@
 import {
-    extractYouTubeVideoId, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO, type MimeType,
-    MIME_TYPES_DICT, normalizeMimeTypeForCKEditor, safeLinkPreviewHref, safeLinkPreviewImageSrc
+    encodeBlockParameter, extractYouTubeVideoId, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
+    type MimeType, MIME_TYPES_DICT, normalizeMimeTypeForCKEditor, safeLinkPreviewHref,
+    safeLinkPreviewImageSrc, sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -322,6 +323,11 @@ export interface ShareRenderOptions {
     seenNoteIds?: Set<string>;
     /** See {@link CanAccessEmbed}. When omitted, every embedded note is expanded. */
     canAccessEmbed?: CanAccessEmbed;
+    /**
+     * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
+     * out, and a missing block renders as a broken reference.
+     */
+    block?: string;
 }
 
 export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}) {
@@ -386,6 +392,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         blockTextElements: {}
     };
     const document = parse(result.content || "", parseOpts);
+    if (options.block !== undefined && !sliceToBlockReference(document, options.block)) {
+        const message = escapeHtml(t("content_renderer.broken-block-reference"));
+        result.content = `<p class="block-reference-broken">${message}</p>`;
+        return;
+    }
 
     // One of a preview's pictures, or what stands in for it. Every picture on a shared page makes
     // the same decision, so it is made once: safeLinkPreviewImageSrc() keeps the placeholder for
@@ -490,7 +501,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         : (attachmentId: string) => shaca.getAttachment(attachmentId);
 
     const seenNoteIds = new Set(options.seenNoteIds);
-    seenNoteIds.add(note.noteId);
+    seenNoteIds.add(getEmbedKey(note.noteId, options.block));
     for (const embedEl of document.querySelectorAll(".include-note")) {
         // A Tiny embed shows only a title, so it links to what it shows instead of rendering it.
         const asLink = !!options.embedsAsReferenceLinks
@@ -510,6 +521,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
         const noteId = embedEl.getAttribute("data-note-id");
         if (!noteId) continue;
+        const block = embedEl.getAttribute("data-block");
 
         const embeddedNote = shaca.getNote(noteId);
         if (!embeddedNote) continue;
@@ -524,14 +536,23 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
         // Tiny embeds, deeper-than-first-level embeds and any cycle in the recursive path degrade
         // to a reference link that the link-processing passes below resolve to the shared note.
-        if (asLink || seenNoteIds.has(noteId)) {
-            embedEl.replaceWith(...parse(`<a class="reference-link" href="#root/${escapeHtml(noteId)}">${escapeHtml(embeddedNote.title)}</a>`, parseOpts).childNodes);
+        if (asLink || seenNoteIds.has(getEmbedKey(noteId, block))) {
+            const query = block ? `?block=${encodeBlockParameter(block)}` : "";
+            const href = escapeHtml(`#root/${noteId}${query}`);
+            const title = escapeHtml(embeddedNote.title);
+            const link = `<a class="reference-link" href="${href}">${title}</a>`;
+            embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             continue;
         }
 
+        const nestedOptions: ShareRenderOptions = {
+            seenNoteIds: new Set(seenNoteIds),
+            canAccessEmbed: options.canAccessEmbed,
+            block
+        };
         const embeddedResult = getContent(embeddedNote, options.expandNestedEmbeds
-            ? { expandNestedEmbeds: true, seenNoteIds: new Set(seenNoteIds), canAccessEmbed: options.canAccessEmbed }
-            : { embedsAsReferenceLinks: true, seenNoteIds: new Set(seenNoteIds), canAccessEmbed: options.canAccessEmbed });
+            ? { ...nestedOptions, expandNestedEmbeds: true }
+            : { ...nestedOptions, embedsAsReferenceLinks: true });
         if (typeof embeddedResult.content !== "string") continue;
 
         const embeddedDocument = parse(embeddedResult.content, parseOpts).childNodes;
@@ -577,6 +598,11 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             renderIndex(result);
         }
     }
+}
+
+/** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */
+function getEmbedKey(noteId: string, block: string | undefined) {
+    return block ? `${noteId}:${block}` : noteId;
 }
 
 /**

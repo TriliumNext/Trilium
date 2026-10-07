@@ -99,6 +99,8 @@ export function useSpacedUpdate(callback: () => void | Promise<void>, interval =
 
 export interface SavedData {
     content: string;
+    /** The blocks that `content` holds, a `block` link parameter, for an editor of some blocks. */
+    block?: string;
     attachments?: {
         /** The attachment to update. Without it, the attachment is matched by its title. */
         attachmentId?: string;
@@ -111,7 +113,7 @@ export interface SavedData {
     }[];
 }
 
-export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval }: {
+export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, block }: {
     noteType: NoteType;
     note: FNote | null | undefined,
     noteContext: NoteContext | null | undefined,
@@ -119,9 +121,21 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
     onContentChange: (newContent: string) => void,
     dataSaved?: (savedData: SavedData) => void,
     updateInterval?: number;
+    /**
+     * The blocks of the note to edit instead of the whole note, a `block` link parameter. Each
+     * save replaces them, and the blocks that `getData()` reports are the ones the next save
+     * replaces.
+     */
+    block?: string;
 }) {
     const parentComponent = useContext(ParentComponent);
-    const blob = useNoteBlob(note, parentComponent?.componentId, { reportLoadStateTo: noteContext });
+    const blockRef = useRef(block ?? "");
+    const blob = useNoteBlob(note, parentComponent?.componentId, {
+        reportLoadStateTo: noteContext,
+        load: block === undefined
+            ? undefined
+            : (loadedNote) => loadBlocks(loadedNote, blockRef.current)
+    });
 
     // The note whose content is currently loaded in the editor. Editor instances are reused
     // across note switches, so until the new note's blob arrives the editor still holds the
@@ -139,11 +153,17 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 
-        await server.put(`notes/${note.noteId}/data`, data, parentComponent?.componentId);
-
-        noteSavedDataStore.set(note.noteId, data.content);
+        if (block === undefined) {
+            await server.put(`notes/${note.noteId}/data`, data, parentComponent?.componentId);
+            noteSavedDataStore.set(note.noteId, data.content);
+        } else {
+            const { block: savedBlock, ...blocks } = data;
+            const url = `notes/${note.noteId}/blocks?block=${encodeURIComponent(blockRef.current)}`;
+            await server.put(url, blocks, parentComponent?.componentId);
+            blockRef.current = savedBlock ?? blockRef.current;
+        }
         dataSaved?.(data);
-    }, [ note, dataSaved, noteType, parentComponent ]);
+    }, [ note, dataSaved, noteType, parentComponent, block ]);
 
     const stateCallback = useCallback<StateCallback>((state) => {
         noteContext?.setContextData("saveState", {
@@ -177,7 +197,9 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
         if (!blob || !note) return;
         // Changes not saved here yet stay when another editor saves the note, and replace it.
         if (loadedNoteIdRef.current === note.noteId && spacedUpdate.hasUnsavedChanges()) return;
-        noteSavedDataStore.set(note.noteId, blob.content);
+        if (block === undefined) {
+            noteSavedDataStore.set(note.noteId, blob.content);
+        }
         spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob.content));
         loadedNoteIdRef.current = note.noteId;
     }, [ blob ]);
@@ -216,6 +238,17 @@ export function useSaveBeforeLeaving<T>(
         appContext.addBeforeUnloadListener(listener);
         return () => appContext.removeBeforeUnloadListener(listener);
     }, [ spacedUpdate ]);
+}
+
+/** The blocks of `note` that `block` points at, or `null` when they cannot be read. */
+async function loadBlocks(note: FNote, block: string) {
+    try {
+        return await server.getWithSilentNotFound<{ content: string }>(
+            `notes/${note.noteId}/blocks?block=${encodeURIComponent(block)}`
+        );
+    } catch {
+        return null;
+    }
 }
 
 export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, replaceWithoutRevision }: {
@@ -826,7 +859,7 @@ export function useNoteLabelInt(note: FNote | undefined | null, labelName: Filte
     ];
 }
 
-export function useNoteBlob(note: FNote | null | undefined, componentId?: string, opts?: {
+export function useNoteBlob<T extends { content: string } = FBlob>(note: FNote | null | undefined, componentId?: string, opts?: {
     /** Publish the fetch progress as `contentLoad` context data on the given note context, so
      * the note detail can show a loading state instead of the previous note's content. Should
      * only be set by widgets whose main content display is gated on this blob. (Passed
@@ -842,8 +875,10 @@ export function useNoteBlob(note: FNote | null | undefined, componentId?: string
      * produced by a sibling under the same parent component (e.g. the read-only text view behind
      * the editor), own-component changes are somebody else's edits that must eventually show. */
     refreshOnShow?: boolean;
-}): FBlob | null | undefined {
-    const [ blob, setBlob ] = useState<FBlob | null>();
+    /** Reads the content instead of the blob of the note, resolving to `null` when it fails. */
+    load?: (note: FNote) => Promise<T | null>;
+}): T | null | undefined {
+    const [ blob, setBlob ] = useState<T | null>();
     const requestIdRef = useRef(0);
     const missedContentChangeRef = useRef(false);
 
@@ -859,7 +894,9 @@ export function useNoteBlob(note: FNote | null | undefined, componentId?: string
         if (note) {
             reportLoadState("loading");
         }
-        const newBlob = await note?.getBlob();
+        const newBlob = note && opts?.load
+            ? await opts.load(note)
+            : await note?.getBlob() as T | null | undefined;
 
         // Only update if this is the latest request.
         if (requestId === requestIdRef.current) {
@@ -914,6 +951,22 @@ export function useSearchTermsConsumer(note: FNote | null | undefined, noteConte
         if (switchedContext.ntxId !== ntxId) return;
         if (switchedContext.note?.noteId !== note?.noteId) return;
         consumeSearchTerms(noteContext, ntxId);
+    });
+}
+
+/**
+ * Calls `callback` when the note context `ntxId` switches to `note`, the note the widget shows
+ * already, as when a link to a part of the open note is followed.
+ */
+export function useSameNoteSwitch(
+    note: FNote | null | undefined,
+    ntxId: string | null | undefined,
+    callback: () => void
+) {
+    useTriliumEvent("noteSwitched", ({ noteContext }) => {
+        if (noteContext.ntxId === ntxId && noteContext.note?.noteId === note?.noteId) {
+            callback();
+        }
     });
 }
 

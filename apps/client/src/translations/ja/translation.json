@@ -242,8 +242,6 @@
   "basic_properties": {
     "note_type": "ノートタイプ",
     "editable": "編集可能",
-    "basic_properties": "基本プロパティ",
-    "language": "言語",
     "configure_code_notes": "コードノートを設定..."
   },
   "i18n": {
@@ -291,9 +289,6 @@
       "tomorrow": "明日",
       "yesterday": "昨日"
     }
-  },
-  "classic_editor_toolbar": {
-    "title": "書式設定"
   },
   "search_definition": {
     "add_search_option": "検索オプションを追加:",
@@ -533,15 +528,6 @@
   },
   "create_pane_button": {
     "create_new_split": "新しく分割する"
-  },
-  "edit_button": {
-    "edit_this_note": "このノートを編集"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "目次を表示"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "ハイライトリストを表示"
   },
   "relation_map_buttons": {
     "create_child_note_title": "子ノートを作成し、マップに追加",
@@ -820,21 +806,6 @@
     "example_2": "より複雑な例としては、一致したノートの属性をすべて削除することが挙げられます:",
     "example_1": "例えば、ノートのタイトルに文字列を追加するには、この小さなスクリプトを使用します:"
   },
-  "script_executor": {
-    "execute_script": "スクリプトを実行",
-    "query": "クエリ",
-    "script": "スクリプト",
-    "execute_query": "クエリを実行"
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "ボタンを非表示"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "ボタンを表示"
-  },
-  "svg_export_button": {
-    "button_title": "図をSVG形式でエクスポート"
-  },
   "book_properties": {
     "grid": "グリッド",
     "list": "リスト",
@@ -893,18 +864,11 @@
     "widget-preset-sample": "ウィジェットからのメッセージ"
   },
   "edited_notes": {
-    "no_edited_notes_found": "この日の編集されたノートはまだありません...",
-    "title": "編集されたノート",
-    "deleted": "（削除済み）"
+    "no_edited_notes_found": "この日の編集されたノートはまだありません..."
   },
   "file_properties": {
-    "note_id": "ノート ID",
-    "file_type": "ファイルタイプ",
-    "file_size": "ファイルサイズ",
     "download": "ダウンロード",
     "open": "外部で開く",
-    "title": "ファイル",
-    "upload_new_revision": "編集履歴をアップロード",
     "original_file_name": "元のファイル名",
     "upload_success": "新しいファイルの変更がアップロードされました。",
     "upload_failed": "新しいファイルの変更のアップロードに失敗しました。"
@@ -923,13 +887,7 @@
     "mime": "MIME タイプ"
   },
   "image_properties": {
-    "file_type": "ファイルタイプ",
-    "file_size": "ファイルサイズ",
-    "download": "ダウンロード",
-    "open": "開く",
-    "title": "画像",
     "upload_new_revision": "編集履歴をアップロード",
-    "original_file_name": "元のファイル名",
     "copy_reference_to_clipboard": "参照をクリップボードにコピー",
     "upload_success": "新しい画像の変更がアップロードされました。",
     "upload_failed": "新しい画像の変更のアップロードに失敗しました: {{message}}"
@@ -979,15 +937,10 @@
   "note_paths": {
     "title": "ノートパス",
     "clone_button": "ノートを新しい場所にクローン...",
-    "intro_placed": "このノートは以下のパスに置かれています:",
     "intro_not_placed": "このノートはまだノートツリーに配置されていません。",
     "archived": "アーカイブされた",
     "search": "検索",
     "outside_hoisted": "このパスはホイストされたノートの外側にあるため、ホイストを解除する必要があります。"
-  },
-  "note_properties": {
-    "info": "情報",
-    "this_note_was_originally_taken_from": "このノートは元々以下から引用したものです:"
   },
   "similar_notes": {
     "title": "類似ノート",
@@ -1253,21 +1206,10 @@
     "italic": "イタリック体",
     "underline": "下線",
     "color": "カラーテキスト",
-    "bg_color": "背景色付きテキスト",
-    "visibility_title": "ハイライトリストの表示",
-    "visibility_description": "#hideHighlightWidget ラベルを追加することで、ノートごとにハイライトウィジェットを非表示にできます。",
-    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
-  },
-  "table_of_contents": {
-    "title": "目次",
-    "description": "ノートに定義された数以上の見出しがある場合、テキストノートに目次が表示されます。この数はカスタマイズできます:",
-    "unit": "見出し",
-    "disable_info": "このオプションに非常に大きな数値を設定することで、目次を効果的に無効にすることもできます。",
-    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（目次を含む）を素早く切り替えるキーボードショートカットを設定できます。"
+    "bg_color": "背景色付きテキスト"
   },
   "toc": {
     "table_of_contents": "目次",
-    "options": "オプション",
     "no_headings": "見出しはありません。"
   },
   "text_auto_read_only_size": {
@@ -1420,9 +1362,7 @@
     "cancel": "キャンセル"
   },
   "bookmark_switch": {
-    "bookmark": "ブックマーク",
-    "bookmark_this_note": "このノートを左サイドパネルにブックマークする",
-    "remove_bookmark": "ブックマークを削除"
+    "bookmark": "ブックマーク"
   },
   "attribute_detail": {
     "delete": "削除",
@@ -1504,7 +1444,6 @@
     "display_relations": "表示するリレーション名をカンマで区切って指定します。それ以外のリレーション名は非表示になります。",
     "hide_relations": "非表示にするリレーション名をカンマで区切って指定します。それ以外のリレーションは表示されます。",
     "template": "このノートは、新しいノートを作成するときに利用可能なテンプレートの選択肢に表示されます。",
-    "toc": "<code>#toc</code> または <code>#toc=show</code> は目次を強制的に表示し、<code>#toc=hide</code> は目次を強制的に非表示にします。ラベルが存在しない場合は、グローバル設定が適用されます。",
     "color": "ノートツリー、リンクなどのノートの色を定義します。 'red' や #a13d5f などの有効な CSS カラー値を使用します。",
     "keyboard_shortcut": "このノートにすぐにジャンプするキーボードショートカットを定義します。例: 「ctrl+alt+e」。変更を有効にするには、フロントエンドをリロードする必要があります。",
     "keep_current_hoisting": "このリンクを開いても、ノートが現在のホイストされたサブツリーに表示できない場合でも、ホイストは変更されません。",
@@ -1512,7 +1451,6 @@
     "execute_description": "実行ボタンと一緒に表示される現在のコードノートの詳細な説明。",
     "exclude_from_note_map": "このラベルの付いたノートはノートマップから非表示になります。",
     "new_notes_on_top": "新しいノートは親ノートの下部ではなく上部に作成されます。",
-    "hide_highlight_widget": "このノートのハイライトリストを非表示にし、それ以外のノートでは表示したままにします。",
     "run_on_note_creation": "バックエンドでノートが作成された際に実行されます。特定のサブツリー配下に作成されたすべてのノートに対してスクリプトを実行したい場合は、このリレーションを使用してください。その場合は、サブツリーのルートノートにスクリプトを作成し、継承可能にしてください。サブツリー内（任意の深さ）に新しいノートが作成されると、スクリプトが実行されます。",
     "run_on_child_note_creation": "このリレーションが定義されているノートの下に新しいノートが作成されたときに実行されます。",
     "render_note": "\"HTML ノートをレンダリング\" タイプのノートは、コードノート（HTML またはスクリプト）を使用してレンダリングされます。このリレーションを使用して、どのノートをレンダリングするかを指定する必要があります。",
@@ -1558,7 +1496,6 @@
     "add_option": "オプションを追加",
     "remove_option": "このオプションを削除",
     "versioning_limit": "このノートで保持する変更履歴数を制限し、グローバル設定を上書きします。",
-    "similar_notes_widget_disabled": "このノートの類似のノートリボンタブを無効にします。旧レイアウトのみ。",
     "llm_chat_home": "新しい AI チャットは、このノートの子として作成されます。",
     "workspace_llm_chat_home": "新しい AI チャットは、このノートの子として作成されると同時に、このワークスペースの祖先要素にホイストされます。",
     "date_pattern": "このカレンダーのルート配下で生成される日ノートのタイトルのパターン、例: <code>{dateNumberPadded} - {weekDay}</code>。",
@@ -1719,34 +1656,18 @@
     "attachment-info": "添付ファイル • {{size}}"
   },
   "protect_note": {
-    "toggle-on": "ノートを保護",
-    "toggle-off": "ノートの保護を解除",
-    "toggle-on-hint": "ノートは保護されていません。クリックして保護してください",
-    "toggle-off-hint": "ノートは保護されています。クリックして保護を解除してください"
+    "toggle-on": "ノートを保護"
   },
   "shared_switch": {
     "shared": "共有",
-    "toggle-on-title": "ノートを共有",
-    "toggle-off-title": "ノートの共有を解除",
     "shared-branch": "このノートは共有ノートとしてのみ存在し、共有を解除すると削除されます。続行してこのノートを削除しますか？",
     "inherited": "このノートは、親から継承された共有方法のため、ここでは共有解除できません。"
   },
   "template_switch": {
-    "template": "テンプレート",
-    "toggle-on-hint": "ノートをテンプレート化する",
-    "toggle-off-hint": "テンプレートとしてのノートを削除する"
+    "template": "テンプレート"
   },
   "open-help-page": "ヘルプページを開く",
-  "shared_info": {
-    "help_link": "ヘルプについては、 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a> をご覧ください。",
-    "shared_locally": "このノートは {{- link}} でローカルに共有されています。",
-    "shared_publicly": "このノートは {{- link}} で一般公開されています。",
-    "shared_preview": "このノートは {{- link}} で共有されていますが、そのページを開けるのはこのブラウザのみであり、かつ Trilium がそのブラウザで開かれている間だけです。他の人に公開するには、Trilium サーバーが必要です。",
-    "shared_export_only": "このノートは共有されていますが、モバイルアプリでは共有ページを開くことができません。公開するには、サブツリーを \"{{format}}\" としてエクスポートし、任意の Web サーバーでファイルをホストするか、Trilium サーバーを使用してください。"
-  },
   "highlights_list_2": {
-    "title": "ハイライトリスト",
-    "options": "オプション",
     "title_with_count_other": "{{count}} ハイライト",
     "menu_configure": "ハイライトリストの設定...",
     "no_highlights": "ハイライトが見つかりません。"
@@ -1881,12 +1802,10 @@
     "editor_type": {
       "label": "書式設定ツールバー",
       "floating": {
-        "description": "編集ツールがカーソル付近に表示されます。",
         "title": "フローティング"
       },
       "fixed": {
-        "title": "固定",
-        "description": "編集ツールは「書式設定」のリボンタブに表示されます。"
+        "title": "固定"
       },
       "multiline-toolbar": "ツールバーが収まりきらない場合は複数行で表示",
       "toolbar_style": "ツールバーのスタイル"
@@ -1933,9 +1852,6 @@
   "content_language": {
     "title": "コンテンツの言語",
     "description": "読み取り専用または編集可能なテキストノートの基本プロパティセクションの言語選択に表示する言語を 1 つ以上選択してください。これにより、スペルチェック、右から左へのサポート、引用符、テキスト抽出（OCR）などの機能が利用できるようになります。"
-  },
-  "png_export_button": {
-    "button_title": "図をPNG形式でエクスポート"
   },
   "svg": {
     "export_to_png": "図をPNG形式でエクスポートできませんでした。",
@@ -2075,15 +1991,10 @@
     "update_relation_target": "リレーション対象の更新",
     "to": "を"
   },
-  "revisions_button": {
-    "note_revisions": "ノートの変更履歴"
-  },
   "note_launcher": {
     "this_launcher_doesnt_define_target_note": "このランチャーにはターゲットとなるノートが設定されていないため、開く対象がありません。\"ターゲット\" リレーションを設定して、特定のノートを指すようにしてください。"
   },
   "zpetne_odkazy": {
-    "relation": "リレーション",
-    "backlink_other": "{{count}} 個のバックリンク",
     "no_backlinks": "このノートには、リンクされているノートはありません。"
   },
   "mobile_detail_menu": {
@@ -2097,21 +2008,15 @@
   },
   "inherited_attribute_list": {
     "title": "継承属性",
-    "no_inherited_attributes": "継承属性はありません。",
     "none": "なし"
   },
   "note_map": {
-    "open_full": "拡大表示",
-    "collapse": "通常サイズに折りたたむ",
     "title": "ノートマップ",
     "link-distance": "リンク距離",
     "fix-nodes": "ノードを修正",
     "too-many-notes_other": "ここに {{count}} 件のノートがあります。表示すると処理速度が遅くなる可能性があります。",
     "show-anyway": "マップを表示",
     "expand": "マップを展開"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "所有属性"
   },
   "promoted_attributes": {
     "unset-field-placeholder": "未設定",
@@ -2357,9 +2262,6 @@
     "vacuum_label": "データベースの最適化（Vacuum）",
     "vacuum_description": "データベースを再構築してファイルサイズを削減します。データは変更されません。"
   },
-  "ribbon": {
-    "edited_notes_message": "編集したノートのリボンタブは、日ノートで自動的に開きます"
-  },
   "ui-performance": {
     "enable-motion": "画面遷移とアニメーション",
     "enable-shadows": "影",
@@ -2604,10 +2506,6 @@
     "title_vertical": "編集パネルを下に移動",
     "title_horizontal": "編集パネルを左に移動"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "編集のロックを解除",
-    "lock-editing": "編集をロック"
-  },
   "book_properties_config": {
     "hide-weekends": "週末を非表示",
     "display-week-numbers": "週番号を表示",
@@ -2632,9 +2530,6 @@
     "background_effects_message": "WindowsおよびmacOSデバイスで、背景効果が安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。",
     "background_effects_button": "背景効果を有効にする",
     "dismiss": "却下",
-    "new_layout_title": "新しいレイアウト",
-    "new_layout_message": "Trilium のレイアウトを刷新しました。リボンは廃止され、メインインターフェースにシームレスに統合されました。主要な機能は、新しいステータスバーと展開可能なセクション（プロモート属性など）に集約されています。\n\n新しいレイアウトはデフォルトで有効になっていますが、「オプション」→「外観」から一時的に無効にすることもできます。",
-    "new_layout_button": "詳細情報",
     "scripting_disabled_title": "バックエンドスクリプトは無効になっています",
     "scripting_disabled_message": "セキュリティ上の理由から、バックエンドスクリプトはデフォルトで無効になっています。ノートにはバックエンドスクリプト（#run ラベルが付いているノート）が含まれていますが、これらは自動的に実行されなくなります。\n\nこれらのスクリプトに依存している場合は、セキュリティ設定でバックエンドスクリプトを再度有効にできます。",
     "scripting_disabled_button": "セキュリティ設定を開く"
@@ -2647,9 +2542,6 @@
     "related_code_blocks": "テキストノート内のコードブロックの配色",
     "related_code_notes": "コードノートの配色",
     "ui": "ユーザーインターフェース",
-    "ui_old_layout": "旧レイアウト",
-    "ui_new_layout": "新しいレイアウト",
-    "ui_layout_style": "レイアウトスタイル",
     "ui_layout_orientation": "ランチャーバーの方向"
   },
   "units": {
@@ -2668,9 +2560,6 @@
   },
   "update_available": {
     "update_available": "アップデートが利用可能"
-  },
-  "copy_image_reference_button": {
-    "button_title": "画像参照をクリップボードにコピーし、テキストノートに貼り付けることができます。"
   },
   "attachment_detail": {
     "open_help_page": "添付ファイルのヘルプページを開く",
@@ -2818,8 +2707,6 @@
     "create_event": "作成"
   },
   "read-only-info": {
-    "read-only-note": "現在、読み取り専用のノートを表示しています。",
-    "auto-read-only-note": "このノートは読み込みを高速化するために読み取り専用モードで表示されています。",
     "edit-note": "ノートを編集"
   },
   "note-color": {
@@ -2842,8 +2729,6 @@
   "experimental_features": {
     "title": "実験オプション",
     "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。",
-    "new_layout_name": "新しいレイアウト",
-    "new_layout_description": "よりモダンな外観と使いやすさが向上した新しいレイアウトをお試しください。今後のリリースで大幅な変更が加えられる可能性があります。",
     "llm_name": "AI / LLM チャット",
     "llm_description": "大規模言語モデルを活用した AI チャットサイドバーと LLM チャットノートを有効にします。"
   },

@@ -657,7 +657,6 @@
     "hide_relations": "숨길 관계 이름을 쉼표로 구분하여 입력합니다. 그 밖의 관계는 모두 표시됩니다.",
     "title_template": "이 노트의 하위 노트로 생성될 때 기본으로 사용되는 제목입니다. 이 값은 JavaScript 문자열로 평가되므로 \n동적인 내용을 넣을 수 있습니다. 주입된 <code>now</code> 및 <code>parentNote</code> 변수를 통해 가능합니다. 예시:\n\n<ul>\n    <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n    <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n</ul>\n\n자세한 내용은 <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki with details</a>, API 문서는 <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> 및 <a href=\"https://day.js.org/docs/en/display/format\">now</a> 를 참고해 주세요.",
     "template": "이 노트는 새 노트를 생성할 때 사용 가능한 템플릿 선택에 나타납니다.",
-    "toc": "<code>#toc</code> 또는 <code>#toc=show</code> 값을 사용하면 목차가 강제로 표시되고, <code>#toc=hide</code> 값을 사용하면 목차가 강제로 숨겨집니다. 해당 레이블이 없으면 전역 설정을 따릅니다.",
     "color": "노트 트리와 링크 등에서 노트의 색상을 정의합니다. 'red' 또는 '#a13d5f'처럼 유효한 CSS 색상 값을 사용합니다.",
     "keyboard_shortcut": "이 노트로 바로 전환되는 키보드 단축키를 정의합니다. 예시: 'ctrl+alt+e'. 변경 사항이 적용되려면 프론트엔드 재로드가 필요합니다.",
     "keep_current_hoisting": "현재 루트로 보는 하위 트리에 노트를 표시할 수 없어도 이 링크를 열 때 루트 보기 상태를 변경하지 않습니다.",
@@ -665,7 +664,6 @@
     "execute_description": "실행 버튼과 함께 현재 코드 노트에 대한 더 긴 설명이 표시됩니다.",
     "exclude_from_note_map": "이 라벨이 붙은 노트는 노트 맵에서 숨겨집니다.",
     "new_notes_on_top": "새로운 노트는 상위 노트의 상단에 생성되며, 하단에 생성되지 않습니다.",
-    "hide_highlight_widget": "이 노트에서만 하이라이트 목록을 숨기고 다른 노트에는 계속 표시합니다.",
     "run_on_note_creation": "백엔드에서 노트가 생성될 때 실행됩니다. 특정 하위 트리에서 생성되는 모든 노트에 스크립트를 실행하려면 이 관계를 하위 트리의 루트 노트에 만들고 상속 가능하게 설정합니다. 그러면 하위 트리 안의 어느 깊이에서 새 노트가 생성되어도 스크립트가 실행됩니다.",
     "run_on_child_note_creation": "이 관계가 정의된 노트 아래에서 새 노트가 생성될 때 실행됩니다.",
     "run_on_note_title_change": "노트 제목이 변경되면 실행됩니다(노트 생성도 포함).",
@@ -698,7 +696,6 @@
     "color_type": "색상",
     "relation_type": "관계",
     "versioning_limit": "이 노트가 유지할 수 있는 수정본 횟수를 제한하여 전역 설정을 덮어줍니다.",
-    "similar_notes_widget_disabled": "이 노트의 유사 노트 리본 탭을 비활성화합니다. 이전 레이아웃에서만 적용됩니다.",
     "llm_chat_home": "새 AI 채팅을 이 노트의 하위 노트로 만듭니다.",
     "workspace_llm_chat_home": "이 작업 공간의 상위 노트를 루트로 볼 때 새 AI 채팅을 이 노트의 하위 노트로 만듭니다.",
     "date_pattern": "이 달력 루트 아래에서 생성되는 일별 노트의 제목 패턴입니다. 예: <code>{dateNumberPadded} - {weekDay}</code>.",
@@ -1099,15 +1096,6 @@
   "create_pane_button": {
     "create_new_split": "새 분할 생성"
   },
-  "edit_button": {
-    "edit_this_note": "이 노트 편집"
-  },
-  "show_toc_widget_button": {
-    "show_toc": "목차 보기"
-  },
-  "show_highlights_list_widget_button": {
-    "show_highlights_list": "하이라이트 목록 보기"
-  },
   "options": {
     "title": "옵션",
     "back": "모든 옵션으로 돌아가기",
@@ -1217,9 +1205,6 @@
     "active": "보호된 세션이 활성화되어 있습니다. 보호된 세션을 떠나려면 클릭하세요.",
     "inactive": "보호된 세션을 시작하려면 클릭"
   },
-  "revisions_button": {
-    "note_revisions": "노트 수정본"
-  },
   "update_available": {
     "update_available": "업데이트 가능"
   },
@@ -1233,18 +1218,6 @@
     "save_to_note_button_title": "노트로 저장",
     "opening_api_docs_message": "API 문서를 여는 중...",
     "sql_console_saved_message": "SQL 콘솔 노트가 {{note_path}}에 저장되었습니다"
-  },
-  "copy_image_reference_button": {
-    "button_title": "클립보드에 이미지 참조를 복사해 텍스트 노트에 붙여넣을 수 있습니다."
-  },
-  "hide_floating_buttons_button": {
-    "button_title": "버튼 숨기기"
-  },
-  "show_floating_buttons_button": {
-    "button_title": "버튼 표시"
-  },
-  "svg_export_button": {
-    "button_title": "다이어그램을 SVG로 내보내기"
   },
   "relation_map_buttons": {
     "create_child_note_title": "하위 노트를 만들어 맵에 추가",
@@ -1270,8 +1243,6 @@
     "esc_hint": "닫기"
   },
   "zpetne_odkazy": {
-    "backlink_other": "백링크 {{count}}개",
-    "relation": "관계",
     "no_backlinks": "이 노트로 연결되는 노트가 없습니다."
   },
   "mobile_detail_menu": {
@@ -1299,8 +1270,6 @@
   "basic_properties": {
     "note_type": "노트 유형",
     "editable": "편집 가능",
-    "basic_properties": "기본 속성",
-    "language": "언어",
     "configure_code_notes": "코드 노트 설정하기..."
   },
   "book_properties": {
@@ -1330,37 +1299,23 @@
     "open_all_limit_exceeded": "한 번에 열 수 있는 노트가 너무 많습니다({{count}}). 최대 {{max}}개까지 열 수 있으므로 먼저 결과 범위를 좁혀보세요."
   },
   "edited_notes": {
-    "no_edited_notes_found": "아직 이날 편집한 노트가 없습니다...",
-    "title": "편집된 노트",
-    "deleted": "(삭제됨)"
+    "no_edited_notes_found": "아직 이날 편집한 노트가 없습니다..."
   },
   "file_properties": {
-    "note_id": "노트 ID",
     "original_file_name": "원본 파일 이름",
-    "file_type": "파일 형식",
-    "file_size": "파일 크기",
     "download": "다운로드",
     "open": "외부에서 열기",
-    "upload_new_revision": "새 수정본 업로드",
     "upload_success": "새 파일 수정본이 업로드되었습니다.",
-    "upload_failed": "새 파일 수정본 업로드에 실패했습니다.",
-    "title": "파일"
+    "upload_failed": "새 파일 수정본 업로드에 실패했습니다."
   },
   "image_properties": {
-    "original_file_name": "원본 파일 이름",
-    "file_type": "파일 형식",
-    "file_size": "파일 크기",
-    "download": "다운로드",
-    "open": "열기",
     "copy_reference_to_clipboard": "참조를 클립보드에 복사",
     "upload_new_revision": "새 수정본 업로드",
     "upload_success": "새 이미지 수정본이 업로드되었습니다.",
-    "upload_failed": "새 이미지 수정본을 업로드하지 못했습니다: {{message}}",
-    "title": "이미지"
+    "upload_failed": "새 이미지 수정본을 업로드하지 못했습니다: {{message}}"
   },
   "inherited_attribute_list": {
     "title": "상속 속성",
-    "no_inherited_attributes": "상속된 속성이 없습니다.",
     "none": "없음"
   },
   "note_info_widget": {
@@ -1377,8 +1332,6 @@
     "show_similar_notes": "유사한 노트 표시"
   },
   "note_map": {
-    "open_full": "완전 확장하기",
-    "collapse": "일반 크기로 접기",
     "title": "노트 맵",
     "fix-nodes": "고정 노드",
     "link-distance": "링크 거리",
@@ -1389,18 +1342,10 @@
   "note_paths": {
     "title": "노트 경로",
     "clone_button": "노트를 새 위치로 복제...",
-    "intro_placed": "이 노트는 다음 경로에 배치되어 있습니다:",
     "intro_not_placed": "이 노트는 아직 노트 트리에 배치되지 않았습니다.",
     "outside_hoisted": "이 경로는 현재 루트로 보는 노트 밖에 있으므로 루트 보기를 해제해야 합니다.",
     "archived": "보관됨",
     "search": "검색"
-  },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "이 노트는 원래 다음 출처에서 가져온 것입니다:",
-    "info": "정보"
-  },
-  "owned_attribute_list": {
-    "owned_attributes": "직접 속성"
   },
   "promoted_attributes": {
     "promoted_attributes": "표시 속성",
@@ -1429,12 +1374,6 @@
     "display_on_items": "컬렉션 항목에 속성 표시",
     "conflicting": "여러 정의",
     "conflicting_tooltip": "항목마다 이 속성을 서로 다른 방식으로 정의하고 있어 텍스트로 정렬되며, 항목 메뉴에서는 값을 설정할 수 없습니다."
-  },
-  "script_executor": {
-    "query": "쿼리",
-    "script": "스크립트",
-    "execute_query": "쿼리 실행",
-    "execute_script": "스크립트 실행"
   },
   "search_definition": {
     "add_search_option": "검색 옵션 추가:",
@@ -1794,8 +1733,6 @@
   "experimental_features": {
     "title": "실험적 옵션",
     "disclaimer": "이러한 선택지는 실험적이며 불안정성을 초래할 수 있습니다. 조심해서 사용하세요.",
-    "new_layout_name": "새 레이아웃",
-    "new_layout_description": "더 현대적인 디자인과 향상된 사용성을 위해 새로운 레이아웃을 사용해 보세요. 향후 릴리스에서 크게 변경될 수 있습니다.",
     "llm_name": "AI / LLM 채팅",
     "llm_description": "AI 채팅 사이드바와 대형 언어 모델이 지원하는 LLM 채팅 노트를 활성화하세요."
   },
@@ -1847,9 +1784,6 @@
     "title": "네이티브 타이틀 바 (앱 재시작 필요)",
     "enabled": "활성화",
     "disabled": "비활성화"
-  },
-  "ribbon": {
-    "edited_notes_message": "편집된 노트 리본 탭은 하루 노트에 자동으로 열립니다"
   },
   "theme": {
     "title": "사용자 인터페이스",
@@ -2051,17 +1985,7 @@
     "italic": "이탤릭 텍스트",
     "underline": "밑줄 그린 텍스트",
     "color": "컬러 텍스트",
-    "bg_color": "배경색이 있는 텍스트",
-    "visibility_title": "하이라이트 목록 가시성",
-    "visibility_description": "#hideHighlightWidget 라벨을 추가하면 노트별로 하이라이트 위젯을 숨길 수 있습니다.",
-    "shortcut_info": "옵션 -> 단축키(이름 'toggleRightPane')에서 오른쪽 창(하이라이트 포함)을 빠르게 토글할 수 있는 단축키를 설정할 수 있습니다."
-  },
-  "table_of_contents": {
-    "title": "목차",
-    "description": "목차는 노트에 정해진 제목 수가 많을 때 텍스트 노트에 나타납니다. 이 번호는 다음과 같이 맞춤 설정할 수 있습니다:",
-    "unit": "개",
-    "disable_info": "이 옵션을 사용해 매우 높은 수치를 설정해 TOC를 효과적으로 비활성화할 수도 있습니다.",
-    "shortcut_info": "옵션 -> 단축키(이름 'toggleRightPane')에서 오른쪽 창(TOC 포함)을 빠르게 토글할 수 있는 단축키를 설정할 수 있습니다."
+    "bg_color": "배경색이 있는 텍스트"
   },
   "text_auto_read_only_size": {
     "title": "자동 읽기 전용 크기",
@@ -2380,9 +2304,7 @@
     "kind_and_size": "{{role}} · {{size}}"
   },
   "bookmark_switch": {
-    "bookmark": "북마크",
-    "bookmark_this_note": "이 노트를 왼쪽 패널에 북마크로 추가",
-    "remove_bookmark": "북마크 제거"
+    "bookmark": "북마크"
   },
   "editability_select": {
     "auto": "자동",
@@ -2437,16 +2359,7 @@
     "clone": "복제",
     "clone-tooltip": "같은 노트를 두 위치에서 동시에 사용할 수 있도록 복제"
   },
-  "shared_info": {
-    "shared_publicly": "이 노트는 {{- link}}에서 공개적으로 공유됩니다.",
-    "shared_locally": "이 노트는 {{- link}}에서 로컬로 공유되고 있습니다.",
-    "help_link": "도움이 필요하시면 방문하세요 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">위키</a>.",
-    "shared_preview": "이 노트는 {{- link}}에서 공유되고 있지만, 이 페이지는 이 브라우저에서만 열 수 있으며 Trilium이 이 브라우저에서 실행 중일 때만 사용할 수 있습니다. 다른 사람이 볼 수 있도록 게시하려면 Trilium 서버가 필요합니다.",
-    "shared_export_only": "이 노트는 공유되어 있지만 모바일 앱에서는 공유 페이지를 열 수 없습니다. 게시하려면 하위 트리를 \"{{format}}\" 형식으로 내보낸 뒤 아무 웹 서버에나 파일을 호스팅하거나 Trilium 서버를 사용하세요."
-  },
   "read-only-info": {
-    "read-only-note": "현재 읽기 전용 노트를 보고 있습니다.",
-    "auto-read-only-note": "이 노트는 더 빠른 로딩을 위해 읽기 전용 모드로 표시됩니다.",
     "edit-note": "노트 편집"
   },
   "note_types": {
@@ -2481,10 +2394,7 @@
     "widget-preset-sample": "위젯에서 보내는 인사"
   },
   "protect_note": {
-    "toggle-on": "노트 보호",
-    "toggle-off": "노트 보호 해제",
-    "toggle-on-hint": "노트가 보호되지 않았습니다. 클릭하면 보호할 수 있습니다",
-    "toggle-off-hint": "노트가 보호되어 있습니다. 클릭하면 보호를 해제할 수 있습니다"
+    "toggle-on": "노트 보호"
   },
   "llm_chat": {
     "placeholder": "메시지를 입력하세요...",
@@ -2621,15 +2531,11 @@
   },
   "shared_switch": {
     "shared": "공유",
-    "toggle-on-title": "노트 공유",
-    "toggle-off-title": "노트 공유 취소",
     "shared-branch": "이 노트는 공유 노트로만 존재하므로 공유를 해제하면 삭제됩니다. 계속하여 이 노트를 삭제하시겠습니까?",
     "inherited": "노트는 조상으로부터 상속받아 공유되기 때문에 여기서 해제할 수 없습니다."
   },
   "template_switch": {
-    "template": "템플릿",
-    "toggle-on-hint": "노트를 템플릿으로 만드세요",
-    "toggle-off-hint": "노트를 템플릿에서 해제"
+    "template": "템플릿"
   },
   "full_content_width_switch": {
     "title": "전체 너비"
@@ -2645,9 +2551,7 @@
     "replace_all": "모두 바꾸기"
   },
   "highlights_list_2": {
-    "title": "하이라이트 목록",
     "title_with_count_other": "하이라이트 {{count}}개",
-    "options": "옵션",
     "menu_configure": "하이라이트 리스트 설정하기...",
     "no_highlights": "하이라이트는 찾지 못했습니다."
   },
@@ -2762,7 +2666,6 @@
   },
   "toc": {
     "table_of_contents": "목차",
-    "options": "옵션",
     "no_headings": "제목이 없습니다."
   },
   "watched_file_update_status": {
@@ -2859,9 +2762,6 @@
     "tab_width": "탭 폭",
     "tab_width_unit": "칸"
   },
-  "classic_editor_toolbar": {
-    "title": "포맷팅"
-  },
   "editor": {
     "title": "편집기"
   },
@@ -2870,12 +2770,10 @@
       "label": "서식 도구 모음",
       "toolbar_style": "툴바 스타일",
       "floating": {
-        "title": "플로팅",
-        "description": "편집 도구는 커서 근처에 나타납니다;"
+        "title": "플로팅"
       },
       "fixed": {
-        "title": "고정",
-        "description": "편집 도구는 \"서식\" 리본 탭에 나타납니다."
+        "title": "고정"
       },
       "multiline-toolbar": "툴바가 한 줄에 맞지 않으면 여러 줄로 표시"
     }
@@ -3241,17 +3139,10 @@
     "title_vertical": "편집 창을 맨 아래로 이동",
     "title_horizontal": "편집 창을 왼쪽으로 이동"
   },
-  "toggle_read_only_button": {
-    "unlock-editing": "편집 잠금 해제",
-    "lock-editing": "편집 잠금"
-  },
   "display_mode": {
     "source": "소스 보기",
     "split": "분할 보기",
     "preview": "미리보기"
-  },
-  "png_export_button": {
-    "button_title": "다이어그램을 PNG로 내보내기"
   },
   "svg": {
     "export_to_png": "이 다이어그램은 PNG로 내보낼 수 없었습니다.",
@@ -3580,9 +3471,6 @@
     "background_effects_title": "배경 효과가 이제 안정적으로 변했습니다",
     "background_effects_message": "Windows와 macOS 기기에서는 배경 효과가 이제 안정적입니다. 배경 효과는 배경을 흐리게 하여 사용자 인터페이스에 색감을 더합니다.",
     "background_effects_button": "배경 효과 활성화",
-    "new_layout_title": "새 레이아웃",
-    "new_layout_message": "Trilium에 현대적인 새 레이아웃을 도입했습니다. 리본을 제거하고 기본 인터페이스에 자연스럽게 통합했으며, 새 상태 표시줄과 확장 가능한 섹션(예: 표시 속성)이 주요 기능을 담당합니다.\n\n새 레이아웃은 기본적으로 활성화됩니다. 옵션 → 모양에서 일시적으로 비활성화할 수 있습니다.",
-    "new_layout_button": "추가 정보",
     "scripting_disabled_title": "백엔드 스크립팅이 비활성화되었습니다",
     "scripting_disabled_message": "보안상 백엔드 스크립팅은 기본적으로 비활성화되어 있습니다. 노트에는 백엔드 스크립트(#run 라벨이 붙은 노트)가 포함되어 있는데, 이들은 더 이상 자동으로 실행되지 않습니다.\n\n이 스크립트에 의존한다면 보안 설정에서 백엔드 스크립팅을 다시 활성화할 수 있습니다.",
     "scripting_disabled_button": "보안 설정 열기",
@@ -3596,10 +3484,7 @@
     "related_code_blocks": "텍스트 노트 내 코드 블록의 색상 체계",
     "related_code_notes": "코드 노트의 색상 체계",
     "ui": "사용자 인터페이스",
-    "ui_layout_style": "레이아웃 스타일",
-    "ui_layout_orientation": "실행 표시줄 방향",
-    "ui_old_layout": "이전 레이아웃",
-    "ui_new_layout": "새 레이아웃"
+    "ui_layout_orientation": "실행 표시줄 방향"
   },
   "units": {
     "percentage": "%"

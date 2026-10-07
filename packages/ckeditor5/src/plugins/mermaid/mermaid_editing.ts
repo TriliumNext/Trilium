@@ -73,7 +73,8 @@ export default class MermaidEditing extends Plugin {
 		this.editor.model.schema.register( 'mermaid', {
 			allowAttributes: [ 'displayMode', 'source' ],
 			allowWhere: '$block',
-			isObject: true
+			isObject: true,
+			isBlock: true
 		} );
 	}
 

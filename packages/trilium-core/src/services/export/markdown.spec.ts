@@ -777,6 +777,13 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("drops the block ids of a text note, which Markdown has no syntax for", () => {
+        const html = `<h2 data-trilium-block-id="h1">Title</h2>`
+            + `<p data-trilium-block-id="p1">Text</p>`;
+
+        expect(markdownExportService.toMarkdown(html)).toBe("## Title\n\nText");
+    });
+
     it("drops data-trilium-collapsed but keeps the collapsed item's children as bullets", () => {
         // Collapsing is editor-only UI state (the nested items live in the content, hidden via
         // CSS), and Markdown has no syntax for it — so the attribute is dropped on export while

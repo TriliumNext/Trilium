@@ -20,8 +20,8 @@ vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
  */
 
 /** Renders revision HTML and lets the reference-link lookups (froca, then the icon) settle. */
-async function renderRevision(content: string) {
-    const container = renderInto(<RevisionContentText content={content} />);
+async function renderRevision(content: string, noteId = "revisedNote") {
+    const container = renderInto(<RevisionContentText content={content} noteId={noteId} />);
     await vi.waitFor(() => expect(container.querySelector(".ck-content")).toBeTruthy());
     return container;
 }
@@ -65,6 +65,22 @@ describe("RevisionContentText", () => {
             const link = container.querySelector("a.reference-link > span");
             expect(link?.textContent).toContain("Target note");
         });
+    });
+
+    it("labels a reference to a block of the revised note by the text of the block", async () => {
+        const note = buildNote({
+            title: "Revised note",
+            content: "<p data-trilium-block-id=\"b1\">Opening words</p>"
+        });
+        const href = `#root/${note.noteId}?block=b1`;
+        const container = await renderRevision(
+            `<p>before</p><p><a class="reference-link" href="${href}">x</a></p>`,
+            note.noteId
+        );
+
+        const link = container.querySelector("a.reference-link");
+        expect(link).not.toBeNull();
+        await vi.waitFor(() => expect(link?.textContent).toBe("Opening words"));
     });
 
     it("leaves a preview without a URL alone rather than rendering an empty card", async () => {

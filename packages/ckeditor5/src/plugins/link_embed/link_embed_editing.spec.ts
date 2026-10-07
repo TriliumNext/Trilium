@@ -21,9 +21,16 @@ describe("LinkEmbedEditing", () => {
         const schema = editor.model.schema;
         expect(schema.isRegistered("linkEmbed")).toBe(true);
         expect(schema.isObject("linkEmbed")).toBe(true);
+        expect(schema.isBlock("linkEmbed")).toBe(true);
         expect(schema.isRegistered("linkMention")).toBe(true);
         expect(schema.isInline("linkMention")).toBe(true);
         expect(schema.isObject("linkMention")).toBe(true);
+    });
+
+    it("makes a selected linkEmbed one of the selected blocks", () => {
+        setModelData(editor.model, '[<linkEmbed url="https://e.co/" embedType="web"></linkEmbed>]');
+        const blocks = Array.from(editor.model.document.selection.getSelectedBlocks());
+        expect(blocks.map((block) => block.name)).toStrictEqual([ "linkEmbed" ]);
     });
 
     it("upcasts a <section.link-embed> with all data attributes into a linkEmbed", () => {

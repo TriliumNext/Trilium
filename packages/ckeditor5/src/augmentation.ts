@@ -83,7 +83,17 @@ declare global {
          */
         formatDateTime(date: Date, format?: string): string;
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
-        loadEmbeddedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string): void;
+        /**
+         * Fills an embed with the note, or with the `block` of it, a `block` link parameter. An
+         * editor of those blocks calls `onBlockChange()` once the blocks at its edges change.
+         */
+        loadEmbeddedNote(
+            noteId: string,
+            $el: JQuery<HTMLElement>,
+            boxSize?: string,
+            block?: string,
+            onBlockChange?: (block: string) => void
+        ): void;
         loadEmbeddedAttachment(
             attachmentId: string,
             $el: JQuery<HTMLElement>,
@@ -103,6 +113,11 @@ declare global {
          * leave it out.
          */
         openContentEmbedMenu?(embed: HTMLElement, anchor: HTMLElement): void;
+        /**
+         * Opens the menu of the block handle at `event`, for `count` selected blocks. Hosts
+         * without block references leave it out.
+         */
+        openBlockHandleMenu?(event: MouseEvent, count: number): void;
         /**
          * The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. Hosts
          * without embeds leave it out.

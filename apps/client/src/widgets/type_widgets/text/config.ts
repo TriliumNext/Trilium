@@ -12,7 +12,7 @@ import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { isMac, openInAppHelpFromUrl } from "../../../services/utils.js";
+import { isMac, isMobile, openInAppHelpFromUrl } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
@@ -461,6 +461,11 @@ function getDisabledPlugins() {
 
     if (options.get("textNoteSlashCommandsEnabled") !== "true") {
         disabledPlugins.push("TriliumSlashCommands");
+    }
+
+    // The mobile layout leaves no margin beside the blocks for the drag handle.
+    if (isMobile()) {
+        disabledPlugins.push("BlockDragHandle");
     }
 
     return disabledPlugins;

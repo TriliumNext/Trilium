@@ -62,8 +62,15 @@ describe("ContentEmbed", () => {
         const schema = editor.model.schema;
         expect(schema.isRegistered("contentEmbed")).toBe(true);
         expect(schema.isObject("contentEmbed")).toBe(true);
+        expect(schema.isBlock("contentEmbed")).toBe(true);
         expect(schema.checkAttribute(["$root", "contentEmbed"], "noteId")).toBe(true);
         expect(schema.checkAttribute(["$root", "contentEmbed"], "boxSize")).toBe(true);
+    });
+
+    it("is one of the selected blocks when selected", () => {
+        setModelData(editor.model, "[<contentEmbed noteId=\"n1\"></contentEmbed>]");
+        const blocks = Array.from(editor.model.document.selection.getSelectedBlocks());
+        expect(blocks.map((block) => block.name)).toStrictEqual([ "contentEmbed" ]);
     });
 
     // -----------------------------------------------------------------------
@@ -985,6 +992,69 @@ describe("ContentEmbed with attachments", () => {
         await editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
 
         expect(findContentEmbed(editor)?.getAttribute("attachmentId")).toBe("att1");
+    });
+
+    it("stores, saves and renders an embed of blocks, and points it at other blocks", async () => {
+        const html = "<figure class=\"include-note\" data-note-id=\"noteAbc\" data-block=\"a1:b2\""
+            + " data-box-size=\"small\">&nbsp;</figure>";
+        editor.setData(html);
+        renderEmbeds();
+
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b2");
+        expect(editor.getData()).toBe(html);
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "small", "a1:b2", expect.any(Function)
+        );
+
+        // The editor in the embed points it at other blocks, and keeps showing them.
+        const setBlock = loadEmbeddedNote.mock.lastCall?.[4] as (block: string) => void;
+        setBlock("c3");
+        renderEmbeds();
+
+        expect(loadEmbeddedNote).toHaveBeenCalledOnce();
+        expect(editor.getData()).toBe(html.replace("a1:b2", "c3"));
+        expect(editor.editing.view.getDomRoot()?.querySelector(".include-note")
+            ?.getAttribute("data-block")).toBe("c3");
+        expect(editor.commands.get("undo")?.isEnabled).toBe(false);
+
+        editor.model.change((writer) => writer.setSelection(findContentEmbed(editor), "on"));
+        editor.execute(BOX_SIZE_COMMAND_NAME, { value: "medium" });
+        expect(loadEmbeddedNote).toHaveBeenLastCalledWith(
+            "noteAbc", expect.anything(), "medium", "c3", expect.any(Function)
+        );
+
+        editor.setData("<p>Removed</p>");
+        setBlock("d4");
+        expect(editor.getData()).toBe("<p>Removed</p>");
+
+        await editor.destroy();
+        expect(() => setBlock("e5")).not.toThrow();
+    });
+
+    it("turns a link to blocks into an embed of them, and the embed back into a link", async () => {
+        const blockHref = "#root/parentAbc/noteAbc?block=a1:b%202";
+        editor.setData(
+            `<p><a class="reference-link" href="${blockHref}">blocks</a></p>`
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a1&card=c1\">mixed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a:b:c\">malformed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=\">empty</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#\">no note</a></p>"
+        );
+        const links = editor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLElement>("a.reference-link") ?? [];
+        const plugin = editor.plugins.get(ContentEmbed);
+
+        expect([ ...links ].map((link) => plugin.canConvertLinkToEmbed(link)))
+            .toEqual([ true, false, false, false, false ]);
+
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: links[0] });
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b 2");
+
+        selectEmbed();
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+        await vi.waitFor(() => expect(editor.getData()).toContain(
+            "<a class=\"reference-link\" href=\"#root/noteAbc?block=a1:b%202\">"
+        ));
     });
 
     it("redraws the embeds of a changed attachment and removes those of a deleted one", () => {
