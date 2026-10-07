@@ -1,3 +1,4 @@
+import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import { randomString } from "../../../services/utils";
 
@@ -20,7 +21,8 @@ export async function applyReferenceLinks(
 /**
  * Turns the tabs blocks in `container` into working tabs: the first tab of each block shows, and
  * a click on a title, Enter or Space shows that tab. The arrow keys, Home and End move between
- * the titles of a block. A block that is already set up keeps its listeners and its active tab.
+ * the titles of a block. A title without text shows the editor's placeholder. A block that is
+ * already set up keeps its listeners and its active tab.
  */
 export function applyTabs(container: HTMLElement) {
     for (const block of container.querySelectorAll<HTMLElement>(".trilium-tabs")) {
@@ -35,6 +37,13 @@ export function applyTabs(container: HTMLElement) {
             const panel = tab.querySelector<HTMLElement>(":scope > .trilium-tab-panel");
             if (!title || !panel) {
                 continue;
+            }
+
+            if (!title.textContent?.trim() && !title.querySelector(":not(br)")) {
+                const placeholder = t("text-editor.ck.tab-title");
+                title.replaceChildren();
+                title.dataset.placeholder = placeholder;
+                title.setAttribute("aria-label", placeholder);
             }
 
             const id = `trilium-tab-${randomString(8)}`;

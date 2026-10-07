@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { applyTabs } from "./read_only_helper";
+
+vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
 function renderTabs(html: string) {
     const container = document.createElement("div");
@@ -99,6 +101,23 @@ describe("applyTabs", () => {
         expect(activeTitles(container)).toEqual(["C"]);
 
         container.remove();
+    });
+
+    it("labels a title that has no text with the editor's placeholder", () => {
+        const container = renderTabs(
+            `<div class="trilium-tabs">${tab("&nbsp;", "")}${tab("", "")}${tab("Named", "")}</div>`
+        );
+        const label = "text-editor.ck.tab-title";
+        const titles = [...container.querySelectorAll<HTMLElement>(".trilium-tab-title")];
+        expect(titles).toHaveLength(3);
+
+        for (const title of titles.slice(0, 2)) {
+            expect(title.textContent).toBe("");
+            expect(title.dataset.placeholder).toBe(label);
+            expect(title.getAttribute("aria-label")).toBe(label);
+        }
+        expect(titles[2].dataset.placeholder).toBeUndefined();
+        expect(titles[2].hasAttribute("aria-label")).toBe(false);
     });
 
     it("keeps nested tabs blocks independent", () => {
