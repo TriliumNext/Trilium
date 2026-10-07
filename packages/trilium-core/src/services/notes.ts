@@ -747,7 +747,7 @@ function saveBookmarks(note: BNote, content: string) {
 }
 
 function findInternalLinks(content: string, foundLinks: FoundLink[]) {
-    const re = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)\/?"/g;
+    const re = /href="[^"]*#root[a-zA-Z0-9_\/]*\/([a-zA-Z0-9_]+)\/?(?:\?[^"]*)?"/g;
     let match;
 
     while ((match = re.exec(content))) {

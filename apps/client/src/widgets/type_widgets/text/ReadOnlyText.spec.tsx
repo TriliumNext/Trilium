@@ -33,13 +33,18 @@ import ReadOnlyText from "./ReadOnlyText";
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
-const { watchContentEmbeds, stopWatchingEmbeds } = vi.hoisted(() => {
+const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote } = vi.hoisted(() => {
     const stop = vi.fn();
-    return { watchContentEmbeds: vi.fn(() => stop), stopWatchingEmbeds: stop };
+    return {
+        watchContentEmbeds: vi.fn(() => stop),
+        stopWatchingEmbeds: stop,
+        loadEmbeddedNote: vi.fn(async () => {})
+    };
 });
 vi.mock("./utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("./utils")>(),
-    watchContentEmbeds
+    watchContentEmbeds,
+    loadEmbeddedNote
 }));
 
 vi.stubGlobal("logError", vi.fn());
@@ -247,6 +252,85 @@ describe("ReadOnlyText ?bookmark= handling", () => {
     });
 });
 
+describe("ReadOnlyText ?block= handling", () => {
+    let cleanupContainer: HTMLElement | undefined;
+
+    afterEach(() => {
+        const mounted = cleanupContainer;
+        if (mounted) {
+            act(() => render(null, mounted));
+            mounted.remove();
+            cleanupContainer = undefined;
+        }
+    });
+
+    async function mountWithBlock(block: string) {
+        const scrollIntoView = vi.fn();
+        Element.prototype.scrollIntoView = scrollIntoView;
+        const note = buildNote({
+            title: "Blocks",
+            type: "text",
+            content: "<p data-trilium-block-id=\"b1\">One</p>"
+                + "<p data-trilium-block-id=\"b2\">Two</p>"
+        });
+        const parent = new Component();
+        const noteContext = new NoteContext("block-ntx");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { block };
+
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+        cleanupContainer = container;
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={parent}>
+                    <ReadOnlyText
+                        note={note}
+                        noteContext={noteContext}
+                        ntxId={noteContext.ntxId}
+                        parentComponent={parent}
+                        viewScope={noteContext.viewScope}
+                        isVisible={true}
+                    />
+                </ParentComponent.Provider>,
+                container
+            );
+        });
+        const isBlockKept = noteContext.viewScope?.block === block;
+        await act(async () => {});
+
+        return { parent, noteContext, container, scrollIntoView, isBlockKept };
+    }
+
+    it("reveals the referenced block once the content renders", async () => {
+        const { noteContext, container, scrollIntoView, isBlockKept } = await mountWithBlock("b2");
+
+        expect(isBlockKept).toBe(true);
+        expect(noteContext.viewScope?.block).toBeUndefined();
+        expect(scrollIntoView.mock.contexts)
+            .toEqual([ container.querySelector("[data-trilium-block-id='b2']") ]);
+    });
+
+    it("reveals a block of the open note when a link to it is followed", async () => {
+        const { parent, noteContext, container, scrollIntoView } = await mountWithBlock("b2");
+        const otherContext = new NoteContext("other-ntx");
+        otherContext.noteId = noteContext.noteId;
+
+        noteContext.viewScope = { block: "b1" };
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext: otherContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBe("b1");
+
+        await act(async () => {
+            await parent.handleEvent("noteSwitched", { noteContext, notePath: "" });
+        });
+        expect(noteContext.viewScope?.block).toBeUndefined();
+        expect(scrollIntoView.mock.contexts.at(-1))
+            .toBe(container.querySelector("[data-trilium-block-id='b1']"));
+    });
+});
+
 /**
  * The direction is resolved from the note's `#language` label and handed to the content
  * element as `dir`, which is what the RTL rules in the content stylesheets key off (they
@@ -299,5 +383,21 @@ describe("ReadOnlyText embedded notes", () => {
         await act(async () => render(null, harness.container));
         harness.container.remove();
         expect(stopWatchingEmbeds).toHaveBeenCalledOnce();
+    });
+
+    it("loads an embed with the blocks it shows", async () => {
+        loadEmbeddedNote.mockClear();
+        const harness = setupHarness({ isVisible: true });
+        harness.note.getBlob = async () => ({
+            content: "<figure class=\"include-note\" data-note-id=\"src1\""
+                + " data-block=\"b1:b2\"></figure>"
+        }) as never;
+
+        await harness.mount();
+
+        expect(loadEmbeddedNote)
+            .toHaveBeenCalledWith("src1", expect.anything(), undefined, { block: "b1:b2" });
+        await act(async () => render(null, harness.container));
+        harness.container.remove();
     });
 });

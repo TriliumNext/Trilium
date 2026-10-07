@@ -5,6 +5,7 @@ import { createTestEditor } from "../test/editor-kit.js";
 import { AttributeEditor } from "./index.js";
 import Admonition from "./plugins/admonition/admonition.js";
 import BlockDragHandle from "./plugins/block_drag_handle.js";
+import BlockReference from "./plugins/block_reference/block_reference.js";
 import ItalicAsEmPlugin from "./plugins/italic_as_em.js";
 import StrikethroughAsDel from "./plugins/strikethrough_as_del.js";
 import { CHAT_INPUT_PLUGINS, CLASSIC_EDITOR_PLUGINS, COMMON_PLUGINS, CORE_PLUGINS, MEMO_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
@@ -80,6 +81,7 @@ describe("plugin lists", () => {
         expect(COMMON_PLUGINS).toContain(CutToNotePlugin);
         expect(COMMON_PLUGINS).toContain(InternalLinkPlugin);
         expect(COMMON_PLUGINS).toContain(ContentEmbed);
+        expect(COMMON_PLUGINS).toContain(BlockReference);
         expect(COMMON_PLUGINS).toContain(LinkEmbed);
         expect(COMMON_PLUGINS).toContain(FindInLinkWidgets);
         expect(COMMON_PLUGINS).toContain(Uploadfileplugin);

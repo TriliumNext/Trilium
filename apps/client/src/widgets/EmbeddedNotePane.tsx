@@ -160,7 +160,7 @@ export function SelectTitleOnFirstOpen() {
  * calendar turns to its date) — instead of navigating the whole tab away from the view. Every
  * other link keeps meaning what it means anywhere else, as does every way of asking for more than
  * a plain navigation: a modified click wanting a new tab or window, a link saying how it wants to
- * be opened — in a popup, at an attachment, at a bookmark, in a named tab.
+ * be opened — in a popup, at an attachment, at a bookmark or a block, in a named tab.
  *
  * `onFollowLink` is offered the link's note and answers whether the host took the navigation
  * over; only then is the link stopped. Captured on the pane's own element, so it goes ahead of
@@ -184,7 +184,8 @@ export function useFollowLinksWithin(paneRef: RefObject<HTMLElement | null>, onF
             // this note" is the pane's to take, and only for a note the host can go to.
             const { noteId, ntxId, viewScope, openInPopup } = link.parseNavigationStateFromUrl(href);
             if (!noteId || ntxId || openInPopup || viewScope?.viewMode !== "default"
-                || viewScope.attachmentId || viewScope.bookmark || !onFollowLink(noteId)) return;
+                || viewScope.attachmentId || viewScope.bookmark || viewScope.block
+                || !onFollowLink(noteId)) return;
 
             e.preventDefault();
             e.stopPropagation();

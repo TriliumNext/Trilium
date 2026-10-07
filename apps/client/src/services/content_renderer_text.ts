@@ -1,4 +1,4 @@
-import { KATEX_MACROS } from "@triliumnext/commons";
+import { encodeBlockParameter, KATEX_MACROS, sliceToBlockReference } from "@triliumnext/commons";
 
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
@@ -21,7 +21,8 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
 
 /**
  * Renders `content`, the HTML of `note`, which can differ from the saved content, as while the
- * note is edited. An empty note shows the list of its children instead.
+ * note is edited. An empty note shows the list of its children instead. With `options.block`,
+ * only those blocks render.
  */
 export async function renderTextContent(
     note: FNote | FAttachment,
@@ -29,8 +30,16 @@ export async function renderTextContent(
     $renderedContent: JQuery<HTMLElement>,
     options: RenderOptions = {}
 ) {
-    if (content !== undefined && !isHtmlEmpty(content)) {
-        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(content)));
+    const hasContent = content !== undefined && !isHtmlEmpty(content);
+    const $content = $('<div class="ck-content">')
+        .html(hasContent ? sanitizeNoteContentHtml(content) : "");
+
+    if (options.block !== undefined && !sliceToBlockReference($content[0], options.block)) {
+        $renderedContent.append($("<p>")
+            .addClass("block-reference-broken")
+            .text(t("block_reference.broken")));
+    } else if (hasContent) {
+        $renderedContent.append($content);
         await postProcessRichContent(note, $renderedContent, options);
     } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
@@ -46,7 +55,7 @@ export async function renderTextContent(
  */
 export async function postProcessRichContent(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const seenNoteIds = options.seenNoteIds ?? new Set<string>();
-    seenNoteIds.add("noteId" in note ? note.noteId : note.attachmentId);
+    seenNoteIds.add(getEmbedKey("noteId" in note ? note.noteId : note.attachmentId, options.block));
     if (options.noContentEmbeds) {
         $renderedContent.find(".include-note").remove();
     } else if (options.embedsAsReferenceLinks) {
@@ -120,6 +129,7 @@ async function renderContentEmbeds(contentEl: HTMLElement, seenNoteIds: Set<stri
 
         const noteId = embedEl.getAttribute("data-note-id");
         if (!noteId) continue;
+        const block = embedEl.getAttribute("data-block") ?? undefined;
 
         const note = froca.getNoteFromCache(noteId);
         if (!note) {
@@ -127,7 +137,7 @@ async function renderContentEmbeds(contentEl: HTMLElement, seenNoteIds: Set<stri
             continue;
         }
 
-        if (seenNoteIds.has(noteId)) {
+        if (seenNoteIds.has(getEmbedKey(noteId, block))) {
             console.warn(`Skipping embedding of ${noteId} to avoid circular reference.`);
             embedEl.remove();
             continue;
@@ -138,11 +148,16 @@ async function renderContentEmbeds(contentEl: HTMLElement, seenNoteIds: Set<stri
         // Clone seenNoteIds per descent so it tracks the current ancestor path only — sibling
         // branches must not pollute each other (a note embedded in two sub-trees is not a cycle).
         const renderedContent = (await content_renderer.getRenderedContent(note, expandNested
-            ? { seenNoteIds: new Set(seenNoteIds), expandNestedEmbeds: true }
-            : { seenNoteIds: new Set(seenNoteIds), embedsAsReferenceLinks: true }
+            ? { seenNoteIds: new Set(seenNoteIds), expandNestedEmbeds: true, block }
+            : { seenNoteIds: new Set(seenNoteIds), embedsAsReferenceLinks: true, block }
         )).$renderedContent;
         replaceEmbedContent(embedEl, renderedContent.toArray());
     }
+}
+
+/** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */
+function getEmbedKey(noteId: string, block: string | undefined) {
+    return block ? `${noteId}:${block}` : noteId;
 }
 
 /** Puts `content` in an embed, followed by the embed's caption. */
@@ -191,9 +206,12 @@ async function replaceEmbedWithReferenceLink(embedEl: Element) {
     // comes from note HTML, and the reference-link pass later reinterprets that href.
     if (!noteId || !/^[a-zA-Z0-9_]+$/.test(noteId)) return;
 
+    const block = embedEl.getAttribute("data-block");
     const referenceLink = document.createElement("a");
     referenceLink.className = "reference-link";
-    referenceLink.setAttribute("href", `#root/${noteId}`);
+    referenceLink.setAttribute("href", block
+        ? `#root/${noteId}?block=${encodeBlockParameter(block)}`
+        : `#root/${noteId}`);
     embedEl.replaceWith(referenceLink);
 }
 

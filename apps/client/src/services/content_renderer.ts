@@ -62,6 +62,11 @@ export interface RenderOptions {
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
     seenNoteIds?: Set<string>;
+    /**
+     * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
+     * out, and a missing block renders as a broken reference.
+     */
+    block?: string;
     showTextRepresentation?: boolean;
     /**
      * If enabled, note types that have a richer live representation (currently only web views) are
@@ -171,7 +176,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         // view type is excluded: it's the only view that re-propagates `interactive` to its tiles, so
         // skipping it here is what keeps an embedded collection from recursing into itself.
         await renderCollection(entity, $renderedContent);
-    } else if (type === "text" && options.interactive && options.noteEditor
+    } else if (type === "text" && options.interactive && options.noteEditor && !options.block
         && entity instanceof FNote) {
         await renderEditableText(entity, $renderedContent, options);
     } else if (type === "text" || type === "book") {

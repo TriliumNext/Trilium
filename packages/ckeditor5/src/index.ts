@@ -31,6 +31,7 @@ export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
 import "./plugins/file_upload/uploadfileplugin.js";
+import "./plugins/block_reference/block_reference.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/math/math.js";
 import "./plugins/mermaid/mermaid.js";

@@ -348,7 +348,8 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed.",
-    "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here."
+    "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here.",
+    "broken-block-reference": "Broken reference"
   },
   "onenote_import": {
     "root-title": "OneNote import",

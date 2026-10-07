@@ -926,6 +926,22 @@ export function useSearchTermsConsumer(note: FNote | null | undefined, noteConte
     });
 }
 
+/**
+ * Calls `callback` when the note context `ntxId` switches to `note`, the note the widget shows
+ * already, as when a link to a part of the open note is followed.
+ */
+export function useSameNoteSwitch(
+    note: FNote | null | undefined,
+    ntxId: string | null | undefined,
+    callback: () => void
+) {
+    useTriliumEvent("noteSwitched", ({ noteContext }) => {
+        if (noteContext.ntxId === ntxId && noteContext.note?.noteId === note?.noteId) {
+            callback();
+        }
+    });
+}
+
 export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, { noteContext, containerClassName, containerStyle }: {
     noteContext?: NoteContext;
     containerClassName?: string;

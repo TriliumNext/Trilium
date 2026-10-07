@@ -452,6 +452,18 @@ describe("notes service (real DB)", () => {
             expect(relation!.value).toBe(target.note.noteId);
         });
 
+        it("creates internal-link relations for links to a part of a note", () => {
+            const target = createNote("root", { title: "spec-part-target" });
+            const source = createNote("root", { title: "spec-part-source" });
+
+            const content = `<a href="#root/${target.note.noteId}?block=a1:b2">x</a>`
+                + `<a href="#root/${target.note.noteId}?bookmark=heading">y</a>`;
+            getContext().init(() => saveLinks(source.note, content));
+
+            const relations = source.note.getRelations().filter((r) => r.name === "internalLink");
+            expect(relations.map((r) => r.value)).toEqual([ target.note.noteId ]);
+        });
+
         it("removes link relations that are no longer present in the content", () => {
             const target = createNote("root", { title: "spec-unused-target" });
             const source = createNote("root", { title: "spec-unused-source" });

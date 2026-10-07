@@ -488,6 +488,19 @@ describe("getRenderedContent editable code", () => {
         expect(rendered(again)).toBe("<p>Edited</p>");
     });
 
+    it("renders the blocks of a text note without an editor", async () => {
+        const note = buildNote({ title: "Doc", type: "text", content: "<p>Hi</p>" });
+
+        const { $renderedContent } = await getRenderedContent(note, {
+            interactive: true,
+            noteEditor: buildEditor(),
+            block: "b1"
+        });
+
+        expect($renderedContent.find(".from-render-text").length).toBe(1);
+        expect(textEmbedComponent).not.toHaveBeenCalled();
+    });
+
     it("edits only code and text notes", async () => {
         const json = buildNote({
             title: "Data", type: "file", mime: "application/json", content: "{}"

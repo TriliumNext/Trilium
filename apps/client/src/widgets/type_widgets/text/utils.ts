@@ -17,6 +17,8 @@ import ContentEmbed, { getNoteActions, TinyContentEmbed } from "./ContentEmbed";
 interface EmbeddedNoteOptions {
     /** Saves the changes that the content makes to the note, such as a code note. */
     noteEditor?: NoteEditor;
+    /** The blocks of the note to show, a `block` link parameter. The whole note when left out. */
+    block?: string;
 }
 
 /**
@@ -27,22 +29,25 @@ export async function loadEmbeddedNote(
     noteId: string,
     $el: JQuery<HTMLElement>,
     boxSize?: string,
-    { noteEditor }: EmbeddedNoteOptions = {}
+    { noteEditor, block }: EmbeddedNoteOptions = {}
 ) {
     const note = await froca.getNote(noteId);
     if (!note) return;
 
     const el = $el[0];
     const size = boxSize ?? getEmbedBoxSize(el);
+    const viewScope: ViewScope | undefined = block ? { block } : undefined;
     if (size === "tiny") {
         const $link = await link.createLink(note.noteId, {
             showTooltip: false,
-            showNotePath: true
+            showNotePath: true,
+            viewScope
         });
         const box = h(TinyContentEmbed, {
             icon: note.getIcon(),
             title: $link[0],
             notePath: note.noteId,
+            viewScope,
             actions: getNoteActions(note.noteId)
         });
         await mountEmbedBox(el, box);
@@ -51,7 +56,8 @@ export async function loadEmbeddedNote(
 
     const $link = await link.createLink(note.noteId, {
         showTooltip: false,
-        showNoteIcon: true
+        showNoteIcon: true,
+        viewScope
     });
 
     // The embed widget itself is the first level of embedding, so the embedded note's own
@@ -60,7 +66,8 @@ export async function loadEmbeddedNote(
         interactive: true,
         embedsAsReferenceLinks: true,
         mediaEnvironment: "embedded",
-        noteEditor
+        noteEditor,
+        block
     });
 
     const box = h(ContentEmbed, {
@@ -68,7 +75,8 @@ export async function loadEmbeddedNote(
         title: $link[0],
         content: $renderedContent[0],
         contentType: type,
-        notePath: note.noteId
+        notePath: note.noteId,
+        viewScope
     });
     await mountEmbedBox(el, box, $renderedContent);
 }
@@ -182,7 +190,7 @@ function getWrapper(el: HTMLElement) {
  * opens from the embed, so that the text editor that contains it stays focused.
  */
 export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLElement) {
-    const { noteId, attachmentId } = embed.dataset;
+    const { noteId, attachmentId, block } = embed.dataset;
     const origin = linkContextMenu.getOriginBelow(anchor, embed);
 
     if (attachmentId) {
@@ -194,7 +202,7 @@ export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLEleme
             });
         }
     } else if (noteId) {
-        await linkContextMenu.openContextMenu(noteId, origin, {});
+        await linkContextMenu.openContextMenu(noteId, origin, block ? { block } : {});
     }
 }
 
@@ -242,9 +250,13 @@ export function refreshEmbeddedNote(
     noteId: string,
     options?: EmbeddedNoteOptions
 ) {
-    const embeddedNotes = container.querySelectorAll(`.include-note[data-note-id="${noteId}"]`);
+    const embeddedNotes =
+        container.querySelectorAll<HTMLElement>(`.include-note[data-note-id="${noteId}"]`);
     for (const embeddedNote of embeddedNotes) {
-        loadEmbeddedNote(noteId, $(embeddedNote as HTMLElement), undefined, options);
+        loadEmbeddedNote(noteId, $(embeddedNote), undefined, {
+            ...options,
+            block: embeddedNote.dataset.block
+        });
     }
 }
 

@@ -14,6 +14,9 @@ import { createPortal } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import {
+    consumeBlockReference, copyBlockReference, openBlockHandleMenu
+} from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import { getUploadBoxSize } from "../../../services/content_renderer";
 import dialog from "../../../services/dialog";
@@ -26,7 +29,10 @@ import { consumeSearchTerms } from "../../../services/search_jump";
 import toast from "../../../services/toast";
 import utils, { isMobile } from "../../../services/utils";
 import type { IconPickerOpts } from "../../dialogs/icon_picker";
-import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import {
+    useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useSameNoteSwitch,
+    useSearchTermsConsumer, useTriliumEvent, useTriliumOption, useTriliumOptionBool
+} from "../../react/hooks";
 import IconPicker from "../../react/IconPicker";
 import { setEditorNoteId } from "../../react/NoteStore";
 import { TypeWidgetProps } from "../type_widget";
@@ -119,12 +125,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // Jump to the first search match when navigated from search results.
             consumeSearchTerms(noteContext, ntxId, initialized.current);
 
-            // Scroll to bookmark anchor if navigated with ?bookmark=...
+            // Scroll to the bookmark or the blocks a link points at.
             const viewScope = noteContext?.viewScope;
-            if (viewScope?.bookmark) {
-                requestAnimationFrame(() => {
-                    consumeBookmark(watchdogRef.current?.editor?.editing.view.getDomRoot(), viewScope);
-                });
+            if (viewScope?.bookmark || viewScope?.block) {
+                requestAnimationFrame(revealLinkTarget);
             }
         },
         dataSaved(savedData) {
@@ -137,6 +141,17 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const templates = useTemplates();
 
     useSearchTermsConsumer(note, noteContext, ntxId);
+    useSameNoteSwitch(note, ntxId, () => {
+        if (contentNoteIdRef.current === note?.noteId) {
+            revealLinkTarget();
+        }
+    });
+
+    function revealLinkTarget() {
+        const root = watchdogRef.current?.editor?.editing.view.getDomRoot();
+        consumeBookmark(root, noteContext?.viewScope);
+        consumeBlockReference(root, noteContext?.viewScope);
+    }
 
     useTriliumEvent("scrollToEnd", () => {
         const editor = watchdogRef.current?.editor;
@@ -205,8 +220,13 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
-        loadEmbeddedNote(noteId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
-            return loadEmbeddedNote(noteId, $el, boxSize, { noteEditor: embedNoteEditor });
+        loadEmbeddedNote(
+            noteId: string,
+            $el: JQuery<HTMLElement>,
+            boxSize?: string,
+            block?: string
+        ) {
+            return loadEmbeddedNote(noteId, $el, boxSize, { noteEditor: embedNoteEditor, block });
         },
         loadEmbeddedAttachment(attachmentId: string, $el: JQuery<HTMLElement>, boxSize?: string) {
             const isFocused = focusedAttachmentIdRef.current === attachmentId;
@@ -227,6 +247,17 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         },
         getEmbedBoxSize: getUploadBoxSize,
         openContentEmbedMenu,
+        openBlockHandleMenu(event: MouseEvent, count: number) {
+            const editor = watchdogRef.current?.editor as CKTextEditor | undefined;
+            if (!editor) return;
+
+            const notePath = noteContext?.notePath ?? `root/${note.noteId}`;
+            openBlockHandleMenu(event, count, async () => {
+                await copyBlockReference(editor, notePath, note.title);
+                // Saved now, so that the link resolves in other notes at once.
+                spacedUpdate.updateNowIfNecessary();
+            });
+        },
         getContentEmbedTools,
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.

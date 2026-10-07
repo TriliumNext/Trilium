@@ -994,6 +994,57 @@ describe("ContentEmbed with attachments", () => {
         expect(findContentEmbed(editor)?.getAttribute("attachmentId")).toBe("att1");
     });
 
+    it("stores, saves and renders an embed of blocks, and redraws it when they change", () => {
+        const html = "<figure class=\"include-note\" data-note-id=\"noteAbc\" data-block=\"a1:b2\""
+            + " data-box-size=\"small\">&nbsp;</figure>";
+        editor.setData(html);
+        renderEmbeds();
+
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b2");
+        expect(editor.getData()).toBe(html);
+        expect(loadEmbeddedNote)
+            .toHaveBeenLastCalledWith("noteAbc", expect.anything(), "small", "a1:b2");
+
+        editor.model.change((writer) => {
+            const embed = findContentEmbed(editor);
+            if (embed) {
+                writer.setAttribute("block", "c3", embed);
+            }
+        });
+        renderEmbeds();
+
+        expect(loadEmbeddedNote)
+            .toHaveBeenLastCalledWith("noteAbc", expect.anything(), "small", "c3");
+        expect(editor.editing.view.getDomRoot()?.querySelector(".include-note")
+            ?.getAttribute("data-block")).toBe("c3");
+    });
+
+    it("turns a link to blocks into an embed of them, and the embed back into a link", async () => {
+        const blockHref = "#root/parentAbc/noteAbc?block=a1:b%202";
+        editor.setData(
+            `<p><a class="reference-link" href="${blockHref}">blocks</a></p>`
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a1&card=c1\">mixed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=a:b:c\">malformed</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#root/noteAbc?block=\">empty</a></p>"
+            + "<p><a class=\"reference-link\" href=\"#\">no note</a></p>"
+        );
+        const links = editor.editing.view.getDomRoot()
+            ?.querySelectorAll<HTMLElement>("a.reference-link") ?? [];
+        const plugin = editor.plugins.get(ContentEmbed);
+
+        expect([ ...links ].map((link) => plugin.canConvertLinkToEmbed(link)))
+            .toEqual([ true, false, false, false, false ]);
+
+        editor.execute(CONVERT_LINK_TO_EMBED_COMMAND, { domElement: links[0] });
+        expect(findContentEmbed(editor)?.getAttribute("block")).toBe("a1:b 2");
+
+        selectEmbed();
+        editor.execute(CONVERT_EMBED_TO_LINK_COMMAND);
+        await vi.waitFor(() => expect(editor.getData()).toContain(
+            "<a class=\"reference-link\" href=\"#root/noteAbc?block=a1:b%202\">"
+        ));
+    });
+
     it("redraws the embeds of a changed attachment and removes those of a deleted one", () => {
         editor.setData(embedHtml("att1") + embedHtml("att2"));
         renderEmbeds();

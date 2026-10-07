@@ -1,8 +1,9 @@
-import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+import { ALLOWED_PROTOCOLS, encodeBlockParameter } from "@triliumnext/commons";
 
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
 import linkContextMenuService from "../menus/link_context_menu.js";
+import { getCachedBlockReferenceLabel, loadBlockReferenceLabel } from "./block_excerpts.js";
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -75,6 +76,11 @@ export interface ViewScope {
     /** When set, scrolls to a bookmark anchor within the note after navigation. */
     bookmark?: string;
     /**
+     * The blocks of a text note a reference points at, `id` or `startId:endId`, which the note
+     * scrolls to and flashes once it renders. Consumed once, as `bookmark` is.
+     */
+    block?: string;
+    /**
      * Search terms to highlight and jump to after navigating from search results; consumed once
      * by the destination type widget (mirrors `bookmark` semantics).
      */
@@ -130,8 +136,8 @@ const NOTE_PATH_PATTERN = /^[_a-z0-9]{4,}(\/[_a-z0-9]{4,})*$/i;
 const MAX_SPLIT_PANES_IN_HASH = 8;
 
 /** Hash parameters that belong to a pane's view scope rather than to the window as a whole. */
-const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "column", "columnTitle",
-    "columnIcon", "columnColor", "card", "page", "annotation"];
+const VIEW_SCOPE_PARAMS = ["viewMode", "attachmentId", "bookmark", "block", "column",
+    "columnTitle", "columnIcon", "columnColor", "card", "page", "annotation"];
 
 interface CreateLinkOptions {
     title?: string;
@@ -268,6 +274,7 @@ export function calculateHash(
         hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId } : null,
         viewScope.viewMode && viewScope.viewMode !== "default" ? { viewMode: viewScope.viewMode } : null,
         viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null,
+        viewScope.block ? { block: viewScope.block } : null,
         viewScope.column ? { column: viewScope.column } : null,
         viewScope.columnTitle ? { columnTitle: viewScope.columnTitle } : null,
         viewScope.columnIcon ? { columnIcon: viewScope.columnIcon } : null,
@@ -289,7 +296,10 @@ export function calculateHash(
 
             /* v8 ignore next -- `value` is never undefined: every retained pair holds a string. It
                can be empty, but only for a `splits` list whose panes are all empty. */
-            return `${encodeURIComponent(name)}=${encodeURIComponent(value || "")}`;
+            const encodedValue = name === "block"
+                ? encodeBlockParameter(value || "")
+                : encodeURIComponent(value || "");
+            return `${encodeURIComponent(name)}=${encodedValue}`;
         })
         .join("&");
 
@@ -700,6 +710,18 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
         ));
     }
 
+    if (viewScope?.block && note) {
+        const label = await loadBlockReferenceLabel(note, viewScope.block);
+        if (label) {
+            $el.append($("<small>")
+                .toggleClass("block-reference-broken", label.isBroken)
+                .append(
+                    $("<span>").addClass("bx bx-paragraph"),
+                    document.createTextNode(label.text)
+                ));
+        }
+    }
+
     if (viewScope?.page) {
         $el.append($("<small>").append(
             $("<span>").addClass(viewScope.annotation ? "bx bx-comment-detail" : "bx bx-file"),
@@ -774,6 +796,13 @@ function getReferenceLinkTitleSync(href: string) {
 
     if (viewScope?.bookmark) {
         return `${note.title} - ${viewScope.bookmark}`;
+    }
+
+    const blockLabel = viewScope?.block
+        ? getCachedBlockReferenceLabel(note, viewScope.block)
+        : null;
+    if (blockLabel && !blockLabel.isBroken) {
+        return `${note.title} - ${blockLabel.text}`;
     }
 
     if (viewScope?.page) {

@@ -4594,5 +4594,12 @@
     "filter": "Filter",
     "filter_placeholder": "Type to filter…",
     "back": "Back"
+  },
+  "block_reference": {
+    "copy_one": "Copy reference to this block",
+    "copy_other": "Copy reference to these {{count}} blocks",
+    "broken": "Broken reference",
+    "not_found": "A referenced block could not be found. It might have been deleted.",
+    "untitled": "Block"
   }
 }

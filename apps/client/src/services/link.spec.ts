@@ -1169,3 +1169,45 @@ describe("module-level click handlers", () => {
         $a.remove();
     });
 });
+
+describe("block references", () => {
+    const content = "<p data-trilium-block-id=\"b1\">First block</p>"
+        + "<p data-trilium-block-id=\"b2\">Second</p>";
+
+    it("parses and writes the block parameter, keeping the colon of a range", () => {
+        expect(parseNavigationStateFromUrl("#root/a1b2/c3d4?block=b1:b%202").viewScope)
+            .toMatchObject({ block: "b1:b 2" });
+        expect(calculateHash({ notePath: "root/c3d4", viewScope: { block: "b1:b 2" } }))
+            .toBe("#root/c3d4?block=b1:b%202");
+    });
+
+    it("labels a reference by the text of its blocks, or as broken", async () => {
+        const note = buildNote({ title: "Source", content });
+        const $el = $("<span>");
+        const $broken = $("<span>");
+
+        const href = `#root/${note.noteId}?block=b1:b2`;
+        const brokenHref = `#root/${note.noteId}?block=gone`;
+
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Source");
+        await linkService.loadReferenceLinkTitle($el, href);
+        await linkService.loadReferenceLinkTitle($broken, brokenHref);
+
+        expect($el.find("small span.bx.bx-paragraph")).toHaveLength(1);
+        expect($el.find("small").text()).toBe("First block … Second");
+        expect($el.find("small").hasClass("block-reference-broken")).toBe(false);
+        expect($broken.find("small").text()).toBe("block_reference.broken");
+        expect($broken.find("small").hasClass("block-reference-broken")).toBe(true);
+        expect(linkService.getReferenceLinkTitleSync(href)).toBe("Source - First block … Second");
+        expect(linkService.getReferenceLinkTitleSync(brokenHref)).toBe("Source");
+    });
+
+    it("adds no label to a reference to the blocks of a note that cannot be read", async () => {
+        const note = buildNote({ title: "Code", type: "code", content });
+        const $el = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($el, `#root/${note.noteId}?block=b1`);
+
+        expect($el.find("small")).toHaveLength(0);
+    });
+});

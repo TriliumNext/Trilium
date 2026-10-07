@@ -1,0 +1,27 @@
+:where(:root) {
+    --block-reference-flash-color: rgb(255 200 0 / 40%);
+    --block-reference-broken-color: var(--muted-text-color);
+}
+
+.block-reference-flash {
+    /* The duration matches FLASH_DURATION_MS in block_reference.ts. */
+    animation: block-reference-flash 1.5s ease-out;
+}
+
+@keyframes block-reference-flash {
+    from,
+    30% {
+        box-shadow:
+            0 0 0 4px var(--block-reference-flash-color),
+            inset 0 0 0 100vmax var(--block-reference-flash-color);
+    }
+
+    to {
+        box-shadow: 0 0 0 4px transparent, inset 0 0 0 100vmax transparent;
+    }
+}
+
+.block-reference-broken {
+    color: var(--block-reference-broken-color);
+    font-style: italic;
+}
