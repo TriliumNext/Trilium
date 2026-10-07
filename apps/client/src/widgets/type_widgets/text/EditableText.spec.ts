@@ -29,10 +29,13 @@ vi.mock("@triliumnext/ckeditor5", () => ({}));
 
 const {
     applyPendingAttachmentChanges,
+    getBlockData,
     notifyAttachmentChanges,
     onNotificationInfo,
     onNotificationWarning,
-    showFileUploadProgress
+    revealLinkTargetWhenReady,
+    showFileUploadProgress,
+    watchEditorBlocks
 } = await import("./EditableText");
 
 describe("onNotificationWarning", () => {
@@ -206,5 +209,74 @@ describe("notifyAttachmentChanges", () => {
         applyPendingAttachmentChanges(editor, "note1", pending);
 
         expect(updateAttachmentLinks).not.toHaveBeenCalled();
+    });
+});
+
+describe("getBlockData", () => {
+    it("reads all of the content, with the blocks at its edges", () => {
+        const getRange = vi.fn()
+            .mockReturnValueOnce({ startId: "a", endId: "n" })
+            .mockReturnValueOnce(null);
+        const getData = vi.fn(() => "<p data-trilium-block-id=\"a\">&nbsp;</p>");
+        const editor = {
+            getData,
+            plugins: { get: () => ({ getRange }) }
+        } as unknown as CKTextEditor;
+
+        expect(getBlockData(editor, "a:b")).toEqual({
+            content: "<p data-trilium-block-id=\"a\">&nbsp;</p>",
+            block: "a:n"
+        });
+        expect(getData).toHaveBeenCalledWith({ trim: "none" });
+        expect(getRange).toHaveBeenCalledWith({ startId: "a", endId: "b" });
+        expect(getBlockData(editor, "a").block).toBeUndefined();
+    });
+});
+
+describe("watchEditorBlocks", () => {
+    it("reports the blocks of the editor each time they change", () => {
+        const getRange = vi.fn();
+        const editor = { plugins: { get: () => ({ getRange }) } } as unknown as CKTextEditor;
+        const onBlockChange = vi.fn();
+        const report = watchEditorBlocks("a:b", onBlockChange);
+
+        for (const range of [
+            { startId: "a", endId: "b" },
+            { startId: "a", endId: "n" },
+            { startId: "a", endId: "n" },
+            null,
+            { startId: "a", endId: "b" }
+        ]) {
+            getRange.mockReturnValueOnce(range);
+            report(editor);
+        }
+
+        expect(onBlockChange.mock.calls).toEqual([ [ "a:n" ], [ "a:b" ] ]);
+        expect(getRange).toHaveBeenCalledWith({ startId: "a", endId: "b" });
+    });
+});
+
+describe("revealLinkTargetWhenReady", () => {
+    it("reveals a bookmark or blocks once the editor is ready, as in a new tab", async () => {
+        vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+            callback(0);
+            return 0;
+        });
+        const reveal = vi.fn();
+        let markReady = () => {};
+        const ready = new Promise<void>((resolve) => {
+            markReady = resolve;
+        });
+
+        revealLinkTargetWhenReady({ block: "a:b" }, ready, reveal);
+        revealLinkTargetWhenReady({ bookmark: "intro" }, ready, reveal);
+        revealLinkTargetWhenReady({ viewMode: "default" }, ready, reveal);
+        await Promise.resolve();
+        expect(reveal).not.toHaveBeenCalled();
+
+        markReady();
+        await ready;
+        await Promise.resolve();
+        expect(reveal).toHaveBeenCalledTimes(2);
     });
 });

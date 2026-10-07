@@ -181,6 +181,41 @@ describe("content_renderer", () => {
             expect(result.content).toContain("reference-link");
         });
 
+        it("renders only the referenced blocks of an embedded note, or a broken reference", () => {
+            const blockEmbed = (block: string) => `<figure class="include-note"`
+                + ` data-note-id="blkSrc" data-block="${block}" data-box-size="medium"></figure>`;
+            buildShareNote({
+                id: "blkSrc",
+                content: `<p>Intro</p><ol><li>One</li><li data-trilium-block-id="b1">Two</li>`
+                    + `<li data-trilium-block-id="b2">Three</li><li>Four</li></ol><p>Outro</p>`
+            });
+            const note = buildShareNote({ content: blockEmbed("b2:b1") + blockEmbed("b1:gone") });
+
+            const content = getContent(note).content as string;
+
+            expect(content).toContain(`<ol start="2"><li data-trilium-block-id="b1">Two</li>`
+                + `<li data-trilium-block-id="b2">Three</li></ol>`);
+            expect(content).not.toMatch(/Intro|One|Four|Outro/);
+            expect(content).toContain(`<p class="block-reference-broken">`);
+        });
+
+        it("embeds blocks of the note itself, and links to blocks one level down", () => {
+            const note = buildShareNote({
+                id: "blkSelf",
+                title: "Self",
+                content: `<p data-trilium-block-id="top">Top</p>`
+                    + `<figure class="include-note" data-note-id="blkSelf" data-block="top"`
+                    + ` data-box-size="medium"></figure>`
+            });
+
+            const content = getContent(note).content as string;
+            const nested = getContent(note, { embedsAsReferenceLinks: true }).content as string;
+
+            expect(content.match(/Top/g)).toHaveLength(2);
+            expect(nested).toContain(`href="./blkSelf"`);
+            expect(nested).not.toContain("include-note");
+        });
+
         it("replaces an embed of a shareCredentials-protected note with a placeholder when the caller lacks access", () => {
             buildShareNote({
                 id: "credSecret",
@@ -259,6 +294,23 @@ describe("content_renderer", () => {
             if (typeof page !== "string") throw new Error("expected string content");
             expect(page).toContain("page host body");
             expect(page).not.toContain("page secret body");
+        });
+
+        it("gives a referenced heading a table of contents anchor, as any other heading", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "tocBlockHost",
+                    content: `<h2>Plain</h2><p>a</p>`
+                        + `<h3 data-trilium-block-id="b1">Referenced</h3><p>b</p>`
+                }]
+            });
+
+            const page = renderNoteContent(shareRootNote.getChildNotes()[0]);
+
+            expect(page).toContain(`<h3 data-trilium-block-id="b1">Referenced`
+                + `<a id="referenced" class="toc-anchor"`);
+            expect(page).toContain(`href="#referenced"`);
         });
 
         it("leaves an include-note section untouched when the referenced note is missing", () => {

@@ -60,19 +60,17 @@ export function registerContentEmbedTools(
     provider: ContentEmbedToolProvider
 ) {
     providers.set(element, provider);
-    for (const { container, callback } of watchers) {
-        if (container.contains(element)) {
-            callback();
-        }
-    }
+    notifyWatchers(element);
     return () => {
         providers.delete(element);
+        notifyWatchers(element);
     };
 }
 
 /**
- * Calls `callback` when content inside `container` adds its buttons, as a canvas drawing does
- * once it renders after its embed was selected. Stops when the returned function is called.
+ * Calls `callback` when content inside `container` adds or removes its buttons, as a canvas
+ * drawing adds them once it renders after its embed was selected. Stops when the returned function
+ * is called.
  */
 export function watchContentEmbedTools(container: HTMLElement, callback: () => void) {
     const watcher = { container, callback };
@@ -90,6 +88,14 @@ export function getContentEmbedTools(embed: HTMLElement) {
         }
     }
     return null;
+}
+
+function notifyWatchers(element: HTMLElement) {
+    for (const { container, callback } of watchers) {
+        if (container.contains(element)) {
+            callback();
+        }
+    }
 }
 
 /** Shows the content box of the embed that contains `element` in fullscreen. */

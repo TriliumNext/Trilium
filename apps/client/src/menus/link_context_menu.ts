@@ -43,7 +43,7 @@ async function openContextMenu(
     const embed = editor && getMenuEmbed(e, editor);
     const ownItems = viewScope.viewMode === "attachments" && viewScope.attachmentId
         ? await getAttachmentItems(noteId, viewScope.attachmentId, e, editor, embed)
-        : await getNoteItems(noteId, e, editor, embed);
+        : await getNoteItems(noteId, e, editor, embed, !!viewScope.block);
     // A later right-click opened its own menu while this one waited for the editor or the
     // attachment.
     if (request !== lastMenuRequest) {
@@ -195,18 +195,23 @@ async function getAttachmentItems(
 
 /**
  * The commands of an embedded note that the menu is opened on, in a group of their own, and
- * converting it in another. A menu opened on a link to the note offers converting the link.
+ * converting it in another. A menu opened on a link to the note offers converting the link, to an
+ * excerpt for a link to blocks of the note.
  */
 async function getNoteItems(
     noteId: string,
     e: LinkMenuOrigin,
     editor: CKTextEditor | null,
-    embed: MenuEmbed | null
+    embed: MenuEmbed | null,
+    isBlockReference: boolean
 ): Promise<MenuItem<CommandNames>[]> {
     if (!embed) {
         const embedItem = await getConvertToEmbedItem(
-            e, editor, t("link_context_menu.convert_link_to_included_note"),
-            () => froca.getNote(noteId)
+            e, editor, isBlockReference
+                ? t("link_context_menu.convert_link_to_note_excerpt")
+                : t("link_context_menu.convert_link_to_included_note"),
+            () => froca.getNote(noteId),
+            isBlockReference
         );
         return embedItem ? [ { kind: "separator" }, embedItem ] : [];
     }
@@ -294,13 +299,15 @@ function runEmbedCommand(
 
 /**
  * The item titled `title` that converts a link to a note or an attachment into an embed, in a
- * text note open for editing, for a link that the editor can convert.
+ * text note open for editing, for a link that the editor can convert. `isExcerpt` is set for a
+ * link to blocks of a note.
  */
 async function getConvertToEmbedItem(
     e: LinkMenuOrigin,
     editor: CKTextEditor | null,
     title: string,
-    getLinkedEntity: () => Promise<FNote | FAttachment | null>
+    getLinkedEntity: () => Promise<FNote | FAttachment | null>,
+    isExcerpt = false
 ): Promise<MenuItem<CommandNames> | null> {
     const link = getTarget(e)?.closest<HTMLElement>("a.reference-link");
     if (!link || !editor?.commands.get("convertLinkToEmbed")?.isEnabled
@@ -309,7 +316,7 @@ async function getConvertToEmbedItem(
     }
 
     // Imported on demand: `content_renderer` imports `link`, which imports this module.
-    const [ entity, { getEmbedBoxSize } ] = await Promise.all([
+    const [ entity, { EXCERPT_BOX_SIZE, getEmbedBoxSize } ] = await Promise.all([
         getLinkedEntity(),
         import("../services/content_renderer.js")
     ]);
@@ -322,7 +329,7 @@ async function getConvertToEmbedItem(
         uiIcon: "bx bx-window-alt",
         handler: () => editor.execute("convertLinkToEmbed", {
             domElement: link,
-            boxSize: getEmbedBoxSize(entity)
+            boxSize: isExcerpt ? EXCERPT_BOX_SIZE : getEmbedBoxSize(entity)
         })
     };
 }
@@ -359,7 +366,7 @@ async function isInReadOnlyNote(element: Element | null) {
 
 /** The text editor containing `element`, or `null` when there is none or it is read-only. */
 async function getEditingTextEditor(element: Element | null) {
-    // Checked first: a note shown read-only has no editor, and asking for one waits for a timeout.
+    // An editor in read-only mode renders its editable with `contenteditable="false"`.
     if (!element?.closest(".ck-editor__editable[contenteditable='true']")) {
         return null;
     }

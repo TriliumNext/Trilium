@@ -25,6 +25,7 @@ let editorData = "";
 
 /** The text editor, which has a spec of its own. It listens for what a real editor listens for. */
 vi.mock("./EditableText", () => ({
+    getBlockData: () => ({ content: editorData }),
     default: (props: TypeWidgetProps) => {
         const isNested = useContext(NestedEmbedContext);
         editorProps({ ...props, isNested });
@@ -157,7 +158,8 @@ describe("TextEmbed", () => {
             await new Promise((resolve) => setTimeout(resolve, 50));
         });
         expect(shownPreview()).toBe("<div><p>Typed just now</p></div>");
-        expect(renderPreview).toHaveBeenCalledExactlyOnceWith("<p>Typed just now</p>");
+        expect(renderPreview)
+            .toHaveBeenCalledExactlyOnceWith("<p>Typed just now</p>", undefined);
 
         // Once the last save lands, the preview follows what the note holds.
         note.getBlob = async () => buildBlob("<p>Saved</p>");
@@ -272,6 +274,35 @@ describe("TextEmbed", () => {
         });
     });
 
+    it("edits the blocks it shows, and follows the blocks that its editor holds", async () => {
+        const note = buildTextNote("blocks");
+        const renderPreview = vi.fn(async (content: string) => buildPreview(content));
+        const onBlockChange = vi.fn();
+        const { figure } = await mount(note, buildEditor(), {
+            isEditable: true, renderPreview, block: "a:b", onBlockChange
+        });
+        const lastEditorProps = () => editorProps.mock.lastCall?.[0] as {
+            block?: string;
+            onBlockChange?: (block: string) => void;
+        };
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        expect(lastEditorProps().block).toBe("a:b");
+
+        // The embed follows new blocks at the edges of the editor while it is open.
+        act(() => lastEditorProps().onBlockChange?.("a:n"));
+        expect(onBlockChange).toHaveBeenCalledExactlyOnceWith("a:n");
+        expect(lastEditorProps().block).toBe("a:n");
+
+        editorData = "<p>Blocks and a new one</p>";
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        await vi.waitFor(() => {
+            expect(renderPreview).toHaveBeenLastCalledWith("<p>Blocks and a new one</p>", "a:n");
+        });
+    });
+
     it("loads the note once the save of the editor it replaces lands", async () => {
         const note = buildTextNote("redrawn");
         const countEditors = () =>
@@ -313,9 +344,11 @@ interface MountOptions {
     isEditable?: boolean;
     /** Whether the editor around the embed has a fixed toolbar, rather than a floating one. */
     hasFixedToolbar?: boolean;
-    renderPreview?: (content: string) => Promise<HTMLElement>;
+    renderPreview?: (content: string, block?: string) => Promise<HTMLElement>;
     /** The content that the host read for the embed, instead of the content of the note. */
     content?: string;
+    block?: string;
+    onBlockChange?: (block: string) => void;
 }
 
 /** Renders `TextEmbed` in the markup of an embed, as the host does. */
@@ -351,8 +384,10 @@ async function mount(note: FNote, editor: ContentEditor | undefined, options: Mo
                     note={note}
                     editor={editor}
                     content={content}
+                    block={options.block}
                     preview={options.preview ?? buildPreview(content)}
                     renderPreview={options.renderPreview ?? (async (html) => buildPreview(html))}
+                    onBlockChange={options.onBlockChange}
                 />
             </ParentComponent.Provider>,
             box

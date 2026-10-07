@@ -4,12 +4,15 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import link from "../../../services/link";
 import CKEditorWithWatchdog, { type CKEditorApi } from "./CKEditorWithWatchdog";
 
 const mocks = vi.hoisted(() => ({
     options: {} as Record<string, string | boolean>,
     create: vi.fn(async () => {}),
-    destroy: vi.fn(async () => {})
+    destroy: vi.fn(async () => {}),
+    note: undefined as { noteId: string; title: string } | undefined,
+    handlers: {} as Record<string, (...args: unknown[]) => unknown>
 }));
 
 vi.mock("@triliumnext/ckeditor5", () => {
@@ -34,11 +37,13 @@ vi.mock("@triliumnext/ckeditor5", () => {
 
 vi.mock("../../react/hooks", () => ({
     useKeyboardShortcuts: () => {},
-    useLegacyImperativeHandlers: () => {},
+    useLegacyImperativeHandlers: (handlers: typeof mocks.handlers) => {
+        mocks.handlers = handlers;
+    },
     useNoteContext: () => ({
         parentComponent: undefined,
         ntxId: undefined,
-        note: undefined,
+        note: mocks.note,
         notePath: undefined
     }),
     useSyncedRef: (_externalRef: unknown, initialValue: unknown) => useRef(initialValue),
@@ -57,6 +62,7 @@ let host: HTMLElement;
 
 beforeEach(() => {
     mocks.options = { locale: "en", mathFieldEnabled: true };
+    mocks.note = undefined;
     mocks.create.mockClear();
     mocks.destroy.mockClear();
     host = document.body.appendChild(document.createElement("div"));
@@ -109,5 +115,27 @@ describe("CKEditorWithWatchdog", () => {
         await act(async () => render(null, host));
         await vi.waitFor(() => expect(mocks.destroy).toHaveBeenCalledOnce());
         expect(props.watchdogRef.current).toBeNull();
+    });
+
+    it("labels its reference links as links in the note it edits", async () => {
+        mocks.note = { noteId: "host1", title: "Host" };
+        const loadReferenceLinkTitle = vi.spyOn(link, "loadReferenceLinkTitle")
+            .mockResolvedValue(undefined);
+        const props = {
+            contentLanguage: null,
+            watchdogRef: createRef<EditorWatchdog>(),
+            onChange: vi.fn(),
+            editorApi: createRef<CKEditorApi>(),
+            templates: []
+        };
+        await act(async () => {
+            render(<CKEditorWithWatchdog {...props} />, host);
+        });
+
+        const $el = $("<span>");
+        await mocks.handlers.loadReferenceLinkTitle($el, "#root/host1?block=b1");
+
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith($el, "#root/host1?block=b1", "host1");
+        loadReferenceLinkTitle.mockRestore();
     });
 });

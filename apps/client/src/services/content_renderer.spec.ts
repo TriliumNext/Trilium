@@ -488,6 +488,33 @@ describe("getRenderedContent editable code", () => {
         expect(rendered(again)).toBe("<p>Edited</p>");
     });
 
+    it("mounts TextEmbed for blocks, with an editor where they can be edited apart", async () => {
+        const content = "<ul><li><p>Intro</p><p data-trilium-block-id=\"a\">A</p></li></ul>"
+            + "<p data-trilium-block-id=\"b\">B</p>";
+        const note = buildNote({ title: "Doc", type: "text", content });
+        const onBlockChange = vi.fn();
+        const renderBlocks = (block: string) => getRenderedContent(note, {
+            interactive: true,
+            noteEditor: buildEditor(),
+            block,
+            onBlockChange
+        });
+
+        await renderBlocks("b");
+        const props = textEmbedComponent.mock.lastCall?.[0];
+        expect(props).toMatchObject({ content, block: "b", onBlockChange });
+        expect(props.editor.canEdit()).toBe(true);
+        expect(renderTextContent).toHaveBeenLastCalledWith(
+            note, content, expect.anything(), expect.objectContaining({ block: "b" }));
+
+        await props.renderPreview("<p>New</p>", "b:n");
+        expect(renderTextContent).toHaveBeenLastCalledWith(
+            note, "<p>New</p>", expect.anything(), expect.objectContaining({ block: "b:n" }));
+
+        await renderBlocks("a:b");
+        expect(textEmbedComponent.mock.lastCall?.[0].editor).toBeUndefined();
+    });
+
     it("edits only code and text notes", async () => {
         const json = buildNote({
             title: "Data", type: "file", mime: "application/json", content: "{}"

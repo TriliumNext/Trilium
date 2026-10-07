@@ -617,4 +617,17 @@ describe("CK config - disabled plugins", () => {
         expect(enabled.removePlugins).not.toContain("TriliumEmojiMention");
         expect(enabled.removePlugins).not.toContain("TriliumSlashCommands");
     });
+
+    it("removes the block drag handle in the mobile layout", async () => {
+        const originalDevice = window.glob.device;
+        try {
+            window.glob.device = "desktop";
+            expect((await buildConfig(baseOpts())).removePlugins).not.toContain("BlockDragHandle");
+
+            window.glob.device = "mobile";
+            expect((await buildConfig(baseOpts())).removePlugins).toContain("BlockDragHandle");
+        } finally {
+            window.glob.device = originalDevice;
+        }
+    });
 });

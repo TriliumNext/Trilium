@@ -61,6 +61,10 @@ Here's a list of various features supported by text notes:
             <td><ul><li>Include note</li></ul></td>
         </tr>
         <tr>
+            <td><a class="reference-link" href="Text/Block%20references.md">Block references</a></td>
+            <td><ul><li>Links to blocks of a note</li><li>Including blocks of a note</li></ul></td>
+        </tr>
+        <tr>
             <td><a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a></td>
             <td><ul><li>Symbols</li><li><a class="reference-link" href="Text/Math%20Equations.md">Math Equations</a></li><li>Mermaid diagrams</li><li>Horizontal ruler</li><li>Page break</li></ul></td>
         </tr>

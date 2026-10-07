@@ -9,6 +9,7 @@ const {
     getRenderedContent,
     getNoteTitleWithPathAsSuffix,
     getActiveContext,
+    revealHighlightedBlocks,
     t
 } = vi.hoisted(() => ({
     parseNavigationStateFromUrl: vi.fn(),
@@ -16,6 +17,7 @@ const {
     getRenderedContent: vi.fn(),
     getNoteTitleWithPathAsSuffix: vi.fn(),
     getActiveContext: vi.fn(),
+    revealHighlightedBlocks: vi.fn(),
     t: vi.fn((key: string) => key)
 }));
 
@@ -40,6 +42,8 @@ vi.mock("../components/app_context.js", () => ({
 }));
 
 vi.mock("./i18n.js", () => ({ t }));
+
+vi.mock("./block_reference.js", () => ({ revealHighlightedBlocks }));
 
 // Imports AFTER vi.mock calls.
 import DeletedFNote from "../entities/deleted_fnote.js";
@@ -638,6 +642,7 @@ describe("mouseEnterHandler", () => {
         // color class folded into the tooltip template
         expect(initCall?.[0].template).toContain("color-blue");
         expect(tooltipMock).toHaveBeenCalledWith("show");
+        expect(revealHighlightedBlocks).not.toHaveBeenCalled();
 
         // the watchdog re-arms while still hovering...
         await vi.advanceTimersByTimeAsync(1000);
@@ -647,6 +652,40 @@ describe("mouseEnterHandler", () => {
         await vi.advanceTimersByTimeAsync(1000);
         const disposeAfter = tooltipMock.mock.calls.filter((c) => c[0] === "dispose").length;
         expect(disposeAfter).toBeGreaterThan(disposeBefore);
+    });
+
+    it("highlights the blocks of a block link and scrolls its tooltip to them", async () => {
+        vi.useFakeTimers();
+        const $link = makeLink('<a href="#root/abc?block=b1">x</a>');
+        parseNavigationStateFromUrl.mockReturnValue({
+            notePath: "root/abc",
+            noteId: "abc",
+            viewScope: { viewMode: "default", block: "b1" }
+        });
+        const note = fakeNote({ noteId: "abc", bestPath: "root/abc" });
+        froca.getNote = vi.fn(async () => note) as any;
+        hoverActive = true;
+        // Insert the tooltip on show, as Bootstrap does.
+        const $tooltip = $("<div>");
+        ($.fn as any).tooltip = vi.fn(function (this: unknown, arg: unknown) {
+            if (arg && typeof arg === "object" && "title" in arg) {
+                $tooltip.html(String(arg.title));
+            } else if (arg === "show") {
+                $("body").append($tooltip.addClass(String($link.attr("data-link-id"))));
+            }
+            return this;
+        });
+
+        const promise = mouseEnterHandler.call($link[0], eventFor($link));
+        await vi.advanceTimersByTimeAsync(600);
+        await promise;
+
+        expect(getRenderedContent)
+            .toHaveBeenCalledWith(note, expect.objectContaining({ highlightBlock: "b1" }));
+        const tooltipContent = $tooltip.find(".note-tooltip-content")[0];
+        expect(tooltipContent).toBeDefined();
+        expect(revealHighlightedBlocks).toHaveBeenCalledWith(tooltipContent);
+        $tooltip.remove();
     });
 });
 

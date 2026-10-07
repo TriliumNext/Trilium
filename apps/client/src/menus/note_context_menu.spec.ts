@@ -2,24 +2,18 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // All mutable mock state lives in a hoisted holder so the (hoisted) vi.mock
 // factory below can reference it.
-const h = vi.hoisted(() => {
-    const tabManager = {
-        activeNote: null as { type: string } | null,
-        activeContext: null as { getTextEditor: () => Promise<unknown> } | null,
-        getActiveContext: () => tabManager.activeContext
-            && { note: tabManager.activeNote, ...tabManager.activeContext },
-        getNoteContexts: () => []
-    };
-    return { tabManager, triggerCommand: vi.fn() };
-});
+const h = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
 
 vi.mock("../components/app_context.js", () => ({
-    default: { tabManager: h.tabManager, triggerCommand: h.triggerCommand }
+    default: { triggerCommand: h.triggerCommand }
 }));
 
 // The module under test pulls in several DOM/jQuery-heavy collaborators at import
 // time; stub them so importing stays cheap and side-effect free.
 vi.mock("../components/zoom.js", () => ({ default: {} }));
+vi.mock("../services/block_reference.js", () => ({
+    buildBlockReferenceMenuItems: vi.fn(async () => null)
+}));
 vi.mock("../services/clipboard_ext.js", () => ({ copyHtml: vi.fn(), copyTextWithToast: vi.fn() }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
 vi.mock("../services/options.js", () => ({ default: { get: () => "" } }));
@@ -33,8 +27,10 @@ vi.mock("./table_context_menu.js", () => ({
     hasTableCellSelection: vi.fn(async () => false)
 }));
 
+import { buildBlockReferenceMenuItems } from "../services/block_reference.js";
 import { copyHtml, copyTextWithToast } from "../services/clipboard_ext.js";
 import server from "../services/server.js";
+import { setEditorNoteId } from "../widgets/react/NoteStore.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import {
     buildTableContextMenuSections,
@@ -49,12 +45,13 @@ import {
     setupContextMenu
 } from "./note_context_menu.js";
 
-const { tabManager } = h;
-
-/** Builds an editor whose editable DOM root is `domRoot` and selection HTML is `selectedHtml`. */
-function fakeEditor(domRoot: Node | null, selectedHtml: string, plainText = "") {
+/**
+ * Builds an editor whose editable DOM root is `domRoot` and selection HTML is `selectedHtml`. It
+ * holds the content of a note unless `holdsNote` is `false`, as the attribute editor does not.
+ */
+function fakeEditor(domRoot: HTMLElement, selectedHtml: string, plainText = "", holdsNote = true) {
     const pasteTarget = { paste: vi.fn(), release: vi.fn() };
-    return {
+    const editor = {
         editing: { view: { getDomRoot: () => domRoot } },
         getSelectedHtml: vi.fn(() => selectedHtml),
         getSelectedPlainText: vi.fn(() => plainText),
@@ -65,6 +62,12 @@ function fakeEditor(domRoot: Node | null, selectedHtml: string, plainText = "") 
         isReadOnly: false,
         execute: vi.fn()
     };
+    domRoot.classList.add("ck-editor__editable");
+    Object.assign(domRoot, { ckeditorInstance: editor });
+    if (holdsNote) {
+        setEditorNoteId(editor, "note1");
+    }
+    return editor;
 }
 
 /**
@@ -147,8 +150,6 @@ function submenu(items: MenuItem<any>[], title: string): MenuItem<any>[] {
 describe("buildNoteContextMenuItems", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        tabManager.activeNote = null;
-        tabManager.activeContext = null;
     });
 
     it("offers copy, copy-as-markdown and the search rows for a plain selection", async () => {
@@ -310,6 +311,52 @@ describe("buildNoteContextMenuItems", () => {
         expect(buildTableContextMenuSections).not.toHaveBeenCalled();
     });
 
+    it("puts the block reference rows in the copy and paste submenus", async () => {
+        const cell = document.createElement("td");
+        vi.mocked(buildTableContextMenuSections).mockResolvedValueOnce({
+            main: [],
+            sort: { title: "S" },
+            delete: [],
+            select: { title: "SEL" },
+            pasteRows: [ { title: "PR1" } ]
+        } as TableMenuSections);
+        vi.mocked(buildBlockReferenceMenuItems).mockResolvedValueOnce({
+            copy: { title: "BC" },
+            paste: [ { title: "BP1" }, { title: "BP2" } ]
+        });
+        const host = browserLikeHost({
+            paste: { enabled: true, run: vi.fn(), runAsPlainText: vi.fn(), read: vi.fn() }
+        });
+
+        const items = await build({ isEditable: true, element: cell, selectionText: "" }, host);
+
+        expect(buildBlockReferenceMenuItems).toHaveBeenCalledWith(cell, host.paste);
+        // Built once the table sections have moved the selection into the clicked cell.
+        expect(vi.mocked(buildTableContextMenuSections).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(buildBlockReferenceMenuItems).mock.invocationCallOrder[0]);
+        expect(titles(submenu(items, "electron_context_menu.copy"))).toEqual([
+            "electron_context_menu.copy",
+            "electron_context_menu.copy-as-markdown",
+            "---",
+            "BC"
+        ]);
+        // Without a selection only the reference can be copied, so the row opens its submenu.
+        expect(findItem(items, "electron_context_menu.copy"))
+            .toMatchObject({ enabled: true, handler: undefined });
+        expect(titles(submenu(items, "electron_context_menu.paste"))).toEqual([
+            "electron_context_menu.paste",
+            "electron_context_menu.paste-as-plain-text",
+            "---",
+            "BP1",
+            "BP2",
+            "---",
+            "PR1"
+        ]);
+
+        await build({ element: cell });
+        expect(buildBlockReferenceMenuItems).toHaveBeenCalledTimes(1);
+    });
+
     it("converts the selection through the to-markdown route", async () => {
         vi.mocked(server.post).mockResolvedValue({ markdownContent: "# Hi" });
         setSelection(document.createElement("span"), "<h1>Hi</h1>");
@@ -382,8 +429,6 @@ describe("setupContextMenu (browser)", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        tabManager.activeNote = null;
-        tabManager.activeContext = null;
     });
 
     /** Right-clicks `element`, holding Shift or letting another widget claim the event first. */
@@ -571,7 +616,6 @@ describe("setupContextMenu (browser)", () => {
         const execCommand = stubExecCommand();
 
         const content = codeEditable();
-        tabManager.activeNote = { type: "code" }; // so no CKEditor answers for the selection
         setSelection(content, "<span>code</span>", "code");
 
         const codeRows = await menuFor(content);
@@ -585,8 +629,6 @@ describe("setupContextMenu (browser)", () => {
         const anchor = document.createElement("span");
         editorRoot.appendChild(anchor);
         const editor = fakeEditor(editorRoot, "<p>clean</p>");
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
         setSelection(anchor, "<p>clean</p>", "clean");
 
         await run(await menuFor(editorRoot), "electron_context_menu.cut");
@@ -600,8 +642,6 @@ describe("setupContextMenu (browser)", () => {
         const anchor = document.createElement("span");
         editorRoot.appendChild(anchor);
         const editor = fakeEditor(editorRoot, "<table><tr><td>a1</td></tr></table>", "a1");
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
         setSelection(anchor, "", "Selected 1 cell");
 
         await run(await menuFor(editorRoot), "electron_context_menu.copy");
@@ -628,8 +668,6 @@ describe("setupContextMenu (browser)", () => {
             const anchor = document.createElement("span");
             editorRoot.appendChild(anchor);
             const editor = fakeEditor(editorRoot, "<p>clean</p>");
-            tabManager.activeNote = { type: "text" };
-            tabManager.activeContext = { getTextEditor: async () => editor };
             setSelection(anchor, "<p>clean</p>", "clean");
 
             const rows = await menuFor(editorRoot);
@@ -667,8 +705,6 @@ describe("setupContextMenu (browser)", () => {
             const anchor = document.createElement("span");
             editorRoot.appendChild(anchor);
             const editor = fakeEditor(editorRoot, "<p>clean</p>");
-            tabManager.activeNote = { type: "text" };
-            tabManager.activeContext = { getTextEditor: async () => editor };
             setSelection(anchor, "<p>clean</p>", "clean");
 
             await run(await menuFor(editorRoot), "electron_context_menu.paste");
@@ -697,7 +733,6 @@ describe("setupContextMenu (browser)", () => {
 
         try {
             const content = codeEditable();
-            tabManager.activeNote = { type: "code" };
             setSelection(content, "<span>code</span>", "code");
 
             await run(await menuFor(content), "electron_context_menu.paste");
@@ -715,7 +750,6 @@ describe("setupContextMenu (browser)", () => {
 
         try {
             const content = codeEditable();
-            tabManager.activeNote = { type: "code" };
             setSelection(content, "<span>code</span>", "code");
 
             const shown = titles(await menuFor(content));
@@ -729,7 +763,6 @@ describe("setupContextMenu (browser)", () => {
 
     it("drops the cut row in a read-only code note", async () => {
         const content = codeEditable(true);
-        tabManager.activeNote = { type: "code" };
         setSelection(content, "<span>code</span>", "code");
 
         const rows = await menuFor(content);
@@ -765,8 +798,6 @@ describe("setupContextMenu (browser)", () => {
 describe("getSelectedHtmlForMarkdown", () => {
     beforeEach(() => {
         vi.restoreAllMocks();
-        tabManager.activeNote = null;
-        tabManager.activeContext = null;
     });
 
     it("uses the editor's data-pipeline HTML when the selection is inside the editor", async () => {
@@ -775,8 +806,6 @@ describe("getSelectedHtmlForMarkdown", () => {
         editorRoot.appendChild(anchor);
         const editor = fakeEditor(editorRoot, "<p>clean</p>");
 
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
         setSelection(anchor, "<b>dom clone</b>");
 
         expect(await getSelectedHtmlForMarkdown()).toBe("<p>clean</p>");
@@ -788,8 +817,6 @@ describe("getSelectedHtmlForMarkdown", () => {
         const outsideAnchor = document.createElement("span"); // not appended to editorRoot
         const editor = fakeEditor(editorRoot, "<p>clean</p>");
 
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
         setSelection(outsideAnchor, "<b>dom clone</b>");
 
         expect(await getSelectedHtmlForMarkdown()).toBe("<b>dom clone</b>");
@@ -802,38 +829,22 @@ describe("getSelectedHtmlForMarkdown", () => {
         editorRoot.appendChild(anchor);
         const editor = fakeEditor(editorRoot, ""); // empty model selection
 
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
         setSelection(anchor, "<b>dom clone</b>");
 
         expect(await getSelectedHtmlForMarkdown()).toBe("<b>dom clone</b>");
     });
 
-    it("skips the editor path entirely for a non-text note", async () => {
-        const editor = fakeEditor(document.createElement("div"), "<p>clean</p>");
-        tabManager.activeNote = { type: "code" };
-        tabManager.activeContext = { getTextEditor: async () => editor };
-        setSelection(document.createElement("span"), "<b>dom clone</b>");
+    it("skips an editor that holds no note, such as the attribute editor", async () => {
+        const editorRoot = document.createElement("div");
+        const anchor = editorRoot.appendChild(document.createElement("span"));
+        const editor = fakeEditor(editorRoot, "<p>clean</p>", "", false);
+        setSelection(anchor, "<b>dom clone</b>");
 
         expect(await getSelectedHtmlForMarkdown()).toBe("<b>dom clone</b>");
         expect(editor.getSelectedHtml).not.toHaveBeenCalled();
     });
 
-    it("falls back when resolving the text editor throws or times out", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {}); // the catch logs the timeout
-        tabManager.activeNote = { type: "text" };
-        tabManager.activeContext = {
-            getTextEditor: async () => {
-                throw new Error("timed out");
-            }
-        };
-        setSelection(document.createElement("span"), "<b>dom clone</b>");
-
-        expect(await getSelectedHtmlForMarkdown()).toBe("<b>dom clone</b>");
-    });
-
     it("returns an empty string when there is no selection at all", async () => {
-        tabManager.activeNote = { type: "text" };
         setSelection(null);
 
         expect(await getSelectedHtmlForMarkdown()).toBe("");

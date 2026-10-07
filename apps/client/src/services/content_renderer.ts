@@ -3,6 +3,7 @@ import "./content_renderer.css";
 import {
     attachmentIcon,
     CANVAS_ATTACHMENT_MIME,
+    getEditableBlockRun,
     getMimeTypeFromFileName,
     isAcceptedImageMime,
     isImageAttachmentRole,
@@ -62,6 +63,15 @@ export interface RenderOptions {
     includeArchivedNotes?: boolean;
     /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
     seenNoteIds?: Set<string>;
+    /**
+     * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
+     * out, and a missing block renders as a broken reference.
+     */
+    block?: string;
+    /** Points the embed of `block` at the blocks that its editor holds, once they change. */
+    onBlockChange?: (block: string) => void;
+    /** The blocks of a text note to highlight, a `block` link parameter. Embeds are left out. */
+    highlightBlock?: string;
     showTextRepresentation?: boolean;
     /**
      * If enabled, note types that have a richer live representation (currently only web views) are
@@ -150,6 +160,9 @@ const PREVIEWED_TYPES = new Set([
     "mindMap", "spreadsheet", "office", "pdf", "audio", "video", "mermaid", "render", "doc",
     "llmChat"
 ]);
+
+/** The box size a new embed of blocks of a note, an excerpt, starts with. */
+export const EXCERPT_BOX_SIZE: BoxSize = "full";
 
 export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
 
@@ -258,17 +271,18 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 }
 
 /**
- * Renders a text note that `TextEmbed` edits in place while the Editable toggle of its embed is
- * on.
+ * Renders a text note, or the blocks of it that `options.block` points at, which `TextEmbed`
+ * edits in place while the Editable toggle of its embed is on. Blocks that cannot be edited apart
+ * from the rest of the note stay read-only.
  */
 async function renderEditableText(
     note: FNote,
     $renderedContent: JQuery<HTMLElement>,
     options: RenderOptions
 ) {
-    const renderPreview = async (content: string) => {
+    const renderPreview = async (content: string, block = options.block) => {
         const $preview = $("<div>");
-        await renderTextContent(note, content, $preview, options);
+        await renderTextContent(note, content, $preview, { ...options, block });
         return $preview[0];
     };
     const [ blob, { default: TextEmbed } ] = await Promise.all([
@@ -277,19 +291,27 @@ async function renderEditableText(
     ]);
     const content = blob?.content ?? "";
     const preview = await renderPreview(content);
+    const canEditBlocks = !options.block || isEditableBlockRange(content, options.block);
 
     const $container = $('<div class="text-embed">');
     const container = $container.get(0);
     if (container) {
         await mountInteractiveWidget(h(TextEmbed, {
             note,
-            editor: getContentEditor(note, options),
+            editor: canEditBlocks ? getContentEditor(note, options) : undefined,
             content,
+            block: options.block,
             preview,
-            renderPreview
+            renderPreview,
+            onBlockChange: options.onBlockChange
         }), container);
     }
     $renderedContent.append($container);
+}
+
+function isEditableBlockRange(content: string, block: string) {
+    const root = new DOMParser().parseFromString(content, "text/html").body;
+    return !!getEditableBlockRun(root, block);
 }
 
 /**

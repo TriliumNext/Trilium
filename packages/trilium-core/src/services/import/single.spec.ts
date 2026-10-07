@@ -97,6 +97,14 @@ describe("processNoteContent", () => {
         expect(content).toContain("Child");
     });
 
+    it("safe import preserves the block ids of a text note", async () => {
+        const html = `<p data-trilium-block-id="p1">Text</p>`;
+        const { importedNote } = await testImport(
+            "blocks.html", "text/html", Buffer.from(html), { safeImport: true });
+
+        expect(importedNote.getContent().toString()).toContain(html);
+    });
+
     it("supports code note with UTF-16", async () => {
         const { importedNote, buffer } = await testImport("UTF-16LE Code Note.json", "application/json");
         expect(importedNote.mime).toBe("application/json");
