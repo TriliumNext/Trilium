@@ -371,6 +371,7 @@
     "mermaid": "Insert a Mermaid diagram",
     "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
     "collapsible": "Insert a collapsible block",
+    "tabs": "Insert titled tabs that show one panel at a time",
     "page_break": "Insert a page break (for printing)",
     "table": "Insert a table",
     "admonition": "Insert {{type}} admonition",
@@ -386,6 +387,7 @@
       "mermaid": "Mermaid diagram",
       "mermaid_template": "Mermaid diagram: {{name}}",
       "collapsible": "Collapsible block",
+      "tabs": "Tabs",
       "page_break": "Page break",
       "table": "Table",
       "note": "Note",
@@ -399,6 +401,8 @@
       "math": "equation",
       "collapsible_summary": "Summary",
       "collapsible_details": "Details",
+      "tab_title": "Tab {{number}}",
+      "tab_content": "Content",
       "table_column": "Column {{number}}"
     }
   },

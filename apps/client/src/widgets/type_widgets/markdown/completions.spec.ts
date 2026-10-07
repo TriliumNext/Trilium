@@ -286,6 +286,28 @@ describe("buildSlashCommands", () => {
         expect(editor.state.sliceDoc(from, to)).toBe("markdown_slash_commands.placeholders.table_column");
     });
 
+    it("inserts two tabs on a line of their own and selects the first title", () => {
+        const tabs = [
+            "=== \"markdown_slash_commands.placeholders.tab_title\"",
+            "",
+            "    markdown_slash_commands.placeholders.tab_content",
+            "",
+            "=== \"markdown_slash_commands.placeholders.tab_title\"",
+            "",
+            "    markdown_slash_commands.placeholders.tab_content"
+        ].join("\n");
+        expect(commands().find((entry) => entry.id === "tabs")).toMatchObject({
+            title: "markdown_slash_commands.titles.tabs",
+            aliases: expect.arrayContaining([ "tabs", "tabbed", "variants" ])
+        });
+
+        expect(run("tabs", "/tabs")).toBe(tabs);
+        const { from, to } = editor.state.selection.main;
+        expect([ from, to ]).toEqual([ 5, 5 + "markdown_slash_commands.placeholders.tab_title".length ]);
+
+        expect(run("tabs", "Intro /tabs")).toBe(`Intro\n\n${tabs}`);
+    });
+
     it("uploads an image picked to the note shown once the file arrives", () => {
         let picker: HTMLInputElement | undefined;
         const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(function (this: HTMLInputElement) { picker = this; });
