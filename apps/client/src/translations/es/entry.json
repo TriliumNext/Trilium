@@ -159,6 +159,7 @@
         "restore-stage-validating": "Comprobando la base de datos",
         "restore-stage-swapping": "Colocándola en su sitio",
         "restore-stage-migrating": "Abriendo la base de datos",
-        "restore-do-not-close": "No cierre esta ventana."
+        "restore-do-not-close": "No cierre esta ventana.",
+        "backup-saved-to": "La copia de seguridad se ha guardado en {{- location}}. Haga click en \"Finalizar\" para volver a la aplicación."
     }
 }
