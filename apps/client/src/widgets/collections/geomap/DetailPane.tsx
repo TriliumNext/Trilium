@@ -89,7 +89,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     // geometry the way it follows a marker that moves.
     const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
     const shape = shapeValue ? parseGeoShape(shapeValue) : null;
-    const { noteContext, component: paneComponent } = useEmbeddedNoteContext(note, PANE_NTX_ID);
+    const { noteContext, component: paneComponent, ntxId } = useEmbeddedNoteContext(note, PANE_NTX_ID_PREFIX);
 
     /**
      * Lets the pane go, having given whatever is being edited in it the chance to save (see
@@ -97,9 +97,9 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
      * thing: that is a note switch within the pane, and the context announces it.
      */
     const closePane = useCallback(() => {
-        void announceEmbeddedNoteClosing(paneComponent, PANE_NTX_ID);
+        void announceEmbeddedNoteClosing(paneComponent, ntxId);
         onSelect(null);
-    }, [ paneComponent, onSelect ]);
+    }, [ paneComponent, ntxId, onSelect ]);
 
     /**
      * Arms the map for this marker to be put somewhere else, and stands the pane down while it waits.
@@ -457,8 +457,8 @@ function MarkerContents({ note, parentNote, isReadOnly, onRelocate }: {
     );
 }
 
-/** The pane's own ntxId, as the quick editor has one of its own. */
-const PANE_NTX_ID = "_geo-detail-pane";
+/** The start of the ntxId of the pane's own note context. */
+const PANE_NTX_ID_PREFIX = "_geo-detail-pane";
 
 /**
  * What can be done with the marker: the ways of opening its note (see {@link OpenNoteActions}),

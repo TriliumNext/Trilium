@@ -2,7 +2,7 @@
 @import url(./shell.css);
 @import url(./dialogs.css);
 @import url(./pages.css);
-@import url(./ribbon.css);
+@import url(./note-panels.css);
 @import url(./notes/text.css);
 @import url(./notes/canvas.css);
 @import url(./notes/collections/table.css);
@@ -65,11 +65,6 @@
     --new-tab-button-size: 24px;
 
     --center-pane-border-radius: 10px;
-
-    --floating-button-height: 34px;
-    --floating-button-width: 40px;
-    --floating-button-icon-size: 20px;
-    --floating-button-show-hide-button-size: 26px;
 
     --overlay-button-height: 28px;
     --overlay-button-border-radius: 6px;
@@ -179,8 +174,7 @@ body.backdrop-effects-disabled {
 
 body.desktop .dropdown-menu::before,
 :root .ck.ck-dropdown__panel::before,
-:root .excalidraw .popover::before,
-body.zen .note-split .ribbon-container .classic-toolbar-widget::before {
+:root .excalidraw .popover::before {
     content: "";
     backdrop-filter: var(--dropdown-backdrop-filter);
     border-radius: var(--dropdown-border-radius);

@@ -86,10 +86,8 @@
     padding-block: 10px;
 }
 
-/* Break out of the option page's inline padding (25px in the new layout) so the bar — and its bottom
-   border — spans the full content width; re-add the inset as padding so the title and actions still
-   line up with the option cards. */
-body.experimental-feature-new-layout .options-page-header {
+/* Matches the options page's inline padding in pages.css. */
+.options-page-header {
     margin-inline: -25px;
     padding-inline: 25px;
 }

@@ -153,7 +153,6 @@ export default function PromotedAttributesCard({
             isOwned: true,
             // Where the press was, or below the top of the page for one made from the keyboard.
             x: event?.pageX ?? 0,
-            y: event?.pageY ?? 150,
             focus: attribute ? undefined : "name",
             hideMultiplicity: true,
             // Every attribute listed here is inheritable and promoted already, so the two toggles

@@ -26,17 +26,6 @@ function flushRaf() {
     }
 }
 
-/** Force `$("#right-pane").is(":visible")` to a chosen value (no layout in happy-dom). */
-function setRightPaneVisible(visible: boolean) {
-    const origIs = ($ as any).fn.is;
-    return vi.spyOn(($ as any).fn, "is").mockImplementation(function (this: any, sel: any, ...rest: any[]) {
-        if (sel === ":visible") {
-            return visible;
-        }
-        return origIs.call(this, sel, ...rest);
-    });
-}
-
 /**
  * Force `$("#launcher-pane").outerWidth()` to a chosen pixel value (happy-dom has
  * no layout, so it otherwise returns 0). Used to exercise the vertical-layout
@@ -57,13 +46,12 @@ function setLauncherPaneWidth(px: number) {
  * singleton that never resets) with options.get/getInt stubbed to the supplied
  * values.
  */
-async function loadResizer(opts: { layoutOrientation?: string; leftPaneWidth?: number | null; rightPaneWidth?: number | null } = {}) {
+async function loadResizer(opts: { layoutOrientation?: string; leftPaneWidth?: number | null } = {}) {
     vi.resetModules();
     const optionsModule = (await import("./options.js")).default;
     optionsModule.get = vi.fn((key) => (key === "layoutOrientation" ? (opts.layoutOrientation ?? "horizontal") : "")) as typeof optionsModule.get;
     optionsModule.getInt = vi.fn((key) => {
         if (key === "leftPaneWidth") return opts.leftPaneWidth ?? null;
-        if (key === "rightPaneWidth") return opts.rightPaneWidth ?? null;
         return null;
     }) as typeof optionsModule.getInt;
     optionsModule.save = vi.fn(async () => {}) as typeof optionsModule.save;
@@ -92,8 +80,7 @@ beforeEach(() => {
         <div id="rest-pane"></div>
         <div id="center-pane">
             <div class="split-note-container-widget"></div>
-        </div>
-        <div id="right-pane"></div>`;
+        </div>`;
 });
 
 afterEach(() => {
@@ -226,58 +213,6 @@ describe("setupLeftPaneResizer", () => {
         // layoutOrientation / leftPaneWidth are cached after the first call (?? short-circuits).
         expect((options.get as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getCallsAfterFirst);
         expect((options.getInt as ReturnType<typeof vi.fn>).mock.calls.length).toBe(getIntCallsAfterFirst);
-    });
-});
-
-describe("setupRightPaneResizer", () => {
-    it("when right pane is hidden, stretches center pane to full width", async () => {
-        const isSpy = setRightPaneVisible(false);
-        const { resizer } = await loadResizer();
-
-        resizer.setupRightPaneResizer();
-
-        expect($("#center-pane").css("width")).toBe("100%");
-        expect(SplitMock).not.toHaveBeenCalled();
-        isSpy.mockRestore();
-    });
-
-    it("when right pane is visible, creates a Split and persists drag results", async () => {
-        const isSpy = setRightPaneVisible(true);
-        const { resizer, options } = await loadResizer({ rightPaneWidth: 25 });
-
-        resizer.setupRightPaneResizer();
-
-        expect(SplitMock).toHaveBeenCalledTimes(1);
-        const [elements, config] = SplitMock.mock.calls[0];
-        expect(elements).toEqual(["#center-pane", "#right-pane"]);
-        expect(config.sizes).toEqual([75, 25]);
-        expect(config.minSize).toEqual([300, 180]);
-
-        config.onDragEnd([60.2, 39.8]);
-        expect(options.save).toHaveBeenCalledWith("rightPaneWidth", 40);
-
-        // onDragEnd also mutates the module-level cache: a subsequent rebuild must use
-        // the NEW (dragged + rounded) width 40, not the original 25 -> sizes [60, 40].
-        resizer.setupRightPaneResizer();
-        expect(SplitMock).toHaveBeenCalledTimes(2);
-        expect(SplitMock.mock.calls[1][1].sizes).toEqual([60, 40]);
-        isSpy.mockRestore();
-    });
-
-    it("clamps an undefined/too-small right pane width up to 5 and destroys a previous instance", async () => {
-        const isSpy = setRightPaneVisible(true);
-        const destroy = vi.fn();
-        SplitMock.mockImplementation(() => ({ destroy }));
-        const { resizer } = await loadResizer({ rightPaneWidth: null });
-
-        resizer.setupRightPaneResizer();
-        expect(SplitMock.mock.calls[0][1].sizes).toEqual([95, 5]);
-        expect(destroy).not.toHaveBeenCalled();
-
-        resizer.setupRightPaneResizer();
-        expect(destroy).toHaveBeenCalledTimes(1);
-        expect(SplitMock).toHaveBeenCalledTimes(2);
-        isSpy.mockRestore();
     });
 });
 

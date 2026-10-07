@@ -51,7 +51,9 @@ describe("relation map NotePane", () => {
         document.body.appendChild(container);
         (appContext as unknown as { tabManager: unknown }).tabManager = {
             getActiveContext: () => undefined,
-            getActiveContextNotePath: () => undefined
+            getActiveContextNotePath: () => undefined,
+            registerDetachedContext: () => undefined,
+            unregisterDetachedContext: () => undefined
         };
         buildNote({
             id: "root", title: "root", children: [
@@ -68,7 +70,8 @@ describe("relation map NotePane", () => {
 
     afterEach(() => {
         if (container) {
-            render(null, container);
+            const mounted = container;
+            act(() => render(null, mounted));
             container.remove();
             container = undefined;
         }

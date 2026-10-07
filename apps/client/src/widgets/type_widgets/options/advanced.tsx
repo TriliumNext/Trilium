@@ -20,8 +20,8 @@ export default function AdvancedSettings() {
 
 function ExperimentalOptions() {
     const [enabledFeatures, setEnabledFeatures] = useTriliumOptionJson<ExperimentalFeatureId[]>("experimentalFeatures", true);
-    // Features with dedicated controls elsewhere (appearance settings and the AI/LLM page, respectively).
-    const integratedFeatures: ExperimentalFeatureId[] = ["new-layout", "llm"];
+    // Features with dedicated controls elsewhere (the AI/LLM page).
+    const integratedFeatures: ExperimentalFeatureId[] = ["llm"];
     const filteredFeatures = useMemo(() => getAvailableExperimentalFeatures().filter(e => !integratedFeatures.includes(e.id)), []);
 
     const toggleFeature = useCallback((featureId: ExperimentalFeatureId, enabled: boolean) => {

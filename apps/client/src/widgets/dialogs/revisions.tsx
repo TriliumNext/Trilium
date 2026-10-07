@@ -47,8 +47,8 @@ export default function RevisionsDialog() {
     const { isMasterDetail, mobileView, switchMobileView, resetMobileView } = useMobileMasterDetail(modalRef);
     const isMobile = utils.isMobile();
 
-    useTriliumEvent("showRevisions", async ({ noteId }) => {
-        const note = await getNote(noteId);
+    useTriliumEvent("showRevisions", async ({ noteId, ntxId }) => {
+        const note = await getNote(noteId, ntxId);
         if (note) {
             setNote(note);
             // Mobile opens on the revision list; selecting one slides to its detail.
@@ -854,10 +854,10 @@ function FilePreviewInner({ revisionItem, fullRevision }: { revisionItem: Revisi
     return t("revisions.preview_not_available");
 }
 
-async function getNote(noteId?: string | null) {
+async function getNote(noteId: string | null | undefined, ntxId: string | null | undefined) {
     if (noteId) {
         return await froca.getNote(noteId);
     }
-    return appContext.tabManager.getActiveContextNote();
+    return appContext.tabManager.getCommandContext(ntxId)?.note;
 
 }

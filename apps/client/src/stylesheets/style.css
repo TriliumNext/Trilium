@@ -153,14 +153,8 @@ body.desktop {
         }
     }
 
-    &.experimental-feature-new-layout #root-widget.horizontal-layout {
+    #root-widget.horizontal-layout {
         >.status-bar {
-            padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
-        }
-    }
-
-    &:not(.experimental-feature-new-layout) #root-widget.horizontal-layout {
-        #horizontal-main-container {
             padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
         }
     }
@@ -2187,10 +2181,6 @@ body.desktop .dropdown-submenu > .dropdown-menu {
     position: static;
 }
 
-#right-pane {
-    overflow: auto;
-}
-
 #right-pane .card {
     border: 0;
     display: flex;
@@ -2407,12 +2397,6 @@ body.electron:not(.platform-darwin) .tab-row-container {
     color: var(--hover-item-text-color);
 }
 
-.note-split.type-geoMap .floating-buttons-children {
-    background: var(--main-background-color);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    border-radius: 4px;
-}
-
 body.zen {
     --tab-bar-height: 0;
 }
@@ -2426,23 +2410,18 @@ body.zen .right-pane-peek-button,
 body.zen #mobile-sidebar-wrapper,
 body.zen .tab-row-container,
 body.zen .tab-row-widget,
-body.zen .shared-info-widget,
-body.zen .ribbon-container:not(:has(.classic-toolbar-widget)),
-body.zen .ribbon-container:has(.classic-toolbar-widget) .ribbon-top-row,
-body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget)),
 body.zen .title-row .icon-action,
 body.zen .note-badges > *:not(.read-only-badge),
-body.zen .ribbon-button-container,
+body.zen .note-actions-bar,
 body.zen .inline-title,
 body.zen .promoted-attributes-widget,
-body.zen .floating-buttons-children > *:not(.bx-edit-alt),
 body.zen .action-button,
 body.zen .tooltip.content-hint, /* content-area hints (task states, collapsible summaries, drag handles) */
 body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
 }
 
-body.experimental-feature-new-layout.zen #vertical-main-container {
+body.zen #vertical-main-container {
     /* Remove the placeholder for the right pane peek button */
     --right-pane-peek-button-gutter: 0 !important;
 }
@@ -2467,20 +2446,6 @@ body.zen .title-row {
     padding-inline-start: env(titlebar-area-x);
     padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
     border-bottom: none !important;
-}
-
-body.zen .floating-buttons {
-    top: -10px;
-}
-
-body.zen .floating-buttons-children {
-    inset-inline-end: 0;
-}
-
-body.zen .floating-buttons-children .button-widget {
-    width: var(--zen-button-size);
-    height: var(--zen-button-size);
-    padding: 0;
 }
 
 body.zen .note-title-widget,
@@ -2545,67 +2510,7 @@ body.zen:not(.backdrop-effects-disabled) .note-split.type-text .scrolling-contai
 
 /* Fixed formatting toolbar */
 
-body.zen:not(.experimental-feature-new-layout) {
-    .note-split .ribbon-container {
-        position: fixed;
-        left: 0;
-        bottom: 20px;
-        width: 100%;
-        z-index: 1000;
-        opacity: 0; /* Hidden unless the current note split is focused */
-        pointer-events: none;
-        transition: opacity 100ms linear;
-    }
-
-    /* An open dropdown holds the toolbar up: hovering its submenu takes focus out of the split. */
-    .note-split:focus-within .ribbon-container,
-    .ribbon-container:has(.ck-dropdown__panel-visible) {
-        opacity: 1; /* Show when the note split is focused */
-    }
-
-    .note-split .ribbon-container .ribbon-body {
-        border: 0;
-    }
-
-    .note-split .ribbon-container .classic-toolbar-widget {
-        margin: auto;
-        width: fit-content;
-        box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
-        border-radius: 8px;
-        border: 1px solid var(--main-border-color);
-        padding: 4px;
-        background: var(--menu-background-color);
-    }
-
-    .note-split .ribbon-container .classic-toolbar-widget:not(:has(> .ck-toolbar)) {
-        /* Hide the toolbar wrapper if the toolbar is missing */
-        display: none;
-    }
-
-    .note-split:focus-within .ribbon-container .classic-toolbar-widget,
-    .ribbon-container:has(.ck-dropdown__panel-visible) .classic-toolbar-widget {
-        pointer-events: all;
-    }
-
-    @media (max-width: 1300px) {
-        .note-split .ribbon-container .classic-toolbar-widget {
-            /* Set the toolbar to full with */
-            width: 100%;
-        }
-
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
-        .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
-            /* Force toolbar items overflow dropdowns open upwards */
-            top: auto;
-            bottom: 100%;
-        }
-    }
-}
-
-body.zen.experimental-feature-new-layout {
+body.zen {
     .status-bar {
         display: none;
     }
@@ -2811,41 +2716,6 @@ footer.webview-footer button {
     0% { opacity: 0.3; }
     50% { opacity: 1; }
     100% { opacity: 0.3; }
-}
-
-/* Right Pane Tab Styles */
-#right-pane-tab-container {
-    display: flex;
-    gap: 10px;
-}
-
-.right-pane-tab {
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: background-color 0.2s ease;
-}
-
-.right-pane-tab:hover {
-    background-color: var(--hover-item-background-color);
-}
-
-.right-pane-tab.active {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.right-pane-tab .tab-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.right-pane-tab .tab-title .tn-icon {
-    font-size: 1.1em;
 }
 
 .admonition {

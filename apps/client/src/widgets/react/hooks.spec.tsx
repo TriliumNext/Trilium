@@ -5,10 +5,14 @@ import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
+import type NoteContext from "../../components/note_context";
+import type TabManager from "../../components/tab_manager";
 import { buildNote } from "../../test/easy-froca";
 import {
     type DelayedVisibilityPhase,
     useDelayedVisibility,
+    useDetachedNoteContext,
     useFocusWithin,
     useImperativeSearchHighlighlighting,
     useMediaQuery,
@@ -125,6 +129,36 @@ describe("useDelayedVisibility", () => {
         await show(false);
         await advance(0);
         expect(currentPhase).toBe("hidden");
+    });
+});
+
+describe("useDetachedNoteContext", () => {
+    it("registers the context while it is in use, and unregisters it once replaced or unmounted", () => {
+        const tabManager = appContext.tabManager;
+        const registerDetachedContext = vi.fn();
+        const unregisterDetachedContext = vi.fn();
+        appContext.tabManager = { registerDetachedContext, unregisterDetachedContext } as unknown as TabManager;
+        try {
+            const first = { ntxId: "_tree-popup" } as NoteContext;
+            const second = { ntxId: "_tree-popup" } as NoteContext;
+            function Host({ noteContext }: { noteContext: NoteContext }) {
+                useDetachedNoteContext(noteContext);
+                return null;
+            }
+            const container = document.createElement("div");
+
+            act(() => render(<Host noteContext={first} />, container));
+            expect(registerDetachedContext).toHaveBeenLastCalledWith(first);
+
+            act(() => render(<Host noteContext={second} />, container));
+            expect(unregisterDetachedContext).toHaveBeenLastCalledWith(first);
+            expect(registerDetachedContext).toHaveBeenLastCalledWith(second);
+
+            act(() => render(null, container));
+            expect(unregisterDetachedContext).toHaveBeenLastCalledWith(second);
+        } finally {
+            appContext.tabManager = tabManager;
+        }
     });
 });
 

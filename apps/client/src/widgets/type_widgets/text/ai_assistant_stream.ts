@@ -184,8 +184,8 @@ export function buildAiAssistantQuickActions(): AiQuickActionGroup[] {
             submenu: true,
             actions: buildTranslateActions(),
             // The one group whose contents are the user's to choose, so the way to choose them
-            // closes it — as it closes the note's own language picker in the status bar and the
-            // ribbon, and for the same reason: nobody looking at the list would think to go
+            // closes it — as it closes the note's own language picker in the status bar, and for
+            // the same reason: nobody looking at the list would think to go
             // hunting through the settings for what fills it.
             footer: {
                 label: t("note_language.configure-languages"),

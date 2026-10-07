@@ -320,8 +320,8 @@ export default function PdfPreview({ note, blob, componentId, noteContext, isVis
         open.download(url);
     });
 
-    useTriliumEvent("printActiveNote", () => {
-        if (!noteContext.isActive()) return;
+    useTriliumEvent("printActiveNote", ({ ntxId }) => {
+        if (!noteContext.isCommandTarget(ntxId)) return;
         iframeRef.current?.contentWindow?.postMessage({
             type: "trilium-print"
         }, window.location.origin);

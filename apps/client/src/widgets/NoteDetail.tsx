@@ -90,7 +90,7 @@ export default function NoteDetail() {
         if (!note) return;
 
         // we're detecting note type change on the note_detail level, but triggering the noteTypeMimeChanged
-        // globally, so it gets also to e.g. ribbon components. But this means that the event can be generated multiple
+        // globally, so it also reaches widgets outside the note detail. But this means that the event can be generated multiple
         // times if the same note is open in several tabs.
 
         if (note.noteId
@@ -176,8 +176,8 @@ export default function NoteDetail() {
         resolve(component);
     });
 
-    useTriliumEvent("printActiveNote", () => {
-        if (!noteContext?.isActive() || !note) return;
+    useTriliumEvent("printActiveNote", ({ ntxId }) => {
+        if (!noteContext?.isCommandTarget(ntxId) || !note) return;
 
         // PDF printing is handled by the PDF viewer's own print mechanism.
         if (note.type === "file" && note.mime === "application/pdf") return;

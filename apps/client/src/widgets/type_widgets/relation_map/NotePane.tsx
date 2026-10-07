@@ -43,14 +43,12 @@ export default function NotePane({ paneRef, noteIdsOnMap, mapApiRef, isReadOnly,
 }) {
     const note = useNote(selection?.noteId, true);
     const [ maximized, setMaximized ] = useState(false);
-    const { noteContext, component: paneComponent } = useEmbeddedNoteContext(note ?? undefined, PANE_NTX_ID_PREFIX);
+    const { noteContext, component: paneComponent, ntxId } = useEmbeddedNoteContext(note ?? undefined, PANE_NTX_ID_PREFIX);
 
     const closePane = useCallback(() => {
-        if (noteContext.ntxId) {
-            void announceEmbeddedNoteClosing(paneComponent, noteContext.ntxId);
-        }
+        void announceEmbeddedNoteClosing(paneComponent, ntxId);
         onSelect(null);
-    }, [ paneComponent, noteContext, onSelect ]);
+    }, [ paneComponent, ntxId, onSelect ]);
     useImperativeHandle<NotePaneHandle | null, NotePaneHandle | null>(paneRef, () => ({ close: closePane }), [ closePane ]);
 
     const followLink = useCallback((noteId: string) => {

@@ -11,7 +11,7 @@ import utils, { isElectron, isStandalone } from "../../services/utils";
 import NoteDetail from "../NoteDetail";
 import FormList, { FormListItem } from "../react/FormList";
 import HelpButton from "../react/HelpButton";
-import { useChildNotes, useContainedLinkNavigation, useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useChildNotes, useContainedLinkNavigation, useDetachedNoteContext, useNoteContext, useTriliumEvent } from "../react/hooks";
 import { DetailPane, MasterDetailHeader, MasterPane, useMobileMasterDetail } from "../react/master_detail";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
@@ -35,6 +35,7 @@ export default function OptionsDialog() {
     const [ shown, setShown ] = useState(false);
     const parentComponent = useContext(ParentComponent);
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext("_options-dialog"));
+    useDetachedNoteContext(noteContext);
     // Remembers the page last viewed this session so reopening the dialog lands there instead of
     // always on Appearance. Kept in component state (resets on reload), not persisted.
     const [ lastSection, setLastSection ] = useState<string | null>(null);

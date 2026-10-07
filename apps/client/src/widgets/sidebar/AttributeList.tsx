@@ -149,7 +149,6 @@ export default function AttributeList() {
             attribute,
             isOwned,
             x: e.pageX,
-            y: e.pageY,
             anchor: anchor ?? undefined,
             // Presses on another row swap the shown attribute instead of dismissing the popup first.
             parent: spawningArea()
@@ -191,7 +190,6 @@ export default function AttributeList() {
             attribute,
             isOwned: true,
             x: e.pageX,
-            y: e.pageY,
             focus: "name",
             // There is no row to anchor to yet: the attribute only joins the list once it is saved.
             anchor: containerRef.current ?? undefined,
@@ -733,7 +731,7 @@ const IS_MOBILE = isMobile();
 /**
  * The badge the kind icon carries on its corner, where there is one to carry: a cog for the names
  * Trilium reads for itself, and a chevron for a definition whose field is promoted — lifted, that is,
- * out of the attributes and into the note's own ribbon. At most one of the two, which no attribute is
+ * out of the attributes and into the note's promoted attributes section. At most one of the two, which no attribute is
  * ever both of: no built-in name is a definition. The class alone: what either badge means is a line
  * of the icon's own tooltip (see {@link getKindTooltip}), the two being read as one mark.
  */

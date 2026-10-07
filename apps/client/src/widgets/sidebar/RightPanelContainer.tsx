@@ -1,4 +1,3 @@
-//! This is currently only used for the new layout.
 import "./RightPanelContainer.css";
 
 import Split from "@triliumnext/split.js";

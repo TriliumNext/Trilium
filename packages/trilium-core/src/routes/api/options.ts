@@ -104,7 +104,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "centerContent",
     "compressImages",
     "downloadImagesAutomatically",
-    "minTocHeadings",
     "highlightsList",
     "checkForUpdates",
     "disableTray",
@@ -152,7 +151,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "splitEditorOrientation",
     "seenCallToActions",
     "experimentalFeatures",
-    "newLayout",
     "mfaMethod",
     // LLM options
     "aiEnabled",

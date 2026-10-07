@@ -171,16 +171,12 @@ span.fancytree-node.protected > span.fancytree-custom-icon {
 }
 
 .note-indicator-icon.clone-indicator::before {
-    content: "\eb3d"; /* bx-link-alt */
+    content: "\ed82";
+    opacity: 0.5;
 }
 
 .note-indicator-icon.shared-indicator::before {
     content: "\ec03"; /* bx-share-alt */
-}
-
-body.experimental-feature-new-layout .note-indicator-icon.clone-indicator::before {
-    content: "\ed82";
-    opacity: 0.5;
 }
 
 span.fancytree-node.fancytree-active-clone:not(.fancytree-active) .fancytree-title {

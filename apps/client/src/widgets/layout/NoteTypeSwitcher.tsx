@@ -1,20 +1,28 @@
 import "./NoteTypeSwitcher.css";
 
-import type { NoteType } from "@triliumnext/commons";
-import { useEffect, useState } from "preact/hooks";
+import { getCodeLanguageIcon, type MimeType, type NoteType } from "@triliumnext/commons";
+import { type Dispatch, type StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import type { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import type { TreeCommandNames } from "../../menus/tree_context_menu";
 import attributes from "../../services/attributes";
+import dialog from "../../services/dialog";
 import { t } from "../../services/i18n";
+import mime_types from "../../services/mime_types";
 import { applyNotePreset } from "../../services/note_presets";
-import note_types, { MARKDOWN_NOTE_TYPE_MIME, NOTE_TYPES, type NoteTypeData } from "../../services/note_types";
+import note_types, {
+    isCurrentNoteType, MARKDOWN_NOTE_TYPE_MIME, NOTE_TYPES, type NoteTypeData, selectableNoteTypes
+} from "../../services/note_types";
 import server from "../../services/server";
+import { escapeHtml } from "../../services/utils";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import {
-    useGetContextDataFrom, useNoteContext, useNoteProperty, useNoteSavedData, useTriliumEvent
+    useGetContextDataFrom, useNoteContext, useNoteProperty, useNoteSavedData, useTriliumEvent, useTriliumOption
 } from "../react/hooks";
+import { MenuItemRows } from "../react/Menu";
+import Modal from "../react/Modal";
+import { CodeMimeTypesList } from "../type_widgets/options/code_mime_types_list";
 import { onWheelHorizontalScroll } from "../widget_utils";
 
 /** The note types offered as a pill of their own, each a single click away. */
@@ -163,4 +171,118 @@ function switchTo(
 
 function switchNoteType(noteId: string, type: string, mime?: string) {
     return server.put(`notes/${noteId}/type`, { type, mime });
+}
+
+interface NoteTypeListProps {
+    currentNoteType?: NoteType;
+    currentNoteMime?: string | null;
+    note?: FNote | null;
+    setModalShown: Dispatch<StateUpdater<boolean>>;
+    noCodeNotes?: boolean;
+}
+
+/** The note types to switch `note` to, as rows of a menu or a list. See {@link useNoteTypeItems}. */
+export function NoteTypeDropdownContent(props: NoteTypeListProps) {
+    return <MenuItemRows items={useNoteTypeItems(props)} />;
+}
+
+/**
+ * The note types to switch `note` to, the current one ticked, as menu items: the note types, then,
+ * unless {@link NoteTypeListProps.noCodeNotes}, the enabled code languages under a "Code" heading
+ * and a row opening their options.
+ */
+export function useNoteTypeItems({ currentNoteType, currentNoteMime, note, setModalShown, noCodeNotes }: NoteTypeListProps) {
+    const { enabledMimeTypes } = useMimeTypes();
+    const noteTypes = useMemo(() => selectableNoteTypes(!noCodeNotes), [ noCodeNotes ]);
+    const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
+        if (!note || (type === currentNoteType && mime === currentNoteMime)) {
+            return;
+        }
+
+        // Confirm change if the note already has a content.
+        if (type !== currentNoteType) {
+            const blob = await note.getBlob();
+
+            if (blob?.content && blob.content.trim().length &&
+                !await (dialog.confirm(t("note_types.confirm-change")))) {
+                return;
+            }
+        }
+
+        await switchNoteType(note.noteId, type, mime);
+    }, [ note, currentNoteType, currentNoteMime ]);
+
+    const items: MenuItem<unknown>[] = [];
+    for (const { isNew, isBeta, type, mime, title } of noteTypes) {
+        if (noCodeNotes || type !== "code") {
+            items.push({
+                title: escapeHtml(title),
+                checked: isCurrentNoteType({ type, mime }, note),
+                badges: [
+                    ...isNew ? [ { className: "new-note-type-badge", title: t("note_types.new-feature") } ] : [],
+                    ...isBeta ? [ { title: t("note_types.beta-feature") } ] : []
+                ],
+                handler: () => void changeNoteType(type, mime)
+            });
+        } else {
+            // The code entries head the list of languages that follows.
+            items.push({ kind: "separator" }, { title: `<strong>${escapeHtml(title)}</strong>`, uiIcon: undefined, enabled: false });
+        }
+    }
+    if (!noCodeNotes) {
+        items.push(...codeLanguageItems({
+            currentMimeType: currentNoteMime ?? undefined,
+            mimeTypes: enabledMimeTypes,
+            changeNoteType: (type, mime) => void changeNoteType(type, mime),
+            onConfigure: () => setModalShown(true)
+        }));
+    }
+    return items;
+}
+
+interface CodeLanguageListProps {
+    currentMimeType?: string;
+    mimeTypes: MimeType[];
+    changeNoteType(type: NoteType, mime: string): void;
+    /** Opens the options of the code languages, from a row at the end; without it, there is none. */
+    onConfigure?(): void;
+}
+
+/** The code languages to switch a note to, the current one ticked, as menu items. */
+export function codeLanguageItems({ currentMimeType, mimeTypes, changeNoteType, onConfigure }: CodeLanguageListProps) {
+    const items: MenuItem<unknown>[] = mimeTypes.map((mimeType) => ({
+        title: escapeHtml(mimeType.title),
+        uiIcon: getCodeLanguageIcon(mimeType),
+        checked: mimeType.mime === currentMimeType,
+        handler: () => changeNoteType("code", mimeType.mime)
+    }));
+    if (onConfigure) {
+        items.push({ kind: "separator" }, { title: t("basic_properties.configure_code_notes"), uiIcon: "bx bx-cog", handler: onConfigure });
+    }
+    return items;
+}
+
+export function useMimeTypes() {
+    const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
+    return useMemo(() => {
+        mime_types.loadMimeTypes();
+        const allMimeTypes = mime_types.getMimeTypes();
+        return {
+            enabledMimeTypes: allMimeTypes.filter(mimeType => mimeType?.enabled),
+            allMimeTypes
+        };
+    }, [ codeNotesMimeTypes ]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
+    return (
+        <Modal
+            className="code-mime-types-modal"
+            title={t("code_mime_types.title")}
+            show={modalShown} onHidden={() => setModalShown(false)}
+            size="xl" scrollable
+        >
+            <CodeMimeTypesList />
+        </Modal>
+    );
 }

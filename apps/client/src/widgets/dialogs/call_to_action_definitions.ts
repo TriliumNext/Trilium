@@ -43,19 +43,6 @@ export interface CallToAction {
 
 const CALL_TO_ACTIONS: CallToAction[] = [
     {
-        id: "new_layout",
-        title: t("call_to_action.new_layout_title"),
-        message: t("call_to_action.new_layout_message"),
-        enabled: () => true,
-        buttons: [
-            {
-
-                text: t("call_to_action.new_layout_button"),
-                onClick: () => appContext.tabManager.openInNewTab("_help_IjZS7iK5EXtb", "_help", true)
-            }
-        ]
-    },
-    {
         id: "background_effects",
         title: t("call_to_action.background_effects_title"),
         message: t("call_to_action.background_effects_message"),

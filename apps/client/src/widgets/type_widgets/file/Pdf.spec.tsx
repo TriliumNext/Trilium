@@ -68,7 +68,8 @@ beforeEach(() => {
         viewScope: {},
         setContextData: vi.fn((key: string, value: unknown) => { contextData[key] = value; }),
         getContextData: vi.fn((key: string) => contextData[key]),
-        isActive: () => true
+        isActive: () => true,
+        isCommandTarget: (ntxId?: string | null) => (ntxId ? ntxId === noteContext.ntxId : noteContext.isActive())
     } as unknown as NoteContext;
 
     container = document.createElement("div");

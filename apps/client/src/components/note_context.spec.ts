@@ -1,7 +1,27 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { buildNote } from "../test/easy-froca.js";
+import appContext from "./app_context.js";
 import NoteContext from "./note_context.js";
+import type TabManager from "./tab_manager.js";
+
+describe("NoteContext.isCommandTarget", () => {
+    it("matches a command with its own ntxId, or one without an ntxId while it is the active context", () => {
+        const tabManager = appContext.tabManager;
+        appContext.tabManager = { activeNtxId: "tab" } as TabManager;
+        try {
+            const tab = new NoteContext("tab");
+            const popup = new NoteContext("_popup-editor");
+
+            expect(popup.isCommandTarget("_popup-editor")).toBe(true);
+            expect(tab.isCommandTarget("_popup-editor")).toBe(false);
+            expect(tab.isCommandTarget(undefined)).toBe(true);
+            expect(popup.isCommandTarget(undefined)).toBe(false);
+        } finally {
+            appContext.tabManager = tabManager;
+        }
+    });
+});
 
 describe("NoteContext read-only capability", () => {
     let noteContext: NoteContext;

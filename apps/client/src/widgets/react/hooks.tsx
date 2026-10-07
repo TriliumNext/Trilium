@@ -35,7 +35,7 @@ import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import { DragData } from "../note_tree";
 import { noteSavedDataStore } from "./NoteStore";
-import { NoteContextContext, ParentComponent, refToJQuerySelector } from "./react_utils";
+import { findClosestNoteContext, NoteContextContext, ParentComponent, refToJQuerySelector } from "./react_utils";
 import type FAttachment from "../../entities/fattachment";
 
 export function useTriliumEvent<T extends EventNames>(eventName: T, handler: (data: EventData<T>) => void) {
@@ -467,7 +467,7 @@ export function useNoteContext() {
         setNotePath(noteContext.notePath);
         setViewScope(noteContext.viewScope);
         // Navigating resets the view scope, so the temporary "enable editing" toggle must be reset too.
-        // Otherwise the stale value prevents consumers (e.g. the ribbon) from refreshing when the user
+        // Otherwise the stale value prevents consumers from refreshing when the user
         // re-enables editing on a note that was previously made temporarily editable.
         setIsReadOnlyTemporarilyDisabled(noteContext?.viewScope?.readOnlyTemporarilyDisabled);
     });
@@ -505,26 +505,6 @@ export function useNoteContext() {
         parentComponent,
         isReadOnlyTemporarilyDisabled
     };
-}
-
-/**
- * Finds the note context held by the closest legacy ancestor component (e.g. the note split's
- * `NoteWrapperWidget`). Used to initialize {@link useNoteContext} for components that mount after
- * the initial `setNoteContext` event has been dispatched (e.g. components rendered via
- * `LazyComponent`), which would otherwise not know their context until the next note switch.
- */
-function findClosestNoteContext(component: Component | null): NoteContext | undefined {
-    let current: Component | undefined = component ?? undefined;
-    while (current) {
-        if ("noteContext" in current) {
-            const { noteContext } = current as { noteContext?: NoteContext };
-            if (noteContext) {
-                return noteContext;
-            }
-        }
-        current = current.parent as Component | undefined;
-    }
-    return undefined;
 }
 
 /**
@@ -567,6 +547,17 @@ export function isContextInActiveTab(
     }
 
     return activeMainNtxId === noteContext.getMainContext().ntxId;
+}
+
+/**
+ * Registers `noteContext`, built outside the tab row, with `TabManager` for as long as the component
+ * uses it, so that commands naming its `ntxId` resolve to it.
+ */
+export function useDetachedNoteContext(noteContext: NoteContext) {
+    useEffect(() => {
+        appContext.tabManager.registerDetachedContext(noteContext);
+        return () => appContext.tabManager.unregisterDetachedContext(noteContext);
+    }, [ noteContext ]);
 }
 
 /**

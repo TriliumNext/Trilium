@@ -6,7 +6,7 @@ import type RootContainer from "../widgets/containers/root_container.js";
 import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
 import PopupEditorDialog from "../widgets/dialogs/PopupEditor.jsx";
 import { useTriliumEvents } from "../widgets/react/hooks.jsx";
-import { ParentComponent } from "../widgets/react/react_utils.jsx";
+import { ParentComponent, POPUP_EDITOR_NTX_ID } from "../widgets/react/react_utils.jsx";
 import ShortcutHintsPanel from "../widgets/shortcut_hints/shortcut_hints_panel.jsx";
 import ToastContainer from "../widgets/Toast.jsx";
 
@@ -51,6 +51,7 @@ export function applyModals(rootContainer: RootContainer) {
         //  - CallToAction has no summon event; it decides whether to show itself on startup, so there is nothing to lazily mount against.
         //  - Toast is needed immediately and continuously to surface messages/errors, including ones raised during startup.
         .child(<PopupEditorDialog />)
+        .child(<PopupEditorDialog ntxId={`${POPUP_EDITOR_NTX_ID}-nested`} openCommand="openInNestedPopup" />)
         .child(<CallToActionDialog />)
         .child(<ToastContainer />)
         // Auxiliary tooltip-style panel; always mounted (renders nothing until summoned), like the toast host.

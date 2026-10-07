@@ -15,7 +15,7 @@
 /*
  * A badge on the corner of the icon: a cog for the names Trilium reads for itself (settings of the note
  * rather than a word for it), a chevron for a definition of a promoted field (one lifted out of the
- * attributes and into the note's own ribbon). A second glyph rather than an icon of its own, so
+ * attributes and into the note's promoted attributes section). A second glyph rather than an icon of its own, so
  * `cssClass` still reads as the label it is, and a promoted date field as the date field it defines.
  */
 :is(.attribute-list-panel, .attr-name-suggestion) .attribute-kind.marker-system::after,

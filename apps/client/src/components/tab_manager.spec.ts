@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import appContext from "./app_context.js";
+import NoteContext from "./note_context.js";
 import TabManager, { buildNoteContextStatesFromUrl } from "./tab_manager.js";
 
 describe("TabManager tab placement", () => {
@@ -252,3 +253,38 @@ function openEmptyTabs(tm: TabManager, count: number) {
 function ntxOrder(tm: TabManager) {
     return tm.mainNoteContexts.map((nc) => nc.ntxId);
 }
+
+describe("note contexts outside the tab row", () => {
+    it("resolves a registered context by its id without listing it among the tabs", async () => {
+        const tm = new TabManager();
+        await openEmptyTabs(tm, 1);
+        const popupContext = new NoteContext("_popup-editor");
+
+        tm.registerDetachedContext(popupContext);
+        expect(tm.getNoteContextById("_popup-editor")).toBe(popupContext);
+        expect(tm.getNoteContexts()).not.toContain(popupContext);
+
+        // `getCommandContext()` returns the context with the given `ntxId`, or the active one without it.
+        const [ tab ] = tm.getNoteContexts();
+        tm.activeNtxId = tab.ntxId;
+        expect(tm.getCommandContext("_popup-editor")).toBe(popupContext);
+        expect(tm.getCommandContext(undefined)).toBe(tab);
+    });
+
+    it("forgets a context once unregistered, and resolves an unknown one to nothing", async () => {
+        const tm = new TabManager();
+        await openEmptyTabs(tm, 1);
+        const replaced = new NoteContext("_tree-popup");
+        const current = new NoteContext("_tree-popup");
+
+        tm.registerDetachedContext(replaced);
+        tm.registerDetachedContext(current);
+        // Unregistering the context a host replaced leaves the one it replaced it with.
+        tm.unregisterDetachedContext(replaced);
+        expect(tm.getCommandContext("_tree-popup")).toBe(current);
+
+        tm.unregisterDetachedContext(current);
+        expect(tm.getCommandContext("_tree-popup")).toBeNull();
+        expect(tm.getCommandContext("_nowhere")).toBeNull();
+    });
+});

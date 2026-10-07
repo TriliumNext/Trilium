@@ -150,10 +150,6 @@
     height: 0;
 }
 
-body.experimental-feature-new-layout .note-detail-content-widget-content.options {
-    padding-inline: 25px;
-}
-
 /* Every top-level block of an options page is a section of it; only the header spans the full pane. */
 .note-detail-content-widget-content.options > *:not(.options-page-header) {
     margin-bottom: 26px;
@@ -185,6 +181,7 @@ body.desktop .options-section:not(.tn-no-card) {
     --default-padding: 15px;
     padding-top: var(--default-padding);
     padding-bottom: var(--default-padding);
+    padding-inline: 25px;
 }
 
 .options-section h4 {

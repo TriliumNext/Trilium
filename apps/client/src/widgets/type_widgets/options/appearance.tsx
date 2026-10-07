@@ -6,8 +6,7 @@ import zoomService from "../../../components/zoom";
 import { ColorScheme, resolveColorScheme, THEME_FAMILY_SCHEMES } from "../../../services/color_scheme";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
-import { isElectron, isMobile, reloadFrontendApp } from "../../../services/utils";
-import { VerticalLayoutIcon } from "../../buttons/global_menu";
+import { isElectron, isMobile } from "../../../services/utils";
 import { Card, CardSection, OptionCardSection } from "../../react/Card";
 import Dropdown from "../../react/Dropdown";
 import { FormListHeader, FormListItem } from "../../react/FormList";
@@ -72,7 +71,7 @@ export default function AppearanceSettings() {
         <>
             <OptionsPageHeader />
             <UserInterface />
-            {!isMobile() && <LayoutChoices />}
+            {!isMobile() && <LayoutOrientation />}
             <Fonts />
             {isElectron() && <ElectronIntegration /> }
             <Performance />
@@ -94,7 +93,6 @@ export default function AppearanceSettings() {
 function UserInterface() {
     const [ theme, setTheme ] = useTriliumOption("theme");
     const [ customThemes, setCustomThemes ] = useState<CustomTheme[]>([]);
-    const [ newLayout ] = useTriliumOptionBool("newLayout");
     const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
 
     useEffect(() => {
@@ -180,10 +178,10 @@ function UserInterface() {
                 />
             </OptionCardSection>
 
-            {!isMobile() && !newLayout && (
+            {!isMobile() && (
                 <OptionCardSection
                     name="edited-notes-open-in-ribbon"
-                    label={t("ribbon.edited_notes_message")}
+                    label={t("theme.edited_notes_expanded")}
                 >
                     <FormToggle
                         currentValue={editedNotesOpenInRibbon}
@@ -191,45 +189,6 @@ function UserInterface() {
                     />
                 </OptionCardSection>
             )}
-        </Card>
-    );
-}
-
-/**
- * The two choices that decide the shape of the window, each shown as a picture rather than named in
- * words. Neither fits a settings row — an illustration is too large to stand as a value beside a
- * label — so each takes a card of its own, with what the choice is called as the card's heading.
- *
- * Side by side, being read against one another rather than one after the other; a pane too narrow to
- * hold both puts them on lines of their own instead (see the CSS).
- */
-function LayoutChoices() {
-    return (
-        <div className="appearance-layout-choices">
-            <LayoutOrientation />
-            <LayoutStyle />
-        </div>
-    );
-}
-
-function LayoutStyle() {
-    const [ newLayout, setNewLayout ] = useTriliumOptionBool("newLayout");
-
-    return (
-        <Card className="thumbnail-selector-option-card" heading={t("settings_appearance.ui_layout_style")}>
-            <CardSection>
-                <RadioWithIllustration
-                    currentValue={newLayout ? "new-layout" : "old-layout"}
-                    onChange={async newValue => {
-                        await setNewLayout(newValue === "new-layout");
-                        reloadFrontendApp();
-                    }}
-                    values={[
-                        { key: "old-layout", text: t("settings_appearance.ui_old_layout"), illustration: <LayoutIllustration /> },
-                        { key: "new-layout", text: t("settings_appearance.ui_new_layout"), illustration: <LayoutIllustration isNewLayout /> }
-                    ]}
-                />
-            </CardSection>
         </Card>
     );
 }
@@ -250,98 +209,6 @@ function LayoutOrientation() {
                 />
             </CardSection>
         </Card>
-    );
-}
-
-function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
-    return (
-        <div className="old-layout-illustration">
-            <div className="launcher-pane">
-                <VerticalLayoutIcon />
-                <Icon icon="bx bx-send" />
-                <Icon icon="bx bx-file-blank" />
-                <Icon icon="bx bx-search" />
-            </div>
-
-            <div className="tree">
-                <ul>
-                    <li>Options</li>
-                    <ul>
-                        <li>Appearance</li>
-                        <li>Shortcuts</li>
-                        <li>Text Notes</li>
-                        <li>Code Notes</li>
-                        <li>Images</li>
-                    </ul>
-                </ul>
-            </div>
-
-            <div className="main">
-                <div className="tab-bar" />
-
-                <div className="content">
-
-                    {(isNewLayout) ? (
-                        <div className="note-header">
-                            <div className="note-toolbar">
-                                <Icon icon="bx bx-dock-right" />
-                            </div>
-                            <div className="note-inline-title">
-                                <Icon className="note-icon" icon="bx bx-leaf" />
-                                <div className="note-title-row">
-                                    <div className="title">Title</div>
-                                    <div className="subtitle">Just a sample note</div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div>
-                            <div className="title-bar">
-                                <Icon icon="bx bx-leaf" />
-                                <span className="title">Title</span>
-                                <Icon icon="bx bx-dock-right" />
-                            </div>
-                        </div>
-                    )}
-
-                    {!isNewLayout && <div className="ribbon">
-                        <div className="ribbon-header">
-                            <Icon icon="bx bx-slider" />
-                            <Icon icon="bx bx-list-check" />
-                            <Icon icon="bx bx-list-plus" />
-                            <Icon icon="bx bx-collection" />
-                        </div>
-
-                        <div className="ribbon-body">
-                            <div className="ribbon-body-content" />
-                        </div>
-                    </div>}
-
-                    {isNewLayout && <div className="note-title-actions">
-                        <Icon icon="bx bx-chevron-down" />{" "}Promoted attributes
-                    </div>}
-
-                    <div className="content-inner">
-                        This is a "demo" document packaged with Trilium to showcase some of its features and also give you some ideas on how you might structure your notes. You can play with it, and modify the note content and tree structure as you wish.
-                    </div>
-
-                    {isNewLayout && <div className="status-bar">
-                        <div className="status-bar-breadcrumb">
-                            <Icon icon="bx bx-home" />
-                            <Icon icon="bx bx-chevron-right" />
-                            Note
-                            <Icon icon="bx bx-chevron-right" />
-                            Note
-                        </div>
-
-                        <div className="status-bar-actions">
-                            <Icon icon="bx bx-list-check" />
-                            <Icon icon="bx bx-info-circle" />
-                        </div>
-                    </div>}
-                </div>
-            </div>
-        </div>
     );
 }
 

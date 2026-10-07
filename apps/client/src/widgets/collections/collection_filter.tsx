@@ -11,7 +11,7 @@ import type LoadResults from "../../services/load_results";
 import searchService from "../../services/search";
 import ActionButton from "../react/ActionButton";
 import { useNoteContext, useTriliumEvent } from "../react/hooks";
-import SearchStringEditor from "../ribbon/SearchStringEditor";
+import SearchStringEditor from "../search/SearchStringEditor";
 
 /** How long to wait after a change before re-running the active filter. */
 const RERUN_DEBOUNCE_MS = 300;

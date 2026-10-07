@@ -54,24 +54,22 @@ export default class RootCommandExecutor extends Component {
         this.searchNotesCommand({ ancestorNoteId: noteId });
     }
 
-    openNoteExternallyCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
-        const mime = appContext.tabManager.getActiveContextNoteMime();
-        if (noteId) {
-            openService.openNoteExternally(noteId, mime || "");
+    openNoteExternallyCommand({ ntxId }: CommandListenerData<"openNoteExternally">) {
+        const note = appContext.tabManager.getCommandContext(ntxId)?.note;
+        if (note) {
+            openService.openNoteExternally(note.noteId, note.mime);
         }
     }
 
-    openNoteCustomCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
-        const mime = appContext.tabManager.getActiveContextNoteMime();
-        if (noteId) {
-            openService.openNoteCustom(noteId, mime || "");
+    openNoteCustomCommand({ ntxId }: CommandListenerData<"openNoteCustom">) {
+        const note = appContext.tabManager.getCommandContext(ntxId)?.note;
+        if (note) {
+            openService.openNoteCustom(note.noteId, note.mime);
         }
     }
 
-    openNoteOnServerCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    openNoteOnServerCommand({ ntxId }: CommandListenerData<"openNoteOnServer">) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (noteId) {
             openService.openNoteOnServer(noteId);
         }
@@ -137,8 +135,8 @@ export default class RootCommandExecutor extends Component {
         });
     }
 
-    async showNoteSourceCommand() {
-        const notePath = appContext.tabManager.getActiveContextNotePath();
+    async showNoteSourceCommand({ ntxId }: CommandListenerData<"showNoteSource">) {
+        const notePath = appContext.tabManager.getCommandContext(ntxId)?.notePath;
 
         if (notePath) {
             await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
@@ -150,8 +148,8 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    showNoteOCRTextCommand() {
-        const noteId = appContext.tabManager.getActiveContextNoteId();
+    showNoteOCRTextCommand({ ntxId }: CommandListenerData<"showNoteOCRText">) {
+        const noteId = appContext.tabManager.getCommandContext(ntxId)?.noteId;
         if (noteId) {
             appContext.triggerCommand("showOcrTextDialog", {
                 textUrl: `ocr/notes/${noteId}/text`,
@@ -160,8 +158,8 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    async showAttachmentsCommand() {
-        const notePath = appContext.tabManager.getActiveContextNotePath();
+    async showAttachmentsCommand({ ntxId }: CommandListenerData<"showAttachments">) {
+        const notePath = appContext.tabManager.getCommandContext(ntxId)?.notePath;
 
         if (notePath) {
             await appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
@@ -199,11 +197,9 @@ export default class RootCommandExecutor extends Component {
         appContext.triggerEvent("zenModeChanged", { isEnabled });
     }
 
-    async toggleRibbonTabNoteMapCommand(data: CommandListenerData<"toggleRibbonTabNoteMap">) {
-        // A phone has neither the ribbon the map was a tab of nor the pane it is a card of, so it is
-        // shown the way the pane's card shows it expanded: as the quick-edit popup, which is the map at
-        // the size of the window wherever there is no card to expand from. The popup carries the note's
-        // title, steps aside when a note of the map is pressed, and can be taken on to a tab.
+    toggleRibbonTabNoteMapCommand() {
+        // Mobile has no right pane, so the map opens in the quick edit popup with the `note-map` view
+        // mode, the same view the sidebar card's expand button opens.
         if (utils.isMobile()) {
             const notePath = appContext.tabManager.getActiveContext()?.notePath;
             if (notePath) {
@@ -212,18 +208,8 @@ export default class RootCommandExecutor extends Component {
             return;
         }
 
-        const { isExperimentalFeatureEnabled } = await import("../services/experimental_features.js");
-        const isNewLayout = isExperimentalFeatureEnabled("new-layout");
-        if (!isNewLayout) {
-            this.triggerEvent("toggleRibbonTabNoteMap", data);
-            return;
-        }
-
-        // The sidebar's map is the note map of the new layout: it is the one that follows the note being
-        // read, so the menu points at it rather than opening a second copy beside it that would then go
-        // stale. Peeked rather than docked, as the connection badges of the status bar are: a press for
-        // the tab already docked would otherwise close the pane out from under the card it is meant to
-        // expand (see reduceTabSelection).
+        // Peeks the right pane rather than docking it: with the connections tab already docked,
+        // `reduceTabSelection()` closes the pane instead of expanding the card.
         void appContext.triggerEvent("selectRightPaneTab", {
             tabId: "connections",
             peek: true,

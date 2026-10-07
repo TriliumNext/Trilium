@@ -9,10 +9,12 @@ import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListTogglea
 import HelpTooltipButton from "./HelpTooltipButton";
 import FormTextBox from "./FormTextBox";
 import { useNoteLabel, useNoteLabelBoolean } from "./hooks";
-import { ParentComponent } from "./react_utils";
+import { NoteContextContext, ParentComponent } from "./react_utils";
 
 export interface ClickContext {
     note: FNote;
+    /** The note context the menu stands in, when it stands in one other than a split's. */
+    ntxId?: string | null;
     triggerCommand: NoteContextAwareWidget["triggerCommand"];
 }
 
@@ -187,6 +189,7 @@ function OptionGroupPropertyView({ note, property }: { note: FNote, property: Op
 
 function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonProperty }) {
     const parentComponent = useContext(ParentComponent);
+    const noteContext = useContext(NoteContextContext);
 
     return (
         <FormListItem
@@ -196,6 +199,7 @@ function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonP
                 if (!parentComponent) return;
                 property.onClick({
                     note,
+                    ntxId: noteContext?.ntxId,
                     triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
                 });
             }}
@@ -206,8 +210,10 @@ function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonP
 function SplitButtonPropertyView({ note, property }: { note: FNote, property: SplitButtonProperty }) {
     const parentComponent = useContext(ParentComponent);
     const ItemsComponent = property.items;
+    const noteContext = useContext(NoteContextContext);
     const clickContext = parentComponent && {
         note,
+        ntxId: noteContext?.ntxId,
         triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
     };
 
