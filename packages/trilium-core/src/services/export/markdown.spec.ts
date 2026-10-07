@@ -962,4 +962,43 @@ describe("Markdown export", () => {
         });
     });
 
+    describe("tabs blocks", () => {
+        const tab = (title: string, panel: string) =>
+            `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p><div class="trilium-tab-panel">${panel}</div></section>`;
+        const tabs = (...items: string[]) => `<div class="trilium-tabs">${items.join("")}</div>`;
+
+        it("exports each tab as a MkDocs tabbed section with its panel indented four spaces", () => {
+            const html = tabs(
+                tab("Windows", "<p>Run the <strong>installer</strong>.</p><pre><code class=\"language-text-x-sh\">setup.exe</code></pre>"),
+                tab("Say \"hi\"", "<ul><li>One</li><li>Two</li></ul>")
+            );
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                === "Windows"
+
+                    Run the **installer**.
+
+                    \`\`\`sh
+                    setup.exe
+                    \`\`\`
+
+                === "Say "hi""
+
+                    *   One
+                    *   Two`);
+        });
+
+        it("indents nested tabs once more and starts a block that follows another one with ===!", () => {
+            const html = tabs(tab("Outer", tabs(tab("Inner", "<p>x</p>")))) + tabs(tab("Next", "<p>y</p>"));
+            expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+                === "Outer"
+
+                    === "Inner"
+
+                        x
+
+                ===! "Next"
+
+                    y`);
+        });
+    });
 });
