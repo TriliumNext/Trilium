@@ -10,6 +10,7 @@ import {
     toWidgetEditable,
     type ViewDocumentEnterEvent,
     type ViewEditableElement,
+    uid,
     Widget
 } from "ckeditor5";
 
@@ -45,6 +46,9 @@ export default class TabsEditing extends Plugin {
     /** The tab each tabs block shows, keyed by the `tabs` model element. */
     private readonly activeTabs = new WeakMap<ModelElement, ModelElement>();
 
+    /** The editing-view ID prefix of each tab's title and panel, keyed by the `tab` model element. */
+    private readonly tabIds = new WeakMap<ModelElement, string>();
+
     public init(): void {
         const editor = this.editor;
         editor.commands.add("tabs", new InsertTabsCommand(editor));
@@ -71,6 +75,20 @@ export default class TabsEditing extends Plugin {
         }
         const first = tabs.getChild(0);
         return first?.is("element", ELEMENTS.tab) ? first : null;
+    }
+
+    private isActiveTab(tab: ModelElement) {
+        const tabs = tab.parent;
+        return !!tabs?.is("element", ELEMENTS.tabs) && this.getActiveTab(tabs) === tab;
+    }
+
+    private getTabId(tab: ModelElement) {
+        let id = this.tabIds.get(tab);
+        if (!id) {
+            id = `trilium-tab-${uid()}`;
+            this.tabIds.set(tab, id);
+        }
+        return id;
     }
 
     private registerSchema() {
@@ -150,17 +168,24 @@ export default class TabsEditing extends Plugin {
         conversion.for("editingDowncast").elementToElement({
             model: ELEMENTS.tab,
             view: (model, { writer }) => {
-                const tabs = model.parent;
-                const isActive = !!tabs?.is("element", ELEMENTS.tabs) && this.getActiveTab(tabs) === model;
-                const classes = isActive ? [CLASSES.tab, CLASSES.activeTab] : [CLASSES.tab];
+                const classes = this.isActiveTab(model) ? [CLASSES.tab, CLASSES.activeTab] : [CLASSES.tab];
                 return writer.createContainerElement("section", { class: classes.join(" ") });
             }
         });
         conversion.for("editingDowncast").elementToElement({
             model: ELEMENTS.tabTitle,
-            view: (_model, { writer }) => {
+            view: (model, { writer }) => {
+                // The title keeps its textbox role so that screen readers offer to edit it; the
+                // global `aria-current` and `aria-controls` attributes carry the tab semantics.
+                const tab = model.parent as ModelElement;
+                const id = this.getTabId(tab);
                 const title: ViewEditableElement & PlaceholderableViewElement =
-                    writer.createEditableElement("div", { class: CLASSES.tabTitle });
+                    writer.createEditableElement("div", {
+                        class: CLASSES.tabTitle,
+                        id: `${id}-title`,
+                        "aria-controls": `${id}-panel`,
+                        ...(this.isActiveTab(tab) ? { "aria-current": "true" } : {})
+                    });
                 title.placeholder = t("Tab title");
                 enableViewPlaceholder({
                     view: editor.editing.view,
@@ -172,8 +197,15 @@ export default class TabsEditing extends Plugin {
         });
         conversion.for("editingDowncast").elementToElement({
             model: ELEMENTS.tabPanel,
-            view: (_model, { writer }) => {
-                const panel = writer.createEditableElement("div", { class: CLASSES.tabPanel });
+            view: (model, { writer }) => {
+                // `aria-labelledby` names the panel after its title; an empty title falls back to
+                // the `aria-label`.
+                const id = this.getTabId(model.parent as ModelElement);
+                const panel = writer.createEditableElement("div", {
+                    class: CLASSES.tabPanel,
+                    id: `${id}-panel`,
+                    "aria-labelledby": `${id}-title`
+                });
                 return toWidgetEditable(panel, writer, { label: t("Tab content") });
             }
         });
@@ -245,15 +277,18 @@ export default class TabsEditing extends Plugin {
                     continue;
                 }
                 const active = this.getActiveTab(tabs);
-                for (const tab of tabs.getChildren()) {
-                    const view = editing.mapper.toViewElement(tab as ModelElement);
-                    if (!view) {
+                for (const tab of tabs.getChildren() as IterableIterator<ModelElement>) {
+                    const view = editing.mapper.toViewElement(tab);
+                    const title = editing.mapper.toViewElement(tab.getChild(0) as ModelElement);
+                    if (!view || !title) {
                         continue;
                     }
                     if (tab === active) {
                         writer.addClass(CLASSES.activeTab, view);
+                        writer.setAttribute("aria-current", "true", title);
                     } else {
                         writer.removeClass(CLASSES.activeTab, view);
+                        writer.removeAttribute("aria-current", title);
                     }
                 }
             }

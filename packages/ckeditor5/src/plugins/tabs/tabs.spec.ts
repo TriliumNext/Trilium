@@ -106,6 +106,29 @@ describe("Tabs", () => {
         expect(activeTitles()).toEqual(["Linux"]);
     });
 
+    it("exposes the active tab and each panel's title to assistive technology", () => {
+        editor.setData(TWO_TABS);
+        const root = editor.editing.view.getDomRoot();
+        const titles = [...root?.querySelectorAll(".trilium-tab-title") ?? []];
+        const panels = [...root?.querySelectorAll(".trilium-tab-panel") ?? []];
+        expect(titles).toHaveLength(2);
+        expect(panels).toHaveLength(2);
+
+        expect(titles.map(title => title.getAttribute("aria-current"))).toEqual(["true", null]);
+        for (const [index, title] of titles.entries()) {
+            const panel = panels[index];
+            expect(panel.id).not.toBe("");
+            expect(title.getAttribute("aria-controls")).toBe(panel.id);
+            expect(panel.getAttribute("aria-labelledby")).toBe(title.id);
+            expect(root?.querySelector(`#${title.id}`)?.textContent).toBe(["Windows", "Linux"][index]);
+        }
+        expect(new Set([...titles, ...panels].map(element => element.id)).size).toBe(4);
+
+        const linux = tabsElement().getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(linux.getChild(1) as ModelElement, 0));
+        expect(titles.map(title => title.getAttribute("aria-current"))).toEqual([null, "true"]);
+    });
+
     it("adds, moves and removes the tab holding the selection", () => {
         editor.setData(TWO_TABS);
         const windows = tabsElement().getChild(0) as ModelElement;
