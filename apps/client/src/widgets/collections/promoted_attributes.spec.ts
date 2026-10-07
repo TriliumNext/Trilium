@@ -144,6 +144,15 @@ describe("resolvePromotedAttributes", () => {
         expect(resolvePromotedAttributes(undefined, undefined)).toEqual([]);
     });
 
+    it("preserves colons in the attribute name when the definition name contains multiple colons", () => {
+        const resolved = resolvePromotedAttributes(
+            collection([ definition("label:sometool:parameter") ]), undefined);
+
+        expect(resolved).toHaveLength(1);
+        expect(resolved[0].name).toBe("sometool:parameter");
+        expect(resolved[0].type).toBe("label");
+    });
+
     /** A definition names its kind before the colon; anything else is not one to draw. */
     it("passes over a definition of a kind it cannot draw", () => {
         const resolved = resolvePromotedAttributes(

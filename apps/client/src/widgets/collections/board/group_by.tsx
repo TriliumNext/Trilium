@@ -1,4 +1,4 @@
-import { DEFAULT_BOARD_GROUP_BY, normalizeBoardGroupBy } from "@triliumnext/commons";
+import { DEFAULT_BOARD_GROUP_BY, extractAttributeDefinitionTypeAndName, normalizeBoardGroupBy } from "@triliumnext/commons";
 
 import { createPortal } from "preact";
 import { useCallback, useRef, useState } from "preact/hooks";
@@ -75,7 +75,7 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
     /** Writes the definition the editor was left holding, and groups by it. */
     const save = useCallback(async () => {
         const definition = edited.current;
-        const [ , name ] = definition?.name.split(":", 2) ?? [];
+        const [ , name ] = definition ? extractAttributeDefinitionTypeAndName(definition.name) : [];
         if (!definition || !name) {
             setDetail(null);
             return;
