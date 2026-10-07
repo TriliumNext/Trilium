@@ -6,8 +6,20 @@
     "donate_tooltip": "Quyên góp để ủng hộ dự án này",
     "license_tooltip": "Bản quyền",
     "role_brief_history": {
-      "lead-dev": "Elian Doran thành lập Trilium Next - một dự án cộng đồng - vào năm 2024, sau khi Zadam rời khỏi. Sau này, Zadam đã bàn giao kho lưu trữ gốc của dự án cho nhóm TriliumNext và kết hợp hai dự án làm một."
-    }
+      "lead-dev": "Elian Doran thành lập Trilium Next - một dự án cộng đồng - vào năm 2024, sau khi Zadam rời khỏi. Sau này, Zadam đã bàn giao kho lưu trữ gốc của dự án cho nhóm TriliumNext và kết hợp hai dự án làm một.",
+      "original-dev": "Vào ngày 25 tháng 12 năm 2017, Zadam đã phát hành bản beta đầu tiên của Trilium (được viết với một chữ \"l\", khác với tên loài hoa). Vì không hài lòng với các ứng dụng quản lý ghi chú hiện có, ông đã tự xây dựng một hệ quản trị trí thức phân cấp self-hosted đầy mạnh mẽ—dự án sau đó đã thu hút hơn 22.000 ngôi sao trên GitHub. Đến năm 2024, do công việc cuộc sống bận rộn hơn, ông đã chuyển dự án sang chế độ bảo trì."
+    },
+    "version": "Build: {{buildDate}}, phiên bản: <buildRevision />\n{{appVersion}} (cơ sở dữ liệu: {{dbVersion}}, giao thức đồng bộ: {{syncVersion}})",
+    "contributor_full_list": "Xem toàn bộ cộng đồng",
+    "contributor_roles": {
+      "lead-dev": "Trưởng nhóm phát triển",
+      "original-dev": "Tác giả gốc"
+    },
+    "channel": {
+      "nightly": "Tối",
+      "standalone": "Độc lập"
+    },
+    "github_tooltip": "Báo lỗi, đề xuất tính năng hoặc đóng góp trên GitHub"
   },
   "add_link": {
     "add_link": "Thêm liên kết",
