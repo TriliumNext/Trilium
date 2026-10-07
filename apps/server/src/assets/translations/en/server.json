@@ -456,7 +456,8 @@
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",
-    "login": "Login"
+    "login": "Login",
+    "tab-title": "Tab title"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

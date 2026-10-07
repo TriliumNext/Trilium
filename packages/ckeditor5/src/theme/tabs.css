@@ -84,12 +84,12 @@
 
 .ck-content:not(.ck-editor__editable) .trilium-tabs > .trilium-tab > .trilium-tab-title {
     &:focus-visible {
-        outline: 2px solid var(--input-focus-outline-color, var(--ck-color-focus-border));
+        outline: 2px solid var(--input-focus-outline-color, var(--ck-color-focus-border, currentColor));
         outline-offset: -2px;
     }
 
     &[data-placeholder]::before {
         content: attr(data-placeholder);
-        color: var(--ck-color-engine-placeholder-text);
+        color: var(--ck-color-engine-placeholder-text, var(--_tabs-title-color));
     }
 }

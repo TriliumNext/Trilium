@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { applyTabs } from "./read_only_helper";
+import { applyTabs } from "./tabs_read_only.js";
 
-vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
+const PLACEHOLDER = "Tab title";
 
 function renderTabs(html: string) {
     const container = document.createElement("div");
     container.innerHTML = html;
-    applyTabs(container);
+    applyTabs(container, { placeholder: PLACEHOLDER });
     return container;
 }
 
@@ -95,7 +95,7 @@ describe("applyTabs", () => {
         expect(document.activeElement).toBe(titleOf(container, "A"));
 
         titleOf(container, "B").click();
-        applyTabs(container);
+        applyTabs(container, { placeholder: PLACEHOLDER });
         expect(activeTitles(container)).toEqual(["B"]);
         press(titleOf(container, "B"), "ArrowRight");
         expect(activeTitles(container)).toEqual(["C"]);
@@ -107,7 +107,7 @@ describe("applyTabs", () => {
         const container = renderTabs(
             `<div class="trilium-tabs">${tab("&nbsp;", "")}${tab("", "")}${tab("Named", "")}</div>`
         );
-        const label = "text-editor.ck.tab-title";
+        const label = PLACEHOLDER;
         const titles = [...container.querySelectorAll<HTMLElement>(".trilium-tab-title")];
         expect(titles).toHaveLength(3);
 

@@ -11,6 +11,9 @@ import setupFaviconContrast from "./modules/favicon_contrast.js";
 import api from "./modules/api.js";
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
+import "@triliumnext/ckeditor5/src/theme/tabs.css";
+
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 
 function $try<T extends (...a: unknown[]) => unknown>(func: T, ...args: Parameters<T>) {
     try {
@@ -34,6 +37,7 @@ function setupTextNote() {
     $try(setupMath);
     $try(setupVideoFacades);
     $try(setupFaviconContrast);
+    $try(setupTabs);
 }
 
 document.addEventListener(
@@ -62,6 +66,13 @@ document.addEventListener(
     },
     false
 );
+
+function setupTabs() {
+    const content = document.getElementById("content");
+    if (content) {
+        applyTabs(content, { placeholder: content.dataset.tabTitlePlaceholder ?? "" });
+    }
+}
 
 function determineNoteType() {
     const bodyClass = document.body.className;
