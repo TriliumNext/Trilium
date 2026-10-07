@@ -5,7 +5,6 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "p
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import tree from "../../services/tree";
@@ -20,12 +19,9 @@ import PromotedAttributes from "../PromotedAttributes";
 import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent } from "../react/react_utils";
-import ReadOnlyNoteInfoBar from "../ReadOnlyNoteInfoBar";
 import StandaloneRibbonAdapter from "../ribbon/components/StandaloneRibbonAdapter";
 import FormattingToolbar, { showFormattingToolbar } from "../ribbon/FormattingToolbar";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
-
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 /** The layer the stylesheet gives this popup while it stands over another modal. */
 const STACKED_LAYER = 1100;
@@ -184,7 +180,6 @@ export default function PopupEditor() {
                     noFocus // automatic focus breaks block popup
                     stackable
                 >
-                    {!isNewLayout && <ReadOnlyNoteInfoBar />}
                     <PromotedAttributes />
 
                     {isMobile

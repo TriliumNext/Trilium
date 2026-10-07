@@ -4,12 +4,6 @@
     z-index: 998;
 }
 
-/* When content header is floating, ribbon sticks below it */
-.scrolling-container:has(.content-header-widget.floating) .ribbon-container {
-    position: sticky;
-    top: var(--content-header-height, 100px);
-}
-
 .ribbon-top-row {
     display: flex;
     min-height: 36px;

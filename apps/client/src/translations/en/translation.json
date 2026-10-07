@@ -2509,16 +2509,7 @@
     "clone": "Clone",
     "clone-tooltip": "Clone, to have the same note in two places at once"
   },
-  "shared_info": {
-    "shared_publicly": "This note is shared publicly on {{- link}}.",
-    "shared_locally": "This note is shared locally on {{- link}}.",
-    "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>.",
-    "shared_preview": "This note is shared on {{- link}}, but only this browser can open that page, and only while Trilium is open in it. Publishing it for others needs a Trilium server.",
-    "shared_export_only": "This note is shared, but the mobile app cannot open shared pages. To publish it, export the subtree as \"{{format}}\" and host the files on any web server, or use a Trilium server."
-  },
   "read-only-info": {
-    "read-only-note": "Currently viewing a read-only note.",
-    "auto-read-only-note": "This note is shown in a read-only mode for faster loading.",
     "edit-note": "Edit note"
   },
   "note_types": {

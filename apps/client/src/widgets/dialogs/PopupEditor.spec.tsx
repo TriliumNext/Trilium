@@ -106,7 +106,6 @@ vi.mock("../FloatingButtonsDefinitions", () => ({
     POPUP_HIDDEN_FLOATING_BUTTONS: [ "hidden" ]
 }));
 vi.mock("../PromotedAttributes", () => ({ default: () => null }));
-vi.mock("../ReadOnlyNoteInfoBar", () => ({ default: () => null }));
 vi.mock("../layout/NoteBadges", () => ({ default: () => null }));
 vi.mock("../layout/NoteTypeSwitcher", () => ({
     default: () => <div className="note-type-switcher-stub" />

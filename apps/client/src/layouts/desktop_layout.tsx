@@ -12,7 +12,6 @@ import MovePaneButton from "../widgets/buttons/move_pane_button.js";
 import RightPaneToggle from "../widgets/buttons/right_pane_toggle.jsx";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import NoteList from "../widgets/collections/NoteList.jsx";
-import ContentHeader from "../widgets/containers/content_header.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import LeftPaneContainer from "../widgets/containers/left_pane_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
@@ -36,13 +35,11 @@ import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
 import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearch from "../widgets/quick_search.jsx";
-import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
 import LazyComponent from "../widgets/react/LazyComponent.jsx";
 import NoteActions from "../widgets/ribbon/NoteActions.jsx";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
-import SharedInfo from "../widgets/shared_info.jsx";
 import RightPanelContainer from "../widgets/sidebar/RightPanelContainer.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
 import TabHistoryNavigationButtons from "../widgets/TabHistoryNavigationButtons.jsx";
@@ -134,7 +131,7 @@ export default class DesktopLayout {
                                                             .cssBlock(".title-row > * { margin: 5px; }")
                                                             .child(<NoteIconWidget />)
                                                             .child(<NoteTitleWidget />)
-                                                            .optChild(isNewLayout, <NoteBadges />)
+                                                            .child(<NoteBadges />)
                                                             .child(<SpacerWidget baseSize={0} growthFactor={1} />)
                                                             .optChild(!isNewLayout, <MovePaneButton direction="left" />)
                                                             .optChild(!isNewLayout, <MovePaneButton direction="right" />)
@@ -149,10 +146,6 @@ export default class DesktopLayout {
                                                                 .filling()
                                                                 .optChild(isNewLayout, <InlineTitle />)
                                                                 .optChild(isNewLayout, <NoteTitleActions />)
-                                                                .optChild(!isNewLayout, new ContentHeader()
-                                                                    .child(<ReadOnlyNoteInfoBar />)
-                                                                    .child(<SharedInfo />)
-                                                                )
                                                                 .optChild(!isNewLayout, <PromotedAttributes />)
                                                                 .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)
