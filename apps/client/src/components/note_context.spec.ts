@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import type { ViewScope } from "../services/link.js";
 import { buildNote } from "../test/easy-froca.js";
 import NoteContext from "./note_context.js";
 
@@ -41,5 +42,22 @@ describe("NoteContext read-only capability", () => {
         // honouring it.
         if (noteContext.viewScope) noteContext.viewScope.readOnlyTemporarilyDisabled = true;
         expect(await noteContext.isReadOnly()).toBe(false);
+    });
+});
+
+describe("NoteContext view scope", () => {
+    it("keeps its own copy of the view scope it is given", async () => {
+        buildNote({ id: "root", title: "root", children: [ { id: "blocks", title: "Blocks" } ] });
+        const viewScope: ViewScope = { block: "a" };
+        const noteContext = new NoteContext();
+
+        await noteContext.setNote("root/blocks", {
+            viewScope, skipRecentNotes: true, triggerSwitchEvent: false
+        });
+        expect(noteContext.viewScope).toEqual({ block: "a", viewMode: "default" });
+
+        // What `revealBlockReference()` does once it has scrolled to the block.
+        if (noteContext.viewScope) noteContext.viewScope.block = undefined;
+        expect(viewScope).toEqual({ block: "a" });
     });
 });
