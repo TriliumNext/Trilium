@@ -33,7 +33,6 @@ import NoteTitleWidget from "../widgets/note_title.jsx";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearch from "../widgets/quick_search.jsx";
 import { FixedFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.jsx";
 import LazyComponent from "../widgets/react/LazyComponent.jsx";
@@ -145,8 +144,7 @@ export default class DesktopLayout {
                                                             new ScrollingContainer()
                                                                 .filling()
                                                                 .optChild(isNewLayout, <InlineTitle />)
-                                                                .optChild(isNewLayout, <NoteTitleActions />)
-                                                                .optChild(!isNewLayout, <PromotedAttributes />)
+                                                                .child(<NoteTitleActions />)
                                                                 .child(<NoteDetail />)
                                                                 .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)
