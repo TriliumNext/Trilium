@@ -3,9 +3,9 @@ Relation map is a type of note which visualizes notes and their [relations](..
 
 ## Interaction
 
-*   To create a new note and add it to the board, press the plus button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
-    *   Afterwards, click anywhere on the map to place it there.
-    *   The note will be placed as a sub-child of the map.
+*   To create a new note and add it to the map, press the <span class="tn-icon bx bx-note"></span> _Add note_ button at the bottom of the map, then click anywhere on the map to place it there.
+    *   While the map waits for the click, a translucent box follows the mouse to show where the note will go. To cancel, press the button again (now labeled _Cancel_) or press <kbd>Esc</kbd>.
+    *   The note is created as a child of the map, with the default title of a new note. It opens in the note panel (see below) with its title selected, so you can type its name straight away.
 *   An existing note can also be dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. It will be placed at the position it's dragged on.
     *   Multiple notes can also be dragged via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Multiple%20selection.md">Multiple selection</a>. The notes will be positioned near the dragged position without overlapping.
     *   The dragged note can be a sub-child of the map, or it can be at any arbitrary position.
@@ -13,9 +13,31 @@ Relation map is a type of note which visualizes notes and their [relations](..
     *   Drag it over another note to create a relationship pointing from the first note to the second one.
     *   Drag over the same note to create a self-referencing relationship (represented as a loop).
     *   Once dragged, a popover next to the relationship asks for its name. Type a new name and press <kbd>Enter</kbd>, or pick a relation name already in use from the suggestions. To cancel, press <kbd>Esc</kbd>, close the popover or click elsewhere on the map.
-*   To open a note, either click on the note (opening it in the current view) or use the right click menu to open in a new tab.
+*   To view or edit a note, click it on the map. This opens the note panel (see below).
+    *   To open the note in a new tab instead, <kbd>Ctrl</kbd>+click its title, or use the right click menu.
 *   To edit the title of a note or to delete it (either from the map, or delete it completely), right click the note.
 *   To rename or delete a relationship, right click it and select the corresponding option.
+
+## Note panel
+
+When a note on the map is clicked, a panel opens to the right of the map and the note is highlighted. The panel contains:
+
+*   The title and icon of the note, both editable.
+*   A button to expand the panel over the whole map, and to restore it afterwards.
+*   Buttons to interact with the note:
+    *   Open the note in the current tab, or, through the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> menu, in a new tab, split, window or the quick edit popup.
+    *   A color picker to change the color of the note.
+    *   A button to remove the note from the map, which can optionally delete the note as well.
+*   The <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> of the note, if any.
+*   The note's content, which can be edited directly from the panel.
+
+The color picker and the remove button are not shown if the map is read-only.
+
+Clicking another note on the map switches the panel to it. Similarly, clicking an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> inside the panel switches the panel to that note, as long as it is on the map.
+
+To close the panel, press the X button at its top-right, click an empty part of the map, or press <kbd>Esc</kbd>.
+
+On mobile, the note opens as a dialog over the whole screen instead of a panel.
 
 ## Development process demo
 

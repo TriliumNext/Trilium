@@ -45,20 +45,7 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
                 {
                     title: t("relation_map.remove_note"),
                     uiIcon: "bx bx-trash",
-                    handler: async () => {
-                        if (!note) return;
-
-                        // The branch is all the dialog is told: from it, it works out for itself
-                        // whether ticking the box would delete the note or merely unfile it here,
-                        // and says so (see confirmDeleteNoteBoxWithNote).
-                        const result = await dialog.confirmDeleteNoteBoxWithNote(note.title, {
-                            noteId: note.noteId,
-                            branchId: mapApiRef.current?.branchIdFor(note.noteId)
-                        });
-                        if (typeof result !== "object" || !result.confirmed) return;
-
-                        mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
-                    }
+                    handler: () => confirmRemoveFromMap(note, mapApiRef)
                 },
             ],
             selectMenuItemHandler({ command }) {
@@ -67,6 +54,23 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
             }
         });
     };
+}
+
+/**
+ * Asks whether to take the note off the map, and whether to delete it from the tree as well, then
+ * does so. Serves the box's context menu and the note pane.
+ */
+export async function confirmRemoveFromMap(note: FNote, mapApiRef: RefObject<RelationMapApi | null>) {
+    // The branch is all the dialog is told: from it, it works out for itself whether ticking the
+    // box would delete the note or merely unfile it here, and says so (see
+    // confirmDeleteNoteBoxWithNote).
+    const result = await dialog.confirmDeleteNoteBoxWithNote(note.title, {
+        noteId: note.noteId,
+        branchId: mapApiRef.current?.branchIdFor(note.noteId)
+    });
+    if (typeof result !== "object" || !result.confirmed) return;
+
+    await mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
 }
 
 export function buildRelationContextMenuHandler(connection: Connection, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: AskRelationName) {

@@ -28,9 +28,11 @@ const NOTE_BOX_TARGET_CONFIG = {
 
 interface NoteBoxProps extends MapDataNoteEntry {
     mapApiRef: RefObject<RelationMapApi | null>;
+    /** The note is open in the note pane. */
+    selected?: boolean;
 }
 
-export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {
+export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
     useEffect(() => {
@@ -47,6 +49,7 @@ export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {
             className={`note-box ${note?.getCssClass()}`}
             onContextMenu={contextMenuHandler}
             x={x} y={y}
+            selected={selected}
             draggable={{
                 start() {},
                 drag() {},
@@ -63,4 +66,17 @@ export function NoteBox({ noteId, x, y, mapApiRef }: NoteBoxProps) {
             <div className="endpoint" title={t("relation_map.start_dragging_relations")} />
         </JsPlumbItem>
     )
+}
+
+/**
+ * The translucent box that follows the pointer while the map waits for a click to place a new
+ * note. `RelationMap` moves it by writing `left`/`top` straight onto the element, so a pointer
+ * moving across the map does not render on every event.
+ */
+export function GhostNoteBox({ elementRef }: { elementRef: RefObject<HTMLDivElement | null> }) {
+    return (
+        <div ref={elementRef} className="note-box relation-map-ghost-note" aria-hidden="true">
+            <span className="title">{t("relation_map.default_new_note_title")}</span>
+        </div>
+    );
 }

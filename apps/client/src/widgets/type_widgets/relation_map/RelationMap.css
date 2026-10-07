@@ -85,3 +85,23 @@
 .note-detail-relation-map .ui-contextmenu {
     z-index: 100;
 }
+
+.relation-map-wrapper.placing-note {
+    cursor: crosshair;
+}
+
+.note-detail-relation-map .note-box.relation-map-ghost-note {
+    border-style: dashed;
+    pointer-events: none;
+    opacity: 0;
+
+    &.visible {
+        opacity: 0.5;
+    }
+}
+
+.note-detail-relation-map .note-box.selected {
+    border-color: var(--input-focus-outline-color);
+    box-shadow: 0 0 0 2px var(--input-focus-outline-color);
+    opacity: 1;
+}

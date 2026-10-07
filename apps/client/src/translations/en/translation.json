@@ -1232,7 +1232,9 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Create child note and add it to map",
-    "create_child_note_text": "Add note"
+    "create_child_note_text": "Add note",
+    "create_child_note_cancel_title": "Cancel adding the note",
+    "create_child_note_cancel_text": "Cancel"
   },
   "image_navigation": {
     "previous": "Previous image: {{- title}}",
@@ -1727,9 +1729,14 @@
     "note_not_found": "Note {{noteId}} not found!",
     "cannot_match_transform": "Cannot match transform: {{transform}}",
     "note_already_in_diagram": "Note \"{{title}}\" is already in the diagram.",
-    "enter_title_of_new_note": "Enter title of new note",
     "default_new_note_title": "new note",
-    "click_on_canvas_to_place_new_note": "Click on canvas to place new note"
+    "add_note_toast_title": "New note",
+    "add_note_instruction": "Click on the map to place a new note there or press Escape to dismiss.",
+    "close_note_pane": "Close",
+    "expand_note_pane": "Expand the note to fill the map",
+    "restore_note_pane": "Put the note back beside the map",
+    "note_color": "Note color",
+    "remove_from_map": "Remove from map"
   },
   "render": {
     "setup_title": "Display custom HTML or Preact JSX inside this note",

@@ -246,5 +246,8 @@
   },
   "sync_2": {
     "effective_server_disabled": "Synchronisation is turned off."
+  },
+  "relation_map": {
+    "note_color": "Note colour"
   }
 }

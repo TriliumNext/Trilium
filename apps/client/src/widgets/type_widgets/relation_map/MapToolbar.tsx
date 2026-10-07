@@ -53,9 +53,11 @@ export default function MapToolbar({ panZoom, onCommand }: MapToolbarProps) {
 interface EditToolbarProps {
     /** The map may not be edited, which is every one of these buttons refused at once. */
     isReadOnly: boolean;
-    /** Asks for a title and leaves the note waiting for a place to be clicked (see `useNoteCreation`
-     *  in RelationMap.tsx). */
-    onAddNote: () => void;
+    /** The map is armed for the next click to place a new note, which the button shows as pressed. */
+    placing: boolean;
+    /** Arms the map for a note to be placed, or disarms it (see `useNotePlacement` in
+     *  RelationMap.tsx). */
+    onTogglePlacement: () => void;
 }
 
 /**
@@ -78,19 +80,20 @@ interface EditToolbarProps {
  * note-and-plus in the icon set, and that leaves the mark unlike the + of the zoom step opposite.
  *
  * It stands on the map rather than in the note's own bar of actions, where it was: what it starts is
- * finished by a click on the map, so it belongs beside the canvas that answers it — the toast that
- * follows says as much in words.
+ * finished by a click on the map, so it belongs beside the canvas that answers it. While the map is
+ * armed the button shows as pressed, and a second press disarms it.
  */
-export function EditToolbar({ isReadOnly, onAddNote }: EditToolbarProps) {
+export function EditToolbar({ isReadOnly, placing, onTogglePlacement }: EditToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-edit-toolbar" placement="bottom-center">
             <OverlayControlButton
-                title={t("relation_map_buttons.create_child_note_title")}
+                title={placing ? t("relation_map_buttons.create_child_note_cancel_title") : t("relation_map_buttons.create_child_note_title")}
                 icon="bx-note"
-                text={t("relation_map_buttons.create_child_note_text")}
+                text={placing ? t("relation_map_buttons.create_child_note_cancel_text") : t("relation_map_buttons.create_child_note_text")}
                 className="relation-map-add-note-button"
                 disabled={isReadOnly}
-                onClick={onAddNote}
+                active={placing}
+                onClick={onTogglePlacement}
             />
         </OverlayControlGroup>
     );

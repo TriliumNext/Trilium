@@ -1,6 +1,7 @@
 import "./RelationMap.css";
 
-import { CreateChildrenResponse, RelationMapPostResponse } from "@triliumnext/commons";
+import { RelationMapPostResponse } from "@triliumnext/commons";
+import clsx from "clsx";
 import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
 // The library's own types rather than the hand-written `PanZoom` in types.d.ts, which stops at the
 // handful of calls the map made when it was written and knows nothing of the rest — the ends of the
@@ -10,8 +11,8 @@ import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
-import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
+import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
@@ -20,15 +21,11 @@ import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, RelationType
 import { buildRelationContextMenuHandler } from "./context_menu";
 import { JsPlumb } from "./jsplumb";
 import MapToolbar, { EditToolbar } from "./MapToolbar";
-import { NoteBox } from "./NoteBox";
+import { GhostNoteBox, NoteBox } from "./NoteBox";
+import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import setupOverlays, { uniDirectionalOverlays } from "./overlays";
 import RelationNamePopover, { type AskRelationName, useRelationNamePrompt } from "./RelationNamePopover";
 import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
-
-interface Clipboard {
-    noteId: string;
-    title: string;
-}
 
 declare module "jsplumb" {
 
@@ -110,11 +107,24 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         pbApiRef.current.setZoom(zoom);
     }, [ data ]);
 
-    const clickCallback = useNoteCreation({
+    const [ selection, setSelection ] = useState<PaneSelection | null>(null);
+    const noteIdsOnMap = useMemo(() => data?.notes.map((entry) => entry.noteId) ?? [], [ data ]);
+    const paneRef = useRef<NotePaneHandle>(null);
+    const placement = useNotePlacement({
         containerRef,
         note,
         ntxId,
-        mapApiRef
+        mapApiRef,
+        // The click that places the note has to reach the map, which the pane partly covers.
+        onArm: () => paneRef.current?.close(),
+        onCreated: (noteId) => setSelection({ noteId, isNew: true })
+    });
+    const clickProps = useCanvasClicks({
+        containerRef,
+        placing: placement.placing,
+        onPlace: placement.placeAt,
+        onSelectNote: (noteId) => setSelection({ noteId }),
+        onClickEmpty: () => paneRef.current?.close()
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef });
 
@@ -143,8 +153,10 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
 
     return (
         <div
-            className="relation-map-wrapper"
-            onClick={clickCallback}
+            className={clsx("relation-map-wrapper", placement.placing && "placing-note")}
+            onMouseMove={placement.followPointer}
+            onMouseLeave={placement.hideGhost}
+            {...clickProps}
             {...dragProps}
         >
             <JsPlumb
@@ -161,8 +173,9 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 onConnection={connectionCallback}
             >
                 {data?.notes.map(note => (
-                    <NoteBox {...note} mapApiRef={mapApiRef} />
+                    <NoteBox {...note} mapApiRef={mapApiRef} selected={note.noteId === selection?.noteId} />
                 ))}
+                {placement.placing && <GhostNoteBox elementRef={placement.ghostRef} />}
             </JsPlumb>
 
             {/* Both groups stand on the map whatever layout the note is read in: what is done to a
@@ -170,12 +183,22 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 reader is looking while dragging one. */}
             <EditToolbar
                 isReadOnly={isReadOnly}
-                onAddNote={() => parentComponent?.triggerEvent("relationMapCreateChildNote", { ntxId })}
+                placing={placement.placing}
+                onTogglePlacement={() => parentComponent?.triggerEvent("relationMapCreateChildNote", { ntxId })}
             />
 
             <MapToolbar
                 panZoom={panZoom}
                 onCommand={(command) => parentComponent?.triggerEvent(command, { ntxId })}
+            />
+
+            <NotePane
+                paneRef={paneRef}
+                noteIdsOnMap={noteIdsOnMap}
+                mapApiRef={mapApiRef}
+                isReadOnly={isReadOnly}
+                selection={selection}
+                onSelect={setSelection}
             />
 
             {relationNamePrompt.request && (
@@ -332,45 +355,156 @@ async function useRelationData(noteId: string, mapData: MapData | undefined, map
     }, [ relations, mapData ]);
 }
 
-function useNoteCreation({ ntxId, note, containerRef, mapApiRef }: {
+/**
+ * Arms the map for the next click to place a new note, and creates the note where it lands.
+ *
+ * Pressing the button again disarms the map, as Escape does. A translucent box follows the pointer
+ * while the map is armed (see {@link GhostNoteBox}). The note is created without a title, so it takes
+ * the name any new note takes (or the map's `#titleTemplate`), and the pane opens on it with that
+ * name selected.
+ */
+function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreated }: {
     ntxId: string | null | undefined;
     note: FNote;
     containerRef: RefObject<HTMLDivElement | null>;
     mapApiRef: RefObject<RelationMapApi | null>;
+    onArm(): void;
+    onCreated(noteId: string): void;
 }) {
-    const clipboardRef = useRef<Clipboard>(null);
-    useTriliumEvent("relationMapCreateChildNote", async ({ ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId) return;
-        const title = await dialog.prompt({ message: t("relation_map.enter_title_of_new_note"), defaultValue: t("relation_map.default_new_note_title") });
-        if (!title?.trim()) return;
+    const [ placing, setPlacing ] = useState(false);
+    const ghostRef = useRef<HTMLDivElement>(null);
 
-        const { note: createdNote } = await server.post<CreateChildrenResponse>(`notes/${note.noteId}/children?target=into`, {
-            title,
-            content: "",
-            type: "text"
+    useTriliumEvent("relationMapCreateChildNote", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId !== ntxId) return;
+        if (!placing) onArm();
+        setPlacing(!placing);
+    });
+
+    // Tied to the state rather than to what armed it, so the toast and the listener go on cancel,
+    // on placement and on unmount alike.
+    useEffect(() => {
+        if (!placing) return;
+
+        const toastId = `relation-map-placement-${ntxId}`;
+        toast.showPersistent({
+            id: toastId,
+            icon: "plus",
+            title: t("relation_map.add_note_toast_title"),
+            message: t("relation_map.add_note_instruction")
         });
 
-        toast.showMessage(t("relation_map.click_on_canvas_to_place_new_note"));
-        clipboardRef.current = {
-            noteId: createdNote.noteId,
-            title
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setPlacing(false);
         };
-    });
-    const onClickHandler = useCallback((e: MouseEvent) => {
-        const clipboard = clipboardRef.current;
-        if (clipboard && containerRef.current && mapApiRef.current) {
-            const zoom = getZoom(containerRef.current);
-            let { x, y } = getMousePosition(e, containerRef.current, zoom);
+        window.addEventListener("keydown", onKeyDown);
 
-            // modifying position so that the cursor is on the top-center of the box
-            x -= 80;
-            y -= 15;
+        return () => {
+            window.removeEventListener("keydown", onKeyDown);
+            toast.closePersistent(toastId);
+        };
+    }, [ placing, ntxId ]);
 
-            mapApiRef.current.createItem({ noteId: clipboard.noteId, x, y });
-            clipboardRef.current = null;
+    const followPointer = useCallback((e: MouseEvent) => {
+        const ghost = ghostRef.current;
+        const container = containerRef.current;
+        if (!ghost || !container) return;
+
+        const { x, y } = boxPositionAt(e, container);
+        ghost.style.left = `${x}px`;
+        ghost.style.top = `${y}px`;
+        // Hidden over the toolbars, which a click does not place a note through.
+        ghost.classList.toggle("visible", isOnCanvas(e, container));
+    }, [ containerRef ]);
+
+    const hideGhost = useCallback(() => ghostRef.current?.classList.remove("visible"), []);
+
+    const placeAt = useCallback(async (e: MouseEvent) => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        // Disarmed first, so a failure to create the note does not leave the map armed.
+        setPlacing(false);
+        const position = boxPositionAt(e, container);
+
+        const { note: created } = await note_create.createNote(note.noteId, {
+            content: "",
+            type: "text",
+            activate: false,
+            isProtected: note.isProtected
+        });
+        if (!created || !mapApiRef.current) return;
+
+        mapApiRef.current.createItem({ noteId: created.noteId, ...position });
+        onCreated(created.noteId);
+    }, [ note, containerRef, mapApiRef, onCreated ]);
+
+    return { placing, ghostRef, followPointer, hideGhost, placeAt };
+}
+
+/**
+ * Routes a click on the map: it places a new note while the map is armed, selects the box it lands
+ * on, or closes the pane when it lands on empty canvas. A click that ends a pan or a drag counts as
+ * none of these, and clicks on whatever stands over the map (toolbars, the pane, the relation name
+ * popover) are left alone.
+ *
+ * Captured, so a box's title link does not navigate away from the map. A modified click on the
+ * title still reaches the link, which opens the note in a new tab or window.
+ */
+export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty }: {
+    containerRef: RefObject<HTMLDivElement | null>;
+    placing: boolean;
+    onPlace(e: MouseEvent): void;
+    onSelectNote(noteId: string): void;
+    onClickEmpty(): void;
+}): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onClickCapture"> {
+    const pressedAt = useRef<{ x: number; y: number }>(null);
+
+    return {
+        onPointerDownCapture(e) {
+            pressedAt.current = { x: e.clientX, y: e.clientY };
+        },
+        onClickCapture(e) {
+            const container = containerRef.current;
+            const pressed = pressedAt.current;
+            if (!container || !isOnCanvas(e, container) || e.button !== 0) return;
+            if (pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE) return;
+
+            if (placing) {
+                e.preventDefault();
+                e.stopPropagation();
+                onPlace(e);
+                return;
+            }
+
+            const box = e.target instanceof Element ? e.target.closest<HTMLElement>(".note-box") : null;
+            if (!box) {
+                onClickEmpty();
+                return;
+            }
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            onSelectNote(idToNoteId(box.id));
         }
-    }, []);
-    return onClickHandler;
+    };
+}
+
+/** Where the pointer stands on a box being placed: the top centre of its title. */
+const PLACEMENT_OFFSET = { x: 80, y: 15 };
+
+/** How far, in pixels, the pointer can move between press and release for the click to count. */
+const CLICK_TOLERANCE = 4;
+
+/** The map position, in unzoomed map pixels, of a box placed under the pointer. */
+function boxPositionAt(e: MouseEvent, container: HTMLDivElement) {
+    const { x, y } = getMousePosition(e, container, getZoom(container));
+    return { x: x - PLACEMENT_OFFSET.x, y: y - PLACEMENT_OFFSET.y };
+}
+
+/** Whether the event happened on the map itself, rather than on something standing over it. */
+function isOnCanvas(e: MouseEvent, container: HTMLDivElement) {
+    return e.target === e.currentTarget || (e.target instanceof Node && container.contains(e.target));
 }
 
 function useNoteDragging({ containerRef, mapApiRef }: {

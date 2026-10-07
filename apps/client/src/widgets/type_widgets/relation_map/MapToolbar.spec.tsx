@@ -65,15 +65,23 @@ describe("relation map MapToolbar", () => {
 
 describe("relation map EditToolbar", () => {
     it("offers to add a note in words as well as in a mark, and hands the asking to the map view", () => {
-        const { button, onAddNote } = renderEditToolbar();
+        const { button, onTogglePlacement } = renderEditToolbar();
 
         // The mark is a child of the button rather than the button's own class — the words beside it
         // are to stay words (see OverlayControlGroup.tsx).
         expect(button()?.querySelector(".bx-note")).not.toBeNull();
         expect(button()?.textContent).toBe("relation_map_buttons.create_child_note_text");
+        expect(button()?.classList.contains("active")).toBe(false);
 
         act(() => button()?.click());
-        expect(onAddNote).toHaveBeenCalledTimes(1);
+        expect(onTogglePlacement).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows as pressed while the map is armed, and offers to cancel", () => {
+        const { button } = renderEditToolbar({ placing: true });
+
+        expect(button()?.classList.contains("active")).toBe(true);
+        expect(button()?.textContent).toBe("relation_map_buttons.create_child_note_cancel_text");
     });
 
     it("refuses on a map that may not be edited", () => {
@@ -114,16 +122,16 @@ function renderToolbar({ withMap = true } = {}) {
 }
 
 /** Builds the editing group, which asks for nothing beyond what its one button is driven by. */
-function renderEditToolbar({ isReadOnly = false } = {}) {
-    const onAddNote = vi.fn();
+function renderEditToolbar({ isReadOnly = false, placing = false } = {}) {
+    const onTogglePlacement = vi.fn();
     let container: HTMLElement | undefined;
     act(() => {
-        container = renderInto(<EditToolbar isReadOnly={isReadOnly} onAddNote={onAddNote} />);
+        container = renderInto(<EditToolbar isReadOnly={isReadOnly} placing={placing} onTogglePlacement={onTogglePlacement} />);
     });
     if (!container) throw new Error("the toolbar was not rendered");
 
     return {
-        onAddNote,
+        onTogglePlacement,
         button: () => container?.querySelector<HTMLButtonElement>(".relation-map-edit-toolbar button") ?? null
     };
 }

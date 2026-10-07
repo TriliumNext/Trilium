@@ -55,13 +55,16 @@ export function JsPlumb({ className, props, children, containerRef: externalCont
     )
 }
 
-export function JsPlumbItem({ x, y, children, draggable, sourceConfig, targetConfig, ...restProps }: {
+export function JsPlumbItem({ x, y, children, draggable, sourceConfig, targetConfig, selected, ...restProps }: {
     x: number;
     y: number;
     children: ComponentChildren;
     draggable?: DragOptions;
     sourceConfig?: object;
     targetConfig?: object;
+    /** Adds the `selected` class. Toggled on the element rather than through `className`, which
+     *  would drop the classes jsPlumb adds to it. */
+    selected?: boolean;
 } & Pick<HTMLAttributes<HTMLDivElement>, "id" | "className" | "onContextMenu">) {
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useContext(JsPlumbInstance);
@@ -80,6 +83,10 @@ export function JsPlumbItem({ x, y, children, draggable, sourceConfig, targetCon
         if (!targetConfig || !apiRef?.current || !containerRef.current) return;
         apiRef.current.makeTarget(containerRef.current, targetConfig);
     }, [ targetConfig ]);
+
+    useEffect(() => {
+        containerRef.current?.classList.toggle("selected", !!selected);
+    }, [ selected, restProps.className ]);
 
     return (
         <div
