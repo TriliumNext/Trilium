@@ -40,7 +40,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    ExportImageButtons,
     ExportSpreadsheetButton,
     InAppHelpButton,
     Backlinks
@@ -52,26 +51,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function ExportImageButtons({ note, triggerEvent, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = ["mermaid", "mindMap"].includes(note?.type ?? "")
-            && note?.isContentAvailable() && isDefaultViewMode;
-    return isEnabled && (
-        <>
-            <FloatingButton
-                icon="bx bxs-file-image"
-                text={t("svg_export_button.button_title")}
-                onClick={() => triggerEvent("exportSvg")}
-            />
-
-            <FloatingButton
-                icon="bx bxs-file-png"
-                text={t("png_export_button.button_title")}
-                onClick={() => triggerEvent("exportPng")}
-            />
-        </>
-    );
-}
 
 function ExportSpreadsheetButton({ note, triggerEvent, isDefaultViewMode }: FloatingButtonContext) {
     const isEnabled = note?.type === "spreadsheet" && note?.isContentAvailable() && isDefaultViewMode;

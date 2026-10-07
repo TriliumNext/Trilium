@@ -1210,9 +1210,6 @@
   "show_floating_buttons_button": {
     "button_title": "Show buttons"
   },
-  "svg_export_button": {
-    "button_title": "Export diagram as SVG"
-  },
   "relation_map_buttons": {
     "create_child_note_title": "Create child note and add it to map",
     "create_child_note_text": "Add note"
@@ -3370,9 +3367,6 @@
     "source": "Source view",
     "split": "Split view",
     "preview": "Preview"
-  },
-  "png_export_button": {
-    "button_title": "Export diagram as PNG"
   },
   "svg": {
     "export_to_png": "The diagram could not be exported to PNG.",
