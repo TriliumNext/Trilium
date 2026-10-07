@@ -13,11 +13,12 @@ import { t } from "../../../services/i18n";
 import { goToLinkExt } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
+import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks";
+import { useContextualShortcutHints, useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
-import { useZoomPanKeyboard } from "../../react/zoom_pan_keyboard";
+import { useZoomPanKeyboard, ZOOM_PAN_HINTS } from "../../react/zoom_pan_keyboard";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, MapTransform } from "./api";
@@ -122,6 +123,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
     boxesRef.current = boxes;
 
     useRevealSelectedBox({ wrapperRef, containerRef, moveBy: mapZoom.moveBy, noteId: selection?.noteId });
+    useContextualShortcutHints(RELATION_MAP_HINTS);
     const hoveredNoteId = useHoveredBox(containerRef);
     const [ hoveredRelationId, setHoveredRelationId ] = useState<string | null>(null);
     const { relations, inverseRelations } = useRelationData(note.noteId, data, mapApiRef);
@@ -292,6 +294,18 @@ export function MapViewport({ zoom, viewportRef, children }: {
         </div>
     );
 }
+
+/** The zoom and pan keys of the viewport, and the keys of placement mode and the note pane. */
+const RELATION_MAP_HINTS: ShortcutHintDefinition = [
+    ...ZOOM_PAN_HINTS,
+    {
+        titleKey: "relation_map.hints.title",
+        hints: [
+            { keys: [ "Escape" ], labelKey: "relation_map.hints.cancel_adding_note" },
+            { keys: [ "Escape" ], labelKey: "relation_map.hints.close_note_pane" }
+        ]
+    }
+];
 
 /** The zoom range of the map. */
 const MIN_SCALE = 0.3;

@@ -1674,7 +1674,12 @@
     "restore_note_pane": "Put the note back beside the map",
     "note_color": "Note color",
     "remove_from_map": "Remove from map",
-    "fit_to_view": "Fit to view"
+    "fit_to_view": "Fit to view",
+    "hints": {
+      "title": "Relation map",
+      "cancel_adding_note": "Cancel adding a note",
+      "close_note_pane": "Close the note panel"
+    }
   },
   "render": {
     "setup_title": "Display custom HTML or Preact JSX inside this note",

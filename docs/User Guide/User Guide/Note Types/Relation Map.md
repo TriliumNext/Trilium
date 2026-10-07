@@ -20,6 +20,7 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   To edit the title of a note, change its color or delete it (either from the map, or delete it completely), right click the note. The color picker is not shown if the map is read-only.
 *   To rename or delete a relationship, right click it and select the corresponding option.
 *   To move around the map, drag an empty part of it, and zoom with the mouse wheel or the buttons at the bottom-right corner. Clicking the zoom percentage goes back to 100%, and <span class="tn-icon bx bx-scan"></span> _Fit to view_ zooms and pans so that all the notes are visible.
+    *   Once the map has been clicked, the arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> pan it, and <kbd>+</kbd> and <kbd>-</kbd> zoom it. The <kbd>?</kbd> button at the top-right corner of the map lists all its keyboard shortcuts.
 
 ## Note panel
 
