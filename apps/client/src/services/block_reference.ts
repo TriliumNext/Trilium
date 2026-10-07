@@ -1,6 +1,6 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import {
-    formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
+    type BlockRange, formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -33,6 +33,8 @@ export interface ClipboardBlockReference {
 export interface BlockReferenceMenuItems {
     /** Copies a reference to the selected blocks, in the _Copy_ submenu, or `null`. */
     copy: MenuItem<CommandNames> | null;
+    /** Copies a link to the tab that holds the selection, in the _Copy_ submenu, or `null`. */
+    copyTab: MenuItem<CommandNames> | null;
     /** Pastes the reference on the clipboard, in the _Paste_ submenu. */
     paste: MenuItem<CommandNames>[];
 }
@@ -40,6 +42,7 @@ export interface BlockReferenceMenuItems {
 /** The component of a text editor that copies references to the blocks of its note. */
 interface BlockReferenceHost {
     copyBlockReference?(): Promise<void>;
+    copyTabReference?(): void;
 }
 
 /** Opens the menu of the block handle at `event`, which copies a reference to `count` blocks. */
@@ -67,6 +70,7 @@ export async function buildBlockReferenceMenuItems(
 
     return {
         copy: getCopyMenuItem(editor),
+        copyTab: getCopyTabMenuItem(editor),
         paste: clipboard ? getPasteMenuItems(editor, clipboard) : []
     };
 }
@@ -102,7 +106,28 @@ export async function copyBlockReference(
     notePath: string,
     noteTitle: string
 ) {
-    const target = editor.execute("assignBlockReference");
+    await copyReference(editor, editor.execute("assignBlockReference"), notePath, noteTitle);
+}
+
+/**
+ * Gives an id to the tab that holds the selection of `editor`, flashes the tab and copies a link
+ * to it, named by its title. `notePath` and `noteTitle` are of the note the editor shows.
+ */
+export async function copyTabReference(
+    editor: CKTextEditor,
+    notePath: string,
+    noteTitle: string
+) {
+    await copyReference(editor, editor.execute("assignTabReference"), notePath, noteTitle);
+}
+
+/** Flashes the blocks of `target` and copies a reference link to them. */
+async function copyReference(
+    editor: CKTextEditor,
+    target: BlockRange | null | undefined,
+    notePath: string,
+    noteTitle: string
+) {
     const root = editor.editing.view.getDomRoot();
     const { start, end } = target && root
         ? resolveBlockRange<HTMLElement>(root, target)
@@ -234,6 +259,21 @@ function getCopyMenuItem(editor: CKTextEditor) {
     }
 
     return getCopyItem(command.value, () => void host.copyBlockReference?.());
+}
+
+function getCopyTabMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
+    const command = editor.commands.get("assignTabReference");
+    const root = editor.editing.view.getDomRoot();
+    const host: BlockReferenceHost | undefined = root && glob.getComponentByEl(root);
+    if (!command?.isEnabled || !host?.copyTabReference) {
+        return null;
+    }
+
+    return {
+        title: t("block_reference.copy_tab"),
+        uiIcon: "bx bx-link",
+        handler: () => host.copyTabReference?.()
+    };
 }
 
 function getPasteMenuItems(

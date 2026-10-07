@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommandNames } from "../components/app_context.js";
 import type { MenuCommandItem, MenuItem } from "../menus/context_menu.js";
 import {
-    buildBlockReferenceMenuItems, consumeBlockReference, copyBlockReference,
+    buildBlockReferenceMenuItems, consumeBlockReference, copyBlockReference, copyTabReference,
     getBlockRangeElements, getClipboardBlockReference, highlightBlockReference,
     openBlockHandleMenu, revealHighlightedBlocks
 } from "./block_reference.js";
@@ -229,6 +229,27 @@ describe("copyBlockReference", () => {
     });
 });
 
+describe("copyTabReference", () => {
+    it("copies a link to the tab holding the selection, named by its title, and flashes it", async () => {
+        const root = buildContainer(
+            "<div class=\"trilium-tabs\"><section class=\"trilium-tab\" data-trilium-block-id=\"t1\">"
+            + "<p class=\"trilium-tab-title\">Linux</p>"
+            + "<div class=\"trilium-tab-panel\"><p>Use the package.</p></div></section></div>"
+        );
+        const editor = buildEditor(root, { startId: "t1", endId: "t1", count: 1 });
+
+        await copyTabReference(editor, "root/n1", "Note");
+
+        const href = "#root/n1?block=t1";
+        expect(editor.execute).toHaveBeenCalledWith("assignTabReference");
+        expect(copyHtmlWithToast).toHaveBeenCalledWith(
+            `<a class="reference-link" href="${href}">Note - Linux</a>`,
+            href
+        );
+        expect(root.querySelector(".trilium-tab")?.classList.contains("block-reference-flash")).toBe(true);
+    });
+});
+
 describe("openBlockHandleMenu", () => {
     it("offers to copy a reference to the selected blocks", () => {
         const event = new MouseEvent("contextmenu", { clientX: 10, clientY: 20 });
@@ -293,6 +314,25 @@ describe("buildBlockReferenceMenuItems", () => {
         expect(items?.copy).toMatchObject({ title: "block_reference.copy:3" });
         expect(copyReference).toHaveBeenCalledTimes(1);
         expect(items?.paste).toEqual([]);
+    });
+
+    it("copies a link to the tab holding the selection through the host of the editor", async () => {
+        const copyTabReference = vi.fn();
+        const { editor } = buildMenuEditor();
+        getTextEditorContaining.mockResolvedValue(editor);
+        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn(), copyTabReference });
+
+        const items = await buildBlockReferenceMenuItems(element);
+        runItem(items?.copyTab);
+
+        expect(items?.copyTab).toMatchObject({ title: "block_reference.copy_tab" });
+        expect(copyTabReference).toHaveBeenCalledTimes(1);
+
+        getTextEditorContaining.mockResolvedValue(buildMenuEditor({ isInTab: false }).editor);
+        expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
+        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn() });
+        getTextEditorContaining.mockResolvedValue(editor);
+        expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
     });
 
     it("offers no copy row where no reference can be made or the host cannot copy", async () => {
@@ -389,12 +429,13 @@ describe("buildBlockReferenceMenuItems", () => {
 });
 
 function buildMenuEditor({
-    count = 2, canReference = true, canEmbed = true, hasPlugin = true
+    count = 2, canReference = true, canEmbed = true, hasPlugin = true, isInTab = true
 } = {}) {
     const root = document.createElement("div");
     const pasteTarget = { paste: vi.fn(), release: vi.fn() };
     const commands: Record<string, { isEnabled: boolean; value?: number }> = {
         assignBlockReference: { isEnabled: canReference, value: count },
+        assignTabReference: { isEnabled: isInTab },
         insertContentEmbed: { isEnabled: canEmbed }
     };
     const editor = {

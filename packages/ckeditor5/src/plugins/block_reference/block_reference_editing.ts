@@ -236,7 +236,8 @@ function getBlocksById(model: Model, excluded: Set<ModelElement>) {
     return blocks;
 }
 
-function generateBlockId() {
+/** A new random block id. */
+export function generateBlockId() {
     const bytes = crypto.getRandomValues(new Uint8Array(BLOCK_ID_LENGTH));
     const characters = Array.from(bytes, (byte) =>
         BLOCK_ID_CHARACTERS[byte % BLOCK_ID_CHARACTERS.length]);

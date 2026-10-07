@@ -119,6 +119,11 @@ declare global {
          */
         openBlockHandleMenu?(event: MouseEvent, count: number): void;
         /**
+         * Copies a link to the tab that holds the selection. Hosts without block references leave
+         * it out.
+         */
+        copyTabReference?(): void;
+        /**
          * The buttons that what `embed` shows adds to the toolbar of the embed, or `null`. Hosts
          * without embeds leave it out.
          */

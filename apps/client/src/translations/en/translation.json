@@ -4388,6 +4388,7 @@
       "remove-tab": "Remove tab",
       "move-tab-left": "Move tab left",
       "move-tab-right": "Move tab right",
+      "copy-link-to-tab": "Copy link to tab",
       "tabs-toolbar": "Tabs toolbar",
       "insert-titled-tabs-that-show-one-panel-at-a-time": "Insert titled tabs that show one panel at a time."
     },
@@ -4512,6 +4513,7 @@
   "block_reference": {
     "copy_one": "Copy reference to this block",
     "copy_other": "Copy reference to these {{count}} blocks",
+    "copy_tab": "Copy link to this tab",
     "paste_as_link": "Paste reference as a link",
     "paste_as_excerpt": "Paste reference as an excerpt",
     "no_reference_on_clipboard": "The clipboard does not contain a block reference.",

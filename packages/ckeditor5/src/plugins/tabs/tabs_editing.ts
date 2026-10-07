@@ -14,8 +14,11 @@ import {
     Widget
 } from "ckeditor5";
 
+import { BLOCK_ID } from "../block_reference/block_reference_editing.js";
 import { CLASSES, ELEMENTS, TABS_WIDGET_PROPERTY } from "./constants.js";
-import { InsertTabCommand, InsertTabsCommand, MoveTabCommand, RemoveTabCommand } from "./tabs_commands.js";
+import {
+    AssignTabReferenceCommand, InsertTabCommand, InsertTabsCommand, MoveTabCommand, RemoveTabCommand
+} from "./tabs_commands.js";
 
 /**
  * Schema, conversion, commands and key handling for tabs blocks. The active tab is editing-view
@@ -44,6 +47,7 @@ export default class TabsEditing extends Plugin {
         editor.commands.add("removeTab", new RemoveTabCommand(editor));
         editor.commands.add("moveTabLeft", new MoveTabCommand(editor, "left"));
         editor.commands.add("moveTabRight", new MoveTabCommand(editor, "right"));
+        editor.commands.add("assignTabReference", new AssignTabReferenceCommand(editor));
 
         this.registerSchema();
         this.registerConversion();
@@ -105,6 +109,7 @@ export default class TabsEditing extends Plugin {
         });
         schema.register(ELEMENTS.tab, {
             allowIn: ELEMENTS.tabs,
+            allowAttributes: BLOCK_ID,
             isLimit: true
         });
         schema.register(ELEMENTS.tabTitle, {

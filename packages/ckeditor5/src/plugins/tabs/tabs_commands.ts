@@ -1,5 +1,6 @@
 import { Command, type Editor, type ModelElement, type ModelWriter } from "ckeditor5";
 
+import { BLOCK_ID, type BlockReferenceTarget, generateBlockId } from "../block_reference/block_reference_editing.js";
 import { ELEMENTS } from "./constants.js";
 
 /**
@@ -133,6 +134,32 @@ export class MoveTabCommand extends Command {
     private getNeighbor(tab: ModelElement | null) {
         const neighbor = this.direction === "left" ? tab?.previousSibling : tab?.nextSibling;
         return neighbor?.is("element", ELEMENTS.tab) ? neighbor : null;
+    }
+}
+
+/**
+ * Gives the tab holding the selection a block id, unless it has one, and returns it as the target
+ * of a block reference, so that a link to the tab resolves like a link to a block.
+ */
+export class AssignTabReferenceCommand extends Command {
+
+    public override refresh(): void {
+        const tab = getSelectedTab(this.editor);
+        this.isEnabled = !!tab && this.editor.model.schema.checkAttribute(tab, BLOCK_ID);
+    }
+
+    public override execute(): BlockReferenceTarget | null {
+        const tab = getSelectedTab(this.editor);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
+        if (!tab) {
+            return null;
+        }
+
+        if (!tab.hasAttribute(BLOCK_ID)) {
+            this.editor.model.change(writer => writer.setAttribute(BLOCK_ID, generateBlockId(), tab));
+        }
+        const id = tab.getAttribute(BLOCK_ID) as string;
+        return { startId: id, endId: id, count: 1 };
     }
 }
 

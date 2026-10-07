@@ -1,6 +1,8 @@
 import {
     ButtonView,
     type Command,
+    type Editor,
+    IconLink,
     IconNextArrow,
     IconPlus,
     IconPreviousArrow,
@@ -36,14 +38,29 @@ export default class TabsUI extends Plugin {
         this.addButton("removeTab", t("Remove tab"), IconRemove);
         this.addButton("moveTabLeft", t("Move tab left"), IconPreviousArrow);
         this.addButton("moveTabRight", t("Move tab right"), IconNextArrow);
+        this.addCopyLinkButton();
     }
 
     public afterInit(): void {
         const t = this.editor.t;
         this.editor.plugins.get(WidgetToolbarRepository).register("tabs", {
             ariaLabel: t("Tabs toolbar"),
-            items: ["insertTab", "removeTab", "|", "moveTabLeft", "moveTabRight"],
+            items: ["insertTab", "removeTab", "|", "moveTabLeft", "moveTabRight", "|", "copyTabLink"],
             getRelatedElement: getTabsWidget
+        });
+    }
+
+    /** Adds the button that copies a link to the tab holding the selection, through the host. */
+    private addCopyLinkButton() {
+        const editor = this.editor;
+        editor.ui.componentFactory.add("copyTabLink", locale => {
+            const button = new ButtonView(locale);
+            button.set({ label: editor.t("Copy link to tab"), icon: IconLink, tooltip: true });
+
+            const command = editor.commands.get("assignTabReference") as Command;
+            button.bind("isEnabled").to(command, "isEnabled");
+            this.listenTo(button, "execute", () => getHost(editor).copyTabReference?.());
+            return button;
         });
     }
 
@@ -64,6 +81,11 @@ export default class TabsUI extends Plugin {
             return button;
         });
     }
+}
+
+/** Returns the host component of `editor`, which copies links. */
+function getHost(editor: Editor) {
+    return glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
 }
 
 /** Returns the innermost tabs widget that is selected or holds the selection. */

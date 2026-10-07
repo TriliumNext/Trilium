@@ -10,6 +10,7 @@ import {
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import BlockReferenceEditing from "../block_reference/block_reference_editing.js";
 import Tabs from "./tabs.js";
 import { revealTab } from "./tabs_read_only.js";
 
@@ -30,7 +31,7 @@ describe("Tabs", () => {
         document.body.appendChild(domElement);
         editor = await ClassicEditor.create(domElement, {
             licenseKey: "GPL",
-            plugins: [Bookmark, Essentials, FindAndReplaceEditing, Paragraph, Tabs]
+            plugins: [BlockReferenceEditing, Bookmark, Essentials, FindAndReplaceEditing, Paragraph, Tabs]
         });
     });
 
@@ -180,6 +181,28 @@ describe("Tabs", () => {
         expect(bookmark).toBeTruthy();
         revealTab(bookmark as Element);
         expect(activeTitles()).toEqual(["Windows"]);
+    });
+
+    it("gives the tab holding the selection a reference id, saved on its section", () => {
+        editor.setData(TWO_TABS);
+        const command = editor.commands.get("assignTabReference");
+        expect(command).toBeDefined();
+        editor.model.change(writer => writer.setSelection(tabsElement(), "on"));
+        expect(command?.isEnabled).toBe(false);
+
+        const linux = tabsElement().getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(linux.getChild(1) as ModelElement, 0));
+        expect(command?.isEnabled).toBe(true);
+        const target = editor.execute("assignTabReference") as { startId: string; endId: string; count: number };
+
+        expect(target.startId).toMatch(/^[A-Za-z0-9]{12}$/);
+        expect(target).toEqual({ startId: target.startId, endId: target.startId, count: 1 });
+        const data = editor.getData();
+        expect(data).toContain(`<section class="trilium-tab" data-trilium-block-id="${target.startId}"><p class="trilium-tab-title">Linux</p>`);
+        expect(editor.execute("assignTabReference")).toEqual(target);
+
+        editor.setData(data);
+        expect((tabsElement().getChild(1) as ModelElement).getAttribute("blockId")).toBe(target.startId);
     });
 
     it("exposes the active tab and each panel's title to assistive technology", () => {

@@ -34,6 +34,7 @@ import "./plugins/file_upload/uploadfileplugin.js";
 import "./plugins/block_reference/block_reference.js";
 import "./plugins/content_embed/content_embed.js";
 import "./plugins/math/math.js";
+import "./plugins/tabs/tabs.js";
 import "./plugins/mermaid/mermaid.js";
 import "./plugins/referencelink.js";
 import "./plugins/table_context_menu.js";

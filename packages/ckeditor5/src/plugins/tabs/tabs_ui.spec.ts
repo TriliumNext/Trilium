@@ -1,6 +1,7 @@
 import { ButtonView, ClassicEditor, Essentials, Paragraph } from "ckeditor5";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { installGlobMock } from "../../../test/globals-test-kit.js";
 import Tabs from "./tabs.js";
 
 describe("TabsUI", () => {
@@ -32,5 +33,20 @@ describe("TabsUI", () => {
         expect(editor.getData()).toContain("trilium-tabs");
         expect(buttons.map(button => button.isEnabled)).toEqual([false, true, true, false, true]);
         expect(buttons.every(button => button.label && button.icon && button.tooltip)).toBe(true);
+    });
+
+    it("copies a link to the tab holding the selection through the host", () => {
+        const copyTabReference = vi.fn();
+        installGlobMock({ getComponentByEl: () => ({ copyTabReference }) });
+        editor.setData("<p>x</p>");
+        const button = editor.ui.componentFactory.create("copyTabLink") as ButtonView;
+        expect(button.isEnabled).toBe(false);
+
+        editor.execute("tabs");
+        expect(button.isEnabled).toBe(true);
+        expect(button.label && button.icon && button.tooltip).toBeTruthy();
+        button.fire("execute");
+
+        expect(copyTabReference).toHaveBeenCalledTimes(1);
     });
 });
