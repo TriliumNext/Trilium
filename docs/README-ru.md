@@ -19,6 +19,7 @@ LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes – это приложение для заметок с иерархической структурой,
@@ -375,11 +376,6 @@ Trilium не существовал бы без технологий, лежащ
   используемые в коллекциях.
 * [FancyTree](https://github.com/mar10/fancytree) - многофункциональная
   библиотека деревьев, не имеющая себе равных.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - библиотека визуальных связей.
-  Используется в [картах
-  связей](https://docs.triliumnotes.org/user-guide/note-types/relation-map) и
-  [картах
-  ссылок](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Поддержка
 

@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes adalah aplikasi pencatatan hierarkis lintas platform yang gratis
@@ -372,11 +373,6 @@ Trilium tidak akan mungkin ada tanpa teknologi yang mendukungnya:
   yang digunakan dalam koleksi.
 * [FancyTree](https://github.com/mar10/fancytree) - library tree kaya fitur
   tanpa pesaing nyata.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - library konektivitas visual.
-  Digunakan dalam [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) dan
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Dukungan
 

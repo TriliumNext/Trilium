@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes là một ứng dụng ghi chú phân cấp miễn phí, mã nguồn mở, đa nền
@@ -370,11 +371,6 @@ Trilium sẽ không thể tồn tại nếu không có các công nghệ đằng
   sử dụng trong các bộ sưu tập.
 * [FancyTree](https://github.com/mar10/fancytree) - thư viện cây phong phú tính
   năng, không có đối thủ thực sự.
-* [JsPlumb](https://github.com/jsplumb/jsplumb) - thư viện kết nối trực quan.
-  Được sử dụng trong [sơ đồ quan
-  hệ](https://docs.triliumnotes.org/user-guide/note-types/relation-map) và [sơ
-  đồ liên
-  kết](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Hỗ trợ
 

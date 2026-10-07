@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式，專注於建立大型個人知識庫。
@@ -294,8 +295,6 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Leaflet](https://github.com/Leaflet/Leaflet) —— 用於渲染地理地圖。
 * [Tabulator](https://github.com/olifolkerd/tabulator) —— 用於集合中的互動式表格。
 * [FancyTree](https://github.com/mar10/fancytree) —— 功能非常豐富的樹狀元件，無可匹敵。
-* [jsPlumb](https://github.com/jsplumb/jsplumb) ——
-  視覺連線函式庫。用於[關聯圖](https://docs.triliumnotes.org/user-guide/note-types/relation-map)與[連結圖](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 支援我們
 

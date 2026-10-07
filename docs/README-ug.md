@@ -19,6 +19,7 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 [Korean](./README-ko.md) | [Polish](./README-pl.md) | [Romanian](./README-ro.md)
 | [Russian](./README-ru.md) | [Spanish](./README-es.md) |
 [Ukrainian](./README-uk.md) | [Urdu](./README-ur.md) | [Uyghur](./README-ug.md)
+| [Vietnamese](./README-vi.md)
 <!-- translate:on -->
 
 Trilium Notes بولسا ھەقسىز، ئوچۇق كودلۇق، سىستېما ھالقىغان، قاتلاملىق خاتىرە
@@ -382,12 +383,6 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
   تەسىرلىشىدىغان جەدۋەللەر ئۈچۈن ئىشلىتىلىدۇ.
 * [FancyTree](https://github.com/mar10/fancytree) —— ئىقتىدارى مول بولغان
   دەرەخسىمان كونترول كۇتۇپخانىسى، ئۇنىڭغا تەڭ كېلىدىغان باشقا بىر كۇتۇپخانا يوق.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) —— كۆرۈنۈشچان ئۇلىنىش
-  كۇتۇپخانىسى. مۇناسىۋەت خەرىتىسى
-  (https://docs.triliumnotes.org/user-guide/note-types/relation-map) ۋە ئۇلىنىش
-  خەرىتىسى
-  (https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
-  ئۈچۈن ئىشلىتىلىدۇ
 
 ## 🤝 بىزنى قوللاش
 
