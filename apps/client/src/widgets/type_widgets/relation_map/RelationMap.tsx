@@ -17,7 +17,7 @@ import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
-import { useZoomPanKeyboard, ZOOM_PAN_VIEWPORT_CLASS } from "../../react/zoom_pan_keyboard";
+import { useZoomPanKeyboard } from "../../react/zoom_pan_keyboard";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, MapTransform } from "./api";
 import Connections from "./Connections";
@@ -282,7 +282,7 @@ export function MapViewport({ zoom, viewportRef, children }: {
     children: ComponentChildren;
 }) {
     return (
-        <div ref={viewportRef} className={clsx("relation-map-viewport", ZOOM_PAN_VIEWPORT_CLASS)} tabIndex={0}>
+        <div ref={viewportRef} className="relation-map-viewport" tabIndex={0}>
             <TransformWrapper
                 ref={zoom.ref}
                 minScale={MIN_SCALE}

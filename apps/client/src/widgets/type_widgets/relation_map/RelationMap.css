@@ -22,6 +22,10 @@
     height: 100%;
 }
 
+.relation-map-viewport {
+    outline: none;
+}
+
 .note-detail-relation-map .relation-map-connections {
     position: absolute;
     top: 0;
