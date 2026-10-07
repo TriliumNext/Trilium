@@ -4514,5 +4514,8 @@
     "filter": "Filtrar",
     "no_matches": "No hay coincidencias",
     "filter_placeholder": "Escriba para filtrar…"
+  },
+  "block_reference": {
+    "untitled": "Bloque"
   }
 }
