@@ -204,9 +204,10 @@ function DownloadFileButton({ note, parentComponent, ntxId }: NoteActionsCustomI
 }
 
 //#region Floating buttons
-function CopyReferenceToClipboardButton({ note, noteType }: NoteActionsCustomInnerProps) {
+function CopyReferenceToClipboardButton({ note, noteType, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(noteType);
+    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(noteType)
+        && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && (
         <>
