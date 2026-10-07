@@ -12,11 +12,12 @@ describe("relation map canvas clicks", () => {
     const onPlace = vi.fn();
     const onSelectNote = vi.fn();
     const onClickEmpty = vi.fn();
+    const onOpenNote = vi.fn();
 
     beforeEach(() => {
         container = document.createElement("div");
         document.body.appendChild(container);
-        for (const fn of [ onPlace, onSelectNote, onClickEmpty ]) fn.mockClear();
+        for (const fn of [ onPlace, onSelectNote, onClickEmpty, onOpenNote ]) fn.mockClear();
     });
 
     afterEach(() => {
@@ -30,12 +31,12 @@ describe("relation map canvas clicks", () => {
     /** The wrapper, the panned canvas with a box on it, and a toolbar standing over the canvas. */
     function Harness({ placing }: { placing: boolean }) {
         const containerRef = useRef<HTMLDivElement>(null);
-        const clickProps = useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty });
+        const clickProps = useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote });
         return (
             <div className="wrapper" {...clickProps}>
                 <div ref={containerRef} className="canvas">
                     <div id={noteIdToId("boxnote")} className="note-box">
-                        <a className="title" href="#root/boxnote">Box</a>
+                        <span className="title">Box</span>
                     </div>
                 </div>
                 <button className="toolbar" type="button" />
@@ -54,14 +55,14 @@ describe("relation map canvas clicks", () => {
     }
 
     /** A press and release at the same spot, or `moved` pixels apart. */
-    function click(target: HTMLElement, { moved = 0, ...init }: MouseEventInit & { moved?: number } = {}) {
+    function click(target: HTMLElement, { moved = 0, type = "click", ...init }: MouseEventInit & { moved?: number; type?: string } = {}) {
         target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10 }));
-        const event = new MouseEvent("click", { bubbles: true, cancelable: true, clientX: 10 + moved, clientY: 10, ...init });
+        const event = new MouseEvent(type, { bubbles: true, cancelable: true, clientX: 10 + moved, clientY: 10, ...init });
         act(() => { target.dispatchEvent(event); });
         return event;
     }
 
-    /** Clicks that reach the document, where `link.ts` handles a click on a link. */
+    /** Clicks that reach the document, where the app's own click handlers listen. */
     const reachedDocument = vi.fn();
     beforeEach(() => {
         reachedDocument.mockClear();
@@ -69,7 +70,7 @@ describe("relation map canvas clicks", () => {
     });
     afterEach(() => document.removeEventListener("click", reachedDocument));
 
-    it("selects the box clicked, keeping its title link from navigating", () => {
+    it("selects the box clicked, and keeps the click to the map", () => {
         const { title } = mount();
 
         const event = click(title);
@@ -79,16 +80,21 @@ describe("relation map canvas clicks", () => {
         expect(reachedDocument).not.toHaveBeenCalled();
     });
 
-    it("leaves a modified click to the link, and a pan or drag to the map", () => {
+    it("opens the note on a modified or middle click, and leaves a pan or drag to the map", () => {
         const { title, canvas } = mount();
 
-        click(title, { ctrlKey: true });
-        expect(reachedDocument).toHaveBeenCalledTimes(1);
+        const ctrlClick = click(title, { ctrlKey: true });
+        const middleClick = click(title, { type: "auxclick", button: 1 });
+        expect(onOpenNote.mock.calls).toEqual([ [ "boxnote", ctrlClick ], [ "boxnote", middleClick ] ]);
+        expect(reachedDocument).not.toHaveBeenCalled();
+
         click(title, { moved: 20 });
+        click(title, { moved: 20, ctrlKey: true });
         click(canvas, { moved: 20 });
 
         expect(onSelectNote).not.toHaveBeenCalled();
         expect(onClickEmpty).not.toHaveBeenCalled();
+        expect(onOpenNote).toHaveBeenCalledTimes(2);
     });
 
     it("closes the pane on empty canvas, but not on what stands over the map", () => {

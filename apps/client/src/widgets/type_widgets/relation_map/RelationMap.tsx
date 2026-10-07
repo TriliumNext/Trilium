@@ -10,8 +10,11 @@ import panzoom, { PanZoom, PanZoomOptions } from "panzoom";
 import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
+import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
+import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { goToLinkExt } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
@@ -126,7 +129,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
         placing: placement.placing,
         onPlace: placement.placeAt,
         onSelectNote: (noteId) => setSelection({ noteId }),
-        onClickEmpty: () => paneRef.current?.close()
+        onClickEmpty: () => paneRef.current?.close(),
+        onOpenNote: openNoteFromBox
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef });
 
@@ -447,31 +451,45 @@ function useNotePlacement({ ntxId, note, containerRef, mapApiRef, onArm, onCreat
 
 /**
  * Routes a click on the map: it places a new note while the map is armed, selects the box it lands
- * on, or closes the pane when it lands on empty canvas. A click that ends a pan or a drag counts as
+ * on, or closes the pane when it lands on empty canvas. A modified or middle click on a box opens its
+ * note the way a link would (a new tab, a new window). A click that ends a pan or a drag counts as
  * none of these, and clicks on whatever stands over the map (toolbars, the pane, the relation name
  * popover) are left alone.
- *
- * Captured, so a box's title link does not navigate away from the map. A modified click on the
- * title still reaches the link, which opens the note in a new tab or window.
  */
-export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty }: {
+export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, onClickEmpty, onOpenNote }: {
     containerRef: RefObject<HTMLDivElement | null>;
     placing: boolean;
     onPlace(e: MouseEvent): void;
     onSelectNote(noteId: string): void;
     onClickEmpty(): void;
-}): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onClickCapture"> {
+    onOpenNote(noteId: string, e: MouseEvent): void;
+}): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onClickCapture" | "onAuxClickCapture"> {
     const pressedAt = useRef<{ x: number; y: number }>(null);
+
+    /** Whether the click happened on the map itself, without the pointer moving since the press. */
+    const isPlainClickOnCanvas = (e: MouseEvent, container: HTMLDivElement) => {
+        const pressed = pressedAt.current;
+        return isOnCanvas(e, container)
+            && !(pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE);
+    };
+    const boxAt = (e: MouseEvent) => e.target instanceof Element ? e.target.closest<HTMLElement>(".note-box") : null;
 
     return {
         onPointerDownCapture(e) {
             pressedAt.current = { x: e.clientX, y: e.clientY };
         },
+        onAuxClickCapture(e) {
+            const container = containerRef.current;
+            const box = boxAt(e);
+            if (!container || e.button !== 1 || placing || !box || !isPlainClickOnCanvas(e, container)) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenNote(idToNoteId(box.id), e);
+        },
         onClickCapture(e) {
             const container = containerRef.current;
-            const pressed = pressedAt.current;
-            if (!container || !isOnCanvas(e, container) || e.button !== 0) return;
-            if (pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE) return;
+            if (!container || e.button !== 0 || !isPlainClickOnCanvas(e, container)) return;
 
             if (placing) {
                 e.preventDefault();
@@ -480,16 +498,19 @@ export function useCanvasClicks({ containerRef, placing, onPlace, onSelectNote, 
                 return;
             }
 
-            const box = e.target instanceof Element ? e.target.closest<HTMLElement>(".note-box") : null;
+            const box = boxAt(e);
             if (!box) {
                 onClickEmpty();
                 return;
             }
-            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
 
             e.preventDefault();
             e.stopPropagation();
-            onSelectNote(idToNoteId(box.id));
+            if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                onOpenNote(idToNoteId(box.id), e);
+            } else {
+                onSelectNote(idToNoteId(box.id));
+            }
         }
     };
 }
@@ -544,6 +565,16 @@ const PLACEMENT_OFFSET = { x: 80, y: 15 };
 
 /** How far, in pixels, the pointer can move between press and release for the click to count. */
 const CLICK_TOLERANCE = 4;
+
+/**
+ * Opens the note of a box the way a link to it opens: Ctrl or the middle button in a new tab, Shift
+ * in a new window (see `goToLinkExt`).
+ */
+function openNoteFromBox(noteId: string, e: MouseEvent) {
+    const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+    const notePath = froca.getNoteFromCache(noteId)?.getBestNotePathString(hoistedNoteId);
+    goToLinkExt(e, `#${notePath || noteId}`);
+}
 
 /** The map position, in unzoomed map pixels, of a box placed under the pointer. */
 function boxPositionAt(e: MouseEvent, container: HTMLDivElement) {

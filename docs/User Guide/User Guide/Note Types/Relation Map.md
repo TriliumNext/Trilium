@@ -9,12 +9,13 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   An existing note can also be dragged from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>. It will be placed at the position it's dragged on.
     *   Multiple notes can also be dragged via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Multiple%20selection.md">Multiple selection</a>. The notes will be positioned near the dragged position without overlapping.
     *   The dragged note can be a sub-child of the map, or it can be at any arbitrary position.
-*   To create a relationship, hold the mouse on the box on the right of a note and then:
+*   To create a relationship, hold the mouse on the dot on the right of a note and then:
     *   Drag it over another note to create a relationship pointing from the first note to the second one.
     *   Drag over the same note to create a self-referencing relationship (represented as a loop).
     *   Once dragged, a popover next to the relationship asks for its name. Type a new name and press <kbd>Enter</kbd>, or pick a relation name already in use from the suggestions. To cancel, press <kbd>Esc</kbd>, close the popover or click elsewhere on the map.
+*   Each note is shown as a card with its icon and title, colored in the note's color the same way as the cards of a <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban Board</a>.
 *   To view or edit a note, click it on the map. This opens the note panel (see below).
-    *   To open the note in a new tab instead, <kbd>Ctrl</kbd>+click its title, or use the right click menu.
+    *   To open the note in a new tab instead, <kbd>Ctrl</kbd>+click it or click it with the middle mouse button. <kbd>Shift</kbd>+click opens it in a new window. The right click menu offers the same options.
 *   To edit the title of a note or to delete it (either from the map, or delete it completely), right click the note.
 *   To rename or delete a relationship, right click it and select the corresponding option.
 

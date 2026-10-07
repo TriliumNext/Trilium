@@ -1,0 +1,85 @@
+/*
+ * The surface a note is drawn on as a card: an item of a board collection, a box on a relation
+ * map. The tokens keep the board's names, which themes already set.
+ *
+ * A card is coloured by `--board-item-hue` and the two saturations: its own note's colour where it
+ * has one (`with-hue`, from `FNote.getColorClass()`), otherwise grey. A host can set them from
+ * something else as well, as the board does for the column a card stands in. The defaults below are
+ * wrapped in `:where()` so that any host rule outweighs them.
+ */
+
+/* Defaults for a theme that sets none of its own; the light values, the app's own default look. */
+:where(:root) {
+  --board-item-background-saturation: 100%;
+  --board-item-background-lightness: 96%;
+
+  --board-item-hover-background-saturation: 100%;
+  --board-item-hover-background-lightness: 98.5%;
+
+  /* What a card at rest casts on what it stands on. */
+  --board-item-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+  /* The lift a card takes under the pointer, named so that a picked-out card can carry its ring
+     and this shadow together. */
+  --board-item-hover-shadow: 2px 4px 8px rgba(0, 0, 0, 0.1);
+  /* The ring a picked-out card carries. */
+  --board-selected-ring-color: var(--link-color);
+
+  /* What a card writes its text and icons in, and what it marks the quieter ones with. These are
+     what a card without a hue paints; with one, the pairs below replace them. */
+  --board-text-color: var(--main-text-color);
+  --board-muted-text-color: var(--muted-text-color);
+  /* How each is composed where the card carries a hue. The colour lends its hue alone: the
+     lightness is the theme's, so a coloured card reads as light as a plain one. */
+  --board-text-saturation: 30%;
+  --board-text-lightness: 8%;
+  --board-muted-text-saturation: 20%;
+  --board-muted-text-lightness: 40%;
+}
+
+:where(.tn-note-card) {
+  --board-item-hue: 0;
+  --board-item-saturation: 0%;
+  --board-item-hover-saturation: 0%;
+
+  color: var(--board-text-color);
+  background-color: var(--note-card-background);
+  box-shadow: var(--board-item-shadow);
+  border-radius: 5px;
+}
+
+:where(.tn-note-card:hover) {
+  background-color: var(--note-card-hover-background);
+  box-shadow: var(--board-item-hover-shadow);
+}
+
+:where(.tn-note-card.with-hue) {
+  --board-item-hue: var(--custom-color-hue);
+  --board-item-saturation: var(--board-item-background-saturation);
+  --board-item-hover-saturation: var(--board-item-hover-background-saturation);
+  --board-text-color: var(--note-card-text-color);
+  --board-muted-text-color: var(--note-card-muted-text-color);
+}
+
+/* Composed on the card itself, so they read the hue the card ends up with. */
+.tn-note-card {
+  --note-card-background: hsl(
+    var(--board-item-hue),
+    var(--board-item-saturation),
+    var(--board-item-background-lightness)
+  );
+  --note-card-hover-background: hsl(
+    var(--board-item-hue),
+    var(--board-item-hover-saturation),
+    var(--board-item-hover-background-lightness)
+  );
+  --note-card-text-color: hsl(
+    var(--board-item-hue),
+    var(--board-text-saturation),
+    var(--board-text-lightness)
+  );
+  --note-card-muted-text-color: hsl(
+    var(--board-item-hue),
+    var(--board-muted-text-saturation),
+    var(--board-muted-text-lightness)
+  );
+}

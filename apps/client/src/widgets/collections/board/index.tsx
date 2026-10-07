@@ -1,3 +1,4 @@
+import "../../note_card.css";
 import "./index.css";
 
 import clsx from "clsx";

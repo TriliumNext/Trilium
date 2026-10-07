@@ -14,37 +14,7 @@
     outline: none; /* remove dotted outline on click */
 }
 
-.note-detail-relation-map .note-box {
-    padding: 16px;
-    position: absolute !important;
-    background-color: var(--accented-background-color);
-    color: var(--main-text-color);
-    z-index: 4;
-    border: 1px solid #666;
-    box-shadow: 2px 2px 19px #999;
-    border-radius: 8px;
-    opacity: 0.8;
-    font-size: 11px;
-    width: auto;
-    height: auto;
-    max-width: 200px;
-    min-width: 150px;
-    max-height: 200px;
-    overflow: hidden;
-}
-
-.note-detail-relation-map .note-box:hover {
-    background-color: var(--more-accented-background-color);
-}
-
-.note-detail-relation-map .note-box .title {
-    font-size: larger;
-    font-weight: 600;
-}
-
-.note-detail-relation-map .connection-label.jtk-hover,
-.jtk-source-hover,
-.jtk-target-hover {
+.note-detail-relation-map .connection-label.jtk-hover {
     background-color: var(--more-accented-background-color);
 }
 
@@ -58,25 +28,6 @@
     cursor: pointer;
 }
 
-.note-detail-relation-map .endpoint {
-    position: absolute;
-    bottom: 37%;
-    inset-inline-end: 5px;
-    width: 1em;
-    height: 1em;
-    background-color: #333;
-    cursor: pointer;
-    box-shadow: 0 0 2px black;
-}
-
-.note-detail-relation-map .endpoint:hover {
-    box-shadow: 0 0 6px black;
-}
-
-.note-detail-relation-map .dragHover {
-    border: 2px solid orange;
-}
-
 .note-detail-relation-map path,
 .note-detail-relation-map .jtk-endpoint {
     cursor: pointer;
@@ -88,20 +39,4 @@
 
 .relation-map-wrapper.placing-note {
     cursor: crosshair;
-}
-
-.note-detail-relation-map .note-box.relation-map-ghost-note {
-    border-style: dashed;
-    pointer-events: none;
-    opacity: 0;
-
-    &.visible {
-        opacity: 0.5;
-    }
-}
-
-.note-detail-relation-map .note-box.selected {
-    border-color: var(--input-focus-outline-color);
-    box-shadow: 0 0 0 2px var(--input-focus-outline-color);
-    opacity: 1;
 }

@@ -1,14 +1,18 @@
+import "../../note_card.css";
+import "./NoteBox.css";
+
+import clsx from "clsx";
+import { RefObject } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
-import { useNoteProperty } from "../../react/hooks";
+
+import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import { JsPlumbItem } from "./jsplumb";
-import FNote from "../../../entities/fnote";
+import { useNoteColorClass, useNoteIcon, useNoteProperty } from "../../react/hooks";
 import RelationMapApi, { MapDataNoteEntry } from "./api";
-import { RefObject } from "preact";
-import NoteLink from "../../react/NoteLink";
-import { idToNoteId, noteIdToId } from "./utils";
 import { buildNoteContextMenuHandler } from "./context_menu";
+import { JsPlumbItem } from "./jsplumb";
+import { idToNoteId, noteIdToId } from "./utils";
 
 const NOTE_BOX_SOURCE_CONFIG = {
     filter: ".endpoint",
@@ -35,6 +39,8 @@ interface NoteBoxProps extends MapDataNoteEntry {
 export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
+    const icon = useNoteIcon(note);
+    const colorClass = useNoteColorClass(note);
     useEffect(() => {
         froca.getNote(noteId).then(setNote);
     }, [ noteId ]);
@@ -46,10 +52,10 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
     return note && (
         <JsPlumbItem
             id={noteIdToId(noteId)}
-            className={`note-box ${note?.getCssClass()}`}
+            className="note-box tn-note-card"
+            dynamicClassName={clsx(colorClass, note.getCssClass(), selected && "selected")}
             onContextMenu={contextMenuHandler}
             x={x} y={y}
-            selected={selected}
             draggable={{
                 start() {},
                 drag() {},
@@ -62,7 +68,8 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
             sourceConfig={NOTE_BOX_SOURCE_CONFIG}
             targetConfig={NOTE_BOX_TARGET_CONFIG}
         >
-            <NoteLink className="title" title={title} notePath={noteId} noTnLink noContextMenu />
+            <span className={clsx("note-box-icon", icon)} />
+            <span className="note-box-title">{title}</span>
             <div className="endpoint" title={t("relation_map.start_dragging_relations")} />
         </JsPlumbItem>
     )
@@ -75,8 +82,9 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
  */
 export function GhostNoteBox({ elementRef }: { elementRef: RefObject<HTMLDivElement | null> }) {
     return (
-        <div ref={elementRef} className="note-box relation-map-ghost-note" aria-hidden="true">
-            <span className="title">{t("relation_map.default_new_note_title")}</span>
+        <div ref={elementRef} className="note-box tn-note-card relation-map-ghost-note" aria-hidden="true">
+            <span className="note-box-icon bx bx-note" />
+            <span className="note-box-title">{t("relation_map.default_new_note_title")}</span>
         </div>
     );
 }
