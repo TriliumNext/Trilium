@@ -1,12 +1,11 @@
 import { t } from "i18next";
 import "./FloatingButtons.css";
-import { useNoteContext, useNoteLabel, useNoteLabelBoolean } from "./react/hooks";
+import { useNoteContext } from "./react/hooks";
 import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 import { ParentComponent } from "./react/react_utils";
 import { EventData, EventNames } from "../components/app_context";
 import { type FloatingButtonsList, type FloatingButtonContext } from "./FloatingButtonsDefinitions";
 import ActionButton from "./react/ActionButton";
-import { ViewTypeOptions } from "./collections/interface";
 
 interface FloatingButtonsProps {
     items: FloatingButtonsList;
@@ -22,8 +21,6 @@ interface FloatingButtonsProps {
 export default function FloatingButtons({ items }: FloatingButtonsProps) {
     const { note, noteContext } = useNoteContext();
     const parentComponent = useContext(ParentComponent);
-    const [ viewType ] = useNoteLabel(note, "viewType");
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const context = useMemo<FloatingButtonContext | null>(() => {
         if (!note || !noteContext || !parentComponent) return null;
 
@@ -31,8 +28,6 @@ export default function FloatingButtons({ items }: FloatingButtonsProps) {
             note,
             noteContext,
             isDefaultViewMode: noteContext.viewScope?.viewMode === "default",
-            viewType: viewType as ViewTypeOptions,
-            isReadOnly,
             triggerEvent<T extends EventNames>(name: T, data?: Omit<EventData<T>, "ntxId">) {
                 parentComponent.triggerEvent(name, {
                     ntxId: noteContext.ntxId,
@@ -40,7 +35,7 @@ export default function FloatingButtons({ items }: FloatingButtonsProps) {
                 } as EventData<T>);
             }
         };
-    }, [ note, noteContext, parentComponent, viewType, isReadOnly ]);
+    }, [ note, noteContext, parentComponent ]);
 
     // Manage the user-adjustable visibility of the floating buttons.
     const [ visible, setVisible ] = useState(true);
