@@ -64,18 +64,40 @@ describe("replaceBlockRangeContent", () => {
         );
     });
 
+    it("applies the list properties edited with the items to the whole list", () => {
+        const items = `<li><p data-trilium-block-id="a">4</p></li>`
+            + `<li><p data-trilium-block-id="b">5</p></li></ol>`;
+        const rest = LIST.slice(LIST.indexOf(">") + 1);
+        const replace = (openTag: string) => replaceBlockRangeContent(LIST, "a:b", openTag + items);
+
+        expect(replace(`<ol start="10" class="numbered">`)).toBe(
+            `<ol start="9" class="numbered">${rest}`
+        );
+        expect(replace(`<ol start="4" class="numbered" style="list-style-type:lower-roman;">`))
+            .toBe(`<ol start="3" class="numbered" style="list-style-type:lower-roman;">${rest}`);
+        expect(replace(`<ol start="4" class="numbered" reversed>`)).toBe(
+            `<ol start="5" class="numbered" reversed>${rest}`
+        );
+    });
+
     it("splits the list around list items that change into other content", () => {
         const paragraph = `<p data-trilium-block-id="a">Not an item</p>`;
         const bullets = `<ul><li><p data-trilium-block-id="x">Bullet</p></li></ul>`;
+        const reversed = `<ol reversed><li>3</li><li><p data-trilium-block-id="a">2</p></li>`
+            + `<li>1</li></ol>`;
 
         expect(replaceBlockRangeContent(LIST, "a:b", paragraph)).toBe(
             `<ol start="3" class="numbered"><li><p data-trilium-block-id="x">3</p></li>\n</ol>`
             + paragraph
-            + `<ol start="3" class="numbered"><li><p>6</p></li></ol>`
+            + `<ol start="6" class="numbered"><li><p>6</p></li></ol>`
         );
         expect(replaceBlockRangeContent(LIST, "x:a", bullets)).toBe(
-            `${bullets}<ol start="3" class="numbered">`
+            `${bullets}<ol start="5" class="numbered">`
             + `<li><p data-trilium-block-id="b">5</p></li><li><p>6</p></li></ol>`
+        );
+        expect(replaceBlockRangeContent(reversed, "a", paragraph)).toBe(
+            `<ol reversed start="3"><li>3</li></ol>${paragraph}`
+            + `<ol reversed start="1"><li>1</li></ol>`
         );
     });
 });

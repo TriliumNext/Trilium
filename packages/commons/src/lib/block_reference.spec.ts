@@ -6,6 +6,7 @@ import {
     encodeBlockParameter,
     formatBlockRange,
     getEditableBlockRun,
+    getListItemNumber,
     isValidBlockId,
     parseBlockRange,
     resolveBlockRange,
@@ -155,15 +156,34 @@ describe("sliceToBlockReference", () => {
         const list = el("ol", {}, el("li", {}, text("1")), text(" "), el("li", {}, text("2")),
             el("li", {}, block("p", "x")));
         const numberedList = el("ol", { start: "4" }, el("li", {}, text("4")), block("li", "x"));
+        const reversedList = el("ol", { reversed: "" }, block("li", "x", text("3")),
+            el("li", {}, text("2")), el("li", {}, text("1")));
+        const numberedReversedList = el("ol", { reversed: "", start: "10" },
+            el("li", {}, text("10")), block("li", "x"), el("li", {}, text("8")));
         const bulletList = el("ul", {}, el("li", {}, text("a")), block("li", "x"));
 
-        for (const container of [ list, numberedList, bulletList ]) {
+        for (const container of [
+            list, numberedList, reversedList, numberedReversedList, bulletList
+        ]) {
             sliceToBlockReference(el("div", {}, container), "x");
         }
 
         expect(list.getAttribute("start")).toBe("3");
         expect(numberedList.getAttribute("start")).toBe("5");
+        expect(reversedList.getAttribute("start")).toBe("3");
+        expect(numberedReversedList.getAttribute("start")).toBe("9");
         expect(bulletList.getAttribute("start")).toBeNull();
+    });
+});
+
+describe("getListItemNumber", () => {
+    it("counts up from the start of a list, and down in a reversed list", () => {
+        const items = () => [ el("li", {}), text(" "), el("li", {}) ];
+
+        expect(getListItemNumber(el("ol", {}, ...items()), 1)).toBe(2);
+        expect(getListItemNumber(el("ol", { start: "5" }, ...items()), -2)).toBe(3);
+        expect(getListItemNumber(el("ol", { reversed: "" }, ...items()), 0)).toBe(2);
+        expect(getListItemNumber(el("ol", { reversed: "", start: "5" }, ...items()), -1)).toBe(6);
     });
 });
 

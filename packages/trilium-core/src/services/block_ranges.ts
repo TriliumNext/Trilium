@@ -1,7 +1,7 @@
 import {
-    BLOCK_ID_ATTRIBUTE, getEditableBlockRun, sliceToBlockReference
+    BLOCK_ID_ATTRIBUTE, getEditableBlockRun, getListItemNumber, sliceToBlockReference
 } from "@triliumnext/commons";
-import { HTMLElement, parse } from "node-html-parser";
+import { HTMLElement, Node, parse } from "node-html-parser";
 
 /**
  * The HTML of the blocks of `content` that `block`, a `block` link parameter, points at, to edit
@@ -44,24 +44,47 @@ export function replaceBlockRangeContent(content: string, block: string, fragmen
     }
 
     const list = run.parent;
+    const items = list.childNodes.filter((node) => isTag(node, "LI"));
+    const firstChild = list.childNodes[0];
+    const lastChild = list.childNodes[list.childNodes.length - 1];
     const editedList = getSameList(edited, list);
     if (editedList) {
-        return splice(content, start, end, editedList.innerHTML);
+        const firstNumber = getListItemNumber(editedList, -items.indexOf(run.first));
+        const openTag = getOpenTag(editedList, firstNumber);
+        const withItems = splice(content, start, end, editedList.innerHTML);
+        return openTag === getOpenTag(list, getListItemNumber(list, 0))
+            ? withItems
+            : splice(withItems, list.range[0], firstChild.range[0], openTag);
     }
 
     // The edited items are no longer items of the list, which splits around them.
-    const firstItem = list.childNodes[0];
-    const lastItem = list.childNodes[list.childNodes.length - 1];
-    const openTag = content.slice(list.range[0], firstItem.range[0]);
-    const closeTag = content.slice(lastItem.range[1], list.range[1]);
-    const wrap = (items: string) => (items.trim() ? `${openTag}${items}${closeTag}` : "");
-    const before = wrap(content.slice(firstItem.range[0], start));
-    const after = wrap(content.slice(end, lastItem.range[1]));
+    const closeTag = content.slice(lastChild.range[1], list.range[1]);
+    const wrap = (html: string, firstNumber: number) => (
+        html.trim() ? `${getOpenTag(list, firstNumber)}${html}${closeTag}` : ""
+    );
+    const before = wrap(content.slice(firstChild.range[0], start), getListItemNumber(list, 0));
+    const after = wrap(
+        content.slice(end, lastChild.range[1]),
+        getListItemNumber(list, items.indexOf(run.last) + 1)
+    );
     return splice(content, list.range[0], list.range[1], `${before}${edited.toString()}${after}`);
 }
 
 function isList(node: HTMLElement) {
-    return node.tagName === "UL" || node.tagName === "OL";
+    return isTag(node, "UL") || isTag(node, "OL");
+}
+
+function isTag(node: Node, tagName: string) {
+    return node instanceof HTMLElement && node.tagName === tagName;
+}
+
+/** The opening tag of `list`, numbered from `firstNumber` when it is ordered. */
+function getOpenTag(list: HTMLElement, firstNumber: number) {
+    const tag = new HTMLElement(list.rawTagName, {}, list.rawAttrs);
+    if (isTag(tag, "OL")) {
+        tag.setAttribute("start", String(firstNumber));
+    }
+    return `<${tag.rawTagName}${tag.rawAttrs ? ` ${tag.rawAttrs}` : ""}>`;
 }
 
 function getBlockIdsOutside(root: HTMLElement, start: number, end: number) {

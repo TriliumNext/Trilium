@@ -136,6 +136,18 @@ export function getEditableBlockRun<T extends BlockNode>(
     return isContainer ? { parent, first, last } : null;
 }
 
+/**
+ * The number that the item at `index` of the ordered `list` shows, as the browser numbers it. A
+ * negative `index` counts on before the first item.
+ */
+export function getListItemNumber(list: BlockNode, index: number) {
+    const isReversed = typeof list.getAttribute?.("reversed") === "string";
+    const start = Number.parseInt(list.getAttribute?.("start") ?? "", 10);
+    const itemCount = Array.from(list.childNodes).filter((node) => isTag(node, "LI")).length;
+    const first = Number.isNaN(start) ? (isReversed ? itemCount : 1) : start;
+    return isReversed ? first - index : first + index;
+}
+
 const RUN_CONTAINERS = new Set([
     "ASIDE", "BLOCKQUOTE", "DETAILS", "DIV", "LI", "OL", "SECTION", "UL"
 ]);
@@ -170,8 +182,8 @@ function sliceToBlockRange(root: BlockNode, start: BlockNode, end: BlockNode) {
     for (let node = start; node !== root && node.parentNode; node = node.parentNode) {
         const siblings = Array.from(node.parentNode.childNodes);
         const removed = siblings.slice(0, siblings.indexOf(node));
+        keepListNumbering(node.parentNode, removed.filter((other) => isTag(other, "LI")).length);
         removeNodes(removed);
-        keepListNumbering(node.parentNode, removed);
     }
 
     for (let node = end; node !== root && node.parentNode; node = node.parentNode) {
@@ -193,15 +205,11 @@ function removeNodes(nodes: BlockNode[]) {
     }
 }
 
-function keepListNumbering(list: BlockNode, removed: BlockNode[]) {
-    const removedItems = removed.filter((node) => isTag(node, "LI")).length;
-    if (!isTag(list, "OL") || !removedItems) {
-        return;
+/** Sets the `start` of `list` so that its item at `index` keeps its number once it comes first. */
+function keepListNumbering(list: BlockNode, index: number) {
+    if (isTag(list, "OL")) {
+        list.setAttribute?.("start", String(getListItemNumber(list, index)));
     }
-
-    const start = Number.parseInt(list.getAttribute?.("start") ?? "", 10);
-    const firstNumber = Number.isNaN(start) ? 1 : start;
-    list.setAttribute?.("start", String(firstNumber + removedItems));
 }
 
 function isTag(node: BlockNode, tagName: string) {
