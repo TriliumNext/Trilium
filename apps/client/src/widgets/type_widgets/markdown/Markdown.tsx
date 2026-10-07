@@ -1,12 +1,13 @@
 import "./Markdown.css";
 import "./MarkdownCommons.css";
 
+import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import VanillaCodeMirror from "@triliumnext/codemirror";
 import { findWikilinkNoteIds, triliumNoteChips } from "@triliumnext/codemirror/src/extensions/trilium_note_chips";
 import { CustomMarkdownRenderer, renderToHtml } from "@triliumnext/commons/src/lib/markdown_renderer";
-import { createLiteralTildeExtension } from "@triliumnext/commons/src/lib/marked_extensions";
+import { createLiteralTildeExtension, createTabsExtensions } from "@triliumnext/commons/src/lib/marked_extensions";
 import DOMPurify from "dompurify";
-import { Marked, type Tokens } from "marked";
+import { Marked, type Token, type Tokens } from "marked";
 import { createContext } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
 
@@ -31,8 +32,9 @@ import { insertText, replaceSelection, uploadImageAndInsert } from "./editor_uti
 
 const marked = new Marked({ breaks: true, gfm: true });
 // Headings in the outline are rendered by this instance rather than by `renderToHtml`, so it needs
-// the same single-tilde handling to stay consistent with the preview body.
-marked.use({ extensions: [createLiteralTildeExtension()] });
+// the same single-tilde handling to stay consistent with the preview body. `renderWithSourceLines`
+// pairs its top-level tokens with the rendered blocks, so it also needs every block extension.
+marked.use({ extensions: [createLiteralTildeExtension(), ...createTabsExtensions()] });
 
 /**
  * The default {@link CustomMarkdownRenderer} falls back to
@@ -304,9 +306,10 @@ function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElem
 
         let current: HTMLElement | null = null;
 
-        function update() {
+        function update(revealCursorTab: boolean) {
             if (!view || !preview) return;
             const activeLine = view.state.doc.lineAt(view.state.selection.main.head).number;
+            if (revealCursorTab) revealTabAtLine(preview, activeLine);
             const blocks = preview.querySelectorAll<HTMLElement>("[data-source-line]");
             const match = findActiveBlock(blocks, activeLine);
 
@@ -321,19 +324,34 @@ function useSyncedHighlight(view: VanillaCodeMirror | null, preview: HTMLDivElem
             preview.style.setProperty("--markdown-preview-marker-height", `${match?.offsetHeight ?? 0}px`);
         }
 
-        update();
-        const observer = new ResizeObserver(update);
+        // A resize leaves the tabs alone, so a tab picked in the preview stays shown.
+        update(true);
+        const observer = new ResizeObserver(() => update(false));
         observer.observe(preview);
         for (const block of preview.children) observer.observe(block);
 
         const unsubscribe = view.addUpdateListener((v) => {
-            if (v.selectionSet || v.docChanged) update();
+            if (v.selectionSet || v.docChanged) update(true);
         });
         return () => {
             observer.disconnect();
             unsubscribe();
         };
     }, [ view, preview, html ]);
+}
+
+/**
+ * Shows the tab that `line` falls in, nested tabs included: the last tab whose header starts at or
+ * before `line` within the top-level block that holds it. A line outside every tabs block leaves the
+ * tabs as they are.
+ */
+export function revealTabAtLine(preview: HTMLElement, line: number) {
+    const block = findActiveBlock(preview.querySelectorAll<HTMLElement>(":scope > [data-source-line]"), line);
+    let match: HTMLElement | null = null;
+    for (const tab of block?.querySelectorAll<HTMLElement>("section.trilium-tab") ?? []) {
+        if (Number(tab.dataset.tabSourceLine) <= line) match = tab;
+    }
+    if (match) revealTab(match);
 }
 
 /** The last block that starts at or before `activeLine`, i.e. the one the cursor sits in. */
@@ -680,7 +698,51 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
         children[i].setAttribute("data-source-line", String(sourceLine));
     }
 
+    // A separate attribute: the scroll sync and the active-line marker measure every
+    // `[data-source-line]` element, and a hidden tab has no geometry.
+    const tabLines = collectTabLines(tokens, 1);
+    const tabs = container.querySelectorAll<HTMLElement>("section.trilium-tab");
+    if (tabs.length === tabLines.length) {
+        for (const [ index, tab ] of tabs.entries()) {
+            tab.dataset.tabSourceLine = String(tabLines[index]);
+        }
+    }
+
     return { html: container.innerHTML, headings, highlights: extractHighlights(container) };
+}
+
+/**
+ * The 1-indexed line of every tab header, in document order, which is also the order of the
+ * rendered `section.trilium-tab` elements. A tab panel is dedented, which keeps its line count, so
+ * the lines of nested tabs follow from their parent tab. Inside a list or a block quote the lines
+ * are approximate.
+ */
+function collectTabLines(tokens: Token[], firstLine: number): number[] {
+    const lines: number[] = [];
+    let line = firstLine;
+    for (const token of tokens) {
+        if (token.type === "tabs") {
+            let tabLine = line;
+            for (const tab of (token as Tokens.Generic).tokens ?? []) {
+                lines.push(tabLine);
+                // The panel starts below the `=== "Title"` line.
+                lines.push(...collectTabLines((tab as Tokens.Generic).tokens ?? [], tabLine + 1));
+                tabLine += countNewlines(tab.raw);
+            }
+        } else if (token.type === "list") {
+            for (const item of (token as Tokens.List).items) {
+                lines.push(...collectTabLines(item.tokens, line));
+            }
+        } else if (token.type === "blockquote") {
+            lines.push(...collectTabLines((token as Tokens.Blockquote).tokens, line));
+        }
+        line += countNewlines(token.raw);
+    }
+    return lines;
+}
+
+function countNewlines(text: string) {
+    return (text.match(/\n/g) ?? []).length;
 }
 
 /**
