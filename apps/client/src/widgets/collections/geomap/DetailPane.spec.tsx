@@ -176,12 +176,14 @@ describe("DetailPane", () => {
         container = document.createElement("div");
         document.body.appendChild(container);
 
-        // `tabManager` is only built when the app starts, and the pane asks it where the reader is
-        // hoisted.
+        // `tabManager` is only built when the app starts. The pane asks it where the reader is
+        // hoisted, and registers its note context with it.
         (appContext as unknown as { tabManager: unknown }).tabManager = {
             getActiveContext: () => undefined,
             getActiveContextNotePath: () => undefined,
-            openContextWithNote: async () => undefined
+            openContextWithNote: async () => undefined,
+            registerDetachedContext: () => undefined,
+            unregisterDetachedContext: () => undefined
         };
         editorAskedToSave.mockClear();
         onRelocate.mockClear();
@@ -191,7 +193,6 @@ describe("DetailPane", () => {
     });
 
     afterEach(() => {
-        (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
         mapComponent = undefined;
 
         if (container) {
@@ -199,6 +200,7 @@ describe("DetailPane", () => {
             container.remove();
             container = undefined;
         }
+        (appContext as unknown as { tabManager: unknown }).tabManager = undefined;
     });
 
     /** Stands in for the map's own component, which is what the pane hangs under. */

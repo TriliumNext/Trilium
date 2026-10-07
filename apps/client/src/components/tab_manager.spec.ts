@@ -270,4 +270,21 @@ describe("note contexts outside the tab row", () => {
         expect(tm.getCommandContext("_popup-editor")).toBe(popupContext);
         expect(tm.getCommandContext(undefined)).toBe(tab);
     });
+
+    it("forgets a context once unregistered, and resolves an unknown one to nothing", async () => {
+        const tm = new TabManager();
+        await openEmptyTabs(tm, 1);
+        const replaced = new NoteContext("_tree-popup");
+        const current = new NoteContext("_tree-popup");
+
+        tm.registerDetachedContext(replaced);
+        tm.registerDetachedContext(current);
+        // Unregistering the context a host replaced leaves the one it replaced it with.
+        tm.unregisterDetachedContext(replaced);
+        expect(tm.getCommandContext("_tree-popup")).toBe(current);
+
+        tm.unregisterDetachedContext(current);
+        expect(tm.getCommandContext("_tree-popup")).toBeNull();
+        expect(tm.getCommandContext("_nowhere")).toBeNull();
+    });
 });

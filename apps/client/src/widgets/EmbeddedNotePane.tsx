@@ -14,7 +14,7 @@ import link from "../services/link";
 import ActionButton from "./react/ActionButton";
 import Dropdown, { DropdownPanel } from "./react/Dropdown";
 import { FormListItem } from "./react/FormList";
-import { useNoteContext } from "./react/hooks";
+import { useDetachedNoteContext, useNoteContext } from "./react/hooks";
 import { NoteContextContext, ParentComponent } from "./react/react_utils";
 
 /*
@@ -46,6 +46,7 @@ export function useEmbeddedNoteContext(note: FNote | undefined, ntxId: string) {
     const parentComponent = useContext(ParentComponent);
     const [ noteContext ] = useState(() => new NoteContext(ntxId));
     const [ component ] = useState(() => new Component());
+    useDetachedNoteContext(noteContext);
 
     useEffect(() => {
         if (!parentComponent) return;

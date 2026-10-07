@@ -79,6 +79,13 @@ export default class TabManager extends Component {
         }
     }
 
+    /** Removes `noteContext`, unless another context has since been registered under its `ntxId`. */
+    unregisterDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId && this.detachedContexts.get(noteContext.ntxId) === noteContext) {
+            this.detachedContexts.delete(noteContext.ntxId);
+        }
+    }
+
     get mainNoteContexts(): NoteContext[] {
         return this.noteContexts.filter((nc) => !nc.mainNtxId);
     }
@@ -228,9 +235,13 @@ export default class TabManager extends Component {
         return this.activeNtxId ? this.getNoteContextById(this.activeNtxId).getMainContext() : null;
     }
 
-    /** Returns the note context with the given `ntxId`, or the active one when `ntxId` is empty. */
+    /** Returns the note context with the given `ntxId`, or the active one when `ntxId` is empty. Returns `null` for an unknown `ntxId`. */
     getCommandContext(ntxId: string | null | undefined): NoteContext | null {
-        return ntxId ? this.getNoteContextById(ntxId) : this.getActiveContext();
+        if (!ntxId) {
+            return this.getActiveContext();
+        }
+
+        return this.noteContexts.find((nc) => nc.ntxId === ntxId) ?? this.detachedContexts.get(ntxId) ?? null;
     }
 
     getActiveContextNotePath(): string | null {

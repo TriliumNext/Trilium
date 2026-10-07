@@ -571,6 +571,17 @@ export function isContextInActiveTab(
  * Similar to {@link useNoteContext}, but instead of using the note context from the split container that the component is part of, it uses the active note context instead
  * (the note currently focused by the user).
  */
+/**
+ * Registers `noteContext`, built outside the tab row, with `TabManager` for as long as the component
+ * uses it, so that commands naming its `ntxId` resolve to it.
+ */
+export function useDetachedNoteContext(noteContext: NoteContext) {
+    useEffect(() => {
+        appContext.tabManager.registerDetachedContext(noteContext);
+        return () => appContext.tabManager.unregisterDetachedContext(noteContext);
+    }, [ noteContext ]);
+}
+
 export function useActiveNoteContext() {
     const [ noteContext, setNoteContext ] = useState<NoteContext | undefined>(appContext.tabManager.getActiveContext() ?? undefined);
     const [ notePath, setNotePath ] = useState<string | null | undefined>();

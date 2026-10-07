@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
     openInNewTab: vi.fn(),
     openContextWithNote: vi.fn(),
     registerDetachedContext: vi.fn(),
+    unregisterDetachedContext: vi.fn(),
     getNote: vi.fn(),
     getAttachment: vi.fn(),
     /** Every context the popup created, newest last — one is built per open. */
@@ -26,7 +27,8 @@ vi.mock("../../components/app_context", () => ({
         tabManager: {
             openInNewTab: mocks.openInNewTab,
             openContextWithNote: mocks.openContextWithNote,
-            registerDetachedContext: mocks.registerDetachedContext
+            registerDetachedContext: mocks.registerDetachedContext,
+            unregisterDetachedContext: mocks.unregisterDetachedContext
         }
     }
 }));

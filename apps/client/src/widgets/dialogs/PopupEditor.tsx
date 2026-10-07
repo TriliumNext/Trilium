@@ -19,7 +19,7 @@ import TitleRow from "../layout/TitleRow";
 import NoteDetail from "../NoteDetail";
 import PromotedAttributes from "../PromotedAttributes";
 import { DropdownPanel, type DropdownHandle } from "../react/Dropdown";
-import { useContainedLinkNavigation, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
+import { useContainedLinkNavigation, useDetachedNoteContext, useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 import { NoteContextContext, ParentComponent, POPUP_EDITOR_NTX_ID } from "../react/react_utils";
 import { BacklinksWidget, useBacklinkCount } from "../sidebar/Backlinks";
@@ -47,6 +47,7 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
     const [ noteContext, setNoteContext ] = useState(() => new NoteContext(ntxId));
     const modalRef = useRef<HTMLDivElement>(null);
     const isMobile = utils.isMobile();
+    useDetachedNoteContext(noteContext);
 
     useTriliumEvent(openCommand, async ({ noteIdOrPath, viewScope, showNoteTypeSwitcher }) => {
         const noteId = tree.getNoteIdAndParentIdFromUrl(noteIdOrPath);
@@ -77,7 +78,6 @@ export default function PopupEditor({ ntxId = POPUP_EDITOR_NTX_ID, openCommand =
 
         // Events triggered at note context level (e.g. the save indicator) would not work since the note context has no parent component. Propagate events to parent component so that they can be handled properly.
         noteContext.triggerEvent = (name, data) => parentComponent?.handleEventInChildren(name, data);
-        appContext.tabManager.registerDetachedContext(noteContext);
         setNoteContext(noteContext);
         setShown(true);
     });
