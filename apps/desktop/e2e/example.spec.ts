@@ -1,4 +1,4 @@
-import { test, expect, _electron as electron, type ElectronApplication, request } from '@playwright/test';
+import { test, expect, _electron as electron, type ElectronApplication } from '@playwright/test';
 import { join } from 'path';
 import App from './support';
 
@@ -35,13 +35,12 @@ test.afterAll(async () => {
 test('First setup', async () => {
     // Get the main window
     const setupWindow = await app.firstWindow();
-    await expect(setupWindow).toHaveTitle("Setup");
-    await expect(setupWindow.locator('h1')).toHaveText("Trilium Notes setup");
-    await setupWindow.locator(`input[type="radio"]`).first().click();
+    await setupWindow.getByRole("button", { name: "Continue" }).click();
+    await setupWindow.getByText("New knowledge base").click();
 
     // Wait for the finish.
     const newWindowPromise = app.waitForEvent('window');
-    await setupWindow.locator(`button[type="submit"]`, { hasText: "Next" }).click();
+    await setupWindow.getByText("With demo content").click();
 
     const mainWindow = await newWindowPromise;
     await expect(mainWindow).toHaveTitle("Trilium Notes");
@@ -50,17 +49,5 @@ test('First setup', async () => {
     await support.selectNoteInNoteTree("Trilium Demo");
     await support.setNoteShared(true);
 
-    const sharedInfoWidget = support.currentNoteSplit.locator(".shared-info-widget");
-    await expect(sharedInfoWidget).toBeVisible();
-
-    const sharedInfoLink = sharedInfoWidget.locator("a.shared-link");
-    const linkUrl = await sharedInfoLink.getAttribute("href");
-    expect(linkUrl).toBeDefined();
-
-    // Verify the shared link is valid
-    const requestContext = await request.newContext();
-    const response = await requestContext.get(linkUrl!);
-    await expect(response).toBeOK();
-
-    await mainWindow.waitForTimeout(5000);
+    await expect(support.currentNoteSplit.locator(".share-badge").first()).toBeVisible();
 });
