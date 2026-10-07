@@ -171,10 +171,14 @@ export default class Entrypoints extends Component {
         await appContext.tabManager.openInSameTab(todayNote.noteId);
     }
 
-    async runActiveNoteCommand({ ntxId: requestedNtxId, noteId }: CommandListenerData<"runActiveNote"> = {}) {
-        const activeContext = appContext.tabManager.getActiveContext();
-        const note = noteId ? await froca.getNote(noteId) : activeContext?.note;
-        const ntxId = noteId ? requestedNtxId : activeContext?.ntxId;
+    async runActiveNoteCommand({ ntxId: requestedNtxId }: CommandListenerData<"runActiveNote"> = {}) {
+        const noteContext = requestedNtxId
+            ? appContext.tabManager.getNoteContextById(requestedNtxId)
+            : appContext.tabManager.getActiveContext();
+        if (!noteContext) {
+            return;
+        }
+        const { ntxId, note } = noteContext;
 
         // ctrl+enter is also used elsewhere, so make sure we're running only when appropriate
         if (!note || note.type !== "code") {

@@ -85,20 +85,24 @@ describe("runActiveNoteCommand", () => {
         vi.restoreAllMocks();
     });
 
-    it("runs the note the command names, in its own context, rather than the active tab's", async () => {
+    it("runs the note of the context the command names, rather than the active tab's", async () => {
         buildNote({ id: "tabNote", title: "Tab", type: "code", mime: "text/x-sqlite;schema=trilium" });
         buildNote({ id: "popupQuery", title: "Popup", type: "code", mime: "text/x-sqlite;schema=trilium" });
         const tabContext = { ntxId: "tab", note: froca.getNoteFromCache("tabNote") } as NoteContext;
-        appContext.tabManager = { getActiveContext: () => tabContext } as TabManager;
+        const popupContext = { ntxId: "_popup-editor", note: froca.getNoteFromCache("popupQuery") } as NoteContext;
+        appContext.tabManager = {
+            getActiveContext: () => tabContext,
+            getNoteContextById: (ntxId: string | null) => (ntxId === popupContext.ntxId ? popupContext : tabContext)
+        } as TabManager;
         const post = vi.spyOn(server, "post").mockResolvedValue({ success: true, results: [] });
         const triggerEvent = vi.spyOn(appContext, "triggerEvent").mockResolvedValue(undefined);
         vi.spyOn(toastService, "showMessage").mockImplementation(() => {});
 
-        await entrypoints.runActiveNoteCommand({ ntxId: "_popup-editor", noteId: "popupQuery" });
+        await entrypoints.runActiveNoteCommand({ ntxId: "_popup-editor" });
         expect(post).toHaveBeenCalledWith("sql/execute/popupQuery");
         expect(triggerEvent).toHaveBeenCalledWith("sqlQueryResults", expect.objectContaining({ ntxId: "_popup-editor" }));
 
-        // Without a note named, as the badges trigger it, the active tab's note runs.
+        // Without a context named, the active tab's note runs.
         post.mockClear();
         await entrypoints.runActiveNoteCommand();
         expect(post).toHaveBeenCalledWith("sql/execute/tabNote");

@@ -70,6 +70,15 @@ export default class TabManager extends Component {
         return this.children;
     }
 
+    /** Note contexts outside the tab row, such as the quick edit popup's, which commands can still name by `ntxId`. */
+    private detachedContexts = new Map<string, NoteContext>();
+
+    registerDetachedContext(noteContext: NoteContext) {
+        if (noteContext.ntxId) {
+            this.detachedContexts.set(noteContext.ntxId, noteContext);
+        }
+    }
+
     get mainNoteContexts(): NoteContext[] {
         return this.noteContexts.filter((nc) => !nc.mainNtxId);
     }
@@ -201,7 +210,8 @@ export default class TabManager extends Component {
     }
 
     getNoteContextById(ntxId: string | null): NoteContext {
-        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId);
+        const noteContext = this.noteContexts.find((nc) => nc.ntxId === ntxId)
+            ?? (ntxId ? this.detachedContexts.get(ntxId) : undefined);
 
         if (!noteContext) {
             throw new Error(`Cannot find noteContext id='${ntxId}'`);

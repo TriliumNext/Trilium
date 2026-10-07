@@ -26,7 +26,7 @@ const executeOption: BookProperty = {
     type: "button",
     icon: "bx bx-play",
     label: t("active_content_badges.menu_execute_now"),
-    onClick: context => context.triggerCommand("runActiveNote")
+    onClick: context => context.triggerCommand("runActiveNote", { ntxId: context.ntxId })
 };
 
 const typeMappings: Record<ActiveContentInfo["type"], {

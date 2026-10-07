@@ -65,6 +65,7 @@ export default function PopupEditor() {
 
         // Events triggered at note context level (e.g. the save indicator) would not work since the note context has no parent component. Propagate events to parent component so that they can be handled properly.
         noteContext.triggerEvent = (name, data) => parentComponent?.handleEventInChildren(name, data);
+        appContext.tabManager.registerDetachedContext(noteContext);
         setNoteContext(noteContext);
         setShown(true);
     });

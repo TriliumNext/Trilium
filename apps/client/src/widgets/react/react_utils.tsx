@@ -1,10 +1,27 @@
 import { ComponentChild, createContext, render, type JSX, type RefObject } from "preact";
+import { useContext } from "preact/hooks";
+
+import type { CommandMappings, CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 
 export const ParentComponent = createContext<Component | null>(null);
 
 export const NoteContextContext = createContext<NoteContext | null>(null);
+
+/**
+ * A click handler that triggers `command` from the surrounding component with the `ntxId` of the
+ * surrounding `NoteContextContext`, so a handler can act on the note of a context that is not the
+ * active tab, such as the quick edit popup's. Undefined when there is no command to trigger.
+ */
+export function useCommandTrigger(command: CommandNames | undefined) {
+    const parentComponent = useContext(ParentComponent);
+    const noteContext = useContext(NoteContextContext);
+
+    return command && (() => {
+        parentComponent?.triggerCommand(command, { ntxId: noteContext?.ntxId } as CommandMappings[typeof command]);
+    });
+}
 
 /**
  * Whether the container (e.g. a dialog) holding the current note view is actually shown. False inside a dialog

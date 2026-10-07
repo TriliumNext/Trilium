@@ -166,7 +166,7 @@ function ClippedNoteBadge() {
 }
 
 export function ExecuteBadge() {
-    const { note, parentComponent } = useNoteContext();
+    const { note, ntxId, parentComponent } = useNoteContext();
     const isScript = note?.isTriliumScript();
     const isSql = note?.isTriliumSqlite();
     const isExecutable = isScript || isSql;
@@ -183,7 +183,7 @@ export function ExecuteBadge() {
             icon="bx bx-play"
             text={title || (isScript ? t("breadcrumb_badges.execute_script") : t("breadcrumb_badges.execute_sql"))}
             tooltip={executeDescription || (isScript ? t("breadcrumb_badges.execute_script_description") : t("breadcrumb_badges.execute_sql_description"))}
-            onClick={() => parentComponent.triggerCommand("runActiveNote")}
+            onClick={() => parentComponent.triggerCommand("runActiveNote", { ntxId })}
         />
     );
 }

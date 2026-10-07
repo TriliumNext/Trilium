@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import appContext from "./app_context.js";
+import NoteContext from "./note_context.js";
 import TabManager, { buildNoteContextStatesFromUrl } from "./tab_manager.js";
 
 describe("TabManager tab placement", () => {
@@ -252,3 +253,15 @@ function openEmptyTabs(tm: TabManager, count: number) {
 function ntxOrder(tm: TabManager) {
     return tm.mainNoteContexts.map((nc) => nc.ntxId);
 }
+
+describe("note contexts outside the tab row", () => {
+    it("resolves a registered context by its id without listing it among the tabs", async () => {
+        const tm = new TabManager();
+        await openEmptyTabs(tm, 1);
+        const popupContext = new NoteContext("_popup-editor");
+
+        tm.registerDetachedContext(popupContext);
+        expect(tm.getNoteContextById("_popup-editor")).toBe(popupContext);
+        expect(tm.getNoteContexts()).not.toContain(popupContext);
+    });
+});

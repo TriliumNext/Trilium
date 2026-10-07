@@ -3,7 +3,10 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import Component from "../../components/component";
+import NoteContext from "../../components/note_context";
 import ActionButton from "./ActionButton";
+import { NoteContextContext, ParentComponent } from "./react_utils";
 
 describe("ActionButton", () => {
     let container: HTMLElement;
@@ -20,6 +23,25 @@ describe("ActionButton", () => {
             orphan.remove();
         }
     });
+
+    it("triggers its command from the surrounding component, naming the note context it stands in", () => {
+        const parentComponent = new Component();
+        const triggerCommand = vi.spyOn(parentComponent, "triggerCommand").mockReturnValue(undefined);
+
+        act(() => render(
+            <ParentComponent.Provider value={parentComponent}>
+                <NoteContextContext.Provider value={new NoteContext("_popup-editor")}>
+                    <ActionButton icon="bx bx-play" text="Run" triggerCommand="runActiveNote" />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>, container));
+
+        const button = container.querySelector("button");
+        expect(button).not.toBeNull();
+        act(() => button?.click());
+
+        expect(triggerCommand).toHaveBeenCalledWith("runActiveNote", { ntxId: "_popup-editor" });
+    });
+
 
     it("dismisses its tooltip when pressed, so it cannot sit on top of what the press opened", async () => {
         const onClick = vi.fn();

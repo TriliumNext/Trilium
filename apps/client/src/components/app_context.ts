@@ -313,10 +313,7 @@ export type CommandMappings = {
         zoomFactor: string;
     };
 
-    runActiveNote: CommandData & {
-        /** The note to run, for a context that is not a tab, such as the quick edit popup; the active tab's note otherwise. */
-        noteId?: string;
-    };
+    runActiveNote: CommandData;
     scrollContainerTo: CommandData & {
         position: number;
     };

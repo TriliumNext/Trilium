@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     triggerCommand: vi.fn(),
     openInNewTab: vi.fn(),
     openContextWithNote: vi.fn(),
+    registerDetachedContext: vi.fn(),
     getNote: vi.fn(),
     getAttachment: vi.fn(),
     /** Every context the popup created, newest last — one is built per open. */
@@ -21,7 +22,8 @@ vi.mock("../../components/app_context", () => ({
         triggerCommand: mocks.triggerCommand,
         tabManager: {
             openInNewTab: mocks.openInNewTab,
-            openContextWithNote: mocks.openContextWithNote
+            openContextWithNote: mocks.openContextWithNote,
+            registerDetachedContext: mocks.registerDetachedContext
         }
     }
 }));
@@ -212,6 +214,8 @@ describe("PopupEditor", () => {
         });
         expect(modal()?.dataset.shown).toBe("true");
         expect(document.body.classList.contains("popup-editor-open")).toBe(true);
+        // Registered so that a command naming the popup's context can find it.
+        expect(mocks.registerDetachedContext).toHaveBeenCalledWith(lastContext());
 
         mocks.getNote.mockResolvedValue(fakeNote([ "readOnly" ]));
         await openPopup({ noteIdOrPath: "root/n2" });
