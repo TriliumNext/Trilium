@@ -28,7 +28,7 @@ export function useBoxDragging({ containerRef, mapApiRef, getScale }: {
 
         const zoom = getScale();
         let position: MapDataNoteEntry | null = null;
-        track({
+        track(e.pointerId, {
             onMove(moveEvent) {
                 const dx = moveEvent.clientX - e.clientX;
                 const dy = moveEvent.clientY - e.clientY;
@@ -77,7 +77,7 @@ export function useRelationDrawing({ containerRef, mapApiRef, getScale, askRelat
         });
         setPending(pendingAt(e));
 
-        track({
+        track(e.pointerId, {
             onMove: (moveEvent) => setPending(pendingAt(moveEvent)),
             async onEnd(endEvent) {
                 const dropped = pendingAt(endEvent);
@@ -104,30 +104,35 @@ export function useRelationDrawing({ containerRef, mapApiRef, getScale, askRelat
 }
 
 /**
- * Follows the pointer on the window until it is released or the gesture is canceled, so the gesture
- * continues outside the box it started on. Stops following on unmount.
+ * Follows the pointer `pointerId` on the window until it is released or the gesture is canceled,
+ * so the gesture continues outside the box it started on, and ignores any other pointer, such as a
+ * second finger. Stops following on unmount.
  */
 function usePointerTracking() {
     const stopRef = useRef<() => void>(null);
     useEffect(() => () => stopRef.current?.(), []);
 
-    return useCallback(({ onMove, onEnd }: {
+    return useCallback((pointerId: number, { onMove, onEnd }: {
         onMove(e: PointerEvent): void;
         onEnd(e: PointerEvent): void;
     }) => {
         stopRef.current?.();
+        const move = (e: PointerEvent) => {
+            if (e.pointerId === pointerId) onMove(e);
+        };
         const end = (e: PointerEvent) => {
+            if (e.pointerId !== pointerId) return;
             stop();
             onEnd(e);
         };
         const stop = () => {
-            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointermove", move);
             window.removeEventListener("pointerup", end);
             window.removeEventListener("pointercancel", end);
             stopRef.current = null;
         };
 
-        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointermove", move);
         window.addEventListener("pointerup", end);
         window.addEventListener("pointercancel", end);
         stopRef.current = stop;

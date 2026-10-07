@@ -53,8 +53,8 @@ describe("relation map pointer drags", () => {
     /** The map is zoomed to 2x. */
     const getScale = () => 2;
 
-    function pointer(type: string, clientX: number, clientY: number) {
-        return new PointerEvent(type, { clientX, clientY, button: 0, isPrimary: true });
+    function pointer(type: string, clientX: number, clientY: number, pointerId = 1) {
+        return new PointerEvent(type, { clientX, clientY, button: 0, isPrimary: pointerId === 1, pointerId });
     }
 
     /** Releases the pointer, and waits for the name to be asked and the relation created. */
@@ -65,8 +65,8 @@ describe("relation map pointer drags", () => {
         });
     }
 
-    function dispatch(type: string, clientX: number, clientY: number) {
-        act(() => { window.dispatchEvent(pointer(type, clientX, clientY)); });
+    function dispatch(type: string, clientX: number, clientY: number, pointerId = 1) {
+        act(() => { window.dispatchEvent(pointer(type, clientX, clientY, pointerId)); });
     }
 
     it("moves a box once the pointer leaves the click tolerance, and saves it on release", () => {
@@ -81,6 +81,26 @@ describe("relation map pointer drags", () => {
         dispatch("pointerup", 140, 160);
         expect(moveNote).toHaveBeenCalledWith("box", 30, 50);
         expect(state.dragged).toBeNull();
+    });
+
+    it("follows only the pointer that started the gesture", async () => {
+        act(() => startDrag?.(pointer("pointerdown", 100, 100), { noteId: "box", x: 10, y: 20 }));
+        dispatch("pointermove", 300, 300, 2);
+        dispatch("pointerup", 300, 300, 2);
+        expect(state.dragged).toBeNull();
+        expect(moveNote).not.toHaveBeenCalled();
+
+        dispatch("pointermove", 140, 160);
+        dispatch("pointerup", 140, 160);
+        expect(moveNote).toHaveBeenCalledWith("box", 30, 50);
+
+        act(() => startDrawing?.(pointer("pointerdown", 100, 100), "source"));
+        dispatch("pointermove", 150, 100, 2);
+        expect(state.pending).toMatchObject({ pointer: { x: 50, y: 50 } });
+        dispatch("pointercancel", 150, 100, 2);
+        expect(state.pending).not.toBeNull();
+        dispatch("pointercancel", 150, 100);
+        expect(state.pending).toBeNull();
     });
 
     it("puts a box back when the drag is canceled", () => {
