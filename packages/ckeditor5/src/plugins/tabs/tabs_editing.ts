@@ -62,6 +62,7 @@ export default class TabsEditing extends Plugin {
         this.registerPostFixer();
         this.registerActiveTabTracking();
         this.registerEnterInTitle();
+        this.registerFindReveal();
     }
 
     /**
@@ -246,15 +247,19 @@ export default class TabsEditing extends Plugin {
         const editor = this.editor;
         const model = editor.model;
 
+        // A change that leaves the selection where it was, such as a find marker moving, keeps
+        // the tab that is showing.
+        let selectionMoved = true;
+        this.listenTo(model.document.selection, "change:range", () => {
+            selectionMoved = true;
+        });
+
         this.listenTo(model.document, "change", () => {
             const blocks = new Set<ModelElement>();
 
-            const position = model.document.selection.getFirstPosition();
-            for (const ancestor of position?.getAncestors() ?? []) {
-                if (ancestor.is("element", ELEMENTS.tab) && ancestor.parent?.is("element", ELEMENTS.tabs)) {
-                    this.activeTabs.set(ancestor.parent, ancestor);
-                    blocks.add(ancestor.parent);
-                }
+            if (selectionMoved) {
+                this.activateTabsAround(model.document.selection.getFirstPosition(), blocks);
+                selectionMoved = false;
             }
 
             for (const change of model.document.differ.getChanges()) {
@@ -267,6 +272,33 @@ export default class TabsEditing extends Plugin {
                 this.updateActiveClasses(blocks);
             }
         }, { priority: "lowest" });
+    }
+
+    /** Shows the tab that holds the highlighted find-in-note result, without moving the caret. */
+    private registerFindReveal() {
+        const plugins = this.editor.plugins;
+        const state = plugins.has("FindAndReplaceEditing") ? plugins.get("FindAndReplaceEditing").state : undefined;
+        if (!state) {
+            return;
+        }
+
+        this.listenTo(state, "change:highlightedResult", (_evt, _name, highlighted) => {
+            const blocks = new Set<ModelElement>();
+            this.activateTabsAround(highlighted?.marker?.getStart(), blocks);
+            if (blocks.size) {
+                this.updateActiveClasses(blocks);
+            }
+        });
+    }
+
+    /** Makes every tab that encloses `position` the active one of its block and adds the block to `blocks`. */
+    private activateTabsAround(position: ModelPosition | null | undefined, blocks: Set<ModelElement>) {
+        for (const ancestor of position?.getAncestors() ?? []) {
+            if (ancestor.is("element", ELEMENTS.tab) && ancestor.parent?.is("element", ELEMENTS.tabs)) {
+                this.activeTabs.set(ancestor.parent, ancestor);
+                blocks.add(ancestor.parent);
+            }
+        }
     }
 
     private updateActiveClasses(blocks: Set<ModelElement>) {

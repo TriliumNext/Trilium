@@ -3,6 +3,7 @@ import {
     _setModelData as setModelData,
     ClassicEditor,
     Essentials,
+    FindAndReplaceEditing,
     type ModelElement,
     Paragraph
 } from "ckeditor5";
@@ -27,7 +28,7 @@ describe("Tabs", () => {
         document.body.appendChild(domElement);
         editor = await ClassicEditor.create(domElement, {
             licenseKey: "GPL",
-            plugins: [Essentials, Paragraph, Tabs]
+            plugins: [Essentials, FindAndReplaceEditing, Paragraph, Tabs]
         });
     });
 
@@ -131,6 +132,26 @@ describe("Tabs", () => {
         expect(activeTitles()).toEqual(["Linux"]);
 
         editor.model.change(writer => writer.setSelection(editor.model.document.getRoot() as ModelElement, "end"));
+        expect(activeTitles()).toEqual(["Linux"]);
+    });
+
+    it("shows the tab holding the highlighted find result without moving the caret", () => {
+        editor.setData(TWO_TABS);
+        const windowsPanel = (tabsElement().getChild(0) as ModelElement).getChild(1) as ModelElement;
+        editor.model.change(writer => writer.setSelection(windowsPanel, 0));
+        const caret = getModelData(editor.model);
+
+        editor.execute("find", "the");
+        expect(activeTitles()).toEqual(["Windows"]);
+
+        editor.execute("findNext");
+        expect(activeTitles()).toEqual(["Linux"]);
+        expect(getModelData(editor.model)).toBe(caret);
+
+        editor.execute("findNext");
+        expect(activeTitles()).toEqual(["Windows"]);
+
+        editor.execute("findPrevious");
         expect(activeTitles()).toEqual(["Linux"]);
     });
 
