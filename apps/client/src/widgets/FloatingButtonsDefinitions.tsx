@@ -17,7 +17,7 @@ import { sanitizeNoteContentHtml } from "../services/sanitize_content";
 import server from "../services/server";
 import toast from "../services/toast";
 import tree from "../services/tree";
-import { createImageSrcUrl, isElectron, openInAppHelpFromUrl } from "../services/utils";
+import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
 import { useTriliumEvent, useWindowSize } from "./react/hooks";
 import NoItems from "./react/NoItems";
@@ -43,8 +43,6 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
 
 export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
-    OpenTriliumApiDocsButton,
-    OpenElectronApiDocsButton,
     SaveToNoteButton,
     CopyImageReferenceButton,
     ExportImageButtons,
@@ -59,24 +57,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
 export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
     InAppHelpButton
 ];
-
-function OpenTriliumApiDocsButton({ note }: FloatingButtonContext) {
-    const isEnabled = note.mime.startsWith("application/javascript;env=");
-    return isEnabled && <FloatingButton
-        icon="bx bx-help-circle"
-        text={t("code_buttons.trilium_api_docs_button_title")}
-        onClick={() => openInAppHelpFromUrl(note.mime.endsWith("frontend") ? "Q2z6av6JZVWm" : "MEtfsqa5VwNi")}
-    />;
-}
-
-function OpenElectronApiDocsButton({ note }: FloatingButtonContext) {
-    const isEnabled = note.mime === "application/javascript;env=frontend" && isElectron();
-    return isEnabled && <FloatingButton
-        icon="bx bx-window-alt"
-        text={t("code_buttons.electron_api_docs_button_title")}
-        onClick={() => openInAppHelpFromUrl("GFXVHyblVN3d")}
-    />;
-}
 
 function SaveToNoteButton({ note }: FloatingButtonContext) {
     const isEnabled = note.mime === "text/x-sqlite;schema=trilium" && note.isHiddenCompletely();
