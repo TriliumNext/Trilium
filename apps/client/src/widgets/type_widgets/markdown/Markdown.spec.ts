@@ -2,10 +2,11 @@
 // DOMPurify relies on browser-faithful DOM traversal (NodeIterator); happy-dom
 // mishandles it and strips valid markup (surfaced by dompurify 3.4.8). Run the
 // sanitization-dependent specs under jsdom, which matches real-browser behavior.
+import type VanillaCodeMirror from "@triliumnext/codemirror";
 import { HIGHLIGHT_STYLE } from "@triliumnext/commons";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { findActiveBlock, renderWithSourceLines } from "./Markdown.js";
+import { findActiveBlock, renderWithSourceLines, scrollToSourceLine } from "./Markdown.js";
 
 describe("renderWithSourceLines", () => {
     function extractLines(src: string): number[] {
@@ -326,5 +327,49 @@ describe("findActiveBlock", () => {
     it("matches nothing above the first block or in an empty preview", () => {
         expect(findActiveBlock(blocks(3), 1)).toBeNull();
         expect(findActiveBlock([], 1)).toBeNull();
+    });
+});
+
+describe("scrollToSourceLine", () => {
+    function preview() {
+        const el = document.createElement("div");
+        el.innerHTML = renderWithSourceLines("# One\n\ntext\n\n## Two\n\nmore").html;
+        const heading = el.querySelector<HTMLElement>("h2");
+        if (!heading) throw new Error("h2 not rendered");
+        heading.scrollIntoView = vi.fn();
+        return { el, heading };
+    }
+
+    /** A stand-in for the CodeMirror view, with a scroller of the given height (0 when hidden). */
+    function editor(clientHeight: number) {
+        const scrollTo = vi.fn();
+        const view = {
+            state: { doc: { lines: 7, line: () => ({ from: 0 }) } },
+            lineBlockAt: () => ({ top: 0, height: 10 }),
+            scrollDOM: { clientHeight, scrollTo }
+        } as unknown as VanillaCodeMirror;
+        return { view, scrollTo };
+    }
+
+    it("scrolls the preview when the editor is unmounted or hidden (preview mode)", () => {
+        const { el, heading } = preview();
+        expect(heading.dataset.sourceLine).toBe("5");
+
+        scrollToSourceLine(null, el, 5);
+        expect(heading.scrollIntoView).toHaveBeenCalledTimes(1);
+
+        const hidden = editor(0);
+        scrollToSourceLine(hidden.view, el, 5);
+        expect(heading.scrollIntoView).toHaveBeenCalledTimes(2);
+        expect(hidden.scrollTo).not.toHaveBeenCalled();
+    });
+
+    it("scrolls the editor when it is on screen, leaving the preview to follow", () => {
+        const { el, heading } = preview();
+        const visible = editor(400);
+
+        scrollToSourceLine(visible.view, el, 5);
+        expect(visible.scrollTo).toHaveBeenCalledTimes(1);
+        expect(heading.scrollIntoView).not.toHaveBeenCalled();
     });
 });

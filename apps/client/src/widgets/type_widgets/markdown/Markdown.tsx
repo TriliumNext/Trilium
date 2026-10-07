@@ -101,8 +101,8 @@ export default function Markdown(props: TypeWidgetProps) {
 
     useSyncedScrolling(editorView, previewEl);
     useSyncedHighlight(editorView, previewEl, html);
-    usePublishToc(props.noteContext, editorView, headings, props.note);
-    usePublishHighlights(props.noteContext, editorView, highlights, props.note);
+    usePublishToc(props.noteContext, editorView, previewEl, headings, props.note);
+    usePublishHighlights(props.noteContext, editorView, previewEl, highlights, props.note);
     useImageDrop(props.note, editorView);
     useTextCommands(props.parentComponent, editorView);
     useNoteLinkChips(editorView);
@@ -150,6 +150,7 @@ function MarkdownPreview({ ntxId }: { ntxId: TypeWidgetProps["ntxId"] }) {
 function usePublishToc(
     noteContext: NoteContext | undefined,
     editorView: VanillaCodeMirror | null,
+    previewEl: HTMLDivElement | null,
     headings: MarkdownHeading[],
     note: FNote
 ) {
@@ -159,10 +160,10 @@ function usePublishToc(
             headings,
             scrollToHeading(heading) {
                 const mdHeading = headings.find(h => h.id === heading.id);
-                if (mdHeading) scrollEditorToLine(editorView, mdHeading.line);
+                if (mdHeading) scrollToSourceLine(editorView, previewEl, mdHeading.line);
             }
         });
-    }, [ noteContext, headings, editorView, note.noteId ]);
+    }, [ noteContext, headings, editorView, previewEl, note.noteId ]);
 
     // Publish when headings or editor change.
     useEffect(() => { publish(); }, [ publish ]);
@@ -177,9 +178,24 @@ function usePublishToc(
     });
 }
 
+/**
+ * Scrolls to the given 1-indexed source line: in the editor when it is on screen, since
+ * `useSyncedScrolling` makes the preview follow, otherwise in the preview. In preview mode the
+ * editor is either unmounted or hidden.
+ */
+export function scrollToSourceLine(editorView: VanillaCodeMirror | null, previewEl: HTMLElement | null, lineNumber: number) {
+    if (editorView && editorView.scrollDOM.clientHeight > 0) {
+        scrollEditorToLine(editorView, lineNumber);
+        return;
+    }
+
+    if (!previewEl) return;
+    const block = findActiveBlock(previewEl.querySelectorAll<HTMLElement>("[data-source-line]"), lineNumber);
+    block?.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
 /** Scrolls the source editor so the given 1-indexed line sits in the middle of the viewport. */
-function scrollEditorToLine(editorView: VanillaCodeMirror | null, lineNumber: number) {
-    if (!editorView) return;
+function scrollEditorToLine(editorView: VanillaCodeMirror, lineNumber: number) {
 
     const line = editorView.state.doc.line(Math.min(lineNumber, editorView.state.doc.lines));
     const lineBlock = editorView.lineBlockAt(line.from);
@@ -199,6 +215,7 @@ function scrollEditorToLine(editorView: VanillaCodeMirror | null, lineNumber: nu
 function usePublishHighlights(
     noteContext: NoteContext | undefined,
     editorView: VanillaCodeMirror | null,
+    previewEl: HTMLDivElement | null,
     highlights: MarkdownHighlight[],
     note: FNote
 ) {
@@ -208,10 +225,10 @@ function usePublishHighlights(
             highlights,
             scrollToHighlight(highlight) {
                 const mdHighlight = highlights.find(h => h.id === highlight.id);
-                if (mdHighlight) scrollEditorToLine(editorView, mdHighlight.line);
+                if (mdHighlight) scrollToSourceLine(editorView, previewEl, mdHighlight.line);
             }
         });
-    }, [ noteContext, highlights, editorView, note.noteId ]);
+    }, [ noteContext, highlights, editorView, previewEl, note.noteId ]);
 
     useEffect(() => { publish(); }, [ publish ]);
 
@@ -672,8 +689,7 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
  * unchanged — and `==highlight==`, which renders as a coloured span, is picked up too.
  *
  * Each run is traced back to the source line of the block it sits in (the attribute tagged on
- * just above), so clicking it can scroll the editor rather than the preview, which may not even
- * be on screen.
+ * just above), so clicking it scrolls whichever pane is on screen (`scrollToSourceLine`).
  */
 function extractHighlights(container: HTMLElement): MarkdownHighlight[] {
     return extractHighlightsFromStaticHtml(container).map(({ element, ...highlight }, index) => ({
