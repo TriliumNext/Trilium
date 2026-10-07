@@ -8,7 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import NoteContext from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import FNote from "../../../entities/fnote";
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import type { ContentEditor } from "../../../services/content_renderer";
 import server from "../../../services/server";
 import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
 import { buildNewImageAttachments, CANVAS_EXPORT_TITLE, IMAGE_ROLE, loadImageAttachments } from "./image_attachments";
@@ -350,7 +350,7 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
  */
 export function useCanvasDrawingPersistence(
     attachment: FAttachment,
-    editor: AttachmentEditor | undefined,
+    editor: ContentEditor | undefined,
     apiRef: RefObject<ExcalidrawImperativeAPI | null>,
     theme: AppState["theme"]
 ): Partial<ExcalidrawProps> {
@@ -361,7 +361,7 @@ export function useCanvasDrawingPersistence(
     const initialSceneAppliedRef = useRef(true);
 
     const [ initialData ] = useState(async (): Promise<ExcalidrawInitialDataState> => {
-        const unsavedContent = editor?.getUnsavedContent(attachment.attachmentId);
+        const unsavedContent = editor?.getUnsavedContent();
         const blobContent = unsavedContent === undefined
             ? (await attachment.getBlob())?.content ?? ""
             : unsavedContent;
@@ -381,7 +381,7 @@ export function useCanvasDrawingPersistence(
 
     // A layout cleanup runs during the unmount, before Excalidraw's `componentWillUnmount()` empties
     // the scene that `release()` reads; a passive one runs after paint.
-    useLayoutEffect(() => () => editor?.release(attachment.attachmentId), [ editor, attachment ]);
+    useLayoutEffect(() => () => editor?.release(), [ editor ]);
 
     return {
         initialData,
@@ -407,7 +407,7 @@ export function useCanvasDrawingPersistence(
             if (sceneVersion === currentSceneVersion.current && !isAppStateChanged) return;
 
             currentSceneVersion.current = sceneVersion;
-            editor.scheduleSave(attachment, () => serializeDrawing(api));
+            editor.scheduleSave(() => serializeDrawing(api));
         }
     };
 }

@@ -23,6 +23,7 @@ import Component from "../../components/component";
 import NoteContext from "../../components/note_context";
 import FBlob from "../../entities/fblob";
 import type FNote from "../../entities/fnote";
+import LoadResults from "../../services/load_results";
 import server from "../../services/server";
 import type SpacedUpdate from "../../services/spaced_update";
 import { buildNote } from "../../test/easy-froca";
@@ -183,6 +184,56 @@ describe("note switch save race (#9614)", () => {
 
         // Note B must not be overwritten with note A's content + the new keystrokes.
         expect(putsTo(noteB)).toEqual([]);
+
+    });
+
+    it("loads the next note even when keystrokes typed over the previous one wait for a save", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, noteB, editor, pendingBlobB, blobB, show } = harness;
+
+        await show(noteA);
+        await show(noteB);
+        editor.content = "AAA plus keystrokes meant for B";
+        getSpacedUpdate().scheduleUpdate();
+
+        // Note B's content arrives within the debounce of the save.
+        await act(async () => {
+            pendingBlobB.resolve(blobB);
+        });
+        await vi.advanceTimersByTimeAsync(20);
+        expect(editor.content).toBe("BBB");
+    });
+
+    it("keeps unsaved changes when another editor saves the note, and reloads an editor without any", async () => {
+        const harness = setupEditorHarness({ withParent: true });
+        cleanupContainer = harness.container;
+        const { noteA, editor, parent, show } = harness;
+        await show(noteA);
+        const savedElsewhere = async (content: string) => {
+            noteA.getBlob = async () => new FBlob({
+                blobId: `blob-${content}`,
+                content,
+                contentLength: content.length,
+                dateModified: "",
+                utcDateModified: ""
+            });
+            const loadResults = new LoadResults([]);
+            loadResults.addNoteContent(noteA.noteId, "another-editor");
+            await act(async () => {
+                await parent?.handleEvent("entitiesReloaded", { loadResults });
+            });
+            await vi.advanceTimersByTimeAsync(20);
+        };
+
+        editor.content = "AAA typed here";
+        getSpacedUpdate().scheduleUpdate();
+        await savedElsewhere("AAA typed elsewhere");
+        expect(editor.content).toBe("AAA typed here");
+
+        await vi.advanceTimersByTimeAsync(1500);
+        await savedElsewhere("AAA typed elsewhere again");
+        expect(editor.content).toBe("AAA typed elsewhere again");
     });
 
     it("awaits async event handlers registered by React components (the contract NoteContext.setNote relies on)", async () => {

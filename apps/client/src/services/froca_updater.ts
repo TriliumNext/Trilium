@@ -306,6 +306,7 @@ function processAttachment(loadResults: LoadResults, ec: EntityChange) {
     }
 
     if (ec.entity) {
+        delete froca.blobPromises[`attachments-${ec.entityId}`];
         if (attachment) {
             attachment.update(ec.entity as FAttachmentRow);
         } else {

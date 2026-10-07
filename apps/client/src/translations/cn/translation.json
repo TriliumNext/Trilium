@@ -1275,7 +1275,8 @@
       "completions": "显示建议",
       "new_line": "换行",
       "run_search": "执行搜索"
-    }
+    },
+    "error_title": "搜索出错"
   },
   "attachment_detail": {
     "open_help_page": "打开附件帮助页面",
@@ -1310,7 +1311,8 @@
     "editor_crashed_details_button": "浏览更多明细...",
     "editor_crashed_details_intro": "如果你多次遇到此错误，请考虑通过粘贴以下信息在 GitHub 上报告。",
     "editor_crashed_details_title": "技术信息",
-    "nothing_selected_to_cut": "请先选中一些文本，再将其剪切为子笔记。"
+    "nothing_selected_to_cut": "请先选中一些文本，再将其剪切为子笔记。",
+    "uploading_attachment": "正在上传附件"
   },
   "empty": {
     "open_note_instruction": "通过在下面的输入框中输入笔记标题或在树中选择笔记来打开笔记。",
@@ -1347,7 +1349,11 @@
     "enter_title_of_new_note": "输入新笔记的标题",
     "default_new_note_title": "新笔记",
     "click_on_canvas_to_place_new_note": "点击画布以放置新笔记",
-    "rename_relation": "重命名关系"
+    "rename_relation": "重命名关系",
+    "rename": "重命名",
+    "new_relation": "新建关系",
+    "create_relation": "创建关系",
+    "relation_name_placeholder": "关系名称"
   },
   "backend_log": {
     "refresh": "刷新"
@@ -1976,7 +1982,11 @@
     "unarchive": "取消归档",
     "open-in-a-new-window": "在新窗口中打开",
     "hide-subtree": "隐藏子树",
-    "show-subtree": "显示子树"
+    "show-subtree": "显示子树",
+    "duplicate-with-children": "笔记及其子笔记",
+    "duplicate-note-only": "仅此笔记",
+    "clone": "克隆",
+    "clone-tooltip": "克隆，让同一条笔记同时出现在两处"
   },
   "shared_info": {
     "help_link": "访问 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a> 获取帮助。",
@@ -2012,7 +2022,9 @@
     "llm-chat": "AI对话",
     "markdown": "Markdown",
     "note-types": "笔记类型",
-    "built-in-templates": "内置模板"
+    "built-in-templates": "内置模板",
+    "more": "更多",
+    "widget-preset-sample": "来自小组件的问候"
   },
   "protect_note": {
     "toggle-on": "保护笔记",
@@ -2052,7 +2064,13 @@
     "placeholder": "快速搜索",
     "searching": "正在搜索...",
     "no-results": "未找到结果",
-    "show-in-full-search": "在完整的搜索界面中显示"
+    "show-in-full-search": "在完整的搜索界面中显示",
+    "hints": {
+      "title": "快速搜索结果",
+      "to_results": "移动到结果",
+      "page": "在结果中翻页",
+      "close": "关闭结果"
+    }
   },
   "note_tree": {
     "collapse-title": "折叠笔记树",
@@ -2106,7 +2124,8 @@
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
     "edited_notes": "今天编辑过的笔记",
-    "promoted_attributes": "升级属性"
+    "promoted_attributes": "升级属性",
+    "note_type_switcher_all": "所有类型"
   },
   "search_result": {
     "no_notes_found": "没有找到符合搜索条件的笔记。",
@@ -2114,7 +2133,8 @@
     "search_now": "立即搜索",
     "result_count_other": "{{count}} 个结果",
     "page_size": "每页",
-    "snippet_unavailable": "无法预览。"
+    "snippet_unavailable": "无法预览。",
+    "searching": "正在搜索…"
   },
   "sql_result": {
     "no_rows": "此查询没有返回任何数据",
@@ -2276,7 +2296,14 @@
     "open_note_in_new_window": "在新窗口中打开笔记",
     "open_note_in_popup": "快速编辑",
     "open_note_in_other_split": "在另一个分屏中打开笔记",
-    "open_note": "打开笔记"
+    "open_note": "打开笔记",
+    "convert_link_to_embed": "将链接转换为嵌入",
+    "convert_link_to_included_note": "将链接转换为包含的笔记",
+    "convert_embed_to_link": "转换为链接",
+    "include_size": "尺寸",
+    "show_title": "显示标题",
+    "show_caption": "显示题注",
+    "editable": "可编辑"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -2294,11 +2321,27 @@
     "create-note-into": "在 {{parentTitle}} 中创建笔记 \"{{term}}\"",
     "create-note-into-day-note": "在今天的日记笔记中创建笔记 \"{{term}}\"",
     "create-note-into-root": "在顶层创建笔记 \"{{term}}\"",
-    "create-child-note": "创建子笔记 \"{{term}}\""
+    "create-child-note": "创建子笔记 \"{{term}}\"",
+    "show-in-full-search": "在完整搜索中显示「{{term}}」的全部结果",
+    "include-note-contents": "在「{{term}}」的结果中包含笔记正文",
+    "include-contents": "包含笔记正文",
+    "hints": {
+      "title": "笔记搜索结果",
+      "move": "在结果中移动",
+      "open": "打开高亮的结果"
+    },
+    "recent": {
+      "today": "今天",
+      "yesterday": "昨天",
+      "past_week": "过去 7 天",
+      "past_month": "过去 30 天",
+      "older": "更早"
+    }
   },
   "note_tooltip": {
     "note-has-been-deleted": "笔记已被删除。",
-    "quick-edit": "快速编辑"
+    "quick-edit": "快速编辑",
+    "attachment-info": "附件 • {{size}}"
   },
   "geo-map": {
     "create-child-note-title": "创建一个新的子笔记并将其添加到地图中",
@@ -2901,7 +2944,10 @@
     "annotation_drawing": "第 {{pageNumber}} 页上的绘图",
     "annotation_highlight": "第 {{pageNumber}} 页上的高亮",
     "annotation_note": "第 {{pageNumber}} 页上的注释",
-    "annotation_text_box": "第 {{pageNumber}} 页上的文本框"
+    "annotation_text_box": "第 {{pageNumber}} 页上的文本框",
+    "copy_reference": "复制引用",
+    "page_reference": "第 {{pageNumber}} 页",
+    "annotation_reference": "第 {{pageNumber}} 页上的批注"
   },
   "platform_indicator": {
     "available_on": "在 {{platform}} 上可用"
@@ -3064,7 +3110,7 @@
     "stop": "停止",
     "edit_index": "编辑第 {{index}} 条（共 {{total}} 条）",
     "retry": "重试",
-    "web_search_unavailable_gemini": "在笔记访问功能开启时，Gemini 模型不可用 — Google 的 API 不允许同时使用两者。如需使用网络搜索，请关闭笔记访问功能，或切换到其他提供商。",
+    "web_search_unavailable_gemini": "Gemini 无法同时使用内置搜索和笔记访问。请关闭笔记访问，或改选搜索提供商。",
     "attach_file": "添加图片、PDF 或文本文件",
     "remove_attachment": "移除附件",
     "attachment_upload_failed": "上传“{{name}}”失败。",
@@ -3137,7 +3183,15 @@
     "attachment_model_cannot_read_image": "{{- model}} 无法读取图片。",
     "attachment_model_cannot_read_file": "{{- model}} 无法读取 PDF。",
     "attachment_refused": "「{{name}}」未能附加。{{- reason}}",
-    "remove_unreadable_attachments": "移除 {{- model}} 无法读取的附件"
+    "remove_unreadable_attachments": "移除 {{- model}} 无法读取的附件",
+    "tools": "工具",
+    "note_tools_description": "搜索、阅读和编辑你的笔记",
+    "web_search_disabled": "已禁用",
+    "web_search_builtin": "使用模型内置搜索",
+    "manage_search_providers": "管理搜索提供商…",
+    "web_search_builtin_unsupported": "此模型没有内置网络搜索。请改选搜索提供商。",
+    "web_search_provider_unsupported": "此模型的提供商使用自己的工具进行网络搜索。",
+    "searched_with": "已使用 {{name}} 搜索"
   },
   "sidebar_chat": {
     "title": "AI对话",
@@ -3334,7 +3388,21 @@
     "antigravity_setup_download": "在运行 Trilium 的设备上，从 Google 的 <Link>ACP registry entry</Link> 下载适用于你平台的压缩包，并将其解压到一个可以长期存放的文件夹中。",
     "antigravity_setup_archive": "下载 <Link>the archive for the device running Trilium</Link> ，并在该设备上将其解压到一个可以长期存放的文件夹中。",
     "antigravity_setup_path": "将该文件夹添加到 <Code>PATH</Code>，或将 <Code>TRILIUM_ANTIGRAVITY_ACP_PATH</Code> 环境变量设置为其内的 <Code>agy_acp_server.par</Code>（Windows 上为 <Code>agy_acp_server.exe</Code>），然后重启 Trilium。",
-    "antigravity_setup_sign_in": "回到此步骤。首次操作时，该设备的浏览器会打开 Google 登录页面。"
+    "antigravity_setup_sign_in": "回到此步骤。首次操作时，该设备的浏览器会打开 Google 登录页面。",
+    "search_providers": "搜索提供商",
+    "no_search_providers_configured": "尚未配置搜索提供商。",
+    "add_search_provider": "添加搜索提供商",
+    "search_provider_group_cloud": "搜索 API",
+    "search_provider_group_cloud_description": "使用 API 密钥；视服务而定，每月有免费额度或按搜索次数计费。你的搜索内容会被发送到提供商的服务器。",
+    "search_provider_group_local": "自托管",
+    "search_provider_group_local_description": "你自己的元搜索引擎实例。搜索只会到达该实例及其所查询的搜索引擎。",
+    "setup_hint_searxng": "你的 SearXNG 实例的地址。其 <Code>settings.yml</Code> 必须在 <Code>search.formats</Code> 下列出 <Code>json</Code>。",
+    "search_base_url_description": "可选。通过代理或网关访问同一 API。",
+    "model_providers": "模型提供商",
+    "add_model_provider": "添加模型提供商",
+    "no_model_providers_configured": "尚未配置模型提供商。",
+    "provider_no_models": "未选择任何模型，因此不会出现在对话中。",
+    "search_provider_unavailable_standalone": "在浏览器版中不可用：该服务拒绝来自网页的请求，因此只能从桌面版或服务器版使用。"
   },
   "revisions": {
     "note_revisions": "笔记修订",
@@ -3489,7 +3557,9 @@
     "save": "保存",
     "cancel": "取消",
     "fullscreen": "全屏",
-    "exit_fullscreen": "退出全屏"
+    "exit_fullscreen": "退出全屏",
+    "open_in_new_tab": "在新标签页中打开",
+    "more_actions": "更多操作"
   },
   "spreadsheet": {
     "read-only": "此注释为只读。",
@@ -3526,7 +3596,20 @@
       "date": "插入日期/时间",
       "include": "包含笔记",
       "image": "上传图片",
-      "link": "内部链接"
+      "link": "内部链接",
+      "math": "公式",
+      "footnote": "脚注",
+      "mermaid": "Mermaid 图表",
+      "mermaid_template": "Mermaid 图表：{{name}}",
+      "collapsible": "折叠块",
+      "page_break": "分页符",
+      "table": "表格",
+      "note": "备注",
+      "tip": "提示",
+      "important": "重要",
+      "caution": "注意",
+      "warning": "警告",
+      "todo": "任务：{{title}}"
     }
   },
   "mobile_note_navigator": {
@@ -3720,12 +3803,29 @@
       "sort": "排序",
       "ascending": "升序",
       "descending": "降序",
-      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "部分行被一并排序，因为合并单元格将它们彼此绑定"
+      "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "部分行被一并排序，因为合并单元格将它们彼此绑定",
+      "attach-and-embed-file": "附加并嵌入文件",
+      "attach-file": "附加文件",
+      "attach-file-as-a-link": "以链接形式附加文件",
+      "caption-for-the-included-note": "包含笔记的题注",
+      "convert-to-link": "转换为链接",
+      "enter-caption": "输入题注",
+      "upload-files-as-attachments-and-insert-embeds": "将文件作为附件上传并插入嵌入。",
+      "upload-files-as-attachments-and-insert-links": "将文件作为附件上传并插入链接。",
+      "tiny": "极小",
+      "show-title": "显示标题",
+      "more-actions": "更多操作",
+      "drawing-canvas": "绘图画布",
+      "editable": "可编辑",
+      "insert-a-canvas-to-draw-on": "插入一块可供绘图的画布。"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
       "insert": "插入",
       "alignment": "对齐"
+    },
+    "colors": {
+      "pink": "粉色"
     }
   },
   "image_navigation": {
@@ -4402,7 +4502,9 @@
     "label_marker": "引用标签。按 Enter 查看标签列表",
     "label_marker_negated": "排除标签。按 Enter 查看标签列表",
     "relation_marker": "引用关系。按 Enter 查看关系列表",
-    "relation_marker_negated": "排除关系。按 Enter 查看关系列表"
+    "relation_marker_negated": "排除关系。按 Enter 查看关系列表",
+    "property_links": "继续应用于该笔记链接到的笔记",
+    "property_backlinks": "继续应用于链接到该笔记的笔记"
   },
   "lightbox": {
     "image": "图片",
@@ -4411,5 +4513,11 @@
   },
   "split_button": {
     "more_actions": "更多操作"
+  },
+  "menu": {
+    "no_matches": "没有匹配项",
+    "filter": "筛选",
+    "filter_placeholder": "输入以筛选…",
+    "back": "返回"
   }
 }

@@ -42,7 +42,11 @@ import { NoteContextContext, ParentComponent } from "./react/react_utils";
  * child, so app-wide events travel down into the pane — a component hanging off nothing would never
  * hear that its note was edited elsewhere.
  */
-export function useEmbeddedNoteContext(note: FNote | undefined, ntxId: string) {
+export function useEmbeddedNoteContext(
+    note: FNote | undefined,
+    ntxId: string,
+    { floatingToolbar = true, skipRecentNotes = false }: EmbeddedNoteContextOptions = {}
+) {
     const parentComponent = useContext(ParentComponent);
     const [ noteContext ] = useState(() => new NoteContext(ntxId));
     const [ component ] = useState(() => new Component());
@@ -67,18 +71,26 @@ export function useEmbeddedNoteContext(note: FNote | undefined, ntxId: string) {
             // Selecting a note in the pane is not the kind of navigation that should dismiss an
             // open dialog.
             keepActiveDialog: true,
+            skipRecentNotes,
             viewScope: {
                 // A note held read-only only because of its size is editable here, as it is in the
                 // quick editor; one the reader has marked read-only stays that way.
                 readOnlyTemporarilyDisabled: !note.hasLabel("readOnly"),
                 // The pane has a third of a note's width, which is not a toolbar's worth: the
                 // editor's own follows the selection instead of standing in a bar (see link.ts).
-                floatingToolbar: true
+                floatingToolbar
             }
         });
     }, [ noteContext, note?.noteId ]);
 
     return { noteContext, component };
+}
+
+interface EmbeddedNoteContextOptions {
+    /** Whether the editor shows its buttons in a toolbar that follows the selection. */
+    floatingToolbar?: boolean;
+    /** Whether the note stays out of the recent notes. */
+    skipRecentNotes?: boolean;
 }
 
 /**

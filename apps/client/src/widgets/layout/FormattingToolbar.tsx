@@ -7,6 +7,7 @@ import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import options from "../../services/options";
 import { useActiveNoteContext, useNoteContext, useNoteProperty, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
+import { useNestedEditor } from "../type_widgets/text/editable_embed";
 
 /**
  * Handles the editing toolbar of a single note context when the CKEditor is in decoupled mode, as
@@ -21,6 +22,9 @@ export default function FormattingToolbar() {
     const { note, noteContext, ntxId } = useNoteContext();
     const [ textNoteEditorType ] = useTriliumOption("textNoteEditorType");
     const [ shown, setShown ] = useState(false);
+    const [ noteToolbar, setNoteToolbar ] = useState<HTMLElement | null>();
+    const nestedEditor = useNestedEditor(ntxId);
+    const toolbar = nestedEditor?.ui.view.toolbar?.element ?? noteToolbar;
 
     useEffect(() => {
         let active = true;
@@ -37,15 +41,17 @@ export default function FormattingToolbar() {
 
     // Attach the toolbar from the CKEditor.
     useTriliumEvent("textEditorRefreshed", ({ ntxId: eventNtxId, editor }) => {
-        if (eventNtxId !== ntxId || !containerRef.current) return;
-        const toolbar = editor.ui.view.toolbar?.element;
-
-        if (toolbar) {
-            containerRef.current.replaceChildren(toolbar);
-        } else {
-            containerRef.current.replaceChildren();
-        }
+        if (eventNtxId !== ntxId) return;
+        setNoteToolbar(editor.ui.view.toolbar?.element);
     });
+
+    useEffect(() => {
+        if (toolbar) {
+            containerRef.current?.replaceChildren(toolbar);
+        } else {
+            containerRef.current?.replaceChildren();
+        }
+    }, [ toolbar ]);
 
     return (textNoteEditorType === "ckeditor-classic" &&
         <div
@@ -69,15 +75,17 @@ export function FixedFormattingToolbar() {
     const noteType = useNoteProperty(note, "type");
     const renderState = useRenderState(noteContext, note);
     const [ toolbarToRender, setToolbarToRender ] = useState<HTMLElement | null | undefined>();
+    const nestedEditor = useNestedEditor(ntxId);
+    const shownToolbar = nestedEditor?.ui.view.toolbar?.element ?? toolbarToRender;
 
     // Keyboard shortcut.
     const lastFocusedElement = useRef<Element>(null);
     useTriliumEvent("toggleRibbonTabClassicEditor", () => {
-        if (!toolbarToRender) return;
-        if (!toolbarToRender.contains(document.activeElement)) {
+        if (!shownToolbar) return;
+        if (!shownToolbar.contains(document.activeElement)) {
             // Focus to the fixed formatting toolbar.
             lastFocusedElement.current = document.activeElement;
-            toolbarToRender.querySelector<HTMLButtonElement>(".ck-toolbar__items button")?.focus();
+            shownToolbar.querySelector<HTMLButtonElement>(".ck-toolbar__items button")?.focus();
         } else {
             // Focus back to the last selection.
             (lastFocusedElement.current as HTMLElement)?.focus();
@@ -114,12 +122,12 @@ export function FixedFormattingToolbar() {
 
     // Render the toolbar.
     useEffect(() => {
-        if (toolbarToRender) {
-            containerRef.current?.replaceChildren(toolbarToRender);
+        if (shownToolbar) {
+            containerRef.current?.replaceChildren(shownToolbar);
         } else {
             containerRef.current?.replaceChildren();
         }
-    }, [ toolbarToRender ]);
+    }, [ shownToolbar ]);
 
     return (
         <div

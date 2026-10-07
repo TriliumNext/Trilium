@@ -24,6 +24,8 @@ export interface SetNoteOpts {
     viewScope?: ViewScope;
     /** If true, skip closing the currently active dialog. Used when opening a note into a stackable popup (e.g. quick-edit) that must not dismiss the dialog it was launched from. */
     keepActiveDialog?: boolean;
+    /** If true, the note is not added to the recent notes, as for an included note being edited. */
+    skipRecentNotes?: boolean;
 }
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
@@ -214,7 +216,9 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             }
         }
 
-        this.saveToRecentNotes(resolvedNotePath);
+        if (!opts.skipRecentNotes) {
+            this.saveToRecentNotes(resolvedNotePath);
+        }
 
         protectedSessionHolder.touchProtectedSessionIfNecessary(this.note);
 

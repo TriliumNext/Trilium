@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
-import type NoteContext from "../../../components/note_context";
+import type { default as NoteContext, SaveState } from "../../../components/note_context";
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import type { AttachmentEditor, NoteEditor } from "../../../services/content_renderer";
 import protected_session_holder from "../../../services/protected_session_holder";
 import server from "../../../services/server";
 import SpacedUpdate from "../../../services/spaced_update";
@@ -12,27 +12,86 @@ import { ParentComponent } from "../../react/react_utils";
 
 type SavedAttachments = NonNullable<SavedData["attachments"]>;
 
-interface PendingSave {
-    attachment: FAttachment;
+interface SavedNote {
+    note: FNote;
+    content: string;
+}
+
+interface PendingSave<T> {
+    entity: T;
     /** Reads the content from the mounted editor. */
     getContent?: () => string;
     /** The content read when the editor went away. */
     content?: string;
-    /** Counts the changes, so that a save keeps the changes made while it ran. */
+    /**
+     * Numbers the change, uniquely among all changes, so that a save drops only the change it
+     * sent, also when it is retried.
+     */
     revision: number;
+}
+
+/**
+ * The content changes that wait for a save, by the ID of the note or attachment they change.
+ * `T` is the changed entity, and `I` the item that `collectItems()` builds for each change.
+ */
+abstract class PendingSaves<T, I extends object> {
+    protected pending = new Map<string, PendingSave<T>>();
+    private lastRevision = 0;
+    private sentRevisions = new WeakMap<I, { id: string; revision: number }>();
+
+    getUnsavedContent(id: string) {
+        const save = this.pending.get(id);
+        return save ? readContent(save) : undefined;
+    }
+
+    release(id: string) {
+        const save = this.pending.get(id);
+        if (save?.getContent) {
+            save.content = save.getContent();
+            save.getContent = undefined;
+        }
+    }
+
+    /** Drops the changes that `items`, as returned by `collectItems()`, saved. */
+    markSaved(items: I[] | undefined) {
+        for (const item of items ?? []) {
+            const sent = this.sentRevisions.get(item);
+            if (sent && this.pending.get(sent.id)?.revision === sent.revision) {
+                this.pending.delete(sent.id);
+            }
+        }
+    }
+
+    protected schedule(id: string, entity: T, getContent: () => string) {
+        this.pending.set(id, { entity, getContent, revision: ++this.lastRevision });
+    }
+
+    /** One item for each change, with the content read at the time of the call. */
+    protected collectItems(toItem: (id: string, entity: T, content: string) => I) {
+        const items: I[] = [];
+        for (const [ id, save ] of this.pending) {
+            const item = toItem(id, save.entity, readContent(save));
+            this.sentRevisions.set(item, { id, revision: save.revision });
+            items.push(item);
+        }
+
+        return items;
+    }
 }
 
 /**
  * The attachment changes that content, such as a canvas drawing, makes. A text note saves them
  * together with its own content, and `useAttachmentEditor()` saves them on their own.
  */
-export default class AttachmentSaves implements AttachmentEditor {
+export default class AttachmentSaves
+    extends PendingSaves<FAttachment, SavedAttachments[number]>
+    implements AttachmentEditor {
     private noteId: string | undefined;
-    private pending = new Map<string, PendingSave>();
-    private sentRevisions = new WeakMap<SavedAttachments, Map<string, number>>();
 
     /** @param scheduleUpdate schedules a save of the text note. */
-    constructor(private scheduleUpdate: () => void) {}
+    constructor(private scheduleUpdate: () => void) {
+        super();
+    }
 
     /** Sets the note whose attachments can change, and drops the changes to any other note. */
     setNoteId(noteId: string | undefined) {
@@ -46,50 +105,90 @@ export default class AttachmentSaves implements AttachmentEditor {
         return !!this.noteId && attachment.ownerId === this.noteId;
     }
 
-    getUnsavedContent(attachmentId: string) {
-        const save = this.pending.get(attachmentId);
-        return save ? readContent(save) : undefined;
-    }
-
     scheduleSave(attachment: FAttachment, getContent: () => string) {
-        const revision = (this.pending.get(attachment.attachmentId)?.revision ?? 0) + 1;
-        this.pending.set(attachment.attachmentId, { attachment, getContent, revision });
+        this.schedule(attachment.attachmentId, attachment, getContent);
         this.scheduleUpdate();
-    }
-
-    release(attachmentId: string) {
-        const save = this.pending.get(attachmentId);
-        if (save?.getContent) {
-            save.content = save.getContent();
-            save.getContent = undefined;
-        }
     }
 
     /** The attachments to save with the note, read at the time of the call. */
     collect(): SavedAttachments {
-        const attachments: SavedAttachments = [];
-        const revisions = new Map<string, number>();
-        for (const [ attachmentId, save ] of this.pending) {
-            const { role, mime, title } = save.attachment;
-            attachments.push({ attachmentId, role, mime, title, content: readContent(save) });
-            revisions.set(attachmentId, save.revision);
-        }
+        return this.collectItems((attachmentId, { role, mime, title }, content) => (
+            { attachmentId, role, mime, title, content }
+        ));
+    }
+}
 
-        this.sentRevisions.set(attachments, revisions);
-        return attachments;
+/**
+ * The changes that content embedded in a text note, such as a code note, makes to the notes it
+ * shows. `useNoteEditor()` saves them.
+ */
+export class NoteSaves extends PendingSaves<FNote, SavedNote> implements NoteEditor {
+    private saveStates = new Map<string, SaveState>();
+    private stateListeners = new Set<() => void>();
+
+    /**
+     * @param scheduleUpdate schedules a save.
+     * @param componentId the component that saves the changes.
+     * @param getHostNoteId the note that shows the embeds, which they cannot edit.
+     */
+    constructor(
+        private scheduleUpdate: () => void,
+        readonly componentId: string | undefined,
+        private getHostNoteId: () => string | undefined = () => undefined
+    ) {
+        super();
     }
 
-    /** Drops the changes that `attachments`, as returned by `collect()`, saved. */
-    markSaved(attachments: SavedAttachments | undefined) {
-        const revisions = attachments && this.sentRevisions.get(attachments);
-        if (!revisions) {
-            return;
-        }
+    canEdit(note: FNote) {
+        return note.noteId !== this.getHostNoteId() && note.isContentAvailable();
+    }
 
-        for (const [ attachmentId, revision ] of revisions) {
-            if (this.pending.get(attachmentId)?.revision === revision) {
-                this.pending.delete(attachmentId);
+    scheduleSave(note: FNote, getContent: () => string) {
+        this.schedule(note.noteId, note, getContent);
+        this.setSaveState(note.noteId, "unsaved");
+        this.scheduleUpdate();
+    }
+
+    getSaveState(noteId: string) {
+        return this.saveStates.get(noteId);
+    }
+
+    subscribeSaveState(listener: () => void) {
+        this.stateListeners.add(listener);
+        return () => {
+            this.stateListeners.delete(listener);
+        };
+    }
+
+    /** The notes to save, read at the time of the call. */
+    collect() {
+        return this.collectItems((_noteId, note, content) => ({ note, content }));
+    }
+
+    /**
+     * Saves `items`, as returned by `collect()`, one note after the other with `saveNote`. Stops at
+     * the first note that fails to save, and rejects with its error.
+     */
+    async save(items: SavedNote[], saveNote: (item: SavedNote) => Promise<unknown>) {
+        for (const item of items) {
+            const { noteId } = item.note;
+            this.setSaveState(noteId, "saving");
+            try {
+                await saveNote(item);
+            } catch (e) {
+                this.setSaveState(noteId, "error");
+                throw e;
             }
+
+            this.markSaved([ item ]);
+            this.setSaveState(noteId, this.pending.has(noteId) ? "unsaved" : "saved");
+        }
+    }
+
+    private setSaveState(noteId: string, state: SaveState) {
+        this.saveStates.set(noteId, state);
+        for (const listener of this.stateListeners) {
+            listener();
         }
     }
 }
@@ -137,17 +236,49 @@ export function useAttachmentEditor(
     });
 
     useSaveBeforeLeaving(spacedUpdate, noteContext);
+    useSaveOnUnmount(spacedUpdate);
 
-    // Saves what is left once the content goes away.
+    return saves;
+}
+
+/**
+ * Saves the changes that content embedded in the note of `noteContext`, such as a code note,
+ * makes to the notes it shows. Each note saves with a request of its own.
+ */
+export function useNoteEditor(noteContext: NoteContext | null | undefined): NoteEditor {
+    const parentComponent = useContext(ParentComponent);
+    const noteContextRef = useRef(noteContext);
+    noteContextRef.current = noteContext;
+    const [ saves ] = useState(() => new NoteSaves(
+        () => spacedUpdate.scheduleUpdate(),
+        parentComponent?.componentId,
+        () => noteContextRef.current?.noteId ?? undefined
+    ));
+
+    const [ spacedUpdate ] = useState(() => new SpacedUpdate<SavedNote[]>({
+        key: null,
+        prepare: () => saves.collect(),
+        commit: (notes) => saves.save(notes, ({ note, content }) => {
+            protected_session_holder.touchProtectedSessionIfNecessary(note);
+            return server.put(`notes/${note.noteId}/data`, { content }, saves.componentId);
+        })
+    }));
+
+    useSaveBeforeLeaving(spacedUpdate, noteContext);
+    useSaveOnUnmount(spacedUpdate);
+
+    return saves;
+}
+
+/** Saves what is left once the content goes away. */
+function useSaveOnUnmount<T>(spacedUpdate: SpacedUpdate<T>) {
     useEffect(() => () => {
         spacedUpdate.updateNowIfNecessary().catch(() => {
             // Failures are logged by `SpacedUpdate` and retried.
         });
     }, [ spacedUpdate ]);
-
-    return saves;
 }
 
-function readContent(save: PendingSave) {
+function readContent<T>(save: PendingSave<T>) {
     return save.getContent ? save.getContent() : save.content ?? "";
 }

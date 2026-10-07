@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { isIOS } from "../../../services/utils";
 import { useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent } from "../../react/hooks";
+import { useNestedEditor } from "./editable_embed";
 
 interface MobileEditorToolbarProps {
     inPopupEditor?: boolean;
@@ -24,24 +25,36 @@ export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolb
     const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
     const shouldDisplay = noteType === "text" && isReadOnly === false;
     const [ dropdownActive, setDropdownActive ] = useState(false);
+    const [ noteEditor, setNoteEditor ] = useState<CKTextEditor>();
+    const nestedEditor = useNestedEditor(ntxId);
+    const editor = nestedEditor?.ui.view.toolbar ? nestedEditor : noteEditor;
 
     usePositioningOniOS(!inPopupEditor, containerRef);
 
     // Attach the toolbar from the CKEditor.
     useTriliumEvent("textEditorRefreshed", ({ ntxId: eventNtxId, editor }) => {
-        if (eventNtxId !== ntxId || !containerRef.current) return;
-        const toolbar = editor.ui.view.toolbar?.element;
+        if (eventNtxId !== ntxId) return;
 
         if (!inPopupEditor) {
             repositionDropdowns(editor);
         }
-
-        if (toolbar) {
-            containerRef.current.replaceChildren(toolbar);
-        } else {
-            containerRef.current.replaceChildren();
-        }
+        setNoteEditor(editor);
     });
+
+    useEffect(() => {
+        if (nestedEditor && !inPopupEditor) {
+            repositionDropdowns(nestedEditor);
+        }
+    }, [ nestedEditor, inPopupEditor ]);
+
+    useEffect(() => {
+        const toolbar = editor?.ui.view.toolbar?.element;
+        if (toolbar) {
+            containerRef.current?.replaceChildren(toolbar);
+        } else {
+            containerRef.current?.replaceChildren();
+        }
+    }, [ editor ]);
 
     // Observe when a dropdown is expanded to apply a style that allows the dropdown to be visible, since we can't have the element both visible and the toolbar scrollable.
     useEffect(() => {
@@ -100,12 +113,18 @@ function usePositioningOniOS(enabled: boolean, wrapperRef: RefObject<HTMLDivElem
     }, [ enabled, adjustPosition ]);
 }
 
+/** The editors whose toolbar dropdowns open upwards already. */
+const repositionedEditors = new WeakSet<CKTextEditor>();
+
 /**
  * Reposition all dropdowns to point upwards instead of downwards.
  * See https://ckeditor.com/docs/ckeditor5/latest/examples/framework/bottom-toolbar-editor.html for more info.
  * @param editor
  */
 function repositionDropdowns(editor: CKTextEditor) {
+    if (repositionedEditors.has(editor)) return;
+    repositionedEditors.add(editor);
+
     const toolbarView = (editor as ClassicEditor).ui.view.toolbar;
     for (const item of toolbarView.items) {
         if (!("panelView" in item)) continue;

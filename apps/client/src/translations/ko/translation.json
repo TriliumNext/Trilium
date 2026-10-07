@@ -2431,7 +2431,11 @@
     "apply-bulk-actions": "대량 작업 적용",
     "converted-to-attachments_other": "노트 {{count}}개를 첨부 파일로 변환했습니다.",
     "convert-to-attachment-confirm": "선택한 노트를 각 상위 노트의 첨부 파일로 변환하시겠습니까? 이미지 노트에만 적용하며 다른 노트는 건너뜁니다.",
-    "open-in-popup": "빠른 편집"
+    "open-in-popup": "빠른 편집",
+    "duplicate-with-children": "노트와 하위 노트",
+    "duplicate-note-only": "이 노트만",
+    "clone": "복제",
+    "clone-tooltip": "같은 노트를 두 위치에서 동시에 사용할 수 있도록 복제"
   },
   "shared_info": {
     "shared_publicly": "이 노트는 {{- link}}에서 공개적으로 공유됩니다.",
@@ -2472,7 +2476,9 @@
     "new-feature": "신규",
     "spreadsheet": "스프레드시트",
     "note-types": "노트 유형",
-    "built-in-templates": "기본 제공 템플릿"
+    "built-in-templates": "기본 제공 템플릿",
+    "more": "더 보기",
+    "widget-preset-sample": "위젯에서 보내는 인사"
   },
   "protect_note": {
     "toggle-on": "노트 보호",
@@ -2717,7 +2723,8 @@
     "note_type_switcher_templates": "템플릿",
     "note_type_switcher_collection": "컬렉션",
     "edited_notes": "이 날 편집된 노트",
-    "promoted_attributes": "표시 속성"
+    "promoted_attributes": "표시 속성",
+    "note_type_switcher_all": "모든 유형"
   },
   "search_result": {
     "no_notes_found": "주어진 검색 매개변수에 대한 노트는 발견되지 않았습니다.",
@@ -4506,5 +4513,11 @@
   },
   "split_button": {
     "more_actions": "추가 작업"
+  },
+  "menu": {
+    "no_matches": "일치하는 항목 없음",
+    "filter": "필터",
+    "filter_placeholder": "필터할 내용을 입력…",
+    "back": "뒤로"
   }
 }

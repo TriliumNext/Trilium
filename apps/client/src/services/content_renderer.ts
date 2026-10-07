@@ -3,6 +3,7 @@ import "./content_renderer.css";
 import {
     attachmentIcon,
     CANVAS_ATTACHMENT_MIME,
+    getMimeTypeFromFileName,
     isAcceptedImageMime,
     isImageAttachmentRole,
     isOfficeMimeType,
@@ -12,6 +13,7 @@ import {
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
+import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
@@ -19,7 +21,9 @@ import { t } from "../services/i18n.js";
 import { type MediaEnvironment, showsFileActions } from "../widgets/type_widgets/file/media_environment.js";
 import type { LlmChatContent, StoredMessage } from "../widgets/type_widgets/llm_chat/llm_chat_types.js";
 import type { BoxSize } from "../widgets/type_widgets/text/CKEditorWithWatchdog.js";
-import renderText, { postProcessRichContent, renderChildrenList } from "./content_renderer_text.js";
+import renderText, {
+    postProcessRichContent, renderChildrenList, renderTextContent
+} from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
 import { renderOfficeToHtml } from "./office_renderer.js";
@@ -89,6 +93,11 @@ export interface RenderOptions {
      * Without it, that content is read-only.
      */
     attachmentEditor?: AttachmentEditor;
+    /**
+     * Saves the changes that interactive content makes to the note it shows, such as a code note.
+     * Without it, that content is read-only.
+     */
+    noteEditor?: NoteEditor;
 }
 
 /** Saves the changes that rendered content makes to attachments of the note that shows it. */
@@ -103,7 +112,34 @@ export interface AttachmentEditor {
     release(attachmentId: string): void;
 }
 
+/** Saves the changes that rendered content makes to the notes it shows. */
+export interface NoteEditor {
+    /** Whether the rendered content can change `note`. */
+    canEdit(note: FNote): boolean;
+    /** The content of the note that is not saved yet, or `undefined`. */
+    getUnsavedContent(noteId: string): string | undefined;
+    /** Schedules a save of `note`. The save reads the content from `getContent`. */
+    scheduleSave(note: FNote, getContent: () => string): void;
+    /** Reads the unsaved content of the note now, before its editor unmounts. */
+    release(noteId: string): void;
+    /** How the saving of the note goes, or `undefined` before its first change. */
+    getSaveState(noteId: string): SaveState | undefined;
+    /** Calls `listener` when the save state of a note changes, until the returned call. */
+    subscribeSaveState(listener: () => void): () => void;
+}
+
 const CODE_MIME_TYPES = new Set(["application/json"]);
+
+/** The size of an attached text or code file above which it shows as a file: highlighting is slow. */
+const MAX_ATTACHED_CODE_SIZE = 256 * 1024;
+
+/** The types of the notes that an embed can edit in place. */
+const EDITABLE_NOTE_TYPES = new Set<string>([ "code", "text" ]);
+
+/** The media types of attached files, besides `text/*` and JSON, that show as code. */
+const ATTACHED_CODE_MIME_TYPES = new Set([
+    "application/javascript", "application/x-javascript", "application/x-sql"
+]);
 
 /**
  * The content types that an interactive `getRenderedContent()` previews; it shows any other as an
@@ -135,12 +171,15 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         // view type is excluded: it's the only view that re-propagates `interactive` to its tiles, so
         // skipping it here is what keeps an embedded collection from recursing into itself.
         await renderCollection(entity, $renderedContent);
+    } else if (type === "text" && options.interactive && options.noteEditor
+        && entity instanceof FNote) {
+        await renderEditableText(entity, $renderedContent, options);
     } else if (type === "text" || type === "book") {
         await renderText(entity, $renderedContent, options);
     } else if (type === "markdown") {
         await renderMarkdown(entity, $renderedContent, options);
     } else if (type === "code") {
-        await renderCode(entity, $renderedContent);
+        await renderCode(entity, $renderedContent, options);
     } else if (type === "iconPack" && !options.tooltip && entity instanceof FNote) {
         await renderIconPack(entity, $renderedContent, options);
     } else if (type === "canvasDrawing") {
@@ -209,12 +248,48 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
     if (entity instanceof FNote) {
         $renderedContent.addClass(entity.getCssClass());
+        $renderedContent.toggleClass("full-content-width", entity.isLabelTruthy("fullContentWidth"));
     }
 
     return {
         $renderedContent,
         type
     };
+}
+
+/**
+ * Renders a text note that `TextEmbed` edits in place while the Editable toggle of its embed is
+ * on.
+ */
+async function renderEditableText(
+    note: FNote,
+    $renderedContent: JQuery<HTMLElement>,
+    options: RenderOptions
+) {
+    const renderPreview = async (content: string) => {
+        const $preview = $("<div>");
+        await renderTextContent(note, content, $preview, options);
+        return $preview[0];
+    };
+    const [ blob, { default: TextEmbed } ] = await Promise.all([
+        note.getBlob(),
+        import("../widgets/type_widgets/text/TextEmbed")
+    ]);
+    const content = blob?.content ?? "";
+    const preview = await renderPreview(content);
+
+    const $container = $('<div class="text-embed">');
+    const container = $container.get(0);
+    if (container) {
+        await mountInteractiveWidget(h(TextEmbed, {
+            note,
+            editor: getContentEditor(note, options),
+            content,
+            preview,
+            renderPreview
+        }), container);
+    }
+    $renderedContent.append($container);
 }
 
 /**
@@ -272,13 +347,40 @@ async function renderIconPack(note: FNote, $renderedContent: JQuery<HTMLElement>
 }
 
 /**
- * Renders a code note, by displaying its content and applying syntax highlighting based on the selected MIME type.
+ * Renders a code note or file, by displaying its content and applying syntax highlighting based on
+ * the selected MIME type. Interactive content that an editor can save mounts `CodeEmbed`, which
+ * edits the content with CodeMirror while the Editable toggle of its embed is on.
  */
-async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
-    const blob = await note.getBlob();
+async function renderCode(
+    entity: FNote | FAttachment,
+    $renderedContent: JQuery<HTMLElement>,
+    options: RenderOptions
+) {
+    const editor = options.interactive ? getContentEditor(entity, options) : undefined;
+    const content = editor?.getUnsavedContent() ?? (await entity.getBlob())?.content ?? "";
+    const mime = getCodeMime(entity);
+    const preview = await renderCodePreview(content, mime);
 
-    let content = blob?.content || "";
-    if (note.mime === "application/json") {
+    if (!editor) {
+        $renderedContent.append(preview);
+        return;
+    }
+
+    const { default: CodeEmbed } = await import("../widgets/type_widgets/code/CodeEmbed");
+    const $container = $('<div class="code-embed">');
+    const container = $container.get(0);
+    if (container) {
+        await mountInteractiveWidget(
+            h(CodeEmbed, { entity, editor, content, mime, preview }),
+            container
+        );
+    }
+    $renderedContent.append($container);
+}
+
+/** The highlighted content of a code note or file, with JSON indented. */
+export async function renderCodePreview(content: string, mime: string) {
+    if (mime === "application/json") {
         try {
             content = JSON.stringify(JSON.parse(content), null, 4);
         } catch (e) {
@@ -288,8 +390,68 @@ async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HT
 
     const $codeBlock = $("<code>");
     $codeBlock.text(content);
-    $renderedContent.append($("<pre>").append($codeBlock));
-    await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(note.mime));
+    const $pre = $("<pre>").append($codeBlock);
+    await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(mime));
+    return $pre[0];
+}
+
+/**
+ * The MIME type that highlights the code of `entity`. An attachment keeps the type the browser
+ * uploaded it with, often a generic one such as `text/plain`, so its file name decides first.
+ */
+function getCodeMime(entity: FNote | FAttachment) {
+    return entity instanceof FAttachment
+        ? getMimeTypeFromFileName(entity.title) ?? entity.mime
+        : entity.mime;
+}
+
+/** Saves the changes that rendered content makes to one note or attachment. */
+export interface ContentEditor {
+    /** Whether the rendered content can change the note or attachment. */
+    canEdit(): boolean;
+    getUnsavedContent(): string | undefined;
+    scheduleSave(getContent: () => string): void;
+    release(): void;
+    /**
+     * How the saving goes, for content that saves on its own rather than with the note that shows
+     * it, or `undefined`.
+     */
+    getSaveState?(): SaveState | undefined;
+    /** Calls `listener` when `getSaveState()` changes, until the returned call. */
+    subscribeSaveState?(listener: () => void): () => void;
+}
+
+/** `editor`, saving the changes to `attachment`. */
+export function bindAttachmentEditor(
+    editor: AttachmentEditor,
+    attachment: FAttachment
+): ContentEditor {
+    return {
+        canEdit: () => editor.canEdit(attachment),
+        getUnsavedContent: () => editor.getUnsavedContent(attachment.attachmentId),
+        scheduleSave: (getContent) => editor.scheduleSave(attachment, getContent),
+        release: () => editor.release(attachment.attachmentId)
+    };
+}
+
+/** The editor of `options` that saves the changes to `entity`, or `undefined`. */
+function getContentEditor(
+    entity: FNote | FAttachment,
+    options: RenderOptions
+): ContentEditor | undefined {
+    if (entity instanceof FAttachment) {
+        return options.attachmentEditor && bindAttachmentEditor(options.attachmentEditor, entity);
+    }
+
+    const editor = options.noteEditor;
+    return editor && EDITABLE_NOTE_TYPES.has(entity.type) ? {
+        canEdit: () => editor.canEdit(entity),
+        getUnsavedContent: () => editor.getUnsavedContent(entity.noteId),
+        scheduleSave: (getContent) => editor.scheduleSave(entity, getContent),
+        release: () => editor.release(entity.noteId),
+        getSaveState: () => editor.getSaveState(entity.noteId),
+        subscribeSaveState: (listener) => editor.subscribeSaveState(listener)
+    } : undefined;
 }
 
 async function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
@@ -354,7 +516,7 @@ async function renderCanvasDrawing(
         if (container) {
             await mountInteractiveWidget(h(CanvasDrawing, {
                 attachment: entity,
-                editor: options.attachmentEditor
+                editor: getContentEditor(entity, options)
             }), container);
         }
         $renderedContent.append($container);
@@ -776,8 +938,8 @@ export function hasRenderedPreview(entity: FNote | FAttachment) {
 }
 
 /** The box size of a new embed of a file being uploaded, from the attachment it becomes. */
-export function getUploadBoxSize(mime: string): BoxSize {
-    const type = isAcceptedImageMime(mime) ? "image" : getFileContentType("file", mime);
+export function getUploadBoxSize(mime: string, size?: number): BoxSize {
+    const type = isAcceptedImageMime(mime) ? "image" : getAttachedFileContentType(mime, size);
     return getBoxSize(type, PREVIEWED_TYPES.has(type));
 }
 
@@ -820,7 +982,7 @@ function getContentType(entity: FNote | FAttachment) {
     // "importSource" attachments (e.g. the OneNote debug source HTML/InkML) are plain files kept
     // for reference; render them exactly like a "file" role.
     if (entity.role === "importSource") {
-        return getFileContentType("file", entity.mime);
+        return getAttachedFileContentType(entity.mime, entity.contentLength);
     }
     // A link preview's "favicon" is a picture like any other as far as showing it goes; the
     // role only says where it came from. Without this it would fall through to the unknown
@@ -828,7 +990,21 @@ function getContentType(entity: FNote | FAttachment) {
     if (isImageAttachmentRole(entity.role)) {
         return "image";
     }
-    return getFileContentType(entity.role, entity.mime);
+    return entity.role === "file"
+        ? getAttachedFileContentType(entity.mime, entity.contentLength)
+        : getFileContentType(entity.role, entity.mime);
+}
+
+/**
+ * The kind of file an attachment holds, which is code for text and the code media types up to
+ * `MAX_ATTACHED_CODE_SIZE`.
+ */
+function getAttachedFileContentType(mime: string, size = 0) {
+    const type = getFileContentType("file", mime);
+    const isCode = type === "code"
+        || (type === "file" && (mime.startsWith("text/") || ATTACHED_CODE_MIME_TYPES.has(mime)));
+    if (!isCode) return type;
+    return size <= MAX_ATTACHED_CODE_SIZE ? "code" : "file";
 }
 
 /** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */

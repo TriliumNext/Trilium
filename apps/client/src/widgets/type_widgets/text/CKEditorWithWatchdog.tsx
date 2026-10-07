@@ -352,6 +352,20 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
         aiEnabled, llmProviders
     ]);
 
+    // Destroys the editor when the component goes away, after a build still in progress.
+    useEffect(() => () => {
+        buildQueueRef.current = buildQueueRef.current
+            .then(async () => {
+                const watchdog = watchdogRef.current;
+                watchdogRef.current = null;
+                externalWatchdogRef.current = null;
+                await watchdog?.destroy();
+            })
+            .catch((e) => {
+                console.warn("Watchdog destroy failed", e);
+            });
+    }, []);
+
     // Push snippet ("template") definitions into the live editor instead of rebuilding it. The premium
     // Template plugin read its definitions once at init; TriliumSnippets keeps them in a live
     // collection, so add/remove/rename/re-icon all apply in place.

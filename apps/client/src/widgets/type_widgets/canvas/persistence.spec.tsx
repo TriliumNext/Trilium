@@ -17,7 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type FAttachment from "../../../entities/fattachment";
 import type FNote from "../../../entities/fnote";
-import type { AttachmentEditor } from "../../../services/content_renderer";
+import type { ContentEditor } from "../../../services/content_renderer";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import useCanvasPersistence, { useCanvasDrawingPersistence } from "./persistence";
@@ -217,7 +217,7 @@ describe("useCanvasDrawingPersistence", () => {
 
     function DrawingProbe({ attachment, editor, apiRef }: {
         attachment: FAttachment;
-        editor: AttachmentEditor | undefined;
+        editor: ContentEditor | undefined;
         apiRef: RefObject<ExcalidrawImperativeAPI | null>;
     }) {
         drawingProps = useCanvasDrawingPersistence(attachment, editor, apiRef, "light");
@@ -251,10 +251,10 @@ describe("useCanvasDrawingPersistence", () => {
             getUnsavedContent: vi.fn(() => unsavedContent),
             scheduleSave: vi.fn(),
             release: vi.fn()
-        } satisfies AttachmentEditor;
+        } satisfies ContentEditor;
     }
 
-    async function mount(attachment: FAttachment, editor: AttachmentEditor | undefined) {
+    async function mount(attachment: FAttachment, editor: ContentEditor | undefined) {
         const api = {
             getSceneElements: () => sceneElements,
             getAppState: () => appState,
@@ -316,8 +316,7 @@ describe("useCanvasDrawingPersistence", () => {
         sceneElements = [ { ...loaded[0], version: 4 }, loaded[1] ];
         change();
         expect(editor.scheduleSave).toHaveBeenCalledTimes(1);
-        const [ savedAttachment, getContent ] = editor.scheduleSave.mock.calls[0];
-        expect(savedAttachment).toBe(attachment);
+        const [ getContent ] = editor.scheduleSave.mock.calls[0];
         expect(JSON.parse(getContent())).toEqual({
             type: "excalidraw",
             version: 2,
@@ -335,7 +334,7 @@ describe("useCanvasDrawingPersistence", () => {
         expect(editor.scheduleSave).toHaveBeenCalledTimes(2);
 
         act(() => render(null, container));
-        expect(editor.release).toHaveBeenCalledWith("a1");
+        expect(editor.release).toHaveBeenCalledOnce();
     });
 
     it("saves nothing without an editor", async () => {
