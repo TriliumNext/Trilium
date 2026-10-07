@@ -23,6 +23,7 @@ While the cursor is inside a tabs block, a toolbar appears above it with the fol
 *   _Add tab_ inserts a tab after the current one and selects its title.
 *   _Remove tab_ removes the current tab. Removing the last tab removes the whole block.
 *   _Move tab left_ and _Move tab right_ change the order of the tabs.
+*   _Copy link to tab_ copies a link to the current tab, as described below.
 
 The tab that is showing is not saved with the note: every tabs block opens on its first tab.
 
@@ -34,6 +35,18 @@ In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Note
 *   To move between the titles of a block, use the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>.
 
 A tab without a title shows “Tab title” in place of one.
+
+## Linking to a tab
+
+A link can point to a single tab, much like a link to a block (see <a class="reference-link" href="Block%20references.md">Block references</a>):
+
+1.  Place the cursor in the tab, either in its title or in its panel.
+2.  Press _Copy link to tab_ in the toolbar of the tabs block. Alternatively, right-click the text and select _Copy_ → _Copy link to this tab_. The tab flashes briefly.
+3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
+
+The link shows the title of the note, followed by the title of the tab. Clicking it opens the note, shows the tab and flashes it. As with any block reference, the link can be turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only that tab.
+
+Links to a tab can be copied only from a note being edited. On a [shared page](../../Advanced%20Usage/Sharing.md), such a link opens the whole note.
 
 ## Content in hidden tabs
 
