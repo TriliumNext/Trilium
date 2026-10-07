@@ -3,7 +3,7 @@ import "./NoteBox.css";
 
 import clsx from "clsx";
 import { RefObject } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
@@ -11,38 +11,30 @@ import { t } from "../../../services/i18n";
 import { useNoteColorClass, useNoteIcon, useNoteProperty } from "../../react/hooks";
 import RelationMapApi, { MapDataNoteEntry } from "./api";
 import { buildNoteContextMenuHandler } from "./context_menu";
-import { JsPlumbItem } from "./jsplumb";
-import { idToNoteId, noteIdToId } from "./utils";
-
-const NOTE_BOX_SOURCE_CONFIG = {
-    filter: ".endpoint",
-    anchor: "Continuous",
-    connectorStyle: { strokeWidth: 1 },
-    connectionType: "basic",
-    extract: {
-        action: "the-action"
-    }
-};
-
-const NOTE_BOX_TARGET_CONFIG = {
-    dropOptions: { hoverClass: "dragHover" },
-    anchor: "Continuous",
-    allowLoopback: true
-};
+import { noteIdToId } from "./utils";
 
 interface NoteBoxProps extends MapDataNoteEntry {
     mapApiRef: RefObject<RelationMapApi | null>;
     /** The note is open in the note pane. */
     selected?: boolean;
+    /** A relation of the note is hovered. */
+    highlighted?: boolean;
+    /** A relation being drawn would end on this box. */
+    dropTarget?: boolean;
     /** The map cannot be edited, so the context menu offers no color picker. */
     isReadOnly: boolean;
+    /** Starts dragging the box, or drawing a relation from its `.endpoint`. */
+    onPointerDown(e: PointerEvent): void;
+    /** Reports the box's size, which the relations need to end on its border. */
+    onResize(noteId: string, size: { width: number; height: number }): void;
 }
 
-export function NoteBox({ noteId, x, y, mapApiRef, selected, isReadOnly }: NoteBoxProps) {
+export function NoteBox({ noteId, x, y, mapApiRef, selected, highlighted, dropTarget, isReadOnly, onPointerDown, onResize }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
     const icon = useNoteIcon(note);
     const colorClass = useNoteColorClass(note);
+    const boxRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         froca.getNote(noteId).then(setNote);
     }, [ noteId ]);
@@ -51,30 +43,37 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected, isReadOnly }: NoteB
         return buildNoteContextMenuHandler(note, mapApiRef, isReadOnly);
     }, [ note, isReadOnly ]);
 
+    useLayoutEffect(() => {
+        const box = boxRef.current;
+        if (!box) return;
+
+        const report = () => onResize(noteId, { width: box.offsetWidth, height: box.offsetHeight });
+        report();
+        const observer = new ResizeObserver(report);
+        observer.observe(box);
+        return () => observer.disconnect();
+    }, [ note, noteId, onResize ]);
+
     return note && (
-        <JsPlumbItem
+        <div
+            ref={boxRef}
             id={noteIdToId(noteId)}
-            className="note-box tn-note-card"
-            dynamicClassName={clsx(colorClass, note.getCssClass(), selected && "selected")}
+            className={clsx(
+                "note-box tn-note-card", colorClass, note.getCssClass(),
+                selected && "selected", highlighted && "highlighted", dropTarget && "drop-target"
+            )}
+            style={{ left: `${x}px`, top: `${y}px` }}
             onContextMenu={contextMenuHandler}
-            x={x} y={y}
-            draggable={{
-                start() {},
-                drag() {},
-                stop(params) {
-                    const noteId = idToNoteId(params.el.id);
-                    const [ x, y ] = params.pos;
-                    mapApiRef.current?.moveNote(noteId, x, y);
-                },
-            }}
-            sourceConfig={NOTE_BOX_SOURCE_CONFIG}
-            targetConfig={NOTE_BOX_TARGET_CONFIG}
+            onPointerDown={onPointerDown}
+            // Keeps `panzoom` from panning the map while the box is dragged.
+            onMouseDown={stopPropagation}
+            onTouchStart={stopPropagation}
         >
             <span className={clsx("note-box-icon", icon)} />
             <span className="note-box-title">{title}</span>
             <div className="endpoint" title={t("relation_map.start_dragging_relations")} />
-        </JsPlumbItem>
-    )
+        </div>
+    );
 }
 
 /**
@@ -88,4 +87,8 @@ export function GhostNoteBox({ elementRef }: { elementRef: RefObject<HTMLDivElem
             <span className="note-box-title">{t("relation_map.default_new_note_title")}</span>
         </div>
     );
+}
+
+function stopPropagation(e: Event) {
+    e.stopPropagation();
 }

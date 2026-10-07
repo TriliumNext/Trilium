@@ -1,12 +1,10 @@
-import type { Connection, jsPlumbInstance } from "jsplumb";
 import type { PanZoom } from "panzoom";
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildNote } from "../../../test/easy-froca";
-import { useCanvasClicks, useHoveredNoteRelations, useRevealSelectedBox } from "./RelationMap";
+import { useCanvasClicks, useRevealSelectedBox } from "./RelationMap";
 import { noteIdToId } from "./utils";
 
 describe("relation map canvas clicks", () => {
@@ -198,78 +196,4 @@ describe("relation map revealing the selected box", () => {
         addBox(noteId, left);
         mount(noteId);
     }
-});
-
-describe("relation map highlighting the relations of the hovered box", () => {
-    let container: HTMLElement | undefined;
-
-    afterEach(() => {
-        if (container) {
-            render(null, container);
-            container.remove();
-            container = undefined;
-        }
-    });
-
-    /** Renders a canvas with boxes `a`, `b` and `c`, a relation from `a` to `b` and one from `b` to `c`. */
-    function mount() {
-        buildNote({ id: "a", title: "A", "#color": "red" });
-        buildNote({ id: "b", title: "B" });
-        container = document.createElement("div");
-        document.body.appendChild(container);
-
-        const relations = [ fakeConnection("a", "b"), fakeConnection("b", "c") ];
-        function Harness() {
-            const canvasRef = useRef<HTMLDivElement>(null);
-            const jsPlumbApiRef = useRef<jsPlumbInstance>({ getAllConnections: () => relations.map((r) => r.connection) } as unknown as jsPlumbInstance);
-            useHoveredNoteRelations({ containerRef: canvasRef, jsPlumbApiRef });
-            return (
-                <div ref={canvasRef} className="canvas">
-                    {[ "a", "b", "c" ].map((noteId) => (
-                        <div id={noteIdToId(noteId)} className="note-box"><span className="title" /></div>
-                    ))}
-                </div>
-            );
-        }
-        act(() => render(<Harness />, container as HTMLElement));
-
-        const canvas = container.querySelector(".canvas");
-        if (!canvas) throw new Error("canvas not rendered");
-        for (const { line, label } of relations) canvas.append(line, label);
-        return { canvas, relations };
-    }
-
-    function fakeConnection(sourceNoteId: string, targetNoteId: string) {
-        const line = document.createElement("div");
-        const label = document.createElement("div");
-        const connection = {
-            sourceId: noteIdToId(sourceNoteId),
-            targetId: noteIdToId(targetNoteId),
-            canvas: line,
-            getOverlay: (id: string) => (id === "label" ? { getElement: () => label } : undefined)
-        } as unknown as Connection;
-        return { connection, line, label };
-    }
-
-    function hover(element: Element | null | undefined) {
-        act(() => { element?.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); });
-    }
-
-    it("lights the relations of the hovered box in its color and clears them when the pointer leaves", () => {
-        const { canvas, relations: [ ab, bc ] } = mount();
-
-        hover(canvas.querySelector(`#${noteIdToId("a")} .title`));
-        expect(canvas.classList.contains("relation-map-note-hovered")).toBe(true);
-        expect([ ab.line, ab.label ].map((e) => e.classList.contains("relation-map-lit"))).toEqual([ true, true ]);
-        expect(ab.line.style.getPropertyValue("--relation-map-lit-color")).toBe("red");
-        expect(bc.line.classList.contains("relation-map-lit")).toBe(false);
-
-        hover(canvas.querySelector(`#${noteIdToId("b")}`));
-        expect([ ab.line, bc.line ].map((e) => e.classList.contains("relation-map-lit"))).toEqual([ true, true ]);
-        expect(ab.line.style.getPropertyValue("--relation-map-lit-color")).toBe("");
-
-        act(() => { canvas.dispatchEvent(new MouseEvent("mouseleave")); });
-        expect(canvas.classList.contains("relation-map-note-hovered")).toBe(false);
-        expect([ ab.line, bc.line ].map((e) => e.classList.contains("relation-map-lit"))).toEqual([ false, false ]);
-    });
 });

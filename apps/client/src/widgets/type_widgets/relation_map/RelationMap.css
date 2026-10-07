@@ -17,11 +17,53 @@
     outline: none; /* remove dotted outline on click */
 }
 
-.note-detail-relation-map .connection-label.jtk-hover {
-    background-color: var(--more-accented-background-color);
+.note-detail-relation-map .relation-map-connections {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.note-detail-relation-map .relation-map-connection {
+    transition: opacity 0.2s ease;
+
+    .relation-map-connection-hit {
+        fill: none;
+        stroke: transparent;
+        stroke-width: 12px;
+        pointer-events: stroke;
+        cursor: pointer;
+    }
+
+    .relation-map-connection-line {
+        fill: none;
+        stroke: var(--relation-map-line-color);
+        stroke-width: 1px;
+        transition: stroke 0.2s ease;
+    }
+
+    .relation-map-arrow {
+        fill: var(--relation-map-line-color);
+        stroke: var(--relation-map-line-color);
+        stroke-width: 1.2px;
+        stroke-linejoin: round;
+        transition: stroke 0.2s ease, fill 0.2s ease;
+    }
+
+    &:is(.hovered, .lit, .pending) {
+        --relation-map-line-color: var(--relation-map-lit-color, var(--relation-map-highlight-color));
+    }
 }
 
 .note-detail-relation-map .connection-label {
+    position: absolute;
+    z-index: 2;
+    translate: -50% -50%;
+    white-space: nowrap;
     background-color: var(--accented-background-color);
     color: var(--main-text-color);
     opacity: 0.8;
@@ -29,11 +71,15 @@
     border-radius: 0.5em;
     border: 1px solid #666;
     cursor: pointer;
+    transition: opacity 0.2s ease;
+
+    &.hovered {
+        background-color: var(--more-accented-background-color);
+    }
 }
 
-.note-detail-relation-map path,
-.note-detail-relation-map .jtk-endpoint {
-    cursor: pointer;
+.note-detail-relation-map :is(.relation-map-connection, .connection-label).faded {
+    opacity: 0.15;
 }
 
 .note-detail-relation-map .ui-contextmenu {
@@ -42,28 +88,4 @@
 
 .relation-map-wrapper.placing-note {
     cursor: crosshair;
-}
-
-.note-detail-relation-map .jtk-connector {
-    transition: opacity 0.2s ease;
-
-    path {
-        stroke: var(--relation-map-line-color);
-        transition: stroke 0.2s ease, fill 0.2s ease;
-    }
-
-    .relation-map-arrow {
-        fill: var(--relation-map-line-color);
-        stroke-width: 1.2px;
-        stroke-linejoin: round;
-    }
-
-    &.jtk-hover,
-    &.relation-map-lit {
-        --relation-map-line-color: var(--relation-map-lit-color, var(--relation-map-highlight-color));
-    }
-}
-
-.relation-map-note-hovered :is(.jtk-connector, .connection-label):not(.relation-map-lit) {
-    opacity: 0.15;
 }

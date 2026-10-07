@@ -1,4 +1,3 @@
-import { Connection } from "jsplumb";
 import { RefObject } from "preact";
 
 import appContext from "../../../components/app_context";
@@ -10,8 +9,7 @@ import dialog from "../../../services/dialog";
 import toast from "../../../services/toast";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
-import RelationMapApi from "./api";
-import type { AskRelationName } from "./RelationNamePopover";
+import RelationMapApi, { type ClientRelation } from "./api";
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>, isReadOnly: boolean) {
     return (e: MouseEvent) => {
@@ -77,46 +75,42 @@ export async function confirmRemoveFromMap(note: FNote, mapApiRef: RefObject<Rel
     await mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
 }
 
-export function buildRelationContextMenuHandler(connection: Connection, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: AskRelationName) {
-    return (_, event: MouseEvent) => {
-        if (connection.getType().includes("link")) {
-            // don't create context menu if it's a link since there's nothing to do with link from relation map
-            // (don't open browser menu either)
-            event.preventDefault();
-        } else {
-            event.preventDefault();
-            event.stopPropagation();
+/**
+ * Shows the context menu of a relation, which renames or removes it. `askRelationName` asks for the
+ * new name next to the relation.
+ */
+export function showRelationContextMenu(event: MouseEvent, relation: ClientRelation, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: (defaultValue: string) => Promise<string | null>) {
+    event.preventDefault();
+    event.stopPropagation();
 
-            contextMenu.show({
-                x: event.pageX,
-                y: event.pageY,
-                items: [
-                    { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" },
-                    { kind: "separator" },
-                    { title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }
-                ],
-                selectMenuItemHandler: async ({ command }) => {
-                    if (command === "rename") {
-                        const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
-                        const newName = await askRelationName(connection, currentName);
+    contextMenu.show({
+        x: event.pageX,
+        y: event.pageY,
+        items: [
+            { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" },
+            { kind: "separator" },
+            { title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }
+        ],
+        selectMenuItemHandler: async ({ command }) => {
+            if (command === "rename") {
+                const currentName = mapApiRef.current?.getRelationName(relation.attributeId) ?? "";
+                const newName = await askRelationName(currentName);
 
-                        if (!newName?.trim() || newName === currentName) {
-                            return;
-                        }
-
-                        const result = await mapApiRef.current?.renameRelation(connection, newName);
-                        if (!result) {
-                            toast.showError(t("relation_map.connection_exists", { name: newName }));
-                        }
-                    } else if (command === "remove") {
-                        if (!(await dialog.confirm(t("relation_map.confirm_remove_relation")))) {
-                            return;
-                        }
-
-                        mapApiRef.current?.removeRelation(connection);
-                    }
+                if (!newName?.trim() || newName === currentName) {
+                    return;
                 }
-            });
+
+                const result = await mapApiRef.current?.renameRelation(relation.attributeId, newName);
+                if (!result) {
+                    toast.showError(t("relation_map.connection_exists", { name: newName }));
+                }
+            } else if (command === "remove") {
+                if (!(await dialog.confirm(t("relation_map.confirm_remove_relation")))) {
+                    return;
+                }
+
+                mapApiRef.current?.removeRelation(relation.attributeId);
+            }
         }
-    };
+    });
 }

@@ -1,4 +1,3 @@
-import { Connection } from "jsplumb";
 import FNote from "../../../entities/fnote";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
@@ -88,8 +87,8 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
-    async removeRelation(connection: Connection) {
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+    async removeRelation(attributeId: string) {
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
 
         if (relation) {
             await server.remove(`notes/${relation.sourceNoteId}/relations/${relation.name}/to/${relation.targetNoteId}`);
@@ -98,9 +97,9 @@ export default class RelationMapApi {
         this.onDataChange(true);
     }
 
-    async renameRelation(connection: Connection, newName: string) {
+    async renameRelation(attributeId: string, newName: string) {
         newName = utils.filterAttributeName(newName);
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
 
         if (!relation) return false;
 
@@ -116,8 +115,8 @@ export default class RelationMapApi {
         return true;
     }
 
-    getRelationName(connection: Connection): string | undefined {
-        const relation = this.relations.find((rel) => rel.attributeId === connection.id);
+    getRelationName(attributeId: string): string | undefined {
+        const relation = this.relations.find((rel) => rel.attributeId === attributeId);
         return relation?.name;
     }
 

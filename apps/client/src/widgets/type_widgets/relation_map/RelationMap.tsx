@@ -2,7 +2,6 @@ import "./RelationMap.css";
 
 import { RelationMapPostResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { jsPlumbInstance, OnConnectionBindInfo, Overlay } from "jsplumb";
 // The library's own types rather than the hand-written `PanZoom` in types.d.ts, which stops at the
 // handful of calls the map made when it was written and knows nothing of the rest — the ends of the
 // zoom range, or unsubscribing from a report.
@@ -21,34 +20,16 @@ import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
-import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, RelationType } from "./api";
-import { buildRelationContextMenuHandler } from "./context_menu";
-import { JsPlumb } from "./jsplumb";
+import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry } from "./api";
+import Connections from "./Connections";
+import { showRelationContextMenu } from "./context_menu";
+import { useBoxDragging, useRelationDrawing } from "./drags";
+import type { Box } from "./geometry";
 import MapToolbar, { EditToolbar } from "./MapToolbar";
 import { GhostNoteBox, NoteBox } from "./NoteBox";
 import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
-import setupOverlays, { uniDirectionalOverlays } from "./overlays";
-import RelationNamePopover, { type AskRelationName, useRelationNamePrompt } from "./RelationNamePopover";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId, revealOffset } from "./utils";
-
-declare module "jsplumb" {
-
-    interface Connection {
-        canvas: HTMLCanvasElement;
-        getType(): string;
-        bind(event: string, callback: (obj: unknown, event: MouseEvent) => void): void;
-    }
-
-    interface Overlay {
-        setLabel(label: string): void;
-        /** The element of a label overlay. */
-        getElement(): HTMLElement;
-    }
-
-    interface ConnectParams {
-        type: RelationType;
-    }
-}
+import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
+import { CLICK_TOLERANCE, getMousePosition, getZoom, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
 export default function RelationMap({ note, noteContext, ntxId, parentComponent }: TypeWidgetProps) {
     const [ data, setData ] = useState<MapData>();
@@ -57,7 +38,6 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);
-    const pbApiRef = useRef<jsPlumbInstance>(null);
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
@@ -108,10 +88,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
 
     const onTransform = useCallback((pzInstance: PanZoom) => {
-        if (!containerRef.current || !mapApiRef.current || !pbApiRef.current || !data) return;
-        const zoom = getZoom(containerRef.current);
+        if (!mapApiRef.current || !data) return;
         mapApiRef.current.setTransform(pzInstance.getTransform());
-        pbApiRef.current.setZoom(zoom);
     }, [ data ]);
 
     const [ selection, setSelection ] = useState<PaneSelection | null>(null);
@@ -137,7 +115,9 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const dragProps = useNoteDragging({ containerRef, mapApiRef });
 
     const relationNamePrompt = useRelationNamePrompt();
-    const connectionCallback = useRelationCreation({ mapApiRef, jsPlumbApiRef: pbApiRef, askRelationName: relationNamePrompt.ask });
+    const { dragged, startDrag } = useBoxDragging({ containerRef, mapApiRef });
+    const { pending, startDrawing } = useRelationDrawing({ containerRef, mapApiRef, askRelationName: relationNamePrompt.ask });
+    const { boxes, onBoxResize } = useBoxes(data?.notes, dragged);
 
     const panZoom = usePanZoom({
         ntxId,
@@ -158,8 +138,16 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
 
     useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId: selection?.noteId });
-    useHoveredNoteRelations({ containerRef, jsPlumbApiRef: pbApiRef });
-    useRelationData(note.noteId, data, mapApiRef, pbApiRef);
+    const hoveredNoteId = useHoveredBox(containerRef);
+    const [ hoveredRelationId, setHoveredRelationId ] = useState<string | null>(null);
+    const { relations, inverseRelations } = useRelationData(note.noteId, data, mapApiRef);
+    const drawnRelations = useMemo(() => relations?.filter((relation) => relation.render) ?? [], [ relations ]);
+    const hoveredRelation = drawnRelations.find((relation) => relation.attributeId === hoveredRelationId);
+
+    const onRelationContextMenu = useCallback((relation: ClientRelation, e: MouseEvent) => {
+        const anchor = () => containerRef.current?.querySelector(`[data-connection-id="${CSS.escape(relation.attributeId)}"]`);
+        showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue));
+    }, [ relationNamePrompt.ask ]);
 
     return (
         <div
@@ -170,23 +158,41 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             {...clickProps}
             {...dragProps}
         >
-            <JsPlumb
-                apiRef={pbApiRef}
-                containerRef={containerRef}
-                className="relation-map-container"
-                props={{
-                    Endpoint: ["Dot", { radius: 2 }],
-                    Connector: "StateMachine",
-                    ConnectionOverlays: uniDirectionalOverlays,
-                }}
-                onInstanceCreated={setupOverlays}
-                onConnection={connectionCallback}
-            >
-                {data?.notes.map(note => (
-                    <NoteBox {...note} mapApiRef={mapApiRef} selected={note.noteId === selection?.noteId} isReadOnly={isReadOnly} />
-                ))}
+            <div ref={containerRef} className="relation-map-container">
+                <Connections
+                    relations={drawnRelations}
+                    inverseRelations={inverseRelations}
+                    boxes={boxes}
+                    hoveredNoteId={hoveredNoteId}
+                    hoveredRelationId={hoveredRelationId}
+                    pending={pending}
+                    onHoverRelation={setHoveredRelationId}
+                    onContextMenu={onRelationContextMenu}
+                />
+                {data?.notes.map((entry) => {
+                    const position = dragged?.noteId === entry.noteId ? dragged : entry;
+                    return (
+                        <NoteBox
+                            key={entry.noteId}
+                            {...position}
+                            mapApiRef={mapApiRef}
+                            selected={entry.noteId === selection?.noteId}
+                            highlighted={entry.noteId === hoveredRelation?.sourceNoteId || entry.noteId === hoveredRelation?.targetNoteId}
+                            dropTarget={entry.noteId === pending?.targetNoteId}
+                            isReadOnly={isReadOnly}
+                            onPointerDown={(e) => {
+                                if (e.target instanceof Element && e.target.closest(".endpoint")) {
+                                    startDrawing(e, entry.noteId);
+                                } else {
+                                    startDrag(e, position);
+                                }
+                            }}
+                            onResize={onBoxResize}
+                        />
+                    );
+                })}
                 {placement.placing && <GhostNoteBox elementRef={placement.ghostRef} />}
-            </JsPlumb>
+            </div>
 
             {/* Both groups stand on the map whatever layout the note is read in: what is done to a
                 canvas belongs on the canvas, and the bar of buttons above the note is not where the
@@ -214,7 +220,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             {relationNamePrompt.request && (
                 <RelationNamePopover
                     key={relationNamePrompt.request.id}
-                    connection={relationNamePrompt.request.connection}
+                    anchor={relationNamePrompt.request.anchor}
                     defaultValue={relationNamePrompt.request.defaultValue}
                     onAnswer={relationNamePrompt.answer}
                 />
@@ -280,89 +286,89 @@ function usePanZoom({ ntxId, containerRef, options, transformData, onTransform }
     return panZoom;
 }
 
-async function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi | null>, jsPlumbRef: RefObject<jsPlumbInstance | null>) {
-    const noteIds = mapData?.notes.map((note) => note.noteId);
+function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef: RefObject<RelationMapApi | null>) {
     const [ relations, setRelations ] = useState<ClientRelation[]>();
     const [ inverseRelations, setInverseRelations ] = useState<RelationMapPostResponse["inverseRelations"]>();
 
-    async function refresh() {
+    useEffect(() => {
         const api = mapApiRef.current;
+        const noteIds = mapData?.notes.map((note) => note.noteId);
         if (!noteIds || !api) return;
 
-        const data = await server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId: noteId });
-        const relations: ClientRelation[] = [];
+        let isCurrent = true;
+        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId: noteId }).then((data) => {
+            if (!isCurrent) return;
 
-        for (const _relation of data.relations) {
-            const relation = _relation as ClientRelation;   // we inject a few variables.
-            const match = relations.find(
-                (rel) =>
-                    rel.name === data.inverseRelations[relation.name] &&
-                    ((rel.sourceNoteId === relation.sourceNoteId && rel.targetNoteId === relation.targetNoteId) ||
-                        (rel.sourceNoteId === relation.targetNoteId && rel.targetNoteId === relation.sourceNoteId))
-            );
-
-            if (match) {
-                match.type = relation.type = relation.name === data.inverseRelations[relation.name] ? "biDirectional" : "inverse";
-                relation.render = false; // don't render second relation
-            } else {
-                relation.type = "uniDirectional";
-                relation.render = true;
-            }
-
-            relations.push(relation);
+            const relations = pairInverseRelations(data.relations, data.inverseRelations);
+            setRelations(relations);
             setInverseRelations(data.inverseRelations);
+            api.loadRelations(relations);
+            api.cleanupOtherNotes(Object.keys(data.noteTitles));
+        });
+        return () => {
+            isCurrent = false;
+        };
+    }, [ noteId, mapData, mapApiRef ]);
+
+    return { relations, inverseRelations };
+}
+
+/**
+ * Gives each relation its `type`. A relation whose inverse also runs between the same two notes is
+ * drawn once, as `biDirectional` when it is its own inverse and as `inverse` otherwise; the second
+ * of the pair gets `render: false`.
+ */
+function pairInverseRelations(serverRelations: RelationMapPostResponse["relations"], inverseRelations: Record<string, string>) {
+    const relations: ClientRelation[] = [];
+
+    for (const serverRelation of serverRelations) {
+        const relation: ClientRelation = { ...serverRelation, type: "uniDirectional", render: true };
+        const match = relations.find(
+            (rel) =>
+                rel.name === inverseRelations[relation.name] &&
+                ((rel.sourceNoteId === relation.sourceNoteId && rel.targetNoteId === relation.targetNoteId) ||
+                    (rel.sourceNoteId === relation.targetNoteId && rel.targetNoteId === relation.sourceNoteId))
+        );
+
+        if (match) {
+            match.type = relation.type = relation.name === inverseRelations[relation.name] ? "biDirectional" : "inverse";
+            relation.render = false;
         }
 
-        setRelations(relations);
-        api.loadRelations(relations);
-        api.cleanupOtherNotes(Object.keys(data.noteTitles));
+        relations.push(relation);
     }
 
-    useEffect(() => {
-        refresh();
-    }, [ noteId, mapData, jsPlumbInstance ]);
+    return relations;
+}
 
-    // Refresh on the canvas.
-    useEffect(() => {
-        const jsPlumbInstance = jsPlumbRef.current;
-        if (!jsPlumbInstance) return;
+/**
+ * The boxes on the map by note ID, for drawing the relations: each note's position, with `dragged`
+ * overriding the saved one, and the size its `NoteBox` reports through `onBoxResize`. A box that
+ * has not reported its size yet is left out.
+ */
+function useBoxes(notes: MapDataNoteEntry[] | undefined, dragged: MapDataNoteEntry | null) {
+    const [ sizes, setSizes ] = useState<Record<string, { width: number; height: number }>>({});
 
-        jsPlumbInstance.batch(async () => {
-            if (!mapData || !relations) {
-                return;
-            }
-
-            jsPlumbInstance.deleteEveryEndpoint();
-
-            for (const relation of relations) {
-                if (!relation.render) {
-                    continue;
-                }
-
-                const connection = jsPlumbInstance.connect({
-                    source: noteIdToId(relation.sourceNoteId),
-                    target: noteIdToId(relation.targetNoteId),
-                    type: relation.type
-                });
-                if (!connection) return;
-
-                // Stash the attributeId on the connection so api.ts can map a clicked connection
-                // back to its relation (see the `rel.attributeId === connection.id` lookups there),
-                // and so it can be exposed as data-connection-id below.
-                //@ts-expect-error jsPlumb's Connection type has no writable `id` property.
-                connection.id = relation.attributeId;
-
-                if (relation.type === "inverse") {
-                    connection.getOverlay("label-source").setLabel(relation.name);
-                    connection.getOverlay("label-target").setLabel(inverseRelations?.[relation.name] ?? "");
-                } else {
-                    connection.getOverlay("label").setLabel(relation.name);
-                }
-
-                connection.canvas.setAttribute("data-connection-id", connection.id);
-            }
+    const onBoxResize = useCallback((noteId: string, size: { width: number; height: number }) => {
+        setSizes((sizes) => {
+            const current = sizes[noteId];
+            if (current?.width === size.width && current.height === size.height) return sizes;
+            return { ...sizes, [noteId]: size };
         });
-    }, [ relations, mapData ]);
+    }, []);
+
+    const boxes = useMemo(() => {
+        const boxes = new Map<string, Box>();
+        for (const entry of notes ?? []) {
+            const size = sizes[entry.noteId];
+            if (!size) continue;
+            const { x, y } = dragged?.noteId === entry.noteId ? dragged : entry;
+            boxes.set(entry.noteId, { x, y, ...size });
+        }
+        return boxes;
+    }, [ notes, sizes, dragged ]);
+
+    return { boxes, onBoxResize };
 }
 
 /**
@@ -561,79 +567,35 @@ export function useRevealSelectedBox({ wrapperRef, containerRef, panZoom, noteId
     }, [ wrapperRef, containerRef, panZoom, noteId ]);
 }
 
-/**
- * Highlights the relations of the hovered box and fades the other relations, as the note map does.
- * The relations take the note's `color` label, or `--relation-map-highlight-color` without one.
- */
-export function useHoveredNoteRelations({ containerRef, jsPlumbApiRef }: {
-    containerRef: RefObject<HTMLDivElement | null>;
-    jsPlumbApiRef: RefObject<jsPlumbInstance | null>;
-}) {
+/** The note of the box under the pointer, or `null` while the pointer is over no box. */
+export function useHoveredBox(containerRef: RefObject<HTMLDivElement | null>) {
+    const [ hoveredNoteId, setHoveredNoteId ] = useState<string | null>(null);
+
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
-
-        let hoveredBox: Element | null = null;
-        let litElements: HTMLElement[] = [];
-
-        const clear = () => {
-            container.classList.remove("relation-map-note-hovered");
-            for (const element of litElements) {
-                element.classList.remove("relation-map-lit");
-                element.style.removeProperty("--relation-map-lit-color");
-            }
-            litElements = [];
-        };
 
         const onMouseOver = (e: MouseEvent) => {
             const box = e.target instanceof Element
                 ? e.target.closest(".note-box:not(.relation-map-ghost-note)")
                 : null;
-            if (box === hoveredBox) return;
-
-            clear();
-            hoveredBox = box;
-            const connections = jsPlumbApiRef.current?.getAllConnections();
-            if (!box || !connections) return;
-
-            const color = froca.getNoteFromCache(idToNoteId(box.id))?.getLabelValue("color");
-            for (const connection of connections) {
-                if (connection.sourceId !== box.id && connection.targetId !== box.id) continue;
-
-                const labels = LABEL_OVERLAY_IDS
-                    .map((id) => connection.getOverlay(id) as Overlay | undefined)
-                    .filter((overlay) => overlay !== undefined)
-                    .map((overlay) => overlay.getElement());
-                for (const element of [ connection.canvas, ...labels ]) {
-                    element.classList.add("relation-map-lit");
-                    if (color) element.style.setProperty("--relation-map-lit-color", color);
-                    litElements.push(element);
-                }
-            }
-            container.classList.add("relation-map-note-hovered");
+            setHoveredNoteId(box ? idToNoteId(box.id) : null);
         };
-        const onMouseLeave = () => {
-            hoveredBox = null;
-            clear();
-        };
+        const onMouseLeave = () => setHoveredNoteId(null);
 
         container.addEventListener("mouseover", onMouseOver);
         container.addEventListener("mouseleave", onMouseLeave);
         return () => {
             container.removeEventListener("mouseover", onMouseOver);
             container.removeEventListener("mouseleave", onMouseLeave);
-            clear();
         };
-    }, [ containerRef, jsPlumbApiRef ]);
-}
+    }, [ containerRef ]);
 
-const LABEL_OVERLAY_IDS = [ "label", "label-source", "label-target" ];
+    return hoveredNoteId;
+}
 
 /** Offset of the pointer from the top-left corner of a box being placed, near the box's top center. */
 const PLACEMENT_OFFSET = { x: 80, y: 15 };
-
-/** How far, in pixels, the pointer can move between press and release for the click to count. */
-const CLICK_TOLERANCE = 4;
 
 /**
  * Opens the note of a box the way a link to it opens: Ctrl or the middle button in a new tab, Shift
@@ -695,39 +657,3 @@ function useNoteDragging({ containerRef, mapApiRef }: {
 
     return dragProps;
 }
-
-function useRelationCreation({ mapApiRef, jsPlumbApiRef, askRelationName }: {
-    mapApiRef: RefObject<RelationMapApi | null>,
-    jsPlumbApiRef: RefObject<jsPlumbInstance | null>,
-    askRelationName: AskRelationName
-}) {
-    const connectionCallback = useCallback(async (info: OnConnectionBindInfo, originalEvent: Event) => {
-        const connection = info.connection;
-
-        // Called whenever a connection is created, either initially or manually when added by the user.
-        const handler = buildRelationContextMenuHandler(connection, mapApiRef, askRelationName);
-        connection.bind("contextmenu", handler);
-
-        // if there's no event, then this has been triggered programmatically
-        if (!originalEvent || !mapApiRef.current) return;
-
-        const name = await askRelationName(connection);
-
-        // Delete the newly created connection if the dialog was dismissed.
-        if (!name || !name.trim()) {
-            jsPlumbApiRef.current?.deleteConnection(connection);
-            return;
-        }
-
-        const targetNoteId = idToNoteId(connection.target.id);
-        const sourceNoteId = idToNoteId(connection.source.id);
-        const result = await mapApiRef.current.connect(name, sourceNoteId, targetNoteId);
-        if (!result) {
-            toast.showError(t("relation_map.connection_exists", { name }));
-            jsPlumbApiRef.current?.deleteConnection(connection);
-        }
-    }, [ askRelationName ]);
-
-    return connectionCallback;
-}
-

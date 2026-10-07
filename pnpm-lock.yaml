@@ -313,9 +313,6 @@ importers:
       jquery.fancytree:
         specifier: 2.38.5
         version: 2.38.5(jquery@4.0.0)
-      jsplumb:
-        specifier: 2.15.6
-        version: 2.15.6
       katex:
         specifier: 0.19.0
         version: 0.19.0
@@ -945,9 +942,6 @@ importers:
       js-sha512:
         specifier: 0.9.0
         version: 0.9.0
-      jsplumb:
-        specifier: 2.15.6
-        version: 2.15.6
       katex:
         specifier: 0.19.0
         version: 0.19.0
@@ -8304,9 +8298,6 @@ packages:
   jsonpointer@5.0.1:
     resolution: {integrity: sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==}
     engines: {node: '>=0.10.0'}
-
-  jsplumb@2.15.6:
-    resolution: {integrity: sha512-sIpbpz5eMVM+vV+MQzFCidlaa1RsknrQs6LOTKYDjYUDdTAi2AN2bFi94TxB33TifcIsRNV1jebcaxg0tCoPzg==}
 
   jsx-ast-utils@3.3.5:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
@@ -19966,8 +19957,6 @@ snapshots:
 
   jsonpointer@5.0.1:
     optional: true
-
-  jsplumb@2.15.6: {}
 
   jsx-ast-utils@3.3.5:
     dependencies:

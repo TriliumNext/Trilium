@@ -17,6 +17,7 @@
     line-height: 1.2;
     cursor: pointer;
     user-select: none;
+    touch-action: none;
 
     > .note-box-icon {
         flex-shrink: 0;
@@ -56,7 +57,7 @@
             var(--board-item-hover-shadow);
     }
 
-    &.dragHover {
+    &.drop-target {
         outline: 2px solid var(--board-selected-ring-color);
     }
 
@@ -71,8 +72,7 @@
     }
 }
 
-/* jsPlumb adds these classes to both boxes of the hovered relation. */
-.note-detail-relation-map .note-box:is(.jtk-source-hover, .jtk-target-hover) {
+.note-detail-relation-map .note-box.highlighted {
     background-color: var(--note-card-hover-background);
     box-shadow: var(--board-item-hover-shadow);
 }

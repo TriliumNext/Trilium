@@ -1,7 +1,7 @@
 import { render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import FAttribute from "../../../entities/fattribute";
@@ -34,9 +34,11 @@ describe("relation map NoteBox", () => {
         }
     });
 
+    const onResize = vi.fn();
+
     function Harness({ selected }: { selected: boolean }) {
         const mapApiRef = useRef<RelationMapApi>(null);
-        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} isReadOnly={false} />;
+        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} isReadOnly={false} onPointerDown={() => {}} onResize={onResize} />;
     }
 
     async function mount(selected = false) {
@@ -59,19 +61,19 @@ describe("relation map NoteBox", () => {
 
     const box = () => container?.querySelector<HTMLElement>(".note-box") ?? null;
 
-    it("shows the note's icon and title as a card, not as a link", async () => {
+    it("shows the note's icon and title as a card, not as a link, and reports its size", async () => {
         await mount();
 
         expect(box()?.classList.contains("tn-note-card")).toBe(true);
         expect(box()?.querySelector(".note-box-icon")?.classList.contains("bx-bug")).toBe(true);
         expect(box()?.querySelector(".note-box-title")?.textContent).toBe("Specification");
         expect(box()?.querySelector("a")).toBeNull();
+        expect(onResize).toHaveBeenCalledWith("boxnote", { width: 0, height: 0 });
     });
 
-    it("follows the note's colour and the selection without dropping the classes jsPlumb added", async () => {
+    it("follows the note's colour and the selection", async () => {
         await mount();
         const coloured = cssClassManager.createClassForColor("#ff0000");
-        box()?.classList.add("jtk-draggable");
         expect(box()?.className).not.toContain(coloured);
 
         await addColor("#ff0000");
@@ -80,7 +82,6 @@ describe("relation map NoteBox", () => {
         expect(box()?.className).toContain(coloured);
         expect(box()?.classList.contains("with-hue")).toBe(true);
         expect(box()?.classList.contains("selected")).toBe(true);
-        expect(box()?.classList.contains("jtk-draggable")).toBe(true);
 
         await mount(false);
         expect(box()?.classList.contains("selected")).toBe(false);

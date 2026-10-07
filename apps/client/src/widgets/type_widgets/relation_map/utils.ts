@@ -9,6 +9,9 @@ export function idToNoteId(id: string) {
     return id.substr(13);
 }
 
+/** How far, in pixels, the pointer can move between press and release for the click to count. */
+export const CLICK_TOLERANCE = 4;
+
 export function getZoom(container: HTMLDivElement) {
     const transform = window.getComputedStyle(container).transform;
     if (transform === "none") {

@@ -1,0 +1,65 @@
+import { describe, expect, it } from "vitest";
+
+import { type Box, type ConnectionShape, layoutConnections, layoutLine } from "./geometry";
+
+const boxA: Box = { x: 0, y: 0, width: 100, height: 40 };
+const boxB: Box = { x: 300, y: 0, width: 100, height: 40 };
+
+describe("relation map geometry", () => {
+    it("runs a line between the facing borders, with an arrowhead at the target only", () => {
+        const layout = layoutLine(boxA, boxB, { labelAt: [ 0.5 ] });
+
+        expect(layout?.path).toBe("M 103 20 Q 200 20 297 20");
+        expect(layout?.arrows).toHaveLength(1);
+        expect(arrowTip(layout?.arrows[0])).toEqual({ x: 297, y: 20 });
+        expect(layout?.labels).toEqual([ { x: 200, y: 20 } ]);
+
+        const both = layoutLine(boxA, boxB, { arrowAtSource: true });
+        expect(both?.arrows.map(arrowTip)).toEqual([ { x: 297, y: 20 }, { x: 103, y: 20 } ]);
+    });
+
+    it("draws a relation being created up to the pointer, and nothing from inside its own box", () => {
+        expect(layoutLine(boxA, { x: 250, y: 20 })?.path).toBe("M 103 20 Q 150 20 250 20");
+        expect(layoutLine(boxA, { x: 60, y: 30 })).toBeNull();
+    });
+
+    it("bows relations between the same two boxes apart, whichever way they run", () => {
+        const layouts = layoutConnections([
+            shape("ab", "a", "b"),
+            shape("ba", "b", "a"),
+            shape("single", "a", "c")
+        ], new Map([ [ "a", boxA ], [ "b", boxB ], [ "c", { ...boxB, y: 300 } ] ]));
+
+        const offset = (id: string) => (layouts.get(id)?.labels[0].y ?? 20) - 20;
+        expect(offset("ab") * offset("ba")).toBeLessThan(0);
+        expect(Math.abs(offset("ab") - offset("ba"))).toBeGreaterThan(20);
+        expect(layouts.get("single")?.path).toMatch(/^M [\d.]+ [\d.]+ Q 200 170 /);
+    });
+
+    it("loops a relation to its own box around the top-right corner, each further loop wider", () => {
+        const layouts = layoutConnections([
+            { ...shape("first", "a", "a"), labelAt: [ 0.5 ] },
+            shape("second", "a", "a")
+        ], new Map([ [ "a", boxA ] ]));
+
+        expect(layouts.get("first")?.path).toBe("M 82 0 A 18 18 0 1 1 100 18");
+        expect(layouts.get("second")?.path).toBe("M 72 0 A 28 28 0 1 1 100 28");
+        expect(arrowTip(layouts.get("first")?.arrows[0])).toEqual({ x: 100, y: 18 });
+        const label = layouts.get("first")?.labels[0];
+        expect([ label?.x, label?.y ].map((value) => Math.round(value ?? 0))).toEqual([ 113, -13 ]);
+    });
+
+    it("leaves out a relation whose box is not measured yet", () => {
+        expect(layoutConnections([ shape("ab", "a", "b") ], new Map([ [ "a", boxA ] ])).size).toBe(0);
+    });
+});
+
+function shape(id: string, sourceId: string, targetId: string): ConnectionShape {
+    return { id, sourceId, targetId, arrowAtSource: false, labelAt: [ 0.5 ] };
+}
+
+/** The first point of an arrowhead outline, which is its tip. */
+function arrowTip(points: string | undefined) {
+    const [ x, y ] = (points ?? "").split(" ")[0].split(",").map(Number);
+    return { x, y };
+}
