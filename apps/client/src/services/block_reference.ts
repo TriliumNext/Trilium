@@ -9,7 +9,7 @@ import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast } from "./clipboard_ext.js";
-import { expandAncestorDetails } from "./collapsible.js";
+import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
@@ -137,7 +137,7 @@ export function consumeBlockReference(
 
     const first = start ?? end;
     if (first) {
-        expandAncestorDetails(first);
+        revealElement(first);
         first.scrollIntoView({ behavior: "smooth", block: "center" });
         flashBlocks(start && end ? getBlockRangeElements(start, end) : [ first ]);
     }
@@ -147,9 +147,9 @@ export function consumeBlockReference(
 }
 
 /**
- * Highlights the blocks that `value`, a `block` link parameter, points at in `container`, and opens
- * the collapsed blocks around its first and last block. Of a broken range, the block found is
- * highlighted.
+ * Highlights the blocks that `value`, a `block` link parameter, points at in `container`, and
+ * reveals its first and last block inside collapsed blocks and inactive tabs. Of a broken range,
+ * the block found is highlighted.
  */
 export function highlightBlockReference(container: HTMLElement, value: string) {
     const { start, end } = resolveBlockReference<HTMLElement>(container, value);
@@ -160,7 +160,7 @@ export function highlightBlockReference(container: HTMLElement, value: string) {
 
     for (const block of [ start, end ]) {
         if (block) {
-            expandAncestorDetails(block);
+            revealElement(block);
         }
     }
     const elements = start && end ? getBlockRangeElements(start, end) : [ first ];

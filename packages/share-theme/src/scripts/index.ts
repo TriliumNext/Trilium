@@ -13,7 +13,7 @@ import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 
-import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+import { applyTabs, revealFragment } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 
 function $try<T extends (...a: unknown[]) => unknown>(func: T, ...args: Parameters<T>) {
     try {
@@ -72,6 +72,11 @@ function setupTabs() {
     if (content) {
         applyTabs(content, { placeholder: content.dataset.tabTitlePlaceholder ?? "" });
     }
+
+    // The browser does not scroll to a fragment inside a hidden panel.
+    const showFragment = () => revealFragment(location.hash)?.scrollIntoView();
+    showFragment();
+    window.addEventListener("hashchange", showFragment);
 }
 
 function determineNoteType() {

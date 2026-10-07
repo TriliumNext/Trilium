@@ -109,6 +109,24 @@ export function revealTab(element: Element) {
     }
 }
 
+/**
+ * Returns the element that the URL fragment `hash` (`#id`, percent-encoded) names, after showing
+ * every tab that encloses it, or `null` when no element has that ID.
+ */
+export function revealFragment(hash: string): Element | null {
+    let id: string;
+    try {
+        id = decodeURIComponent(hash.slice(1));
+    } catch {
+        return null;
+    }
+    const target = id ? document.getElementById(id) : null;
+    if (target) {
+        revealTab(target);
+    }
+    return target;
+}
+
 /** Shows the tab of the given title, keyed by the tabs block that {@link applyTabs} set up. */
 const activators = new WeakMap<HTMLElement, (title: HTMLElement) => void>();
 let lastTabId = 0;

@@ -1,4 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -66,6 +67,20 @@ describe("consumeBlockReference", () => {
 
         vi.advanceTimersByTime(1500);
         expect(block?.classList.contains("block-reference-flash")).toBe(false);
+    });
+
+    it("shows the tab that holds the block", () => {
+        const container = buildContainer(
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">A</p><div class="trilium-tab-panel"></div></section>` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel"><p data-trilium-block-id="a">A</p></div></section>` +
+            `</div>`
+        );
+        applyTabs(container, { placeholder: "" });
+
+        consumeBlockReference(container, { block: "a" });
+
+        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
     });
 
     it("flashes the outermost elements of a range", () => {

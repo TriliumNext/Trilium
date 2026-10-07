@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { applyTabs, revealTab } from "./tabs_read_only.js";
+import { applyTabs, revealFragment, revealTab } from "./tabs_read_only.js";
 
 const PLACEHOLDER = "Tab title";
 
@@ -150,5 +150,20 @@ describe("applyTabs", () => {
         titleOf(container, "Outer 1").click();
         revealTab(container.querySelector("#outside") as Element);
         expect(activeTitles(container)).toEqual(["Outer 1", "Inner 2"]);
+    });
+
+    it("reveals the element a URL fragment names", () => {
+        const container = renderTabs(
+            `<div class="trilium-tabs">${tab("A", "")}${tab("B", "<h2 id=\"step two\">x</h2>")}</div>`
+        );
+        document.body.append(container);
+
+        expect(revealFragment("#step%20two")?.textContent).toBe("x");
+        expect(activeTitles(container)).toEqual(["B"]);
+
+        expect(revealFragment("")).toBeNull();
+        expect(revealFragment("#missing")).toBeNull();
+        expect(revealFragment("#%E0%A4%A")).toBeNull();
+        container.remove();
     });
 });

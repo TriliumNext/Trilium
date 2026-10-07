@@ -1,9 +1,9 @@
-import { expandAncestorDetails } from "./collapsible.js";
+import { revealElement } from "./collapsible.js";
 import type { ViewScope } from "./link.js";
 
 /**
  * Consumes `viewScope.bookmark` (the `?bookmark=` link parameter) against a rendered note
- * content container: expands any closed collapsible ancestor of the target, scrolls to it,
+ * content container: reveals the target inside collapsed blocks and inactive tabs, scrolls to it,
  * and clears the bookmark so it fires only once (mirrors `consumeSearchTerms`).
  *
  * A null `container` leaves the bookmark untouched, because the content is not rendered yet and
@@ -20,7 +20,7 @@ export function consumeBookmark(container: ParentNode | null | undefined, viewSc
     const bookmark = viewScope.bookmark;
     const el = [...container.querySelectorAll("[id]")].find((candidate) => candidate.id === bookmark);
     if (el) {
-        expandAncestorDetails(el);
+        revealElement(el);
         el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
     viewScope.bookmark = undefined;
