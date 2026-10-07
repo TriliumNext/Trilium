@@ -18,6 +18,19 @@ describe("relation map geometry", () => {
         expect(both?.arrows.map(arrowTip)).toEqual([ { x: 297, y: 20 }, { x: 103, y: 20 } ]);
     });
 
+    it("runs a line between nearby boxes of different sizes, across the gap between them", () => {
+        const narrow: Box = { x: 0, y: 0, width: 150, height: 40 };
+        const wide: Box = { x: 200, y: 0, width: 300, height: 40 };
+        const tall: Box = { x: 200, y: -80, width: 300, height: 200 };
+
+        for (const target of [ wide, tall ]) {
+            const layout = layoutLine(narrow, target);
+            expect(layout?.path).toBe("M 153 20 Q 175 20 197 20");
+            expect(arrowTip(layout?.arrows[0])).toEqual({ x: 197, y: 20 });
+        }
+        expect(layoutLine(wide, narrow, { bend: 15 })).not.toBeNull();
+    });
+
     it("turns a label along its line and keeps it upright", () => {
         const upward = layoutLine(boxB, { ...boxA, y: 300 }, { labelAt: [ 0.5 ] })?.labels[0];
         expect(upward?.angle).toBe(-45);
@@ -25,7 +38,7 @@ describe("relation map geometry", () => {
     });
 
     it("draws a relation being created up to the pointer, and nothing from inside its own box", () => {
-        expect(layoutLine(boxA, { x: 250, y: 20 })?.path).toBe("M 103 20 Q 150 20 250 20");
+        expect(layoutLine(boxA, { x: 250, y: 20 })?.path).toBe("M 103 20 Q 176.5 20 250 20");
         expect(layoutLine(boxA, { x: 60, y: 30 })).toBeNull();
     });
 

@@ -98,14 +98,19 @@ export function layoutLine(source: Box, target: Box | Point, { bend = 0, arrowAt
     const distance = Math.hypot(dx, dy);
     if (!distance) return null;
 
+    // The ends of the straight line, which the control point is measured from, so that it falls
+    // between the boxes even when one box is much larger than the other.
+    const straightStart = exitPoint(source, to);
+    const straightEnd = "width" in target ? exitPoint(target, from) : target;
+    if (!straightStart || !straightEnd) return null;
+
     // The curve passes halfway between the middle of the straight line and its control point.
     const control = {
-        x: (from.x + to.x) / 2 + (dy / distance) * bend * 2,
-        y: (from.y + to.y) / 2 - (dx / distance) * bend * 2
+        x: (straightStart.x + straightEnd.x) / 2 + (dy / distance) * bend * 2,
+        y: (straightStart.y + straightEnd.y) / 2 - (dx / distance) * bend * 2
     };
-    const start = exitPoint(source, control);
-    const end = "width" in target ? exitPoint(target, control) : target;
-    if (!start || !end) return null;
+    const start = exitPoint(source, control) ?? straightStart;
+    const end = "width" in target ? exitPoint(target, control) ?? straightEnd : target;
 
     return {
         path: `M ${round(start.x)} ${round(start.y)} Q ${round(control.x)} ${round(control.y)} ${round(end.x)} ${round(end.y)}`,

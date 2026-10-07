@@ -105,7 +105,7 @@ describe("relation map Connections", () => {
     it("draws a relation being created toward the pointer", () => {
         mount({ sourceNoteId: "a", pointer: { x: 250, y: 20 } });
 
-        expect(connection("pending")?.querySelector("path")?.getAttribute("d")).toBe("M 103 20 Q 150 20 250 20");
+        expect(connection("pending")?.querySelector("path")?.getAttribute("d")).toBe("M 103 20 Q 176.5 20 250 20");
     });
 });
 
