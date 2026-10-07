@@ -1407,12 +1407,6 @@
     "conflicting": "Multiple definitions",
     "conflicting_tooltip": "The items define this attribute in more than one way, so it is sorted as text and cannot be set from the item menu."
   },
-  "script_executor": {
-    "query": "Query",
-    "script": "Script",
-    "execute_query": "Execute Query",
-    "execute_script": "Execute Script"
-  },
   "search_definition": {
     "add_search_option": "Add search option:",
     "search_string": "search string",

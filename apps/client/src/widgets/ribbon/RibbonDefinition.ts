@@ -4,19 +4,9 @@ import EditedNotesTab from "./EditedNotesTab";
 import ImagePropertiesTab from "./ImagePropertiesTab";
 import NotePropertiesTab from "./NotePropertiesTab";
 import { TabConfiguration } from "./ribbon-interface";
-import ScriptTab from "./ScriptTab";
 import SearchDefinitionTab from "./SearchDefinitionTab";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
-    {
-        title: ({ note }) => note?.isTriliumSqlite() ? t("script_executor.query") : t("script_executor.script"),
-        icon: "bx bx-play",
-        content: ScriptTab,
-        activate: true,
-        show: ({ note }) => note &&
-            (note.isTriliumScript() || note.isTriliumSqlite()) &&
-            (note.hasLabel("executeDescription") || note.hasLabel("executeButton"))
-    },
     {
         title: t("search_definition.search_parameters"),
         icon: "bx bx-search",
