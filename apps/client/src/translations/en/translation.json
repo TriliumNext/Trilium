@@ -1373,10 +1373,6 @@
     "archived": "Archived",
     "search": "Search"
   },
-  "note_properties": {
-    "this_note_was_originally_taken_from": "This note was originally taken from:",
-    "info": "Info"
-  },
   "promoted_attributes": {
     "promoted_attributes": "Promoted Attributes",
     "create_attribute": "Create a new attribute",
