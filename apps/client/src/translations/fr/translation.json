@@ -1024,11 +1024,8 @@
     "connection_exists": "La connexion « {{name}} » entre ces notes existe déjà.",
     "start_dragging_relations": "Commencez à faire glisser les relations à partir d'ici et déposez-les sur une autre note.",
     "note_not_found": "Note {{noteId}} introuvable !",
-    "cannot_match_transform": "Correspondance à la transformation : {{transform}} introuvable",
     "note_already_in_diagram": "La note \"{{title}}\" est déjà dans le diagramme.",
-    "enter_title_of_new_note": "Entrez le titre de la nouvelle note",
     "default_new_note_title": "nouvelle note",
-    "click_on_canvas_to_place_new_note": "Cliquez sur le canevas pour placer une nouvelle note",
     "rename_relation": "Renommer la relation"
   },
   "backend_log": {

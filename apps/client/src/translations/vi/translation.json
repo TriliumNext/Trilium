@@ -1686,11 +1686,8 @@
     "connection_exists": "Kết nối '{{name}}' giữa các ghi chú này đã tồn tại.",
     "start_dragging_relations": "Bắt đầu kéo các quan hệ từ đây và thả chúng lên một ghi chú khác.",
     "note_not_found": "Không tìm thấy ghi chú {{noteId}}!",
-    "cannot_match_transform": "Không thể khớp phép biến đổi: {{transform}}",
     "note_already_in_diagram": "Ghi chú \"{{title}}\" đã có trong sơ đồ.",
-    "enter_title_of_new_note": "Nhập tiêu đề của ghi chú mới",
-    "default_new_note_title": "Ghi chú mới",
-    "click_on_canvas_to_place_new_note": "Nhấp vào vùng làm việc để đặt ghi chú mới"
+    "default_new_note_title": "Ghi chú mới"
   },
   "render": {
     "setup_title": "Hiển thị HTML tùy chỉnh hoặc Preact JSX bên trong ghi chú này",

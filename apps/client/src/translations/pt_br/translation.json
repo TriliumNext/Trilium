@@ -1363,12 +1363,9 @@
     "connection_exists": "A conexão '{{name}}' já existe entre estas notas.",
     "note_not_found": "Nota {{noteId}} não encontrada!",
     "note_already_in_diagram": "A nota \"{{title}}\" já está no diagrama.",
-    "enter_title_of_new_note": "Digite o título da nova nota",
     "default_new_note_title": "nova nota",
-    "click_on_canvas_to_place_new_note": "Clique no quadro para incluir uma nova nota",
     "specify_new_relation_name": "Especifique o novo nome da relação (caracteres disponíveis: alfanuméricos, vírgula e underscore):",
     "start_dragging_relations": "Comece arrastando as relações daqui e solte-as em outra nota.",
-    "cannot_match_transform": "Não foi possível combinar a transformação: {{transform}}",
     "rename_relation": "Renomear relação"
   },
   "backend_log": {
