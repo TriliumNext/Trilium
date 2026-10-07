@@ -3,13 +3,18 @@ import "./MapToolbar.css";
 import { t } from "../../../services/i18n";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../../react/OverlayControlGroup";
 
-/** What the buttons ask for, which is what the map itself answers (see `useMapZoom` in RelationMap.tsx). */
-export type MapCommand = "relationMapResetZoomIn" | "relationMapResetZoomOut" | "relationMapResetPanZoom" | "relationMapFitToView";
-
 interface MapToolbarProps {
-    /** The scale the map is drawn at, and whether each zoom step has room left. */
-    zoom: { scale: number; canZoomIn: boolean; canZoomOut: boolean };
-    onCommand: (command: MapCommand) => void;
+    /** The map's scale, whether each zoom step has room left, and the actions of the buttons (see
+     *  `useMapZoom` in RelationMap.tsx). */
+    zoom: {
+        scale: number;
+        canZoomIn: boolean;
+        canZoomOut: boolean;
+        zoomIn(): void;
+        zoomOut(): void;
+        reset(): void;
+        fit(): void;
+    };
 }
 
 /**
@@ -22,26 +27,24 @@ interface MapToolbarProps {
  * those do — a hundred being the map drawn at its own size — and pressed, takes the map back there
  * and to the corner it started in, which is what the button wearing a crop mark did.
  *
- * What the three do is asked for as commands rather than done here — the same commands a script can
- * trigger (`api.triggerCommand`), which is why they outlive the floating buttons that were the other
- * caller. The map itself is only read from: for the scale to show, and for the ends of its range,
- * which is what leaves a step with nothing left to give disabled.
+ * A step is disabled once the scale reaches the end of the map's zoom range, and the last button
+ * fits all the notes into the view.
  */
-export default function MapToolbar({ zoom, onCommand }: MapToolbarProps) {
+export default function MapToolbar({ zoom }: MapToolbarProps) {
     return (
         <OverlayControlGroup className="relation-map-toolbar" placement="bottom-end">
             <ZoomControls
                 percent={zoom.scale * 100}
                 canZoomIn={zoom.canZoomIn}
                 canZoomOut={zoom.canZoomOut}
-                onZoomIn={() => onCommand("relationMapResetZoomIn")}
-                onZoomOut={() => onCommand("relationMapResetZoomOut")}
-                onReset={() => onCommand("relationMapResetPanZoom")}
+                onZoomIn={zoom.zoomIn}
+                onZoomOut={zoom.zoomOut}
+                onReset={zoom.reset}
             />
             <OverlayControlButton
                 title={t("relation_map.fit_to_view")}
                 icon="bx-scan"
-                onClick={() => onCommand("relationMapFitToView")}
+                onClick={zoom.fit}
             />
         </OverlayControlGroup>
     );

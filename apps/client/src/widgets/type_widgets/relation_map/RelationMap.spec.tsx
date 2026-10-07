@@ -28,8 +28,6 @@ vi.mock("react-zoom-pan-pinch", () => ({
     TransformComponent: (props: { children?: ComponentChildren }) => <div>{props.children}</div>
 }));
 
-import Component from "../../../components/component";
-import { ParentComponent } from "../../react/react_utils";
 import type RelationMapApi from "./api";
 import type { MapTransform } from "./api";
 import { MapViewport, useCanvasClicks, useMapZoom, useRevealSelectedBox } from "./RelationMap";
@@ -239,7 +237,6 @@ describe("relation map zoom", () => {
     const setTransform = vi.fn();
     let boxes = [ { x: 0, y: 0, width: 1840, height: 100 } ];
     let zoom: ReturnType<typeof useMapZoom> | undefined;
-    const component = new Component();
 
     afterEach(() => {
         if (container) {
@@ -253,7 +250,7 @@ describe("relation map zoom", () => {
     function Harness({ loadedTransform }: { loadedTransform: MapTransform }) {
         const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
         const mapApiRef = useRef({ setTransform } as unknown as RelationMapApi);
-        zoom = useMapZoom({ ntxId: "map", viewport, loadedTransform, mapApiRef, getBoxes: () => boxes });
+        zoom = useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes: () => boxes });
         return <MapViewport zoom={zoom} viewportRef={setViewport}><div className="note-box" /></MapViewport>;
     }
 
@@ -261,7 +258,7 @@ describe("relation map zoom", () => {
         container = document.createElement("div");
         document.body.appendChild(container);
         act(() => render(
-            <ParentComponent.Provider value={component}><Harness loadedTransform={loadedTransform} /></ParentComponent.Provider>,
+            <Harness loadedTransform={loadedTransform} />,
             container as HTMLElement));
     }
 
@@ -274,8 +271,7 @@ describe("relation map zoom", () => {
         Object.defineProperty(viewport, "clientWidth", { value: 1000 });
         Object.defineProperty(viewport, "clientHeight", { value: 600 });
     }
-    const trigger = (name: "relationMapResetPanZoom" | "relationMapResetZoomIn" | "relationMapResetZoomOut", ntxId: string) =>
-        act(() => { component.handleEvent(name, { ntxId }); });
+    const run = (action: "reset" | "fit" | "zoomIn" | "zoomOut") => act(() => { zoom?.[action](); });
 
     it("pans an unbounded canvas, and leaves boxes, labels and relations to be dragged and clicked", () => {
         mount({ x: 0, y: 0, scale: 1 });
@@ -291,7 +287,7 @@ describe("relation map zoom", () => {
         expect(state()).toEqual({ positionX: -800, positionY: 600, scale: 1.5 });
         expect(zoom?.scale).toBe(1.5);
 
-        trigger("relationMapResetPanZoom", "map");
+        run("reset");
         expect(state()).toEqual({ positionX: 0, positionY: 0, scale: 1 });
         expect(setTransform).toHaveBeenLastCalledWith({ x: 0, y: 0, scale: 1 });
     });
@@ -300,24 +296,21 @@ describe("relation map zoom", () => {
         mount({ x: -800, y: 600, scale: 2 });
         sizeViewport();
 
-        act(() => { component.handleEvent("relationMapFitToView", { ntxId: "map" }); });
+        run("fit");
         expect(state()).toEqual({ positionX: 40, positionY: 251, scale: 0.5 });
 
         boxes = [];
-        act(() => { component.handleEvent("relationMapFitToView", { ntxId: "map" }); });
+        run("fit");
         expect(state()).toEqual({ positionX: 40, positionY: 251, scale: 0.5 });
     });
 
-    it("steps the zoom on the commands of its own map only", () => {
+    it("steps the zoom", () => {
         mount({ x: 0, y: 0, scale: 1 });
 
-        trigger("relationMapResetZoomIn", "other");
-        expect(state()?.scale).toBe(1);
-
-        trigger("relationMapResetZoomIn", "map");
+        run("zoomIn");
         expect(state()?.scale).toBeCloseTo(1.2);
 
-        trigger("relationMapResetZoomOut", "map");
+        run("zoomOut");
         expect(state()?.scale).toBeCloseTo(1);
     });
 });

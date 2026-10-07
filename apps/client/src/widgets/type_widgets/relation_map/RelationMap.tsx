@@ -15,9 +15,10 @@ import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
+import { useEditorSpacedUpdate, useNoteLabelBoolean } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard } from "../../react/zoom_pan_keyboard";
+import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
 import { TypeWidgetProps } from "../type_widget";
 import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, MapTransform } from "./api";
 import Connections from "./Connections";
@@ -30,7 +31,7 @@ import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
 import { CLICK_TOLERANCE, fitTransform, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
-export default function RelationMap({ note, noteContext, ntxId, parentComponent }: TypeWidgetProps) {
+export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProps) {
     const [ data, setData ] = useState<MapData>();
     // The same read-only the note's own bar of actions read while the + stood there.
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
@@ -90,7 +91,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     });
 
     const boxesRef = useRef<Map<string, Box>>(new Map());
-    const mapZoom = useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes: () => boxesRef.current.values() });
+    const mapZoom = useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes: () => boxesRef.current.values() });
     const { getScale } = mapZoom;
     const [ selection, setSelection ] = useState<PaneSelection | null>(null);
     const noteIdsOnMap = useMemo(() => data?.notes.map((entry) => entry.noteId) ?? [], [ data ]);
@@ -185,13 +186,13 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             <EditToolbar
                 isReadOnly={isReadOnly}
                 placing={placement.placing}
-                onTogglePlacement={() => parentComponent?.triggerEvent("relationMapCreateChildNote", { ntxId })}
+                onTogglePlacement={placement.toggle}
             />
 
-            <MapToolbar
-                zoom={mapZoom}
-                onCommand={(command) => parentComponent?.triggerEvent(command, { ntxId })}
-            />
+            <MapToolbar zoom={mapZoom} />
+
+            {/* The note pane takes the top-right corner while it is open. */}
+            {!isMobile() && !selection && <ShortcutHintButton />}
 
             <NotePane
                 paneRef={paneRef}
@@ -217,12 +218,11 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
 /**
  * Pans and zooms the map with react-zoom-pan-pinch, as the image viewer does, on a canvas without
  * bounds. Restores `loadedTransform` whenever the note's content loads, saves every change to the
- * map's data, and answers the zoom commands, which scripts can trigger too. Fitting shows all of
- * `getBoxes()` at once. The wheel zooms without
- * the map being focused, since the map fills its pane and has no page to scroll.
+ * map's data, and returns the actions of the zoom toolbar: `reset` goes back to the origin at
+ * 100%, and `fit` shows all of `getBoxes()` at once. The wheel zooms without the map being
+ * focused, since the map fills its pane and has no page to scroll.
  */
-export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBoxes }: {
-    ntxId: string | null | undefined;
+export function useMapZoom({ viewport, loadedTransform, mapApiRef, getBoxes }: {
     /** The focusable element the keyboard and the wheel act on. */
     viewport: HTMLDivElement | null;
     loadedTransform: MapTransform | undefined;
@@ -254,22 +254,14 @@ export function useMapZoom({ ntxId, viewport, loadedTransform, mapApiRef, getBox
         api.setTransform(positionX + dx, positionY + dy, scale, REVEAL_ANIMATION_MS);
     }, [ ref ]);
 
-    useTriliumEvents([ "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapResetZoomOut", "relationMapFitToView" ], ({ ntxId: eventNtxId }, eventName) => {
-        if (eventNtxId !== ntxId) return;
+    const reset = useCallback(() => ref.current?.setTransform(0, 0, 1), [ ref ]);
 
-        if (eventName === "relationMapResetPanZoom") {
-            ref.current?.setTransform(0, 0, 1);
-        } else if (eventName === "relationMapFitToView") {
-            const fitted = viewport && fitTransform(getBoxes(), { width: viewport.clientWidth, height: viewport.clientHeight }, MIN_SCALE);
-            if (fitted) ref.current?.setTransform(fitted.x, fitted.y, fitted.scale, REVEAL_ANIMATION_MS);
-        } else if (eventName === "relationMapResetZoomIn") {
-            zoom.zoomIn();
-        } else {
-            zoom.zoomOut();
-        }
-    });
+    const fit = useCallback(() => {
+        const fitted = viewport && fitTransform(getBoxes(), { width: viewport.clientWidth, height: viewport.clientHeight }, MIN_SCALE);
+        if (fitted) ref.current?.setTransform(fitted.x, fitted.y, fitted.scale, REVEAL_ANIMATION_MS);
+    }, [ ref, viewport, getBoxes ]);
 
-    return { ...zoom, onTransform, getScale, moveBy };
+    return { ...zoom, onTransform, getScale, moveBy, reset, fit };
 }
 
 /**
@@ -415,11 +407,10 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
     const [ placing, setPlacing ] = useState(false);
     const ghostRef = useRef<HTMLDivElement>(null);
 
-    useTriliumEvent("relationMapCreateChildNote", ({ ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId) return;
+    const toggle = useCallback(() => {
         if (!placing) onArm();
         setPlacing(!placing);
-    });
+    }, [ placing, onArm ]);
 
     // Depends on `placing` rather than on the code that turned placement mode on, so the toast and
     // the listener are removed on cancel, after placement and on unmount.
@@ -479,7 +470,7 @@ function useNotePlacement({ ntxId, note, containerRef, getScale, mapApiRef, onAr
         onCreated(created.noteId);
     }, [ note, containerRef, getScale, mapApiRef, onCreated ]);
 
-    return { placing, ghostRef, followPointer, hideGhost, placeAt };
+    return { placing, toggle, ghostRef, followPointer, hideGhost, placeAt };
 }
 
 /**

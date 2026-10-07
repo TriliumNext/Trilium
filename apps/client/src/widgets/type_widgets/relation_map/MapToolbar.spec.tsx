@@ -6,7 +6,7 @@ import { act } from "preact/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderInto } from "../../../test/render";
-import MapToolbar, { EditToolbar, type MapCommand } from "./MapToolbar";
+import MapToolbar, { EditToolbar } from "./MapToolbar";
 
 vi.mock("../../../services/i18n", () => ({ t: (key: string) => key }));
 
@@ -30,7 +30,7 @@ describe("relation map MapToolbar", () => {
         expect([ zoomOut()?.disabled, zoomIn()?.disabled ]).toEqual([ false, true ]);
     });
 
-    it("asks for what each button stands for rather than moving the map itself", () => {
+    it("calls the action of each button", () => {
         const { commands, readout, zoomIn, zoomOut, fit } = renderToolbar();
 
         act(() => zoomOut()?.click());
@@ -38,7 +38,7 @@ describe("relation map MapToolbar", () => {
         act(() => zoomIn()?.click());
         act(() => fit()?.click());
 
-        expect(commands).toEqual([ "relationMapResetZoomOut", "relationMapResetPanZoom", "relationMapResetZoomIn", "relationMapFitToView" ]);
+        expect(commands).toEqual([ "zoomOut", "reset", "zoomIn", "fit" ]);
     });
 });
 
@@ -70,17 +70,18 @@ describe("relation map EditToolbar", () => {
     });
 });
 
-/** Builds the camera group, holding on to what the buttons ask for. */
+/** Builds the camera group, recording which action each button calls. */
 function renderToolbar() {
-    const commands: MapCommand[] = [];
+    const commands: string[] = [];
+    const actions = {
+        zoomIn: () => commands.push("zoomIn"),
+        zoomOut: () => commands.push("zoomOut"),
+        reset: () => commands.push("reset"),
+        fit: () => commands.push("fit")
+    };
     let container: HTMLElement | undefined;
     const rerender = (zoom: Partial<Parameters<typeof MapToolbar>[0]["zoom"]> = {}) => act(() => {
-        container = renderInto(
-            <MapToolbar
-                zoom={{ scale: 1, canZoomIn: true, canZoomOut: true, ...zoom }}
-                onCommand={(command) => commands.push(command)}
-            />
-        );
+        container = renderInto(<MapToolbar zoom={{ scale: 1, canZoomIn: true, canZoomOut: true, ...actions, ...zoom }} />);
     });
     rerender();
     if (!container) throw new Error("the toolbar was not rendered");
