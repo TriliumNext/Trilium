@@ -43,7 +43,7 @@ async function openContextMenu(
     const embed = editor && getMenuEmbed(e, editor);
     const ownItems = viewScope.viewMode === "attachments" && viewScope.attachmentId
         ? await getAttachmentItems(noteId, viewScope.attachmentId, e, editor, embed)
-        : await getNoteItems(noteId, e, editor, embed);
+        : await getNoteItems(noteId, e, editor, embed, !!viewScope.block);
     // A later right-click opened its own menu while this one waited for the editor or the
     // attachment.
     if (request !== lastMenuRequest) {
@@ -195,17 +195,21 @@ async function getAttachmentItems(
 
 /**
  * The commands of an embedded note that the menu is opened on, in a group of their own, and
- * converting it in another. A menu opened on a link to the note offers converting the link.
+ * converting it in another. A menu opened on a link to the note offers converting the link, to an
+ * excerpt for a link to blocks of the note.
  */
 async function getNoteItems(
     noteId: string,
     e: LinkMenuOrigin,
     editor: CKTextEditor | null,
-    embed: MenuEmbed | null
+    embed: MenuEmbed | null,
+    isBlockReference: boolean
 ): Promise<MenuItem<CommandNames>[]> {
     if (!embed) {
         const embedItem = await getConvertToEmbedItem(
-            e, editor, t("link_context_menu.convert_link_to_included_note"),
+            e, editor, isBlockReference
+                ? t("link_context_menu.convert_link_to_note_excerpt")
+                : t("link_context_menu.convert_link_to_included_note"),
             () => froca.getNote(noteId)
         );
         return embedItem ? [ { kind: "separator" }, embedItem ] : [];

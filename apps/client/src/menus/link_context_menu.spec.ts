@@ -379,6 +379,29 @@ describe("openContextMenu", () => {
         expect(mocks.show.mock.calls[1][0].items).toHaveLength(4);
     });
 
+    it("offers converting a link to blocks of a note to an excerpt", async () => {
+        mocks.getTextEditorContaining.mockResolvedValue({
+            commands: { get: () => ({ isEnabled: true }) },
+            plugins: { get: () => ({ canConvertLinkToEmbed: () => true }) },
+            execute: vi.fn()
+        });
+        const editable = document.createElement("div");
+        editable.className = "ck-editor__editable";
+        editable.setAttribute("contenteditable", "true");
+        editable.innerHTML = `<p><a class="reference-link" href="#root/n1?block=b1">Note</a></p>`;
+        const link = editable.querySelector("a");
+        expect(link).not.toBeNull();
+
+        await linkContextMenu.openContextMenu(
+            "root/n1", contextMenuEvent(link ?? undefined), { block: "b1" }
+        );
+
+        expect(mocks.show.mock.calls[0][0].items.at(-1)).toMatchObject({
+            title: "link_context_menu.convert_link_to_note_excerpt",
+            uiIcon: "bx bx-window-alt"
+        });
+    });
+
     describe("opened on an embed in a note being edited", () => {
         const CHECK = "bx bx-check";
         const execute = vi.fn();

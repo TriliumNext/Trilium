@@ -16,7 +16,7 @@ Clicking a block reference opens the note, scrolls to the referenced blocks and 
 
 ## Including the referenced blocks
 
-To show the referenced blocks inside another note, right-click the link in a note being edited and select _Convert link to an included note_. The include shows only the referenced blocks, not the rest of the note, and marks them with an _Excerpt_ badge in its title. To see the whole note, press the <span class="tn-icon bx bx-link-external"></span> button in the same title, which opens the note in a new tab. Converting the include back to a link keeps the reference.
+To show the referenced blocks inside another note, right-click the link in a note being edited and select _Convert link to note excerpt_. The include shows only the referenced blocks, not the rest of the note, and marks them with an _Excerpt_ badge in its title. To see the whole note, press the <span class="tn-icon bx bx-link-external"></span> button in the same title, which opens the note in a new tab. Converting the include back to a link keeps the reference.
 
 To edit the referenced blocks without leaving the note, turn on _Editable_ in the toolbar of the include, as for any <a class="reference-link" href="Include%20Note.md">Include Note</a>. The changes are saved to the referenced blocks, and the rest of the note stays as it is.
 

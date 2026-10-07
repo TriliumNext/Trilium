@@ -11,7 +11,7 @@ To include a note that is already linked, right-click a reference link to it in 
 
 An [attachment](../../Basic%20Concepts%20and%20Features/Notes/Attachments.md) can be included the same way, from the context menu of a link to it (see _Embedding an attachment_ there).
 
-A link to blocks of a text note is converted the same way, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
+A link to blocks of a text note is converted the same way, with _Convert link to note excerpt_, and the include then shows only those blocks. See <a class="reference-link" href="Block%20references.md">Block references</a>.
 
 ## Box sizes
 

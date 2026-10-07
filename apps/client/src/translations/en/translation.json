@@ -3095,6 +3095,7 @@
     "open_note_in_popup": "Quick edit",
     "convert_link_to_embed": "Convert link to an embed",
     "convert_link_to_included_note": "Convert link to an included note",
+    "convert_link_to_note_excerpt": "Convert link to note excerpt",
     "convert_embed_to_link": "Convert to link",
     "include_size": "Size",
     "show_title": "Show title",
