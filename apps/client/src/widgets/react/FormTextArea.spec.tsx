@@ -19,12 +19,19 @@ describe("FormTextArea", () => {
 
     const textarea = () => container.querySelector<HTMLTextAreaElement>("textarea");
 
-    it("reflects an updated currentValue prop when re-rendered", () => {
-        act(() => render(<FormTextArea currentValue="first" />, container));
-        expect(textarea()?.value).toBe("first");
+    it("reflects an updated currentValue prop after a user edit", () => {
+        act(() => render(<FormTextArea currentValue="note A" />, container));
 
-        act(() => render(<FormTextArea currentValue="second" />, container));
-        expect(textarea()?.value).toBe("second");
+        const el = textarea();
+        if (!el) throw new Error("textarea not found");
+
+        // Simulate the user typing, which dirties the DOM value without updating currentValue.
+        el.value = "user edit";
+        act(() => { el.dispatchEvent(new Event("input", { bubbles: true })); });
+
+        // Now re-render with a new prop, as if the parent switched to a different note.
+        act(() => render(<FormTextArea currentValue="note B" />, container));
+        expect(textarea()?.value).toBe("note B");
     });
 
     it("fires onChange with the new value when the user types", () => {
