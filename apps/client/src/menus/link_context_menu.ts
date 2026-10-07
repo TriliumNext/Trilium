@@ -366,7 +366,7 @@ async function isInReadOnlyNote(element: Element | null) {
 
 /** The text editor containing `element`, or `null` when there is none or it is read-only. */
 async function getEditingTextEditor(element: Element | null) {
-    // Checked first: a note shown read-only has no editor, and asking for one waits for a timeout.
+    // An editor in read-only mode renders its editable with `contenteditable="false"`.
     if (!element?.closest(".ck-editor__editable[contenteditable='true']")) {
         return null;
     }
