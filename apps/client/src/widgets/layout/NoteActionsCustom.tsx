@@ -65,7 +65,8 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
         isReadOnly
     };
 
-    useTriliumEvents([ "toggleRibbonTabFileProperties", "toggleRibbonTabImageProperties" ], () => {
+    useTriliumEvents([ "toggleRibbonTabFileProperties", "toggleRibbonTabImageProperties" ], ({ ntxId }) => {
+        if (ntxId !== props.ntxId) return;
         (containerRef.current?.firstElementChild as HTMLElement)?.focus();
     });
 

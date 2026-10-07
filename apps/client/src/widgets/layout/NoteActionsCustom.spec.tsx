@@ -32,6 +32,27 @@ describe("NoteActionsCustom", () => {
         triggerCommand.mockRestore();
     });
 
+    it("focuses its first button on the File and Image Properties shortcuts only for its own note context", async () => {
+        const note = buildNote({ title: "Diagram", type: "mermaid" });
+        const parent = new Component();
+        const container = renderInto(
+            <ParentComponent.Provider value={parent}>
+                <NoteActionsCustom note={note} ntxId="ntx-split-2" noteContext={{ viewScope: { viewMode: "default" } } as NoteContext} />
+            </ParentComponent.Provider>
+        );
+        const firstButton = container.querySelector(".note-actions-custom")?.firstElementChild;
+        expect(firstButton).toBeTruthy();
+
+        for (const eventName of [ "toggleRibbonTabFileProperties", "toggleRibbonTabImageProperties" ] as const) {
+            (document.activeElement as HTMLElement | null)?.blur();
+            await parent.handleEvent(eventName, { ntxId: "ntx-split-1" });
+            expect(document.activeElement).not.toBe(firstButton);
+
+            await parent.handleEvent(eventName, { ntxId: "ntx-split-2" });
+            expect(document.activeElement).toBe(firstButton);
+        }
+    });
+
     function renderCopyButton({ isProtected = false }: { isProtected?: boolean }, viewScope: ViewScope = { viewMode: "default" }) {
         const note = buildNote({ title: "Diagram", type: "mermaid" });
         note.isProtected = isProtected;

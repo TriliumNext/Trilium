@@ -57,7 +57,10 @@ function PromotedAttributes({ note, componentId, noteContext }: {
     }, [ note, noteContext ]);
 
     // Keyboard shortcut.
-    useTriliumEvent("toggleRibbonTabPromotedAttributes", () => setExpanded(!expanded));
+    useTriliumEvent("toggleRibbonTabPromotedAttributes", ({ ntxId }) => {
+        if (!noteContext || ntxId !== noteContext.ntxId) return;
+        setExpanded(!expanded);
+    });
 
     if (!cells?.length) return false;
     return (note && (
