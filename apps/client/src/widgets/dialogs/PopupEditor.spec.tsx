@@ -44,7 +44,7 @@ vi.mock("../../components/note_context", () => ({
         note = mocks.contextNote;
         triggerEvent = vi.fn();
         setNote = vi.fn(async (_notePath: string, opts?: { viewScope?: ViewScope }) => {
-            this.viewScope = opts?.viewScope;
+            this.viewScope = { viewMode: "default", ...opts?.viewScope };
         });
 
         constructor(ntxId: string) {
