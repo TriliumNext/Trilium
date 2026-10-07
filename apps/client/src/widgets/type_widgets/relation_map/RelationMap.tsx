@@ -588,21 +588,26 @@ export function useCanvasClicks({ placing, onPlace, onSelectNote, onClickEmpty, 
     onSelectNote(noteId: string): void;
     onClickEmpty(): void;
     onOpenNote(noteId: string, e: MouseEvent): void;
-}): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onClickCapture" | "onAuxClickCapture"> {
+}): Pick<HTMLAttributes<HTMLDivElement>, "onPointerDownCapture" | "onPointerMoveCapture" | "onClickCapture" | "onAuxClickCapture"> {
     const pressedAt = useRef<{ x: number; y: number }>(null);
-
-    /** Whether the click targets the map canvas, with the pointer moved no more than
-     *  `CLICK_TOLERANCE` since the press. */
-    const isPlainClickOnCanvas = (e: MouseEvent) => {
+    const movedRef = useRef(false);
+    const isAwayFromPress = (e: MouseEvent) => {
         const pressed = pressedAt.current;
-        return isOnCanvas(e)
-            && !(pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE);
+        return !!pressed && Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > CLICK_TOLERANCE;
     };
+
+    /** Whether the click targets the map canvas, with the pointer kept within `CLICK_TOLERANCE`
+     *  of the press throughout. */
+    const isPlainClickOnCanvas = (e: MouseEvent) => isOnCanvas(e) && !movedRef.current && !isAwayFromPress(e);
     const boxAt = (e: MouseEvent) => e.target instanceof Element ? e.target.closest<HTMLElement>(".note-box") : null;
 
     return {
         onPointerDownCapture(e) {
             pressedAt.current = { x: e.clientX, y: e.clientY };
+            movedRef.current = false;
+        },
+        onPointerMoveCapture(e) {
+            if (isAwayFromPress(e)) movedRef.current = true;
         },
         onAuxClickCapture(e) {
             const box = boxAt(e);

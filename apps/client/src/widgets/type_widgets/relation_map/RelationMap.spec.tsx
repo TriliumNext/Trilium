@@ -140,6 +140,26 @@ describe("relation map canvas clicks", () => {
         expect(onOpenNote).toHaveBeenCalledTimes(2);
     });
 
+    it("ignores a drag that comes back to where it started", () => {
+        const roundTrip = (target: HTMLElement) => {
+            target.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 10, clientY: 10 }));
+            target.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: 60, clientY: 10 }));
+            act(() => { target.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, clientX: 11, clientY: 10 })); });
+        };
+
+        const { canvas, title } = mount();
+        roundTrip(canvas);
+        roundTrip(title);
+        expect(onClickEmpty).not.toHaveBeenCalled();
+        expect(onSelectNote).not.toHaveBeenCalled();
+
+        roundTrip(mount(true).canvas);
+        expect(onPlace).not.toHaveBeenCalled();
+
+        click(canvas);
+        expect(onPlace).toHaveBeenCalledTimes(1);
+    });
+
     it("closes the pane on empty canvas, but not on what stands over the map", () => {
         const { wrapper, canvas, toolbar } = mount();
 
