@@ -34,9 +34,11 @@ interface NoteBoxProps extends MapDataNoteEntry {
     mapApiRef: RefObject<RelationMapApi | null>;
     /** The note is open in the note pane. */
     selected?: boolean;
+    /** The map cannot be edited, so the context menu offers no color picker. */
+    isReadOnly: boolean;
 }
 
-export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
+export function NoteBox({ noteId, x, y, mapApiRef, selected, isReadOnly }: NoteBoxProps) {
     const [ note, setNote ] = useState<FNote | null>();
     const title = useNoteProperty(note, "title");
     const icon = useNoteIcon(note);
@@ -46,8 +48,8 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected }: NoteBoxProps) {
     }, [ noteId ]);
 
     const contextMenuHandler = useMemo(() => {
-        return buildNoteContextMenuHandler(note, mapApiRef);
-    }, [ note ]);
+        return buildNoteContextMenuHandler(note, mapApiRef, isReadOnly);
+    }, [ note, isReadOnly ]);
 
     return note && (
         <JsPlumbItem

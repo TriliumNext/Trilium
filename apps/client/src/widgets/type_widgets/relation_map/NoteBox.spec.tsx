@@ -36,7 +36,7 @@ describe("relation map NoteBox", () => {
 
     function Harness({ selected }: { selected: boolean }) {
         const mapApiRef = useRef<RelationMapApi>(null);
-        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} />;
+        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} isReadOnly={false} />;
     }
 
     async function mount(selected = false) {

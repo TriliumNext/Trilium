@@ -16,7 +16,7 @@ Relation map is a type of note which visualizes notes and their [relations](..
 *   Each note is shown as a card with its icon and title, colored in the note's color the same way as the cards of a <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban Board</a>.
 *   To view or edit a note, click it on the map. This opens the note panel (see below).
     *   To open the note in a new tab instead, <kbd>Ctrl</kbd>+click it or click it with the middle mouse button. <kbd>Shift</kbd>+click opens it in a new window. The right click menu offers the same options.
-*   To edit the title of a note or to delete it (either from the map, or delete it completely), right click the note.
+*   To edit the title of a note, change its color or delete it (either from the map, or delete it completely), right click the note. The color picker is not shown if the map is read-only.
 *   To rename or delete a relationship, right click it and select the corresponding option.
 
 ## Note panel

@@ -4,6 +4,7 @@ import { RefObject } from "preact";
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
+import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
 import dialog from "../../../services/dialog";
 import toast from "../../../services/toast";
@@ -12,7 +13,7 @@ import server from "../../../services/server";
 import RelationMapApi from "./api";
 import type { AskRelationName } from "./RelationNamePopover";
 
-export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>) {
+export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>, isReadOnly: boolean) {
     return (e: MouseEvent) => {
         if (!note) return;
         e.preventDefault();
@@ -47,6 +48,10 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
                     uiIcon: "bx bx-trash",
                     handler: () => confirmRemoveFromMap(note, mapApiRef)
                 },
+                ...(isReadOnly ? [] : [
+                    { kind: "separator" as const },
+                    { kind: "custom" as const, componentFn: () => NoteColorPicker({ note }) }
+                ]),
             ],
             selectMenuItemHandler({ command }) {
                 // Pass the events to the link context menu

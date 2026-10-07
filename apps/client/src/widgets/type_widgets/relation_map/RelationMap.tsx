@@ -181,7 +181,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 onConnection={connectionCallback}
             >
                 {data?.notes.map(note => (
-                    <NoteBox {...note} mapApiRef={mapApiRef} selected={note.noteId === selection?.noteId} />
+                    <NoteBox {...note} mapApiRef={mapApiRef} selected={note.noteId === selection?.noteId} isReadOnly={isReadOnly} />
                 ))}
                 {placement.placing && <GhostNoteBox elementRef={placement.ghostRef} />}
             </JsPlumb>
