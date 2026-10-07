@@ -1,4 +1,5 @@
 import { render } from "preact";
+import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
@@ -117,5 +118,27 @@ describe("NoteContextMenu", () => {
             expect((await shownIn("ntx-tab", image)).paperclips).toBe(2);
             expect((await shownIn("_popup-editor", image)).paperclips).toBe(1);
         }
+    });
+
+    it("opens on the Basic Properties shortcut only for its own note context", async () => {
+        const note = buildNote({ title: "Text", type: "text", content: "<p>Hi</p>" });
+        const noteContext = new NoteContext("ntx-split-2");
+        noteContext.noteId = note.noteId;
+        noteContext.viewScope = { viewMode: "default" };
+        const parent = new Component();
+        render((
+            <ParentComponent.Provider value={parent}>
+                <NoteContextContext.Provider value={noteContext}>
+                    <NoteContextMenu note={note} noteContext={noteContext} />
+                </NoteContextContext.Provider>
+            </ParentComponent.Provider>
+        ), host);
+        const popup = () => document.querySelector(".tn-popup");
+
+        await act(async () => { await parent.handleEvent("toggleRibbonTabBasicProperties", { ntxId: "ntx-split-1" }); });
+        expect(popup()).toBeNull();
+
+        await act(async () => { await parent.handleEvent("toggleRibbonTabBasicProperties", { ntxId: "ntx-split-2" }); });
+        await vi.waitFor(() => expect(popup()).not.toBeNull());
     });
 });

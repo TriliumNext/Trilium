@@ -90,7 +90,8 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     const isInPopup = !!noteContext?.ntxId?.startsWith(POPUP_EDITOR_NTX_ID);
     const itemToFocusRef = useRef<ItemToFocus>(null);
     // Keyboard shortcuts.
-    useTriliumEvent("toggleRibbonTabBasicProperties", () => {
+    useTriliumEvent("toggleRibbonTabBasicProperties", ({ ntxId }) => {
+        if (!noteContext || ntxId !== noteContext.ntxId) return;
         itemToFocusRef.current = "basic-properties";
         dropdownRef.current?.toggle();
     });
