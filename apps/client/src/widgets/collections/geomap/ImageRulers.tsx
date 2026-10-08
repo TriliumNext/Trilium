@@ -17,6 +17,8 @@ const LABEL_SPACING_PX = 90;
 const TICK_LENGTH_PX = 6;
 /** The gap between a tick's end and its label, in screen pixels. */
 const LABEL_GAP_PX = 3;
+/** The most ticks along one axis, far more than fit on a screen at the 90-pixel spacing. */
+const MAX_TICKS = 1000;
 
 /**
  * Coordinate rulers along an image map's edges, in the map's own coordinates (see
@@ -190,8 +192,11 @@ export function axisTicks(from: number, to: number, pixels: number, screenPerIma
     const ticks: { value: number; text: string }[] = [];
     // A hair of slack, so an edge that falls on a round value keeps its tick despite rounding.
     const slack = step * 1e-9;
-    for (let i = Math.ceil((low - slack) / step); i * step <= high + slack; i++) {
-        const value = Number((i * step).toFixed(decimals));
+    const first = Math.ceil((low - slack) / step) * step;
+    // Counted from the first tick, since far from zero `first / step + 1` can round back to itself.
+    const count = Math.min(Math.floor((high + slack - first) / step), MAX_TICKS);
+    for (let i = 0; i <= count; i++) {
+        const value = Number((first + i * step).toFixed(decimals));
         // `+ 0` turns a negative zero into a plain one, which would otherwise print as "-0".
         ticks.push({ value, text: String(value + 0) });
     }

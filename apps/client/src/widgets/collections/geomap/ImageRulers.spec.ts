@@ -34,6 +34,13 @@ describe("axisTicks", () => {
         const fine = axisTicks(0, 1, 1000, 1);
         expect(fine.map(({ text }) => text)).toEqual([ "0", "0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1" ]);
     });
+
+    it("ends for an axis far from zero compared to its step", () => {
+        // A step of 1e-7 at 1e9 puts the first tick's index past 2^53, where adding one changes nothing.
+        const ticks = axisTicks(1e9, 1e9 + 1e-6, 1000, 1);
+        expect(ticks.length).toBeGreaterThan(0);
+        expect(ticks.length).toBeLessThanOrEqual(12);
+    }, 2000);
 });
 
 describe("rulerFeatures", () => {
