@@ -6,7 +6,12 @@ import { createTestEditor } from "../../../test/editor-kit.js";
 import { COLUMN_RATIOS, getColumnCount } from "./constants.js";
 import Multicolumn from "./multicolumn.js";
 
-const GAP = 12;
+const EDITOR_GAP = 12;
+
+/** The gap between the columns of saved content, which is 2em. */
+function savedGapOf(layout: Element) {
+    return 2 * parseFloat(getComputedStyle(layout).fontSize);
+}
 
 function layoutHtml(ratios: string, columns: string[]) {
     const content = columns.map(column => `<section>${column}</section>`).join("");
@@ -43,11 +48,11 @@ function cornersOf(element: Element | null | undefined) {
     ].join(" ");
 }
 
-function expectWidthsToFollow(layout: HTMLElement, ratios: string) {
+function expectWidthsToFollow(layout: HTMLElement, ratios: string, gap: number) {
     const columns = columnsOf(layout);
     const weights = ratios.split("-").map(Number);
     const total = weights.reduce((sum, weight) => sum + weight, 0);
-    const available = layout.getBoundingClientRect().width - GAP * (weights.length - 1);
+    const available = layout.getBoundingClientRect().width - gap * (weights.length - 1);
 
     expect(columns).toHaveLength(weights.length);
     for (const [index, column] of columns.entries()) {
@@ -75,7 +80,8 @@ describe("multicolumn layout styles", () => {
             const layout = container.querySelector<HTMLElement>(".trilium-multicolumn-layout");
             expect(layout, ratios).not.toBeNull();
 
-            expectWidthsToFollow(layout as HTMLElement, ratios);
+            const element = layout as HTMLElement;
+            expectWidthsToFollow(element, ratios, savedGapOf(element));
             container.remove();
         }
     });
@@ -92,7 +98,7 @@ describe("multicolumn layout styles", () => {
                 editable.querySelector<HTMLElement>(".trilium-multicolumn-layout.ck-widget");
             expect(layout, ratios).not.toBeNull();
 
-            expectWidthsToFollow(layout as HTMLElement, ratios);
+            expectWidthsToFollow(layout as HTMLElement, ratios, EDITOR_GAP);
         }
     });
 
@@ -111,10 +117,60 @@ describe("multicolumn layout styles", () => {
             "0px 8px 8px 0px"
         ]);
 
-        const container = renderContent(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]), 800);
-        container.dir = "rtl";
-        const columns = columnsOf(container.querySelector(".trilium-multicolumn-layout"));
+        const rtlEditor = await createTestEditor([Essentials, Paragraph, Multicolumn], {
+            language: { content: "ar" }
+        });
+        const rtlEditable = rtlEditor.ui.view.editable.element as HTMLElement;
+        rtlEditable.style.width = "800px";
+        rtlEditor.setData(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]));
+        expect(rtlEditable.dir).toBe("rtl");
+        const columns = columnsOf(rtlEditable.querySelector(".trilium-multicolumn-layout"));
         expect(columns.map(cornersOf)).toEqual(["0px 8px 8px 0px", "8px 0px 0px 8px"]);
+    });
+
+    it("borders and pads the columns only in the editor", async () => {
+        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        editable.style.width = "800px";
+        editor.setData(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]));
+        const editingColumns = columnsOf(editable.querySelector(".trilium-multicolumn-layout"));
+
+        const container = renderContent(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]), 800);
+        const savedColumns = columnsOf(container.querySelector(".trilium-multicolumn-layout"));
+
+        expect(editingColumns).toHaveLength(2);
+        expect(savedColumns).toHaveLength(2);
+        for (const column of editingColumns) {
+            const style = getComputedStyle(column);
+            expect([style.borderTopWidth, style.paddingLeft, style.paddingRight])
+                .toEqual(["1px", "16px", "16px"]);
+        }
+        for (const column of savedColumns) {
+            const style = getComputedStyle(column);
+            expect([style.borderTopWidth, style.borderLeftWidth, style.paddingLeft])
+                .toEqual(["0px", "0px", "0px"]);
+            expect([style.paddingRight, cornersOf(column)]).toEqual(["0px", "0px 0px 0px 0px"]);
+        }
+    });
+
+    it("lines the text of saved content up with the content around it, 2em apart", () => {
+        const html = "<p>Outside</p>" +
+            layoutHtml("1-2-1", ["<p>A</p>", "<p>B</p>", "<p>C</p>"]);
+        const container = renderContent(html, 800);
+        const outside = container.querySelector("p")?.getBoundingClientRect();
+        const layout = container.querySelector(".trilium-multicolumn-layout");
+        const columns = columnsOf(layout);
+        const texts = columns.map(column =>
+            column.querySelector("p")?.getBoundingClientRect());
+        const gap = layout ? savedGapOf(layout) : NaN;
+
+        expect(outside).toBeDefined();
+        expect(texts).toHaveLength(3);
+        expect(gap).toBeGreaterThan(EDITOR_GAP);
+        expect(texts[0]?.left).toBeCloseTo(outside?.left ?? NaN, 0);
+        expect(texts[2]?.right).toBeCloseTo(outside?.right ?? NaN, 0);
+        expect((texts[1]?.left ?? NaN) - (texts[0]?.right ?? NaN)).toBeCloseTo(gap, 0);
+        expect((texts[2]?.left ?? NaN) - (texts[1]?.right ?? NaN)).toBeCloseTo(gap, 0);
     });
 
     /** Shows the layout toolbar the way the editor does and opens its dropdown. */
@@ -165,23 +221,38 @@ describe("multicolumn layout styles", () => {
         }
     });
 
-    it("stacks the columns with alternating backgrounds and no borders below 500px", () => {
-        const html = layoutHtml("1-2-1", ["<p>A</p>", "<p>B</p>", "<p>C</p>"]);
-        const container = renderContent(html, 480);
-        const layout = container.querySelector(".trilium-multicolumn-layout");
+    /** Returns the columns of a layout below 500px, after checking that they are stacked. */
+    function expectStacked(layout: Element | null | undefined) {
         const columns = columnsOf(layout);
+        const width = layout?.getBoundingClientRect().width ?? NaN;
         const boxes = columns.map(column => column.getBoundingClientRect());
 
+        expect(columns).toHaveLength(3);
+        expect(width).toBeLessThan(500);
         for (const [index, box] of boxes.entries()) {
-            expect(box.width).toBeCloseTo(480, 0);
+            expect(box.width).toBeCloseTo(width, 0);
             expect(getComputedStyle(columns[index]).borderTopWidth).toBe("0px");
             if (index > 0) {
                 expect(box.top).toBeCloseTo(boxes[index - 1].bottom, 0);
             }
         }
-        const backgrounds = columns.map(column => getComputedStyle(column).backgroundColor);
-        expect(backgrounds[0]).toBe(backgrounds[2]);
-        expect(backgrounds[1]).not.toBe(backgrounds[0]);
+        return columns.map(column => getComputedStyle(column).backgroundColor);
+    }
+
+    it("stacks the columns below 500px, alternating backgrounds only in the editor", async () => {
+        const html = layoutHtml("1-2-1", ["<p>A</p>", "<p>B</p>", "<p>C</p>"]);
+        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        editable.style.width = "480px";
+        editor.setData(html);
+
+        const editing = expectStacked(editable.querySelector(".trilium-multicolumn-layout"));
+        expect(editing[0]).toBe(editing[2]);
+        expect(editing[1]).not.toBe(editing[0]);
+
+        const container = renderContent(html, 480);
+        const saved = expectStacked(container.querySelector(".trilium-multicolumn-layout"));
+        expect(saved).toEqual(["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)"]);
     });
 
     it("stacks a nested layout by its own width", () => {
@@ -190,7 +261,8 @@ describe("multicolumn layout styles", () => {
         const outer = container.querySelector<HTMLElement>(".trilium-multicolumn-layout");
         const innerColumns = columnsOf(outer?.querySelector(".trilium-multicolumn-layout"));
 
-        expectWidthsToFollow(outer as HTMLElement, "1-3");
+        const element = outer as HTMLElement;
+        expectWidthsToFollow(element, "1-3", savedGapOf(element));
         expect(innerColumns[1].getBoundingClientRect().top)
             .toBeCloseTo(innerColumns[0].getBoundingClientRect().bottom, 0);
     });
