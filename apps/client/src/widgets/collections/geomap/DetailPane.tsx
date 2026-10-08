@@ -16,11 +16,11 @@ import ActionButton from "../../react/ActionButton";
 import { useNoteLabelByName, useStaticTooltip } from "../../react/hooks";
 import { removeFromMap } from "./api";
 import { type Bounds, boundsOf } from "./coordinates";
-import { GPX_MIME, trackSourceId } from "./GpxTrack";
+import { trackSourceId } from "./GpxTrack";
 import { ParentMap } from "./map";
 import { featureAt } from "./ShapeLayer";
 import { geoShapeBounds } from "./shapes";
-import { isShapeNote, locationOf, type MapSpace, MapSpaceContext } from "./space";
+import { isShapeNote, isTrackNote, locationOf, type MapSpace, MapSpaceContext } from "./space";
 
 /**
  * Which marker the pane stands for, and why it came to be selected.
@@ -198,7 +198,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
             return;
         }
 
-        if (note.mime === GPX_MIME) {
+        if (isTrackNote(note, space)) {
             const focus = selection?.focus;
 
             // A clicked flag is a place the reader chose: stood clear of the pane at the zoom they
@@ -350,7 +350,7 @@ const FIT_MAX_ZOOM = 16;
  * coming from the note's own file rather than from a label. An image map draws no tracks.
  */
 function standsOnMap(note: FNote, space: MapSpace) {
-    return (space.kind === "geo" && note.mime === GPX_MIME)
+    return isTrackNote(note, space)
         || !!locationOf(note, space)
         || isShapeNote(note, space);
 }
@@ -503,7 +503,7 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
                 {/* Not offered for a track or a drawn shape: neither has a location label to
                     rewrite, and moving one means drawing it again. ContextMenus leaves it out for
                     the same reason. */}
-                {note.mime !== GPX_MIME && !isShape && <ActionButton
+                {!isTrackNote(note, space) && !isShape && <ActionButton
                     className="geo-detail-pane-move"
                     icon="bx bx-move"
                     text={t("geo-map-context.move-marker")}
@@ -519,7 +519,7 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
                     // Named for what it does to a track, which is delete the note: a track's line is
                     // drawn from the note's own file, so there is no taking it off the map and
                     // keeping it (see removeFromMap). The right-click menu names it the same way.
-                    text={t(note.mime === GPX_MIME ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map")}
+                    text={t(isTrackNote(note, space) ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map")}
                     // Whether the note goes with its marker is asked before anything happens, the
                     // two being different wishes. Nothing closes the pane afterwards because the
                     // effect above already stands it down, either way round.

@@ -11,10 +11,9 @@ import froca from "../../../services/froca.js";
 import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
 import { removeFromMap } from "./api.js";
-import { GPX_MIME } from "./GpxTrack.js";
 import { type GeoMouseEvent, ParentMap, toGeoMouseEvent } from "./map.js";
 import { featureAt } from "./ShapeLayer.js";
-import { isShapeNote, type MapSpace, MapSpaceContext } from "./space.js";
+import { isShapeNote, isTrackNote, type MapSpace, MapSpaceContext } from "./space.js";
 
 interface ContextMenusProps {
     /** The map's own note, which is how the tree is told what the map holds a note by. */
@@ -91,7 +90,7 @@ export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, 
                 // A track is named for what removing it does, which is delete the note: its line is
                 // drawn from the note's own file rather than from a location written on it, so there
                 // is no taking it off the map and keeping it (see removeFromMap).
-                title: t(note?.mime === GPX_MIME ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map"),
+                title: t(note && isTrackNote(note, space) ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map"),
                 // Called rather than commanded: what was a broadcast command every open map heard
                 // would now put a dialog up on each of them in turn.
                 handler: () => note && void removeFromMap(space, note, parentNote),
@@ -157,7 +156,7 @@ export function openMapContextMenu(e: GeoMouseEvent, isEditable: boolean, onCrea
  */
 function buildRelocateItem(noteId: string, onRelocate: (noteId: string) => void, space: MapSpace): MenuItem<keyof CommandMappings>[] {
     const note = froca.getNoteFromCache(noteId);
-    if (!note || note.mime === GPX_MIME || isShapeNote(note, space)) {
+    if (!note || isTrackNote(note, space) || isShapeNote(note, space)) {
         return [];
     }
 

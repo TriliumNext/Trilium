@@ -14,7 +14,7 @@ import { buildNote } from "../../../test/easy-froca";
 import {
     createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker, removeFromMap
 } from "./api";
-import { geoSpace } from "./space";
+import { geoSpace, imageSpace } from "./space";
 
 vi.mock("../../../services/note_create", () => ({
     default: { createNote: vi.fn(async () => ({ note: { noteId: "created" }, branch: null })) }
@@ -183,6 +183,19 @@ describe("geo map api", () => {
             await removeFromMap(geoSpace, note, map);
 
             expect(setLabel).toHaveBeenLastCalledWith(note.noteId, "geolocation", "");
+        });
+
+        it("insists on deleting a track on a world map, but lets a GPX pin on an image map go", async () => {
+            const map = buildNote({ title: "The map" });
+            const track = buildNote({ title: "Sunday ride", type: "file", mime: "application/gpx+xml" });
+            confirmDelete.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
+
+            await removeFromMap(geoSpace, track, map);
+            expect(confirmDelete).toHaveBeenLastCalledWith(track.title, expect.anything(), expect.objectContaining({ mustDeleteNote: true }));
+
+            await removeFromMap(imageSpace({ width: 100, height: 100 }), track, map);
+            expect(confirmDelete).toHaveBeenLastCalledWith(track.title, expect.anything(), expect.objectContaining({ mustDeleteNote: false }));
+            expect(setLabel).toHaveBeenLastCalledWith(track.noteId, "imagePosition", "");
         });
 
         it("leaves the marker alone where the reader changed their mind", async () => {

@@ -6,10 +6,9 @@ import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import note_create from "../../../services/note_create";
 import { deleteNoteOrBranch } from "../../../services/note_deletion";
-import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
 import type { GeoShape } from "./shapes";
-import { geoSpace, type MapSpace } from "./space";
+import { geoSpace, isTrackNote, type MapSpace } from "./space";
 
 /** The type a note put on the map is created as, and so what a template handed to it must match. */
 export const MARKER_NOTE_TYPE: NoteType = "text";
@@ -33,7 +32,7 @@ export async function moveMarker(space: MapSpace, noteId: string, latLng: { lat:
  * the note is the track. That is also why it is not offered under the same name (see ContextMenus).
  */
 export async function removeFromMap(space: MapSpace, note: FNote, mapNote: FNote) {
-    const isTrack = note.mime === GPX_MIME;
+    const isTrack = isTrackNote(note, space);
     // The map's own branch for the note, which is how a note the map merely shows — cloned in from
     // elsewhere, and clone-able out again — is told from one that lives here and nowhere else.
     const branchId = note.parentToBranch[mapNote.noteId] ?? null;

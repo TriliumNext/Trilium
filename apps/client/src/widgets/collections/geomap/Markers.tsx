@@ -497,8 +497,6 @@ export function FitToNotes({ notes, enabled, bounds: fixedBounds }: { notes: FNo
         //
         // Not animated: this is where the map opens, not somewhere it is taken. Flying would show
         // the stock view first and swoop off it every time a map is opened for the first time.
-        // No `maxZoom` key at all for fixed bounds: MapLibre merges an `undefined` over its own
-        // default, and the fit then comes out NaN.
         map.fitBounds(bounds, {
             padding: FIT_PADDING,
             animate: false,

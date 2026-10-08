@@ -12,7 +12,7 @@ import toast from "../../../services/toast";
 import { fileAccept } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate } from "../../react/hooks";
+import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";
 import { createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker } from "./api";
@@ -65,10 +65,15 @@ const PLACEMENT_TOAST_ID = "geo-placement";
 const OUTLINE_DELAY_MS = 250;
 
 interface MapData {
-    view?: {
-        center?: { lat: number; lng: number } | [number, number];
-        zoom?: number;
-    };
+    view?: SavedView;
+    /** The view of the same map drawn over its image (`~map:image`), whose positions say nothing
+     *  about the world map's, so that switching between the two restores each. */
+    imageView?: SavedView;
+}
+
+interface SavedView {
+    center?: { lat: number; lng: number } | [number, number];
+    zoom?: number;
 }
 
 /**
@@ -114,8 +119,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     // Whether that pane has been grown over the map. Held here for the reason the selection is: what
     // the map places around the pane has to know of it too (see the maximized pane in DetailPane).
     const [ paneMaximized, setPaneMaximized ] = useState(false);
-    const [ coordinates, setCoordinates ] = useState(viewConfig?.view?.center);
-    const [ zoom, setZoom ] = useState(viewConfig?.view?.zoom);
+    const [ coordinates, setCoordinates ] = useState<SavedView["center"]>();
+    const [ zoom, setZoom ] = useState<number>();
     const [ hasScale ] = useNoteLabelBoolean(note, "map:scale");
     const [ hideLabels ] = useNoteLabelBoolean(note, "map:hideLabels");
     const [ clustered ] = useNoteLabelBoolean(note, "map:cluster");
@@ -126,6 +131,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const image = imageMap.status === "image" ? imageMap : undefined;
     const space = image?.space ?? geoSpace;
     const isGeo = space.kind === "geo";
+    const viewKey = isGeo ? "view" : "imageView";
+    const savedView = viewConfig?.[viewKey];
     const layerData = useLayerData(note, image);
     const spacedUpdate = useSpacedUpdate(() => {
         if (viewConfig) {
@@ -139,9 +146,9 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         if (!note) return;
         // An image map with no saved view is fitted to its image as soon as it is drawn (see
         // FitToNotes), so where it starts out matters only for the frame before that.
-        setCoordinates(viewConfig?.view?.center ?? (image ? imageCenter(image.space) : DEFAULT_COORDINATES));
-        setZoom(viewConfig?.view?.zoom ?? DEFAULT_ZOOM);
-    }, [ note, viewConfig, image ]);
+        setCoordinates(savedView?.center ?? (image ? imageCenter(image.space) : DEFAULT_COORDINATES));
+        setZoom(savedView?.zoom ?? DEFAULT_ZOOM);
+    }, [ note, savedView, image ]);
 
     // Note creation and marker relocation. Both are scoped to this map instance via local callbacks
     // rather than global commands: embedded maps share no note context (no distinct ntxId), so a
@@ -427,7 +434,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 layerData={layerData}
                 viewportChanged={(coordinates, zoom) => {
                     if (!viewConfig) viewConfig = {};
-                    viewConfig.view = { center: coordinates, zoom };
+                    viewConfig[viewKey] = { center: coordinates, zoom };
                     spacedUpdate.scheduleUpdate();
                 }}
                 onClick={onClick}
@@ -497,7 +504,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 {notes.map(note => <NoteShapeWrapper key={note.noteId} note={note} />)}
                 {/* One binding for every shape's layers, rather than one per shape (see ShapeNames). */}
                 <ShapeNames />
-                <FitToNotes notes={notes} enabled={!viewConfig?.view} bounds={image?.space.bounds} />
+                <FitToNotes notes={notes} enabled={!savedView} bounds={image?.space.bounds} />
             </Map></MapSpaceContext.Provider>}
         </div>
     );
@@ -549,6 +556,15 @@ function useImageMap(note: FNote): ImageMapState {
     const [ imageNoteId ] = useNoteRelation(note, "map:image");
     const [ boundsValue ] = useNoteLabel(note, "map:imageBounds");
     const [ image, setImage ] = useState<LoadedImage>(imageNoteId ? { status: "loading" } : { status: "geo" });
+    // Bumped when the image note's content or title changes, which loads the picture again under a
+    // URL of its own, so neither the browser's cache nor MapLibre's keeps the old one.
+    const [ version, setVersion ] = useState(0);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (imageNoteId && (loadResults.isNoteContentReloaded(imageNoteId) || loadResults.isNoteReloaded(imageNoteId))) {
+            setVersion((current) => current + 1);
+        }
+    });
 
     useEffect(() => {
         if (!imageNoteId) {
@@ -559,31 +575,36 @@ function useImageMap(note: FNote): ImageMapState {
         let cancelled = false;
         setImage({ status: "loading" });
 
+        const fail = (reason: "unloadable" | "svg", detail?: unknown) => {
+            if (cancelled) return;
+            if (reason === "unloadable") {
+                logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded${detail ? `: ${detail}` : "."}`);
+            }
+            setImage({ status: "error", reason });
+        };
+
         (async () => {
             const imageNote = await froca.getNote(imageNoteId, true);
             // MapLibre decodes an image source with `createImageBitmap`, which refuses SVG, and
             // would leave the map blank with only a console warning to show for it.
             if (imageNote?.mime === "image/svg+xml") {
-                if (!cancelled) setImage({ status: "error", reason: "svg" });
+                fail("svg");
                 return;
             }
 
             // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
             const url = imageNote && new URL(
-                `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}`, document.baseURI).href;
+                `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}?v=${version}`, document.baseURI).href;
             const size = url ? await measureImage(url) : null;
-            if (cancelled) return;
-
             if (!url || !size) {
-                logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded.`);
-                setImage({ status: "error", reason: "unloadable" });
+                fail("unloadable");
                 return;
             }
-            setImage({ status: "image", url, size });
-        })();
+            if (!cancelled) setImage({ status: "image", url, size });
+        })().catch((e: unknown) => fail("unloadable", e));
 
         return () => { cancelled = true; };
-    }, [ note.noteId, imageNoteId ]);
+    }, [ note.noteId, imageNoteId, version ]);
 
     // Built apart from the loading, so naming the corners anew does not fetch the image again.
     // A value that names no corners is read as none, which leaves the image's own pixels.

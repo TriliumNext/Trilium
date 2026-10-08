@@ -12,6 +12,8 @@ import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE, 
 import { MercatorCoordinate } from "maplibre-gl";
 import { createContext } from "preact";
 
+import { GPX_MIME } from "../../../services/gpx";
+
 import type { Bounds } from "./coordinates";
 import { CIRCLE_SEGMENTS, type GeoShape, parseGeoShape, readShape, serializeGeoShape, shapeRing, writeShape } from "./shapes";
 
@@ -69,6 +71,14 @@ export function shapeOf(note: LabelSource, space: MapSpace) {
  */
 export function isShapeNote(note: LabelSource, space: MapSpace): boolean {
     return !!shapeOf(note, space);
+}
+
+/**
+ * Whether the note is drawn as a GPX track, which only a geo map does. On an image map a GPX note is
+ * a marker like any other, placed and removed through its position label.
+ */
+export function isTrackNote(note: { mime: string }, space: MapSpace): boolean {
+    return space.kind === "geo" && note.mime === GPX_MIME;
 }
 
 /** `lat,lng` as the label stores it, as the `[lng, lat]` GeoJSON wants, or `null` if unreadable. */
