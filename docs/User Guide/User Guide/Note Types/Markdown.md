@@ -27,7 +27,6 @@ The following features are supported by Trilium's Markdown format and will show 
 *   All standard and GitHub-flavored syntax (basic formatting, tables, blockquotes).
 *   Basic HTML is also supported (e.g. collapsible blocks using `<details>` and `<summary>`).
 *   Code blocks with syntax highlight.
-    
     *   The language must be specified for syntax highlight to be applied (e.g. ` ```js `).
     *   Code blocks will respect the text wrapping from the <a class="reference-link" href="Text.md">Text</a> section in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a>.
 *   <a class="reference-link" href="Text/Block%20quotes%20%26%20admonitions.md">Block quotes &amp; admonitions</a>
@@ -178,7 +177,7 @@ Note that slash commands only work outside of code blocks and inline code.
 
 #### Linking notes with `@` or `[[`
 
-As in <a class="reference-link" href="Text.md">Text</a> notes, typing `@` at the start of a line or after a space opens the note search. Picking a note replaces what was typed with a link to it in the Wikilinks-like format (`[[noteId]]`), which the preview shows as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">internal link</a> with the note's title.
+As in <a class="reference-link" href="Text.md">Text</a> notes, typing `@` at the start of a line or after a space opens the note search. Picking a note replaces what was typed with a link to it in the Wikilinks-like format (`[[noteId]]`), which the preview shows as an <a class="reference-link" href="Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> with the note's title.
 
 The search runs on everything typed after the `@`, spaces included, so a title such as `@My meeting notes` can be typed out; press <kbd>Esc</kbd> to close the list and go on writing. If no note fits, the list offers to create one, as a child of the Markdown note or in the inbox; the link is inserted once the note is created.
 
@@ -197,7 +196,6 @@ The list of languages matches the one for <a class="reference-link" href="Code.
 ### Other features
 
 *   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
-    *   This feature is available only on the <a class="reference-link" href="../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>.
 
 ### Shared notes
 

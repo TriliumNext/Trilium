@@ -1,16 +1,4 @@
 # Right pane widget
-## Key highlights
-
-*   `doRender` must not be overridden, instead `doRenderBody()` has to be overridden.
-    *   `doRenderBody` can optionally be `async`.
-*   `parentWidget()` must be set to `“rightPane”`.
-*   `widgetTitle()` getter can optionally be overriden, otherwise the widget will be displayed as “Untitled widget”.
-
-## Example for new layout
-
-> [!IMPORTANT]
-> This section addresses example that are tailored for the <a class="reference-link" href="../../Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a> (available starting with v0.101.0) where the right pane widget/sidebar is no longer shown or hidden based on the widgets it has. 
-
 ### Title widget
 
 This is an example of a context-aware widget which displays the title of the current note:
@@ -40,91 +28,54 @@ module.exports = new NoteTitleWidget();
 
 A simple widget which will show the current time, as an example on how to dynamically change the content of the widget periodically.
 
-### Legacy widget
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
-```
-const template = `<div></div>`;
+    ```
+    import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
 
-class ToDoListWidget extends api.RightPanelWidget {
-    
-    get widgetTitle() { return "Clock"; }        
-    get parentWidget() { return "right-pane" }
-    
-    async doRenderBody() {
-        if (!this.timer) {
-            this.timer = setInterval(() => {
-                this.$body.empty().append(`The time is: <span>${new Date().toLocaleString()}</span>`);                       
-            }, 1000);            
+    export default defineWidget({
+        parent: "right-pane",    
+        position: 1,
+        render() {
+            const [ time, setTime ] = useState();
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setTime(new Date().toLocaleString());
+                }, 1000);
+                return () => clearInterval(interval);
+            });        
+            return (
+                <RightPanelWidget id="clock-jsx" title="Clock (JSX)">
+                    <p>The time is: {time}</p>
+                </RightPanelWidget>
+            );
         }
+    });
+    ```
 
-        this.$body.empty().append(`The time is: <span>${new Date().toLocaleString()}</span>`);
-    }   
-}
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
 
-module.exports = new ToDoListWidget();
-```
+    ```
+    const template = `<div></div>`;
 
-### Preact widget
-
-```
-import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
-
-export default defineWidget({
-    parent: "right-pane",    
-    position: 1,
-    render() {
-        const [ time, setTime ] = useState();
-        useEffect(() => {
-            const interval = setInterval(() => {
-                setTime(new Date().toLocaleString());
-            }, 1000);
-            return () => clearInterval(interval);
-        });        
-        return (
-            <RightPanelWidget id="clock-jsx" title="Clock (JSX)">
-                <p>The time is: {time}</p>
-            </RightPanelWidget>
-        );
-    }
-});
-```
-
-## Example for old layout
-
-Here's a widget that displays a basic message ("Hi"):
-
-```
-const template = `<div>Hi</div>`;
-
-class HelloWorldWidget extends api.RightPanelWidget {
-    
-    get widgetTitle() {
-        return "Title goes here";
-    }
+    class ToDoListWidget extends api.RightPanelWidget {
         
-    get parentWidget() { return "right-pane" }
-    
-    doRenderBody() {
-        this.$body.empty().append($(template));
-    }   
-    
-    async refreshWithNote(note) {
-    	// Do something when the note changes.
+        get widgetTitle() { return "Clock"; }        
+        get parentWidget() { return "right-pane" }
+        
+        async doRenderBody() {
+            if (!this.timer) {
+                this.timer = setInterval(() => {
+                    this.$body.empty().append(`The time is: <span>${new Date().toLocaleString()}</span>`);                       
+                }, 1000);            
+            }
+
+            this.$body.empty().append(`The time is: <span>${new Date().toLocaleString()}</span>`);
+        }   
     }
-}
 
-module.exports = new HelloWorldWidget();
-```
-
-### Conditionally changing visibility
-
-In `refreshWithNote`:
-
-```
-const visible = true;	// replace with your own visibility logic
-this.toggleInt(visible);
-this.triggerCommand("reEvaluateRightPaneVisibility");
-```
+    module.exports = new ToDoListWidget();
+    ```
 
 ## Altering the position within the sidebar
 
@@ -132,12 +83,35 @@ By default, the sidebar items are displayed in the order they are found by the a
 
 It is possible to make a widget appear higher or lower up, by adjusting its `position` property:
 
-```
-class MyWidget extends api.RightPanelWidget {
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
-+    get position() { return 20 };
-        
-}
-```
+    ```javascript
+    import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
+
+    export default defineWidget({
+    	/* [...] */
+        position: 20,
+        render() {
+    		/* [...] */
+        }
+    });
+    ```
+
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
+
+    ```javascript
+    class MyWidget extends api.RightPanelWidget {
+
+        get position() { return 20 };
+            
+    }
+    ```
 
 Generally the default position starts from 10 and increases by 10 with each item, including the default Table of Contents and Highlights list.
+
+## Key highlights for legacy widgets
+
+*   `doRender` must not be overridden, instead `doRenderBody()` has to be overridden.
+    *   `doRenderBody` can optionally be `async`.
+*   `parentWidget()` must be set to `“rightPane”`.
+*   `widgetTitle()` getter can optionally be overriden, otherwise the widget will be displayed as “Untitled widget”.

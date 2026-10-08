@@ -44,7 +44,7 @@ Highlighted text is defined as:
 ### Configuration
 
 *   Globally, it's possible to toggle the display of each category of highlighted text (as defined above) 
-    *   For the new layout, pressing the gear button in the top-right part of the section will reveal a menu to toggle between the highlight categories.
+    *   Pressing the gear button in the top-right part of the section will reveal a menu to toggle between the highlight categories.
     *   Alternatively, they can be changed by going to <a class="reference-link" href="#root/_hidden/_options/_optionsTextNotes">Text Notes</a> settings and looking for the _Highlights List_ section.
 
 ## PDF-specific outline
@@ -62,7 +62,6 @@ When <a class="reference-link" href="../../../Note%20Types/File/PDFs.md">PDFs</
 *   Annotations
     *   Highlight and comment annotations are listed here.
     *   Right-clicking an annotation and selecting _Copy reference_ copies a link that opens the PDF at that annotation.
-    *   For the old layout, this feature is not directly available, however there is a listing of comments directly in the PDF toolbar.
 *   Attachments
     *   If the PDF has its own attachments (not to be confused with Trilium's <a class="reference-link" href="../../Notes/Attachments.md">Attachments</a>), they will be displayed in a list.
     *   Some information such as the name and size of the attachment are displayed.

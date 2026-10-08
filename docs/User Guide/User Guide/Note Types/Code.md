@@ -47,9 +47,6 @@ Long lines can be displayed on multiple lines:
 
 ## Adjusting options using the status bar
 
-> [!NOTE]
-> This feature is only available for the <a class="reference-link" href="../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>. For the old layout, the tab width can be adjusted at note level using the `#tabWidth` attribute, but re-indentation is not available.
-
 The status bar at the bottom of the editor shows the current indentation settings and language. Clicking on the indentation indicator opens a menu with three sections:
 
 1.  **Indent Using** — switch between Spaces and Tabs (`#indentWithTabs`). If a per-note override is active, a "Reset to default" option appears.

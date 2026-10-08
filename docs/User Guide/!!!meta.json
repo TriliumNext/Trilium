@@ -1450,14 +1450,6 @@
                                             "mime": "image/jpg",
                                             "position": 10,
                                             "dataFileName": "1_Vertical and horizontal layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "NVjM5z6IsNZf",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "2_Vertical and horizontal layout_image.png"
                                         }
                                     ]
                                 },

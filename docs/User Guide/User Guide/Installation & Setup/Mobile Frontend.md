@@ -21,7 +21,6 @@ Here is a non-exhaustive list of differences between the desktop version and the
 *   Most of the note-related actions are grouped in the horizontal dots icon on the top-right of the note.
 *   The <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Tabs.md">Tabs</a> are grouped under a tab switcher in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, where the tabs are displayed in a full-screen grid with preview for easy switching, as well as additional options such as reopening closed tabs.
 *   Since v0.100.0, <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Split%20View.md">Split View</a> can also be used in mobile view, but with a maximum of two panes at once. The splits are displayed vertically instead of horizontally.
-*   Starting with v0.102.0, the <a class="reference-link" href="../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a> is enforced on mobile. This brings features such as the note badges, note type switcher or collection properties which would otherwise not be available.
 
 ## Installing as a PWA
 

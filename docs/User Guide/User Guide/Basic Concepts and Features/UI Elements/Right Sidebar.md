@@ -8,9 +8,6 @@ The right sidebar displays specific content for the current note. The sidebar is
 *   <a class="reference-link" href="Right%20Sidebar/AI%20chat%20tab.md">AI chat tab</a>, which uses the <a class="reference-link" href="../../AI.md">AI</a> integration to chat, with optional access to the current note.
 *   <a class="reference-link" href="Right%20Sidebar/Connections%20tab.md">Connections tab</a>, which groups together the note map, note paths, backlinks and similar notes.
 
-> [!WARNING]
-> There are currently two types of sidebars; the documentation here refers only to the one defined in the <a class="reference-link" href="../../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>. The old layout has a different sidebar mechanism which only shows the table of contents and highlights.
-
 ## Toggling the right sidebar
 
 There are two ways to toggle the right sidebar:
