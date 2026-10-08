@@ -8,6 +8,7 @@ import {
     getEditableBlockRun,
     getListItemNumber,
     isValidBlockId,
+    MULTICOLUMN_LAYOUT_CLASS,
     parseBlockRange,
     resolveBlockRange,
     resolveBlockReference,
@@ -144,6 +145,29 @@ describe("sliceToBlockReference", () => {
         );
     });
 
+    it("drops a layout left with one column around the blocks, and keeps one with more", () => {
+        const layout = (...columns: BlockNode[]) =>
+            el("section", { class: `${MULTICOLUMN_LAYOUT_CLASS} wide` }, ...columns);
+        const target = block("p", "b", text("B"));
+        const inner = layout(
+            el("section", {}, el("p", {}, text("A")), target),
+            el("section", {}, el("p", {}, text("C")))
+        );
+        const root = el("div", {}, layout(el("section", {}, inner), el("section", {})));
+
+        expect(sliceToBlockReference(root, "b")).toBe(true);
+        expect(render(root)).toBe(`<div>${render(target)}</div>`);
+
+        const across = layout(
+            el("section", {}, block("p", "x")),
+            el("section", {}, block("p", "y"))
+        );
+        const otherRoot = el("div", {}, across);
+        sliceToBlockReference(otherRoot, "x:y");
+        expect(otherRoot.childNodes).toEqual([ across ]);
+        expect(across.childNodes).toHaveLength(2);
+    });
+
     it("changes nothing when a block is missing", () => {
         const root = el("div", {}, block("p", "a"), el("p", {}));
 
@@ -238,6 +262,16 @@ describe("getEditableBlockRun", () => {
         });
     });
 
+    it("finds the blocks of a column of a multicolumn layout", () => {
+        const first = block("p", "a");
+        const last = block("p", "b");
+        const column = el("section", {}, el("p", {}), first, last);
+        const root = el("div", {},
+            el("section", { class: MULTICOLUMN_LAYOUT_CLASS }, column, el("section", {})));
+
+        expect(getEditableBlockRun(root, "a:b")).toEqual({ parent: column, first, last });
+    });
+
     it("finds nothing for a missing block, or an ancestor that holds other content", () => {
         const root = el("div", {},
             el("ul", {},
@@ -281,6 +315,17 @@ class TestElement implements BlockNode {
 
     remove() {
         removeFromParent(this);
+    }
+
+    replaceWith(...nodes: BlockNode[]) {
+        const siblings = this.parentNode?.childNodes;
+        if (Array.isArray(siblings)) {
+            siblings.splice(siblings.indexOf(this), 1, ...nodes);
+        }
+        for (const node of nodes) {
+            node.parentNode = this.parentNode;
+        }
+        this.parentNode = null;
     }
 
     render(): string {

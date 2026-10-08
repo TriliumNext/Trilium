@@ -1,0 +1,70 @@
+<p>A multicolumn layout arranges content in two to four columns, side by
+  side. A column can hold any kind of content, including tables, images and
+  another multicolumn layout.</p>
+<p>The borders around the columns are only a guide while editing. In <a href="#root/_help_CoFPLs3dRlXc">read-only notes</a>, <a
+  href="#root/_help_R9pX4DGra2Vt">shared notes</a> and printouts, the columns
+  have no borders, and their text lines up with the rest of the note.</p>
+<h2>Inserting a layout</h2>
+<ul>
+  <li>In the formatting bar, go to <em>Insert</em> → <span class="tn-icon cke cke-trilium-multicolumn"></span>  <em>Multiple column layout</em> to
+    insert a layout with two columns. Its submenu offers <em>2 columns</em>, <em>3 columns</em> and <em>4 columns</em>.</li>
+  <li>Alternatively, type <code>/columns</code> and choose <em>2 columns layout</em>, <em>3 columns layout</em> or <em>4 columns layout</em>,
+    as described in&nbsp;<a class="reference-link" href="#root/_help_ZlN4nump6EbW">Slash Commands</a>.</li>
+</ul>
+<p>The columns of a new layout have equal widths. If text is selected when
+  the layout is inserted, the selection moves into the first column.</p>
+<h2>Changing the columns</h2>
+<p>While the cursor is inside a layout, a toolbar appears above it with a
+  button that shows the current layout. Clicking it opens a row of figures,
+  one for each available layout; hovering over a figure shows its number
+  of columns and their widths:</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Columns</th>
+        <th>Widths</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>2</td>
+        <td>50%-50%, 25%-75%, 75%-25%</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>33%-33%-33%, 25%-50%-25%</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>25%-25%-25%-25%</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<ul>
+  <li>Choosing a layout with more columns adds empty columns at the end.</li>
+  <li>Choosing a layout with fewer columns removes the last columns and moves
+    their content to the end of the last remaining column.</li>
+</ul>
+<h2>Removing a layout</h2>
+<ul>
+  <li>To remove the layout but keep its content, click the <span class="tn-icon cke cke-cancel"></span>  <em>Remove layout</em> button
+    in the layout's toolbar. The content of the columns is placed one after
+    another where the layout was, and empty columns are left out.</li>
+  <li>To delete the layout together with its content, click the handle at its
+    top-left corner to select it, then press <kbd>Delete</kbd>.</li>
+</ul>
+<h2>Narrow screens</h2>
+<p>When a layout has too little room for its columns (narrower than about
+  500 pixels, such as on a phone), the columns are stacked one below the
+  other. While editing, alternating background colors take the place of the
+  borders. This applies to each layout on its own, so a layout inside a narrow
+  column is stacked while the outer one stays side by side.</p>
+<h2>Printing and exporting</h2>
+<ul>
+  <li>When printing or <a href="#root/_help_NRnIZmSMc5sj">exporting to PDF</a>,
+    the columns are printed side by side, without borders.</li>
+  <li>Markdown has no columns, so Markdown export writes the content of the
+    columns one after another.</li>
+</ul>

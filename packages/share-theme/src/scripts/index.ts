@@ -12,6 +12,7 @@ import api from "./modules/api.js";
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
+import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
 
 import { applyTabs, revealFragment } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 

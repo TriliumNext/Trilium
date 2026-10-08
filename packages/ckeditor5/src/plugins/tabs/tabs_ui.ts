@@ -7,14 +7,12 @@ import {
     IconPlus,
     IconPreviousArrow,
     IconRemove,
-    isWidget,
     Plugin,
-    type ViewDocumentSelection,
-    type ViewElement,
     WidgetToolbarRepository
 } from "ckeditor5";
 
 import tabsIcon from "../../icons/tabs.svg?raw";
+import { findSelectedWidget } from "../widget_utils.js";
 import { TABS_WIDGET_PROPERTY } from "./constants.js";
 
 /**
@@ -46,7 +44,8 @@ export default class TabsUI extends Plugin {
         this.editor.plugins.get(WidgetToolbarRepository).register("tabs", {
             ariaLabel: t("Tabs toolbar"),
             items: ["insertTab", "removeTab", "|", "moveTabLeft", "moveTabRight", "|", "copyTabLink"],
-            getRelatedElement: getTabsWidget
+            getRelatedElement: selection =>
+                findSelectedWidget(selection, TABS_WIDGET_PROPERTY)
         });
     }
 
@@ -86,25 +85,4 @@ export default class TabsUI extends Plugin {
 /** Returns the host component of `editor`, which copies links. */
 function getHost(editor: Editor) {
     return glob.getComponentByEl<EditorComponent>(editor.editing.view.getDomRoot());
-}
-
-/** Returns the innermost tabs widget that is selected or holds the selection. */
-function getTabsWidget(selection: ViewDocumentSelection): ViewElement | null {
-    const selected = selection.getSelectedElement();
-    if (selected && isTabsWidget(selected)) {
-        return selected;
-    }
-
-    let node = selection.getFirstPosition()?.parent ?? null;
-    while (node) {
-        if (node.is("element") && isTabsWidget(node)) {
-            return node;
-        }
-        node = node.parent;
-    }
-    return null;
-}
-
-function isTabsWidget(element: ViewElement) {
-    return !!element.getCustomProperty(TABS_WIDGET_PROPERTY) && isWidget(element);
 }

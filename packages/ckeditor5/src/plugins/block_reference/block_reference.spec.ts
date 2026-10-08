@@ -1,12 +1,14 @@
 import {
     _getModelData as getModelData, _setModelData as setModelData, BalloonEditor, BlockQuote,
-    BlockToolbar, type ClassicEditor, CodeBlock, Essentials, Heading, List, Paragraph, Table
+    BlockToolbar, type ClassicEditor, CodeBlock, Essentials, Heading, List, type ModelNode,
+    Paragraph, Table
 } from "ckeditor5";
 import { describe, expect, it, vi } from "vitest";
 
 import { createTestEditor, createTestEditorOf } from "../../../test/editor-kit.js";
 import { installGlobMock } from "../../../test/globals-test-kit.js";
 import BlockDragHandle from "../block_drag_handle.js";
+import Multicolumn from "../multicolumn/multicolumn.js";
 import BlockReference from "./block_reference.js";
 
 const PLUGINS = [
@@ -122,6 +124,24 @@ describe("BlockReference", () => {
 
             expect(reference?.count).toBe(1);
             expect(getBlock(editor, 0).getAttribute("blockId")).toBe(reference?.startId);
+        });
+
+        it("references a block in a column of a layout, and a table there as a whole", async () => {
+            const editor = await createTestEditor([ ...PLUGINS, Multicolumn ]);
+            setModelData(editor.model,
+                "<multicolumnLayout columnRatios=\"1-1\"><multicolumnColumn>"
+                + "<paragraph>one</paragraph><paragraph>two</paragraph></multicolumnColumn>"
+                + "<multicolumnColumn><table><tableRow><tableCell><paragraph>cell</paragraph>"
+                + "</tableCell></tableRow></table></multicolumnColumn></multicolumnLayout>"
+            );
+            const layout = getBlock(editor, 0);
+            const paragraph = layout.getNodeByPath([ 0, 1 ]);
+            const table = layout.getNodeByPath([ 1, 0 ]);
+
+            expect(getReferenced(editor, paragraph, "end")).toBe(paragraph);
+            expect(getReferenced(editor, layout.getNodeByPath([ 1, 0, 0, 0, 0 ]), "end"))
+                .toBe(table);
+            expect(getReferenced(editor, layout, "on")).toBe(layout);
         });
 
         it("is disabled in read-only mode", async () => {
@@ -353,6 +373,15 @@ function getBlock(editor: ClassicEditor, index: number) {
     }
 
     return block;
+}
+
+/** The element that gets the id when a reference is copied with `node` selected at `place`. */
+function getReferenced(editor: ClassicEditor, node: ModelNode, place: "end" | "on") {
+    editor.model.change((writer) => writer.setSelection(node, place));
+    const id = editor.execute("assignBlockReference")?.startId;
+    const root = editor.model.document.getRoot();
+    const items = root ? Array.from(editor.model.createRangeIn(root).getItems()) : [];
+    return items.find((item) => item.is("element") && item.getAttribute("blockId") === id);
 }
 
 function getHandle(element: HTMLElement | undefined) {

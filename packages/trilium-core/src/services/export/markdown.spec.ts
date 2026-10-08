@@ -1019,4 +1019,26 @@ describe("Markdown export", () => {
                     b`);
         });
     });
+
+    it("exports the columns of a multicolumn layout one after another", () => {
+        const html =
+            "<p>Before</p>" +
+            "<section class=\"trilium-multicolumn-layout\" data-trilium-column-ratios=\"1-3\">" +
+                "<section><p>First <strong>column</strong></p><ul><li>One</li></ul></section>" +
+                "<section><h2>Second</h2><p>Text</p></section>" +
+            "</section>" +
+            "<p>After</p>";
+        expect(markdownExportService.toMarkdown(html)).toBe(trimIndentation`\
+            Before
+
+            First **column**
+
+            *   One
+
+            ## Second
+
+            Text
+
+            After`);
+    });
 });

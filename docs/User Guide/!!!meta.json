@@ -6311,6 +6311,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "wYDzQ1fBFgfT",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "wYDzQ1fBFgfT"
+                                    ],
+                                    "title": "Multicolumn layout",
+                                    "notePosition": 250,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "multicolumn-layout",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "cke cke-trilium-multicolumn",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Multicolumn layout.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "dEHYtoWWi8ct",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -6319,7 +6354,7 @@
                                         "dEHYtoWWi8ct"
                                     ],
                                     "title": "Other features",
-                                    "notePosition": 250,
+                                    "notePosition": 260,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6371,7 +6406,7 @@
                                         "gLt3vA97tMcp"
                                     ],
                                     "title": "Premium features",
-                                    "notePosition": 260,
+                                    "notePosition": 270,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6406,7 +6441,7 @@
                                         "ZlN4nump6EbW"
                                     ],
                                     "title": "Slash Commands",
-                                    "notePosition": 270,
+                                    "notePosition": 280,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6450,7 +6485,7 @@
                                         "oBo3iHIZnbG2"
                                     ],
                                     "title": "Spell Check",
-                                    "notePosition": 280,
+                                    "notePosition": 290,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6485,7 +6520,7 @@
                                         "BFvAtE74rbP6"
                                     ],
                                     "title": "Table of contents",
-                                    "notePosition": 290,
+                                    "notePosition": 300,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6520,7 +6555,7 @@
                                         "NdowYOC1GFKS"
                                     ],
                                     "title": "Tables",
-                                    "notePosition": 300,
+                                    "notePosition": 310,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6588,7 +6623,7 @@
                                         "pwc194wlRzcH"
                                     ],
                                     "title": "Text Snippets",
-                                    "notePosition": 310,
+                                    "notePosition": 320,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -6617,7 +6652,7 @@
                                         "fASfBrYnquKU"
                                     ],
                                     "title": "To-do Lists",
-                                    "notePosition": 320,
+                                    "notePosition": 330,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

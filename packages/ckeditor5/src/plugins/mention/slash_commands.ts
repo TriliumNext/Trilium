@@ -55,6 +55,8 @@ import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
 import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
 import type { MermaidSample } from "../mermaid/mermaid_ui.js";
+import { getDefaultRatios, MAX_COLUMNS, MIN_COLUMNS } from "../multicolumn/constants.js";
+import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import SnippetsEditing from "../snippets/snippetsediting.js";
 import { registerHostedMentionFeed } from "./register_feed.js";
 import type { MentionHostedList } from "./types.js";
@@ -371,6 +373,7 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             icon: tabsIcon,
             commandName: "tabs"
         },
+        ...buildMulticolumnSlashCommands(editor),
         {
             id: "footnote",
             title: t("Footnote"),
@@ -664,6 +667,26 @@ function buildAdmonitionSlashCommands(editor: Editor): SlashCommandDefinition[] 
         execute: (target: Editor) => target.execute("admonition", { forceValue: type }),
         aliases: [ "box" ]
     }));
+}
+
+/** One entry per column count, inserting that many equal columns, with the layout as its icon. */
+function buildMulticolumnSlashCommands(editor: Editor): SlashCommandDefinition[] {
+    const t = editor.locale.t;
+
+    return Array.from({ length: MAX_COLUMNS - MIN_COLUMNS + 1 }, (_, index) => {
+        const count = MIN_COLUMNS + index;
+        const value = getDefaultRatios(count);
+        return {
+            id: `multicolumn-layout-${count}`,
+            title: t("%0 columns layout", count),
+            description: t("Arrange content in %0 equal columns side by side.", count),
+            aliases: [ "multicolumn", "columns", "column", "layout", "side by side" ],
+            icon: createLayoutFigure(value, BUTTON_ICON_SIZE),
+            // `commandName` supplies the enabled state; `execute` passes the column weights along.
+            commandName: "multicolumnLayout",
+            execute: (target: Editor) => target.execute("multicolumnLayout", { value })
+        };
+    });
 }
 
 /**

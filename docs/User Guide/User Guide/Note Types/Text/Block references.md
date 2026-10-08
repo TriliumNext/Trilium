@@ -8,7 +8,7 @@ Block references are [links](Links.md) to a block of a text note, such as a para
 3.  Select _Copy reference to this block_, or _Copy reference to these blocks_ for a selection. The referenced blocks flash briefly.
 4.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy link to tab_ instead.
+Inside a <a class="reference-link" href="Content%20tabs.md">Content tabs</a> block, the reference points to the whole block. To link to a single tab, use _Copy link to tab_ instead. Inside a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a>, the reference points to the blocks in the column, and an include shows them without the layout around them.
 
 The link shows the title of the note, followed by the beginning of the referenced text. A link to blocks of the same note shows only the beginning of the referenced text.
 

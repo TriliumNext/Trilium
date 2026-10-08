@@ -3,6 +3,8 @@ import {
     Command, type Model, type ModelElement, type ModelWriter, Plugin, type ViewElement
 } from "ckeditor5";
 
+import { ELEMENTS as MULTICOLUMN_ELEMENTS } from "../multicolumn/constants.js";
+
 /** The model attribute with the id of a block. */
 export const BLOCK_ID = "blockId";
 
@@ -120,14 +122,16 @@ export class AssignBlockReferenceCommand extends Command {
 
 /**
  * The blocks of the selection that a reference can point at. A block inside an object, such as a
- * table cell, is replaced by the outermost object.
+ * table cell, is replaced by the outermost object. A multicolumn layout does not count, so a block
+ * in one of its columns is referenced itself.
  */
 export function getReferenceBlocks(model: Model) {
     const blocks: ModelElement[] = [];
     for (const block of model.document.selection.getSelectedBlocks()) {
         const outerObject = block.getAncestors()
             .find((ancestor): ancestor is ModelElement =>
-                ancestor.is("element") && model.schema.isObject(ancestor));
+                ancestor.is("element") && model.schema.isObject(ancestor)
+                && !ancestor.is("element", MULTICOLUMN_ELEMENTS.layout));
         const target = outerObject ?? block;
         if (!blocks.includes(target) && model.schema.checkAttribute(target, BLOCK_ID)) {
             blocks.push(target);
