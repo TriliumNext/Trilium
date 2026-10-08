@@ -68,6 +68,9 @@ async function setupGlob() {
     const response = localFetch
         ? await withTimeout(localFetch(new Request(url)), LOCAL_BOOTSTRAP_TIMEOUT_MS)
         : await fetch(url);
+    if (!response.ok) {
+        throw new Error(await readErrorMessage(response));
+    }
     const json = await response.json();
     if (import.meta.env.DEV && localFetch) {
         // The worker answers this one only once it has finished starting up, so the time it
@@ -82,6 +85,19 @@ async function setupGlob() {
         device: json.device || getDevice()
     };
     window.glob.getThemeStyle = getThemeStyle;
+}
+
+/** The `message` of a JSON error body, or the status line when the body has none. */
+async function readErrorMessage(response: Response): Promise<string> {
+    try {
+        const body = await response.json();
+        if (typeof body?.message === "string") {
+            return body.message;
+        }
+    } catch {
+        // Not JSON: fall through to the status line.
+    }
+    return `the server answered ${response.status} ${response.statusText}`.trim();
 }
 
 /**

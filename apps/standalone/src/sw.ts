@@ -198,11 +198,29 @@ async function answerShareRequest(request, clientId) {
     return forwardToClientLocalServer(request, clientId);
 }
 
-async function forwardToClientLocalServer(request, _clientId, retried = false) {
-    const { client, candidates } = await findLeaderClient();
+/**
+ * How long a request waits for a tab to own the database. A reloaded leader page requests
+ * `/bootstrap` before the browser has released the previous page's Web Lock and promoted it, so
+ * for a moment no tab answers as leader.
+ */
+const LEADER_WAIT_MS = 30_000;
+const LEADER_RETRY_DELAY_MS = 250;
 
-    // If no page is available, fall back to network
-    if (!client) return fetch(request);
+/**
+ * Answers a local API request that no tab can serve. The static host has no API of its own: a
+ * network request for one returns `index.html`, which the client fails to parse as JSON.
+ */
+function noLeaderResponse(reason) {
+    return new Response(JSON.stringify({ message: reason }), {
+        status: 503,
+        headers: { "content-type": "application/json; charset=utf-8" }
+    });
+}
+
+async function forwardToClientLocalServer(request, _clientId, deadline = Date.now() + LEADER_WAIT_MS) {
+    const { client } = await findLeaderClient();
+
+    if (!client) return noLeaderResponse("No Trilium tab is open to answer this request.");
 
     const reqUrl = request.url;
     const headersObj = {};
@@ -253,22 +271,21 @@ async function forwardToClientLocalServer(request, _clientId, retried = false) {
 
     const localResp = await responsePromise;
 
-    // We picked a follower. It refused to open a second database; re-resolve the
-    // leader and try once more. Only once: leadership can flip between a tab
-    // answering WHO_IS_LEADER and that same tab serving the fetch, so an
-    // unbounded retry could ping-pong between two tabs indefinitely.
+    // We picked a follower, which refuses to open a second database. Re-resolve the leader until
+    // `deadline`: a tab can be waiting for the Web Lock, and leadership can flip between a tab
+    // answering WHO_IS_LEADER and that same tab serving the fetch.
     if (localResp?.type === "NOT_LEADER") {
         leaderClientId = null;
-        if (retried) return fetch(request);
+        if (Date.now() >= deadline) {
+            return noLeaderResponse("No Trilium tab took ownership of the database in time.");
+        }
 
-        const leader = await findLeader(candidates.filter((c) => c.id !== client.id));
-        if (!leader) return fetch(request);
-        return forwardToClientLocalServer(request, _clientId, true);
+        await new Promise((resolve) => setTimeout(resolve, LEADER_RETRY_DELAY_MS));
+        return forwardToClientLocalServer(request, _clientId, deadline);
     }
 
     if (!localResp || localResp.type !== "LOCAL_FETCH_RESPONSE" || localResp.id !== id) {
-    // Protocol mismatch; fall back
-        return fetch(request);
+        return noLeaderResponse("The Trilium tab sent an unexpected reply.");
     }
 
     // localResp.response: { status, headers, body }
