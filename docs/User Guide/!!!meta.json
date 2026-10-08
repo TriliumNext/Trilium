@@ -5126,7 +5126,7 @@
                                         {
                                             "type": "label",
                                             "name": "iconClass",
-                                            "value": "bx bx-tab",
+                                            "value": "cke cke-trilium-tabs",
                                             "isInheritable": false,
                                             "position": 20
                                         }

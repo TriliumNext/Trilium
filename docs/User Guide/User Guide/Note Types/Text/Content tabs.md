@@ -29,7 +29,7 @@ The tab that is showing is not saved with the note: every tabs block opens on it
 
 ## Reading tabs
 
-In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a> and on <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">shared pages</a>, tabs blocks work as tabs as well:
+In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a> and on <a class="reference-link" href="../../Advanced%20Usage/Sharing.md">Sharing</a>, tabs blocks work as tabs as well:
 
 *   To show a tab, click its title, or focus it and press <kbd>Enter</kbd> or <kbd>Space</kbd>.
 *   To move between the titles of a block, use the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>.
@@ -38,13 +38,13 @@ A tab without a title shows “Tab title” in place of one.
 
 ## Linking to a tab
 
-A link can point to a single tab, much like a link to a block (see <a class="reference-link" href="Block%20references.md">Block references</a>):
+A link can point to a single tab, much like a link to a block (see <a class="reference-link" href="Block%20references.md">Block references</a>):
 
 1.  Place the cursor in the tab, either in its title or in its panel.
 2.  Press _Copy link to tab_ in the toolbar of the tabs block. Alternatively, right-click the text and select _Copy_ → _Copy link to this tab_. The tab flashes briefly.
 3.  Go to the note where to insert the link and press <kbd>Ctrl</kbd>+<kbd>V</kbd>.
 
-The link shows the title of the note, followed by the title of the tab. Clicking it opens the note, shows the tab and flashes it. As with any block reference, the link can be turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only that tab.
+The link shows the title of the note, followed by the title of the tab. Clicking it opens the note, shows the tab and flashes it. As with any block reference, the link can be turned into an <a class="reference-link" href="Include%20Note.md">Include Note</a> that shows only that tab.
 
 Links to a tab can be copied only from a note being edited. On a [shared page](../../Advanced%20Usage/Sharing.md), such a link opens the whole note.
 
@@ -53,8 +53,8 @@ Links to a tab can be copied only from a note being edited. On a [shared page](.
 Content inside a tab that is not showing is still reachable (both while editing and while reading). The tab that holds it is shown when:
 
 *   searching the note with <kbd>Ctrl</kbd>+<kbd>F</kbd> highlights a match inside it;
-*   a link points to an anchor or a block inside it (see <a class="reference-link" href="Anchors.md">Anchors</a> and <a class="reference-link" href="Block%20references.md">Block references</a>);
-*   an entry of the <a class="reference-link" href="Table%20of%20contents.md">Table of contents</a> or the <a class="reference-link" href="Highlights%20list.md">Highlights list</a> points inside it;
+*   a link points to an anchor or a block inside it (see <a class="reference-link" href="Anchors.md">Anchors</a> and <a class="reference-link" href="Block%20references.md">Block references</a>);
+*   an entry of the <a class="reference-link" href="Table%20of%20contents.md">Table of contents</a> or the <a class="reference-link" href="Highlights%20list.md">Highlights list</a> points inside it;
 *   on a shared page, the address of the page points to a heading or an anchor inside it.
 
 Tab titles are not headings, so they do not appear in the table of contents; headings inside a panel do.
