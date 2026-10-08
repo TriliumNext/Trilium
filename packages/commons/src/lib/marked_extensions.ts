@@ -230,22 +230,8 @@ export function createLiteralTildeExtension(): TokenizerAndRendererExtension {
 }
 
 /**
- * Creates the extensions for the tabbed syntax of Python-Markdown's `pymdownx.tabbed` (used by
- * Material for MkDocs), which the Markdown export writes for a tabs block:
- *
- * ```markdown
- * === "Windows"
- *
- *     Content of the tab, indented four spaces.
- *
- * ===! "Other"
- *
- *     `===!` starts a new tabs block instead of adding a tab to the previous one.
- * ```
- *
- * Consecutive tabs become one `<div class="trilium-tabs">` in the markup the text editor
- * downcasts. A title is plain text, and an empty panel gets the empty paragraph the editor keeps
- * in every panel.
+ * Creates the extensions for the content tabs of `pymdownx.tabbed` (Material for MkDocs), which
+ * render consecutive tabs as one `<div class="trilium-tabs">` in the text editor's markup.
  */
 export function createTabsExtensions(): TokenizerAndRendererExtension[] {
     return [
