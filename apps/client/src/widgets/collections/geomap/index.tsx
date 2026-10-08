@@ -412,7 +412,10 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 lives on the map itself (see EditToolbar), where it survives the map going
                 fullscreen without this bar. */}
             <CollectionProperties note={note} />
-            {imageMap.status === "error" && <NoItems icon="bx bx-image-alt" text={t("geo-map.image-unavailable")} />}
+            {imageMap.status === "error" && <NoItems
+                icon="bx bx-image-alt"
+                text={t(imageMap.reason === "svg" ? "geo-map.image-svg-unsupported" : "geo-map.image-unavailable")}
+            />}
             { coordinates !== undefined && zoom !== undefined && imageMap.status !== "loading" && imageMap.status !== "error" &&
             <MapSpaceContext.Provider value={space}><Map
                 // Built afresh when the image changes: the camera's limits are fixed when the map
@@ -539,7 +542,7 @@ function pickGpxFile(): Promise<File | null> {
 type ImageMapState =
     | { status: "geo" }
     | { status: "loading" }
-    | { status: "error" }
+    | { status: "error"; reason: "unloadable" | "svg" }
     | { status: "image"; url: string; space: ImageSpace };
 
 function useImageMap(note: FNote): ImageMapState {
@@ -558,6 +561,13 @@ function useImageMap(note: FNote): ImageMapState {
 
         (async () => {
             const imageNote = await froca.getNote(imageNoteId, true);
+            // MapLibre decodes an image source with `createImageBitmap`, which refuses SVG, and
+            // would leave the map blank with only a console warning to show for it.
+            if (imageNote?.mime === "image/svg+xml") {
+                if (!cancelled) setImage({ status: "error", reason: "svg" });
+                return;
+            }
+
             // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
             const url = imageNote && new URL(
                 `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}`, document.baseURI).href;
@@ -566,7 +576,7 @@ function useImageMap(note: FNote): ImageMapState {
 
             if (!url || !size) {
                 logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded.`);
-                setImage({ status: "error" });
+                setImage({ status: "error", reason: "unloadable" });
                 return;
             }
             setImage({ status: "image", url, size });

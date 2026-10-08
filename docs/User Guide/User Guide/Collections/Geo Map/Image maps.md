@@ -3,7 +3,7 @@ An image map is a geo map drawn over an image of your own instead of a world map
 
 ## Creating an image map
 
-1.  Upload the image as a note of its own, for example by dragging the file into the note tree.
+1.  Upload the image as a note of its own, for example by dragging the file into the note tree. PNG, JPEG, WebP and GIF images are supported; SVG images are not.
 2.  Create a geo map, or open an existing one.
 3.  In the attributes of the geo map, add a `~map:image` [relation](../../Advanced%20Usage/Attributes/Relations.md) pointing to the image note.
 
