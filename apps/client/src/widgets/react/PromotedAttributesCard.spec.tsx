@@ -402,6 +402,22 @@ describe("PromotedAttributesCard", () => {
             expect(mocks.bulk).not.toHaveBeenCalled();
             expect(mocks.removeOwned).not.toHaveBeenCalled();
         });
+
+        it("targets the full colon-carrying name when the definition name contains multiple colons", async () => {
+            defined = [ definition("label:sometool:parameter") ];
+            draw();
+
+            await act(async () => {
+                segments()[0].querySelector<HTMLElement>(".promoted-attribute-delete")?.click();
+                await flush();
+            });
+
+            expect(mocks.bulk).toHaveBeenCalledWith(
+                [ "board1" ],
+                [ { name: "deleteLabel", labelName: "sometool:parameter" } ],
+                { includeDescendants: true, silent: true });
+            expect(mocks.removeOwned).toHaveBeenCalledWith(NOTE, "label", "label:sometool:parameter");
+        });
     });
 
     describe("creating one", () => {

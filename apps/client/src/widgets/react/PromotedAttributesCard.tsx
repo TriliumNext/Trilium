@@ -198,7 +198,7 @@ export default function PromotedAttributesCard({
      * panel instead leaves the items carrying values no definition describes.
      */
     const erase = useCallback(async (definitionName: string) => {
-        const [ type, name ] = definitionName.split(":", 2) as [ "label" | "relation", string ];
+        const [ type, name ] = extractAttributeDefinitionTypeAndName(definitionName);
         await deleteAttributeInSubtree(note.noteId, type, name);
         await removeOwnedAttributesByNameOrType(note, "label", definitionName);
     }, [ note ]);
