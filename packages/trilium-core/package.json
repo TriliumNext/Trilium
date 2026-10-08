@@ -20,7 +20,7 @@
     "async-mutex": "0.5.0",
     "chardet": "2.2.0",
     "color": "5.0.3",
-    "ejs": "6.0.1",
+    "ejs": "7.0.1",
     "escape-html": "1.0.3",
     "html-to-text": "10.0.1",
     "i18next": "26.4.2",
@@ -34,7 +34,7 @@
     "sax": "1.6.1",
     "striptags": "3.2.0",
     "sucrase": "3.35.1",
-    "turnish": "1.12.2",
+    "turnish": "1.13.0",
     "xml2js": "0.6.2",
     "zod": "4.6.5"
   },

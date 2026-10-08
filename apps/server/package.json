@@ -69,7 +69,7 @@
     "compression": "1.8.2",
     "cookie-parser": "1.4.7",
     "csrf-csrf": "4.0.3",
-    "ejs": "6.0.1",
+    "ejs": "7.0.1",
     "express": "5.2.1",
     "express-openid-connect": "3.4.0",
     "express-rate-limit": "8.7.0",
