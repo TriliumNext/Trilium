@@ -1488,8 +1488,8 @@ importers:
         specifier: 3.35.1
         version: 3.35.1
       turnish:
-        specifier: 1.12.2
-        version: 1.12.2
+        specifier: 1.13.0
+        version: 1.13.0
       xml2js:
         specifier: 0.6.2
         version: 0.6.2
@@ -1531,8 +1531,8 @@ importers:
         specifier: 7.2.4
         version: 7.2.4
       turnish:
-        specifier: 1.12.2
-        version: 1.12.2
+        specifier: 1.13.0
+        version: 1.13.0
       vitest:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.19.1)(@vitest/browser-playwright@5.0.3)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(happy-dom@20.14.5)(jsdom@30.1.2(@noble/hashes@2.4.0))(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.0))
@@ -1559,9 +1559,6 @@ packages:
 
   '@actions/io@3.0.2':
     resolution: {integrity: sha512-nRBchcMM+QK1pdjO7/idu86rbJI5YHUKCvKs0KxnSYbVe3F51UfGxuZX4Qy/fWlp6l7gWFwIkrOzN+oUK03kfw==}
-
-  '@adobe/css-tools@4.5.0':
-    resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
 
   '@agentclientprotocol/codex-acp@2.1.1':
     resolution: {integrity: sha512-dppZxW3f8kNbTDbR25+lBLtNst5DIC/Sm7GtRF69PI1Ilqv12tDSsIb0hJQW0iNzkx+JdDvX76HOyv5Uibu1qQ==}
@@ -10630,8 +10627,8 @@ packages:
     resolution: {integrity: sha512-I8yFsfRzmzK0WV1pNNOA4A7y4RDfFxPRxb3t+e3ui14qSGOxGtiSP6GjeX+Y6CHb7HYaFj7ECUD7VE5kQMZWGQ==}
     engines: {node: '>=18', npm: '>=9'}
 
-  turnish@1.12.2:
-    resolution: {integrity: sha512-XQZVzbHJTGOTGhAgHY9DJEOODOzwyajShgss34gJSrA9T9t47uwtplTpfoOkDT6MHXj2eD1AQ/9AIHLob1jfgg==}
+  turnish@1.13.0:
+    resolution: {integrity: sha512-D7SFEnLIO+7qdjsz/TgM+kIFp47AB7P+2V59zu32LNWXs0r0UIxtizufjrd4t9XYgGB4FohAKxp7gmZ1Zt/U1A==}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -11447,8 +11444,6 @@ snapshots:
       undici: 6.28.1
 
   '@actions/io@3.0.2': {}
-
-  '@adobe/css-tools@4.5.0': {}
 
   '@agentclientprotocol/codex-acp@2.1.1':
     dependencies:
@@ -22724,9 +22719,8 @@ snapshots:
     dependencies:
       '@mixmark-io/domino': 2.2.0
 
-  turnish@1.12.2:
+  turnish@1.13.0:
     dependencies:
-      '@adobe/css-tools': 4.5.0
       '@mixmark-io/domino': 2.2.0
 
   type-check@0.4.0:
