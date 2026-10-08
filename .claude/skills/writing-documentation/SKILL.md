@@ -144,6 +144,12 @@ skeletons per page kind are [references/page-templates.md](references/page-templ
 8. A button is shown by its icon: `<span class="tn-icon cke cke-<name>"></span>` for a text-editor
    toolbar button, `<span class="tn-icon bx bx-<name>"></span>` for the rest of the app, followed by
    "button"/"icon"/"menu". Never a cropped screenshot of a button. `icons` finds the class.
+   **A toolbar button with no `cke` class means the font is stale**, not that the icon is missing:
+   the `cke` pack is built from the editor's SVGs and is not rebuilt with them. Run
+   `pnpm --filter @triliumnext/icon-pack-builder start cke` and commit both outputs,
+   `apps/client/src/fonts/text-editor-icons.woff2` and
+   `packages/trilium-core/src/services/icon_pack_text_editor.json`. `icons` and `check` both flag
+   a Trilium SVG the font lacks. A Trilium SVG `src/icons/foo.svg` becomes `cke-trilium-foo`.
 9. Callouts: `> [!NOTE]` context/history · `> [!TIP]` a better way · `> [!IMPORTANT]` beta status,
    requirement, third-party disclaimer · `> [!WARNING]` data/security risk or a version-gated break.
 10. Version facts: "Since v0.104.0, …", "Starting with v0.104.0, …", "Versions prior to v0.103.0 …".
@@ -172,6 +178,7 @@ rediscovers them. Fix what you pass by; none blocks a change:
   affordances; wire a new page through them.
 - **working-with-translations** — the English strings `impact --diff` reads come from those catalogues.
 - **ckeditor5-plugin-development** — the `cke` icon pack: an editor icon added, renamed or removed
-  means regenerating the font and grepping the docs for the old `cke-<name>` class.
+  means regenerating the font (rule 8 has the command) and grepping the docs for the old
+  `cke-<name>` class.
 - [references/pipeline.md](references/pipeline.md) — how the trees, the meta files, the in-app help and
   the docs site are produced and consumed, and which identifiers are load-bearing.

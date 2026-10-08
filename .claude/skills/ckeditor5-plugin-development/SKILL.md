@@ -157,8 +157,12 @@ Key rules (inherited from the upstream conventions via `eslint-config-ckeditor5`
   (`import fooIcon from '../../icons/foo.svg?raw';`); there is no `icons` export any more.
 - Every editor icon, CKEditor's and ours, is also a glyph in the built-in `cke` icon font that the
   User Guide uses to name toolbar buttons (`cke-table-merge-cell`, `cke-trilium-kbd`). Adding,
-  renaming or removing an SVG, or bumping `ckeditor5`, means regenerating that font and checking
-  the docs for the old class. See "The `cke` icon pack" in `references/ui-and-localization.md`.
+  renaming or removing an SVG, or bumping `ckeditor5`, means regenerating that font **in the same
+  change**: `pnpm --filter @triliumnext/icon-pack-builder start cke`, then commit
+  `apps/client/src/fonts/text-editor-icons.woff2` and
+  `packages/trilium-core/src/services/icon_pack_text_editor.json`. A renamed or removed icon also
+  means grepping `docs/User Guide` for the old class. Naming rules and what survives the
+  conversion: "The `cke` icon pack" in `references/ui-and-localization.md`.
 
 ## Minimal end-to-end example (inline text attribute)
 
