@@ -73,7 +73,11 @@
     "focus-split-right": "アクティブな分割画面の右側の分割画面にフォーカスを移動する",
     "split-view": "画面分割",
     "move-split-left": "アクティブな分割画面を左側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）",
-    "move-split-right": "アクティブな分割画面を右側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）"
+    "move-split-right": "アクティブな分割画面を右側の分割画面と入れ替える（ノートが移動し、フォーカスもそれに追従する）",
+    "note-panels": "ノートパネル",
+    "show-note-map": "右ペインにノートマップを表示",
+    "focus-collection-properties": "コレクションの表示タイプセレクターにフォーカスを移動",
+    "focus-formatting-toolbar": "固定の書式設定ツールバーとエディター間でフォーカスを移動"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -171,7 +175,19 @@
     "move-split-right": "分割画面を右へ移動",
     "focus-split-left": "左側の分割画面にフォーカスを移動",
     "focus-split-right": "右側の分割画面にフォーカスを移動",
-    "duplicate-note": "子ノートを含めずに複製"
+    "duplicate-note": "子ノートを含めずに複製",
+    "focus-formatting-toolbar": "書式設定ツールバーにフォーカス",
+    "show-basic-properties": "基本プロパティを表示",
+    "focus-collection-properties": "コレクションのプロパティにフォーカス",
+    "focus-file-actions": "ファイル操作にフォーカス",
+    "focus-image-actions": "画像操作にフォーカス",
+    "toggle-owned-attributes": "所有属性の表示を切り替え",
+    "toggle-inherited-attributes": "継承属性の表示を切り替え",
+    "toggle-promoted-attributes": "プロモート属性の表示を切り替え",
+    "show-note-map": "ノートマップを表示",
+    "show-note-info": "ノート情報を表示",
+    "show-note-paths": "ノートパスを表示",
+    "toggle-similar-notes": "類似ノートの表示を切り替え"
   },
   "login": {
     "title": "ログイン",
@@ -313,7 +329,8 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
-    "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。"
+    "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
+    "broken-block-reference": "参照が壊れています"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
