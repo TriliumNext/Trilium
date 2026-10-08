@@ -432,8 +432,8 @@ function buildTabTitleFilter(): Rule {
         filter(node) {
             return node.classList.contains(TAB_TITLE_CLASS);
         },
-        replacement(_content, node) {
-            return `\n\n${tabTitleLine(node)}\n\n`;
+        replacement(content, node) {
+            return `\n\n${tabTitleLine(node, content)}\n\n`;
         }
     };
 }
@@ -470,15 +470,16 @@ function blankTabsReplacement(node: Node): string | null {
     if (!titles) {
         return null;
     }
-    return `\n\n${titles.map(tabTitleLine).join("\n\n")}\n\n`;
+    return `\n\n${titles.map((title) => tabTitleLine(title, "")).join("\n\n")}\n\n`;
 }
 
-function tabTitleLine(title: Element): string {
+/** `content` is the title as Turndown rendered it, so its icons and formatting stay inline Markdown. */
+function tabTitleLine(title: Element, content: string): string {
     const tab = title.parentElement;
     const block = tab?.parentElement;
     const startsNewBlock = block?.firstElementChild === tab
         && block?.previousElementSibling?.classList.contains(TABS_CLASS);
-    const text = (title.textContent ?? "").replace(/\s+/g, " ").trim();
+    const text = content.replace(/\s+/g, " ").trim();
     return `===${startsNewBlock ? "!" : ""} "${text}"`;
 }
 

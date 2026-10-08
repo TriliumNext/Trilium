@@ -677,7 +677,7 @@ $$`;
 
                     Run the **installer**.
 
-                === "<b>Linux</b>"
+                === "**Linux** <span class="tn-icon bx bxl-tux"></span>"
                     - One
                     - Two
 
@@ -689,7 +689,7 @@ $$`;
             expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(
                 tabs(
                     tab("Windows", "<p>Run the <strong>installer</strong>.</p>"),
-                    tab("&lt;b&gt;Linux&lt;/b&gt;", "<ul><li>One</li><li>Two</li></ul>")
+                    tab(`<strong>Linux</strong> <span class="tn-icon bx bxl-tux"></span>`, "<ul><li>One</li><li>Two</li></ul>")
                 ) +
                 tabs(tab("Other", "<p>x</p>")) +
                 "<p>After.</p>"
@@ -701,6 +701,9 @@ $$`;
                 tabs(
                     tab("Windows", "<p>Run the <strong>installer</strong>.</p><ul><li>One</li><li>Two</li></ul>"),
                     tab("&nbsp;", "<p>&nbsp;</p>"),
+                    tab(`<span class="tn-icon bx bxl-chrome"></span> Chrome`, "<p>c</p>"),
+                    tab("<strong>Bold</strong>, <em>italic</em> and <code>code</code>", "<p>f</p>"),
+                    tab("a &lt;b&gt; *c* \"d\"", "<p>t</p>"),
                     tab("Nested", tabs(tab("A", "<p>a</p>"), tab("B", "<blockquote><p>b</p></blockquote>")))
                 ) +
                 tabs(tab("Next", "<p>y</p>"));

@@ -270,7 +270,7 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
                     tabs.push({
                         type: "tab",
                         raw: match[0],
-                        title: match[2],
+                        titleTokens: this.lexer.inlineTokens(match[2]),
                         tokens: this.lexer.blockTokens(content, [])
                     });
                     raw += match[0];
@@ -289,7 +289,7 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
         {
             name: "tab",
             renderer(token) {
-                const title = escapeHtml(token.title as string) || "&nbsp;";
+                const title = this.parser.parseInline(token.titleTokens as Token[]) || "&nbsp;";
                 const panel = this.parser.parse(token.tokens as Token[]).trim() || "<p>&nbsp;</p>";
                 return `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
                     `<div class="trilium-tab-panel">${panel}</div></section>`;

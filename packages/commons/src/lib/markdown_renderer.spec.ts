@@ -670,7 +670,7 @@ describe("renderToHtml", () => {
                 "",
                 "    Run the **installer**.",
                 "",
-                "=== \"<b>Linux</b>\"",
+                "=== \"**Linux** <span class=\"tn-icon bx bxl-tux\"></span>\"",
                 "\t- One",
                 "\t- Two",
                 "===! \"Other\"",
@@ -682,7 +682,10 @@ describe("renderToHtml", () => {
                 "<p>Before.</p>" +
                 tabs(
                     tab("Windows", "<p>Run the <strong>installer</strong>.</p>"),
-                    tab("&lt;b&gt;Linux&lt;/b&gt;", "<ul><li>One</li><li>Two</li></ul>")
+                    tab(
+                        "<strong>Linux</strong> <span class=\"tn-icon bx bxl-tux\"></span>",
+                        "<ul><li>One</li><li>Two</li></ul>"
+                    )
                 ) +
                 tabs(tab("Other", "<p>x</p>")) +
                 "<p>After.</p>"

@@ -1000,5 +1000,23 @@ describe("Markdown export", () => {
 
                     y`);
         });
+
+        it("exports the icons and formatting of a tab title as inline Markdown", () => {
+            const html = tabs(
+                tab(`<span class="tn-icon bx bxl-chrome"></span>&nbsp;Chrome`, "<p>a</p>"),
+                tab("<strong>Bold</strong> and <code>code</code>", "<p>b</p>")
+            );
+            const markdown = markdownExportService.toMarkdown(html);
+
+            expect(markdown).not.toContain("");
+            expect(markdown).toBe(trimIndentation`\
+                === "<span class="tn-icon bx bxl-chrome"></span> Chrome"
+
+                    a
+
+                === "**Bold** and \`code\`"
+
+                    b`);
+        });
     });
 });
