@@ -2457,7 +2457,7 @@
                                         {
                                             "type": "label",
                                             "name": "shareAlias",
-                                            "value": "note-menu",
+                                            "value": "note-context-menu",
                                             "isInheritable": false,
                                             "position": 30
                                         },
@@ -12017,7 +12017,7 @@
                                         "cNpC0ITcfX0N",
                                         "IjZS7iK5EXtb"
                                     ],
-                                    "title": "v0.108.0: Removal of the old layout",
+                                    "title": "v0.107.0: Removal of the old layout",
                                     "notePosition": 10,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -12040,7 +12040,7 @@
                                         }
                                     ],
                                     "format": "markdown",
-                                    "dataFileName": "v0.108.0 Removal of the old layout.md",
+                                    "dataFileName": "v0.107.0 Removal of the old layout.md",
                                     "attachments": []
                                 },
                                 {

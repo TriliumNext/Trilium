@@ -9,11 +9,22 @@ As such, the first step is to create a new note to gather all the themes.
 
 ## Step 2. Create the theme
 
-|  |  |
-| --- | --- |
-| ![](Creating%20a%20custom%20theme_3_Creating%20a%20custom%20theme_im.png) | Themes are code notes with a special attribute. Start by creating a new code note. |
-| ![](Creating%20a%20custom%20theme_1_Creating%20a%20custom%20theme_im.png) | Then change the note type to a CSS code. |
-| ![](Creating%20a%20custom%20theme_Creating%20a%20custom%20theme_im.png) | In the _Owned Attributes_ section define the `#appTheme` attribute to point to any desired name. This is the name that will show up in the appearance section in settings. |
+<table>
+    <tbody>
+        <tr>
+            <td><img src="Creating a custom theme_3_Creating a custom theme_im.png"></td>
+            <td>Themes are code notes with a special attribute. Start by creating a new code note.</td>
+        </tr>
+        <tr>
+            <td><img src="Creating a custom theme_1_Creating a custom theme_im.png"></td>
+            <td>Then change the note type to a CSS code.</td>
+        </tr>
+        <tr>
+            <td><img src="Creating a custom theme_Creating a custom theme_im.png"></td>
+            <td>In the <em>Owned Attributes</em> section define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
+        </tr>
+    </tbody>
+</table>
 
 ## Step 3. Define the theme's CSS
 
@@ -37,7 +48,7 @@ Afterwards the application will refresh itself with the new theme:
 
 ![](Creating%20a%20custom%20theme_4_Creating%20a%20custom%20theme_im.png)
 
-Do note that the theme will be based off of the legacy theme. To override that and base the theme on the new TriliumNext theme, see: [Theme base (legacy vs. next)](Customize%20the%20Next%20theme.md)
+Do note that the theme will be based off of the legacy theme. To override that and base the theme on the Modern theme, see <a class="reference-link" href="Customize%20the%20Next%20theme.md">Customize the Next theme</a>.
 
 ## Step 5. Making changes
 

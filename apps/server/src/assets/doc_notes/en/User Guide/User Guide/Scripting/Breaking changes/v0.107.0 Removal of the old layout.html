@@ -32,9 +32,9 @@
             the promoted attributes instead.</li>
         </ul>
       </li>
-      <li><em>Edited Notes</em>, which appears for&nbsp;<a class="reference-link"
-        href="#root/_help_l0tKav7yLHGF">Day Notes</a>&nbsp;is now shown underneath
-        the title.
+      <li><em>Edited Notes</em> (now renamed to <em>Notes edited on this day</em>),
+        which appears for&nbsp;<a class="reference-link" href="#root/_help_l0tKav7yLHGF">Day Notes</a>&nbsp;is
+        now shown underneath the title.
         <ul>
           <li>Whether the section is collapsed or not depends on the choice in&nbsp;<a
             class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→
@@ -55,7 +55,7 @@
 <p>The most significant change is the removal of the ribbon. All the actions
   and options from the ribbon were integrated in other places in the application.</p>
 <p>Here's how all the different tabs that were once part of the ribbon are
-  now available in the new layout:</p>
+  available in the new layout:</p>
 <ul>
   <li>“Formatting toolbar” was relocated to the top of the page.
     <ul>
@@ -95,7 +95,7 @@
       <li>Expanded by default for new searches, collapsed for saved searches.</li>
     </ul>
   </li>
-  <li>The Note map is now available in the Note actions menu.
+  <li>The Note map is now in the Note actions menu.
     <ul>
       <li>Instead of opening into a panel in the ribbon, the note map now opens
         in the sidebar, in the&nbsp;<a class="reference-link" href="#root/_help_KRlZFoIH0j6p">Connections tab</a>&nbsp;where
@@ -107,6 +107,7 @@
     <ul>
       <li>Instead of opening into a panel in the ribbon, the similar notes are now
         shown in the sidebar, in the&nbsp;<a class="reference-link" href="#root/_help_KRlZFoIH0j6p">Connections tab</a>.</li>
+      <li><code>similarNotesWidgetDisabled</code> no longer has any effect.</li>
     </ul>
   </li>
   <li>The Collection properties tab were relocated under the note title and
@@ -126,8 +127,9 @@
 </ul>
 <aside class="admonition note">
   <p>The ribbon keyboard shortcuts (e.g. <code>toggleRibbonTabClassicEditor</code>)
-    have been repurposed to work on the new layout, where they will toggle
-    the appropriate panel.</p>
+    have been repurposed and renamed (<em>Focus Formatting Toolbar</em>, <em>Toggle Owned Attributes</em>, <em>Show Note Map</em>,
+    etc.) to work on the new layout, where they will toggle the appropriate
+    panel.</p>
 </aside>
 <h3>Removal of the floating buttons</h3>
 <p>Most of the buttons were relocated to the right of the note title, in
@@ -165,6 +167,17 @@
   content shifts when moving between two panes in a split view. In the new
   layout, the sidebar acts more like the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;pane,
   remaining visible even if there is nothing to display.</p>
+<p>As such:</p>
+<ul>
+  <li>The <em>Table of Contents</em> card in Text Notes options (minimum number
+    of headings) is gone. The &nbsp;shows the table of contents whatever the
+    number of headings.</li>
+  <li><code>#toc</code> / <code>#toc=show</code> / <code>#toc=hide</code> no longer
+    have any effect.</li>
+  <li><code>#hideHighlightWidget</code> no longer has any effect. The highlight
+    categories are still set globally, from the gear menu or Text Notes options,
+    but they can't be hidden for a single note.</li>
+</ul>
 <p>In order to toggle the sidebar, there is a new button on the top-right
   side of the screen, near the window buttons (on Windows and Linux).</p>
 <p>Now each section of the sidebar (e.g. “Table of Contents”, “Highlights

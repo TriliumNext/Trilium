@@ -35,18 +35,18 @@ The two submenus in this section:
 
 ## Importing, exporting and printing
 
-*   <span class="tn-icon bx bx-import"></span> _Import files_ opens the import dialog, which imports files as children of the current note. See <a class="reference-link" href="../Import%20%26%20Export.md">[missing note]</a>. It is unavailable on <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">[missing note]</a> notes.
+*   <span class="tn-icon bx bx-import"></span> _Import files_ opens the import dialog, which imports files as children of the current note. See <a class="reference-link" href="../Import%20%26%20Export.md">Import &amp; Export</a>. It is unavailable on <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
 *   <span class="tn-icon bx bx-export"></span> _Export note_ opens the export dialog with _Only this note_ selected; select _This note & all descendants_ there to export the whole subtree.
-*   <span class="tn-icon bx bx-printer"></span>_Print note…_ prints the note. On the desktop application this entry reads _Print/export to PDF…_ and can also save the note as a PDF file. See <a class="reference-link" href="../Notes/Printing%20%26%20Exporting%20as%20PDF.md">[missing note]</a>, including which note types and collections can be printed.
+*   <span class="tn-icon bx bx-printer"></span>_Print note…_ prints the note. On the desktop application this entry reads _Print/export to PDF…_ and can also save the note as a PDF file. See <a class="reference-link" href="../Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a>, including which note types and collections can be printed.
 
 Some note types add their own export formats right below _Export note_:
 
-*   <span class="tn-icon bx bxs-file-image"></span>_Export as image_, on <a class="reference-link" href="../../Note%20Types/Mermaid%20Diagrams.md">[missing note]</a> and <a class="reference-link" href="../../Note%20Types/Mind%20Map.md">[missing note]</a> notes, downloads the diagram as _PNG (raster)_ or _SVG (vector)_.
-*   <span class="tn-icon bx bxs-spreadsheet"></span>_Export to Excel (.xlsx)_ and _Export to CSV (.csv)_, on <a class="reference-link" href="../../Note%20Types/Spreadsheets.md">[missing note]</a>, download the spreadsheet in those formats.
+*   <span class="tn-icon bx bxs-file-image"></span>_Export as image_, on <a class="reference-link" href="../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> and <a class="reference-link" href="../../Note%20Types/Mind%20Map.md">Mind Map</a> notes, downloads the diagram as _PNG (raster)_ or _SVG (vector)_.
+*   <span class="tn-icon bx bxs-spreadsheet"></span>_Export to Excel (.xlsx)_ and _Export to CSV (.csv)_, on <a class="reference-link" href="../../Note%20Types/Spreadsheets.md">Spreadsheets</a>, download the spreadsheet in those formats.
 
 ## Revisions
 
-These entries manage the <a class="reference-link" href="../Notes/Note%20Revisions.md">[missing note]</a> of the note:
+These entries manage the <a class="reference-link" href="../Notes/Note%20Revisions.md">Note Revisions</a> of the note:
 
 *   <span class="tn-icon bx bx-history"></span>_Note revisions…_ opens the revisions dialog, where previous versions can be previewed, compared with the current one, downloaded or restored.
 *   <span class="tn-icon bx bx-save"></span>_Save revision_ saves a revision of the note right away, instead of waiting for the next automatic snapshot.
@@ -57,21 +57,21 @@ These entries manage the <a class="reference-link" href="../Notes/Note%20Revisi
 The following entries only appear on some notes:
 
 *   <span class="tn-icon bx bx-pencil"></span>_Edit note_ appears at the top of the menu when the note is currently read-only. It enables editing until the note is closed.
-*   <span class="tn-icon bx bx-align-justify"></span>_Word wrap_ appears at the top of the menu on <a class="reference-link" href="../../Note%20Types/Code.md">[missing note]</a> notes, and sets whether long lines wrap in this note:
-    *   _Auto_ (the default) follows <a class="reference-link" href="Options.md">[missing note]</a> → _Code Notes_ → _Wrap lines in code notes_.
+*   <span class="tn-icon bx bx-align-justify"></span>_Word wrap_ appears at the top of the menu on <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, and sets whether long lines wrap in this note:
+    *   _Auto_ (the default) follows <a class="reference-link" href="Options.md">Options</a> → _Code Notes_ → _Wrap lines in code notes_.
     *   _On_ and _Off_ override it for this note only, by setting the `#wrapLines` label.
-*   <span class="tn-icon bx bx-paperclip"></span>_Convert into attachment_ appears on an image note that has no children and a single parent. After a confirmation, it turns the image into an attachment of its parent note and opens it there. See <a class="reference-link" href="../Notes/Attachments.md">[missing note]</a>.
-*   <span class="tn-icon bx bx-extension"></span>_Re-render note_ appears on a <a class="reference-link" href="../../Note%20Types/Render%20Note.md">[missing note]</a>, and runs its script again to refresh the output.
-*   <span class="tn-icon bx bx-cog"></span>_Board properties_ appears on a <a class="reference-link" href="../../Collections/Kanban%20Board.md">[missing note]</a>, and configures its columns, card attributes and card templates.
+*   <span class="tn-icon bx bx-paperclip"></span>_Convert into attachment_ appears on an image note that has no children and a single parent. After a confirmation, it turns the image into an attachment of its parent note and opens it there. See <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>.
+*   <span class="tn-icon bx bx-extension"></span>_Re-render note_ appears on a <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a>, and runs its script again to refresh the output.
+*   <span class="tn-icon bx bx-cog"></span>_Board properties_ appears on a <a class="reference-link" href="../../Collections/Kanban%20Board.md">Kanban Board</a>, and configures its columns, card attributes and card templates.
 
 ## Advanced
 
 The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the actions that are needed less often:
 
-*   <span class="tn-icon bx bx-file-find"></span>_Open note externally_ (desktop application only) saves the note to a temporary file and opens it in the application that the operating system associates with it. Trilium watches the file, and offers to upload the modified version back into the note. It is unavailable on <a class="reference-link" href="../../Collections.md">[missing note]</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">[missing note]</a> notes.
+*   <span class="tn-icon bx bx-file-find"></span>_Open note externally_ (desktop application only) saves the note to a temporary file and opens it in the application that the operating system associates with it. Trilium watches the file, and offers to upload the modified version back into the note. It is unavailable on <a class="reference-link" href="../../Collections.md">Collections</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a> notes.
 *   <span class="tn-icon bx bx-customize"></span>_Open note custom_ (desktop application only, Windows and Linux) works like _Open note externally_, but lets you pick the application to open the file with.
-*   <span class="tn-icon bx bx-code"></span>_Note source_ shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">[missing note]</a>, the content of the note exactly as it is stored.
-*   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown Note_ (on text notes) and _Convert to Text Note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">[missing note]</a>.
+*   <span class="tn-icon bx bx-code"></span>_Note source_ shows the <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>, the content of the note exactly as it is stored.
+*   <span class="tn-icon bx bxl-markdown"></span>_Convert to Markdown Note_ (on text notes) and _Convert to Text Note_ (on Markdown notes) switch the note between rich text and Markdown. After a confirmation, Trilium saves a revision and converts the content; the revision allows going back if some formatting was lost. See <a class="reference-link" href="../../Note%20Types/Converting%20between%20note%20types.md">Converting between note types</a>.
 *   <span class="tn-icon bx bx-collapse-alt"></span>_Compress images_ opens a dialog that reduces the size of the images in the note. It lists the images found and how much space they take, and offers to:
     
     *   Resize the images larger than a chosen size.
@@ -79,35 +79,35 @@ The <span class="tn-icon bx bx-wrench"></span>_Advanced_ submenu groups the acti
     *   Keep, optimize, or convert to JPEG the PNG images.
     *   _Process child notes as well_, to include the images of the notes beneath this one.
     
-    Compressing cannot be undone. Images can also be compressed automatically on upload, see <a class="reference-link" href="../../Note%20Types/Text/Images.md">[missing note]</a>.
-*   <span class="tn-icon bx bx-text"></span>_View OCR text_ (on image and file notes) shows the text extracted from the note via <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">[missing note]</a>. If the note has not been processed yet, the dialog offers to _Process OCR_.
-*   <span class="tn-icon bx bx-world"></span>_Open note on server_ (desktop application only, listed when <a class="reference-link" href="../../Installation%20%26%20Setup/Synchronization.md">[missing note]</a> is configured) opens the same note on the sync server, in the web browser.
+    Compressing cannot be undone. Images can also be compressed automatically on upload, see <a class="reference-link" href="../../Note%20Types/Text/Images.md">Images</a>.
+*   <span class="tn-icon bx bx-text"></span>_View OCR text_ (on image and file notes) shows the text extracted from the note via <a class="reference-link" href="../../Advanced%20Usage/Text%20Extraction%20(OCR).md">Text Extraction (OCR)</a>. If the note has not been processed yet, the dialog offers to _Process OCR_.
+*   <span class="tn-icon bx bx-world"></span>_Open note on server_ (desktop application only, listed when <a class="reference-link" href="../../Installation%20%26%20Setup/Synchronization.md">Synchronization</a> is configured) opens the same note on the sync server, in the web browser.
 
 ## Deleting the note
 
 <span class="tn-icon bx bx-trash"></span>_Delete note_ opens the deletion dialog for the current note and its subtree. The dialog lists the notes that will be deleted and the relations that will be broken, and offers to:
 
-*   Also delete the other clones of the note, if it is cloned elsewhere. Otherwise, only the current placement is removed and the note stays in its other locations. See <a class="reference-link" href="../Notes/Cloning%20Notes.md">[missing note]</a>.
+*   Also delete the other clones of the note, if it is cloned elsewhere. Otherwise, only the current placement is removed and the note stays in its other locations. See <a class="reference-link" href="../Notes/Cloning%20Notes.md">Cloning Notes</a>.
 *   _Erase permanently_ instead of the usual soft deletion. This cannot be undone and reloads the application.
 
-Notes deleted without erasing can be brought back, see <a class="reference-link" href="../Notes/Restoring%20Deleted%20Notes.md">[missing note]</a>.
+Notes deleted without erasing can be brought back, see <a class="reference-link" href="../Notes/Restoring%20Deleted%20Notes.md">Restoring Deleted Notes</a>.
 
 ## Limitations
 
 *   The note menu is not available on launchers.
-*   On the notes of <a class="reference-link" href="Options.md">[missing note]</a> and of the in-app help, most entries are grayed out, since these notes cannot be imported into, exported, deleted or have revisions.
-*   The [Note properties](#note-properties) section is only listed when the note itself is displayed, not its <a class="reference-link" href="../Notes/Attachments.md">[missing note]</a> or its <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">[missing note]</a>.
-*   In <a class="reference-link" href="../Navigation/Quick%20edit.md">[missing note]</a>, _Search in note_, _Note map_, _Full width_ and _Convert into attachment_ are not listed.
+*   On the notes of <a class="reference-link" href="Options.md">Options</a> and of the in-app help, most entries are grayed out, since these notes cannot be imported into, exported, deleted or have revisions.
+*   The [Note properties](#note-properties) section is only listed when the note itself is displayed, not its <a class="reference-link" href="../Notes/Attachments.md">Attachments</a> or its <a class="reference-link" href="../../Advanced%20Usage/Note%20source.md">Note source</a>.
+*   In <a class="reference-link" href="../Navigation/Quick%20edit.md">Quick edit</a>, _Search in note_, _Note map_, _Full width_ and _Convert into attachment_ are not listed.
 
 ## Mobile support
 
-On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">[missing note]</a>, the note menu opens as a sheet from the bottom of the screen. Besides the entries above, it contains the items that the desktop layout places elsewhere:
+On the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the note menu opens as a sheet from the bottom of the screen. Besides the entries above, it contains the items that the desktop layout places elsewhere:
 
-*   _Backlinks_ and _Note paths_, at the top, which open the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">[missing note]</a> and the other locations of the note.
-*   The custom buttons of the note type (such as <span class="tn-icon bx bx-download"></span>_Download_ on a <a class="reference-link" href="../../Note%20Types/File.md">[missing note]</a>).
+*   _Backlinks_ and _Note paths_, at the top, which open the <a class="reference-link" href="../../Note%20Types/Text/Links/Backlinks.md">Backlinks</a> and the other locations of the note.
+*   The custom buttons of the note type (such as <span class="tn-icon bx bx-download"></span>_Download_ on a <a class="reference-link" href="../../Note%20Types/File.md">File</a>).
 *   _Insert child note_, which creates a note under the current one.
-*   _Create new split_ and _Close this pane_, to manage the <a class="reference-link" href="Split%20View.md">[missing note]</a>.
+*   _Create new split_ and _Close this pane_, to manage the <a class="reference-link" href="Split%20View.md">Split View</a>.
 *   _Note attributes_, which opens the attributes of the note.
-*   On <a class="reference-link" href="../../Note%20Types/Text.md">[missing note]</a> notes, the content language (see <a class="reference-link" href="../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">[missing note]</a>); on <a class="reference-link" href="../../Note%20Types/Code.md">[missing note]</a> notes, the language of the code.
-*   _Note info_ and <a class="reference-link" href="../Navigation/Similar%20Notes.md">[missing note]</a>.
+*   On <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, the content language (see <a class="reference-link" href="../../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md">Content language &amp; Right-to-left support</a>); on <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, the language of the code.
+*   _Note info_ and <a class="reference-link" href="../Navigation/Similar%20Notes.md">Similar Notes</a>.
 *   _Note map_ opens the map in a popup instead of the right sidebar.

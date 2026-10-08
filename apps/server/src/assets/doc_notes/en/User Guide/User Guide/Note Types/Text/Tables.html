@@ -9,7 +9,7 @@
 <p>Since v0.107.0, the same menu starts with an <em>Insert table…</em> item,
   for a table larger than the grid or to type its size instead:</p>
 <ol>
-  <li>Click the <span class="tn-icon cke cke-table"></span> button and select <em>Insert table…</em>.
+  <li>Click the <span class="tn-icon cke cke-table"></span>button and select <em>Insert table…</em>.
     A small form opens at the cursor.</li>
   <li>Enter the number of <em>Rows</em> (up to 1000) and <em>Columns</em> (up to
     100). The table can have at most 5000 cells in total, for example 1000
@@ -21,8 +21,9 @@
   the grid while the menu is open.</p>
 <h2>Formatting toolbar</h2>
 <p>When a table is selected, a special formatting toolbar will appear:</p>
-<img
-src="3_Tables_image.png" width="384" height="100">
+<p>
+  <img src="3_Tables_image.png" width="384" height="100">
+</p>
 <h2>Context menu</h2>
 <p>Since v0.106.0, right-clicking anywhere inside a table opens a context
   menu with the most common table operations:</p>
@@ -97,7 +98,7 @@ src="3_Tables_image.png" width="384" height="100">
     removed.</li>
   <li>Since v0.107.0, <em>Select</em>, below <em>Delete table</em>, selects the
     cells of every row (<em>Row</em>) or column (<em>Column</em>) the selection
-    touches, or every cell of the table (<em>Table</em>). Unlike the <span class="tn-icon cke cke-drag-handle"></span> button,
+    touches, or every cell of the table (<em>Table</em>). Unlike the <span class="tn-icon cke cke-drag-handle"></span>button,
     which selects the table as a whole, <em>Table</em> selects its cells, so
     cell operations such as <em>Merge cells</em> apply to all of them. In a table
     nested inside another, <em>Table</em> selects only the cells of the inner
@@ -122,7 +123,7 @@ src="3_Tables_image.png" width="384" height="100">
       <li>Click on a cell to focus it.</li>
       <li>Click the&nbsp;<span class="tn-icon cke cke-return-arrow"></span> button
         at the top or the bottom of a table to insert an empty paragraph near it.</li>
-      <li>Click the&nbsp;<span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
+      <li>Click the&nbsp;<span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
         at the top-left of the table to select it entirely (for easy copy-pasting
         or cutting) or drag and drop it to relocate the table.</li>
     </ul>
@@ -143,7 +144,7 @@ src="3_Tables_image.png" width="384" height="100">
   <li>Columns can be resized by hovering the mouse over the border of two adjacent
     cells and dragging it.</li>
   <li>To give several columns the same width, select cells across them and choose <em>Distribute columns evenly</em> from
-    the <span class="tn-icon cke cke-table-column"></span> button of the formatting
+    the <span class="tn-icon cke cke-table-column"></span>button of the formatting
     toolbar or from the <a href="#context-menu">context menu</a>.</li>
   <li>By default, the row height is not adjustable using the mouse, but it can
     be configured from the cell settings (see below).</li>
@@ -190,7 +191,7 @@ src="3_Tables_image.png" width="384" height="100">
   <li>To sort all the rows, place the cursor in any cell of the column to sort
     by, then select <em>Sort</em> → <em>Ascending</em> or <em>Descending</em> from
     the <a href="#context-menu">context menu</a>. The same items are in the <span
-    class="tn-icon bx bx-sort-alt-2"></span> button of the formatting toolbar.</li>
+    class="tn-icon bx bx-sort-alt-2"></span>button of the formatting toolbar.</li>
   <li>To sort only some of the rows, select their cells in the column to sort
     by, then sort the same way. Sorting is not available while the selection
     spans more than one column.</li>
@@ -250,7 +251,7 @@ src="3_Tables_image.png" width="384" height="100">
 <ul>
   <li>Dates are also recognized in the formats of the note's language, such
     as <code>30.09.2026</code> or <code>30. September 2026</code> for German, and
-    in the format chosen in <a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a> → <em>Text Notes</em> → <em>Editor</em> → <em>Date/time format</em> for <a
+    in the format chosen in&nbsp;<a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a>&nbsp;→ <em>Text Notes</em> → <em>Editor</em> → <em>Date/time format</em> for <a
     href="#root/_help_CohkqWQC1iBv">inserting the date and time</a>.</li>
   <li>A number can start with a currency symbol, such as <code>$</code>, <code>€</code> or <code>£</code>.
     Whatever follows the number, such as a unit, is ignored, so units are not
@@ -260,8 +261,9 @@ src="3_Tables_image.png" width="384" height="100">
     one and a half in English, but one thousand five hundred in German. A comma
     or period that is not followed by exactly three digits is always read as
     a decimal separator, so <code>1,5</code> is one and a half in either language.</li>
-  <li>The language of the note is the one set in its Basic Properties, or else
-    the default content language. See&nbsp;<a class="reference-link" href="#root/_help_veGu4faJErEM">Content language &amp; Right-to-left support</a>.</li>
+  <li>The language of the note set in the&nbsp;<a class="reference-link" href="#root/_help_AlJ73vBCjWDw">Status bar</a>&nbsp;via
+    the&nbsp;<span class="tn-icon bx bx-globe"></span> icon, or else the default
+    content language. See&nbsp;<a class="reference-link" href="#root/_help_veGu4faJErEM">Content language &amp; Right-to-left support</a>.</li>
 </ul>
 <h3>Merged cells</h3>
 <p>Rows joined by a merged cell are kept together and move as one block.
@@ -398,7 +400,7 @@ src="3_Tables_image.png" width="384" height="100">
 <p>Since v0.104.1, tables can be indented as a block (the whole table moves,
   rather than just the content of a cell).</p>
 <ol>
-  <li>Click the&nbsp;<span style="color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
+  <li>Click the&nbsp;<span style="--tn-color:hsl(0,0%,60%);color:hsl(0,0%,60%);"><span class="tn-icon cke cke-drag-handle"></span></span>button
     to select the entire table. Otherwise, the indentation applies only to
     the current cell's content.</li>
   <li>Press <kbd>Tab</kbd> to increase the indent, or <kbd>Shift</kbd>+<kbd>Tab</kbd> to

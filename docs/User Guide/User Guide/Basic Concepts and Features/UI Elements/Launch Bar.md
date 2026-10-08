@@ -44,7 +44,7 @@ Drag-and-drop the items in the tree in order to change their order. See <a cl
 
 ## Customizing the launcher
 
-*   The icon of a launcher can be changed just like a normal note. See <a class="reference-link" href="../Notes/Note%20Icons%20%26%20Colors.md">Note Icons</a> for more information.
+*   The icon of a launcher can be changed just like a normal note. See <a class="reference-link" href="../Notes/Note%20Icons%20%26%20Colors.md">[missing note]</a> for more information.
 *   The title of the launcher can also be changed.
 
 ### Resetting
@@ -57,18 +57,16 @@ Right click either the _Available launchers_ or _Visible launchers_ sections and
 
 1.  **Note Launcher**  
     A note launcher will simply navigate to a specified note.
-    
     1.  Set the `target` promoted attribute to the note to navigate to.
     2.  Optionally, set `hoistedNote` to hoist a particular note. See <a class="reference-link" href="../Navigation/Note%20Hoisting.md">Note Hoisting</a> for more information.
     3.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 2.  **Script Launcher**  
     An advanced launcher which will run a script upon pressing. See <a class="reference-link" href="../../Scripting.md">Scripting</a> for more information.
-    
     1.  Set `script` to point to the desired script to run.
     2.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 3.  **Custom Widget**
     
-    Allows defining a custom widget to be rendered inside the launcher. See <a class="reference-link" href="../../Scripting/Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md">Widget Basics</a> for more information.
+    Allows defining a custom widget to be rendered inside the launcher. See <a class="reference-link" href="../../Scripting/Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md">[missing note]</a> for more information.
 4.  **Spacers**  
     Launchers that create some distance between other launchers for better visual distinction.
 
