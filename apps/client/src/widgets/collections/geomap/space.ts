@@ -154,6 +154,14 @@ export interface ImageSpace extends MapSpace {
     maxBounds: Bounds;
     /** The deepest zoom worth having: a few levels past the one that draws a pixel per pixel. */
     maxZoom: number;
+    /** The image's natural size. */
+    size: ImageSize;
+    /** The coordinates of the image's corners, the image's own pixels where the map names none. */
+    extent: ImageExtent;
+    /** A position in the map's coordinates as `[lng, lat]`, unrounded. */
+    toLngLat(point: [number, number]): [number, number];
+    /** A position in the image's pixels, from its top-left corner, as `[lng, lat]`. */
+    pixelToLngLat(pixel: [number, number]): [number, number];
 }
 
 /**
@@ -224,6 +232,10 @@ export function imageSpace({ width, height }: ImageSize, extent?: ImageExtent | 
         maxBounds: [ [ west, south ], [ east, north ] ],
         // MapLibre's world is 512 pixels across at zoom 0, and doubles with each level.
         maxZoom: Math.log2(longerSide / (IMAGE_EXTENT * 512)) + IMAGE_OVERZOOM,
+        size: { width, height },
+        extent: { topLeft: [ left, top ], bottomRight: [ right, bottom ] },
+        toLngLat,
+        pixelToLngLat,
 
         parseLocation(value) {
             const point = parsePair(value);

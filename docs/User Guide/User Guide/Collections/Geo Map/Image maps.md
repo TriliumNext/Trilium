@@ -22,7 +22,7 @@ The features that only make sense on a real map are not available on an image ma
 *   Going to your location.
 *   Adding GPS tracks.
 *   Clicking the places the base map shows.
-*   The 3D buildings and the scale.
+*   The 3D buildings.
 *   Opening a location in an external map application.
 
 The look of the marker titles follows the image: if the image is dark, add the `#map:darkStyle` label to the geo map so that the titles are drawn in a light color.
@@ -40,6 +40,12 @@ To use coordinates of your own instead, add a `#map:imageBounds` label to the ge
 The two axes don't have to use the same scale. A circle is always measured in the map's own units, so it appears as an ellipse when the units are stretched differently along the two axes.
 
 A value that cannot be read, or whose corners share an `x` or a `y`, is ignored and the pixels of the image are used instead.
+
+## Coordinate rulers
+
+Enabling _Show scale_ in the collection properties draws rulers along the edges of the image instead of a distance scale. Round values of the map's coordinates are marked with ticks along all four edges, labeled along the top and left ones, with faint grid lines across the image. The spacing follows the zoom level, and the values follow `#map:imageBounds` when it is set.
+
+The rulers are drawn on the image itself, so they move out of view along with its edges when zooming in. The grid lines remain visible across the image.
 
 ## How the positions are stored
 

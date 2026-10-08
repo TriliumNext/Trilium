@@ -24,6 +24,7 @@ import DrawShape, { DrawTool } from "./DrawShape";
 import DrawToolbar from "./DrawToolbar";
 import EditToolbar from "./EditToolbar";
 import GhostPin from "./GhostPin";
+import ImageRulers from "./ImageRulers";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
 import type { GeoSearchResult } from "./geocoding";
 import Map, { type CameraLimits, DEFAULT_ZOOM, GeoMouseEvent } from "./map";
@@ -493,6 +494,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 {/* Stood up only while the view is leaned over, so the 3D button changes the map
                     and not merely the angle it is seen from. */}
                 {isGeo && <Buildings isDarkTheme={layerData.isDarkTheme ?? false} />}
+                {/* The scale an image map has instead of a distance in meters. */}
+                {image && hasScale && <ImageRulers space={image.space} isDarkTheme={layerData.isDarkTheme ?? false} />}
                 {/* The places the base map itself draws answer a click, which is a marker named and
                     placed without typing either (see Pois). */}
                 {isGeo && <Pois placing={!!placement} onPick={pickPlace} />}

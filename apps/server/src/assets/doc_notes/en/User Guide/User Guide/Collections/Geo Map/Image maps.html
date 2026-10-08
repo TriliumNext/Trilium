@@ -33,7 +33,7 @@ class="admonition note">
   <li>Going to your location.</li>
   <li>Adding GPS tracks.</li>
   <li>Clicking the places the base map shows.</li>
-  <li>The 3D buildings and the scale.</li>
+  <li>The 3D buildings.</li>
   <li>Opening a location in an external map application.</li>
 </ul>
 <p>The look of the marker titles follows the image: if the image is dark,
@@ -63,6 +63,16 @@ class="admonition note">
   stretched differently along the two axes.</p>
 <p>A value that cannot be read, or whose corners share an <code>x</code> or
   a <code>y</code>, is ignored and the pixels of the image are used instead.</p>
+<h2>Coordinate rulers</h2>
+<p>Enabling <em>Show scale</em> in the collection properties draws rulers along
+  the edges of the image instead of a distance scale. Round values of the
+  map's coordinates are marked with ticks along all four edges, labeled along
+  the top and left ones, with faint grid lines across the image. The spacing
+  follows the zoom level, and the values follow <code>#map:imageBounds</code> when
+  it is set.</p>
+<p>The rulers are drawn on the image itself, so they move out of view along
+  with its edges when zooming in. The grid lines remain visible across the
+  image.</p>
 <h2>How the positions are stored</h2>
 <p>Because positions are stored in different labels from the ones of a geo
   map, the same note can be placed both on a geo map and on an image map.</p>
