@@ -331,12 +331,25 @@ describe("ReferenceLink", () => {
         await Promise.resolve();
 
         expect(getModelData(editor.model, { withoutSelection: true }))
-            .toBe('<paragraph>a<reference href="#root/noteNew"></reference>b</paragraph>');
+            .toBe('<paragraph>a<reference href="#root/noteNew" storedTitle="Some title"></reference>b</paragraph>');
 
         editor.execute("undo");
 
         expect(getModelData(editor.model, { withoutSelection: true }))
             .toBe('<paragraph>a<reference href="#root/gone" storedTitle="Gone"></reference>b</paragraph>');
+    });
+
+    it("saves the last title it saved for a link whose note goes missing while the editor is open", () => {
+        let liveTitle: string | undefined = "Renamed";
+        getReferenceLinkTitleSync.mockImplementation((_href: string, storedTitle?: string) =>
+            liveTitle ?? storedTitle ?? "[missing note]");
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc">Loaded</a></p>');
+
+        expect(editor.getData()).toContain(">Renamed</a>");
+
+        liveTitle = undefined;
+
+        expect(editor.getData()).toContain(">Renamed</a>");
     });
 
     it("asks to fix a reference to a missing note when it is clicked, and not one to a note", () => {

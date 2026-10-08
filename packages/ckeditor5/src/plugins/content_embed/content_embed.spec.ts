@@ -799,7 +799,7 @@ describe("ContentEmbed with attachments", () => {
 
         editor.execute("undo");
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            `<paragraph>Before <reference href="${LINK_HREF}"></reference> after</paragraph>`
+            `<paragraph>Before <reference href="${LINK_HREF}" storedTitle="x"></reference> after</paragraph>`
         );
 
         const relinked = editor.editing.view.getDomRoot()?.querySelector("a.reference-link");
@@ -839,8 +839,8 @@ describe("ContentEmbed with attachments", () => {
             "<paragraph>Before </paragraph>" +
             "<contentEmbed boxSize=\"full\" noteId=\"noteAbc\"></contentEmbed>" +
             "<paragraph> after</paragraph>" +
-            `<paragraph><reference href="${cardHref}"></reference></paragraph>` +
-            `<paragraph><reference href="${LINK_HREF}"></reference></paragraph>`
+            `<paragraph><reference href="${cardHref}" storedTitle="card"></reference></paragraph>` +
+            `<paragraph><reference href="${LINK_HREF}" storedTitle="file"></reference></paragraph>`
         );
 
         // A link in the content of an embed is not part of the note.

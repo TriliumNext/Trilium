@@ -113,7 +113,7 @@ describe("a reference link pasted from a rendered page", () => {
             + `<span><span class="tn-icon bx bx-file"></span>Some note</span></a> for more.</p>`);
 
         expect(getModelData(editor.model, { withoutSelection: true }))
-            .toBe(`<paragraph>See <reference href="#root/abc"></reference> for more.</paragraph>`);
+            .toBe(`<paragraph>See <reference href="#root/abc" storedTitle="Some note"></reference> for more.</paragraph>`);
     });
 });
 
