@@ -56,7 +56,7 @@ Trilium requires a directory on the host system to store its data. This director
 
     ```sh
     sudo docker run -t -i -p 127.0.0.1:8080:8080 \
-    	-v ~/trilium-data:/home/node/trilium-data
+    	-v ~/trilium-data:/home/node/trilium-data \
     	triliumnext/trilium:[VERSION]
     ```
 
@@ -95,7 +95,9 @@ Trilium requires a directory on the host system to store its data. This director
     To allow access from any IP address, run the container as follows:
 
     ```sh
-    docker run -d -p 0.0.0.0:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]
+    docker run -d -p 0.0.0.0:8080:8080 \
+    	-v ~/trilium-data:/home/node/trilium-data \
+    	triliumnext/trilium:[VERSION]
     ```
 
     Stop the container with `docker stop <CONTAINER ID>`, where the container ID is obtained from `docker ps`.

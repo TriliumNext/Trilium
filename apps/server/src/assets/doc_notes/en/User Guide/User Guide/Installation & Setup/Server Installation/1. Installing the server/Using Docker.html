@@ -45,7 +45,7 @@ class="admonition warning">
       <p>Run the container to make it accessible only from the localhost. This
         setup is suitable for testing or when using a proxy server like Nginx or
         Apache.</p><pre><code class="language-text-x-sh">sudo docker run -t -i -p 127.0.0.1:8080:8080 \
-	-v ~/trilium-data:/home/node/trilium-data
+	-v ~/trilium-data:/home/node/trilium-data \
 	triliumnext/trilium:[VERSION]</code></pre>
       <ol>
         <li>Verify the container is running using <code>docker ps</code>.</li>
@@ -69,7 +69,9 @@ docker inspect [container_name]</code></pre>
   <section class="trilium-tab">
     <p class="trilium-tab-title">Global Access</p>
     <div class="trilium-tab-panel">
-      <p>To allow access from any IP address, run the container as follows:</p><pre><code class="language-text-x-sh">docker run -d -p 0.0.0.0:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]</code></pre>
+      <p>To allow access from any IP address, run the container as follows:</p><pre><code class="language-text-x-sh">docker run -d -p 0.0.0.0:8080:8080 \
+	-v ~/trilium-data:/home/node/trilium-data \
+	triliumnext/trilium:[VERSION]</code></pre>
       <p>Stop the container with <code>docker stop &lt;CONTAINER ID&gt;</code>,
         where the container ID is obtained from <code>docker ps</code>.</p>
     </div>
@@ -119,15 +121,11 @@ docker inspect [container_name]</code></pre>
       root, and Trilium cannot write to it. For example:</p><pre><code class="language-text-x-sh">mkdir -p /srv/trilium-data
 sudo chown 1000:1000 /srv/trilium-data</code></pre>
   </li>
-  <li>
-    <p>A named volume instead of a host directory only works for UID <code>1000</code>:
-      Docker gives a new volume the owner of the image's data directory, which
-      is the <code>node</code> user.</p>
-  </li>
-  <li>
-    <p><code>USER_UID</code> and <code>USER_GID</code> are ignored. The user comes
-      from <code>--user</code> or <code>user:</code> alone.</p>
-  </li>
+  <li>A named volume instead of a host directory only works for UID <code>1000</code>:
+    Docker gives a new volume the owner of the image's data directory, which
+    is the <code>node</code> user.</li>
+  <li><code>USER_UID</code> and <code>USER_GID</code> are ignored. The user comes
+    from <code>--user</code> or <code>user:</code> alone.</li>
 </ul>
 <p>If Trilium cannot use its data directory, it stops at startup and prints
   which directory or files it cannot use, who owns them, and the command
