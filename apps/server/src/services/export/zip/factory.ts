@@ -4,11 +4,17 @@ import path from "path";
 
 import { getResourceDir, isDev } from "../../utils.js";
 
+/** The stylesheet of an HTML export: CKEditor's content styles, then the multicolumn layout's. */
 function readContentCss(): string {
-    const cssFile = isDev
-        ? path.join(require.resolve("ckeditor5/ckeditor5-content.css"))
-        : path.join(getResourceDir(), "ckeditor5-content.css");
-    return fs.readFileSync(cssFile, "utf-8");
+    const cssFiles = isDev
+        ? [
+            require.resolve("ckeditor5/ckeditor5-content.css"),
+            // In development the resource directory is `apps/server/src`.
+            path.join(getResourceDir(), "../../../packages/ckeditor5/src/theme/multicolumn.css")
+        ]
+        : [ "ckeditor5-content.css", "ckeditor5-multicolumn.css" ]
+            .map((fileName) => path.join(getResourceDir(), fileName));
+    return cssFiles.map((cssFile) => fs.readFileSync(cssFile, "utf-8")).join("\n");
 }
 
 export async function serverZipExportProviderFactory(format: ExportFormat, data: ZipExportProviderData): Promise<ZipExportProvider> {
