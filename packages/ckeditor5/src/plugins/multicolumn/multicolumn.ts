@@ -2,7 +2,7 @@ import { Plugin } from "ckeditor5";
 
 import "../../theme/multicolumn.css";
 import type {
-    ColumnLayoutCommand, InsertMulticolumnLayoutCommand
+    ColumnLayoutCommand, InsertMulticolumnLayoutCommand, RemoveMulticolumnLayoutCommand
 } from "./multicolumn_commands.js";
 import MulticolumnEditing from "./multicolumn_editing.js";
 import MulticolumnUI from "./multicolumn_ui.js";
@@ -34,5 +34,6 @@ declare module "ckeditor5" {
     interface CommandsMap {
         multicolumnLayout: InsertMulticolumnLayoutCommand;
         columnLayout: ColumnLayoutCommand;
+        removeMulticolumnLayout: RemoveMulticolumnLayoutCommand;
     }
 }

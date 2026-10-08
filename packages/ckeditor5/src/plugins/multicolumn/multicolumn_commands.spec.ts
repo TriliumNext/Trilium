@@ -221,4 +221,103 @@ describe("multicolumn commands", () => {
             expect(editor.getData()).toBe(before);
         });
     });
+
+    describe("removeMulticolumnLayout", () => {
+        function command() {
+            const removeLayout = editor.commands.get("removeMulticolumnLayout");
+            if (!removeLayout) {
+                throw new Error("the editor should register the removeMulticolumnLayout command");
+            }
+            return removeLayout;
+        }
+
+        it("is enabled in or on a layout", () => {
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+            expect(command().isEnabled).toBe(false);
+
+            setModelData(editor.model, layout("1-3", "A[]", "B"));
+            expect(command().isEnabled).toBe(true);
+
+            setModelData(editor.model, `[${layout("1-3", "A", "B")}]`);
+            expect(command().isEnabled).toBe(true);
+        });
+
+        it("puts the content of the columns one after another in its place", () => {
+            const cell = "<tableCell><paragraph>Cell</paragraph></tableCell>";
+            const table = `<table><tableRow>${cell}</tableRow></table>`;
+            setModelData(editor.model,
+                "<paragraph>Before</paragraph>" +
+                "<multicolumnLayout columnRatios=\"1-2-1\">" +
+                    "<multicolumnColumn><paragraph>A</paragraph><paragraph>B</paragraph>" +
+                    "</multicolumnColumn>" +
+                    `<multicolumnColumn><paragraph>C[]</paragraph>${table}</multicolumnColumn>` +
+                    `<multicolumnColumn>${layout("1-1", "D", "E")}</multicolumnColumn>` +
+                "</multicolumnLayout>" +
+                "<paragraph>After</paragraph>"
+            );
+
+            editor.execute("removeMulticolumnLayout");
+
+            expect(modelWithSelection()).toBe(
+                "<paragraph>Before</paragraph>" +
+                "<paragraph>A</paragraph><paragraph>B</paragraph>" +
+                `<paragraph>C[]</paragraph>${table}` +
+                layout("1-1", "D", "E") +
+                "<paragraph>After</paragraph>"
+            );
+        });
+
+        it("adds no blank line for an empty column, and leaves one for an empty layout", () => {
+            setModelData(editor.model, layout("1-1-1", "A[]", "", "C"));
+            editor.execute("removeMulticolumnLayout");
+            expect(modelWithSelection()).toBe("<paragraph>A[]</paragraph><paragraph>C</paragraph>");
+
+            setModelData(editor.model, layout("1-1", "", "[]"));
+            editor.execute("removeMulticolumnLayout");
+            expect(modelWithSelection()).toBe("<paragraph>[]</paragraph>");
+        });
+
+        it("moves the caret out of an empty column, and selects the content of the layout", () => {
+            setModelData(editor.model,
+                `${layout("1-1-1", "A", "[]", "C")}<paragraph>D</paragraph>`);
+            editor.execute("removeMulticolumnLayout");
+            expect(modelWithSelection())
+                .toBe("<paragraph>A</paragraph><paragraph>C[]</paragraph><paragraph>D</paragraph>");
+
+            setModelData(editor.model, `[${layout("1-1", "A", "B")}]<paragraph>C</paragraph>`);
+            editor.execute("removeMulticolumnLayout");
+            expect(modelWithSelection())
+                .toBe("<paragraph>[A</paragraph><paragraph>B]</paragraph><paragraph>C</paragraph>");
+        });
+
+        it("removes only the innermost layout", () => {
+            setModelData(editor.model,
+                "<multicolumnLayout columnRatios=\"1-3\">" +
+                    `<multicolumnColumn>${layout("1-1", "A[]", "B")}</multicolumnColumn>` +
+                    "<multicolumnColumn><paragraph>C</paragraph></multicolumnColumn>" +
+                "</multicolumnLayout>"
+            );
+
+            editor.execute("removeMulticolumnLayout");
+
+            expect(modelWithSelection()).toBe(
+                "<multicolumnLayout columnRatios=\"1-3\">" +
+                    "<multicolumnColumn><paragraph>A[]</paragraph><paragraph>B</paragraph>" +
+                    "</multicolumnColumn>" +
+                    "<multicolumnColumn><paragraph>C</paragraph></multicolumnColumn>" +
+                "</multicolumnLayout>"
+            );
+        });
+
+        it("is one undo step", () => {
+            setModelData(editor.model, layout("1-1-1", "A", "", "C[]"));
+            const before = editor.getData();
+
+            editor.execute("removeMulticolumnLayout");
+            expect(editor.getData()).not.toBe(before);
+            editor.execute("undo");
+
+            expect(editor.getData()).toBe(before);
+        });
+    });
 });

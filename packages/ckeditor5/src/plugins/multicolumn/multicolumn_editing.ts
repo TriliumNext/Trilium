@@ -16,7 +16,8 @@ import {
     MAX_COLUMNS, MIN_COLUMNS, RATIOS_ATTRIBUTE, RATIOS_DATA_ATTRIBUTE
 } from "./constants.js";
 import {
-    ColumnLayoutCommand, InsertMulticolumnLayoutCommand, setColumnCount
+    ColumnLayoutCommand, InsertMulticolumnLayoutCommand, RemoveMulticolumnLayoutCommand,
+    setColumnCount
 } from "./multicolumn_commands.js";
 
 /**
@@ -37,6 +38,7 @@ export default class MulticolumnEditing extends Plugin {
         const editor = this.editor;
         editor.commands.add("multicolumnLayout", new InsertMulticolumnLayoutCommand(editor));
         editor.commands.add("columnLayout", new ColumnLayoutCommand(editor));
+        editor.commands.add("removeMulticolumnLayout", new RemoveMulticolumnLayoutCommand(editor));
 
         this.registerSchema();
         this.registerConversion();

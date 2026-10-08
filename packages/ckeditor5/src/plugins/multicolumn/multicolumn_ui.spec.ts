@@ -6,6 +6,7 @@ import {
     ContextualBalloon,
     type DropdownView,
     Essentials,
+    IconCancel,
     type ModelElement,
     Paragraph,
     type ToolbarView,
@@ -57,6 +58,21 @@ describe("MulticolumnUI", () => {
         expect(focus).toHaveBeenCalled();
 
         editor.enableReadOnlyMode("spec");
+        expect(button.isEnabled).toBe(false);
+    });
+
+    it("removes the layout from its button, keeping the content", () => {
+        setModelData(editor.model, layout("1-3", paragraph("A[]"), paragraph("B")));
+        const button = editor.ui.componentFactory.create("removeMulticolumnLayout") as ButtonView;
+        expect([button.label, button.icon, button.tooltip])
+            .toEqual(["Remove layout", IconCancel, true]);
+        expect(button.isEnabled).toBe(true);
+        const focus = vi.spyOn(editor.editing.view, "focus");
+
+        button.fire("execute");
+
+        expect(getModelData(editor.model)).toBe(paragraph("A[]") + paragraph("B"));
+        expect(focus).toHaveBeenCalled();
         expect(button.isEnabled).toBe(false);
     });
 
@@ -141,7 +157,7 @@ describe("MulticolumnUI", () => {
             return related?.getAttribute("data-trilium-column-ratios") ?? null;
         }
 
-        it("shows the layout dropdown while the selection is in a layout", () => {
+        it("shows the layout dropdown and the remove button while in a layout", () => {
             setModelData(editor.model, layout("1-3", paragraph("A[]"), paragraph("B")));
             editor.ui.focusTracker.isFocused = true;
             editor.ui.update();
@@ -149,9 +165,12 @@ describe("MulticolumnUI", () => {
             const toolbar = toolbarDefinition().view;
             expect(editor.plugins.get(ContextualBalloon).visibleView).toBe(toolbar);
             expect(toolbar.ariaLabel).toBe("Multicolumn layout toolbar");
-            const items = [...toolbar.items] as DropdownView[];
-            expect(items.map(item => [item.buttonView.label, item.buttonView.icon]))
-                .toEqual([["Column layout", createLayoutFigure("1-3", 20)]]);
+            const items = [...toolbar.items] as (DropdownView | ButtonView)[];
+            const buttons = items.map(item => "buttonView" in item ? item.buttonView : item);
+            expect(buttons.map(button => [button.label, button.icon])).toEqual([
+                ["Column layout", createLayoutFigure("1-3", 20)],
+                ["Remove layout", IconCancel]
+            ]);
         });
 
         it("belongs to the innermost layout that holds or is the selection", () => {
@@ -207,7 +226,7 @@ describe("MulticolumnUI", () => {
             expect(figures[0].box).toEqual([4, 6.6, 36, 30.8]);
         });
 
-        it("spaces the dots evenly and keeps 1px from the outline at both ends, at any size", () => {
+        it("spaces the dots evenly, 1px from the outline at both ends, at any size", () => {
             for (const [size, count] of [[44, 9], [20, 4]]) {
                 const { box: [, top, , height], dots } = draw("1-1", size);
                 const outline = 1.5 / 2;

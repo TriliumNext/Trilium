@@ -4395,7 +4395,8 @@
       "multicolumn-layout-toolbar": "Multicolumn layout toolbar",
       "column-layout": "Column layout",
       "arrange-content-in-two-to-four-columns-side-by-side": "Arrange content in two to four columns side by side.",
-      "0-columns-1": "%0 columns (%1)"
+      "0-columns-1": "%0 columns (%1)",
+      "remove-layout": "Remove layout"
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

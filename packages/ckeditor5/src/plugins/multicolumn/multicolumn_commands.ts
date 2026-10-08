@@ -66,6 +66,34 @@ export class ColumnLayoutCommand extends Command {
 }
 
 /**
+ * Replaces the selected layout with the content of its columns, one column after another. Empty
+ * columns add nothing, and a layout with only empty columns leaves one empty paragraph.
+ */
+export class RemoveMulticolumnLayoutCommand extends Command {
+
+    public override refresh(): void {
+        this.isEnabled = !!getSelectedLayout(this.editor);
+    }
+
+    public override execute(): void {
+        const layout = getSelectedLayout(this.editor);
+        /* v8 ignore next 3 -- execute() runs only while refresh() keeps the command enabled */
+        if (!layout) {
+            return;
+        }
+
+        this.editor.model.change(writer => {
+            const columns = [...layout.getChildren()] as ModelElement[];
+            const filled = columns.filter(hasContent);
+            for (const column of filled.length ? filled : columns.slice(0, 1)) {
+                writer.move(writer.createRangeIn(column), writer.createPositionBefore(layout));
+            }
+            writer.remove(layout);
+        });
+    }
+}
+
+/**
  * Returns the selected layout, or the innermost layout that contains the selection.
  */
 export function getSelectedLayout(editor: Editor): ModelElement | null {

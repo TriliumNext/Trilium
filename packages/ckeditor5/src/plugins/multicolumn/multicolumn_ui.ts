@@ -1,7 +1,9 @@
 import {
     ButtonView,
+    type Command,
     createDropdown,
     focusChildOnDropdownOpen,
+    IconCancel,
     type Locale,
     Plugin,
     WidgetToolbarRepository
@@ -11,13 +13,11 @@ import multicolumnIcon from "../../icons/multicolumn.svg?raw";
 import TileRowView from "../tile_row_view.js";
 import { findSelectedWidget } from "../widget_utils.js";
 import { COLUMN_RATIOS, getColumnCount, LAYOUT_WIDGET_PROPERTY } from "./constants.js";
-import type {
-    ColumnLayoutCommand, InsertMulticolumnLayoutCommand
-} from "./multicolumn_commands.js";
+import type { ColumnLayoutCommand } from "./multicolumn_commands.js";
 
 /**
  * The insert button for multicolumn layouts, and the contextual toolbar with the column layout
- * dropdown, shown while the selection is inside a layout.
+ * dropdown and the remove button, shown while the selection is inside a layout.
  */
 export default class MulticolumnUI extends Plugin {
 
@@ -30,32 +30,37 @@ export default class MulticolumnUI extends Plugin {
     }
 
     public init(): void {
+        const t = this.editor.t;
         const factory = this.editor.ui.componentFactory;
-        factory.add("multicolumnLayout", locale => this.createInsertButton(locale));
+        this.addCommandButton("multicolumnLayout", t("Multicolumn layout"), multicolumnIcon);
         factory.add("columnLayout", locale => this.createLayoutDropdown(locale));
+        this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconCancel);
     }
 
     public afterInit(): void {
         this.editor.plugins.get(WidgetToolbarRepository).register("multicolumnLayout", {
             ariaLabel: this.editor.t("Multicolumn layout toolbar"),
-            items: ["columnLayout"],
+            items: ["columnLayout", "removeMulticolumnLayout"],
             getRelatedElement: selection => findSelectedWidget(selection, LAYOUT_WIDGET_PROPERTY)
         });
     }
 
-    private createInsertButton(locale: Locale) {
+    /** Adds a button named after the command it runs. */
+    private addCommandButton(name: string, label: string, icon: string) {
         const editor = this.editor;
-        // MulticolumnEditing, which the glue plugin loads first, registers every command.
-        const command = editor.commands.get("multicolumnLayout") as InsertMulticolumnLayoutCommand;
-        const button = new ButtonView(locale);
-        button.set({ label: editor.t("Multicolumn layout"), icon: multicolumnIcon, tooltip: true });
-        button.bind("isEnabled").to(command, "isEnabled");
+        editor.ui.componentFactory.add(name, locale => {
+            // MulticolumnEditing, which the glue plugin loads first, registers every command.
+            const command = editor.commands.get(name) as Command;
+            const button = new ButtonView(locale);
+            button.set({ label, icon, tooltip: true });
+            button.bind("isEnabled").to(command, "isEnabled");
 
-        this.listenTo(button, "execute", () => {
-            editor.execute("multicolumnLayout");
-            editor.editing.view.focus();
+            this.listenTo(button, "execute", () => {
+                editor.execute(name);
+                editor.editing.view.focus();
+            });
+            return button;
         });
-        return button;
     }
 
     /** A dropdown with a figure of every column layout, grouped by column count. */
