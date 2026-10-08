@@ -479,7 +479,8 @@ function tabTitleLine(title: Element, content: string): string {
     const block = tab?.parentElement;
     const startsNewBlock = block?.firstElementChild === tab
         && block?.previousElementSibling?.classList.contains(TABS_CLASS);
-    const text = content.replace(/\s+/g, " ").trim();
+    // Collapses line breaks but keeps U+00A0: CKEditor drops a plain space after an inline icon.
+    const text = content.replace(/[^\S\u00A0]+/g, " ").trim();
     return `===${startsNewBlock ? "!" : ""} "${text}"`;
 }
 

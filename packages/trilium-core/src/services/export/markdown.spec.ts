@@ -1010,7 +1010,7 @@ describe("Markdown export", () => {
 
             expect(markdown).not.toContain("");
             expect(markdown).toBe(trimIndentation`\
-                === "<span class="tn-icon bx bxl-chrome"></span> Chrome"
+                === "<span class="tn-icon bx bxl-chrome"></span>${"\u00A0"}Chrome"
 
                     a
 

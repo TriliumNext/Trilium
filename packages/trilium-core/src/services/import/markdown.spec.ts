@@ -701,7 +701,7 @@ $$`;
                 tabs(
                     tab("Windows", "<p>Run the <strong>installer</strong>.</p><ul><li>One</li><li>Two</li></ul>"),
                     tab("&nbsp;", "<p>&nbsp;</p>"),
-                    tab(`<span class="tn-icon bx bxl-chrome"></span> Chrome`, "<p>c</p>"),
+                    tab(`<span class="tn-icon bx bxl-chrome"></span>&nbsp;Chrome`, "<p>c</p>"),
                     tab("<strong>Bold</strong>, <em>italic</em> and <code>code</code>", "<p>f</p>"),
                     tab("a &lt;b&gt; *c* \"d\"", "<p>t</p>"),
                     tab("Nested", tabs(tab("A", "<p>a</p>"), tab("B", "<blockquote><p>b</p></blockquote>")))
