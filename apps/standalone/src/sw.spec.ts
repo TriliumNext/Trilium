@@ -274,12 +274,14 @@ describe("forwardToClientLocalServer", () => {
         expect(res.status).toBe(200);
     });
 
-    it("falls back to the network when there are no clients", async () => {
+    it("answers 503 rather than asking the static host when there are no clients", async () => {
         (self as unknown as SwGlobals).clients = { claim: vi.fn(), matchAll: vi.fn(async () => []) };
         const handlers = await loadSw();
         const event = await dispatchLocal(handlers, "GET");
-        await event._response;
-        expect(fetch).toHaveBeenCalled();
+        const res = await awaitResponse(event);
+        expect(res.status).toBe(503);
+        expect(await res.json()).toEqual({ message: expect.stringContaining("No Trilium tab") });
+        expect(fetch).not.toHaveBeenCalled();
     });
 
     it("defaults status and omits headers when the response is sparse", async () => {
@@ -294,15 +296,15 @@ describe("forwardToClientLocalServer", () => {
         expect(res.status).toBe(200);
     });
 
-    it("falls back to the network on a protocol mismatch", async () => {
+    it("answers 503 rather than asking the static host on a protocol mismatch", async () => {
         const client = mainClient();
         (self as unknown as SwGlobals).clients = { claim: vi.fn(), matchAll: vi.fn(async () => [client]) };
         const handlers = await loadSw();
         const event = await dispatchLocal(handlers, "GET");
         await vi.waitFor(() => expect(client.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "LOCAL_FETCH" }), expect.anything()));
         channels.at(-1)?.port1.onmessage?.({ data: { type: "WRONG", id: "uuid-1" } } as unknown);
-        await event._response;
-        expect(fetch).toHaveBeenCalled();
+        expect((await awaitResponse(event)).status).toBe(503);
+        expect(fetch).not.toHaveBeenCalled();
     });
 
     it("rejects on a message error", async () => {
@@ -413,27 +415,72 @@ describe("forwardToClientLocalServer", () => {
         expect((await awaitResponse(event)).status).toBe(200);
     });
 
-    it("gives up to the network rather than looping when the retry also refuses", async () => {
-        // Both tabs claim leadership when probed but refuse when asked to serve.
-        const a = mainClient("c-a", true);
-        const b = mainClient("c-b", true);
-        (self as unknown as SwGlobals).clients = {
-            claim: vi.fn(),
-            matchAll: vi.fn(async () => [a, b])
+    it("waits for a reloaded tab that is promoted to leader after its request went out", async () => {
+        // The reloaded page requests /bootstrap while the previous page still holds the Web Lock.
+        let promoted = false;
+        const page = {
+            id: "c-page",
+            url: `${origin}/`,
+            postMessage: vi.fn((msg: { type?: string; id?: string }) => {
+                const port = channels.at(-1)?.port1;
+                if (msg?.type === "WHO_IS_LEADER") {
+                    port?.onmessage?.({ data: { type: "LEADER_REPLY", isLeader: promoted } } as unknown);
+                } else if (msg?.type === "LOCAL_FETCH") {
+                    port?.onmessage?.({
+                        data: promoted
+                            ? { type: "LOCAL_FETCH_RESPONSE", id: msg.id, response: { status: 200, headers: {}, body: null } }
+                            : { type: "NOT_LEADER", id: msg.id }
+                    } as unknown);
+                }
+            })
         };
-        const fetchMock = vi.fn(async () => new Response("network", { status: 200 }));
-        vi.stubGlobal("fetch", fetchMock);
-
+        (self as unknown as SwGlobals).clients = { claim: vi.fn(), matchAll: vi.fn(async () => [page]) };
         const handlers = await loadSw();
-        const event = await dispatchLocal(handlers, "PUT");
+        vi.useFakeTimers();
 
-        await vi.waitFor(() => expect(a.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "LOCAL_FETCH" }), expect.anything()));
-        channels.at(-1)?.port1.onmessage?.({ data: { type: "NOT_LEADER", id: "uuid-1" } } as unknown);
-
-        await vi.waitFor(() => expect(b.postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: "LOCAL_FETCH" }), expect.anything()));
-        channels.at(-1)?.port1.onmessage?.({ data: { type: "NOT_LEADER", id: "uuid-1" } } as unknown);
+        const event = await dispatchLocal(handlers, "GET");
+        await vi.advanceTimersByTimeAsync(1_000);
+        expect(event._response).toBeDefined();
+        promoted = true;
+        await vi.advanceTimersByTimeAsync(1_000);
 
         expect((await awaitResponse(event)).status).toBe(200);
-        expect(fetchMock).toHaveBeenCalled();
+        expect(fetch).not.toHaveBeenCalled();
+        vi.useRealTimers();
+    });
+
+    it("answers 503 once no tab has become leader by the deadline", async () => {
+        // Both tabs claim leadership when probed but refuse when asked to serve.
+        const refuse = (id: string) => ({
+            id,
+            url: `${origin}/`,
+            postMessage: vi.fn((msg: { type?: string; id?: string }) => {
+                const port = channels.at(-1)?.port1;
+                port?.onmessage?.({
+                    data: msg?.type === "WHO_IS_LEADER"
+                        ? { type: "LEADER_REPLY", isLeader: true }
+                        : { type: "NOT_LEADER", id: msg.id }
+                } as unknown);
+            })
+        });
+        (self as unknown as SwGlobals).clients = {
+            claim: vi.fn(),
+            matchAll: vi.fn(async () => [refuse("c-a"), refuse("c-b")])
+        };
+        const handlers = await loadSw();
+        vi.useFakeTimers();
+
+        const event = await dispatchLocal(handlers, "PUT");
+        let settled = false;
+        void event._response?.then(() => { settled = true; });
+        await vi.advanceTimersByTimeAsync(29_000);
+        expect(settled).toBe(false);
+        await vi.advanceTimersByTimeAsync(2_000);
+
+        const res = await awaitResponse(event);
+        expect(res.status).toBe(503);
+        expect(await res.json()).toEqual({ message: expect.stringContaining("in time") });
+        expect(fetch).not.toHaveBeenCalled();
+        vi.useRealTimers();
     });
 });
