@@ -117,6 +117,54 @@ describe("multicolumn layout styles", () => {
         expect(columns.map(cornersOf)).toEqual(["0px 8px 8px 0px", "8px 0px 0px 8px"]);
     });
 
+    /** Shows the layout toolbar the way the editor does and opens its dropdown. */
+    async function openLayoutDropdown() {
+        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
+        editor.setData(layoutHtml("1-3", ["<p>A</p>", "<p>B</p>"]));
+        editor.ui.focusTracker.isFocused = true;
+        editor.ui.update();
+        const toolbar = document.querySelector("[aria-label='Multicolumn layout toolbar']");
+        const button = toolbar?.querySelector<HTMLElement>(".ck-dropdown__button");
+        button?.click();
+        return { toolbar, button };
+    }
+
+    it("separates the tiles of each column count by 20px in the open dropdown", async () => {
+        const { toolbar } = await openLayoutDropdown();
+        const tiles = [...toolbar?.querySelectorAll(".ck-list-styles-list > .ck-button") ?? []];
+        const boxes = tiles.map(tile => tile.getBoundingClientRect());
+        const gaps = boxes.slice(1).map((box, index) => box.left - boxes[index].right);
+
+        expect(gaps).toHaveLength(5);
+        expect(gaps[2]).toBeCloseTo(20, 1);
+        expect(gaps[4]).toBeCloseTo(20, 1);
+        expect(gaps[0]).toBeLessThan(20);
+        expect(gaps[1]).toBeCloseTo(gaps[0], 1);
+        expect(gaps[3]).toBeCloseTo(gaps[0], 1);
+    });
+
+    it("draws the layout figures as outlines at the size of the editor's icons", async () => {
+        const { toolbar, button } = await openLayoutDropdown();
+        const icons = [
+            button?.querySelector("svg.ck-icon"),
+            toolbar?.querySelector(".ck-list-styles-list svg.ck-icon")
+        ];
+        for (const [index, size] of [20, 44].entries()) {
+            const icon = icons[index];
+            const rect = icon?.querySelector("rect");
+            const dots = [...icon?.querySelectorAll("circle") ?? []];
+            expect(icon?.getBoundingClientRect().width).toBeCloseTo(size, 0);
+            expect(rect && getComputedStyle(rect).fill).toBe("none");
+
+            // The outline is centered on the box, so 0.75px of it lies inside, then the 1px gap.
+            const box = (rect as Element).getBoundingClientRect();
+            const first = dots[0].getBoundingClientRect();
+            const last = dots[dots.length - 1].getBoundingClientRect();
+            expect(first.top - box.top).toBeCloseTo(1.75, 1);
+            expect(box.bottom - last.bottom).toBeCloseTo(1.75, 1);
+        }
+    });
+
     it("stacks the columns with alternating backgrounds and no borders below 500px", () => {
         const html = layoutHtml("1-2-1", ["<p>A</p>", "<p>B</p>", "<p>C</p>"]);
         const container = renderContent(html, 480);

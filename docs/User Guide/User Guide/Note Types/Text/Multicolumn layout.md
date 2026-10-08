@@ -10,7 +10,7 @@ A new layout has two columns of equal width. If text is selected when the layout
 
 ## Changing the columns
 
-While the cursor is inside a layout, a toolbar appears above it with a dropdown of the available layouts, grouped by the number of columns:
+While the cursor is inside a layout, a toolbar appears above it with a button that shows the current layout. Clicking it opens a row of figures, one for each available layout; hovering over a figure shows its number of columns and their widths:
 
 | Columns | Widths |
 | --- | --- |

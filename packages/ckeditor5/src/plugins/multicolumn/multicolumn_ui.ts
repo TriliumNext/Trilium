@@ -1,16 +1,14 @@
 import {
-    addListToDropdown,
     ButtonView,
-    Collection,
     createDropdown,
-    type ListDropdownGroupDefinition,
+    focusChildOnDropdownOpen,
     type Locale,
     Plugin,
-    UIModel,
     WidgetToolbarRepository
 } from "ckeditor5";
 
 import multicolumnIcon from "../../icons/multicolumn.svg?raw";
+import TileRowView from "../tile_row_view.js";
 import { findSelectedWidget } from "../widget_utils.js";
 import { COLUMN_RATIOS, getColumnCount, LAYOUT_WIDGET_PROPERTY } from "./constants.js";
 import type {
@@ -60,49 +58,89 @@ export default class MulticolumnUI extends Plugin {
         return button;
     }
 
-    /** A dropdown of every column layout, grouped by column count. */
+    /** A dropdown with a figure of every column layout, grouped by column count. */
     private createLayoutDropdown(locale: Locale) {
         const editor = this.editor;
-        const t = editor.t;
+        const label = editor.t("Column layout");
         const command = editor.commands.get("columnLayout") as ColumnLayoutCommand;
         const dropdown = createDropdown(locale);
-        dropdown.buttonView.set({ withText: true, tooltip: t("Column layout") });
-        dropdown.buttonView.bind("label").to(command, "value", value =>
-            value ? formatRatios(value) : "");
+        dropdown.buttonView.set({ label, tooltip: true });
+        dropdown.buttonView.bind("icon").to(command, "value", value =>
+            value ? createLayoutFigure(value, BUTTON_ICON_SIZE) : multicolumnIcon);
         dropdown.bind("isEnabled").to(command, "isEnabled");
 
-        const groups = new Map<number, ListDropdownGroupDefinition>();
+        const groups = new Map<number, ButtonView[]>();
         for (const ratios of COLUMN_RATIOS) {
             const count = getColumnCount(ratios);
-            let group = groups.get(count);
-            if (!group) {
-                group = { type: "group", label: t("%0 columns", count), items: new Collection() };
-                groups.set(count, group);
-            }
-
-            const model = new UIModel({
-                label: formatRatios(ratios),
-                ratios,
-                role: "menuitemradio",
-                withText: true
+            const tile = new ButtonView(locale);
+            tile.set({
+                label: editor.t("%0 columns (%1)", [count, formatRatios(ratios)]),
+                icon: createLayoutFigure(ratios, TILE_ICON_SIZE),
+                tooltip: true,
+                isToggleable: true
             });
-            model.bind("isOn").to(command, "value", value => value === ratios);
-            group.items.add({ type: "button", model });
+            tile.bind("isOn").to(command, "value", value => value === ratios);
+            this.listenTo(tile, "execute", () => {
+                editor.execute("columnLayout", { value: ratios });
+                editor.editing.view.focus();
+            });
+            groups.set(count, [...groups.get(count) ?? [], tile]);
         }
-        addListToDropdown(dropdown, new Collection([...groups.values()]), { role: "menu" });
 
-        this.listenTo(dropdown, "execute", evt => {
-            const { ratios } = evt.source as unknown as { ratios: string };
-            editor.execute("columnLayout", { value: ratios });
-            editor.editing.view.focus();
-        });
+        const row = new TileRowView(locale, [...groups.values()], label);
+        row.delegate("execute").to(dropdown);
+        dropdown.panelView.children.add(row);
+        focusChildOnDropdownOpen(dropdown, () => row.tiles.find(tile => tile.isOn));
         return dropdown;
     }
 }
 
 /** Formats column weights as rounded percentages, such as `25%-75%` for `1-3`. */
 export function formatRatios(ratios: string): string {
+    return getShares(ratios).map(share => `${Math.round(share * 100)}%`).join("-");
+}
+
+/**
+ * Draws column weights as a square icon of `size` pixels: a rounded rectangle split into columns by
+ * dotted lines, with 4px of padding and corner radius at 44px. The outline, the dots and the gap
+ * between the end dots and the outline are in pixels, so each size has a drawing of its own.
+ */
+export function createLayoutFigure(ratios: string, size: number): string {
+    const outline = 1.5;
+    const dotRadius = 1;
+    const padding = size / 11;
+    const width = size - 2 * padding;
+    const top = size * .15;
+    const height = size * .7;
+    const inset = outline / 2 + 1 + dotRadius;
+    const span = height - 2 * inset;
+    const steps = Math.max(1, Math.round(span / 3));
+
+    let edge = padding;
+    const dots = getShares(ratios).slice(0, -1).flatMap(share => {
+        edge += share * width;
+        return Array.from({ length: steps + 1 }, (_, step) => {
+            const y = top + inset + span * step / steps;
+            return `<circle cx="${round(edge)}" cy="${round(y)}" r="${dotRadius}"/>`;
+        });
+    });
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">` +
+        `<rect x="${round(padding)}" y="${round(top)}" width="${round(width)}" ` +
+        `height="${round(height)}" rx="${round(padding)}" fill="none" stroke="currentColor" ` +
+        `stroke-width="${outline}"/><g fill="currentColor">${dots.join("")}</g></svg>`;
+}
+
+/** The icon sizes of a list style tile and of a toolbar button, in pixels. */
+const TILE_ICON_SIZE = 44;
+const BUTTON_ICON_SIZE = 20;
+
+function getShares(ratios: string) {
     const weights = ratios.split("-").map(Number);
     const total = weights.reduce((sum, weight) => sum + weight, 0);
-    return weights.map(weight => `${Math.round(weight / total * 100)}%`).join("-");
+    return weights.map(weight => weight / total);
+}
+
+function round(value: number) {
+    return Math.round(value * 100) / 100;
 }

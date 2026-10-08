@@ -1,0 +1,8 @@
+.ck.ck-list-styles-list.ck-tile-row {
+    justify-content: start;
+
+    /* `--ck-spacing-medium` is the column gap of `.ck-list-styles-list`. */
+    & > .ck-button.ck-tile-row__group-start {
+        margin-inline-start: calc(20px - var(--ck-spacing-medium));
+    }
+}
