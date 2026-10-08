@@ -4,6 +4,7 @@ import "./ReadOnlyText.css";
 // (see https://github.com/zadam/trilium/issues/1590 for example of such conflict)
 import "@triliumnext/ckeditor5";
 
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import clsx from "clsx";
 import { Ref } from "preact";
 import { useEffect, useLayoutEffect, useMemo, useRef as usePreactRef } from "preact/hooks";
@@ -13,6 +14,7 @@ import FNote from "../../../entities/fnote";
 import { consumeBlockReference } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
+import { t } from "../../../services/i18n";
 import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
@@ -104,7 +106,7 @@ interface ReadOnlyTextContentProps {
 /**
  * Renders arbitrary CKEditor-style HTML with the same pipeline as {@link ReadOnlyText}:
  * mermaid rewriting, inline mermaid, embed expansion, KaTeX math, reference-link
- * titles, code-block syntax highlighting, and image click handling. Transforms re-run
+ * titles, tabs, code-block syntax highlighting, and image click handling. Transforms re-run
  * whenever `html` changes.
  */
 export function ReadOnlyTextContent({
@@ -144,6 +146,7 @@ export function ReadOnlyTextContent({
         ]));
 
         applyMath(container);
+        applyTabs(container, { placeholder: t("text-editor.ck.tab-title") });
         setupImageOpening(container, true);
     }, [ html, noteId, ntxId, contentRef ]);
 

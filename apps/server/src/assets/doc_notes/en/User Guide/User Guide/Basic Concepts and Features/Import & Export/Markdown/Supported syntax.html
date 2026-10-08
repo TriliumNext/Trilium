@@ -29,6 +29,25 @@
 &gt; This is a caution.</code></pre>
 <p>There are currently no plans of supporting alternative admonition syntaxes
   such as <code>!!! note</code>.</p>
+<h2>Tabs</h2>
+<p>Tabs use the syntax of <a href="https://squidfunk.github.io/mkdocs-material/reference/content-tabs/">Material for MkDocs</a>:
+  each tab starts with a <code>=== "Title"</code> line, followed by its content
+  indented by four spaces. Consecutive tabs form one tabs block, and <code>===!</code> starts
+  a new block right after another one:</p><pre><code class="language-text-x-trilium-auto">=== "Windows"
+
+    Run the **installer**.
+
+=== "Linux"
+
+    Use the package.
+
+===! "Another block"
+
+    This tab starts a separate tabs block.</code></pre>
+<p>Tabs can be nested by indenting the inner tabs inside the content of a
+  tab. A tab title is plain text, so its formatting is not kept on export.
+  For how tabs blocks work in a text note, see&nbsp;<a class="reference-link"
+  href="#root/_help_EK2ckIZ74tbT">Content tabs</a>.</p>
 <h2>Wikilinks</h2>
 <p>Basic support for wikilinks has been added in v0.96.0:</p>
 <ul>

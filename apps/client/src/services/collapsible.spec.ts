@@ -1,5 +1,7 @@
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { describe, expect, it } from "vitest";
-import { expandAncestorDetails } from "./collapsible.js";
+
+import { expandAncestorDetails, revealElement } from "./collapsible.js";
 
 /** Build a DOM tree from an HTML string and return the element matching `selector`. */
 function mount(html: string, selector: string): HTMLElement {
@@ -63,5 +65,26 @@ describe("expandAncestorDetails", () => {
         const outer = match.closest("details.outer");
         expect(self instanceof HTMLDetailsElement && self.open).toBe(true);
         expect(outer instanceof HTMLDetailsElement && outer.open).toBe(true);
+    });
+});
+
+describe("revealElement", () => {
+    it("opens the collapsed blocks and shows the tabs around an element", () => {
+        const container = document.createElement("div");
+        container.innerHTML =
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">A</p><div class="trilium-tab-panel"></div></section>` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel">` +
+                    `<details><summary>s</summary><span class="m">hit</span></details>` +
+                `</div></section>` +
+            `</div>`;
+        applyTabs(container, { placeholder: "" });
+        const match = container.querySelector(".m");
+        expect(match).not.toBeNull();
+
+        revealElement(match as Element);
+
+        expect(container.querySelector("details")?.open).toBe(true);
+        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
     });
 });

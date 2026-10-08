@@ -17,25 +17,17 @@ Do note that there is also a “tablet mode” in the mobile layout. For that pa
 
 ```css
 @media (max-width: 991px) {
-
     #launcher-pane {
-
         /* Do something on mobile layout */
-
     }
-
 }
 
 
 
 @media (min-width: 992px) {
-
     #launcher-pane {
-
         /* Do something on mobile tablet + desktop layout */
-
     }
-
 }
 ```
 
@@ -45,7 +37,7 @@ The user can select between vertical layout (the classical one, where the launch
 
 Different styles can be applied by using classes at `body` level:
 
-```
+```css
 body.layout-vertical #left-pane {
 	/* Do something */
 }
@@ -59,19 +51,33 @@ The two different layouts use different containers (but they are present in the 
 
 ## Detecting platform (Windows, macOS) or Electron
 
-It is possible to add particular styles that only apply to a given platform by using the classes in `body`:
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
-| Windows | macOS |
-| --- | --- |
-| `<br>body.platform-win32 {<br> background: red;<br>}<br>` | `<br>body.platform-darwin {<br> background: red;<br>}<br>` |
+    ```css
+    body.platform-win32 {
+    	background: red;
+    }
+    ```
 
-It is also possible to only apply a style if running under Electron (desktop application):
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
-```
-body.electron {
-	background: blue;
-}
-```
+    ```css
+    body.platform-darwin {
+    	background: red;
+    }
+    ```
+
+=== "<span class="tn-icon bx bx-windows"></span> Electron (desktop app)"
+
+    To distinguish between a <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a> and a <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>:
+
+    ```
+    body.electron {
+    	background: blue;
+    }
+    ```
+
+    Can be chained with Windows/macOS detections (e.g. `body.electron.platform-win32`).
 
 ### Native title bar
 
@@ -93,37 +99,37 @@ When running under Electron with native title bar off, a feature was introduced 
 
 See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes](https://github.com/TriliumNext/Notes/pull/702) for the original implementation of this feature, including screenshots.
 
-#### On Windows
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
-The colors of the native window button area can be adjusted using a RGB hex color:
+    The colors of the native window button area can be adjusted using a RGB hex color:
 
-```
-body {
-	--native-titlebar-foreground: #ffffff;
-	--native-titlebar-background: #ff0000;
-}
-```
+    ```
+    body {
+    	--native-titlebar-foreground: #ffffff;
+    	--native-titlebar-background: #ff0000;
+    }
+    ```
 
-It is also possible to use transparency at the cost of reduced hover colors using a RGBA hex color:
+    It is also possible to use transparency at the cost of reduced hover colors using a RGBA hex color:
 
-```
-body {
-	--native-titlebar-background: #ff0000aa;
-}
-```
+    ```
+    body {
+    	--native-titlebar-background: #ff0000aa;
+    }
+    ```
 
-Note that the value is read when the window is initialized and then it is refreshed only when the user changes their light/dark mode preference.
+    Note that the value is read when the window is initialized and then it is refreshed only when the user changes their light/dark mode preference.
 
-#### On macOS
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
-On macOS the semaphore window buttons are enabled by default when the native title bar is disabled. The offset of the buttons can be adjusted using:
+    On macOS the semaphore window buttons are enabled by default when the native title bar is disabled. The offset of the buttons can be adjusted using:
 
-```css
-body {
-    --native-titlebar-darwin-x-offset: 12;
-    --native-titlebar-darwin-y-offset: 14 !important;
-}
-```
+    ```css
+    body {
+        --native-titlebar-darwin-x-offset: 12;
+        --native-titlebar-darwin-y-offset: 14 !important;
+    }
+    ```
 
 ### Background/transparency effects on Windows (Mica)
 

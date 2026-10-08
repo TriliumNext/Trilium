@@ -322,6 +322,7 @@ describe("buildNoteContextMenuItems", () => {
         } as TableMenuSections);
         vi.mocked(buildBlockReferenceMenuItems).mockResolvedValueOnce({
             copy: { title: "BC" },
+            copyTab: { title: "BT" },
             paste: [ { title: "BP1" }, { title: "BP2" } ]
         });
         const host = browserLikeHost({
@@ -338,7 +339,8 @@ describe("buildNoteContextMenuItems", () => {
             "electron_context_menu.copy",
             "electron_context_menu.copy-as-markdown",
             "---",
-            "BC"
+            "BC",
+            "BT"
         ]);
         // Without a selection only the reference can be copied, so the row opens its submenu.
         expect(findItem(items, "electron_context_menu.copy"))

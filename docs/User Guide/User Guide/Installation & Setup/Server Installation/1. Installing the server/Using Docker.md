@@ -50,53 +50,57 @@ Trilium requires a directory on the host system to store its data. This director
 
 ### Running the Docker Container
 
-#### Local Access Only
+=== "Local Access Only"
 
-Run the container to make it accessible only from the localhost. This setup is suitable for testing or when using a proxy server like Nginx or Apache.
+    Run the container to make it accessible only from the localhost. This setup is suitable for testing or when using a proxy server like Nginx or Apache.
 
-```
-sudo docker run -t -i -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]
-```
+    ```sh
+    sudo docker run -t -i -p 127.0.0.1:8080:8080 \
+    	-v ~/trilium-data:/home/node/trilium-data \
+    	triliumnext/trilium:[VERSION]
+    ```
 
-1.  Verify the container is running using `docker ps`.
-2.  Access Trilium via a web browser at `127.0.0.1:8080`.
+    1.  Verify the container is running using `docker ps`.
+    2.  Access Trilium via a web browser at `127.0.0.1:8080`.
 
-#### Local Network Access
+=== "Local Network Access"
 
-To make the container accessible only on your local network, first create a new Docker network:
+    To make the container accessible only on your local network, first create a new Docker network:
 
-```
-docker network create -d macvlan -o parent=eth0 --subnet 192.168.2.0/24 --gateway 192.168.2.254 --ip-range 192.168.2.252/27 mynet
-```
+    ```sh
+    docker network create -d macvlan -o parent=eth0 --subnet 192.168.2.0/24 --gateway 192.168.2.254 --ip-range 192.168.2.252/27 mynet
+    ```
 
-Then, run the container with the network settings:
+    Then, run the container with the network settings:
 
-```
-docker run --net=mynet -d -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest
-```
+    ```sh
+    docker run --net=mynet -d -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest
+    ```
 
-To set a different user ID (UID) and group ID (GID) for the saved data, use the `USER_UID` and `USER_GID` environment variables:
+    To set a different user ID (UID) and group ID (GID) for the saved data, use the `USER_UID` and `USER_GID` environment variables:
 
-```
-docker run --net=mynet -d -p 127.0.0.1:8080:8080 -e "USER_UID=1001" -e "USER_GID=1001" -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest
-```
+    ```sh
+    docker run --net=mynet -d -p 127.0.0.1:8080:8080 -e "USER_UID=1001" -e "USER_GID=1001" -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest
+    ```
 
-Find the local IP address using `docker inspect [container_name]` and access the service from devices on the local network.
+    Find the local IP address using `docker inspect [container_name]` and access the service from devices on the local network.
 
-```
-docker ps
-docker inspect [container_name]
-```
+    ```sh
+    docker ps
+    docker inspect [container_name]
+    ```
 
-#### Global Access
+=== "Global Access"
 
-To allow access from any IP address, run the container as follows:
+    To allow access from any IP address, run the container as follows:
 
-```
-docker run -d -p 0.0.0.0:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]
-```
+    ```sh
+    docker run -d -p 0.0.0.0:8080:8080 \
+    	-v ~/trilium-data:/home/node/trilium-data \
+    	triliumnext/trilium:[VERSION]
+    ```
 
-Stop the container with `docker stop <CONTAINER ID>`, where the container ID is obtained from `docker ps`.
+    Stop the container with `docker stop <CONTAINER ID>`, where the container ID is obtained from `docker ps`.
 
 ### Custom Data Directory
 

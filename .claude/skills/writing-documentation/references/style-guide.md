@@ -152,7 +152,8 @@ A button, menu or toolbar control is named by its icon, never by a cropped scree
   services/icon_pack_text_editor.json`); upstream `IconTableMergeCell` → `cke-table-merge-cell`,
   Trilium's own SVGs → `cke-trilium-<file>` (`cke-trilium-kbd`, `cke-trilium-ai`). `bx` is
   `icon_pack_boxicons-v2.json` (1635). `docs.mjs icons <terms>` searches both; `icons --check`
-  validates every class in the docs. `iconClass` in the meta uses `bx` only.
+  validates every class in the docs. `iconClass` in the meta uses `bx` only. The `cke` font is
+  rebuilt by hand, so a new editor button can be missing from it; see rule 8 in `SKILL.md`.
 
 ## Lists, tables, code
 

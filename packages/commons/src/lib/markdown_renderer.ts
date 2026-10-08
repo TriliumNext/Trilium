@@ -84,6 +84,7 @@ import {
     createCommentExtension,
     createHighlightExtension,
     createLiteralTildeExtension,
+    createTabsExtensions,
     createTransclusionExtension,
     createWikiLinkExtension,
     transclusionExtension,
@@ -617,7 +618,8 @@ export function renderToHtml(content: string, title: string, options: RenderToHt
         options.transclusion ? createTransclusionExtension(options.transclusion) : transclusionExtension,
         options.wikiLink ? createWikiLinkExtension(options.wikiLink) : wikiLinkExtension,
         createHighlightExtension(),
-        createLiteralTildeExtension()
+        createLiteralTildeExtension(),
+        ...createTabsExtensions()
     ];
     if (options.obsidian) {
         extensions.push(createCommentExtension());

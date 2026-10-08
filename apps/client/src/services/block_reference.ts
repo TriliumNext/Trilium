@@ -1,6 +1,7 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import {
-    formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
+    type BlockRange, formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
 } from "@triliumnext/commons";
 
 import type { CommandNames } from "../components/app_context.js";
@@ -9,7 +10,7 @@ import type { ClipboardAccess } from "../menus/table_context_menu.js";
 import { getTextEditorContaining } from "../menus/text_editor_context_menu.js";
 import { getBlockExcerpt } from "./block_excerpts.js";
 import { copyHtmlWithToast } from "./clipboard_ext.js";
-import { expandAncestorDetails } from "./collapsible.js";
+import { revealElement } from "./collapsible.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { calculateHash, parseNavigationStateFromUrl, type ViewScope } from "./link.js";
@@ -33,6 +34,8 @@ export interface ClipboardBlockReference {
 export interface BlockReferenceMenuItems {
     /** Copies a reference to the selected blocks, in the _Copy_ submenu, or `null`. */
     copy: MenuItem<CommandNames> | null;
+    /** Copies a link to the tab that holds the selection, in the _Copy_ submenu, or `null`. */
+    copyTab: MenuItem<CommandNames> | null;
     /** Pastes the reference on the clipboard, in the _Paste_ submenu. */
     paste: MenuItem<CommandNames>[];
 }
@@ -40,6 +43,7 @@ export interface BlockReferenceMenuItems {
 /** The component of a text editor that copies references to the blocks of its note. */
 interface BlockReferenceHost {
     copyBlockReference?(): Promise<void>;
+    copyTabReference?(): void;
 }
 
 /** Opens the menu of the block handle at `event`, which copies a reference to `count` blocks. */
@@ -67,6 +71,7 @@ export async function buildBlockReferenceMenuItems(
 
     return {
         copy: getCopyMenuItem(editor),
+        copyTab: getCopyTabMenuItem(editor),
         paste: clipboard ? getPasteMenuItems(editor, clipboard) : []
     };
 }
@@ -102,7 +107,28 @@ export async function copyBlockReference(
     notePath: string,
     noteTitle: string
 ) {
-    const target = editor.execute("assignBlockReference");
+    await copyReference(editor, editor.execute("assignBlockReference"), notePath, noteTitle);
+}
+
+/**
+ * Gives an id to the tab that holds the selection of `editor`, flashes the tab and copies a link
+ * to it, named by its title. `notePath` and `noteTitle` are of the note the editor shows.
+ */
+export async function copyTabReference(
+    editor: CKTextEditor,
+    notePath: string,
+    noteTitle: string
+) {
+    await copyReference(editor, editor.execute("assignTabReference"), notePath, noteTitle);
+}
+
+/** Flashes the blocks of `target` and copies a reference link to them. */
+async function copyReference(
+    editor: CKTextEditor,
+    target: BlockRange | null | undefined,
+    notePath: string,
+    noteTitle: string
+) {
     const root = editor.editing.view.getDomRoot();
     const { start, end } = target && root
         ? resolveBlockRange<HTMLElement>(root, target)
@@ -137,8 +163,8 @@ export function consumeBlockReference(
 
     const first = start ?? end;
     if (first) {
-        expandAncestorDetails(first);
-        first.scrollIntoView({ behavior: "smooth", block: "center" });
+        revealElement(first);
+        getBlockBoxes(first).top.scrollIntoView({ behavior: "smooth", block: "center" });
         flashBlocks(start && end ? getBlockRangeElements(start, end) : [ first ]);
     }
     if (!start || !end) {
@@ -147,9 +173,9 @@ export function consumeBlockReference(
 }
 
 /**
- * Highlights the blocks that `value`, a `block` link parameter, points at in `container`, and opens
- * the collapsed blocks around its first and last block. Of a broken range, the block found is
- * highlighted.
+ * Highlights the blocks that `value`, a `block` link parameter, points at in `container`, and
+ * reveals its first and last block inside collapsed blocks and inactive tabs. Of a broken range,
+ * the block found is highlighted.
  */
 export function highlightBlockReference(container: HTMLElement, value: string) {
     const { start, end } = resolveBlockReference<HTMLElement>(container, value);
@@ -160,7 +186,7 @@ export function highlightBlockReference(container: HTMLElement, value: string) {
 
     for (const block of [ start, end ]) {
         if (block) {
-            expandAncestorDetails(block);
+            revealElement(block);
         }
     }
     const elements = start && end ? getBlockRangeElements(start, end) : [ first ];
@@ -178,11 +204,26 @@ export function revealHighlightedBlocks(container: HTMLElement) {
         return;
     }
 
-    const top = first.getBoundingClientRect().top;
-    const height = last.getBoundingClientRect().bottom - top;
+    const top = getBlockBoxes(first).top.getBoundingClientRect().top;
+    const height = getBlockBoxes(last).bottom.getBoundingClientRect().bottom - top;
     const viewportTop = container.getBoundingClientRect().top + container.clientTop;
     const margin = Math.max(0, (container.clientHeight - height) / 2);
     container.scrollTop += top - viewportTop - margin;
+}
+
+/**
+ * Returns the elements that render the top and bottom of `block`. A tab is `display: contents`, so
+ * its title and panel render it.
+ */
+function getBlockBoxes(block: Element): { top: Element; bottom: Element } {
+    if (block.classList.contains(TAB_CLASSES.tab)) {
+        const title = block.querySelector(`:scope > .${TAB_CLASSES.tabTitle}`);
+        const panel = block.querySelector(`:scope > .${TAB_CLASSES.tabPanel}`);
+        if (title && panel) {
+            return { top: title, bottom: panel };
+        }
+    }
+    return { top: block, bottom: block };
 }
 
 /** The outermost elements inside the range from `start` to `end`, both included. */
@@ -234,6 +275,21 @@ function getCopyMenuItem(editor: CKTextEditor) {
     }
 
     return getCopyItem(command.value, () => void host.copyBlockReference?.());
+}
+
+function getCopyTabMenuItem(editor: CKTextEditor): MenuItem<CommandNames> | null {
+    const command = editor.commands.get("assignTabReference");
+    const root = editor.editing.view.getDomRoot();
+    const host: BlockReferenceHost | undefined = root && glob.getComponentByEl(root);
+    if (!command?.isEnabled || !host?.copyTabReference) {
+        return null;
+    }
+
+    return {
+        title: t("block_reference.copy_tab"),
+        uiIcon: "bx bx-link",
+        handler: () => host.copyTabReference?.()
+    };
 }
 
 function getPasteMenuItems(

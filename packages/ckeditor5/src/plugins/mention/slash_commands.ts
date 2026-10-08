@@ -40,6 +40,7 @@ import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
 import importMarkdownIcon from "../../icons/markdown-mark.svg?raw";
 import mathIcon from "../../icons/math.svg?raw";
 import noteIcon from "../../icons/note.svg?raw";
+import tabsIcon from "../../icons/tabs.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
 import { ADMONITION_TYPE_NAMES, type AdmonitionType } from "../admonition/admonition_command.js";
 import { getAdmonitionTitle } from "../admonition/admonition_ui.js";
@@ -361,6 +362,14 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             ],
             icon: collapsibleIcon,
             commandName: "collapsible"
+        },
+        {
+            id: "tabs",
+            title: t("Tabs"),
+            description: t("Insert titled tabs that show one panel at a time."),
+            aliases: [ "tab", "tabbed", "tab group", "panels", "variants" ],
+            icon: tabsIcon,
+            commandName: "tabs"
         },
         {
             id: "footnote",

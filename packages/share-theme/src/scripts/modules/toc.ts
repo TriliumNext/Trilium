@@ -1,3 +1,5 @@
+import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+
 import { closeMobileMenus } from "./mobile.js";
 
 /**
@@ -27,6 +29,7 @@ export default function setupToC() {
             e.preventDefault();
             e.stopPropagation();
 
+            revealTab(target);
             target.scrollIntoView({behavior: "smooth"});
             closeMobileMenus();
         });
