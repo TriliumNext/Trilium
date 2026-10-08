@@ -88,6 +88,17 @@ describe("triliumNoteChips", () => {
         expect(resolve).toHaveBeenCalledTimes(1);
     });
 
+    it("asks only once for a missing note whose lookup settles to undefined", async () => {
+        const redrawn = vi.fn();
+        const resolve = vi.fn(() => Promise.resolve(undefined)) as unknown as NoteChipResolver;
+        const parent = build("~author.noteId = gone", resolve, [ EditorView.updateListener.of(redrawn) ]);
+
+        await vi.waitFor(() => expect(redrawn).toHaveBeenCalled());
+        await new Promise((settle) => setTimeout(settle, 20));
+        expect(resolve).toHaveBeenCalledTimes(1);
+        expect(parent.textContent).toContain("gone");
+    });
+
     it("keeps a drawn chip across an edit elsewhere in the query", () => {
         const parent = build("~author.noteId = abc123", () => TOLKIEN);
         const chip = parent.querySelector(".cm-note-chip");
