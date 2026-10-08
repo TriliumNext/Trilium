@@ -81,7 +81,7 @@
     "@types/mark.js": "8.11.12",
     "@types/tabulator-tables": "6.3.6",
     "happy-dom": "20.14.5",
-    "jsdom": "30.1.1",
+    "jsdom": "30.1.2",
     "lightningcss": "1.33.0",
     "sass": "1.105.1",
     "stylelint": "17.16.0",
