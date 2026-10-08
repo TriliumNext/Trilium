@@ -26,7 +26,7 @@ See also:
 
 ## Note paths
 
-The note paths section displays the locations in which the current note is [cloned](../../Notes/Cloning%20Notes.md). Each segment of the note path is clickable, in order to navigate to that note or clone. The root note is shown as its icon, the same as in the <a class="reference-link" href="../New%20Layout/Breadcrumb.md">Breadcrumb</a>; hovering it shows its title.
+The note paths section displays the locations in which the current note is [cloned](../../Notes/Cloning%20Notes.md). Each segment of the note path is clickable, in order to navigate to that note or clone. The root note is shown as its icon, the same as in the <a class="reference-link" href="../Breadcrumb.md">Breadcrumb</a>; hovering it shows its title.
 
 A new clone can be created from the top-right button.
 

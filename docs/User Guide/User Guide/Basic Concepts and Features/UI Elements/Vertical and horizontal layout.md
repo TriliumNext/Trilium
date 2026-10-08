@@ -1,6 +1,4 @@
 # Vertical and horizontal layout
-## Layouts
-
 Trilium supports two different layouts, based on your preference.
 
 ### Vertical layout
@@ -11,7 +9,7 @@ The vertical layout is Trilium's original layout:
 *   The tab bar is at the top, but to the right of the <a class="reference-link" href="Note%20Tree.md">Note Tree</a>.
 *   The <a class="reference-link" href="../Navigation/Quick%20search.md">Quick search</a> is at the top of the <a class="reference-link" href="Note%20Tree.md">Note Tree</a>.
 *   The <a class="reference-link" href="Note%20Tree.md">Note Tree</a> can be collapsed by pressing the <span class="tn-icon bx bx-chevrons-left"></span> button at the bottom of the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>.
-*   The <a class="reference-link" href="Global%20menu.md">Global menu</a> can be accessed via the ![](2_Vertical%20and%20horizontal%20layout_image.png) icon at the top of the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>.
+*   The <a class="reference-link" href="Global%20menu.md">Global menu</a> can be accessed via the <span class="tn-icon cke cke-trilium"></span> icon at the top of the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>.
 
 ![](1_Vertical%20and%20horizontal%20layout_image.png)
 
@@ -31,4 +29,4 @@ The horizontal layout is a more traditional layout, since it bears similarity wi
 
 Go to <a class="reference-link" href="Options.md">Options</a> and look for the _Appearance_ option on the left. Then look for the _Layout_ section, where there is the possibility to switch between the two available layouts.
 
-Selecting an option will immediately apply the new layout by reloading the window.
+Clicking an option will immediately apply the selected layout by reloading the window.

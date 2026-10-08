@@ -34,4 +34,4 @@ SQL queries or commands can be saved into a dedicated note.
 
 To do so, simply write the query and press the <span class="tn-icon bx bx-save"></span> button. Once saved, the note will appear in <a class="reference-link" href="../../Advanced%20Showcases/Day%20Notes.md">Day Notes</a> by default. It is possible to change the default location of saved queries by assigning a `#sqlConsoleHome` [label](../../Attributes/Labels.md).
 
-The note can be locked for editing by pressing the _Lock_ button in the note actions section near the title bar (on the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, or in the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area if using the old layout). When editing is locked, the SQL statement is hidden from view.
+The note can be locked for editing by pressing the _Lock_ button in the note actions section near the title bar. When editing is locked, the SQL statement is hidden from view.

@@ -84,7 +84,7 @@ When Trilium is on mobile, the interaction with the calendar is slightly differe
 
 ## Configuring the calendar view
 
-In the _Collections_ tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>, it's possible to adjust the following:
+In the <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>, it's possible to:
 
 *   Hide weekends from the week view.
 *   Display week numbers on the calendar.
@@ -148,10 +148,10 @@ For each note of the calendar, the following attributes can be used:
 | `#endTime` | Similar to `startTime`, it mentions the time at which the event ends (in relation with `endDate` if present, or `startDate`). |
 | `#recurrence` | This is an optional CalDAV `RRULE` string that if present, determines whether a task should repeat or not. Note that it does not include the `DTSTART` attribute, which is derived from the `#startDate` and `#startTime` directly. For examples of valid `RRULE` strings see [https://icalendar.org/rrule-tool.html](https://icalendar.org/rrule-tool.html) |
 | `#color` | Displays the event with a specified color (named such as `red`, `gray` or hex such as `#FF0000`). This will also change the color of the note in other places such as the note tree. |
-| `#calendar:color` | **❌️ Removed since v0.100.0. Use** `#color` **instead.**      <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
+| `#calendar:color` | **❌️ Removed since v0.100.0. Use** `#color` **instead.**       <br>  <br>Similar to `#color`, but applies the color only for the event in the calendar and not for other places such as the note tree. |
 | `#iconClass` | If present, the icon of the note will be displayed to the left of the event title. |
 | `#calendar:title` | Changes the title of an event to point to an attribute of the note other than the title, can either a label or a relation (without the `#` or `~` symbol). See _Use-cases_ for more information. |
-| `#calendar:displayedAttributes` | Allows displaying the value of one or more attributes in the calendar like this:           <br>  <br>![](6_Calendar_image.png)          <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`         <br>  <br>It can also be used with relations, case in which it will display the title of the target note:          <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
+| `#calendar:displayedAttributes` | Allows displaying the value of one or more attributes in the calendar like this:            <br>  <br>![](6_Calendar_image.png)           <br>  <br>`#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"`          <br>  <br>It can also be used with relations, case in which it will display the title of the target note:           <br>  <br>`~assignee=@My assignee #calendar:displayedAttributes="assignee"` |
 | `#calendar:startDate` | Allows using a different label to represent the start date, other than `startDate` (e.g. `expiryDate`). The label name **must not be** prefixed with `#`. If the label is not defined for a note, the default will be used instead. |
 | `#calendar:endDate` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the end date. |
 | `#calendar:startTime` | Similar to `#calendar:startDate`, allows changing the attribute which is being used to read the start time. |
@@ -208,47 +208,19 @@ Also note that the recurrence label can be made promoted as with the start and e
 > [!WARNING]
 > If the recurrence string is not valid, a toast will be shown with the note ID and title of the note with the erroneous recurrence message. This note will not be added to the calendar
 
-## Slot Duration & Slot Label Interval
+## Customizing the slot duration and label interval
 
-Trilium's calendar view is powered by FullCalendar, which gives you fine-grained control over how the time grid looks and behaves for day and week views. Two labels you can use to configure these views are `#calendar:slotDuration` and `#calendar:slotLabelInterval`. Understanding what each one does — and how they interact — lets you tailor the calendar to match your workflow, whether you're scheduling in 15-minute increments or planning out your day in broad hourly blocks.
+Time slots in day and week views can be customized from <a class="reference-link" href="Collection%20Properties.md">Collection Properties</a>
 
-These settings can also be adjusted from the _Collections_ tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
+*   _Slot duration_ controls how tall each time slot is on the calendar (essentially the smallest unit of time the grid is divided into).
+    *   A shorter duration means more rows and finer granularity; a longer one means fewer, chunkier rows.
+    *   The default is one row every 15 minutes.
+*   _Label interval_ controls how often a time label appears on the left-hand axis.
+    *   This is independent of the slot size: you can have very small slots but only label every hour to keep the axis readable.
+    *   The default is a time label shown every hour.
 
-### Slot duration
-
-Controls how tall each time slot is on the calendar — essentially the smallest unit of time the grid is divided into. A shorter duration means more rows and finer granularity; a longer one means fewer, chunkier rows. The default is one row every 15 minutes.
-
-**Examples:**
-
-| Value | Result |
-| --- | --- |
-| `#calendar:slotDuration="00:15:00"` | One row every 15 minutes |
-| `#calendar:slotDuration="00:30:00"` | One row every 30 minutes |
-| `#calendar:slotDuration="01:00:00"` | One row every hour |
-
-### Label interval
-
-Controls how often a time label appears on the left-hand axis. This is independent of the slot size — you can have very small slots but only label every hour to keep the axis readable. The default is a time label shown every hour.
-
-**Examples:**
-
-| Value | Result |
-| --- | --- |
-| `#calendar:slotLabelInterval="00:30:00"` | Show a time label every 30 minutes |
-| `#calendar:slotLabelInterval="01:00:00"` | Show a time label every hour |
-
-### Useful combinations
-
-| `#calendar:slotDuration` | `#calendar:slotLabelInterval` | Result |
-| --- | --- | --- |
-| `00:15:00` | `01:00:00` | Fine grid, clean axis — good for busy schedules |
-| `00:30:00` | `01:00:00` | Standard calendar feel |
-| `01:00:00` | `01:00:00` | Simple hourly grid — good for day planning |
-| `00:15:00` | `00:30:00` | Fine grid, labels every 30 min — balanced detail |
-
-### Format
-
-Both values use `HH:mm:ss` format. Hours can go up to `24` (`24:00:00`), while minutes and seconds must be between `00` and `59`. The minimum meaningful duration is 1 minute (`00:01:00`).
+> [!NOTE]
+> These values can also be customized directly via the `#calendar:slotDuration` and `#calendar:slotLabelInterval` [labels](../Advanced%20Usage/Attributes/Labels.md). Both values use `HH:mm:ss` format. Hours can go up to `24` (`24:00:00`), while minutes and seconds must be between `00` and `59`. The minimum meaningful duration is 1 minute (`00:01:00`).
 
 ## Use-cases
 

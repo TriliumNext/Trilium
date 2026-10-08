@@ -1,5 +1,5 @@
 # Read-Only Notes
-Some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes in Trilium can be set to read-only. When a note is in read-only mode, it is presented to the user in a non-editable view, with the option to switch to editing mode if needed.
+Some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>, <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes and even some of the <a class="reference-link" href="../../Collections.md">Collections</a> can be set to read-only. When a note is in read-only mode, it is presented to the user in a non-editable view, with the option to switch to editing mode if needed.
 
 ## Automatic read-only mode
 
@@ -11,12 +11,7 @@ In addition, it's possible to change the number of characters at which the autom
 
 ## Changing a note's read-only behavior
 
-A note's read-only behavior can be changed via:
-
-*   On the [New layout](../UI%20Elements/New%20Layout.md), <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ on the new layout
-*   For the old layout via the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>, by going to the _Basic Properties_ tab and looking for the _Editable_ selection.
-
-The following options are possible:
+A note's read-only behavior can be changed via <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> → _Editable._ The following options are possible:
 
 *   **Auto**  
     This is the default behavior in which the note will be editable by default, unless it becomes large enough to trigger read-only mode.
@@ -25,27 +20,17 @@ The following options are possible:
 *   **Always Editable**  
     This option will bypass the automatic read-only activation for this particular note. It's useful for large notes that are frequently edited.
 
-If the _Editable_ section is missing from the ribbon, then the note type does not support read-only mode.
+If the _Editable_ section is missing from the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, then the note type does not support read-only mode.
 
 ### Manually setting the options
 
-Apart from using the ribbon as previously mentioned, it's also possible to use [labels](../../Advanced%20Usage/Attributes.md) to change the behavior:
+Apart from using the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> as previously mentioned, it's also possible to use [labels](../../Advanced%20Usage/Attributes.md) to change the behavior:
 
 *   To set as read-only, apply the `readOnly` label to the note.
 *   To disable automatic read-only (always editable), apply the `autoReadOnlyDisabled` label.
 
 ## Temporarily editing a read-only note
 
-When accessing a read-only note, it's possible to temporarily edit it by:
-
-*   Pressing the _Read-only_ badge on the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
-*   Or pressing the <span class="tn-icon bx bx-pencil"></span> button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+When accessing a read-only note, it's possible to temporarily edit it pressing the _Read-only_ badge.
 
 When pressed, the note will become editable but will become read-only again after navigating to a different note.
-
-## Special read-only behavior
-
-Some note types have a special behavior based on whether the read-only mode is enabled:
-
-*   <a class="reference-link" href="../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> will hide the Mermaid source code and display the diagram preview in full-size. In this case, the read-only mode can be easily toggled on or off via a dedicated button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
-*   <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map</a> will disallow all interaction that would otherwise change the map (dragging notes, adding new items).

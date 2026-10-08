@@ -17,6 +17,10 @@ You can see the structure of day notes appearing under "Journal" note - there's 
 
 You can also notice how this day note has [promoted attribute](../Attributes/Promoted%20Attributes.md) "weight" where you can track your daily weight. This data is then used in [Weight tracker](Weight%20Tracker.md).
 
+## Edited notes
+
+When a day note is opened, a collapsible section will appear underneath the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> showing the notes edited on that day.
+
 ## Week Note and Quarter Note
 
 Week and quarter notes are disabled by default, since it might be too much for some people. To enable them, you need to set `#enableWeekNote` and `#enableQuarterNote` attributes on the root calendar note, which is identified by `#calendarRoot` label. Week note is affected by the first week of year option. Be careful when you already have some week notes created, it will not automatically change the existing week notes and might lead to some duplicates.

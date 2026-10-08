@@ -5,14 +5,12 @@ Split view is a feature of <a class="reference-link" href="../../Note%20Types/M
 
 ## Display modes and interaction
 
-The split comes with three different display modes:
+The split comes with three different display modes which can be toggled from the <a class="reference-link" href="Note%20buttons.md">Note buttons</a> area:
 
-*   _Split view_, in which both the source code is available on one side and can be edited, and the preview is available on the other side.
+*   <span class="tn-icon bx bxs-dock-left"></span> _(Split view)_, in which both the source code is available on one side and can be edited, and the preview is available on the other side.
     *   In this mode, the size of either the source pane or the preview pane can be adjusted by dragging the small border between them.
-*   _Source view_ which shows the source code on the entire screen for a more focused editing experience.
-*   _Preview_ which displays only the rendering of the diagram or text in full screen, especially useful for read-only notes.
-
-These buttons can be found near the <a class="reference-link" href="Note%20buttons.md">Note buttons</a> section on the <a class="reference-link" href="New%20Layout.md">New Layout</a>, or in the <a class="reference-link" href="Floating%20buttons.md">Floating buttons</a> on the old layout.
+*   <span class="tn-icon bx bx-code"></span> (_Source view)_ which shows the source code on the entire screen for a more focused editing experience.
+*   <span class="tn-icon bx bx-show"></span> _(Preview)_ which displays only the rendering of the diagram or text in full screen, especially useful for read-only notes.
 
 The display node is stored at note level.
 

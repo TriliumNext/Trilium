@@ -5,7 +5,7 @@ In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/
 
 Interaction since v0.104.0:
 
-*   The file can be downloaded as a text file using the dedicated button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area (<a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a> only).
+*   The file can be downloaded as a text file using the <span class="tn-icon bx bx-download"></span> button in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
 *   The file can also be searched just like a normal <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> note.
 
 ## Location on the disk

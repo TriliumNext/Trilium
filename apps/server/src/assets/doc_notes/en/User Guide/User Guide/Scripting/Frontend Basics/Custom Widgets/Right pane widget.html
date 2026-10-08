@@ -1,22 +1,3 @@
-<h2>Key highlights</h2>
-<ul>
-  <li><code>doRender</code> must not be overridden, instead <code>doRenderBody()</code> has
-    to be overridden.
-    <ul>
-      <li><code>doRenderBody</code> can optionally be <code>async</code>.</li>
-    </ul>
-  </li>
-  <li><code>parentWidget()</code> must be set to <code>“rightPane”</code>.</li>
-  <li><code>widgetTitle()</code> getter can optionally be overriden, otherwise
-    the widget will be displayed as “Untitled widget”.</li>
-</ul>
-<h2>Example for new layout</h2>
-<aside class="admonition important">
-  <p>This section addresses example that are tailored for the&nbsp;<a class="reference-link"
-    href="#root/_help_IjZS7iK5EXtb">New Layout</a>&nbsp;(available starting
-    with v0.101.0) where the right pane widget/sidebar is no longer shown or
-    hidden based on the widgets it has.&nbsp;</p>
-</aside>
 <h3>Title widget</h3>
 <p>This is an example of a context-aware widget which displays the title
   of the current note:</p><pre><code class="language-text-x-trilium-auto">class NoteTitleWidget extends api.RightPanelWidget {
@@ -40,26 +21,10 @@ module.exports = new NoteTitleWidget();</code></pre>
 <h3>Clock</h3>
 <p>A simple widget which will show the current time, as an example on how
   to dynamically change the content of the widget periodically.</p>
-<h3>Legacy widget</h3><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;&lt;/div&gt;`;
-
-class ToDoListWidget extends api.RightPanelWidget {
-    
-    get widgetTitle() { return "Clock"; }        
-    get parentWidget() { return "right-pane" }
-    
-    async doRenderBody() {
-        if (!this.timer) {
-            this.timer = setInterval(() =&gt; {
-                this.$body.empty().append(`The time is: &lt;span&gt;${new Date().toLocaleString()}&lt;/span&gt;`);                       
-            }, 1000);            
-        }
-
-        this.$body.empty().append(`The time is: &lt;span&gt;${new Date().toLocaleString()}&lt;/span&gt;`);
-    }   
-}
-
-module.exports = new ToDoListWidget();</code></pre>
-<h3>Preact widget</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-react"></span>&nbsp;Preact</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
 
 export default defineWidget({
     parent: "right-pane",    
@@ -79,39 +44,72 @@ export default defineWidget({
         );
     }
 });</code></pre>
-<h2>Example for old layout</h2>
-<p>Here's a widget that displays a basic message ("Hi"):</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;Hi&lt;/div&gt;`;
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-javascript"></span>&nbsp;Legacy</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;&lt;/div&gt;`;
 
-class HelloWorldWidget extends api.RightPanelWidget {
+class ToDoListWidget extends api.RightPanelWidget {
     
-    get widgetTitle() {
-        return "Title goes here";
-    }
-        
+    get widgetTitle() { return "Clock"; }        
     get parentWidget() { return "right-pane" }
     
-    doRenderBody() {
-        this.$body.empty().append($(template));
+    async doRenderBody() {
+        if (!this.timer) {
+            this.timer = setInterval(() =&gt; {
+                this.$body.empty().append(`The time is: &lt;span&gt;${new Date().toLocaleString()}&lt;/span&gt;`);                       
+            }, 1000);            
+        }
+
+        this.$body.empty().append(`The time is: &lt;span&gt;${new Date().toLocaleString()}&lt;/span&gt;`);
     }   
-    
-    async refreshWithNote(note) {
-    	// Do something when the note changes.
-    }
 }
 
-module.exports = new HelloWorldWidget();</code></pre>
-<h3>Conditionally changing visibility</h3>
-<p>In <code>refreshWithNote</code>:</p><pre><code class="language-text-x-trilium-auto">const visible = true;	// replace with your own visibility logic
-this.toggleInt(visible);
-this.triggerCommand("reEvaluateRightPaneVisibility");</code></pre>
+module.exports = new ToDoListWidget();</code></pre>
+    </div>
+  </section>
+</div>
 <h2>Altering the position within the sidebar</h2>
 <p>By default, the sidebar items are displayed in the order they are found
   by the application when searching for <code>#widget</code> notes.</p>
 <p>It is possible to make a widget appear higher or lower up, by adjusting
-  its <code>position</code> property:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.RightPanelWidget {
+  its <code>position</code> property:</p>
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-react"></span>&nbsp;Preact</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-javascript">import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
 
-+    get position() { return 20 };
+export default defineWidget({
+	/* [...] */
+    position: 20,
+    render() {
+		/* [...] */
+    }
+});</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-javascript"></span>&nbsp;Legacy</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-javascript">class MyWidget extends api.RightPanelWidget {
+
+    get position() { return 20 };
         
 }</code></pre>
+    </div>
+  </section>
+</div>
 <p>Generally the default position starts from 10 and increases by 10 with
   each item, including the default Table of Contents and Highlights list.</p>
+<h2>Key highlights for legacy widgets</h2>
+<ul>
+  <li><code>doRender</code> must not be overridden, instead <code>doRenderBody()</code> has
+    to be overridden.
+    <ul>
+      <li><code>doRenderBody</code> can optionally be <code>async</code>.</li>
+    </ul>
+  </li>
+  <li><code>parentWidget()</code> must be set to <code>“rightPane”</code>.</li>
+  <li><code>widgetTitle()</code> getter can optionally be overriden, otherwise
+    the widget will be displayed as “Untitled widget”.</li>
+</ul>

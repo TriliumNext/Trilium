@@ -28,6 +28,6 @@ These are the types of active content in Trilium, along with a few examples of w
 
 ## Active content badge
 
-Starting with v0.102.0, on the <a class="reference-link" href="UI%20Elements/New%20Layout.md">New Layout</a> a badge will be displayed near the note title, indicating that an active content is detected. Clicking the badge will reveal a menu with various options related to that content type, for example to open the documentation or to configure the execution of scripts.
+If a note is considered to have active content, a badge is shown in the <a class="reference-link" href="Notes/Note%20badges.md">Note badges</a> area. Clicking the badge will reveal a menu with various options related to that content type, for example to open the documentation or to configure the execution of scripts.
 
 For some active content types, such as backend scripts with custom triggering conditions a toggle button will appear. This makes it possible to easily disable scripts or widgets, but also to re-enable them if an import was made with safe mode active.

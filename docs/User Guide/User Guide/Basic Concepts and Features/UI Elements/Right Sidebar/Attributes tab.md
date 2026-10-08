@@ -66,4 +66,4 @@ For attribute definition (see <a class="reference-link" href="../../../Advanced
 
 ## Mobile
 
-The attributes can also be edited visually on mobile, but not as part of the sidebar. Go to <a class="reference-link" href="../Note%20buttons.md">Note buttons</a> and select _Note attributes_.
+The attributes can also be edited visually on mobile, but not as part of the sidebar. Go to <a class="reference-link" href="../Note%20menu.md">Note menu</a> and select _Note attributes_.
