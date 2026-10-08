@@ -44,7 +44,7 @@ Drag-and-drop the items in the tree in order to change their order. See <a cl
 
 ## Customizing the launcher
 
-*   The icon of a launcher can be changed just like a normal note. See <a class="reference-link" href="../Notes/Note%20Icons%20%26%20Colors.md">[missing note]</a> for more information.
+*   The icon of a launcher can be changed just like a normal note. See [note icons](../Notes/Note%20Icons%20%26%20Colors.md) for more information.
 *   The title of the launcher can also be changed.
 
 ### Resetting
@@ -66,7 +66,7 @@ Right click either the _Available launchers_ or _Visible launchers_ sections and
     2.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 3.  **Custom Widget**
     
-    Allows defining a custom widget to be rendered inside the launcher. See <a class="reference-link" href="../../Scripting/Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md">[missing note]</a> for more information.
+    Allows defining a custom widget to be rendered inside the launcher. See <a class="reference-link" href="../../Scripting/Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md">Widget Basics</a> for more information.
 4.  **Spacers**  
     Launchers that create some distance between other launchers for better visual distinction.
 
