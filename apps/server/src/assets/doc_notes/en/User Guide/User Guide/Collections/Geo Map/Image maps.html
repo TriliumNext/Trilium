@@ -52,7 +52,7 @@ class="admonition note">
 <ul>
   <li>A screenshot of a game map that covers <code>x</code> from -512 to 512 and <code>y</code> from
     -512 to 512, with <code>y</code> growing downwards: <code>#map:imageBounds=-512,-512 512,512</code>.
-    Coordinates copied from the game can then be pasted directly into <code>#imagePosition</code>.</li>
+    Coordinates copied from the game can then be pasted directly into <code>#mapPosition</code>.</li>
   <li>A world whose <code>y</code> grows upwards, with the origin in the middle
     of the image: <code>#map:imageBounds=-2000,1000 2000,-1000</code>. A top-left <code>y</code> larger
     than the bottom-right one is what flips the axis.</li>
@@ -77,16 +77,16 @@ class="table">
     </thead>
     <tbody>
       <tr>
-        <td><code>#imagePosition</code>
+        <td><code>#mapPosition</code>
         </td>
-        <td>The position of a marker, as <code>x,y</code>, for example <code>#imagePosition=320,145</code>.</td>
+        <td>The position of a marker, as <code>x,y</code>, for example <code>#mapPosition=320,145</code>.</td>
       </tr>
       <tr>
-        <td><code>#imageShape</code>
+        <td><code>#mapShape</code>
         </td>
         <td>A shape, in the same format as <code>#geoShape</code> (see&nbsp;<a class="reference-link"
           href="#root/_help_C2H9HK4BzwG7">Drawing shapes</a>) but with <code>x,y</code> pairs,
-          and a circle's radius in the map's units, for example <code>#imageShape=circle:400,300 50</code>.</td>
+          and a circle's radius in the map's units, for example <code>#mapShape=circle:400,300 50</code>.</td>
       </tr>
     </tbody>
   </table>

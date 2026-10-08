@@ -72,8 +72,8 @@ describe("imageSpace", () => {
     });
 
     it("reads the labels of its own space only", () => {
-        const marker = buildNote({ title: "Tavern", "#imagePosition": "10,20", "#geolocation": "1,2" });
-        const shape = buildNote({ title: "Road", "#imageShape": "line:0,0 10,10" });
+        const marker = buildNote({ title: "Tavern", "#mapPosition": "10,20", "#geolocation": "1,2" });
+        const shape = buildNote({ title: "Road", "#mapShape": "line:0,0 10,10" });
 
         expect(locationOf(marker, space)).toEqual(space.parseLocation("10,20"));
         expect(locationOf(marker, geoSpace)).toEqual([ 2, 1 ]);

@@ -195,7 +195,7 @@ describe("geo map api", () => {
 
             await removeFromMap(imageSpace({ width: 100, height: 100 }), track, map);
             expect(confirmDelete).toHaveBeenLastCalledWith(track.title, expect.anything(), expect.objectContaining({ mustDeleteNote: false }));
-            expect(setLabel).toHaveBeenLastCalledWith(track.noteId, "imagePosition", "");
+            expect(setLabel).toHaveBeenLastCalledWith(track.noteId, "mapPosition", "");
         });
 
         it("leaves the marker alone where the reader changed their mind", async () => {

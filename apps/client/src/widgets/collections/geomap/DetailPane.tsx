@@ -1,6 +1,6 @@
 import "./DetailPane.css";
 
-import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE, IMAGE_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
+import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
 import type { EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "preact/hooks";
 
@@ -461,7 +461,7 @@ function MarkerContents({ note, parentNote, isReadOnly, onRelocate }: {
 
 /** The labels that put a note on a map, of either space. */
 const OMITTED_ATTRIBUTES = [
-    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE, IMAGE_SHAPE_ATTRIBUTE
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE
 ];
 
 /** The start of the ntxId of the pane's own note context. */

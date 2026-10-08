@@ -189,7 +189,7 @@ The location of a marker is stored in the `#geolocation` attribute of the child 
 
 This value can be added manually if needed. The value of the attribute is made up of the latitude and longitude separated by a comma.
 
-On an image map, the position is stored in `#imagePosition` instead (see <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>).
+On an image map, the position is stored in `#mapPosition` instead (see <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>).
 
 ## Repositioning markers
 

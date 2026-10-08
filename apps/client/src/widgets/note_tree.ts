@@ -5,7 +5,7 @@ import "jquery.fancytree/dist/modules/jquery.fancytree.filter.js";
 import "../stylesheets/tree.css";
 import "./note_tree.css";
 
-import { GEO_LOCATION_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE } from "@triliumnext/commons";
+import { GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE } from "@triliumnext/commons";
 
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import type { SetNoteOpts } from "../components/note_context.js";
@@ -1306,10 +1306,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
     #processAttributeRows(attributeRows: AttributeRow[], refreshCtx: RefreshContext) {
         for (const attrRow of attributeRows) {
-            // `geolocation` and `imagePosition` decide the icon of a note that has none of its own
+            // `geolocation` and `mapPosition` decide the icon of a note that has none of its own
             // (see getNoteIcon).
             const dirtyingLabels = ["iconClass", "cssClass", "workspace", "workspaceIconClass",
-                "color", GEO_LOCATION_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE];
+                "color", GEO_LOCATION_ATTRIBUTE, MAP_POSITION_ATTRIBUTE];
 
             if (attrRow.type === "label" && dirtyingLabels.includes(attrRow.name ?? "") && attrRow.noteId) {
                 if (attrRow.isInheritable) {

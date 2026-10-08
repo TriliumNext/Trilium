@@ -4,11 +4,11 @@
  * MapLibre knows only longitude and latitude, so everything on the map is held in `[lng, lat]`
  * whichever it is. A {@link MapSpace} converts at the edge, where a position is read off a note's
  * label or written back onto one: a geo map stores `#geolocation` and `#geoShape` in degrees, an
- * image map `#imagePosition` and `#imageShape` in a coordinate system the map names for its image
+ * image map `#mapPosition` and `#mapShape` in a coordinate system the map names for its image
  * (see {@link imageSpace}).
  */
 
-import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, IMAGE_POSITION_ATTRIBUTE, IMAGE_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
+import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
 import { MercatorCoordinate } from "maplibre-gl";
 import { createContext } from "preact";
 
@@ -217,8 +217,8 @@ export function imageSpace({ width, height }: ImageSize, extent?: ImageExtent | 
 
     return {
         kind: "image",
-        locationAttribute: IMAGE_POSITION_ATTRIBUTE,
-        shapeAttribute: IMAGE_SHAPE_ATTRIBUTE,
+        locationAttribute: MAP_POSITION_ATTRIBUTE,
+        shapeAttribute: MAP_SHAPE_ATTRIBUTE,
         corners: [ topLeftLngLat, pixelToLngLat([ width, 0 ]), bottomRightLngLat, pixelToLngLat([ 0, height ]) ],
         bounds: [ [ topLeftLngLat[0], bottomRightLngLat[1] ], [ bottomRightLngLat[0], topLeftLngLat[1] ] ],
         maxBounds: [ [ west, south ], [ east, north ] ],
