@@ -1,23 +1,31 @@
 import {
+    addListToDropdown,
     ButtonView,
+    Collection,
     type Command,
     createDropdown,
     focusChildOnDropdownOpen,
     IconCancel,
+    type ListDropdownItemDefinition,
     type Locale,
     Plugin,
+    SplitButtonView,
+    ViewModel,
     WidgetToolbarRepository
 } from "ckeditor5";
 
 import multicolumnIcon from "../../icons/multicolumn.svg?raw";
 import TileRowView from "../tile_row_view.js";
 import { findSelectedWidget } from "../widget_utils.js";
-import { COLUMN_RATIOS, getColumnCount, LAYOUT_WIDGET_PROPERTY } from "./constants.js";
+import {
+    COLUMN_RATIOS, getColumnCount, getDefaultRatios, LAYOUT_WIDGET_PROPERTY, MAX_COLUMNS,
+    MIN_COLUMNS
+} from "./constants.js";
 import type { ColumnLayoutCommand } from "./multicolumn_commands.js";
 
 /**
- * The insert button for multicolumn layouts, and the contextual toolbar with the column layout
- * dropdown and the remove button, shown while the selection is inside a layout.
+ * The insert split button for multicolumn layouts, and the contextual toolbar with the column
+ * layout dropdown and the remove button, shown while the selection is inside a layout.
  */
 export default class MulticolumnUI extends Plugin {
 
@@ -32,7 +40,7 @@ export default class MulticolumnUI extends Plugin {
     public init(): void {
         const t = this.editor.t;
         const factory = this.editor.ui.componentFactory;
-        this.addCommandButton("multicolumnLayout", t("Multicolumn layout"), multicolumnIcon);
+        factory.add("multicolumnLayout", locale => this.createInsertDropdown(locale));
         factory.add("columnLayout", locale => this.createLayoutDropdown(locale));
         this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconCancel);
     }
@@ -61,6 +69,48 @@ export default class MulticolumnUI extends Plugin {
             });
             return button;
         });
+    }
+
+    /**
+     * A split button that inserts two equal columns, with a list that inserts two to four equal
+     * columns.
+     */
+    private createInsertDropdown(locale: Locale) {
+        const editor = this.editor;
+        const command = editor.commands.get("multicolumnLayout") as Command;
+        const dropdown = createDropdown(locale, SplitButtonView);
+        dropdown.buttonView.set({
+            label: editor.t("Multiple column layout"),
+            icon: multicolumnIcon,
+            tooltip: true
+        });
+        // `createDropdown` binds the split button's `isEnabled` to the dropdown's.
+        dropdown.bind("isEnabled").to(command, "isEnabled");
+
+        const items = new Collection<ListDropdownItemDefinition>();
+        for (let count = MIN_COLUMNS; count <= MAX_COLUMNS; count++) {
+            const ratios = getDefaultRatios(count);
+            items.add({
+                type: "button",
+                model: new ViewModel({
+                    commandParam: ratios,
+                    label: editor.t("%0 columns", count),
+                    icon: createLayoutFigure(ratios, BUTTON_ICON_SIZE),
+                    role: "menuitem",
+                    withText: true
+                })
+            });
+        }
+        addListToDropdown(dropdown, items);
+
+        const insert = (value?: string) => {
+            editor.execute("multicolumnLayout", { value });
+            editor.editing.view.focus();
+        };
+        this.listenTo(dropdown.buttonView, "execute", () => insert());
+        this.listenTo(dropdown, "execute", evt =>
+            insert((evt.source as { commandParam?: string }).commandParam));
+        return dropdown;
     }
 
     /** A dropdown with a figure of every column layout, grouped by column count. */

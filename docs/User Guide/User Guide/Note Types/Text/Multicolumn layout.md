@@ -5,7 +5,7 @@ The borders around the columns are only a guide while editing. In [read-only not
 
 ## Inserting a layout
 
-*   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Multicolumn layout_ to insert a layout with two columns.
+*   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Multiple column layout_ to insert a layout with two columns. Its submenu offers _2 columns_, _3 columns_ and _4 columns_.
 *   Alternatively, type `/columns` and choose _2 columns layout_, _3 columns layout_ or _4 columns layout_, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 
 The columns of a new layout have equal widths. If text is selected when the layout is inserted, the selection moves into the first column.

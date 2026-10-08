@@ -4,11 +4,13 @@ import {
     type ButtonView,
     type ClassicEditor,
     ContextualBalloon,
-    type DropdownView,
+    DropdownView,
     Essentials,
     IconCancel,
+    type ListItemView,
     type ModelElement,
     Paragraph,
+    SplitButtonView,
     type ToolbarView,
     type ViewDocumentSelection,
     type ViewElement,
@@ -19,6 +21,10 @@ import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { createTestEditor } from "../../../test/editor-kit.js";
 import multicolumnIcon from "../../icons/multicolumn.svg?raw";
 import type TileRowView from "../tile_row_view.js";
+import ToolbarGroupMenu, {
+    type ToolbarGroupMenuEntry, type ToolbarGroupMenuHost, type ToolbarGroupMenuItem,
+    type ToolbarGroupMenuRequest
+} from "../toolbar_group_menu.js";
 import { COLUMN_RATIOS } from "./constants.js";
 import Multicolumn from "./multicolumn.js";
 import { createLayoutFigure, formatRatios } from "./multicolumn_ui.js";
@@ -37,6 +43,13 @@ function layout(ratios: string, ...columns: string[]) {
     return `<multicolumnLayout columnRatios="${ratios}">${content.join("")}</multicolumnLayout>`;
 }
 
+function entryOf(item: ToolbarGroupMenuItem | undefined): ToolbarGroupMenuEntry {
+    if (item?.kind !== "entry") {
+        throw new Error("expected a menu entry");
+    }
+    return item;
+}
+
 describe("MulticolumnUI", () => {
     let editor: ClassicEditor;
 
@@ -44,21 +57,99 @@ describe("MulticolumnUI", () => {
         editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
     });
 
-    it("inserts a layout from its button and returns the focus to the editor", () => {
-        setModelData(editor.model, "<paragraph>[]</paragraph>");
-        const button = editor.ui.componentFactory.create("multicolumnLayout") as ButtonView;
-        expect(button.label).toBe("Multicolumn layout");
-        expect(button.icon && button.tooltip).toBeTruthy();
-        expect(button.isEnabled).toBe(true);
-        const focus = vi.spyOn(editor.editing.view, "focus");
+    describe("insert button", () => {
+        function createInsertDropdown() {
+            const dropdown = editor.ui.componentFactory.create("multicolumnLayout") as DropdownView;
+            dropdown.render();
+            const element = dropdown.element as HTMLElement;
+            document.body.appendChild(element);
+            onTestFinished(() => element.remove());
+            dropdown.isOpen = true;
+            return dropdown;
+        }
 
-        button.fire("execute");
+        function itemsOf(dropdown: DropdownView) {
+            return [...dropdown.listView?.items ?? []]
+                .map(item => (item as ListItemView).children.first as ButtonView);
+        }
 
-        expect(getModelData(editor.model)).toContain("<multicolumnLayout");
-        expect(focus).toHaveBeenCalled();
+        it("inserts two columns from its main action and returns the focus to the editor", () => {
+            setModelData(editor.model, "<paragraph>[]</paragraph>");
+            const dropdown = createInsertDropdown();
+            const button = dropdown.buttonView;
+            expect(button).toBeInstanceOf(SplitButtonView);
+            expect([button.label, button.icon, button.tooltip])
+                .toEqual(["Multiple column layout", multicolumnIcon, true]);
+            expect(dropdown.isEnabled).toBe(true);
+            const focus = vi.spyOn(editor.editing.view, "focus");
 
-        editor.enableReadOnlyMode("spec");
-        expect(button.isEnabled).toBe(false);
+            button.fire("execute");
+
+            expect(getModelData(editor.model, { withoutSelection: true }))
+                .toBe(layout("1-1", paragraph(""), paragraph("")));
+            expect(focus).toHaveBeenCalled();
+
+            editor.enableReadOnlyMode("spec");
+            expect([dropdown.isEnabled, button.isEnabled]).toEqual([false, false]);
+        });
+
+        it("lists 2, 3 and 4 columns, each inserting that many equal columns", () => {
+            const dropdown = createInsertDropdown();
+            const items = itemsOf(dropdown);
+            const focus = vi.spyOn(editor.editing.view, "focus");
+
+            expect(items.map(item => [item.label, item.icon])).toEqual([
+                ["2 columns", createLayoutFigure("1-1", 20)],
+                ["3 columns", createLayoutFigure("1-1-1", 20)],
+                ["4 columns", createLayoutFigure("1-1-1-1", 20)]
+            ]);
+            for (const [index, ratios] of ["1-1", "1-1-1", "1-1-1-1"].entries()) {
+                setModelData(editor.model, "<paragraph>[]</paragraph>");
+                items[index].fire("execute");
+
+                const columns = ratios.split("-").map(() => paragraph(""));
+                expect(getModelData(editor.model, { withoutSelection: true }))
+                    .toBe(layout(ratios, ...columns));
+            }
+            expect(focus).toHaveBeenCalledTimes(3);
+        });
+
+        it("is a split entry of a menu group, over its three column counts", async () => {
+            const host = { show: vi.fn(), hide: vi.fn(), destroy: vi.fn() } satisfies
+                ToolbarGroupMenuHost;
+            const group = {
+                label: "Insert", icon: "plus", asMenu: true, items: ["multicolumnLayout"]
+            };
+            const menuEditor = await createTestEditor(
+                [Essentials, Paragraph, Multicolumn, ToolbarGroupMenu],
+                { toolbarGroupMenu: { host: () => host }, toolbar: { items: [group] } }
+            );
+            const toolbar = (menuEditor.ui.view as { toolbar: ToolbarView }).toolbar;
+            const dropdown = [...toolbar.items].find(item => item instanceof DropdownView);
+
+            /** Opens the group and returns the menu entry of the layout. */
+            function openEntry() {
+                expect(dropdown).toBeInstanceOf(DropdownView);
+                (dropdown as DropdownView).isOpen = true;
+                const request = host.show.mock.lastCall?.[0] as ToolbarGroupMenuRequest | undefined;
+                return entryOf(request?.items[0]);
+            }
+
+            setModelData(menuEditor.model, "<paragraph>[]</paragraph>");
+            const entry = openEntry();
+            expect(entry.label).toBe("Multiple column layout");
+            expect(entry.children?.map(child => entryOf(child).label))
+                .toEqual(["2 columns", "3 columns", "4 columns"]);
+
+            entry.run?.();
+            expect(getModelData(menuEditor.model, { withoutSelection: true }))
+                .toBe(layout("1-1", paragraph(""), paragraph("")));
+
+            setModelData(menuEditor.model, "<paragraph>[]</paragraph>");
+            entryOf(openEntry().children?.[2]).run?.();
+            expect(getModelData(menuEditor.model, { withoutSelection: true }))
+                .toBe(layout("1-1-1-1", ...Array.from({ length: 4 }, () => paragraph(""))));
+        });
     });
 
     it("removes the layout from its button, keeping the content", () => {
