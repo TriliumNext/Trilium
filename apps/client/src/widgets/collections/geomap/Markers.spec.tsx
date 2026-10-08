@@ -22,8 +22,10 @@ import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CLUSTER_COUNT_LAYER, CLUSTER_LAYER } from "./clusters";
+import type { Bounds } from "./coordinates";
 import { MapStyleLoaded, ParentMap } from "./map";
-import Markers, { FitToNotes, formatLocation, MARKER_LAYER, MARKER_SOURCE, parseLocation, SELECTION_LAYER } from "./Markers";
+import Markers, { FitToNotes, MARKER_LAYER, MARKER_SOURCE, SELECTION_LAYER } from "./Markers";
+import { formatLocation, parseLocation } from "./space";
 
 vi.mock("../../../services/icon_glyphs", () => ({
     renderIconImage: vi.fn(async () => "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=")
@@ -717,11 +719,11 @@ describe("framing a map around its notes", () => {
         container.remove();
     });
 
-    function mountFit(notes: FNote[], map: ReturnType<typeof fakeMap>, enabled = true) {
+    function mountFit(notes: FNote[], map: ReturnType<typeof fakeMap>, enabled = true, bounds?: Bounds) {
         return act(async () => {
             render(
                 <ParentMap.Provider value={map as never}>
-                    <FitToNotes notes={notes} enabled={enabled} />
+                    <FitToNotes notes={notes} enabled={enabled} bounds={bounds} />
                 </ParentMap.Provider>,
                 container
             );
@@ -742,6 +744,20 @@ describe("framing a map around its notes", () => {
         // A single note would otherwise fit at whatever zoom solves a box with no width, and a map
         // that flew to its own notes would show the stock view first.
         expect(map.fits[0].options).toMatchObject({ maxZoom: expect.any(Number), animate: false });
+    });
+
+    it("frames the bounds it is given instead of the notes, passing no option as undefined", async () => {
+        const map = fakeMap();
+        const image: Bounds = [ [ -90, -40 ], [ 90, 40 ] ];
+
+        await mountFit([ PARIS ], map, true, image);
+
+        expect(map.fits).toHaveLength(1);
+        expect(map.fits[0].bounds).toEqual(image);
+        // MapLibre merges the options over its defaults key by key, so an `undefined` replaces the
+        // default rather than leaving it be: `maxZoom: undefined` made the zoom, and so the centre, NaN.
+        const options = map.fits[0].options as Record<string, unknown>;
+        expect(Object.keys(options).filter((key) => options[key] === undefined)).toEqual([]);
     });
 
     it("leaves a map that has a saved view exactly where the reader put it", async () => {

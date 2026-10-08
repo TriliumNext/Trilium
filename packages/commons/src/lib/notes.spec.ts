@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle,
-    getMimeIcon, getNoteIcon,
+    getMimeIcon, getNoteIcon, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE,
     NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
 } from "./notes.js";
 import { NoteType } from "./rows.js";
@@ -129,6 +129,19 @@ describe("getNoteIcon", () => {
         // the line icon is the fallback.
         expect(getNoteIcon(buildArgs({ getLabelValue: drawn("nonsense") }))).toBe("bx bx-vector");
         expect(getNoteIcon(buildArgs({ getLabelValue: drawn("") }))).toBe("bx bx-note");
+    });
+
+    it("draws the notes of an image map by their map labels, as it does those of a geo map", () => {
+        const labelled = (labels: Record<string, string>) => (name: string) => labels[name] ?? null;
+
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ [MAP_POSITION_ATTRIBUTE]: "10,20" }) })))
+            .toBe("bx bx-pin");
+        expect(getNoteIcon(buildArgs({ getLabelValue: labelled({ [MAP_SHAPE_ATTRIBUTE]: "circle:10,20 5" }) })))
+            .toBe("bx bx-shape-circle");
+        // A note taken off a geo map keeps an empty `#geoShape`, which leaves the image's to answer.
+        expect(getNoteIcon(buildArgs({
+            getLabelValue: labelled({ [GEO_SHAPE_ATTRIBUTE]: "", [MAP_SHAPE_ATTRIBUTE]: "polygon:0,0 1,0 1,1" })
+        }))).toBe("bx bx-shape-polygon");
     });
 
     it("returns the note icon for a text note that is not a folder", () => {

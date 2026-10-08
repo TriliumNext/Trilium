@@ -188,7 +188,12 @@ describe("DrawShape", () => {
 
         expect(instances()[0].modeName).toBe("circle");
         act(() => instances()[0].finish("f1", "draw", CIRCLE_FEATURE));
-        expect(onFinish).toHaveBeenCalledWith({ type: "circle", center: [ 10, 20 ], radiusMeters: 500 });
+        expect(onFinish).toHaveBeenCalledWith({
+            type: "circle",
+            center: [ 10, 20 ],
+            radiusMeters: 500,
+            ring: [ [ 10, 21 ], [ 11, 20 ], [ 10, 19 ], [ 9, 20 ] ]
+        });
     });
 
     it("leaves alone what is not a drawing being finished", () => {

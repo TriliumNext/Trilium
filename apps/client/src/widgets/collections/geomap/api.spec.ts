@@ -14,6 +14,7 @@ import { buildNote } from "../../../test/easy-froca";
 import {
     createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker, removeFromMap
 } from "./api";
+import { geoSpace, imageSpace } from "./space";
 
 vi.mock("../../../services/note_create", () => ({
     default: { createNote: vi.fn(async () => ({ note: { noteId: "created" }, branch: null })) }
@@ -36,7 +37,7 @@ describe("geo map api", () => {
     it("leaves a placed note to be named as any new note is, where the click landed", async () => {
         const parent = buildNote({ title: "The map" });
 
-        const created = await createNewNote(parent, {
+        const created = await createNewNote(geoSpace, parent, {
             latlng: { lat: 48.85, lng: 2.36 },
             originalEvent: new MouseEvent("click"),
             point: { x: 0, y: 0 } as never
@@ -114,7 +115,7 @@ describe("geo map api", () => {
     it("leaves a drawn shape to be named as a placed marker is, geometry in the label", async () => {
         const parent = buildNote({ title: "The map" });
 
-        const created = await createShapeNote(parent, {
+        const created = await createShapeNote(geoSpace, parent, {
             type: "polygon",
             coordinates: [ [ 2.29, 48.85 ], [ 2.35, 48.86 ], [ 2.3, 48.9 ] ]
         });
@@ -154,11 +155,11 @@ describe("geo map api", () => {
     });
 
     it("writes a marker's location, and empties it to take the marker off the map", async () => {
-        await moveMarker("note1", { lat: 45.796, lng: 24.147 });
+        await moveMarker(geoSpace, "note1", { lat: 45.796, lng: 24.147 });
         expect(setLabel).toHaveBeenLastCalledWith("note1", "geolocation", "45.796,24.147");
 
         // An empty value is what leaves the note in place with no marker standing for it.
-        await moveMarker("note1", null);
+        await moveMarker(geoSpace, "note1", null);
         expect(setLabel).toHaveBeenLastCalledWith("note1", "geolocation", "");
     });
 
@@ -168,7 +169,7 @@ describe("geo map api", () => {
             const note = buildNote({ title: "A place" });
             confirmDelete.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: true });
 
-            await removeFromMap(note, map);
+            await removeFromMap(geoSpace, note, map);
 
             expect(deleteNoteOrBranch).toHaveBeenCalledWith(note.noteId, null);
             expect(setLabel).not.toHaveBeenCalledWith(note.noteId, "geolocation", "");
@@ -179,9 +180,22 @@ describe("geo map api", () => {
             const note = buildNote({ title: "A place" });
             confirmDelete.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
 
-            await removeFromMap(note, map);
+            await removeFromMap(geoSpace, note, map);
 
             expect(setLabel).toHaveBeenLastCalledWith(note.noteId, "geolocation", "");
+        });
+
+        it("insists on deleting a track on a world map, but lets a GPX pin on an image map go", async () => {
+            const map = buildNote({ title: "The map" });
+            const track = buildNote({ title: "Sunday ride", type: "file", mime: "application/gpx+xml" });
+            confirmDelete.mockResolvedValue({ confirmed: true, isDeleteNoteChecked: false });
+
+            await removeFromMap(geoSpace, track, map);
+            expect(confirmDelete).toHaveBeenLastCalledWith(track.title, expect.anything(), expect.objectContaining({ mustDeleteNote: true }));
+
+            await removeFromMap(imageSpace({ width: 100, height: 100 }), track, map);
+            expect(confirmDelete).toHaveBeenLastCalledWith(track.title, expect.anything(), expect.objectContaining({ mustDeleteNote: false }));
+            expect(setLabel).toHaveBeenLastCalledWith(track.noteId, "mapPosition", "");
         });
 
         it("leaves the marker alone where the reader changed their mind", async () => {
@@ -189,7 +203,7 @@ describe("geo map api", () => {
             const note = buildNote({ title: "A place" });
             confirmDelete.mockResolvedValue({ confirmed: false, isDeleteNoteChecked: false });
 
-            await removeFromMap(note, map);
+            await removeFromMap(geoSpace, note, map);
 
             expect(deleteNoteOrBranch).not.toHaveBeenCalled();
             expect(setLabel).not.toHaveBeenCalled();

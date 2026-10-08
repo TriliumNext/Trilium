@@ -121,11 +121,15 @@ docker inspect [container_name]</code></pre>
       root, and Trilium cannot write to it. For example:</p><pre><code class="language-text-x-sh">mkdir -p /srv/trilium-data
 sudo chown 1000:1000 /srv/trilium-data</code></pre>
   </li>
-  <li>A named volume instead of a host directory only works for UID <code>1000</code>:
-    Docker gives a new volume the owner of the image's data directory, which
-    is the <code>node</code> user.</li>
-  <li><code>USER_UID</code> and <code>USER_GID</code> are ignored. The user comes
-    from <code>--user</code> or <code>user:</code> alone.</li>
+  <li>
+    <p>A named volume instead of a host directory only works for UID <code>1000</code>:
+      Docker gives a new volume the owner of the image's data directory, which
+      is the <code>node</code> user.</p>
+  </li>
+  <li>
+    <p><code>USER_UID</code> and <code>USER_GID</code> are ignored. The user comes
+      from <code>--user</code> or <code>user:</code> alone.</p>
+  </li>
 </ul>
 <p>If Trilium cannot use its data directory, it stops at startup and prints
   which directory or files it cannot use, who owns them, and the command
