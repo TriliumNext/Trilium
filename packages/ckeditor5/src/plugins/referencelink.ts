@@ -307,11 +307,7 @@ function referenceAttributes( href: string | undefined, storedTitle: string | un
 function getText( element: ViewElement ): string {
 	let text = '';
 	for ( const child of element.getChildren() ) {
-		if ( child.is( '$text' ) ) {
-			text += child.data;
-		} else if ( child.is( 'element' ) ) {
-			text += getText( child );
-		}
+		text += child.is( '$text' ) ? child.data : getText( child as ViewElement );
 	}
 	return text;
 }

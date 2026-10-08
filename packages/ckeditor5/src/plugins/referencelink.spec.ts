@@ -388,6 +388,60 @@ describe("ReferenceLink", () => {
             replace: findReference(editor)?.nextSibling
         });
     });
+
+    it("asks with no title for a missing reference without one, and not for what only looks like one", () => {
+        const fixReferenceLink = vi.fn();
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement) => {
+            el.classList.add("reference-link-missing");
+        });
+        installGlobMock({
+            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
+            getReferenceLinkTitle,
+            getReferenceLinkTitleSync
+        });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/gone"></a><a href="https://x.org">x</a></p>'
+        );
+        const domRoot = editor.editing.view.getDomRoot();
+        const hyperlink = domRoot?.querySelector("a:not(.reference-link)");
+        const detached = document.createElement("a");
+        for (const anchor of [ hyperlink, detached ]) {
+            anchor?.classList.add("reference-link");
+            anchor?.append(Object.assign(document.createElement("span"), {
+                className: "reference-link-missing"
+            }));
+        }
+        const click = (domTarget: Element | null | undefined) =>
+            editor.editing.view.document.fire("click", {
+                domTarget,
+                domEvent: {},
+                preventDefault: () => {}
+            });
+
+        click(hyperlink?.querySelector("span"));
+        click(detached.querySelector("span"));
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(domRoot?.querySelector("a.reference-link > span"));
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("");
+    });
+
+    it("does not replace a reference deleted while the title of its replacement loads", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        editor.model.change((writer) => {
+            const reference = findReference(editor);
+            if (reference) {
+                writer.remove(reference);
+            }
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe("<paragraph>ab</paragraph>");
+    });
 });
 
 function findReference(editor: ClassicEditor) {
