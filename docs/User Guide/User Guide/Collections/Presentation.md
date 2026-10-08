@@ -16,7 +16,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 ## Interaction and navigation
 
-In the floating buttons section (top-right):
+In the floating toolbar (top-right):
 
 *   Edit button to go to the corresponding note of the current slide.
 *   Press Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.

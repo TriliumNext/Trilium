@@ -82,7 +82,14 @@ declare global {
          * `customDateTimeFormat` when none is given.
          */
         formatDateTime(date: Date, format?: string): string;
-        loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
+        loadReferenceLinkTitle(
+            $el: JQuery<HTMLElement>, href: string, storedTitle?: string
+        ): Promise<void>;
+        /**
+         * Lets the user pick the note a reference link to a missing note should point at instead,
+         * starting from `storedTitle`, and calls `fix()` with the new href.
+         */
+        fixReferenceLink?(storedTitle: string, fix: (href: string) => void): void;
         /**
          * Fills an embed with the note, or with the `block` of it, a `block` link parameter. An
          * editor of those blocks calls `onBlockChange()` once the blocks at its edges change.
@@ -152,6 +159,6 @@ declare global {
         /** The headers of a request to the server, with `headers` added to them. */
         getHeaders(headers?: Record<string, string | undefined>): Promise<Record<string, string>>;
         getReferenceLinkTitle(href: string): Promise<string>;
-        getReferenceLinkTitleSync(href: string): string;
+        getReferenceLinkTitleSync(href: string, storedTitle?: string): string;
     };
 }

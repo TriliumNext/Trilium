@@ -168,6 +168,7 @@ describe("ReferenceLink", () => {
         const reference = findReference(editor);
         expect(reference).toBeDefined();
         expect(reference?.getAttribute("href")).toBe("#root/noteAbc");
+        expect(reference?.getAttribute("storedTitle")).toBe("Some title");
     });
 
     it("renders the reference as an inline widget in the editing view and loads its title", () => {
@@ -183,6 +184,7 @@ describe("ReferenceLink", () => {
         expect(anchor).not.toBeNull();
         expect(loadReferenceLinkTitle).toHaveBeenCalledTimes(1);
         expect(loadReferenceLinkTitle.mock.calls[0]?.[1]).toBe("#root/noteAbc");
+        expect(loadReferenceLinkTitle.mock.calls[0]?.[2]).toBe("Some title");
     });
 
     it("shows a placeholder's file name, then redraws it as a titled link once uploaded", () => {
@@ -210,7 +212,7 @@ describe("ReferenceLink", () => {
 
         expect(findAnchor()?.getAttribute("href")).toBe("#root/abc");
         expect(findAnchor()?.querySelector(".bx-spin")).toBeNull();
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc");
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc", undefined);
     });
 
     it("redraws the links to a changed attachment and removes those to a deleted one", () => {
@@ -232,9 +234,9 @@ describe("ReferenceLink", () => {
         const renamedHref = "#root/owner?viewMode=attachments&attachmentId=renamed";
         expect([ ...redrawnHrefs ]).toEqual([ renamedHref ]);
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            `<paragraph><reference href="${renamedHref}"></reference></paragraph>` +
+            `<paragraph><reference href="${renamedHref}" storedTitle="a"></reference></paragraph>` +
             "<paragraph></paragraph>" +
-            "<paragraph><reference href=\"#root/noteAbc\"></reference></paragraph>"
+            "<paragraph><reference href=\"#root/noteAbc\" storedTitle=\"c\"></reference></paragraph>"
         );
         // The removal records a change made elsewhere, so undo cannot bring the link back.
         expect(editor.commands.get("undo")?.isEnabled).toBe(false);
@@ -253,7 +255,7 @@ describe("ReferenceLink", () => {
             { attachmentId: "renamed", isDeleted: false }
         ]);
 
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href);
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href, "a");
         expect(getModelData(editor.model)).toBe(before);
     });
 
@@ -272,11 +274,11 @@ describe("ReferenceLink", () => {
     });
 
     it("dataDowncasts a reference back to an anchor, resolving the title synchronously", () => {
-        editor.setData('<p><a class="reference-link" href="#root/noteAbc">old</a></p>');
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc"><span>old</span></a></p>');
 
         const data = editor.getData();
 
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc");
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc", "old");
         expect(data).toContain('class="reference-link"');
         expect(data).toContain('href="#root/noteAbc"');
         expect(data).toContain("Some title");
@@ -319,6 +321,126 @@ describe("ReferenceLink", () => {
         expect(openSpy).not.toHaveBeenCalled();
 
         openSpy.mockRestore();
+    });
+
+    it("replaces the reference it is given with one to the new href, in one undo step", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/noteNew" storedTitle="Some title"></reference>b</paragraph>');
+
+        editor.execute("undo");
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/gone" storedTitle="Gone"></reference>b</paragraph>');
+    });
+
+    it("saves the last title it saved for a link whose note goes missing while the editor is open", () => {
+        let liveTitle: string | undefined = "Renamed";
+        getReferenceLinkTitleSync.mockImplementation((_href: string, storedTitle?: string) =>
+            liveTitle ?? storedTitle ?? "[missing note]");
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc">Loaded</a></p>');
+
+        expect(editor.getData()).toContain(">Renamed</a>");
+
+        liveTitle = undefined;
+
+        expect(editor.getData()).toContain(">Renamed</a>");
+    });
+
+    it("asks to fix a reference to a missing note when it is clicked, and not one to a note", () => {
+        const fixReferenceLink = vi.fn();
+        // The test setup makes `$` a passthrough, so the title element arrives as itself.
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement, href: string) => {
+            el.classList.toggle("reference-link-missing", href === "#root/gone");
+        });
+        installGlobMock({
+            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
+            getReferenceLinkTitle,
+            getReferenceLinkTitleSync
+        });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/noteAbc">Fine</a>'
+            + '<a class="reference-link" href="#root/gone">Gone</a></p>'
+        );
+        const titles = editor.editing.view.getDomRoot()?.querySelectorAll("a.reference-link > span");
+        const click = (domTarget: Element | undefined) => editor.editing.view.document.fire("click", {
+            domTarget,
+            domEvent: {},
+            preventDefault: () => {}
+        });
+
+        click(titles?.[0]);
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(titles?.[1]);
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("Gone");
+
+        const execute = vi.spyOn(editor, "execute");
+        fixReferenceLink.mock.calls[0]?.[1]("#root/noteNew");
+        expect(execute).toHaveBeenCalledWith("referenceLink", {
+            href: "#root/noteNew",
+            replace: findReference(editor)?.nextSibling
+        });
+    });
+
+    it("asks with no title for a missing reference without one, and not for what only looks like one", () => {
+        const fixReferenceLink = vi.fn();
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement) => {
+            el.classList.add("reference-link-missing");
+        });
+        installGlobMock({
+            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
+            getReferenceLinkTitle,
+            getReferenceLinkTitleSync
+        });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/gone"></a><a href="https://x.org">x</a></p>'
+        );
+        const domRoot = editor.editing.view.getDomRoot();
+        const hyperlink = domRoot?.querySelector("a:not(.reference-link)");
+        const detached = document.createElement("a");
+        for (const anchor of [ hyperlink, detached ]) {
+            anchor?.classList.add("reference-link");
+            anchor?.append(Object.assign(document.createElement("span"), {
+                className: "reference-link-missing"
+            }));
+        }
+        const click = (domTarget: Element | null | undefined) =>
+            editor.editing.view.document.fire("click", {
+                domTarget,
+                domEvent: {},
+                preventDefault: () => {}
+            });
+
+        click(hyperlink?.querySelector("span"));
+        click(detached.querySelector("span"));
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(domRoot?.querySelector("a.reference-link > span"));
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("");
+    });
+
+    it("does not replace a reference deleted while the title of its replacement loads", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        editor.model.change((writer) => {
+            const reference = findReference(editor);
+            if (reference) {
+                writer.remove(reference);
+            }
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true })).toBe("<paragraph>ab</paragraph>");
     });
 });
 

@@ -3,13 +3,35 @@ Collections are a unique type of note that don't have content, but instead displ
 
 ## Main collections
 
-|  |  |
-| --- | --- |
-| <figure class="image"><img style="aspect-ratio:1651/810;" src="Collections_collection_calendar.webp" width="1651" height="810"></figure> | <a class="reference-link" href="Collections/Calendar.md">Calendar</a>         <br>which displays a week, month or year calendar with the notes being shown as events. New events can be added easily by dragging across the calendar. |
-| <figure class="image"><img style="aspect-ratio:1643/647;" src="Collections_collection_table.webp" width="1643" height="647"></figure> | <a class="reference-link" href="Collections/Table.md">Table</a>         <br>displays each note as a row in a table, with <a class="reference-link" href="Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> being shown as well. This makes it easy to visualize attributes of notes, as well as making them easily editable. |
-| <figure class="image"><img style="aspect-ratio:1174/850;" src="Collections_collection_board.webp" width="1174" height="850"></figure> | <a class="reference-link" href="Collections/Kanban%20Board.md">Kanban Board</a>         <br>displays notes in columns, grouped by the value of a label. Items and columns can easily be created or dragged around to change their status. |
-| <figure class="image"><img style="aspect-ratio:844/639;" src="Collections_collection_geomap.webp" width="844" height="639"></figure> | <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a>         <br>which displays a geographical map in which the notes are represented as pins on the map. New markers can be easily added by pointing on the map. In addition [shapes](Collections/Geo%20Map/Drawing%20shapes.md) such as paths, rectangles and circles can be added, as well as GPX tracks. |
-| <figure class="image"><img style="aspect-ratio:1120/763;" src="Collections_collection_presentation.webp" width="1120" height="763"></figure> | <a class="reference-link" href="Collections/Presentation.md">Presentation</a>         <br>which shows each note as a slide and can be presented full-screen with smooth transitions or exported to PDF for sharing. |
+=== "<span class="tn-icon bx bx-calendar"></span> Calendar"
+
+    <a class="reference-link" href="Collections/Calendar.md">Calendar</a> displays a week, month or year calendar with the notes being shown as events. New events can be added easily by dragging across the calendar.
+
+    <figure class="image"><img style="aspect-ratio:1651/810;" src="Collections_collection_calendar.webp" width="1651" height="810"></figure>
+
+=== "<span class="tn-icon bx bx-table"></span> Table"
+
+    <a class="reference-link" href="Collections/Table.md">Table</a> displays each note as a row in a table, with <a class="reference-link" href="Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> being shown as well. This makes it easy to visualize attributes of notes, as well as making them easily editable.
+
+    <figure class="image"><img style="aspect-ratio:1643/647;" src="Collections_collection_table.webp" width="1643" height="647"></figure>
+
+=== "<span class="tn-icon bx bx-columns"></span> Kanban Board"
+
+    <a class="reference-link" href="Collections/Kanban%20Board.md">Kanban Board</a> displays notes in columns, grouped by the value of a label. Items and columns can easily be created or dragged around to change their status.
+
+    <figure class="image"><img style="aspect-ratio:1174/850;" src="Collections_collection_board.webp" width="1174" height="850"></figure>
+
+=== "<span class="tn-icon bx bx-map-alt"></span> Geo Map"
+
+    <a class="reference-link" href="Collections/Geo%20Map.md">Geo Map</a> which displays a geographical map in which the notes are represented as pins on the map. New markers can be easily added by pointing on the map. In addition [shapes](Collections/Geo%20Map/Drawing%20shapes.md) such as paths, rectangles and circles can be added, as well as GPX tracks.
+
+    <figure class="image"><img style="aspect-ratio:844/639;" src="Collections_collection_geomap.webp" width="844" height="639"></figure>
+
+=== "<span class="tn-icon bx bx-slideshow"></span> Presentation"
+
+    <a class="reference-link" href="Collections/Presentation.md">Presentation</a> which shows each note as a slide and can be presented full-screen with smooth transitions or exported to PDF for sharing.
+
+    <figure class="image"><img style="aspect-ratio:1120/763;" src="Collections_collection_presentation.webp" width="1120" height="763"></figure>
 
 ## Classic collections
 
@@ -22,7 +44,7 @@ Classic collections make use of pagination to support a large number of notes. T
 
 ## Creating a new collection
 
-To create a new collection, right-click a note in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → the desired type.
+To create a new collection, right-click a note in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Insert child note_ → _Collection_ → the desired type.
 
 By default, collections come with a default configuration and sometimes even sample notes. To create a collection completely from scratch:
 
@@ -64,7 +86,7 @@ The only downside to this method is that <a class="reference-link" href="Collec
 
 Collections, by default, only display the child notes. However, it is possible to use the <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> functionality to display notes all across the tree, with advanced querying functionality.
 
-To do so, simply start a <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> and go to the _Collection Properties_ tab in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> and select a desired type of collection. To keep the search-based collection, use a <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a>.
+To do so, simply start a <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> and go to the <a class="reference-link" href="Collections/Collection%20Properties.md">Collection Properties</a> and select a desired type of collection. To keep the search-based collection, use a <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a>.
 
 > [!IMPORTANT]
 > While in search, none of the collections will not display the child notes of the search results. The reason is that the search might hit a note multiple times, causing an exponential rise in the number of results.

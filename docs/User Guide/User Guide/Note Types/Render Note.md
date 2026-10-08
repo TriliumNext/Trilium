@@ -64,7 +64,7 @@ Here are the steps to creating a simple render note:
 
 It's possible to refresh the note via:
 
-*   The corresponding button in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
+*   The <span class="tn-icon bx bx-refresh"></span> button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area.
 *   The “Render active note” [keyboard shortcut](../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md) (not assigned by default).
 
 ## Examples

@@ -60,6 +60,16 @@ interface MapProps {
     children: ComponentChildren;
     onClick?: (e: GeoMouseEvent) => void;
     scale: boolean;
+    /** How far the camera can go, where it is held tighter than the whole world. Read once, when
+     *  the map is built. */
+    limits?: CameraLimits;
+}
+
+/** The camera's bounds on a map that is less than the world, as an image map is (see `imageSpace`). */
+export interface CameraLimits {
+    minZoom: number;
+    maxZoom: number;
+    maxBounds: [[number, number], [number, number]];
 }
 
 export function toGeoMouseEvent(e: MapMouseEvent): GeoMouseEvent {
@@ -73,10 +83,34 @@ export function toGeoMouseEvent(e: MapMouseEvent): GeoMouseEvent {
 /** Where the fonts a label is drawn from come from, matching what the vector styles ask for. */
 const GLYPHS_URL = "https://tiles.versatiles.org/assets/glyphs/{fontstack}/{range}.pbf";
 
+/** The source, and the layer drawing it, of an image map's picture. */
+const IMAGE_SOURCE = "map-image";
+
 /** The style for a layer: a vector layer's URL for MapLibre to fetch, or a raster spec built here. */
 function buildStyle(layerData: MapLayer): StyleSpecification | string {
     if (layerData.type === "vector") {
         return layerData.style;
+    }
+
+    if (layerData.type === "image") {
+        return {
+            version: 8,
+            glyphs: GLYPHS_URL,
+            sources: {
+                [IMAGE_SOURCE]: {
+                    type: "image",
+                    url: layerData.url,
+                    coordinates: layerData.corners
+                }
+            },
+            layers: [
+                {
+                    id: IMAGE_SOURCE,
+                    type: "raster",
+                    source: IMAGE_SOURCE
+                }
+            ]
+        };
     }
 
     return {
@@ -138,7 +172,7 @@ function toCenter(coordinates: { lat: number; lng: number } | [number, number]):
         : [ coordinates.lng, coordinates.lat ];
 }
 
-export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, scale, apiRef, containerRef: _containerRef }: MapProps) {
+export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, scale, limits, apiRef, containerRef: _containerRef }: MapProps) {
     // State rather than a ref: the children below read the map off the context, so its creation has
     // to produce a render or they would only ever see the null it started as.
     const [ map, setMap ] = useState<MapLibreGLMap | null>(null);
@@ -201,7 +235,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
 
         let mapInstance: MapLibreGLMap;
         try {
-            mapInstance = createMap(containerRef.current, initialStyle, toCenter(coordinates), zoom);
+            mapInstance = createMap(containerRef.current, initialStyle, toCenter(coordinates), zoom, limits);
         } catch (e) {
             // MapLibre draws through WebGL and has no other way to draw, so a context it cannot get
             // is the end of it: the constructor throws rather than firing the "error" event handled
@@ -393,13 +427,16 @@ export function useMapPitch(map: MapLibreGLMap | null) {
  * Separate from the effect that calls it so that the throw it is wrapped in covers the constructor
  * and nothing else: everything the effect goes on to do is on a map that exists.
  */
-function createMap(container: HTMLDivElement, style: StyleSpecification | string, center: [number, number], zoom: number) {
+function createMap(container: HTMLDivElement, style: StyleSpecification | string, center: [number, number], zoom: number, limits?: CameraLimits) {
     return new MapLibreGLMap({
         container,
         style,
         center,
         zoom,
         minZoom: 2,
+        // An image map's bounds are its image and a margin, well inside the world, so the crash
+        // described below cannot happen to them.
+        ...limits,
         // No explicit maxBounds: a bounds whose longitude range spans the full world
         // (-180..180) crashes MapLibre — the east edge wraps to -180, collapsing the range
         // to zero width and making the constrain zoom infinite (a singular-matrix null

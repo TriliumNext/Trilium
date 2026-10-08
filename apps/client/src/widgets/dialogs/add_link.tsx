@@ -54,6 +54,11 @@ export interface AddLinkOpts {
      * dialog says it is editing rather than adding, too.
      */
     currentLink?: Suggestion;
+    /**
+     * Repoints a reference link to a missing note. The dialog is titled "Fix link", searches for
+     * `text`, and offers only notes, always as a reference link.
+     */
+    fixLink?: boolean;
     addLink(notePath: string, linkTitle: string | null, externalLink?: boolean): Promise<void>;
 }
 
@@ -186,15 +191,19 @@ export default function AddLinkDialog() {
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
     const handleRef = useRef<NoteAutocompleteHandle>(null);
+    const title = opts?.fixLink ? t("add_link.fix_link")
+        : opts?.currentLink ? t("add_link.edit_link") : t("add_link.add_link");
+    const buttonText = opts?.fixLink ? t("add_link.button_fix_link")
+        : opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link");
 
     return (
         <Modal
             className="add-link-dialog"
             size="lg"
             maxWidth={1000}
-            title={opts?.currentLink ? t("add_link.edit_link") : t("add_link.add_link")}
+            title={title}
             helpPageId="QEAPj01N5f7w"
-            footer={<Button text={opts?.currentLink ? t("add_link.button_edit_link") : t("add_link.button_add_link")} keyboardShortcut="Enter" />}
+            footer={<Button text={buttonText} keyboardShortcut="Enter" />}
             onSubmit={onSubmit}
             onShown={onShown}
             onHidden={() => {
@@ -228,7 +237,7 @@ export default function AddLinkDialog() {
                     handleRef={handleRef}
                     onChange={setSuggestion}
                     opts={{
-                        allowExternalLinks: true,
+                        allowExternalLinks: !opts?.fixLink,
                         allowCreatingNotes: true
                     }}
                 />
@@ -249,7 +258,7 @@ export default function AddLinkDialog() {
                 </FormGroup>
             )}
 
-            {!opts?.hasSelection && !opts?.targetOnly && (
+            {!opts?.hasSelection && !opts?.targetOnly && !opts?.fixLink && (
                 <div className="add-link-title-settings">
                     {(linkType !== "external-link") && (
                         <>

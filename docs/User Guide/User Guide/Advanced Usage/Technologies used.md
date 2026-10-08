@@ -5,7 +5,7 @@ This page showcases some of the technologies used, for a better understanding of
 
 ## CKEditor
 
-CKEditor is the editor behind <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes, as well as integrated in various facets of the application such as the attribute editor in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a> or the chat box in the <a class="reference-link" href="../AI.md">AI</a> sidebar or notes.
+CKEditor is the editor behind <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes, as well as integrated in various facets of the application such as the attribute editor in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> or the chat box in the <a class="reference-link" href="../AI.md">AI</a> sidebar or notes.
 
 For more information see <a class="reference-link" href="Technologies%20used/CKEditor.md">CKEditor</a>.
 

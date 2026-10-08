@@ -189,6 +189,8 @@ The location of a marker is stored in the `#geolocation` attribute of the child 
 
 This value can be added manually if needed. The value of the attribute is made up of the latitude and longitude separated by a comma.
 
+On an image map, the position is stored in `#mapPosition` instead (see <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>).
+
 ## Repositioning markers
 
 Once a marker is set, it can be repositioned using one of the two ways:
@@ -294,6 +296,10 @@ Similarly to the Google Maps approach:
 
 See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Drawing shapes</a> page.
 
+## Using an image instead of the world map
+
+A geo map can be drawn over an image of your own, such as a floor plan or a fantasy map, with markers placed in the image's pixels. See <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>.
+
 ## Adding GPS tracks (.gpx)
 
 <figure class="image"><img style="aspect-ratio:1566/1155;" src="1_Geo Map_image.png" width="1566" height="1155"></figure>
@@ -328,7 +334,7 @@ When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%2
 *   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
 *   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
 
-To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable_ → _Read-only_ (on the new layout, or in Basic Properties on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> for the old layout).
+To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note buttons</a> → _Editable_ → _Read-only_.
 
 ## Configuration
 

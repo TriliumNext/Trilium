@@ -89,7 +89,8 @@ export async function postProcessRichContent(note: FNote | FAttachment, $rendere
     const hostNoteId = note instanceof FNote ? note.noteId : undefined;
     await Promise.all(referenceLinks.toArray().map(async (el) => {
         const innerSpan = document.createElement("span");
-        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"), hostNoteId);
+        await link.loadReferenceLinkTitle($(innerSpan), el.getAttribute("href"), hostNoteId,
+            el.textContent ?? undefined);
         el.replaceChildren(innerSpan);
     }));
 

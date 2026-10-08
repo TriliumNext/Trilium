@@ -9,23 +9,23 @@ A label is an [attribute](../Attributes.md) of a note which has a name and optio
 
 ## Creating a label using the visual editor
 
-1.  Go to the _Owned Attributes_ section in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-2.  Press the + button (_Add new attribute_) to the right.
-3.  Select _Add new label_ for the relation.
-
-> [!TIP]
-> If you prefer keyboard shortcuts, press Alt+L while focused on a note or in the _Owned Attributes_ section to display the visual editor.
+1.  Go to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Attributes%20tab.md">Attributes tab</a> in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
+2.  Press the <span class="tn-icon bx bx-plus"></span> (Add attribute) button at the end of the list, or via the <span class="tn-icon bx bx-plus"></span> button at the top-right of the section → _Add new label_.
 
 While in the visual editor:
 
-*   Set the desired name
+*   Set the desired name.
 *   Optionally, set the value of the label. Labels can exist without a value.
-*   Check _Inheritable_ if the label should be inherited by the child notes as well. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> for more information.
+*   Children can inherit this relation, click the relation and check _Inheritable_. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> for more information.
+
+> [!TIP]
+> Alternatively, press <kbd>Alt</kbd>+<kbd>L</kbd> which will open the attribute details (same view as when an existing attribute is clicked) in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>.
 
 ## Creating a label manually
 
-In the _Owned Attributes_ section in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>:
+In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, press the <span class="tn-icon bx bx-list-check"></span> button to show the list of the attributes.
 
+*   Click the input box to focus it.
 *   To create a label called `myLabel` with no value, simply type `#myLabel`.
 *   To create a label called `myLabel` with a value `value`, simply type `#myLabel=value`.
 *   If the value contains spaces, then the text must be quoted: `#myLabel="Hello world"`.
@@ -70,9 +70,9 @@ This is a list of labels that Trilium natively supports.
 | `bookmarkFolder` | Note with this label will appear in bookmarks as folder (allowing access to its children). See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Navigation/Bookmarks.md">Bookmarks</a> for more information. |
 | `share*` | See the attribute reference in <a class="reference-link" href="../Sharing.md">Sharing</a>. |
 | `displayRelations`, `hideRelations` | Comma delimited names of relations which should be displayed/hidden in a <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">Relation Map</a> (both the note type and the <a class="reference-link" href="../Note%20Map%20(Link%20map%2C%20Tree%20map).md">Note Map (Link map, Tree map)</a> general functionality). |
-| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.       <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
+| `titleTemplate` | Default title of notes created as children of this note. This value is evaluated as a JavaScript string and thus can be enriched with dynamic content via the injected `now` and `parentNote` variables.        <br>  <br>See <a class="reference-link" href="../Default%20Note%20Title.md">Default Note Title</a> for more info. |
 | `template` | This note will appear in the selection of available template when creating new note. See <a class="reference-link" href="../Templates.md">Templates</a> for more information. |
-| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f        <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
+| `color` | defines color of the note in note tree, links etc. Use any valid CSS color value like 'red' or #a13d5f         <br>Note: this color may be automatically adjusted when displayed to ensure sufficient contrast with the background. |
 | `keyboardShortcut` | Defines a keyboard shortcut which will immediately jump to this note. Example: 'ctrl+alt+e'. Requires frontend reload for the change to take effect. |
 | `keepCurrentHoisting` | Opening this link won't change hoisting even if the note is not displayable in the current hoisted subtree. |
 | `executeButton` | Title of the button which will execute the current code note |

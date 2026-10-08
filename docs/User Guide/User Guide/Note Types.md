@@ -10,7 +10,7 @@ To create a new note of a different type, head to the <a class="reference-link"
 *   _Insert note after_, to put the new note underneath the one selected.
 *   _Insert child note_, to insert the note as a child of the selected note.
 
-The note types created less often, <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a>, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> and <a class="reference-link" href="Note%20Types/Note%20Map.md">Note Map</a>, are in the _More_ submenu.
+The note types created less often, <a class="reference-link" href="Note%20Types/Saved%20Search.md">Saved Search</a>, <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a>, <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> and <a class="reference-link" href="Note%20Types/Note%20Map.md">Note Map</a>, are in the _More_ submenu.
 
 ![](Note%20Types_image.png)
 
@@ -23,7 +23,10 @@ The note type is chosen from the same menu as in the note tree, with its submenu
 
 ## Changing the type of a note
 
-It is possible to change the type of a note after it has been created via the _Basic Properties_ tab in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>. Note that it's generally a good idea to change the note type only if the note is empty. Can also be used to edit the [source of a note](Advanced%20Usage/Note%20source.md).
+It is possible to change the type of a note after it has been created via <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note type_. This feature can also be used to edit the [source of a note](Advanced%20Usage/Note%20source.md).
+
+> [!NOTE]
+> Note that it's generally a good idea to change the note type only if the note is empty
 
 ## Supported note types
 
@@ -37,7 +40,7 @@ The following note types are supported by Trilium:
 | <a class="reference-link" href="Note%20Types/Relation%20Map.md">Relation Map</a> | Allows easy creation of notes and relations between them. Can be used for mainly relational data such as a family tree. |
 | <a class="reference-link" href="Note%20Types/Note%20Map.md">Note Map</a> | Displays the relationships between the notes, whether via relations or their hierarchical structure. |
 | <a class="reference-link" href="Note%20Types/Render%20Note.md">Render Note</a> | Used in <a class="reference-link" href="Scripting.md">Scripting</a>, it displays the HTML content of another note. This allows displaying any kind of content, provided there is a script behind it to generate it. |
-| <a class="reference-link" href="Collections.md">Collections</a> | Displays the children of the note either as a grid, a list, or for a more specialized case: a calendar.             <br>  <br>Generally useful for easy reading of short notes. |
+| <a class="reference-link" href="Collections.md">Collections</a> | Displays the children of the note either as a grid, a list, or for a more specialized case: a calendar.              <br>  <br>Generally useful for easy reading of short notes. |
 | <a class="reference-link" href="Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> | Displays diagrams such as bar charts, flow charts, state diagrams, etc. Requires a bit of technical knowledge since the diagrams are written in a specialized format. |
 | <a class="reference-link" href="Note%20Types/Canvas.md">Canvas</a> | Allows easy drawing of sketches, diagrams, handwritten content. Uses the same technology behind [excalidraw.com](https://excalidraw.com). |
 | <a class="reference-link" href="Note%20Types/Web%20View.md">Web View</a> | Displays the content of an external web page, similar to a browser. |

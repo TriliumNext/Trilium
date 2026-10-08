@@ -49,8 +49,8 @@ In the demo, you can see how a clone can be created using the context menu. It's
 
 You can view the list of all available clones:
 
-*   In the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> for the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
-*   For the old layout, in the "Note Paths" tab in the <a class="reference-link" href="../UI%20Elements/Ribbon.md">Ribbon</a>.
+*   In the <a class="reference-link" href="../UI%20Elements/Status%20bar.md">Status bar</a>, by looking for the <span class="tn-icon bx bx-directions"></span> icon.
+*   In the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> of the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, by looking at the _Note paths_ section.
 
 Titles of cloned notes in the tree view have an asterisk to the right to easily see that the note is also placed into some other location.
 

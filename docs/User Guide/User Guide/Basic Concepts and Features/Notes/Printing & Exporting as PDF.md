@@ -14,7 +14,7 @@ Printing and exporting as PDF are not perfect. Due to technical limitations, and
 
 On the desktop application of Trilium it is possible to export a note as PDF. To print a note:
 
-*   Press the menu button in the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> area and select _Print note_.
+*   Press the menu button in the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print note_.
 *   Alternatively, printing can be triggered from a [keyboard shortcut](../Keyboard%20Shortcuts.md) (unassigned by default) or through the [command palette](../Navigation/Jump%20to%20%26%20command%20palette.md).
 
 This will trigger the print preview screen next.
@@ -46,7 +46,7 @@ If the note cannot be rendered with the current options, or stops making progres
 
 This feature allows printing of notes. It works on both the desktop client, but also on the web.
 
-To print a note, select the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> ([New layout](../UI%20Elements/New%20Layout.md), or <span class="tn-icon bx bx-dots-vertical-rounded"></span> for the old layout) button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
+To print a note, click the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
 On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
 

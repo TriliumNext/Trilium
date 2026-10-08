@@ -22,7 +22,7 @@ Depending on the chart being edited and user preference, there are two layouts s
 *   Horizontal, where the source code (editable part) is on the left side of the screen and the preview is to the right.
 *   Vertical, where the source code is at the bottom of the screen and the preview is at the top.
 
-It's possible to switch between the two layouts at any time by pressing the <span class="tn-icon bx bxs-dock-left"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+It's possible to switch between the two layouts at any time by pressing the <span class="tn-icon bx bxs-dock-left"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>.
 
 ## Interaction
 
@@ -39,12 +39,13 @@ It's possible to switch between the two layouts at any time by pressing the <sp
         *   <kbd>/</kbd> to reset the zoom/position.
         *   Arrow keys or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to pan. Holding <kbd>Shift</kbd> pans faster.
 *   The size of the source/preview panes can be adjusted by hovering over the border between them and dragging it with the mouse.
-*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area:
-    *   The source/preview can be laid out left-right or bottom-top via the _Move editing pane to the left / bottom_ option.
-    *   Press _Lock editing_ to automatically mark the note as read-only. In this mode, the code pane is hidden and the diagram is displayed full-size. Similarly, press _Unlock editing_ to mark a read-only note as editable.
-    *   Press the _Copy image reference to the clipboard_ to be able to insert the image representation of the diagram into a text note. See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
-    *   Press the _Export diagram as SVG_ to download a scalable/vector rendering of the diagram. Can be used to present the diagram without degrading when zooming.
-    *   Press the _Export diagram as PNG_ to download a normal image (at 1x scale, raster) of the diagram. Can be used to send the diagram in more traditional channels such as e-mail.
+*   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>:
+    *   The source/preview can be laid out left-right (via <span class="tn-icon bx bxs-dock-left"></span>) or bottom-top (via <span class="tn-icon bx bxs-dock-bottom"></span>).
+    *   Press the <span class="tn-icon bx bx-copy"></span> (_Copy image reference to the clipboard_) to be able to insert the image representation of the diagram into a text note. See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
+*   To export the diagram as either SVG or PNG, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> and select _Export as image_:
+    *   Select _SVG (vector)_ to download a scalable/vector rendering of the diagram. Can be used to present the diagram without degrading when zooming.
+    *   Select _PNG (raster)_ to download a normal image (at 1x scale, raster) of the diagram. Can be used to send the diagram in more traditional channels such as e-mail.
+*   The note can be marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), case in which it switches by default to the preview (although it can be switched back using the source/preview buttons) and the source is no longer editable.
 
 ## Errors in the diagram
 

@@ -273,7 +273,8 @@
     "toggle-navigation": "Alternar navegación",
     "toggle-toc": "Alternar tabla de contenido",
     "logo-alt": "Logo",
-    "login": "Iniciar sesión"
+    "login": "Iniciar sesión",
+    "tab-title": "Título de la pestaña"
   },
   "keyboard_action_names": {
     "jump-to-note": "Saltar a...",
@@ -459,8 +460,8 @@
       "row-throttling": "Tiempo limitado por Microsoft Graph",
       "value-links": "{{resolved}} resueltos, {{unresolved}} apuntando fuera de la selección importada",
       "value-throttling_one": "{{- wait}} ({{count}} solicitud limitada)",
-      "value-throttling_many": "",
-      "value-throttling_other": "",
+      "value-throttling_many": "{{- wait}} ({{count}} solicitudes limitadas)",
+      "value-throttling_other": "{{- wait}} ({{count}} solicitudes limitadas)",
       "skipped-sections-title": "Secciones que no se pudieron importar",
       "skipped-sections-section": "Sección",
       "skipped-sections-notebook": "Cuaderno",
@@ -470,9 +471,9 @@
       "failed-pages-section": "Sección",
       "failed-pages-error": "Error",
       "failed-resources-title": "Imágenes y archivos adjuntos que faltan",
-      "failed-resources-item_one": "{{- pageLink}}: no se pudieron descargar {{count}} recursos",
-      "failed-resources-item_many": "",
-      "failed-resources-item_other": ""
+      "failed-resources-item_one": "{{- pageLink}}: no se pudo descargar {{count}} recurso",
+      "failed-resources-item_many": "{{- pageLink}}: no se pudieron descargar {{count}} recursos",
+      "failed-resources-item_other": "{{- pageLink}}: no se pudieron descargar {{count}} recursos"
     }
   },
   "notion_import": {

@@ -1,5 +1,6 @@
 import "./DetailPane.css";
 
+import { GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE } from "@triliumnext/commons";
 import type { EaseToOptions, GeoJSONSource, MapGeoJSONFeature, Map as MapLibreGLMap, MapMouseEvent, MapSourceDataEvent } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef } from "preact/hooks";
 
@@ -12,14 +13,14 @@ import { announceEmbeddedNoteClosing, EmbeddedNoteActions, EmbeddedNoteScope, Em
 import NoteDetail from "../../NoteDetail";
 import PromotedAttributes from "../../PromotedAttributes";
 import ActionButton from "../../react/ActionButton";
-import { useNoteLabel, useStaticTooltip } from "../../react/hooks";
+import { useNoteLabelByName, useStaticTooltip } from "../../react/hooks";
 import { removeFromMap } from "./api";
 import { type Bounds, boundsOf } from "./coordinates";
-import { GPX_MIME, trackSourceId } from "./GpxTrack";
+import { trackSourceId } from "./GpxTrack";
 import { ParentMap } from "./map";
-import { formatLocation, LOCATION_ATTRIBUTE, parseLocation } from "./Markers";
 import { featureAt } from "./ShapeLayer";
-import { geoShapeBounds, isShapeNote, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import { geoShapeBounds } from "./shapes";
+import { isShapeNote, isTrackNote, locationOf, type MapSpace, MapSpaceContext } from "./space";
 
 /**
  * Which marker the pane stands for, and why it came to be selected.
@@ -83,12 +84,13 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     onMaximizedChange: (maximized: boolean) => void;
 }) {
     const map = useContext(ParentMap);
+    const space = useContext(MapSpaceContext);
     const note = notes.find((note) => note.noteId === selection?.noteId);
-    const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
+    const [ location ] = useNoteLabelByName(note, space.locationAttribute);
     // Read as a label rather than from the click, so the camera effect below follows an edit to the
     // geometry the way it follows a marker that moves.
-    const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
-    const shape = shapeValue ? parseGeoShape(shapeValue) : null;
+    const [ shapeValue ] = useNoteLabelByName(note, space.shapeAttribute);
+    const shape = space.parseShape(shapeValue);
     const { noteContext, component: paneComponent, ntxId } = useEmbeddedNoteContext(note, PANE_NTX_ID_PREFIX);
 
     /**
@@ -123,11 +125,11 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
      */
     const followLink = useCallback((noteId: string) => {
         const target = notes.find((n) => n.noteId === noteId);
-        if (!target || !standsOnMap(target)) return false;
+        if (!target || !standsOnMap(target, space)) return false;
 
         onSelect({ noteId });
         return true;
-    }, [ notes, onSelect ]);
+    }, [ notes, space, onSelect ]);
 
     // The pane comes back up beside the map rather than over it, however it was left: the state
     // outlives the pane, being the map's (see the props), where a card that is taken down and built
@@ -141,10 +143,10 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
     // The pane closes once its note is no longer on the map. "Remove from map" only clears the
     // label that put it there, so a note that is gone is not the only case. See standsOnMap().
     useEffect(() => {
-        if (selection && !(note && standsOnMap(note))) {
+        if (selection && !(note && standsOnMap(note, space))) {
             void closePane();
         }
-    }, [ selection, note, location, shapeValue, closePane ]);
+    }, [ selection, note, space, location, shapeValue, closePane ]);
 
     // A marker, a GPX track or a drawn shape selects, anywhere else clears. Read off the rendered
     // layers rather than bound to them (`map.on("click", MARKER_LAYER, ...)`) so one handler answers
@@ -196,7 +198,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
             return;
         }
 
-        if (note.mime === GPX_MIME) {
+        if (isTrackNote(note, space)) {
             const focus = selection?.focus;
 
             // A clicked flag is a place the reader chose: stood clear of the pane at the zoom they
@@ -238,7 +240,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
             };
         }
 
-        const coordinates = parseLocation(location);
+        const coordinates = space.parseLocation(location);
         if (!coordinates) return;
 
         const aim: EaseToOptions = { center: coordinates, offset: paneOffset(map) };
@@ -252,7 +254,7 @@ export default function DetailPane({ notes, parentNote, placing, isReadOnly, sel
         // Growing and shrinking the pane are asks of the same kind, the room the camera is aiming
         // into being what changed: a pane put back down brings its marker clear of it again, rather
         // than leaving it under the pane until something else happens to move the camera.
-    }, [ map, note?.noteId, location, shapeValue, selection?.focus, selection?.zoom, maximized ]);
+    }, [ map, space, note?.noteId, location, shapeValue, selection?.focus, selection?.zoom, maximized ]);
 
     // Bound only while something is selected, so the map's other Escape — giving up on placing a
     // marker (see index.tsx) — stands alone when nothing is. A phone's dialog answers the key
@@ -343,14 +345,14 @@ const FIT_MAX_ZOOM = 16;
 /**
  * Whether the note is on this map, which is what keeps the pane open.
  *
- * Three kinds of note reach the map three ways: a marker through `LOCATION_ATTRIBUTE`, a drawn
- * shape through `SHAPE_ATTRIBUTE` (see shapes.ts), and a GPX track through its mime, its line
- * coming from the note's own file rather than from a label.
+ * Three kinds of note reach the map three ways: a marker through the space's location label, a
+ * drawn shape through its shape label (see space.ts), and a GPX track through its mime, its line
+ * coming from the note's own file rather than from a label. An image map draws no tracks.
  */
-function standsOnMap(note: FNote) {
-    return note.mime === GPX_MIME
-        || !!parseLocation(note.getLabelValue(LOCATION_ATTRIBUTE))
-        || isShapeNote(note);
+function standsOnMap(note: FNote, space: MapSpace) {
+    return isTrackNote(note, space)
+        || !!locationOf(note, space)
+        || isShapeNote(note, space);
 }
 
 /**
@@ -446,7 +448,7 @@ function MarkerContents({ note, parentNote, isReadOnly, onRelocate }: {
                 Neither the location nor the geometry is among them: promoted, each is a field of
                 raw digits beside a map that already draws it, and a marker is moved rather than
                 retyped. */}
-            <PromotedAttributes omit={[ LOCATION_ATTRIBUTE, SHAPE_ATTRIBUTE ]} />
+            <PromotedAttributes omit={OMITTED_ATTRIBUTES} />
 
             {/* The note itself, drawn by whichever widget its type calls for — the same one the
                 quick editor mounts, so a marker is written in exactly as it is anywhere else.
@@ -457,6 +459,11 @@ function MarkerContents({ note, parentNote, isReadOnly, onRelocate }: {
     );
 }
 
+/** The labels that put a note on a map, of either space. */
+const OMITTED_ATTRIBUTES = [
+    GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE
+];
+
 /** The start of the ntxId of the pane's own note context. */
 const PANE_NTX_ID_PREFIX = "_geo-detail-pane";
 
@@ -465,24 +472,26 @@ const PANE_NTX_ID_PREFIX = "_geo-detail-pane";
  * then the ways of changing it.
  */
 function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNote; parentNote: FNote; isReadOnly: boolean; onRelocate(): void }) {
-    const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
+    const space = useContext(MapSpaceContext);
+    const [ location ] = useNoteLabelByName(note, space.locationAttribute);
     // Read so the row is rebuilt when the geometry is edited away and the note stops being a
     // shape.
-    useNoteLabel(note, SHAPE_ATTRIBUTE);
-    const latLng = parseLocation(location);
-    const isShape = isShapeNote(note);
+    useNoteLabelByName(note, space.shapeAttribute);
+    const latLng = space.parseLocation(location);
+    const isShape = isShapeNote(note, space);
 
     return (
         <EmbeddedNoteActions>
             <OpenNoteActions note={note} />
 
-            <ActionButton
+            {/* A spot on an image is no place the system can open. */}
+            {space.kind === "geo" && <ActionButton
                 icon="bx bx-map-alt"
                 text={t("geo-map-context.open-location")}
                 // Handed to whatever the system opens a place with, as the right-click menu does.
                 onClick={() => latLng && link.goToLinkExt(null, `geo:${latLng[1]},${latLng[0]}`)}
                 disabled={!latLng}
-            />
+            />}
 
             {/* Left out rather than disabled on a read-only map, as the right-click menu leaves them
                 out: everything else in the row reads the note, these three alone write it. */}
@@ -494,7 +503,7 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
                 {/* Not offered for a track or a drawn shape: neither has a location label to
                     rewrite, and moving one means drawing it again. ContextMenus leaves it out for
                     the same reason. */}
-                {note.mime !== GPX_MIME && !isShape && <ActionButton
+                {!isTrackNote(note, space) && !isShape && <ActionButton
                     className="geo-detail-pane-move"
                     icon="bx bx-move"
                     text={t("geo-map-context.move-marker")}
@@ -510,11 +519,11 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
                     // Named for what it does to a track, which is delete the note: a track's line is
                     // drawn from the note's own file, so there is no taking it off the map and
                     // keeping it (see removeFromMap). The right-click menu names it the same way.
-                    text={t(note.mime === GPX_MIME ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map")}
+                    text={t(isTrackNote(note, space) ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map")}
                     // Whether the note goes with its marker is asked before anything happens, the
                     // two being different wishes. Nothing closes the pane afterwards because the
                     // effect above already stands it down, either way round.
-                    onClick={() => void removeFromMap(note, parentNote)}
+                    onClick={() => void removeFromMap(space, note, parentNote)}
                 />
             </>}
         </EmbeddedNoteActions>
@@ -530,8 +539,9 @@ function MarkerActions({ note, parentNote, isReadOnly, onRelocate }: { note: FNo
  * is the bargain the map's own menu strikes for the point under the pointer.
  */
 function MarkerLocation({ note }: { note: FNote }) {
-    const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
-    const coordinates = parseLocation(location);
+    const space = useContext(MapSpaceContext);
+    const [ location ] = useNoteLabelByName(note, space.locationAttribute);
+    const coordinates = space.parseLocation(location);
 
     // The label is read in an effect, so a marker just opened has nothing to say yet.
     if (!coordinates) {
@@ -547,6 +557,7 @@ function MarkerLocation({ note }: { note: FNote }) {
  * location has been read in which there is no button to bind to.
  */
 export function LocationButton({ coordinates }: { coordinates: [number, number] }) {
+    const space = useContext(MapSpaceContext);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     // The app's own tooltip rather than the browser's, as the buttons under it wear (see
@@ -562,13 +573,10 @@ export function LocationButton({ coordinates }: { coordinates: [number, number] 
         <button
             ref={buttonRef}
             className="geo-detail-pane-location"
-            onClick={() => copyTextWithToast(formatLocation(coordinates, FULL_PRECISION))}
+            onClick={() => copyTextWithToast(space.formatLocation(coordinates, true))}
         >
             <span className="bx bx-crosshair" />
-            {formatLocation(coordinates)}
+            {space.formatLocation(coordinates)}
         </button>
     );
 }
-
-/** Enough decimals to give back whatever was stored, the map writing a float's worth of them. */
-const FULL_PRECISION = 15;

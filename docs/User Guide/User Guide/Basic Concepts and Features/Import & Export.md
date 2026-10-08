@@ -4,11 +4,11 @@ To import a note:
 *   The easiest way to import is to simply drag & drop a file or an archive into the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
     *   This will automatically detect some formats such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a>.
     *   _Safe import_ is automatically on to prevent accidental running of foreign scripts.
-*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> → _Import into note_.
+*   To configure an import, there is a dedicated dialog which can be accessed from either <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> → _Import into note_ or <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> → _Import into note_.
     *   This feature allows for dedicated importers for others apps such as <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Obsidian.md">Obsidian</a> or <a class="reference-link" href="Import%20%26%20Export/Importing%20data%20from%20other%20applications/Microsoft%20OneNote.md">Microsoft OneNote</a>.
     *   _Safe import_ as well as other options can be configured from the collapsed _Options_ section at the bottom.
 
-To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a> there is a _Export note_ option.
+To export a note, right click the note in the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a> and select _Export_. Similarly, in <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a> there is a _Export note_ option.
 
 ## Supported formats
 
@@ -37,7 +37,7 @@ During large imports or exports, memory consumption might spike but it will rema
 > For the <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>, there are two distinct import mechanisms:
 > 
 > *   A quick import, from the <a class="reference-link" href="UI%20Elements/Note%20Tree.md">Note Tree</a>.
-> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20buttons.md">Note buttons</a>).
+> *   The import dialog (via right click in the note tree → _Import into note_ or from <a class="reference-link" href="UI%20Elements/Note%20menu.md">Note menu</a>).
 > 
 > When dealing with large files (multi-gigabyte), prefer using the import dialog as it has a special mechanism which makes sure that the file is read directly from disk rather than uploaded again.
 

@@ -1,11 +1,13 @@
 # Saved Search
 Trilium allows you to save common searches as notes within the note tree. The search results will appear as sub-notes under these "saved search" notes. Here is an example of how it works:
 
-<figure class="image image_resized image-style-align-center" style="width:50%;"><img style="aspect-ratio:812/585;" src="Saved Search_saved-search.gif" width="812" height="585"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:812/585;" src="Saved Search_saved-search.gif" width="812" height="585"></figure>
 
 A saved search runs when you open it, and when you expand it in the note tree. A saved search in a tab that is not shown, such as a background tab restored at startup, runs when you switch to that tab. Its results stay until you run the search again with the _Search_ button of the search parameters. If the query has an error, it appears as a notification.
 
-In <a class="reference-link" href="../Advanced%20Usage/Safe%20mode.md">Safe mode</a>, and when the request fails, the search does not run on its own. Press _Search now_ to run it.
+In <a class="reference-link" href="../Advanced%20Usage/Safe%20mode.md">Safe mode</a>, and when the request fails, the search does not run on its own. Press _Search now_ to run it.
+
+Once a search is saved, the _Search parameters_ is still available underneath the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> in order to be able to change the settings later on but it will appear collapsed by default.
 
 ## Location
 

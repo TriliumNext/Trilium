@@ -73,7 +73,11 @@
     "focus-split-right": "Bog an fócas go dtí an scoilt ar dheis an cheann gníomhach",
     "split-view": "Radharc scoilte",
     "move-split-left": "Malartaigh an scoilt ghníomhach leis an gceann ar a chlé, ionas go mbogann an nóta agus go leanann an fócas é",
-    "move-split-right": "Malartaigh an scoilt ghníomhach leis an gceann ar a dheis, ionas go mbogann an nóta agus go leanann an fócas é"
+    "move-split-right": "Malartaigh an scoilt ghníomhach leis an gceann ar a dheis, ionas go mbogann an nóta agus go leanann an fócas é",
+    "note-panels": "Painéil nótaí",
+    "show-note-map": "Taispeánann sé léarscáil na nótaí sa phána ar dheis",
+    "focus-collection-properties": "Bogann sé an fócas chuig roghnóir chineál an amhairc don bhailiúchán",
+    "focus-formatting-toolbar": "Bogann sé an fócas idir an barra uirlisí formáidithe seasta agus an t-eagarthóir"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -170,7 +174,20 @@
     "move-split-left": "Bog Scoilt Ar Chlé",
     "move-split-right": "Bog Scoilt ar Dheis",
     "focus-split-left": "Fócas Scoilte ar Chlé",
-    "focus-split-right": "Fócas Scoilte ar Dheis"
+    "focus-split-right": "Fócas Scoilte ar Dheis",
+    "duplicate-note": "Macasamhail nóta gan fho-nótaí",
+    "focus-formatting-toolbar": "Barra Uirlisí Formáidithe Fócais",
+    "show-basic-properties": "Taispeáin Buntréithe",
+    "focus-collection-properties": "Airíonna an Bhailiúcháin Fócais",
+    "focus-file-actions": "Dírigh ar Ghníomhartha Comhaid",
+    "focus-image-actions": "Gníomhartha Íomhá Fócais",
+    "toggle-owned-attributes": "Scoránaigh Tréithe faoi Úinéireacht",
+    "toggle-inherited-attributes": "Scoránaigh tréithe oidhreachta",
+    "toggle-promoted-attributes": "Scoránaigh Tréithe Curtha chun Cinn",
+    "show-note-map": "Léarscáil Nótaí an Chláir",
+    "show-note-info": "Eolas faoi Nótaí an Chláir",
+    "show-note-paths": "Taispeáin Conairí Nótaí",
+    "toggle-similar-notes": "Scoránaigh Nótaí Cosúla"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -319,18 +336,21 @@
   },
   "backend_log": {
     "log-does-not-exist": "Níl an comhad loga cúil '{{ fileName }}' ann (go fóill).",
-    "reading-log-failed": "Theip ar an gcomhad loga cúil '{{ fileName }}' a léamh."
+    "reading-log-failed": "Theip ar an gcomhad loga cúil '{{ fileName }}' a léamh.",
+    "log-file-unavailable": "Níorbh fhéidir an comhad logála a oscailt, mar sin ní thaispeántar ach na hiontrálacha is déanaí atá sa chuimhne. Bíonn Trilium ag iarraidh é a oscailt go leanúnach agus scríobhann sé na hiontrálacha seo ann a luaithe is féidir leis é sin a dhéanamh."
   },
   "content_renderer": {
     "note-cannot-be-displayed": "Ní féidir an cineál nóta seo a thaispeáint.",
-    "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo."
+    "included-note-requires-credentials": "Tá an nóta seo atá san áireamh cosanta ag pasfhocal agus ní féidir é a thaispeáint anseo.",
+    "broken-block-reference": "Tagairt bhriste"
   },
   "pdf": {
     "export_filter": "Doiciméad PDF (*.pdf)",
     "unable-to-export-message": "Níorbh fhéidir an nóta reatha a easpórtáil mar PDF.",
     "unable-to-export-title": "Ní féidir a onnmhairiú mar PDF",
     "unable-to-save-message": "Níorbh fhéidir scríobh chuig an gcomhad roghnaithe. Déan iarracht eile nó roghnaigh ceann scríbe eile.",
-    "unable-to-print": "Ní féidir an nóta a phriontáil"
+    "unable-to-print": "Ní féidir an nóta a phriontáil",
+    "render-timeout": "Níor chríochnaigh an nóta á rindreáil laistigh de {{seconds}} soicind."
   },
   "tray": {
     "close": "Scoir de Trilium",
@@ -363,7 +383,8 @@
     "toggle-navigation": "Nascleanúint a Athrú",
     "toggle-toc": "Clár Ábhair a Athsholáthar",
     "logo-alt": "Lógó",
-    "login": "Logáil Isteach"
+    "login": "Logáil Isteach",
+    "tab-title": "Teideal an chluaisín"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",

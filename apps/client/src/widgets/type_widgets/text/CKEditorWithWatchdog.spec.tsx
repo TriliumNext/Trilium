@@ -133,9 +133,10 @@ describe("CKEditorWithWatchdog", () => {
         });
 
         const $el = $("<span>");
-        await mocks.handlers.loadReferenceLinkTitle($el, "#root/host1?block=b1");
+        await mocks.handlers.loadReferenceLinkTitle($el, "#root/host1?block=b1", "Stored");
 
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith($el, "#root/host1?block=b1", "host1");
+        expect(loadReferenceLinkTitle)
+            .toHaveBeenCalledWith($el, "#root/host1?block=b1", "host1", "Stored");
         loadReferenceLinkTitle.mockRestore();
     });
 });

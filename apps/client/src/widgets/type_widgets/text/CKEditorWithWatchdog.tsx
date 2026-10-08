@@ -223,8 +223,10 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     }));
 
     useLegacyImperativeHandlers({
-        async loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | null = null) {
-            await link.loadReferenceLinkTitle($el, href, note?.noteId);
+        async loadReferenceLinkTitle(
+            $el: JQuery<HTMLElement>, href: string | null = null, storedTitle?: string
+        ) {
+            await link.loadReferenceLinkTitle($el, href, note?.noteId, storedTitle);
         },
         async fetchLinkMetadata(url: string) {
             // The preview's pictures are stored as attachments of the note being edited, so there

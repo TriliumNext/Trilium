@@ -15,7 +15,7 @@ Starting with version v0.104.0, Trilium's importer was expanded to application-s
 To import from an application, there are two ways to access the import dialog:
 
 *   In the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a>, right click on a note and select _Import into note_.
-*   In the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> area, select _Import files_.
+*   In the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, select _Import files_.
 
 A list of supported applications will appear at the top, each with their own configuration. Simply click one and proceed with the on-screen instructions.
 

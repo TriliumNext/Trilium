@@ -18,9 +18,9 @@ import { DEFAULT_GEOCODING_PROVIDER_NAME, DEFAULT_PLACE_ICON, type GeoBounds, GE
 import { GPX_MIME } from "./GpxTrack";
 import { ParentMap } from "./map";
 import { describePlace } from "./place_address";
-import { LOCATION_ATTRIBUTE, parseLocation } from "./Markers";
 import { frameResult, type SearchResult } from "./results";
-import { geoShapeBounds, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import { geoShapeBounds } from "./shapes";
+import { geoSpace, locationOf, shapeOf } from "./space";
 
 /** Shorter queries are not searched. */
 const MIN_QUERY_LENGTH = 2;
@@ -288,7 +288,7 @@ function matchMarkers(notes: FNote[], query: string): SearchEntry[] {
         // location, a drawn shape's geometry, and a GPX track's file. A track's route is in the
         // file rather than on a label, so it stands on no point the list can measure from, and the
         // pane fits the whole of it (see DetailPane).
-        const center = parseLocation(note.getLabelValue(LOCATION_ATTRIBUTE));
+        const center = locationOf(note, geoSpace);
         const bounds = center ? null : shapeBounds(note);
         if (!center && !bounds && note.mime !== GPX_MIME) continue;
 
@@ -310,8 +310,7 @@ function matchMarkers(notes: FNote[], query: string): SearchEntry[] {
 
 /** The box a note's drawn shape covers, or `null` where the note carries no readable one. */
 function shapeBounds(note: FNote): Bounds | null {
-    const value = note.getLabelValue(SHAPE_ATTRIBUTE);
-    const shape = value ? parseGeoShape(value) : null;
+    const shape = shapeOf(note, geoSpace);
     return shape ? geoShapeBounds(shape) : null;
 }
 
