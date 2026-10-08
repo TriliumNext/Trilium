@@ -162,6 +162,36 @@ describe("handlers", () => {
             });
             expect(sortNotesIfNeeded).toHaveBeenCalledWith("ar-par");
         });
+
+        it("re-sorts the parents of notes that inherit an 'archived' change", () => {
+            buildNote({ id: "ai-tpl" });
+            buildNote({ id: "ai-folder", children: [{ id: "ai-clone" }] });
+            buildNote({
+                id: "ai-par",
+                "#sorted": "",
+                "#sortArchivedLast": "",
+                children: [{ id: "ai-chld", "~template": "ai-tpl" }, { id: "ai-other" }]
+            });
+            new BBranch({
+                noteId: "ai-clone", parentNoteId: "ai-par", branchId: "ai-par_ai-clone"
+            });
+
+            const templateArchived = addAttribute("ai-tpl", "label", "archived", "");
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: templateArchived
+            });
+            expect(sortNotesIfNeeded).toHaveBeenCalledWith("ai-par");
+            sortNotesIfNeeded.mockClear();
+
+            const folderArchived = new BAttribute({
+                noteId: "ai-folder", attributeId: randomString(12), type: "label",
+                name: "archived", value: "", position: 0, isInheritable: true
+            });
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: folderArchived
+            });
+            expect(sortNotesIfNeeded).toHaveBeenCalledWith("ai-par");
+        });
     });
 
     describe("ENTITY_CREATED (template relation)", () => {

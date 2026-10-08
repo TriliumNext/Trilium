@@ -201,11 +201,34 @@ function handleMaybeSortingLabel(entity: BAttribute) {
             if (
                 entity.name === "top" ||
                 entity.name === "bottom" ||
-                (entity.name === "archived" && parentNote.isLabelTruthy("sortArchivedLast")) ||
                 parseSortCriteria(sorted).some((criterion) => criterion.key === entity.name)
             ) {
                 treeService.sortNotesIfNeeded(parentNote.noteId);
             }
+        }
+
+        if (entity.name === "archived") {
+            sortArchivedLastParents(entity, note);
+        }
+    }
+}
+
+function sortArchivedLastParents(entity: BAttribute, note: BNote) {
+    // An inheritable or template `#archived` also archives the notes that inherit it.
+    const affectedNotes = entity.isInheritable
+        ? note.getSubtreeNotesIncludingTemplated()
+        : note.getInheritingNotes();
+    const parentNoteIds = new Set<string>();
+
+    for (const affectedNote of affectedNotes) {
+        for (const parentNote of affectedNote.getParentNotes()) {
+            parentNoteIds.add(parentNote.noteId);
+        }
+    }
+
+    for (const parentNoteId of parentNoteIds) {
+        if (becca.notes[parentNoteId]?.isLabelTruthy("sortArchivedLast")) {
+            treeService.sortNotesIfNeeded(parentNoteId);
         }
     }
 }
