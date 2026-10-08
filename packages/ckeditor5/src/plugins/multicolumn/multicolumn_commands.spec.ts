@@ -5,7 +5,8 @@ import {
     Essentials,
     List,
     Paragraph,
-    Table
+    Table,
+    TodoList
 } from "ckeditor5";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -19,11 +20,19 @@ function layout(ratios: string, ...columns: string[]) {
     return `<multicolumnLayout columnRatios="${ratios}">${content.join("")}</multicolumnLayout>`;
 }
 
+/** An empty bulleted item and an empty checked to-do item, in model notation. */
+const EMPTY_BULLET = "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">" +
+    "</paragraph>";
+const EMPTY_TODO = "<paragraph listIndent=\"0\" listItemId=\"b\" listType=\"todo\" " +
+    "todoListChecked=\"true\"></paragraph>";
+
 describe("multicolumn commands", () => {
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        editor = await createTestEditor([Essentials, Paragraph, List, Table, Multicolumn]);
+        editor = await createTestEditor([
+            Essentials, Paragraph, List, TodoList, Table, Multicolumn
+        ]);
     });
 
     function modelWithSelection() {
@@ -211,6 +220,27 @@ describe("multicolumn commands", () => {
             expect(modelWithSelection()).toBe(layout("1-1", "A", "C[]"));
         });
 
+        it("keeps an empty list or to-do item on either side of a merge", () => {
+            setModelData(editor.model,
+                "<multicolumnLayout columnRatios=\"1-1-1-1\">" +
+                    "<multicolumnColumn><paragraph>A[]</paragraph></multicolumnColumn>" +
+                    `<multicolumnColumn>${EMPTY_BULLET}</multicolumnColumn>` +
+                    "<multicolumnColumn><paragraph>C</paragraph></multicolumnColumn>" +
+                    `<multicolumnColumn>${EMPTY_TODO}</multicolumnColumn>` +
+                "</multicolumnLayout>"
+            );
+
+            editor.execute("columnLayout", { value: "1-1" });
+
+            expect(modelWithSelection()).toBe(
+                "<multicolumnLayout columnRatios=\"1-1\">" +
+                    "<multicolumnColumn><paragraph>A[]</paragraph></multicolumnColumn>" +
+                    `<multicolumnColumn>${EMPTY_BULLET}<paragraph>C</paragraph>${EMPTY_TODO}` +
+                    "</multicolumnColumn>" +
+                "</multicolumnLayout>"
+            );
+        });
+
         it("moves the caret out of a removed empty column", () => {
             setModelData(editor.model, layout("1-1-1", "A", "B", "[]"));
 
@@ -293,6 +323,21 @@ describe("multicolumn commands", () => {
             setModelData(editor.model, layout("1-1", "", "[]"));
             editor.execute("removeMulticolumnLayout");
             expect(modelWithSelection()).toBe("<paragraph>[]</paragraph>");
+        });
+
+        it("keeps a column whose only content is an empty list or to-do item", () => {
+            setModelData(editor.model,
+                "<multicolumnLayout columnRatios=\"1-1-1\">" +
+                    `<multicolumnColumn>${EMPTY_BULLET}</multicolumnColumn>` +
+                    "<multicolumnColumn><paragraph>B[]</paragraph></multicolumnColumn>" +
+                    `<multicolumnColumn>${EMPTY_TODO}</multicolumnColumn>` +
+                "</multicolumnLayout>"
+            );
+
+            editor.execute("removeMulticolumnLayout");
+
+            expect(modelWithSelection())
+                .toBe(`${EMPTY_BULLET}<paragraph>B[]</paragraph>${EMPTY_TODO}`);
         });
 
         it("moves the caret out of an empty column, and selects the content of the layout", () => {

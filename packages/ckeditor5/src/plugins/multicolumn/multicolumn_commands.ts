@@ -131,7 +131,7 @@ function createColumn(writer: ModelWriter): ModelElement {
 
 /**
  * Moves the content of `from` to the end of `to` and removes `from`. A column with only an empty
- * paragraph counts as empty, so a merge adds no blank line.
+ * paragraph that is not a list item counts as empty, so a merge adds no blank line.
  */
 function mergeColumn(writer: ModelWriter, from: ModelElement, to: ModelElement) {
     if (hasContent(from)) {
@@ -144,10 +144,14 @@ function mergeColumn(writer: ModelWriter, from: ModelElement, to: ModelElement) 
     writer.remove(from);
 }
 
+/** Whether `column` holds more than the empty paragraph that a new column starts with. */
 function hasContent(column: ModelElement) {
     const first = column.getChild(0);
     if (!first) {
         return false;
     }
-    return column.childCount > 1 || !first.is("element", "paragraph") || !first.isEmpty;
+    return column.childCount > 1
+        || !first.is("element", "paragraph")
+        || !first.isEmpty
+        || first.hasAttribute("listItemId");
 }
