@@ -83,10 +83,10 @@ If the file could not be identified as any of the supported file types from abov
 
 ## Interaction
 
-*   Regardless of the file type, a series of buttons will be displayed in the _Image_ or _File_ tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-    *   _Download_, which will download the file for local use.
-    *   _Open_, will will open the file with the system-default application.
-    *   Upload new revision to replace the file with a new one.
+*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area.
+    *   <span class="tn-icon bx bx-download"></span> (Download), which will download the file for local use.
+    *   <span class="tn-icon bx bx-link-external"></span> (Open), will will open the file with the system-default application.
+    *   <span class="tn-icon bx bx-folder-open"></span> (Upload new revision) to replace the file with a new one.
 *   It is **not** possible to change the note type of a _File_ note.
 *   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md).
 

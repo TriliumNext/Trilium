@@ -2067,16 +2067,7 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Floating buttons.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "drdKIHK5GzfU",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Floating buttons_image.png"
-                                        }
-                                    ]
+                                    "attachments": []
                                 },
                                 {
                                     "isClone": false,
@@ -5418,10 +5409,10 @@
                                     "dataFileName": "Formatting toolbar.md",
                                     "attachments": [
                                         {
-                                            "attachmentId": "CZ8ENj2LsBsA",
+                                            "attachmentId": "6nnko21wbLAr",
                                             "title": "image.png",
                                             "role": "image",
-                                            "mime": "image/jpg",
+                                            "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "Formatting toolbar_image.png"
                                         },
@@ -5434,18 +5425,18 @@
                                             "dataFileName": "1_Formatting toolbar_image.png"
                                         },
                                         {
-                                            "attachmentId": "MMeih4nJVgNk",
+                                            "attachmentId": "jYEbPqDcUCNQ",
                                             "title": "image.png",
                                             "role": "image",
-                                            "mime": "image/jpg",
+                                            "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "2_Formatting toolbar_image.png"
                                         },
                                         {
-                                            "attachmentId": "SGaPJHzNyLLV",
+                                            "attachmentId": "WV5kfOEFZdMa",
                                             "title": "image.png",
                                             "role": "image",
-                                            "mime": "image/jpg",
+                                            "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "3_Formatting toolbar_image.png"
                                         }
@@ -6693,14 +6684,6 @@
                                     "mime": "image/jpg",
                                     "position": 10,
                                     "dataFileName": "Code_image.png"
-                                },
-                                {
-                                    "attachmentId": "iKJbcEUkME1a",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/jpg",
-                                    "position": 10,
-                                    "dataFileName": "1_Code_image.png"
                                 }
                             ]
                         },

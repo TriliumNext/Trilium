@@ -53,14 +53,16 @@ The following types are supported:
 To create a new promoted attribute:
 
 1.  Go to a note.
-2.  Go to _Owned Attributes_ in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
-3.  Press the + button.
+2.  Go to the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Attributes%20tab.md">Attributes tab</a> in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
+3.  Press the <span class="tn-icon bx bx-plus"></span> button for the top-most section (_Owned attributes_).
 4.  Select either _Add new label definition_ or _Add new relation definition_.
 5.  Select the name which will be name of the label or relation that will be created when the promoted attribute is edited.
 6.  Ensure _Promoted_ is checked in order to display it at the top of notes.
 7.  Optionally, choose an _Alias_ which will be displayed next to the promoted attribute instead of the attribute name. Generally it's best to choose a “user-friendly” name since it can contain spaces and other characters which are not supported as attribute names.
 8.  Check _Inheritable_ to apply it to this note and all its descendants. To keep it only for the current note, un-check it.
-9.  Press “Save & Close” to apply the changes.
+9.  Press _Save & Close_ to apply the changes.
+
+Alternatively, promoted attributes can be created from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a> by going to <span class="tn-icon bx bx-list-check"></span> (_Attributes_), pressing the <span class="tn-icon bx bx-plus"></span> button and selecting _Add new label definition_. The resulting attribute can also be copy-pasted or written manually (albeit discouraged).
 
 ## How attribute definitions actually work
 
@@ -72,10 +74,18 @@ When a new promoted attribute definition is created, it creates a corresponding 
 
 The only purpose of the attribute definition is to set up a template. If the attribute was marked as promoted, then it's also displayed to the user for easy editing.
 
-|  |  |
-| --- | --- |
-| <figure class="image"><img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png" width="495" height="157"></figure> | Notice how the promoted attribute definition only creates a “Due date” box above the text content. |
-| <figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure> | Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute. |
+<table>
+    <tbody>
+        <tr>
+            <td><figure class="image"><img style="aspect-ratio:495/157;" src="1_Promoted Attributes_image.png" width="495" height="157"></figure></td>
+            <td>Notice how the promoted attribute definition only creates a “Due date” box above the text content.</td>
+        </tr>
+        <tr>
+            <td><figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure></td>
+            <td>Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute.</td>
+        </tr>
+    </tbody>
+</table>
 
 So there's one attribute for value and one for definition. But notice how an definition attribute can be made [Inheritable](Attribute%20Inheritance.md), meaning that it's also applied to all descendant notes. In this case, the definition used for the whole sub-tree while "value" attributes are for each not individually.
 

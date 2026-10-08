@@ -21,9 +21,9 @@ In the [Note Tree](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tre
 
 ## Adjusting the language of a code note
 
-In the [Ribbon](../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md), look for the _Note type_ selector and click it to reveal the possible note types. Inside of it there will be a section called _Code_, select any one of the languages. To find a language quickly, type its name: the list narrows to the matching entries, and <kbd>Enter</kbd> picks the first one.
+To change the language of a code note, look for the <span class="tn-icon bx bx-code"></span> icon in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a>. When clicked it will reveal the list of available languages (which can be customized according to the section below). The menu also features a search bar to quickly filter, and icons to visually distinguish some of the programming languages.
 
-![](1_Code_image.png)
+On the <a class="reference-link" href="../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>, the same list is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area → _Change language mode_.
 
 ## Adjusting the list of languages
 

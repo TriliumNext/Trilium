@@ -10,9 +10,8 @@ There are two types of note map:
 
 The note map comes into multiple flavors:
 
-*   To access the note map for the current note:
-    *   On the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, the note map is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>.
-    *   On the old layout, the note map is a tab in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a>.
+*   The note map is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, in the _Note map_ section.
+    *   It can also be accessed by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Note map_, which will focus the sidebar at the right section.
 *   To display a full-screen note map, there is a [dedicated note type](../Note%20Types/Note%20Map.md) with the same name.
 *   To view the global note map (of all the notes in the knowledge base), there is a dedicated _Note map_ button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
 
@@ -22,7 +21,7 @@ The note map comes into multiple flavors:
     *   When the map is zoomed out, the title can still be viewed by hovering over the node.
     *   The [icon and color](../Basic%20Concepts%20and%20Features/Notes/Note%20Icons%20%26%20Colors.md) of the note are respected.
 *   The root node is the reference point for which the relations and hierarchical structure are displayed.
-    *   When accessing the note map through the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Ribbon.md">Ribbon</a> or the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> (new layout), the root node is the current note.
+    *   When accessing the note map through the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, the root node is the current note.
     *   When using a dedicated <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a> note, the root note can be either the parent note, the currently [hoisted](../Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.md) note or a specific note. See the note type documentation for more information.
 
 ## Interaction

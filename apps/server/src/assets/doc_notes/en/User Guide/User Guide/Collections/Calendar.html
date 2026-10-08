@@ -120,8 +120,8 @@
   </li>
 </ul>
 <h2>Configuring the calendar view</h2>
-<p>In the <em>Collections</em> tab in the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>,
-  it's possible to adjust the following:</p>
+<p>In the&nbsp;<a class="reference-link" href="#root/_help_CssoWBu8I7jF">Collection Properties</a>,
+  it's possible to:</p>
 <ul>
   <li>Hide weekends from the week view.</li>
   <li>Display week numbers on the calendar.</li>
@@ -260,7 +260,7 @@ class="table">
       <tr>
         <td><code>#calendar:color</code>
         </td>
-        <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code>#color</code>  <strong>instead.</strong>&nbsp;&nbsp;&nbsp;&nbsp;
+        <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code>#color</code>  <strong>instead.</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>Similar to <code>#color</code>, but applies the color only for the event
           in the calendar and not for other places such as the note tree.</td>
@@ -282,15 +282,15 @@ class="table">
         <td><code>#calendar:displayedAttributes</code>
         </td>
         <td>Allows displaying the value of one or more attributes in the calendar
-          like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>
-          <img src="6_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <img src="6_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
-          <br><code>#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <br><code>#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br>It can also be used with relations, case in which it will display the
-          title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <br>
           <br><code>~assignee=@My assignee #calendar:displayedAttributes="assignee"</code>
         </td>
@@ -382,126 +382,35 @@ class="table">
     note ID and title of the note with the erroneous recurrence message. This
     note will not be added to the calendar</p>
 </aside>
-<h2>Slot Duration &amp; Slot Label Interval</h2>
-<p>Trilium's calendar view is powered by FullCalendar, which gives you fine-grained
-  control over how the time grid looks and behaves for day and week views.
-  Two labels you can use to configure these views are <code>#calendar:slotDuration</code> and <code>#calendar:slotLabelInterval</code>.
-  Understanding what each one does — and how they interact — lets you tailor
-  the calendar to match your workflow, whether you're scheduling in 15-minute
-  increments or planning out your day in broad hourly blocks.</p>
-<p>These settings can also be adjusted from the <em>Collections</em> tab in
-  the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>.</p>
-<h3>Slot duration</h3>
-<p>Controls how tall each time slot is on the calendar — essentially the
-  smallest unit of time the grid is divided into. A shorter duration means
-  more rows and finer granularity; a longer one means fewer, chunkier rows.
-  The default is one row every 15 minutes.</p>
-<p><strong>Examples:</strong>
+<h2>Customizing the slot duration and label interval</h2>
+<p>Time slots in day and week views can be customized from&nbsp;<a class="reference-link"
+  href="#root/_help_CssoWBu8I7jF">Collection Properties</a>
 </p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Value</th>
-        <th>Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>#calendar:slotDuration="00:15:00"</code>
-        </td>
-        <td>One row every 15 minutes</td>
-      </tr>
-      <tr>
-        <td><code>#calendar:slotDuration="00:30:00"</code>
-        </td>
-        <td>One row every 30 minutes</td>
-      </tr>
-      <tr>
-        <td><code>#calendar:slotDuration="01:00:00"</code>
-        </td>
-        <td>One row every hour</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Label interval</h3>
-<p>Controls how often a time label appears on the left-hand axis. This is
-  independent of the slot size — you can have very small slots but only label
-  every hour to keep the axis readable. The default is a time label shown
-  every hour.</p>
-<p><strong>Examples:</strong>
-</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Value</th>
-        <th>Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>#calendar:slotLabelInterval="00:30:00"</code>
-        </td>
-        <td>Show a time label every 30 minutes</td>
-      </tr>
-      <tr>
-        <td><code>#calendar:slotLabelInterval="01:00:00"</code>
-        </td>
-        <td>Show a time label every hour</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Useful combinations</h3>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th><code>#calendar:slotDuration</code>
-        </th>
-        <th><code>#calendar:slotLabelInterval</code>
-        </th>
-        <th>Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>00:15:00</code>
-        </td>
-        <td><code>01:00:00</code>
-        </td>
-        <td>Fine grid, clean axis — good for busy schedules</td>
-      </tr>
-      <tr>
-        <td><code>00:30:00</code>
-        </td>
-        <td><code>01:00:00</code>
-        </td>
-        <td>Standard calendar feel</td>
-      </tr>
-      <tr>
-        <td><code>01:00:00</code>
-        </td>
-        <td><code>01:00:00</code>
-        </td>
-        <td>Simple hourly grid — good for day planning</td>
-      </tr>
-      <tr>
-        <td><code>00:15:00</code>
-        </td>
-        <td><code>00:30:00</code>
-        </td>
-        <td>Fine grid, labels every 30 min — balanced detail</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<h3>Format</h3>
-<p>Both values use <code>HH:mm:ss</code> format. Hours can go up to <code>24</code> (<code>24:00:00</code>),
-  while minutes and seconds must be between <code>00</code> and <code>59</code>.
-  The minimum meaningful duration is 1 minute (<code>00:01:00</code>).</p>
+<ul>
+  <li><em>Slot duration</em> controls how tall each time slot is on the calendar
+    (essentially the smallest unit of time the grid is divided into).
+    <ul>
+      <li>A shorter duration means more rows and finer granularity; a longer one
+        means fewer, chunkier rows.</li>
+      <li>The default is one row every 15 minutes.</li>
+    </ul>
+  </li>
+  <li><em>Label interval </em>controls how often a time label appears on the
+    left-hand axis.
+    <ul>
+      <li>This is independent of the slot size: you can have very small slots but
+        only label every hour to keep the axis readable.</li>
+      <li>The default is a time label shown every hour.</li>
+    </ul>
+  </li>
+</ul>
+<aside class="admonition note">
+  <p>These values can also be customized directly via the <code>#calendar:slotDuration</code> and <code>#calendar:slotLabelInterval</code>  <a
+    href="#root/_help_HI6GBBIduIgv">labels</a>. Both values use <code>HH:mm:ss</code> format.
+    Hours can go up to <code>24</code> (<code>24:00:00</code>), while minutes
+    and seconds must be between <code>00</code> and <code>59</code>. The minimum
+    meaningful duration is 1 minute (<code>00:01:00</code>).</p>
+</aside>
 <h2>Use-cases</h2>
 <h3>Using with the Journal / calendar</h3>
 <p>It is possible to integrate the calendar view into the Journal with day
@@ -523,7 +432,9 @@ class="table">
     not having a <code>dateNote</code> attribute. Children of the child notes
     will not be displayed.</li>
 </ul>
-<img src="5_Calendar_image.png" width="1217" height="724">
+<p>
+  <img src="5_Calendar_image.png" width="1217" height="724">
+</p>
 <h3>Using a different attribute as event title</h3>
 <p>
   <img class="image-style-align-right" src="2_Calendar_image.png" width="445"

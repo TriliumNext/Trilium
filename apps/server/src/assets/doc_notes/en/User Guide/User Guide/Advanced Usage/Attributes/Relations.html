@@ -16,39 +16,39 @@
 </ul>
 <h2>Creating a relation using the visual editor</h2>
 <ol>
-  <li>Go to the <em>Owned Attributes</em> section in the&nbsp;<a class="reference-link"
-    href="#root/_help_BlN9DFI679QC">Ribbon</a>.</li>
-  <li>Press the + button (<em>Add new attribute</em>) to the right.</li>
+  <li>Go to the&nbsp;<a class="reference-link" href="#root/_help_uNtgN0cUKEBc">Attributes tab</a>&nbsp;in
+    the&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>.</li>
+  <li>Press the&nbsp;<span class="tn-icon bx bx-plus"></span> button (<em>Add a new attribute</em>)
+    to the right of the <em>Owned attributes</em> section.</li>
   <li>Select <em>Add new relation</em> for the relation.</li>
 </ol>
+<p>While in the visual editor, set the desired name and the <em>Target note</em> (the
+  note to point to). Unlike labels, relations cannot exist with a target
+  note.</p>
+<p>Children can inherit this relation, click the relation and check <em>Inheritable</em>.
+  See&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;for
+  more information.</p>
 <aside class="admonition tip">
-  <p>If you prefer keyboard shortcuts, press <kbd>Alt</kbd>+<kbd>L</kbd> while
-    focused on a note or in the <em>Owned Attributes</em> section to display
-    the visual editor.</p>
+  <p>Alternatively, press <kbd>Alt</kbd>+<kbd>L</kbd> which will open the attribute
+    details (same view as when an existing attribute is clicked) in the&nbsp;<a
+    class="reference-link" href="#root/_help_AlJ73vBCjWDw">Status bar</a>.</p>
 </aside>
-<p>While in the visual editor:</p>
-<ul>
-  <li>Set the desired name</li>
-  <li>Set the Target note (the note to point to). Unlike labels, relations cannot
-    exist with a target note.</li>
-  <li>Check <em>Inheritable</em> if the label should be inherited by the child
-    notes as well. See&nbsp;<a class="reference-link" href="#root/_help_bwZpz2ajCEwO">Attribute Inheritance</a>&nbsp;for
-    more information.</li>
-</ul>
 <h2>Creating a relation manually</h2>
-<p>In the <em>Owned Attributes</em> section in the&nbsp;<a class="reference-link"
-  href="#root/_help_BlN9DFI679QC">Ribbon</a>:</p>
+<p>In the&nbsp;<a class="reference-link" href="#root/_help_AlJ73vBCjWDw">Status bar</a>,
+  press the&nbsp;<span class="tn-icon bx bx-list-check"></span> button to
+  show the list of the attributes.</p>
 <ul>
   <li>To create a relation called <code>myRelation</code>:
-    <ul>
-      <li>First type <code>~myRelation=@</code> .</li>
+    <ol>
+      <li>Click the input box to focus it.</li>
+      <li>Type <code>~myRelation=@</code> .</li>
       <li>After this, an autocompletion box should appear.</li>
       <li>Type the title of the note to point to and press <kbd>Enter</kbd> to confirm
         (or click the desired note).</li>
       <li>Alternatively copy a note from the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
         paste it after the <code>=</code> sign (without the <code>@</code> , in this
         case).</li>
-    </ul>
+    </ol>
   </li>
   <li>To create an inheritable relation, follow the same steps as previously
     described but instead of <code>~myRelation</code> write <code>~myRelation(inheritable)</code>.</li>
@@ -68,7 +68,7 @@ class="table">
       <tr>
         <td><code>runOn*</code>
         </td>
-        <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>
+        <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Backend Events</a>
         </td>
       </tr>
       <tr>
@@ -83,7 +83,7 @@ class="table">
         </td>
         <td>set on a template note, points to the note under which notes created from
           the template are placed when no other location is picked; when set several
-          times, the note is cloned into every target. See <a class="reference-link"
+          times, the note is cloned into every target. See&nbsp;<a class="reference-link"
           href="#root/_help_KC1HB96bqqHX">Templates</a>.</td>
       </tr>
       <tr>
