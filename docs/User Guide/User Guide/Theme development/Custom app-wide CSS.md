@@ -1,13 +1,9 @@
 # Custom app-wide CSS
 It is possible to provide a CSS file to be used regardless of the theme set by the user.
 
-The quickest way to create one is _Insert child note_ → _Code_ → _Custom CSS_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, which creates a CSS note that already has the `#appCss` label. To set one up by hand instead:
+The quickest way to create one is _Insert child note_ → _Code_ → _Custom CSS_ in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>.
 
-|  |  |
-| --- | --- |
-| ![](Custom%20app-wide%20CSS_image.png) | Start by creating a new note and changing the note type to CSS |
-| ![](2_Custom%20app-wide%20CSS_image.png) | In the ribbon, press the “Owned Attributes” section and type `#appCss`. |
-| ![](3_Custom%20app-wide%20CSS_image.png) | Type the desired CSS.     <br>  <br>Generally it's a good idea to append `!important` for the styles that are being changed, in order to prevent other |
+Alternatively, create a <a class="reference-link" href="../Note%20Types/Code.md">Code</a> note manually, set the language to CSS and apply the `#appCss` label.
 
 ## Seeing the changes
 
@@ -52,7 +48,7 @@ To change the color of the note title and the icon (above the content):
 
 #### Add a watermark to the note content
 
-<figure class="image image-style-align-right image_resized" style="width:39.97%;"><img style="aspect-ratio:641/630;" src="1_Custom app-wide CSS_image.png" width="641" height="630"></figure>
+<figure class="image image-style-align-right image_resized" style="width:39.97%;"><img style="aspect-ratio:641/630;" src="Custom app-wide CSS_image.png" width="641" height="630"></figure>
 
 1.  Insert an image in any note and take the URL of the image.
 2.  Use the following CSS, adjusting the `background-image` and `width` and `height` to the desired values.

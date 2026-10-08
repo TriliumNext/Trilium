@@ -20,7 +20,7 @@ A note's read-only behavior can be changed via <a class="reference-link" href="
 *   **Always Editable**  
     This option will bypass the automatic read-only activation for this particular note. It's useful for large notes that are frequently edited.
 
-If the _Editable_ section is missing from the ribbon, then the note type does not support read-only mode.
+If the _Editable_ section is missing from the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a>, then the note type does not support read-only mode.
 
 ### Manually setting the options
 

@@ -8,15 +8,12 @@ Note search enables you to find notes by searching for text in the title, conten
 There are multiple types of searches, all using the same search mechanism and query language:
 
 *   <a class="reference-link" href="Quick%20search.md">Quick search</a> which can be found in the <a class="reference-link" href="../UI%20Elements/Launch%20Bar.md">Launch Bar</a> for small one-off searches.
-    
     *   The results are shown in a popup and it has an infinite scroll.
 *   _Full search_ is the more advanced search mechanism.
-    
     *   The results are displayed in a separate page and it has multiple advanced features (search script, fast search, include archived notes, order by, limit).
     *   <a class="reference-link" href="../../Advanced%20Usage/Bulk%20Actions.md">Bulk Actions</a> such as adding a label/relation can be applied to the results.
     *   The results are paginated and they can be displayed in any <a class="reference-link" href="../../Collections.md">Collections</a> view (e.g. grid, list, calendar, table).
 *   Some <a class="reference-link" href="../../Collections.md">Collections</a> such as board view have a dedicated search bar which applies to that collection.
-    
     *   In this case, the results are displayed directly in the collection instead of a popup and they are limited to the collection but the query language remains the same.
 
 > [!NOTE]
@@ -60,12 +57,10 @@ The autocomplete offers:
 *   Fields for object-like fields such as `note` or `~relation`, triggered by typing `.`.
 *   Contextual enumerations such as `note.type = "` or `note.mime = "`.
 *   [Label](../../Advanced%20Usage/Attributes/Labels.md) names by typing `#`.
-    
     *   A small gear on the name's icon indicates a system attribute.
     *   After typing the label name, the value is also autocompleted with values that are present in the database.
 *   [Relation](../../Advanced%20Usage/Attributes/Relations.md) names by typing `~`.
 *   [Note ID](../../Advanced%20Usage/Note%20ID.md)s can be inserted easily by typing `@` and looking for a note.
-    
     *   If the note ID is under a valid syntax, it will be shown as a chip of the note instead of the raw ID.
     *   This is especially useful for queries that make use of the note ID such as searching by template: `~template.noteId = @`
 
@@ -80,7 +75,7 @@ The search is also checked for errors in two phases, which will be displayed as 
 *   Linter errors which identify common error patterns and also provide a way to fix them.
 *   Search errors which are checked by the server, without indicating the exact place the error occurred.
 
-An error the search only runs into while running, such as an operator that note content cannot be searched with, is shown in a _Search error_ card instead: below the search string, or at the top of the <a class="reference-link" href="Quick%20search.md">Quick search</a> results.
+An error the search only runs into while running, such as an operator that note content cannot be searched with, is shown in a _Search error_ card instead: below the search string, or at the top of the <a class="reference-link" href="Quick%20search.md">Quick search</a> results.
 
 ### Multiline
 

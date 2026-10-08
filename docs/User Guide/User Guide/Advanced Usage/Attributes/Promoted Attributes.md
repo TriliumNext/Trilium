@@ -3,6 +3,8 @@
 
 Promoted attributes are [attributes](../Attributes.md) which are displayed prominently in the UI which allow them to be easily viewed and edited.
 
+The promoted attributes are shown underneath the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Title.md">Title</a> of the note, in a collapsible section. For full-height notes such as <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>, the promoted attributes are collapsed by default to make room.
+
 One way of seeing promoted attributes is as a kind of form with several fields. Each field is just regular attribute, the only difference is that they appear on the note itself.
 
 Attributes can be pretty useful since they allow for querying and script automation etc. but they are also inconveniently hidden. This allows you to select few of the important ones and push them to the front of the user.

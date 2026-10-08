@@ -1773,50 +1773,6 @@
                                 },
                                 {
                                     "isClone": false,
-                                    "noteId": "BlN9DFI679QC",
-                                    "notePath": [
-                                        "pOsGYCXsbNQG",
-                                        "gh7bpGYxajRS",
-                                        "Vc8PjrjAGuOp",
-                                        "BlN9DFI679QC"
-                                    ],
-                                    "title": "Ribbon",
-                                    "notePosition": 50,
-                                    "prefix": null,
-                                    "isExpanded": false,
-                                    "type": "text",
-                                    "mime": "text/html",
-                                    "attributes": [
-                                        {
-                                            "type": "label",
-                                            "name": "iconClass",
-                                            "value": "bx bx-dots-horizontal",
-                                            "isInheritable": false,
-                                            "position": 20
-                                        },
-                                        {
-                                            "type": "label",
-                                            "name": "shareAlias",
-                                            "value": "ribbon",
-                                            "isInheritable": false,
-                                            "position": 230
-                                        }
-                                    ],
-                                    "format": "markdown",
-                                    "dataFileName": "Ribbon.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "JCiJ3vRhgXY9",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/jpg",
-                                            "position": 10,
-                                            "dataFileName": "Ribbon_image.png"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "isClone": false,
                                     "noteId": "3seOhtN8uLIY",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -3265,50 +3221,6 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "Note badges_image.png"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "isClone": false,
-                                    "noteId": "HekTW6La1h6X",
-                                    "notePath": [
-                                        "pOsGYCXsbNQG",
-                                        "gh7bpGYxajRS",
-                                        "BFs8mudNFgCS",
-                                        "HekTW6La1h6X"
-                                    ],
-                                    "title": "Collapsible sections",
-                                    "notePosition": 200,
-                                    "prefix": null,
-                                    "isExpanded": false,
-                                    "type": "text",
-                                    "mime": "text/html",
-                                    "attributes": [
-                                        {
-                                            "type": "label",
-                                            "name": "iconClass",
-                                            "value": "bx bx-chevron-down",
-                                            "isInheritable": false,
-                                            "position": 80
-                                        },
-                                        {
-                                            "type": "label",
-                                            "name": "shareAlias",
-                                            "value": "collapsible-sections",
-                                            "isInheritable": false,
-                                            "position": 90
-                                        }
-                                    ],
-                                    "format": "markdown",
-                                    "dataFileName": "Collapsible sections.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "pguUUFMjIe74",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "Collapsible sections_image.png"
                                         }
                                     ]
                                 },
@@ -8673,36 +8585,12 @@
                             "dataFileName": "Custom app-wide CSS.md",
                             "attachments": [
                                 {
-                                    "attachmentId": "fkMLaf6reA6I",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Custom app-wide CSS_image.png"
-                                },
-                                {
                                     "attachmentId": "qBzZ9Qpxwoba",
                                     "title": "image.png",
                                     "role": "image",
                                     "mime": "image/png",
                                     "position": 10,
-                                    "dataFileName": "1_Custom app-wide CSS_image.png"
-                                },
-                                {
-                                    "attachmentId": "TIerrMjmeich",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "2_Custom app-wide CSS_image.png"
-                                },
-                                {
-                                    "attachmentId": "YUrNq5vsCwHe",
-                                    "title": "image.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "3_Custom app-wide CSS_image.png"
+                                    "dataFileName": "Custom app-wide CSS_image.png"
                                 }
                             ]
                         },
