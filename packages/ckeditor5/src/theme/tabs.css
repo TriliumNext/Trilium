@@ -1,71 +1,74 @@
-/* Saved HTML without a marked tab, such as a preview, reads as a sequence of titled sections. */
-:is(.ck-editor__editable, .ck-content) .trilium-tabs:has(> .trilium-tab--active) {
-    --_tabs-background: var(--card-background-color,
-                            var(--accented-background-color, var(--ck-color-base-foreground)));
-    --_tabs-inactive-background: color-mix(in srgb, var(--_tabs-background), transparent 80%);
-    --_tabs-delimiter-width: 2px;
-    --_tabs-border-radius: 8px;
-    --_tabs-active-title-color: var(--main-text-color, currentColor);
-    --_tabs-title-color: color-mix(in srgb, var(--_tabs-active-title-color), transparent 50%);
+/* Saved HTML without a marked tab, such as a preview or a printout, reads as a sequence of titled
+   sections. */
+@media screen {
+    :is(.ck-editor__editable, .ck-content) .trilium-tabs:has(> .trilium-tab--active) {
+        --_tabs-background: var(--card-background-color,
+                                var(--accented-background-color, var(--ck-color-base-foreground)));
+        --_tabs-inactive-background: color-mix(in srgb, var(--_tabs-background), transparent 80%);
+        --_tabs-delimiter-width: 2px;
+        --_tabs-border-radius: 8px;
+        --_tabs-active-title-color: var(--main-text-color, currentColor);
+        --_tabs-title-color: color-mix(in srgb, var(--_tabs-active-title-color), transparent 50%);
 
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 0 var(--_tabs-delimiter-width);
-    margin: 1em 0;
-    border-radius: var(--_tabs-border-radius);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0 var(--_tabs-delimiter-width);
+        margin: 1em 0;
+        border-radius: var(--_tabs-border-radius);
 
-    & > .trilium-tab {
-        display: contents;
-    }
-
-    & > .trilium-tab > .trilium-tab-title {
-        order: 0;
-        min-width: 4em;
-        max-width: 100%;
-        margin: 0 0 var(--_tabs-delimiter-width);
-        padding: 6px 1rem;
-        border-radius: var(--_tabs-border-radius) var(--_tabs-border-radius) 0 0;
-        background: var(--_tabs-inactive-background);
-        color: var(--_tabs-title-color);
-        font-weight: 500;
-        cursor: pointer;
-        transition: color 200ms ease-out, background-color 200ms ease-out;
-
-        &:hover {
-            color: var(--_tabs-active-title-color);
-        }
-    }
-
-    & > .trilium-tab > .trilium-tab-panel {
-        display: none;
-        order: 1;
-        flex: 1 0 100%;
-        min-width: 0;
-        padding: .75rem 1rem;
-        border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
-        background: var(--_tabs-background);
-
-        & > :first-child {
-            margin-top: 0;
+        & > .trilium-tab {
+            display: contents;
         }
 
-        & > :last-child {
-            margin-bottom: 0;
-        }
-    }
+        & > .trilium-tab > .trilium-tab-title {
+            order: 0;
+            min-width: 4em;
+            max-width: 100%;
+            margin: 0 0 var(--_tabs-delimiter-width);
+            padding: 6px 1rem;
+            border-radius: var(--_tabs-border-radius) var(--_tabs-border-radius) 0 0;
+            background: var(--_tabs-inactive-background);
+            color: var(--_tabs-title-color);
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 200ms ease-out, background-color 200ms ease-out;
 
-    & > .trilium-tab.trilium-tab--active {
-        & > .trilium-tab-title {
-            margin-bottom: 0;
-            padding-bottom: calc(6px + var(--_tabs-delimiter-width));
+            &:hover {
+                color: var(--_tabs-active-title-color);
+            }
+        }
+
+        & > .trilium-tab > .trilium-tab-panel {
+            display: none;
+            order: 1;
+            flex: 1 0 100%;
+            min-width: 0;
+            padding: .75rem 1rem;
+            border-radius: 0 var(--_tabs-border-radius) var(--_tabs-border-radius);
             background: var(--_tabs-background);
-            color: var(--_tabs-active-title-color);
-            cursor: text;
+
+            & > :first-child {
+                margin-top: 0;
+            }
+
+            & > :last-child {
+                margin-bottom: 0;
+            }
         }
 
-        & > .trilium-tab-panel {
-            display: block;
+        & > .trilium-tab.trilium-tab--active {
+            & > .trilium-tab-title {
+                margin-bottom: 0;
+                padding-bottom: calc(6px + var(--_tabs-delimiter-width));
+                background: var(--_tabs-background);
+                color: var(--_tabs-active-title-color);
+                cursor: text;
+            }
+
+            & > .trilium-tab-panel {
+                display: block;
+            }
         }
     }
 }
