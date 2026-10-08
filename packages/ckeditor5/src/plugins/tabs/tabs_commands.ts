@@ -46,9 +46,7 @@ export class InsertTabCommand extends Command {
         if (!tabs) {
             return;
         }
-        // With a nested block selected as a whole, the selection's tab belongs to the outer block.
-        const selectedTab = getSelectedTab(editor);
-        const currentTab = selectedTab?.parent === tabs ? selectedTab : null;
+        const currentTab = getSelectedTab(editor);
         // A tabs block holds only elements, so the offset after a tab is its index plus one.
         const index = currentTab ? editor.model.createPositionAfter(currentTab).offset : tabs.childCount;
 
@@ -175,9 +173,16 @@ export function createTab(writer: ModelWriter, titleText: string): ModelElement 
     return tab;
 }
 
-/** Returns the innermost tab that contains the selection. */
+/**
+ * Returns the innermost tab that contains the selection, or `null` while a tabs block is selected
+ * as a whole, since the tab around it belongs to an outer block.
+ */
 export function getSelectedTab(editor: Editor): ModelElement | null {
-    const position = editor.model.document.selection.getFirstPosition();
+    const selection = editor.model.document.selection;
+    if (selection.getSelectedElement()?.is("element", ELEMENTS.tabs)) {
+        return null;
+    }
+    const position = selection.getFirstPosition();
     return (position?.findAncestor(ELEMENTS.tab) as ModelElement | null) ?? null;
 }
 

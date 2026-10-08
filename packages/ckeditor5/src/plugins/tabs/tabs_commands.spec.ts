@@ -60,6 +60,29 @@ describe("tabs commands", () => {
         expect(getModelData(editor.model)).toContain("<tabTitle>[Tab 3]</tabTitle>");
     });
 
+    it("disables the commands for a single tab while a nested block is selected as a whole", () => {
+        editor.setData(
+            `<div class="trilium-tabs">${tab("A")}<section class="trilium-tab">` +
+                `<p class="trilium-tab-title">B</p><div class="trilium-tab-panel">` +
+                    `<div class="trilium-tabs">${tab("B1")}${tab("B2")}</div>` +
+                `</div></section>${tab("C")}</div>`
+        );
+        const outer = editor.model.document.getRoot()?.getChild(0) as ModelElement;
+        const inner = ((outer.getChild(1) as ModelElement).getChild(1) as ModelElement).getChild(0) as ModelElement;
+        expect(inner.is("element", "tabs")).toBe(true);
+
+        editor.model.change(writer => writer.setSelection(inner, "on"));
+
+        for (const name of [ "removeTab", "moveTabLeft", "moveTabRight", "assignTabReference" ]) {
+            const command = editor.commands.get(name);
+            expect(command, name).toBeDefined();
+            expect(command?.isEnabled, name).toBe(false);
+        }
+        editor.execute("removeTab");
+        expect(titles(outer)).toEqual(["A", "B", "C"]);
+        expect(titles(inner)).toEqual(["B1", "B2"]);
+    });
+
     it("moves a tab left and disables the move at either end", () => {
         editor.setData(`<div class="trilium-tabs">${tab("A")}${tab("B")}</div>`);
         const tabs = editor.model.document.getRoot()?.getChild(0) as ModelElement;
