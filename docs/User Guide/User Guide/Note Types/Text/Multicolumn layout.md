@@ -3,10 +3,10 @@ A multicolumn layout arranges content in two to four columns, side by side. A co
 
 ## Inserting a layout
 
-*   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Multicolumn layout_.
-*   Alternatively, type `/columns` and press <kbd>Enter</kbd>, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
+*   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Multicolumn layout_ to insert a layout with two columns.
+*   Alternatively, type `/columns` and choose _2 columns layout_, _3 columns layout_ or _4 columns layout_, as described in <a class="reference-link" href="Slash%20Commands.md">Slash Commands</a>.
 
-A new layout has two columns of equal width. If text is selected when the layout is inserted, the selection moves into the first column.
+The columns of a new layout have equal widths. If text is selected when the layout is inserted, the selection moves into the first column.
 
 ## Changing the columns
 

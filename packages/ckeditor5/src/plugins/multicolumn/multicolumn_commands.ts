@@ -5,8 +5,8 @@ import {
 } from "./constants.js";
 
 /**
- * Inserts a layout with two equal columns at the selection. Selected content moves into the first
- * column, and the caret goes to the end of that column.
+ * Inserts a layout with the column weights `value`, two equal columns by default, at the selection.
+ * Selected content moves into the first column, and the caret goes to the end of that column.
  */
 export class InsertMulticolumnLayoutCommand extends Command {
 
@@ -16,18 +16,22 @@ export class InsertMulticolumnLayoutCommand extends Command {
         this.isEnabled = !!position && !!model.schema.findAllowedParent(position, ELEMENTS.layout);
     }
 
-    public override execute(): void {
+    public override execute(
+        { value = getDefaultRatios(MIN_COLUMNS) }: { value?: string } = {}
+    ): void {
+        if (!COLUMN_RATIOS.includes(value)) {
+            return;
+        }
+
         const model = this.editor.model;
         const selection = model.document.selection;
 
         model.change(writer => {
             const content = selection.isCollapsed ? null : model.getSelectedContent(selection);
-            const layout = writer.createElement(ELEMENTS.layout, {
-                [RATIOS_ATTRIBUTE]: getDefaultRatios(MIN_COLUMNS)
-            });
+            const layout = writer.createElement(ELEMENTS.layout, { [RATIOS_ATTRIBUTE]: value });
             const firstColumn = createColumn(writer);
             writer.append(firstColumn, layout);
-            writer.append(createColumn(writer), layout);
+            setColumnCount(writer, layout, getColumnCount(value));
 
             model.insertObject(layout);
             if (content) {

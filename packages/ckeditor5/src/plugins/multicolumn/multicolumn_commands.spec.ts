@@ -60,6 +60,24 @@ describe("multicolumn commands", () => {
             );
         });
 
+        it("inserts the column weights it is given, and nothing for weights no layout uses", () => {
+            setModelData(editor.model, "<paragraph>Keep [moved] text</paragraph>");
+            editor.execute("multicolumnLayout", { value: "1-5" });
+            expect(modelWithSelection()).toBe("<paragraph>Keep [moved] text</paragraph>");
+
+            editor.execute("multicolumnLayout", { value: "1-2-1" });
+
+            expect(modelWithSelection()).toBe(
+                "<paragraph>Keep </paragraph>" +
+                "<multicolumnLayout columnRatios=\"1-2-1\">" +
+                    "<multicolumnColumn><paragraph>moved[]</paragraph></multicolumnColumn>" +
+                    "<multicolumnColumn><paragraph></paragraph></multicolumnColumn>" +
+                    "<multicolumnColumn><paragraph></paragraph></multicolumnColumn>" +
+                "</multicolumnLayout>" +
+                "<paragraph> text</paragraph>"
+            );
+        });
+
         it("moves selected blocks, lists and tables into the first column", () => {
             const listItem = "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">";
             const cell = "<tableCell><paragraph>Cell</paragraph></tableCell>";

@@ -26,6 +26,7 @@ import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
 import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
+import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
 import TriliumSlashCommands, {
@@ -780,6 +781,37 @@ describe("buildTriliumSlashCommands", () => {
             entry.execute?.(fake);
             expect(executeSpy).toHaveBeenCalledWith("admonition", { forceValue: type });
         }
+    });
+
+    it("defines one multicolumn entry per column count, each inserting equal columns", () => {
+        const { fake, executeSpy } = makeFakeEditor();
+
+        const layouts = [ [ 2, "1-1" ], [ 3, "1-1-1" ], [ 4, "1-1-1-1" ] ] as const;
+        for (const [ count, value ] of layouts) {
+            const entry = definition(`multicolumn-layout-${count}`);
+            expect(entry.title).toBe(`${count} columns layout`);
+            expect(entry.description)
+                .toBe(`Arrange content in ${count} equal columns side by side.`);
+            expect(entry.commandName).toBe("multicolumnLayout");
+            expect(entry.icon).toBe(createLayoutFigure(value, BUTTON_ICON_SIZE));
+
+            entry.execute?.(fake);
+            expect(executeSpy).toHaveBeenLastCalledWith("multicolumnLayout", { value });
+        }
+    });
+
+    it("finds the multicolumn entries by the feature's name, fewest columns first", () => {
+        const definitions = buildTriliumSlashCommands(editor);
+        const layouts = (query: string) => matchSlashCommands(definitions, query)
+            .map((entry) => entry.id)
+            .filter((id) => id.startsWith("multicolumn"));
+
+        const all = [ "multicolumn-layout-2", "multicolumn-layout-3", "multicolumn-layout-4" ];
+
+        for (const query of [ "multicolumn", "columns", "layout", "side by side" ]) {
+            expect(layouts(query)).toEqual(all);
+        }
+        expect(matchSlashCommands(definitions, "3")[0]?.id).toBe("multicolumn-layout-3");
     });
 
     it("opens the math balloon rather than running a command", () => {

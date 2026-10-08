@@ -138,7 +138,7 @@ export function createLayoutFigure(ratios: string, size: number): string {
 
 /** The icon sizes of a list style tile and of a toolbar button, in pixels. */
 const TILE_ICON_SIZE = 44;
-const BUTTON_ICON_SIZE = 20;
+export const BUTTON_ICON_SIZE = 20;
 
 function getShares(ratios: string) {
     const weights = ratios.split("-").map(Number);
