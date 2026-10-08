@@ -378,7 +378,7 @@ describe("CodeMirror", () => {
         });
 
         it("paints the matches when every one of them is before the cursor", async () => {
-            // No match is activated then, so nothing else redraws the editor after the search.
+            // No match follows the cursor, so no `scrollToMatch()` call redraws the editor.
             editor = build();
             editor.setText("foo bar foo");
             editor.dispatch({ selection: EditorSelection.cursor(11) });

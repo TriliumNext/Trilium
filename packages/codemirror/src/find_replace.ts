@@ -47,8 +47,7 @@ export class SearchHighlighter {
         this.searchRegexp = regex;
         this.#updateSearchData(this.view);
         if (!this.#scrollToMatchNearestSelection()) {
-            // The view only reads the decorations of a plugin when it updates, and no match was
-            // activated (which would have dispatched one), so ask for a redraw to paint the matches.
+            // `EditorView` reads plugin decorations only on an update, so draw `matches` with one.
             this.view.dispatch({});
         }
     }

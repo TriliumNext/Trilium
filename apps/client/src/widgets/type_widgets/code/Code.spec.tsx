@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type VanillaCodeMirror from "@triliumnext/codemirror";
-import { render } from "preact";
+import { createRef, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -71,13 +71,13 @@ describe("CodeEditor", () => {
         componentId: "c"
     } as unknown as Component;
 
-    /** Fires an event at every registered listener, as `triggerCommand` does for an unhandled command. */
+    /** Fires an event at every listener, as `triggerCommand()` does for an unhandled command. */
     async function trigger(name: string, data: unknown) {
         await Promise.all((handlers.get(name) ?? []).map((handler) => handler(data)));
     }
 
     beforeEach(() => {
-        // Without a theme option the theme effect throws, which skips the effects of every editor after the first.
+        // Without `codeNoteTheme`, the theme effect throws and skips the effects of later editors.
         options.load({ codeNoteTheme: "none" } as Parameters<typeof options.load>[0]);
     });
 
@@ -86,21 +86,23 @@ describe("CodeEditor", () => {
     });
 
     it("answers for its context only while it is the displayed editor", async () => {
-        // The note detail keeps the widget of a type it showed earlier mounted but hidden, so the
-        // editor of a previous note (here registered first) shares the context with the current one.
-        let hidden: VanillaCodeMirror | null = null;
-        let shown: VanillaCodeMirror | null = null;
+        // `NoteDetail` keeps earlier type widgets mounted but hidden, so they share the `ntxId`.
+        const hiddenRef = createRef<VanillaCodeMirror>();
+        const shownRef = createRef<VanillaCodeMirror>();
         await act(async () => {
             renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <CodeEditor ntxId="ntx" mime="text/plain" isVisible={false} editorRef={(editor) => { hidden = editor; }} />
-                    <CodeEditor ntxId="ntx" mime="text/plain" isVisible editorRef={(editor) => { shown = editor; }} />
+                    <CodeEditor
+                        ntxId="ntx" mime="text/plain" isVisible={false} editorRef={hiddenRef}
+                    />
+                    <CodeEditor ntxId="ntx" mime="text/plain" isVisible editorRef={shownRef} />
                     <CodeEditor ntxId="other" mime="text/plain" />
                 </ParentComponent.Provider>
             );
         });
-        expect(hidden).not.toBeNull();
-        expect(shown).not.toBeNull();
+        const shown = shownRef.current;
+        expect(hiddenRef.current).not.toBeNull();
+        if (!shown) throw new Error("The displayed editor did not initialize.");
 
         const resolveEditor = vi.fn();
         await trigger("executeWithCodeEditor", { resolve: resolveEditor, ntxId: "ntx" });
@@ -110,22 +112,23 @@ describe("CodeEditor", () => {
         const resolveElement = vi.fn();
         await trigger("executeWithContentElement", { resolve: resolveElement, ntxId: "ntx" });
         expect(resolveElement).toHaveBeenCalledOnce();
-        expect(resolveElement.mock.calls[0][0][0]).toBe(shown!.dom.parentElement);
+        expect(resolveElement.mock.calls[0][0][0]).toBe(shown.dom.parentElement);
     });
 
     it("answers when nothing tells it whether it is displayed", async () => {
-        let editor: VanillaCodeMirror | null = null;
+        const editorRef = createRef<VanillaCodeMirror>();
         await act(async () => {
             renderInto(
                 <ParentComponent.Provider value={parent}>
-                    <CodeEditor ntxId="ntx" mime="text/plain" editorRef={(instance) => { editor = instance; }} />
+                    <CodeEditor ntxId="ntx" mime="text/plain" editorRef={editorRef} />
                 </ParentComponent.Provider>
             );
         });
+        expect(editorRef.current).not.toBeNull();
 
         const resolve = vi.fn();
         await trigger("executeWithCodeEditor", { resolve, ntxId: "ntx" });
-        expect(resolve).toHaveBeenCalledWith(editor);
+        expect(resolve).toHaveBeenCalledWith(editorRef.current);
     });
 });
 

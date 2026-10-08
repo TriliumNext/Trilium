@@ -218,9 +218,7 @@ export function CodeEditor({ ntxId, isVisible, containerRef: externalContainerRe
         }
     }, [ codeEditorRef, effectiveTheme ]);
 
-    // The note detail keeps the widget of every note type a context has shown, hidden, so an editor
-    // left behind by a previous note (read-only code, Markdown, Mermaid, ...) shares the context's
-    // `ntxId`. Only the displayed one may answer, otherwise the caller gets the hidden editor.
+    // Cached widgets share `ntxId`, so only the visible editor can answer these events.
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || isVisible === false) return;
         await initialized.current.promise();
