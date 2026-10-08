@@ -38,29 +38,28 @@ body.layout-horizontal #center-pane {
 <h2>Detecting platform (Windows, macOS) or Electron</h2>
 <div class="trilium-tabs">
   <section class="trilium-tab">
-    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span> Windows</p>
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span>&nbsp;Windows</p>
     <div class="trilium-tab-panel"><pre><code class="language-text-css">body.platform-win32 {
 	background: red;
 }</code></pre>
     </div>
   </section>
   <section class="trilium-tab">
-    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span> macOS</p>
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span>&nbsp;macOS</p>
     <div class="trilium-tab-panel"><pre><code class="language-text-css">body.platform-darwin {
 	background: red;
 }</code></pre>
     </div>
   </section>
   <section class="trilium-tab">
-    <p class="trilium-tab-title"><span class="tn-icon bx bx-windows"></span> Electron (desktop app)</p>
+    <p class="trilium-tab-title"><span class="tn-icon bx bx-windows"></span>&nbsp;Electron (desktop app)</p>
     <div
     class="trilium-tab-panel">
       <p>To distinguish between a&nbsp;<a class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>&nbsp;and
         a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>:</p><pre><code class="language-text-x-trilium-auto">body.electron {
 	background: blue;
 }</code></pre>
-      <p>Can be chained with detections for&nbsp;<a class="reference-link" href="#root/_help_WN5z4M8ASACJ">Reference</a>&nbsp;or&nbsp;<a
-        class="reference-link" href="#root/_help_WN5z4M8ASACJ">Reference</a>&nbsp;(e.g. <code>body.electron.platform-win32</code>).</p>
+      <p>Can be chained with Windows/macOS detections (e.g. <code>body.electron.platform-win32</code>).</p>
     </div>
   </section>
 </div>
@@ -81,7 +80,7 @@ body.electron:not(.native-titlebar) {
 <div
 class="trilium-tabs">
   <section class="trilium-tab">
-    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span> Windows</p>
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span>&nbsp;Windows</p>
     <div class="trilium-tab-panel">
       <p>The colors of the native window button area can be adjusted using a RGB
         hex color:</p><pre><code class="language-text-x-trilium-auto">body {
@@ -97,7 +96,7 @@ class="trilium-tabs">
     </div>
   </section>
   <section class="trilium-tab">
-    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span> macOS</p>
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span>&nbsp;macOS</p>
     <div class="trilium-tab-panel">
       <p>On macOS the semaphore window buttons are enabled by default when the
         native title bar is disabled. The offset of the buttons can be adjusted

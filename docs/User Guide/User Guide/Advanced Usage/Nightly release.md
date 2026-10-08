@@ -21,7 +21,7 @@ Depending on your use case, you can either test the portable version or even use
 
 This is pretty useful if you are a beta tester that wants to periodically update their version:
 
-=== "<span class="tn-icon bx bxl-tux"></span> Ubuntu (Bash)"
+=== "<span class="tn-icon bx bxl-tux"></span> Ubuntu (Bash)"
 
     ```sh
     #!/usr/bin/env bash
@@ -33,7 +33,7 @@ This is pretty useful if you are a beta tester that wants to periodically update
     rm $name
     ```
 
-=== "<span class="tn-icon bx bxl-windows"></span> Windows (PowerShell)"
+=== "<span class="tn-icon bx bxl-windows"></span> Windows (PowerShell)"
 
     ```powershell
     if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {

@@ -5,7 +5,7 @@ This is an example of a note context-aware widget, which reacts to the currently
 
 In this example, the title of the note is displayed. It works best on the [horizontal layout](../../../Basic%20Concepts%20and%20Features/UI%20Elements/Vertical%20and%20horizontal%20layout.md).
 
-=== "<span class="tn-icon bx bxl-react"></span> Preact"
+=== "<span class="tn-icon bx bxl-react"></span> Preact"
 
     ```
     import { defineLauncherWidget, useActiveNoteContext } from "trilium:preact";
@@ -25,7 +25,7 @@ In this example, the title of the note is displayed. It works best on the [horiz
     });
     ```
 
-=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
+=== "<span class="tn-icon bx bxl-javascript"></span> Legacy"
 
     ```javascript
     const TPL = `\

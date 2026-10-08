@@ -131,7 +131,7 @@ Both naming patterns are fully supported and can be used interchangeably:
 
 ## Examples
 
-=== "<span class="tn-icon bx bxl-docker"></span> Docker Compose"
+=== "<span class="tn-icon bx bxl-docker"></span> Docker Compose"
 
     ```yaml
     services:
@@ -151,7 +151,7 @@ Both naming patterns are fully supported and can be used interchangeably:
           # TRILIUM_OAUTH_BASE_URL: "https://auth.example.com"
     ```
 
-=== "<span class="tn-icon bx bxl-tux"></span> Linux Shell"
+=== "<span class="tn-icon bx bxl-tux"></span> Linux Shell"
 
     ```
     # Using either format

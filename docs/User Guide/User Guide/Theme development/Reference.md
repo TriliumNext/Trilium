@@ -51,7 +51,7 @@ The two different layouts use different containers (but they are present in the 
 
 ## Detecting platform (Windows, macOS) or Electron
 
-=== "<span class="tn-icon bx bxl-windows"></span> Windows"
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
     ```css
     body.platform-win32 {
@@ -59,7 +59,7 @@ The two different layouts use different containers (but they are present in the 
     }
     ```
 
-=== "<span class="tn-icon bx bxl-apple"></span> macOS"
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
     ```css
     body.platform-darwin {
@@ -67,7 +67,7 @@ The two different layouts use different containers (but they are present in the 
     }
     ```
 
-=== "<span class="tn-icon bx bx-windows"></span> Electron (desktop app)"
+=== "<span class="tn-icon bx bx-windows"></span> Electron (desktop app)"
 
     To distinguish between a <a class="reference-link" href="../Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a> and a <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>:
 
@@ -77,7 +77,7 @@ The two different layouts use different containers (but they are present in the 
     }
     ```
 
-    Can be chained with detections for <a class="reference-link" href="Reference.md">Reference</a> or <a class="reference-link" href="Reference.md">Reference</a> (e.g. `body.electron.platform-win32`).
+    Can be chained with Windows/macOS detections (e.g. `body.electron.platform-win32`).
 
 ### Native title bar
 
@@ -99,7 +99,7 @@ When running under Electron with native title bar off, a feature was introduced 
 
 See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes](https://github.com/TriliumNext/Notes/pull/702) for the original implementation of this feature, including screenshots.
 
-=== "<span class="tn-icon bx bxl-windows"></span> Windows"
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
     The colors of the native window button area can be adjusted using a RGB hex color:
 
@@ -120,7 +120,7 @@ See [Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/
 
     Note that the value is read when the window is initialized and then it is refreshed only when the user changes their light/dark mode preference.
 
-=== "<span class="tn-icon bx bxl-apple"></span> macOS"
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
     On macOS the semaphore window buttons are enabled by default when the native title bar is disabled. The offset of the buttons can be adjusted using:
 

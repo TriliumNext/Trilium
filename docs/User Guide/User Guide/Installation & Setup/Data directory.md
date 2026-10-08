@@ -29,7 +29,7 @@ If you want to back up your Trilium data, just backup this single directory - it
 
 If you want to use some other location for the data directory than the default one, you may change it via `TRILIUM_DATA_DIR` environment variable to some other location:
 
-=== "<span class="tn-icon bx bxl-windows"></span> Windows"
+=== "<span class="tn-icon bx bxl-windows"></span> Windows"
 
     1.  Press the <span class="tn-icon bx bxl-windows"></span> key on your keyboard.
     2.  Search and select _Edit the system variables_.
@@ -39,7 +39,7 @@ If you want to use some other location for the data directory than the default o
     6.  Press the _Browse Directory…_ button and select the new directory where to store the database.
     7.  Close all the windows by pressing the _OK_ button for each of them.
 
-=== "<span class="tn-icon bx bxl-tux"></span> Linux"
+=== "<span class="tn-icon bx bxl-tux"></span> Linux"
 
     Trilium reads `TRILIUM_DATA_DIR` when it starts, so the variable must be set in the environment that launches it.
 
@@ -96,7 +96,7 @@ If you want to use some other location for the data directory than the default o
 
     The user set in `User=` must be able to write to the folder. For Docker, see <a class="reference-link" href="Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md">Using Docker</a> instead.
 
-=== "<span class="tn-icon bx bxl-apple"></span> macOS"
+=== "<span class="tn-icon bx bxl-apple"></span> macOS"
 
     You need to create a `.plist` file under `~/Library/LaunchAgents` to load it properly each login.
 

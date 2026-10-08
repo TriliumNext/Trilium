@@ -27,7 +27,7 @@ Here is a non-exhaustive list of differences between the desktop version and the
 
 The mobile view can be set up as a PWA. While this does not offer any offline capabilities, it will display the application in full-screen and makes it easy to access via your mobile phone's home screen.
 
-=== "<span class="tn-icon bx bxl-apple"></span> iOS with Safari"
+=== "<span class="tn-icon bx bxl-apple"></span> iOS with Safari"
 
     1.  Open your default web browser and access your Trilium instance.
     2.  Login.
@@ -35,7 +35,7 @@ The mobile view can be set up as a PWA. While this does not offer any offline ca
     4.  Scroll down to reveal the full list of items and choose _Add to Home Screen_.
     5.  Press _Add_ and the web app will be available.
 
-=== "<span class="tn-icon bx bxl-chrome"></span> Android with Google Chrome"
+=== "<span class="tn-icon bx bxl-chrome"></span> Android with Google Chrome"
 
     > [!IMPORTANT]
     > Google Chrome requires the server to be served over HTTPS in order to display in full-screen. If using HTTP, the app will appear like a normal web page (similar to a bookmark).
