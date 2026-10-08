@@ -531,7 +531,9 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "子ノートを作成し、マップに追加",
-    "create_child_note_text": "ノートを追加"
+    "create_child_note_text": "ノートを追加",
+    "create_child_note_cancel_title": "ノートの追加をキャンセル",
+    "create_child_note_cancel_text": "キャンセル"
   },
   "tree-context-menu": {
     "advanced": "高度",
@@ -1134,7 +1136,8 @@
     "color_scheme_switcher_light": "ライトモード",
     "color_scheme_switcher_dark": "ダークモード",
     "color_scheme_switcher_hint": "クリックして配色を切り替えます。",
-    "color_scheme_switcher_unsupported": "現在のテーマは配色の変更に対応していません。"
+    "color_scheme_switcher_unsupported": "現在のテーマは配色の変更に対応していません。",
+    "edited_notes_expanded": "日ノートで \"この日に編集されたノート\" を展開"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vimキーバインド",
@@ -1648,7 +1651,8 @@
     "include_size": "サイズ",
     "show_title": "タイトルを表示",
     "show_caption": "キャプションを表示",
-    "editable": "編集可能"
+    "editable": "編集可能",
+    "convert_link_to_note_excerpt": "リンクをノートの抜粋に変換"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -1766,7 +1770,8 @@
     "copied": "ノートはクリップボードにコピーされました。",
     "copy_failed": "権限の問題で、クリップボードにコピーできません。",
     "copy_success": "クリップボードにコピーしました。",
-    "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。"
+    "copied_without_links": "ノートはクリップボードにコピーされましたが、ノートへのリンクはシステムクリップボードに配置できませんでした。",
+    "paste_notes": "ノートを貼り付け"
   },
   "launcher_context_menu": {
     "add-note-launcher": "ノートランチャーを追加",
@@ -2063,7 +2068,21 @@
     "rename": "名前を変更",
     "new_relation": "新しいリレーション",
     "create_relation": "リレーションを作成",
-    "relation_name_placeholder": "リレーション名"
+    "relation_name_placeholder": "リレーション名",
+    "add_note_toast_title": "新しいノート",
+    "add_note_instruction": "マップ上をクリックして新しいノートを配置するか、Esc キーを押して閉じてください。",
+    "close_note_pane": "閉じる",
+    "expand_note_pane": "ノートを拡大してマップ全体に表示",
+    "restore_note_pane": "ノートをマップの横に戻す",
+    "note_color": "ノートの色",
+    "remove_from_map": "マップから削除",
+    "fit_to_view": "画面に合わせる",
+    "hints": {
+      "title": "リレーションマップ",
+      "paste_notes": "コピーまたは切り取ったノートを貼り付け",
+      "cancel_adding_note": "ノートの追加をキャンセル",
+      "close_note_pane": "ノートパネルを閉じる"
+    }
   },
   "database_anonymization": {
     "title": "データベースの匿名化",
@@ -4401,5 +4420,17 @@
     "filter": "フィルター",
     "filter_placeholder": "入力して絞り込み…",
     "back": "戻る"
+  },
+  "block_reference": {
+    "copy_other": "これら {{count}} 件のブロックへの参照をコピー",
+    "paste_as_link": "参照をリンクとして貼り付け",
+    "paste_as_excerpt": "参照を抜粋として貼り付け",
+    "no_reference_on_clipboard": "クリップボードにブロック参照が含まれていません。",
+    "broken": "参照が壊れています",
+    "not_found": "参照先のブロックが見つかりませんでした。削除された可能性があります。",
+    "untitled": "ブロック",
+    "excerpt": "抜粋",
+    "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
+    "edit_excerpt": "抜粋を編集"
   }
 }

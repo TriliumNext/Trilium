@@ -1221,7 +1221,9 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "하위 노트를 만들어 맵에 추가",
-    "create_child_note_text": "노트 추가"
+    "create_child_note_text": "노트 추가",
+    "create_child_note_cancel_title": "노트 추가 취소",
+    "create_child_note_cancel_text": "취소"
   },
   "image_navigation": {
     "previous": "이전 이미지: {{- title}}",
@@ -1610,7 +1612,21 @@
     "rename": "이름 변경",
     "new_relation": "새 관계",
     "create_relation": "관계 생성",
-    "relation_name_placeholder": "관계 이름"
+    "relation_name_placeholder": "관계 이름",
+    "add_note_toast_title": "새 노트",
+    "add_note_instruction": "맵을 클릭하여 새 노트를 배치하거나 Escape 키를 눌러 취소하세요.",
+    "close_note_pane": "닫기",
+    "expand_note_pane": "노트를 펼쳐 맵을 채우기",
+    "restore_note_pane": "노트를 맵 옆으로 되돌리기",
+    "note_color": "노트 색상",
+    "remove_from_map": "맵에서 제거",
+    "fit_to_view": "화면에 맞추기",
+    "hints": {
+      "title": "관계 맵",
+      "paste_notes": "복사하거나 잘라낸 노트 붙여넣기",
+      "cancel_adding_note": "노트 추가 취소",
+      "close_note_pane": "노트 패널 닫기"
+    }
   },
   "render": {
     "setup_title": "이 노트 안에 사용자 지정 HTML 또는 Preact JSX를 표시합니다",
@@ -1810,7 +1826,8 @@
     "layout-vertical-title": "수직",
     "layout-horizontal-title": "수평",
     "layout-vertical-description": "실행 표시줄이 왼쪽에 표시됩니다(기본값)",
-    "layout-horizontal-description": "실행 표시줄은 탭 바 아래에 배치되고, 탭 바는 전체 너비로 표시됩니다."
+    "layout-horizontal-description": "실행 표시줄은 탭 바 아래에 배치되고, 탭 바는 전체 너비로 표시됩니다.",
+    "edited_notes_expanded": "데일리 노트에서 \"이 날 편집된 노트\" 펼치기"
   },
   "ui-performance": {
     "title": "성능",
@@ -2688,7 +2705,8 @@
     "copied": "노트는 클립보드에 복사되었습니다.",
     "copy_failed": "권한 문제로 인해 클립보드에 복사할 수 없습니다.",
     "copy_success": "클립보드에 복사했습니다.",
-    "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다."
+    "copied_without_links": "노트가 클립보드에 복사되었지만, 노트 링크를 시스템 클립보드에 넣을 수 없습니다.",
+    "paste_notes": "노트 붙여넣기"
   },
   "entrypoints": {
     "note-revision-created": "노트 수정이 생성되었습니다.",
@@ -2809,7 +2827,8 @@
     "include_size": "크기",
     "show_title": "제목 표시",
     "show_caption": "캡션 표시",
-    "editable": "편집 가능"
+    "editable": "편집 가능",
+    "convert_link_to_note_excerpt": "링크를 노트 발췌로 변환"
   },
   "electron_integration": {
     "desktop-application": "데스크톱 애플리케이션",
@@ -4401,5 +4420,17 @@
     "filter": "필터",
     "filter_placeholder": "필터할 내용을 입력…",
     "back": "뒤로"
+  },
+  "block_reference": {
+    "paste_as_link": "참조를 링크로 붙여넣기",
+    "paste_as_excerpt": "참조를 발췌로 붙여넣기",
+    "no_reference_on_clipboard": "클립보드에 블록 참조가 없습니다.",
+    "broken": "끊어진 참조",
+    "not_found": "참조된 블록을 찾을 수 없습니다. 삭제되었을 수 있습니다.",
+    "untitled": "블록",
+    "excerpt": "발췌",
+    "excerpt_description": "현재 이 노트의 일부만 보고 있습니다. {{icon}} 버튼을 눌러 전체 노트를 새 탭에서 여세요.",
+    "edit_excerpt": "발췌 편집",
+    "copy_other": "이 {{count}}개 블록의 참조 복사"
   }
 }

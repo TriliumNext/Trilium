@@ -979,7 +979,9 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Crear una subnota y añadirla al mapa",
-    "create_child_note_text": "Añadir nota"
+    "create_child_note_text": "Añadir nota",
+    "create_child_note_cancel_title": "Cancelar la creación de la nota",
+    "create_child_note_cancel_text": "Cancelar"
   },
   "zpetne_odkazy": {
     "no_backlinks": "No hay notas asociadas a este elemento."
@@ -1304,7 +1306,22 @@
     "rename_relation": "Renombrar relación",
     "new_relation": "Nueva relación",
     "create_relation": "Crear relación",
-    "relation_name_placeholder": "Nombre de la relación"
+    "relation_name_placeholder": "Nombre de la relación",
+    "add_note_instruction": "Haga clic en el mapa para colocar una nueva nota o pulse Escape para cancelar.",
+    "note_color": "Color de la nota",
+    "fit_to_view": "Ajustar a la vista",
+    "hints": {
+      "title": "Mapa de relaciones",
+      "paste_notes": "Pegar las notas copiadas o cortadas",
+      "cancel_adding_note": "Cancelar la creación de una nota",
+      "close_note_pane": "Cerrar el panel de la nota"
+    },
+    "rename": "Cambiar nombre",
+    "add_note_toast_title": "Nueva nota",
+    "close_note_pane": "Cerrar",
+    "expand_note_pane": "Expandir la nota para que ocupe el mapa",
+    "restore_note_pane": "Volver a colocar la nota junto al mapa",
+    "remove_from_map": "Quitar del mapa"
   },
   "backend_log": {
     "refresh": "Refrescar"
@@ -2081,7 +2098,8 @@
     "result_count_many": "",
     "result_count_other": "",
     "page_size": "Por página",
-    "snippet_unavailable": "No hay vista previa disponible."
+    "snippet_unavailable": "No hay vista previa disponible.",
+    "searching": "Buscando..."
   },
   "sql_result": {
     "no_rows": "No se han devuelto filas para esta consulta",
@@ -2135,7 +2153,8 @@
     "copied": "La(s) notas(s) han sido copiadas al portapapeles.",
     "copy_failed": "No se puede copiar al portapapeles debido a problemas de permisos.",
     "copy_success": "Copiado al portapapeles.",
-    "copied_without_links": "La(s) nota(s) se han copiado al portapapeles, pero los enlaces a notas no pudieron colocarse en el portapapeles del sistema."
+    "copied_without_links": "La(s) nota(s) se han copiado al portapapeles, pero los enlaces a notas no pudieron colocarse en el portapapeles del sistema.",
+    "paste_notes": "Pegar nota(s)"
   },
   "entrypoints": {
     "note-revision-created": "Una revisión de nota ha sido creada.",
@@ -2241,7 +2260,11 @@
     "editable": "Editable",
     "convert_link_to_embed": "Convertir el enlace en un elemento incrustado",
     "convert_link_to_included_note": "Convertir el enlace en una nota incluida",
-    "show_caption": "Mostrar leyenda"
+    "show_caption": "Mostrar leyenda",
+    "convert_link_to_note_excerpt": "Convertir el enlace en un extracto de nota",
+    "convert_embed_to_link": "Convertir en enlace",
+    "include_size": "Tamaño",
+    "show_title": "Mostrar título"
   },
   "electron_integration": {
     "desktop-application": "Aplicación de escritorio",
@@ -2264,7 +2287,8 @@
       "yesterday": "Ayer",
       "past_week": "Últimos 7 días",
       "past_month": "Últimos 30 días",
-      "older": "Anteriores"
+      "older": "Anteriores",
+      "today": "Hoy"
     },
     "show-in-full-search": "Mostrar todos los resultados de «{{term}}» en la búsqueda completa",
     "include-note-contents": "Incluir el contenido de la nota en los resultados de «{{term}}»",
@@ -2288,9 +2312,9 @@
     "move-marker-instruction": "Haga clic en el mapa para mover el marcador a esa ubicación o pulse Escape para cancelar.",
     "move-marker-toast-title": "Mover marcador",
     "webgl-unavailable": "No se puede dibujar este mapa porque WebGL no está disponible. Compruebe que la aceleración por hardware esté habilitada y que los controladores gráficos estén actualizados.",
-    "expand-details": "Expandir la nota para llenar el mapa",
-    "restore-details": "Devolver la nota junto al mapa",
-    "create-child-note-cancel": "Cancelar la adición de la nota",
+    "expand-details": "Expandir la nota para que ocupe el mapa",
+    "restore-details": "Volver a colocar la nota junto al mapa",
+    "create-child-note-cancel": "Cancelar la creación de la nota",
     "add-marker": "Añadir marcador",
     "add-marker-cancel": "Cancelar",
     "add-gpx-track": "Añadir una traza GPS desde un archivo GPX",
@@ -2337,7 +2361,7 @@
   },
   "geo-map-context": {
     "open-location": "Abrir ubicación",
-    "remove-from-map": "Eliminar del mapa",
+    "remove-from-map": "Quitar del mapa",
     "add-note": "Añadir un marcador en esta ubicación",
     "move-marker": "Mover a otra ubicación",
     "remove-from-map-confirmation": "¿Está seguro de que desea quitar la nota «{{title}}» del mapa?",
@@ -2433,7 +2457,7 @@
     "presentation-theme": "Tema"
   },
   "table_context_menu": {
-    "delete_row": "Eliminar filas",
+    "delete_row": "Eliminar fila",
     "sort": "Ordenar",
     "delete_columns": "Eliminar columnas",
     "insert_columns_left": "Insertar columna a la izquierda",
@@ -2449,7 +2473,15 @@
     "set_header_row": "Establecer como encabezado",
     "set_header_up_to_row": "Establecer como encabezado hasta esta fila",
     "paste_rows_above": "Pegar filas encima",
-    "paste_rows_below": "Pegar filas debajo"
+    "paste_rows_below": "Pegar filas debajo",
+    "insert_rows_above": "Insertar fila encima",
+    "insert_rows_below": "Insertar fila debajo",
+    "delete_rows": "Eliminar fila",
+    "split_reset": "Descombinar celdas",
+    "sort_ascending": "Ascendente",
+    "sort_descending": "Descendente",
+    "select": "Seleccionar",
+    "select_table": "Tabla"
   },
   "board_view": {
     "delete-note": "Eliminar nota...",
@@ -2782,7 +2814,7 @@
     "tab_width_style_tabs": "Tabuladores"
   },
   "pdf": {
-    "attachments_one": "{{count}} adjunto",
+    "attachments_one": "{{count}} archivo adjunto",
     "attachments_many": "",
     "attachments_other": "",
     "layers_one": "{{count}} capa",
@@ -2801,7 +2833,8 @@
     "annotation_note": "Nota en la página {{pageNumber}}",
     "annotation_text_box": "Cuadro de texto en la página {{pageNumber}}",
     "page_reference": "Página {{pageNumber}}",
-    "annotation_reference": "Anotación en la página {{pageNumber}}"
+    "annotation_reference": "Anotación en la página {{pageNumber}}",
+    "copy_reference": "Copiar referencia"
   },
   "experimental_features": {
     "title": "Opciones experimentales",
@@ -3233,7 +3266,9 @@
     "attachment_ocr": "Texto reconocido a partir del archivo",
     "skills": {
       "frontend_scripting": "Programación de frontend",
-      "dashboards": "Paneles"
+      "dashboards": "Paneles",
+      "search_syntax": "Sintaxis de búsqueda",
+      "backend_scripting": "Scripts del backend"
     },
     "web_sources_count_one": "({{count}} fuente)",
     "web_sources_count_many": "",
@@ -3249,7 +3284,10 @@
     "manage_search_providers": "Gestionar proveedores de búsqueda…",
     "web_search_builtin_unsupported": "Este modelo no tiene búsqueda web integrada. Elija un proveedor de búsqueda en su lugar.",
     "web_search_provider_unsupported": "El proveedor de este modelo busca en la web con sus propias herramientas.",
-    "searched_with": "Búsqueda realizada con {{name}}"
+    "searched_with": "Búsqueda realizada con {{name}}",
+    "attachment_count_one": "{{count}} archivo adjunto",
+    "attachment_count_many": "{{count}} archivos adjuntos",
+    "attachment_count_other": "{{count}} archivos adjuntos"
   },
   "sidebar_chat": {
     "title": "Chat de IA",
@@ -3262,7 +3300,7 @@
     "no_chats": "No hay chats anteriores",
     "more_actions": "Más acciones",
     "view_all_chats": "Ver todos los chats",
-    "rename": "Renombrar",
+    "rename": "Cambiar nombre",
     "rename_title": "Renombrar chat",
     "rename_message": "Introduzca un nuevo nombre para este chat:",
     "delete": "Eliminar",
@@ -3513,7 +3551,8 @@
     "cancel": "Cancelar",
     "fullscreen": "Pantalla completa",
     "exit_fullscreen": "Salir de pantalla completa",
-    "open_in_new_tab": "Abrir en una pestaña nueva"
+    "open_in_new_tab": "Abrir en una pestaña nueva",
+    "more_actions": "Más acciones"
   },
   "spreadsheet": {
     "read-only": "Esta nota es de solo lectura.",
@@ -3628,7 +3667,14 @@
       "tip": "Consejo",
       "caution": "Precaución",
       "warning": "Advertencia",
-      "todo": "Tarea: {{title}}"
+      "todo": "Tarea: {{title}}",
+      "date": "Insertar fecha y hora",
+      "include": "Incluir nota",
+      "link": "Enlace interno",
+      "math": "Ecuación matemática",
+      "footnote": "Nota al pie",
+      "note": "Nota",
+      "important": "Importante"
     }
   },
   "save_revision": {
@@ -3703,7 +3749,7 @@
     "hide_on_auto_start_description": "Al iniciarse automáticamente al iniciar sesión, arrancar oculto en la bandeja del sistema en lugar de abrir una ventana. Requiere tener activados el inicio automático y el icono de la bandeja."
   },
   "security": {
-    "backend_scripting_title": "Programación de backend",
+    "backend_scripting_title": "Scripts del backend",
     "backend_scripting_section_description": "Los scripts de backend tienen acceso completo al servidor, incluido el sistema de archivos, la red y los comandos del sistema operativo. Pueden activarse mediante sincronización, importación o cualquier contenido que incluya atributos ejecutables. Los scripts de frontend siempre están habilitados, ya que se ejecutan en un contexto de navegador aislado (sandbox).",
     "backend_scripting_label": "Ejecución de scripts de backend",
     "backend_scripting_description": "Permitir la ejecución de scripts de backend (scripts de inicio, controladores de peticiones personalizados, controladores de eventos, scripts programados, etc.).",
@@ -3951,7 +3997,7 @@
       "insert-a-block-of-preformatted-code": "Insertar un bloque de código preformateado.",
       "insert-a-horizontal-rule": "Insertar una línea horizontal.",
       "insert-a-table": "Insertar una tabla.",
-      "insert-date-time": "Insertar fecha/hora",
+      "insert-date-time": "Insertar fecha y hora",
       "insert-footnote-0": "Insertar nota al pie %0",
       "insert-mermaid-source-code": "Insertar código fuente Mermaid",
       "insert-paragraph-after-code-block": "Insertar párrafo después del bloque de código",
@@ -4027,7 +4073,7 @@
       "more-actions": "Más acciones",
       "convert-to-link": "Convertir en enlace",
       "show-title": "Mostrar título",
-      "unmerge-cells": "Separar celdas",
+      "unmerge-cells": "Descombinar celdas",
       "attach-and-embed-file": "Adjuntar e incrustar archivo",
       "attach-file": "Adjuntar archivo",
       "attach-file-as-a-link": "Adjuntar archivo como enlace",
@@ -4051,7 +4097,13 @@
       "some-rows-were-sorted-together-because-merged-cells-tie-them-to-each-other": "Algunas filas se han ordenado juntas porque las celdas combinadas las vinculan entre sí",
       "tiny": "Pequeño",
       "drawing-canvas": "Lienzo de dibujo",
-      "insert-a-canvas-to-draw-on": "Insertar un lienzo en el que dibujar."
+      "insert-a-canvas-to-draw-on": "Insertar un lienzo en el que dibujar.",
+      "columns": "Columnas",
+      "distribute-columns-evenly": "Distribuir las columnas uniformemente",
+      "sort": "Ordenar",
+      "ascending": "Ascendente",
+      "descending": "Descendente",
+      "editable": "Editable"
     },
     "toolbar-groups": {
       "text-formatting": "Formato de texto",
@@ -4505,14 +4557,30 @@
   },
   "lightbox": {
     "pdf": "PDF",
-    "open_original": "Abrir el original en una pestaña nueva"
+    "open_original": "Abrir el original en una pestaña nueva",
+    "image": "Imagen"
   },
   "menu": {
     "filter": "Filtrar",
     "no_matches": "No hay coincidencias",
-    "filter_placeholder": "Escriba para filtrar…"
+    "filter_placeholder": "Escriba para filtrar…",
+    "back": "Atrás"
   },
   "block_reference": {
-    "untitled": "Bloque"
+    "untitled": "Bloque",
+    "copy_one": "Copiar la referencia a este bloque",
+    "copy_many": "",
+    "copy_other": "",
+    "paste_as_link": "Pegar la referencia como enlace",
+    "paste_as_excerpt": "Pegar la referencia como extracto",
+    "no_reference_on_clipboard": "El portapapeles no contiene ninguna referencia de bloque.",
+    "broken": "Referencia no válida",
+    "not_found": "No se ha encontrado el bloque referenciado. Es posible que se haya eliminado.",
+    "excerpt": "Extracto",
+    "excerpt_description": "Actualmente solo está viendo un fragmento de esta nota. Pulse el botón {{icon}} para abrir la nota completa en una pestaña nueva.",
+    "edit_excerpt": "Editar extracto"
+  },
+  "split_button": {
+    "more_actions": "Más acciones"
   }
 }

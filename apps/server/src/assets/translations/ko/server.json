@@ -73,7 +73,11 @@
     "focus-split-right": "활성 분할 화면 오른쪽의 분할 화면으로 포커스 이동",
     "split-view": "분할 화면",
     "move-split-left": "활성 분할 화면을 왼쪽 분할 화면과 바꾸고, 노트와 포커스도 함께 이동",
-    "move-split-right": "활성 분할 화면을 오른쪽 분할 화면과 바꾸고, 노트와 포커스도 함께 이동"
+    "move-split-right": "활성 분할 화면을 오른쪽 분할 화면과 바꾸고, 노트와 포커스도 함께 이동",
+    "note-panels": "노트 패널",
+    "show-note-map": "오른쪽 창에 노트 맵을 표시합니다",
+    "focus-collection-properties": "컬렉션의 보기 유형 선택기로 포커스를 이동합니다",
+    "focus-formatting-toolbar": "고정 서식 도구 모음과 편집기 사이에서 포커스를 이동합니다"
   },
   "hidden-subtree": {
     "zen-mode": "젠 모드",
@@ -247,7 +251,19 @@
     "move-split-right": "분할 화면 오른쪽으로 이동",
     "focus-split-left": "왼쪽 분할 화면으로 포커스 이동",
     "focus-split-right": "오른쪽 분할 화면으로 포커스 이동",
-    "duplicate-note": "하위 노트 없이 노트 복제"
+    "duplicate-note": "하위 노트 없이 노트 복제",
+    "focus-formatting-toolbar": "서식 도구 모음에 포커스",
+    "show-basic-properties": "기본 속성 표시",
+    "focus-collection-properties": "컬렉션 속성에 포커스",
+    "focus-file-actions": "파일 작업에 포커스",
+    "focus-image-actions": "이미지 작업에 포커스",
+    "toggle-owned-attributes": "소유 속성 표시 전환",
+    "toggle-inherited-attributes": "상속된 속성 표시 전환",
+    "toggle-promoted-attributes": "승격된 속성 표시 전환",
+    "show-note-map": "노트 맵 표시",
+    "show-note-info": "노트 정보 표시",
+    "show-note-paths": "노트 경로 표시",
+    "toggle-similar-notes": "유사한 노트 표시 전환"
   },
   "login": {
     "title": "로그인",
@@ -332,7 +348,8 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "이 노트 유형은 표시할 수 없습니다.",
-    "included-note-requires-credentials": "여기에 포함된 노트는 비밀번호로 보호되어 있어 표시할 수 없습니다."
+    "included-note-requires-credentials": "여기에 포함된 노트는 비밀번호로 보호되어 있어 표시할 수 없습니다.",
+    "broken-block-reference": "끊어진 참조"
   },
   "onenote_import": {
     "root-title": "OneNote 가져오기",
