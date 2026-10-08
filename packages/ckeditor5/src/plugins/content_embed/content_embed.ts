@@ -374,14 +374,12 @@ class ContentEmbedEditing extends Plugin {
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
 
-		// `preventCKEditorHandling()` turns `_renderer.isFocused` off for a press in an embed.
-		// Without a reset once the selection leaves it, the DOM selection stops following the model.
-		const selection = editor.model.document.selection;
-		this.listenTo( selection, 'change:range', () => {
-			if ( !isContentEmbed( selection.getSelectedElement() ) ) {
-				restoreRendererFocus( editor );
-			}
-		} );
+		// Widget UI sets `_renderer.isFocused` to false on a press. The view ignores its events
+		// (`data-cke-ignore-events`), so a press or key that the view sees is back in the text.
+		const viewDocument = editor.editing.view.document;
+		const restore = () => restoreRendererFocus( editor );
+		this.listenTo( viewDocument, 'mousedown', restore, { priority: 'highest' } );
+		this.listenTo( viewDocument, 'keydown', restore, { priority: 'highest' } );
 	}
 
 	/** Keeps a copy of `caption`, for `embed` to show again. */
@@ -1304,7 +1302,7 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
 	}
 }
 
-/** Sets `_renderer.isFocused` back to `view.document.isFocused`, undoing `hackRendererFocus()`. */
+/** Sets `_renderer.isFocused` back to `view.document.isFocused`. */
 function restoreRendererFocus( editor: Editor ) {
 	const view = editor.editing.view;
 	//@ts-expect-error: We are accessing a private field.
