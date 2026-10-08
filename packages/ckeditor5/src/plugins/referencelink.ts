@@ -1,4 +1,4 @@
-import { Command, ModelElement, ModelLivePosition, LinkEditing, Plugin, toWidget, viewToModelPositionOutsideModelElement, Widget } from "ckeditor5";
+import { Command, ModelElement, ModelLivePosition, LinkEditing, Plugin, toWidget, ViewElement, viewToModelPositionOutsideModelElement, Widget } from "ckeditor5";
 
 export default class ReferenceLink extends Plugin {
 	static get requires() {
@@ -152,7 +152,8 @@ export class ReferenceLinkEditing extends Plugin {
 			// The inline widget is self-contained, so it cannot be split by the caret, and it can be selected:
 			isObject: true,
 
-			allowAttributes: [ 'href', 'uploadId', 'uploadStatus', 'uploadFileName' ]
+			// `storedTitle` is the title the loaded content holds, shown when the note is missing.
+			allowAttributes: [ 'href', 'storedTitle', 'uploadId', 'uploadStatus', 'uploadFileName' ]
 		} );
 	}
 
@@ -167,8 +168,10 @@ export class ReferenceLinkEditing extends Plugin {
 			},
 			model: ( viewElement, { writer: modelWriter } ) => {
 				const href = viewElement.getAttribute('href');
+				const storedTitle = getText( viewElement );
 
-				return modelWriter.createElement( 'reference', { href } );
+				return modelWriter.createElement( 'reference',
+					storedTitle ? { href, storedTitle } : { href } );
 			}
 		} );
 
@@ -177,6 +180,7 @@ export class ReferenceLinkEditing extends Plugin {
 			model: { name: 'reference', attributes: [ 'href', 'uploadFileName' ] },
 			view: ( modelItem, { writer: viewWriter } ) => {
 				const href = modelItem.getAttribute('href') as string;
+				const storedTitle = modelItem.getAttribute('storedTitle') as string | undefined;
 				const uploadFileName = String(modelItem.getAttribute('uploadFileName') ?? '');
 
 				const referenceLinkView = viewWriter.createContainerElement( 'a', {
@@ -200,7 +204,7 @@ export class ReferenceLinkEditing extends Plugin {
 					const editorEl = editor.editing.view.getDomRoot();
 					const component = glob.getComponentByEl<EditorComponent>(editorEl);
 
-					component.loadReferenceLinkTitle($(domElement), href);
+					component.loadReferenceLinkTitle($(domElement), href, storedTitle);
 
 					return domElement;
 				});
@@ -222,7 +226,8 @@ export class ReferenceLinkEditing extends Plugin {
 					class: 'reference-link'
 				} );
 
-				const title = glob.getReferenceLinkTitleSync(href);
+				const storedTitle = modelItem.getAttribute('storedTitle') as string | undefined;
+				const title = glob.getReferenceLinkTitleSync(href, storedTitle);
 
 				const innerText = viewWriter.createText(title);
 				viewWriter.insert(viewWriter.createPositionAt(referenceLinkView, 0), innerText);
@@ -231,6 +236,19 @@ export class ReferenceLinkEditing extends Plugin {
 			}
 		} );
 	}
+}
+
+/** The text inside `element` and its descendants. */
+function getText( element: ViewElement ): string {
+	let text = '';
+	for ( const child of element.getChildren() ) {
+		if ( child.is( '$text' ) ) {
+			text += child.data;
+		} else if ( child.is( 'element' ) ) {
+			text += getText( child );
+		}
+	}
+	return text;
 }
 
 /** The attachment a reference link points to, or `null` for a link to a note. */

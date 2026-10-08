@@ -80,8 +80,8 @@ describe("setupGlobs", () => {
         await expect(window.glob.getReferenceLinkTitle("#root/abc")).resolves.toBe("async:#root/abc");
         expect(getReferenceLinkTitle).toHaveBeenCalledWith("#root/abc");
 
-        expect(window.glob.getReferenceLinkTitleSync("#root/def")).toBe("sync:#root/def");
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/def");
+        expect(window.glob.getReferenceLinkTitleSync("#root/def", "Stored")).toBe("sync:#root/def");
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/def", "Stored");
     });
 
     it("loads each configured app CSS note that isn't already present", () => {

@@ -168,6 +168,7 @@ describe("ReferenceLink", () => {
         const reference = findReference(editor);
         expect(reference).toBeDefined();
         expect(reference?.getAttribute("href")).toBe("#root/noteAbc");
+        expect(reference?.getAttribute("storedTitle")).toBe("Some title");
     });
 
     it("renders the reference as an inline widget in the editing view and loads its title", () => {
@@ -183,6 +184,7 @@ describe("ReferenceLink", () => {
         expect(anchor).not.toBeNull();
         expect(loadReferenceLinkTitle).toHaveBeenCalledTimes(1);
         expect(loadReferenceLinkTitle.mock.calls[0]?.[1]).toBe("#root/noteAbc");
+        expect(loadReferenceLinkTitle.mock.calls[0]?.[2]).toBe("Some title");
     });
 
     it("shows a placeholder's file name, then redraws it as a titled link once uploaded", () => {
@@ -210,7 +212,7 @@ describe("ReferenceLink", () => {
 
         expect(findAnchor()?.getAttribute("href")).toBe("#root/abc");
         expect(findAnchor()?.querySelector(".bx-spin")).toBeNull();
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc");
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), "#root/abc", undefined);
     });
 
     it("redraws the links to a changed attachment and removes those to a deleted one", () => {
@@ -232,9 +234,9 @@ describe("ReferenceLink", () => {
         const renamedHref = "#root/owner?viewMode=attachments&attachmentId=renamed";
         expect([ ...redrawnHrefs ]).toEqual([ renamedHref ]);
         expect(getModelData(editor.model, { withoutSelection: true })).toBe(
-            `<paragraph><reference href="${renamedHref}"></reference></paragraph>` +
+            `<paragraph><reference href="${renamedHref}" storedTitle="a"></reference></paragraph>` +
             "<paragraph></paragraph>" +
-            "<paragraph><reference href=\"#root/noteAbc\"></reference></paragraph>"
+            "<paragraph><reference href=\"#root/noteAbc\" storedTitle=\"c\"></reference></paragraph>"
         );
         // The removal records a change made elsewhere, so undo cannot bring the link back.
         expect(editor.commands.get("undo")?.isEnabled).toBe(false);
@@ -253,7 +255,7 @@ describe("ReferenceLink", () => {
             { attachmentId: "renamed", isDeleted: false }
         ]);
 
-        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href);
+        expect(loadReferenceLinkTitle).toHaveBeenCalledWith(expect.anything(), href, "a");
         expect(getModelData(editor.model)).toBe(before);
     });
 
@@ -272,11 +274,11 @@ describe("ReferenceLink", () => {
     });
 
     it("dataDowncasts a reference back to an anchor, resolving the title synchronously", () => {
-        editor.setData('<p><a class="reference-link" href="#root/noteAbc">old</a></p>');
+        editor.setData('<p><a class="reference-link" href="#root/noteAbc"><span>old</span></a></p>');
 
         const data = editor.getData();
 
-        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc");
+        expect(getReferenceLinkTitleSync).toHaveBeenCalledWith("#root/noteAbc", "old");
         expect(data).toContain('class="reference-link"');
         expect(data).toContain('href="#root/noteAbc"');
         expect(data).toContain("Some title");

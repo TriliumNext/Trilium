@@ -21,7 +21,7 @@ interface CustomGlobals extends BootstrapDefinition {
     getComponentByEl: typeof appContext.getComponentByEl;
     getHeaders: typeof server.getHeaders;
     getReferenceLinkTitle: (href: string) => Promise<string>;
-    getReferenceLinkTitleSync: (href: string) => string;
+    getReferenceLinkTitleSync: (href: string, storedTitle?: string) => string;
     getActiveContextNote: () => FNote | null;
     getThemeStyle: () => "auto" | "light" | "dark";
     ESLINT: Library;
