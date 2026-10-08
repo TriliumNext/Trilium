@@ -2,7 +2,7 @@ import { MercatorCoordinate } from "maplibre-gl";
 import { describe, expect, it } from "vitest";
 
 import { buildNote } from "../../../test/easy-froca";
-import { geoSpace, imageSpace, isShapeNote, locationOf, shapeOf } from "./space";
+import { geoSpace, imageSpace, isShapeNote, locationOf, parseImageExtent, shapeOf } from "./space";
 
 describe("geoSpace", () => {
     it("stores latitude first and hands MapLibre longitude first", () => {
@@ -80,6 +80,73 @@ describe("imageSpace", () => {
         expect(isShapeNote(shape, space)).toBe(true);
         expect(isShapeNote(shape, geoSpace)).toBe(false);
         expect(shapeOf(marker, space)).toBeNull();
+    });
+});
+
+describe("imageSpace with named corners", () => {
+    const size = { width: 1000, height: 500 };
+    // A y-up world whose origin is the middle of the image, as a game map often is.
+    const extent = parseImageExtent("-2000,1000 2000,-1000");
+    const space = imageSpace(size, extent);
+    const pixels = imageSpace(size);
+
+    it("puts the corners and the origin where the map names them", () => {
+        expect(space.parseLocation("-2000,1000")).toEqual(pixels.parseLocation("0,0"));
+        expect(space.parseLocation("2000,-1000")).toEqual(pixels.parseLocation("1000,500"));
+        expect(space.parseLocation("0,0")).toEqual(pixels.parseLocation("500,250"));
+        // Up is up: a larger y stands higher on the image.
+        const higher = space.parseLocation("0,500");
+        const origin = space.parseLocation("0,0");
+        expect(higher && origin && higher[1] > origin[1]).toBe(true);
+    });
+
+    it("stores what it reads, rounded to a hundredth of a pixel and shown to a whole one", () => {
+        const point = space.parseLocation("123.456,-78.9");
+        if (!point) throw new Error("unreadable");
+        // 4 units a pixel: a hundredth of a pixel is 0.04, which takes two decimals.
+        expect(space.serializeLocation(point)).toBe("123.46,-78.9");
+        expect(space.formatLocation(point)).toBe("123, -79");
+        expect(space.formatLocation(point, true)).toBe("123.46, -78.9");
+
+        const fine = imageSpace(size, parseImageExtent("0,0 1,0.5"));
+        const finePoint = fine.parseLocation("0.123456,0.25");
+        if (!finePoint) throw new Error("unreadable");
+        expect(fine.serializeLocation(finePoint)).toBe("0.12346,0.25");
+    });
+
+    it("keeps a marker on the same ground when the image is replaced by a larger one", () => {
+        const larger = imageSpace({ width: 4000, height: 2000 }, extent);
+        const pixelsOfLarger = imageSpace({ width: 4000, height: 2000 });
+
+        expect(larger.parseLocation("1000,500")).toEqual(space.parseLocation("1000,500"));
+        expect(pixelsOfLarger.formatLocation(larger.parseLocation("1000,500") ?? [ 0, 0 ])).toBe("3000, 500");
+    });
+
+    it("measures circles in the map's units, as an ellipse where the axes differ", () => {
+        // 1 unit a pixel across, 4 units a pixel down.
+        const stretched = imageSpace(size, parseImageExtent("0,0 1000,2000"));
+        const shape = shapeOrThrow(stretched.parseShape("circle:500,1000 200"));
+        if (shape.type !== "circle" || !shape.ring) throw new Error("expected a circle with a ring");
+
+        const ringPixels = shape.ring.map((point) => pixels.serializeLocation(point).split(",").map(Number));
+        const width = Math.max(...ringPixels.map(([ x ]) => x)) - Math.min(...ringPixels.map(([ x ]) => x));
+        const height = Math.max(...ringPixels.map(([ , y ]) => y)) - Math.min(...ringPixels.map(([ , y ]) => y));
+        expect(width).toBeCloseTo(400, 0);
+        expect(height).toBeCloseTo(100, 0);
+
+        expect(stretched.serializeShape(shape)).toBe("circle:500,1000 200");
+        for (const value of [ "line:-2000,1000 0,0", "polygon:0,0 100,0 100,-50" ]) {
+            expect(space.serializeShape(shapeOrThrow(space.parseShape(value)))).toBe(value);
+        }
+    });
+
+    it("reads corners only where both are pairs spanning something", () => {
+        expect(parseImageExtent("-2000,1000 2000,-1000")).toEqual({ topLeft: [ -2000, 1000 ], bottomRight: [ 2000, -1000 ] });
+        expect(parseImageExtent("  0,0   10,5 ")).toEqual({ topLeft: [ 0, 0 ], bottomRight: [ 10, 5 ] });
+        // Four numbers in a row are not two corners.
+        for (const value of [ "", "0,0", "0,0 10", "0,0 0,5", "0,0 10,0", "a,b c,d", "0,0 1,1 2,2", "-100,-100,1200,512", null, undefined ]) {
+            expect(parseImageExtent(value)).toBeNull();
+        }
     });
 });
 

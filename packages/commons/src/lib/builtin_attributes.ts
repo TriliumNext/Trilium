@@ -302,9 +302,11 @@ const BUILTIN_ATTRIBUTES = [
     // client's geomap/shapes.ts).
     { type: "label", name: "geoShape", valueType: "text", hasUserValue: true },
     // The counterparts of `geolocation` and `geoShape` on a map drawn over an image (`~map:image`):
-    // `x,y` in the image's own pixels, measured from its top-left corner.
+    // `x,y` in the map's coordinates, which are the image's own pixels unless the map names others.
     { type: "label", name: "imagePosition", valueType: "text", hasUserValue: true },
     { type: "label", name: "imageShape", valueType: "text", hasUserValue: true },
+    // The coordinates of an image map's top-left and bottom-right corners, as `x,y x,y`.
+    { type: "label", name: "map:imageBounds", valueType: "text", hasUserValue: true },
     // Which note map a note map note draws; anything but `tree` is read as `link`.
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
         "link", "tree"

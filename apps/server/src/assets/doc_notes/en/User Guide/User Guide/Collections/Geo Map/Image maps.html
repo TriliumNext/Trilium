@@ -1,8 +1,9 @@
 <p>An image map is a geo map drawn over an image of your own instead of a
   world map, such as a floor plan, a fantasy map for a tabletop game, or
   a diagram to annotate. Markers and shapes work as they do on a geo map,
-  but their positions are measured in the image's own pixels instead of latitude
-  and longitude.</p>
+  but their positions are measured on the image instead of in latitude and
+  longitude: in the image's own pixels, or in a coordinate system of your
+  choosing, such as the one a video game uses.</p>
 <h2>Creating an image map</h2>
 <ol>
   <li>Upload the image as a note of its own, for example by dragging the file
@@ -37,13 +38,35 @@ class="admonition note">
 <p>The look of the marker titles follows the image: if the image is dark,
   add the <code>#map:darkStyle</code> label to the geo map so that the titles
   are drawn in a light color.</p>
+<h2>Choosing the coordinate system</h2>
+<p>By default, positions are measured in pixels of the image at its original
+  size, from its top-left corner, with <code>x</code> growing to the right
+  and <code>y</code> growing downwards.</p>
+<p>To use coordinates of your own instead, add a <code>#map:imageBounds</code> label
+  to the geo map, naming the coordinates of the image's top-left corner and
+  of its bottom-right corner as <code>x,y x,y</code>, with a space between
+  the two corners. All positions are then read and written in those coordinates,
+  including the ones shown in the contextual menu and in the popup view.
+  For example:</p>
+<ul>
+  <li>A screenshot of a game map that covers <code>x</code> from -512 to 512 and <code>y</code> from
+    -512 to 512, with <code>y</code> growing downwards: <code>#map:imageBounds=-512,-512 512,512</code>.
+    Coordinates copied from the game can then be pasted directly into <code>#imagePosition</code>.</li>
+  <li>A world whose <code>y</code> grows upwards, with the origin in the middle
+    of the image: <code>#map:imageBounds=-2000,1000 2000,-1000</code>. A top-left <code>y</code> larger
+    than the bottom-right one is what flips the axis.</li>
+  <li>A floor plan measured in meters: <code>#map:imageBounds=0,0 24,12</code>.</li>
+</ul>
+<p>The two axes don't have to use the same scale. A circle is always measured
+  in the map's own units, so it appears as an ellipse when the units are
+  stretched differently along the two axes.</p>
+<p>A value that cannot be read, or whose corners share an <code>x</code> or
+  a <code>y</code>, is ignored and the pixels of the image are used instead.</p>
 <h2>How the positions are stored</h2>
-<p>Positions are stored in pixels of the image at its original size, measured
-  from its top-left corner, with <code>x</code> growing to the right and <code>y</code> growing
-  downwards. Because they are stored in different labels from the ones of
-  a geo map, the same note can be placed both on a geo map and on an image
-  map.</p>
-<figure class="table">
+<p>Because positions are stored in different labels from the ones of a geo
+  map, the same note can be placed both on a geo map and on an image map.</p>
+<figure
+class="table">
   <table>
     <thead>
       <tr>
@@ -62,14 +85,19 @@ class="admonition note">
         </td>
         <td>A shape, in the same format as <code>#geoShape</code> (see&nbsp;<a class="reference-link"
           href="#root/_help_C2H9HK4BzwG7">Drawing shapes</a>) but with <code>x,y</code> pairs,
-          and a circle's radius in pixels, for example <code>#imageShape=circle:400,300 50</code>.</td>
+          and a circle's radius in the map's units, for example <code>#imageShape=circle:400,300 50</code>.</td>
       </tr>
     </tbody>
   </table>
 </figure>
-<p>Since the positions are in pixels, replacing the image with one of a different
-  size moves the markers relative to what the image shows. Prefer keeping
-  the same dimensions when updating the image.</p>
+<p>The positions belong to the coordinate system, not to the image. When
+  replacing the image with a different one, for example a higher-resolution
+  copy, keep <code>#map:imageBounds</code> describing the area the new image
+  covers and every marker stays in place. Without <code>#map:imageBounds</code>,
+  the positions are pixels, so an image of a different size moves the markers
+  relative to what the image shows; to avoid that, set <code>#map:imageBounds</code> to
+  the size of the old image (<code>0,0 &lt;width&gt;,&lt;height&gt;</code>)
+  before replacing it.</p>
 <aside class="admonition tip">
   <p>To draw freely over an image instead of placing notes on it, consider
     a&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>.</p>

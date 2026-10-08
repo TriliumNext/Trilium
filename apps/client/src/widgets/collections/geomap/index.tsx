@@ -38,7 +38,7 @@ import { NOTE_ZOOM, type SearchResult } from "./results";
 import SearchBox from "./SearchBox";
 import { ShapeLayer, ShapeNames } from "./ShapeLayer";
 import type { GeoShape } from "./shapes";
-import { geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext } from "./space";
+import { geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext, parseImageExtent } from "./space";
 import Tooltips from "./Tooltips";
 
 /**
@@ -544,16 +544,17 @@ type ImageMapState =
 
 function useImageMap(note: FNote): ImageMapState {
     const [ imageNoteId ] = useNoteRelation(note, "map:image");
-    const [ state, setState ] = useState<ImageMapState>(imageNoteId ? { status: "loading" } : { status: "geo" });
+    const [ boundsValue ] = useNoteLabel(note, "map:imageBounds");
+    const [ image, setImage ] = useState<LoadedImage>(imageNoteId ? { status: "loading" } : { status: "geo" });
 
     useEffect(() => {
         if (!imageNoteId) {
-            setState({ status: "geo" });
+            setImage({ status: "geo" });
             return;
         }
 
         let cancelled = false;
-        setState({ status: "loading" });
+        setImage({ status: "loading" });
 
         (async () => {
             const imageNote = await froca.getNote(imageNoteId, true);
@@ -565,17 +566,26 @@ function useImageMap(note: FNote): ImageMapState {
 
             if (!url || !size) {
                 logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded.`);
-                setState({ status: "error" });
+                setImage({ status: "error" });
                 return;
             }
-            setState({ status: "image", url, space: imageSpace(size) });
+            setImage({ status: "image", url, size });
         })();
 
         return () => { cancelled = true; };
     }, [ note.noteId, imageNoteId ]);
 
-    return state;
+    // Built apart from the loading, so naming the corners anew does not fetch the image again.
+    // A value that names no corners is read as none, which leaves the image's own pixels.
+    return useMemo(() => image.status === "image"
+        ? { status: "image", url: image.url, space: imageSpace(image.size, parseImageExtent(boundsValue)) }
+        : image, [ image, boundsValue ]);
 }
+
+/** {@link ImageMapState} before the coordinate system is laid over the measured image. */
+type LoadedImage =
+    | Exclude<ImageMapState, { status: "image" }>
+    | { status: "image"; url: string; size: ImageSize };
 
 /** The natural size of the image at `url`, or `null` where it does not load as one. */
 function measureImage(url: string): Promise<ImageSize | null> {
