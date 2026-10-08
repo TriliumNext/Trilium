@@ -62,28 +62,28 @@ Development versions are version pre-release versions, generally meant for testi
 *   [GitHub Releases](https://github.com/TriliumNext/Trilium/releases) by looking for releases starting with _Web Clipper._
 *   Artifacts in GitHub Actions, by looking for the [_Deploy web clipper extension_ workflow](https://github.com/TriliumNext/Trilium/actions/workflows/web-clipper.yml). Once a workflow run is selected, the ZIP files are available in the _Artifacts_ section, under the name `web-clipper-extension`.
 
-### For Chrome
+=== "<span class="tn-icon bx bxl-chrome"></span> Chrome"
 
-1.  Download `trilium-web-clipper-[x.y.z]-chrome.zip`.
-2.  Extract the archive.
-3.  In Chrome, navigate to `chrome://extensions/`
-4.  Toggle _Developer Mode_ in top-right of the page.
-5.  Press the _Load unpacked_ button near the header.
-6.  Point to the extracted directory from step (2).
+    1.  Download `trilium-web-clipper-[x.y.z]-chrome.zip`.
+    2.  Extract the archive.
+    3.  In Chrome, navigate to `chrome://extensions/`
+    4.  Toggle _Developer Mode_ in top-right of the page.
+    5.  Press the _Load unpacked_ button near the header.
+    6.  Point to the extracted directory from step (2).
 
-### For Firefox
+=== "<span class="tn-icon bx bxl-firefox"></span> Firefox"
 
-> [!WARNING]
-> Firefox prevents installation of unsigned packages in the “retail” version. To be able to install extensions from disk, consider using _Firefox Developer Edition_ or a non-branded version of Firefox (e.g. _GNU IceCat_).
-> 
-> One time, go to `about:config` and change `xpinstall.signatures.required` to `false`.
+    > [!WARNING]
+    > Firefox prevents installation of unsigned packages in the “retail” version. To be able to install extensions from disk, consider using _Firefox Developer Edition_ or a non-branded version of Firefox (e.g. _GNU IceCat_).
+    > 
+    > One time, go to `about:config` and change `xpinstall.signatures.required` to `false`.
 
-1.  Navigate to `about:addons`.
-2.  Select _Extensions_ in the left-side navigation.
-3.  Press the _Gear_ icon on the right of the _Manage Your Extensions_ title.
-4.  Select _Install Add-on From File…_
-5.  Point it to `trilium-web-clipper-[x.y.z]-firefox.zip`.
-6.  Press the _Add_ button to confirm.
+    1.  Navigate to `about:addons`.
+    2.  Select _Extensions_ in the left-side navigation.
+    3.  Press the _Gear_ icon on the right of the _Manage Your Extensions_ title.
+    4.  Select _Install Add-on From File…_
+    5.  Point it to `trilium-web-clipper-[x.y.z]-firefox.zip`.
+    6.  Press the _Add_ button to confirm.
 
 ## Credits
 

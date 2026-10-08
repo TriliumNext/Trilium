@@ -32,34 +32,104 @@
 <p>If you want to use some other location for the data directory than the
   default one, you may change it via <code>TRILIUM_DATA_DIR</code> environment
   variable to some other location:</p>
-<h3>Windows</h3>
-<ol>
-  <li>Press the Windows key on your keyboard.</li>
-  <li>Search and select “Edit the system variables”.</li>
-  <li>Press the “Environment Variables…” button in the bottom-right of the newly
-    opened screen.</li>
-  <li>On the top section ("User variables for [user]"), press the “New…” button.</li>
-  <li>In the <em>Variable name</em> field insert <code>TRILIUM_DATA_DIR</code>.</li>
-  <li>Press the <em>Browse Directory…</em> button and select the new directory
-    where to store the database.</li>
-  <li>Close all the windows by pressing the <em>OK</em> button for each of them.</li>
-</ol>
-<h4>Linux</h4><pre><code class="language-text-x-trilium-auto">export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
-<h4>Mac OS X</h4>
-<p>You need to create a <code>.plist</code> file under <code>~/Library/LaunchAgents</code> to
-  load it properly each login.</p>
-<p>To load it manually, you need to use <code>launchctl setenv TRILIUM_DATA_DIR &lt;yourpath&gt;</code>
-</p>
-<p>Here is a pre-defined template, where you just need to add your path to:</p><pre><code class="language-text-x-trilium-auto">        Label
-        set.trilium.env
-        RunAtLoad
-        
-        ProgramArguments
-        
-            launchctl
-            setenv
-            TRILIUM_DATA_DIR
-            /Users/YourUserName/Library/Application Support/trilium-data    </code></pre>
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span> Windows</p>
+    <div class="trilium-tab-panel">
+      <ol>
+        <li>Press the&nbsp;<span class="tn-icon bx bxl-windows"></span> key on your
+          keyboard.</li>
+        <li>Search and select <em>Edit the system variables</em>.</li>
+        <li>Press the <em>Environment Variables…</em> button in the bottom-right of
+          the newly opened screen.</li>
+        <li>On the top section (<em>User variables for [user]</em>), press the <em>New…</em> button.</li>
+        <li>In the <em>Variable name</em> field insert <code>TRILIUM_DATA_DIR</code>.</li>
+        <li>Press the <em>Browse Directory…</em> button and select the new directory
+          where to store the database.</li>
+        <li>Close all the windows by pressing the <em>OK</em> button for each of them.</li>
+      </ol>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-tux"></span> Linux</p>
+    <div class="trilium-tab-panel">
+      <p>Trilium reads <code>TRILIUM_DATA_DIR</code> when it starts, so the variable
+        must be set in the environment that launches it.</p>
+      <aside class="admonition note">
+        <p>Setting the variable does not move existing notes. To keep them, close
+          Trilium and copy the old data directory to the new location first. Trilium
+          creates the last folder of the path if it is missing, but not its parent
+          folders.</p>
+      </aside>
+      <p><strong>Desktop application (.deb, .rpm, AppImage or .zip)</strong>
+      </p>
+      <p>To use the new location however Trilium is started (from the application
+        menu, a desktop shortcut, at login or from a terminal), set the variable
+        for the whole session:</p>
+      <ol>
+        <li>
+          <p>Create the file <code>~/.config/environment.d/trilium.conf</code> with the
+            following content, using the full path (<code>~</code> is not expanded in
+            this file):</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
+        </li>
+        <li>
+          <p>Log out and log back in.</p>
+        </li>
+      </ol>
+      <p>This works on desktops started by <code>systemd</code>, which covers most
+        distributions running GNOME or KDE Plasma. On other systems, add the following
+        line to <code>~/.profile</code> instead, then log out and log back in:</p><pre><code class="language-text-x-sh">export TRILIUM_DATA_DIR="$HOME/data/my-trilium-data"</code></pre>
+      <p>The same line in <code>~/.bashrc</code> (or your shell's equivalent) only
+        applies when Trilium is started from a terminal, not from the application
+        menu.</p>
+      <p><strong>Flatpak (Flathub)</strong>
+      </p>
+      <p>The Flathub version runs in a sandbox that cannot see the rest of the
+        file system, so it needs access to the folder as well as the variable:</p><pre><code class="language-text-x-sh">flatpak override --user \
+    --env=TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data \
+    --filesystem=/home/myuser/data/my-trilium-data:create \
+    org.triliumnotes.Trilium</code></pre>
+      <p>To return to the default location, run <code>flatpak override --user --reset org.triliumnotes.Trilium</code>.
+        This also removes any other overrides set for Trilium.</p>
+      <p><strong>Server running as a systemd service</strong>
+      </p>
+      <p>Add an <code>Environment=</code> line to the <code>[Service]</code> section
+        of the unit file described in&nbsp;<a class="reference-link" href="#root/_help_3tW6mORuTHnB">Packaged version for Linux</a>:</p><pre><code class="language-text-x-trilium-auto">[Service]
+Environment=TRILIUM_DATA_DIR=/var/lib/trilium-data</code></pre>
+      <p>Then reload and restart the service:</p><pre><code class="language-text-x-sh">sudo systemctl daemon-reload
+sudo systemctl restart trilium</code></pre>
+      <p>The user set in <code>User=</code> must be able to write to the folder.
+        For Docker, see&nbsp;<a class="reference-link" href="#root/_help_rWX5eY045zbE">Using Docker</a>&nbsp;instead.</p>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span> macOS</p>
+    <div class="trilium-tab-panel">
+      <p>You need to create a <code>.plist</code> file under <code>~/Library/LaunchAgents</code> to
+        load it properly each login.</p>
+      <p>To load it manually, you need to use <code>launchctl setenv TRILIUM_DATA_DIR &lt;yourpath&gt;</code>
+      </p>
+      <p>Here is a pre-defined template, where you just need to add your path to:</p><pre><code class="language-text-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;key&gt;Label&lt;/key&gt;
+    &lt;string&gt;set.trilium.env&lt;/string&gt;
+    &lt;key&gt;RunAtLoad&lt;/key&gt;
+    &lt;true/&gt;
+    &lt;key&gt;ProgramArguments&lt;/key&gt;
+    &lt;array&gt;
+        &lt;string&gt;/bin/launchctl&lt;/string&gt;
+        &lt;string&gt;setenv&lt;/string&gt;
+        &lt;string&gt;TRILIUM_DATA_DIR&lt;/string&gt;
+        &lt;string&gt;/Users/YourUserName/Library/Application Support/trilium-data&lt;/string&gt;
+    &lt;/array&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;
+</code></pre>
+    </div>
+  </section>
+</div>
 <h3>Create a script to run with specific data directory</h3>
 <p>An alternative to globally setting environment variable is to run only
   the Trilium Notes with this environment variable. This then allows for

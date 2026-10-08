@@ -131,39 +131,39 @@ Both naming patterns are fully supported and can be used interchangeably:
 
 ## Examples
 
-### Docker Compose Example
+=== "<span class="tn-icon bx bxl-docker"></span> Docker Compose"
 
-```yaml
-services:
-  trilium:
-    image: triliumnext/trilium
-    environment:
-      # Using full format
-      TRILIUM_GENERAL_INSTANCENAME: "My Trilium Instance"
-      TRILIUM_NETWORK_PORT: "8080"
-      TRILIUM_NETWORK_CORSALLOWORIGIN: "https://myapp.com"
-      TRILIUM_SYNC_SYNCSERVERHOST: "https://sync.example.com"
-      TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL: "https://auth.example.com"
-      
-      # Or using shorter alternatives (equally valid)
-      # TRILIUM_NETWORK_CORS_ALLOW_ORIGIN: "https://myapp.com"
-      # TRILIUM_SYNC_SERVER_HOST: "https://sync.example.com"
-      # TRILIUM_OAUTH_BASE_URL: "https://auth.example.com"
-```
+    ```yaml
+    services:
+      trilium:
+        image: triliumnext/trilium
+        environment:
+          # Using full format
+          TRILIUM_GENERAL_INSTANCENAME: "My Trilium Instance"
+          TRILIUM_NETWORK_PORT: "8080"
+          TRILIUM_NETWORK_CORSALLOWORIGIN: "https://myapp.com"
+          TRILIUM_SYNC_SYNCSERVERHOST: "https://sync.example.com"
+          TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL: "https://auth.example.com"
+          
+          # Or using shorter alternatives (equally valid)
+          # TRILIUM_NETWORK_CORS_ALLOW_ORIGIN: "https://myapp.com"
+          # TRILIUM_SYNC_SERVER_HOST: "https://sync.example.com"
+          # TRILIUM_OAUTH_BASE_URL: "https://auth.example.com"
+    ```
 
-### Shell Export Example
+=== "<span class="tn-icon bx bxl-tux"></span> Linux Shell"
 
-```
-# Using either format
-export TRILIUM_GENERAL_NOAUTHENTICATION=false
-export TRILIUM_NETWORK_HTTPS=true
-export TRILIUM_NETWORK_CERTPATH=/path/to/cert.pem
-export TRILIUM_NETWORK_KEYPATH=/path/to/key.pem
-export TRILIUM_LOGGING_RETENTIONDAYS=30
+    ```
+    # Using either format
+    export TRILIUM_GENERAL_NOAUTHENTICATION=false
+    export TRILIUM_NETWORK_HTTPS=true
+    export TRILIUM_NETWORK_CERTPATH=/path/to/cert.pem
+    export TRILIUM_NETWORK_KEYPATH=/path/to/key.pem
+    export TRILIUM_LOGGING_RETENTIONDAYS=30
 
-# Start Trilium
-npm start
-```
+    # Start Trilium
+    npm start
+    ```
 
 ## config.ini Reference
 

@@ -320,7 +320,10 @@
   <li>You can use whichever format you prefer - both are equally valid</li>
 </ul>
 <h2>Examples</h2>
-<h3>Docker Compose Example</h3><pre><code class="language-text-x-yaml">services:
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-docker"></span> Docker Compose</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-yaml">services:
   trilium:
     image: triliumnext/trilium
     environment:
@@ -335,7 +338,11 @@
       # TRILIUM_NETWORK_CORS_ALLOW_ORIGIN: "https://myapp.com"
       # TRILIUM_SYNC_SERVER_HOST: "https://sync.example.com"
       # TRILIUM_OAUTH_BASE_URL: "https://auth.example.com"</code></pre>
-<h3>Shell Export Example</h3><pre><code class="language-text-x-trilium-auto"># Using either format
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-tux"></span> Linux Shell</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto"># Using either format
 export TRILIUM_GENERAL_NOAUTHENTICATION=false
 export TRILIUM_NETWORK_HTTPS=true
 export TRILIUM_NETWORK_CERTPATH=/path/to/cert.pem
@@ -344,6 +351,9 @@ export TRILIUM_LOGGING_RETENTIONDAYS=30
 
 # Start Trilium
 npm start</code></pre>
+    </div>
+  </section>
+</div>
 <h2>config.ini Reference</h2>
 <p>For the complete list of configuration options and their INI file format,
   please review the <a href="https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/config-sample.ini">config-sample.ini</a> file

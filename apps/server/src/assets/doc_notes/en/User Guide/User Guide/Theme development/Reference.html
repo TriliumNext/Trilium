@@ -9,31 +9,23 @@ body.desktop #root-widget {
 }</code></pre>
 <p>Do note that there is also a “tablet mode” in the mobile layout. For that
   particular case media queries are required:</p><pre><code class="language-text-css">@media (max-width: 991px) {
-
     #launcher-pane {
-
         /* Do something on mobile layout */
-
     }
-
 }
 
 
 
 @media (min-width: 992px) {
-
     #launcher-pane {
-
         /* Do something on mobile tablet + desktop layout */
-
     }
-
 }</code></pre>
 <h2>Detecting horizontal vs. vertical layout</h2>
 <p>The user can select between vertical layout (the classical one, where
   the launcher bar is on the left) and a horizontal layout (where the launcher
   bar is on the top and tabs are full-width).</p>
-<p>Different styles can be applied by using classes at <code>body</code> level:</p><pre><code class="language-text-x-trilium-auto">body.layout-vertical #left-pane {
+<p>Different styles can be applied by using classes at <code>body</code> level:</p><pre><code class="language-text-css">body.layout-vertical #left-pane {
 	/* Do something */
 }
 
@@ -44,30 +36,34 @@ body.layout-horizontal #center-pane {
   in the DOM regardless of the user's choice), for example <code>#horizontal-main-container</code> and <code>#vertical-main-container</code> can
   be used to customize the background of the content section.</p>
 <h2>Detecting platform (Windows, macOS) or Electron</h2>
-<p>It is possible to add particular styles that only apply to a given platform
-  by using the classes in <code>body</code>:</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>Windows</th>
-        <th>macOS</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><code>&lt;br&gt;body.platform-win32 {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
-        </td>
-        <td><code>&lt;br&gt;body.platform-darwin {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
-<p>It is also possible to only apply a style if running under Electron (desktop
-  application):</p><pre><code class="language-text-x-trilium-auto">body.electron {
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span> Windows</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-css">body.platform-win32 {
+	background: red;
+}</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span> macOS</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-css">body.platform-darwin {
+	background: red;
+}</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bx-windows"></span> Electron (desktop app)</p>
+    <div
+    class="trilium-tab-panel">
+      <p>To distinguish between a&nbsp;<a class="reference-link" href="#root/_help_poXkQfguuA0U">Desktop Installation</a>&nbsp;and
+        a&nbsp;<a class="reference-link" href="#root/_help_WOcw2SLH6tbX">Server Installation</a>:</p><pre><code class="language-text-x-trilium-auto">body.electron {
 	background: blue;
 }</code></pre>
+      <p>Can be chained with detections for&nbsp;<a class="reference-link" href="#root/_help_WN5z4M8ASACJ">Reference</a>&nbsp;or&nbsp;<a
+        class="reference-link" href="#root/_help_WN5z4M8ASACJ">Reference</a>&nbsp;(e.g. <code>body.electron.platform-win32</code>).</p>
+    </div>
+  </section>
+</div>
 <h3>Native title bar</h3>
 <p>It's possible to detect if the user has selected the native title bar
   or the custom title bar by querying against <code>body</code>:</p><pre><code class="language-text-x-trilium-auto">body.electron.native-titlebar {
@@ -82,25 +78,36 @@ body.electron:not(.native-titlebar) {
   to use the platform-specific window buttons such as the semaphore on macOS.</p>
 <p>See <a href="https://github.com/TriliumNext/Notes/pull/702">Native title bar buttons by eliandoran · Pull Request #702 · TriliumNext/Notes</a> for
   the original implementation of this feature, including screenshots.</p>
-<h4>On Windows</h4>
-<p>The colors of the native window button area can be adjusted using a RGB
-  hex color:</p><pre><code class="language-text-x-trilium-auto">body {
+<div
+class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span> Windows</p>
+    <div class="trilium-tab-panel">
+      <p>The colors of the native window button area can be adjusted using a RGB
+        hex color:</p><pre><code class="language-text-x-trilium-auto">body {
 	--native-titlebar-foreground: #ffffff;
 	--native-titlebar-background: #ff0000;
 }</code></pre>
-<p>It is also possible to use transparency at the cost of reduced hover colors
-  using a RGBA hex color:</p><pre><code class="language-text-x-trilium-auto">body {
+      <p>It is also possible to use transparency at the cost of reduced hover colors
+        using a RGBA hex color:</p><pre><code class="language-text-x-trilium-auto">body {
 	--native-titlebar-background: #ff0000aa;
 }</code></pre>
-<p>Note that the value is read when the window is initialized and then it
-  is refreshed only when the user changes their light/dark mode preference.</p>
-<h4>On macOS</h4>
-<p>On macOS the semaphore window buttons are enabled by default when the
-  native title bar is disabled. The offset of the buttons can be adjusted
-  using:</p><pre><code class="language-text-css">body {
+      <p>Note that the value is read when the window is initialized and then it
+        is refreshed only when the user changes their light/dark mode preference.</p>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span> macOS</p>
+    <div class="trilium-tab-panel">
+      <p>On macOS the semaphore window buttons are enabled by default when the
+        native title bar is disabled. The offset of the buttons can be adjusted
+        using:</p><pre><code class="language-text-css">body {
     --native-titlebar-darwin-x-offset: 12;
     --native-titlebar-darwin-y-offset: 14 !important;
 }</code></pre>
+    </div>
+  </section>
+</div>
 <h3>Background/transparency effects on Windows (Mica)</h3>
 <p>Windows 11 offers a special background/transparency effect called Mica,
   which can be enabled by themes by setting the <code>--background-material</code> variable
