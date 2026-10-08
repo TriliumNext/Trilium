@@ -712,10 +712,8 @@ export function renderWithSourceLines(src: string): { html: string; headings: Ma
 }
 
 /**
- * The 1-indexed line of every tab header, in document order, which is also the order of the
- * rendered `section.trilium-tab` elements. A tab panel is dedented, which keeps its line count, so
- * the lines of nested tabs follow from their parent tab. Inside a list or a block quote the lines
- * are approximate.
+ * Returns the 1-indexed line of every tab header, in the order of the rendered
+ * `section.trilium-tab` elements; inside a list or a block quote the lines are approximate.
  */
 function collectTabLines(tokens: Token[], firstLine: number): number[] {
     const lines: number[] = [];

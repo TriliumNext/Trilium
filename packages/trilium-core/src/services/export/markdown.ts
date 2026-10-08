@@ -426,12 +426,7 @@ function buildDetailsFilter(): Rule {
     };
 }
 
-/**
- * Tabs blocks export to the tabbed syntax of Python-Markdown's `pymdownx.tabbed` (used by Material
- * for MkDocs): a `=== "Title"` line per tab, followed by the panel indented four spaces. A block
- * that directly follows another one starts with `===! "Title"`, which keeps the two apart. The
- * shared Markdown renderer reads the same syntax back.
- */
+/** Exports a tab title as the `=== "Title"` line of MkDocs content tabs (`pymdownx.tabbed`). */
 function buildTabTitleFilter(): Rule {
     return {
         filter(node) {

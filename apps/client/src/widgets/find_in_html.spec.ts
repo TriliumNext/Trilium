@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import FindInHtml from "./find_in_html.js";
 
