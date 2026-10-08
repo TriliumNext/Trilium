@@ -97,8 +97,12 @@ function loadContent(note: FNote) {
     return entry.loaded;
 }
 
+/** The text of `element`; a tab is named by its title. */
 function getText(element: Element) {
-    return (element.textContent ?? "").replace(/\s+/g, " ").trim();
+    const title = element.matches(".trilium-tab")
+        ? element.querySelector(":scope > .trilium-tab-title")
+        : null;
+    return ((title ?? element).textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
 function truncate(text: string, maxLength: number) {

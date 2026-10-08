@@ -186,3 +186,8 @@ body.type-webView {
     font-size: .9em;
     text-align: center;
 }
+
+.ck-content .trilium-tabs {
+    --card-background-color: var(--background-secondary);
+    --main-text-color: var(--text-primary);
+}

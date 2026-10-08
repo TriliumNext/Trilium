@@ -657,6 +657,50 @@ describe("renderToHtml", () => {
         });
     });
 
+    describe("tabs blocks (MkDocs content tabs)", () => {
+        const tab = (title: string, panel: string) =>
+            `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
+            `<div class="trilium-tab-panel">${panel}</div></section>`;
+        const tabs = (...items: string[]) => `<div class="trilium-tabs">${items.join("")}</div>`;
+
+        it("groups consecutive tabs into one block and starts a new block at ===!", () => {
+            const input = [
+                "Before.",
+                "=== \"Windows\"",
+                "",
+                "    Run the **installer**.",
+                "",
+                "=== \"**Linux** <span class=\"tn-icon bx bxl-tux\"></span>\"",
+                "\t- One",
+                "\t- Two",
+                "===! \"Other\"",
+                "    x",
+                "",
+                "After."
+            ].join("\n");
+            expect(render(input)).toBe(
+                "<p>Before.</p>" +
+                tabs(
+                    tab("Windows", "<p>Run the <strong>installer</strong>.</p>"),
+                    tab(
+                        "<strong>Linux</strong> <span class=\"tn-icon bx bxl-tux\"></span>",
+                        "<ul><li>One</li><li>Two</li></ul>"
+                    )
+                ) +
+                tabs(tab("Other", "<p>x</p>")) +
+                "<p>After.</p>"
+            );
+        });
+
+        it("fills an empty title and an empty panel at the end of the input", () => {
+            expect(render("=== \"\"")).toBe(tabs(tab("&nbsp;", "<p>&nbsp;</p>")));
+        });
+
+        it("leaves === without a quoted title to the other tokenizers", () => {
+            expect(render("=== Title")).toBe("<p>=== Title</p>");
+        });
+    });
+
     describe("Obsidian syntax (obsidian option)", () => {
         it("turns %% comment %% into an HTML comment only when the obsidian flag is set", () => {
             expect(render("a %%secret%% b", "", { obsidian: true })).toBe("<p>a <!-- secret --> b</p>");

@@ -54,6 +54,7 @@ describe("isAlwaysFullWidthByType", () => {
 
     it("is true for layout-heavy types, media/PDF files and non-list/grid searches", () => {
         expect(isAlwaysFullWidthByType(buildNote({ title: "Canvas", type: "canvas" }))).toBe(true);
+        expect(isAlwaysFullWidthByType(buildNote({ title: "Relations", type: "relationMap" }))).toBe(true);
 
         const pdf = buildNote({ title: "PDF", type: "file" });
         pdf.mime = "application/pdf";

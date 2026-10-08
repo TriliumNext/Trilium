@@ -665,4 +665,50 @@ $$`;
             }
         });
     });
+
+    describe("tabs blocks", () => {
+        const tab = (title: string, panel: string) =>
+            `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p><div class="trilium-tab-panel">${panel}</div></section>`;
+        const tabs = (...items: string[]) => `<div class="trilium-tabs">${items.join("")}</div>`;
+
+        it("renders MkDocs tabbed sections as a tabs block, starting a new block at ===!", () => {
+            const input = trimIndentation`\
+                === "Windows"
+
+                    Run the **installer**.
+
+                === "**Linux** <span class="tn-icon bx bxl-tux"></span>"
+                    - One
+                    - Two
+
+                ===! "Other"
+
+                    x
+
+                After.`;
+            expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(
+                tabs(
+                    tab("Windows", "<p>Run the <strong>installer</strong>.</p>"),
+                    tab(`<strong>Linux</strong> <span class="tn-icon bx bxl-tux"></span>`, "<ul><li>One</li><li>Two</li></ul>")
+                ) +
+                tabs(tab("Other", "<p>x</p>")) +
+                "<p>After.</p>"
+            );
+        });
+
+        it("round-trips tabs blocks through the Markdown exporter", () => {
+            const original =
+                tabs(
+                    tab("Windows", "<p>Run the <strong>installer</strong>.</p><ul><li>One</li><li>Two</li></ul>"),
+                    tab("&nbsp;", "<p>&nbsp;</p>"),
+                    tab(`<span class="tn-icon bx bxl-chrome"></span>&nbsp;Chrome`, "<p>c</p>"),
+                    tab("<strong>Bold</strong>, <em>italic</em> and <code>code</code>", "<p>f</p>"),
+                    tab("a &lt;b&gt; *c* \"d\"", "<p>t</p>"),
+                    tab("Nested", tabs(tab("A", "<p>a</p>"), tab("B", "<blockquote><p>b</p></blockquote>")))
+                ) +
+                tabs(tab("Next", "<p>y</p>"));
+            expect(markdownService.renderToHtml(markdownExportService.toMarkdown(original), "Title"))
+                .toStrictEqual(original);
+        });
+    });
 });

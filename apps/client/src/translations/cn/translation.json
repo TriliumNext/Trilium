@@ -973,7 +973,9 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "创建子笔记并添加到图",
-    "create_child_note_text": "添加笔记"
+    "create_child_note_text": "添加笔记",
+    "create_child_note_cancel_title": "取消添加笔记",
+    "create_child_note_cancel_text": "取消"
   },
   "zpetne_odkazy": {
     "no_backlinks": "没有笔记链接到这篇笔记。"
@@ -1289,7 +1291,21 @@
     "rename": "重命名",
     "new_relation": "新建关系",
     "create_relation": "创建关系",
-    "relation_name_placeholder": "关系名称"
+    "relation_name_placeholder": "关系名称",
+    "add_note_toast_title": "新笔记",
+    "add_note_instruction": "点击关系图即可在此放置新笔记，或按 Escape 取消。",
+    "close_note_pane": "关闭",
+    "expand_note_pane": "展开笔记以填满关系图",
+    "restore_note_pane": "将笔记放回关系图旁",
+    "note_color": "笔记颜色",
+    "remove_from_map": "从关系图中移除",
+    "fit_to_view": "适应视图",
+    "hints": {
+      "title": "关系图",
+      "paste_notes": "粘贴复制或剪切的笔记",
+      "cancel_adding_note": "取消添加笔记",
+      "close_note_pane": "关闭笔记面板"
+    }
   },
   "backend_log": {
     "refresh": "刷新"
@@ -1432,7 +1448,8 @@
     "color_scheme_switcher_light": "浅色模式",
     "color_scheme_switcher_dark": "深色模式",
     "color_scheme_switcher_hint": "点击即可切换配色方案。",
-    "color_scheme_switcher_unsupported": "当前主题不支持更改配色方案。"
+    "color_scheme_switcher_unsupported": "当前主题不支持更改配色方案。",
+    "edited_notes_expanded": "在日记中展开「本日编辑的笔记」"
   },
   "zoom_factor": {
     "title": "缩放系数（仅桌面客户端有效）",
@@ -2093,7 +2110,8 @@
     "copied": "笔记已复制到剪贴板。",
     "copy_failed": "由于权限问题，无法复制到剪贴板。",
     "copy_success": "已复制到剪贴板。",
-    "copied_without_links": "笔记已复制到剪贴板，但笔记链接无法放入系统剪贴板。"
+    "copied_without_links": "笔记已复制到剪贴板，但笔记链接无法放入系统剪贴板。",
+    "paste_notes": "粘贴笔记"
   },
   "entrypoints": {
     "note-revision-created": "笔记修订已创建。",
@@ -2202,7 +2220,8 @@
     "include_size": "尺寸",
     "show_title": "显示标题",
     "show_caption": "显示题注",
-    "editable": "可编辑"
+    "editable": "可编辑",
+    "convert_link_to_note_excerpt": "将链接转换为笔记摘录"
   },
   "electron_integration": {
     "desktop-application": "桌面应用程序",
@@ -4401,5 +4420,17 @@
     "filter": "筛选",
     "filter_placeholder": "输入以筛选…",
     "back": "返回"
+  },
+  "block_reference": {
+    "copy_other": "复制对这{{count}}个块的引用",
+    "paste_as_link": "将引用粘贴为链接",
+    "paste_as_excerpt": "将引用粘贴为摘录",
+    "no_reference_on_clipboard": "剪贴板中没有块引用。",
+    "broken": "引用已损坏",
+    "not_found": "找不到被引用的块，可能已被删除。",
+    "untitled": "块",
+    "excerpt": "摘录",
+    "excerpt_description": "你目前看到的只是该笔记的一个片段。按 {{icon}} 按钮即可在新标签页中打开整条笔记。",
+    "edit_excerpt": "编辑摘录"
   }
 }

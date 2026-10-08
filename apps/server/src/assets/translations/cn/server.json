@@ -73,7 +73,11 @@
     "focus-split-right": "将焦点移动到当前活动窗口右侧的分屏上",
     "split-view": "分屏视图",
     "move-split-left": "将活动分屏与其左侧的分屏交换，这样音符会移动，焦点会跟随它",
-    "move-split-right": "将活动分屏与右侧的分屏交换，这样笔记会移动，焦点也会跟随它"
+    "move-split-right": "将活动分屏与右侧的分屏交换，这样笔记会移动，焦点也会跟随它",
+    "note-panels": "笔记面板",
+    "show-note-map": "在右侧边栏中显示笔记图谱",
+    "focus-collection-properties": "将焦点移到集合的视图类型选择器",
+    "focus-formatting-toolbar": "在固定格式工具栏与编辑器之间移动焦点"
   },
   "login": {
     "title": "登录",
@@ -227,7 +231,8 @@
   },
   "content_renderer": {
     "note-cannot-be-displayed": "此笔记类型无法显示。",
-    "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。"
+    "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。",
+    "broken-block-reference": "引用已损坏"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
@@ -353,7 +358,19 @@
     "move-split-right": "向右拆分移动",
     "focus-split-left": "将焦点分割到左侧",
     "focus-split-right": "将焦点分割到右侧",
-    "duplicate-note": "创建笔记副本（不含子笔记）"
+    "duplicate-note": "创建笔记副本（不含子笔记）",
+    "focus-formatting-toolbar": "聚焦格式工具栏",
+    "show-basic-properties": "显示基本属性",
+    "focus-collection-properties": "聚焦集合属性",
+    "focus-file-actions": "聚焦文件操作",
+    "toggle-promoted-attributes": "切换提升属性",
+    "toggle-inherited-attributes": "切换继承属性",
+    "focus-image-actions": "聚焦图片操作",
+    "toggle-owned-attributes": "切换自有属性",
+    "show-note-map": "显示笔记图谱",
+    "show-note-info": "显示笔记信息",
+    "show-note-paths": "显示笔记路径",
+    "toggle-similar-notes": "切换相似笔记"
   },
   "share_theme": {
     "site-theme": "网站主题",

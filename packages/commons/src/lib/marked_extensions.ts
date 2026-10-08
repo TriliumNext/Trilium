@@ -229,6 +229,67 @@ export function createLiteralTildeExtension(): TokenizerAndRendererExtension {
     };
 }
 
+/**
+ * Creates the extensions for the content tabs of `pymdownx.tabbed` (Material for MkDocs), which
+ * render consecutive tabs as one `<div class="trilium-tabs">` in the text editor's markup.
+ */
+export function createTabsExtensions(): TokenizerAndRendererExtension[] {
+    return [
+        {
+            name: "tabs",
+            level: "block",
+
+            start(src: string) {
+                return /^===!? +"/m.exec(src)?.index;
+            },
+
+            tokenizer(src) {
+                const tabs: Token[] = [];
+                let raw = "";
+                let rest = src;
+                for (;;) {
+                    const match = TAB.exec(rest);
+                    if (!match || (match[1] && tabs.length)) {
+                        break;
+                    }
+                    const content = match[3].replace(/^(?: {4}|\t)/gm, "");
+                    tabs.push({
+                        type: "tab",
+                        raw: match[0],
+                        titleTokens: this.lexer.inlineTokens(match[2]),
+                        tokens: this.lexer.blockTokens(content, [])
+                    });
+                    raw += match[0];
+                    rest = rest.slice(match[0].length);
+                }
+
+                if (tabs.length) {
+                    return { type: "tabs", raw, tokens: tabs };
+                }
+            },
+
+            renderer(token) {
+                return `<div class="trilium-tabs">${this.parser.parse(token.tokens as Token[])}</div>`;
+            }
+        },
+        {
+            name: "tab",
+            renderer(token) {
+                const title = this.parser.parseInline(token.titleTokens as Token[]) || "&nbsp;";
+                const panel = this.parser.parse(token.tokens as Token[]).trim() || "<p>&nbsp;</p>";
+                return `<section class="trilium-tab"><p class="trilium-tab-title">${title}</p>` +
+                    `<div class="trilium-tab-panel">${panel}</div></section>`;
+            }
+        }
+    ];
+}
+
+/**
+ * One tab: the `=== "Title"` line (`===! "Title"` starts a new block; the title runs to the last
+ * quote), then its panel, the following lines that are blank or indented by four spaces or a tab.
+ */
+const TAB = /^===(!)? +"(.*)" *(?:\n|$)((?:[ \t]*\n|(?: {4}|\t).*(?:\n|$))*)/;
+
 /** Pre-configured wiki-link extension for server-side (uses /noteId format) */
 export const wikiLinkExtension = createWikiLinkExtension();
 

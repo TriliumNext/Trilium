@@ -93,4 +93,14 @@ describe("getBlockExcerpt", () => {
         expect(single.endsWith("word…")).toBe(true);
         expect(range).toBe(`${"word ".repeat(6).trimEnd()}… … end`);
     });
+
+    it("names a tab by its title", () => {
+        const container = document.createElement("div");
+        container.innerHTML = "<section class=\"trilium-tab\"><p class=\"trilium-tab-title\">Linux</p>"
+            + "<div class=\"trilium-tab-panel\"><p>Use the package.</p></div></section>";
+        const tab = container.querySelector(".trilium-tab");
+        expect(tab).not.toBeNull();
+
+        expect(getBlockExcerpt(tab as Element, tab as Element)).toBe("Linux");
+    });
 });

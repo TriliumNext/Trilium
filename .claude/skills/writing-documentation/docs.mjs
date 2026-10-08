@@ -55,6 +55,9 @@ const ICON_PACKS = {
     bx: "packages/trilium-core/src/services/icon_pack_boxicons-v2.json",
     cke: "packages/trilium-core/src/services/icon_pack_text_editor.json"
 };
+const CKE_BUILDER = "apps/icon-pack-builder/src/providers/ckeditor.ts";
+const CKE_REBUILD = "run `pnpm --filter @triliumnext/icon-pack-builder start cke` and commit "
+    + "apps/client/src/fonts/text-editor-icons.woff2 with " + ICON_PACKS.cke;
 
 /** `apps/client/src/services/doc_renderer.ts` refuses any other character in a help page path. */
 const DOC_NAME_CHARS = /^[a-zA-Z0-9_/\- ()&.,`]+$/;
@@ -367,6 +370,8 @@ function icons() {
         console.log(problems.length ? `${problems.length} unknown icon class(es)` : "every icon class in the docs exists in a built-in pack");
         return;
     }
+    const stale = packs.includes("cke") ? staleCkeIcons() : [];
+    if (stale.length) console.log(`! cke font is out of date, no glyph for ${stale.join(", ")}\n  ${CKE_REBUILD}\n`);
     const query = flags._.map((q) => q.toLowerCase());
     if (!query.length) die("usage: icons <query...> [--pack bx|cke] | icons --check");
     for (const pack of packs) {
@@ -448,6 +453,8 @@ function check() {
         checkContent(index, errors, warnings);
         if (treeName === "user") checkHtmlMirror(index, errors, warnings);
     }
+    const stale = staleCkeIcons();
+    if (stale.length) warnings.push(`cke font is out of date, no glyph for ${stale.join(", ")}: ${CKE_REBUILD}`);
     if (trees.includes("user")) {
         checkCodeReferences(loadTree("user"), errors);
         checkUrlLiterals(errors);
@@ -866,6 +873,27 @@ function assertIconExists(cls) {
 function loadIconPack(pack) {
     if (!iconCache.has(pack)) iconCache.set(pack, JSON.parse(fs.readFileSync(path.join(ROOT, ICON_PACKS[pack]), "utf-8")));
     return iconCache.get(pack);
+}
+
+/**
+ * The `cke-trilium-*` classes of the SVGs in `packages/ckeditor5` that the font has no glyph for.
+ * The folders come from `TRILIUM_ICON_DIRS` in the builder, so the two cannot drift.
+ */
+function staleCkeIcons() {
+    const source = fs.readFileSync(path.join(ROOT, CKE_BUILDER), "utf-8");
+    const list = /TRILIUM_ICON_DIRS\s*=\s*\[([^\]]*)\]/.exec(source)?.[1] ?? "";
+    const known = loadIconPack("cke").icons;
+    const stale = [];
+    for (const [, dir] of list.matchAll(/"([^"]+)"/g)) {
+        const fullDir = path.join(ROOT, "packages/ckeditor5", dir);
+        if (!fs.existsSync(fullDir)) continue;
+        for (const file of fs.readdirSync(fullDir).filter((f) => f.endsWith(".svg"))) {
+            const name = file.slice(0, -".svg".length);
+            const id = name === "trilium" ? "cke-trilium" : `cke-trilium-${name}`;
+            if (!(id in known)) stale.push(id);
+        }
+    }
+    return stale;
 }
 
 /** `bx bx-star`, `bx bxs-grid`, `cke cke-quote`, with optional modifiers such as `bx-flip-horizontal`. */

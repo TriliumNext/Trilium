@@ -39,6 +39,26 @@ The Markdown syntax for admonitions as supported by Trilium is the one that GitH
 
 There are currently no plans of supporting alternative admonition syntaxes such as `!!! note`.
 
+## Tabs
+
+Tabs use the syntax of [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/reference/content-tabs/): each tab starts with a `=== "Title"` line, followed by its content indented by four spaces. Consecutive tabs form one tabs block, and `===!` starts a new block right after another one:
+
+```
+=== "Windows"
+
+    Run the **installer**.
+
+=== "Linux"
+
+    Use the package.
+
+===! "Another block"
+
+    This tab starts a separate tabs block.
+```
+
+Tabs can be nested by indenting the inner tabs inside the content of a tab. A tab title is plain text, so its formatting is not kept on export. For how tabs blocks work in a text note, see <a class="reference-link" href="../../../Note%20Types/Text/Content%20tabs.md">Content tabs</a>.
+
 ## Wikilinks
 
 Basic support for wikilinks has been added in v0.96.0:

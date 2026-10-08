@@ -10,6 +10,7 @@ vi.mock("../../services/task_states.js", async (importOriginal) => {
     return { ...actual, getTaskStates: getTaskStatesMock };
 });
 
+import markdownImport from "../import/markdown.js";
 import { buildSystemPrompt } from "./system_prompt.js";
 
 describe("buildSystemPrompt", () => {
@@ -62,6 +63,24 @@ describe("buildSystemPrompt", () => {
         expect(prompt).toContain("Collapsible blocks");
         expect(prompt).toContain("Keyboard keys");
         expect(prompt).toContain(`<span class="tn-icon bx bx-cog"></span>`);
+    });
+
+    it("teaches content tabs with an example that imports as a tabs block", () => {
+        const example = "=== \"Windows\"\n\n    Run `setup.exe`.\n\n=== \"Linux\"\n\n    Run `./setup.sh`.";
+        const prompt = buildSystemPrompt([], {}) ?? "";
+        expect(prompt).toContain("Content tabs");
+        expect(prompt).toContain(example);
+
+        const html = markdownImport.renderToHtml(example, "Title");
+        expect(html.match(/class="trilium-tabs"/g)).toHaveLength(1);
+        expect(html).toContain(`<p class="trilium-tab-title">Windows</p>`);
+        expect(html).toContain(`<p class="trilium-tab-title">Linux</p>`);
+    });
+
+    it("asks to keep the indentation of content tabs only when the model can edit notes", () => {
+        const hint = "keep each `===` line and the four-space indentation of its content";
+        expect(buildSystemPrompt([], { enableNoteTools: true }) ?? "").toContain(hint);
+        expect(buildSystemPrompt([], {}) ?? "").not.toContain(hint);
     });
 
     it("names the icon search tool in the icon hint only when the tool is there", () => {

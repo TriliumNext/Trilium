@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import {
-    consumeBlockReference, copyBlockReference, openBlockHandleMenu
+    consumeBlockReference, copyBlockReference, copyTabReference, openBlockHandleMenu
 } from "../../../services/block_reference";
 import { consumeBookmark } from "../../../services/bookmark_jump";
 import { getUploadBoxSize } from "../../../services/content_renderer";
@@ -170,12 +170,12 @@ export default function EditableText({
         consumeBlockReference(root, noteContext?.viewScope);
     }
 
-    async function copyReference() {
+    async function copyReference(copy = copyBlockReference) {
         const editor = watchdogRef.current?.editor as CKTextEditor | undefined;
         if (!editor) return;
 
         const notePath = noteContext?.notePath ?? `root/${note.noteId}`;
-        await copyBlockReference(editor, notePath, note.title);
+        await copy(editor, notePath, note.title);
         // Saved now, so that the link resolves in other notes at once.
         spacedUpdate.updateNowIfNecessary();
     }
@@ -282,7 +282,8 @@ export default function EditableText({
         openBlockHandleMenu(event: MouseEvent, count: number) {
             openBlockHandleMenu(event, count, () => void copyReference());
         },
-        copyBlockReference: copyReference,
+        copyBlockReference: () => copyReference(),
+        copyTabReference: () => void copyReference(copyTabReference),
         getContentEmbedTools,
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.

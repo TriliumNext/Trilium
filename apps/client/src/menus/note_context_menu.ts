@@ -190,8 +190,10 @@ export async function buildNoteContextMenuItems(
                 handler: copySelectionAsMarkdown
             }
         ];
-        if (blockReferenceItems?.copy) {
-            copyVariants.push({ kind: "separator" }, blockReferenceItems.copy);
+        const referenceItems = [ blockReferenceItems?.copy, blockReferenceItems?.copyTab ]
+            .filter((item): item is MenuItem<CommandNames> => !!item);
+        if (referenceItems.length) {
+            copyVariants.push({ kind: "separator" }, ...referenceItems);
         }
 
         items.push(splitMenuItem({

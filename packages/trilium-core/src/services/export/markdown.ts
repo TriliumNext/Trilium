@@ -71,6 +71,12 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
                     return linkPreviewReplacement(node);
                 }
 
+                // A tab without text still keeps its `=== ""` line, or the import loses the tab.
+                const blankTabs = blankTabsReplacement(node);
+                if (blankTabs !== null) {
+                    return blankTabs;
+                }
+
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
                 return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
             },
@@ -80,6 +86,8 @@ function toMarkdown(content: string, options: ToMarkdownOptions = {}) {
         instance.addRule("img", buildImageFilter());
         instance.addRule("admonition", buildAdmonitionFilter());
         instance.addRule("details", buildDetailsFilter());
+        instance.addRule("tabTitle", buildTabTitleFilter());
+        instance.addRule("tabPanel", buildTabPanelFilter());
         instance.addRule("inlineLink", buildInlineLinkFilter());
         instance.addRule("figure", buildFigureFilter());
         instance.addRule("linkPreview", buildLinkPreviewFilter());
@@ -417,6 +425,73 @@ function buildDetailsFilter(): Rule {
         }
     };
 }
+
+/** Exports a tab title as the `=== "Title"` line of MkDocs content tabs (`pymdownx.tabbed`). */
+function buildTabTitleFilter(): Rule {
+    return {
+        filter(node) {
+            return node.classList.contains(TAB_TITLE_CLASS);
+        },
+        replacement(content, node) {
+            return `\n\n${tabTitleLine(node, content)}\n\n`;
+        }
+    };
+}
+
+function buildTabPanelFilter(): Rule {
+    return {
+        filter(node) {
+            return node.classList.contains(TAB_PANEL_CLASS);
+        },
+        replacement(content) {
+            const indented = content
+                .trim()
+                .split("\n")
+                .map((line) => (line ? `    ${line}` : line))
+                .join("\n");
+            return `\n\n${indented}\n\n`;
+        }
+    };
+}
+
+/** The title lines of a tabs block, tab or title that holds no text; `null` for any other node. */
+function blankTabsReplacement(node: Node): string | null {
+    if (!isElement(node)) {
+        return null;
+    }
+    const childrenWithClass = (parent: Element, className: string) =>
+        Array.from(parent.children).filter((child) => child.classList.contains(className));
+
+    const titles = node.classList.contains(TABS_CLASS)
+        ? childrenWithClass(node, TAB_CLASS).flatMap((tab) => childrenWithClass(tab, TAB_TITLE_CLASS))
+        : node.classList.contains(TAB_CLASS)
+            ? childrenWithClass(node, TAB_TITLE_CLASS)
+            : node.classList.contains(TAB_TITLE_CLASS) ? [node] : null;
+    if (!titles) {
+        return null;
+    }
+    return `\n\n${titles.map((title) => tabTitleLine(title, "")).join("\n\n")}\n\n`;
+}
+
+/** `content` is the title as Turndown rendered it, so its icons and formatting stay inline Markdown. */
+function tabTitleLine(title: Element, content: string): string {
+    const tab = title.parentElement;
+    const block = tab?.parentElement;
+    const startsNewBlock = block?.firstElementChild === tab
+        && block?.previousElementSibling?.classList.contains(TABS_CLASS);
+    // Collapses line breaks but keeps U+00A0: CKEditor drops a plain space after an inline icon.
+    const text = content.replace(/[^\S\u00A0]+/g, " ").trim();
+    return `===${startsNewBlock ? "!" : ""} "${text}"`;
+}
+
+function isElement(node: Node): node is Element {
+    return node.nodeType === 1;
+}
+
+const TABS_CLASS = "trilium-tabs";
+const TAB_CLASS = "trilium-tab";
+const TAB_TITLE_CLASS = "trilium-tab-title";
+const TAB_PANEL_CLASS = "trilium-tab-panel";
 
 // Keep in line with https://github.com/mixmark-io/turndown/blob/master/src/commonmark-rules.js.
 function buildListItemFilter(): Rule {

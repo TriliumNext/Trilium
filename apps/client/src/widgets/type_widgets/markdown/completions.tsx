@@ -8,6 +8,7 @@ import dateTimeIcon from "@triliumnext/ckeditor5/src/icons/date-time.svg?raw";
 import insertFootnoteIcon from "@triliumnext/ckeditor5/src/icons/insert-footnote.svg?raw";
 import mathIcon from "@triliumnext/ckeditor5/src/icons/math.svg?raw";
 import noteIcon from "@triliumnext/ckeditor5/src/icons/note.svg?raw";
+import tabsIcon from "@triliumnext/ckeditor5/src/icons/tabs.svg?raw";
 import internalLinkIcon from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
 import type VanillaCodeMirror from "@triliumnext/codemirror";
 import { hostedCompletion, type HostedCompletionApply, type HostedCompletionState } from "@triliumnext/codemirror/src/extensions/hosted_completion";
@@ -269,6 +270,27 @@ export function buildSlashCommands({ parentComponent, getNote, editorView, taskS
             view.dispatch({
                 changes: { from, to, insert: open + placeholder + close },
                 selection: { anchor, head: anchor + placeholder.length }
+            });
+        }),
+        command("tabs", {
+            title: t("markdown_slash_commands.titles.tabs"),
+            description: t("markdown_slash_commands.tabs"),
+            aliases: [ "tab", "tabbed", "tab group", "panels", "variants" ],
+            iconSvg: tabsIcon
+        }, (view, from, to) => {
+            // The `=== "Title"` syntax of Material for MkDocs, which the Markdown export writes for
+            // a tabs block (see marked_extensions.ts). A header only counts at the start of a line.
+            const lineStart = view.state.doc.lineAt(from).from;
+            const before = view.state.sliceDoc(lineStart, from);
+            const start = from - (before.length - before.trimEnd().length);
+            const prefix = before.trim() ? "\n\n" : "";
+            const content = t("markdown_slash_commands.placeholders.tab_content");
+            const tab = (number: number) =>
+                `=== "${t("markdown_slash_commands.placeholders.tab_title", { number })}"\n\n    ${content}`;
+            const anchor = start + prefix.length + 5;
+            view.dispatch({
+                changes: { from: start, to, insert: `${prefix}${tab(1)}\n\n${tab(2)}` },
+                selection: { anchor, head: anchor + t("markdown_slash_commands.placeholders.tab_title", { number: 1 }).length }
             });
         }),
         command("page-break", {

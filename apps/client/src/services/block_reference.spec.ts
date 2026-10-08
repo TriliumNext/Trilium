@@ -1,10 +1,11 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CommandNames } from "../components/app_context.js";
 import type { MenuCommandItem, MenuItem } from "../menus/context_menu.js";
 import {
-    buildBlockReferenceMenuItems, consumeBlockReference, copyBlockReference,
+    buildBlockReferenceMenuItems, consumeBlockReference, copyBlockReference, copyTabReference,
     getBlockRangeElements, getClipboardBlockReference, highlightBlockReference,
     openBlockHandleMenu, revealHighlightedBlocks
 } from "./block_reference.js";
@@ -66,6 +67,35 @@ describe("consumeBlockReference", () => {
 
         vi.advanceTimersByTime(1500);
         expect(block?.classList.contains("block-reference-flash")).toBe(false);
+    });
+
+    it("shows the tab that holds the block", () => {
+        const container = buildContainer(
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">A</p><div class="trilium-tab-panel"></div></section>` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel"><p data-trilium-block-id="a">A</p></div></section>` +
+            `</div>`
+        );
+        applyTabs(container, { placeholder: "" });
+
+        consumeBlockReference(container, { block: "a" });
+
+        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
+    });
+
+    it("scrolls to the title of a linked tab, which has no box of its own", () => {
+        const container = buildContainer(
+            `<div class="trilium-tabs"><section class="trilium-tab" data-trilium-block-id="t">` +
+                `<p class="trilium-tab-title">A</p><div class="trilium-tab-panel"><p>a</p></div>` +
+            `</section></div>`
+        );
+        const title = container.querySelector(".trilium-tab-title");
+        expect(title).not.toBeNull();
+
+        consumeBlockReference(container, { block: "t" });
+
+        expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(scrollIntoView.mock.contexts[0]).toBe(title);
     });
 
     it("flashes the outermost elements of a range", () => {
@@ -174,6 +204,26 @@ describe("revealHighlightedBlocks", () => {
         expect(container.scrollTop).toBe(500);
     });
 
+    it("measures a highlighted tab from the top of its title to the bottom of its panel", () => {
+        const container = buildContainer(
+            "<div class=\"trilium-tabs\"><section class=\"trilium-tab block-reference-highlight\">"
+            + "<p class=\"trilium-tab-title\">A</p><div class=\"trilium-tab-panel\"><p>a</p></div>"
+            + "</section></div>"
+        );
+        const title = container.querySelector(".trilium-tab-title");
+        const panel = container.querySelector(".trilium-tab-panel");
+        expect(title).not.toBeNull();
+        expect(panel).not.toBeNull();
+        Object.defineProperty(container, "clientHeight", { value: 300 });
+        stubRect(container, 100, 400);
+        stubRect(title as Element, 600, 630);
+        stubRect(panel as Element, 630, 700);
+
+        revealHighlightedBlocks(container);
+
+        expect(container.scrollTop).toBe(400);
+    });
+
     it("leaves the scroll position alone without highlighted blocks", () => {
         const container = buildContainer("<p>A</p>");
         container.scrollTop = 20;
@@ -211,6 +261,27 @@ describe("copyBlockReference", () => {
         await copyBlockReference(buildEditor(root, missingTarget), "root/n1", "Note");
 
         expect(copyHtmlWithToast).not.toHaveBeenCalled();
+    });
+});
+
+describe("copyTabReference", () => {
+    it("copies a link to the tab holding the selection, named by its title, and flashes it", async () => {
+        const root = buildContainer(
+            "<div class=\"trilium-tabs\"><section class=\"trilium-tab\" data-trilium-block-id=\"t1\">"
+            + "<p class=\"trilium-tab-title\">Linux</p>"
+            + "<div class=\"trilium-tab-panel\"><p>Use the package.</p></div></section></div>"
+        );
+        const editor = buildEditor(root, { startId: "t1", endId: "t1", count: 1 });
+
+        await copyTabReference(editor, "root/n1", "Note");
+
+        const href = "#root/n1?block=t1";
+        expect(editor.execute).toHaveBeenCalledWith("assignTabReference");
+        expect(copyHtmlWithToast).toHaveBeenCalledWith(
+            `<a class="reference-link" href="${href}">Note - Linux</a>`,
+            href
+        );
+        expect(root.querySelector(".trilium-tab")?.classList.contains("block-reference-flash")).toBe(true);
     });
 });
 
@@ -278,6 +349,25 @@ describe("buildBlockReferenceMenuItems", () => {
         expect(items?.copy).toMatchObject({ title: "block_reference.copy:3" });
         expect(copyReference).toHaveBeenCalledTimes(1);
         expect(items?.paste).toEqual([]);
+    });
+
+    it("copies a link to the tab holding the selection through the host of the editor", async () => {
+        const copyTabReference = vi.fn();
+        const { editor } = buildMenuEditor();
+        getTextEditorContaining.mockResolvedValue(editor);
+        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn(), copyTabReference });
+
+        const items = await buildBlockReferenceMenuItems(element);
+        runItem(items?.copyTab);
+
+        expect(items?.copyTab).toMatchObject({ title: "block_reference.copy_tab" });
+        expect(copyTabReference).toHaveBeenCalledTimes(1);
+
+        getTextEditorContaining.mockResolvedValue(buildMenuEditor({ isInTab: false }).editor);
+        expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
+        getComponentByEl.mockReturnValue({ copyBlockReference: vi.fn() });
+        getTextEditorContaining.mockResolvedValue(editor);
+        expect((await buildBlockReferenceMenuItems(element))?.copyTab).toBeNull();
     });
 
     it("offers no copy row where no reference can be made or the host cannot copy", async () => {
@@ -374,12 +464,13 @@ describe("buildBlockReferenceMenuItems", () => {
 });
 
 function buildMenuEditor({
-    count = 2, canReference = true, canEmbed = true, hasPlugin = true
+    count = 2, canReference = true, canEmbed = true, hasPlugin = true, isInTab = true
 } = {}) {
     const root = document.createElement("div");
     const pasteTarget = { paste: vi.fn(), release: vi.fn() };
     const commands: Record<string, { isEnabled: boolean; value?: number }> = {
         assignBlockReference: { isEnabled: canReference, value: count },
+        assignTabReference: { isEnabled: isInTab },
         insertContentEmbed: { isEnabled: canEmbed }
     };
     const editor = {

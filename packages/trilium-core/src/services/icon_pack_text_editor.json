@@ -1392,20 +1392,26 @@
         "trilium-scissors"
       ]
     },
-    "cke-trilium": {
+    "cke-trilium-tabs": {
       "glyph": "",
+      "terms": [
+        "trilium-tabs"
+      ]
+    },
+    "cke-trilium": {
+      "glyph": "",
       "terms": [
         "trilium"
       ]
     },
     "cke-trilium-ai": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-ai"
       ]
     },
     "cke-trilium-template": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-template"
       ]

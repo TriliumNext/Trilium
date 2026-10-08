@@ -1,3 +1,4 @@
+import { applyTabs } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { consumeBookmark } from "./bookmark_jump.js";
@@ -32,6 +33,20 @@ describe("consumeBookmark", () => {
         }
         expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "center" });
         expect(viewScope.bookmark).toBeUndefined();
+    });
+
+    it("shows the tab that holds the target", () => {
+        const container = buildContainer(
+            `<div class="trilium-tabs">` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">A</p><div class="trilium-tab-panel"></div></section>` +
+                `<section class="trilium-tab"><p class="trilium-tab-title">B</p><div class="trilium-tab-panel"><p><a id="in-tab"></a>target</p></div></section>` +
+            `</div>`
+        );
+        applyTabs(container, { placeholder: "" });
+
+        consumeBookmark(container, { bookmark: "in-tab" });
+
+        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
     });
 
     it("leaves the bookmark unconsumed when the content container is not rendered yet", () => {

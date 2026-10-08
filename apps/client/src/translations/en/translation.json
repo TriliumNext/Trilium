@@ -371,6 +371,7 @@
     "mermaid": "Insert a Mermaid diagram",
     "mermaid_template": "Insert a \"{{name}}\" Mermaid diagram",
     "collapsible": "Insert a collapsible block",
+    "tabs": "Insert titled tabs that show one panel at a time",
     "page_break": "Insert a page break (for printing)",
     "table": "Insert a table",
     "admonition": "Insert {{type}} admonition",
@@ -386,6 +387,7 @@
       "mermaid": "Mermaid diagram",
       "mermaid_template": "Mermaid diagram: {{name}}",
       "collapsible": "Collapsible block",
+      "tabs": "Tabs",
       "page_break": "Page break",
       "table": "Table",
       "note": "Note",
@@ -399,6 +401,8 @@
       "math": "equation",
       "collapsible_summary": "Summary",
       "collapsible_details": "Details",
+      "tab_title": "Tab {{number}}",
+      "tab_content": "Content",
       "table_column": "Column {{number}}"
     }
   },
@@ -4375,7 +4379,18 @@
       "more-actions": "More actions",
       "drawing-canvas": "Drawing canvas",
       "editable": "Editable",
-      "insert-a-canvas-to-draw-on": "Insert a canvas to draw on."
+      "insert-a-canvas-to-draw-on": "Insert a canvas to draw on.",
+      "tabs": "Tabs",
+      "tab-title": "Tab title",
+      "tab-0": "Tab %0",
+      "tab-content": "Tab content",
+      "add-tab": "Add tab",
+      "remove-tab": "Remove tab",
+      "move-tab-left": "Move tab left",
+      "move-tab-right": "Move tab right",
+      "copy-link-to-tab": "Copy link to tab",
+      "tabs-toolbar": "Tabs toolbar",
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "Insert titled tabs that show one panel at a time."
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",
@@ -4498,6 +4513,7 @@
   "block_reference": {
     "copy_one": "Copy reference to this block",
     "copy_other": "Copy reference to these {{count}} blocks",
+    "copy_tab": "Copy link to this tab",
     "paste_as_link": "Paste reference as a link",
     "paste_as_excerpt": "Paste reference as an excerpt",
     "no_reference_on_clipboard": "The clipboard does not contain a block reference.",
