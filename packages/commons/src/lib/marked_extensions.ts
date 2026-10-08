@@ -262,20 +262,19 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
                 let raw = "";
                 let rest = src;
                 for (;;) {
-                    const header = TAB_HEADER.exec(rest);
-                    if (!header || (header[1] && tabs.length)) {
+                    const match = TAB.exec(rest);
+                    if (!match || (match[1] && tabs.length)) {
                         break;
                     }
-                    const body = TAB_BODY.exec(rest.slice(header[0].length))?.[0] ?? "";
-                    const content = body.replace(/^(?: {4}|\t)/gm, "");
+                    const content = match[3].replace(/^(?: {4}|\t)/gm, "");
                     tabs.push({
                         type: "tab",
-                        raw: header[0] + body,
-                        title: header[2],
+                        raw: match[0],
+                        title: match[2],
                         tokens: this.lexer.blockTokens(content, [])
                     });
-                    raw += header[0] + body;
-                    rest = rest.slice(header[0].length + body.length);
+                    raw += match[0];
+                    rest = rest.slice(match[0].length);
                 }
 
                 if (tabs.length) {
@@ -299,11 +298,11 @@ export function createTabsExtensions(): TokenizerAndRendererExtension[] {
     ];
 }
 
-/** `=== "Title"`, or `===! "Title"` to start a new block; the title runs to the last quote. */
-const TAB_HEADER = /^===(!)? +"(.*)" *(?:\n|$)/;
-
-/** The lines of a tab's panel: blank, or indented by four spaces or a tab. */
-const TAB_BODY = /^(?:[ \t]*\n|(?: {4}|\t).*(?:\n|$))*/;
+/**
+ * One tab: the `=== "Title"` line (`===! "Title"` starts a new block; the title runs to the last
+ * quote), then its panel, the following lines that are blank or indented by four spaces or a tab.
+ */
+const TAB = /^===(!)? +"(.*)" *(?:\n|$)((?:[ \t]*\n|(?: {4}|\t).*(?:\n|$))*)/;
 
 /** Pre-configured wiki-link extension for server-side (uses /noteId format) */
 export const wikiLinkExtension = createWikiLinkExtension();
