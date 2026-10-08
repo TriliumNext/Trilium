@@ -215,6 +215,16 @@ export default function EditableText({
                 }
             });
         },
+        fixReferenceLink(storedTitle: string, fix: (href: string) => void) {
+            parentComponent?.triggerCommand("showAddLinkDialog", {
+                text: storedTitle,
+                hasSelection: false,
+                fixLink: true,
+                async addLink(notePath) {
+                    fix(`#${notePath}`);
+                }
+            });
+        },
         pasteMarkdownIntoTextCommand() {
             if (!editorApiRef.current) return;
             parentComponent?.triggerCommand("showPasteMarkdownDialog", {

@@ -920,11 +920,14 @@ describe("getReferenceLinkTitle / getReferenceLinkTitleSync", () => {
             .toBe("Paper - pdf.page_reference");
     });
 
-    it("getReferenceLinkTitleSync returns [missing note] when the note is not in cache", () => {
-        const orig = froca.getNoteFromCache;
-        froca.getNoteFromCache = vi.fn(() => null) as unknown as typeof froca.getNoteFromCache;
-        expect(linkService.getReferenceLinkTitleSync("#root/aaaaaaaaaaaa")).toBe("[missing note]");
-        froca.getNoteFromCache = orig;
+    it("getReferenceLinkTitleSync returns the stored title or [missing note] when the note is not in cache", () => {
+        const getNoteFromCache = vi.spyOn(froca, "getNoteFromCache").mockReturnValue(undefined);
+        const unknownTitle = linkService.getReferenceLinkTitleSync("#root/aaaaaaaaaaaa");
+        const storedTitle = linkService.getReferenceLinkTitleSync("#root/aaaaaaaaaaaa", "Stored");
+        getNoteFromCache.mockRestore();
+
+        expect(unknownTitle).toBe("[missing note]");
+        expect(storedTitle).toBe("Stored");
     });
 });
 
@@ -1040,17 +1043,22 @@ describe("loadReferenceLinkTitle", () => {
         expect($el.text()).toContain("Inner");
     });
 
-    it("renders the title without color class / icon when the note is not found", async () => {
-        const orig = froca.getNote;
-        // First lookup (for color/icon) returns null; getReferenceLinkTitle also returns missing note.
-        froca.getNote = vi.fn(async () => null) as typeof froca.getNote;
-        const $a = $("<a>").attr("href", "#root/aaaaaaaaaaaa");
-        const $el = $("<span>").append($a);
-        await linkService.loadReferenceLinkTitle($el, "#root/aaaaaaaaaaaa");
-        expect($el.text()).toBe("[missing note]");
-        // no color class span and no prepended icon since the note was absent
-        expect($el.find("small").length).toBe(0);
-        froca.getNote = orig;
+    it("renders a missing note with the title stored in the content, an X icon and in red", async () => {
+        const getNote = vi.spyOn(froca, "getNote").mockResolvedValue(null);
+        const $stored = $("<span>");
+        const $unknown = $("<span>");
+
+        await linkService.loadReferenceLinkTitle($stored, "#root/aaaaaaaaaaaa?bookmark=Sec", undefined,
+            "Deleted note");
+        await linkService.loadReferenceLinkTitle($unknown, "#root/aaaaaaaaaaaa");
+        getNote.mockRestore();
+
+        expect($stored.text()).toBe("Deleted note");
+        expect($stored.is(".reference-link-missing.no-link-navigation")).toBe(true);
+        expect($stored.children("span").first().is(".tn-icon.bx.bx-x")).toBe(true);
+        expect($stored.find("small").length).toBe(0);
+        expect($unknown.text()).toBe("[missing note]");
+        expect($unknown.hasClass("reference-link-missing")).toBe(true);
     });
 
     it("does not prepend an icon when the resolved note has no icon", async () => {

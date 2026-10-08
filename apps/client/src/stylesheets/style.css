@@ -2283,6 +2283,11 @@ button.close:hover {
     display: inline-block;
 }
 
+:root a.reference-link.reference-link-missing,
+.ck-content a.reference-link > span.reference-link-missing {
+    color: var(--bs-danger);
+}
+
 /* The board column a reference points at. `--custom-color` is set by the theme on
    `.use-note-color`. */
 .reference-link small.use-note-color {

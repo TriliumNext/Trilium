@@ -115,8 +115,10 @@ export default function ChatInputBar({
     // CKEditor's ReferenceLink plugin calls back into the parent component to
     // resolve a note's title from its href.
     useLegacyImperativeHandlers({
-        async loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | null = null) {
-            await link.loadReferenceLinkTitle($el, href);
+        async loadReferenceLinkTitle(
+            $el: JQuery<HTMLElement>, href: string | null = null, storedTitle?: string
+        ) {
+            await link.loadReferenceLinkTitle($el, href, undefined, storedTitle);
         }
     });
 
