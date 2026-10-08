@@ -60,7 +60,7 @@ The following entries only appear on some notes:
 *   <span class="tn-icon bx bx-align-justify"></span>_Word wrap_ appears at the top of the menu on <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes, and sets whether long lines wrap in this note:
     *   _Auto_ (the default) follows <a class="reference-link" href="Options.md">Options</a> → _Code Notes_ → _Wrap lines in code notes_.
     *   _On_ and _Off_ override it for this note only, by setting the `#wrapLines` label.
-*   <span class="tn-icon bx bx-paperclip"></span>_Convert into attachment_ appears on an image note that has no children and a single parent. After a confirmation, it turns the image into an attachment of its parent note and opens it there. See <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>.
+*   <span class="tn-icon bx bx-paperclip"></span>_Convert into attachment_ appears on an image note that has no children and a single parent which is a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note. After a confirmation, it turns the image into an attachment of its parent note and opens it there. See <a class="reference-link" href="../Notes/Attachments.md">Attachments</a>.
 *   <span class="tn-icon bx bx-extension"></span>_Re-render note_ appears on a <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a>, and runs its script again to refresh the output.
 *   <span class="tn-icon bx bx-cog"></span>_Board properties_ appears on a <a class="reference-link" href="../../Collections/Kanban%20Board.md">Kanban Board</a>, and configures its columns, card attributes and card templates.
 

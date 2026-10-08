@@ -19,6 +19,7 @@ The following note types are supported:
 
 *   Clicking on a heading will scroll the document to the position of the heading.
 *   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
+*   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 
 ## Highlights
 
@@ -39,7 +40,6 @@ Highlighted text is defined as:
 ### Interaction
 
 *   Clicking on a highlighted text will scroll the document to its position.
-*   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 
 ### Configuration
 

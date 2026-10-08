@@ -45,7 +45,7 @@ It's possible to switch between the two layouts at any time by pressing the <sp
 *   To export the diagram as either SVG or PNG, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> and select _Export as image_:
     *   Select _SVG (vector)_ to download a scalable/vector rendering of the diagram. Can be used to present the diagram without degrading when zooming.
     *   Select _PNG (raster)_ to download a normal image (at 1x scale, raster) of the diagram. Can be used to send the diagram in more traditional channels such as e-mail.
-*   The note can be marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), case in which the code and preview are still available but cannot be edited.
+*   The note can be marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), case in which it switches by default to the preview (although it can be switched back using the source/preview buttons) and the source is no longer editable.
 
 ## Errors in the diagram
 
