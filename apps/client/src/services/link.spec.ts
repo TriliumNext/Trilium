@@ -1054,7 +1054,7 @@ describe("loadReferenceLinkTitle", () => {
         getNote.mockRestore();
 
         expect($stored.text()).toBe("Deleted note");
-        expect($stored.hasClass("reference-link-missing")).toBe(true);
+        expect($stored.is(".reference-link-missing.no-link-navigation")).toBe(true);
         expect($stored.children("span").first().is(".tn-icon.bx.bx-x")).toBe(true);
         expect($stored.find("small").length).toBe(0);
         expect($unknown.text()).toBe("[missing note]");

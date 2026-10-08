@@ -322,6 +322,59 @@ describe("ReferenceLink", () => {
 
         openSpy.mockRestore();
     });
+
+    it("replaces the reference it is given with one to the new href, in one undo step", async () => {
+        editor.setData('<p>a<a class="reference-link" href="#root/gone">Gone</a>b</p>');
+
+        editor.execute("referenceLink", { href: "#root/noteNew", replace: findReference(editor) });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/noteNew"></reference>b</paragraph>');
+
+        editor.execute("undo");
+
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toBe('<paragraph>a<reference href="#root/gone" storedTitle="Gone"></reference>b</paragraph>');
+    });
+
+    it("asks to fix a reference to a missing note when it is clicked, and not one to a note", () => {
+        const fixReferenceLink = vi.fn();
+        // The test setup makes `$` a passthrough, so the title element arrives as itself.
+        loadReferenceLinkTitle.mockImplementation(async (el: HTMLElement, href: string) => {
+            el.classList.toggle("reference-link-missing", href === "#root/gone");
+        });
+        installGlobMock({
+            getComponentByEl: () => ({ loadReferenceLinkTitle, fixReferenceLink }),
+            getReferenceLinkTitle,
+            getReferenceLinkTitleSync
+        });
+        editor.setData(
+            '<p><a class="reference-link" href="#root/noteAbc">Fine</a>'
+            + '<a class="reference-link" href="#root/gone">Gone</a></p>'
+        );
+        const titles = editor.editing.view.getDomRoot()?.querySelectorAll("a.reference-link > span");
+        const click = (domTarget: Element | undefined) => editor.editing.view.document.fire("click", {
+            domTarget,
+            domEvent: {},
+            preventDefault: () => {}
+        });
+
+        click(titles?.[0]);
+        expect(fixReferenceLink).not.toHaveBeenCalled();
+
+        click(titles?.[1]);
+        expect(fixReferenceLink).toHaveBeenCalledTimes(1);
+        expect(fixReferenceLink.mock.calls[0]?.[0]).toBe("Gone");
+
+        const execute = vi.spyOn(editor, "execute");
+        fixReferenceLink.mock.calls[0]?.[1]("#root/noteNew");
+        expect(execute).toHaveBeenCalledWith("referenceLink", {
+            href: "#root/noteNew",
+            replace: findReference(editor)?.nextSibling
+        });
+    });
 });
 
 function findReference(editor: ClassicEditor) {

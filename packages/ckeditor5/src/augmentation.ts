@@ -86,6 +86,11 @@ declare global {
             $el: JQuery<HTMLElement>, href: string, storedTitle?: string
         ): Promise<void>;
         /**
+         * Lets the user pick the note a reference link to a missing note should point at instead,
+         * starting from `storedTitle`, and calls `fix()` with the new href.
+         */
+        fixReferenceLink?(storedTitle: string, fix: (href: string) => void): void;
+        /**
          * Fills an embed with the note, or with the `block` of it, a `block` link parameter. An
          * editor of those blocks calls `onBlockChange()` once the blocks at its edges change.
          */

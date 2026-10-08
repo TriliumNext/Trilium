@@ -1,4 +1,7 @@
-import { Command, ModelElement, ModelLivePosition, LinkEditing, Plugin, toWidget, ViewElement, viewToModelPositionOutsideModelElement, Widget } from "ckeditor5";
+import {
+	ClickObserver, Command, LinkEditing, ModelElement, ModelLivePosition, Plugin, toWidget,
+	type ViewDocumentClickEvent, ViewElement, viewToModelPositionOutsideModelElement, Widget
+} from "ckeditor5";
 
 export default class ReferenceLink extends Plugin {
 	static get requires() {
@@ -8,12 +11,32 @@ export default class ReferenceLink extends Plugin {
 
 class ReferenceLinkCommand extends Command {
 
-	override execute({ href }: { href: string }) {
+	/**
+	 * Inserts a reference to `href` at the selection, or in place of the `replace` reference.
+	 */
+	override execute({ href, replace }: { href: string; replace?: ModelElement }) {
 		if (!href?.trim()) {
 			return;
 		}
 
 		const editor = this.editor;
+
+		if (replace) {
+			glob.getReferenceLinkTitle(href).then(() => {
+				const root = replace.root;
+				if (!root.is('rootElement') || root.rootName === '$graveyard') {
+					return;
+				}
+
+				editor.model.change(writer => {
+					const reference = writer.createElement('reference', {href});
+					writer.insert(reference, writer.createPositionBefore(replace));
+					writer.remove(replace);
+					writer.setSelection(reference, 'on');
+				});
+			});
+			return;
+		}
 
 		const selectionPosition = editor.model.document.selection.getFirstPosition();
 		if (!selectionPosition) {
@@ -138,6 +161,38 @@ export class ReferenceLinkEditing extends Plugin {
             // This works even if the link is not a reference link, since it is handled by Trilium.
             return true;
         });
+
+		const view = this.editor.editing.view;
+		view.addObserver( ClickObserver );
+		this.listenTo<ViewDocumentClickEvent>( view.document, 'click', ( _evt, data ) => {
+			this._fixMissingReference( data.domTarget );
+		} );
+	}
+
+	/**
+	 * Asks the editor component to fix the reference link around `domTarget` when
+	 * `loadReferenceLinkTitle()` rendered it as one to a missing note.
+	 */
+	private _fixMissingReference( domTarget: HTMLElement | undefined ) {
+		const editor = this.editor;
+		const anchor = domTarget?.closest<HTMLAnchorElement>( 'a.reference-link' );
+		if ( editor.isReadOnly || !anchor?.querySelector( '.reference-link-missing' ) ) {
+			return;
+		}
+
+		const viewElement = editor.editing.view.domConverter.mapDomToView( anchor );
+		const reference = viewElement?.is( 'element' )
+			? editor.editing.mapper.toModelElement( viewElement )
+			: undefined;
+		if ( !reference?.is( 'element', 'reference' ) ) {
+			return;
+		}
+
+		const component = glob.getComponentByEl<EditorComponent>( editor.editing.view.getDomRoot() );
+		component?.fixReferenceLink?.( String( reference.getAttribute( 'storedTitle' ) ?? '' ), href => {
+			editor.execute( 'referenceLink', { href, replace: reference } );
+			editor.editing.view.focus();
+		} );
 	}
 
 	_defineSchema() {

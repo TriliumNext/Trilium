@@ -703,7 +703,7 @@ async function loadReferenceLinkTitle(
 
     if (!note) {
         $el.text(storedTitle || MISSING_NOTE_TITLE)
-            .addClass("reference-link-missing")
+            .addClass("reference-link-missing no-link-navigation")
             .prepend($("<span>").addClass("tn-icon bx bx-x"));
         return;
     }
