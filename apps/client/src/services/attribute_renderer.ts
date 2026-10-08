@@ -90,6 +90,7 @@ const HIDDEN_ATTRIBUTES = [
     "pageSize",
     "viewType",
     "geolocation",
+    "imagePosition",
     "docName",
     "webViewSrc",
     "archived"

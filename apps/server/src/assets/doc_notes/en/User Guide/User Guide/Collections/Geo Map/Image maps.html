@@ -1,0 +1,76 @@
+<p>An image map is a geo map drawn over an image of your own instead of a
+  world map, such as a floor plan, a fantasy map for a tabletop game, or
+  a diagram to annotate. Markers and shapes work as they do on a geo map,
+  but their positions are measured in the image's own pixels instead of latitude
+  and longitude.</p>
+<h2>Creating an image map</h2>
+<ol>
+  <li>Upload the image as a note of its own, for example by dragging the file
+    into the note tree.</li>
+  <li>Create a geo map, or open an existing one.</li>
+  <li>In the attributes of the geo map, add a <code>~map:image</code>  <a href="#root/_help_Cq5X6iKQop6R">relation</a> pointing
+    to the image note.</li>
+</ol>
+<p>The map then shows the image instead of the world map and opens with the
+  whole image in view. To go back to a world map, remove the relation.</p>
+<aside
+class="admonition note">
+  <p>The image is drawn as a single picture, so very large images can fail
+    to display on devices whose graphics card cannot hold them. Images up to
+    4096 pixels on their longer side are safe on practically every device.</p>
+</aside>
+<h2>Interaction</h2>
+<p>Adding, moving and removing markers, drawing shapes, the popup view and
+  the contextual menu work as described for the&nbsp;<a class="reference-link"
+  href="#root/_help_81SGnPGMk7Xc">Geo Map</a>. The camera stays over the
+  image and can zoom in up to four times past the image's own resolution.</p>
+<p>The features that only make sense on a real map are not available on an
+  image map:</p>
+<ul>
+  <li>Searching the map and searching for places online.</li>
+  <li>Going to your location.</li>
+  <li>Adding GPS tracks.</li>
+  <li>Clicking the places the base map shows.</li>
+  <li>The 3D buildings and the scale.</li>
+  <li>Opening a location in an external map application.</li>
+</ul>
+<p>The look of the marker titles follows the image: if the image is dark,
+  add the <code>#map:darkStyle</code> label to the geo map so that the titles
+  are drawn in a light color.</p>
+<h2>How the positions are stored</h2>
+<p>Positions are stored in pixels of the image at its original size, measured
+  from its top-left corner, with <code>x</code> growing to the right and <code>y</code> growing
+  downwards. Because they are stored in different labels from the ones of
+  a geo map, the same note can be placed both on a geo map and on an image
+  map.</p>
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Content</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>#imagePosition</code>
+        </td>
+        <td>The position of a marker, as <code>x,y</code>, for example <code>#imagePosition=320,145</code>.</td>
+      </tr>
+      <tr>
+        <td><code>#imageShape</code>
+        </td>
+        <td>A shape, in the same format as <code>#geoShape</code> (see&nbsp;<a class="reference-link"
+          href="#root/_help_C2H9HK4BzwG7">Drawing shapes</a>) but with <code>x,y</code> pairs,
+          and a circle's radius in pixels, for example <code>#imageShape=circle:400,300 50</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
+<p>Since the positions are in pixels, replacing the image with one of a different
+  size moves the markers relative to what the image shows. Prefer keeping
+  the same dimensions when updating the image.</p>
+<aside class="admonition tip">
+  <p>To draw freely over an image instead of placing notes on it, consider
+    a&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>.</p>
+</aside>

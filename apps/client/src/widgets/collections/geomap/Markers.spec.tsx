@@ -23,7 +23,8 @@ import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import { CLUSTER_COUNT_LAYER, CLUSTER_LAYER } from "./clusters";
 import { MapStyleLoaded, ParentMap } from "./map";
-import Markers, { FitToNotes, formatLocation, MARKER_LAYER, MARKER_SOURCE, parseLocation, SELECTION_LAYER } from "./Markers";
+import Markers, { FitToNotes, MARKER_LAYER, MARKER_SOURCE, SELECTION_LAYER } from "./Markers";
+import { formatLocation, parseLocation } from "./space";
 
 vi.mock("../../../services/icon_glyphs", () => ({
     renderIconImage: vi.fn(async () => "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=")

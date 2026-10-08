@@ -8,15 +8,15 @@ import note_create from "../../../services/note_create";
 import { deleteNoteOrBranch } from "../../../services/note_deletion";
 import { GPX_MIME } from "./GpxTrack";
 import type { GeoMouseEvent } from "./map";
-import { LOCATION_ATTRIBUTE } from "./Markers";
-import { type GeoShape, serializeGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import type { GeoShape } from "./shapes";
+import { geoSpace, type MapSpace } from "./space";
 
 /** The type a note put on the map is created as, and so what a template handed to it must match. */
 export const MARKER_NOTE_TYPE: NoteType = "text";
 
-export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
-    const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
-    await attributes.setLabel(noteId, LOCATION_ATTRIBUTE, value);
+export async function moveMarker(space: MapSpace, noteId: string, latLng: { lat: number; lng: number } | null) {
+    const value = latLng ? space.serializeLocation([ latLng.lng, latLng.lat ]) : "";
+    await attributes.setLabel(noteId, space.locationAttribute, value);
 }
 
 /**
@@ -32,7 +32,7 @@ export async function moveMarker(noteId: string, latLng: { lat: number; lng: num
  * rather than from a location written on it, so there is no taking it off the map and keeping it —
  * the note is the track. That is also why it is not offered under the same name (see ContextMenus).
  */
-export async function removeFromMap(note: FNote, mapNote: FNote) {
+export async function removeFromMap(space: MapSpace, note: FNote, mapNote: FNote) {
     const isTrack = note.mime === GPX_MIME;
     // The map's own branch for the note, which is how a note the map merely shows — cloned in from
     // elsewhere, and clone-able out again — is told from one that lives here and nowhere else.
@@ -54,12 +54,12 @@ export async function removeFromMap(note: FNote, mapNote: FNote) {
 
     if (result.isDeleteNoteChecked) {
         await deleteNoteOrBranch(note.noteId, branchId);
-    } else if (note.hasLabel(SHAPE_ATTRIBUTE)) {
-        // A shape is on the map through its geometry rather than a location, so clearing
-        // SHAPE_ATTRIBUTE is what takes it off. The note and its content stay.
-        await attributes.setLabel(note.noteId, SHAPE_ATTRIBUTE, "");
+    } else if (note.hasLabel(space.shapeAttribute)) {
+        // A shape is on the map through its geometry rather than a location, so clearing the
+        // shape label is what takes it off. The note and its content stay.
+        await attributes.setLabel(note.noteId, space.shapeAttribute, "");
     } else {
-        await moveMarker(note.noteId, null);
+        await moveMarker(space, note.noteId, null);
     }
 }
 
@@ -102,8 +102,8 @@ export async function importGpxTrack(parentNote: FNote, file: File) {
  * unnamed instead, and the caller opens the pane on it with the name it was given selected —
  * naming the place is typing over it (see index.tsx).
  */
-export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
-    return createNoteAt(parentNote, [ e.latlng.lat, e.latlng.lng ]);
+export async function createNewNote(space: MapSpace, parentNote: FNote, e: GeoMouseEvent) {
+    return createNoteAt(space, parentNote, [ e.latlng.lng, e.latlng.lat ]);
 }
 
 /**
@@ -120,7 +120,7 @@ export async function createNewNote(parentNote: FNote, e: GeoMouseEvent) {
 export async function createNoteForPlace(parentNote: FNote, place: PlaceToKeep) {
     const title = place.unnamed ? undefined : place.name;
 
-    return createNoteAt(parentNote, [ place.lat, place.lng ], title, place.icon);
+    return createNoteAt(geoSpace, parentNote, [ place.lng, place.lat ], title, place.icon);
 }
 
 /** What keeping a place as a marker needs of it: where it stands, what to call it there, and what
@@ -152,9 +152,9 @@ interface PlaceToKeep {
  * through `#child:iconClass` or a template to apply instead.
  */
 async function createNoteAt(
-    parentNote: FNote, [ lat, lng ]: [number, number], title?: string, icon?: string) {
+    space: MapSpace, parentNote: FNote, point: [number, number], title?: string, icon?: string) {
     const noteAttributes: Omit<AttributeRow, "noteId" | "attributeId">[] = [
-        { type: "label", name: LOCATION_ATTRIBUTE, value: [ lat, lng ].join(",") }
+        { type: "label", name: space.locationAttribute, value: space.serializeLocation(point) }
     ];
     if (icon) {
         noteAttributes.push({ type: "label", name: "iconClass", value: icon });
@@ -169,9 +169,9 @@ async function createNoteAt(
  * A marker note but for the label, which holds the whole shape in `#geoShape` where a marker keeps
  * its point in `#geolocation` (see shapes.ts). Naming and icons follow the same rules.
  */
-export async function createShapeNote(parentNote: FNote, shape: GeoShape) {
+export async function createShapeNote(space: MapSpace, parentNote: FNote, shape: GeoShape) {
     return createMapNote(parentNote, [
-        { type: "label", name: SHAPE_ATTRIBUTE, value: serializeGeoShape(shape) }
+        { type: "label", name: space.shapeAttribute, value: space.serializeShape(shape) }
     ]);
 }
 

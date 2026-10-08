@@ -115,6 +115,10 @@ const IMAGE_MIME_MAPPINGS: Record<string, string> = {
 export const GEO_LOCATION_ATTRIBUTE = "geolocation";
 export const GEO_SHAPE_ATTRIBUTE = "geoShape";
 
+/** The same two labels on a map drawn over an image, holding pixels rather than degrees. */
+export const IMAGE_POSITION_ATTRIBUTE = "imagePosition";
+export const IMAGE_SHAPE_ATTRIBUTE = "imageShape";
+
 /** The icon a note on a geo map is drawn under where it has none of its own. */
 export const GEO_MARKER_ICON = "bx bx-pin";
 
@@ -132,8 +136,8 @@ export const GEO_SHAPE_ICONS: Record<string, string> = {
  * The icon a note is drawn under: its own `#iconClass` where it has one, and a default read off
  * what the note is otherwise.
  *
- * A note carrying a non-empty `#geolocation` is drawn as a pin, and one carrying a `#geoShape` as
- * the shape it names, where neither has anything more specific. The geo map therefore writes no
+ * A note carrying a non-empty `#geolocation` or `#imagePosition` is drawn as a pin, and one carrying
+ * a `#geoShape` or `#imageShape` as the shape it names, where neither has anything more specific. The geo map therefore writes no
  * `#iconClass` onto a marker or a shape it creates, so an icon it hands down through
  * `#child:iconClass` or a template still applies, and redrawing a shape as another kind changes the
  * icon with it. `iconClass` stays an argument rather than being read here because the share tree
@@ -163,10 +167,10 @@ export function getNoteIcon({
     } else if (type === "text") {
         // A place on a map is written onto a note deliberately, so it outranks the folder icon the
         // note picks up from having children.
-        if (getLabelValue(GEO_LOCATION_ATTRIBUTE)) {
+        if (getLabelValue(GEO_LOCATION_ATTRIBUTE) || getLabelValue(IMAGE_POSITION_ATTRIBUTE)) {
             return GEO_MARKER_ICON;
         }
-        const shape = getLabelValue(GEO_SHAPE_ATTRIBUTE);
+        const shape = getLabelValue(GEO_SHAPE_ATTRIBUTE) || getLabelValue(IMAGE_SHAPE_ATTRIBUTE);
         if (shape) {
             return GEO_SHAPE_ICONS[shape.split(":", 1)[0]] ?? GEO_SHAPE_ICONS.line;
         }

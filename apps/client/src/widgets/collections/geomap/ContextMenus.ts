@@ -13,9 +13,8 @@ import link from "../../../services/link.js";
 import { removeFromMap } from "./api.js";
 import { GPX_MIME } from "./GpxTrack.js";
 import { type GeoMouseEvent, ParentMap, toGeoMouseEvent } from "./map.js";
-import { formatLocation } from "./Markers.js";
 import { featureAt } from "./ShapeLayer.js";
-import { isShapeNote } from "./shapes.js";
+import { isShapeNote, type MapSpace, MapSpaceContext } from "./space.js";
 
 interface ContextMenusProps {
     /** The map's own note, which is how the tree is told what the map holds a note by. */
@@ -38,6 +37,7 @@ interface ContextMenusProps {
 
 export default function ContextMenus({ parentNote, isReadOnly, onRelocate, onCreateNote }: ContextMenusProps) {
     const map = useContext(ParentMap);
+    const space = useContext(MapSpaceContext);
 
     const onContextMenu = useCallback((e: GeoMouseEvent) => {
         if (!map) return;
@@ -47,12 +47,12 @@ export default function ContextMenus({ parentNote, isReadOnly, onRelocate, onCre
 
         if (feature) {
             // A note's context menu.
-            openContextMenu(feature.properties.id, e, { isEditable: !isReadOnly, onRelocate, parentNote });
+            openContextMenu(feature.properties.id, e, { isEditable: !isReadOnly, onRelocate, parentNote, space });
         } else {
             // Empty area context menu.
-            openMapContextMenu(e, !isReadOnly, onCreateNote);
+            openMapContextMenu(e, !isReadOnly, onCreateNote, space);
         }
-    }, [ map, isReadOnly, onRelocate, onCreateNote, parentNote ]);
+    }, [ map, space, isReadOnly, onRelocate, onCreateNote, parentNote ]);
 
     useEffect(() => {
         if (!onContextMenu || !map) return;
@@ -68,13 +68,14 @@ export default function ContextMenus({ parentNote, isReadOnly, onRelocate, onCre
     return null;
 }
 
-export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, onRelocate, parentNote }: {
+export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, onRelocate, parentNote, space }: {
     isEditable: boolean;
     onRelocate: (noteId: string) => void;
     parentNote: FNote;
+    space: MapSpace;
 }) {
     let items: MenuItem<keyof CommandMappings>[] = [
-        ...buildGeoLocationItem(e),
+        ...buildGeoLocationItem(e, space),
         { kind: "separator" },
         ...linkContextMenu.getItems(e),
     ];
@@ -85,7 +86,7 @@ export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, 
         items = [
             ...items,
             { kind: "separator" },
-            ...buildRelocateItem(noteId, onRelocate),
+            ...buildRelocateItem(noteId, onRelocate, space),
             {
                 // A track is named for what removing it does, which is delete the note: its line is
                 // drawn from the note's own file rather than from a location written on it, so there
@@ -93,7 +94,7 @@ export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, 
                 title: t(note?.mime === GPX_MIME ? "geo-map-context.delete-note" : "geo-map-context.remove-from-map"),
                 // Called rather than commanded: what was a broadcast command every open map heard
                 // would now put a dialog up on each of them in turn.
-                handler: () => note && void removeFromMap(note, parentNote),
+                handler: () => note && void removeFromMap(space, note, parentNote),
                 uiIcon: "bx bx-trash"
             },
             { kind: "separator"},
@@ -113,9 +114,9 @@ export function openContextMenu(noteId: string, e: GeoMouseEvent, { isEditable, 
     });
 }
 
-export function openMapContextMenu(e: GeoMouseEvent, isEditable: boolean, onCreateNote: (e: GeoMouseEvent) => void) {
+export function openMapContextMenu(e: GeoMouseEvent, isEditable: boolean, onCreateNote: (e: GeoMouseEvent) => void, space: MapSpace) {
     let items: MenuItem<keyof CommandMappings>[] = [
-        ...buildGeoLocationItem(e)
+        ...buildGeoLocationItem(e, space)
     ];
 
     if (isEditable) {
@@ -154,9 +155,9 @@ export function openMapContextMenu(e: GeoMouseEvent, isEditable: boolean, onCrea
  * only wrote a location onto the note, planting a stray pin while the figure stayed where it was.
  * DetailPane leaves the button out for the same reason.
  */
-function buildRelocateItem(noteId: string, onRelocate: (noteId: string) => void): MenuItem<keyof CommandMappings>[] {
+function buildRelocateItem(noteId: string, onRelocate: (noteId: string) => void, space: MapSpace): MenuItem<keyof CommandMappings>[] {
     const note = froca.getNoteFromCache(noteId);
-    if (!note || note.mime === GPX_MIME || isShapeNote(note)) {
+    if (!note || note.mime === GPX_MIME || isShapeNote(note, space)) {
         return [];
     }
 
@@ -165,15 +166,21 @@ function buildRelocateItem(noteId: string, onRelocate: (noteId: string) => void)
     ];
 }
 
-function buildGeoLocationItem(e: GeoMouseEvent) {
+function buildGeoLocationItem(e: GeoMouseEvent, space: MapSpace): MenuItem<keyof CommandMappings>[] {
     const coordinates: [number, number] = [ e.latlng.lng, e.latlng.lat ];
+    const copyItem: MenuItem<keyof CommandMappings> = {
+        title: space.formatLocation(coordinates),
+        uiIcon: "bx bx-crosshair",
+        handler: () => copyTextWithToast(space.formatLocation(coordinates, true))
+    };
+
+    // A spot on an image is no place the system can open.
+    if (space.kind === "image") {
+        return [ copyItem ];
+    }
 
     return [
-        {
-            title: formatLocation(coordinates),
-            uiIcon: "bx bx-crosshair",
-            handler: () => copyTextWithToast(formatLocation(coordinates, 15))
-        },
+        copyItem,
         {
             title: t("geo-map-context.open-location"),
             uiIcon: "bx bx-map-alt",

@@ -3083,6 +3083,7 @@
     "move-marker-toast-title": "Move marker",
     "unable-to-load-map": "Unable to load map.",
     "webgl-unavailable": "This map can't be drawn because WebGL isn't available. Check that hardware acceleration is enabled and that your graphics drivers are up to date.",
+    "image-unavailable": "This map's image couldn't be loaded. Check that the note its map:image relation points to is an image.",
     "enter-3d": "Tilt into a 3D view\nHold Ctrl and drag to tilt the map freely",
     "exit-3d": "Lay the map flat again",
     "close-details": "Close",

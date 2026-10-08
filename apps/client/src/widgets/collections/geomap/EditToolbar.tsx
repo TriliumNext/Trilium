@@ -15,8 +15,9 @@ interface EditToolbarProps {
     /** Arms the map for a note to be placed, or stands it down again — the visible counterpart of
      *  the Escape the instruction toast offers (see index.tsx). */
     onTogglePlacement: () => void;
-    /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). */
-    onAddGpxTrack: () => void;
+    /** Asks for a GPX file and brings it onto the map (see `addGpxTrack` in index.tsx). Absent on
+     *  an image map, which has no ground for a track to run over. */
+    onAddGpxTrack?: () => void;
 }
 
 /**
@@ -56,12 +57,12 @@ export default function EditToolbar({ isReadOnly, placing, onTogglePlacement, on
                 disabled={isReadOnly}
                 onClick={onTogglePlacement}
             />
-            <OverlayControlButton
+            {onAddGpxTrack && <OverlayControlButton
                 title={t("geo-map.add-gpx-track")}
                 icon="bx-trip"
                 disabled={isReadOnly}
                 onClick={onAddGpxTrack}
-            />
+            />}
         </OverlayControlGroup>
     );
 }

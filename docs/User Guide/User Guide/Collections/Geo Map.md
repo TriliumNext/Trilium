@@ -189,6 +189,8 @@ The location of a marker is stored in the `#geolocation` attribute of the child 
 
 This value can be added manually if needed. The value of the attribute is made up of the latitude and longitude separated by a comma.
 
+On an image map, the position is stored in `#imagePosition` instead (see <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>).
+
 ## Repositioning markers
 
 Once a marker is set, it can be repositioned using one of the two ways:
@@ -293,6 +295,10 @@ Similarly to the Google Maps approach:
 ## Drawing shapes on the map
 
 See the dedicated <a class="reference-link" href="Geo%20Map/Drawing%20shapes.md">Drawing shapes</a> page.
+
+## Using an image instead of the world map
+
+A geo map can be drawn over an image of your own, such as a floor plan or a fantasy map, with markers placed in the image's pixels. See <a class="reference-link" href="Geo%20Map/Image%20maps.md">Image maps</a>.
 
 ## Adding GPS tracks (.gpx)
 

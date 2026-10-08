@@ -1,7 +1,7 @@
 import "./index.css";
 
 import type { Map as MapLibreGLMap } from "maplibre-gl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
@@ -12,7 +12,8 @@ import toast from "../../../services/toast";
 import { fileAccept } from "../../../services/utils";
 import { logError } from "../../../services/ws";
 import CollectionProperties from "../../note_bars/CollectionProperties";
-import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSpacedUpdate } from "../../react/hooks";
+import { useCollectionTreeDrag, useColorScheme, useEffectiveReadOnly, useNoteBlob, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteLabelByName, useNoteProperty, useNoteRelation, useSpacedUpdate } from "../../react/hooks";
+import NoItems from "../../react/NoItems";
 import { ViewModeProps } from "../interface";
 import { createNewNote, createNoteForPlace, createShapeNote, importGpxTrack, moveMarker } from "./api";
 import Buildings from "./Buildings";
@@ -24,11 +25,11 @@ import DrawToolbar from "./DrawToolbar";
 import EditToolbar from "./EditToolbar";
 import GhostPin from "./GhostPin";
 import { GPX_MIME, GpxTrack } from "./GpxTrack";
-import Map, { DEFAULT_ZOOM, GeoMouseEvent } from "./map";
+import type { GeoSearchResult } from "./geocoding";
+import Map, { type CameraLimits, DEFAULT_ZOOM, GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import MapToolbar from "./MapToolbar";
-import type { GeoSearchResult } from "./geocoding";
-import Markers, { DEFAULT_MARKER_COLOR, FitToNotes, LOCATION_ATTRIBUTE } from "./Markers";
+import Markers, { DEFAULT_MARKER_COLOR, FitToNotes } from "./Markers";
 import PlaceMarker from "./PlaceMarker";
 import PlacePanel from "./PlacePanel";
 import Pois from "./Pois";
@@ -36,7 +37,8 @@ import ResultNavigator from "./ResultNavigator";
 import { NOTE_ZOOM, type SearchResult } from "./results";
 import SearchBox from "./SearchBox";
 import { ShapeLayer, ShapeNames } from "./ShapeLayer";
-import { GeoShape, parseGeoShape, SHAPE_ATTRIBUTE } from "./shapes";
+import type { GeoShape } from "./shapes";
+import { geoSpace, type ImageSize, imageSpace, type ImageSpace, MapSpaceContext } from "./space";
 import Tooltips from "./Tooltips";
 
 /**
@@ -61,8 +63,6 @@ const PLACEMENT_TOAST_ID = "geo-placement";
  * results asks for nothing on the way past, short enough not to be waited on once the stepping stops.
  */
 const OUTLINE_DELAY_MS = 250;
-
-export { LOCATION_ATTRIBUTE };
 
 interface MapData {
     view?: {
@@ -122,7 +122,11 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     const [ notes, setNotes ] = useState<FNote[]>([]);
-    const layerData = useLayerData(note);
+    const imageMap = useImageMap(note);
+    const image = imageMap.status === "image" ? imageMap : undefined;
+    const space = image?.space ?? geoSpace;
+    const isGeo = space.kind === "geo";
+    const layerData = useLayerData(note, image);
     const spacedUpdate = useSpacedUpdate(() => {
         if (viewConfig) {
             saveConfig(viewConfig);
@@ -133,9 +137,11 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
 
     useEffect(() => {
         if (!note) return;
-        setCoordinates(viewConfig?.view?.center ?? DEFAULT_COORDINATES);
+        // An image map with no saved view is fitted to its image as soon as it is drawn (see
+        // FitToNotes), so where it starts out matters only for the frame before that.
+        setCoordinates(viewConfig?.view?.center ?? (image ? imageCenter(image.space) : DEFAULT_COORDINATES));
         setZoom(viewConfig?.view?.zoom ?? DEFAULT_ZOOM);
-    }, [ note, viewConfig ]);
+    }, [ note, viewConfig, image ]);
 
     // Note creation and marker relocation. Both are scoped to this map instance via local callbacks
     // rather than global commands: embedded maps share no note context (no distinct ntxId), so a
@@ -267,12 +273,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const finishShape = useCallback(async (shape: GeoShape) => {
         setPlacement(undefined);
 
-        const created = await createShapeNote(note, shape);
+        const created = await createShapeNote(space, note, shape);
         if (!created) return;
 
         setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
         selectNote({ noteId: created.noteId, isNew: true });
-    }, [ note, selectNote ]);
+    }, [ space, note, selectNote ]);
 
     /**
      * Creates a note where the click landed and opens the pane on it, title selected, so naming the
@@ -285,12 +291,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
      * The marker appears with the pane rather than after it, which is no accident either.
      */
     const createNoteAt = useCallback(async (e: GeoMouseEvent) => {
-        const created = await createNewNote(note, e);
+        const created = await createNewNote(space, note, e);
         if (!created) return;
 
         setNotes((current) => current.some((n) => n.noteId === created.noteId) ? current : [ ...current, created ]);
         selectNote({ noteId: created.noteId, isNew: true });
-    }, [ note ]);
+    }, [ space, note ]);
 
     /**
      * Asks for a GPX file and brings it onto the map as a child note (see importGpxTrack). The
@@ -363,9 +369,9 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         if (placement.mode === "new") {
             await createNoteAt(e);
         } else {
-            await moveMarker(placement.noteId, e.latlng);
+            await moveMarker(space, placement.noteId, e.latlng);
         }
-    }, [ placement, createNoteAt ]);
+    }, [ space, placement, createNoteAt ]);
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
@@ -390,12 +396,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             const targetNote = await froca.getNote(noteId, true);
             const parents = targetNote?.getParentNoteIds();
             if (parents?.includes(note.noteId)) {
-                await moveMarker(noteId, latlng);
+                await moveMarker(space, noteId, latlng);
                 return [];
             }
 
             await branches.cloneNoteToParentNote(noteId, note.noteId);
-            await moveMarker(noteId, latlng);
+            await moveMarker(space, noteId, latlng);
             return [ noteId ];
         }
     });
@@ -406,7 +412,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 lives on the map itself (see EditToolbar), where it survives the map going
                 fullscreen without this bar. */}
             <CollectionProperties note={note} />
-            { coordinates !== undefined && zoom !== undefined && <Map
+            {imageMap.status === "error" && <NoItems icon="bx bx-image-alt" text={t("geo-map.image-unavailable")} />}
+            { coordinates !== undefined && zoom !== undefined && imageMap.status !== "loading" && imageMap.status !== "error" &&
+            <MapSpaceContext.Provider value={space}><Map
+                // Built afresh when the image changes: the camera's limits are fixed when the map
+                // is made, and they are the image's.
+                key={image?.url ?? "geo"}
                 apiRef={apiRef} containerRef={containerRef}
                 coordinates={coordinates}
                 zoom={zoom}
@@ -417,12 +428,15 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     spacedUpdate.scheduleUpdate();
                 }}
                 onClick={onClick}
-                scale={hasScale}
+                scale={hasScale && isGeo}
+                limits={image && imageLimits(image.space)}
             >
-                <SearchBox
+                {/* Searching looks up places as well as the map's own notes, which an image has
+                    none of. */}
+                {isGeo && <SearchBox
                     notes={notes}
                     onPickResult={(picked) => picked ? showResult(picked.results, picked.index) : clearSearch()}
-                />
+                />}
                 {walk && <ResultNavigator
                     results={walk.results} index={walk.index}
                     onStep={(index) => showResult(walk.results, index)}
@@ -437,12 +451,12 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                         onAddMarker={keepPlaceAsMarker} onClose={() => pickPlace(null)}
                     />
                 </>}
-                <MapToolbar onLocationClick={showLocation} />
+                <MapToolbar onLocationClick={isGeo ? showLocation : undefined} canLocate={isGeo} />
                 <EditToolbar
                     isReadOnly={isReadOnly}
                     placing={placement?.mode === "new"}
                     onTogglePlacement={toggleNotePlacement}
-                    onAddGpxTrack={addGpxTrack}
+                    onAddGpxTrack={isGeo ? addGpxTrack : undefined}
                 />
                 <DrawToolbar
                     isReadOnly={isReadOnly}
@@ -468,20 +482,20 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 <ContextMenus parentNote={note} isReadOnly={isReadOnly} onRelocate={startMarkerRelocation} onCreateNote={createNoteAt} />
                 {/* Stood up only while the view is leaned over, so the 3D button changes the map
                     and not merely the angle it is seen from. */}
-                <Buildings isDarkTheme={layerData.isDarkTheme ?? false} />
+                {isGeo && <Buildings isDarkTheme={layerData.isDarkTheme ?? false} />}
                 {/* The places the base map itself draws answer a click, which is a marker named and
                     placed without typing either (see Pois). */}
-                <Pois placing={!!placement} onPick={pickPlace} />
+                {isGeo && <Pois placing={!!placement} onPick={pickPlace} />}
                 {/* The pane above is what a click on a marker opens now, so the markers no longer
                     open the note themselves — the two would otherwise both answer the same click,
                     raising the quick editor over the pane that had just opened behind it. */}
                 <Markers notes={notes} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} clustered={clustered} placing={!!placement} opensNotes={false} selectedNoteId={selection?.noteId ?? null} />
-                {notes.map(note => <NoteGpxTrackWrapper key={note.noteId} note={note} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} />)}
+                {isGeo && notes.map(note => <NoteGpxTrackWrapper key={note.noteId} note={note} hideLabels={hideLabels} isDarkTheme={layerData.isDarkTheme ?? false} />)}
                 {notes.map(note => <NoteShapeWrapper key={note.noteId} note={note} />)}
                 {/* One binding for every shape's layers, rather than one per shape (see ShapeNames). */}
                 <ShapeNames />
-                <FitToNotes notes={notes} enabled={!viewConfig?.view} />
-            </Map>}
+                <FitToNotes notes={notes} enabled={!viewConfig?.view} bounds={image?.space.bounds} />
+            </Map></MapSpaceContext.Provider>}
         </div>
     );
 }
@@ -514,7 +528,78 @@ function pickGpxFile(): Promise<File | null> {
     });
 }
 
-function useLayerData(note: FNote) {
+/**
+ * What an image map is drawn over, followed through `~map:image`: the picture's URL and the space
+ * its natural size makes (see {@link imageSpace}). A map without the relation is a geo map.
+ *
+ * The image is loaded here once to be measured, which MapLibre then loads again from the browser's
+ * cache. Its size has to be known before the map is built, since the camera's limits are (see
+ * {@link imageLimits}).
+ */
+type ImageMapState =
+    | { status: "geo" }
+    | { status: "loading" }
+    | { status: "error" }
+    | { status: "image"; url: string; space: ImageSpace };
+
+function useImageMap(note: FNote): ImageMapState {
+    const [ imageNoteId ] = useNoteRelation(note, "map:image");
+    const [ state, setState ] = useState<ImageMapState>(imageNoteId ? { status: "loading" } : { status: "geo" });
+
+    useEffect(() => {
+        if (!imageNoteId) {
+            setState({ status: "geo" });
+            return;
+        }
+
+        let cancelled = false;
+        setState({ status: "loading" });
+
+        (async () => {
+            const imageNote = await froca.getNote(imageNoteId, true);
+            // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
+            const url = imageNote && new URL(
+                `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}`, document.baseURI).href;
+            const size = url ? await measureImage(url) : null;
+            if (cancelled) return;
+
+            if (!url || !size) {
+                logError(`The image ${imageNoteId} of map ${note.noteId} could not be loaded.`);
+                setState({ status: "error" });
+                return;
+            }
+            setState({ status: "image", url, space: imageSpace(size) });
+        })();
+
+        return () => { cancelled = true; };
+    }, [ note.noteId, imageNoteId ]);
+
+    return state;
+}
+
+/** The natural size of the image at `url`, or `null` where it does not load as one. */
+function measureImage(url: string): Promise<ImageSize | null> {
+    return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve(image.naturalWidth && image.naturalHeight
+            ? { width: image.naturalWidth, height: image.naturalHeight }
+            : null);
+        image.onerror = () => resolve(null);
+        image.src = url;
+    });
+}
+
+/** Keeps the camera over the image, from showing all of it to a few levels past its own pixels. */
+function imageLimits(space: ImageSpace): CameraLimits {
+    return { minZoom: 0, maxZoom: space.maxZoom, maxBounds: space.maxBounds };
+}
+
+/** The middle of the image, latitude first as {@link MapData} holds a centre. */
+function imageCenter({ bounds: [ [ west, south ], [ east, north ] ] }: ImageSpace): [number, number] {
+    return [ (south + north) / 2, (west + east) / 2 ];
+}
+
+function useLayerData(note: FNote, image: { url: string; space: ImageSpace } | undefined) {
     const [ layerName ] = useNoteLabel(note, "map:style");
     // Whether the style is a dark one, which decides how a marker's title is drawn over it (see
     // Markers). Only the style itself can say, and a style named by URL says nothing to us: it is
@@ -523,6 +608,16 @@ function useLayerData(note: FNote) {
     const isSystemDark = useColorScheme() === "dark";
     // Memo is needed because it would generate unnecessary reloads due to layer change.
     const layerData = useMemo(() => {
+        if (image) {
+            return {
+                name: "Image",
+                type: "image",
+                url: image.url,
+                corners: image.space.corners,
+                isDarkTheme: isDarkStyle
+            } satisfies MapLayer;
+        }
+
         // Custom layers.
         if (layerName?.startsWith("http")) {
             return {
@@ -549,7 +644,7 @@ function useLayerData(note: FNote) {
         }
 
         return isDarkStyle ? { ...layerData, isDarkTheme: true } : layerData;
-    }, [ layerName, isDarkStyle, isSystemDark ]);
+    }, [ image, layerName, isDarkStyle, isSystemDark ]);
 
     return layerData;
 }
@@ -607,15 +702,16 @@ function NoteGpxTrack({ note, hideLabels, isDarkTheme }: { note: FNote, hideLabe
 }
 
 /**
- * A note's drawn shape, read from its `#geoShape` label (see shapes.ts). A label that cannot be
+ * A note's drawn shape, read from the space's shape label (see space.ts). A label that cannot be
  * parsed draws nothing, as a note with no shape does: the label is user-editable like any other,
  * and a map is no place to report a parse error.
  */
 function NoteShapeWrapper({ note }: { note: FNote }) {
-    const [ shapeValue ] = useNoteLabel(note, SHAPE_ATTRIBUTE);
+    const space = useContext(MapSpaceContext);
+    const [ shapeValue ] = useNoteLabelByName(note, space.shapeAttribute);
     const [ color ] = useNoteLabel(note, "color");
 
-    const shape = shapeValue ? parseGeoShape(shapeValue) : null;
+    const shape = space.parseShape(shapeValue);
     if (!shape) {
         return null;
     }
