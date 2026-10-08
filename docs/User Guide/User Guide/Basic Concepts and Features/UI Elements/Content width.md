@@ -1,5 +1,5 @@
 # Content width
-Some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>, <a class="reference-link" href="../../Note%20Types/Relation%20Map.md">Relation Map</a>, and saved search intentionally limit the width of the content.
+Some note types (such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and saved search) intentionally limit the width of the content.
 
 This might appear surprising at first, but the idea is to make text fit well on wider screens without appearing distorted. This is especially the case if the document contains <a class="reference-link" href="../../Note%20Types/Text/Images.md">Images</a>, tables or other width-dependent elements.
 
