@@ -327,6 +327,63 @@ describe("ContentEmbed", () => {
         expect(selected?.name).toBe("contentEmbed");
     });
 
+    describe("renderer focus after a press in the widget", () => {
+        /** Presses the embed of a focused editor, which turns `_renderer.isFocused` off. */
+        function pressWidgetOfFocusedEditor() {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>"
+                + "<contentEmbed noteId=\"noteFocus\" boxSize=\"small\"></contentEmbed>"
+                + "<paragraph>bar</paragraph>");
+            // A headless page cannot take the real focus, so set the flag the renderer reads.
+            editor.editing.view.document.isFocused = true;
+            pressWidget();
+        }
+
+        function pressWidget() {
+            const root = editor.editing.view.getDomRoot();
+            const wrapper = root?.querySelector("div.include-note-wrapper");
+            if (!wrapper) {
+                throw new Error("The embed was not rendered.");
+            }
+            wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+            expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+            expect(rendererIsFocused()).toBe(false);
+        }
+
+        function rendererIsFocused() {
+            //@ts-expect-error: The renderer is a private field.
+            return editor.editing.view._renderer.isFocused as boolean;
+        }
+
+        it("turns the renderer's focus back on once the selection leaves the widget", () => {
+            pressWidgetOfFocusedEditor();
+
+            editor.model.change((writer) => {
+                const root = editor.model.document.getRoot();
+                if (!root) {
+                    throw new Error("The editor has no root.");
+                }
+                writer.setSelection(root.getChild(2), "end");
+            });
+            expect(rendererIsFocused()).toBe(true);
+
+            // The next press turns it off again.
+            pressWidget();
+        });
+
+        it("turns the renderer's focus back on once the selected widget is deleted", () => {
+            pressWidgetOfFocusedEditor();
+
+            editor.execute("delete");
+            expect(getModelData(editor.model)).toBe(
+                "<paragraph>foo</paragraph><paragraph>[]</paragraph><paragraph>bar</paragraph>");
+            expect(rendererIsFocused()).toBe(true);
+            // The DOM selection follows the model selection into the new empty paragraph.
+            const domSelection = window.getSelection();
+            const caretParagraph = editor.editing.view.getDomRoot()?.children[1];
+            expect(caretParagraph?.contains(domSelection?.anchorNode ?? null)).toBe(true);
+        });
+    });
+
     it("suppresses the native caret on a non-interactive mousedown but not on interactive targets", () => {
         insertContentEmbed(editor, "noteCaret", "small");
 

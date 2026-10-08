@@ -373,6 +373,15 @@ class ContentEmbedEditing extends Plugin {
 			TOGGLE_EDITABLE_COMMAND_NAME, new ToggleContentEmbedEditableCommand( editor ) );
 
 		editor.model.document.registerPostFixer( writer => this.removeTinyCaptions( writer ) );
+
+		// `preventCKEditorHandling()` turns `_renderer.isFocused` off for a press in an embed.
+		// Without a reset once the selection leaves it, the DOM selection stops following the model.
+		const selection = editor.model.document.selection;
+		this.listenTo( selection, 'change:range', () => {
+			if ( !isContentEmbed( selection.getSelectedElement() ) ) {
+				restoreRendererFocus( editor );
+			}
+		} );
 	}
 
 	/** Keeps a copy of `caption`, for `embed` to show again. */
@@ -1293,6 +1302,13 @@ function preventCKEditorHandling( domElement: HTMLElement, editor: Editor ) {
         //@ts-expect-error: We are accessing a private field.
 		editor.editing.view._renderer.isFocused = false;
 	}
+}
+
+/** Sets `_renderer.isFocused` back to `view.document.isFocused`, undoing `hackRendererFocus()`. */
+function restoreRendererFocus( editor: Editor ) {
+	const view = editor.editing.view;
+	//@ts-expect-error: We are accessing a private field.
+	view._renderer.isFocused = view.document.isFocused;
 }
 
 /** Whether `target` is in the content box of an embed, rather than in its title row. */
