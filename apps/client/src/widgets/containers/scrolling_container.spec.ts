@@ -78,7 +78,7 @@ describe("ScrollingContainer", () => {
         expect(firstRect).not.toHaveBeenCalled();
     });
 
-    it("stops observing on cleanup", () => {
+    it("stops observing and listening to scrolls on cleanup", () => {
         const { scrollingContainer, container, observer } = render();
         const cancelAnimationFrame = vi.fn();
         vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrame);
@@ -88,6 +88,10 @@ describe("ScrollingContainer", () => {
 
         expect(observer.disconnected).toBe(true);
         expect(cancelAnimationFrame).toHaveBeenCalledWith(frames.length);
+
+        const framesBefore = frames.length;
+        container.dispatchEvent(new Event("scroll"));
+        expect(frames).toHaveLength(framesBefore);
     });
 
     /** Renders a container scrolled so that a paragraph sits right at its top edge. */

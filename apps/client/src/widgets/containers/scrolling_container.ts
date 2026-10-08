@@ -11,6 +11,7 @@ export default class ScrollingContainer extends Container<BasicWidget> {
     private scrollAnchor: ScrollAnchor | null = null;
     private pendingAnchorFrame: number | null = null;
     private resizeObserver?: ResizeObserver;
+    private scrollListener?: AbortController;
 
     constructor() {
         super();
@@ -36,13 +37,14 @@ export default class ScrollingContainer extends Container<BasicWidget> {
                 : null;
         };
 
+        this.scrollListener = new AbortController();
         container.addEventListener("scroll", () => {
             if (this.pendingAnchorFrame !== null) return;
             this.pendingAnchorFrame = requestAnimationFrame(() => {
                 this.pendingAnchorFrame = null;
                 recordAnchor();
             });
-        }, { passive: true });
+        }, { passive: true, signal: this.scrollListener.signal });
 
         let wasHidden = false;
         this.resizeObserver = new ResizeObserver(([ entry ]) => {
@@ -62,9 +64,11 @@ export default class ScrollingContainer extends Container<BasicWidget> {
     }
 
     cleanup() {
+        this.scrollListener?.abort();
         this.resizeObserver?.disconnect();
         if (this.pendingAnchorFrame !== null) {
             cancelAnimationFrame(this.pendingAnchorFrame);
+            this.pendingAnchorFrame = null;
         }
     }
 
