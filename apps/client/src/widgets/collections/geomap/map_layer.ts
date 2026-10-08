@@ -19,6 +19,12 @@ export type MapLayer = ({
     attribution: string;
     /** The deepest zoom the server draws tiles for, past which the last one is stretched instead. */
     maxZoom?: number;
+} | {
+    /** One picture in place of a world map (see `imageSpace`). */
+    type: "image";
+    url: string;
+    /** Where the picture's corners stand: top-left, top-right, bottom-right, bottom-left. */
+    corners: [[number, number], [number, number], [number, number], [number, number]];
 }) & {
     // Common properties
     name: string;

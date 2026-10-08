@@ -7852,6 +7852,41 @@
                                     "format": "markdown",
                                     "dataFileName": "Drawing shapes.md",
                                     "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "ZRDXGc0nAIh4",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "GTwFsgaA0lCt",
+                                        "81SGnPGMk7Xc",
+                                        "ZRDXGc0nAIh4"
+                                    ],
+                                    "title": "Image maps",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "image-maps",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-image-alt",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Image maps.md",
+                                    "attachments": []
                                 }
                             ]
                         },

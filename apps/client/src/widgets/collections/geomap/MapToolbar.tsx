@@ -53,6 +53,8 @@ interface MapToolbarProps {
      * click's own coordinates on it (see {@link useGeolocate}).
      */
     onLocationClick?: (location: LngLat) => void;
+    /** Whether the device's position means anything on this map, which it does not on an image. */
+    canLocate?: boolean;
 }
 
 /** A position as the Geolocation API reports one and `#geolocation` stores it. */
@@ -61,7 +63,7 @@ interface LngLat {
     lng: number;
 }
 
-export default function MapToolbar({ onLocationClick }: MapToolbarProps) {
+export default function MapToolbar({ onLocationClick, canLocate = true }: MapToolbarProps) {
     const map = useContext(ParentMap);
     // The zoom is only read for the steps' disabled state, so where the steps stay home the map is
     // not listened to for it either.
@@ -70,7 +72,7 @@ export default function MapToolbar({ onLocationClick }: MapToolbarProps) {
     // The map itself rather than the whole view: what is around it is the note's own chrome, and
     // everything the bar above the map offers is on the map's right-click menu as well.
     const [ isFullscreen, toggleFullscreen ] = useFullscreen(map?.getContainer());
-    const locate = useGeolocate(map, onLocationClick);
+    const locate = useGeolocate(canLocate ? map : null, onLocationClick);
 
     if (!map) return null;
 

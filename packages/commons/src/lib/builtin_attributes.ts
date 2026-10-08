@@ -301,6 +301,12 @@ const BUILTIN_ATTRIBUTES = [
     // A shape drawn onto a geo map: a kind, a colon, then a `lat,lng` per vertex (see the
     // client's geomap/shapes.ts).
     { type: "label", name: "geoShape", valueType: "text", hasUserValue: true },
+    // The counterparts of `geolocation` and `geoShape` on a map drawn over an image (`~map:image`):
+    // `x,y` in the map's coordinates, which are the image's own pixels unless the map names others.
+    { type: "label", name: "mapPosition", valueType: "text", hasUserValue: true },
+    { type: "label", name: "mapShape", valueType: "text", hasUserValue: true },
+    // The coordinates of an image map's top-left and bottom-right corners, as `x,y x,y`.
+    { type: "label", name: "map:imageBounds", valueType: "text", hasUserValue: true },
     // Which note map a note map note draws; anything but `tree` is read as `link`.
     { type: "label", name: "mapType", valueType: "select", hasUserValue: true, selectOptions: [
         "link", "tree"
@@ -350,6 +356,8 @@ const BUILTIN_ATTRIBUTES = [
     { type: "relation", name: "runOnChildNoteCreation", isDangerous: true },
     { type: "relation", name: "runOnAttributeCreation", isDangerous: true },
     { type: "relation", name: "runOnAttributeChange", isDangerous: true },
+    // The image a geo map draws in place of a world map.
+    { type: "relation", name: "map:image" },
     { type: "relation", name: "template" },
     // Set on a template: where a note created from it goes when no parent is picked explicitly.
     { type: "relation", name: "template:newNoteDefaultParent" },
