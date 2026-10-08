@@ -30,7 +30,7 @@ When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>
 *   _Markdown_ and _Canvas_ switch the note to that type in one click.
 *   _Code_ lists the scripting notes (_Custom CSS_, _Widget_ and _Backend script_), then the enabled code languages.
 *   _Collection_ and _Template_ list the collections and the templates.
-*   _All types_ offers everything at once, the shortcuts above included: the same menu as _Insert note after_ in the <a class="reference-link" href="Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, with every note type and template grouped the same way.
+*   _All types_ offers everything at once, the shortcuts above included: the same menu as _Insert note after_ in the <a class="reference-link" href="Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a>, with every note type and template grouped the same way.
 
 Typing while the _Code_, _Template_ or _All types_ menu is open narrows it down to the matching entries.
 
@@ -46,7 +46,7 @@ Note badges appear near the fixed note title and indicate important information 
 
 The following badges are available:
 
-*   **Read-only badge**, which will be shown if the note is not editable due to either automatic read-only or manual read-only. Clicking on the badge will temporarily edit the note (similar to the Edit [floating button](Floating%20buttons.md)).
+*   **Read-only badge**, which will be shown if the note is not editable due to either automatic read-only or manual read-only. Clicking on the badge will temporarily edit the note (similar to the old <span class="tn-icon bx bx-edit-alt"></span> floating button).
 *   **Share badge**, which will indicate that the current note is shared. The badge will also indicate if the share is on the local network (for the desktop application without <a class="reference-link" href="../../Installation%20%26%20Setup/Synchronization.md">Synchronization</a> set up) or publicly accessible (for the server).
 *   **Web clip badge**, which will indicate if the note was clipped using the <a class="reference-link" href="../../Installation%20%26%20Setup/Web%20Clipper.md">Web Clipper</a>. The badge acts as a link, so it can be clicked on to navigate to the page or right clicked for more options.
 *   **Execute badge**, for [scripts](../../Scripting.md) or [saved SQL queries](../../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md) which have an execute button or a description.

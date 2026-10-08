@@ -1,5 +1,5 @@
 # Read-Only Notes
-Some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> and <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes in Trilium can be set to read-only. When a note is in read-only mode, it is presented to the user in a non-editable view, with the option to switch to editing mode if needed.
+Some note types such as <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>, <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes and even some of the <a class="reference-link" href="../../Collections.md">Collections</a> can be set to read-only. When a note is in read-only mode, it is presented to the user in a non-editable view, with the option to switch to editing mode if needed.
 
 ## Automatic read-only mode
 
@@ -31,16 +31,6 @@ Apart from using the <a class="reference-link" href="../UI%20Elements/Note%20bu
 
 ## Temporarily editing a read-only note
 
-When accessing a read-only note, it's possible to temporarily edit it by:
-
-*   Pressing the _Read-only_ badge on the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>.
-*   Or pressing the <span class="tn-icon bx bx-pencil"></span> button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
+When accessing a read-only note, it's possible to temporarily edit it pressing the _Read-only_ badge.
 
 When pressed, the note will become editable but will become read-only again after navigating to a different note.
-
-## Special read-only behavior
-
-Some note types have a special behavior based on whether the read-only mode is enabled:
-
-*   <a class="reference-link" href="../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> will hide the Mermaid source code and display the diagram preview in full-size. In this case, the read-only mode can be easily toggled on or off via a dedicated button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
-*   <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map</a> will disallow all interaction that would otherwise change the map (dragging notes, adding new items).

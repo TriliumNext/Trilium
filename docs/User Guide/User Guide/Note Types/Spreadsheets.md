@@ -33,7 +33,6 @@ Both [import and export](../Basic%20Concepts%20and%20Features/Import%20%26%20Exp
     *   Multiple files can be imported at the same time, including a mixture of .csv and .xlsx files. Folder structure can be preserved by using a .zip file.
 *   Unlike importing, exporting is on a per-note basis:
     *   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>, choose the _Export to Excel_ or _Export to CSV_ options for the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>.
-    *   For the old layout, choose the corresponding buttons in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
     *   If exported as a single file via <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a>, the resulting file will be a custom `.triliumsheet` file that preserves the spreadsheet as-is.
         *   The export is intentionally a different process than the normal <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md">Import &amp; Export</a> functionality because it does conversion to multiple formats with varying degrees of compatibility.
 

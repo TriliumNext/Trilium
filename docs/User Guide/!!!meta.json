@@ -2036,41 +2036,6 @@
                                 },
                                 {
                                     "isClone": false,
-                                    "noteId": "XpOYSgsLkTJy",
-                                    "notePath": [
-                                        "pOsGYCXsbNQG",
-                                        "gh7bpGYxajRS",
-                                        "Vc8PjrjAGuOp",
-                                        "XpOYSgsLkTJy"
-                                    ],
-                                    "title": "Floating buttons",
-                                    "notePosition": 160,
-                                    "prefix": null,
-                                    "isExpanded": false,
-                                    "type": "text",
-                                    "mime": "text/html",
-                                    "attributes": [
-                                        {
-                                            "type": "label",
-                                            "name": "iconClass",
-                                            "value": "bx bx-rectangle",
-                                            "isInheritable": false,
-                                            "position": 10
-                                        },
-                                        {
-                                            "type": "label",
-                                            "name": "shareAlias",
-                                            "value": "floating-buttons",
-                                            "isInheritable": false,
-                                            "position": 60
-                                        }
-                                    ],
-                                    "format": "markdown",
-                                    "dataFileName": "Floating buttons.md",
-                                    "attachments": []
-                                },
-                                {
-                                    "isClone": false,
                                     "noteId": "RnaPdbciOfeq",
                                     "notePath": [
                                         "pOsGYCXsbNQG",

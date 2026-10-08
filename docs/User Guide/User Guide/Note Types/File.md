@@ -26,7 +26,7 @@ Interaction:
 
 *   _Copy reference to clipboard_, for embedding the image within <a class="reference-link" href="Text.md">Text</a> notes.
     *   See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
-    *   Alternatively, press the corresponding button from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
+    *   Alternatively, press the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>.
 
 ### Videos
 

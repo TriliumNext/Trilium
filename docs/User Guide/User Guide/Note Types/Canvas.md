@@ -1,13 +1,11 @@
 # Canvas
 <figure class="image"><img src="Canvas_image.png" alt="grafik"></figure>
 
-Available since Trilium v0.52.
-
 Canvas notes use the Excalidraw library to allow handwritten notes with mouse, pen or touch on an infinite canvas. It also supports basic diagramming, text and graphics input.
 
 ## Interaction
 
-*   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> section.
+*   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>.
 
 ## Embedding notes
 
@@ -22,4 +20,4 @@ Embedding notes in the canvas follows the same rules as <a class="reference-lin
 
 ## Drawing in a text note
 
-To draw inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert a drawing canvas with <span class="tn-icon bx bx-pen"></span> _Drawing canvas_ in the <span class="tn-icon cke cke-plus"></span> _Insert_ menu. See _Drawing canvases_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.
+To draw inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert a drawing canvas with <span class="tn-icon bx bx-pen"></span>_Drawing canvas_ in the <span class="tn-icon cke cke-plus"></span>_Insert_ menu. See _Drawing canvases_ in <a class="reference-link" href="Text/Include%20Note.md">Include Note</a>.

@@ -19,7 +19,6 @@ The following note types are supported:
 
 *   Clicking on a heading will scroll the document to the position of the heading.
 *   As the document is scrolled, the heading being read is highlighted and the list scrolls to keep it in view. If that heading is hidden inside a collapsed section, the collapsed heading is highlighted instead.
-*   Pressing the close button will dismiss the table of contents but it can be shown again from the <a class="reference-link" href="../Floating%20buttons.md">Floating buttons</a> section.
 
 ## Highlights
 
@@ -40,7 +39,7 @@ Highlighted text is defined as:
 ### Interaction
 
 *   Clicking on a highlighted text will scroll the document to its position.
-*   For the old layout only, pressing the close button will dismiss the list of highlights but it can be shown again from the <a class="reference-link" href="../Floating%20buttons.md">Floating buttons</a> section.
+*   Nested items can be collapsed by pressing the corresponding <span class="tn-icon bx bx-chevron-down"></span> button.
 
 ### Configuration
 
