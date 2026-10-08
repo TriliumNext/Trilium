@@ -63,6 +63,21 @@ describe("ScrollingContainer", () => {
         expect(scrollTo).not.toHaveBeenCalled();
     });
 
+    it("searches from the last anchor on the next scroll", () => {
+        const { container } = render();
+        const first = document.createElement("p");
+        const second = document.createElement("p");
+        container.prepend(first, second);
+        const firstRect = vi.spyOn(first, "getBoundingClientRect")
+            .mockReturnValue(new DOMRect(0, -150, 500, 50));
+        vi.spyOn(second, "getBoundingClientRect").mockReturnValue(new DOMRect(0, -100, 500, 50));
+
+        paragraphTop = -20;
+        scrollAndWaitForFrame(container, 1020);
+
+        expect(firstRect).not.toHaveBeenCalled();
+    });
+
     it("stops observing on cleanup", () => {
         const { scrollingContainer, container, observer } = render();
         const cancelAnimationFrame = vi.fn();

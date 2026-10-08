@@ -48,6 +48,48 @@ describe("findScrollAnchor", () => {
         expect(findScrollAnchor(container))
             .toEqual({ element: byId(container, "next"), offset: 30 });
     });
+
+    describe("with the previous anchor", () => {
+        it("walks forward from it without reading the blocks above it", () => {
+            const { container, rects } = buildParagraphs([ -500, -400, -300, -200, -100, 20 ]);
+            const previous = byId(container, "p3");
+
+            expect(findScrollAnchor(container, previous))
+                .toEqual({ element: byId(container, "p5"), offset: -80 });
+            expect(rects[0]).not.toHaveBeenCalled();
+            expect(rects[2]).not.toHaveBeenCalled();
+        });
+
+        it("walks back from it when the content moved down", () => {
+            const { container, rects } = buildParagraphs([ -200, -100, 20, 120, 220, 320 ]);
+            const previous = byId(container, "p4");
+
+            expect(findScrollAnchor(container, previous))
+                .toEqual({ element: byId(container, "p2"), offset: -80 });
+            expect(rects[0]).not.toHaveBeenCalled();
+            expect(rects[5]).not.toHaveBeenCalled();
+        });
+
+        it("searches all blocks when it left the container", () => {
+            const { container, rects } = buildParagraphs([ -200, -100, 20, 120, 220, 320 ]);
+            const previous = byId(container, "p4");
+            previous.remove();
+
+            expect(findScrollAnchor(container, previous))
+                .toEqual({ element: byId(container, "p2"), offset: -80 });
+            expect(rects[0]).toHaveBeenCalled();
+        });
+
+        it("searches all blocks when it is hidden", () => {
+            const { container, rects } = buildParagraphs([ -200, -100, 20, 120, 220, 320 ]);
+            const previous = byId(container, "p4");
+            placeAt(previous, 0, 0, 0);
+
+            expect(findScrollAnchor(container, previous))
+                .toEqual({ element: byId(container, "p2"), offset: -80 });
+            expect(rects[0]).toHaveBeenCalled();
+        });
+    });
 });
 
 describe("restoreScrollAnchor", () => {
@@ -95,6 +137,18 @@ function buildContainer(html: string) {
     return container;
 }
 
+/**
+ * Builds a container with a `content` block holding paragraphs `p0`, `p1`… 100px tall at `tops`,
+ * and returns the mocks of their boxes.
+ */
+function buildParagraphs(tops: number[]) {
+    const paragraphs = tops.map((_, index) => `<p id="p${index}"></p>`).join("");
+    const container = buildContainer(`<div id="content">${paragraphs}</div>`);
+    placeAt(byId(container, "content"), tops[0], 1000);
+    const rects = tops.map((top, index) => placeAt(byId(container, `p${index}`), top, 100));
+    return { container, rects };
+}
+
 function byId(container: HTMLElement, id: string) {
     const element = container.querySelector(`#${id}`);
     if (!element) {
@@ -105,5 +159,6 @@ function byId(container: HTMLElement, id: string) {
 
 /** Mocks the box of `element`, since happy-dom does no layout. */
 function placeAt(element: Element, top: number, height: number, width = 100) {
-    vi.spyOn(element, "getBoundingClientRect").mockReturnValue(new DOMRect(0, top, width, height));
+    return vi.spyOn(element, "getBoundingClientRect")
+        .mockReturnValue(new DOMRect(0, top, width, height));
 }

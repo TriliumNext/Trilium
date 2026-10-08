@@ -31,7 +31,9 @@ export default class ScrollingContainer extends Container<BasicWidget> {
         const recordAnchor = () => {
             // A hidden container reads `scrollTop` as 0, so the recorded anchor stays.
             if (!container.getClientRects().length) return;
-            this.scrollAnchor = container.scrollTop > 0 ? findScrollAnchor(container) : null;
+            this.scrollAnchor = container.scrollTop > 0
+                ? findScrollAnchor(container, this.scrollAnchor?.element)
+                : null;
         };
 
         container.addEventListener("scroll", () => {
