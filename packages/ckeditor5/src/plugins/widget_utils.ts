@@ -1,4 +1,4 @@
-import type { Editor } from "ckeditor5";
+import { type Editor, isWidget, type ViewDocumentSelection, type ViewElement } from "ckeditor5";
 
 /**
  * Hack coming from https://github.com/ckeditor/ckeditor5/issues/4465
@@ -50,4 +50,31 @@ function selectParentWidget(domElement: HTMLElement, editor: Editor) {
     editor.model.enqueueChange({ isUndoable: false }, writer => {
         writer.setSelection(modelElement, "on");
     });
+}
+
+/**
+ * Returns the innermost widget with the `property` custom property that is selected or contains
+ * the selection. Used as the `getRelatedElement` of a widget toolbar.
+ */
+export function findSelectedWidget(
+    selection: ViewDocumentSelection,
+    property: string
+): ViewElement | null {
+    const selected = selection.getSelectedElement();
+    if (selected && isMarkedWidget(selected, property)) {
+        return selected;
+    }
+
+    let node = selection.getFirstPosition()?.parent ?? null;
+    while (node) {
+        if (node.is("element") && isMarkedWidget(node, property)) {
+            return node;
+        }
+        node = node.parent;
+    }
+    return null;
+}
+
+function isMarkedWidget(element: ViewElement, property: string) {
+    return !!element.getCustomProperty(property) && isWidget(element);
 }

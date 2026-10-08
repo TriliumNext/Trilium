@@ -115,6 +115,7 @@ export function SingleNoteRenderer({ note, onReady }: RendererProps) {
             } else {
                 if (note.type === "text") {
                     await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
+                    await import("@triliumnext/ckeditor5/src/theme/multicolumn.css");
                 }
                 // Printing preserves full embed nesting (see expandNestedEmbeds).
                 const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true, expandNestedEmbeds: true, mediaEnvironment: "native" });

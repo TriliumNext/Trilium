@@ -398,6 +398,13 @@ details::details-content {
 }
 /* #endregion */
 
+/* #region Multicolumn layout */
+.ck-content .trilium-multicolumn-layout {
+    --multicolumn-layout-border-color: #ccc;
+    --multicolumn-layout-stacked-background: #f0f0f0;
+}
+/* #endregion */
+
 /* #region Page breaks */
 .page-break {
     page-break-after: always;

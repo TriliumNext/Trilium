@@ -1380,38 +1380,44 @@
         "trilium-mermaid-split-mode"
       ]
     },
-    "cke-trilium-note": {
+    "cke-trilium-multicolumn": {
       "glyph": "",
+      "terms": [
+        "trilium-multicolumn"
+      ]
+    },
+    "cke-trilium-note": {
+      "glyph": "",
       "terms": [
         "trilium-note"
       ]
     },
     "cke-trilium-scissors": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-scissors"
       ]
     },
     "cke-trilium-tabs": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-tabs"
       ]
     },
     "cke-trilium": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium"
       ]
     },
     "cke-trilium-ai": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-ai"
       ]
     },
     "cke-trilium-template": {
-      "glyph": "",
+      "glyph": "",
       "terms": [
         "trilium-template"
       ]

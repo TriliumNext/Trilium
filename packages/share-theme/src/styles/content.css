@@ -191,3 +191,8 @@ body.type-webView {
     --card-background-color: var(--background-secondary);
     --main-text-color: var(--text-primary);
 }
+
+.ck-content .trilium-multicolumn-layout {
+    --multicolumn-layout-border-color: var(--background-highlight);
+    --multicolumn-layout-stacked-background: var(--background-secondary);
+}

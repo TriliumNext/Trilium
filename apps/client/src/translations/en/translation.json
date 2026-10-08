@@ -4390,7 +4390,12 @@
       "move-tab-right": "Move tab right",
       "copy-link-to-tab": "Copy link to tab",
       "tabs-toolbar": "Tabs toolbar",
-      "insert-titled-tabs-that-show-one-panel-at-a-time": "Insert titled tabs that show one panel at a time."
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "Insert titled tabs that show one panel at a time.",
+      "multicolumn-layout": "Multicolumn layout",
+      "multicolumn-layout-toolbar": "Multicolumn layout toolbar",
+      "column-layout": "Column layout",
+      "0-columns": "%0 columns",
+      "arrange-content-in-two-to-four-columns-side-by-side": "Arrange content in two to four columns side by side."
     },
     "task-state-dropped-title": "Invalid task states",
     "task-state-dropped-message_one": "A custom task state definition is invalid and was ignored.",

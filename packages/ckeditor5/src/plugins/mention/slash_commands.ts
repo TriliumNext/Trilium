@@ -39,6 +39,7 @@ import dateTimeIcon from "../../icons/date-time.svg?raw";
 import insertFootnoteIcon from "../../icons/insert-footnote.svg?raw";
 import importMarkdownIcon from "../../icons/markdown-mark.svg?raw";
 import mathIcon from "../../icons/math.svg?raw";
+import multicolumnIcon from "../../icons/multicolumn.svg?raw";
 import noteIcon from "../../icons/note.svg?raw";
 import tabsIcon from "../../icons/tabs.svg?raw";
 import internalLinkIcon from "../../icons/trilium.svg?raw";
@@ -370,6 +371,14 @@ export function buildTriliumSlashCommands(editor: Editor): SlashCommandDefinitio
             aliases: [ "tab", "tabbed", "tab group", "panels", "variants" ],
             icon: tabsIcon,
             commandName: "tabs"
+        },
+        {
+            id: "multicolumn-layout",
+            title: t("Multicolumn layout"),
+            description: t("Arrange content in two to four columns side by side."),
+            aliases: [ "columns", "column", "layout", "side by side" ],
+            icon: multicolumnIcon,
+            commandName: "multicolumnLayout"
         },
         {
             id: "footnote",

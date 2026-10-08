@@ -29,6 +29,10 @@ Interaction:
 *   The window can be dragged around by the top bar where the title is, to avoid it getting in the way of the text.
 *   Click on the _Category_ selector to filter the characters.
 
+## Multicolumn layout
+
+See the dedicated <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> page.
+
 ## Math equations
 
 See the dedicated <a class="reference-link" href="Math%20Equations.md">Math Equations</a> page.

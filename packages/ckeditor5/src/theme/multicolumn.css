@@ -1,0 +1,73 @@
+:where(:root) {
+    --multicolumn-layout-border-color: var(--main-border-color, var(--ck-color-base-border));
+    --multicolumn-layout-stacked-background: var(--accented-background-color,
+                                                 var(--ck-color-base-foreground));
+    --multicolumn-layout-border-radius: 8px;
+}
+
+.ck-content .trilium-multicolumn-layout {
+    container: multicolumn-layout / inline-size;
+    /* Intrinsic width for table cells: `container` makes the content's width count as zero. */
+    contain-intrinsic-inline-size: 15rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    margin: 1em 0;
+    border-radius: var(--multicolumn-layout-border-radius);
+
+    &[data-trilium-column-ratios="1-3"] {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+    }
+
+    &[data-trilium-column-ratios="3-1"] {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    }
+
+    &[data-trilium-column-ratios="1-1-1"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    &[data-trilium-column-ratios="1-2-1"] {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+    }
+
+    &[data-trilium-column-ratios="1-1-1-1"] {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    & > section {
+        border: 1px solid var(--multicolumn-layout-border-color);
+        border-radius: var(--multicolumn-layout-border-radius);
+        padding: .75rem 1rem;
+
+        &:not(:first-of-type) {
+            border-start-start-radius: 0;
+            border-end-start-radius: 0;
+        }
+
+        &:not(:last-of-type) {
+            border-start-end-radius: 0;
+            border-end-end-radius: 0;
+        }
+
+        & > :first-child {
+            margin-top: 0;
+        }
+
+        & > :last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+@container multicolumn-layout (max-width: 500px) {
+    .ck-content .trilium-multicolumn-layout > section {
+        grid-column: 1 / -1;
+        border: 0;
+        border-radius: 0;
+
+        &:nth-of-type(even) {
+            background: var(--multicolumn-layout-stacked-background);
+        }
+    }
+}

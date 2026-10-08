@@ -32,6 +32,7 @@ import Mermaid from "./plugins/mermaid/mermaid.js";
 import Admonition from "./plugins/admonition/admonition.js";
 import Collapsible from "./plugins/collapsible/collapsible.js";
 import Tabs from "./plugins/tabs/tabs.js";
+import Multicolumn from "./plugins/multicolumn/multicolumn.js";
 import Footnotes from "./plugins/footnotes/footnotes.js";
 import Math from "./plugins/math/math.js";
 import AutoformatMath from "./plugins/math/autoformat_math.js";
@@ -136,6 +137,7 @@ const EXTERNAL_PLUGINS: typeof Plugin[] = [
     Admonition,
     Collapsible,
     Tabs,
+    Multicolumn,
     Footnotes,
     Math,
 	AutoformatMath
