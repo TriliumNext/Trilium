@@ -1,4 +1,5 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import { CLASSES as TAB_CLASSES } from "@triliumnext/ckeditor5/src/plugins/tabs/constants.js";
 import {
     type BlockRange, formatBlockRange, parseBlockRange, resolveBlockRange, resolveBlockReference
 } from "@triliumnext/commons";
@@ -163,7 +164,7 @@ export function consumeBlockReference(
     const first = start ?? end;
     if (first) {
         revealElement(first);
-        first.scrollIntoView({ behavior: "smooth", block: "center" });
+        getBlockBoxes(first).top.scrollIntoView({ behavior: "smooth", block: "center" });
         flashBlocks(start && end ? getBlockRangeElements(start, end) : [ first ]);
     }
     if (!start || !end) {
@@ -203,11 +204,26 @@ export function revealHighlightedBlocks(container: HTMLElement) {
         return;
     }
 
-    const top = first.getBoundingClientRect().top;
-    const height = last.getBoundingClientRect().bottom - top;
+    const top = getBlockBoxes(first).top.getBoundingClientRect().top;
+    const height = getBlockBoxes(last).bottom.getBoundingClientRect().bottom - top;
     const viewportTop = container.getBoundingClientRect().top + container.clientTop;
     const margin = Math.max(0, (container.clientHeight - height) / 2);
     container.scrollTop += top - viewportTop - margin;
+}
+
+/**
+ * Returns the elements that render the top and bottom of `block`. A tab is `display: contents`, so
+ * its title and panel render it.
+ */
+function getBlockBoxes(block: Element): { top: Element; bottom: Element } {
+    if (block.classList.contains(TAB_CLASSES.tab)) {
+        const title = block.querySelector(`:scope > .${TAB_CLASSES.tabTitle}`);
+        const panel = block.querySelector(`:scope > .${TAB_CLASSES.tabPanel}`);
+        if (title && panel) {
+            return { top: title, bottom: panel };
+        }
+    }
+    return { top: block, bottom: block };
 }
 
 /** The outermost elements inside the range from `start` to `end`, both included. */

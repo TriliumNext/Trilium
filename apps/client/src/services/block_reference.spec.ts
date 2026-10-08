@@ -83,6 +83,21 @@ describe("consumeBlockReference", () => {
         expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
     });
 
+    it("scrolls to the title of a linked tab, which has no box of its own", () => {
+        const container = buildContainer(
+            `<div class="trilium-tabs"><section class="trilium-tab" data-trilium-block-id="t">` +
+                `<p class="trilium-tab-title">A</p><div class="trilium-tab-panel"><p>a</p></div>` +
+            `</section></div>`
+        );
+        const title = container.querySelector(".trilium-tab-title");
+        expect(title).not.toBeNull();
+
+        consumeBlockReference(container, { block: "t" });
+
+        expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(scrollIntoView.mock.contexts[0]).toBe(title);
+    });
+
     it("flashes the outermost elements of a range", () => {
         const container = buildContainer(
             "<p>before</p><p data-trilium-block-id=\"a\">A</p><blockquote><p>quote</p></blockquote>"
@@ -187,6 +202,26 @@ describe("revealHighlightedBlocks", () => {
         stubRect(last, 650, 1200);
         revealHighlightedBlocks(container);
         expect(container.scrollTop).toBe(500);
+    });
+
+    it("measures a highlighted tab from the top of its title to the bottom of its panel", () => {
+        const container = buildContainer(
+            "<div class=\"trilium-tabs\"><section class=\"trilium-tab block-reference-highlight\">"
+            + "<p class=\"trilium-tab-title\">A</p><div class=\"trilium-tab-panel\"><p>a</p></div>"
+            + "</section></div>"
+        );
+        const title = container.querySelector(".trilium-tab-title");
+        const panel = container.querySelector(".trilium-tab-panel");
+        expect(title).not.toBeNull();
+        expect(panel).not.toBeNull();
+        Object.defineProperty(container, "clientHeight", { value: 300 });
+        stubRect(container, 100, 400);
+        stubRect(title as Element, 600, 630);
+        stubRect(panel as Element, 630, 700);
+
+        revealHighlightedBlocks(container);
+
+        expect(container.scrollTop).toBe(400);
     });
 
     it("leaves the scroll position alone without highlighted blocks", () => {
