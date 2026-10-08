@@ -11,7 +11,7 @@ There are two types of note map:
 The note map comes into multiple flavors:
 
 *   The note map is available in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>, in the _Note map_ section.
-    *   It can also be accessed by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Note map_, which will focus the sidebar at the right section.
+    *   It can also be accessed by going to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note map_, which will focus the sidebar at the right section.
 *   To display a full-screen note map, there is a [dedicated note type](../Note%20Types/Note%20Map.md) with the same name.
 *   To view the global note map (of all the notes in the knowledge base), there is a dedicated _Note map_ button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
 

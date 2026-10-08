@@ -23,7 +23,7 @@ The note type is chosen from the same menu as in the note tree, with its submenu
 
 ## Changing the type of a note
 
-It is possible to change the type of a note after it has been created via <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Note type_. This feature can also be used to edit the [source of a note](Advanced%20Usage/Note%20source.md).
+It is possible to change the type of a note after it has been created via <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Note type_. This feature can also be used to edit the [source of a note](Advanced%20Usage/Note%20source.md).
 
 > [!NOTE]
 > Note that it's generally a good idea to change the note type only if the note is empty

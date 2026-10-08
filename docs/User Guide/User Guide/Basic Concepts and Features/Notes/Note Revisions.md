@@ -3,7 +3,7 @@
 
 Trilium supports seamless versioning of notes by storing snapshots ("revisions") of notes at regular intervals.
 
-To display the revisions, press the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> and select _Note revisions…_
+To display the revisions, press the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> and select _Note revisions…_
 
 ## Interaction
 
@@ -36,7 +36,7 @@ In the list of note revisions:
 
 To create a named revision, either:
 
-*   Go to the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a>, select _Save named revision…_, enter the name of revision and confirm.
+*   Go to the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, select _Save named revision…_, enter the name of revision and confirm.
 *   Use the corresponding [keyboard shortcut](../Keyboard%20Shortcuts.md) or the <a class="reference-link" href="../Navigation/Jump%20to%20%26%20command%20palette.md">Jump to &amp; command palette</a> command with the same name.
 *   Save a revision normally, and adjust the name afterwards from the note revision list.
 
@@ -46,7 +46,7 @@ Revisions are saved:
 
 *   Automatically at a fixed interval. This behavior can be configured (see below).
 *   Manually, by:
-    *   Going to the press the [note context menu](../UI%20Elements/Note%20buttons.md) and select _Save revision._
+    *   Going to the press the [note context menu](../UI%20Elements/Note%20menu.md) and select _Save revision._
     *   Using the _Force Save Revision_ [keyboard shortcut](../Keyboard%20Shortcuts.md).
     *   In the _Revisions_ dialog, pressing the \[…\] button in the top-right and selecting _Save a revision now_.
 

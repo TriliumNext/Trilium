@@ -11,7 +11,7 @@ In addition, it's possible to change the number of characters at which the autom
 
 ## Changing a note's read-only behavior
 
-A note's read-only behavior can be changed via <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> → _Editable._ The following options are possible:
+A note's read-only behavior can be changed via <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> → _Editable._ The following options are possible:
 
 *   **Auto**  
     This is the default behavior in which the note will be editable by default, unless it becomes large enough to trigger read-only mode.
@@ -20,11 +20,11 @@ A note's read-only behavior can be changed via <a class="reference-link" href="
 *   **Always Editable**  
     This option will bypass the automatic read-only activation for this particular note. It's useful for large notes that are frequently edited.
 
-If the _Editable_ section is missing from the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a>, then the note type does not support read-only mode.
+If the _Editable_ section is missing from the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a>, then the note type does not support read-only mode.
 
 ### Manually setting the options
 
-Apart from using the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> as previously mentioned, it's also possible to use [labels](../../Advanced%20Usage/Attributes.md) to change the behavior:
+Apart from using the <a class="reference-link" href="../UI%20Elements/Note%20menu.md">Note menu</a> as previously mentioned, it's also possible to use [labels](../../Advanced%20Usage/Attributes.md) to change the behavior:
 
 *   To set as read-only, apply the `readOnly` label to the note.
 *   To disable automatic read-only (always editable), apply the `autoReadOnlyDisabled` label.

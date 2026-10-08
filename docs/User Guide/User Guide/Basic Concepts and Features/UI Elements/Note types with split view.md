@@ -5,7 +5,7 @@ Split view is a feature of <a class="reference-link" href="../../Note%20Types/M
 
 ## Display modes and interaction
 
-The split comes with three different display modes which can be toggled from the <a class="reference-link" href="Note%20buttons.md">Note buttons</a>:
+The split comes with three different display modes which can be toggled from the <a class="reference-link" href="Note%20buttons.md">Note buttons</a> area:
 
 *   <span class="tn-icon bx bxs-dock-left"></span> _(Split view)_, in which both the source code is available on one side and can be edited, and the preview is available on the other side.
     *   In this mode, the size of either the source pane or the preview pane can be adjusted by dragging the small border between them.

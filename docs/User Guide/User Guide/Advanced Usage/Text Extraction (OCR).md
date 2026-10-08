@@ -90,7 +90,7 @@ To enforce the detection in a particular language for a given note, use the `lan
 
 To access the extracted content of a note:
 
-*   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> → _Advanced_ → _View OCR Text_.
+*   For <a class="reference-link" href="../Note%20Types/File.md">File</a> notes, go to the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Advanced_ → _View OCR Text_.
 *   For <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Attachments.md">Attachments</a> (e.g. <a class="reference-link" href="../Note%20Types/Text/Images.md">Images</a> in <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes), double-click the attachment to view the details, press the \[…\] button at the left and select _View extracted text (OCR)_.
 
 This section allows:

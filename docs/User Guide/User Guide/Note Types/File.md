@@ -24,9 +24,7 @@ Trilium offers previews for Office documents such as Word (`.docx`), Excel (`.xl
 
 Interaction:
 
-*   _Copy reference to clipboard_, for embedding the image within <a class="reference-link" href="Text.md">Text</a> notes.
-    *   See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
-    *   Alternatively, press the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a>.
+*   An [image reference](Text/Images/Image%20references.md) can be copied by pressing the <span class="tn-icon bx bx-copy"></span> icon from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area, which allows pasting it in a <a class="reference-link" href="Text.md">Text</a> note.
 
 ### Videos
 
@@ -83,12 +81,12 @@ If the file could not be identified as any of the supported file types from abov
 
 ## Interaction
 
-*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md">Note buttons</a> area.
+*   Regardless of the file type, a series of buttons will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> area.
     *   <span class="tn-icon bx bx-download"></span> (Download), which will download the file for local use.
     *   <span class="tn-icon bx bx-link-external"></span> (Open), will will open the file with the system-default application.
     *   <span class="tn-icon bx bx-folder-open"></span> (Upload new revision) to replace the file with a new one.
 *   It is **not** possible to change the note type of a _File_ note.
-*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20buttons.md).
+*   Convert into an [attachment](../Basic%20Concepts%20and%20Features/Notes/Attachments.md) from the [note menu](../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md).
 
 ## Relation with other notes
 

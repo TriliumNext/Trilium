@@ -15,7 +15,7 @@ By default, the content is aligned to the left, but it can be centered horizonta
 
 For notes with large elements such as <a class="reference-link" href="../../Note%20Types/Text/Tables.md">Tables</a>, it sometimes makes sense to avoid the content width without affecting other notes. To do so:
 
-*   Go to <a class="reference-link" href="Note%20buttons.md">Note buttons</a> and toggle _Full width_.
+*   Go to <a class="reference-link" href="Note%20menu.md">Note menu</a> and toggle _Full width_.
 *   Or manually apply the `fullContentWidth` [label](../../Advanced%20Usage/Attributes/Labels.md) to the note.
 
 > [!NOTE]

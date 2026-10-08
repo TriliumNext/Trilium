@@ -1868,7 +1868,7 @@
                                         "Vc8PjrjAGuOp",
                                         "8YBEPzcpUgxw"
                                     ],
-                                    "title": "Note buttons",
+                                    "title": "Note menu",
                                     "notePosition": 130,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -1878,16 +1878,60 @@
                                         {
                                             "type": "label",
                                             "name": "iconClass",
-                                            "value": "bx bx-dots-vertical-rounded",
+                                            "value": "bx bx-dots-horizontal-rounded",
                                             "isInheritable": false,
                                             "position": 50
                                         },
                                         {
                                             "type": "label",
                                             "name": "shareAlias",
-                                            "value": "note-buttons",
+                                            "value": "note-menu",
                                             "isInheritable": false,
                                             "position": 60
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Note menu.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "A7OZsjQuWYAY",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Note menu_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "1P8QXI5edXNd",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Vc8PjrjAGuOp",
+                                        "1P8QXI5edXNd"
+                                    ],
+                                    "title": "Note buttons",
+                                    "notePosition": 140,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "note-buttons",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-download",
+                                            "isInheritable": false,
+                                            "position": 40
                                         }
                                     ],
                                     "format": "markdown",
@@ -1904,7 +1948,7 @@
                                         "4TIF1oA4VQRO"
                                     ],
                                     "title": "Options",
-                                    "notePosition": 140,
+                                    "notePosition": 150,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -1948,7 +1992,7 @@
                                         "luNhaphA37EO"
                                     ],
                                     "title": "Split View",
-                                    "notePosition": 150,
+                                    "notePosition": 160,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -1992,7 +2036,7 @@
                                         "RnaPdbciOfeq"
                                     ],
                                     "title": "Right Sidebar",
-                                    "notePosition": 170,
+                                    "notePosition": 180,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2211,7 +2255,7 @@
                                         "r5JGHN99bVKn"
                                     ],
                                     "title": "Recent Changes",
-                                    "notePosition": 190,
+                                    "notePosition": 200,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2255,7 +2299,7 @@
                                         "ny318J39E5Z0"
                                     ],
                                     "title": "Zoom",
-                                    "notePosition": 200,
+                                    "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2290,7 +2334,7 @@
                                         "lgKX7r3aL30x"
                                     ],
                                     "title": "Note Tooltip",
-                                    "notePosition": 220,
+                                    "notePosition": 230,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2334,7 +2378,7 @@
                                         "SL5f1Auq7sVN"
                                     ],
                                     "title": "Note types with split view",
-                                    "notePosition": 240,
+                                    "notePosition": 250,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2369,7 +2413,7 @@
                                         "t596jLvPrqkS"
                                     ],
                                     "title": "Content width",
-                                    "notePosition": 250,
+                                    "notePosition": 260,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2404,7 +2448,7 @@
                                         "jcQVxzYybYgz"
                                     ],
                                     "title": "Note contextual menu",
-                                    "notePosition": 260,
+                                    "notePosition": 270,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2448,7 +2492,7 @@
                                         "AlJ73vBCjWDw"
                                     ],
                                     "title": "Status bar",
-                                    "notePosition": 270,
+                                    "notePosition": 280,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -2483,7 +2527,7 @@
                                         "I6p2a06hdnL6"
                                     ],
                                     "title": "Breadcrumb",
-                                    "notePosition": 280,
+                                    "notePosition": 290,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
