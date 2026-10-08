@@ -344,7 +344,8 @@
     "logo-alt": "Логотип",
     "toggle-toc": "Переключение оглавления",
     "toggle-navigation": "Переключение навигации",
-    "login": "Вход"
+    "login": "Вход",
+    "tab-title": "Название вкладки"
   },
   "hidden_subtree_templates": {
     "description": "Описание",

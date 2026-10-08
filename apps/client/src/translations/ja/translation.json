@@ -3489,7 +3489,9 @@
       "math": "数式",
       "collapsible_summary": "概要",
       "collapsible_details": "詳細",
-      "table_column": "{{number}} 列"
+      "table_column": "{{number}} 列",
+      "tab_title": "タブ {{number}}",
+      "tab_content": "内容"
     },
     "page_break": "改ページを挿入（印刷用）",
     "table": "表を挿入",
@@ -3510,8 +3512,10 @@
       "important": "重要",
       "caution": "注意",
       "warning": "警告",
-      "todo": "タスク: {{title}}"
-    }
+      "todo": "タスク: {{title}}",
+      "tabs": "タブ"
+    },
+    "tabs": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入"
   },
   "mobile_note_navigator": {
     "back": "1つ上の階層へ移動",
@@ -3718,7 +3722,18 @@
       "more-actions": "その他のアクション",
       "drawing-canvas": "描画キャンバス",
       "editable": "編集可能",
-      "insert-a-canvas-to-draw-on": "描画用のキャンバスを挿入。"
+      "insert-a-canvas-to-draw-on": "描画用のキャンバスを挿入。",
+      "tabs": "タブ",
+      "tab-title": "タブ名",
+      "tab-0": "タブ %0",
+      "tab-content": "タブの内容",
+      "add-tab": "タブを追加",
+      "remove-tab": "タブを削除",
+      "move-tab-left": "タブを左へ移動",
+      "move-tab-right": "タブを右へ移動",
+      "copy-link-to-tab": "タブへのリンクをコピー",
+      "tabs-toolbar": "タブツールバー",
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入。"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4431,6 +4446,7 @@
     "untitled": "ブロック",
     "excerpt": "抜粋",
     "excerpt_description": "現在、このノートの一部のみが表示されています。{{icon}} ボタンを押すと、新しいタブでノート全体を開くことができます。",
-    "edit_excerpt": "抜粋を編集"
+    "edit_excerpt": "抜粋を編集",
+    "copy_tab": "このタブへのリンクをコピー"
   }
 }
