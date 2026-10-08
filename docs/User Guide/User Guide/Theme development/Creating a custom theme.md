@@ -21,7 +21,7 @@ As such, the first step is to create a new note to gather all the themes.
         </tr>
         <tr>
             <td><img src="Creating a custom theme_Creating a custom theme_im.png"></td>
-            <td>In the <em>Owned Attributes</em> section define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
+            <td>In the attributes of the note (the <span class="tn-icon bx bx-list-check"></span> button in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>), define the <code>#appTheme</code> attribute to point to any desired name. This is the name that will show up in the appearance section in settings.</td>
         </tr>
     </tbody>
 </table>
