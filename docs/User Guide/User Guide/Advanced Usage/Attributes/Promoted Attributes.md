@@ -62,7 +62,7 @@ To create a new promoted attribute:
 8.  Check _Inheritable_ to apply it to this note and all its descendants. To keep it only for the current note, un-check it.
 9.  Press _Save & Close_ to apply the changes.
 
-Alternatively, promoted attributes can be created from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a> by going to <span class="tn-icon bx bx-list-check"></span> (_Attributes_), pressing the <span class="tn-icon bx bx-plus"></span> button and selecting _Add new label definition_. The resulting attribute can also be copy-pasted or written manually (albeit discouraged).
+Alternatively, promoted attributes can be created from the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> by going to <span class="tn-icon bx bx-list-check"></span> (_Attributes_), pressing the <span class="tn-icon bx bx-plus"></span> button and selecting _Add new label definition_. The resulting attribute can also be copy-pasted or written manually (albeit discouraged).
 
 ## How attribute definitions actually work
 

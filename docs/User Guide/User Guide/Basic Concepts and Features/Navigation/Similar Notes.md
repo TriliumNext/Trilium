@@ -6,7 +6,7 @@ The Similar Notes feature tries to identify notes that relate to the current not
 To access the list of similar notes:
 
 *   Go to the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar/Connections%20tab.md">Connections tab</a> in the <a class="reference-link" href="../UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> and look for the corresponding section.
-*   Alternatively, press the <span class="tn-icon bx bx-info-circle"></span> in the <a class="reference-link" href="../UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a> and select _Show similar notes_ which will open a pane at the bottom.
+*   Alternatively, press the <span class="tn-icon bx bx-info-circle"></span> in the <a class="reference-link" href="../UI%20Elements/Status%20bar.md">Status bar</a> and select _Show similar notes_ which will open a pane at the bottom.
 
 ## Interaction
 

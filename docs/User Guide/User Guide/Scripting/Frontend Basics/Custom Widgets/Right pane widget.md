@@ -9,7 +9,7 @@
 ## Example for new layout
 
 > [!IMPORTANT]
-> This section addresses example that are tailored for the <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a> (available starting with v0.101.0) where the right pane widget/sidebar is no longer shown or hidden based on the widgets it has. 
+> This section addresses example that are tailored for the <a class="reference-link" href="../../Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a> (available starting with v0.101.0) where the right pane widget/sidebar is no longer shown or hidden based on the widgets it has. 
 
 ### Title widget
 

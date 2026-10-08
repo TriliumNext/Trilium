@@ -197,7 +197,7 @@ The list of languages matches the one for <a class="reference-link" href="Code.
 ### Other features
 
 *   The <a class="reference-link" href="Text/Table%20of%20contents.md">Table of contents</a> will be displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a> based on the Markdown-level headings.
-    *   This feature is available only on the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>.
+    *   This feature is available only on the <a class="reference-link" href="../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>.
 
 ### Shared notes
 

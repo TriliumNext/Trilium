@@ -2378,182 +2378,6 @@
                                 },
                                 {
                                     "isClone": false,
-                                    "noteId": "IjZS7iK5EXtb",
-                                    "notePath": [
-                                        "pOsGYCXsbNQG",
-                                        "gh7bpGYxajRS",
-                                        "Vc8PjrjAGuOp",
-                                        "IjZS7iK5EXtb"
-                                    ],
-                                    "title": "New Layout",
-                                    "notePosition": 230,
-                                    "prefix": null,
-                                    "isExpanded": false,
-                                    "type": "text",
-                                    "mime": "text/html",
-                                    "attributes": [
-                                        {
-                                            "type": "label",
-                                            "name": "iconClass",
-                                            "value": "bx bx-layout",
-                                            "isInheritable": false,
-                                            "position": 30
-                                        },
-                                        {
-                                            "type": "label",
-                                            "name": "shareAlias",
-                                            "value": "new-layout",
-                                            "isInheritable": false,
-                                            "position": 190
-                                        }
-                                    ],
-                                    "format": "markdown",
-                                    "dataFileName": "New Layout.md",
-                                    "attachments": [
-                                        {
-                                            "attachmentId": "3DFGaMiTTHQ1",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "6iN5nrmdwG6z",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "1_New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "a7dHjn9Uqvsc",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "2_New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "KvNAEoJjRhyr",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "3_New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "lEKxf6dYMG6u",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "4_New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "SYOTVGCyx749",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "5_New Layout_image.png"
-                                        },
-                                        {
-                                            "attachmentId": "wCwzwfGspejR",
-                                            "title": "image.png",
-                                            "role": "image",
-                                            "mime": "image/png",
-                                            "position": 10,
-                                            "dataFileName": "6_New Layout_image.png"
-                                        }
-                                    ],
-                                    "dirFileName": "New Layout",
-                                    "children": [
-                                        {
-                                            "isClone": false,
-                                            "noteId": "I6p2a06hdnL6",
-                                            "notePath": [
-                                                "pOsGYCXsbNQG",
-                                                "gh7bpGYxajRS",
-                                                "Vc8PjrjAGuOp",
-                                                "IjZS7iK5EXtb",
-                                                "I6p2a06hdnL6"
-                                            ],
-                                            "title": "Breadcrumb",
-                                            "notePosition": 10,
-                                            "prefix": null,
-                                            "isExpanded": false,
-                                            "type": "text",
-                                            "mime": "text/html",
-                                            "attributes": [
-                                                {
-                                                    "type": "label",
-                                                    "name": "iconClass",
-                                                    "value": "bx bx-chevron-right",
-                                                    "isInheritable": false,
-                                                    "position": 40
-                                                },
-                                                {
-                                                    "type": "label",
-                                                    "name": "shareAlias",
-                                                    "value": "breadcrumb",
-                                                    "isInheritable": false,
-                                                    "position": 50
-                                                }
-                                            ],
-                                            "format": "markdown",
-                                            "dataFileName": "Breadcrumb.md",
-                                            "attachments": [
-                                                {
-                                                    "attachmentId": "CjYmaJD0L1D4",
-                                                    "title": "image.png",
-                                                    "role": "image",
-                                                    "mime": "image/png",
-                                                    "position": 10,
-                                                    "dataFileName": "Breadcrumb_image.png"
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "isClone": false,
-                                            "noteId": "AlJ73vBCjWDw",
-                                            "notePath": [
-                                                "pOsGYCXsbNQG",
-                                                "gh7bpGYxajRS",
-                                                "Vc8PjrjAGuOp",
-                                                "IjZS7iK5EXtb",
-                                                "AlJ73vBCjWDw"
-                                            ],
-                                            "title": "Status bar",
-                                            "notePosition": 20,
-                                            "prefix": null,
-                                            "isExpanded": false,
-                                            "type": "text",
-                                            "mime": "text/html",
-                                            "attributes": [
-                                                {
-                                                    "type": "label",
-                                                    "name": "iconClass",
-                                                    "value": "bx bx-dock-bottom",
-                                                    "isInheritable": false,
-                                                    "position": 40
-                                                },
-                                                {
-                                                    "type": "label",
-                                                    "name": "shareAlias",
-                                                    "value": "status-bar",
-                                                    "isInheritable": false,
-                                                    "position": 50
-                                                }
-                                            ],
-                                            "format": "markdown",
-                                            "dataFileName": "Status bar.md",
-                                            "attachments": []
-                                        }
-                                    ]
-                                },
-                                {
-                                    "isClone": false,
                                     "noteId": "SL5f1Auq7sVN",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -2665,6 +2489,85 @@
                                             "dataFileName": "Note contextual menu_image.png"
                                         }
                                     ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "AlJ73vBCjWDw",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Vc8PjrjAGuOp",
+                                        "AlJ73vBCjWDw"
+                                    ],
+                                    "title": "Status bar",
+                                    "notePosition": 270,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-dock-bottom",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "status-bar",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Status bar.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "I6p2a06hdnL6",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "Vc8PjrjAGuOp",
+                                        "I6p2a06hdnL6"
+                                    ],
+                                    "title": "Breadcrumb",
+                                    "notePosition": 280,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-chevron-right",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "breadcrumb",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Breadcrumb.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "CjYmaJD0L1D4",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Breadcrumb_image.png"
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -2736,7 +2639,24 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Title.md",
-                                    "attachments": []
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "iG6vP3uWkujz",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Title_image.png"
+                                        },
+                                        {
+                                            "attachmentId": "RQKwv6lWjQix",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "1_Title_image.png"
+                                        }
+                                    ]
                                 },
                                 {
                                     "isClone": false,
@@ -3259,6 +3179,182 @@
                                     "format": "markdown",
                                     "dataFileName": "Restoring Deleted Notes.md",
                                     "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "m3VlURMSeOrd",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "BFs8mudNFgCS",
+                                        "m3VlURMSeOrd"
+                                    ],
+                                    "title": "New note type switcher",
+                                    "notePosition": 180,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bxs-widget",
+                                            "isInheritable": false,
+                                            "position": 60
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "new-note-type-switcher",
+                                            "isInheritable": false,
+                                            "position": 70
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "New note type switcher.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "XKxr20oZiGeP",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "New note type switcher_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "B5dihXRDksTk",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "BFs8mudNFgCS",
+                                        "B5dihXRDksTk"
+                                    ],
+                                    "title": "Note badges",
+                                    "notePosition": 190,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "note-badges",
+                                            "isInheritable": false,
+                                            "position": 70
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-square-rounded",
+                                            "isInheritable": false,
+                                            "position": 80
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Note badges.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "nRxe218ROLwP",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Note badges_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "HekTW6La1h6X",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "BFs8mudNFgCS",
+                                        "HekTW6La1h6X"
+                                    ],
+                                    "title": "Collapsible sections",
+                                    "notePosition": 200,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-chevron-down",
+                                            "isInheritable": false,
+                                            "position": 80
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "collapsible-sections",
+                                            "isInheritable": false,
+                                            "position": 90
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Collapsible sections.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "pguUUFMjIe74",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Collapsible sections_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "Bsm4fyzPJkSc",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "gh7bpGYxajRS",
+                                        "BFs8mudNFgCS",
+                                        "Bsm4fyzPJkSc"
+                                    ],
+                                    "title": "Save status indicator",
+                                    "notePosition": 210,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-save",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "save-status-indicator",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Save status indicator.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "0GVob2qOILD5",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Save status indicator_image.png"
+                                        }
+                                    ]
                                 }
                             ]
                         },
@@ -11990,6 +12086,41 @@
                             "children": [
                                 {
                                     "isClone": false,
+                                    "noteId": "IjZS7iK5EXtb",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "CdNpE2pqjmI6",
+                                        "cNpC0ITcfX0N",
+                                        "IjZS7iK5EXtb"
+                                    ],
+                                    "title": "v0.108.0: Removal of the old layout",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-layout",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "old-layout-removal",
+                                            "isInheritable": false,
+                                            "position": 190
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "v0.108.0 Removal of the old layout.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "kTx7WqLdZ3Ry",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -11998,7 +12129,7 @@
                                         "kTx7WqLdZ3Ry"
                                     ],
                                     "title": "v0.106.0: Removal of cheerio",
-                                    "notePosition": 10,
+                                    "notePosition": 20,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -12026,7 +12157,7 @@
                                         "YeOa2l7Pu39I"
                                     ],
                                     "title": "v0.104.0: Disabling the Node integration in Electron",
-                                    "notePosition": 20,
+                                    "notePosition": 30,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -12054,7 +12185,7 @@
                                         "fqAK6opjUagR"
                                     ],
                                     "title": "v0.103.0: Removal of axios",
-                                    "notePosition": 30,
+                                    "notePosition": 40,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -12082,7 +12213,7 @@
                                         "pAJ0jWz16xFm"
                                     ],
                                     "title": "v0.103.0: `cheerio` is now deprecated",
-                                    "notePosition": 40,
+                                    "notePosition": 50,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -12110,7 +12241,7 @@
                                         "72dxvnbnkDFY"
                                     ],
                                     "title": "v0.102.0: Upgrade to jQuery 4.0.0",
-                                    "notePosition": 50,
+                                    "notePosition": 60,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

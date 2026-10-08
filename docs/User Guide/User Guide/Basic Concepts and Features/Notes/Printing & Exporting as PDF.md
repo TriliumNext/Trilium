@@ -46,7 +46,7 @@ If the note cannot be rendered with the current options, or stops making progres
 
 This feature allows printing of notes. It works on both the desktop client, but also on the web.
 
-To print a note, select the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> ([New layout](../UI%20Elements/New%20Layout.md), or <span class="tn-icon bx bx-dots-vertical-rounded"></span> for the old layout) button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
+To print a note, select the <span class="tn-icon bx bx-dots-horizontal-rounded"></span> ([New layout](../../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md), or <span class="tn-icon bx bx-dots-vertical-rounded"></span> for the old layout) button to the right of the note and select _Print note_. Depending on the size and type of the note, this can take up to a few seconds. Afterwards you will be redirected to the system/browser printing dialog.
 
 On the server or PWA (mobile), the option is not available due to technical constraints and it will be hidden.
 

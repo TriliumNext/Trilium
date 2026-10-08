@@ -43,7 +43,7 @@ The map indicates the following types of relations:
 *   <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between notes.
 *   <a class="reference-link" href="Attributes/Relations.md">Relations</a>
 
-The link map will also show unlinked notes that are part of the hierarchy as a cloud of unconnected dots. On the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout.md">New Layout</a>, the sidebar deliberately omits this in order to save some space, but they will be revealed once the map is maximized.
+The link map will also show unlinked notes that are part of the hierarchy as a cloud of unconnected dots. On the <a class="reference-link" href="../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>, the sidebar deliberately omits this in order to save some space, but they will be revealed once the map is maximized.
 
 ## Tree Map
 

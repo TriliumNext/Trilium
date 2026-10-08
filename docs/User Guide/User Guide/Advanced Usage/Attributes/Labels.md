@@ -19,11 +19,11 @@ While in the visual editor:
 *   Children can inherit this relation, click the relation and check _Inheritable_. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> for more information.
 
 > [!TIP]
-> Alternatively, press <kbd>Alt</kbd>+<kbd>L</kbd> which will open the attribute details (same view as when an existing attribute is clicked) in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a>.
+> Alternatively, press <kbd>Alt</kbd>+<kbd>L</kbd> which will open the attribute details (same view as when an existing attribute is clicked) in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>.
 
 ## Creating a label manually
 
-In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a>, press the <span class="tn-icon bx bx-list-check"></span> button to show the list of the attributes.
+In the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a>, press the <span class="tn-icon bx bx-list-check"></span> button to show the list of the attributes.
 
 *   Click the input box to focus it.
 *   To create a label called `myLabel` with no value, simply type `#myLabel`.

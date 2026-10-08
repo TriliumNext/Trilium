@@ -5,7 +5,7 @@ Trilium supports seamless versioning of notes by storing snapshots ("revisions")
 
 ## Displaying the revisions
 
-*   On the <a class="reference-link" href="../UI%20Elements/New%20Layout.md">New Layout</a>, press the [note context menu](../UI%20Elements/Note%20buttons.md) and select _Note revisions…_
+*   On the <a class="reference-link" href="../../Scripting/Breaking%20changes/v0.108.0%20Removal%20of%20the%20old%20layout.md">New Layout</a>, press the [note context menu](../UI%20Elements/Note%20buttons.md) and select _Note revisions…_
 *   On the old layout, press directly the <span class="tn-icon bx bx-history"></span> button in the <a class="reference-link" href="../UI%20Elements/Note%20buttons.md">Note buttons</a> area.
 
 ## Interaction

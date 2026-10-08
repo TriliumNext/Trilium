@@ -10,7 +10,7 @@ The content language determines:
 
 ## Setting the language of a single note
 
-To set the language of the content of a <a class="reference-link" href="../Text.md">Text</a> note, there is a language selector in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/New%20Layout/Status%20bar.md">Status bar</a> indicated by a <span class="tn-icon bx bx-globe"></span> icon.
+To set the language of the content of a <a class="reference-link" href="../Text.md">Text</a> note, there is a language selector in the <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Status%20bar.md">Status bar</a> indicated by a <span class="tn-icon bx bx-globe"></span> icon.
 
 ## Adjusting the list of languages
 
