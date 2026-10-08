@@ -35,6 +35,10 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
             <td>If <code>sorted</code> is applied, folders (notes with children) will be sorted as a group at the top (at the bottom when <code>#sortDirection</code> is <code>desc</code>), and the rest will be sorted.</td>
         </tr>
         <tr>
+            <td><code>#sortArchivedLast</code></td>
+            <td>If <code>sorted</code> is applied, <a href="Archived%20Notes.md">archived notes</a> will be sorted as a group at the bottom, whatever the <code>#sortDirection</code>, and the rest will be sorted above them. This takes precedence over <code>#top</code> and <code>#bottom</code>, which then only apply within each of the two groups.</td>
+        </tr>
+        <tr>
             <td><code>#sortNatural</code></td>
             <td>Sort numbers naturally instead of alphabetically, so 2 comes before 10.</td>
         </tr>
@@ -53,7 +57,7 @@ Child notes can be automatically sorted by attaching specific [labels](../../Adv
     </tbody>
 </table>
 
-Sorting is done by comparing note properties or specific labels on child notes. There are four sorting levels, with the first having the highest priority. Lower priority levels are applied only if higher priority comparisons result in equality.
+Sorting is done by comparing note properties or specific labels on child notes. If `#sortArchivedLast` is set, archived notes are first separated from the rest and placed after them; the levels below then apply within each group. There are four sorting levels, with the first having the highest priority. Lower priority levels are applied only if higher priority comparisons result in equality.
 
 1.  **Top Label Sorting**: Child notes with the `#top` label will appear at the top of the folder.
 2.  **Bottom Label Sorting**: (Introduced in Trilium 0.62) Child notes with the `#bottom` label will appear at the bottom of the folder.

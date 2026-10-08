@@ -15,6 +15,10 @@ import { DefinitionObject } from "@triliumnext/commons";
 
 type Handler = (definition: DefinitionObject, note: BNote, targetNote: BNote) => void;
 
+const SORTING_LABELS = [
+    "sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale", "sortArchivedLast"
+];
+
 function runAttachedRelations(note: BNote, relationName: string, originEntity: AbstractBeccaEntity<any>) {
     if (!note || !isScriptingEnabled()) {
         return;
@@ -55,7 +59,7 @@ eventService.subscribe([eventService.ENTITY_CHANGED, eventService.ENTITY_DELETED
     if (entityName === "attributes") {
         runAttachedRelations(entity.getNote(), "runOnAttributeChange", entity);
 
-        if (entity.type === "label" && ["sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale"].includes(entity.name)) {
+        if (entity.type === "label" && SORTING_LABELS.includes(entity.name)) {
             handleSortedAttribute(entity);
         } else if (entity.type === "label") {
             handleMaybeSortingLabel(entity);
@@ -127,7 +131,7 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
             if (note.getChildNotes().length === 0 && !note.isDescendantOfNote(templateNote.noteId)) {
                 noteService.duplicateSubtreeWithoutRoot(templateNote.noteId, note.noteId);
             }
-        } else if (entity.type === "label" && ["sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale"].includes(entity.name)) {
+        } else if (entity.type === "label" && SORTING_LABELS.includes(entity.name)) {
             handleSortedAttribute(entity);
         } else if (entity.type === "label") {
             handleMaybeSortingLabel(entity);
@@ -197,6 +201,7 @@ function handleMaybeSortingLabel(entity: BAttribute) {
             if (
                 entity.name === "top" ||
                 entity.name === "bottom" ||
+                (entity.name === "archived" && parentNote.isLabelTruthy("sortArchivedLast")) ||
                 parseSortCriteria(sorted).some((criterion) => criterion.key === entity.name)
             ) {
                 treeService.sortNotesIfNeeded(parentNote.noteId);

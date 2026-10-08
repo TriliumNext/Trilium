@@ -142,6 +142,7 @@ const BUILTIN_ATTRIBUTES = [
     { type: "label", name: "sortFoldersFirst", valueType: "boolean" },
     { type: "label", name: "sortNatural", valueType: "boolean" },
     { type: "label", name: "sortLocale", valueType: "text" },
+    { type: "label", name: "sortArchivedLast", valueType: "boolean" },
     { type: "label", name: "top", valueType: "boolean" },
     { type: "label", name: "bottom", valueType: "boolean" },
     { type: "label", name: "fullContentWidth", valueType: "boolean" },

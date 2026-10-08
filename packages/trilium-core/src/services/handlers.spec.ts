@@ -136,6 +136,32 @@ describe("handlers", () => {
             eventService.emit(eventService.ENTITY_CHANGED, { entityName: "attributes", entity: topAttr });
             expect(sortNotesIfNeeded).toHaveBeenCalledWith("par");
         });
+
+        it("re-sorts the parent on an 'archived' change only under #sortArchivedLast", () => {
+            buildNote({ id: "ar-plain", children: [{ id: "ar-plain-chld" }] });
+            addAttribute("ar-plain", "label", "sorted", "");
+            buildNote({ id: "ar-par", children: [{ id: "ar-chld" }] });
+            addAttribute("ar-par", "label", "sorted", "");
+            const archivedLast = addAttribute("ar-par", "label", "sortArchivedLast", "");
+
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: archivedLast
+            });
+            expect(sortNotesIfNeeded).toHaveBeenCalledWith("ar-par");
+            sortNotesIfNeeded.mockClear();
+
+            const plainArchived = addAttribute("ar-plain-chld", "label", "archived", "");
+            eventService.emit(eventService.ENTITY_CHANGED, {
+                entityName: "attributes", entity: plainArchived
+            });
+            expect(sortNotesIfNeeded).not.toHaveBeenCalled();
+
+            const archived = addAttribute("ar-chld", "label", "archived", "");
+            eventService.emit(eventService.ENTITY_DELETED, {
+                entityName: "attributes", entity: archived
+            });
+            expect(sortNotesIfNeeded).toHaveBeenCalledWith("ar-par");
+        });
     });
 
     describe("ENTITY_CREATED (template relation)", () => {

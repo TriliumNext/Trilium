@@ -90,7 +90,8 @@ function sortNotes(
     reverse = false,
     foldersFirst = false,
     sortNatural = false,
-    _sortLocale?: string | null
+    _sortLocale?: string | null,
+    archivedLast = false
 ) {
     const criteria = parseSortCriteria(sortBy);
 
@@ -146,6 +147,10 @@ function sortNotes(
         }
 
         notes.sort((a, b) => {
+            if (archivedLast && a.isArchived !== b.isArchived) {
+                return a.isArchived ? 1 : -1;
+            }
+
             const topA = fetchValue(a, "top");
             const topB = fetchValue(b, "top");
 
@@ -229,8 +234,17 @@ function sortNotesIfNeeded(parentNoteId: string) {
     const sortFoldersFirst = parentNote.isLabelTruthy("sortFoldersFirst");
     const sortNatural = parentNote.isLabelTruthy("sortNatural");
     const sortLocale = parentNote.getLabelValue("sortLocale");
+    const sortArchivedLast = parentNote.isLabelTruthy("sortArchivedLast");
 
-    sortNotes(parentNoteId, sortedLabel.value, sortReversed, sortFoldersFirst, sortNatural, sortLocale);
+    sortNotes(
+        parentNoteId,
+        sortedLabel.value,
+        sortReversed,
+        sortFoldersFirst,
+        sortNatural,
+        sortLocale,
+        sortArchivedLast
+    );
 }
 
 /**
