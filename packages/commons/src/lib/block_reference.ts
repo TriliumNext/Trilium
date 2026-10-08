@@ -1,6 +1,9 @@
 /** The HTML attribute with the id of a block in a text note. */
 export const BLOCK_ID_ATTRIBUTE = "data-trilium-block-id";
 
+/** The class of a multicolumn layout, a `<section>` whose child sections are its columns. */
+export const MULTICOLUMN_LAYOUT_CLASS = "trilium-multicolumn-layout";
+
 /** The blocks that a block reference points at. `startId` equals `endId` for a single block. */
 export interface BlockRange {
     startId: string;
@@ -16,6 +19,7 @@ export interface BlockNode {
     getAttribute?(name: string): string | null | undefined;
     setAttribute?(name: string, value: string): unknown;
     remove?(): unknown;
+    replaceWith?(...nodes: unknown[]): unknown;
 }
 
 /** Sibling nodes, children of `parent`, from `first` to `last`. */
@@ -87,7 +91,8 @@ export function resolveBlockReference<T extends BlockNode>(root: BlockNode, valu
 
 /**
  * Keeps in `root` only the blocks that `value`, a `block` link parameter, points at, inside their
- * ancestors. Returns `false` and changes nothing when a block is missing.
+ * ancestors. A multicolumn layout left with one column is replaced by the column's content.
+ * Returns `false` and changes nothing when a block is missing.
  */
 export function sliceToBlockReference(root: BlockNode, value: string) {
     const { start, end } = resolveBlockReference(root, value);
@@ -189,6 +194,19 @@ function sliceToBlockRange(root: BlockNode, start: BlockNode, end: BlockNode) {
     for (let node = end; node !== root && node.parentNode; node = node.parentNode) {
         const siblings = Array.from(node.parentNode.childNodes);
         removeNodes(siblings.slice(siblings.indexOf(node) + 1));
+    }
+
+    for (const node of new Set([ ...getPath(start, root), ...getPath(end, root) ])) {
+        unwrapSingleColumnLayout(node);
+    }
+}
+
+/** Replaces `node`, when it is a multicolumn layout with one column, by the column's content. */
+function unwrapSingleColumnLayout(node: BlockNode) {
+    const isLayout = node.getAttribute?.("class")?.split(/\s+/).includes(MULTICOLUMN_LAYOUT_CLASS);
+    const columns = Array.from(node.childNodes).filter((child) => child.tagName);
+    if (isLayout && columns.length === 1) {
+        node.replaceWith?.(...Array.from(columns[0].childNodes));
     }
 }
 
