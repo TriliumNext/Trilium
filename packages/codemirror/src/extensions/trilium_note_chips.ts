@@ -132,7 +132,7 @@ class NoteChipsPlugin {
 
         const answer = this.resolve(noteId);
         if (!(answer instanceof Promise)) {
-            this.resolved.set(noteId, answer);
+            this.resolved.set(noteId, answer ?? null);
             return answer;
         }
 
@@ -141,7 +141,8 @@ class NoteChipsPlugin {
             .catch(() => null)
             .then((chip) => {
                 this.pending.delete(noteId);
-                this.resolved.set(noteId, chip);
+                // `undefined` would read as never asked, and the dispatch below would ask again.
+                this.resolved.set(noteId, chip ?? null);
                 // Outside the update that asked for it, so dispatching here is safe.
                 this.view.dispatch({ effects: noteChipResolved.of() });
             });

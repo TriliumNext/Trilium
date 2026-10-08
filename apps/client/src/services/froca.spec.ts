@@ -405,6 +405,9 @@ describe("getNotes / getNote / noteExists / getNoteFromCache", () => {
 
         const note = buildNote({ id: "gn-real", title: "Real" });
         await expect(froca.getNote(note.noteId)).resolves.toBe(note);
+
+        server.post = vi.fn(async () => ({ notes: [], branches: [], attributes: [] })) as typeof server.post;
+        await expect(froca.getNote("gn-missing", true)).resolves.toBeNull();
     });
 
     it("getNoteFromCache throws on empty id and returns the cached note otherwise", () => {
