@@ -441,6 +441,28 @@ describe("revealTabAtLine", () => {
         expect(activeTitles(el)).toEqual([ "A", "B2" ]);
     });
 
+    it("tags the tabs of separate list items with their own lines", () => {
+        const listSrc = [
+            "- First",              // 1
+            "",                     // 2
+            "  === \"A\"",        // 3
+            "",                     // 4
+            "      a",              // 5
+            "",                     // 6
+            "- Second",             // 7
+            "",                     // 8
+            "  === \"B\"",        // 9
+            "",                     // 10
+            "      b"               // 11
+        ].join("\n");
+        const el = document.createElement("div");
+        el.innerHTML = renderWithSourceLines(listSrc).html;
+        const tabs = [ ...el.querySelectorAll<HTMLElement>("li section.trilium-tab") ];
+
+        expect(tabs.map((tab) => tab.querySelector(".trilium-tab-title")?.textContent)).toEqual([ "A", "B" ]);
+        expect(tabs.map((tab) => tab.dataset.tabSourceLine)).toEqual([ "3", "9" ]);
+    });
+
     it("leaves the tabs alone for a line outside the block", () => {
         const el = preview();
         revealTabAtLine(el, 13);

@@ -728,8 +728,10 @@ function collectTabLines(tokens: Token[], firstLine: number): number[] {
                 tabLine += countNewlines(tab.raw);
             }
         } else if (token.type === "list") {
+            let itemLine = line;
             for (const item of (token as Tokens.List).items) {
-                lines.push(...collectTabLines(item.tokens, line));
+                lines.push(...collectTabLines(item.tokens, itemLine));
+                itemLine += countNewlines(item.raw);
             }
         } else if (token.type === "blockquote") {
             lines.push(...collectTabLines((token as Tokens.Blockquote).tokens, line));
