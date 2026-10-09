@@ -140,8 +140,8 @@ const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = 
         { specifier: "./calendar_view.js", importer: "content/calendar.ts" }
     ],
     geomap: [
-        { specifier: "./app_globals.js", importer: "content/geomap.ts" },
-        { specifier: "./geomap_view.js", importer: "content/geomap.ts" }
+        { specifier: "./app_globals.js", importer: "content/app_view.ts" },
+        { specifier: "./content/geomap_view.js", importer: "index.ts" }
     ]
 };
 

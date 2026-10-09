@@ -19,7 +19,7 @@ import "./content/link_embed.css";
 import "./content/collection_view.css";
 import setupMath from "./content/math.js";
 import setupCalendar from "./content/calendar.js";
-import setupGeoMap from "./content/geomap.js";
+import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         $try(setupMermaid);
     } else if (classList.contains("type-book")) {
         $try(setupCalendar);
-        $try(setupGeoMap);
+        $try(() => setupAppView(".share-geomap", () => import("./content/geomap_view.js")));
     }
 });
 

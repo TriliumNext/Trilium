@@ -1,90 +1,28 @@
 import "./geomap_view.css";
 
-import appContext from "@triliumnext/client/src/components/app_context.js";
-import Component from "@triliumnext/client/src/components/component.js";
-import TabManager from "@triliumnext/client/src/components/tab_manager.js";
-import froca from "@triliumnext/client/src/services/froca.js";
-import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import GeoView, { type MapData } from "@triliumnext/client/src/widgets/collections/geomap/index.js";
-import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
 import { render } from "preact";
 
-import type { FrocaPayload } from "./calendar_view.js";
-import { createShareFrocaSource } from "./share_froca_source.js";
+import ShareAppHost, { type AppPayload } from "./app_host.js";
 
-interface GeoMapPayload extends FrocaPayload {
-    options: Record<string, OptionValue | null>;
-    viewConfig?: MapData;
-}
-
-/**
- * Loads the map's notes into froca, which reads any other note from the share, and the display
- * options into `options`, then mounts the app's `GeoView` over them, under a component of its own
- * as the app mounts every view. A `#readOnly` label added to the collection's note turns off every
- * editing control the view has.
- */
-export default function mountGeoMap(container: HTMLElement, payload: GeoMapPayload) {
-    const { options: optionValues, links, viewConfig, ...rows } = payload;
-    options.load(Object.fromEntries(Object.entries(optionValues)
-        .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
-
-    const noteId = container.dataset.noteId ?? "";
-    froca.setSource(createShareFrocaSource(links));
-    froca.addResp({
-        ...rows,
-        attributes: [ ...rows.attributes, {
-            attributeId: `${noteId}-share-readOnly`,
-            noteId,
-            type: "label",
-            name: "readOnly",
-            value: "",
-            position: 0,
-            isInheritable: false
-        } ]
-    });
-
-    const note = froca.getNoteFromCache(noteId);
-    if (!note) {
-        return;
-    }
-
+/** Mounts the app's `GeoView` over the map's notes and its saved view. */
+export default function mountGeoMap(container: HTMLElement, payload: AppPayload) {
     render(
-        <ParentComponent.Provider value={startAppContext()}>
-            <GeoView
-                note={note}
-                notePath={noteId}
-                noteIds={note.getChildNoteIds()}
-                highlightedTokens={null}
-                viewConfig={viewConfig}
-                saveConfig={() => {}}
-                media="screen"
-                onReady={() => {}}
-                onOpenNote={(openedNoteId) => openLink(links[openedNoteId])}
-            />
-        </ParentComponent.Provider>,
+        <ShareAppHost noteId={container.dataset.noteId ?? ""} payload={payload}>
+            {({ note, openNote }) => (
+                <GeoView
+                    note={note}
+                    notePath={note.noteId}
+                    noteIds={note.getChildNoteIds()}
+                    highlightedTokens={null}
+                    viewConfig={payload.viewConfig as MapData | undefined}
+                    saveConfig={() => {}}
+                    media="screen"
+                    onReady={() => {}}
+                    onOpenNote={openNote}
+                />
+            )}
+        </ShareAppHost>,
         container
     );
-}
-
-/** Opens a note's shared page, which the map does in place of its detail pane. */
-function openLink(link: string | undefined) {
-    if (link) {
-        window.location.href = link;
-    }
-}
-
-/**
- * Gives `appContext` the part of `start()` that the view relies on, a `TabManager` for the note
- * contexts its panes register, and returns a component under it for the view to mount below.
- * The app's layout, commands and shortcuts are left out.
- */
-function startAppContext() {
-    if (!appContext.tabManager) {
-        appContext.tabManager = new TabManager();
-        appContext.child(appContext.tabManager);
-    }
-
-    const component = new Component();
-    appContext.child(component);
-    return component;
 }
