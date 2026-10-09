@@ -29,7 +29,7 @@
 <%- snippets["body:start"] %>
 <div id="header">
     <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-menu" aria-hidden="true"></span></button>
-    <a href="<%= logo.href %>" id="header-logo">
+    <a href="<%= logo.href %>" id="header-logo" class="no-arrow">
         <% if (logo.image) { %>
             <img src="<%= logo.image %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
         <% } else { %>
@@ -92,7 +92,7 @@
                     <ul>
                         <% for (const child of childLinks) { %>
                             <li>
-                                <a class="type-<%= child.type %>" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
+                                <a class="type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
                             </li>
                         <% } %>
                     </ul>

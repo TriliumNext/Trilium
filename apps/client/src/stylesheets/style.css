@@ -1127,13 +1127,6 @@ svg.ck-icon.note-icon {
     padding: 2px;
 }
 
-a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href^="https://"]:not(.no-arrow):after
-{
-    font-size: smaller;
-    content: "\2197";
-    vertical-align: top;
-}
-
 .card {
     color: inherit !important;
     border-color: var(--main-border-color) !important;

@@ -1,7 +1,7 @@
 <ul>
     <% for (const item of items) { %>
         <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>">
-            <a class="type-<%= item.type %><%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
+            <a class="type-<%= item.type %> no-arrow<%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
                 <% if (item.children.length) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><span class="tn-icon bx bx-chevron-down" aria-hidden="true"></span></button><% } %>
                 <span><span class="tn-icon <%= item.icon %>" aria-hidden="true"></span> <%= item.title %></span>
             </a>
