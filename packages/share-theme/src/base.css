@@ -125,6 +125,11 @@ html.theme-dark {
     color-scheme: dark;
 }
 
+/* The page background under the name the content styles shared with the app read it by. */
+:root {
+    --main-background-color: var(--background-primary);
+}
+
 body {
     background: var(--background-primary);
     font-family: "Inter", system-ui, sans-serif;
