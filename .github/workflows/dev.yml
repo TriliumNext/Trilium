@@ -271,8 +271,32 @@ jobs:
           disable_search: true
           fail_ci_if_error: false
 
+      - name: Run the share-theme tests
+        id: test-share-theme
+        run: pnpm run --filter=share-theme test --coverage
+
+      - name: Upload share-theme coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        if: ${{ !cancelled() && steps.test-share-theme.outcome == 'success' }}
+        with:
+          files: packages/share-theme/test-output/vitest/coverage/lcov.info
+          flags: share-theme
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload share-theme test results to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        if: ${{ !cancelled() && steps.test-share-theme.outcome != 'skipped' }}
+        with:
+          report_type: test_results
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/share-theme/test-output/vitest/junit.xml
+          flags: share-theme
+          disable_search: true
+          fail_ci_if_error: false
+
       - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5 --filter=\!codemirror --filter=\!highlightjs --filter=\!pdfjs-viewer test
+        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5 --filter=\!codemirror --filter=\!highlightjs --filter=\!pdfjs-viewer --filter=\!share-theme test
 
   # The two suites below are split out of test_dev so they run concurrently with
   # it (and each other) rather than queueing behind the client/package suites.

@@ -349,7 +349,8 @@
   "content_renderer": {
     "note-cannot-be-displayed": "This note type cannot be displayed.",
     "included-note-requires-credentials": "This included note is password-protected and cannot be displayed here.",
-    "broken-block-reference": "Broken reference"
+    "broken-block-reference": "Broken reference",
+    "play-video": "Play video"
   },
   "onenote_import": {
     "root-title": "OneNote import",
@@ -457,7 +458,8 @@
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",
     "login": "Login",
-    "tab-title": "Tab title"
+    "tab-title": "Tab title",
+    "heading-link": "Link to This Section"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

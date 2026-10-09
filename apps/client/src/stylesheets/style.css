@@ -1106,48 +1106,6 @@ svg.ck-icon.note-icon {
 
 .ck-content .footnote-section {
     border: 1px solid #c4c4c4;
-    border-radius: 2px;
-    counter-reset: footnote-counter;
-    margin: 1em 0;
-    padding: 10px;
-}
-
-.ck-content .footnote-item {
-    counter-increment: footnote-counter;
-    display: flex;
-    list-style: none;
-    margin-inline-start: 0.5em;
-}
-
-.ck-content .footnote-item > * {
-    vertical-align: text-top;
-}
-
-.ck-content .footnote-back-link {
-    margin-inline-end: 0.1em;
-    position: relative;
-    top: -0.2em;
-}
-
-.ck-content .footnotes .footnote-back-link > sup {
-    margin-inline-end: 0;
-}
-
-.ck-content .footnote-item:before {
-    content: counter(footnote-counter) ". ";
-    display: inline-block;
-    min-width: fit-content;
-    position: relative;
-    inset-inline-end: 0.2em;
-    text-align: end;
-}
-
-.ck-content .footnote-content {
-    border-radius: 2px;
-    display: inline-block;
-    flex-grow: 1;
-    padding: 0 0.3em;
-    width: 95%;
 }
 
 .ck-content .ck-content-widget.footnote-section .ck-content-widget__type-around__button_after {
@@ -1167,13 +1125,6 @@ svg.ck-icon.note-icon {
     background-color: var(--accented-background-color);
     border: 1px solid var(--main-border-color);
     padding: 2px;
-}
-
-a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href^="https://"]:not(.no-arrow):after
-{
-    font-size: smaller;
-    content: "\2197";
-    vertical-align: top;
 }
 
 .card {
@@ -2261,22 +2212,8 @@ button.close:hover {
 }
 
 .reference-link .tn-icon {
-    /* A line can wrap after an inline-block. An inline box that does not wrap and ends with a
-       word joiner keeps the icon on the line of the first title character. */
-    display: inline;
     position: relative;
     top: 1px;
-    margin-inline-end: 3px;
-    white-space: nowrap;
-}
-
-.reference-link .tn-icon::before {
-    /* An inline-block glyph does not take the underline of the link. */
-    display: inline-block;
-}
-
-.reference-link .tn-icon::after {
-    content: "\2060";
 }
 
 .reference-link small {

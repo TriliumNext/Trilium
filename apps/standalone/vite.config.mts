@@ -11,6 +11,7 @@ import { shareMermaidManifest, stripUniverEmojiData, stripUniverHyphenation } fr
 const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
+const FULL_COVERAGE = { lines: 100, functions: 100, branches: 100, statements: 100 };
 
 // Next to the share theme's own files, where `scripts.js` looks for it.
 const SHARE_MERMAID_MANIFEST = "share/assets/client/share_mermaid.json";
@@ -485,7 +486,12 @@ export default defineConfig(() => ({
             // so paths would emit as bare `main.ts` / `../../../packages/trilium-core/src/…`,
             // which are ambiguous in this monorepo and get attributed to whichever project wins
             // the match. Anchor to the repo root so every path is unambiguous.
-            reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]]
+            reporter: ["text", "html", ["lcov", { projectRoot: join(__dirname, "../..") }]],
+            // Threshold globs match paths relative to the root, `src`.
+            thresholds: {
+                "../../../packages/trilium-core/src/share/**": FULL_COVERAGE,
+                "lightweight/share_provider.ts": FULL_COVERAGE
+            }
         },
         server: {
             deps: {

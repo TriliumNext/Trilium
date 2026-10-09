@@ -1,3 +1,12 @@
+// Content styles shared with the share theme. `stylesheets/` is served as is, so a bare package
+// `@import` there would reach the browser unresolved; Vite bundles these into the entry's CSS,
+// which loads ahead of the stylesheets `loadStylesheets()` appends.
+import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
+import "@triliumnext/ckeditor5/src/theme/external_links.css";
+import "@triliumnext/ckeditor5/src/theme/footnotes.css";
+import "@triliumnext/ckeditor5/src/theme/headings.css";
+import "@triliumnext/ckeditor5/src/theme/reference_links.css";
+
 import { createFontStylesheetLink } from "./services/font";
 import {
     CLIENT_STARTUP_PHASES, hideSplash, initSplashProgress, reportSplashPhase, showSplashError

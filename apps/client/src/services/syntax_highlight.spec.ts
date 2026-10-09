@@ -274,6 +274,20 @@ describe("syntax_highlight", () => {
             expect($a.html()).toBe("noresult");
         });
 
+        it("leaves code beyond the size cutoff plain", async () => {
+            const mod = await freshModule();
+            const longCode = Array(501).fill("x").join("\n");
+            const $a = $codeBlock(longCode, "text-x-csrc");
+            await mod.applySingleBlockSyntaxHighlight($a, "text-x-csrc");
+            const $b = $codeBlock(longCode, "text-x-trilium-auto");
+            await mod.applySingleBlockSyntaxHighlight($b, "text-x-trilium-auto");
+
+            expect(hl.highlight).not.toHaveBeenCalled();
+            expect(hl.highlightAuto).not.toHaveBeenCalled();
+            expect($a.text()).toBe(longCode);
+            expect($b.text()).toBe(longCode);
+        });
+
         it("does not highlight when the mime type is empty", async () => {
             const mod = await freshModule();
             const $a = $codeBlock("nolang");

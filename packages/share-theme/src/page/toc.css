@@ -1,0 +1,146 @@
+#toc-pane {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+    position: sticky;
+    top: 0;
+    order: 3;
+    transition: width 0.3s ease, margin-right 0.3s ease;
+    width: 250px;
+    flex-shrink: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-top: 20px;
+    z-index: 1;
+    background: var(--background-primary);
+}
+
+.toc-pane-collapsed #toc-pane {
+    width: 0;
+    overflow: hidden;
+}
+
+.toc-pane-collapsed #toc-pane h3,
+.toc-pane-collapsed #toc-pane #toc {
+    display: none;
+}
+
+#toc-pane h3 {
+    text-transform: uppercase;
+}
+
+#toc {
+    position: relative;
+    height: fit-content;
+    margin: 0;
+    border-radius: 6px;
+    padding: 0 0 0 16px;
+    max-width: 100%;
+}
+
+#toc, #toc ul {
+    list-style: none;
+}
+
+#toc ul {
+    padding-left: 16px;
+}
+
+#toc span {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#toc li a {
+    display: flex;
+    align-items: center;
+    color: var(--text-heading);
+    transition: color 200ms ease;
+    white-space: nowrap;
+}
+
+#toc li a:hover,
+#toc li a.active {
+    color: var(--text-link);
+    text-decoration: none;
+}
+
+#toc li a::before {
+    content: "";
+    display: flex;
+    position: absolute;
+    width: 2px;
+    height: 16px;
+    background: transparent;
+    left: 0;
+    transition: background-color 200ms ease;
+}
+
+#toc li a.active::before {
+    background: var(--text-link);
+}
+
+#toc::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0px;
+    top: 4px;
+    width: 2px;
+    height: calc(100% - 8px);
+    background: var(--background-highlight);
+}
+
+#content :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: 16px;
+}
+
+#content .toc-anchor {
+    margin-inline-start: 0.3em;
+    font-size: 0.6em;
+    vertical-align: middle;
+    color: var(--text-menu);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+
+#content :is(h1, h2, h3, h4, h5, h6):hover > .toc-anchor,
+#content .toc-anchor:focus-visible,
+#content .toc-anchor.copied {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    #content .toc-anchor {
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 48em) {
+    #toc-pane {
+        display: flex;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 80%;
+        max-width: 300px;
+        padding: 20px;
+        background: var(--background-secondary);
+        transform: translateX(100%);
+        transition: transform 200ms ease;
+        z-index: 2;
+        overflow-y: auto;
+    }
+
+    #toc-pane h3,
+    #toc-pane #toc {
+        display: block;
+    }
+
+    .toc-open #toc-pane {
+        transform: translateX(0);
+    }
+}

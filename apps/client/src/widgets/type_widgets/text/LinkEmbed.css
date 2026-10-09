@@ -236,10 +236,6 @@ body.light-theme .link-embed-favicon-light {
     }
 }
 
-a.link-embed-card::after {
-    display: none !important;
-}
-
 /* Cards in a series share flush edges; only the outer corners stay rounded. A card that
    stands alone matches neither rule below and keeps the default 8px on every corner. */
 

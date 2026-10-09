@@ -39,15 +39,13 @@ void sql_init.dbReady.then(() => {
     });
     dbConnectionReady = true;
 
-    [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `SIGTERM`].forEach((eventType) => {
+    for (const eventType of [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `SIGTERM`]) {
         process.on(eventType, () => {
-            if (dbConnection) {
-                // closing connection is especially important to fold -wal file into the main DB file
-                // (see https://sqlite.org/tempfiles.html for details)
-                dbConnection.close();
-            }
+            // closing connection is especially important to fold -wal file into the main DB file
+            // (see https://sqlite.org/tempfiles.html for details)
+            dbConnection.close();
         });
-    });
+    }
 });
 
 function assertDbReady(): void {

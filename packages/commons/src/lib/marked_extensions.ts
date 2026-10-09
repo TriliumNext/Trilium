@@ -1,17 +1,6 @@
 import type { Token, TokenizerAndRendererExtension } from "marked";
 
-/**
- * Escapes HTML special characters to prevent XSS attacks.
- * Used for both attribute values and text content.
- */
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
+import { escapeHtml } from "./utils.js";
 
 export interface WikiLinkOptions {
     /** Format the href for the link. Defaults to `/${noteId}` */

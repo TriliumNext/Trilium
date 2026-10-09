@@ -411,6 +411,25 @@ describe("Nested embeds (single-level display vs recursive print)", () => {
         expect(contentEl.querySelector("a.reference-link")).toBeNull();
     });
 
+    it("on print, links back to a note already expanded on the path instead of looping", async () => {
+        buildNote({
+            id: "cycB",
+            title: "Note B",
+            content: `<p>B body</p><section class="include-note" data-note-id="cycA" data-box-size="medium">&nbsp;</section>`
+        });
+        const noteA = buildNote({
+            id: "cycA",
+            title: "Note A",
+            content: `<p>A body</p><section class="include-note" data-note-id="cycB" data-box-size="medium">&nbsp;</section>`
+        });
+        const contentEl = document.createElement("div");
+        await renderText(noteA, $(contentEl), { expandNestedEmbeds: true });
+
+        expect(contentEl.textContent).toContain("B body");
+        expect(contentEl.querySelector('section.include-note[data-note-id="cycA"]')).toBeNull();
+        expect(contentEl.querySelector("a.reference-link")?.getAttribute("href")).toBe("#root/cycA");
+    });
+
     it("on print, expands a note shared across sibling branches in each branch (not a false cycle)", async () => {
         // Diamond: A embeds B and C; both B and C embed D. D is not a cycle, so under recursive
         // expansion it must render in both branches (the ancestor path is tracked per-branch).
@@ -526,6 +545,22 @@ describe("Attachment embeds", () => {
         expect(nestedEl.querySelector("section.include-note")).toBeNull();
         expect(nestedEl.querySelector("a.reference-link")?.getAttribute("href"))
             .toBe(`#root/${owner.noteId}?viewMode=attachments&attachmentId=embedPic`);
+    });
+
+    it("leaves the embed of an attachment that cannot be loaded as it is", async () => {
+        const owner = buildNote({
+            title: "Missing embed owner",
+            content: `<section class="include-note" data-attachment-id="gonePic">&nbsp;</section>`
+        });
+        const getAttachment = vi.spyOn(froca, "getAttachment").mockResolvedValue(null);
+
+        const contentEl = document.createElement("div");
+        await renderText(owner, $(contentEl));
+
+        expect(getAttachment).toHaveBeenCalledWith("gonePic", true);
+        expect(contentEl.querySelector(`section.include-note[data-attachment-id="gonePic"]`)?.innerHTML)
+            .toBe("&nbsp;");
+        getAttachment.mockRestore();
     });
 });
 

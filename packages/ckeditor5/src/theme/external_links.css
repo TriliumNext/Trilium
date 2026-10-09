@@ -1,0 +1,5 @@
+a:is(.external, [href^="http://"], [href^="https://"]):not(.no-arrow, .link-embed-card)::after {
+    font-size: smaller;
+    content: "\2197";
+    vertical-align: top;
+}

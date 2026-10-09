@@ -1,0 +1,16 @@
+.reference-link .tn-icon {
+    /* A line can wrap after an inline-block. An inline box that does not wrap and ends with a
+       word joiner keeps the icon on the line of the first title character. */
+    display: inline;
+    margin-inline-end: 3px;
+    white-space: nowrap;
+}
+
+.reference-link .tn-icon::before {
+    /* An inline-block glyph does not take the underline of the link. */
+    display: inline-block;
+}
+
+.reference-link .tn-icon::after {
+    content: "\2060";
+}

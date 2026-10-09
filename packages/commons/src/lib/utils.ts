@@ -78,3 +78,16 @@ export function fnv1a(value: string): number {
 
     return hash >>> 0;
 }
+
+/**
+ * Escapes `&`, `<`, `>`, `"` and `'`, so that the value can go into HTML text or a quoted
+ * attribute.
+ */
+export function escapeHtml(value: string): string {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+}

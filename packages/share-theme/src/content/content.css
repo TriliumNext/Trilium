@@ -1,0 +1,223 @@
+@import "@triliumnext/ckeditor5/src/theme/headings.css";
+@import "@triliumnext/ckeditor5/src/theme/reference_links.css";
+
+:root {
+    --ck-content-font-family: inherit !important;
+    --ck-content-font-size: inherit !important;
+    --ck-content-font-color: inherit !important;
+    --ck-content-line-height: inherit !important;
+}
+
+#content #title {
+    margin: 0;
+    padding-top: 10px;
+    font-size: 2em;
+    line-height: 1.2;
+    color: var(--text-heading);
+    border-bottom: 1px solid var(--background-highlight);
+}
+
+iframe.pdf-view {
+    width: 100%;
+    height: 800px;
+}
+
+.ck-content code,
+.ck-content pre {
+    color: var(--text-primary);
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-active);
+    border-radius: 6px;
+}
+
+/* Only a code block preserves the source's own line breaks. Inline code used to inherit this from
+ * the rule above, which kept a long snippet on one line and pushed the page sideways on mobile. */
+.ck-content pre {
+    white-space: pre;
+}
+
+.ck-content code:not(pre code) {
+    padding: 2px 5px;
+    overflow-wrap: break-word;
+}
+
+.ck-content pre code {
+    border: 0;
+}
+
+.ck-content pre {
+    overflow: auto;
+    position: relative;
+    min-width: unset !important;
+}
+
+.ck-content pre .copy-button {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+}
+
+/* The heading weight of the app's default theme (`theme-next/notes/text.css`) and its default
+   `headingStyle`, "underline" (`ReadOnlyText.css`). */
+.ck-content :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: 300;
+    border-bottom: 1px solid var(--background-highlight);
+}
+
+/* The links of the app's default theme, `theme-next/forms.css`; link previews and heading links have their own. */
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)) {
+    --background: transparent;
+
+    box-shadow: 0 0 0 0 var(--background);
+    border-radius: 4px;
+    background: var(--background);
+    font-weight: 500;
+    text-decoration: none;
+
+    transition:
+        background-color 200ms ease-out,
+        box-shadow 200ms ease-out,
+        color 300ms ease-out;
+}
+
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)):focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 2px;
+}
+
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)):hover {
+    --background: var(--link-hover-background);
+
+    box-shadow: 0 0 0 4px var(--link-hover-background);
+    text-decoration: underline;
+
+    transition:
+        background-color 100ms ease-in,
+        box-shadow 100ms ease-in,
+        color 150ms ease-in;
+}
+
+#content img {
+    max-width: 100%;
+    height: auto;
+}
+
+body:not(.math-loaded) .math-tex {
+    visibility: hidden;
+}
+
+body.type-webView {
+    #main {
+        max-width: unset;
+        padding: 0;
+        height: 100%;
+    }
+
+    #content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        h1 {
+            display: none;
+        }
+
+        iframe.webview {
+            width: 100%;
+            flex-grow: 1;
+            border: 0;
+        }
+    }
+}
+
+/* table styles */
+.ck-content table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.ck-content table td,
+.ck-content table th {
+    min-width: 120px;
+    border: 1px solid var(--background-highlight);
+    padding: 8px;
+}
+
+.ck-content table th {
+    background-color: var(--background-secondary);
+    font-weight: bold;
+}
+
+/* Spreadsheet (Univer) tables are emitted as a static <table> whose cells carry their
+   own inline borders/fills. They live under #content.type-spreadsheet, not .ck-content,
+   so the rule above does not reach them. Collapse the borders so adjacent cell borders
+   merge into single lines instead of doubling across the default border-spacing gaps. */
+.spreadsheet-table {
+    border-collapse: collapse;
+    /* The gridline color, for the sheets that enable gridlines; the rule drawing them is emitted
+       by the renderer, and a sheet carrying its own color overrides this on the table element.
+       Borders collapse, so adjacent cells' gridlines merge into single 1px lines (no doubling).
+       A real data border at the same 1px width ties the gridline under collapse and wins by
+       source order, so heavier (>=2px) and filled-cell borders always show; an unfilled cell's
+       own 1px border may cede its top/left edge to a neighbour's gridline — fine for a faint grid. */
+    --spreadsheet-gridline-color: var(--background-highlight);
+    width: auto;
+    margin-top: 1em;
+    /* Honour the per-column widths emitted in the colgroup (and the explicit table width) so the
+       grid keeps the editor's geometry. Without this, a cell wider than its column would stretch
+       the column and break the alignment of the absolutely-positioned floating images. */
+    table-layout: fixed;
+}
+
+/* The context is in :where() so this stays a default: the renderer emits the commonest cell
+   style as a `.spreadsheet-table td` rule, which has to win over it. */
+:where(.spreadsheet-table) td {
+    padding: 2px 4px;
+    /* Match the spreadsheet: long text overflows into empty neighbouring cells rather than
+       wrapping, which keeps every row at its declared height. Wrapping would grow rows and push
+       the floating images (positioned in absolute px) out of alignment with the grid. */
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* A sheet that has floating images is wrapped in a positioned container; the images are emitted as
+   absolutely-positioned <img> with inline left/top/width/height in the grid's content coordinates
+   (the Univer transform, with the row/column header sizes removed). */
+.spreadsheet-sheet {
+    position: relative;
+    font-size: 11pt;
+    line-height: 1.2;
+    /* Carry the table's top spacing on the wrapper so the table's top edge sits exactly at the
+       wrapper origin — the images are positioned absolutely from there, so any table margin would
+       shift them vertically out of alignment with the grid. */
+    margin-top: 1em;
+}
+
+.spreadsheet-sheet .spreadsheet-table {
+    margin-top: 0;
+}
+
+/* Images embedded inside a cell flow with the cell content. */
+.spreadsheet-cell-image {
+    display: block;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+/* An include with a caption: the included content, then the caption. */
+.ck-content figure.include-note {
+    margin: 1em 0;
+}
+
+.ck-content .include-note > figcaption {
+    margin-top: .5em;
+    border-top: 1px solid var(--background-active);
+    padding-top: .5em;
+    font-size: .9em;
+    text-align: center;
+}
+
+.ck-content .trilium-tabs {
+    --card-background-color: var(--background-secondary);
+    --main-text-color: var(--text-primary);
+}

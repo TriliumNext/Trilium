@@ -63,6 +63,70 @@
         <td><code>true</code> when the note has no content of its own.</td>
       </tr>
       <tr>
+        <td><code>head</code>
+        </td>
+        <td>The values of the page's <code>&lt;head&gt;</code>: <code>title</code> (the
+          note's title, followed by the site's), <code>description</code> (<code>#shareDescription</code>), <code>noIndex</code> (<code>#shareDisallowRobotIndexing</code>)
+          and <code>openGraph</code> with <code>url</code>, <code>domain</code>, <code>image</code>, <code>color</code> and <code>card</code> (<code>summary_large_image</code> with
+          an image, <code>summary</code> without). A value whose label is not set is <code>null</code>. <code>metaTags</code> lists
+          the description, OpenGraph and Twitter <code>&lt;meta&gt;</code> tags of
+          the values that are set, each with <code>attribute</code> (<code>name</code> or <code>property</code>), <code>key</code> and <code>content</code>.</td>
+      </tr>
+      <tr>
+        <td><code>logo</code>
+        </td>
+        <td>The site logo in the header: <code>href</code> (<code>#shareRootLink</code>,
+          otherwise the site's root page), <code>image</code> (the <code>~shareLogo</code> image,
+          or <code>null</code>), <code>icon</code> (the icon classes of the site's root
+          note, shown when there is no <code>image</code>), and <code>width</code> and <code>height</code> for
+          the image.</td>
+      </tr>
+      <tr>
+        <td><code>navigation</code>
+        </td>
+        <td>The navigation tree of the site: its visible pages, each with <code>title</code>, <code>href</code>, <code>isExternal</code>, <code>type</code>, <code>icon</code>, <code>isActive</code> (the
+          page being shown), <code>isExpanded</code> (that page or one of its ancestors)
+          and <code>children</code>.</td>
+      </tr>
+      <tr>
+        <td><code>contentClasses</code>
+        </td>
+        <td>The classes of the content element: <code>type-&lt;note type&gt;</code>, <code>ck-content</code> for
+          text and Markdown notes, and <code>no-content</code> when the note has no
+          content of its own.</td>
+      </tr>
+      <tr>
+        <td><code>childLinks</code>
+        </td>
+        <td>The links to the note's visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>type</code>.</td>
+      </tr>
+      <tr>
+        <td><code>prevNext</code>
+        </td>
+        <td>The pages before and after the note in the navigation tree, as <code>previous</code> and <code>next</code>,
+          each with <code>title</code> and <code>href</code>, or <code>null</code>.</td>
+      </tr>
+      <tr>
+        <td><code>language</code>
+        </td>
+        <td>The languages of the page: <code>page</code> with the <code>lang</code> and <code>dir</code> of
+          the application's language, and <code>content</code> with those of the note's
+          content language, or <code>null</code> when they are the same.</td>
+      </tr>
+      <tr>
+        <td><code>lastUpdated</code>
+        </td>
+        <td>When the note was last changed, as <code>iso</code> for a <code>&lt;time&gt;</code> element
+          and as <code>text</code> in the application's language, or <code>null</code>.</td>
+      </tr>
+      <tr>
+        <td><code>snippets</code>
+        </td>
+        <td>The HTML of the <code>~shareHtml</code> snippets for each location, such
+          as <code>snippets["head:end"]</code>. Every location is present, empty when
+          no snippet goes there.</td>
+      </tr>
+      <tr>
         <td><code>subRoot</code>
         </td>
         <td>The root of the shared subtree as <code>{ note, branch }</code> — handy
@@ -77,7 +141,8 @@
       <tr>
         <td><code>faviconUrl</code> / <code>logoUrl</code>
         </td>
-        <td>Resolved favicon and logo URLs.</td>
+        <td>Resolved favicon and logo URLs. Without <code>~shareLogo</code>, <code>logoUrl</code> is
+          the Trilium logo.</td>
       </tr>
       <tr>
         <td><code>isStatic</code>

@@ -1,18 +1,27 @@
 import { trimIndentation } from "@triliumnext/commons";
+import {
+    getChildLinks, getContentClasses, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
+} from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
+import { t } from "i18next";
 import { parse } from "node-html-parser";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as iconPackService from "../services/icon_packs.js";
+import { getLog } from "../services/log.js";
 import options from "../services/options.js";
+import { getPlatform } from "../services/platform.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
+import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import {
-    ensureShareHighlighting, getContent, getMimeTypesForOption, readShareTemplate, renderCode,
-    renderNoteContent, type Result, shouldSyntaxHighlight
+    assetUrlFragment, ensureShareHighlighting, getContent, preparePageContent, readShareTemplate,
+    renderCode, renderNoteContent, renderNoteForExport, type Result
 } from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
+import { getShareProvider } from "./share_provider.js";
 import shareRoot from "./share_root.js";
 
 vi.mock("../becca/becca_loader.js", () => ({
@@ -62,8 +71,8 @@ describe("content_renderer", () => {
             const result = getContent(note);
             expect(result.content).toStrictEqual(trimIndentation`\
                 <p>Before</p>
-                <p>Foo</p><div>Bar</div>
-                <strong>Baz</strong>
+                <section class="include-note" data-note-id="subnote1" data-box-size="small"><p>Foo</p><div>Bar</div></section>
+                <section class="include-note" data-note-id="subnote2" data-box-size="small"><strong>Baz</strong></section>
                 <p>After</p>
             `);
         });
@@ -308,9 +317,161 @@ describe("content_renderer", () => {
 
             const page = renderNoteContent(shareRootNote.getChildNotes()[0]);
 
-            expect(page).toContain(`<h3 data-trilium-block-id="b1">Referenced`
-                + `<a id="referenced" class="toc-anchor"`);
+            expect(page).toContain(`<h3 data-trilium-block-id="b1" id="referenced">Referenced`
+                + `<a class="toc-anchor"`);
             expect(page).toContain(`href="#referenced"`);
+
+            const toc = parse(String(page)).querySelector("#toc");
+            expect(toc?.querySelectorAll(":scope > li > a").map((link) => link.text.trim()))
+                .toStrictEqual([ "Plain" ]);
+            expect(toc?.querySelector("li li a")?.getAttribute("href")).toBe("#referenced");
+        });
+
+        it("links a page to the pages before and after it in the site", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "navSite",
+                    title: "Site",
+                    children: [
+                        { id: "navFirst", title: "First", content: "<p>1</p>" },
+                        { id: "navSecond", title: "Second", content: "<p>2</p>" }
+                    ]
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(
+                shareRootNote.getChildNotes()[0].getChildNotes()[0])));
+
+            expect(page.querySelector(".navigation .previous")?.getAttribute("href")).toBe("./navSite");
+            expect(page.querySelector(".navigation .next")?.text).toBe("Second");
+        });
+
+        it("anchors a heading spanning lines and lists it in the table of contents", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "multilineHeadings",
+                    content: `<h2>First</h2><p>a</p><h2>Spans\n    two lines</h2><p>b</p>`
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+
+            expect(page.querySelector("#content h2:last-of-type")?.id)
+                .toBe("spans-two-lines");
+            expect(page.querySelectorAll("#toc a").map((link) => [
+                link.getAttribute("href"), link.text.trim()
+            ])).toStrictEqual([
+                [ "#first", "First" ],
+                [ "#spans-two-lines", "Spans two lines" ]
+            ]);
+        });
+
+        it("links the table of contents to a heading's own ID, URL-encoded", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "encodedHeadings",
+                    content: `<h2 id="part%20one">Part one</h2><p>a</p><h2>Two</h2><p>b</p>`
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+
+            expect(page.querySelectorAll("#toc a").map((link) => link.getAttribute("href")))
+                .toStrictEqual([ "#part%2520one", "#two" ]);
+        });
+
+        it("prints only the OpenGraph tags that have a value, with an absolute image", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "plainSite", title: "Plain", content: "<p>a</p>" },
+                    {
+                        "id": "previewSite",
+                        "title": "Preview",
+                        "content": "<p>b</p>",
+                        "#shareOpenGraphURL": "https://example.com/share/previewSite",
+                        "~shareOpenGraphImage": "plainSite"
+                    }
+                ]
+            });
+            const [ plainSite, previewSite ] = shareRootNote.getChildNotes();
+            const metaTags = (note: SNote) => parse(String(renderNoteContent(note)))
+                .querySelectorAll("head meta[content]")
+                .map((meta) => [ meta.getAttribute("property") ?? meta.getAttribute("name"),
+                    meta.getAttribute("content") ])
+                .filter(([ name ]) => name !== "viewport");
+
+            expect(metaTags(plainSite).filter(([ , content ]) => !content)).toStrictEqual([]);
+            expect(metaTags(plainSite)).toStrictEqual([
+                [ "og:type", "website" ],
+                [ "og:title", "Plain" ],
+                [ "twitter:card", "summary" ],
+                [ "twitter:title", "Plain" ]
+            ]);
+            expect(metaTags(previewSite)).toEqual(expect.arrayContaining([
+                [ "og:url", "https://example.com/share/previewSite" ],
+                [ "og:image", "https://example.com/share/api/images/plainSite/image.png" ],
+                [ "twitter:card", "summary_large_image" ]
+            ]));
+        });
+
+        it("declares the display language on the page and the note's own on its content", () => {
+            const getOption = options.getOptionOrNull.bind(options);
+            vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+                (name === "locale" ? "de" : getOption(name)));
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [ { "id": "hebrewPage", "content": "<p>שלום</p>", "#language": "he" } ]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+            vi.restoreAllMocks();
+
+            const language = (selector: string) => [ "lang", "dir" ]
+                .map((name) => page.querySelector(selector)?.getAttribute(name));
+            expect(language("html")).toStrictEqual([ "de", "ltr" ]);
+            expect(language("#content")).toStrictEqual([ "he", "rtl" ]);
+
+            const time = page.querySelector(".updated time");
+            expect(time).toBeTruthy();
+            expect(time?.text).toBe(new Intl.DateTimeFormat("de", { dateStyle: "long" })
+                .format(new Date(time?.getAttribute("datetime") ?? "")));
+        });
+
+        it("shows a subpage list only when there are subpages", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "emptyBook", type: "book", content: "" },
+                    { id: "fullBook", type: "book", content: "", children: [ { id: "bookChild", title: "Child" } ] }
+                ]
+            });
+            const [ emptyBook, fullBook ] = shareRootNote.getChildNotes()
+                .map((note) => parse(String(renderNoteContent(note))));
+
+            expect(emptyBook.querySelector("#childLinks") === null).toBe(true);
+            expect(emptyBook.querySelector("#content")?.classList.contains("no-content")).toBe(true);
+            expect(fullBook.querySelectorAll("#childLinks a").map((link) => link.text))
+                .toStrictEqual([ "Child" ]);
+        });
+
+        it("keeps the alt text of an image on the page", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "altPage",
+                    content: `<p><img src="chart.png" alt="Chart"></p><p><img src="plain.png"></p>`
+                }]
+            });
+
+            const page = String(renderNoteContent(shareRootNote.getChildNotes()[0]));
+
+            expect(page).not.toMatch(/<img[^>]*\salt=[^>]*\salt=/);
+            expect(page).toContain(`<img src="chart.png" alt="Chart" loading="lazy">`);
+            expect(page).toMatch(/<img src="plain.png" alt="[^"]+" loading="lazy">/);
         });
 
         it("leaves an include-note section untouched when the referenced note is missing", () => {
@@ -438,10 +599,12 @@ describe("content_renderer", () => {
             const content = getContent(note).content as string;
 
             const src = "api/attachments/embedPic1/image/my%20photo.png";
-            expect(content).toContain(`<img src="${src}" alt="my photo.png">`);
+            expect(content).toContain(`<section class="include-note" data-attachment-id="embedPic1">`
+                + `<img src="${src}" alt="my photo.png"></section>`);
+            expect(content).toContain(`<section class="include-note" data-attachment-id="embedPdf1">`
+                + `<a class="reference-link attachment-link role-file"`);
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);
             expect(content).toContain("report.pdf");
-            expect(content).not.toContain("include-note");
             expect(content).not.toContain("embedGone");
         });
 
@@ -580,6 +743,34 @@ describe("content_renderer", () => {
                 expect(externalLink.text).toBe("Ext");
             });
 
+            it("links a note with either external link label out, as the navigation does", () => {
+                buildShareNote({
+                    "id": "legacyExt0001",
+                    "title": "Legacy",
+                    "#shareExternal": "https://example.com/legacy"
+                });
+                buildShareNote({
+                    "id": "spacedExt0001",
+                    "title": "Spaced",
+                    "#shareExternalLink": "   ",
+                    "#shareExternal": " https://example.com/spaced "
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a href="#root/legacyExt0001">Legacy</a>`
+                        + ` <a href="#root/spacedExt0001">Spaced</a></p>`
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+
+                expect(links.map((link) => link.getAttribute("href")))
+                    .toStrictEqual([ "https://example.com/legacy", "https://example.com/spaced" ]);
+                for (const link of links) {
+                    expect(link.getAttribute("target")).toBe("_blank");
+                    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+                }
+            });
+
             it("replaces a reference link to a missing attachment with its text", () => {
                 buildShareNote({ id: "attachOwner01", title: "Owner" });
                 const href = "#root/attachOwner01?viewMode=attachments&amp;attachmentId=missing01";
@@ -605,7 +796,7 @@ describe("content_renderer", () => {
 
             const content = String(getContent(note).content);
             expect(content).toContain(`<div class="link-embed-card-url">`
-                + `<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`
+                + `<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" draggable="false" width="16" height="16">`
                 + `<span>Example</span></div>`);
         });
 
@@ -696,8 +887,27 @@ describe("content_renderer", () => {
             });
 
             const content = String(getContent(note).content);
-            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`);
+            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" draggable="false" width="16" height="16">`);
             expect(content).toContain(`<span class="link-embed-mention-title">A title</span>`);
+        });
+    });
+
+    describe("Mermaid note", () => {
+        it("shows the saved image and keeps the source for the share theme to draw", () => {
+            const note = buildShareNote({
+                id: "mermaidNote",
+                type: "mermaid",
+                mime: "text/vnd.mermaid",
+                content: "graph TD; A-->B[<script>]"
+            });
+            const root = parse(String(getContent(note).content));
+            const container = root.querySelector("div.mermaid-note");
+
+            expect(container?.querySelector("img.mermaid-note-image")?.getAttribute("src"))
+                .toMatch(/^api\/images\/mermaidNote\//);
+            expect(container?.querySelector("details pre.mermaid-note-source")?.textContent)
+                .toBe("graph TD; A-->B[<script>]");
+            expect(root.querySelector("script")).toBeNull();
         });
     });
 
@@ -767,6 +977,7 @@ describe("content_renderer", () => {
                 "//example.com/protocol-relative",
                 "/\\example.com/backslash",
                 "/\t/example.com",
+                "//[invalid-host",
                 "./a",
                 "relative/path",
                 "mailto:a@b.com",
@@ -836,24 +1047,6 @@ describe("content_renderer", () => {
         });
     });
 
-    describe("shouldSyntaxHighlight", () => {
-        it("allows small code blocks", () => {
-            expect(shouldSyntaxHighlight("a\nb\nc")).toBe(true);
-            expect(shouldSyntaxHighlight("")).toBe(true);
-        });
-
-        it("rejects code blocks beyond the line limit", () => {
-            expect(shouldSyntaxHighlight(Array(500).fill("x").join("\n"))).toBe(true);
-            expect(shouldSyntaxHighlight(Array(501).fill("x").join("\n"))).toBe(false);
-        });
-
-        it("rejects a single huge line that stays under the line limit", () => {
-            // No newlines, so the line check never trips — the character ceiling must catch it.
-            expect(shouldSyntaxHighlight("x".repeat(50_000))).toBe(true);
-            expect(shouldSyntaxHighlight("x".repeat(50_001))).toBe(false);
-        });
-    });
-
     describe("ensureShareHighlighting", () => {
         it("registers once per option value and drops a disabled language", async () => {
             const getOption = vi.spyOn(options, "getOptionOrNull");
@@ -878,23 +1071,6 @@ describe("content_renderer", () => {
         });
     });
 
-    describe("getMimeTypesForOption", () => {
-        const enabledMimes = (optionValue: string | null) => getMimeTypesForOption(optionValue)
-            .filter((mt) => mt.enabled)
-            .map((mt) => mt.mime);
-
-        it("enables the listed MIME types plus text/plain", () => {
-            expect(enabledMimes(JSON.stringify([ "text/x-python", null ])))
-                .toStrictEqual([ "text/plain", "text/x-python" ]);
-        });
-
-        it("falls back to the default MIME types when the option is missing", () => {
-            const enabled = enabledMimes(null);
-            expect(enabled).toContain("text/x-python");
-            expect(enabled).not.toContain("text/x-cobol");
-        });
-    });
-
     describe("Share index", () => {
         it("points each index entry at the child's shareId, whatever characters it carries", () => {
             buildShareNote({
@@ -915,92 +1091,170 @@ describe("content_renderer", () => {
             expect(anchor?.getAttribute("href")).toBe(`./my alias"x`);
             expect(Object.keys(anchor?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
         });
-    });
-    describe("Tree item template", () => {
-        it("sets a working target and rel on external tree links only", () => {
-            const external = renderTreeItemAnchor({
-                "id": "external1",
-                "#shareExternal": "https://example.com/page"
+
+        it("points an entry with either external link label at that link, in a new tab", () => {
+            buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { "id": "legacyExternal", "#shareExternal": "https://example.com/legacy" },
+                    { "id": "documentedExternal", "#shareExternalLink": " https://example.com/doc " }
+                ]
             });
+            const note = buildShareNote({ "id": "indexNote2", "content": "<p>Index</p>", "#shareIndex": "" });
 
-            expect(external?.getAttribute("href")).toBe("https://example.com/page");
-            expect(external?.getAttribute("target")).toBe("_blank");
-            expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
-            expect(Object.keys(external?.attributes ?? {}).sort())
-                .toEqual([ "class", "href", "rel", "target" ]);
+            const anchors = parse(String(getContent(note).content)).querySelectorAll("#index a");
 
-            const internal = renderTreeItemAnchor({ id: "internal1" });
-
-            expect(internal?.getAttribute("href")).toBe("./internal1");
-            expect(Object.keys(internal?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
-        });
-
-        it("links to the first non-empty value of either external link label", () => {
-            const documented = renderTreeItemAnchor({
-                "id": "external2",
-                "#shareExternalLink": "https://example.com/page"
-            });
-            const bothLabels = renderTreeItemAnchor({
-                "id": "external3",
-                "#shareExternal": "",
-                "#shareExternalLink": "https://example.com/page"
-            });
-
-            for (const anchor of [ documented, bothLabels ]) {
-                expect(anchor?.getAttribute("href")).toBe("https://example.com/page");
-                expect(anchor?.getAttribute("target")).toBe("_blank");
-                expect(anchor?.getAttribute("rel")).toBe("noopener noreferrer");
-                expect(Object.keys(anchor?.attributes ?? {}).sort())
-                    .toEqual([ "class", "href", "rel", "target" ]);
+            expect(anchors.map((anchor) => anchor.getAttribute("href")))
+                .toStrictEqual([ "https://example.com/legacy", "https://example.com/doc" ]);
+            for (const anchor of anchors) {
+                expect(anchor.getAttribute("target")).toBe("_blank");
+                expect(anchor.getAttribute("rel")).toBe("noopener noreferrer");
             }
+        });
+    });
+    describe("preparePageContent", () => {
+        it("anchors every heading and lists it with its level, text and unique slug", () => {
+            const { content, headings } = prepare(trimIndentation`
+                <h1>Intro</h1>
+                <p>Text</p>
+                <h2 class="x">Q&amp;A <strong>now</strong></h2>
+                <h3>Spans
+                two lines</h3>
+                <h2>Intro</h2>
+            `);
 
-            const noUrl = renderTreeItemAnchor({ "id": "external4", "#shareExternal": "" });
-
-            expect(noUrl?.getAttribute("href")).toBe("./external4");
-            expect(Object.keys(noUrl?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
-
-            const twoUrls = renderTreeItemAnchor({
-                "id": "external5",
-                "#shareExternal": "https://example.com/legacy",
-                "#shareExternalLink": "https://example.com/documented"
-            });
-
-            expect(twoUrls?.getAttribute("href")).toBe("https://example.com/documented");
-
-            const whitespaceWithLegacy = renderTreeItemAnchor({
-                "id": "external6",
-                "#shareExternal": "https://example.com/legacy2",
-                "#shareExternalLink": "   "
-            });
-
-            expect(whitespaceWithLegacy?.getAttribute("href")).toBe("https://example.com/legacy2");
-
-            const whitespaceOnly = renderTreeItemAnchor({
-                "id": "external7",
-                "#shareExternalLink": "   "
-            });
-
-            expect(whitespaceOnly?.getAttribute("href")).toBe("./external7");
-            expect(Object.keys(whitespaceOnly?.attributes ?? {}).sort())
-                .toEqual([ "class", "href" ]);
+            expect(headings).toStrictEqual([
+                { level: 1, text: "Intro", slug: "intro", href: "#intro" },
+                { level: 2, text: "Q&A now", slug: "q-amp-a-now", href: "#q-amp-a-now" },
+                { level: 3, text: "Spans two lines", slug: "spans-two-lines", href: "#spans-two-lines" },
+                { level: 2, text: "Intro", slug: "intro-1", href: "#intro-1" }
+            ]);
+            expect(content).toContain(
+                `<h2 class="x" id="q-amp-a-now">Q&amp;A <strong>now</strong>`
+                + `<a class="toc-anchor" href="#q-amp-a-now" aria-label="Link &quot;here&quot;">`
+                + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a></h2>`);
+            expect(content).toContain(`<p>Text</p>`);
+            expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
         });
 
-        function renderTreeItemAnchor(noteDef: Parameters<typeof buildShareNote>[0]) {
-            const note = buildShareNote(noteDef);
-            const subRootNote = buildShareNote({ id: `subRoot-${noteDef.id}` });
+        it("keeps a heading's own ID, linked URL-encoded, and gives no other heading an ID in use", () => {
+            const { content, headings } = prepare(trimIndentation`
+                <h2 id="footnote-label" class="sr-only">Footnotes</h2>
+                <p><a id="footnotes">Bookmark</a> <sup><a aria-describedby="footnote-label">1</a></sup></p>
+                <h2>Footnotes</h2>
+                <h3 id="part%20one">Part one</h3>
+            `);
 
-            const html = ejs.render(readShareTemplate("tree_item"), {
-                note,
-                activeNote: subRootNote,
-                subRoot: { note: subRootNote },
-                ancestors: [],
-                sanitizeUrl: sanitize.sanitizeUrl,
-                iconPackSupportedPrefixes: [],
-                t: (key: string) => key
-            });
+            expect(headings).toStrictEqual([
+                { level: 2, text: "Footnotes", slug: "footnote-label", href: "#footnote-label" },
+                { level: 2, text: "Footnotes", slug: "footnotes-1", href: "#footnotes-1" },
+                { level: 3, text: "Part one", slug: "part%20one", href: "#part%2520one" }
+            ]);
+            expect(content).toContain(
+                `<h2 id="footnote-label" class="sr-only">Footnotes`
+                + `<a class="toc-anchor" href="#footnote-label"`);
+            expect(content).toContain(`<h2 id="footnotes-1">Footnotes<a class="toc-anchor" href="#footnotes-1"`);
+            expect(content).toContain(`<h3 id="part%20one">Part one<a class="toc-anchor" href="#part%2520one"`);
+        });
 
-            return parse(html).querySelector("a");
+        it("gives an image without alt text the generic one and lazy loading, keeping its own", () => {
+            const { content } = prepare(trimIndentation`
+                <p><img src="a.png"></p>
+                <p><img src="b.png" alt="Chart" loading="eager"></p>
+                <p><img src="c.png" alt=""></p>
+            `);
+
+            expect(content).toContain(`<img src="a.png" alt="Image" loading="lazy">`);
+            expect(content).toContain(`<img src="b.png" alt="Chart" loading="eager">`);
+            const decorative = parse(content).querySelector(`img[src="c.png"]`);
+            expect(decorative?.getAttribute("alt")).toBe("");
+            expect(decorative?.getAttribute("loading")).toBe("lazy");
+        });
+
+        it("returns content without headings or images as it is", () => {
+            const html = `<p>No <b>headings</b> here &amp; there</p>`;
+            expect(prepare(html)).toStrictEqual({ content: html, headings: [] });
+        });
+
+        function prepare(html: string) {
+            return preparePageContent(html, { imageAlt: "Image", headingLinkLabel: `Link "here"` });
         }
+    });
+
+    describe("Content width", () => {
+        it("marks a page with #fullContentWidth, inherited or its own, for the full width", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "cappedPage", content: "<p>a</p>" },
+                    { "id": "widePage", "content": "<p>b</p>", "#fullContentWidth": "" },
+                    { "id": "narrowPage", "content": "<p>c</p>", "#fullContentWidth": "false" }
+                ]
+            });
+            const contentClasses = (note: SNote) => parse(String(renderNoteContent(note)))
+                .querySelector("#content")?.classList.value ?? [];
+
+            const [ capped, wide, narrow ] = shareRootNote.getChildNotes().map(contentClasses);
+            expect(capped).toContain("ck-content");
+            expect(capped).not.toContain("full-content-width");
+            expect(wide).toContain("full-content-width");
+            expect(narrow).not.toContain("full-content-width");
+        });
+    });
+
+    describe("Site logo", () => {
+        it("shows the site root's note icon, or the ~shareLogo image when there is one", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { "id": "iconSite", "title": "Icon", "content": "<p>a</p>", "#iconClass": "bx bx-book" },
+                    { "id": "imageSite", "title": "Image", "content": "<p>b</p>", "~shareLogo": "iconSite" }
+                ]
+            });
+            const [ iconSite, imageSite ] = shareRootNote.getChildNotes();
+            const logoOf = (note: SNote) => parse(String(renderNoteContent(note))).querySelector("#header-logo");
+
+            const iconLogo = logoOf(iconSite);
+            expect(iconLogo?.querySelector("img") === null).toBe(true);
+            expect(iconLogo?.querySelector(".tn-icon")?.classList.contains("bx-book")).toBe(true);
+
+            const imageLogo = logoOf(imageSite);
+            expect(imageLogo?.querySelector(".tn-icon") === null).toBe(true);
+            expect(imageLogo?.querySelector("img")?.getAttribute("src")).toBe("api/images/iconSite/image.png");
+        });
+    });
+
+    describe("Navigation tree", () => {
+        it("links each page of the site, expanding the way to the page shown", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "treeSite",
+                    title: "Site",
+                    children: [
+                        {
+                            id: "treeSection",
+                            title: "Section",
+                            children: [ { id: "treeShown", title: "Shown", content: "<p>x</p>" } ]
+                        },
+                        { "id": "treeExternal", "title": "External", "#shareExternal": "https://example.com/page" }
+                    ]
+                }]
+            });
+            const shown = shareRootNote.getChildNotes()[0].getChildNotes()[0].getChildNotes()[0];
+
+            const menu = parse(String(renderNoteContent(shown))).querySelector("#menu");
+            const anchors = menu?.querySelectorAll("a") ?? [];
+
+            expect(anchors.map((anchor) => anchor.getAttribute("href")))
+                .toStrictEqual([ "./treeSection", "./treeShown", "https://example.com/page" ]);
+            expect(Object.keys(anchors[0].attributes).sort()).toEqual([ "class", "href" ]);
+            expect(anchors[1].classList.contains("active")).toBe(true);
+            expect(anchors[2].getAttribute("target")).toBe("_blank");
+            expect(anchors[2].getAttribute("rel")).toBe("noopener noreferrer");
+            expect(menu?.querySelectorAll("li.expanded").map((item) => item.querySelector("a")?.text.trim()))
+                .toStrictEqual([ "Section", "Shown" ]);
+        });
     });
     describe("Subpage list template", () => {
         it("sets a working target and rel on external subpage links only", () => {
@@ -1109,7 +1363,18 @@ describe("content_renderer", () => {
                 isStatic: false,
                 faviconUrl: "",
                 iconPackCss: "",
-                iconPackSupportedPrefixes: []
+                iconPackSupportedPrefixes: [],
+                head: getPageHead(note, note),
+                snippets: getHtmlSnippets(note),
+                logo: getSiteLogo(note, { sanitizeUrl: sanitize.sanitizeUrl, image: null }),
+                prevNext: getPrevNextLinks(note, note),
+                navigation: [],
+                childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+                contentClasses: getContentClasses(note, isEmpty),
+                language: { page: { lang: "en", dir: "ltr" }, content: null },
+                lastUpdated: null,
+                headings: [],
+                toc: []
             }, {
                 includer: (path: string) => ({
                     template: readShareTemplate(path)
@@ -1120,3 +1385,313 @@ describe("content_renderer", () => {
         }
     });
 });
+
+describe("content_renderer pages", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("renders the share root as the page of its own site, in English without a locale", () => {
+        mockOptions({ locale: null });
+        const root = buildShareNote({
+            id: shareRoot.SHARE_ROOT_NOTE_ID,
+            title: "Everything shared",
+            content: "<p>Index</p>"
+        });
+
+        const page = parse(String(renderNoteContent(root)));
+
+        expect(page.querySelector("html")?.getAttribute("lang")).toBe("en");
+        expect(page.querySelector("body")?.getAttribute("data-ancestor-note-id"))
+            .toBe(shareRoot.SHARE_ROOT_NOTE_ID);
+        expect(page.querySelector("#header-logo")?.text.trim()).toBe("Everything shared");
+        expect(page.querySelector("#content p")?.text).toBe("Index");
+    });
+
+    it("loads a page's own stylesheets, scripts and icon, without the default stylesheet", () => {
+        const page = parse(String(renderNoteContent(buildSitePage({
+            "id": "assetsPage",
+            "content": "<p>x</p>",
+            "#shareOmitDefaultCss": "",
+            "~shareCss": "pageCss",
+            "~shareJs": "pageJs",
+            "~shareFavicon": "pageIcon"
+        }))));
+
+        const urls = (selector: string, attribute: string) =>
+            page.querySelectorAll(selector).map((element) => element.getAttribute(attribute));
+        expect(urls("link[rel=stylesheet]", "href")).toStrictEqual([ "api/notes/pageCss/download" ]);
+        expect(urls("script[src]", "src"))
+            .toStrictEqual([ "assets/scripts.js", "api/notes/pageJs/download" ]);
+        expect(urls("link[rel='shortcut icon']", "href"))
+            .toStrictEqual([ "api/notes/pageIcon/download" ]);
+    });
+
+    it("styles the icon packs whose manifest is shared, serving their fonts from the share", () => {
+        buildShareNote({ id: "sharedPackManifest", content: "{}" });
+        const builtinPacks = iconPackService.getIconPacks();
+        vi.spyOn(iconPackService, "getIconPacks").mockReturnValue([
+            ...builtinPacks,
+            customIconPack("shared", "sharedPackManifest"),
+            customIconPack("private", "privatePackManifest")
+        ]);
+
+        const page = parse(String(renderNoteContent(buildSitePage({ content: "<p>x</p>" }))));
+        const css = page.querySelector("#trilium-icon-packs")?.text ?? "";
+
+        expect(css).toContain("api/attachments/sharedFont/download");
+        expect(css).not.toContain("privateFont");
+    });
+
+    it("renders a page with its ~shareTemplate and the template's child notes", () => {
+        vi.spyOn(getShareProvider(), "isScriptingEnabled").mockReturnValue(true);
+        const setDevMode = mockDevMode();
+        buildShareNote({
+            id: "pageTemplate",
+            type: "code",
+            mime: "application/x-ejs",
+            content: `<main><%= note.title %> <%= assetPath %><%- include("part") %></main>`,
+            children: [
+                { title: "part", type: "code", mime: "application/x-ejs", content: "<i>part</i>" }
+            ]
+        });
+        const page = buildSitePage({
+            "title": "Page",
+            "content": "",
+            "~shareTemplate": "pageTemplate"
+        });
+
+        setDevMode(true);
+        expect(renderNoteContent(page))
+            .toBe(`<main>Page ${assetUrlFragment}/src<i>part</i></main>`);
+        setDevMode(false);
+        expect(renderNoteContent(page)).toBe(`<main>Page ../${assetUrlFragment}<i>part</i></main>`);
+    });
+
+    it("falls back to the default page when a ~shareTemplate is no template or fails", () => {
+        vi.spyOn(getShareProvider(), "isScriptingEnabled").mockReturnValue(true);
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const template = (
+            id: string, content: string | Buffer, part?: string | Buffer, partType = "code"
+        ) => {
+            buildShareNote({
+                id,
+                type: "code",
+                mime: "application/x-ejs",
+                content,
+                children: part === undefined ? [] : [
+                    { title: "part", type: partType, mime: "application/x-ejs", content: part }
+                ]
+            });
+        };
+        buildShareNote({ id: "textTemplate", content: "<main>text</main>" });
+        template("binaryTemplate", Buffer.from("<main>binary</main>"));
+        template("missingPartTemplate", `<%- include("missing") %>`);
+        template("textPartTemplate", `<%- include("part") %>`, "<i>part</i>", "text");
+        template("binaryPartTemplate", `<%- include("part") %>`, Buffer.from("<i>part</i>"));
+
+        for (const templateId of [ "textTemplate", "binaryTemplate", "missingPartTemplate",
+            "textPartTemplate", "binaryPartTemplate" ]) {
+            const page = buildSitePage({ "content": "<p>x</p>", "~shareTemplate": templateId });
+            expect(parse(String(renderNoteContent(page))).querySelector("#content p")?.text)
+                .toBe("x");
+        }
+        expect(logError.mock.calls.map(([ message ]) => String(message))).toStrictEqual([
+            expect.stringContaining("Unable to find child note: missing."),
+            expect.stringContaining("Incorrect child note type."),
+            expect.stringContaining("Invalid template content type.")
+        ]);
+    });
+
+    it("renders each note type as the page shows it", async () => {
+        await ensureShareHighlighting();
+        const render = (definition: Parameters<typeof buildShareNote>[0]) =>
+            getContent(buildShareNote(definition));
+
+        const markdown = render({
+            type: "code",
+            mime: "text/x-markdown",
+            content: "# Notes\n\nSee [[otherNote]].\n\n```python\nx = 'a'\n```\n\n"
+                + "```mermaid\ngraph TD;\n```\n\n```text-x-trilium-auto\nx = 'a'\n```\n"
+        });
+        const markdownPage = parse(String(markdown.content), { blockTextElements: {} });
+        expect(markdownPage.querySelector("p a")?.getAttribute("href")).toBe("./otherNote");
+        const [ python, mermaid, auto ] = markdownPage.querySelectorAll("pre code");
+        expect(python.classList.contains("hljs")).toBe(true);
+        expect(mermaid.classList.contains("hljs")).toBe(false);
+        expect(auto.classList.contains("hljs")).toBe(false);
+        expect(render({ type: "code", mime: "text/x-markdown", content: "  " }).isEmpty).toBe(true);
+
+        for (const type of [ "image", "canvas", "mindMap" ]) {
+            expect(render({ id: `${type}Note`, type, title: "A picture", content: "" }).content)
+                .toMatch(new RegExp(`^<img src="api/images/${type}Note/A%20picture\\?`));
+        }
+        const file = (id: string, mime: string) =>
+            render({ id, type: "file", mime, content: "" }).content;
+        expect(file("pdfNote", "application/pdf"))
+            .toBe(`<iframe class="pdf-view" src="api/notes/pdfNote/view"></iframe>`);
+        expect(file("zipNote", "application/zip"))
+            .toContain(`location.href='api/notes/zipNote/download'`);
+        expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
+        expect(render({ type: "spreadsheet", content: "{}" }).content)
+            .toBe("<p>Empty spreadsheet.</p>");
+        expect(render({ type: "relationMap", content: "{}" }).content)
+            .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
+    });
+
+    it("leaves content that is not text as it is, and empty text as empty", () => {
+        const binary = Buffer.from("<p>x</p>");
+        for (const type of [ "text", "mermaid", "code" ]) {
+            const note = buildShareNote({ type, mime: "text/plain", content: binary });
+            expect(getContent(note).content)
+                .toBe(binary);
+        }
+        expect(getContent(buildShareNote({ content: "" })).isEmpty).toBe(true);
+
+        const page = buildSitePage({ type: "code", mime: "text/plain", content: binary });
+        expect(parse(String(renderNoteContent(page))).querySelector("#content")?.classList
+            .contains("no-content")).toBe(true);
+    });
+
+    it("leaves markup it cannot resolve, footnotes and embeds of binary notes as they are", () => {
+        buildShareNote({
+            id: "binaryEmbed", type: "code", mime: "text/plain", content: Buffer.from("x")
+        });
+        const result = getContent(buildShareNote({
+            content: `<p><span class="link-mention">mention</span>`
+                + `<a href="#fn1" id="fnref1">1</a> <a class="reference-link">Gone</a></p>`
+                + `<section class="link-embed">embed</section>`
+                + `<section class="include-note">no target</section>`
+                + `<section class="include-note" data-note-id="binaryEmbed">binary</section>`
+                + `<pre><code class="language-mermaid">graph TD;</code></pre>`
+        }));
+
+        const document = parse(String(result.content), { blockTextElements: {} });
+        expect(document.querySelector(".link-mention")?.text).toBe("mention");
+        expect(document.querySelector(".link-embed")?.text).toBe("embed");
+        expect(document.querySelectorAll(".include-note").map((section) => section.text))
+            .toStrictEqual([ "no target", "binary" ]);
+        expect(document.querySelector("#fnref1")?.getAttribute("href")).toBe("#fn1");
+        expect(document.querySelector("p")?.text).toBe("mention1 Gone");
+        expect(document.querySelector("code")?.classList.contains("hljs")).toBe(false);
+    });
+
+    it("detects the language of a code block naming none, unless it is too long", async () => {
+        await ensureShareHighlighting();
+        const long = Array.from({ length: 600 }, (_, index) => `x = ${index}`).join("\n");
+        const result = getContent(buildShareNote({
+            content: `<pre><code>&lt;t t-name="x"&gt;&lt;/t&gt;</code></pre>`
+                + `<pre><code class="language-text-x-python">${long}</code></pre>`
+        }));
+
+        const [ detected, tooLong ] = parse(String(result.content), { blockTextElements: {} })
+            .querySelectorAll("code");
+        expect(detected.innerHTML).toContain("hljs-tag");
+        expect(tooLong.classList.contains("hljs")).toBe(false);
+    });
+
+    it("logs a languages option it cannot read and reads it again for the next page", async () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        mockOptions({ codeNotesMimeTypes: "not json" });
+
+        await ensureShareHighlighting();
+        await ensureShareHighlighting();
+
+        expect(logError).toHaveBeenCalledTimes(2);
+        expect(String(logError.mock.calls[0][0])).toContain("Unable to register the languages");
+
+        vi.restoreAllMocks();
+        mockOptions({ codeNotesMimeTypes: null });
+        await expect(ensureShareHighlighting()).resolves.toBeUndefined();
+    });
+
+    it("exports a page with assets relative to the export, a JavaScript note as its script", () => {
+        vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const site = buildNote({
+            id: "exportSite",
+            title: "Site",
+            content: "",
+            children: [
+                {
+                    "id": "exportPage",
+                    "title": "Page",
+                    "content": `<p><a href="#root/exportSite/exportOther">Other</a> `
+                        + `<a href="#root/exportPage?viewScope=x&attachmentId=missingFile">`
+                        + `File</a></p>`,
+                    "~shareJs": "exportJs"
+                },
+                { id: "exportOther", title: "Other", content: "" },
+                {
+                    id: "exportScript",
+                    type: "code",
+                    mime: "application/javascript;env=frontend",
+                    content: "alert(1)"
+                }
+            ]
+        });
+        const [ pageNote, , script ] = site.getChildNotes();
+        const branch = pageNote.getParentBranches()[0];
+        const [ boxicons ] = iconPackService.getIconPacks();
+
+        const page = parse(String(renderNoteForExport(pageNote, branch, "../", [], [ boxicons ])));
+
+        expect(page.querySelectorAll("link[rel=stylesheet]").map((tag) => tag.getAttribute("href")))
+            .toStrictEqual([ "../assets/scripts.css" ]);
+        expect(page.querySelectorAll("script[src]").map((tag) => tag.getAttribute("src")))
+            .toStrictEqual([ "../assets/scripts.js", "api/notes/exportJs/download" ]);
+        expect(page.querySelector("#trilium-icon-packs")?.text)
+            .toContain("../assets/icon-pack-bx.");
+        const [ other, file ] = page.querySelectorAll("#content a");
+        expect(other.getAttribute("href")).toBe("./exportOther");
+        expect(file.hasAttribute("href")).toBe(false);
+
+        expect(renderNoteForExport(script, branch, "../", [], [])).toBe("alert(1)");
+        script.isProtected = true;
+        expect(renderNoteForExport(script, branch, "../", [], []))
+            .toBe(`console.log("Protected note cannot be exported.");`);
+    });
+});
+
+let sitePageCount = 0;
+
+/** Builds a page in a site of the share root, as the share routes find it. */
+function buildSitePage(page: Parameters<typeof buildShareNote>[0]) {
+    const pageId = page.id ?? `sitePage${++sitePageCount}`;
+    buildShareNote({
+        id: shareRoot.SHARE_ROOT_NOTE_ID,
+        children: [ { id: `${pageId}Site`, title: "Site", children: [ { ...page, id: pageId } ] } ]
+    });
+    return shaca.getNote(pageId);
+}
+
+/** Answers the given options with the given values and every other option as it is. */
+function mockOptions(values: Record<string, string | null>) {
+    const getOptionOrNull = options.getOptionOrNull.bind(options);
+    vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+        (name in values ? values[name] : getOptionOrNull(name)));
+}
+
+/** Returns a switch between development and production for `utils.isDev()`. */
+function mockDevMode() {
+    const platform = getPlatform();
+    const getEnv = platform.getEnv.bind(platform);
+    let isDev = false;
+    vi.spyOn(platform, "getEnv").mockImplementation((key) =>
+        (key === "TRILIUM_ENV" ? (isDev ? "dev" : "production") : getEnv(key)));
+    return (value: boolean) => {
+        isDev = value;
+    };
+}
+
+function customIconPack(name: string, manifestNoteId: string): iconPackService.ProcessedIconPack {
+    return {
+        prefix: name,
+        manifest: { icons: {} },
+        manifestNoteId,
+        fontMime: "font/woff2",
+        fontAttachmentId: `${name}Font`,
+        title: name,
+        icon: `${name} ${name}-icon`,
+        builtin: false
+    };
+}

@@ -155,6 +155,42 @@ export function normalizeLocale(locale: string) {
 }
 
 /**
+ * Turns a Trilium locale id into a canonical BCP 47 tag, for a `lang` attribute or `Intl`. An id
+ * that gives no valid tag, such as `en_rtl`, falls back to its language part, then to `en`.
+ */
+export function toLanguageTag(localeId: string) {
+    const tag = normalizeLocale(localeId);
+    for (const candidate of [ tag, tag.split("-")[0] ]) {
+        try {
+            const [ canonical ] = Intl.getCanonicalLocales(candidate);
+            if (canonical) {
+                return canonical;
+            }
+        } catch {
+            // `Intl` throws a RangeError on a malformed tag; the next candidate is tried.
+        }
+    }
+    return "en";
+}
+
+/**
+ * Returns the language of a note's content: its `#language` label, otherwise the
+ * `defaultContentLanguage` option, otherwise the display language (the `locale` option).
+ */
+export function resolveContentLanguage(
+    noteLanguage: string | null | undefined,
+    defaultContentLanguage: string | null | undefined,
+    displayLanguage: string | null | undefined
+): string | null {
+    return noteLanguage || defaultContentLanguage || displayLanguage || null;
+}
+
+/** Whether the language of the locale id is written right to left. */
+export function isRightToLeftLanguage(localeId: string | null | undefined) {
+    return LOCALES.find((locale) => locale.id === localeId)?.rtl ?? false;
+}
+
+/**
  * Locale ids that are not BCP-47 tags, mapped to one.
  *
  * The Chinese pair deliberately resolves through the script subtags rather than the regions

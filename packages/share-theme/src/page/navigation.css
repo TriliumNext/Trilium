@@ -1,0 +1,127 @@
+#navigation {
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    gap: 10px;
+}
+
+#site-header {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+#menu {
+    order: 1;
+    white-space: nowrap;
+    flex: 0;
+}
+
+#menu > ul {
+    overflow-y: auto;
+    list-style: none;
+    padding-left: 0!important;
+}
+
+#menu ul {
+    overflow-y: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding-left: 20px;
+}
+
+#menu li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    cursor: pointer;
+    max-width: 350px;
+}
+
+#menu li span {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#menu li > ul {
+    transition: height 200ms ease;
+}
+
+#menu li:not(.expanded) > ul {
+    height: 0;
+    overflow: hidden;
+}
+
+#menu li.item > a {
+    padding-left: 24px;
+}
+
+#menu a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    color: var(--text-menu);
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    flex: 1;
+    padding: 2px 6px;
+    font-weight: 400;
+}
+
+#menu a:hover {
+    border-color: var(--text-menu);
+}
+
+#menu a.active {
+    background: var(--background-active);
+    color: var(--text-menu-active);
+    font-weight: 700;
+}
+
+#menu li ul {
+    position: relative;
+}
+
+#menu li ul::before {
+    content: "";
+    display: flex;
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 10px;
+    width: 2px;
+    background: var(--background-highlight);
+}
+
+.active .collapse-button {
+    background: none;
+    color: var(--text-menu-active);
+}
+
+.collapse-button {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--background-secondary);
+    border: 0;
+    color: var(--text-menu);
+    transform: rotate(-90deg);
+    transition: transform 200ms ease;
+}
+
+.expanded > .collapse-button,
+.expanded > a > .collapse-button {
+    transform: rotate(0);
+}
+
+.collapse-button .tn-icon {
+    font-size: 14px;
+}

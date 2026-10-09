@@ -12,7 +12,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 *   Customizable logo.
 *   Toggle button for dark/light mode, which also stores the user preferences.
 *   Quick navigation buttons (previous and next note).
-*   Displaying the date of the last update of the note.
+*   Displaying the date of the last update of the note, written out in the application's language.
+*   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
 ### By note type
 
@@ -32,8 +33,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
     <tbody>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Text.md">Text</a></th>
-            <td><ul><li>Table of contents.</li><li>Syntax highlight of code blocks, in the language selected for each block. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li></ul></td>
-            <td><ul><li>Inline Mermaid diagrams are not rendered.</li></ul></td>
+            <td><ul><li>Table of contents.</li><li>A link next to each heading, shown while the pointer is over the heading. Clicking it shows the address of the section in the address bar of the browser and copies it, to share a link to the section.</li><li>Syntax highlight of code blocks, in the language selected for each block and in the colors of the VS Code light or dark theme, following the page's mode. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li><li>Mermaid diagrams in code blocks, drawn in the page's light or dark mode and redrawn when the visitor switches it.</li></ul></td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Code.md">Code</a></th>
@@ -67,7 +68,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
-            <td><ul><li>The diagram is displayed as a vector image.</li></ul></td>
+            <td><ul><li>The diagram is drawn in the page's light or dark mode and redrawn when the visitor switches it. Until it is drawn, and in browsers with JavaScript disabled, the image saved when the note was last edited is shown instead.</li><li>The source of the diagram can be expanded below it.</li></ul></td>
             <td><ul><li>No further interaction supported.</li></ul></td>
         </tr>
         <tr>
@@ -220,6 +221,7 @@ Sometimes it's useful to include a link to an external website alongside your sh
 Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
 
 *   the listing produced by the `#shareIndex` label;
+*   the navigation tree of the shared site;
 *   the "Subpages" list shown under a parent note;
 *   inline links to this note from within other shared notes.
 
@@ -295,19 +297,21 @@ It's possible to adjust the logo which is displayed on the top-left of the left 
 
 | Attribute | Description |
 | --- | --- |
-| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). |
-| `#shareLogoWidth` | The width (in pixels, without unit) to set for the logo. Default is `53`. |
-| `#shareLogoHeight` | The height (in pixels, without unit) to set for the logo. Default is `40`. |
+| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). Without it, the header shows the icon of the shared root note. |
+| `#shareLogoWidth` | The width of the logo, as a number without unit. With `#shareLogoHeight`, it sets the proportions of the logo, which is shown 32 pixels wide. Default is `53`. |
+| `#shareLogoHeight` | The height of the logo, as a number without unit. With `#shareLogoWidth`, it sets the proportions of the logo. Default is `40`. |
 | `#shareRootLink` | URL to navigate to when the logo is pressed. |
 
 ### Customizing OpenGraph
 
+A meta-property is left out of the page when its attribute is not set. Without an image, link previews use a small card.
+
 | Attribute | Description |
 | --- | --- |
 | `#shareOpenGraphColor` | This adjusts the `theme-color` meta-property. |
-| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. |
+| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. It is also the address a relative `og:image` is completed with, so it should be the public address of the shared site, such as `https://example.com/share/`. |
 | `#shareOpenGraphDomain` | Adjusts the `twitter:domain` meta-property. |
-| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label, case in which the value is passed on as-is, or it can be a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. |
+| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label with the address of an image, or a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. Sites that show a preview of the link load the image from their own servers, so a relative address, which the relation always gives, is completed with `#shareOpenGraphURL`; without it, the image does not show in such previews. |
 
 ## Credits
 

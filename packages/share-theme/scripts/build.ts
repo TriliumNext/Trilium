@@ -1,53 +1,19 @@
 import path from "node:path";
-// import {fileURLToPath} from "node:url";
 
-import dotenv from "dotenv";
 import * as esbuild from "esbuild";
 import { rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
+import {
+    buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
+} from "@triliumnext/highlightjs/src/vs_code_theme.js";
 import * as sass from "sass";
 
-
-// const fileURL = fileURLToPath(import.meta.url);
-// let baseDir = path.dirname(fileURL);
-// if (fileURL.includes("esrun-")) baseDir = path.join(baseDir, "..", "..", "scripts");
-// const rootDir = path.join(baseDir, "..");
-// console.log(process.env.npm_package_json);
-const rootDir = path.dirname(process.env.npm_package_json!);
-
-dotenv.config();
-
-const modules = ["scripts", "styles"];
-const entryPoints: {in: string, out: string}[] = [];
-
-function makeEntry(mod: string) {
-    let entrypoint: string;
-    switch (mod) {
-        case "styles":
-            entrypoint = "index.css";
-            break;
-        case "scripts":
-            entrypoint = "index.ts";
-            break;
-        default:
-            throw new Error(`Unknown module type ${mod}.`);
-    }
-
-    return {
-        "in": path.join(rootDir, "src", mod, entrypoint),
-        "out": mod
-    };
+const packageJson = process.env.npm_package_json;
+if (!packageJson) {
+    throw new Error("Run the build through pnpm, which sets npm_package_json.");
 }
-
-const modulesRequested = process.argv.filter(a => a.startsWith("--module="));
-for (const mod of modulesRequested) {
-    const module = mod?.replace("--module=", "") ?? "";
-    if (modules.includes(module)) entryPoints.push(makeEntry(module));
-}
-
-if (!entryPoints.length) for (const mod of modules) entryPoints.push(makeEntry(mod));
-
+const rootDir = path.dirname(packageJson);
 
 // Sass resolves relative paths on its own; bare specifiers such as
 // "katex/src/styles/katex.scss" go through Node.
@@ -74,6 +40,26 @@ const sassPlugin: esbuild.Plugin = {
     }
 };
 
+// Serves `virtual:code-themes.css`: the VS Code highlighting themes code notes also use, one per
+// share theme mode. `:where()` keeps the block rules as weak as a stock highlight.js theme's, so the
+// share theme's own `.ck-content code` colors still win inside text notes.
+const codeThemesPlugin: esbuild.Plugin = {
+    name: "code-themes",
+    setup(build) {
+        build.onResolve({ filter: /^virtual:code-themes\.css$/ }, (args) => ({
+            path: args.path,
+            namespace: "code-themes"
+        }));
+        build.onLoad({ filter: /.*/, namespace: "code-themes" }, () => ({
+            contents: [
+                buildVsCodeThemeCss(VS_CODE_LIGHT, ":where(html.theme-light)"),
+                buildVsCodeThemeCss(VS_CODE_DARK, ":where(html.theme-dark)")
+            ].join("\n"),
+            loader: "css"
+        }));
+    }
+};
+
 const outDir = path.join(rootDir, "dist");
 
 async function runBuild(watch: boolean) {
@@ -81,14 +67,11 @@ async function runBuild(watch: boolean) {
 
     // esbuild leaves its outdir as it found it, and every `pnpm install` writes an unminified
     // build there, so a minified release build would land beside those files and both sets would
-    // be copied into the app. A partial build must not clean: `--module=` builds one of the two
-    // entry points and would otherwise delete the other's output.
-    if (!modulesRequested.length) {
-        rmSync(outDir, { recursive: true, force: true });
-    }
+    // be copied into the app.
+    rmSync(outDir, { recursive: true, force: true });
 
     const opts: esbuild.BuildOptions = {
-        entryPoints: entryPoints,
+        entryPoints: [ { in: path.join(rootDir, "src", "index.ts"), out: "scripts" } ],
         bundle: true,
         splitting: true,
         outdir: outDir,
@@ -105,7 +88,7 @@ async function runBuild(watch: boolean) {
             ".html": "text",
             ".css": "css"
         },
-        plugins: [sassPlugin],
+        plugins: [ sassPlugin, codeThemesPlugin ],
         logLevel: "info",
         metafile: true,
         minify: process.argv.includes("--minify")

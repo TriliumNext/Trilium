@@ -1,0 +1,90 @@
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 27px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--text-primary);
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.theme-dark .slider {
+    background-color: var(--background-highlight);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--background-highlight);
+}
+
+.theme-dark .slider::before {
+    transform: translateX(33px);
+}
+
+.theme-selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.theme-selection label {
+    position: relative;
+}
+
+.dark-icon, .light-icon {
+    position: absolute;
+    inset-block: 0;
+    margin-block: auto;
+    width: 24px;
+    height: 20px;
+    font-size: 20px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 400ms ease, color 400ms ease;
+    pointer-events: none;
+}
+
+.theme-light .light-icon {
+    opacity: 1;
+}
+
+.theme-dark .dark-icon {
+    opacity: 1;
+}
+
+.dark-icon {
+    left: 5px;
+    color: var(--text-primary);
+}
+
+.light-icon {
+    right: 5px;
+    color: var(--background-highlight);
+}
