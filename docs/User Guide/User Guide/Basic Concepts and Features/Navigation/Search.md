@@ -131,6 +131,7 @@ In addition: 
 *   The **total number of results** is always shown, so you can immediately tell how broad a query is.
 *   A **page-size selector** lets you choose how many results to display per page. Your choice is remembered and synced across your devices (stored in the `searchResultsPageSize` option), so you do not have to reset it on every device.
 *   **Clicking a result** opens the note and jumps straight to the first match. The in-note find bar opens pre-filled with the first word of your search, so you can step through its matches with the find controls. To have the find bar look for a whole phrase instead, put the phrase in quotes in the search, e.g. `"The Lord of the Rings"`. In read-only notes, the other words of the search are highlighted as well.
+*   **Open all results in new tabs** (the button above the results) opens every result in a tab of its own, up to 50. Each tab opens on its first match with the find bar pre-filled, as when clicking a result.
 *   If a match is inside a **collapsed section** (for example a folded heading), that section is expanded automatically so the match is visible.
 
 ## Simple Note Search Examples

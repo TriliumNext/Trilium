@@ -1,5 +1,6 @@
 import "./CollectionProperties.css";
 
+import { SearchResultDetails, SearchResultDetailsResponse } from "@triliumnext/commons";
 import { t } from "i18next";
 import { ComponentChildren } from "preact";
 import { useRef, useState } from "preact/hooks";
@@ -7,8 +8,11 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
+import server from "../../services/server";
 import toast from "../../services/toast";
+import { getErrorMessage } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
+import { searchTermsFor } from "../collections/search/SearchResultCard";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
@@ -99,11 +103,15 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
 
         setIsOpening(true);
         try {
+            const detailsByNoteId = await getResultDetails(note, noteIds);
+            const highlightedTokens = note.highlightedTokenInfos ?? note.highlightedTokens;
             for (let i = 0; i < noteIds.length; i++) {
                 const noteId = noteIds[i];
                 const isLast = i === noteIds.length - 1;
+                const searchTerms = searchTermsFor(detailsByNoteId.get(noteId), highlightedTokens);
                 await appContext.tabManager.openTabWithNoteWithHoisting(noteId, {
-                    activate: isLast
+                    activate: isLast,
+                    viewScope: searchTerms?.length ? { searchTerms } : null
                 });
             }
         } finally {
@@ -119,6 +127,22 @@ function OpenAllButton({ note, isOpening, setIsOpening }: {
             disabled={count === 0 || isOpening}
         />
     );
+}
+
+/**
+ * The details of the results being opened, for `searchTermsFor()` to read their matched terms.
+ * Empty if the request fails, so the tabs still open and fall back to the query's tokens.
+ */
+async function getResultDetails(searchNote: FNote, noteIds: string[]) {
+    try {
+        const { results } = await server.post<SearchResultDetailsResponse>(
+            `search-note/${searchNote.noteId}/result-details`, { noteIds }
+        );
+        return new Map(results.map((details) => [ details.noteId, details ]));
+    } catch (e) {
+        logError(`Could not load the matched terms of search note '${searchNote.noteId}': ${getErrorMessage(e)}`);
+        return new Map<string, SearchResultDetails>();
+    }
 }
 
 export function useViewType(note: FNote | null | undefined) {
