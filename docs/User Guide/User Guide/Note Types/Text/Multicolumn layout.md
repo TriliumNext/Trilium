@@ -1,8 +1,6 @@
 # Multicolumn layout
 A multicolumn layout arranges content in two to four columns, side by side. A column can hold any kind of content, including tables, images and another multicolumn layout.
 
-The columns have no borders; only the space between them sets them apart. While editing, an empty column shows the hint _Type content here…_. In [read-only notes](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), [shared notes](../../Advanced%20Usage/Sharing.md) and printouts, the text of the columns lines up with the rest of the note.
-
 ## Inserting a layout
 
 *   In the formatting bar, go to _Insert_ → <span class="tn-icon cke cke-trilium-multicolumn"></span> _Multiple column layout_ to insert a layout with two columns. Its submenu offers _2 columns_, _3 columns_ and _4 columns_.
