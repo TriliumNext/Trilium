@@ -11,6 +11,7 @@
   },
   "exports": {
     "./templates/*": "./src/templates/*",
+    "./model/*": "./src/model/*.ts",
     "./*": "./dist/*"
   },
   "author": "Elian Doran <contact@eliandoran.me>",

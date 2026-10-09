@@ -63,6 +63,20 @@
         <td><code>true</code> when the note has no content of its own.</td>
       </tr>
       <tr>
+        <td><code>head</code>
+        </td>
+        <td>The values of the page's <code>&lt;head&gt;</code>: <code>title</code> (the
+          note's title, followed by the site's), <code>description</code> (<code>#shareDescription</code>), <code>noIndex</code> (<code>#shareDisallowRobotIndexing</code>)
+          and <code>openGraph</code> with <code>url</code>, <code>domain</code>, <code>image</code> and <code>color</code>.</td>
+      </tr>
+      <tr>
+        <td><code>snippets</code>
+        </td>
+        <td>The HTML of the <code>~shareHtml</code> snippets for each location, such
+          as <code>snippets["head:end"]</code>. Every location is present, empty when
+          no snippet goes there.</td>
+      </tr>
+      <tr>
         <td><code>subRoot</code>
         </td>
         <td>The root of the shared subtree as <code>{ note, branch }</code> — handy

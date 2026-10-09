@@ -7,6 +7,7 @@ import {
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
+import { getHtmlSnippets, getPageHead } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
 import { t } from "i18next";
@@ -224,6 +225,8 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         isDev: utils.isDev(),
         utils,
         sanitizeUrl: sanitize.sanitizeUrl,
+        head: getPageHead(note, renderArgs.subRoot.note ?? note),
+        snippets: getHtmlSnippets(note),
         ...renderArgs,
     };
 

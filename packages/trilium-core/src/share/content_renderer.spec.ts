@@ -1,4 +1,5 @@
 import { trimIndentation } from "@triliumnext/commons";
+import { getHtmlSnippets, getPageHead } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
@@ -1095,7 +1096,9 @@ describe("content_renderer", () => {
                 isStatic: false,
                 faviconUrl: "",
                 iconPackCss: "",
-                iconPackSupportedPrefixes: []
+                iconPackSupportedPrefixes: [],
+                head: getPageHead(note, note),
+                snippets: getHtmlSnippets(note)
             }, {
                 includer: (path: string) => ({
                     template: readShareTemplate(path)

@@ -1,31 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <%
-    const hasTree = subRoot.note.hasVisibleChildren();
-
-    // Collect HTML snippets by location
-    const htmlSnippetsByLocation = {};
-    for (const htmlRelation of note.getRelations("shareHtml")) {
-        const htmlNote = htmlRelation.targetNote;
-        if (htmlNote) {
-            let location = htmlNote.getLabelValue("shareHtmlLocation") || "content:end";
-            // Default to :end if no position specified
-            if (!location.includes(":")) {
-                location = location + ":end";
-            }
-            if (!htmlSnippetsByLocation[location]) {
-                htmlSnippetsByLocation[location] = [];
-            }
-            htmlSnippetsByLocation[location].push(htmlNote.getContent());
-        }
-    }
-    const renderSnippets = (location) => {
-        const snippets = htmlSnippetsByLocation[location];
-        return snippets ? snippets.join("\n") : "";
-    };
-    %>
-    <%- renderSnippets("head:start") %>
+    <% const hasTree = subRoot.note.hasVisibleChildren(); %>
+    <%- snippets["head:start"] %>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -36,24 +13,10 @@
     <% for (const url of jsToLoad) { %>
         <script type="module" src="<%= url %>"></script>
     <% } %>
-    <% if (note.hasLabel("shareDisallowRobotIndexing")) { %>
+    <% if (head.noIndex) { %>
         <meta name="robots" content="noindex,follow" />
     <% } %>
-    
-    <%
-        const pageTitle = `${note.title}${note.noteId !== subRoot.note.noteId ? ` - ${subRoot.note.title}` : ""}`;
-
-        // Setup some key OpenGraph variables
-        const openGraphColor = subRoot.note.getLabelValue("shareOpenGraphColor");
-        const openGraphURL = subRoot.note.getLabelValue("shareOpenGraphURL");
-        const openGraphDomain = subRoot.note.getLabelValue("shareOpenGraphDomain");
-        let openGraphImage = subRoot.note.getLabelValue("shareOpenGraphImage");
-        // Relation takes priority and requires some altering
-        if (subRoot.note.hasRelation("shareOpenGraphImage")) {
-            openGraphImage = `api/images/${subRoot.note.getRelation("shareOpenGraphImage").value}/image.png`;
-        }
-    %>
-    <title><%= pageTitle %></title>
+    <title><%= head.title %></title>
     <script>
         // Load dark/light theme as soon as possible to avoid color flashes.
         let theme = localStorage.getItem("theme");
@@ -75,26 +38,26 @@
         })();
     </script>
     <!-- HTML Meta Tags -->
-    <meta name="description" content="<%= note.getLabelValue("shareDescription") %>">
+    <meta name="description" content="<%= head.description %>">
     <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="<%= openGraphURL %>">
+    <meta property="og:url" content="<%= head.openGraph.url %>">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="<%= pageTitle %>">
-    <meta property="og:description" content="<%= note.getLabelValue("shareDescription") %>">
-    <meta property="og:image" content="<%= openGraphImage %>">
+    <meta property="og:title" content="<%= head.title %>">
+    <meta property="og:description" content="<%= head.description %>">
+    <meta property="og:image" content="<%= head.openGraph.image %>">
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="<%= openGraphDomain %>">
-    <meta property="twitter:url" content="<%= openGraphURL %>">
-    <meta name="twitter:title" content="<%= pageTitle %>">
-    <meta name="twitter:description" content="<%= note.getLabelValue("shareDescription") %>">
-    <meta name="twitter:image" content="<%= openGraphImage %>">
+    <meta property="twitter:domain" content="<%= head.openGraph.domain %>">
+    <meta property="twitter:url" content="<%= head.openGraph.url %>">
+    <meta name="twitter:title" content="<%= head.title %>">
+    <meta name="twitter:description" content="<%= head.description %>">
+    <meta name="twitter:image" content="<%= head.openGraph.image %>">
     <!-- Meta Tags Generated via https://opengraph.dev -->
-    <meta name="theme-color" content="<%= openGraphColor %>">
+    <meta name="theme-color" content="<%= head.openGraph.color %>">
     <style id="trilium-icon-packs">
       <%- utils.escapeInlineStylesheet(iconPackCss) %>
     </style>
-    <%- renderSnippets("head:end") %>
+    <%- snippets["head:end"] %>
 </head>
 <%
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
@@ -114,7 +77,7 @@ content = content.replaceAll(headingRe, (...match) => {
 });
 %>
 <body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
-<%- renderSnippets("body:start") %>
+<%- snippets["body:start"] %>
 <div id="header">
     <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg></button>
     <a href="<%= shareRootLink %>" id="header-logo">
@@ -161,7 +124,7 @@ content = content.replaceAll(headingRe, (...match) => {
     <div id="right-pane">
         <div id="main">
             <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>" data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
-                <%- renderSnippets("content:start") %>
+                <%- snippets["content:start"] %>
                     <h1 id="title"><%= note.title %></h1>
                 <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>
                     <p><%= t("share_page.no-content") %></p>
@@ -171,7 +134,7 @@ content = content.replaceAll(headingRe, (...match) => {
                     %>
                     <%- content %>
                 <% } %>
-                <%- renderSnippets("content:end") %>
+                <%- snippets["content:end"] %>
             </div>
 
             <% if (note.hasVisibleChildren() || note.type === "book") { %>
@@ -249,6 +212,6 @@ content = content.replaceAll(headingRe, (...match) => {
     </div>
 </div>
 <div id="mobile-backdrop"></div>
-<%- renderSnippets("body:end") %>
+<%- snippets["body:end"] %>
 </body>
 </html>

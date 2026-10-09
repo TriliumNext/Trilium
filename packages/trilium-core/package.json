@@ -15,6 +15,7 @@
     "@braintree/sanitize-url": "7.1.2",
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/highlightjs": "workspace:*",
+    "@triliumnext/share-theme": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
     "ai": "7.0.128",
     "async-mutex": "0.5.0",

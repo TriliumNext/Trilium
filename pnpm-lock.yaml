@@ -1430,6 +1430,9 @@ importers:
       '@triliumnext/highlightjs':
         specifier: workspace:*
         version: link:../highlightjs
+      '@triliumnext/share-theme':
+        specifier: workspace:*
+        version: link:../share-theme
       '@triliumnext/turndown-plugin-gfm':
         specifier: workspace:*
         version: link:../turndown-plugin-gfm
