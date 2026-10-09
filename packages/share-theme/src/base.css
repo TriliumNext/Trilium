@@ -25,7 +25,10 @@ html.theme-light {
     --text-primary: #000000;
     --text-heading: #000000;
     --text-menu: #333333;
-    --text-link: #0000ff;
+    /* The link colors of `theme-next-light.css`. */
+    --text-link: #0076af;
+    --link-hover-background: #3c7fa017;
+    --link-focus-outline-color: #00000063;
     --text-menu-active: var(--background-secondary);
     --mermaid-theme: default;
     color-scheme: light;
@@ -39,7 +42,10 @@ html.theme-dark {
     --text-primary: #cccccc;
     --text-heading: #cccccc;
     --text-menu: #AAAAAA;
-    --text-link: #87CEFA;
+    /* The link colors of `theme-next-dark.css`. */
+    --text-link: #95c3d9;
+    --link-hover-background: #75c2e324;
+    --link-focus-outline-color: #ffffff57;
     --text-menu-active: var(--background-secondary);
     --mermaid-theme: dark;
     color-scheme: dark;
