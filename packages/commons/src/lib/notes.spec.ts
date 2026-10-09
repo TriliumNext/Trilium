@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle,
-    getMimeIcon, getNoteIcon, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE,
+    getMimeIcon, getNoteIcon, isFullWidthNoteType, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE,
     NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
 } from "./notes.js";
 import { NoteType } from "./rows.js";
@@ -272,5 +272,20 @@ describe("getMimeIcon", () => {
         // these return a function, which survives the `??` and is handed on as an icon class.
         expect(getMimeIcon("constructor")).toBe("bx bx-file");
         expect(getMimeIcon("toString")).toBe("bx bx-file");
+    });
+});
+
+describe("isFullWidthNoteType", () => {
+    it("takes the full width for canvas-like types and for PDF, video and audio files", () => {
+        for (const type of [ "code", "image", "mermaid", "book", "canvas", "webView", "mindMap", "spreadsheet" ]) {
+            expect(isFullWidthNoteType(type, "")).toBe(true);
+        }
+        expect(isFullWidthNoteType("file", "application/pdf")).toBe(true);
+        expect(isFullWidthNoteType("file", "video/mp4")).toBe(true);
+        expect(isFullWidthNoteType("file", "audio/ogg")).toBe(true);
+
+        expect(isFullWidthNoteType("text", "text/html")).toBe(false);
+        expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
+        expect(isFullWidthNoteType("search", "")).toBe(false);
     });
 });

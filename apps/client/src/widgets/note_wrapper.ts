@@ -1,3 +1,5 @@
+import { isFullWidthNoteType } from "@triliumnext/commons";
+
 import type { EventData } from "../components/app_context.js";
 import type NoteContext from "../components/note_context.js";
 import type FNote from "../entities/fnote.js";
@@ -140,11 +142,7 @@ export function isAlwaysFullWidthByType(note: FNote) {
         return true;
     }
 
-    if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap", "mindMap", "spreadsheet"].includes(note.type)) {
-        return true;
-    }
-
-    if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/") || note.mime.startsWith("audio/"))) {
+    if (isFullWidthNoteType(note.type, note.mime)) {
         return true;
     }
 

@@ -5,6 +5,10 @@
     margin-inline: auto;
 }
 
+#split-pane:has(#content.full-content-width) {
+    max-width: none;
+}
+
 #left-pane {
     display: flex;
     flex-direction: column;

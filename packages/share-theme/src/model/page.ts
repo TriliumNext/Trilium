@@ -6,6 +6,7 @@
 import {
     isRightToLeftLanguage, resolveContentLanguage, toLanguageTag
 } from "@triliumnext/commons/src/lib/i18n.js";
+import { isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
 
 /** The parts of a note the page model reads; core's `SNote` and `BNote` both provide them. */
 export interface ShareNote {
@@ -331,15 +332,18 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
 /**
  * Returns the classes of the content element: the note's type, `ck-content` for content the text
  * editor's styles apply to (text notes and Markdown code notes), `full-content-width` for a note
- * with `#fullContentWidth`, as in the app, and `no-content` when empty.
+ * with `#fullContentWidth` or of a type the app always shows at full width, and `no-content` when
+ * empty. A Markdown note reads as text, so its type does not make it full width.
  */
 export function getContentClasses(note: ShareNote, isEmpty = false) {
     const isEditorContent = note.type === "text"
         || (note.type === "code" && note.mime === "text/x-markdown");
+    const isFullWidth = (!isEditorContent && isFullWidthNoteType(note.type, note.mime))
+        || note.isLabelTruthy("fullContentWidth");
     return [
         `type-${note.type}`,
         isEditorContent && "ck-content",
-        note.isLabelTruthy("fullContentWidth") && "full-content-width",
+        isFullWidth && "full-content-width",
         isEmpty && "no-content"
     ].filter(Boolean).join(" ");
 }

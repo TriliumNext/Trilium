@@ -214,6 +214,24 @@ export function getCodeLanguageIcon(language: Pick<MimeTypeDefinition, "icon"> |
     return language?.icon ?? NOTE_TYPE_ICONS.code;
 }
 
+/**
+ * Whether a note of `type` and `mime` always takes the full width of the content, whatever its
+ * `#fullContentWidth` label says: canvas-like types, and files shown in a viewer (PDF, video, audio).
+ */
+export function isFullWidthNoteType(type: string, mime: string) {
+    if (FULL_WIDTH_NOTE_TYPES.includes(type)) {
+        return true;
+    }
+
+    return type === "file"
+        && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
+}
+
+const FULL_WIDTH_NOTE_TYPES = [
+    "code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap",
+    "mindMap", "spreadsheet"
+];
+
 function getFileMimeIcon(mime: string): string {
     if (mime.startsWith("video/")) return "bx bx-video";
     if (mime.startsWith("audio/")) return "bx bx-music";

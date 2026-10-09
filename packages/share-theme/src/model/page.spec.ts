@@ -392,8 +392,7 @@ describe("getContentClasses", () => {
     it("styles text and Markdown notes as the editor's content, and marks empty content", () => {
         expect(classes("text", "text/html")).toBe("type-text ck-content");
         expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
-        expect(classes("code", "application/javascript")).toBe("type-code");
-        expect(classes("book", "", true)).toBe("type-book no-content");
+        expect(classes("text", "text/html", true)).toBe("type-text ck-content no-content");
     });
 
     it("marks content as full width with #fullContentWidth, as the app does", () => {
@@ -401,6 +400,16 @@ describe("getContentClasses", () => {
             .toBe("type-text ck-content full-content-width");
         expect(classes("text", "text/html", false, { fullContentWidth: "false" }))
             .toBe("type-text ck-content");
+    });
+
+    it("marks the types the app always shows at full width, but not a Markdown note", () => {
+        expect(classes("canvas", "application/json")).toBe("type-canvas full-content-width");
+        expect(classes("file", "application/pdf")).toBe("type-file full-content-width");
+        expect(classes("code", "application/javascript")).toBe("type-code full-content-width");
+        expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
+        expect(classes("file", "application/zip")).toBe("type-file");
+        expect(classes("file", "application/zip", false, { fullContentWidth: "" }))
+            .toBe("type-file full-content-width");
     });
 });
 

@@ -23,4 +23,4 @@ For notes with large elements such as <a class="reference-link" href="../../Not
 
 ## Shared notes
 
-On a [shared page](../../Advanced%20Usage/Sharing.md), a text note is shown at a fixed reading width, whatever the width configured in Options. A note with `fullContentWidth` uses the whole width of the page there too.
+On a [shared page](../../Advanced%20Usage/Sharing.md), a text note is shown at a fixed reading width, whatever the width configured in Options, and the navigation tree, the content and the table of contents are kept together in a column centered on a wide screen. A note with `fullContentWidth`, or of a type that is full width in the application, uses the whole width of the window there, with the navigation tree and the table of contents at its edges.
