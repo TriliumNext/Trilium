@@ -9,6 +9,7 @@ function lex(str: string) {
     str = str.toLowerCase();
 
     let fulltextQuery = "";
+    let fulltextQueryBeforeLastToken = "";
     const fulltextTokens: TokenData[] = [];
     const expressionTokens: TokenData[] = [];
 
@@ -53,6 +54,7 @@ function lex(str: string) {
         } else {
             fulltextTokens.push(rec);
 
+            fulltextQueryBeforeLastToken = fulltextQuery;
             fulltextQuery = str.substr(0, endIndex + 1);
         }
 
@@ -154,6 +156,14 @@ function lex(str: string) {
     }
 
     finishWord(str.length - 1);
+
+    // `parse()` always joins the fulltext to the expression with AND, so an unquoted "and" between
+    // the two is that join, not a word to search for.
+    const lastFulltextToken = fulltextTokens.at(-1);
+    if (expressionTokens.length > 0 && lastFulltextToken?.token === "and" && !lastFulltextToken.inQuotes) {
+        fulltextTokens.pop();
+        fulltextQuery = fulltextQueryBeforeLastToken;
+    }
 
     // Scoring compares the whole fulltext query against note titles, so the layout the query
     // was typed in must not reach it.

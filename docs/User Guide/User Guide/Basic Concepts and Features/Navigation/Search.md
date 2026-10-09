@@ -139,7 +139,7 @@ In addition: 
 *   `rings tolkien`: Full-text search to find notes containing both "rings" and "tolkien".
 *   `"The Lord of the Rings" Tolkien`: Full-text search where "The Lord of the Rings" must match exactly.
 *   `note.content *=* rings OR note.content *=* tolkien`: Find notes containing "rings" or "tolkien" in their content.
-*   `towers #book`: Combine full-text and attribute search to find notes containing "towers" and having the "book" label.
+*   `towers #book`: Combine full-text and attribute search to find notes containing "towers" and having the "book" label. Writing `towers AND #book` does the same; to search for the word "and" itself, put it in quotes.
 *   `c#` or `towers#book`: A `#` or `~` inside a word is part of the text, so these find notes containing "c#" or "towers#book". To start a label or relation, put a space before it.
 *   `towers #book or #author`: Search for notes containing "towers" and having either the "book" or "author" label.
 *   `towers #!book`: Search for notes containing "towers" and not having the "book" label.
