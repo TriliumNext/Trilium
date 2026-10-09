@@ -2,22 +2,29 @@ html {
     --page-top-spacing: 2rem;
 }
 
+/* Past 90rem the navigation pane widens into the space beside the layout, up to 24rem; the padding
+   keeps the content where the 90rem layout puts it. */
 #split-pane {
+    --left-pane-width: clamp(min(18rem, 25vw), 18rem + (100vw - 90rem) / 2, 24rem);
+    --left-pane-growth: max(0rem, var(--left-pane-width) - 18rem);
+
     display: flex;
     flex-direction: row;
-    max-width: 90rem;
+    max-width: calc(90rem + 2 * var(--left-pane-growth));
     margin-inline: auto;
+    padding-inline-end: var(--left-pane-growth);
 }
 
 #split-pane:has(#content.full-content-width) {
     max-width: none;
+    padding-inline-end: 0;
 }
 
 #left-pane {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    width: min(18rem, 25vw);
+    width: var(--left-pane-width);
     height: 100vh;
     border-inline-end: 1px solid var(--background-highlight);
     background: var(--background-secondary);
