@@ -30,6 +30,8 @@ html.theme-light {
     --link-hover-background: #3c7fa017;
     --link-focus-outline-color: #00000063;
     --text-menu-active: var(--background-secondary);
+    /* The code block shadow of `theme-next-light.css`. */
+    --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
     /* The tree item colors of `theme-next-light.css`. */
     --tree-item-hover-background: rgba(0, 0, 0, 0.032);
     --tree-item-active-background: #FFFFFF;
@@ -68,6 +70,8 @@ html.theme-dark {
     --link-hover-background: #75c2e324;
     --link-focus-outline-color: #ffffff57;
     --text-menu-active: var(--background-secondary);
+    /* The code block shadow of `theme-next-dark.css`. */
+    --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
     /* The tree item colors of `theme-next-dark.css`. */
     --tree-item-hover-background: #ffffff0d;
     --tree-item-active-background: #ffffff25;

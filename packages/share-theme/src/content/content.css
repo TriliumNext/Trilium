@@ -22,33 +22,38 @@ iframe.pdf-view {
     height: 800px;
 }
 
-.ck-content code,
-.ck-content pre {
+.ck-content code:not(pre code) {
     color: var(--text-primary);
     background-color: var(--background-secondary);
     border: 1px solid var(--background-active);
     border-radius: 6px;
-}
-
-/* Only a code block preserves the source's own line breaks. Inline code used to inherit this from
- * the rule above, which kept a long snippet on one line and pushed the page sideways on mobile. */
-.ck-content pre {
-    white-space: pre;
-}
-
-.ck-content code:not(pre code) {
     padding: 2px 5px;
     overflow-wrap: break-word;
 }
 
-.ck-content pre code {
+/* The code blocks of the app's default theme, `theme-next/notes/text.css`. `:root` outranks
+   `ckeditor5-content.css`, which `index.ts` imports after this file. */
+:root .ck-content pre {
+    position: relative;
+    min-width: unset;
+    margin-top: 2px;
     border: 0;
+    border-radius: 6px;
+    padding: 1em;
+    color: var(--text-primary);
+    background-color: var(--background-secondary);
+    box-shadow: var(--code-block-box-shadow);
+    white-space: pre;
 }
 
-.ck-content pre {
+:root .ck-content pre:has(> code) {
+    padding: 0;
+}
+
+:root .ck-content pre code {
+    display: block;
+    padding: 1em;
     overflow: auto;
-    position: relative;
-    min-width: unset !important;
 }
 
 .ck-content pre .copy-button {
