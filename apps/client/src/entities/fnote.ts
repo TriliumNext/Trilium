@@ -1,12 +1,9 @@
 import { getNoteIcon, HighlightedTokenInfo } from "@triliumnext/commons";
 
-import { runBackendScript } from "../services/backend_scripting.js";
-import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
-import search from "../services/search.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import type FAttachment from "./fattachment.js";
@@ -262,6 +259,7 @@ export default class FNote {
         const isHiddenNote = this.noteId.startsWith("_");
         const isSearchNote = this.type === "search";
         if (!includeArchived && !isHiddenNote && !isSearchNote) {
+            const { default: search } = await import("../services/search.js");
             const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
             const results: string[] = [];
             for (const id of this.children) {
@@ -1135,8 +1133,10 @@ export default class FNote {
         const env = this.getScriptEnv();
 
         if (env === "frontend") {
+            const { default: bundleService } = await import("../services/bundle.js");
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
+            const { runBackendScript } = await import("../services/backend_scripting.js");
             await runBackendScript(this.noteId);
         } else {
             throw new Error(`Unrecognized env type ${env} for note ${this.noteId}`);

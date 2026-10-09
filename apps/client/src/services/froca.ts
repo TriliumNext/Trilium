@@ -1,6 +1,5 @@
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
 
-import appContext from "../components/app_context.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBlob, { type FBlobRow } from "../entities/fblob.js";
@@ -194,6 +193,7 @@ class FrocaImpl implements Froca {
 
         this.addResp(resp);
 
+        const { default: appContext } = await import("../components/app_context.js");
         appContext.triggerEvent("notesReloaded", { noteIds });
     }
 
@@ -243,6 +243,7 @@ class FrocaImpl implements Froca {
             ?? highlightedTokens.map((token) => ({ token, type: "plain" as const }));
 
         // The tree and embedded collections also load search notes, so `SearchResult` needs telling.
+        const { default: appContext } = await import("../components/app_context.js");
         appContext.triggerEvent("notesReloaded", { noteIds: [ note.noteId ] });
 
         return { error };

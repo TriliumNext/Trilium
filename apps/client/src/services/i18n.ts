@@ -6,7 +6,10 @@ import { initReactI18next } from "react-i18next";
 /**
  * A deferred promise that resolves when translations are initialized.
  */
-export const translationsInitializedPromise = $.Deferred();
+let resolveTranslationsInitialized = () => {};
+export const translationsInitializedPromise = new Promise<void>((resolve) => {
+    resolveTranslationsInitialized = resolve;
+});
 
 /** Every string in the app proper: 200-300 KB depending on the language. */
 const APP_NAMESPACE = "translation";
@@ -48,7 +51,7 @@ export async function initLocale(locale: LOCALE_IDS = "en", scope: "app" | "entr
     });
 
     await setDayjsLocale(locale);
-    translationsInitializedPromise.resolve();
+    resolveTranslationsInitialized();
 }
 
 /**
