@@ -92,18 +92,18 @@
                     <ul>
                         <% for (const child of childLinks) { %>
                             <li>
-                                <a class="type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
-                                    <span class="tn-icon <%= child.icon %>" aria-hidden="true"></span>
-                                    <span class="child-link-text">
-                                        <span class="child-link-title"><%= child.title %></span>
-                                        <% if (child.excerpt) { %>
-                                            <span class="child-link-excerpt"><%= child.excerpt %></span>
+                                <span class="tn-icon <%= child.icon %>" aria-hidden="true"></span>
+                                <a class="child-link-title type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
+                                <% if (child.excerpt) { %>
+                                    <p class="child-link-excerpt"><%= child.excerpt %></p>
+                                <% } %>
+                                <% if (child.children.length) { %>
+                                    <div class="child-link-children ck-content">
+                                        <% for (const grandchild of child.children) { %>
+                                            <a class="reference-link" href="<%= grandchild.href %>"<% if (grandchild.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><span class="tn-icon <%= grandchild.icon %>" aria-hidden="true"></span><%= grandchild.title %></a>
                                         <% } %>
-                                        <% if (child.childCount) { %>
-                                            <span class="child-link-count"><%= t("share_theme.subpage-count", { count: child.childCount }) %></span>
-                                        <% } %>
-                                    </span>
-                                </a>
+                                    </div>
+                                <% } %>
                             </li>
                         <% } %>
                     </ul>

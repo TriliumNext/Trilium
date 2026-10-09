@@ -11,7 +11,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 *   Collapsible tree with the same note icons as the application. It keeps the sections the visitor expanded and its scroll position while they move between the pages of the site, and shows the current note.
 *   Customizable logo.
 *   Quick navigation buttons (previous and next note).
-*   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage, the start of its text (or its `#shareDescription`) and how many subpages it has itself. The cards can be hidden with `#hideChildrenOverview`.
+*   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage and the start of its text (or its `#shareDescription`), or, for a subpage without text, links to its own first subpages. The cards can be hidden with `#hideChildrenOverview`.
 *   Displaying the date of the last update of the note, written out in the application's language.
 *   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
@@ -63,7 +63,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Collections.md">Collections</a></th>
-            <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon, the start of its text (or its <code>#shareDescription</code>) and how many subpages it has itself.</li></ul></td>
+            <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon and the start of its text (or its <code>#shareDescription</code>), or, for a child note without text, links to its own first child notes.</li></ul></td>
             <td><ul><li>The other view types (such as the calendar, the table or the board) are not supported, and the child notes are shown as cards instead.</li></ul></td>
         </tr>
         <tr>

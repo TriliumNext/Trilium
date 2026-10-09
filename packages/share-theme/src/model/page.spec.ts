@@ -432,23 +432,47 @@ describe("getContentClasses", () => {
 describe("getChildLinks", () => {
     const options = { sanitizeUrl: (url: string) => url, iconPackPrefixes: [ "pack" ] };
 
-    it("links to the visible children of a note, in order, with their icon and subpage count", () => {
+    it("links to the visible children of a note, in order, with their icon and own children", () => {
         const parent = fakeNote({ noteId: "parent" });
         const x = addChild(parent, fakeNote({ noteId: "x", type: "book", icon: "bx bx-book" }));
         addChild(x, fakeNote({ noteId: "grandchild" }));
+        addChild(x, fakeNote({ noteId: "far", labels: { shareExternal: "https://example.org" } }));
         addChild(parent, fakeNote({ noteId: "hidden" }), true);
         addChild(parent, fakeNote({ noteId: "y", labels: { shareExternal: "https://example.com" } }));
 
         expect(getChildLinks(parent, options)).toStrictEqual([
             {
                 href: "./x-alias", isExternal: false, title: "x", type: "book",
-                icon: "bx bx-book pack", excerpt: null, childCount: 1
+                icon: "bx bx-book pack", excerpt: null,
+                children: [
+                    { href: "./grandchild-alias", isExternal: false, title: "grandchild", icon: "bx bx-note pack" },
+                    { href: "https://example.org", isExternal: true, title: "far", icon: "bx bx-note pack" }
+                ]
             },
             {
                 href: "https://example.com", isExternal: true, title: "y", type: "text",
-                icon: "bx bx-note pack", excerpt: null, childCount: 0
+                icon: "bx bx-note pack", excerpt: null, children: []
             }
         ]);
+    });
+
+    it("lists the first ten children of a child only when it has no excerpt, as the app does", () => {
+        const parent = fakeNote({ noteId: "parent" });
+        for (const noteId of [ "empty", "described" ]) {
+            const child = addChild(parent, fakeNote({
+                noteId,
+                labels: noteId === "described" ? { shareDescription: "About it" } : {}
+            }));
+            for (let index = 0; index < 12; index++) {
+                addChild(child, fakeNote({ noteId: `${noteId}-${index}` }));
+            }
+        }
+
+        const [ empty, described ] = getChildLinks(parent, options);
+
+        expect(empty.children.map((child) => child.title))
+            .toStrictEqual(Array.from({ length: 10 }, (_, index) => `empty-${index}`));
+        expect(described.children).toStrictEqual([]);
     });
 
     it("lists the children only under the note types the app does, unless #hideChildrenOverview", () => {

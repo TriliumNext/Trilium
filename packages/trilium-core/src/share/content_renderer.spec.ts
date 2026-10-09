@@ -465,7 +465,7 @@ describe("content_renderer", () => {
             expect(fullBook.querySelector("#childLinks")?.classList.contains("grid")).toBe(true);
         });
 
-        it("describes each subpage by its icon, the start of its text and its own subpages", () => {
+        it("describes each subpage by its icon and the start of its text, or else its own subpages", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
                 children: [{
@@ -477,7 +477,15 @@ describe("content_renderer", () => {
                             "title": "Readable",
                             "#iconClass": "bx bx-rocket",
                             "content": "<h2>Heading</h2><p>First &amp; <b>bold</b>.</p><p>Second.</p>",
-                            "children": [ { id: "grandchild", content: "" } ]
+                            "children": [ { id: "hiddenByExcerpt", content: "" } ]
+                        },
+                        {
+                            id: "folder",
+                            content: "",
+                            children: [
+                                { id: "first", title: "First", content: "" },
+                                { "id": "second", "title": "Second", "content": "", "#iconClass": "bx bx-star" }
+                            ]
                         },
                         { id: "locked", content: "<p>Secret</p>", isProtected: true },
                         { "id": "guarded", "content": "<p>Guarded</p>", "#shareCredentials": "u:p" },
@@ -489,19 +497,25 @@ describe("content_renderer", () => {
 
             const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0],
                 (note) => note.getCredentials().length === 0)));
-            const items = page.querySelectorAll("#childLinks li").map((item) => ({
+            const items = page.querySelectorAll("#childLinks > ul > li").map((item) => ({
                 icon: item.querySelector(".tn-icon")?.classList.contains("bx-rocket"),
                 excerpt: item.querySelector(".child-link-excerpt")?.text,
-                count: item.querySelector(".child-link-count")?.text
+                children: item.querySelectorAll(".child-link-children a.reference-link").map((link) =>
+                    [ link.getAttribute("href"), link.text, link.querySelector(".tn-icon")?.classList.contains("bx-star") ])
             }));
 
             expect(page.querySelector("#childLinks")?.classList.contains("grid")).toBe(true);
             expect(items).toStrictEqual([
-                { icon: true, excerpt: "First & bold. Second.", count: t("share_theme.subpage-count", { count: 1 }) },
-                { icon: false, excerpt: undefined, count: undefined },
-                { icon: false, excerpt: undefined, count: undefined },
-                { icon: false, excerpt: undefined, count: undefined },
-                { icon: false, excerpt: undefined, count: undefined }
+                { icon: true, excerpt: "First & bold. Second.", children: [] },
+                {
+                    icon: false,
+                    excerpt: undefined,
+                    children: [ [ "./first", "First", false ], [ "./second", "Second", true ] ]
+                },
+                { icon: false, excerpt: undefined, children: [] },
+                { icon: false, excerpt: undefined, children: [] },
+                { icon: false, excerpt: undefined, children: [] },
+                { icon: false, excerpt: undefined, children: [] }
             ]);
         });
 

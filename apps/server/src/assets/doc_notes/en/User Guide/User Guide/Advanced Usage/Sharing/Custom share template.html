@@ -100,9 +100,10 @@
         </td>
         <td>The links to the note's visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code>, <code>type</code>, <code>icon</code> (its
           icon classes), <code>excerpt</code> (its <code>#shareDescription</code> or
-          the start of its text, or <code>null</code>) and <code>childCount</code> (how
-          many visible children it has). Empty for a note that is not a collection,
-          a text note or a code note, and with <code>#hideChildrenOverview</code>.</td>
+          the start of its text, or <code>null</code>) and <code>children</code> (when
+          it has no excerpt, its first ten visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>icon</code>).
+          Empty for a note that is not a collection, a text note or a code note,
+          and with <code>#hideChildrenOverview</code>.</td>
       </tr>
       <tr>
         <td><code>childLinksLayout</code>

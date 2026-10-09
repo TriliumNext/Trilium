@@ -232,6 +232,9 @@ function readLabel(note: ShareNote, name: string) {
 
 const CHILD_LIST_NOTE_TYPES = [ "book", "text", "code" ];
 
+/** The most children of a child its card lists, as many as the app's card does. */
+const CHILD_PREVIEW_LENGTH = 10;
+
 /** The most characters of a child's text its excerpt shows. */
 const EXCERPT_LENGTH = 160;
 
@@ -382,8 +385,18 @@ export interface ChildLink extends ShareLink {
     icon: string;
     /** `#shareDescription`, else the start of the child's text, or `null`. */
     excerpt: string | null;
-    /** How many visible children the child has itself. */
-    childCount: number;
+    /**
+     * The first visible children of the child, which the app's card shows in place of a preview
+     * when the child has none; empty when it has an excerpt.
+     */
+    children: ChildLinkChild[];
+}
+
+/** A child of a child of a page, as its card lists it. */
+export interface ChildLinkChild extends ShareLink {
+    title: string;
+    /** The icon's CSS classes. */
+    icon: string;
 }
 
 /** What {@link getChildLinks} needs besides the note. */
@@ -408,14 +421,23 @@ export function getChildLinks(note: ShareNote, options: ChildLinksOptions): Chil
         return [];
     }
 
-    return note.getVisibleChildNotes().map((child) => ({
-        ...getShareLink(child, options.sanitizeUrl),
-        title: child.title,
-        type: child.type,
-        icon: child.getIcon(options.iconPackPrefixes),
-        excerpt: readLabel(child, "shareDescription") ?? toExcerpt(options.getText?.(child) ?? ""),
-        childCount: child.getVisibleChildNotes().length
-    }));
+    return note.getVisibleChildNotes().map((child) => {
+        const excerpt = readLabel(child, "shareDescription")
+            ?? toExcerpt(options.getText?.(child) ?? "");
+        const children = excerpt ? [] : child.getVisibleChildNotes().slice(0, CHILD_PREVIEW_LENGTH);
+        return {
+            ...getShareLink(child, options.sanitizeUrl),
+            title: child.title,
+            type: child.type,
+            icon: child.getIcon(options.iconPackPrefixes),
+            excerpt,
+            children: children.map((grandchild) => ({
+                ...getShareLink(grandchild, options.sanitizeUrl),
+                title: grandchild.title,
+                icon: grandchild.getIcon(options.iconPackPrefixes)
+            }))
+        };
+    });
 }
 
 /**

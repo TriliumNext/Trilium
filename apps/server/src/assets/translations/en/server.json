@@ -468,9 +468,7 @@
     "heading-link": "Link to This Section",
     "previous": "Previous",
     "next": "Next",
-    "page-navigation": "Previous and next pages",
-    "subpage-count_one": "{{count}} subpage",
-    "subpage-count_other": "{{count}} subpages"
+    "page-navigation": "Previous and next pages"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
