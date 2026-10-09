@@ -35,6 +35,15 @@ html.theme-light {
     --tree-item-active-background: #FFFFFF;
     --tree-item-active-color: #000000;
     --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    /* The quick search colors of `theme-next-light.css`. */
+    --quick-search-background: #00000012;
+    --quick-search-color: #06060682;
+    --quick-search-hover-background: #00000020;
+    --quick-search-focus-border: #00000029;
+    --quick-search-focus-background: #ffffff80;
+    --quick-search-focus-color: #000000;
+    --quick-search-button-active-background: rgba(0, 0, 0, 0.11);
+    --quick-search-button-active-color: #383838;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -57,6 +66,15 @@ html.theme-dark {
     --tree-item-active-background: #ffffff25;
     --tree-item-active-color: #dfdfdf;
     --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    /* The quick search colors of `theme-next-dark.css`. */
+    --quick-search-background: #ffffff12;
+    --quick-search-color: #ffffff52;
+    --quick-search-hover-background: #ffffff1f;
+    --quick-search-focus-border: #80808095;
+    --quick-search-focus-background: #ffffff1f;
+    --quick-search-focus-color: #ffffff;
+    --quick-search-button-active-background: #ffffff73;
+    --quick-search-button-active-color: #000000;
     --mermaid-theme: dark;
     color-scheme: dark;
 }

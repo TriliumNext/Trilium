@@ -1,26 +1,73 @@
+/* The quick search box of the app's default theme (`widgets/quick_search.css`). */
 .search-item {
     display: flex;
     align-items: center;
     position: relative;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: var(--quick-search-background);
+    transition: background-color 200ms ease-in;
+}
+
+.search-item:hover {
+    background: var(--quick-search-hover-background);
+    transition: background-color 75ms ease-out;
+}
+
+.search-item:focus-within {
+    border-color: var(--quick-search-focus-border);
+    background: var(--quick-search-focus-background);
+    transition: background-color 100ms ease-out;
 }
 
 .search-input {
-    color: var(--text-primary);
-    background: var(--background-highlight);
-    outline: 0;
-    border: 0;
     flex: 1;
-    padding: 5px 5px 5px 32px;
-    width: 200px;
-    border-radius: 6px;
+    min-width: 0;
+    width: 100%;
+    padding: 3px 8px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    line-height: 24px;
 }
 
-.search-icon {
+.search-input::placeholder {
+    color: var(--quick-search-color);
+    opacity: 1;
+}
+
+.search-item:focus-within .search-input {
+    color: var(--quick-search-focus-color);
+}
+
+/* Outranks the icon pack's `.bx { display: inline-block }`, which the page loads after this. */
+.search-item .search-icon {
     display: flex;
-    color: var(--text-primary);
-    position: absolute;
-    font-size: 20px;
-    left: 5px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    margin-inline-end: 8px;
+    border-radius: 50%;
+    color: var(--quick-search-color);
+    font-size: 16px;
+    transition: background-color 200ms ease-in;
+}
+
+.search-item:focus-within:has(.search-input:not(:placeholder-shown)) .search-icon {
+    background: var(--quick-search-button-active-background);
+    color: var(--quick-search-button-active-color);
+    transition: background-color 500ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .search-item,
+    .search-icon {
+        transition: none;
+    }
 }
 
 .search-results {
