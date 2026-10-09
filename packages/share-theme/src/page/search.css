@@ -19,7 +19,7 @@
     display: flex;
     color: var(--text-primary);
     position: absolute;
-    width: 20px;
+    font-size: 20px;
     left: 5px;
 }
 

@@ -59,14 +59,16 @@ input:focus + .slider {
 }
 
 .dark-icon, .light-icon {
-    display: flex;
+    position: absolute;
+    inset-block: 0;
+    margin-block: auto;
+    width: 24px;
+    height: 20px;
+    font-size: 20px;
+    text-align: center;
     opacity: 0;
     transition: opacity 400ms ease, color 400ms ease;
     pointer-events: none;
-    position: absolute;
-    top: 0;
-    height: 100%;
-    width: 24px;
 }
 
 .theme-light .light-icon {

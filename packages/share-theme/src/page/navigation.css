@@ -122,6 +122,6 @@
     transform: rotate(0);
 }
 
-.collapse-button svg {
-    width: 14px;
+.collapse-button .tn-icon {
+    font-size: 14px;
 }

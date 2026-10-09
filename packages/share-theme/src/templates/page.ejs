@@ -28,13 +28,13 @@
 <body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
 <%- snippets["body:start"] %>
 <div id="header">
-    <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="bx bx-menu" aria-hidden="true"></span></button>
+    <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-menu" aria-hidden="true"></span></button>
     <a href="<%= logo.href %>" id="header-logo">
         <img src="<%= logoUrl %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
         <%= subRoot.note.title %>
     </a>
     <% if (headings.length > 1) { %>
-        <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="bx bx-list-ul" aria-hidden="true"></span></button>
+        <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-list-ul" aria-hidden="true"></span></button>
     <% } else { %>
         <div class="header-button-placeholder"></div>
     <% } %>
@@ -48,13 +48,13 @@
                     <label class="switch">
                       <input type="checkbox" aria-labelledby="sitetheme">
                       <span class="slider"></span>
-                      <span class="dark-icon bx bx-moon" aria-hidden="true"></span>
-                      <span class="light-icon bx bx-sun" aria-hidden="true"></span>
+                      <span class="dark-icon tn-icon bx bx-moon" aria-hidden="true"></span>
+                      <span class="light-icon tn-icon bx bx-sun" aria-hidden="true"></span>
                     </label>
                 </div>
                 <% if (navigation.length) { %>
                     <div class="search-item">
-                        <span class="search-icon bx bx-search" aria-hidden="true"></span>
+                        <span class="search-icon tn-icon bx bx-search" aria-hidden="true"></span>
                         <input type="text" class="search-input" placeholder="<%= t("share_theme.search_placeholder") %>">
                     </div>
                 <% } %>

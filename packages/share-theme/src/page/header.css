@@ -32,6 +32,10 @@
     transition: background-color 200ms ease, transform 200ms ease;
 }
 
+.header-button .tn-icon {
+    font-size: 24px;
+}
+
 .header-button:hover {
     background-color: var(--background-highlight);
 }
@@ -41,8 +45,7 @@
 }
 
 @media (max-width: 48em) {
-    #header .header-button svg {
-        width: 32px;
-        height: 32px;
+    #header .header-button .tn-icon {
+        font-size: 32px;
     }
 }

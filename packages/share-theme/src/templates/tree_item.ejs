@@ -2,8 +2,8 @@
     <% for (const item of items) { %>
         <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>">
             <a class="type-<%= item.type %><%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
-                <% if (item.children.length) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg></button><% } %>
-                <span><i class="<%= item.icon %>"></i> <%= item.title %></span>
+                <% if (item.children.length) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><span class="tn-icon bx bx-chevron-down" aria-hidden="true"></span></button><% } %>
+                <span><span class="tn-icon <%= item.icon %>" aria-hidden="true"></span> <%= item.title %></span>
             </a>
             <% if (item.children.length) { %>
                 <%- include("tree_item", { items: item.children }) %>
