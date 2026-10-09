@@ -81,21 +81,51 @@ describe("setupToC", () => {
         expect(link.classList.contains("copied")).toBe(false);
     });
 
-    it("only jumps to the section when the address cannot be copied", async () => {
+    it("puts the section's address in the location bar instead of jumping to it", () => {
+        vi.stubGlobal("navigator", {});
+        renderPage([ [ 2, "intro", 100 ], [ 2, "later", 500 ] ]);
+        history.replaceState(null, "", "#later");
+        const historyLength = history.length;
+        const scrollIntoView = vi.fn();
+        const heading = document.getElementById("intro");
+        if (!heading) {
+            throw new Error("The heading is missing.");
+        }
+        heading.scrollIntoView = scrollIntoView;
+
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        headingLink("intro").dispatchEvent(click);
+
+        expect(click.defaultPrevented).toBe(true);
+        expect(location.hash).toBe("#intro");
+        expect(history.length).toBe(historyLength);
+        expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    it("leaves a click with a modifier key or another button to the browser", () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal("navigator", { clipboard: { writeText } });
+        renderPage([ [ 2, "intro", 100 ] ]);
+
+        for (const init of [ { ctrlKey: true }, { metaKey: true }, { shiftKey: true },
+            { altKey: true }, { button: 1 } ]) {
+            const click = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
+            headingLink("intro").dispatchEvent(click);
+            expect(click.defaultPrevented).toBe(false);
+        }
+        expect(writeText).not.toHaveBeenCalled();
+    });
+
+    it("shows no check mark when the address cannot be copied", async () => {
         const writeText = vi.fn().mockRejectedValue(new Error("denied"));
         vi.stubGlobal("navigator", { clipboard: { writeText } });
         renderPage([ [ 2, "intro", 100 ] ]);
         const link = headingLink("intro");
 
-        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
-        link.dispatchEvent(click);
+        link.click();
         await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
         await Promise.resolve();
-        expect(click.defaultPrevented).toBe(false);
         expect(link.classList.contains("copied")).toBe(false);
-
-        vi.stubGlobal("navigator", {});
-        expect(() => link.click()).not.toThrow();
     });
 
     it("sets the heading links up on a page without a table of contents", async () => {
