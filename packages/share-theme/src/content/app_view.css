@@ -24,7 +24,7 @@ body:has(#content.app-view) {
         flex: 1;
         min-height: 0;
 
-        > :is(.note-list-widget, .note-detail-mermaid) {
+        > * {
             flex: 1;
             min-height: 0;
         }

@@ -488,11 +488,10 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderMarkdown(result, note);
     } else if (note.type === "code") {
         renderCode(result, note.mime);
+        hostNoteView(result, note);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
-        if (!(note instanceof BNote) && typeof result.content === "string") {
-            hostInAppView(result, note, "share-note-view");
-        }
+        hostNoteView(result, note);
     } else if (["image", "canvas", "mindMap"].includes(note.type)) {
         renderImage(result, note);
     } else if (note.type === "file") {
@@ -918,6 +917,17 @@ function renderCollectionView(result: Result, note: SNote) {
 }
 
 /**
+ * Has the share theme show a shared note with the app's own widget for its type, keeping the content
+ * rendered here for a visitor without scripts. The static export and binary content keep the
+ * content alone.
+ */
+function hostNoteView(result: Result, note: SNote | BNote) {
+    if (!(note instanceof BNote) && typeof result.content === "string") {
+        hostInAppView(result, note, "share-note-view");
+    }
+}
+
+/**
  * Wraps the content in a `container` the share theme's script mounts an app view into, beside the
  * notes and the display options the view starts from. The content stays for a visitor without
  * scripts until the view replaces it.
@@ -939,8 +949,16 @@ function hostInAppView(result: Result, note: SNote, container: string) {
 /** The view types of the collections the share theme shows with the app's own view. */
 const HOSTED_VIEW_TYPES = new Set([ "calendar", "geoMap" ]);
 
-/** The options the app's collection views read, which a shared page needs to draw them alike. */
-const SHARED_OPTIONS = [ "locale", "formattingLocale", "firstDayOfWeek" ] as const;
+/**
+ * The options the app's views read to draw a note as the app does, which a shared page receives. Only
+ * display options: the rest of the options can hold secrets, such as API keys.
+ */
+const SHARED_OPTIONS = [
+    "locale", "formattingLocale", "firstDayOfWeek",
+    "codeNoteTheme", "codeNoteThemeLight", "codeNoteThemeDark", "codeNoteThemeMatchesApp",
+    "codeLineWrapEnabled", "codeNoteTabWidth", "codeNoteIndentWithTabs",
+    "splitEditorOrientation"
+] as const;
 
 /** The `data-*` attributes of a Mermaid note that label its viewer, and their translations. */
 const MERMAID_VIEWER_LABELS = {

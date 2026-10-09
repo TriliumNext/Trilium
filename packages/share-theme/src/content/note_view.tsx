@@ -1,6 +1,8 @@
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
-import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
+import {
+    type ExtendedNoteType, TYPE_MAPPINGS, type TypeWidget
+} from "@triliumnext/client/src/widgets/note_types.js";
 import { useNoteLabel } from "@triliumnext/client/src/widgets/react/hooks.js";
 import OverlayControlGroup, {
     OverlayControlButton
@@ -29,7 +31,7 @@ export default function mountNoteView(container: HTMLElement, payload: AppPayloa
 
 function NoteView({ note }: { note: FNote }) {
     const [ Widget, setWidget ] = useState<TypeWidget>();
-    const mapping = TYPE_MAPPINGS[note.type as keyof typeof TYPE_MAPPINGS];
+    const mapping = TYPE_MAPPINGS[getWidgetType(note)];
 
     useEffect(() => {
         Promise.resolve(mapping.view()).then((view) => {
@@ -51,6 +53,18 @@ function NoteView({ note }: { note: FNote }) {
             {note.type === "mermaid" && <DisplayModeSwitcher note={note} />}
         </div>
     );
+}
+
+/**
+ * The widget the app shows the note with when it is read-only, as a shared note always is: the
+ * read-only editor for code and text, the type's own widget otherwise.
+ */
+function getWidgetType(note: FNote): ExtendedNoteType {
+    switch (note.type) {
+        case "code": return "readOnlyCode";
+        case "text": return "readOnlyText";
+        default: return note.type as ExtendedNoteType;
+    }
 }
 
 /** The app's choice of source, split or preview, which a visitor makes for this page only. */
