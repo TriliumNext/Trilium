@@ -1,17 +1,12 @@
-<%
-const strippedName = utils.stripTags(entry.name);
-const slug = entry.slug ?? utils.slugify(strippedName);
-%>
-
 <li>
-    <a href="#<%= slug %>">
-        <span><%= strippedName %></span>
+    <a href="#<%= entry.slug %>">
+        <span><%= entry.text %></span>
     </a>
 
     <% if (entry.children.length) { %>
         <ul>
             <% for (const subentry of entry.children) { %>
-                <%- include('toc_item', {entry: subentry}) %>
+                <%- include("toc_item", { entry: subentry }) %>
             <% } %>
         </ul>
     <% } %>

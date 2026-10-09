@@ -9,7 +9,7 @@ import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import {
-    ensureShareHighlighting, getContent, readShareTemplate, renderCode, renderNoteContent,
+    anchorHeadings, ensureShareHighlighting, getContent, readShareTemplate, renderCode, renderNoteContent,
     type Result
 } from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
@@ -312,6 +312,11 @@ describe("content_renderer", () => {
             expect(page).toContain(`<h3 data-trilium-block-id="b1">Referenced`
                 + `<a id="referenced" class="toc-anchor"`);
             expect(page).toContain(`href="#referenced"`);
+
+            const toc = parse(String(page)).querySelector("#toc");
+            expect(toc?.querySelectorAll(":scope > li > a").map((link) => link.text.trim()))
+                .toStrictEqual([ "Plain" ]);
+            expect(toc?.querySelector("li li a")?.getAttribute("href")).toBe("#referenced");
         });
 
         it("leaves an include-note section untouched when the referenced note is missing", () => {
@@ -903,6 +908,36 @@ describe("content_renderer", () => {
             expect(Object.keys(anchor?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
         });
     });
+    describe("anchorHeadings", () => {
+        it("anchors every heading and lists it with its level, text and unique slug", () => {
+            const { content, headings } = anchorHeadings(trimIndentation`
+                <h1>Intro</h1>
+                <p>Text</p>
+                <h2 class="x">Q&amp;A <strong>now</strong></h2>
+                <h3>Spans
+                two lines</h3>
+                <h2>Intro</h2>
+            `);
+
+            expect(headings).toStrictEqual([
+                { level: 1, text: "Intro", slug: "intro" },
+                { level: 2, text: "Q&A now", slug: "q-amp-a-now" },
+                { level: 3, text: "Spans two lines", slug: "spans-two-lines" },
+                { level: 2, text: "Intro", slug: "intro-1" }
+            ]);
+            expect(content).toContain(
+                `<h2 class="x">Q&amp;A <strong>now</strong>`
+                + `<a id="q-amp-a-now" class="toc-anchor" name="q-amp-a-now" href="#q-amp-a-now">#</a></h2>`);
+            expect(content).toContain(`<p>Text</p>`);
+            expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
+        });
+
+        it("returns content without headings as it is", () => {
+            const html = `<p>No <b>headings</b> here &amp; there</p>`;
+            expect(anchorHeadings(html)).toStrictEqual({ content: html, headings: [] });
+        });
+    });
+
     describe("Tree item template", () => {
         it("sets a working target and rel on external tree links only", () => {
             const external = renderTreeItemAnchor({
@@ -1099,7 +1134,9 @@ describe("content_renderer", () => {
                 iconPackSupportedPrefixes: [],
                 head: getPageHead(note, note),
                 snippets: getHtmlSnippets(note),
-                logo: getSiteLogo(note, sanitize.sanitizeUrl)
+                logo: getSiteLogo(note, sanitize.sanitizeUrl),
+                headings: [],
+                toc: []
             }, {
                 includer: (path: string) => ({
                     template: readShareTemplate(path)

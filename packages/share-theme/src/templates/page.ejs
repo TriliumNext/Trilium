@@ -40,19 +40,6 @@
     </style>
     <%- snippets["head:end"] %>
 </head>
-<%
-const headingRe = /(<h[1-6](?:\s[^>]*)?>)(.+?)(<\/h[1-6]>)/g;
-const headingMatches = [...content.matchAll(headingRe)];
-// Unique slug per heading (in document order) so duplicate titles get distinct
-// anchor IDs and the ToC links point to the right occurrence.
-const headingSlugs = utils.slugifyHeadings(headingMatches.map((m) => m[2]));
-let headingIndex = 0;
-content = content.replaceAll(headingRe, (...match) => {
-    const slug = headingSlugs[headingIndex++];
-    match[0] = match[0].replace(match[3], `<a id="${slug}" class="toc-anchor" name="${slug}" href="#${slug}">#</a>${match[3]}`);
-    return match[0];
-});
-%>
 <body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
 <%- snippets["body:start"] %>
 <div id="header">
@@ -61,7 +48,7 @@ content = content.replaceAll(headingRe, (...match) => {
         <img src="<%= logoUrl %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
         <%= subRoot.note.title %>
     </a>
-    <% if (headingMatches.length > 1) { %>
+    <% if (headings.length > 1) { %>
         <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9h14V7H3v2zm0 4h14v-2H3v2zm0 4h14v-2H3v2zm16 0h2v-2h-2v2zm0-10V7h2v2h-2zm0 6h2v-2h-2v2z"></path></svg></button>
     <% } else { %>
         <div class="header-button-placeholder"></div>
@@ -158,25 +145,7 @@ content = content.replaceAll(headingRe, (...match) => {
                 <% } %>
             </footer>
         </div>
-        <%
-        if (headingMatches.length > 1) {
-            const level = (m) => parseInt(m[1].replace(/[<h>]+/g, ""));
-
-            const makeEntry = (i) => ({level: level(headingMatches[i]), name: headingMatches[i][2], slug: headingSlugs[i], children: []});
-            const toc = [ makeEntry(0) ];
-            const last = (arr = toc) => arr[arr.length - 1];
-            const getLevelArr = (lvl, arr = toc) => {
-                if (arr[0].level === lvl) return arr;
-                const top = last(arr);
-                return top.children.length ? getLevelArr(lvl, top.children) : top.children;
-            };
-
-
-            for (let m = 1; m < headingMatches.length; m++) {
-                const target = getLevelArr(level(headingMatches[m]));
-                target.push(makeEntry(m));
-            }
-        %>
+        <% if (headings.length > 1) { %>
             <div id="toc-pane">
                 <h3><%= t("share_theme.on-this-page") %></h3>
                 <ul id="toc">

@@ -7,7 +7,9 @@ import {
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
-import { getHtmlSnippets, getPageHead, getSiteLogo } from "@triliumnext/share-theme/model/page";
+import {
+    getHtmlSnippets, getPageHead, getSiteLogo, getTableOfContents, type PageHeading
+} from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
 import { t } from "i18next";
@@ -266,10 +268,39 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         }
     }
 
-    // Render with the default view otherwise.
-    return ejs.render(readShareTemplate("page"), opts, {
+    // Render with the default view otherwise. Custom templates get `content` without the heading
+    // anchors, which templates derived from an earlier `page.ejs` add themselves.
+    const { content: anchoredContent, headings } = typeof content === "string"
+        ? anchorHeadings(content)
+        : { content, headings: [] };
+    const pageOpts = { ...opts, content: anchoredContent, headings, toc: getTableOfContents(headings) };
+    return ejs.render(readShareTemplate("page"), pageOpts, {
         includer: (path) => ({ template: readShareTemplate(path) })
     });
+}
+
+/**
+ * Gives every heading of `html` a `#` link to itself, with an ID made from its text that is
+ * unique on the page, and returns the headings in document order. HTML without headings comes
+ * back as it is.
+ */
+export function anchorHeadings(html: string): { content: string; headings: PageHeading[] } {
+    if (!/<h[1-6][\s>]/i.test(html)) {
+        return { content: html, headings: [] };
+    }
+
+    const document = parse(html, { comment: true });
+    const elements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    const slugs = utils.slugifyHeadings(elements.map((element) => element.innerHTML));
+    const headings = elements.map((element, index) => {
+        const slug = slugs[index];
+        const text = element.text.replace(/\s+/g, " ").trim();
+        const heading = { level: Number(element.tagName.slice(1)), text, slug };
+        element.insertAdjacentHTML("beforeend",
+            `<a id="${slug}" class="toc-anchor" name="${slug}" href="#${slug}">#</a>`);
+        return heading;
+    });
+    return { content: document.toString(), headings };
 }
 
 /**

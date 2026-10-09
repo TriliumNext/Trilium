@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { getHtmlSnippets, getPageHead, getSiteLogo, type ShareNote } from "./page.js";
+import {
+    getHtmlSnippets, getPageHead, getSiteLogo, getTableOfContents, type PageHeading, type ShareNote
+} from "./page.js";
 
 describe("getPageHead", () => {
     it("titles a page after the note and its site, and reads the site's OpenGraph labels", () => {
@@ -102,6 +104,33 @@ describe("getSiteLogo", () => {
 
         expect(logo("https://example.com").href).toBe("https://example.com");
         expect(logo("javascript:alert(1)").href).toBe("about:blank");
+    });
+});
+
+describe("getTableOfContents", () => {
+    const heading = (level: number, slug: string): PageHeading => ({ level, text: slug.toUpperCase(), slug });
+    const outline = (entries: ReturnType<typeof getTableOfContents>): unknown[] =>
+        entries.map((entry) => (entry.children.length
+            ? [ entry.slug, outline(entry.children) ]
+            : entry.slug));
+
+    it("nests each heading under the closest heading of a higher level before it", () => {
+        const toc = getTableOfContents([
+            heading(2, "a"), heading(3, "a1"), heading(4, "a1x"), heading(3, "a2"),
+            heading(2, "b"), heading(4, "b1"), heading(3, "b2")
+        ]);
+
+        expect(outline(toc)).toStrictEqual([
+            [ "a", [ [ "a1", [ "a1x" ] ], "a2" ] ],
+            [ "b", [ "b1", "b2" ] ]
+        ]);
+        expect(toc[0]).toMatchObject({ level: 2, text: "A", slug: "a" });
+    });
+
+    it("keeps a heading of a higher level than the first one at the top", () => {
+        expect(outline(getTableOfContents([ heading(3, "x"), heading(2, "y"), heading(3, "z") ])))
+            .toStrictEqual([ "x", [ "y", [ "z" ] ] ]);
+        expect(getTableOfContents([])).toStrictEqual([]);
     });
 });
 

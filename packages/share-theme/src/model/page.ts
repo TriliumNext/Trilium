@@ -39,6 +39,21 @@ export interface SiteLogo {
     height: number;
 }
 
+/** A heading of the page's content, as core's `anchorHeadings()` finds it. */
+export interface PageHeading {
+    /** 1 for `<h1>`, up to 6 for `<h6>`. */
+    level: number;
+    /** The heading's plain text. */
+    text: string;
+    /** The ID of the heading's anchor, unique on the page. */
+    slug: string;
+}
+
+/** An entry of the table of contents, with the headings it contains. */
+export interface TableOfContentsEntry extends PageHeading {
+    children: TableOfContentsEntry[];
+}
+
 /** Where an HTML snippet can go, as `#shareHtmlLocation` names it. */
 export type HtmlSnippetLocation =
     `${"head" | "body" | "content"}:${"start" | "end"}`;
@@ -124,4 +139,24 @@ export function getSiteLogo(siteRoot: ShareNote, sanitizeUrl: (url: string) => s
 function readPositiveNumber(value: string | null | undefined) {
     const number = Number(value);
     return value && number > 0 ? number : undefined;
+}
+
+/**
+ * Returns the table of contents of a page with `headings`. Each heading goes under the closest
+ * heading before it of a higher level, such as an `<h3>` under the `<h2>` before it, and at the top
+ * when there is none.
+ */
+export function getTableOfContents(headings: PageHeading[]): TableOfContentsEntry[] {
+    const toc: TableOfContentsEntry[] = [];
+    const open: TableOfContentsEntry[] = [];
+
+    for (const heading of headings) {
+        const entry = { ...heading, children: [] };
+        while (open.length && open[open.length - 1].level >= heading.level) {
+            open.pop();
+        }
+        (open.at(-1)?.children ?? toc).push(entry);
+        open.push(entry);
+    }
+    return toc;
 }

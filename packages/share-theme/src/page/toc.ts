@@ -19,13 +19,14 @@ export default function setupToC() {
     if (!toc || !container) return;
 
     // Get all relevant elements
-    const sections = document.getElementById("content")!.querySelectorAll("h2, h3, h4, h5, h6");
+    const sections = [ ...document.querySelectorAll("#content .toc-anchor") ]
+        .map((anchor) => anchor.parentElement);
     const links = toc.querySelectorAll("a");
 
     // Setup smooth scroll on click
     for (const link of links) {
         link.addEventListener("click", e => {
-            const target = document.querySelector(link.getAttribute("href")!);
+            const target = document.getElementById(link.getAttribute("href")?.slice(1) ?? "");
             if (!target) return;
             e.preventDefault();
             e.stopPropagation();
