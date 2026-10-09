@@ -1367,9 +1367,6 @@ importers:
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../ckeditor5
-      dotenv:
-        specifier: 18.0.5
-        version: 18.0.5
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

@@ -62,8 +62,6 @@ body {
     transition: max-width 0.3s ease, margin 0.3s ease;
 }
 
-/* #main always has max-width: 1600px and margin: 0 auto for stability */
-
 @media (min-width: 1200px) {
     #main {
         padding: 0 50px;

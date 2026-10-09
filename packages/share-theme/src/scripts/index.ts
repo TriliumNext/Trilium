@@ -50,13 +50,6 @@ document.addEventListener(
             setupTextNote();
         }
 
-        const toggleMenuButton = document.getElementById("toggleMenuButton");
-        const layout = document.getElementById("layout");
-
-        if (toggleMenuButton && layout) {
-            toggleMenuButton.addEventListener("click", () => layout.classList.toggle("showMenu"));
-        }
-
         // Format <time> elements using the browser's locale.
         for (const el of document.querySelectorAll<HTMLTimeElement>("time[datetime]")) {
             const date = new Date(el.dateTime);

@@ -1,24 +1,3 @@
-body {
-    font-family: "Lucida Grande", "Lucida Sans Unicode", arial, sans-serif;
-    line-height: 1.5;
-}
-
-a {
-    text-decoration: none;
-}
-
-#layout {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: row-reverse;
-}
-
-#parentLink {
-    float: right;
-    margin-top: 20px;
-}
-
 #title {
     margin: 0;
     padding-top: 10px;
@@ -36,36 +15,6 @@ pre {
 iframe.pdf-view {
     width: 100%;
     height: 800px;
-}
-
-#toggleMenuButton {
-    display: none;
-    position: fixed;
-    top: 8px;
-    left: 5px;
-    width: 1.4em;
-    border-radius: 5px;
-    border: 1px solid #aaa;
-    font-size: 2rem;
-    z-index: 10;
-    height: auto;
-    color: black;
-    cursor: pointer;
-}
-
-#noteClippedFrom {
-    padding: 10px 0 10px 0;
-    margin: 20px 0 20px 0;
-    color: #666;
-    border: 1px solid #ddd;
-    border-left: 0;
-    border-right: 0;
-}
-
-#toggleMenuButton::after {
-    position: relative;
-    top: -2px;
-    left: 1px;
 }
 
 .ck-content .footnote-section {

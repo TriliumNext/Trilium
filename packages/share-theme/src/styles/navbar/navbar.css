@@ -7,12 +7,8 @@
 
 #menu {
     order: 1;
-/*         margin-left: auto; */
-
     white-space: nowrap;
-
     flex: 0;
-/*         padding: 25px; */
 }
 
 #menu > ul {
@@ -20,11 +16,6 @@
     list-style: none;
     padding-left: 0!important;
 }
-
-/*     #menu > ul, #menu > div {
-    width: fit-content;
-    margin-left: auto;
-} */
 
 #menu ul {
     overflow-y: hidden;
@@ -36,11 +27,10 @@
 }
 
 #menu li {
-/*         overflow-y: hidden; */
     position: relative;
     display: flex;
     flex-direction: column;
-     list-style: none;
+    list-style: none;
     cursor: pointer;
     max-width: 350px;
 }
@@ -51,11 +41,6 @@
     text-overflow: ellipsis;
 }
 
-#menu li .collapsible-label {
-    display: flex;
-    flex: 1
-}
-
 #menu li > ul {
     transition: height 200ms ease;
 }
@@ -63,15 +48,6 @@
 #menu li:not(.expanded) > ul {
     height: 0;
     overflow: hidden;
-/*         transition: height 1000ms ease; */
-}
-
-#menu li.expanded > ul {
-/*         max-height: 500px; */
-}
-
-#menu p {
-    display: flex;
 }
 
 #menu li.item > a {
@@ -122,7 +98,6 @@
     color: var(--background-secondary);
 }
 
-
 .collapse-button {
     cursor: pointer;
     display: inline-flex;
@@ -132,9 +107,6 @@
     background: var(--background-secondary);
     border: 0;
     color: var(--text-menu);
-/*         position: absolute; */
-/*         top: 2px; */
-/*         left: -18px; */
     transform: rotate(-90deg);
     transition: transform 200ms ease;
 }

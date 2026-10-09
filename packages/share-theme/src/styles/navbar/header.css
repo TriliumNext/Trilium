@@ -4,65 +4,60 @@
     gap: 20px;
 }
 
-
- /* The switch - the box around the slider */
 .switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 27px; /* 32 */
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 27px;
 }
 
-/* Hide default HTML checkbox */
 .switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
-/* The slider */
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--text-primary);;
-  transition: 0.4s;
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--text-primary);
+    transition: 0.4s;
     border-radius: 34px;
 }
 
 .slider::before {
-  position: absolute;
-  content: "";
-  height: 19px; /* 26px */
-  width: 19px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
+    position: absolute;
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
     border-radius: 50%;
     z-index: 2;
 }
 
 input:checked + .slider {
-  background-color: var(--background-highlight);
+    background-color: var(--background-highlight);
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px var(--background-highlight);
+    box-shadow: 0 0 1px var(--background-highlight);
 }
 
 input:checked + .slider:before {
-  transform: translateX(33px); /* whole width - slider width - 8px padding*/
+    transform: translateX(33px);
 }
-
 
 .theme-selection {
     display: flex;
     align-items: center;
-   justify-content: space-between;
+    justify-content: space-between;
 }
 
 .theme-selection label {
@@ -80,10 +75,6 @@ input:checked + .slider:before {
     width: 24px;
 }
 
-/*     input ~ .dark-icon {
-    display: none;
-} */
-
 input:not(:checked) ~ .light-icon {
     opacity: 1;
 }
@@ -91,11 +82,6 @@ input:not(:checked) ~ .light-icon {
 input:checked ~ .dark-icon {
     opacity: 1;
 }
-
-/*     input:checked ~ .light-icon {
-    display: none;
-} */
-
 
 .dark-icon {
     left: 5px;
@@ -106,7 +92,6 @@ input:checked ~ .dark-icon {
     right: 5px;
     color: var(--background-highlight);
 }
-
 
 .search-item {
     display: flex;

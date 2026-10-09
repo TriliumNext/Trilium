@@ -20,19 +20,6 @@
     box-sizing: border-box;
 }
 
-/*
-Accent Color Ideas
---text-link: #4693C3;
-  --text-link: #F9B273;
-  --text-link: #5CA9BF;
-  --text-link: #E43F66;
---text-link: #2FB8D1;
---text-link: #A78BFA;
---text-link: #F2B049;
---text-link: #E47B19;
-  --text-link: #FFB628;
-*/
-
 html.theme-light {
     --background-primary: #FFFFFF;
     --background-secondary: #F3F3F3;

@@ -1,22 +1,12 @@
 import path from "node:path";
-// import {fileURLToPath} from "node:url";
 
-import dotenv from "dotenv";
 import * as esbuild from "esbuild";
 import { rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import * as sass from "sass";
 
-
-// const fileURL = fileURLToPath(import.meta.url);
-// let baseDir = path.dirname(fileURL);
-// if (fileURL.includes("esrun-")) baseDir = path.join(baseDir, "..", "..", "scripts");
-// const rootDir = path.join(baseDir, "..");
-// console.log(process.env.npm_package_json);
 const rootDir = path.dirname(process.env.npm_package_json!);
-
-dotenv.config();
 
 const modules = ["scripts", "styles"];
 const entryPoints: {in: string, out: string}[] = [];
