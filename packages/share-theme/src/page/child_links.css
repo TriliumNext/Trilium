@@ -75,6 +75,11 @@
     align-items: flex-start;
 }
 
+/* `.ck-content` in `ck-content.css`, which loads later, sets the size of the note's text. */
+#childLinks .child-link-children {
+    font-size: 0.8rem;
+}
+
 .child-link-children a {
     display: inline-block;
     max-width: 100%;
