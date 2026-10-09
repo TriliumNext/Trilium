@@ -9,7 +9,7 @@
 }
 
 #content #title {
-    margin: 0;
+    margin: 0 0 0.5em;
     padding-top: 10px;
     font-size: 2em;
     font-weight: 300;
@@ -63,6 +63,11 @@ iframe.pdf-view {
 .ck-content :is(h1, h2, h3, h4, h5, h6) {
     font-weight: 300;
     border-bottom: 1px solid var(--background-highlight);
+}
+
+/* The top margins of Bootstrap's reboot, which the app loads. */
+.ck-content :where(p, ul, ol, pre, blockquote, table) {
+    margin-top: 0;
 }
 
 /* The links of the app's default theme, `theme-next/forms.css`; link previews and heading links have their own. */
