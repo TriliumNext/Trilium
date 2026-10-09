@@ -72,6 +72,9 @@ describe("CollectionProperties", () => {
     });
 });
 
+const originalTabManager = appContext.tabManager;
+
 afterEach(() => {
+    appContext.tabManager = originalTabManager;
     vi.restoreAllMocks();
 });
