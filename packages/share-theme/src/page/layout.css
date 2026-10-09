@@ -1,3 +1,7 @@
+html {
+    --page-top-spacing: 2rem;
+}
+
 #split-pane {
     display: flex;
     flex-direction: row;
@@ -37,13 +41,13 @@
     flex: 1;
     min-width: 0;
     overflow-x: auto;
-    padding: 20px;
+    padding: var(--page-top-spacing) 20px 20px;
     width: 100%;
 }
 
 @media (min-width: 1200px) {
     #main {
-        padding: 0 50px;
+        padding: var(--page-top-spacing) 50px 0;
     }
 }
 
@@ -73,7 +77,7 @@
     }
 
     #main {
-        padding: 1rem;
+        padding: 1.5rem 1rem 1rem;
     }
 
     #left-pane {

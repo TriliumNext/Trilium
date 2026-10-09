@@ -9,7 +9,7 @@
     flex-shrink: 0;
     max-height: 100vh;
     overflow-y: auto;
-    padding-top: 20px;
+    padding-top: var(--page-top-spacing);
     z-index: 1;
     background: var(--background-primary);
 }

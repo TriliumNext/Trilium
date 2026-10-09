@@ -1,7 +1,7 @@
 #navigation {
     display: flex;
     flex-direction: column;
-    padding: 25px;
+    padding: var(--page-top-spacing) 25px 25px;
     gap: 10px;
 }
 
