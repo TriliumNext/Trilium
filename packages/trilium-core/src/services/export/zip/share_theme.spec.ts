@@ -330,6 +330,12 @@ describe("hasMermaidDiagrams", () => {
         ))).toBe(false);
     });
 
+    it("finds a readable Mermaid note", () => {
+        expect(hasMermaidDiagrams(subtreeOf({ type: "mermaid", content: "graph TD;" }))).toBe(true);
+        const unreadable = subtreeOf({ type: "mermaid", available: false, content: "graph TD;" });
+        expect(hasMermaidDiagrams(unreadable)).toBe(false);
+    });
+
     it("finds a fenced mermaid block only in a Markdown note", () => {
         const markdown = { type: "code", mime: "text/x-markdown" };
 

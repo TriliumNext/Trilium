@@ -851,15 +851,19 @@ export function renderCode(result: Result, mime?: string) {
 
 /**
  * Renders a Mermaid note as the image the app saved, which the share theme's script replaces with
- * a diagram drawn from `.mermaid-note-source` in the page's light or dark theme.
+ * a diagram drawn from `.mermaid-note-source` in the page's light or dark theme, inside a viewer
+ * that pans and zooms it. The `data-*` attributes label that viewer.
  */
 function renderMermaid(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") {
         return;
     }
 
+    const labels = Object.entries(MERMAID_VIEWER_LABELS)
+        .map(([ name, key ]) => ` data-${name}="${escapeHtml(t(key))}"`)
+        .join("");
     result.content = `
-<div class="mermaid-note">
+<div class="mermaid-note"${labels}>
 <img class="mermaid-note-image" src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
 <hr>
 <details>
@@ -868,6 +872,14 @@ function renderMermaid(result: Result, note: SNote | BNote) {
 </details>
 </div>`;
 }
+
+/** The `data-*` attributes of a Mermaid note that label its viewer, and their translations. */
+const MERMAID_VIEWER_LABELS = {
+    "label": "share_theme.diagram",
+    "zoom-in": "share_theme.zoom-in",
+    "zoom-out": "share_theme.zoom-out",
+    "zoom-reset": "share_theme.zoom-reset"
+};
 
 function renderImage(result: Result, note: SNote | BNote) {
     result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;

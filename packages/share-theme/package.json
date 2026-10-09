@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@triliumnext/ckeditor5": "workspace:*",
+    "@triliumnext/client": "workspace:*",
     "@types/ejs": "3.1.5",
     "ejs": "7.0.1",
     "happy-dom": "20.14.5",

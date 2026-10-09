@@ -105,7 +105,6 @@ function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ..
     return code.replace(pattern, replacer);
 }
 
-
 /** The share theme's sources, which the app build bundles into the files shared pages load. */
 const SHARE_THEME_SRC = join(import.meta.dirname, "../../packages/share-theme/src");
 
@@ -128,11 +127,15 @@ export const SHARE_THEME_MANIFEST_FILE = `${SHARE_THEME_DIR}/share_theme.json`;
 const SHARE_THEME_TARGET = "chrome96";
 
 /**
- * The libraries the share theme imports on demand that a share-theme export copies only for the
- * pages that use them, keyed by their name in {@link ShareThemeManifest.lazy}.
+ * The modules the share theme imports on demand that a share-theme export copies only for the
+ * pages that use them, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid, and the
+ * viewer a Mermaid note's diagram goes into.
  */
-const LAZY_LIBRARIES: Record<string, { specifier: string; importer: string }> = {
-    mermaid: { specifier: "mermaid", importer: "content/mermaid.ts" }
+const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = {
+    mermaid: [
+        { specifier: "mermaid", importer: "content/mermaid.ts" },
+        { specifier: "./mermaid_zoom.js", importer: "content/mermaid.ts" }
+    ]
 };
 
 const CODE_THEMES_ID = "virtual:code-themes.css";
@@ -229,13 +232,17 @@ async function emitShareTheme(
     config: ResolvedConfig | undefined,
     options: ShareThemeOptions
 ) {
-    const lazyEntries: Record<string, string> = {};
-    for (const [ name, { specifier, importer } ] of Object.entries(LAZY_LIBRARIES)) {
-        const resolved = await context.resolve(specifier, join(SHARE_THEME_SRC, importer));
-        if (!resolved) {
-            throw new Error(`Unable to resolve '${specifier}' from the share theme's ${importer}.`);
+    const lazyEntries: Record<string, string[]> = {};
+    for (const [ name, modules ] of Object.entries(LAZY_MODULES)) {
+        lazyEntries[name] = [];
+        for (const { specifier, importer } of modules) {
+            const resolved = await context.resolve(specifier, join(SHARE_THEME_SRC, importer));
+            if (!resolved) {
+                const source = `'${specifier}' from the share theme's ${importer}`;
+                throw new Error(`Unable to resolve ${source}.`);
+            }
+            lazyEntries[name].push(resolved.id);
         }
-        lazyEntries[name] = resolved.id;
     }
 
     const [ tree, styles ] = await Promise.all([ buildTreeScript(config), buildStyles(config) ]);
@@ -265,6 +272,7 @@ async function emitShareTheme(
         emit(`${stubDir}/scripts.css`, `@import url("${toSource(STYLES_FILE)}");\n`);
     }
 }
+
 /**
  * Serves `virtual:code-themes.css`: the VS Code highlighting themes code notes also use, one per
  * share theme mode. `:where()` keeps the block rules as weak as a stock highlight.js theme's, so
@@ -297,21 +305,22 @@ async function buildTreeScript(config: ResolvedConfig | undefined) {
 }
 
 /**
- * Builds the styles of everything `index.ts` imports into one stylesheet, in the order it imports
- * them. In the app's build, the stylesheets the theme shares with the app move into the shared
- * chunks, which reorders the cascade. Returns the stylesheet and the files it references.
+ * Builds the styles of everything `index.ts` imports statically into one stylesheet, in the order
+ * it imports them. In the app's build, the stylesheets the theme shares with the app move into the
+ * shared chunks, which reorders the cascade. A module imported on demand brings its own styles
+ * from the app's build. Returns the stylesheet and the files it references.
  */
 async function buildStyles(config: ResolvedConfig | undefined) {
     const outputs = await buildShareThemeFile(config, "index.ts", {
         base: "./",
-        plugins: [ codeThemesPlugin() ],
+        plugins: [
+            codeThemesPlugin(),
+            { name: "share-theme-static-styles", resolveDynamicImport: () => false }
+        ],
         css: { transformer: config?.css.transformer },
         build: {
             cssCodeSplit: false,
-            assetsDir: "",
-            rollupOptions: {
-                external: Object.values(LAZY_LIBRARIES).map(({ specifier }) => specifier)
-            }
+            assetsDir: ""
         }
     });
     const assets = outputs.flatMap((output) => (output.type === "asset" ? [ output ] : []));
@@ -373,23 +382,24 @@ type BundleOutput =
  * references, and every chunk `scripts.js` loads, statically or on demand, with what each loads in
  * turn. The styles of the chunks `scripts.js` imports statically are in `scripts.css`, so their
  * stylesheets are listed only when a chunk loaded on demand imports them, which preloads them. What
- * only the libraries in `lazyEntries` load is listed under their name, each given as the module ID
- * the build resolves it to.
+ * only the modules in `lazyEntries` load is listed under the name of their group, each module given
+ * as the ID the build resolves it to.
  */
 export function buildShareThemeManifest(
     bundle: Record<string, BundleOutput>,
-    lazyEntries: Record<string, string>,
+    lazyEntries: Record<string, string[]>,
     styleAssets: string[]
 ): ShareThemeManifest {
-    const lazyChunks = new Map(Object.values(bundle).flatMap((output) => {
-        const name = output.type === "chunk" && output.facadeModuleId
-            ? Object.keys(lazyEntries).find((key) => lazyEntries[key] === output.facadeModuleId)
-            : undefined;
-        return name ? [ [ output.fileName, name ] as const ] : [];
-    }));
-    for (const name of Object.keys(lazyEntries)) {
-        if (![ ...lazyChunks.values() ].includes(name)) {
-            throw new Error(`The bundle has no chunk for the share theme's '${name}'.`);
+    const lazyChunks = new Map<string, string>();
+    for (const [ name, ids ] of Object.entries(lazyEntries)) {
+        for (const id of ids) {
+            const chunk = Object.values(bundle).find((output) =>
+                output.type === "chunk" && output.facadeModuleId === id);
+            if (!chunk) {
+                throw new Error(`The bundle has no chunk for '${id}' of the share theme's`
+                    + ` '${name}'.`);
+            }
+            lazyChunks.set(chunk.fileName, name);
         }
     }
 
@@ -407,8 +417,10 @@ export function buildShareThemeManifest(
     ]);
 
     const lazy: Record<string, string[]> = {};
-    for (const [ fileName, name ] of lazyChunks) {
-        const lazyFiles = collectFiles(bundle, [ fileName ], { dynamic: true });
+    for (const name of Object.keys(lazyEntries)) {
+        const chunks = [ ...lazyChunks ].flatMap(([ fileName, group ]) =>
+            (group === name ? [ fileName ] : []));
+        const lazyFiles = collectFiles(bundle, chunks, { dynamic: true });
         lazy[name] = toManifestPaths([ ...lazyFiles ].filter((file) => !files.has(file)));
     }
 

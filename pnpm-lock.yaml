@@ -1370,6 +1370,9 @@ importers:
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../ckeditor5
+      '@triliumnext/client':
+        specifier: workspace:*
+        version: link:../../apps/client
       '@types/ejs':
         specifier: 3.1.5
         version: 3.1.5

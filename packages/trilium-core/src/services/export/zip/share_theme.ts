@@ -192,14 +192,19 @@ export function getShareThemeExportFiles(manifest: ShareThemeManifest, note: BNo
 }
 
 /**
- * Whether `note` or a note below it has a mermaid code block the shared page renders: a text note's
- * `language-mermaid` block or a Markdown note's fenced one. Only then does the export carry the
- * files of mermaid, several megabytes the pages load on demand.
+ * Whether `note` or a note below it has a diagram the shared page draws with mermaid: a Mermaid
+ * note, a text note's `language-mermaid` block or a Markdown note's fenced one. Only then does the
+ * export carry the files of mermaid and of the viewer a Mermaid note's diagram goes into, several
+ * megabytes the pages load on demand.
  */
 export function hasMermaidDiagrams(note: BNote) {
     return note.getSubtree().notes.some((subtreeNote) => {
         if (!subtreeNote.isContentAvailable()) {
             return false;
+        }
+
+        if (subtreeNote.type === "mermaid") {
+            return true;
         }
 
         if (subtreeNote.type === "text") {

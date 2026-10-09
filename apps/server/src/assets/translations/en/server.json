@@ -468,7 +468,11 @@
     "heading-link": "Link to This Section",
     "previous": "Previous",
     "next": "Next",
-    "page-navigation": "Previous and next pages"
+    "page-navigation": "Previous and next pages",
+    "diagram": "Diagram",
+    "zoom-in": "Zoom in",
+    "zoom-out": "Zoom out",
+    "zoom-reset": "Reset zoom"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

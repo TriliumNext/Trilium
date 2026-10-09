@@ -1,0 +1,74 @@
+.mermaid-zoom {
+    position: relative;
+}
+
+.mermaid-zoom-viewport {
+    border-radius: 6px;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.mermaid-zoom-viewport:focus-visible {
+    outline-color: var(--link-focus-outline-color);
+}
+
+.mermaid-zoom .mermaid-zoom-wrapper,
+.mermaid-zoom .mermaid-zoom-content {
+    width: 100%;
+}
+
+.mermaid-zoom .mermaid-zoom-content {
+    justify-content: center;
+}
+
+.mermaid-zoom .mermaid-zoom-content > div {
+    width: 100%;
+}
+
+.mermaid-zoom-controls {
+    position: absolute;
+    bottom: 8px;
+    inset-inline-end: 8px;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background: var(--background-highlight);
+}
+
+.mermaid-zoom-controls button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 26px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-menu);
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.mermaid-zoom-controls button:hover:not(:disabled) {
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.mermaid-zoom-controls button:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 1px;
+}
+
+.mermaid-zoom-controls button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.mermaid-zoom-controls .mermaid-zoom-reset {
+    min-width: 48px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}

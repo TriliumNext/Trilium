@@ -1022,6 +1022,9 @@ describe("content_renderer", () => {
             expect(container?.querySelector("details pre.mermaid-note-source")?.textContent)
                 .toBe("graph TD; A-->B[<script>]");
             expect(root.querySelector("script")).toBeNull();
+            expect([ "label", "zoom-in", "zoom-out", "zoom-reset" ]
+                .map((name) => container?.getAttribute(`data-${name}`)))
+                .toEqual([ "Diagram", "Zoom in", "Zoom out", "Reset zoom" ]);
         });
     });
 
