@@ -112,7 +112,7 @@
 }
 
 #childLinks.grid li {
-    flex: 1 0 300px;
+    flex: 1 0 max(300px, (100% - 2 * 10px) / 3);
     grid-template-rows: minmax(calc(32px + 1rem), auto);
     align-content: start;
     padding: 0 1rem 1rem;
@@ -134,7 +134,15 @@
 }
 
 #childLinks.grid :is(.child-link-excerpt, .child-link-children) {
+    max-height: 220px;
+    overflow: hidden;
     padding-top: 0.5rem;
+    /* Stops in pixels fade only a preview that reaches the cap, as the app's card does. */
+    mask-image: linear-gradient(to bottom, black 145px, transparent 220px);
+}
+
+#childLinks.grid .child-link-excerpt {
+    font-size: calc(0.8rem * 1.1);
 }
 
 @media (max-width: 48em) {
