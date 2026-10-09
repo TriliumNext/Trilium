@@ -1,85 +1,14 @@
 /*
- * Todo checkboxes.
- *
- * Custom task states carry `data-trilium-task-state` on their `<li>`; the colour,
- * hue and icon glyph of each state are injected per state into the icon pack
- * stylesheet. The unchecked and done states carry no attribute and keep the
- * default checkbox below.
- *
- * The doubled class is what it takes to override CKEditor's own checkbox rules:
- * they are written as `:is(<content>, <editor>)`, so they take the specificity of
- * the more specific editor arm.
+ * Todo checkboxes take the app's rules from `@triliumnext/ckeditor5/src/theme/todo_lists.css`.
+ * Custom task states carry `data-trilium-task-state` on their `<li>`; the color, hue and icon
+ * glyph of each state are injected per state into the icon pack stylesheet.
  */
 
-.ck-content .todo-list .todo-list__label > input:before {
-    background-color: var(--background-primary);
-    border-color: var(--text-primary) !important;
-}
-
+/* The state colors of `theme-next-light.css` and `theme-next-dark.css`. */
 html.theme-light [data-trilium-task-state] {
     --task-state-adjusted-color: hsl(var(--task-state-hue), 50%, 50%);
 }
 
 html.theme-dark [data-trilium-task-state] {
     --task-state-adjusted-color: hsl(var(--task-state-hue), 40%, 50%);
-}
-
-/* A state that defines no colour is injected as `unset`, which on a custom property
-   means inherit — so without this a nested task would pick up its parent's colour. */
-.ck-content .todo-list .todo-list {
-    --task-state-hue: initial;
-    --task-state-color: initial;
-    --task-state-adjusted-color: initial;
-    --task-state-glyph: initial;
-    --task-state-glyph-font-family: initial;
-}
-
-/* Falls back to the raw colour when the state has no hue to adjust, and to the text
-   colour when it defines no colour at all — including states whose definition is gone. */
-.ck-content .todo-list li[data-trilium-task-state] {
-    --_task-state-color: var(--task-state-adjusted-color, var(--task-state-color, var(--text-primary)));
-}
-
-/* Direct children only, so a nested task keeps its own state instead of the parent's. */
-.ck-content.ck-content .todo-list li[data-trilium-task-state] > .todo-list__label > input[type="checkbox"]:after {
-    all: unset;
-
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    content: var(--task-state-glyph);
-    font-family: var(--task-state-glyph-font-family);
-    /* Em box == checkbox box, shrink via scale(): geometric, so the glyph
-       stays centred at any zoom/DPI instead of snapping to the pixel grid. */
-    font-size: var(--ck-content-todo-list-checkmark-size);
-    line-height: 1;
-    color: var(--_task-state-color);
-    transform: scale(0.8);
-}
-
-/* One deterministic geometry for both rendering variants (inline description span vs
-   the real-<p> `_without-description` one): the checkbox leaves the inline flow and is
-   centred geometrically on the first text line, and the description always sits on the
-   plain baseline instead of CKEditor's metric-dependent `vertical-align: middle`. */
-.ck-content.ck-content .todo-list li .todo-list__label {
-    /* An empty inline-block label would create a line of its own (see the client
-       stylesheet); keep it collapsible. */
-    display: inline;
-}
-
-.ck-content.ck-content .todo-list li .todo-list__label input[type="checkbox"] {
-    position: absolute;
-    top: calc((1lh - var(--ck-content-todo-list-checkmark-size)) / 2);
-    inset-inline-start: -25px;
-    inset-inline-end: auto;
-    /* `1lh` must resolve against the text's line height, not the UA form-control
-       font, and the UA's 3px checkbox margins would offset the absolute position. */
-    margin: 0;
-    font: inherit;
-}
-
-.ck-content.ck-content .todo-list li .todo-list__label .todo-list__label__description {
-    vertical-align: baseline;
 }

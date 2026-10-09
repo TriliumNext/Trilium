@@ -33,6 +33,10 @@ html.theme-light {
     /* The code colors of `theme-next-light.css`. */
     --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
     --inline-code-background-color: rgba(0, 0, 0, 0.05);
+    /* The task checkbox colors of `theme-next-light.css`. */
+    --task-checkbox-without-state-background: #00000029;
+    --task-checkbox-with-state-background: gray;
+    --task-checkbox-done-color: #339933;
     /* The tree pane colors of `theme-next-light.css`. */
     --tree-background: #f2f2f2;
     --tree-item-color: #383838;
@@ -83,6 +87,10 @@ html.theme-dark {
     /* The code colors of `theme-next-dark.css`. */
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
     --inline-code-background-color: rgba(255, 255, 255, 0.08);
+    /* The task checkbox colors of `theme-next-dark.css`. */
+    --task-checkbox-without-state-background: #ffffff26;
+    --task-checkbox-with-state-background: #ffffff3b;
+    --task-checkbox-done-color: #408b40;
     /* The tree pane colors of `theme-next-dark.css`. */
     --tree-background: #1f1f1f;
     --tree-item-color: #aaaaaa;

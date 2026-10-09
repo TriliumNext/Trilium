@@ -2887,17 +2887,6 @@ iframe.print-iframe {
  * TASK STATES
  */
 
-:where(:root) {
-    --task-checkbox-without-state-background: #d5d5d5;
-    --task-checkbox-with-state-background: orange;
-    --task-checkbox-done-color: green;
-    --task-checkbox-unknown-state-color: orange;
-    --task-checkbox-glyph-color: white;
-
-    --task-checkbox-border-radius: 4px;
-    --task-checkbox-glyph-ratio: .8;
-}
-
 :root .tn-task-checkbox {
     --_checkbox-size: 18px;
 
@@ -2932,105 +2921,6 @@ iframe.print-iframe {
    so no spacing is added. */
 .tn-task-tooltip-state {
     margin-bottom: 8px;
-}
-
-/* Prevent variables from bleeding into nested items */
-.ck-content .todo-list .todo-list {
-    --task-state-glyph: initial;
-    --task-state-glyph-font-family: initial;
-    --task-state-color: initial;
-    --task-state-adjusted-color: initial;
-    --task-state-hue: initial;
-    --_task-checkbox-background: initial;
-}
-
-/* All tasks with a state */
-:where(.ck-content .todo-list li[data-trilium-task-state]:not([data-trilium-task-state="none"])),
-.tn-task-checkbox:not([data-trilium-task-state="none"]) {
-    --_task-checkbox-background: var(--task-state-adjusted-color, var(--task-state-color, var(--task-checkbox-with-state-background)));
-}
-
-/* Default checked state */
-:where(.ck-content .todo-list li:where(:not([data-trilium-task-state]), [data-trilium-task-state="done"]):has(> .todo-list__label input[type="checkbox"]:checked)),
-.tn-task-checkbox[data-trilium-task-state="done"] {
-    --task-state-glyph: "";
-    --task-state-glyph-font-family: boxicons;
-    --task-state-hue: var(--task-checkbox-done-hue);
-    --_task-checkbox-background: var(--task-checkbox-done-color);
-}
-
-/* The read-only view renders a real <label>, which Bootstrap's reboot makes
-   inline-block — an empty label (its checkbox is absolutely positioned below)
-   then produces a full-height line of its own, pushing the item text onto the
-   next line. Restore the plain inline display so the empty label collapses. */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label {
-    display: inline;
-}
-
-:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"] {
-    --_checkbox-size: var(--ck-content-todo-list-checkmark-size);
-
-    /* Take the checkbox out of the inline flow in every variant and centre it
-       geometrically on the first text line (the li is the positioned ancestor,
-       `li p` has no margin, and CKEditor's own `left/right: -25px` still places
-       it in the gutter). Centering via `vertical-align: middle` depends on font
-       metrics and differs from the absolutely-positioned `_without-description`
-       variant — this makes both variants share one deterministic geometry. */
-    position: absolute;
-    top: calc((1lh - var(--_checkbox-size)) / 2);
-    inset-inline-start: -25px;
-    inset-inline-end: auto;
-    /* `1lh` must resolve against the text's line height, not the UA form-control
-       font, and the UA's 3px checkbox margins would offset the absolute position.
-       (Bootstrap's reboot happens to do both, but don't depend on it.) */
-    margin: 0;
-    font: inherit;
-}
-
-/* CKEditor middle-aligns the inline description span, while a real-<p> description
-   (the `_without-description` variant) sits on the plain baseline — so the text
-   position depended on which variant rendered. Align both on the baseline. */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label .todo-list__label__description {
-    vertical-align: baseline;
-}
-
-/* Checkbox */
-:root .ck-content.ck-content ul.todo-list li .todo-list__label input[type="checkbox"],
-.tn-task-checkbox {
-    /* Checkbox body */
-    &::before {
-        all: unset;
-
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: var(--task-checkbox-border-radius);
-        background: var(--_task-checkbox-background, var(--task-checkbox-without-state-background));
-    }
-
-    /* Checkbox tick */
-    &::after {
-        all: unset;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        inset: 0;
-        content: var(--task-state-glyph);
-        font-family: var(--task-state-glyph-font-family, inherit);
-        /* Em box == checkbox box: the flex centering has zero leftover
-           space to round, so nothing can snap asymmetrically. */
-        font-size: var(--_checkbox-size);
-        line-height: 1;
-        color: var(--task-checkbox-glyph-color);
-        /* The shrink is geometric, not typographic — scale() doesn't snap
-           to the device-pixel grid, so the glyph stays centred at any zoom. */
-        transform: scale(var(--task-checkbox-glyph-ratio));
-    }
-
-    &:disabled {
-        opacity: 1;
-    }
 }
 
 /*

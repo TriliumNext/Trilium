@@ -22,6 +22,7 @@ import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
+import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 
 import { applyTabs, revealFragment } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { enhanceLinkPreviews } from "@triliumnext/commons/src/lib/link_embed_dom.js";

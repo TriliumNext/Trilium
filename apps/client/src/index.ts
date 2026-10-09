@@ -7,6 +7,7 @@ import "@triliumnext/ckeditor5/src/theme/external_links.css";
 import "@triliumnext/ckeditor5/src/theme/footnotes.css";
 import "@triliumnext/ckeditor5/src/theme/headings.css";
 import "@triliumnext/ckeditor5/src/theme/reference_links.css";
+import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 
 import { createFontStylesheetLink } from "./services/font";
 import {
