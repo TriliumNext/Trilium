@@ -455,15 +455,25 @@ function getSitePosition(note: ShareNote, siteRoot: ShareNote) {
         return null;
     }
 
-    const parent = note.getParentNotes().find((candidate) => isInSite(candidate, siteRoot));
+    const answers = new Map<string, boolean>();
+    const parent = note.getParentNotes().find((candidate) => isInSite(candidate, siteRoot, answers));
     const siblings = parent?.getVisibleChildNotes() ?? [];
     const index = siblings.findIndex((sibling) => sibling.noteId === note.noteId);
     return parent && index !== -1 ? { parent, siblings, index } : null;
 }
 
-function isInSite(note: ShareNote, siteRoot: ShareNote): boolean {
-    return note.noteId === siteRoot.noteId
-        || note.getParentNotes().some((parent) => isInSite(parent, siteRoot));
+/**
+ * Whether `note` is `siteRoot` or below it. `answers` keeps the answer for each note checked, so
+ * that clones reached by many paths are checked once.
+ */
+function isInSite(note: ShareNote, siteRoot: ShareNote, answers: Map<string, boolean>): boolean {
+    let answer = answers.get(note.noteId);
+    if (answer === undefined) {
+        answer = note.noteId === siteRoot.noteId
+            || note.getParentNotes().some((parent) => isInSite(parent, siteRoot, answers));
+        answers.set(note.noteId, answer);
+    }
+    return answer;
 }
 
 function toPageLink(note: ShareNote): PageLink {

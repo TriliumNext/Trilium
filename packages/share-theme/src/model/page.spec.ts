@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
     getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
@@ -254,6 +254,33 @@ describe("getPrevNextLinks", () => {
         expect(links(h1)).toStrictEqual([ "hidden", null ]);
         expect(links(lonely, lonely)).toStrictEqual([ null, null ]);
         expect(links(elsewhere)).toStrictEqual([ null, null ]);
+    });
+
+    it("reads the parents of each note outside the site once, however many paths lead to it", () => {
+        // Sixteen layers of two clones each, every clone a child of both clones of the layer above,
+        // make 2^16 paths from `page` up to the share root outside the site.
+        const shareRoot = fakeNote({ noteId: "shareRoot" });
+        const site = addChild(shareRoot, fakeNote({ noteId: "site" }));
+        const clones: FakeNote[] = [];
+        let layer = [ shareRoot ];
+        for (let depth = 0; depth < 16; depth++) {
+            const next = [ fakeNote({ noteId: `left${depth}` }), fakeNote({ noteId: `right${depth}` }) ];
+            for (const parent of layer) {
+                for (const child of next) {
+                    addChild(parent, child);
+                }
+            }
+            clones.push(...next);
+            layer = next;
+        }
+        const page = addChild(layer[0], fakeNote({ noteId: "page" }));
+        addChild(site, page);
+        const reads = clones.map((clone) => vi.spyOn(clone, "getParentNotes"));
+
+        const { previous, next } = getPrevNextLinks(page, site);
+
+        expect([ previous?.title, next ]).toStrictEqual([ "site", null ]);
+        expect(reads.reduce((total, spy) => total + spy.mock.calls.length, 0)).toBeLessThan(100);
     });
 });
 
