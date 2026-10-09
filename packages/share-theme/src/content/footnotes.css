@@ -1,7 +1,7 @@
 @import "@triliumnext/ckeditor5/src/theme/footnotes.css";
 
 .ck-content .footnote-section {
-    border-top: 1px solid var(--background-highlight);
+    border-top: 1px solid var(--main-border-color);
 }
 
 .ck-content .footnote-item:target .footnote-content {

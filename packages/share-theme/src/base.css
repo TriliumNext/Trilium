@@ -55,6 +55,12 @@ html.theme-light {
     --muted-text-color: #666;
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
+    /* The content colors of `theme-next-light.css`. */
+    --accented-background-color: #f5f5f5;
+    --selection-background-color: #3399FF70;
+    --kbd-color: #3f3f3f;
+    --kbd-background: #f5f5f5;
+    --kbd-border: #c9c9c9;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #00000013;
     --mermaid-theme: default;
@@ -62,7 +68,7 @@ html.theme-light {
 }
 
 html.theme-dark {
-    --background-primary: #333333;
+    --background-primary: #242424;
     --background-secondary: #1F1F1F;
     --background-highlight: #484848;
     --background-active: #777777;
@@ -99,6 +105,12 @@ html.theme-dark {
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
+    /* The content colors of `theme-next-dark.css`. */
+    --accented-background-color: #555;
+    --selection-background-color: #3399FF70;
+    --kbd-color: #e0e0e0;
+    --kbd-background: #4a4a4a;
+    --kbd-border: #3a3a3a;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #ffffff26;
     --mermaid-theme: dark;
