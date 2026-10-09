@@ -65,7 +65,9 @@
     "anchor": "锚点（可选）",
     "anchor_none": "无（笔记链接）",
     "edit_link": "编辑链接",
-    "button_edit_link": "保存链接"
+    "button_edit_link": "保存链接",
+    "fix_link": "修复链接",
+    "button_fix_link": "修复链接"
   },
   "branch_prefix": {
     "edit_branch_prefix": "编辑分支前缀",
@@ -601,7 +603,7 @@
     "geolocation": "笔记在地图上放置的纬度和经度。",
     "map_type": "绘制哪种笔记关系图：<code>link</code> 表示笔记间的关系，<code>tree</code> 表示层级结构。",
     "map_style": "地图的绘制样式，从集合属性提供的栅格和矢量样式中选择。",
-    "map_scale": "在地图上显示比例尺。",
+    "map_scale": "在地理地图上显示比例尺，或在图像地图的边缘显示坐标标尺。",
     "map_hide_labels": "隐藏地图上标记旁边的笔记标题。",
     "presentation_theme": "演示文稿使用的主题。",
     "slide_background": "幻灯片的背景，可以是颜色值或 CSS 渐变。",
@@ -637,7 +639,11 @@
     "board_column_width": "对于看板集合，指各列的绘制宽度: <code>narrow</code>, <code>medium</code> 或 <code>wide</code>.。在移动端会被忽略，移动端会按其自身宽度绘制。",
     "board_show_inbox": "对于看板集合，显示收件箱列，其中列出所有未被分配到看板列的子笔记。",
     "board_sort_columns": "对于看板集合，指各列对其卡片进行排序的顺序；除非某列被赋予了自己的排序顺序，否则它遵循此顺序。值可为 <code>title</code>, <code>creationDate</code> 或 <code>attr:</code> 后接提升属性的名称。",
-    "board_sort_columns_descending": "对于看板集合，按 <code>#board:sortColumns</code> 的顺序反向运行。"
+    "board_sort_columns_descending": "对于看板集合，按 <code>#board:sortColumns</code> 的顺序反向运行。",
+    "map_position": "笔记在图像地图上的位置，格式为地图坐标中的 <code>x,y</code>：即图像的像素坐标，除非 <code>map:imageBounds</code> 指定了其他坐标。",
+    "map_shape": "笔记在图像地图上绘制为的形状，格式与 <code>geoShape</code> 相同，但点用 <code>x,y</code> 表示，例如 <code>circle:400,300 50</code>。",
+    "map_image_bounds": "图像地图左上角与右下角的坐标，格式为 <code>x,y x,y</code>，例如 <code>-512,-512 512,512</code>。地图上的位置将以这些坐标读写，而不是图像的像素坐标。",
+    "map_image": "用于在其上绘制地理地图（而非世界地图）的图像笔记。之后标记和形状将使用 <code>mapPosition</code> 和 <code>mapShape</code> 来放置。"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> ；或者如果你还想同时添加数值，则可输入例如 <code>#year = 2020</code>",
@@ -2314,7 +2320,9 @@
     "draw-rectangle-instruction": "在地图上点击一个角，再点击对角。也可以从一个角拖到另一个角。按 Escape 取消。",
     "draw-circle": "在地图上绘制圆形",
     "draw-circle-toast-title": "绘制圆形",
-    "draw-circle-instruction": "在地图上点击圆心，再点击到圆应该覆盖的距离。也可以从圆心向外拖拽。按 Escape 取消。"
+    "draw-circle-instruction": "在地图上点击圆心，再点击到圆应该覆盖的距离。也可以从圆心向外拖拽。按 Escape 取消。",
+    "image-unavailable": "无法加载此地图的图像。请检查其 map:image 关系所指向的笔记是否为图像。",
+    "image-svg-unsupported": "SVG 图像不能用作地图。请改为将图像转换为 PNG、JPEG 或 WebP。"
   },
   "geo-map-context": {
     "open-location": "打开位置",
@@ -3489,7 +3497,9 @@
       "math": "方程",
       "collapsible_summary": "摘要",
       "collapsible_details": "详细内容",
-      "table_column": "第{{number}}列"
+      "table_column": "第{{number}}列",
+      "tab_title": "标签页 {{number}}",
+      "tab_content": "内容"
     },
     "page_break": "插入分页符（用于打印）",
     "table": "插入表格",
@@ -3510,8 +3520,10 @@
       "important": "重要",
       "caution": "注意",
       "warning": "警告",
-      "todo": "任务：{{title}}"
-    }
+      "todo": "任务：{{title}}",
+      "tabs": "标签页"
+    },
+    "tabs": "插入带标题的标签页，一次显示一个面板"
   },
   "mobile_note_navigator": {
     "back": "返回上一级",
@@ -3718,7 +3730,27 @@
       "more-actions": "更多操作",
       "drawing-canvas": "绘图画布",
       "editable": "可编辑",
-      "insert-a-canvas-to-draw-on": "插入一块可供绘图的画布。"
+      "insert-a-canvas-to-draw-on": "插入一块可供绘图的画布。",
+      "tabs": "标签页",
+      "tab-title": "标签页标题",
+      "tab-0": "标签页 %0",
+      "tab-content": "标签页内容",
+      "add-tab": "添加标签页",
+      "remove-tab": "移除标签页",
+      "move-tab-left": "左移标签页",
+      "move-tab-right": "右移标签页",
+      "copy-link-to-tab": "复制标签页链接",
+      "tabs-toolbar": "标签页工具栏",
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "插入带标题的标签页，一次显示一个面板。",
+      "multicolumn-layout": "多栏布局",
+      "multicolumn-layout-toolbar": "多栏布局工具栏",
+      "multiple-column-layout": "多栏布局",
+      "0-columns": "%0 栏",
+      "column-layout": "分栏布局",
+      "0-columns-layout": "%0 栏布局",
+      "arrange-content-in-0-equal-columns-side-by-side": "将内容并排排列为 %0 个等宽栏。",
+      "0-columns-1": "%0 栏（%1）",
+      "remove-layout": "移除布局"
     },
     "toolbar-groups": {
       "text-formatting": "文本格式",
@@ -4431,6 +4463,7 @@
     "untitled": "块",
     "excerpt": "摘录",
     "excerpt_description": "你目前看到的只是该笔记的一个片段。按 {{icon}} 按钮即可在新标签页中打开整条笔记。",
-    "edit_excerpt": "编辑摘录"
+    "edit_excerpt": "编辑摘录",
+    "copy_tab": "复制此标签页的链接"
   }
 }
