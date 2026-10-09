@@ -390,8 +390,8 @@ export function removeFileExtension(filePath: string, mime?: string) {
 }
 
 export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boolean, noteMeta?: NoteMeta) {
-    const trimmedNoteMeta = noteMeta?.title?.trim();
-    if (trimmedNoteMeta) return trimmedNoteMeta;
+    // An empty title in `!!!meta.json` is an untitled note, not a missing title.
+    if (noteMeta?.title !== undefined) return noteMeta.title.trim();
 
     const fileBasename = basename(removeFileExtension(filePath, noteMeta?.mime));
     return replaceUnderscoresWithSpaces ? fileBasename.replace(/_/g, " ").trim() : fileBasename;

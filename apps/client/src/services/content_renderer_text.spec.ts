@@ -546,6 +546,22 @@ describe("Attachment embeds", () => {
         expect(nestedEl.querySelector("a.reference-link")?.getAttribute("href"))
             .toBe(`#root/${owner.noteId}?viewMode=attachments&attachmentId=embedPic`);
     });
+
+    it("leaves the embed of an attachment that cannot be loaded as it is", async () => {
+        const owner = buildNote({
+            title: "Missing embed owner",
+            content: `<section class="include-note" data-attachment-id="gonePic">&nbsp;</section>`
+        });
+        const getAttachment = vi.spyOn(froca, "getAttachment").mockResolvedValue(null);
+
+        const contentEl = document.createElement("div");
+        await renderText(owner, $(contentEl));
+
+        expect(getAttachment).toHaveBeenCalledWith("gonePic", true);
+        expect(contentEl.querySelector(`section.include-note[data-attachment-id="gonePic"]`)?.innerHTML)
+            .toBe("&nbsp;");
+        getAttachment.mockRestore();
+    });
 });
 
 describe("postProcessRichContent with FAttachment", () => {

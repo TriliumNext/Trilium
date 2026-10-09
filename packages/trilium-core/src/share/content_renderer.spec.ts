@@ -384,6 +384,21 @@ describe("content_renderer", () => {
             expect(page.querySelector("#toc-pane-toggle-button") === null).toBe(true);
         });
 
+        it("links the table of contents to a heading's own ID, URL-encoded", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "encodedHeadings",
+                    content: `<h2 id="part%20one">Part one</h2><p>a</p><h2>Two</h2><p>b</p>`
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+
+            expect(page.querySelectorAll("#toc a").map((link) => link.getAttribute("href")))
+                .toStrictEqual([ "#part%2520one", "#two" ]);
+        });
+
         it("prints only the OpenGraph tags that have a value, with an absolute image", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
@@ -1185,10 +1200,10 @@ describe("content_renderer", () => {
             `);
 
             expect(headings).toStrictEqual([
-                { level: 1, text: "Intro", slug: "intro" },
-                { level: 2, text: "Q&A now", slug: "q-amp-a-now" },
-                { level: 3, text: "Spans two lines", slug: "spans-two-lines" },
-                { level: 2, text: "Intro", slug: "intro-1" }
+                { level: 1, text: "Intro", slug: "intro", href: "#intro" },
+                { level: 2, text: "Q&A now", slug: "q-amp-a-now", href: "#q-amp-a-now" },
+                { level: 3, text: "Spans two lines", slug: "spans-two-lines", href: "#spans-two-lines" },
+                { level: 2, text: "Intro", slug: "intro-1", href: "#intro-1" }
             ]);
             expect(content).toContain(
                 `<h2 class="x" id="q-amp-a-now">Q&amp;A <strong>now</strong>`
@@ -1198,21 +1213,24 @@ describe("content_renderer", () => {
             expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
         });
 
-        it("keeps a heading's own ID and gives no other heading an ID already on the page", () => {
+        it("keeps a heading's own ID, linked URL-encoded, and gives no other heading an ID in use", () => {
             const { content, headings } = prepare(trimIndentation`
                 <h2 id="footnote-label" class="sr-only">Footnotes</h2>
                 <p><a id="footnotes">Bookmark</a> <sup><a aria-describedby="footnote-label">1</a></sup></p>
                 <h2>Footnotes</h2>
+                <h3 id="part%20one">Part one</h3>
             `);
 
             expect(headings).toStrictEqual([
-                { level: 2, text: "Footnotes", slug: "footnote-label" },
-                { level: 2, text: "Footnotes", slug: "footnotes-1" }
+                { level: 2, text: "Footnotes", slug: "footnote-label", href: "#footnote-label" },
+                { level: 2, text: "Footnotes", slug: "footnotes-1", href: "#footnotes-1" },
+                { level: 3, text: "Part one", slug: "part%20one", href: "#part%2520one" }
             ]);
             expect(content).toContain(
                 `<h2 id="footnote-label" class="sr-only">Footnotes`
                 + `<a class="toc-anchor" href="#footnote-label"`);
             expect(content).toContain(`<h2 id="footnotes-1">Footnotes<a class="toc-anchor" href="#footnotes-1"`);
+            expect(content).toContain(`<h3 id="part%20one">Part one<a class="toc-anchor" href="#part%2520one"`);
         });
 
         it("gives an image without alt text the generic one and lazy loading, keeping its own", () => {

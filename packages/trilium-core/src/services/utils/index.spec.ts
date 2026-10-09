@@ -388,14 +388,19 @@ describe("#getNoteTitle", () => {
             "some other title"
         ],
         [
-            "when a noteMeta object is passed, but the title prop is empty, it should try to handle the filename as if no noteMeta was passed",
-            [ "test_file.md", true, { title: "" } ],
-            "test file"
+            "when a noteMeta object is passed with an empty title, it should keep the note untitled",
+            [ "note.html", true, { title: "" } ],
+            ""
         ],
         [
-            "when a noteMeta object is passed, but the title prop is empty, it should try to handle the filename as if no noteMeta was passed",
-            [ "test_file.json", false, { title: " " } ],
-            "test_file.json"
+            "when a noteMeta object is passed with a blank title, it should keep the note untitled",
+            [ "1_note.html", false, { title: " " } ],
+            ""
+        ],
+        [
+            "when a noteMeta object is passed without a title, it should handle the filename as if no noteMeta was passed",
+            [ "test_file.md", true, { mime: "text/markdown" } ],
+            "test file"
         ]
     ];
 

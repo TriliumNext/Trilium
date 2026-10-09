@@ -23,18 +23,22 @@ describe("setupToC", () => {
         expect(activeEntry()).toBe("more");
     });
 
-    it("scrolls to the heading of a clicked entry, also when its ID starts with a digit", () => {
-        renderPage([ [ 2, "2024-plans", 100 ], [ 2, "later", 500 ] ]);
-        const scrollIntoView = vi.fn();
-        const heading = document.getElementById("2024-plans");
-        if (!heading) {
-            throw new Error("The heading is missing.");
+    it("scrolls to the heading of a clicked entry, whose ID can start with a digit or hold a %", () => {
+        renderPage([ [ 2, "2024-plans", 100 ], [ 2, "part%20one", 500 ] ]);
+
+        for (const [ id, href ] of [ [ "2024-plans", "#2024-plans" ], [ "part%20one", "#part%2520one" ] ]) {
+            const scrollIntoView = vi.fn();
+            const heading = document.getElementById(id);
+            const entry = document.querySelector<HTMLElement>(`#toc a[href="${href}"]`);
+            if (!heading || !entry) {
+                throw new Error(`The heading or the entry of ${id} is missing.`);
+            }
+            heading.scrollIntoView = scrollIntoView;
+
+            entry.click();
+
+            expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
         }
-        heading.scrollIntoView = scrollIntoView;
-
-        document.querySelector<HTMLElement>(`#toc a[href="#2024-plans"]`)?.click();
-
-        expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
     });
 
     it("leaves an entry without a heading to the browser, and a page without one alone", () => {
@@ -152,7 +156,7 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
                     + `</h${level}>`).join("")}
             </div>
             <ul id="toc">
-                ${headings.map(([ , slug ]) => `<li><a href="#${slug}">${slug}</a></li>`).join("")}
+                ${headings.map(([ , slug ]) => `<li><a href="#${encodeURIComponent(slug)}">${slug}</a></li>`).join("")}
             </ul>
         </div>
     `;
@@ -177,12 +181,12 @@ function activeEntry() {
 
 /** The link core's `preparePageContent()` gives a heading. */
 function anchor(slug: string) {
-    return `<a class="toc-anchor" href="#${slug}" aria-label="Link to This Section">`
+    return `<a class="toc-anchor" href="#${encodeURIComponent(slug)}" aria-label="Link to This Section">`
         + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`;
 }
 
 function headingLink(slug: string) {
-    const link = document.querySelector<HTMLAnchorElement>(`#content a.toc-anchor[href="#${slug}"]`);
+    const link = document.querySelector<HTMLAnchorElement>(`#content a.toc-anchor[href="#${encodeURIComponent(slug)}"]`);
     if (!link) {
         throw new Error(`The link of ${slug} is missing.`);
     }

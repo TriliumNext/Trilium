@@ -192,7 +192,8 @@ describe("getSiteLogo", () => {
 });
 
 describe("getTableOfContents", () => {
-    const heading = (level: number, slug: string): PageHeading => ({ level, text: slug.toUpperCase(), slug });
+    const heading = (level: number, slug: string): PageHeading =>
+        ({ level, text: slug.toUpperCase(), slug, href: `#${slug}` });
     const outline = (entries: ReturnType<typeof getTableOfContents>): unknown[] =>
         entries.map((entry) => (entry.children.length
             ? [ entry.slug, outline(entry.children) ]
