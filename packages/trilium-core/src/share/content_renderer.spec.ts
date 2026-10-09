@@ -3,19 +3,25 @@ import {
     getChildLinks, getContentClasses, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
+import { t } from "i18next";
 import { parse } from "node-html-parser";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as iconPackService from "../services/icon_packs.js";
+import { getLog } from "../services/log.js";
 import options from "../services/options.js";
+import { getPlatform } from "../services/platform.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
+import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import {
-    ensureShareHighlighting, getContent, preparePageContent, readShareTemplate, renderCode,
-    renderNoteContent, type Result
+    assetUrlFragment, ensureShareHighlighting, getContent, preparePageContent, readShareTemplate,
+    renderCode, renderNoteContent, renderNoteForExport, type Result
 } from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
+import { getShareProvider } from "./share_provider.js";
 import shareRoot from "./share_root.js";
 
 vi.mock("../becca/becca_loader.js", () => ({
@@ -956,6 +962,7 @@ describe("content_renderer", () => {
                 "//example.com/protocol-relative",
                 "/\\example.com/backslash",
                 "/\t/example.com",
+                "//[invalid-host",
                 "./a",
                 "relative/path",
                 "mailto:a@b.com",
@@ -1321,3 +1328,313 @@ describe("content_renderer", () => {
         }
     });
 });
+
+describe("content_renderer pages", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("renders the share root as the page of its own site, in English without a locale", () => {
+        mockOptions({ locale: null });
+        const root = buildShareNote({
+            id: shareRoot.SHARE_ROOT_NOTE_ID,
+            title: "Everything shared",
+            content: "<p>Index</p>"
+        });
+
+        const page = parse(String(renderNoteContent(root)));
+
+        expect(page.querySelector("html")?.getAttribute("lang")).toBe("en");
+        expect(page.querySelector("body")?.getAttribute("data-ancestor-note-id"))
+            .toBe(shareRoot.SHARE_ROOT_NOTE_ID);
+        expect(page.querySelector("#header-logo")?.text.trim()).toBe("Everything shared");
+        expect(page.querySelector("#content p")?.text).toBe("Index");
+    });
+
+    it("loads a page's own stylesheets, scripts and icon, without the default stylesheet", () => {
+        const page = parse(String(renderNoteContent(buildSitePage({
+            "id": "assetsPage",
+            "content": "<p>x</p>",
+            "#shareOmitDefaultCss": "",
+            "~shareCss": "pageCss",
+            "~shareJs": "pageJs",
+            "~shareFavicon": "pageIcon"
+        }))));
+
+        const urls = (selector: string, attribute: string) =>
+            page.querySelectorAll(selector).map((element) => element.getAttribute(attribute));
+        expect(urls("link[rel=stylesheet]", "href")).toStrictEqual([ "api/notes/pageCss/download" ]);
+        expect(urls("script[src]", "src"))
+            .toStrictEqual([ "assets/scripts.js", "api/notes/pageJs/download" ]);
+        expect(urls("link[rel='shortcut icon']", "href"))
+            .toStrictEqual([ "api/notes/pageIcon/download" ]);
+    });
+
+    it("styles the icon packs whose manifest is shared, serving their fonts from the share", () => {
+        buildShareNote({ id: "sharedPackManifest", content: "{}" });
+        const builtinPacks = iconPackService.getIconPacks();
+        vi.spyOn(iconPackService, "getIconPacks").mockReturnValue([
+            ...builtinPacks,
+            customIconPack("shared", "sharedPackManifest"),
+            customIconPack("private", "privatePackManifest")
+        ]);
+
+        const page = parse(String(renderNoteContent(buildSitePage({ content: "<p>x</p>" }))));
+        const css = page.querySelector("#trilium-icon-packs")?.text ?? "";
+
+        expect(css).toContain("api/attachments/sharedFont/download");
+        expect(css).not.toContain("privateFont");
+    });
+
+    it("renders a page with its ~shareTemplate and the template's child notes", () => {
+        vi.spyOn(getShareProvider(), "isScriptingEnabled").mockReturnValue(true);
+        const setDevMode = mockDevMode();
+        buildShareNote({
+            id: "pageTemplate",
+            type: "code",
+            mime: "application/x-ejs",
+            content: `<main><%= note.title %> <%= assetPath %><%- include("part") %></main>`,
+            children: [
+                { title: "part", type: "code", mime: "application/x-ejs", content: "<i>part</i>" }
+            ]
+        });
+        const page = buildSitePage({
+            "title": "Page",
+            "content": "",
+            "~shareTemplate": "pageTemplate"
+        });
+
+        setDevMode(true);
+        expect(renderNoteContent(page))
+            .toBe(`<main>Page ${assetUrlFragment}/src<i>part</i></main>`);
+        setDevMode(false);
+        expect(renderNoteContent(page)).toBe(`<main>Page ../${assetUrlFragment}<i>part</i></main>`);
+    });
+
+    it("falls back to the default page when a ~shareTemplate is no template or fails", () => {
+        vi.spyOn(getShareProvider(), "isScriptingEnabled").mockReturnValue(true);
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const template = (
+            id: string, content: string | Buffer, part?: string | Buffer, partType = "code"
+        ) => {
+            buildShareNote({
+                id,
+                type: "code",
+                mime: "application/x-ejs",
+                content,
+                children: part === undefined ? [] : [
+                    { title: "part", type: partType, mime: "application/x-ejs", content: part }
+                ]
+            });
+        };
+        buildShareNote({ id: "textTemplate", content: "<main>text</main>" });
+        template("binaryTemplate", Buffer.from("<main>binary</main>"));
+        template("missingPartTemplate", `<%- include("missing") %>`);
+        template("textPartTemplate", `<%- include("part") %>`, "<i>part</i>", "text");
+        template("binaryPartTemplate", `<%- include("part") %>`, Buffer.from("<i>part</i>"));
+
+        for (const templateId of [ "textTemplate", "binaryTemplate", "missingPartTemplate",
+            "textPartTemplate", "binaryPartTemplate" ]) {
+            const page = buildSitePage({ "content": "<p>x</p>", "~shareTemplate": templateId });
+            expect(parse(String(renderNoteContent(page))).querySelector("#content p")?.text)
+                .toBe("x");
+        }
+        expect(logError.mock.calls.map(([ message ]) => String(message))).toStrictEqual([
+            expect.stringContaining("Unable to find child note: missing."),
+            expect.stringContaining("Incorrect child note type."),
+            expect.stringContaining("Invalid template content type.")
+        ]);
+    });
+
+    it("renders each note type as the page shows it", async () => {
+        await ensureShareHighlighting();
+        const render = (definition: Parameters<typeof buildShareNote>[0]) =>
+            getContent(buildShareNote(definition));
+
+        const markdown = render({
+            type: "code",
+            mime: "text/x-markdown",
+            content: "# Notes\n\nSee [[otherNote]].\n\n```python\nx = 'a'\n```\n\n"
+                + "```mermaid\ngraph TD;\n```\n\n```text-x-trilium-auto\nx = 'a'\n```\n"
+        });
+        const markdownPage = parse(String(markdown.content), { blockTextElements: {} });
+        expect(markdownPage.querySelector("p a")?.getAttribute("href")).toBe("./otherNote");
+        const [ python, mermaid, auto ] = markdownPage.querySelectorAll("pre code");
+        expect(python.classList.contains("hljs")).toBe(true);
+        expect(mermaid.classList.contains("hljs")).toBe(false);
+        expect(auto.classList.contains("hljs")).toBe(false);
+        expect(render({ type: "code", mime: "text/x-markdown", content: "  " }).isEmpty).toBe(true);
+
+        for (const type of [ "image", "canvas", "mindMap" ]) {
+            expect(render({ id: `${type}Note`, type, title: "A picture", content: "" }).content)
+                .toMatch(new RegExp(`^<img src="api/images/${type}Note/A%20picture\\?`));
+        }
+        const file = (id: string, mime: string) =>
+            render({ id, type: "file", mime, content: "" }).content;
+        expect(file("pdfNote", "application/pdf"))
+            .toBe(`<iframe class="pdf-view" src="api/notes/pdfNote/view"></iframe>`);
+        expect(file("zipNote", "application/zip"))
+            .toContain(`location.href='api/notes/zipNote/download'`);
+        expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
+        expect(render({ type: "spreadsheet", content: "{}" }).content)
+            .toBe("<p>Empty spreadsheet.</p>");
+        expect(render({ type: "relationMap", content: "{}" }).content)
+            .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
+    });
+
+    it("leaves content that is not text as it is, and empty text as empty", () => {
+        const binary = Buffer.from("<p>x</p>");
+        for (const type of [ "text", "mermaid", "code" ]) {
+            const note = buildShareNote({ type, mime: "text/plain", content: binary });
+            expect(getContent(note).content)
+                .toBe(binary);
+        }
+        expect(getContent(buildShareNote({ content: "" })).isEmpty).toBe(true);
+
+        const page = buildSitePage({ type: "code", mime: "text/plain", content: binary });
+        expect(parse(String(renderNoteContent(page))).querySelector("#content")?.classList
+            .contains("no-content")).toBe(true);
+    });
+
+    it("leaves markup it cannot resolve, footnotes and embeds of binary notes as they are", () => {
+        buildShareNote({
+            id: "binaryEmbed", type: "code", mime: "text/plain", content: Buffer.from("x")
+        });
+        const result = getContent(buildShareNote({
+            content: `<p><span class="link-mention">mention</span>`
+                + `<a href="#fn1" id="fnref1">1</a> <a class="reference-link">Gone</a></p>`
+                + `<section class="link-embed">embed</section>`
+                + `<section class="include-note">no target</section>`
+                + `<section class="include-note" data-note-id="binaryEmbed">binary</section>`
+                + `<pre><code class="language-mermaid">graph TD;</code></pre>`
+        }));
+
+        const document = parse(String(result.content), { blockTextElements: {} });
+        expect(document.querySelector(".link-mention")?.text).toBe("mention");
+        expect(document.querySelector(".link-embed")?.text).toBe("embed");
+        expect(document.querySelectorAll(".include-note").map((section) => section.text))
+            .toStrictEqual([ "no target", "binary" ]);
+        expect(document.querySelector("#fnref1")?.getAttribute("href")).toBe("#fn1");
+        expect(document.querySelector("p")?.text).toBe("mention1 Gone");
+        expect(document.querySelector("code")?.classList.contains("hljs")).toBe(false);
+    });
+
+    it("detects the language of a code block naming none, unless it is too long", async () => {
+        await ensureShareHighlighting();
+        const long = Array.from({ length: 600 }, (_, index) => `x = ${index}`).join("\n");
+        const result = getContent(buildShareNote({
+            content: `<pre><code>&lt;t t-name="x"&gt;&lt;/t&gt;</code></pre>`
+                + `<pre><code class="language-text-x-python">${long}</code></pre>`
+        }));
+
+        const [ detected, tooLong ] = parse(String(result.content), { blockTextElements: {} })
+            .querySelectorAll("code");
+        expect(detected.innerHTML).toContain("hljs-tag");
+        expect(tooLong.classList.contains("hljs")).toBe(false);
+    });
+
+    it("logs a languages option it cannot read and reads it again for the next page", async () => {
+        const logError = vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        mockOptions({ codeNotesMimeTypes: "not json" });
+
+        await ensureShareHighlighting();
+        await ensureShareHighlighting();
+
+        expect(logError).toHaveBeenCalledTimes(2);
+        expect(String(logError.mock.calls[0][0])).toContain("Unable to register the languages");
+
+        vi.restoreAllMocks();
+        mockOptions({ codeNotesMimeTypes: null });
+        await expect(ensureShareHighlighting()).resolves.toBeUndefined();
+    });
+
+    it("exports a page with assets relative to the export, a JavaScript note as its script", () => {
+        vi.spyOn(getLog(), "error").mockImplementation(() => {});
+        const site = buildNote({
+            id: "exportSite",
+            title: "Site",
+            content: "",
+            children: [
+                {
+                    "id": "exportPage",
+                    "title": "Page",
+                    "content": `<p><a href="#root/exportSite/exportOther">Other</a> `
+                        + `<a href="#root/exportPage?viewScope=x&attachmentId=missingFile">`
+                        + `File</a></p>`,
+                    "~shareJs": "exportJs"
+                },
+                { id: "exportOther", title: "Other", content: "" },
+                {
+                    id: "exportScript",
+                    type: "code",
+                    mime: "application/javascript;env=frontend",
+                    content: "alert(1)"
+                }
+            ]
+        });
+        const [ pageNote, , script ] = site.getChildNotes();
+        const branch = pageNote.getParentBranches()[0];
+        const [ boxicons ] = iconPackService.getIconPacks();
+
+        const page = parse(String(renderNoteForExport(pageNote, branch, "../", [], [ boxicons ])));
+
+        expect(page.querySelectorAll("link[rel=stylesheet]").map((tag) => tag.getAttribute("href")))
+            .toStrictEqual([ "../assets/scripts.css" ]);
+        expect(page.querySelectorAll("script[src]").map((tag) => tag.getAttribute("src")))
+            .toStrictEqual([ "../assets/scripts.js", "api/notes/exportJs/download" ]);
+        expect(page.querySelector("#trilium-icon-packs")?.text)
+            .toContain("../assets/icon-pack-bx.");
+        const [ other, file ] = page.querySelectorAll("#content a");
+        expect(other.getAttribute("href")).toBe("./exportOther");
+        expect(file.hasAttribute("href")).toBe(false);
+
+        expect(renderNoteForExport(script, branch, "../", [], [])).toBe("alert(1)");
+        script.isProtected = true;
+        expect(renderNoteForExport(script, branch, "../", [], []))
+            .toBe(`console.log("Protected note cannot be exported.");`);
+    });
+});
+
+let sitePageCount = 0;
+
+/** Builds a page in a site of the share root, as the share routes find it. */
+function buildSitePage(page: Parameters<typeof buildShareNote>[0]) {
+    const pageId = page.id ?? `sitePage${++sitePageCount}`;
+    buildShareNote({
+        id: shareRoot.SHARE_ROOT_NOTE_ID,
+        children: [ { id: `${pageId}Site`, title: "Site", children: [ { ...page, id: pageId } ] } ]
+    });
+    return shaca.getNote(pageId);
+}
+
+/** Answers the given options with the given values and every other option as it is. */
+function mockOptions(values: Record<string, string | null>) {
+    const getOptionOrNull = options.getOptionOrNull.bind(options);
+    vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+        (name in values ? values[name] : getOptionOrNull(name)));
+}
+
+/** Returns a switch between development and production for `utils.isDev()`. */
+function mockDevMode() {
+    const platform = getPlatform();
+    const getEnv = platform.getEnv.bind(platform);
+    let isDev = false;
+    vi.spyOn(platform, "getEnv").mockImplementation((key) =>
+        (key === "TRILIUM_ENV" ? (isDev ? "dev" : "production") : getEnv(key)));
+    return (value: boolean) => {
+        isDev = value;
+    };
+}
+
+function customIconPack(name: string, manifestNoteId: string): iconPackService.ProcessedIconPack {
+    return {
+        prefix: name,
+        manifest: { icons: {} },
+        manifestNoteId,
+        fontMime: "font/woff2",
+        fontAttachmentId: `${name}Font`,
+        title: name,
+        icon: `${name} ${name}-icon`,
+        builtin: false
+    };
+}

@@ -61,28 +61,21 @@ export interface Result {
 }
 
 interface Subroot {
-    note?: SNote | BNote;
+    note: SNote | BNote;
     branch?: SBranch | BBranch
 }
 
 type GetNoteFunction = (id: string) => SNote | BNote | null;
 
-function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
-    if (!note || note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
-        // share root itself is not shared
-        return {};
+function getSharedSubTreeRoot(note: SNote): Subroot {
+    if (note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        // The share root is the site of its own page, the share index.
+        return { note };
     }
 
     // every path leads to share root, but which one to choose?
     // for the sake of simplicity, URLs are not note paths
     const parentBranch = note.getParentBranches()[0];
-
-    if (note instanceof BNote) {
-        return {
-            note,
-            branch: parentBranch
-        };
-    }
 
     if (parentBranch.parentNoteId === shareRoot.SHARE_ROOT_NOTE_ID) {
         return {
@@ -95,6 +88,11 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
 }
 
 export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: iconPackService.ProcessedIconPack[]) {
+    // An exported JavaScript note stays a script.
+    if (note.mime.startsWith("application/javascript")) {
+        return note.isProtected ? `console.log("Protected note cannot be exported.");` : note.getContent();
+    }
+
     const subRoot: Subroot = {
         branch: parentBranch,
         note: parentBranch.getNote()
@@ -131,7 +129,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
 export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) {
     const subRoot = getSharedSubTreeRoot(note);
 
-    const ancestors = subRoot.note ? getSiteAncestorIds(note, subRoot.note) : [];
+    const ancestors = getSiteAncestorIds(note, subRoot.note);
 
     // Determine CSS to load.
     const cssToLoad: string[] = [];
@@ -197,22 +195,13 @@ interface RenderArgs {
 }
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
-    // When rendering static share, non-protected JavaScript notes should be rendered as-is.
-    if (renderArgs.isStatic && note.mime.startsWith("application/javascript")) {
-        if (note.isProtected) {
-            return `console.log("Protected note cannot be exported.");`;
-        }
-
-        return note.getContent() ?? "";
-    }
-
     // Static export preserves full embed nesting; the live share view renders only the first level.
     const { header, content, isEmpty } = getContent(note, {
         expandNestedEmbeds: renderArgs.isStatic,
         canAccessEmbed: renderArgs.canAccessEmbed
     });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
-    const siteRoot = renderArgs.subRoot.note ?? note;
+    const siteRoot = renderArgs.subRoot.note;
     const displayLanguage = options.getOptionOrNull("locale") || "en";
     const opts = {
         note,
@@ -543,7 +532,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 
         // Apply syntax highlight.
         for (const codeEl of document.querySelectorAll("pre code")) {
-            if (codeEl.classList.contains("language-mermaid") && note.type === "text") {
+            if (codeEl.classList.contains("language-mermaid")) {
                 // Mermaid is handled on client-side, we don't want to break it by adding syntax highlighting.
                 continue;
             }
@@ -551,7 +540,7 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             highlightCodeBlock(codeEl);
         }
 
-        result.content = document.innerHTML ?? "";
+        result.content = document.innerHTML;
 
         if (note.hasLabel("shareIndex")) {
             renderIndex(result);
@@ -559,7 +548,6 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
     }
 }
 
-/** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */
 /** Puts `content` in an embed, followed by the embed's caption, as the app does. */
 function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
     const caption = embedEl.childNodes.find((child) =>
@@ -608,9 +596,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
-            if (link.href) {
-                linkEl.setAttribute("href", link.href);
-            }
+            linkEl.setAttribute("href", link.href);
             if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
@@ -642,7 +628,7 @@ function cleanUpReferenceLinks(linkEl: HTMLElement, href: string, getNote: GetNo
     // `handleAttachmentLink()` removes the `href` of a link whose target is missing.
     let noteId = "";
     if (linkEl.hasAttribute("href")) {
-        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : (href.split("/").at(-1) ?? "");
+        noteId = href.startsWith("#") ? getNoteIdFromLink(href) : href.slice(href.lastIndexOf("/") + 1);
     }
     const note = noteId ? getNote(noteId) : undefined;
     if (!note) {
