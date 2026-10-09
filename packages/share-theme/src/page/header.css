@@ -10,7 +10,7 @@ html {
     align-items: center;
     height: var(--header-height);
     padding: 0 12px;
-    border-bottom: 1px solid var(--background-highlight);
+    border-bottom: 1px solid var(--main-border-color);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -53,6 +53,19 @@ html {
     text-wrap: balance;
 }
 
+#header-logo {
+    font-size: 1rem;
+}
+
+#header-logo .tn-icon {
+    font-size: 1.4em;
+}
+
+#header-logo img {
+    max-width: 24px;
+    height: auto;
+}
+
 #header-logo .site-logo-title {
     min-width: 0;
     overflow: hidden;
@@ -60,22 +73,26 @@ html {
     white-space: nowrap;
 }
 
+/* The icon buttons of the app's default theme, `theme-next/forms.css`. */
 .header-button {
     color: var(--text-menu);
     background: transparent;
+    width: 32px;
+    height: 32px;
     margin: 0;
-    padding: 4px;
+    padding: 0;
     border: 0;
     outline: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: background-color 200ms ease, transform 200ms ease;
 }
 
 .header-button .tn-icon {
-    font-size: 32px;
+    font-size: 21px;
 }
 
 .header-button:hover {
