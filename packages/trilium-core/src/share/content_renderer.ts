@@ -319,9 +319,10 @@ export function preparePageContent(
     const headings = elements.map((element) => {
         const slug = element.id || slugs[slugIndex++];
         const text = element.text.replace(/\s+/g, " ").trim();
-        const heading = { level: Number(element.tagName.slice(1)), text, slug };
+        const href = `#${encodeURIComponent(slug)}`;
+        const heading = { level: Number(element.tagName.slice(1)), text, slug, href };
         element.setAttribute("id", slug);
-        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="#${escapeHtml(slug)}"`
+        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="${href}"`
             + ` aria-label="${escapeHtml(options.headingLinkLabel)}">`
             + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`);
         return heading;

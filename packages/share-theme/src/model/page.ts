@@ -113,6 +113,8 @@ export interface PageHeading {
     text: string;
     /** The ID of the heading's anchor, unique on the page. */
     slug: string;
+    /** The link to the heading: `#` and `slug`, URL-encoded. */
+    href: string;
 }
 
 /** An entry of the table of contents, with the headings it contains. */

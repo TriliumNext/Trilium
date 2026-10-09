@@ -27,7 +27,7 @@ export default function setupToC() {
 
     for (const link of links) {
         link.addEventListener("click", e => {
-            const target = document.getElementById(link.getAttribute("href")?.slice(1) ?? "");
+            const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
             if (!target) return;
             e.preventDefault();
             e.stopPropagation();
