@@ -437,9 +437,9 @@ describe("getContentClasses", () => {
             .toBe("type-file full-content-width");
     });
 
-    it("gives a collection view the full width", () => {
+    it("gives an app view the full width", () => {
         expect(getContentClasses(fakeNote({ noteId: "map", type: "book" }), false, true))
-            .toBe("type-book full-content-width collection-view");
+            .toBe("type-book full-content-width app-view");
     });
 });
 

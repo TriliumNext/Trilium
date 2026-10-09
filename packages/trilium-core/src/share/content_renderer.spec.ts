@@ -1014,14 +1014,22 @@ describe("content_renderer", () => {
                 mime: "text/vnd.mermaid",
                 content: "graph TD; A-->B[<script>]"
             });
-            const root = parse(String(getContent(note).content));
-            const container = root.querySelector("div.mermaid-note");
+            const result = getContent(note);
+            const root = parse(String(result.content));
+            const container = root.querySelector("div.share-note-view > div.mermaid-note");
 
+            expect(result.isAppView).toBe(true);
+            expect(root.querySelector("div.share-note-view")?.getAttribute("data-note-id"))
+                .toBe("mermaidNote");
             expect(container?.querySelector("img.mermaid-note-image")?.getAttribute("src"))
                 .toMatch(/^api\/images\/mermaidNote\//);
             expect(container?.querySelector("details pre.mermaid-note-source")?.textContent)
                 .toBe("graph TD; A-->B[<script>]");
-            expect(root.querySelector("script")).toBeNull();
+            // The only script is the payload the app's view reads, which the browser never runs.
+            const scripts = root.querySelectorAll("script");
+            expect(scripts.map((script) => script.getAttribute("type"))).toEqual([ "application/json" ]);
+            expect(JSON.parse(scripts[0].textContent).notes.map((row: { noteId: string }) => row.noteId))
+                .toContain("mermaidNote");
             expect([ "label", "zoom-in", "zoom-out", "zoom-reset" ]
                 .map((name) => container?.getAttribute(`data-${name}`)))
                 .toEqual([ "Diagram", "Zoom in", "Zoom out", "Reset zoom" ]);

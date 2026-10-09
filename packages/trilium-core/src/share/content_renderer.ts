@@ -60,10 +60,11 @@ export interface Result {
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
     /**
-     * Set to `true` if the content is a collection view, such as a map, which takes the page
-     * without the title, the subpages, the date and the links to the neighboring pages.
+     * Set to `true` if the content is shown with the app's own view, such as a map or a Mermaid
+     * note's editor, which takes the page without the title, the subpages, the date and the links
+     * to the neighboring pages.
      */
-    isCollectionView?: boolean;
+    isAppView?: boolean;
 }
 
 interface Subroot {
@@ -242,7 +243,7 @@ interface IconPackFont {
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
     // Static export preserves full embed nesting; the live share view renders only the first level.
-    const { header, content, isEmpty, isCollectionView } = getContent(note, {
+    const { header, content, isEmpty, isAppView } = getContent(note, {
         expandNestedEmbeds: renderArgs.isStatic,
         canAccessEmbed: renderArgs.canAccessEmbed
     });
@@ -258,7 +259,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
     });
-    const childLinks = isCollectionView ? [] : getChildLinks(note, {
+    const childLinks = isAppView ? [] : getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
         getText: (child) => getExcerptSource(child as SNote | BNote),
@@ -280,17 +281,17 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo,
-        prevNext: isCollectionView ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
+        prevNext: isAppView ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
         navigation,
         childLinks,
         childLinksLayout: getChildLinksLayout(note),
-        contentClasses: getContentClasses(note, isEmpty, isCollectionView),
+        contentClasses: getContentClasses(note, isEmpty, isAppView),
         language: getPageLanguages(note, {
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
-        lastUpdated: isCollectionView ? null : getLastUpdated(note, displayLanguage),
-        showTitle: !isCollectionView,
+        lastUpdated: isAppView ? null : getLastUpdated(note, displayLanguage),
+        showTitle: !isAppView,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
             logo.icon,
             ...getNavigationIcons(navigation),
@@ -489,6 +490,9 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderCode(result, note.mime);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
+        if (!(note instanceof BNote) && typeof result.content === "string") {
+            hostInAppView(result, note, "share-note-view");
+        }
     } else if (["image", "canvas", "mindMap"].includes(note.type)) {
         renderImage(result, note);
     } else if (note.type === "file") {
@@ -909,13 +913,26 @@ function getViewType(note: SNote) {
  * element to mount it into, beside the notes and the display options it starts from.
  */
 function renderCollectionView(result: Result, note: SNote) {
+    result.content = "";
+    hostInAppView(result, note, "share-collection");
+}
+
+/**
+ * Wraps the content in a `container` the share theme's script mounts an app view into, beside the
+ * notes and the display options the view starts from. The content stays for a visitor without
+ * scripts until the view replaces it.
+ */
+function hostInAppView(result: Result, note: SNote, container: string) {
     const payload = {
         ...buildFrocaPayload(note),
-        options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ]))
+        options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
+        // The app's assets, such as its translations, from a page directly below `/share/`.
+        assetPath: `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
-    result.isCollectionView = true;
-    result.content = `<div class="share-collection" data-note-id="${note.noteId}"></div>`
+    result.isAppView = true;
+    const content = String(result.content ?? "");
+    result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
 }
 

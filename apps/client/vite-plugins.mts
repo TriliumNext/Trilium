@@ -136,9 +136,12 @@ const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = 
         { specifier: "mermaid", importer: "content/mermaid.ts" },
         { specifier: "./mermaid_zoom.js", importer: "content/mermaid.ts" }
     ],
-    collection: [
+    app: [
         { specifier: "./app_globals.js", importer: "content/app_view.ts" },
-        { specifier: "./content/collection_view.js", importer: "index.ts" }
+        { specifier: "@triliumnext/client/src/components/app_context.js", importer: "content/app_view.ts" },
+        { specifier: "@triliumnext/client/src/services/i18n.js", importer: "content/app_view.ts" },
+        { specifier: "./content/collection_view.js", importer: "index.ts" },
+        { specifier: "./content/note_view.js", importer: "index.ts" }
     ]
 };
 

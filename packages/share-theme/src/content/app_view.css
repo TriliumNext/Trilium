@@ -1,4 +1,4 @@
-body:has(#content.collection-view) {
+body:has(#content.app-view) {
     #right-pane {
         height: 100vh;
     }
@@ -17,14 +17,14 @@ body:has(#content.collection-view) {
         min-height: 0;
     }
 
-    #content > .share-collection {
+    #content > :is(.share-collection, .share-note-view) {
         position: relative;
         display: flex;
         flex-direction: column;
         flex: 1;
         min-height: 0;
 
-        > .note-list-widget {
+        > :is(.note-list-widget, .note-detail-mermaid) {
             flex: 1;
             min-height: 0;
         }

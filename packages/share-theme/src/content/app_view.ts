@@ -1,3 +1,5 @@
+import type { LOCALE_IDS } from "@triliumnext/commons";
+
 import type { AppPayload } from "./app_host.js";
 
 /** A module mounting an app view, which `setupAppView()` loads on demand. */
@@ -19,8 +21,17 @@ export default async function setupAppView(container: string, load: () => Promis
         return;
     }
 
+    const payload = JSON.parse(data.textContent) as AppPayload;
     await import("./app_globals.js");
     await import("@triliumnext/client/src/components/app_context.js");
+
+    // The views' texts come from the app's catalogue, which `initLocale()` reads from the assets.
+    if (window.glob) {
+        window.glob.assetPath = payload.assetPath;
+    }
+    const { initLocale } = await import("@triliumnext/client/src/services/i18n.js");
+    await initLocale((payload.options.locale as LOCALE_IDS | null) ?? "en");
+
     const { default: mount } = await load();
-    mount(element, JSON.parse(data.textContent));
+    mount(element, payload);
 }
