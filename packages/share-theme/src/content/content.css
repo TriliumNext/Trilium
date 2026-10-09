@@ -12,6 +12,7 @@
     margin: 0;
     padding-top: 10px;
     font-size: 2em;
+    font-weight: 300;
     line-height: 1.2;
     color: var(--text-heading);
     border-bottom: 1px solid var(--background-highlight);
