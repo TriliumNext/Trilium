@@ -18,7 +18,6 @@ import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
 import "./content/collection_view.css";
 import setupMath from "./content/math.js";
-import setupCalendar from "./content/calendar.js";
 import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
@@ -74,8 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (classList.contains("type-mermaid")) {
         $try(setupMermaid);
     } else if (classList.contains("type-book")) {
-        $try(setupCalendar);
-        $try(() => setupAppView(".share-geomap", () => import("./content/geomap_view.js")));
+        $try(() => setupAppView(".share-collection", () => import("./content/collection_view.js")));
     }
 });
 

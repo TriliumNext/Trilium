@@ -457,6 +457,7 @@ describe("share handlers", () => {
         expect(JSON.parse(String(anonymous.body))).toEqual({
             results: [ {
                 id: "visible",
+                noteId: "visible",
                 title: "Visible",
                 score: 7,
                 path: "Docs / Visible",

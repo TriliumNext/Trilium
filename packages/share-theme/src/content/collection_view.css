@@ -17,10 +17,17 @@ body:has(#content.collection-view) {
         min-height: 0;
     }
 
-    #content > .share-calendar,
-    #content > .share-geomap {
+    #content > .share-collection {
+        position: relative;
+        display: flex;
+        flex-direction: column;
         flex: 1;
         min-height: 0;
+
+        > .note-list-widget {
+            flex: 1;
+            min-height: 0;
+        }
     }
 
     @media (max-width: 48em) {

@@ -1,5 +1,7 @@
 import { getShareLink } from "@triliumnext/share-theme/model/page";
 
+import becca from "../becca/becca.js";
+import type BNote from "../becca/entities/bnote.js";
 import * as sanitize from "../services/sanitizer.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SNote from "./shaca/entities/snote.js";
@@ -24,7 +26,8 @@ export function buildFrocaPayload(note: SNote) {
  * Collects `roots`, their visible children and the notes their relations point to (templates and
  * `#calendar:title` relations), with their owned attributes and the branches between them. Shaca
  * holds only shared notes, so a relation to a note outside the share is left out, as is every note
- * that is protected or that `canAccess` refuses.
+ * that is protected or that `canAccess` refuses. A built-in template such as `_template_calendar`
+ * is read from becca instead, as it lives in the hidden subtree, so the notes inherit its labels.
  */
 export function buildFrocaRows(roots: SNote[], canAccess: (note: SNote) => boolean = () => true): FrocaRows {
     const notes = new Map<string, SNote>();
@@ -49,6 +52,24 @@ export function buildFrocaRows(roots: SNote[], canAccess: (note: SNote) => boole
     }
 
     const rows: FrocaRows = { notes: [], branches: [], attributes: [], links: {} };
+    const templates = new Map<string, BNote>();
+    for (const owner of notes.values()) {
+        for (const relation of owner.ownedAttributes) {
+            const template = relation.type === "relation" && relation.value.startsWith("_template_")
+                ? becca.getNote(relation.value) : null;
+            if (template && !notes.has(template.noteId)) {
+                templates.set(template.noteId, template);
+            }
+        }
+    }
+    for (const template of templates.values()) {
+        rows.notes.push(getNoteRow(template));
+        for (const attribute of template.getOwnedAttributes()) {
+            const { attributeId, noteId, type, name, value, position, isInheritable } = attribute;
+            rows.attributes.push({ attributeId, noteId, type, name, value, position, isInheritable: !!isInheritable });
+        }
+    }
+
     for (const included of notes.values()) {
         rows.notes.push(getNoteRow(included));
         rows.links[included.noteId] = getShareLink(included, sanitize.sanitizeUrl).href;
@@ -58,7 +79,7 @@ export function buildFrocaRows(roots: SNote[], canAccess: (note: SNote) => boole
             }
         }
         for (const attribute of included.ownedAttributes) {
-            if (attribute.type === "label" || notes.has(attribute.value)) {
+            if (attribute.type === "label" || notes.has(attribute.value) || templates.has(attribute.value)) {
                 rows.attributes.push(attribute.getPojo());
             }
         }
@@ -91,13 +112,13 @@ export function getBlobRow(entity: SNote | SAttachment) {
     };
 }
 
-function getNoteRow(note: SNote) {
+function getNoteRow(note: SNote | BNote) {
     return {
         noteId: note.noteId,
         title: note.title,
-        isProtected: note.isProtected,
+        isProtected: !!note.isProtected,
         type: note.type,
         mime: note.mime,
-        blobId: note.utcDateModified
+        blobId: note.utcDateModified ?? ""
     };
 }

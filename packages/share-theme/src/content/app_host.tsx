@@ -13,8 +13,6 @@ import { createShareFrocaSource, type ShareFrocaRows } from "./share_froca_sourc
 /** What core embeds next to an app view on a shared page. */
 export interface AppPayload extends ShareFrocaRows {
     options: Record<string, OptionValue | null>;
-    /** The view the collection saved, such as a map's position, for the view to start from. */
-    viewConfig?: unknown;
 }
 
 export interface HostedApp {
@@ -54,7 +52,7 @@ export default function ShareAppHost({ noteId, payload, children }: ShareAppHost
 }
 
 function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
-    const { options: optionValues, links, viewConfig: _viewConfig, ...rows } = payload;
+    const { options: optionValues, links, ...rows } = payload;
     options.load(Object.fromEntries(Object.entries(optionValues)
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 

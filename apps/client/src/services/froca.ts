@@ -399,6 +399,10 @@ class FrocaImpl implements Froca {
         });
     }
 
+    searchNoteIds(query: string, ancestorNoteId: string) {
+        return this.source.searchNoteIds(query, ancestorNoteId);
+    }
+
     async getBlob(entityType: string, entityId: string): Promise<FBlob | null> {
         // I'm not sure why we're not using blobIds directly, it would save us this composite key ...
         // perhaps one benefit is that we're always requesting the latest blob, not relying on perhaps faulty/slow
@@ -431,7 +435,11 @@ const SERVER_SOURCE: FrocaSource = {
         server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`),
     getAttachments: (noteId) => server.get<FAttachmentRow[]>(`notes/${noteId}/attachments`),
     getBlob: (entityType, entityId) =>
-        server.getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`)
+        server.getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`),
+    searchNoteIds: async (query) => {
+        const { default: search } = await import("./search.js");
+        return await search.searchForNoteIds(query);
+    }
 };
 
 const froca = new FrocaImpl();

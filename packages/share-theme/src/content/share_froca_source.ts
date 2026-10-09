@@ -21,7 +21,12 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
             getJson(`api/attachments/${encodeURIComponent(attachmentId)}/all`),
         getAttachments: (noteId) => getJson(`api/notes/${encodeURIComponent(noteId)}/attachments`),
         getBlob: (entityType, entityId) =>
-            getJson(`api/${entityType}/${encodeURIComponent(entityId)}/blob`)
+            getJson(`api/${entityType}/${encodeURIComponent(entityId)}/blob`),
+        searchNoteIds: async (query, ancestorNoteId) => {
+            const params = new URLSearchParams({ search: query, ancestorNoteId });
+            const { results } = await getJson<{ results: { noteId: string }[] }>(`api/notes?${params}`);
+            return results.map((result) => result.noteId);
+        }
     };
 }
 

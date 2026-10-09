@@ -259,8 +259,8 @@ export default class FNote {
         const isHiddenNote = this.noteId.startsWith("_");
         const isSearchNote = this.type === "search";
         if (!includeArchived && !isHiddenNote && !isSearchNote) {
-            const { default: search } = await import("../services/search.js");
-            const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
+            const query = `note.parents.noteId="${this.noteId}" #!archived`;
+            const unorderedIds = new Set(await this.froca.searchNoteIds(query, this.noteId));
             const results: string[] = [];
             for (const id of this.children) {
                 if (unorderedIds.has(id)) {

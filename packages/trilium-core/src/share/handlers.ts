@@ -325,6 +325,7 @@ function searchNotes(req: ShareRequest): ShareReply {
 
         return {
             id: fullNote.shareId,
+            noteId: fullNote.noteId,
             title: fullNote.title,
             score: sr.score,
             path: pathTitle,

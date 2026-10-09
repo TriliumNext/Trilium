@@ -125,7 +125,7 @@ export default class ViewModeStorage<T extends object> {
         }
 
         const attachment = existingAttachments[0];
-        const attachmentData = await server.get<{ content: string } | null>(`attachments/${attachment.attachmentId}/blob`);
-        return attachmentData?.content ?? "{}";
+        const blob = await attachment.getBlob();
+        return blob?.content ?? "{}";
     }
 }

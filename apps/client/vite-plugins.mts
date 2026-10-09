@@ -136,12 +136,9 @@ const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = 
         { specifier: "mermaid", importer: "content/mermaid.ts" },
         { specifier: "./mermaid_zoom.js", importer: "content/mermaid.ts" }
     ],
-    calendar: [
-        { specifier: "./calendar_view.js", importer: "content/calendar.ts" }
-    ],
-    geomap: [
+    collection: [
         { specifier: "./app_globals.js", importer: "content/app_view.ts" },
-        { specifier: "./content/geomap_view.js", importer: "index.ts" }
+        { specifier: "./content/collection_view.js", importer: "index.ts" }
     ]
 };
 

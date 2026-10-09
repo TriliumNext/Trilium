@@ -27,6 +27,8 @@ export interface FrocaSource {
     getSiblingAttachments(attachmentId: string): Promise<FAttachmentRow[]>;
     getAttachments(noteId: string): Promise<FAttachmentRow[]>;
     getBlob(entityType: string, entityId: string): Promise<FBlobRow>;
+    /** The ids of the notes below `ancestorNoteId` that match the search `query`. */
+    searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
 }
 
 export interface Froca {
@@ -46,4 +48,5 @@ export interface Froca {
     getBranches(branchIds: string[], silentNotFoundError?: boolean): FBranch[];
 
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
+    searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
 }

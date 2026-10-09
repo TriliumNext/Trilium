@@ -494,11 +494,8 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "file") {
         renderFile(note, result);
     } else if (note.type === "book" && !(note instanceof BNote)
-        && getViewType(note) === "calendar") {
-        renderCalendar(result, note);
-    } else if (note.type === "book" && !(note instanceof BNote)
-        && getViewType(note) === "geoMap") {
-        renderGeoMap(result, note);
+        && HOSTED_VIEW_TYPES.has(getViewType(note) ?? "")) {
+        renderCollectionView(result, note);
     } else if (note.type === "book") {
         result.isEmpty = true;
     } else if (note.type === "webView") {
@@ -908,48 +905,22 @@ function getViewType(note: SNote) {
 }
 
 /**
- * Renders a calendar collection as an element the share theme's script draws the client's calendar
- * into, from the notes `buildFrocaPayload()` embeds next to it.
+ * Renders a collection the share theme shows with the app's own view, through its note list: an
+ * element to mount it into, beside the notes and the display options it starts from.
  */
-function renderCalendar(result: Result, note: SNote) {
-    const payload = JSON.stringify(buildFrocaPayload(note)).replace(/</g, "\\u003c");
-    result.isCollectionView = true;
-    result.content = `<div class="share-calendar" data-note-id="${note.noteId}"></div>`
-        + `<script type="application/json" class="share-froca">${payload}</script>`;
-}
-
-/**
- * Renders a geo map collection as an element the share theme's script mounts the app's whole map
- * view into, read-only, from the notes, the display options and the saved view embedded next to it.
- */
-function renderGeoMap(result: Result, note: SNote) {
+function renderCollectionView(result: Result, note: SNote) {
     const payload = {
         ...buildFrocaPayload(note),
-        viewConfig: getViewConfig(note, "geoMap"),
         options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ]))
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
     result.isCollectionView = true;
-    result.content = `<div class="share-geomap" data-note-id="${note.noteId}"></div>`
+    result.content = `<div class="share-collection" data-note-id="${note.noteId}"></div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
 }
 
-/**
- * The view a collection saved, such as a map's position and zoom, which the app keeps in a
- * `<viewType>.json` attachment.
- */
-function getViewConfig(note: SNote, viewType: string): unknown {
-    const attachment = note.getAttachmentByTitle(`${viewType}.json`);
-    if (attachment?.role !== "viewConfig") {
-        return undefined;
-    }
-
-    try {
-        return JSON.parse(String(attachment.getContent()));
-    } catch {
-        return undefined;
-    }
-}
+/** The view types of the collections the share theme shows with the app's own view. */
+const HOSTED_VIEW_TYPES = new Set([ "calendar", "geoMap" ]);
 
 /** The options the app's collection views read, which a shared page needs to draw them alike. */
 const SHARED_OPTIONS = [ "locale", "formattingLocale", "firstDayOfWeek" ] as const;
