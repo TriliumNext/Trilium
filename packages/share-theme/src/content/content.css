@@ -22,12 +22,12 @@ iframe.pdf-view {
     height: 800px;
 }
 
+/* The inline code of the app, `style.css`. */
 .ck-content code:not(pre code) {
-    color: var(--text-primary);
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-active);
-    border-radius: 6px;
-    padding: 2px 5px;
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
+    background-color: var(--inline-code-background-color);
+    font-size: 0.8em;
     overflow-wrap: break-word;
 }
 
