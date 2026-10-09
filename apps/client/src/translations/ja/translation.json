@@ -65,7 +65,9 @@
     "anchor": "アンカー（任意）",
     "anchor_none": "なし（ノートへのリンク）",
     "edit_link": "リンクを編集",
-    "button_edit_link": "リンクを保存"
+    "button_edit_link": "リンクを保存",
+    "fix_link": "リンクを修正",
+    "button_fix_link": "リンクを修正"
   },
   "branch_prefix": {
     "save": "保存",
@@ -1601,7 +1603,7 @@
     "geolocation": "ジオマップ上でノートが配置されている緯度と経度。",
     "map_type": "描画するノートマップ: ノート間の関係を表すには <code>link</code> を、階層構造を表すには <code>tree</code> を使用します。",
     "map_style": "ジオマップの描画スタイルは、コレクションのプロパティで提供されているラスター( raster) とベクター(vector) スタイルから選択します。",
-    "map_scale": "ジオマップにスケールバーを表示。",
+    "map_scale": "ジオマップにスケールバーを表示するか、イメージマップの端に座標ルーラーを表示します。",
     "map_hide_labels": "ジオマップ上のマーカー横にあるノートタイトルを非表示。",
     "presentation_theme": "プレゼンテーションの表示に使用するテーマ。",
     "slide_background": "スライドの背景色。単色または CSS グラデーション。",
@@ -1636,7 +1638,11 @@
     "board_column_width": "ボードコレクションでの列幅の指定: <code>narrow</code>、<code>medium</code>、<code>wide</code> （狭い、中、広い ）。モバイル環境では独自の幅で描画されるため、この設定は無視されます。",
     "board_show_inbox": "ボードコレクションに inbox 列を表示します。この列には、どのボード列にも割り当てられていないすべての子ノートが一覧表示されます。",
     "board_sort_columns": "ボードコレクションの列内でのカードの並び順を指定します。個別の並び順が設定されていない限り、列はこの設定に従います。値には <code>title</code>、<code>creationDate</code>、または <code>attr:</code> に続けて昇格された属性名を指定します。",
-    "board_sort_columns_descending": "ボードコレクションでは、<code>#board:sortColumns</code> の並び順が逆向きに適用されます。"
+    "board_sort_columns_descending": "ボードコレクションでは、<code>#board:sortColumns</code> の並び順が逆向きに適用されます。",
+    "map_position": "イメージマップ上でのノートの位置。マップの座標系における <code>x,y</code> で指定します。<code>map:imageBounds</code> で別の座標系が指定されていない限り、画像のピクセル数が基準となります。",
+    "map_shape": "イメージマップ上でノートを描画する際の形状。<code>geoShape</code> と同じ形式ですが、座標は <code>x,y</code> を使用します。例: <code>circle:400,300 50</code>。",
+    "map_image_bounds": "イメージマップの左上隅と右下隅の座標。<code>x,y x,y</code> の形式で指定します。例: <code>-512,-512 512,512</code>。マップ上の位置は、画像のピクセル単位ではなく、この座標系に基づいて読み書きされます。",
+    "map_image": "世界地図の代わりに、ジオマップを描画するための画像ノートです。マーカーや図形は、<code>mapPosition</code> および <code>mapShape</code> を使用して配置されます。"
   },
   "link_context_menu": {
     "open_note_in_popup": "クイック編集",
@@ -2501,7 +2507,9 @@
     "draw-rectangle-instruction": "マップ上の 1 つの頂点をクリックし、次に対角にある頂点をクリックします。一方の頂点からもう一方の頂点へドラッグすることもできます。Esc キーを押すとキャンセルされます。",
     "draw-circle": "マップ上に円を描画",
     "draw-circle-toast-title": "円を描画",
-    "draw-circle-instruction": "マップ上の中心をクリックし、円の半径となる位置を再度クリックします。中心からドラッグして描画することもできます。Esc キーを押すとキャンセルされます。"
+    "draw-circle-instruction": "マップ上の中心をクリックし、円の半径となる位置を再度クリックします。中心からドラッグして描画することもできます。Esc キーを押すとキャンセルされます。",
+    "image-unavailable": "このマップの画像を読み込めませんでした。map:image のリレーションが指し示しているノートが画像であることを確認してください。",
+    "image-svg-unsupported": "SVG 画像はマップとして使用できません。代わりに PNG、JPEG、または WebP 形式に変換してください。"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -3733,7 +3741,16 @@
       "move-tab-right": "タブを右へ移動",
       "copy-link-to-tab": "タブへのリンクをコピー",
       "tabs-toolbar": "タブツールバー",
-      "insert-titled-tabs-that-show-one-panel-at-a-time": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入。"
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "一度に 1 つのパネルを表示する、タイトル付きタブを挿入。",
+      "multicolumn-layout": "複数列レイアウト",
+      "multicolumn-layout-toolbar": "複数列レイアウトツールバー",
+      "multiple-column-layout": "複数列レイアウト",
+      "0-columns": "%0 列",
+      "column-layout": "列レイアウト",
+      "0-columns-layout": "%0 列レイアウト",
+      "arrange-content-in-0-equal-columns-side-by-side": "コンテンツを %0 個の等幅な列に並べて配置します。",
+      "0-columns-1": "%0 列 (%1)",
+      "remove-layout": "レイアウトを削除"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
