@@ -60,7 +60,10 @@
     "run-active-note": "Uruchom aktywny kod JavaScript (frontend/backend)",
     "toggle-note-hoisting": "Włącz/wyłącz skupienie na bieżącej notatce",
     "unhoist": "Wyłącz skupienie z dowolnego miejsca",
-    "toggle-zen-mode": "Włącz/wyłącz tryb Zen (minimalistyczny interfejs)"
+    "toggle-zen-mode": "Włącz/wyłącz tryb Zen (minimalistyczny interfejs)",
+    "toggle-archived-notes": "Pokaż/ukryj zarchiwizowane notatki w drzewie notatek",
+    "show-deleted-notes": "Pokaż okno \"Usunięte notatki\"",
+    "show-space-usage": "Otwórz stronę \"Użycie pamięci\""
   },
   "keyboard_action_names": {
     "zoom-in": "Powiększ",
