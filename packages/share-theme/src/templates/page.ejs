@@ -84,7 +84,7 @@
             </div>
 
             <% if (childLinks.length) { %>
-                <nav id="childLinks" class="<% if (isEmpty) { %>grid<% } else { %>list<% } %>">
+                <nav id="childLinks" class="<%= childLinksLayout %>">
                     <% if (!isEmpty) { %>
                         <span><%= t("share_theme.subpages") %></span>
                     <% } %>
@@ -92,7 +92,18 @@
                     <ul>
                         <% for (const child of childLinks) { %>
                             <li>
-                                <a class="type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
+                                <a class="type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
+                                    <span class="tn-icon <%= child.icon %>" aria-hidden="true"></span>
+                                    <span class="child-link-text">
+                                        <span class="child-link-title"><%= child.title %></span>
+                                        <% if (child.excerpt) { %>
+                                            <span class="child-link-excerpt"><%= child.excerpt %></span>
+                                        <% } %>
+                                        <% if (child.childCount) { %>
+                                            <span class="child-link-count"><%= t("share_theme.subpage-count", { count: child.childCount }) %></span>
+                                        <% } %>
+                                    </span>
+                                </a>
                             </li>
                         <% } %>
                     </ul>

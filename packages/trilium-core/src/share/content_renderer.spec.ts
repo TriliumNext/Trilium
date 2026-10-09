@@ -1,6 +1,6 @@
 import { trimIndentation } from "@triliumnext/commons";
 import {
-    getChildLinks, getContentClasses, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
@@ -447,7 +447,12 @@ describe("content_renderer", () => {
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
                 children: [
                     { id: "emptyBook", type: "book", content: "" },
-                    { id: "fullBook", type: "book", content: "", children: [ { id: "bookChild", title: "Child" } ] }
+                    {
+                        id: "fullBook",
+                        type: "book",
+                        content: "",
+                        children: [ { id: "bookChild", title: "Child", content: "" } ]
+                    }
                 ]
             });
             const [ emptyBook, fullBook ] = shareRootNote.getChildNotes()
@@ -455,8 +460,49 @@ describe("content_renderer", () => {
 
             expect(emptyBook.querySelector("#childLinks") === null).toBe(true);
             expect(emptyBook.querySelector("#content")?.classList.contains("no-content")).toBe(true);
-            expect(fullBook.querySelectorAll("#childLinks a").map((link) => link.text))
+            expect(fullBook.querySelectorAll("#childLinks .child-link-title").map((link) => link.text))
                 .toStrictEqual([ "Child" ]);
+            expect(fullBook.querySelector("#childLinks")?.classList.contains("grid")).toBe(true);
+        });
+
+        it("describes each subpage by its icon, the start of its text and its own subpages", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "listParent",
+                    content: "<p>Parent</p>",
+                    children: [
+                        {
+                            "id": "readable",
+                            "title": "Readable",
+                            "#iconClass": "bx bx-rocket",
+                            "content": "<h2>Heading</h2><p>First &amp; <b>bold</b>.</p><p>Second.</p>",
+                            "children": [ { id: "grandchild", content: "" } ]
+                        },
+                        { id: "locked", content: "<p>Secret</p>", isProtected: true },
+                        { "id": "guarded", "content": "<p>Guarded</p>", "#shareCredentials": "u:p" },
+                        { id: "drawing", type: "canvas", content: "{}" },
+                        { id: "bytes", content: Buffer.from("<p>Bytes</p>") }
+                    ]
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0],
+                (note) => note.getCredentials().length === 0)));
+            const items = page.querySelectorAll("#childLinks li").map((item) => ({
+                icon: item.querySelector(".tn-icon")?.classList.contains("bx-rocket"),
+                excerpt: item.querySelector(".child-link-excerpt")?.text,
+                count: item.querySelector(".child-link-count")?.text
+            }));
+
+            expect(page.querySelector("#childLinks")?.classList.contains("grid")).toBe(true);
+            expect(items).toStrictEqual([
+                { icon: true, excerpt: "First & bold. Second.", count: t("share_theme.subpage-count", { count: 1 }) },
+                { icon: false, excerpt: undefined, count: undefined },
+                { icon: false, excerpt: undefined, count: undefined },
+                { icon: false, excerpt: undefined, count: undefined },
+                { icon: false, excerpt: undefined, count: undefined }
+            ]);
         });
 
         it("keeps the alt text of an image on the page", () => {
@@ -1305,29 +1351,29 @@ describe("content_renderer", () => {
             });
             const anchors = renderPageAnchors("pageParent");
 
-            const bothLabels = anchors.find((a) => a.textContent === "Both labels");
+            const bothLabels = anchors.find((a) => a.textContent.trim() === "Both labels");
             expect(bothLabels?.getAttribute("href")).toBe("https://example.com/other");
             expect(bothLabels?.getAttribute("target")).toBe("_blank");
 
-            const external = anchors.find((a) => a.textContent === "External");
+            const external = anchors.find((a) => a.textContent.trim() === "External");
             expect(external?.getAttribute("href")).toBe("https://example.com/page");
             expect(external?.getAttribute("target")).toBe("_blank");
             expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
             expect(Object.keys(external?.attributes ?? {}).sort())
                 .toEqual([ "class", "href", "rel", "target" ]);
 
-            const internal = anchors.find((a) => a.textContent === "Internal");
+            const internal = anchors.find((a) => a.textContent.trim() === "Internal");
             expect(internal?.getAttribute("href")).toBe("./pageInternal");
             expect(Object.keys(internal?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
 
-            const twoUrls = anchors.find((a) => a.textContent === "Two URLs");
+            const twoUrls = anchors.find((a) => a.textContent.trim() === "Two URLs");
             expect(twoUrls?.getAttribute("href")).toBe("https://example.com/documented");
 
             const whitespaceWithLegacy = anchors
-                .find((a) => a.textContent === "Whitespace with legacy");
+                .find((a) => a.textContent.trim() === "Whitespace with legacy");
             expect(whitespaceWithLegacy?.getAttribute("href")).toBe("https://example.com/legacy2");
 
-            const whitespaceOnly = anchors.find((a) => a.textContent === "Whitespace only");
+            const whitespaceOnly = anchors.find((a) => a.textContent.trim() === "Whitespace only");
             expect(whitespaceOnly?.getAttribute("href")).toBe("./pageWhitespaceOnly");
             expect(Object.keys(whitespaceOnly?.attributes ?? {}).sort())
                 .toEqual([ "class", "href" ]);
@@ -1344,7 +1390,7 @@ describe("content_renderer", () => {
                 ]
             });
 
-            const titles = renderPageAnchors("bookParent").map((a) => a.textContent);
+            const titles = renderPageAnchors("bookParent").map((a) => a.textContent.trim());
             expect(titles).toEqual([ "Visible" ]);
         });
 
@@ -1379,7 +1425,8 @@ describe("content_renderer", () => {
                 logo: getSiteLogo(note, { sanitizeUrl: sanitize.sanitizeUrl, image: null }),
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
-                childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+                childLinks: getChildLinks(note, { sanitizeUrl: sanitize.sanitizeUrl }),
+                childLinksLayout: getChildLinksLayout(note),
                 contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,

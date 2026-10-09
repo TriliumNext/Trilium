@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-    getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
     type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
@@ -430,16 +430,91 @@ describe("getContentClasses", () => {
 });
 
 describe("getChildLinks", () => {
-    it("links to the visible children of a note, in order", () => {
+    const options = { sanitizeUrl: (url: string) => url, iconPackPrefixes: [ "pack" ] };
+
+    it("links to the visible children of a note, in order, with their icon and subpage count", () => {
         const parent = fakeNote({ noteId: "parent" });
-        addChild(parent, fakeNote({ noteId: "x", type: "book" }));
+        const x = addChild(parent, fakeNote({ noteId: "x", type: "book", icon: "bx bx-book" }));
+        addChild(x, fakeNote({ noteId: "grandchild" }));
         addChild(parent, fakeNote({ noteId: "hidden" }), true);
         addChild(parent, fakeNote({ noteId: "y", labels: { shareExternal: "https://example.com" } }));
 
-        expect(getChildLinks(parent, (url) => url)).toStrictEqual([
-            { href: "./x-alias", isExternal: false, title: "x", type: "book" },
-            { href: "https://example.com", isExternal: true, title: "y", type: "text" }
+        expect(getChildLinks(parent, options)).toStrictEqual([
+            {
+                href: "./x-alias", isExternal: false, title: "x", type: "book",
+                icon: "bx bx-book pack", excerpt: null, childCount: 1
+            },
+            {
+                href: "https://example.com", isExternal: true, title: "y", type: "text",
+                icon: "bx bx-note pack", excerpt: null, childCount: 0
+            }
         ]);
+    });
+
+    it("lists the children only under the note types the app does, unless #hideChildrenOverview", () => {
+        const withChild = (note: FakeNote) => {
+            addChild(note, fakeNote({ noteId: `${note.noteId}-child` }));
+            return getChildLinks(note, options).length;
+        };
+
+        expect(withChild(fakeNote({ noteId: "text" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "code", type: "code", mime: "text/x-markdown" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "book", type: "book" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "canvas", type: "canvas" }))).toBe(0);
+        expect(withChild(fakeNote({ noteId: "hidden", labels: { hideChildrenOverview: "" } }))).toBe(0);
+        expect(withChild(fakeNote({ noteId: "shown", labels: { hideChildrenOverview: "false" } }))).toBe(1);
+    });
+
+    it("describes a child by #shareDescription, else by the start of its text", () => {
+        const parent = fakeNote({ noteId: "parent" });
+        const sentences = "First sentence of the note, which says what it is about. "
+            + "A second one goes on about it at length, well past where a summary should stop. "
+            + "A third one is there only to make the whole too long for a summary.";
+        const texts: Record<string, string | null> = {
+            described: "Ignored",
+            short: "  A short\n  note.  ",
+            sentences,
+            words: "word ".repeat(60),
+            unbroken: "x".repeat(200),
+            empty: " ",
+            unreadable: null
+        };
+        for (const noteId of Object.keys(texts)) {
+            addChild(parent, fakeNote({
+                noteId,
+                labels: noteId === "described" ? { shareDescription: "About it" } : {}
+            }));
+        }
+
+        const excerpts = getChildLinks(parent, { ...options, getText: (note) => texts[note.noteId] })
+            .map((link) => link.excerpt);
+
+        expect(excerpts).toStrictEqual([
+            "About it",
+            "A short note.",
+            "First sentence of the note, which says what it is about. "
+                + "A second one goes on about it at length, well past where a summary should stop.",
+            `${"word ".repeat(32).trim()}…`,
+            `${"x".repeat(160)}…`,
+            null,
+            null
+        ]);
+        expect(getChildLinks(parent, options).map((link) => link.excerpt))
+            .toStrictEqual([ "About it", null, null, null, null, null, null ]);
+    });
+});
+
+describe("getChildLinksLayout", () => {
+    const layout = (type: string, labels: Record<string, string> = {}) =>
+        getChildLinksLayout(fakeNote({ noteId: "page", type, labels }));
+
+    it("shows a grid, unless a collection asks for a list", () => {
+        expect(layout("book")).toBe("grid");
+        expect(layout("book", { viewType: "grid" })).toBe("grid");
+        expect(layout("book", { viewType: "list" })).toBe("list");
+        expect(layout("book", { viewType: "calendar" })).toBe("grid");
+        expect(layout("text")).toBe("grid");
+        expect(layout("text", { viewType: "list" })).toBe("grid");
     });
 });
 

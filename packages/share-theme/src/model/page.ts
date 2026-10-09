@@ -230,6 +230,31 @@ function readLabel(note: ShareNote, name: string) {
     return note.getLabelValue(name)?.trim() || null;
 }
 
+const CHILD_LIST_NOTE_TYPES = [ "book", "text", "code" ];
+
+/** The most characters of a child's text its excerpt shows. */
+const EXCERPT_LENGTH = 160;
+
+/**
+ * Shortens `text` to an excerpt of at most {@link EXCERPT_LENGTH} characters: whole sentences when
+ * they fill at least a third of it, else whole words followed by an ellipsis.
+ */
+function toExcerpt(text: string) {
+    const plain = text.replace(/\s+/g, " ").trim();
+    if (plain.length <= EXCERPT_LENGTH) {
+        return plain || null;
+    }
+
+    const head = plain.slice(0, EXCERPT_LENGTH);
+    const sentenceEnd = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
+    if (sentenceEnd >= EXCERPT_LENGTH / 3) {
+        return head.slice(0, sentenceEnd + 1);
+    }
+
+    const wordEnd = head.lastIndexOf(" ");
+    return `${wordEnd > 0 ? head.slice(0, wordEnd) : head}…`;
+}
+
 /** Resolves `address` against `base` unless it is already absolute or `base` is not a URL. */
 function toAbsoluteUrl(address: string, base: string) {
     if (URL.canParse(address) || !URL.canParse(base)) {
@@ -349,13 +374,56 @@ export function getContentClasses(note: ShareNote, isEmpty = false) {
     ].filter(Boolean).join(" ");
 }
 
-/** Returns the links to the visible children of `note`, for its list of subpages. */
-export function getChildLinks(note: ShareNote, sanitizeUrl: (url: string) => string) {
+/** A child of a page, as its list of subpages shows it. */
+export interface ChildLink extends ShareLink {
+    title: string;
+    type: string;
+    /** The icon's CSS classes. */
+    icon: string;
+    /** `#shareDescription`, else the start of the child's text, or `null`. */
+    excerpt: string | null;
+    /** How many visible children the child has itself. */
+    childCount: number;
+}
+
+/** What {@link getChildLinks} needs besides the note. */
+export interface ChildLinksOptions {
+    sanitizeUrl: (url: string) => string;
+    /** The prefixes of the icon packs available to the page, for the children's icons. */
+    iconPackPrefixes?: string[];
+    /**
+     * The plain text a child's excerpt starts from, or `null` for none, such as a child the
+     * visitor is not allowed to read. Without it, only `#shareDescription` describes a child.
+     */
+    getText?: (note: ShareNote) => string | null;
+}
+
+/**
+ * Returns the links to the visible children of `note`, for its list of subpages. As in the app,
+ * only a collection, a text note and a code note list their children, and `#hideChildrenOverview`
+ * hides the list.
+ */
+export function getChildLinks(note: ShareNote, options: ChildLinksOptions): ChildLink[] {
+    if (!CHILD_LIST_NOTE_TYPES.includes(note.type) || note.isLabelTruthy("hideChildrenOverview")) {
+        return [];
+    }
+
     return note.getVisibleChildNotes().map((child) => ({
-        ...getShareLink(child, sanitizeUrl),
+        ...getShareLink(child, options.sanitizeUrl),
         title: child.title,
-        type: child.type
+        type: child.type,
+        icon: child.getIcon(options.iconPackPrefixes),
+        excerpt: readLabel(child, "shareDescription") ?? toExcerpt(options.getText?.(child) ?? ""),
+        childCount: child.getVisibleChildNotes().length
     }));
+}
+
+/**
+ * Returns how the list of subpages is laid out: a grid, unless the note is a collection whose
+ * `#viewType` is `list`.
+ */
+export function getChildLinksLayout(note: ShareNote): "grid" | "list" {
+    return note.type === "book" && note.getLabelValue("viewType") === "list" ? "list" : "grid";
 }
 
 /** What {@link getNavigationTree} needs besides the notes. */

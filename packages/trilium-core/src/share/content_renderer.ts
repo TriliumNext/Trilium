@@ -8,7 +8,7 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
     type PageHeading
 } from "@triliumnext/share-theme/model/page";
@@ -227,7 +227,12 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             sanitizeUrl: sanitize.sanitizeUrl,
             iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
         }),
-        childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+        childLinks: getChildLinks(note, {
+            sanitizeUrl: sanitize.sanitizeUrl,
+            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+            getText: (child) => getExcerptSource(child as SNote | BNote, renderArgs.canAccessEmbed)
+        }),
+        childLinksLayout: getChildLinksLayout(note),
         contentClasses: getContentClasses(note, isEmpty),
         language: getPageLanguages(note, {
             displayLanguage,
@@ -344,6 +349,30 @@ export function readShareTemplate(name: string) {
 function getShareAssetPath() {
     return utils.isDev() ? `${assetUrlFragment}/src` : `../${assetUrlFragment}`;
 }
+
+/**
+ * Returns the text of the paragraphs of a text note, which the excerpt of its entry in its parent's
+ * list of subpages starts from, or `null` for a note of another type, a protected one, or one the
+ * caller is not allowed to read. Only the start of the note is parsed, enough for any excerpt.
+ */
+function getExcerptSource(note: SNote | BNote, canAccessEmbed?: CanAccessEmbed) {
+    // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
+    if (note.type !== "text" || note.isProtected || canAccessEmbed?.(note as SNote) === false) {
+        return null;
+    }
+
+    const content = note.getContent();
+    if (typeof content !== "string") {
+        return null;
+    }
+
+    return parse(content.slice(0, EXCERPT_SOURCE_LENGTH)).querySelectorAll("p")
+        .map((paragraph) => paragraph.text)
+        .join(" ");
+}
+
+/** How much of a text note's HTML {@link getExcerptSource} parses. */
+const EXCERPT_SOURCE_LENGTH = 10_000;
 
 /**
  * Decides whether the caller is allowed to read a note that an embed pulls in. The share routes

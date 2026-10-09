@@ -11,6 +11,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 *   Collapsible tree with the same note icons as the application. It keeps the sections the visitor expanded and its scroll position while they move between the pages of the site, and shows the current note.
 *   Customizable logo.
 *   Quick navigation buttons (previous and next note).
+*   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage, the start of its text (or its `#shareDescription`) and how many subpages it has itself. The cards can be hidden with `#hideChildrenOverview`.
 *   Displaying the date of the last update of the note, written out in the application's language.
 *   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
@@ -62,8 +63,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Collections.md">Collections</a></th>
-            <td><ul><li>The child notes are displayed in a fixed format.&nbsp;</li></ul></td>
-            <td><ul><li>More advanced view types such as the calendar view are not supported.</li></ul></td>
+            <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon, the start of its text (or its <code>#shareDescription</code>) and how many subpages it has itself.</li></ul></td>
+            <td><ul><li>The other view types (such as the calendar, the table or the board) are not supported, and the child notes are shown as cards instead.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
@@ -265,7 +266,7 @@ The URL must be absolute and include the scheme (e.g. `https://`).
         </tr>
         <tr>
             <td><code>#shareDescription</code></td>
-            <td>define text to be added to the HTML meta tag for description</td>
+            <td>define text to be added to the HTML meta tag for description. It also describes the note in the list of subpages of its parent, in place of the start of its text.</td>
         </tr>
         <tr>
             <td><code>#shareRaw</code></td>

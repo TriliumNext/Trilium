@@ -46,6 +46,9 @@ html.theme-light {
     --quick-search-button-active-color: #383838;
     /* The right pane colors of `theme-next-light.css`. */
     --main-border-color: #dbdbdb;
+    --muted-text-color: #666;
+    --card-background-color: #0000000d;
+    --card-background-hover-color: #0000001c;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #00000013;
     --mermaid-theme: default;
@@ -81,6 +84,9 @@ html.theme-dark {
     --quick-search-button-active-color: #000000;
     /* The right pane colors of `theme-next-dark.css`. */
     --main-border-color: #454545;
+    --muted-text-color: #bbb;
+    --card-background-color: #ffffff12;
+    --card-background-hover-color: #ffffff20;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #ffffff26;
     --mermaid-theme: dark;
