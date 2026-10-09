@@ -92,7 +92,7 @@ type Placement =
     | { mode: "move"; noteId: string }
     | { mode: "draw"; tool: DrawTool };
 
-export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<MapData>) {
+export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenNote }: ViewModeProps<MapData>) {
     const { noteContext } = useNoteContext();
     const [ placement, setPlacement ] = useState<Placement>();
     // Which marker the detail pane stands for. Held here rather than in the pane so that creating a
@@ -179,11 +179,16 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     /** Opens the pane on a note, which sends away the searched place the panel would otherwise share
      *  a corner with. */
     const selectNote = useCallback((next: PaneSelection | null) => {
+        if (next && onOpenNote) {
+            onOpenNote(next.noteId);
+            return;
+        }
+
         setSelection(next);
         if (next) {
             forgetPlace();
         }
-    }, [ forgetPlace ]);
+    }, [ forgetPlace, onOpenNote ]);
 
     /** Stands the map on a place found by searching, and fetches the ground it covers where it covers
      *  any (see PlaceMarker). */

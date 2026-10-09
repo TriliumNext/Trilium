@@ -24,4 +24,6 @@ export interface ViewModeProps<T extends object> {
     onReady(data: PrintReport): void;
     onProgressChanged?: ProgressChangedFn;
     showTextRepresentation?: boolean;
+    /** Opens a note the view selects, in place of the view's own way, such as the map's detail pane. */
+    onOpenNote?: (noteId: string) => void;
 }

@@ -21,7 +21,7 @@ interface GeoMapPayload extends FrocaPayload {
  * control the view has.
  */
 export default function mountGeoMap(container: HTMLElement, payload: GeoMapPayload) {
-    const { options: optionValues, links: _links, ...rows } = payload;
+    const { options: optionValues, links, ...rows } = payload;
     options.load(Object.fromEntries(Object.entries(optionValues)
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
@@ -55,10 +55,18 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
                 saveConfig={() => {}}
                 media="screen"
                 onReady={() => {}}
+                onOpenNote={(openedNoteId) => openLink(links[openedNoteId])}
             />
         </ParentComponent.Provider>,
         container
     );
+}
+
+/** Opens a note's shared page, which the map does in place of its detail pane. */
+function openLink(link: string | undefined) {
+    if (link) {
+        window.location.href = link;
+    }
 }
 
 /**
