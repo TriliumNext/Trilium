@@ -56,12 +56,15 @@ interface TreeState {
     siteId: string | undefined;
     top: number;
     expanded: string[];
+    /** The note IDs from the top of the tree down to the entry that was clicked. */
+    activePath?: string[];
 }
 
 /**
  * Keeps the navigation pane's expanded pages and scroll position across the pages of a site, which
  * are separate documents, and brings the current note into view when that position would hide it.
- * The state is kept per site, keyed by `data-ancestor-note-id`, in `sessionStorage`.
+ * Of a cloned note, the entry that was clicked stays the selected one. The state is kept per site,
+ * keyed by `data-ancestor-note-id`, in `sessionStorage`.
  */
 export function setupTreeState() {
     const pane = document.getElementById("left-pane");
@@ -72,7 +75,7 @@ export function setupTreeState() {
 
     const saved = readTreeState();
     if (saved && saved.siteId === siteId) {
-        expandItems(pane, saved.expanded);
+        restoreTree(pane, saved);
         pane.scrollTop = saved.top;
     }
 
@@ -86,10 +89,18 @@ export function setupTreeState() {
         }
     }
 
+    let activePath: string[] | undefined;
+    pane.addEventListener("click", (e) => {
+        const item = e.target instanceof Element && e.target.closest("#menu a")?.closest("li");
+        if (item) {
+            activePath = getItemPath(item);
+        }
+    });
+
     window.addEventListener("pagehide", () => {
         const expandedItems = pane.querySelectorAll<HTMLElement>("#menu li.expanded[data-note-id]");
         const expanded = [ ...expandedItems ].map((item) => item.dataset.noteId);
-        const state = { siteId, top: pane.scrollTop, expanded };
+        const state = { siteId, top: pane.scrollTop, expanded, activePath };
         try {
             sessionStorage.setItem(TREE_STATE_KEY, JSON.stringify(state));
         } catch {
@@ -98,26 +109,96 @@ export function setupTreeState() {
     });
 }
 
-/** Expands the entries of the notes in `noteIds`, every clone of each, without animating. */
-function expandItems(pane: HTMLElement, noteIds: string[]) {
-    const ids = new Set(noteIds);
+/**
+ * Expands the saved entries, every clone of each, and selects the clicked entry of the current
+ * note, all without animating.
+ */
+function restoreTree(pane: HTMLElement, state: TreeState) {
     pane.classList.add("tree-restoring");
+
+    const ids = new Set(state.expanded);
     for (const item of pane.querySelectorAll<HTMLElement>("#menu li.submenu-item[data-note-id]")) {
-        if (!item.dataset.noteId || !ids.has(item.dataset.noteId)) {
-            continue;
+        if (item.dataset.noteId && ids.has(item.dataset.noteId)) {
+            expandItem(item);
         }
-        item.classList.add("expanded");
-        item.querySelector(":scope > * > .collapse-button")?.setAttribute("aria-expanded", "true");
     }
+
+    const path = state.activePath;
+    const clicked = path?.at(-1) === document.body.dataset.noteId && path && findItem(pane, path);
+    if (clicked) {
+        for (const selected of pane.querySelectorAll("#menu .active")) {
+            selected.classList.remove("active");
+        }
+        const rowAndLink = ":scope > .tree-item-row, :scope > * > a, :scope > a";
+        for (const selected of clicked.querySelectorAll(rowAndLink)) {
+            selected.classList.add("active");
+        }
+        const ancestors = getAncestorItems(clicked);
+        for (const ancestor of ancestors) {
+            expandItem(ancestor);
+        }
+        // The server expands the way to another clone, which would push the clicked one down.
+        for (const item of pane.querySelectorAll<HTMLElement>("#menu li.expanded[data-note-id]")) {
+            const keep = item === clicked || ancestors.includes(item)
+                || ids.has(String(item.dataset.noteId));
+            if (!keep) {
+                collapseItem(item);
+            }
+        }
+    }
+
     // Applies the expanded styles while transitions are off, so the chevrons do not rotate.
     void pane.offsetHeight;
     pane.classList.remove("tree-restoring");
 }
 
+function expandItem(item: Element) {
+    item.classList.add("expanded");
+    item.querySelector(":scope > * > .collapse-button")?.setAttribute("aria-expanded", "true");
+}
+
+function collapseItem(item: Element) {
+    item.classList.remove("expanded");
+    item.querySelector(":scope > * > .collapse-button")?.setAttribute("aria-expanded", "false");
+}
+
+/** Returns the note IDs from the top of the tree down to `item`. */
+function getItemPath(item: Element) {
+    return [ ...getAncestorItems(item).reverse(), item ]
+        .map((entry) => entry.getAttribute("data-note-id") ?? "");
+}
+
+/** Returns the entries that contain `item`, from its parent up. */
+function getAncestorItems(item: Element) {
+    const ancestors: Element[] = [];
+    let entry = item.parentElement?.closest("li");
+    while (entry) {
+        ancestors.push(entry);
+        entry = entry.parentElement?.closest("li");
+    }
+    return ancestors;
+}
+
+/** Returns the entry that `path` leads to from the top of the tree, if the tree has it. */
+function findItem(pane: HTMLElement, path: string[]) {
+    let item: Element | undefined;
+    let list = pane.querySelector("#menu > ul");
+    for (const noteId of path) {
+        const children = [ ...list?.children ?? [] ];
+        item = children.find((child) => child.getAttribute("data-note-id") === noteId);
+        list = item?.querySelector(":scope > ul") ?? null;
+    }
+    return item;
+}
+
 function readTreeState(): TreeState | null {
     try {
         const state = JSON.parse(sessionStorage.getItem(TREE_STATE_KEY) ?? "null");
-        return state && { ...state, expanded: Array.isArray(state.expanded) ? state.expanded : [] };
+        return state && {
+            ...state,
+            expanded: Array.isArray(state.expanded) ? state.expanded : [],
+            activePath: Array.isArray(state.activePath) ? state.activePath : undefined
+        };
     } catch {
         return null;
     }

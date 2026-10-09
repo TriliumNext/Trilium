@@ -368,23 +368,29 @@ export interface NavigationTreeOptions {
 /**
  * Returns the navigation tree of the site starting at `siteRoot`: its visible pages, below one
  * another as in the note tree. The entries of `activeNote` and of the notes in `ancestorIds` are
- * expanded.
+ * expanded. Of a cloned `activeNote`, only the entry below exactly the notes in `ancestorIds` is
+ * the active one; their order and whether they include `siteRoot` do not matter.
  */
 export function getNavigationTree(
     siteRoot: ShareNote, activeNote: ShareNote, ancestorIds: string[], options: NavigationTreeOptions
 ): NavigationItem[] {
     const expandedIds = new Set([ activeNote.noteId, ...ancestorIds ]);
-    const toItem = (note: ShareNote): NavigationItem => ({
+    const activeAncestorIds = new Set(ancestorIds.filter((noteId) => noteId !== siteRoot.noteId));
+    const isActive = (note: ShareNote, path: string[]) => note.noteId === activeNote.noteId
+        && path.length === activeAncestorIds.size
+        && path.every((noteId) => activeAncestorIds.has(noteId));
+    const toItem = (note: ShareNote, path: string[]): NavigationItem => ({
         ...getShareLink(note, options.sanitizeUrl),
         noteId: note.noteId,
         title: note.title,
         type: note.type,
         icon: note.getIcon(options.iconPackPrefixes),
-        isActive: note.noteId === activeNote.noteId,
+        isActive: isActive(note, path),
         isExpanded: expandedIds.has(note.noteId),
-        children: note.getVisibleChildNotes().map(toItem)
+        children: note.getVisibleChildNotes()
+            .map((child) => toItem(child, [ ...path, note.noteId ]))
     });
-    return siteRoot.getVisibleChildNotes().map(toItem);
+    return siteRoot.getVisibleChildNotes().map((note) => toItem(note, []));
 }
 
 /**

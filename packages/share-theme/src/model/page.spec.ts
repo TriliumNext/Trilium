@@ -338,6 +338,22 @@ describe("getNavigationTree", () => {
         expect(tree[1]).toMatchObject({ href: "https://example.com", isExternal: true });
     });
 
+    it("marks as active only the clone of the note below its ancestors", () => {
+        // clones ─┬─ x ── c (first parent)
+        //         └─ y ── c (clone)
+        const clones = fakeNote({ noteId: "clones" });
+        const [ x, y ] = [ "x", "y" ].map((noteId) => addChild(clones, fakeNote({ noteId })));
+        const c = addChild(x, fakeNote({ noteId: "c" }));
+        addChild(y, c);
+
+        const outlineOf = (ancestorIds: string[]) =>
+            outline(getNavigationTree(clones, c, ancestorIds, { sanitizeUrl: (url) => url }));
+        expect(outlineOf([ "x" ])).toStrictEqual([ [ "x+", [ "c*+" ] ], [ "y", [ "c+" ] ] ]);
+        expect(outlineOf([ "y" ])).toStrictEqual([ [ "x", [ "c+" ] ], [ "y+", [ "c*+" ] ] ]);
+        // The static export passes the path from the site root down.
+        expect(outlineOf([ "clones", "y" ])).toStrictEqual(outlineOf([ "y" ]));
+    });
+
     it("passes the icon pack prefixes to the notes", () => {
         const tree = getNavigationTree(site, site, [], {
             sanitizeUrl: (url) => url,
