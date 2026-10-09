@@ -1,0 +1,44 @@
+/* Admonitions in note content: the app, its print view, the share theme and the HTML export. */
+:root {
+    --admonition-note-accent-color: #69c7ff;
+    --admonition-tip-accent-color: #40c025;
+    --admonition-important-accent-color: #9839f7;
+    --admonition-caution-accent-color: #ff2e2e;
+    --admonition-warning-accent-color: #e2aa03;
+}
+
+.admonition {
+    --accent-color: var(--card-border-color);
+    background: color-mix(in srgb, var(--accent-color) 15%, transparent);
+    border: 1px solid var(--accent-color);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin: 1.25em 0;
+    position: relative;
+    padding-inline-start: 2.5em;
+    overflow: hidden;
+}
+
+.admonition p:last-child {
+    margin-bottom: 0;
+}
+
+.admonition::before {
+    color: var(--accent-color);
+    font-family: boxicons !important;
+    position: absolute;
+    top: 1em;
+    inset-inline-start: 1em;
+}
+
+.admonition.note { --accent-color: var(--admonition-note-accent-color); }
+.admonition.tip { --accent-color: var(--admonition-tip-accent-color); }
+.admonition.important { --accent-color: var(--admonition-important-accent-color); }
+.admonition.caution { --accent-color: var(--admonition-caution-accent-color); }
+.admonition.warning { --accent-color: var(--admonition-warning-accent-color); }
+
+.admonition.note::before { content: "\eb21"; }
+.admonition.tip::before { content: "\ea0d"; }
+.admonition.important::before { content: "\ea7c"; }
+.admonition.caution::before { content: "\eac7"; }
+.admonition.warning::before { content: "\eac5"; }

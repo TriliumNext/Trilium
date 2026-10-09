@@ -12,6 +12,7 @@ import type {
     ShareThemeExportAssets
 } from "@triliumnext/core/src/services/export/zip/share_theme.js";
 
+import admonitionsCss from "@triliumnext/ckeditor5/src/theme/admonitions.css?raw";
 import contentCss from "@triliumnext/ckeditor5/src/theme/ck-content.css?raw";
 import multicolumnCss from "@triliumnext/ckeditor5/src/theme/multicolumn.css?raw";
 
@@ -19,7 +20,9 @@ export async function standaloneZipExportProviderFactory(format: ExportFormat, d
     switch (format) {
         case "html": {
             const { default: HtmlExportProvider } = await import("@triliumnext/core/src/services/export/zip/html.js");
-            return new HtmlExportProvider(data, { contentCss: `${contentCss}\n${multicolumnCss}` });
+            return new HtmlExportProvider(data, {
+                contentCss: `${contentCss}\n${admonitionsCss}\n${multicolumnCss}`
+            });
         }
         case "markdown": {
             const { default: MarkdownExportProvider } = await import("@triliumnext/core/src/services/export/zip/markdown.js");
