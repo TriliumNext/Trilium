@@ -8,7 +8,7 @@ import setupThemeSelector from "./page/theme_switch.js";
 import setupSearch from "./page/search.js";
 import setupToC from "./page/toc.js";
 import "./page/child_links.css";
-import "./page/footer.css";
+import setupFooter from "./page/footer.js";
 import "./content/content.css";
 import "./content/footnotes.css";
 import "./content/external_links.css";
@@ -41,6 +41,7 @@ $try(setupToC);
 $try(setupExpanders);
 $try(setupLayout);
 $try(setupSearch);
+$try(setupFooter);
 
 function setupTextNote() {
     $try(setupMermaid);
@@ -58,14 +59,6 @@ document.addEventListener(
             setupTextNote();
         } else if (noteType === "mermaid") {
             $try(setupMermaid);
-        }
-
-        // Format <time> elements using the browser's locale.
-        for (const el of document.querySelectorAll<HTMLTimeElement>("time[datetime]")) {
-            const date = new Date(el.dateTime);
-            if (!isNaN(date.getTime())) {
-                el.textContent = date.toLocaleDateString();
-            }
         }
     },
     false
