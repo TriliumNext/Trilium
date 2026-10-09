@@ -28,6 +28,7 @@ import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as task_states from "../services/task_states.js";
 import * as utils from "../services/utils/index.js";
+import { buildFrocaPayload } from "./froca_payload.js";
 import { getShareProvider } from "./share_provider.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
@@ -486,6 +487,9 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderImage(result, note);
     } else if (note.type === "file") {
         renderFile(note, result);
+    } else if (note.type === "book" && !(note instanceof BNote)
+        && getViewType(note) === "calendar") {
+        renderCalendar(result, note);
     } else if (note.type === "book") {
         result.isEmpty = true;
     } else if (note.type === "webView") {
@@ -871,6 +875,37 @@ function renderMermaid(result: Result, note: SNote | BNote) {
     <pre class="mermaid-note-source">${escapeHtml(result.content)}</pre>
 </details>
 </div>`;
+}
+
+/**
+ * The view type of a collection: its own `#viewType`, else the one of a built-in template such as
+ * `_template_calendar`, which lives in the hidden subtree and so is never in shaca.
+ */
+function getViewType(note: SNote) {
+    const viewType = note.getLabelValue("viewType");
+    if (viewType) {
+        return viewType;
+    }
+
+    for (const relation of note.getOwnedRelations("template")) {
+        if (relation.value.startsWith("_template_")) {
+            const templateViewType = becca.getNote(relation.value)?.getLabelValue("viewType");
+            if (templateViewType) {
+                return templateViewType;
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Renders a calendar collection as an element the share theme's script draws the client's calendar
+ * into, from the notes `buildFrocaPayload()` embeds next to it.
+ */
+function renderCalendar(result: Result, note: SNote) {
+    const payload = JSON.stringify(buildFrocaPayload(note)).replace(/</g, "\\u003c");
+    result.content = `<div class="share-calendar" data-note-id="${note.noteId}"></div>`
+        + `<script type="application/json" class="share-froca">${payload}</script>`;
 }
 
 /** The `data-*` attributes of a Mermaid note that label its viewer, and their translations. */

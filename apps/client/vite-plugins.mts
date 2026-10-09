@@ -135,6 +135,9 @@ const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = 
     mermaid: [
         { specifier: "mermaid", importer: "content/mermaid.ts" },
         { specifier: "./mermaid_zoom.js", importer: "content/mermaid.ts" }
+    ],
+    calendar: [
+        { specifier: "./calendar_view.js", importer: "content/calendar.ts" }
     ]
 };
 
@@ -372,6 +375,7 @@ type BundleOutput =
         type: "chunk";
         fileName: string;
         facadeModuleId: string | null;
+        moduleIds?: string[];
         imports: string[];
         dynamicImports: string[];
         viteMetadata?: { importedCss: Set<string>; importedAssets: Set<string> };
@@ -403,6 +407,8 @@ export function buildShareThemeManifest(
         }
     }
 
+    const appOnly = new Set(Object.values(bundle).flatMap((output) =>
+        (output.type === "chunk" && output.moduleIds?.some(isAppOnlyModule) ? [ output.fileName ] : [])));
     const pageFiles = collectFiles(bundle, [ SCRIPTS_FILE ], { dynamic: false });
     const onDemand = [ ...pageFiles ].flatMap((fileName) => {
         const output = bundle[fileName];
@@ -410,7 +416,7 @@ export function buildShareThemeManifest(
     });
     const files = new Set([
         ...pageFiles,
-        ...collectFiles(bundle, onDemand, { dynamic: true, excluded: new Set(lazyChunks.keys()) }),
+        ...collectFiles(bundle, onDemand, { dynamic: true, excluded: new Set([ ...lazyChunks.keys(), ...appOnly ]) }),
         TREE_FILE,
         STYLES_FILE,
         ...styleAssets
@@ -420,12 +426,28 @@ export function buildShareThemeManifest(
     for (const name of Object.keys(lazyEntries)) {
         const chunks = [ ...lazyChunks ].flatMap(([ fileName, group ]) =>
             (group === name ? [ fileName ] : []));
-        const lazyFiles = collectFiles(bundle, chunks, { dynamic: true });
+        const lazyFiles = collectFiles(bundle, chunks, { dynamic: true, excluded: appOnly });
         lazy[name] = toManifestPaths([ ...lazyFiles ].filter((file) => !files.has(file)));
     }
 
     return { files: toManifestPaths([ ...files ]), lazy };
 }
+
+/**
+ * Whether `id` is one of the app's modules that the client code the share theme reuses imports on
+ * demand, on paths a shared page never takes, such as running a script note.
+ */
+function isAppOnlyModule(id: string) {
+    return APP_ONLY_MODULES.some((module) => id.endsWith(module));
+}
+
+const APP_ONLY_MODULES = [
+    "/apps/client/src/components/app_context.ts",
+    "/apps/client/src/services/search.ts",
+    "/apps/client/src/services/bundle.ts",
+    "/apps/client/src/services/backend_scripting.ts",
+    "/apps/client/src/services/dialog.ts"
+];
 
 /**
  * Collects `entries` and the chunks and assets they import, without descending into `excluded`.
