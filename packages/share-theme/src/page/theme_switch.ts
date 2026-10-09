@@ -2,17 +2,21 @@ import "./theme_switch.css";
 
 type ThemePreference = "light" | "dark" | "system";
 
-/** The order of the buttons, and the order in which the header button cycles. */
+/**
+ * The order of the buttons, and the order in which the header button of older templates cycles
+ * through them.
+ */
 const PREFERENCES: ThemePreference[] = [ "light", "dark", "system" ];
 const STORAGE_KEY = "theme";
 
 const themeRootEl = document.documentElement;
 
 /**
- * Wires the theme buttons of the left pane and the header button, which cycles through the same
- * choices. `boot_script.ejs` applies the theme and its `theme-preference-*` class before the first
- * paint, and the controls are styled from that class, so this only syncs `aria-pressed`, switches
- * the theme on click and follows the system theme while the preference is "system".
+ * Wires the theme buttons of the left pane, and the header button of custom templates copied from
+ * an earlier `page.ejs`, which cycles through the same choices. `boot_script.ejs` applies the
+ * theme and its `theme-preference-*` class before the first paint, and the controls are styled
+ * from that class, so this only syncs `aria-pressed`, switches the theme on click and follows the
+ * system theme while the preference is "system".
  */
 export default function setupThemeSelector() {
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)");

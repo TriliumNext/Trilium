@@ -91,7 +91,7 @@ html {
     width: 32px;
 }
 
-#header > :last-child {
+#header > :nth-child(3) {
     justify-self: end;
 }
 
