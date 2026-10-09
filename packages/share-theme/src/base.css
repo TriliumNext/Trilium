@@ -33,7 +33,10 @@ html.theme-light {
     /* The code colors of `theme-next-light.css`. */
     --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
     --inline-code-background-color: rgba(0, 0, 0, 0.05);
-    /* The tree item colors of `theme-next-light.css`. */
+    /* The tree pane colors of `theme-next-light.css`. */
+    --tree-background: #f2f2f2;
+    --tree-item-color: #383838;
+    --tree-item-icon-color: currentColor;
     --tree-item-hover-background: rgba(0, 0, 0, 0.032);
     --tree-item-active-background: #FFFFFF;
     --tree-item-active-color: #000000;
@@ -74,7 +77,10 @@ html.theme-dark {
     /* The code colors of `theme-next-dark.css`. */
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
     --inline-code-background-color: rgba(255, 255, 255, 0.08);
-    /* The tree item colors of `theme-next-dark.css`. */
+    /* The tree pane colors of `theme-next-dark.css`. */
+    --tree-background: #1f1f1f;
+    --tree-item-color: #aaaaaa;
+    --tree-item-icon-color: #c5c5c5;
     --tree-item-hover-background: #ffffff0d;
     --tree-item-active-background: #ffffff25;
     --tree-item-active-color: #dfdfdf;

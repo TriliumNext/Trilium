@@ -27,7 +27,7 @@ html {
     width: var(--left-pane-width);
     height: 100vh;
     border-inline-end: 1px solid var(--background-highlight);
-    background: var(--background-secondary);
+    background: var(--tree-background);
     justify-content: flex-start;
     position: sticky;
     top: 0;
@@ -38,12 +38,12 @@ html {
 /* Extends the pane's background to the edge of the window when the layout is narrower than it. */
 @media not all and (max-width: 48em) {
     #left-pane {
-        box-shadow: -100vw 0 0 100vw var(--background-secondary);
+        box-shadow: -100vw 0 0 100vw var(--tree-background);
         clip-path: inset(0 0 0 -100vw);
     }
 
     #left-pane:dir(rtl) {
-        box-shadow: 100vw 0 0 100vw var(--background-secondary);
+        box-shadow: 100vw 0 0 100vw var(--tree-background);
         clip-path: inset(0 -100vw 0 0);
     }
 }

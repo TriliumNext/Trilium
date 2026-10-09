@@ -3,7 +3,7 @@
 
     display: flex;
     flex-direction: column;
-    padding: 0 25px 25px;
+    padding: 0 6px 40px;
 }
 
 /* Stays at the top of the pane while the tree scrolls, which fades out under its bottom edge. */
@@ -14,11 +14,11 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin-inline: -25px;
+    margin-inline: -6px;
     padding: var(--page-top-spacing) 25px var(--site-header-fade);
     background: linear-gradient(
         to bottom,
-        var(--background-secondary) calc(100% - var(--site-header-fade)),
+        var(--tree-background) calc(100% - var(--site-header-fade)),
         transparent
     );
 }
@@ -50,7 +50,7 @@
     display: flex;
     flex-direction: column;
     list-style: none;
-    padding-inline-start: 12px;
+    padding-inline-start: 10px;
 }
 
 #menu li {
@@ -58,8 +58,6 @@
     display: flex;
     flex-direction: column;
     list-style: none;
-    cursor: pointer;
-    max-width: 350px;
 }
 
 #menu li > ul {
@@ -74,11 +72,12 @@
 /* The tree items of the app's default theme (`theme-next/shell.css`, "TREE PANE"). `li > a` is the
    row of a `tree_item` partial copied from an earlier theme, whose button sits inside its link. */
 #menu :is(.tree-item-row, li > a) {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex: 1;
     border-radius: 6px;
-    color: var(--text-menu);
-    transition: background-color 150ms ease;
+    color: var(--tree-item-color);
 }
 
 #menu :is(.tree-item-row, li > a):hover {
@@ -86,9 +85,26 @@
 }
 
 #menu :is(.tree-item-row, li > a).active {
+    background: transparent;
+    color: var(--tree-item-active-color);
+}
+
+/* The current note's card, inset by 2px as the app's `--left-pane-item-selected-shadow-size`. */
+#menu :is(.tree-item-row, li > a).active::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: -1;
+    border-radius: 6px;
     background: var(--tree-item-active-background);
     box-shadow: var(--tree-item-active-shadow);
-    color: var(--tree-item-active-color);
+    animation: tree-item-select 200ms ease-out;
+}
+
+@keyframes tree-item-select {
+    from {
+        opacity: 0;
+    }
 }
 
 #menu .tree-item-row {
@@ -99,9 +115,9 @@
     display: flex;
     flex: 1;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     min-width: 0;
-    padding: 7px 8px 7px 6px;
+    padding: 7px 8px 7px 0;
     border-radius: 6px;
     color: inherit;
     font-weight: 400;
@@ -109,7 +125,7 @@
 }
 
 #menu li.item > .tree-item-row > a {
-    padding-inline-start: 34px;
+    padding-inline-start: 29px;
 }
 
 #menu li > a {
@@ -127,8 +143,12 @@
 }
 
 #menu a > .tn-icon {
+    display: flex;
     flex-shrink: 0;
+    justify-content: center;
+    width: 1em;
     font-size: 1.2em;
+    color: var(--tree-item-icon-color);
 }
 
 #menu .tree-item-title {
@@ -154,7 +174,7 @@
 }
 
 .tree-item-row > .collapse-button {
-    width: 28px;
+    margin-inline-end: 5px;
 }
 
 .collapse-button:hover {
@@ -185,9 +205,12 @@
 
 @media (prefers-reduced-motion: reduce) {
     #menu li > ul,
-    #menu :is(.tree-item-row, li > a),
     .collapse-button,
     .collapse-button > * {
         transition: none;
+    }
+
+    #menu :is(.tree-item-row, li > a).active::before {
+        animation: none;
     }
 }
