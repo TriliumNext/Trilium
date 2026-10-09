@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import setupLayout from "./layout.js";
 
@@ -7,35 +7,18 @@ describe("setupLayout", () => {
     afterEach(() => {
         document.body.innerHTML = "";
         document.body.className = "";
-        document.documentElement.className = "";
-        localStorage.clear();
-        vi.unstubAllGlobals();
     });
 
-    it("collapses a pane on a wide screen and remembers it", () => {
-        vi.stubGlobal("innerWidth", 1024);
-        renderPage();
-
-        click("left-pane-toggle-button");
-        expect(document.documentElement.classList.contains("left-pane-collapsed")).toBe(true);
-        expect(localStorage.getItem("left-pane-collapsed")).toBe("true");
-
-        click("toc-pane-toggle-button");
-        click("left-pane-toggle-button");
-        expect(document.documentElement.className).toBe("toc-pane-collapsed");
-        expect(localStorage.getItem("left-pane-collapsed")).toBe("false");
-        expect(localStorage.getItem("toc-pane-collapsed")).toBe("true");
-    });
-
-    it("opens one pane at a time on a narrow screen, closed by the backdrop or a return", () => {
-        vi.stubGlobal("innerWidth", 768);
+    it("opens one pane at a time, closed by the backdrop or a return", () => {
         renderPage();
 
         click("left-pane-toggle-button");
         expect(document.body.className).toBe("menu-open");
         click("toc-pane-toggle-button");
         expect(document.body.className).toBe("toc-open");
-        expect(localStorage.length).toBe(0);
+        click("toc-pane-toggle-button");
+        expect(document.body.className).toBe("");
+        click("toc-pane-toggle-button");
 
         click("mobile-backdrop");
         expect(document.body.className).toBe("");

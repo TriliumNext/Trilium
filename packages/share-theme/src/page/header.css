@@ -1,24 +1,27 @@
 #header {
     background: var(--background-secondary);
-    display: flex;
+    display: none;
     justify-content: space-between;
     align-items: center;
-    padding: 6px calc(var(--page-gutter) + 12px);
+    padding: 6px 12px;
     border-bottom: 1px solid var(--background-highlight);
 }
 
-#header-logo {
+#header-logo,
+#site-logo {
     display: flex;
     align-items: center;
     gap: 5px;
     font-weight: bold;
 }
 
-#header-logo img {
+#header-logo img,
+#site-logo img {
     max-width: 32px;
 }
 
-#header-logo .tn-icon {
+#header-logo .tn-icon,
+#site-logo .tn-icon {
     font-size: 24px;
 }
 
@@ -37,7 +40,7 @@
 }
 
 .header-button .tn-icon {
-    font-size: 24px;
+    font-size: 32px;
 }
 
 .header-button:hover {
@@ -49,7 +52,11 @@
 }
 
 @media (max-width: 48em) {
-    #header .header-button .tn-icon {
-        font-size: 32px;
+    #header {
+        display: flex;
+    }
+
+    #site-logo {
+        display: none;
     }
 }

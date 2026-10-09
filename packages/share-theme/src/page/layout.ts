@@ -1,10 +1,8 @@
 import "./layout.css";
 
-const MOBILE_BREAKPOINT = 768; // 48em
-
 export default function setupLayout() {
-    setupToggle("left-pane-toggle-button", "left-pane-collapsed", "menu-open", "toc-open");
-    setupToggle("toc-pane-toggle-button", "toc-pane-collapsed", "toc-open", "menu-open");
+    setupToggle("left-pane-toggle-button", "menu-open", "toc-open");
+    setupToggle("toc-pane-toggle-button", "toc-open", "menu-open");
 
     // A listener on the backdrop itself, not on `window`: iOS Safari dispatches no `click` for a
     // tap on an element it does not consider clickable, and `window` listeners do not count.
@@ -22,18 +20,10 @@ export function closeMobileMenus() {
     document.body.classList.remove("toc-open");
 }
 
-function setupToggle(buttonId: string, className: string, mobileClass: string, otherMobileClass: string) {
-    const button = document.getElementById(buttonId);
-    if (!button) return;
-
-    button.addEventListener("click", () => {
-        const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-        if (isMobile) {
-            document.body.classList.toggle(mobileClass);
-            document.body.classList.remove(otherMobileClass);
-        } else {
-            const isCollapsed = document.documentElement.classList.toggle(className);
-            localStorage.setItem(className, String(isCollapsed));
-        }
+/** Makes a header button, shown on narrow screens only, slide its pane in or out. */
+function setupToggle(buttonId: string, openClass: string, otherOpenClass: string) {
+    document.getElementById(buttonId)?.addEventListener("click", () => {
+        document.body.classList.toggle(openClass);
+        document.body.classList.remove(otherOpenClass);
     });
 }

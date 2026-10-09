@@ -51,7 +51,7 @@ describe("setupMermaid", () => {
         expect(fakeMermaid.render).toHaveBeenLastCalledWith(firstId, "graph TD; A-->B");
 
         // A class change that leaves the theme alone does not draw the diagrams again.
-        document.documentElement.classList.add("left-pane-collapsed");
+        document.documentElement.classList.add("menu-open");
         await Promise.resolve();
         expect(fakeMermaid.render).toHaveBeenCalledTimes(1);
 

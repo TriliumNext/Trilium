@@ -5,13 +5,12 @@ import { createContext, runInContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
 describe("boot_script.ejs", () => {
-    it("applies the stored theme and panes without leaving global names behind", () => {
+    it("applies the stored theme without leaving global names behind", () => {
         const { context, classes } = runBootScript({
-            "theme": "dark",
-            "left-pane-collapsed": "true"
+            "theme": "dark"
         });
 
-        expect([ ...classes ]).toStrictEqual([ "theme-dark", "left-pane-collapsed" ]);
+        expect([ ...classes ]).toStrictEqual([ "theme-dark" ]);
         expect(context.glob).toEqual({ isStatic: true, theme: "dark" });
         expect(() => runInContext(`const el = 1; let theme = 2; let root = 3;`, context)).not.toThrow();
     });

@@ -1,5 +1,5 @@
 <script>
-    // Applies the theme and the collapsed panes before the first paint, to avoid color flashes. The
+    // Applies the theme before the first paint, to avoid color flashes. The
     // function keeps its names out of the global scope, which `~shareHtml` snippets share.
     (function () {
         function read(key) {
@@ -19,8 +19,5 @@
             isStatic: <%= !!isStatic %>,
             theme
         };
-
-        if (read("left-pane-collapsed") === "true") root.classList.add("left-pane-collapsed");
-        if (read("toc-pane-collapsed") === "true") root.classList.add("toc-pane-collapsed");
     })();
 </script>

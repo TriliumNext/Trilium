@@ -5,7 +5,6 @@
     position: sticky;
     top: 0;
     order: 3;
-    transition: width 0.3s ease, margin-right 0.3s ease;
     width: 250px;
     flex-shrink: 0;
     max-height: 100vh;
@@ -13,16 +12,6 @@
     padding-top: 20px;
     z-index: 1;
     background: var(--background-primary);
-}
-
-.toc-pane-collapsed #toc-pane {
-    width: 0;
-    overflow: hidden;
-}
-
-.toc-pane-collapsed #toc-pane h3,
-.toc-pane-collapsed #toc-pane #toc {
-    display: none;
 }
 
 #toc-pane h3 {
@@ -133,11 +122,6 @@
         transition: transform 200ms ease;
         z-index: 2;
         overflow-y: auto;
-    }
-
-    #toc-pane h3,
-    #toc-pane #toc {
-        display: block;
     }
 
     .toc-open #toc-pane {

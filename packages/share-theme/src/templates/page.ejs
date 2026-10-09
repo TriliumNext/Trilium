@@ -29,14 +29,7 @@
 <%- snippets["body:start"] %>
 <div id="header">
     <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-menu" aria-hidden="true"></span></button>
-    <a href="<%= logo.href %>" id="header-logo" class="no-arrow">
-        <% if (logo.image) { %>
-            <img src="<%= logo.image %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
-        <% } else { %>
-            <span class="tn-icon <%= logo.icon %>" aria-hidden="true"></span>
-        <% } %>
-        <%= subRoot.note.title %>
-    </a>
+    <%- include("site_logo", { id: "header-logo" }) %>
     <% if (headings.length > 1) { %>
         <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-list-ul" aria-hidden="true"></span></button>
     <% } else { %>
@@ -47,6 +40,7 @@
     <div id="left-pane">
         <div id="navigation">
             <div id="site-header">
+                <%- include("site_logo", { id: "site-logo" }) %>
                 <div class="theme-selection">
                     <span id="sitetheme"><%= t("share_theme.site-theme") %></span>
                     <label class="switch">

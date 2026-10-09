@@ -1387,6 +1387,7 @@ describe("content_renderer pages", () => {
         expect(page.querySelector("body")?.getAttribute("data-ancestor-note-id"))
             .toBe(shareRoot.SHARE_ROOT_NOTE_ID);
         expect(page.querySelector("#header-logo")?.text.trim()).toBe("Everything shared");
+        expect(page.querySelector("#site-logo")?.text.trim()).toBe("Everything shared");
         expect(page.querySelector("#content p")?.text).toBe("Index");
     });
 

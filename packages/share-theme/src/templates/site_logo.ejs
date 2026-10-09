@@ -1,0 +1,8 @@
+<a href="<%= logo.href %>" id="<%= id %>" class="site-logo no-arrow">
+    <% if (logo.image) { %>
+        <img src="<%= logo.image %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
+    <% } else { %>
+        <span class="tn-icon <%= logo.icon %>" aria-hidden="true"></span>
+    <% } %>
+    <%= subRoot.note.title %>
+</a>
