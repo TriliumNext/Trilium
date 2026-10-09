@@ -16,22 +16,48 @@ html {
     z-index: 1;
 }
 
-#header-logo,
-#site-logo {
+:is(#header-logo, #site-logo) {
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-weight: bold;
+    gap: 0.6rem;
+    min-width: 0;
+    color: var(--text-heading);
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1.25;
+    text-decoration: none;
 }
 
-#header-logo img,
-#site-logo img {
+:is(#header-logo, #site-logo):hover {
+    color: var(--text-link);
+    text-decoration: none;
+}
+
+:is(#header-logo, #site-logo):focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 2px;
+}
+
+:is(#header-logo, #site-logo) img {
+    flex-shrink: 0;
     max-width: 32px;
 }
 
-#header-logo .tn-icon,
-#site-logo .tn-icon {
-    font-size: 24px;
+:is(#header-logo, #site-logo) .tn-icon {
+    flex-shrink: 0;
+    font-size: 1.6em;
+}
+
+#site-logo .site-logo-title {
+    text-wrap: balance;
+}
+
+#header-logo .site-logo-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-button {
