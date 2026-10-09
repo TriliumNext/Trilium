@@ -29,9 +29,7 @@ class SBranch extends AbstractShacaEntity {
             childNote.parents.push(parentNote);
         }
 
-        if (!childNote.parentBranches.includes(this)) {
-            childNote.parentBranches.push(this);
-        }
+        childNote.parentBranches.push(this);
 
         if (!parentNote.children.includes(childNote)) {
             parentNote.children.push(childNote);

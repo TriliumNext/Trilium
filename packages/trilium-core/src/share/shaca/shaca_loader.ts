@@ -29,12 +29,6 @@ function load() {
         [shareRoot.SHARE_ROOT_NOTE_ID]
     );
 
-    if (noteIds.length === 0) {
-        shaca.loaded = true;
-
-        return;
-    }
-
     const noteIdStr = noteIds.map((noteId) => `'${noteId}'`).join(",");
 
     const rawNoteRows = sql.getRawRows<SNoteRow>(`
@@ -79,7 +73,7 @@ function load() {
         // shared, so their attachments must never enter the share cache. The
         // note was loaded above (attachments are scoped to the same subtree).
         const [, ownerId] = row;
-        if (shaca.notes[ownerId]?.isProtected) {
+        if (shaca.notes[ownerId].isProtected) {
             continue;
         }
 

@@ -4,9 +4,11 @@ import SAttribute from "../share/shaca/entities/sattribute.js";
 import SBranch from "../share/shaca/entities/sbranch.js";
 import SNote from "../share/shaca/entities/snote.js";
 import shaca from "../share/shaca/shaca.js";
+import { getShareProvider, initShare, type ShareSql } from "../share/share_provider.js";
 
 type AttributeDefinitions = { [key in `#${string}`]: string; };
 type RelationDefinitions = { [key in `~${string}`]: string; };
+type ShareSqlStub = { [key in keyof ShareSql]?: (query: string, params: string[]) => unknown; };
 
 interface AttachementDefinition {
     id?: string;
@@ -144,4 +146,17 @@ export function buildShareNote(noteDef: NoteDefinition) {
         position++;
     }
     return note;
+}
+
+/**
+ * Registers a share provider whose `sql` answers with the given accessors and keeps the rest of the
+ * registered provider.
+ *
+ * @returns a function that registers the previous provider again.
+ */
+export function stubShareSql(sql: ShareSqlStub) {
+    const original = getShareProvider();
+    initShare({ ...original, sql: { ...original.sql, ...sql } as ShareSql });
+
+    return () => initShare(original);
 }
