@@ -5,7 +5,9 @@ The share theme represents the layout, styles and scripts behind the Share notes
 
 *   The theme resides in `packages/share-theme`.
 *   The HTML is defined in `src/templates` using EJS templating.
-*   The `src/scripts` and `src/styles` subdirectories house the rest of the theme.
+*   `src/page` holds the parts of the page around the note (layout, header, navigation tree, theme switch, search, table of contents, footer) and `src/content` the styles and scripts for the note's own content (math, Mermaid, link embeds, adaptive colors). A script imports its own stylesheet, which sits next to it under the same name: `toc.ts` imports `./toc.css`.
+*   `src/index.ts` is the single entry point. It sets every script up and imports the stylesheets that have no script; the order of its imports is the order of the bundled stylesheet.
+*   The build emits `dist/scripts.js` and `dist/scripts.css`, the only stylesheet a shared page loads (`#shareOmitDefaultCss` drops it).
 
 ## Building the share theme
 
@@ -13,7 +15,7 @@ The share theme represents the layout, styles and scripts behind the Share notes
 *   Alternatively, use `pnpm dev` to watch for changes.
 *   `pnpm dist` is the same build, minified. It is what the app builds run, so a release ships the minified assets while local development keeps readable ones.
 
-Both scripts clear `dist` first, since esbuild writes into it without removing what an earlier build left there — a minified release build would otherwise be copied alongside the unminified files `pnpm install` produces. A `--module=` build (`build-scripts`, `build-styles`) builds one entry point and deliberately does not clear, so it leaves the other's output alone.
+Both scripts clear `dist` first, since esbuild writes into it without removing what an earlier build left there — a minified release build would otherwise be copied alongside the unminified files `pnpm install` produces.
 
 ## Where the code lives
 

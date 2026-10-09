@@ -35,7 +35,7 @@ test("renders a published note, its tree and the share theme", async ({ context 
 
     // The theme's stylesheet is copied into the build rather than answered by a route, so a missing
     // copy step would leave the page unstyled instead of failing outright.
-    const stylesStatus = await share.evaluate(async () => (await fetch("/share/assets/styles.css")).status);
+    const stylesStatus = await share.evaluate(async () => (await fetch("/share/assets/scripts.css")).status);
     expect(stylesStatus).toBe(200);
 });
 

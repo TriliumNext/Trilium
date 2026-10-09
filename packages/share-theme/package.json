@@ -6,8 +6,6 @@
   "scripts": {
     "dev": "esrun scripts/build.ts -- --watch",
     "build": "esrun scripts/build.ts",
-    "build-scripts": "esrun scripts/build.ts -- --module=scripts",
-    "build-styles": "esrun scripts/build.ts -- --module=styles",
     "dist": "esrun scripts/build.ts -- --minify",
     "test": "vitest run"
   },

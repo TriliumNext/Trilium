@@ -1,6 +1,7 @@
 import { revealTab } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 
 import { closeMobileMenus } from "./layout.js";
+import "./toc.css";
 
 /**
  * The ToC is now generated in the page template so

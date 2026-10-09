@@ -1,3 +1,5 @@
+import "./navigation.css";
+
 export default function setupExpanders() {
     const expanders = document.querySelectorAll("#menu .submenu-item .collapse-button");
     for (const expander of expanders) {

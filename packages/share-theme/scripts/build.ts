@@ -6,38 +6,11 @@ import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import * as sass from "sass";
 
-const rootDir = path.dirname(process.env.npm_package_json!);
-
-const modules = ["scripts", "styles"];
-const entryPoints: {in: string, out: string}[] = [];
-
-function makeEntry(mod: string) {
-    let entrypoint: string;
-    switch (mod) {
-        case "styles":
-            entrypoint = "index.css";
-            break;
-        case "scripts":
-            entrypoint = "index.ts";
-            break;
-        default:
-            throw new Error(`Unknown module type ${mod}.`);
-    }
-
-    return {
-        "in": path.join(rootDir, "src", entrypoint),
-        "out": mod
-    };
+const packageJson = process.env.npm_package_json;
+if (!packageJson) {
+    throw new Error("Run the build through pnpm, which sets npm_package_json.");
 }
-
-const modulesRequested = process.argv.filter(a => a.startsWith("--module="));
-for (const mod of modulesRequested) {
-    const module = mod?.replace("--module=", "") ?? "";
-    if (modules.includes(module)) entryPoints.push(makeEntry(module));
-}
-
-if (!entryPoints.length) for (const mod of modules) entryPoints.push(makeEntry(mod));
-
+const rootDir = path.dirname(packageJson);
 
 // Sass resolves relative paths on its own; bare specifiers such as
 // "katex/src/styles/katex.scss" go through Node.
@@ -71,14 +44,11 @@ async function runBuild(watch: boolean) {
 
     // esbuild leaves its outdir as it found it, and every `pnpm install` writes an unminified
     // build there, so a minified release build would land beside those files and both sets would
-    // be copied into the app. A partial build must not clean: `--module=` builds one of the two
-    // entry points and would otherwise delete the other's output.
-    if (!modulesRequested.length) {
-        rmSync(outDir, { recursive: true, force: true });
-    }
+    // be copied into the app.
+    rmSync(outDir, { recursive: true, force: true });
 
     const opts: esbuild.BuildOptions = {
-        entryPoints: entryPoints,
+        entryPoints: [ { in: path.join(rootDir, "src", "index.ts"), out: "scripts" } ],
         bundle: true,
         splitting: true,
         outdir: outDir,

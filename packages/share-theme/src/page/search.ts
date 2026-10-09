@@ -2,6 +2,7 @@ import debounce from "../common/debounce.js";
 import parents from "../common/parents.js";
 import parseHTML from "../common/parsehtml.js";
 import type { default as Fuse, FuseResultMatch } from "fuse.js";
+import "./search.css";
 
 let fuseInstance: Fuse<SearchResult> | null = null;
 

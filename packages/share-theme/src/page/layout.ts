@@ -1,3 +1,5 @@
+import "./layout.css";
+
 const MOBILE_BREAKPOINT = 768; // 48em
 
 export default function setupLayout() {

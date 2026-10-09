@@ -120,10 +120,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
     return renderNoteContentInternal(note, {
         subRoot,
         rootNoteId: parentBranch.noteId,
-        cssToLoad: [
-            `${basePath}assets/styles.css`,
-            `${basePath}assets/scripts.css`,
-        ],
+        cssToLoad: [ `${basePath}assets/scripts.css` ],
         jsToLoad,
         logoUrl: `${basePath}icon-color.svg`,
         faviconUrl: `${basePath}favicon.ico`,
@@ -157,7 +154,6 @@ export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) 
     // Determine CSS to load.
     const cssToLoad: string[] = [];
     if (!note.isLabelTruthy("shareOmitDefaultCss")) {
-        cssToLoad.push(`assets/styles.css`);
         cssToLoad.push(`assets/scripts.css`);
     }
     for (const cssRelation of note.getRelations("shareCss")) {

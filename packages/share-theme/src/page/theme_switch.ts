@@ -1,3 +1,5 @@
+import "./theme_switch.css";
+
 const themeRootEl = document.documentElement;
 
 /**

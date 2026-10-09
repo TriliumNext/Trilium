@@ -1,14 +1,23 @@
-import setupToC from "./page/toc.js";
-import setupExpanders from "./page/navigation.js";
+// The order of these imports is the order of the bundled stylesheet: a module's CSS is emitted
+// where the module is first imported.
+import "./base.css";
 import setupLayout from "./page/layout.js";
-import setupSearch from "./page/search.js";
+import "./page/header.css";
+import setupExpanders from "./page/navigation.js";
 import setupThemeSelector from "./page/theme_switch.js";
-import setupMermaid from "./content/mermaid.js";
+import setupSearch from "./page/search.js";
+import setupToC from "./page/toc.js";
+import "./page/child_links.css";
+import "./page/footer.css";
+import "./content/content.css";
+import "./content/footnotes.css";
+import "./content/external_links.css";
+import "./content/task_states.css";
+import "./content/adaptive_colors.css";
+import setupLinkEmbeds from "./content/link_embed.js";
 import setupMath from "./content/math.js";
-import setupVideoFacades from "./content/video_facade.js";
-import setupFaviconContrast from "./content/favicon_contrast.js";
+import setupMermaid from "./content/mermaid.js";
 import api from "./api.js";
-// These go to `scripts.css`, which the page loads after `styles.css` (built from `index.css`).
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
@@ -35,8 +44,7 @@ $try(setupSearch);
 function setupTextNote() {
     $try(setupMermaid);
     $try(setupMath);
-    $try(setupVideoFacades);
-    $try(setupFaviconContrast);
+    $try(setupLinkEmbeds);
     $try(setupTabs);
 }
 
