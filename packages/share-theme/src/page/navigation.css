@@ -1,14 +1,26 @@
 #navigation {
+    --site-header-fade: 16px;
+
     display: flex;
     flex-direction: column;
-    padding: var(--page-top-spacing) 25px 25px;
-    gap: 10px;
+    padding: 0 25px 25px;
 }
 
+/* Stays at the top of the pane while the tree scrolls, which fades out under its bottom edge. */
 #site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    margin-inline: -25px;
+    padding: var(--page-top-spacing) 25px var(--site-header-fade);
+    background: linear-gradient(
+        to bottom,
+        var(--background-secondary) calc(100% - var(--site-header-fade)),
+        transparent
+    );
 }
 
 #site-title-row {

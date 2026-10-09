@@ -83,9 +83,13 @@ export function setupTreeState() {
     if (active) {
         const paneRect = pane.getBoundingClientRect();
         const activeRect = active.getBoundingClientRect();
-        if (activeRect.top < paneRect.top || activeRect.bottom > paneRect.bottom) {
-            const centered = (pane.clientHeight - activeRect.height) / 2;
-            pane.scrollTop += activeRect.top - paneRect.top - centered;
+        // The sticky `#site-header` covers the top of the pane.
+        const visibleTop = pane.querySelector("#site-header")?.getBoundingClientRect().bottom
+            ?? paneRect.top;
+        if (activeRect.top < visibleTop || activeRect.bottom > paneRect.bottom) {
+            const visibleHeight = pane.clientHeight - (visibleTop - paneRect.top);
+            const centered = (visibleHeight - activeRect.height) / 2;
+            pane.scrollTop += activeRect.top - visibleTop - centered;
         }
     }
 

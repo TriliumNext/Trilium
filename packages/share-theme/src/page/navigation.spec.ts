@@ -200,6 +200,11 @@ describe("setupTreeState", () => {
         renderPane("site1", { activeTop: 368 });
         setupTreeState();
         expect(pane().scrollTop).toBe(0);
+
+        // Below the pane's top but behind its 100px sticky header: 60 - 100 - (300 - 32) / 2
+        renderPane("site1", { activeTop: 60, headerHeight: 100 });
+        setupTreeState();
+        expect(pane().scrollTop).toBe(-174);
     });
 
     it("ignores a malformed position and works with blocked storage or without a pane", () => {
@@ -230,11 +235,20 @@ describe("setupTreeState", () => {
  * Renders a 400px tall pane at the top of the window, with a current note of 32px at `activeTop`
  * when it is given; happy-dom has no layout, so the geometry is set by hand.
  */
-function renderPane(siteId: string, options: { activeTop?: number; menu?: string } = {}) {
-    const { activeTop, menu = NOTE } = options;
+function renderPane(
+    siteId: string, options: { activeTop?: number; menu?: string; headerHeight?: number } = {}
+) {
+    const { activeTop, menu = NOTE, headerHeight } = options;
     document.body.dataset.ancestorNoteId = siteId;
-    document.body.innerHTML = `<div id="left-pane"><nav id="menu">${menu}</nav></div>`;
+    document.body.innerHTML = `
+        <div id="left-pane"><div id="site-header"></div><nav id="menu">${menu}</nav></div>`;
     const paneEl = pane();
+    const header = document.getElementById("site-header");
+    if (headerHeight === undefined) {
+        header?.remove();
+    } else if (header) {
+        header.getBoundingClientRect = () => new DOMRect(0, 0, 200, headerHeight);
+    }
     Object.defineProperty(paneEl, "clientHeight", { value: 400 });
     paneEl.getBoundingClientRect = () => new DOMRect(0, 0, 200, 400);
     const active = paneEl.querySelector<HTMLElement>("a.active");
