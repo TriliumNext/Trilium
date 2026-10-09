@@ -16,7 +16,7 @@ import "./toc.css";
 export default function setupToC() {
     setupHeadingLinks();
 
-    const container = document.getElementById("right-pane");
+    const container = document.getElementById("split-pane");
     const toc = document.getElementById("toc");
     if (!toc || !container) return;
 

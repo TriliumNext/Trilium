@@ -43,7 +43,7 @@ describe("setupToC", () => {
         expect(() => setupToC()).not.toThrow();
 
         document.body.innerHTML = `
-            <div id="right-pane">
+            <div id="split-pane">
                 <ul id="toc"><li><a href="#missing">Missing</a></li><li><a>No link</a></li></ul>
             </div>
         `;
@@ -147,7 +147,7 @@ describe("setupToC", () => {
  */
 function renderPage(headings: [ level: number, slug: string, offsetTop: number ][]) {
     document.body.innerHTML = `
-        <div id="right-pane">
+        <div id="split-pane">
             <div id="content">
                 ${headings.map(([ level, slug ]) => `<h${level} id="${slug}">${slug}${anchor(slug)}`
                     + `</h${level}>`).join("")}
@@ -165,7 +165,7 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
     }
 
     setupToC();
-    const container = document.getElementById("right-pane");
+    const container = document.getElementById("split-pane");
     if (!container) {
         throw new Error("The container is missing.");
     }

@@ -109,7 +109,6 @@ body:not(.math-loaded) .math-tex {
 
 body.type-webView {
     #main {
-        max-width: unset;
         padding: 0;
         height: 100%;
     }

@@ -7,7 +7,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 
 *   Searching by note title.
 *   Automatic dark/light mode based on the user's browser settings.
-*   Mobile-friendly layout, with sidebar.
+*   A layout centered on wide screens, with the navigation tree and the table of contents at either side of the content, and a mobile-friendly layout with sliding panes on narrow ones.
 *   Collapsible tree with the same note icons as the application.
 *   Customizable logo.
 *   Toggle button for dark/light mode, which also stores the user preferences.
@@ -293,7 +293,7 @@ The URL must be absolute and include the scheme (e.g. `https://`).
 
 ### Customizing logo
 
-It's possible to adjust the logo which is displayed on the top-left of the left pane.
+It's possible to adjust the logo which is displayed at the start of the header.
 
 | Attribute | Description |
 | --- | --- |

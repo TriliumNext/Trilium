@@ -110,7 +110,7 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: var(--background-secondary);
+    background: transparent;
     border: 0;
     color: var(--text-menu);
     transform: rotate(-90deg);
