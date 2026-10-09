@@ -41,8 +41,12 @@
     max-width: 350px;
 }
 
-#menu li span {
-    display: inline-block;
+#menu a > .tn-icon {
+    flex-shrink: 0;
+}
+
+#menu .tree-item-title {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
