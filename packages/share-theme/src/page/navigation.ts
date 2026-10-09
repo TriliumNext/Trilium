@@ -97,7 +97,8 @@ export function setupTreeState() {
         }
     });
 
-    window.addEventListener("pagehide", () => {
+    // `pageswap` fires before a prerendered page is shown, `pagehide` only once this one unloads.
+    const saveState = () => {
         const expandedItems = pane.querySelectorAll<HTMLElement>("#menu li.expanded[data-note-id]");
         const expanded = [ ...expandedItems ].map((item) => item.dataset.noteId);
         const state = { siteId, top: pane.scrollTop, expanded, activePath };
@@ -106,7 +107,9 @@ export function setupTreeState() {
         } catch {
             // The next page then starts from the server's expansion and the current note.
         }
-    });
+    };
+    window.addEventListener("pageswap", saveState);
+    window.addEventListener("pagehide", saveState);
 }
 
 /**

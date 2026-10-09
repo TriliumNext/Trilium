@@ -95,6 +95,16 @@ describe("setupTreeState", () => {
         expect(pane().scrollTop).toBe(0);
     });
 
+    it("saves the pane's state before a prerendered page replaces this one", () => {
+        renderPane("site1", { activeTop: 120 });
+        setupTreeState();
+        pane().scrollTop = 40;
+        window.dispatchEvent(new Event("pageswap"));
+
+        expect(JSON.parse(sessionStorage.getItem("share-tree-state") ?? "null"))
+            .toMatchObject({ siteId: "site1", top: 40 });
+    });
+
     it("remembers the expanded pages of a site, also on pages that expand others", () => {
         renderPane("site1", { menu: TREE });
         setupExpanders();

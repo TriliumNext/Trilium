@@ -9,6 +9,7 @@ import setupSearch from "./page/search.js";
 import setupToC from "./page/toc.js";
 import "./page/child_links.css";
 import setupFooter from "./page/footer.js";
+import setupSpeculation, { whenActivated } from "./page/speculation.js";
 import "./content/content.css";
 import "./content/footnotes.css";
 import "./content/external_links.css";
@@ -44,13 +45,15 @@ async function fetchNote(noteId: string | null = null) {
 }
 
 Object.assign(window, { fetchNote });
-$try(setupThemeSelector);
+// A prerendered page reads the theme and the tree's state once it is shown, not while prerendering.
+whenActivated(() => $try(setupThemeSelector));
 $try(setupToC);
 $try(setupExpanders);
-$try(setupTreeState);
+whenActivated(() => $try(setupTreeState));
 $try(setupLayout);
 $try(setupSearch);
 $try(setupFooter);
+$try(setupSpeculation);
 
 function setupTextNote() {
     $try(setupMermaid);

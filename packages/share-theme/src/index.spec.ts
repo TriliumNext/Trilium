@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
     setupSearch: vi.fn().mockRejectedValue(new Error("search failed")),
     setupToC: vi.fn(),
     setupFooter: vi.fn(),
+    setupSpeculation: vi.fn(),
+    whenActivated: vi.fn((callback: () => void) => callback()),
     setupMath: vi.fn(),
     setupMermaid: vi.fn(),
     applyTabs: vi.fn(),
@@ -27,6 +29,10 @@ vi.mock("./page/theme_switch.js", () => ({ default: mocks.setupThemeSelector }))
 vi.mock("./page/search.js", () => ({ default: mocks.setupSearch }));
 vi.mock("./page/toc.js", () => ({ default: mocks.setupToC }));
 vi.mock("./page/footer.js", () => ({ default: mocks.setupFooter }));
+vi.mock("./page/speculation.js", () => ({
+    default: mocks.setupSpeculation,
+    whenActivated: mocks.whenActivated
+}));
 vi.mock("./content/math.js", () => ({ default: mocks.setupMath }));
 vi.mock("./content/mermaid.js", () => ({ default: mocks.setupMermaid }));
 vi.mock("@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js", () => ({
@@ -43,13 +49,16 @@ describe("share theme entry", () => {
     // Vitest clears the calls of every mock before each test.
     let pageSetupCalls: number[] = [];
     let loggedErrors: unknown[] = [];
+    let deferredSetups = 0;
 
     beforeAll(async () => {
         await import("./index.js");
         await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(2));
         pageSetupCalls = [ mocks.setupThemeSelector, mocks.setupToC, mocks.setupExpanders,
-            mocks.setupTreeState, mocks.setupLayout, mocks.setupSearch, mocks.setupFooter ]
+            mocks.setupTreeState, mocks.setupLayout, mocks.setupSearch, mocks.setupFooter,
+            mocks.setupSpeculation ]
             .map((setup) => setup.mock.calls.length);
+        deferredSetups = mocks.whenActivated.mock.calls.length;
         loggedErrors = consoleError.mock.calls.map(([ error ]) => (error as Error).message);
     });
 
@@ -61,7 +70,9 @@ describe("share theme entry", () => {
     });
 
     it("sets up every part of the page, logging what one throws or rejects with", () => {
-        expect(pageSetupCalls).toEqual([ 1, 1, 1, 1, 1, 1, 1 ]);
+        expect(pageSetupCalls).toEqual([ 1, 1, 1, 1, 1, 1, 1, 1 ]);
+        // The theme and the tree's state wait for a prerendered page to be shown.
+        expect(deferredSetups).toBe(2);
         expect(loggedErrors.sort()).toEqual([ "search failed", "theme switch failed" ]);
     });
 

@@ -7,3 +7,8 @@ interface Window {
         theme: string;
     };
 }
+
+interface Document {
+    /** Whether the page is being prerendered (Speculation Rules); not yet in TypeScript's DOM types. */
+    readonly prerendering?: boolean;
+}
