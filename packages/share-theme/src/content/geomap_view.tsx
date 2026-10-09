@@ -1,8 +1,10 @@
 import "./geomap_view.css";
 
+import Component from "@triliumnext/client/src/components/component.js";
 import froca from "@triliumnext/client/src/services/froca.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import GeoView from "@triliumnext/client/src/widgets/collections/geomap/index.js";
+import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
 import { render } from "preact";
 
 import type { FrocaPayload } from "./calendar_view.js";
@@ -13,7 +15,7 @@ interface GeoMapPayload extends FrocaPayload {
 
 /**
  * Loads the map's notes into froca and the display options into `options`, then mounts the app's
- * `GeoView` over them. A `#readOnly` label added to the collection's note turns off every editing
+ * `GeoView` over them, under a component of its own as the app mounts every view. A `#readOnly` label added to the collection's note turns off every editing
  * control the view has.
  */
 export default function mountGeoMap(container: HTMLElement, payload: GeoMapPayload) {
@@ -41,16 +43,18 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
     }
 
     render(
-        <GeoView
-            note={note}
-            notePath={noteId}
-            noteIds={note.getChildNoteIds()}
-            highlightedTokens={null}
-            viewConfig={undefined}
-            saveConfig={() => {}}
-            media="screen"
-            onReady={() => {}}
-        />,
+        <ParentComponent.Provider value={new Component()}>
+            <GeoView
+                note={note}
+                notePath={noteId}
+                noteIds={note.getChildNoteIds()}
+                highlightedTokens={null}
+                viewConfig={undefined}
+                saveConfig={() => {}}
+                media="screen"
+                onReady={() => {}}
+            />
+        </ParentComponent.Provider>,
         container
     );
 }
