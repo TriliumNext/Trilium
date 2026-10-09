@@ -9,7 +9,7 @@ import froca from "./froca.js";
 import { t } from "./i18n.js";
 import { showError } from "./toast.js";
 import treeService from "./tree.js";
-import utils from "./utils.js";
+import utils, { isShare } from "./utils.js";
 
 /** The icon a column reference uses when the link carries no `columnIcon`. */
 const DEFAULT_COLUMN_REFERENCE_ICON = "bx bx-columns";
@@ -829,8 +829,9 @@ function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined
     return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
 }
 
+// A shared page hosting an app view keeps its links as plain links to other shared pages.
 /* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
-if (glob.device !== "print") {
+if (glob.device !== "print" && !isShare) {
     // TODO: Check why the event is not supported.
     //@ts-ignore
     $(document).on("click", "a", goToLink);
