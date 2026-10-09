@@ -180,12 +180,13 @@
         "download_zip": "Wersja przenośna - Portable (.zip)",
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
-        "download_appimage": ".AppImage"
+        "download_appimage": ".AppImage",
+        "download_flathub": "Flathub"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS z Intel",
         "title_arm64": "macOS z Apple Silicon (ARM)",
-        "description_x64": "Dla macOS w wersji Big Sur i późniejszymi, z procesorem Intel.",
+        "description_x64": "Dla macOS w wersji Ventura i późniejszymi, z procesorem Intel.",
         "description_arm64": "Dla produktów Apple z procesorami M1 i M2.",
         "quick_start": "Instalacja przez Homebrew:",
         "download_dmg": "Pobierz instalator (.dmg)",
