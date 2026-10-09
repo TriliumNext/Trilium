@@ -1,47 +1,66 @@
 #content-footer .navigation {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
     margin-top: 3rem;
 }
 
 #content-footer .navigation a {
-    border-radius: 3px;
-    border: 2px solid var(--background-highlight);
-    color: var(--text-primary);
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 5px;
-    overflow: hidden;
-    padding: 8px 12px;
-    user-select: none;
-    transform: translateY(0);
-    transition: transform 200ms ease, background-color 200ms ease, color 200ms ease;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--background-highlight);
+    border-radius: 6px;
+    color: var(--text-primary);
+    transition: border-color 200ms ease;
 }
 
 #content-footer .navigation a:hover {
-    background: var(--background-active);
-    color: var(--text-menu-active);
+    border-color: var(--text-link);
     text-decoration: none;
-    transform: translateY(-2px);
-}
-
-#content-footer .navigation a.previous {
-    justify-self: flex-start;
 }
 
 #content-footer .navigation a.next {
-    justify-self: flex-end;
-    grid-column: 2/3;
+    grid-column: 2;
+    justify-content: flex-end;
+    text-align: end;
 }
 
-#content-footer .navigation a.previous::before {
-    content: "« ";
+#content-footer .navigation .tn-icon {
+    flex-shrink: 0;
+    font-size: 1.5rem;
+    color: var(--text-menu);
 }
 
-#content-footer .navigation a.next::after {
-    content: " »";
+#content-footer .navigation-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#content-footer .navigation-label {
+    font-size: 0.85em;
+    color: var(--text-menu);
+}
+
+#content-footer .navigation-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--text-link);
+}
+
+@media (max-width: 48em) {
+    #content-footer .navigation {
+        grid-template-columns: 1fr;
+    }
+
+    #content-footer .navigation a.next {
+        grid-column: 1;
+    }
 }
 
 #content-footer .navigation + #childLinks {

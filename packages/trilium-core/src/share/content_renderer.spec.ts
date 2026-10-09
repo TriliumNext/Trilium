@@ -344,7 +344,11 @@ describe("content_renderer", () => {
                 shareRootNote.getChildNotes()[0].getChildNotes()[0])));
 
             expect(page.querySelector(".navigation .previous")?.getAttribute("href")).toBe("./navSite");
-            expect(page.querySelector(".navigation .next")?.text).toBe("Second");
+            expect(page.querySelector(".navigation .next .navigation-label")?.text)
+                .toBe(t("share_theme.next"));
+            expect(page.querySelector(".navigation .next .navigation-title")?.text).toBe("Second");
+            expect(page.querySelector("nav.navigation")?.getAttribute("aria-label"))
+                .toBe(t("share_theme.page-navigation"));
         });
 
         it("anchors a heading spanning lines and lists it in the table of contents", () => {

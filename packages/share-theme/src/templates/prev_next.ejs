@@ -1,4 +1,20 @@
-<div class="navigation">
-    <% if (prevNext.previous) { %><a class="previous" href="<%= prevNext.previous.href %>"><%= prevNext.previous.title %></a><% } %>
-    <% if (prevNext.next) { %><a class="next" href="<%= prevNext.next.href %>"><%= prevNext.next.title %></a><% } %>
-</div>
+<nav class="navigation" aria-label="<%= t("share_theme.page-navigation") %>">
+    <% if (prevNext.previous) { %>
+        <a class="previous" href="<%= prevNext.previous.href %>">
+            <span class="tn-icon bx bx-chevron-left" aria-hidden="true"></span>
+            <span class="navigation-text">
+                <span class="navigation-label"><%= t("share_theme.previous") %></span>
+                <span class="navigation-title"><%= prevNext.previous.title %></span>
+            </span>
+        </a>
+    <% } %>
+    <% if (prevNext.next) { %>
+        <a class="next" href="<%= prevNext.next.href %>">
+            <span class="navigation-text">
+                <span class="navigation-label"><%= t("share_theme.next") %></span>
+                <span class="navigation-title"><%= prevNext.next.title %></span>
+            </span>
+            <span class="tn-icon bx bx-chevron-right" aria-hidden="true"></span>
+        </a>
+    <% } %>
+</nav>

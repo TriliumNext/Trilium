@@ -464,7 +464,10 @@
     "logo-alt": "Logo",
     "login": "Login",
     "tab-title": "Tab title",
-    "heading-link": "Link to This Section"
+    "heading-link": "Link to This Section",
+    "previous": "Previous",
+    "next": "Next",
+    "page-navigation": "Previous and next pages"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",
