@@ -16,9 +16,8 @@ import "./toc.css";
 export default function setupToC() {
     setupHeadingLinks();
 
-    const container = document.getElementById("split-pane");
     const toc = document.getElementById("toc");
-    if (!toc || !container) return;
+    if (!toc) return;
 
     const sections = [ ...document.querySelectorAll("#content .toc-anchor") ]
         .map((anchor) => anchor.parentElement)
@@ -41,7 +40,7 @@ export default function setupToC() {
     // Marks the entry of the last section scrolled past, or the first entry above every section.
     const changeLinkState = () => {
         let index = sections.length;
-        while (--index > 0 && container.scrollTop + 50 < sections[index].offsetTop) {
+        while (--index > 0 && sections[index].getBoundingClientRect().top > 50) {
             // Walk back to the last section scrolled past.
         }
 
@@ -51,7 +50,7 @@ export default function setupToC() {
     };
 
     changeLinkState();
-    container.addEventListener("scroll", changeLinkState);
+    window.addEventListener("scroll", changeLinkState, { passive: true });
 }
 
 /** How long a heading link shows its check mark after copying, in milliseconds. */

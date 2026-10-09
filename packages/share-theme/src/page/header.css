@@ -1,10 +1,18 @@
+html {
+    --header-height: 3.5rem;
+}
+
 #header {
     background: var(--background-secondary);
     display: none;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 12px;
+    height: var(--header-height);
+    padding: 0 12px;
     border-bottom: 1px solid var(--background-highlight);
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 #header-logo,

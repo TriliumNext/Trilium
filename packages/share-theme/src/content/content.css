@@ -113,6 +113,10 @@ body:not(.math-loaded) .math-tex {
 }
 
 body.type-webView {
+    #right-pane {
+        height: 100vh;
+    }
+
     #main {
         padding: 0;
         height: 100%;
@@ -131,6 +135,12 @@ body.type-webView {
             width: 100%;
             flex-grow: 1;
             border: 0;
+        }
+    }
+
+    @media (max-width: 48em) {
+        #right-pane {
+            height: calc(100dvh - var(--header-height));
         }
     }
 }

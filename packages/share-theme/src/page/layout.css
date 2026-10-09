@@ -1,20 +1,8 @@
-html,
-body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
 #split-pane {
     display: flex;
     flex-direction: row;
-    width: 100vw;
-    flex: 1;
-    overflow-x: hidden;
-    overflow-y: auto;
-    padding-inline: max(0px, (100% - 90rem) / 2);
+    max-width: 90rem;
+    margin-inline: auto;
 }
 
 #left-pane {
@@ -22,7 +10,7 @@ body {
     flex-direction: column;
     min-width: 0;
     width: min(18rem, 25vw);
-    height: 100%;
+    height: 100vh;
     justify-content: flex-start;
     position: sticky;
     top: 0;
@@ -34,7 +22,6 @@ body {
     flex: 1;
     min-width: 0;
     position: relative;
-    min-height: 100%;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
@@ -67,9 +54,12 @@ body {
 }
 
 @media (max-width: 48em) {
-    html,
-    body {
-        height: 100%;
+    html {
+        scroll-padding-top: var(--header-height);
+    }
+
+    body:is(.menu-open, .toc-open) {
+        overflow: hidden;
     }
 
     #right-pane, #main {
@@ -88,6 +78,7 @@ body {
         left: 0;
         width: 80%;
         max-width: 300px;
+        height: auto;
         background: var(--background-secondary);
         transform: translateX(-100%);
         transition: transform 200ms ease;
