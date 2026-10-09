@@ -20,7 +20,7 @@
 #menu > ul {
     overflow-y: auto;
     list-style: none;
-    padding-left: 0!important;
+    padding-inline-start: 0 !important;
 }
 
 #menu ul {
@@ -29,7 +29,7 @@
     display: flex;
     flex-direction: column;
     list-style: none;
-    padding-left: 20px;
+    padding-inline-start: 12px;
 }
 
 #menu li {
@@ -41,16 +41,6 @@
     max-width: 350px;
 }
 
-#menu a > .tn-icon {
-    flex-shrink: 0;
-}
-
-#menu .tree-item-title {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 #menu li > ul {
     transition: height 200ms ease;
 }
@@ -60,65 +50,71 @@
     overflow: hidden;
 }
 
-#menu li.item > a {
-    padding-left: 24px;
+/* The tree items of the app's default theme (`theme-next/shell.css`, "TREE PANE"). */
+#menu a {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--text-menu);
+    font-weight: 400;
+    text-decoration: none;
+    transition: background-color 150ms ease;
 }
 
-#menu a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-    color: var(--text-menu);
-    text-decoration: none;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    flex: 1;
-    padding: 2px 6px;
-    font-weight: 400;
+#menu li.item > a {
+    padding-inline-start: 32px;
 }
 
 #menu a:hover {
-    border-color: var(--text-menu);
+    background: var(--tree-item-hover-background);
+}
+
+#menu a:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: -2px;
 }
 
 #menu a.active {
-    background: var(--background-active);
-    color: var(--text-menu-active);
-    font-weight: 700;
+    background: var(--tree-item-active-background);
+    color: var(--tree-item-active-color);
 }
 
-#menu li ul {
-    position: relative;
+#menu a > .tn-icon {
+    flex-shrink: 0;
+    font-size: 1.2em;
 }
 
-#menu li ul::before {
-    content: "";
-    display: flex;
-    position: absolute;
-    top: 5px;
-    bottom: 5px;
-    left: 10px;
-    width: 2px;
-    background: var(--background-highlight);
-}
-
-.active .collapse-button {
-    background: none;
-    color: var(--text-menu-active);
+#menu .tree-item-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .collapse-button {
-    cursor: pointer;
-    display: inline-flex;
+    display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    width: 18px;
     padding: 0;
-    background: transparent;
     border: 0;
-    color: var(--text-menu);
+    background: transparent;
+    color: inherit;
+    opacity: 0.65;
+    cursor: pointer;
     transform: rotate(-90deg);
-    transition: transform 200ms ease;
+    transition: transform 200ms ease, opacity 150ms ease;
+}
+
+.collapse-button:hover {
+    opacity: 1;
+}
+
+.collapse-button:dir(rtl) {
+    transform: rotate(90deg);
 }
 
 .expanded > .collapse-button,
@@ -127,5 +123,13 @@
 }
 
 .collapse-button .tn-icon {
-    font-size: 14px;
+    font-size: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #menu li > ul,
+    #menu a,
+    .collapse-button {
+        transition: none;
+    }
 }

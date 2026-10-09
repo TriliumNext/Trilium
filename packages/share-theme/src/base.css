@@ -30,6 +30,9 @@ html.theme-light {
     --link-hover-background: #3c7fa017;
     --link-focus-outline-color: #00000063;
     --text-menu-active: var(--background-secondary);
+    --tree-item-hover-background: rgba(0, 0, 0, 0.04);
+    --tree-item-active-background: rgba(0, 0, 0, 0.075);
+    --tree-item-active-color: #000000;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -47,6 +50,10 @@ html.theme-dark {
     --link-hover-background: #75c2e324;
     --link-focus-outline-color: #ffffff57;
     --text-menu-active: var(--background-secondary);
+    /* The tree item colors of `theme-next-dark.css`. */
+    --tree-item-hover-background: #ffffff0d;
+    --tree-item-active-background: #ffffff25;
+    --tree-item-active-color: #dfdfdf;
     --mermaid-theme: dark;
     color-scheme: dark;
 }
