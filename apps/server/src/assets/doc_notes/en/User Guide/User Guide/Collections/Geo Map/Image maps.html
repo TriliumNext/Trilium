@@ -15,12 +15,23 @@
 </ol>
 <p>The map then shows the image instead of the world map and opens with the
   whole image in view. To go back to a world map, remove the relation.</p>
-<aside
-class="admonition note">
-  <p>The image is drawn as a single picture, so very large images can fail
-    to display on devices whose graphics card cannot hold them. Images up to
-    4096 pixels on their longer side are safe on practically every device.</p>
-</aside>
+<h2>Image size</h2>
+<p>Images are resized when they are uploaded, so by default the image of
+  a map is at most 2000 pixels on its longer side, which can be too coarse
+  for a detailed map. To keep an image at a higher resolution, do one of
+  the following before uploading it:</p>
+<ul>
+  <li>In <a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a> → <em>Media</em>,
+    raise <em>Max image dimensions</em> or turn off <em>Automatically compress images</em>.</li>
+  <li>Upload it through the <em>Import</em> dialog with <em>Compress images</em> unchecked.</li>
+</ul>
+<p>An image that was already uploaded keeps its size; upload it again after
+  changing the settings.</p>
+<p>The image is drawn as a single picture by the graphics card, which limits
+  how large it can be. Images up to 4096 pixels on their longer side are
+  safe on practically every device, and most computers handle up to 16384
+  pixels. On a device whose graphics card cannot hold the image, the markers
+  and shapes still appear but the image itself does not.</p>
 <h2>Interaction</h2>
 <p>Adding, moving and removing markers, drawing shapes, the popup view and
   the contextual menu work as described for the&nbsp;<a class="reference-link"

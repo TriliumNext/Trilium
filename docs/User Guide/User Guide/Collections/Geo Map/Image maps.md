@@ -9,8 +9,16 @@ An image map is a geo map drawn over an image of your own instead of a world map
 
 The map then shows the image instead of the world map and opens with the whole image in view. To go back to a world map, remove the relation.
 
-> [!NOTE]
-> The image is drawn as a single picture, so very large images can fail to display on devices whose graphics card cannot hold them. Images up to 4096 pixels on their longer side are safe on practically every device.
+## Image size
+
+Images are resized when they are uploaded, so by default the image of a map is at most 2000 pixels on its longer side, which can be too coarse for a detailed map. To keep an image at a higher resolution, do one of the following before uploading it:
+
+*   In <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_, raise _Max image dimensions_ or turn off _Automatically compress images_.
+*   Upload it through the _Import_ dialog with _Compress images_ unchecked.
+
+An image that was already uploaded keeps its size; upload it again after changing the settings.
+
+The image is drawn as a single picture by the graphics card, which limits how large it can be. Images up to 4096 pixels on their longer side are safe on practically every device, and most computers handle up to 16384 pixels. On a device whose graphics card cannot hold the image, the markers and shapes still appear but the image itself does not.
 
 ## Interaction
 
