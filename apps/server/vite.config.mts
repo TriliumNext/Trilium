@@ -2,6 +2,9 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
+const CORE_SRC = resolve(__dirname, "../../packages/trilium-core/src").replaceAll("\\", "/");
+const FULL_COVERAGE = { lines: 100, functions: 100, branches: 100, statements: 100 };
+
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/server',
@@ -62,8 +65,15 @@ export default defineConfig(() => ({
       // to the repo root so every path is unambiguous.
       reporter: [ "text", "html", ["lcov", { projectRoot: resolve(__dirname, '../..') }] ],
       allowExternal: true,
-      include: ["src/**/*.{ts,tsx}", "../../packages/trilium-core/src/**/*.{ts,tsx}"],
-      exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"]
+      // Vitest matches a file outside the root by its absolute path, which a relative
+      // `../../packages/…` glob never matches.
+      include: ["src/**/*.{ts,tsx}", `${CORE_SRC}/**/*.{ts,tsx}`],
+      exclude: ["**/*.{test,spec}.{ts,mts,cts,tsx,js,jsx}", "**/*.d.ts"],
+      // Threshold globs, unlike `include`, match paths relative to the root.
+      thresholds: {
+        "../../packages/trilium-core/src/share/**": FULL_COVERAGE,
+        "src/share/**": FULL_COVERAGE
+      }
     },
     pool: "forks",
     maxWorkers: 6

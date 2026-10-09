@@ -127,6 +127,26 @@ template* page of the User Guide. So:
 | inline scripts | render the `.ejs`, run in a `node:vm` context | same |
 | core renderer | shaca fixtures (`buildShareNote`), `getContent()` / `renderNoteContent()` | `pnpm --filter server test src/share` **and** `pnpm --filter standalone test src/share` |
 
+**The share code is held at 100% coverage** (lines, branches, functions, statements), and CI fails
+below it:
+- the share theme package, by `packages/share-theme/vitest.config.ts` (`--coverage` in the
+  `share-theme` CI step, Codecov flag `share-theme`);
+- `packages/trilium-core/src/share/**` and `apps/server/src/share/**`, by the per-glob thresholds in
+  `apps/server/vite.config.mts`; core's share code and `lightweight/share_provider.ts` again in
+  `apps/standalone/vite.config.mts`. Each runner must reach 100% on its own;
+- the merged result, by the `share` project status in `codecov.yml`.
+
+Check a change with `--coverage` on the narrowest run, e.g. `npx vitest run share --coverage` in
+`apps/server` and `apps/standalone`; the threshold errors name the glob that falls short. Other
+core files print `PARSE_ERROR` noise in that run (untested files are parsed untransformed); it does
+not fail the run. Cover a branch with a test; remove it only when the types or the callers rule it
+out. Never delete a public `SNote`/`SAttribute`/`SAttachment` method for coverage: custom templates
+can call any of them.
+
+- The server and standalone setup files load core before a spec's `vi.mock()` runs, so a mock of a
+  module core already imported (icon packs, search) never reaches the renderer or the handlers.
+  Use `vi.spyOn()` on the module namespace or its default export instead, or `vi.resetModules()`
+  with `vi.doMock()` and a dynamic import for a module tested in isolation (the platform adapters).
 - Core specs that render `page.ejs` with hand-built variables (the subpage-list helper in
   `content_renderer.spec.ts`) must be given every new variable, or EJS throws `ReferenceError`.
   Prefer full renders through `renderNoteContent()` for new page-level checks.

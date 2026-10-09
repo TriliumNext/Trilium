@@ -4,6 +4,15 @@ coverage:
       default:
         target: auto
         threshold: 1%
+      # The share code is held at full coverage by the share-theme, server and standalone suites;
+      # this status checks the merged result.
+      share:
+        target: 100%
+        paths:
+          - packages/share-theme/src/
+          - packages/trilium-core/src/share/
+          - apps/server/src/share/
+          - apps/standalone/src/lightweight/share_provider.ts
     patch:
       default:
         target: 80%
@@ -52,6 +61,10 @@ flags:
   pdfjs-viewer:
     paths:
       - packages/pdfjs-viewer/src/
+    carryforward: true
+  share-theme:
+    paths:
+      - packages/share-theme/src/
     carryforward: true
 
 comment:
