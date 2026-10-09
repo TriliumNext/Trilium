@@ -31,6 +31,7 @@ export * from "./lib/onenote.js";
 export * from "./lib/week_utils.js";
 export * from "./lib/board_columns.js";
 export * from "./lib/block_reference.js";
+export * from "./lib/content_embeds.js";
 export * from "./lib/builtin_attributes.js";
 export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";
 // The spreadsheet modules are deliberately not re-exported here: they pull in numfmt, and the
@@ -45,6 +46,8 @@ export * from "./lib/standalone_api_interface.js";
 export * from "./lib/favicon_contrast.js";
 export * from "./lib/mermaid_config.js";
 export * from "./lib/link_embed.js";
+export * from "./lib/link_embed_dom.js";
+export * from "./lib/link_embed_markup.js";
 export * from "./lib/llm_api.js";
 export * from "./lib/marked_extensions.js";
 // The markdown renderer is deliberately not re-exported here: it pulls in marked, and the barrel

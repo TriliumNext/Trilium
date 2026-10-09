@@ -1,3 +1,4 @@
+// @vitest-environment-options {"settings":{"disableIframePageLoading":true}}
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -9,6 +10,8 @@ import {
     safeHostname
 } from "./link_embed.js";
 import server from "./server.js";
+
+vi.mock("./i18n.js", () => ({ t: (key: string) => key }));
 
 let container: HTMLDivElement | undefined;
 

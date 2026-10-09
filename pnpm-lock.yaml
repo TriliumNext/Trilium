@@ -1308,6 +1308,9 @@ importers:
         specifier: 3.2.6
         version: 3.2.6
     devDependencies:
+      happy-dom:
+        specifier: 20.14.5
+        version: 20.14.5
       preact:
         specifier: 11.0.0
         version: 11.0.0(preact-render-to-string@6.8.0)

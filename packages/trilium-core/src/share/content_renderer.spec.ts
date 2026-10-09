@@ -62,8 +62,8 @@ describe("content_renderer", () => {
             const result = getContent(note);
             expect(result.content).toStrictEqual(trimIndentation`\
                 <p>Before</p>
-                <p>Foo</p><div>Bar</div>
-                <strong>Baz</strong>
+                <section class="include-note" data-note-id="subnote1" data-box-size="small"><p>Foo</p><div>Bar</div></section>
+                <section class="include-note" data-note-id="subnote2" data-box-size="small"><strong>Baz</strong></section>
                 <p>After</p>
             `);
         });
@@ -438,10 +438,12 @@ describe("content_renderer", () => {
             const content = getContent(note).content as string;
 
             const src = "api/attachments/embedPic1/image/my%20photo.png";
-            expect(content).toContain(`<img src="${src}" alt="my photo.png">`);
+            expect(content).toContain(`<section class="include-note" data-attachment-id="embedPic1">`
+                + `<img src="${src}" alt="my photo.png"></section>`);
+            expect(content).toContain(`<section class="include-note" data-attachment-id="embedPdf1">`
+                + `<a class="reference-link attachment-link role-file"`);
             expect(content).toContain(`href="api/attachments/embedPdf1/download"`);
             expect(content).toContain("report.pdf");
-            expect(content).not.toContain("include-note");
             expect(content).not.toContain("embedGone");
         });
 
@@ -605,7 +607,7 @@ describe("content_renderer", () => {
 
             const content = String(getContent(note).content);
             expect(content).toContain(`<div class="link-embed-card-url">`
-                + `<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`
+                + `<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" draggable="false" width="16" height="16">`
                 + `<span>Example</span></div>`);
         });
 
@@ -696,7 +698,7 @@ describe("content_renderer", () => {
             });
 
             const content = String(getContent(note).content);
-            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" width="16" height="16">`);
+            expect(content).toContain(`<img class="link-embed-mention-favicon" src="${FAVICON}" alt="" loading="lazy" draggable="false" width="16" height="16">`);
             expect(content).toContain(`<span class="link-embed-mention-title">A title</span>`);
         });
     });

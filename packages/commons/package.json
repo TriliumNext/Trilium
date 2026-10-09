@@ -23,6 +23,7 @@
     "numfmt": "3.2.6"
   },
   "devDependencies": {
+    "happy-dom": "20.14.5",
     "preact": "11.0.0"
   }
 }

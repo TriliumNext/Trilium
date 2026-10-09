@@ -1,7 +1,8 @@
 import {
-    encodeBlockParameter, extractYouTubeVideoId, isHttpUrl, isImageAttachmentRole, MIME_TYPE_AUTO,
-    type MimeType, MIME_TYPES_DICT, normalizeMimeTypeForCKEditor, safeLinkPreviewHref,
-    safeLinkPreviewImageSrc, sliceToBlockReference
+    getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl,
+    isImageAttachmentRole, MIME_TYPE_AUTO, type MimeType, MIME_TYPES_DICT,
+    normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml, renderLinkMentionHtml,
+    resolveContentEmbed, sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -394,94 +395,20 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         return;
     }
 
-    // One of a preview's pictures, or what stands in for it. Every picture on a shared page makes
-    // the same decision, so it is made once: safeLinkPreviewImageSrc() keeps the placeholder for
-    // anything but an inline image or an attachment of this instance, because an <img> fires on
-    // load — a remote URL here would have every visitor to the shared page announce itself to a
-    // third party without so much as a click.
-    const renderPicture = (
-        src: string | undefined | null,
-        { className, placeholder, size }: { className: string; placeholder: string; size?: number }
-    ) => {
-        const safeSrc = safeLinkPreviewImageSrc(src);
-
-        if (!safeSrc) {
-            return placeholder;
-        }
-
-        const sizeAttrs = size ? ` width="${size}" height="${size}"` : "";
-
-        return `<img class="${className}" src="${escapeHtml(safeSrc)}" alt="" loading="lazy"${sizeAttrs}>`;
-    };
-
-    // The site's favicon — shown by both the inline mention and the card's URL line, from the one
-    // `data-favicon` the element already carries. A site whose icon could not be had shows nothing
-    // in its place: unlike a card's missing cover there is no hole to fill, and anything stood there
-    // instead was read as a mark of its own rather than as an absent icon.
-    const renderFavicon = (favicon: string | undefined | null) => renderPicture(favicon, {
-        className: "link-embed-mention-favicon",
-        size: 16,
-        placeholder: ""
-    });
-
-    // Process link mentions (inline) — metadata is stored in data attributes.
+    // Link previews keep their metadata in `data-*` attributes and are drawn as the app draws
+    // them. The share theme adds the click-to-play behavior of a video.
+    const previewOptions = { playVideoLabel: t("content_renderer.play-video") };
     for (const mentionEl of document.querySelectorAll("span.link-mention")) {
-        const url = mentionEl.getAttribute("data-url");
-        if (!url) continue;
-        const title = mentionEl.getAttribute("data-title") || safeHostnameForShare(url);
-        // escapeHtml() makes the value safe to *place* in the attribute; it says nothing about the
-        // scheme. `data-*` survives the save-time sanitizer untouched, so a stored
-        // `data-url="javascript:…"` would otherwise become a live link on a public page.
-        mentionEl.innerHTML = `<a class="link-embed-mention" href="${escapeHtml(safeLinkPreviewHref(url))}" target="_blank" rel="noopener noreferrer">` +
-            renderFavicon(mentionEl.getAttribute("data-favicon")) +
-            `<span class="link-embed-mention-title">${escapeHtml(title)}</span></a>`;
+        const data = readLinkPreviewData((name) => mentionEl.getAttribute(name));
+        if (data) {
+            mentionEl.innerHTML = renderLinkMentionHtml(data, previewOptions);
+        }
     }
 
-    // Process link embeds (block) — metadata is stored in data attributes.
     for (const embedEl of document.querySelectorAll("section.link-embed")) {
-        const url = embedEl.getAttribute("data-url");
-        const embedType = embedEl.getAttribute("data-embed-type");
-        if (!url) continue;
-
-        if (embedType === "youtube") {
-            const videoId = extractYouTubeVideoId(url);
-            if (videoId) {
-                // Click-to-play: the shared page shows the thumbnail stored in the note and only
-                // loads YouTube's player once a visitor asks for it, so simply reading the page does
-                // not hand every visitor's IP to Google. The swap is done by the share theme's
-                // video_facade script, which reads data-video-id.
-                // No placeholder: the play button carries the facade on its own.
-                const thumbnailHtml = renderPicture(embedEl.getAttribute("data-image"), {
-                    className: "link-embed-video-thumbnail",
-                    placeholder: ""
-                });
-                embedEl.innerHTML = `<div class="link-embed-video">`
-                    + `<button type="button" class="link-embed-video-facade" data-video-id="${escapeHtml(videoId)}" aria-label="Play video" title="Play video">`
-                    + thumbnailHtml
-                    + `<span class="link-embed-video-play" aria-hidden="true"></span>`
-                    + `</button></div>`;
-            }
-        } else {
-            const title = embedEl.getAttribute("data-title") || safeHostnameForShare(url);
-            const description = embedEl.getAttribute("data-description");
-            const siteName = embedEl.getAttribute("data-site-name") || safeHostnameForShare(url);
-
-            // The wrapper is there either way: it is what gives the card's left column its size, so
-            // a card without a picture keeps the same shape as one with it.
-            const imageHtml = `<div class="link-embed-card-image-wrapper">`
-                + renderPicture(embedEl.getAttribute("data-image"), {
-                    className: "link-embed-card-image",
-                    placeholder: `<div class="link-embed-card-image-placeholder">&#128279;</div>`
-                })
-                + `</div>`;
-            const descHtml = description ? `<div class="link-embed-card-description">${escapeHtml(description)}</div>` : "";
-            const urlHtml = `<div class="link-embed-card-url">`
-                + renderFavicon(embedEl.getAttribute("data-favicon"))
-                + `<span>${escapeHtml(siteName)}</span></div>`;
-
-            embedEl.innerHTML = `<a class="link-embed-card" href="${escapeHtml(safeLinkPreviewHref(url))}" target="_blank" rel="noopener noreferrer">` +
-                imageHtml +
-                `<div class="link-embed-card-content"><div class="link-embed-card-title">${escapeHtml(title)}</div>${descHtml}${urlHtml}</div></a>`;
+        const data = readLinkPreviewData((name) => embedEl.getAttribute(name));
+        if (data) {
+            embedEl.innerHTML = renderLinkEmbedHtml(data, previewOptions);
         }
     }
 
@@ -496,30 +423,30 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
         ? (attachmentId: string) => becca.getAttachment(attachmentId)
         : (attachmentId: string) => shaca.getAttachment(attachmentId);
 
-    const seenNoteIds = new Set(options.seenNoteIds);
-    seenNoteIds.add(getEmbedKey(note.noteId, options.block));
+    const embedContext = {
+        seenNoteIds: new Set(options.seenNoteIds).add(getEmbedKey(note.noteId, options.block)),
+        embedsAsReferenceLinks: options.embedsAsReferenceLinks,
+        expandNestedEmbeds: options.expandNestedEmbeds
+    };
     for (const embedEl of document.querySelectorAll(".include-note")) {
-        // A Tiny embed shows only a title, so it links to what it shows instead of rendering it.
-        const asLink = !!options.embedsAsReferenceLinks
-            || embedEl.getAttribute("data-box-size") === "tiny";
-        const attachmentId = embedEl.getAttribute("data-attachment-id");
-        if (attachmentId) {
-            const attachment = getAttachment(attachmentId);
-            const html = attachment ? renderAttachmentEmbed(attachmentId, attachment, asLink) : "";
-            const embed = parse(html, parseOpts).childNodes;
-            if (attachment && !asLink && isImageAttachmentRole(attachment.role)) {
-                replaceEmbedContent(embedEl, embed);
+        const embed = resolveContentEmbed((name) => embedEl.getAttribute(name), embedContext);
+        if (!embed) continue;
+
+        if (embed.kind === "attachment") {
+            const attachment = getAttachment(embed.attachmentId);
+            if (!attachment) {
+                embedEl.remove();
+            } else if (embed.asLink) {
+                const link = renderAttachmentLink(embed.attachmentId, attachment);
+                embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             } else {
-                embedEl.replaceWith(...embed);
+                const html = renderAttachmentEmbed(embed.attachmentId, attachment);
+                replaceEmbedContent(embedEl, parse(html, parseOpts).childNodes);
             }
             continue;
         }
 
-        const noteId = embedEl.getAttribute("data-note-id");
-        if (!noteId) continue;
-        const block = embedEl.getAttribute("data-block");
-
-        const embeddedNote = shaca.getNote(noteId);
+        const embeddedNote = shaca.getNote(embed.noteId);
         if (!embeddedNote) continue;
 
         // An embed must not disclose what a direct request for the same note would refuse: a note
@@ -530,31 +457,22 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
             continue;
         }
 
-        // Tiny embeds, deeper-than-first-level embeds and any cycle in the recursive path degrade
-        // to a reference link that the link-processing passes below resolve to the shared note.
-        if (asLink || seenNoteIds.has(getEmbedKey(noteId, block))) {
-            const query = block ? `?block=${encodeBlockParameter(block)}` : "";
-            const href = escapeHtml(`#root/${noteId}${query}`);
+        // The link-processing passes below resolve the reference link to the shared note.
+        if (embed.asLink) {
+            const href = escapeHtml(getNoteEmbedHref(embed.noteId, embed.block));
             const title = escapeHtml(embeddedNote.title);
             const link = `<a class="reference-link" href="${href}">${title}</a>`;
             embedEl.replaceWith(...parse(link, parseOpts).childNodes);
             continue;
         }
 
-        const nestedOptions: ShareRenderOptions = {
-            seenNoteIds: new Set(seenNoteIds),
-            canAccessEmbed: options.canAccessEmbed,
-            block
-        };
-        const embeddedResult = getContent(embeddedNote, options.expandNestedEmbeds
-            ? { ...nestedOptions, expandNestedEmbeds: true }
-            : { ...nestedOptions, embedsAsReferenceLinks: true });
+        const embeddedResult = getContent(embeddedNote, {
+            ...getNestedEmbedOptions(embedContext, embed.block),
+            canAccessEmbed: options.canAccessEmbed
+        });
         if (typeof embeddedResult.content !== "string") continue;
 
-        const embeddedDocument = parse(embeddedResult.content, parseOpts).childNodes;
-        if (embeddedDocument) {
-            replaceEmbedContent(embedEl, embeddedDocument);
-        }
+        replaceEmbedContent(embedEl, parse(embeddedResult.content, parseOpts).childNodes);
     }
 
     result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
@@ -597,45 +515,30 @@ function renderText(result: Result, note: SNote | BNote, options: ShareRenderOpt
 }
 
 /** The key of an embed in `seenNoteIds`. A note can embed blocks of itself. */
-function getEmbedKey(noteId: string, block: string | undefined) {
-    return block ? `${noteId}:${block}` : noteId;
-}
-
-/**
- * Puts `content` in place of an embed. An embed with a caption stays a `<figure>`, holding
- * `content` and then the caption.
- */
+/** Puts `content` in an embed, followed by the embed's caption, as the app does. */
 function replaceEmbedContent(embedEl: HTMLElement, content: ParsedNode[]) {
     const caption = embedEl.childNodes.find((child) =>
         child instanceof HTMLElement && child.tagName === "FIGCAPTION");
-    if (caption) {
-        embedEl.set_content([ ...content, caption ]);
-    } else {
-        embedEl.replaceWith(...content);
-    }
+    embedEl.set_content(caption ? [ ...content, caption ] : content);
 }
 
 /**
- * The markup that stands in for an embedded attachment: a picture as an image, anything else as the
- * attachment link that `handleAttachmentLink` then resolves.
- *
- * @param asLink renders a picture as a link too, for a Tiny embed or one below the first level of
- * embedding.
+ * What an embedded attachment shows: a picture as an image, anything else as the attachment link
+ * that `handleAttachmentLink` then resolves.
  */
-function renderAttachmentEmbed(
-    attachmentId: string,
-    attachment: BAttachment | SAttachment,
-    asLink: boolean
-) {
-    const { ownerId, title } = attachment;
-
-    if (!asLink && isImageAttachmentRole(attachment.role)) {
-        const src = `api/attachments/${attachmentId}/image/${encodeURIComponent(title)}`;
-        return `<img src="${src}" alt="${escapeHtml(title)}">`;
+function renderAttachmentEmbed(attachmentId: string, attachment: BAttachment | SAttachment) {
+    if (!isImageAttachmentRole(attachment.role)) {
+        return renderAttachmentLink(attachmentId, attachment);
     }
 
-    const href = `#root/${ownerId}?viewMode=attachments&amp;attachmentId=${attachmentId}`;
-    return `<a class="reference-link" href="${href}">${escapeHtml(title)}</a>`;
+    const src = `api/attachments/${attachmentId}/image/${encodeURIComponent(attachment.title)}`;
+    return `<img src="${src}" alt="${escapeHtml(attachment.title)}">`;
+}
+
+/** The reference link to an attachment, which `handleAttachmentLink` then resolves. */
+function renderAttachmentLink(attachmentId: string, attachment: BAttachment | SAttachment) {
+    const href = escapeHtml(getAttachmentEmbedHref(attachment.ownerId, attachmentId));
+    return `<a class="reference-link" href="${href}">${escapeHtml(attachment.title)}</a>`;
 }
 
 function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
@@ -950,10 +853,6 @@ function isFramableSource(url: string): boolean {
     }
 }
 
-
-function safeHostnameForShare(url: string): string {
-    try { return new URL(url).hostname; } catch { return url; }
-}
 
 export default {
     getContent
