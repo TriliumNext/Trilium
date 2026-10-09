@@ -1,26 +1,9 @@
+import { getMermaidConfig as getSharedMermaidConfig, parseMermaidTheme } from "@triliumnext/commons";
 import type { MermaidConfig } from "mermaid";
 
 export function getMermaidConfig(): MermaidConfig {
     const documentStyle = window.getComputedStyle(document.documentElement);
-    const mermaidTheme = documentStyle.getPropertyValue("--mermaid-theme") as "default";
-
-    return {
-        theme: mermaidTheme.trim() as "default",
-        // Mermaid 12 made ELK the default layout and `neo` the default look. Both are pinned to the
-        // pre-12 values so diagrams already stored in notes keep rendering as they were written;
-        // front matter still overrides either one per diagram.
-        layout: "dagre",
-        look: "classic",
-        securityLevel: "antiscript",
-        flowchart: { useMaxWidth: false },
-        sequence: { useMaxWidth: false },
-        gantt: { useMaxWidth: false },
-        class: { useMaxWidth: false },
-        state: { useMaxWidth: false },
-        pie: { useMaxWidth: true },
-        journey: { useMaxWidth: false },
-        gitGraph: { useMaxWidth: false }
-    };
+    return getSharedMermaidConfig(parseMermaidTheme(documentStyle.getPropertyValue("--mermaid-theme")));
 }
 
 /**

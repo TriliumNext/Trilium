@@ -43,6 +43,7 @@ export * from "./lib/security_settings.js";
 export * from "./lib/setup_marker.js";
 export * from "./lib/standalone_api_interface.js";
 export * from "./lib/favicon_contrast.js";
+export * from "./lib/mermaid_config.js";
 export * from "./lib/link_embed.js";
 export * from "./lib/llm_api.js";
 export * from "./lib/marked_extensions.js";

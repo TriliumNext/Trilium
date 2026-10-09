@@ -32,8 +32,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
     <tbody>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Text.md">Text</a></th>
-            <td><ul><li>Table of contents.</li><li>Syntax highlight of code blocks, in the language selected for each block. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li></ul></td>
-            <td><ul><li>Inline Mermaid diagrams are not rendered.</li></ul></td>
+            <td><ul><li>Table of contents.</li><li>Syntax highlight of code blocks, in the language selected for each block. For “Auto-detected” blocks, the language is guessed among the ones enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → <em>Code Notes</em>; a language not enabled there is not highlighted.</li><li>Rendering for math equations.</li><li><a href="../Note%20Types/Text/Include%20Note.md">Including notes</a> (only if the included notes are also shared).</li><li>Mermaid diagrams in code blocks, drawn in the page's light or dark mode and redrawn when the visitor switches it.</li></ul></td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Code.md">Code</a></th>
@@ -68,7 +68,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
             <td><ul><li>The diagram is displayed as a vector image.</li></ul></td>
-            <td><ul><li>No further interaction supported.</li></ul></td>
+            <td><ul><li>No further interaction supported.</li><li>The image is the one saved when the note was last edited, in the light or dark theme the application had then, so it does not follow the page's light or dark mode.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a></th>

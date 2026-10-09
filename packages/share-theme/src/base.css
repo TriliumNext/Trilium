@@ -11,6 +11,7 @@ html.theme-light {
     --text-heading: #000000;
     --text-menu: #333333;
     --text-link: #0000ff;
+    --mermaid-theme: default;
     color-scheme: light;
 }
 
@@ -24,6 +25,7 @@ html.theme-dark {
     --text-menu: #AAAAAA;
     --text-link: #87CEFA;
     --text-menu-active: #000000;
+    --mermaid-theme: dark;
     color-scheme: dark;
 }
 

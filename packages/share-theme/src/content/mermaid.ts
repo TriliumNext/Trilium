@@ -1,33 +1,65 @@
+import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
+
 export default async function setupMermaid() {
-    const mermaidEls = document.querySelectorAll("#content pre code.language-mermaid");
-    if (mermaidEls.length === 0) {
+    const codeBlocks = document.querySelectorAll("#content pre code.language-mermaid");
+    if (codeBlocks.length === 0) {
         return;
     }
 
     const mermaid = await loadMermaid();
 
-    for (const codeBlock of mermaidEls) {
+    const diagrams: Diagram[] = [];
+    for (const codeBlock of codeBlocks) {
         const parentPre = codeBlock.parentElement;
         if (!parentPre) {
             continue;
         }
 
-        const mermaidDiv = document.createElement("div");
-        mermaidDiv.classList.add("mermaid");
-        mermaidDiv.innerHTML = codeBlock.innerHTML;
-        parentPre.replaceWith(mermaidDiv);
+        const element = document.createElement("div");
+        element.classList.add("mermaid");
+        parentPre.replaceWith(element);
+        diagrams.push({ element, source: codeBlock.textContent ?? "" });
     }
 
-    // Mermaid 12 made ELK the default layout, `neo` the default look and `redux-color` the default
-    // theme. All three are pinned to the pre-12 values so a published diagram renders the same way
-    // it does in the app; front matter still overrides them per diagram.
-    mermaid.initialize({ theme: "default", layout: "dagre", look: "classic" });
-    mermaid.init();
+    let theme = readMermaidTheme();
+    let rendering = renderDiagrams(mermaid, diagrams, theme);
+
+    // The theme switch toggles a class on <html>, which changes `--mermaid-theme`.
+    new MutationObserver(() => {
+        const newTheme = readMermaidTheme();
+        if (newTheme === theme) {
+            return;
+        }
+
+        theme = newTheme;
+        rendering = rendering.then(() => renderDiagrams(mermaid, diagrams, newTheme));
+    }).observe(document.documentElement, { attributes: true, attributeFilter: [ "class" ] });
+
+    await rendering;
+}
+
+interface Diagram {
+    element: HTMLElement;
+    source: string;
 }
 
 interface Mermaid {
     initialize(config: Record<string, unknown>): void;
-    init(): void;
+    run(options: { nodes: HTMLElement[] }): Promise<void>;
+}
+
+/** Draws every diagram from its source, replacing what an earlier render left in the element. */
+async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: MermaidTheme) {
+    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
+    for (const { element, source } of diagrams) {
+        element.removeAttribute("data-processed");
+        element.textContent = source;
+    }
+    await mermaid.run({ nodes: diagrams.map((diagram) => diagram.element) });
+}
+
+function readMermaidTheme() {
+    return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
 }
 
 /**
