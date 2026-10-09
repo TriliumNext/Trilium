@@ -12,8 +12,10 @@
 
         const root = document.documentElement;
         const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const theme = read("theme") || (prefersDark ? "dark" : "light");
-        root.classList.add(`theme-${theme}`);
+        const stored = read("theme");
+        const preference = stored === "light" || stored === "dark" ? stored : "system";
+        const theme = preference === "system" ? (prefersDark ? "dark" : "light") : preference;
+        root.classList.add(`theme-${theme}`, `theme-preference-${preference}`);
 
         window.glob = {
             isStatic: <%= !!isStatic %>,

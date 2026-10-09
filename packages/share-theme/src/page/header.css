@@ -5,7 +5,8 @@ html {
 #header {
     background: var(--background-secondary);
     display: none;
-    justify-content: space-between;
+    grid-template-columns: 1fr auto 1fr;
+    justify-items: start;
     align-items: center;
     height: var(--header-height);
     padding: 0 12px;
@@ -55,13 +56,27 @@ html {
     background-color: var(--background-highlight);
 }
 
+.header-button:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 1px;
+}
+
 .header-button-placeholder {
     width: 32px;
 }
 
+#header > :last-child {
+    justify-self: end;
+}
+
+.header-actions {
+    display: flex;
+    gap: 4px;
+}
+
 @media (max-width: 48em) {
     #header {
-        display: flex;
+        display: grid;
     }
 
     #site-logo {

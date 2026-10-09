@@ -448,6 +448,10 @@
   },
   "share_theme": {
     "site-theme": "Site Theme",
+    "theme-light": "Light",
+    "theme-dark": "Dark",
+    "theme-system": "System",
+    "theme-current": "Site Theme: {{- theme}}",
     "search_placeholder": "Search...",
     "image_alt": "Article Image",
     "last-updated": "Last updated on {{- date}}",
