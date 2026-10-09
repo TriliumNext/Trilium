@@ -1434,6 +1434,8 @@ describe("content_renderer pages", () => {
         expect(urls("link[rel=stylesheet]", "href")).toStrictEqual([ "api/notes/pageCss/download" ]);
         expect(urls("script[src]", "src"))
             .toStrictEqual([ "assets/scripts.js", "api/notes/pageJs/download" ]);
+        // The theme's script restores the tree before the first paint; the page's own scripts wait.
+        expect(urls("script[src]", "blocking")).toStrictEqual([ "render", undefined ]);
         expect(urls("link[rel='shortcut icon']", "href"))
             .toStrictEqual([ "api/notes/pageIcon/download" ]);
     });

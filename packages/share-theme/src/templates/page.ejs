@@ -9,8 +9,8 @@
     <% for (const url of cssToLoad) { %>
         <link href="<%= url %>" rel="stylesheet">
     <% } %>
-    <% for (const url of jsToLoad) { %>
-        <script type="module" src="<%= url %>"></script>
+    <% for (const [ index, url ] of jsToLoad.entries()) { %>
+        <script type="module" src="<%= url %>"<% if (index === 0) { %> blocking="render"<% } %>></script>
     <% } %>
     <% if (head.noIndex) { %>
         <meta name="robots" content="noindex,follow" />
