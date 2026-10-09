@@ -176,7 +176,6 @@ function IconPickerDropdownButton({
             title={title}
             disabled={disabled}
             dropdownRef={dropdownRef}
-            dropdownContainerStyle={{ width: "620px" }}
             autoClose="outside"
             backdrop={backdrop}
             hideToggleArrow
