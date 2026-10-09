@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getHtmlSnippets, getPageHead, type ShareNote } from "./page.js";
+import { getHtmlSnippets, getPageHead, getSiteLogo, type ShareNote } from "./page.js";
 
 describe("getPageHead", () => {
     it("titles a page after the note and its site, and reads the site's OpenGraph labels", () => {
@@ -83,6 +83,28 @@ describe("getHtmlSnippets", () => {
     });
 });
 
+describe("getSiteLogo", () => {
+    const sanitizeUrl = (url: string) => (url.startsWith("javascript:") ? "about:blank" : url);
+
+    it("draws the logo 32 pixels wide, in the proportions of its labels", () => {
+        const logo = (labels: Record<string, string>) =>
+            getSiteLogo(fakeNote({ noteId: "site", labels }), sanitizeUrl);
+
+        expect(logo({})).toStrictEqual({ href: "./site-alias", width: 32, height: 24 });
+        expect(logo({ shareLogoWidth: "100", shareLogoHeight: "50" }).height).toBe(16);
+        expect(logo({ shareLogoWidth: "auto", shareLogoHeight: "" }).height).toBe(24);
+        expect(logo({ shareLogoWidth: "0", shareLogoHeight: "-5" }).height).toBe(24);
+    });
+
+    it("links to #shareRootLink, made safe", () => {
+        const logo = (shareRootLink: string) => getSiteLogo(
+            fakeNote({ noteId: "site", labels: { shareRootLink } }), sanitizeUrl);
+
+        expect(logo("https://example.com").href).toBe("https://example.com");
+        expect(logo("javascript:alert(1)").href).toBe("about:blank");
+    });
+});
+
 interface FakeNoteOptions {
     noteId: string;
     title?: string;
@@ -97,6 +119,7 @@ function fakeNote(options: FakeNoteOptions): ShareNote {
     const relations = options.relations ?? {};
     return {
         noteId: options.noteId,
+        shareId: `${options.noteId}-alias`,
         title: options.title ?? options.noteId,
         getLabelValue: (name) => labels[name] ?? null,
         hasLabel: (name) => name in labels,

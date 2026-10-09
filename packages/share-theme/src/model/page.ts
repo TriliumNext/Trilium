@@ -6,6 +6,7 @@
 /** The parts of a note the page model reads; core's `SNote` and `BNote` both provide them. */
 export interface ShareNote {
     noteId: string;
+    shareId: string;
     title: string;
     getLabelValue(name: string): string | null | undefined;
     hasLabel(name: string): boolean;
@@ -28,6 +29,14 @@ export interface PageHead {
         image: string | null | undefined;
         color: string | null | undefined;
     };
+}
+
+/** The site logo in the page header. */
+export interface SiteLogo {
+    /** `#shareRootLink` when set, otherwise the site's root page. */
+    href: string;
+    width: number;
+    height: number;
 }
 
 /** Where an HTML snippet can go, as `#shareHtmlLocation` names it. */
@@ -90,4 +99,29 @@ export function getHtmlSnippets(note: ShareNote): Record<HtmlSnippetLocation, st
     return Object.fromEntries(Object.entries(snippets)
         .map(([ location, contents ]) => [ location, contents.join("\n") ])
     ) as Record<HtmlSnippetLocation, string>;
+}
+
+/** The width the header draws the site logo at, in pixels. */
+const LOGO_WIDTH = 32;
+
+/**
+ * Returns the site logo of the site starting at `siteRoot`. `#shareLogoWidth` and
+ * `#shareLogoHeight` give the logo's proportions; a label that is not a positive number falls back
+ * to the default logo's. `sanitizeUrl` makes `#shareRootLink` safe to use as a link.
+ */
+export function getSiteLogo(siteRoot: ShareNote, sanitizeUrl: (url: string) => string): SiteLogo {
+    const width = readPositiveNumber(siteRoot.getLabelValue("shareLogoWidth")) ?? 53;
+    const height = readPositiveNumber(siteRoot.getLabelValue("shareLogoHeight")) ?? 40;
+    const rootLink = siteRoot.getLabelValue("shareRootLink");
+
+    return {
+        href: rootLink ? sanitizeUrl(rootLink) : `./${siteRoot.shareId}`,
+        width: LOGO_WIDTH,
+        height: Math.round(LOGO_WIDTH * height / width)
+    };
+}
+
+function readPositiveNumber(value: string | null | undefined) {
+    const number = Number(value);
+    return value && number > 0 ? number : undefined;
 }

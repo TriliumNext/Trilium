@@ -7,7 +7,7 @@ import {
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
-import { getHtmlSnippets, getPageHead } from "@triliumnext/share-theme/model/page";
+import { getHtmlSnippets, getPageHead, getSiteLogo } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
 import { t } from "i18next";
@@ -213,6 +213,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         canAccessEmbed: renderArgs.canAccessEmbed
     });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
+    const siteRoot = renderArgs.subRoot.note ?? note;
     const opts = {
         note,
         header,
@@ -225,8 +226,9 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         isDev: utils.isDev(),
         utils,
         sanitizeUrl: sanitize.sanitizeUrl,
-        head: getPageHead(note, renderArgs.subRoot.note ?? note),
+        head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
+        logo: getSiteLogo(siteRoot, sanitize.sanitizeUrl),
         ...renderArgs,
     };
 

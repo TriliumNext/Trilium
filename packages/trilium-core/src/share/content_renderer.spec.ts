@@ -1,5 +1,5 @@
 import { trimIndentation } from "@triliumnext/commons";
-import { getHtmlSnippets, getPageHead } from "@triliumnext/share-theme/model/page";
+import { getHtmlSnippets, getPageHead, getSiteLogo } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
@@ -1098,7 +1098,8 @@ describe("content_renderer", () => {
                 iconPackCss: "",
                 iconPackSupportedPrefixes: [],
                 head: getPageHead(note, note),
-                snippets: getHtmlSnippets(note)
+                snippets: getHtmlSnippets(note),
+                logo: getSiteLogo(note, sanitize.sanitizeUrl)
             }, {
                 includer: (path: string) => ({
                     template: readShareTemplate(path)
