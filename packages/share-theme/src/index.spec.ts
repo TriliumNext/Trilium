@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     setupLayout: vi.fn(),
     setupExpanders: vi.fn(),
+    setupTreeScroll: vi.fn(),
     setupThemeSelector: vi.fn().mockImplementation(() => {
         throw new Error("theme switch failed");
     }),
@@ -18,7 +19,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("./page/layout.js", () => ({ default: mocks.setupLayout }));
-vi.mock("./page/navigation.js", () => ({ default: mocks.setupExpanders }));
+vi.mock("./page/navigation.js", () => ({
+    default: mocks.setupExpanders,
+    setupTreeScroll: mocks.setupTreeScroll
+}));
 vi.mock("./page/theme_switch.js", () => ({ default: mocks.setupThemeSelector }));
 vi.mock("./page/search.js", () => ({ default: mocks.setupSearch }));
 vi.mock("./page/toc.js", () => ({ default: mocks.setupToC }));
@@ -44,7 +48,7 @@ describe("share theme entry", () => {
         await import("./index.js");
         await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(2));
         pageSetupCalls = [ mocks.setupThemeSelector, mocks.setupToC, mocks.setupExpanders,
-            mocks.setupLayout, mocks.setupSearch, mocks.setupFooter ]
+            mocks.setupTreeScroll, mocks.setupLayout, mocks.setupSearch, mocks.setupFooter ]
             .map((setup) => setup.mock.calls.length);
         loggedErrors = consoleError.mock.calls.map(([ error ]) => (error as Error).message);
     });
@@ -57,7 +61,7 @@ describe("share theme entry", () => {
     });
 
     it("sets up every part of the page, logging what one throws or rejects with", () => {
-        expect(pageSetupCalls).toEqual([ 1, 1, 1, 1, 1, 1 ]);
+        expect(pageSetupCalls).toEqual([ 1, 1, 1, 1, 1, 1, 1 ]);
         expect(loggedErrors.sort()).toEqual([ "search failed", "theme switch failed" ]);
     });
 

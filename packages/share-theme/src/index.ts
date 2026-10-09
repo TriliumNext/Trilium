@@ -3,7 +3,7 @@
 import "./base.css";
 import setupLayout from "./page/layout.js";
 import "./page/header.css";
-import setupExpanders from "./page/navigation.js";
+import setupExpanders, { setupTreeScroll } from "./page/navigation.js";
 import setupThemeSelector from "./page/theme_switch.js";
 import setupSearch from "./page/search.js";
 import setupToC from "./page/toc.js";
@@ -47,6 +47,7 @@ Object.assign(window, { fetchNote });
 $try(setupThemeSelector);
 $try(setupToC);
 $try(setupExpanders);
+$try(setupTreeScroll);
 $try(setupLayout);
 $try(setupSearch);
 $try(setupFooter);
