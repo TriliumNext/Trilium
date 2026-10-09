@@ -43,21 +43,25 @@ describe("setupMermaid", () => {
         await setupMermaid();
 
         const diagram = document.querySelector("#content > .mermaid");
-        expect(diagram?.textContent).toBe("graph TD; A-->B");
+        const firstId = diagram?.querySelector("svg")?.id;
+        expect(document.querySelector("#content pre")).toBeNull();
+        expect(firstId).toMatch(/^share-mermaid-\d+$/);
         expect(fakeMermaid.initialize).toHaveBeenLastCalledWith(
             expect.objectContaining({ theme: "dark", layout: "dagre", startOnLoad: false }));
-        expect(fakeMermaid.run).toHaveBeenLastCalledWith({ nodes: [ diagram ] });
+        expect(fakeMermaid.render).toHaveBeenLastCalledWith(firstId, "graph TD; A-->B");
 
         // A class change that leaves the theme alone does not draw the diagrams again.
         document.documentElement.classList.add("left-pane-collapsed");
         await Promise.resolve();
-        expect(fakeMermaid.run).toHaveBeenCalledTimes(1);
+        expect(fakeMermaid.render).toHaveBeenCalledTimes(1);
 
         document.documentElement.style.setProperty("--mermaid-theme", "default");
         document.documentElement.classList.add("theme-light");
-        await vi.waitFor(() => expect(fakeMermaid.run).toHaveBeenCalledTimes(2));
+        await vi.waitFor(() => expect(fakeMermaid.render).toHaveBeenCalledTimes(2));
         expect(fakeMermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ theme: "default" }));
-        expect(diagram?.textContent).toBe("graph TD; A-->B");
+        expect(document.querySelector("#content > .mermaid")).toBe(diagram);
+        expect(diagram?.querySelectorAll("svg")).toHaveLength(1);
+        expect(diagram?.querySelector("svg")?.id).not.toBe(firstId);
     });
 
     it("draws a Mermaid note in place of its saved image and keeps the source block", async () => {
@@ -67,11 +71,40 @@ describe("setupMermaid", () => {
         await setupMermaid();
 
         const container = document.querySelector("#content > .mermaid-note");
-        const diagram = container?.querySelector(":scope > .mermaid");
         expect(container?.querySelector("img")).toBeNull();
-        expect(diagram?.textContent).toBe("graph TD; A-->B");
+        expect(container?.querySelectorAll(":scope > .mermaid > svg")).toHaveLength(1);
         expect(container?.querySelector("details pre.mermaid-note-source")).not.toBeNull();
-        expect(fakeMermaid.run).toHaveBeenLastCalledWith({ nodes: [ diagram ] });
+        expect(fakeMermaid.render).toHaveBeenLastCalledWith(expect.any(String), "graph TD; A-->B");
+    });
+
+    it("keeps what a diagram replaces until Mermaid draws it, and draws every diagram again on a theme change", async () => {
+        const fakeMermaid = stubMermaid();
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        document.body.innerHTML = `<div id="content"><div class="mermaid-note">`
+            + `<img class="mermaid-note-image" src="api/images/abc/diagram">`
+            + `<pre class="mermaid-note-source">broken</pre></div>`
+            + `<pre><code class="language-mermaid">graph TD; A--&gt;B</code></pre></div>`;
+
+        await setupMermaid();
+
+        expect(document.querySelector("#content > .mermaid-note > img.mermaid-note-image")).not.toBeNull();
+        expect(document.querySelectorAll("#content > .mermaid > svg")).toHaveLength(1);
+        expect(consoleError).toHaveBeenCalledWith(expect.objectContaining({ message: "Parse error" }));
+
+        document.documentElement.style.setProperty("--mermaid-theme", "dark");
+        document.documentElement.classList.add("theme-dark");
+        await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(2));
+        expect(fakeMermaid.initialize).toHaveBeenLastCalledWith(expect.objectContaining({ theme: "dark" }));
+        expect(fakeMermaid.render.mock.calls.map(([ , source ]) => source))
+            .toStrictEqual([ "graph TD; A-->B", "broken", "graph TD; A-->B", "broken" ]);
+        expect(document.querySelector("#content > .mermaid-note > img.mermaid-note-image")).not.toBeNull();
+        expect(document.querySelectorAll("#content > .mermaid > svg")).toHaveLength(1);
+
+        // Back to the default theme, so that `afterEach` does not start another drawing.
+        document.documentElement.style.removeProperty("--mermaid-theme");
+        document.documentElement.classList.remove("theme-dark");
+        await vi.waitFor(() => expect(consoleError).toHaveBeenCalledTimes(3));
+        consoleError.mockRestore();
     });
 
     it("keeps a Mermaid note's saved image when Mermaid cannot be loaded", async () => {
@@ -114,9 +147,20 @@ const MERMAID_NOTE =`<div id="content"><div class="mermaid-note">`
 
 let stubCount = 0;
 
-/** Serves a fake Mermaid, at a URL of its own: modules are cached by URL. */
+/**
+ * Serves a fake Mermaid, at a URL of its own: modules are cached by URL. It cannot draw a source
+ * containing `broken`.
+ */
 function stubMermaid() {
-    const fakeMermaid = { initialize: vi.fn(), run: vi.fn(async () => {}) };
+    const fakeMermaid = {
+        initialize: vi.fn(),
+        render: vi.fn(async (id: string, source: string) => {
+            if (source.includes("broken")) {
+                throw new Error("Parse error");
+            }
+            return { svg: `<svg id="${id}"></svg>` };
+        })
+    };
     vi.stubGlobal("fakeMermaid", fakeMermaid);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
         entry: `data:text/javascript,export default globalThis.fakeMermaid; // ${++stubCount}`

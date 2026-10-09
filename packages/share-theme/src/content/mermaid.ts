@@ -1,24 +1,16 @@
 import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
 
 /**
- * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes, whose saved
- * image stays in place until Mermaid has loaded.
+ * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes. A code
+ * block or a note's saved image stays in place until Mermaid has drawn its diagram.
  */
 export default async function setupMermaid() {
-    const placeholders = findPlaceholders();
-    if (placeholders.length === 0) {
+    const diagrams = findDiagrams();
+    if (diagrams.length === 0) {
         return;
     }
 
     const mermaid = await loadMermaid();
-
-    const diagrams: Diagram[] = [];
-    for (const { placeholder, source } of placeholders) {
-        const element = document.createElement("div");
-        element.classList.add("mermaid");
-        placeholder.replaceWith(element);
-        diagrams.push({ element, source });
-    }
 
     let theme = readMermaidTheme();
     let rendering = renderDiagrams(mermaid, diagrams, theme);
@@ -38,12 +30,15 @@ export default async function setupMermaid() {
 }
 
 interface Diagram {
+    /** The element the first drawing replaces. */
+    placeholder: Element;
+    /** The element the drawings go into. */
     element: HTMLElement;
     source: string;
 }
 
-/** The elements a drawn diagram replaces, each with the source it is drawn from. */
-function findPlaceholders() {
+/** The diagrams on the page, each with the element its drawing replaces. */
+function findDiagrams() {
     const placeholders: { placeholder: Element; source: string }[] = [];
 
     for (const block of document.querySelectorAll("#content pre")) {
@@ -61,22 +56,39 @@ function findPlaceholders() {
         }
     }
 
-    return placeholders;
+    return placeholders.map(({ placeholder, source }): Diagram => {
+        const element = document.createElement("div");
+        element.classList.add("mermaid");
+        return { placeholder, element, source };
+    });
 }
 
 interface Mermaid {
     initialize(config: Record<string, unknown>): void;
-    run(options: { nodes: HTMLElement[] }): Promise<void>;
+    render(id: string, source: string): Promise<{ svg: string }>;
 }
 
-/** Draws every diagram from its source, replacing what an earlier render left in the element. */
+let renderCount = 0;
+
+/**
+ * Draws every diagram from its source. A diagram Mermaid cannot draw keeps what the page showed
+ * for it before: its placeholder, or its drawing in the previous theme.
+ */
 async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: MermaidTheme) {
     mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
-    for (const { element, source } of diagrams) {
-        element.removeAttribute("data-processed");
-        element.textContent = source;
+    for (const { placeholder, element, source } of diagrams) {
+        try {
+            const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
+            element.innerHTML = svg;
+        } catch (error) {
+            console.error(error);
+            continue;
+        }
+
+        if (placeholder.isConnected) {
+            placeholder.replaceWith(element);
+        }
     }
-    await mermaid.run({ nodes: diagrams.map((diagram) => diagram.element) });
 }
 
 function readMermaidTheme() {
