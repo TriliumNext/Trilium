@@ -104,9 +104,10 @@ export function searchCompletionAt(before: string, explicit: boolean): SearchCom
 /**
  * A note picked with `@`, which opens only where a value can stand — at the start, or after
  * whitespace, an opening bracket or an operator. `@` is a name character to the lexer, so one
- * typed inside an attribute name is left alone.
+ * typed inside an attribute name is left alone. A pick replaces the mention, so the spaces of a
+ * title are part of it until an attribute, a bracket, a quote or a line break ends it.
  */
-const NOTE_MENTION = /(?:^|[\s(=!*<>%~])@[^\s#~()'"`@]*/;
+const NOTE_MENTION = /(?:^|[\s(=!*<>%~])@(?:[^\s#~()'"`@]| )*/;
 /** The characters an operator is spelled with, so typing any of them starts offering them. */
 const OPERATOR_PREFIX = /[=!*<>%~]+/;
 const WORD_PREFIX = /[a-zA-Z]+/;
