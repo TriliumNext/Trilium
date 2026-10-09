@@ -68,6 +68,13 @@ body {
     }
 }
 
+/* A text note reads at a limited width, as in the app, unless it has `#fullContentWidth`. */
+#content.ck-content:not(.full-content-width),
+#content.ck-content:not(.full-content-width) ~ * {
+    max-width: 48rem;
+    margin-inline: auto;
+}
+
 #mobile-backdrop {
     display: none;
 }

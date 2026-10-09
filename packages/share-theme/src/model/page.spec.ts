@@ -359,14 +359,21 @@ describe("getLastUpdated", () => {
 });
 
 describe("getContentClasses", () => {
-    const classes = (type: string, mime: string, isEmpty = false) =>
-        getContentClasses(fakeNote({ noteId: "page", type, mime }), isEmpty);
+    const classes = (type: string, mime: string, isEmpty = false, labels: Record<string, string> = {}) =>
+        getContentClasses(fakeNote({ noteId: "page", type, mime, labels }), isEmpty);
 
     it("styles text and Markdown notes as the editor's content, and marks empty content", () => {
         expect(classes("text", "text/html")).toBe("type-text ck-content");
         expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
         expect(classes("code", "application/javascript")).toBe("type-code");
         expect(classes("book", "", true)).toBe("type-book no-content");
+    });
+
+    it("marks content as full width with #fullContentWidth, as the app does", () => {
+        expect(classes("text", "text/html", false, { fullContentWidth: "" }))
+            .toBe("type-text ck-content full-content-width");
+        expect(classes("text", "text/html", false, { fullContentWidth: "false" }))
+            .toBe("type-text ck-content");
     });
 });
 
@@ -431,6 +438,7 @@ function fakeNote(options: FakeNoteOptions): FakeNote {
         getIcon: (prefixes) => [ options.icon ?? "bx bx-note", ...prefixes ?? [] ].join(" "),
         getLabelValue: (name) => labels[name] ?? null,
         hasLabel: (name) => name in labels,
+        isLabelTruthy: (name) => name in labels && labels[name] !== "false",
         getRelationValue: (name) => relations[name] ?? null,
         hasRelation: (name) => name in relations,
         getRelations: (name) => (name === "shareHtml" ? options.snippets ?? [] : [])

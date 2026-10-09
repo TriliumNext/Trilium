@@ -20,3 +20,7 @@ For notes with large elements such as <a class="reference-link" href="../../Not
 
 > [!NOTE]
 > Some [note types](../../Note%20Types.md) are full width by default, such as the <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a>. In that case the _Full width_ toggle will not be displayed and the label will have no effect.
+
+## Shared notes
+
+On a [shared page](../../Advanced%20Usage/Sharing.md), a text note is shown at a fixed reading width, whatever the width configured in Options. A note with `fullContentWidth` uses the whole width of the page there too.

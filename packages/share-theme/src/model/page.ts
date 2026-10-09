@@ -16,6 +16,8 @@ export interface ShareNote {
     utcDateModified?: string;
     getLabelValue(name: string): string | null | undefined;
     hasLabel(name: string): boolean;
+    /** Whether the label is set to anything but `false`. */
+    isLabelTruthy(name: string): boolean;
     getRelationValue(name: string): string | null | undefined;
     hasRelation(name: string): boolean;
     getRelations(name: string): { targetNote?: ShareNote | null }[];
@@ -328,7 +330,8 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
 
 /**
  * Returns the classes of the content element: the note's type, `ck-content` for content the text
- * editor's styles apply to (text notes and Markdown code notes), and `no-content` when empty.
+ * editor's styles apply to (text notes and Markdown code notes), `full-content-width` for a note
+ * with `#fullContentWidth`, as in the app, and `no-content` when empty.
  */
 export function getContentClasses(note: ShareNote, isEmpty = false) {
     const isEditorContent = note.type === "text"
@@ -336,6 +339,7 @@ export function getContentClasses(note: ShareNote, isEmpty = false) {
     return [
         `type-${note.type}`,
         isEditorContent && "ck-content",
+        note.isLabelTruthy("fullContentWidth") && "full-content-width",
         isEmpty && "no-content"
     ].filter(Boolean).join(" ");
 }

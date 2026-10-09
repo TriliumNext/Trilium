@@ -1146,6 +1146,27 @@ describe("content_renderer", () => {
         }
     });
 
+    describe("Content width", () => {
+        it("marks a page with #fullContentWidth, inherited or its own, for the full width", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "cappedPage", content: "<p>a</p>" },
+                    { "id": "widePage", "content": "<p>b</p>", "#fullContentWidth": "" },
+                    { "id": "narrowPage", "content": "<p>c</p>", "#fullContentWidth": "false" }
+                ]
+            });
+            const contentClasses = (note: SNote) => parse(String(renderNoteContent(note)))
+                .querySelector("#content")?.classList.value ?? [];
+
+            const [ capped, wide, narrow ] = shareRootNote.getChildNotes().map(contentClasses);
+            expect(capped).toContain("ck-content");
+            expect(capped).not.toContain("full-content-width");
+            expect(wide).toContain("full-content-width");
+            expect(narrow).not.toContain("full-content-width");
+        });
+    });
+
     describe("Site logo", () => {
         it("shows the site root's note icon, or the ~shareLogo image when there is one", () => {
             const shareRootNote = buildShareNote({
