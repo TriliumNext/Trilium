@@ -260,22 +260,15 @@ body.type-webView {
     }
 }
 
-/* table styles */
-.ck-content table {
-    border-collapse: collapse;
+/* The tables of the app, which draws them with `ckeditor5-content.css`: Bootstrap's `.table` class
+   stretches the `<figure>` to the content's width, and `style.css` centers the cells vertically. A
+   resized table keeps the width the figure carries in its `style`. */
+.ck-content figure.table {
     width: 100%;
 }
 
-.ck-content table td,
-.ck-content table th {
-    min-width: 120px;
-    border: 1px solid var(--background-highlight);
-    padding: 8px;
-}
-
-.ck-content table th {
-    background-color: var(--background-secondary);
-    font-weight: bold;
+.ck-content .table :is(td, th) {
+    vertical-align: middle;
 }
 
 /* Spreadsheet (Univer) tables are emitted as a static <table> whose cells carry their
