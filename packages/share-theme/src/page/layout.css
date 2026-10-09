@@ -2,25 +2,6 @@ html {
     --page-top-spacing: 2rem;
 }
 
-/* Going to another page of the site cross-fades the content and keeps the panes in place. */
-@view-transition {
-    navigation: auto;
-}
-
-#header {
-    view-transition-name: site-header;
-}
-
-#left-pane {
-    view-transition-name: site-navigation;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    @view-transition {
-        navigation: none;
-    }
-}
-
 /* Past 90rem the navigation pane widens into the space beside the layout, up to 24rem; the padding
    keeps the content where the 90rem layout puts it. */
 #split-pane {
