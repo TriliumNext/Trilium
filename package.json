@@ -71,7 +71,7 @@
     "esbuild": "0.28.2",
     "eslint": "10.12.0",
     "eslint-config-preact": "2.0.0",
-    "eslint-plugin-playwright": "2.12.0",
+    "eslint-plugin-playwright": "2.12.1",
     "eslint-plugin-simple-import-sort": "14.0.0",
     "happy-dom": "20.14.5",
     "http-server": "14.1.1",
