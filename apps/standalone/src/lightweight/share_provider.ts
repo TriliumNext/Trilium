@@ -7,6 +7,7 @@ import templatePrevNext from "@triliumnext/share-theme/templates/prev_next.ejs?r
 import templateSiteLogo from "@triliumnext/share-theme/templates/site_logo.ejs?raw";
 import templateTocItem from "@triliumnext/share-theme/templates/toc_item.ejs?raw";
 import templateTreeItem from "@triliumnext/share-theme/templates/tree_item.ejs?raw";
+import templateTreeToc from "@triliumnext/share-theme/templates/tree_toc.ejs?raw";
 
 /**
  * The share theme's templates, bundled rather than read from disk: this build has no filesystem to
@@ -19,7 +20,8 @@ const TEMPLATES: Record<string, string> = {
     prev_next: templatePrevNext,
     site_logo: templateSiteLogo,
     toc_item: templateTocItem,
-    tree_item: templateTreeItem
+    tree_item: templateTreeItem,
+    tree_toc: templateTreeToc
 };
 
 let registered = false;

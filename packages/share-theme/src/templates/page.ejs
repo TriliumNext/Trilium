@@ -39,9 +39,6 @@
             <span class="theme-cycle-option" data-theme="dark" title="<%= t("share_theme.theme-dark") %>"><span class="tn-icon bx bx-moon" aria-hidden="true"></span><span class="visually-hidden"><%= t("share_theme.theme-current", { theme: t("share_theme.theme-dark") }) %></span></span>
             <span class="theme-cycle-option" data-theme="system" title="<%= t("share_theme.theme-system") %>"><span class="tn-icon bx bx-desktop" aria-hidden="true"></span><span class="visually-hidden"><%= t("share_theme.theme-current", { theme: t("share_theme.theme-system") }) %></span></span>
         </button>
-        <% if (headings.length > 1) { %>
-            <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-list-ul" aria-hidden="true"></span></button>
-        <% } %>
     </div>
 </div>
 <div id="split-pane">
@@ -66,6 +63,12 @@
                     </div>
                 <% } %>
             </div>
+        <% if (headings.length > 1 && !isPageInNavigation) { %>
+            <nav class="tree-toc" aria-labelledby="tree-toc-title">
+                <h3 id="tree-toc-title"><%= t("share_theme.on-this-page") %></h3>
+                <%- include("tree_toc", { entries: toc }) %>
+            </nav>
+        <% } %>
         <% if (navigation.length) { %>
             <nav id="menu">
                 <%- include("tree_item", { items: navigation }) %>

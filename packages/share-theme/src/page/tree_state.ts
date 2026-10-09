@@ -44,7 +44,8 @@ export default function setupTreeState() {
     }
 
     pane.addEventListener("click", (e) => {
-        const item = e.target instanceof Element && e.target.closest("#menu a")?.closest("li");
+        const link = e.target instanceof Element && e.target.closest("#menu a");
+        const item = link && !link.closest(".tree-toc") && link.closest("li");
         if (!item) {
             return;
         }
@@ -110,14 +111,20 @@ function restoreTree(pane: HTMLElement, state: TreeState) {
     return clicked ? path : undefined;
 }
 
-/** Moves the current note's card to `item`, one of its entries. */
+/** Moves the current note's card and its table of contents to `item`, one of its entries. */
 function selectItem(pane: HTMLElement, item: Element) {
     for (const selected of pane.querySelectorAll("#menu .active")) {
-        selected.classList.remove("active");
+        if (!selected.closest(".tree-toc")) {
+            selected.classList.remove("active");
+        }
     }
     const rowAndLink = ":scope > .tree-item-row, :scope > * > a, :scope > a";
     for (const selected of item.querySelectorAll(rowAndLink)) {
         selected.classList.add("active");
+    }
+    const toc = pane.querySelector("#menu .tree-toc");
+    if (toc) {
+        item.querySelector(":scope > .tree-item-row")?.after(toc);
     }
 }
 

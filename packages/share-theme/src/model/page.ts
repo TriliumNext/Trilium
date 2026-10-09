@@ -491,6 +491,14 @@ export function getNavigationTree(
 }
 
 /**
+ * Returns whether a navigation tree has an entry for the page being shown, which the site root
+ * and a note hidden from the tree do not.
+ */
+export function hasActiveItem(items: NavigationItem[]): boolean {
+    return items.some((item) => item.isActive || hasActiveItem(item.children));
+}
+
+/**
  * Returns the IDs of the notes between `note` and `siteRoot`, from its parent up, following the
  * first parent inside the site.
  */

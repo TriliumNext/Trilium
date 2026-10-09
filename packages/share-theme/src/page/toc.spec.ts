@@ -23,6 +23,30 @@ describe("setupToC", () => {
         expect(activeEntry()).toBe("more");
     });
 
+    it("keeps the copy in the navigation pane in step, and closes the pane on a click", () => {
+        const scrollTo = renderPage([ [ 2, "intro", 100 ], [ 2, "details", 500 ] ]);
+        const treeEntry = (selector: string) =>
+            document.querySelector<HTMLAnchorElement>(`.tree-toc a${selector}`);
+
+        expect(treeEntry(".active")?.textContent).toBe("intro");
+        scrollTo(520);
+        expect(treeEntry(".active")?.textContent).toBe("details");
+        expect(activeEntry()).toBe("details");
+
+        const heading = document.getElementById("intro");
+        const entry = treeEntry('[href="#intro"]');
+        if (!heading || !entry) {
+            throw new Error("The heading or its entry in the navigation pane is missing.");
+        }
+        heading.scrollIntoView = vi.fn();
+        document.body.classList.add("menu-open");
+
+        entry.click();
+
+        expect(heading.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
+        expect(document.body.classList.contains("menu-open")).toBe(false);
+    });
+
     it("scrolls to the heading of a clicked entry, whose ID can start with a digit or hold a %", () => {
         renderPage([ [ 2, "2024-plans", 100 ], [ 2, "part%20one", 500 ] ]);
 
@@ -149,6 +173,7 @@ describe("setupToC", () => {
  * scrolls the page.
  */
 function renderPage(headings: [ level: number, slug: string, offsetTop: number ][]) {
+    const link = (slug: string) => `<a href="#${encodeURIComponent(slug)}">${slug}</a>`;
     document.body.innerHTML = `
         <div>
             <div id="content">
@@ -156,8 +181,11 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
                     + `</h${level}>`).join("")}
             </div>
             <ul id="toc">
-                ${headings.map(([ , slug ]) => `<li><a href="#${encodeURIComponent(slug)}">${slug}</a></li>`).join("")}
+                ${headings.map(([ , slug ]) => `<li>${link(slug)}</li>`).join("")}
             </ul>
+            <nav class="tree-toc">
+                ${headings.map(([ , slug ]) => `<div>${link(slug)}</div>`).join("")}
+            </nav>
         </div>
     `;
     let scrolled = 0;

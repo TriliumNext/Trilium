@@ -18,7 +18,8 @@
     display: none;
 }
 
-#toc-pane h3 {
+#toc-pane h3,
+#tree-toc-title {
     margin: 0 0 0.5em;
     padding-inline: 8px;
     font-size: 0.85em;
@@ -57,6 +58,52 @@
 
 #toc li a.active {
     font-weight: bold;
+}
+
+/* The copy of the table of contents that narrow screens show in the navigation pane: below the
+   page's entry in the tree, or at the top of the pane for a page the tree does not list. */
+.tree-toc {
+    display: none;
+}
+
+#menu .tree-toc,
+.tree-toc-children {
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
+}
+
+#menu .tree-toc {
+    margin-block: 2px 6px;
+    margin-inline-start: 40px;
+}
+
+.tree-toc-children {
+    margin-inline-start: 12px;
+}
+
+#navigation > .tree-toc {
+    margin-bottom: 16px;
+    padding-inline: 4px;
+}
+
+#navigation .tree-toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--tree-item-color);
+    font-size: 0.9em;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+#navigation .tree-toc a:hover {
+    background: var(--tree-item-hover-background);
+}
+
+#navigation .tree-toc a.active {
+    color: var(--tree-item-active-color);
+    font-weight: 600;
 }
 
 #content :is(h1, h2, h3, h4, h5, h6) {
@@ -104,6 +151,14 @@
 
     .toc-open #toc-pane {
         transform: translateX(0);
+    }
+
+    .tree-toc {
+        display: block;
+    }
+
+    #menu li:not(.expanded) > .tree-toc {
+        display: none;
     }
 
     #toc-pane:empty {

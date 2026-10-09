@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
     getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
-    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
     type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
 
@@ -318,7 +318,7 @@ describe("getNavigationTree", () => {
     const site = fakeNote({ noteId: "site" });
     const a = addChild(site, fakeNote({ noteId: "a", icon: "bx bx-folder" }));
     const a1 = addChild(a, fakeNote({ noteId: "a1", type: "code" }));
-    addChild(a, fakeNote({ noteId: "hidden" }), true);
+    const hidden = addChild(a, fakeNote({ noteId: "hidden" }), true);
     const b = addChild(site, fakeNote({ noteId: "b", labels: { shareExternalLink: "https://example.com" } }));
     addChild(b, fakeNote({ noteId: "b1" }));
     const outline = (items: NavigationItem[]): unknown[] => items.map((item) => {
@@ -363,6 +363,14 @@ describe("getNavigationTree", () => {
 
         expect(tree[1].icon).toBe("bx bx-note custom");
         expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
+    });
+
+    it("tells whether the page has an entry, which the site root and a hidden note do not", () => {
+        const options = { sanitizeUrl: (url: string) => url };
+
+        expect(hasActiveItem(getNavigationTree(site, a1, [ "a" ], options))).toBe(true);
+        expect(hasActiveItem(getNavigationTree(site, site, [], options))).toBe(false);
+        expect(hasActiveItem(getNavigationTree(site, hidden, [ "a" ], options))).toBe(false);
     });
 });
 

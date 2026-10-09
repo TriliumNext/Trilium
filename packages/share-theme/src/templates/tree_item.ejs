@@ -7,6 +7,11 @@
                     <span class="tn-icon <%= item.icon %>" aria-hidden="true"></span><span class="tree-item-title"><%= item.title %></span>
                 </a>
             </div>
+            <% if (item.isActive && headings.length > 1) { %>
+                <nav class="tree-toc" aria-label="<%= t("share_theme.on-this-page") %>">
+                    <%- include("tree_toc", { entries: toc }) %>
+                </nav>
+            <% } %>
             <% if (item.children.length) { %>
                 <%- include("tree_item", { items: item.children }) %>
             <% } %>

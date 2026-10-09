@@ -16,15 +16,16 @@ import "./toc.css";
 export default function setupToC() {
     setupHeadingLinks();
 
-    const toc = document.getElementById("toc");
-    if (!toc) return;
+    // The ToC pane, and the copy in the navigation pane that narrow screens show instead.
+    const tocs = [ ...document.querySelectorAll("#toc, .tree-toc") ];
+    if (!tocs.length) return;
 
     const sections = [ ...document.querySelectorAll("#content .toc-anchor") ]
         .map((anchor) => anchor.parentElement)
         .filter((heading) => heading !== null);
-    const links = [ ...toc.querySelectorAll("a") ];
+    const linkLists = tocs.map((toc) => [ ...toc.querySelectorAll("a") ]);
 
-    for (const link of links) {
+    for (const link of linkLists.flat()) {
         link.addEventListener("click", e => {
             const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
             if (!target) return;
@@ -44,8 +45,10 @@ export default function setupToC() {
             // Walk back to the last section scrolled past.
         }
 
-        for (const [ linkIndex, link ] of links.entries()) {
-            link.classList.toggle("active", linkIndex === index);
+        for (const links of linkLists) {
+            for (const [ linkIndex, link ] of links.entries()) {
+                link.classList.toggle("active", linkIndex === index);
+            }
         }
     };
 

@@ -155,6 +155,28 @@ describe("setupTreeState", () => {
         expect(event.preventDefault).not.toHaveBeenCalled();
     });
 
+    it("moves the page's table of contents with the selection, and leaves its links alone", () => {
+        const toc = `<nav class="tree-toc"><div><a class="active" href="#missing">Missing</a></div></nav>`;
+        const selectedLink = `<a class="active" href="./c">C</a></div>`;
+        renderPane("site1", { activeTop: 50, menu: CLONES.replace(selectedLink, selectedLink + toc) });
+        document.body.dataset.noteId = "c";
+        setupTreeState();
+        const tocLink = document.querySelector<HTMLElement>(".tree-toc a");
+        if (!tocLink) {
+            throw new Error("The table of contents is missing.");
+        }
+
+        const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+        tocLink.dispatchEvent(event);
+        expect(event.defaultPrevented).toBe(false);
+
+        cloneLink("y").click();
+        const tocParent = document.querySelector(".tree-toc")?.parentElement;
+        expect(tocParent?.parentElement?.closest<HTMLElement>("li")?.dataset.noteId).toBe("y");
+        expect(tocParent?.firstElementChild).toBe(cloneLink("y").parentElement);
+        expect(tocLink.classList.contains("active")).toBe(true);
+    });
+
     it("centers the current note when it is out of view, and leaves it when it is in view", () => {
         renderPane("site1", { activeTop: 700 });
         setupTreeState();

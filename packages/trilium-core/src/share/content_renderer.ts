@@ -9,7 +9,7 @@ import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadshee
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
     getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
-    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
     type NavigationItem, type PageHeading
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
@@ -335,7 +335,13 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             headingLinkLabel: t("share_theme.heading-link")
         })
         : { content, headings: [] };
-    const pageOpts = { ...opts, content: pageContent, headings, toc: getTableOfContents(headings) };
+    const pageOpts = {
+        ...opts,
+        content: pageContent,
+        headings,
+        toc: getTableOfContents(headings),
+        isPageInNavigation: hasActiveItem(navigation)
+    };
     return ejs.render(readShareTemplate("page"), pageOpts, {
         includer: (path) => ({ template: readShareTemplate(path) })
     });

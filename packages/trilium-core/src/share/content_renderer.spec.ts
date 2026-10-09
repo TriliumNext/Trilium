@@ -372,7 +372,7 @@ describe("content_renderer", () => {
             ]);
         });
 
-        it("keeps an empty table of contents pane, and its toggle out, for fewer than two headings", () => {
+        it("keeps an empty table of contents pane, and none in the tree, for fewer than two headings", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
                 children: [{ id: "oneHeading", content: `<h2>Only</h2><p>a</p>` }]
@@ -381,7 +381,40 @@ describe("content_renderer", () => {
             const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
 
             expect(page.querySelector("#toc-pane")?.innerHTML).toBe("");
+            expect(page.querySelector(".tree-toc") === null).toBe(true);
+        });
+
+        it("lists the table of contents in the tree below the page, or above it for the site's page", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "tocSite",
+                    title: "Site",
+                    content: `<h2>Site one</h2><p>a</p><h2>Site two</h2><p>b</p>`,
+                    children: [{
+                        id: "tocPage",
+                        title: "Page",
+                        content: `<h2>One</h2><p>a</p><h3>Two</h3><p>b</p>`
+                    }]
+                }]
+            });
+            const site = shareRootNote.getChildNotes()[0];
+            const tocLinks = (page: ReturnType<typeof parse>, toc: string) => page
+                .querySelectorAll(`${toc} a`).map((link) => link.getAttribute("href"));
+
+            const page = parse(String(renderNoteContent(site.getChildNotes()[0])));
+            const pageToc = "#menu li[data-note-id=\"tocPage\"] > .tree-toc";
+            expect(tocLinks(page, pageToc)).toStrictEqual([ "#one", "#two" ]);
+            expect(tocLinks(page, `${pageToc} .tree-toc-children`)).toStrictEqual([ "#two" ]);
+            expect(page.querySelectorAll(".tree-toc")).toHaveLength(1);
             expect(page.querySelector("#toc-pane-toggle-button") === null).toBe(true);
+
+            const sitePage = parse(String(renderNoteContent(site)));
+            expect(tocLinks(sitePage, "#navigation > .tree-toc"))
+                .toStrictEqual([ "#site-one", "#site-two" ]);
+            expect(sitePage.querySelector("#navigation > .tree-toc > #tree-toc-title")?.text)
+                .toBe(t("share_theme.on-this-page"));
+            expect(sitePage.querySelectorAll(".tree-toc")).toHaveLength(1);
         });
 
         it("links the table of contents to a heading's own ID, URL-encoded", () => {
@@ -1469,7 +1502,8 @@ describe("content_renderer", () => {
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
                 headings: [],
-                toc: []
+                toc: [],
+                isPageInNavigation: false
             }, {
                 includer: (path: string) => ({
                     template: readShareTemplate(path)
