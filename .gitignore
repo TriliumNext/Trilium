@@ -54,6 +54,7 @@ upload
 # docs
 site/
 apps/*/coverage
+packages/*/coverage
 scripts/translation/.language*.json
 
 # Capacitor regenerates this on every `cap sync` and produces different
