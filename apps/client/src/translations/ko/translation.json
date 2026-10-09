@@ -65,7 +65,9 @@
     "anchor": "앵커(선택)",
     "anchor_none": "없음(노트 전체 링크)",
     "edit_link": "링크 편집",
-    "button_edit_link": "링크 저장"
+    "button_edit_link": "링크 저장",
+    "fix_link": "링크 수정",
+    "button_fix_link": "링크 수정"
   },
   "branch_prefix": {
     "save": "저장",
@@ -401,7 +403,9 @@
       "math": "수식",
       "collapsible_summary": "요약",
       "collapsible_details": "세부정보",
-      "table_column": "열 {{number}}"
+      "table_column": "열 {{number}}",
+      "tab_title": "탭 {{number}}",
+      "tab_content": "내용"
     },
     "titles": {
       "date": "날짜/시간 삽입",
@@ -420,8 +424,10 @@
       "important": "중요",
       "caution": "주의",
       "warning": "경고",
-      "todo": "작업: {{title}}"
-    }
+      "todo": "작업: {{title}}",
+      "tabs": "탭"
+    },
+    "tabs": "한 번에 하나의 패널을 표시하는 제목 있는 탭 삽입"
   },
   "move_to": {
     "dialog_title": "노트를 이동할 위치...",
@@ -798,7 +804,7 @@
     "geolocation": "지리 맵에서 노트를 배치할 위도와 경도입니다.",
     "map_type": "그릴 노트 맵의 종류를 지정합니다. 노트 간 관계를 표시하려면 <code>link</code> 값을, 계층 구조를 표시하려면 <code>tree</code> 값을 사용합니다.",
     "map_style": "컬렉션 속성에서 제공하는 래스터 또는 벡터 스타일 중 지리 맵에 사용할 스타일을 지정합니다.",
-    "map_scale": "지리 맵에 축척 막대를 표시합니다.",
+    "map_scale": "지리 맵에는 축척 막대를 표시하고, 이미지 맵에는 가장자리를 따라 좌표 눈금자를 표시합니다.",
     "map_hide_labels": "지리 맵의 마커 옆에 표시되는 노트 제목을 숨깁니다.",
     "presentation_theme": "프레젠테이션에 사용할 테마입니다.",
     "slide_background": "슬라이드의 배경을 색상 또는 CSS 그라데이션으로 지정합니다.",
@@ -833,7 +839,11 @@
     "board_show_inbox": "보드 컬렉션에서 받은 편지함 열을 표시합니다. 이 열에는 보드의 어떤 열에도 할당되지 않은 모든 하위 노트가 나열됩니다.",
     "board_column_width": "보드 컬렉션에서 열이 표시되는 너비를 지정합니다: <code>narrow</code>, <code>medium</code> 또는 <code>wide</code>. 모바일에서는 무시되며, 모바일 화면에 맞는 너비로 표시됩니다.",
     "board_sort_columns": "보드 컬렉션에서 열이 카드를 정렬하는 순서를 지정합니다. 열에 별도의 정렬 순서가 지정되지 않은 경우 이 설정을 따릅니다. <code>title</code>, <code>creationDate</code> 또는 <code>attr:</code> 뒤에 승격된 속성의 이름을 지정할 수 있습니다.",
-    "board_sort_columns_descending": "보드 컬렉션에서 <code>#board:sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다."
+    "board_sort_columns_descending": "보드 컬렉션에서 <code>#board:sortColumns</code> 설정의 정렬 순서를 반대로 적용합니다.",
+    "map_position": "이미지 맵에서 노트의 위치를 맵 좌표의 <code>x,y</code> 형식으로 지정합니다. <code>map:imageBounds</code> 에서 다른 좌표를 지정하지 않은 경우 이미지의 픽셀 좌표를 사용합니다.",
+    "map_shape": "이미지 맵에서 노트가 표시될 도형을 지정합니다. <code>geoShape</code> 와 같은 형식을 사용하지만 <code>x,y</code> 좌표를 사용합니다. 예: <code>circle:400,300 50</code>.",
+    "map_image_bounds": "이미지 맵의 왼쪽 위와 오른쪽 아래 모서리 좌표를 <code>x,y x,y</code> 형식으로 지정합니다. 예: <code>-512,-512 512,512</code>. 맵의 위치는 이미지의 픽셀 좌표 대신 이 좌표계를 기준으로 읽고 기록됩니다.",
+    "map_image": "세계 지도 대신 지리 맵의 배경으로 사용할 이미지 노트입니다. 마커와 도형은 <code>mapPosition</code> 및 <code>mapShape</code> 설정을 사용해 배치됩니다."
   },
   "attribute_editor": {
     "help_text_body1": "레이블을 추가하려면 예를 들어 <code>#rock</code> 값을 입력합니다. 값도 함께 추가하려면 예를 들어 <code>#year = 2020</code> 값을 입력합니다",
@@ -2921,7 +2931,9 @@
     "draw-rectangle-instruction": "지도에서 한쪽 모서리를 클릭한 다음 반대쪽 모서리를 다시 클릭하세요. 한쪽 모서리에서 다른 쪽 모서리까지 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다.",
     "draw-circle": "지도에 원 그리기",
     "draw-circle-toast-title": "원 그리기",
-    "draw-circle-instruction": "지도에서 중심점을 클릭한 다음 원의 반경이 될 위치를 다시 클릭하세요. 중심점에서 바깥쪽으로 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다."
+    "draw-circle-instruction": "지도에서 중심점을 클릭한 다음 원의 반경이 될 위치를 다시 클릭하세요. 중심점에서 바깥쪽으로 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다.",
+    "image-unavailable": "이 맵의 이미지를 불러올 수 없습니다. map:image 관계가 가리키는 노트가 이미지인지 확인하세요.",
+    "image-svg-unsupported": "SVG 이미지는 맵으로 사용할 수 없습니다. 대신 이미지를 PNG, JPEG 또는 WebP로 변환하세요."
   },
   "geo-map-context": {
     "open-location": "위치 열기",
@@ -4129,7 +4141,27 @@
       "more-actions": "추가 작업",
       "drawing-canvas": "그리기 캔버스",
       "editable": "편집 가능",
-      "insert-a-canvas-to-draw-on": "그림을 그릴 수 있는 캔버스를 삽입합니다."
+      "insert-a-canvas-to-draw-on": "그림을 그릴 수 있는 캔버스를 삽입합니다.",
+      "tabs": "탭",
+      "tab-title": "탭 제목",
+      "tab-0": "탭 %0",
+      "tab-content": "탭 내용",
+      "add-tab": "탭 추가",
+      "remove-tab": "탭 제거",
+      "move-tab-left": "탭을 왼쪽으로 이동",
+      "move-tab-right": "탭을 오른쪽으로 이동",
+      "copy-link-to-tab": "탭 링크 복사",
+      "tabs-toolbar": "탭 도구 모음",
+      "insert-titled-tabs-that-show-one-panel-at-a-time": "한 번에 하나의 패널을 표시하는 제목 있는 탭을 삽입합니다.",
+      "multicolumn-layout": "다중 열 레이아웃",
+      "multicolumn-layout-toolbar": "다중 열 레이아웃 도구 모음",
+      "multiple-column-layout": "여러 열 레이아웃",
+      "0-columns": "%0열",
+      "column-layout": "열 레이아웃",
+      "0-columns-layout": "%0열 레이아웃",
+      "arrange-content-in-0-equal-columns-side-by-side": "내용을 같은 너비의 %0개 열로 나란히 배치합니다.",
+      "0-columns-1": "%0열 (%1)",
+      "remove-layout": "레이아웃 제거"
     },
     "toolbar-groups": {
       "text-formatting": "텍스트 서식",
@@ -4431,6 +4463,7 @@
     "excerpt": "발췌",
     "excerpt_description": "현재 이 노트의 일부만 보고 있습니다. {{icon}} 버튼을 눌러 전체 노트를 새 탭에서 여세요.",
     "edit_excerpt": "발췌 편집",
-    "copy_other": "이 {{count}}개 블록의 참조 복사"
+    "copy_other": "이 {{count}}개 블록의 참조 복사",
+    "copy_tab": "이 탭의 링크 복사"
   }
 }
