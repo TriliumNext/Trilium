@@ -390,10 +390,6 @@
             mkdir -p $out/opt/trilium-build-docs/client
             cp --archive apps/client/dist/* $out/opt/trilium-build-docs/client/
 
-            # Copy share-theme (needed for exports)
-            mkdir -p $out/opt/trilium-build-docs/packages/share-theme
-            cp --archive packages/share-theme/dist/* $out/opt/trilium-build-docs/packages/share-theme/
-
             # Create wrapper script
             makeWrapper ${lib.getExe nodejs} $out/bin/trilium-build-docs \
               --add-flags $out/opt/trilium-build-docs/cli.cjs \

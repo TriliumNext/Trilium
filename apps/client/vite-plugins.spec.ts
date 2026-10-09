@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 import { describe, expect, it } from "vitest";
 
 import {
-    buildShareMermaidManifest,
+    buildShareThemeManifest,
     ENGINE_RENDER_ENTRY,
     LANGUAGE_DETECTOR_PACKAGE,
     resolveUniverHyphenationStub,
@@ -121,59 +121,73 @@ describe("stripUniverEmojiData", () => {
     });
 });
 
-describe("buildShareMermaidManifest", () => {
-    const chunk = (fileName: string, extra: { name?: string; isEntry?: boolean; imports?: string[];
-        dynamicImports?: string[]; css?: string[] } = {}) => ({
+describe("buildShareThemeManifest", () => {
+    const MERMAID_ID = "/node_modules/mermaid/dist/mermaid.core.mjs";
+    const chunk = (fileName: string, extra: { facade?: string; imports?: string[];
+        dynamicImports?: string[]; css?: string[]; assets?: string[] } = {}) => ({
         type: "chunk" as const,
         fileName,
-        name: extra.name ?? fileName,
-        isEntry: extra.isEntry ?? false,
+        facadeModuleId: extra.facade ?? null,
         imports: extra.imports ?? [],
         dynamicImports: extra.dynamicImports ?? [],
-        viteMetadata: { importedCss: new Set(extra.css ?? []), importedAssets: new Set<string>() }
+        viteMetadata: {
+            importedCss: new Set(extra.css ?? []),
+            importedAssets: new Set(extra.assets ?? [])
+        }
     });
+    const asset = (fileName: string) => ({ type: "asset" as const, fileName });
     const bundle = Object.fromEntries([
-        chunk("src/share_mermaid-a.js", {
-            name: "share_mermaid",
-            isEntry: true,
-            imports: [ "src/core-b.js" ]
+        chunk("src/scripts.js", {
+            imports: [ "src/shared-a.js", "src/shared-k.js" ],
+            dynamicImports: [ "src/fuse-b.js", "src/mermaid.core-c.js" ],
+            css: [ "src/scripts-j.css" ]
         }),
-        chunk("src/core-b.js", {
-            dynamicImports: [ "src/flowchart-c.js", "src/elk-d.js" ],
-            css: [ "src/core-e.css" ]
+        chunk("src/shared-a.js", { css: [ "src/shared-a.css" ] }),
+        chunk("src/shared-k.js", { css: [ "src/shared-k.css" ] }),
+        chunk("src/fuse-b.js", {
+            imports: [ "src/shared-a.js" ],
+            css: [ "src/fuse-d.css" ],
+            assets: [ "src/font-e.woff2" ]
         }),
-        chunk("src/flowchart-c.js", { imports: [ "src/core-b.js" ] }),
-        chunk("src/elk-d.js"),
-        { type: "asset" as const, fileName: "src/core-e.css" },
-        chunk("src/index-f.js", { name: "index", isEntry: true, imports: [ "src/core-b.js" ] })
+        chunk("src/mermaid.core-c.js", {
+            facade: MERMAID_ID,
+            imports: [ "src/shared-k.js", "src/dagre-f.js" ],
+            dynamicImports: [ "src/flowchart-g.js" ]
+        }),
+        chunk("src/dagre-f.js"),
+        chunk("src/flowchart-g.js"),
+        chunk("src/index-h.js", { imports: [ "src/shared-a.js" ] }),
+        ...[ "scripts-j.css", "shared-a.css", "shared-k.css", "fuse-d.css", "font-e.woff2" ]
+            .map((name) => asset(`src/${name}`))
     ].map((output) => [ output.fileName, output ]));
 
-    it("lists the entry and everything it loads, relative to the manifest", () => {
-        const files = [
-            "core-b.js", "core-e.css", "elk-d.js", "flowchart-c.js", "share_mermaid-a.js"
-        ];
-
-        expect(buildShareMermaidManifest(bundle, "src/share_mermaid.json"))
-            .toEqual({ entry: "share_mermaid-a.js", files });
-        const standaloneManifest = "share/assets/client/share_mermaid.json";
-        expect(buildShareMermaidManifest(bundle, standaloneManifest)).toEqual({
-            entry: "../../../src/share_mermaid-a.js",
-            files: files.map((file) => `../../../src/${file}`)
+    it("lists what every page loads apart from what only mermaid loads", () => {
+        // The styles of the chunks `scripts.js` imports are in `scripts.css`, but a chunk loaded on
+        // demand preloads the stylesheets of the chunks it imports.
+        const styleAssets = [ "src/KaTeX-i.woff2" ];
+        const manifest = buildShareThemeManifest(bundle, { mermaid: MERMAID_ID }, styleAssets);
+        expect(manifest).toEqual({
+            files: [
+                "KaTeX-i.woff2", "font-e.woff2", "fuse-b.js", "fuse-d.css", "scripts.css",
+                "scripts.js", "shared-a.css", "shared-a.js", "shared-k.js", "tree.js"
+            ],
+            lazy: {
+                mermaid: [ "dagre-f.js", "flowchart-g.js", "mermaid.core-c.js", "shared-k.css" ]
+            }
         });
     });
 
-    it("rejects a bundle without the entry or with files outside one directory", () => {
-        const MANIFEST = "src/share_mermaid.json";
-        const { "src/share_mermaid-a.js": _, ...withoutEntry } = bundle;
-        expect(() => buildShareMermaidManifest(withoutEntry, MANIFEST))
-            .toThrow("no 'share_mermaid' entry");
+    it("rejects a bundle without a library's chunk or with files outside one directory", () => {
+        expect(() => buildShareThemeManifest(bundle, { mermaid: "/elsewhere/mermaid.mjs" }, []))
+            .toThrow("no chunk for the share theme's 'mermaid'");
 
         const nested = {
             ...bundle,
-            "src/elk-d.js": chunk("src/elk-d.js", { imports: [ "src/nested/g.js" ] }),
-            "src/nested/g.js": chunk("src/nested/g.js")
+            "src/fuse-b.js": chunk("src/fuse-b.js", { imports: [ "src/nested/k.js" ] }),
+            "src/nested/k.js": chunk("src/nested/k.js")
         };
-        expect(() => buildShareMermaidManifest(nested, MANIFEST)).toThrow("several directories");
+        expect(() => buildShareThemeManifest(nested, { mermaid: MERMAID_ID }, []))
+            .toThrow("must all be in 'src/': src/nested/k.js");
     });
 });
 

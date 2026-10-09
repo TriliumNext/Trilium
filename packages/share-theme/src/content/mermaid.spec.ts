@@ -1,35 +1,25 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import setupMermaid, { loadMermaid } from "./mermaid.js";
+import setupMermaid from "./mermaid.js";
 
-describe("loadMermaid", () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
-    it("imports the entry the manifest next to the script names", async () => {
-        const fetchMock = vi.fn(async (_url: URL) => new Response(JSON.stringify({
-            entry: `data:text/javascript,export default { name: "client mermaid" };`,
-            files: []
-        })));
-        vi.stubGlobal("fetch", fetchMock);
-
-        expect(await loadMermaid()).toEqual({ name: "client mermaid" });
-        expect(fetchMock.mock.calls[0][0].href)
-            .toBe(new URL("client/share_mermaid.json", import.meta.url).href);
-    });
-
-    it("fails when the manifest is missing", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
-
-        await expect(loadMermaid()).rejects.toThrow("HTTP 404");
-    });
-});
+// Each test draws with a Mermaid of its own: a page's theme observer keeps the one it loaded.
+const mermaidModule = vi.hoisted(() => ({
+    current: null as ReturnType<typeof createFakeMermaid> | null,
+    loads: 0
+}));
+vi.mock("mermaid", () => ({
+    get default() {
+        mermaidModule.loads++;
+        if (!mermaidModule.current) {
+            throw new Error("Failed to fetch the module");
+        }
+        return mermaidModule.current;
+    }
+}));
 
 describe("setupMermaid", () => {
     afterEach(() => {
-        vi.unstubAllGlobals();
         document.documentElement.removeAttribute("style");
         document.documentElement.removeAttribute("class");
         document.body.innerHTML = "";
@@ -108,10 +98,10 @@ describe("setupMermaid", () => {
     });
 
     it("keeps a Mermaid note's saved image when Mermaid cannot be loaded", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
+        mermaidModule.current = null;
         document.body.innerHTML = MERMAID_NOTE;
 
-        await expect(setupMermaid()).rejects.toThrow("HTTP 404");
+        await expect(setupMermaid()).rejects.toThrow("Failed to fetch the module");
 
         expect(document.querySelector(".mermaid-note > img.mermaid-note-image")).not.toBeNull();
         expect(document.querySelector(".mermaid")).toBeNull();
@@ -120,13 +110,11 @@ describe("setupMermaid", () => {
 
 describe("setupMermaid without diagrams", () => {
     afterEach(() => {
-        vi.unstubAllGlobals();
         document.body.innerHTML = "";
     });
 
     it("loads nothing for other code blocks or a Mermaid note without its source", async () => {
-        const fetchMock = vi.fn();
-        vi.stubGlobal("fetch", fetchMock);
+        const loads = mermaidModule.loads;
         document.body.innerHTML = `<div id="content">`
             + `<pre><code class="language-javascript">graph TD;</code></pre>`
             + `<div class="mermaid-note"><img class="mermaid-note-image" src="diagram.svg"></div>`
@@ -134,7 +122,7 @@ describe("setupMermaid without diagrams", () => {
 
         await setupMermaid();
 
-        expect(fetchMock).not.toHaveBeenCalled();
+        expect(mermaidModule.loads).toBe(loads);
         expect(document.querySelectorAll("#content pre, #content img")).toHaveLength(2);
     });
 });
@@ -145,14 +133,15 @@ const MERMAID_NOTE =`<div id="content"><div class="mermaid-note">`
     + `<pre class="mermaid-note-source">graph TD; A--&gt;B</pre></details>`
     + `</div></div>`;
 
-let stubCount = 0;
-
-/**
- * Serves a fake Mermaid, at a URL of its own: modules are cached by URL. It cannot draw a source
- * containing `broken`.
- */
+/** Gives the next page a Mermaid of its own. */
 function stubMermaid() {
-    const fakeMermaid = {
+    mermaidModule.current = createFakeMermaid();
+    return mermaidModule.current;
+}
+
+/** A fake Mermaid, which cannot draw a source containing `broken`. */
+function createFakeMermaid() {
+    return {
         initialize: vi.fn(),
         render: vi.fn(async (id: string, source: string) => {
             if (source.includes("broken")) {
@@ -161,9 +150,4 @@ function stubMermaid() {
             return { svg: `<svg id="${id}"></svg>` };
         })
     };
-    vi.stubGlobal("fakeMermaid", fakeMermaid);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
-        entry: `data:text/javascript,export default globalThis.fakeMermaid; // ${++stubCount}`
-    }))));
-    return fakeMermaid;
 }

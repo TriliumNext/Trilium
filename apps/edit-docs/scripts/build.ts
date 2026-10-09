@@ -11,7 +11,6 @@ async function main() {
 
     // Copy assets from server (needed for DB initialization)
     build.copy("/apps/server/src/assets", "assets/");
-    build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/", "dist");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
     build.copy("/packages/ckeditor5/src/theme/multicolumn.css", "ckeditor5-multicolumn.css");

@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import BrowserZipProvider from "./zip_provider.js";
 import { standaloneZipExportProviderFactory } from "./zip_export_provider_factory.js";
 
-vi.mock("virtual:share-theme-assets", () => ({ default: [ "styles.css", "scripts.js" ] }));
 // Vitest imports a stylesheet with `?raw` as an empty string, so the three stand in with markers.
 vi.mock("@triliumnext/ckeditor5/src/theme/admonitions.css?raw", () => ({ default: ".admonition {}" }));
 vi.mock("@triliumnext/ckeditor5/src/theme/ck-content.css?raw", () => ({ default: ".content {}" }));
@@ -45,9 +44,8 @@ describe("standaloneZipExportProviderFactory", () => {
         expect(provider.constructor.name).toBe("MarkdownExportProvider");
     });
 
-    it("creates a share-theme export provider over the theme files the build serves", async () => {
-        const fetchMock = vi.fn(async (url: string) => new Response(`content of ${url}`));
-        vi.stubGlobal("fetch", fetchMock);
+    it("creates a share-theme export provider over the files the manifest lists", async () => {
+        stubBuild();
 
         const provider = await standaloneZipExportProviderFactory("share", makeData());
         expect(provider.constructor.name).toBe("ShareThemeExportProvider");
@@ -56,53 +54,41 @@ describe("standaloneZipExportProviderFactory", () => {
             files: Map<string, string | Uint8Array>;
             readBuiltinFont(fileName: string): Uint8Array | undefined;
         } }).assets;
-        expect([ ...files.keys() ]).toEqual([ "icon-color.svg", "assets/styles.css", "assets/scripts.js" ]);
+        expect([ ...files.keys() ])
+            .toEqual([ "icon-color.svg", "assets/scripts.js", "assets/scripts.css" ]);
         expect(files.get("icon-color.svg")).toContain("<svg");
-        expect(new TextDecoder().decode(files.get("assets/styles.css") as Uint8Array))
-            .toBe("content of /share/assets/styles.css");
+        expect(new TextDecoder().decode(files.get("assets/scripts.css") as Uint8Array))
+            .toBe("content of /src/scripts.css");
         expect(new TextDecoder().decode(readBuiltinFont("boxicons.woff2")))
             .toBe("content of /share/assets/fonts/boxicons.woff2");
     });
 
-    it("adds the client's mermaid through its manifest when a note has a diagram", async () => {
-        const manifest = { entry: "../../../src/entry-a.js", files: [ "../../../src/entry-a.js" ] };
-        vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(
-            url.endsWith("share_mermaid.json")
-                ? JSON.stringify(manifest)
-                : `content of ${new URL(url, location.href).pathname}`
-        )));
+    it("adds the files of mermaid when a note has a diagram", async () => {
+        stubBuild();
 
         const provider = await standaloneZipExportProviderFactory("share",
             makeData(`<pre><code class="language-mermaid">graph TD;</code></pre>`));
 
         type WithAssets = { assets: { files: Map<string, string | Uint8Array> } };
         const { files } = (provider as unknown as WithAssets).assets;
-        expect(JSON.parse(files.get("assets/client/share_mermaid.json") as string))
-            .toEqual({ entry: "entry-a.js", files: [ "entry-a.js" ] });
-        expect(new TextDecoder().decode(files.get("assets/client/entry-a.js") as Uint8Array))
-            .toBe("content of /src/entry-a.js");
+        expect(new TextDecoder().decode(files.get("assets/mermaid.core-a.js") as Uint8Array))
+            .toBe("content of /src/mermaid.core-a.js");
     });
 
-    it("exports without mermaid when the development server lists no built files", async () => {
-        const manifest = { entry: "/@fs/repo/apps/client/src/share_mermaid.ts", files: [] };
-        vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(
-            url.endsWith("share_mermaid.json") ? JSON.stringify(manifest) : "content"
-        )));
+    it("fails the share-theme export when the development server serves no manifest", async () => {
+        vi.stubGlobal("fetch", vi.fn(async () => new Response("<!doctype html>")));
 
-        const provider = await standaloneZipExportProviderFactory("share",
-            makeData(`<pre><code class="language-mermaid">graph TD;</code></pre>`));
-
-        type WithAssets = { assets: { files: Map<string, string | Uint8Array> } };
-        const names = [ ...(provider as unknown as WithAssets).assets.files.keys() ];
-        expect(names).toContain("assets/scripts.js");
-        expect(names.filter((name) => name.startsWith("assets/client/"))).toEqual([]);
+        await expect(standaloneZipExportProviderFactory("share", makeData()))
+            .rejects.toThrow("/src/share_theme.json is not its manifest");
     });
 
     it("fails the share-theme export when a theme file cannot be fetched", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 404 })));
+        vi.stubGlobal("fetch", vi.fn(async (url: string) => (url.endsWith("share_theme.json")
+            ? new Response(JSON.stringify(MANIFEST))
+            : new Response("", { status: 404 }))));
 
         await expect(standaloneZipExportProviderFactory("share", makeData()))
-            .rejects.toThrow("/share/assets/styles.css");
+            .rejects.toThrow("/src/scripts.js");
     });
 
     it("throws for an unsupported format", async () => {
@@ -111,3 +97,15 @@ describe("standaloneZipExportProviderFactory", () => {
         ).rejects.toThrow("Unsupported export format: 'pdf'");
     });
 });
+
+const MANIFEST = {
+    files: [ "scripts.js", "scripts.css" ],
+    lazy: { mermaid: [ "mermaid.core-a.js" ] }
+};
+
+/** Serves {@link MANIFEST} and, for every other file, its path. */
+function stubBuild() {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(
+        url.endsWith("share_theme.json") ? JSON.stringify(MANIFEST) : `content of ${url}`
+    )));
+}

@@ -1363,28 +1363,22 @@ importers:
       katex:
         specifier: 0.19.0
         version: 0.19.0
+      mermaid:
+        specifier: 12.1.0
+        version: 12.1.0
     devDependencies:
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../ckeditor5
-      '@triliumnext/highlightjs':
-        specifier: workspace:*
-        version: link:../highlightjs
       '@types/ejs':
         specifier: 3.1.5
         version: 3.1.5
       ejs:
         specifier: 7.0.1
         version: 7.0.1
-      esbuild:
-        specifier: 0.28.2
-        version: 0.28.2
       happy-dom:
         specifier: 20.14.5
         version: 20.14.5
-      sass:
-        specifier: 1.105.1
-        version: 1.105.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3

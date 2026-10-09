@@ -1,4 +1,5 @@
 import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
+import type { Mermaid } from "mermaid";
 
 /**
  * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes. A code
@@ -10,7 +11,7 @@ export default async function setupMermaid() {
         return;
     }
 
-    const mermaid = await loadMermaid();
+    const { default: mermaid } = await import("mermaid");
 
     let theme = readMermaidTheme();
     let rendering = renderDiagrams(mermaid, diagrams, theme);
@@ -63,11 +64,6 @@ function findDiagrams() {
     });
 }
 
-interface Mermaid {
-    initialize(config: Record<string, unknown>): void;
-    render(id: string, source: string): Promise<{ svg: string }>;
-}
-
 let renderCount = 0;
 
 /**
@@ -93,20 +89,4 @@ async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: Merm
 
 function readMermaidTheme() {
     return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
-}
-
-/**
- * Imports the client's mermaid, which the server, the standalone build and the share-theme export
- * each place at `client/` next to this script, described by `share_mermaid.json`.
- */
-export async function loadMermaid(): Promise<Mermaid> {
-    const manifestUrl = new URL("client/share_mermaid.json", import.meta.url);
-    const response = await fetch(manifestUrl);
-    if (!response.ok) {
-        throw new Error(`Failed to load ${manifestUrl.href}: HTTP ${response.status}.`);
-    }
-
-    const { entry } = await response.json() as { entry: string };
-    const module = await import(new URL(entry, manifestUrl).href) as { default: Mermaid };
-    return module.default;
 }

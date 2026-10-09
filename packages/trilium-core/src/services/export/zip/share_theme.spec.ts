@@ -29,7 +29,7 @@ vi.mock("../../log.js", () => ({ getLog: () => mockLog }));
 const {
     default: ShareThemeExportProvider,
     hasMermaidDiagrams,
-    mapMermaidExportFiles
+    getShareThemeExportFiles
 } = await import("./share_theme.js");
 
 // --- Test scaffolding -------------------------------------------------------
@@ -316,21 +316,6 @@ describe("ShareThemeExportProvider", () => {
 });
 
 describe("hasMermaidDiagrams", () => {
-    type FakeNote = { type: string; mime?: string; available?: boolean; content: string };
-
-    function subtreeOf(...notes: FakeNote[]) {
-        return {
-            getSubtree: () => ({
-                notes: notes.map(({ type, mime = "text/html", available = true, content }) => ({
-                    type,
-                    mime,
-                    isContentAvailable: () => available,
-                    getContent: () => content
-                }))
-            })
-        } as any;
-    }
-
     it("finds a mermaid block only in a readable text note", () => {
         const mermaid = `<pre><code class="language-mermaid">graph TD;</code></pre>`;
 
@@ -358,28 +343,37 @@ describe("hasMermaidDiagrams", () => {
     });
 });
 
-describe("mapMermaidExportFiles", () => {
-    it("maps nothing from a development manifest, which lists no built files", () => {
-        expect(mapMermaidExportFiles({ entry: "/@fs/repo/apps/client/src/share_mermaid.ts", files: [] }))
-            .toBeUndefined();
-    });
+describe("getShareThemeExportFiles", () => {
+    const manifest = {
+        files: [ "scripts.js", "scripts.css" ],
+        lazy: { mermaid: [ "mermaid.core-a.js" ] }
+    };
 
-    it("flattens the listed files into assets/client and rewrites the manifest to match", () => {
-        const entry = "../../../src/share_mermaid-abc.js";
-        const core = "../../../src/mermaid.core-def.js";
-        const mapped = mapMermaidExportFiles({ entry, files: [ entry, core ] });
-        if (!mapped) {
-            throw new Error("The manifest mapped to nothing.");
-        }
+    it("adds the files of mermaid only for a subtree with a diagram", () => {
+        const diagram = `<pre><code class="language-mermaid">graph TD;</code></pre>`;
 
-        expect(mapped.files).toEqual([
-            { source: entry, target: "assets/client/share_mermaid-abc.js" },
-            { source: core, target: "assets/client/mermaid.core-def.js" }
-        ]);
-        expect(mapped.manifest.path).toBe("assets/client/share_mermaid.json");
-        expect(JSON.parse(mapped.manifest.content)).toEqual({
-            entry: "share_mermaid-abc.js",
-            files: [ "share_mermaid-abc.js", "mermaid.core-def.js" ]
-        });
+        expect(getShareThemeExportFiles(manifest, subtreeOf({ type: "text", content: diagram })))
+            .toEqual([ "scripts.js", "scripts.css", "mermaid.core-a.js" ]);
+        const withoutDiagram = subtreeOf({ type: "text", content: "<p>No diagram.</p>" });
+        expect(getShareThemeExportFiles(manifest, withoutDiagram))
+            .toEqual([ "scripts.js", "scripts.css" ]);
+        expect(getShareThemeExportFiles({ files: [ "scripts.js" ], lazy: {} },
+            subtreeOf({ type: "text", content: diagram }))).toEqual([ "scripts.js" ]);
     });
 });
+
+type FakeNote = { type: string; mime?: string; available?: boolean; content: string };
+
+/** A note whose subtree holds `notes`. */
+function subtreeOf(...notes: FakeNote[]) {
+    return {
+        getSubtree: () => ({
+            notes: notes.map(({ type, mime = "text/html", available = true, content }) => ({
+                type,
+                mime,
+                isContentAvailable: () => available,
+                getContent: () => content
+            }))
+        })
+    } as any;
+}

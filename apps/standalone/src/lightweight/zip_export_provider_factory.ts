@@ -1,14 +1,12 @@
-import type { ShareMermaidManifest } from "@triliumnext/commons";
+import type { ShareThemeManifest } from "@triliumnext/commons";
 import {
     binary_utils,
     type ExportFormat,
-    getLog,
     icon_packs,
     type ZipExportProviderData,
     ZipExportProvider
 } from "@triliumnext/core";
 import type {
-    mapMermaidExportFiles,
     ShareThemeExportAssets
 } from "@triliumnext/core/src/services/export/zip/share_theme.js";
 
@@ -29,14 +27,13 @@ export async function standaloneZipExportProviderFactory(format: ExportFormat, d
             return new MarkdownExportProvider(data);
         }
         case "share": {
-            const [ shareTheme, { registerShareProvider }, assets ] = await Promise.all([
+            const [ shareTheme, { registerShareProvider }, manifest ] = await Promise.all([
                 import("@triliumnext/core/src/services/export/zip/share_theme.js"),
                 import("./share_provider.js"),
-                loadShareThemeExportAssets()
+                loadShareThemeManifest()
             ]);
-            if (shareTheme.hasMermaidDiagrams(data.branch.getNote())) {
-                await addMermaidFiles(assets.files, shareTheme.mapMermaidExportFiles);
-            }
+            const files = shareTheme.getShareThemeExportFiles(manifest, data.branch.getNote());
+            const assets = await loadShareThemeExportAssets(files);
             registerShareProvider();
             return new shareTheme.default(data, assets);
         }
@@ -46,21 +43,33 @@ export async function standaloneZipExportProviderFactory(format: ExportFormat, d
 }
 
 /**
- * Fetches the share theme's files and the built-in icon fonts from `share/assets`, where the build
- * copies them for the share pages. The export reads them synchronously, so they are all loaded
- * before it starts.
+ * Fetches the manifest of the share theme, which the build writes beside its files in `src/`. The
+ * development server builds no share theme, so its exports fail here.
  */
-async function loadShareThemeExportAssets(): Promise<ShareThemeExportAssets> {
-    const [ { default: themeFiles }, { default: iconColorSvg } ] = await Promise.all([
-        import("virtual:share-theme-assets"),
-        import("../../../server/src/assets/images/icon-color.svg?raw")
-    ]);
+async function loadShareThemeManifest(): Promise<ShareThemeManifest> {
+    const content = binary_utils.decodeUtf8(await fetchAsset(SHARE_THEME_MANIFEST));
+    try {
+        return JSON.parse(content) as ShareThemeManifest;
+    } catch {
+        throw new Error(`Unable to export with the share theme, since ${SHARE_THEME_MANIFEST} is`
+            + " not its manifest. Exporting needs a production build.");
+    }
+}
+
+/**
+ * Fetches the share theme's `files` from `src/` and the built-in icon fonts from `share/assets`,
+ * where the build places them for the share pages. The export reads them synchronously, so they
+ * are all loaded before it starts.
+ */
+async function loadShareThemeExportAssets(themeFiles: string[]): Promise<ShareThemeExportAssets> {
+    const { default: iconColorSvg } =
+        await import("../../../server/src/assets/images/icon-color.svg?raw");
     const fontFiles = icon_packs.getIconPacks()
         .filter((iconPack) => iconPack.builtin)
         .map((iconPack) => `${iconPack.fontAttachmentId}.${icon_packs.MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime]}`);
 
     const [ themeContents, fontContents ] = await Promise.all([
-        Promise.all(themeFiles.map((file) => fetchAsset(`/share/assets/${file}`))),
+        Promise.all(themeFiles.map((file) => fetchAsset(`/src/${file}`))),
         Promise.all(fontFiles.map((file) => fetchAsset(`/share/assets/fonts/${file}`)))
     ]);
 
@@ -76,33 +85,7 @@ async function loadShareThemeExportAssets(): Promise<ShareThemeExportAssets> {
     };
 }
 
-/**
- * Fetches the client's mermaid through the manifest the build writes next to the share theme. The
- * development server's manifest lists no built files, so its exports show diagrams as code blocks.
- */
-async function addMermaidFiles(
-    files: Map<string, string | Uint8Array>,
-    mapFiles: typeof mapMermaidExportFiles
-) {
-    const manifestUrl = new URL(SHARE_MERMAID_MANIFEST, location.href);
-    const manifestBytes = await fetchAsset(manifestUrl.href);
-    const manifest = JSON.parse(binary_utils.decodeUtf8(manifestBytes)) as ShareMermaidManifest;
-    const mapped = mapFiles(manifest);
-    if (!mapped) {
-        getLog().info("Exporting without mermaid, since the manifest lists no built files.");
-        return;
-    }
-
-    const contents = await Promise.all(mapped.files.map(({ source }) =>
-        fetchAsset(new URL(source, manifestUrl).href)));
-
-    files.set(mapped.manifest.path, mapped.manifest.content);
-    for (const [ index, { target } ] of mapped.files.entries()) {
-        files.set(target, contents[index]);
-    }
-}
-
-const SHARE_MERMAID_MANIFEST = "/share/assets/client/share_mermaid.json";
+const SHARE_THEME_MANIFEST = "/src/share_theme.json";
 
 async function fetchAsset(url: string) {
     const response = await fetch(url);

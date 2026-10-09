@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     plugins: [
         {
-            // Stands in for the build script's `virtual:code-themes.css`, which `index.ts` imports.
+            // Stands in for the client build's `virtual:code-themes.css`, which `index.ts` imports.
             name: "code-themes",
             resolveId: (id) => (id === "virtual:code-themes.css" ? `\0${id}` : null),
             load: (id) => (id === "\0virtual:code-themes.css" ? "" : null)
