@@ -88,7 +88,7 @@
     "marked": "18.1.0",
     "mime-types": "3.0.2",
     "multer": "2.4.0",
-    "officeparser": "8.1.0",
+    "officeparser": "8.1.1",
     "openid-client": "6.8.8",
     "rand-token": "1.0.1",
     "serve-favicon": "2.5.1",
