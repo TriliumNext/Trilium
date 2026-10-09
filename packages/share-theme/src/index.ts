@@ -16,6 +16,7 @@ import "./content/external_links.css";
 import "./content/task_states.css";
 import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
+import "./content/collection_view.css";
 import setupMath from "./content/math.js";
 import setupCalendar from "./content/calendar.js";
 import setupGeoMap from "./content/geomap.js";

@@ -1,7 +1,6 @@
 import "fullcalendar/skeleton.css";
 import "fullcalendar/themes/forma/theme.css";
 import "@triliumnext/client/src/widgets/collections/calendar/palette.css";
-import "./calendar_view.css";
 
 import froca from "@triliumnext/client/src/services/froca.js";
 import Calendar from "@triliumnext/client/src/widgets/collections/calendar/calendar.js";
@@ -51,7 +50,7 @@ function ShareCalendar({ events, plugins, links }: ShareCalendarProps) {
             plugins={plugins}
             initialView="dayGridMonth"
             headerToolbar={{ start: "title", end: "today prev,next" }}
-            height="auto"
+            height="100%"
             editable={false}
             eventClick={onEventClick}
         />

@@ -343,15 +343,16 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
  * with `#fullContentWidth` or of a type the app always shows at full width, and `no-content` when
  * empty. A Markdown note reads as text, so its type does not make it full width.
  */
-export function getContentClasses(note: ShareNote, isEmpty = false) {
+export function getContentClasses(note: ShareNote, isEmpty = false, isCollectionView = false) {
     const isEditorContent = note.type === "text"
         || (note.type === "code" && note.mime === "text/x-markdown");
     const isFullWidth = (!isEditorContent && isFullWidthNoteType(note.type, note.mime))
-        || note.isLabelTruthy("fullContentWidth");
+        || note.isLabelTruthy("fullContentWidth") || isCollectionView;
     return [
         `type-${note.type}`,
         isEditorContent && "ck-content",
         isFullWidth && "full-content-width",
+        isCollectionView && "collection-view",
         isEmpty && "no-content"
     ].filter(Boolean).join(" ");
 }

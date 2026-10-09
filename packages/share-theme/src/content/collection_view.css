@@ -1,0 +1,31 @@
+body:has(#content.collection-view) {
+    #right-pane {
+        height: 100vh;
+    }
+
+    #main {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 0;
+    }
+
+    #content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    #content > .share-calendar,
+    #content > .share-geomap {
+        flex: 1;
+        min-height: 0;
+    }
+
+    @media (max-width: 48em) {
+        #right-pane {
+            height: calc(100dvh - var(--header-height));
+        }
+    }
+}

@@ -284,7 +284,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         navigation,
         childLinks,
         childLinksLayout: getChildLinksLayout(note),
-        contentClasses: getContentClasses(note, isEmpty),
+        contentClasses: getContentClasses(note, isEmpty, isCollectionView),
         language: getPageLanguages(note, {
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
