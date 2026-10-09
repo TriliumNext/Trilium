@@ -383,7 +383,8 @@
     "toggle-navigation": "切换导航",
     "toggle-toc": "切换目录",
     "logo-alt": "Logo",
-    "login": "登录"
+    "login": "登录",
+    "tab-title": "标签页标题"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文本片段",
