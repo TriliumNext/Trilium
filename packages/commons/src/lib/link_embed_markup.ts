@@ -1,6 +1,7 @@
 import {
     extractYouTubeVideoId, safeHostname, safeLinkPreviewHref, safeLinkPreviewImageSrc
 } from "./link_embed.js";
+import { escapeHtml } from "./utils.js";
 
 /** A link preview as the note stores it, in the `data-*` attributes of its element. */
 export interface LinkPreviewData {
@@ -125,13 +126,4 @@ function renderPicture(src: string | null | undefined, className: string, size?:
     const sizeAttributes = size ? ` width="${size}" height="${size}"` : "";
     return `<img class="${className}" src="${escapeHtml(safeSrc)}" alt="" loading="lazy"`
         + ` draggable="false"${sizeAttributes}>`;
-}
-
-function escapeHtml(value: string) {
-    return value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll("\"", "&quot;")
-        .replaceAll("'", "&#39;");
 }

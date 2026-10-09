@@ -1,4 +1,4 @@
-import { deferred, fnv1a, formatLogMessage } from "./utils.js";
+import { deferred, escapeHtml, fnv1a, formatLogMessage } from "./utils.js";
 import { describe, expect, it } from "vitest";
 
 describe("#deferred", () => {
@@ -101,5 +101,14 @@ describe("#fnv1a", () => {
             expect(hash).toBeGreaterThanOrEqual(0);
             expect(hash).toBeLessThanOrEqual(0xffffffff);
         }
+    });
+});
+
+describe("#escapeHtml", () => {
+    it("escapes the characters that end text or a quoted attribute, ampersands first", () => {
+        expect(escapeHtml(`<a href="x">Tom & 'Jerry' &amp;</a>`))
+            .toBe("&lt;a href=&quot;x&quot;&gt;Tom &amp; &#39;Jerry&#39; &amp;amp;&lt;/a&gt;");
+        expect(escapeHtml("plain text = 1/2")).toBe("plain text = 1/2");
+        expect(escapeHtml("")).toBe("");
     });
 });

@@ -1,27 +1,7 @@
 import type { FuseResultMatch } from "fuse.js";
 import { describe, expect, it } from "vitest";
 
-import { buildStaticSnippet, escapeHtml } from "./search.js";
-
-describe("escapeHtml", () => {
-    it("escapes the five HTML special characters", () => {
-        expect(escapeHtml("&")).toBe("&amp;");
-        expect(escapeHtml("<")).toBe("&lt;");
-        expect(escapeHtml(">")).toBe("&gt;");
-        expect(escapeHtml("\"")).toBe("&quot;");
-        expect(escapeHtml("'")).toBe("&#39;");
-    });
-
-    it("escapes every occurrence in a mixed string", () => {
-        expect(escapeHtml(`<script>alert("x & 'y'")</script>`))
-            .toBe("&lt;script&gt;alert(&quot;x &amp; &#39;y&#39;&quot;)&lt;/script&gt;");
-    });
-
-    it("returns the input unchanged when nothing needs escaping", () => {
-        expect(escapeHtml("just plain text 123")).toBe("just plain text 123");
-        expect(escapeHtml("")).toBe("");
-    });
-});
+import { buildStaticSnippet } from "./search.js";
 
 describe("buildStaticSnippet", () => {
     const contentMatch = (...indices: [number, number][]): FuseResultMatch => ({

@@ -2,6 +2,7 @@ import { Marked, type MarkedOptions, Renderer, type Token, type Tokens } from "m
 import markedFootnote from "marked-footnote";
 
 import { DEFAULT_TASK_STATES, type TaskStateDef } from "./task_states.js";
+import { escapeHtml } from "./utils.js";
 
 type TaskListItem = Tokens.ListItem & { _taskState?: string };
 
@@ -193,15 +194,6 @@ export interface RenderToHtmlOptions {
      * since it is the de-facto standard highlight syntax outside of GFM.
      */
     obsidian?: boolean;
-}
-
-function escapeHtml(str: string): string {
-    return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
 }
 
 const NAMED_ENTITIES: Record<string, string> = {

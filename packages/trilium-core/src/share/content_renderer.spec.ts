@@ -8,8 +8,8 @@ import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import {
-    ensureShareHighlighting, getContent, getMimeTypesForOption, readShareTemplate, renderCode,
-    renderNoteContent, type Result, shouldSyntaxHighlight
+    ensureShareHighlighting, getContent, readShareTemplate, renderCode, renderNoteContent,
+    type Result
 } from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
@@ -857,24 +857,6 @@ describe("content_renderer", () => {
         });
     });
 
-    describe("shouldSyntaxHighlight", () => {
-        it("allows small code blocks", () => {
-            expect(shouldSyntaxHighlight("a\nb\nc")).toBe(true);
-            expect(shouldSyntaxHighlight("")).toBe(true);
-        });
-
-        it("rejects code blocks beyond the line limit", () => {
-            expect(shouldSyntaxHighlight(Array(500).fill("x").join("\n"))).toBe(true);
-            expect(shouldSyntaxHighlight(Array(501).fill("x").join("\n"))).toBe(false);
-        });
-
-        it("rejects a single huge line that stays under the line limit", () => {
-            // No newlines, so the line check never trips — the character ceiling must catch it.
-            expect(shouldSyntaxHighlight("x".repeat(50_000))).toBe(true);
-            expect(shouldSyntaxHighlight("x".repeat(50_001))).toBe(false);
-        });
-    });
-
     describe("ensureShareHighlighting", () => {
         it("registers once per option value and drops a disabled language", async () => {
             const getOption = vi.spyOn(options, "getOptionOrNull");
@@ -896,23 +878,6 @@ describe("content_renderer", () => {
 
             getOption.mockRestore();
             await ensureShareHighlighting();
-        });
-    });
-
-    describe("getMimeTypesForOption", () => {
-        const enabledMimes = (optionValue: string | null) => getMimeTypesForOption(optionValue)
-            .filter((mt) => mt.enabled)
-            .map((mt) => mt.mime);
-
-        it("enables the listed MIME types plus text/plain", () => {
-            expect(enabledMimes(JSON.stringify([ "text/x-python", null ])))
-                .toStrictEqual([ "text/plain", "text/x-python" ]);
-        });
-
-        it("falls back to the default MIME types when the option is missing", () => {
-            const enabled = enabledMimes(null);
-            expect(enabled).toContain("text/x-python");
-            expect(enabled).not.toContain("text/x-cobol");
         });
     });
 

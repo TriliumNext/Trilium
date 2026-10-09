@@ -1,7 +1,9 @@
+import { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
+import type { default as Fuse, FuseResultMatch } from "fuse.js";
+
 import debounce from "../common/debounce.js";
 import parents from "../common/parents.js";
 import parseHTML from "../common/parsehtml.js";
-import type { default as Fuse, FuseResultMatch } from "fuse.js";
 import "./search.css";
 
 let fuseInstance: Fuse<SearchResult> | null = null;
@@ -74,19 +76,6 @@ export default function setupSearch() {
         if (parents(e.target as HTMLElement, ".search-results,.search-item").length) return;
         if (existing) existing.remove();
     });
-}
-
-const HTML_ESCAPE_MAP: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "\"": "&quot;",
-    "'": "&#39;"
-};
-
-/** Escape user-supplied/match text before injecting into innerHTML. */
-export function escapeHtml(s: string): string {
-    return s.replace(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c]);
 }
 
 /**

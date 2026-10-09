@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
     getMimeTypeFromFileName, getMimeTypeFromMarkdownName, MIME_TYPE_AUTO, MIME_TYPES_DICT,
-    normalizeMimeTypeForCKEditor
+    normalizeMimeTypeForCKEditor, resolveEnabledMimeTypes, shouldSyntaxHighlight
 } from "./mime_type.js";
 
 describe("normalizeMimeTypeForCKEditor", () => {
@@ -96,5 +96,39 @@ describe("getMimeTypeFromFileName", () => {
     it("has no type for a file without a known language", () => {
         expect([ "notes.txt", "server.log", "archive", ".", "data.unknown" ]
             .map(getMimeTypeFromFileName)).toEqual(Array(5).fill(undefined));
+    });
+});
+
+describe("resolveEnabledMimeTypes", () => {
+    const enabledMimes = (enabled: readonly (string | null)[] | null | undefined) =>
+        resolveEnabledMimeTypes(enabled).filter((mt) => mt.enabled).map((mt) => mt.mime);
+
+    it("enables the listed MIME types plus text/plain, on copies of the dictionary", () => {
+        expect(enabledMimes([ "text/x-python", null ])).toStrictEqual([ "text/plain", "text/x-python" ]);
+        expect(enabledMimes([])).toStrictEqual([ "text/plain" ]);
+
+        const mimeTypes = resolveEnabledMimeTypes([]);
+        expect(mimeTypes).toHaveLength(MIME_TYPES_DICT.length);
+        expect(mimeTypes[0]).not.toBe(MIME_TYPES_DICT[0]);
+    });
+
+    it("falls back to the default MIME types when nothing is configured", () => {
+        for (const enabled of [ enabledMimes(null), enabledMimes(undefined) ]) {
+            expect(enabled).toContain("text/x-python");
+            expect(enabled).not.toContain("text/x-cobol");
+        }
+    });
+});
+
+describe("shouldSyntaxHighlight", () => {
+    it("allows code up to 500 lines", () => {
+        expect(shouldSyntaxHighlight("")).toBe(true);
+        expect(shouldSyntaxHighlight(Array(500).fill("x").join("\n"))).toBe(true);
+        expect(shouldSyntaxHighlight(Array(501).fill("x").join("\n"))).toBe(false);
+    });
+
+    it("allows code up to 50,000 characters, however few lines it has", () => {
+        expect(shouldSyntaxHighlight("x".repeat(50_000))).toBe(true);
+        expect(shouldSyntaxHighlight("x".repeat(50_001))).toBe(false);
     });
 });

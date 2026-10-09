@@ -1,4 +1,4 @@
-import { MimeType } from "@triliumnext/commons";
+import { MimeType, shouldSyntaxHighlight } from "@triliumnext/commons";
 // highlight.js is heavy and this module is reachable from the startup graph (note tooltips →
 // content renderer), so the library itself is only imported dynamically when highlighting runs.
 import type { AutoHighlightResult, HighlightResult, Theme } from "@triliumnext/highlightjs";
@@ -130,6 +130,9 @@ export function applyInlineCodeCopy($inlineCode: JQuery<HTMLElement>) {
 export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLElement>, normalizedMimeType: string) {
     $codeBlock.parent().toggleClass("hljs");
     const text = $codeBlock.text();
+    if (!shouldSyntaxHighlight(text)) {
+        return;
+    }
 
     const cached = getCachedHighlight(normalizedMimeType, text);
     if (cached !== undefined) {

@@ -1,8 +1,8 @@
 import {
     getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl,
-    isImageAttachmentRole, MIME_TYPE_AUTO, type MimeType, MIME_TYPES_DICT,
-    normalizeMimeTypeForCKEditor, readLinkPreviewData, renderLinkEmbedHtml, renderLinkMentionHtml,
-    resolveContentEmbed, sliceToBlockReference
+    isImageAttachmentRole, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor, readLinkPreviewData,
+    renderLinkEmbedHtml, renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes,
+    shouldSyntaxHighlight, sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -34,21 +34,6 @@ import shareRoot from "./share_root.js";
  * The URL prefix the share theme resolves built-in assets against, such as `assets/v1.2.3`.
  */
 export const assetUrlFragment = `assets/v${appInfo.appVersion}`;
-
-/**
- * Maximum number of lines a code block may have before server-side syntax highlighting is skipped.
- * Mirrors the editor's per-block cutoff (HIGHLIGHT_MAX_BLOCK_COUNT in the ckeditor5 syntax
- * highlighting plugin); beyond it `highlightAuto` is too slow and would block the event loop on
- * large shared/embedded code notes (#9717).
- */
-const HIGHLIGHT_MAX_LINE_COUNT = 500;
-
-/**
- * Maximum number of characters a code block may have before server-side syntax highlighting is
- * skipped. The line-count cutoff alone does not protect against a single very long line (e.g.
- * minified code), so a separate character ceiling guards `highlightAuto`'s size-driven cost.
- */
-const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
 
 const PLAIN_TEXT_LANGUAGE = normalizeMimeTypeForCKEditor("text/plain");
 
@@ -650,27 +635,6 @@ function renderMarkdown(result: Result, note: SNote | BNote) {
 }
 
 /**
- * Whether a code block is small enough to syntax-highlight server-side. Highlighting (especially
- * `highlightAuto`, which probes every registered language) scales with content size and would block
- * the single Node event loop on very large code, so blocks beyond {@link HIGHLIGHT_MAX_LINE_COUNT}
- * lines or {@link HIGHLIGHT_MAX_CHAR_COUNT} characters are left unhighlighted.
- */
-export function shouldSyntaxHighlight(code: string) {
-    if (code.length > HIGHLIGHT_MAX_CHAR_COUNT) {
-        return false;
-    }
-
-    let lineCount = 1;
-    let index = -1;
-    while ((index = code.indexOf("\n", index + 1)) !== -1) {
-        if (++lineCount > HIGHLIGHT_MAX_LINE_COUNT) {
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
  * Highlights a `<pre><code>` block in place, in the language its `language-*` class names. A block
  * without one, or set to auto-detect, goes through `highlightAuto`. Plain text and a language that
  * {@link ensureShareHighlighting} did not register stay unhighlighted.
@@ -713,28 +677,15 @@ export function ensureShareHighlighting(): Promise<void> {
 
     registeredMimeTypesOption = optionValue;
     pendingRegistration = Promise.resolve()
-        .then(() => syncMimeTypes(getMimeTypesForOption(optionValue)))
+        .then(() => {
+            const enabledMimes = optionValue ? JSON.parse(optionValue) : null;
+            return syncMimeTypes(resolveEnabledMimeTypes(enabledMimes));
+        })
         .catch((e: unknown) => {
             getLog().error(`Unable to register the languages for syntax highlighting: ${e}`);
             pendingRegistration = null;
         });
     return pendingRegistration;
-}
-
-/**
- * Returns every MIME type in `MIME_TYPES_DICT`, enabled when the `codeNotesMimeTypes` option value
- * lists it. Mirrors `getMimeTypes()` in the client: a missing option falls back to the defaults,
- * and `text/plain` is always enabled.
- */
-export function getMimeTypesForOption(optionValue: string | null): MimeType[] {
-    const enabledMimes: (string | null)[] = optionValue
-        ? JSON.parse(optionValue)
-        : MIME_TYPES_DICT.filter((mt) => mt.default).map((mt) => mt.mime);
-
-    return MIME_TYPES_DICT.map((mt) => ({
-        ...mt,
-        enabled: enabledMimes.includes(mt.mime) || mt.mime === "text/plain"
-    }));
 }
 
 /**

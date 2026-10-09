@@ -221,6 +221,48 @@ const MIME_TYPES_DICT_RAW = [
 ] as const satisfies readonly MimeTypeDefinition[];
 export const MIME_TYPES_DICT = Object.freeze(MIME_TYPES_DICT_RAW as readonly MimeTypeDefinition[]);
 
+/**
+ * Returns a copy of every entry in {@link MIME_TYPES_DICT}, enabled when `enabledMimes` lists it.
+ * `enabledMimes` is the parsed `codeNotesMimeTypes` option; without it, the entries marked
+ * `default` are enabled. `text/plain` is always enabled.
+ */
+export function resolveEnabledMimeTypes(
+    enabledMimes: readonly (string | null)[] | null | undefined
+): MimeType[] {
+    const enabled = enabledMimes ?? MIME_TYPES_DICT.filter((mt) => mt.default).map((mt) => mt.mime);
+    return MIME_TYPES_DICT.map((mt) => ({
+        ...mt,
+        enabled: enabled.includes(mt.mime) || mt.mime === "text/plain"
+    }));
+}
+
+/** Code longer than this many lines is not syntax-highlighted. */
+const HIGHLIGHT_MAX_LINE_COUNT = 500;
+
+/** Code longer than this many characters is not syntax-highlighted, such as one minified line. */
+const HIGHLIGHT_MAX_CHAR_COUNT = 50_000;
+
+/**
+ * Whether code is small enough to syntax-highlight when it is rendered. Highlighting, and
+ * `highlightAuto()` most of all, grows with the size of the code and blocks the thread it runs
+ * on, so code beyond {@link HIGHLIGHT_MAX_LINE_COUNT} lines or {@link HIGHLIGHT_MAX_CHAR_COUNT}
+ * characters stays plain.
+ */
+export function shouldSyntaxHighlight(code: string) {
+    if (code.length > HIGHLIGHT_MAX_CHAR_COUNT) {
+        return false;
+    }
+
+    let lineCount = 1;
+    let index = -1;
+    while ((index = code.indexOf("\n", index + 1)) !== -1) {
+        if (++lineCount > HIGHLIGHT_MAX_LINE_COUNT) {
+            return false;
+        }
+    }
+    return true;
+}
+
 let byMarkdownNameMappings: Record<string, MimeTypeDefinition> | null = null;
 
 export type MermaidMimeType = "text/vnd.mermaid" | "text/mermaid";

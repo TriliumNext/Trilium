@@ -12,7 +12,7 @@
 
 import { format as formatNumfmt, formatColor as formatNumfmtColor } from "numfmt";
 
-import { fnv1a } from "../utils.js";
+import { escapeHtml, fnv1a } from "../utils.js";
 import {
     BorderStyle,
     type CellDocumentSegment,
@@ -1270,18 +1270,5 @@ function resolvePatternColor(style: IStyleData | null, cell: ICellData | undefin
         return null;
     }
 }
-
-function escapeHtml(text: string): string {
-    if (!ESCAPABLE.test(text)) return text;
-
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
-const ESCAPABLE = /[&<>"']/;
 
 // #endregion
