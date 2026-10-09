@@ -1,12 +1,9 @@
 import { escapeHtml } from "@triliumnext/commons/src/lib/utils.js";
 import type { default as Fuse, FuseResultMatch } from "fuse.js";
 
-import debounce from "../common/debounce.js";
-import parents from "../common/parents.js";
-import parseHTML from "../common/parsehtml.js";
 import "./search.css";
 
-let fuseInstance: Fuse<SearchResult> | null = null;
+let fuseIndex: Promise<Fuse<SearchResult>> | undefined;
 
 interface SearchResults {
     results: SearchResult[];
@@ -46,19 +43,13 @@ export default function setupSearch() {
     }
 
     searchInput.addEventListener("keyup", debounce(async () => {
-        // console.log("CHANGE EVENT");
         const query = searchInput.value;
         if (query.length < 3) return;
         const resp = await fetchResults(query);
-        const results = resp.results.slice(0, 5);
-        const lines = [`<div class="search-results">`];
-        for (const result of results) {
-            lines.push(buildResultItem(result));
-        }
-        lines.push("</div>");
+        const container = document.createElement("div");
+        container.className = "search-results";
+        container.innerHTML = resp.results.slice(0, 5).map(buildResultItem).join("");
 
-        const container = parseHTML(lines.join("")) as HTMLDivElement;
-        // console.log(container, lines);
         const rect = searchInput.getBoundingClientRect();
         container.style.top = `${rect.bottom}px`;
         container.style.left = `${rect.left}px`;
@@ -72,10 +63,20 @@ export default function setupSearch() {
     window.addEventListener("click", e => {
         const existing = document.querySelector(".search-results");
         if (!existing) return;
-        // If the click was anywhere search components ignore it
-        if (parents(e.target as HTMLElement, ".search-results,.search-item").length) return;
-        if (existing) existing.remove();
+        // A click inside the results or the search box keeps the results open.
+        if (e.target instanceof Element && e.target.closest(".search-results, .search-item")) {
+            return;
+        }
+        existing.remove();
     });
+}
+
+function debounce(executor: () => Promise<void>, delay: number) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    return () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(executor, delay);
+    };
 }
 
 /**
@@ -139,29 +140,9 @@ async function fetchResults(query: string): Promise<SearchResults> {
     const linkHref = document.head.querySelector("link[rel=stylesheet]")?.getAttribute("href");
     const rootUrl = linkHref?.split("/").slice(0, -2).join("/") || ".";
 
-    if ((window as any).glob.isStatic) {
-        // Load the search index.
-        if (!fuseInstance) {
-            const searchIndex = await (await fetch(`${rootUrl}/search-index.json`)).json();
-            const Fuse = (await import("fuse.js")).default;
-            fuseInstance = new Fuse(searchIndex, {
-                keys: [
-                    "title",
-                    "content"
-                ],
-                includeScore: true,
-                includeMatches: true,
-                threshold: 0.65,
-                ignoreDiacritics: true,
-                ignoreLocation: true,
-                ignoreFieldNorm: true,
-                useExtendedSearch: true
-            });
-        }
-
-        // Do the search.
-        const results = fuseInstance.search(query, { limit: 5 });
-        console.debug("Search results:", results);
+    if (window.glob?.isStatic) {
+        fuseIndex ??= loadSearchIndex(rootUrl);
+        const results = (await fuseIndex).search(query, { limit: 5 });
         const processedResults = results.map(({ item, score, matches }) => {
             const itemWithContent = item as SearchResult & { content?: string };
             const highlightedSnippet = buildStaticSnippet(itemWithContent.content, matches);
@@ -175,7 +156,27 @@ async function fetchResults(query: string): Promise<SearchResults> {
         return { results: processedResults };
     } else {
         const ancestor = document.body.dataset.ancestorNoteId;
-        const resp = await fetch(`api/notes?search=${query}&ancestorNoteId=${ancestor}`);
+        const params = new URLSearchParams({ search: query, ancestorNoteId: ancestor ?? "" });
+        const resp = await fetch(`api/notes?${params}`);
         return await resp.json() as SearchResults;
     }
+}
+
+/** Loads the search index of a static export, which every later search of the page reuses. */
+async function loadSearchIndex(rootUrl: string) {
+    const searchIndex = await (await fetch(`${rootUrl}/search-index.json`)).json();
+    const Fuse = (await import("fuse.js")).default;
+    return new Fuse<SearchResult>(searchIndex, {
+        keys: [
+            "title",
+            "content"
+        ],
+        includeScore: true,
+        includeMatches: true,
+        threshold: 0.65,
+        ignoreDiacritics: true,
+        ignoreLocation: true,
+        ignoreFieldNorm: true,
+        useExtendedSearch: true
+    });
 }

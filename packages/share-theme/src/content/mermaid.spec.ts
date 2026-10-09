@@ -85,7 +85,28 @@ describe("setupMermaid", () => {
     });
 });
 
-const MERMAID_NOTE = `<div id="content"><div class="mermaid-note">`
+describe("setupMermaid without diagrams", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        document.body.innerHTML = "";
+    });
+
+    it("loads nothing for other code blocks or a Mermaid note without its source", async () => {
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        document.body.innerHTML = `<div id="content">`
+            + `<pre><code class="language-javascript">graph TD;</code></pre>`
+            + `<div class="mermaid-note"><img class="mermaid-note-image" src="diagram.svg"></div>`
+            + `</div>`;
+
+        await setupMermaid();
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(document.querySelectorAll("#content pre, #content img")).toHaveLength(2);
+    });
+});
+
+const MERMAID_NOTE =`<div id="content"><div class="mermaid-note">`
     + `<img class="mermaid-note-image" src="api/images/abc/diagram">`
     + `<hr><details><summary>Chart source</summary>`
     + `<pre class="mermaid-note-source">graph TD; A--&gt;B</pre></details>`

@@ -46,9 +46,10 @@ interface Diagram {
 function findPlaceholders() {
     const placeholders: { placeholder: Element; source: string }[] = [];
 
-    for (const codeBlock of document.querySelectorAll("#content pre code.language-mermaid")) {
-        if (codeBlock.parentElement) {
-            placeholders.push({ placeholder: codeBlock.parentElement, source: codeBlock.textContent ?? "" });
+    for (const block of document.querySelectorAll("#content pre")) {
+        const code = block.querySelector(":scope > code.language-mermaid");
+        if (code) {
+            placeholders.push({ placeholder: block, source: code.textContent });
         }
     }
 
@@ -56,7 +57,7 @@ function findPlaceholders() {
         const image = note.querySelector(":scope > .mermaid-note-image");
         const source = note.querySelector(".mermaid-note-source");
         if (image && source) {
-            placeholders.push({ placeholder: image, source: source.textContent ?? "" });
+            placeholders.push({ placeholder: image, source: source.textContent });
         }
     }
 

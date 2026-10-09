@@ -135,7 +135,7 @@ describe("getPageHead", () => {
 });
 
 describe("getHtmlSnippets", () => {
-    it("joins the snippets of each location, at the end of the content by default", () => {
+    it("joins the snippets of each location, at the end of the content by default, text only", () => {
         const page = fakeNote({
             noteId: "page",
             snippets: [
@@ -143,6 +143,9 @@ describe("getHtmlSnippets", () => {
                 fakeNote({ noteId: "b", content: "<p>b</p>" }),
                 fakeNote({ noteId: "c", content: "<meta c>", labels: { shareHtmlLocation: "head:end" } }),
                 fakeNote({ noteId: "d", content: "<p>d</p>", labels: { shareHtmlLocation: "body:start" } }),
+                fakeNote({
+                    noteId: "e", content: new Uint8Array([ 60 ]), labels: { shareHtmlLocation: "body:end" }
+                }),
                 null
             ]
         });
@@ -246,10 +249,11 @@ describe("getPrevNextLinks", () => {
         expect(getPrevNextLinks(a, site).next).toStrictEqual({ title: "a1", href: "./a1-alias" });
     });
 
-    it("gives no links to a note hidden from the tree, nor past a site without pages", () => {
+    it("links nothing from a hidden note or one outside the site, nor past an empty site", () => {
         expect(links(hidden)).toStrictEqual([ null, null ]);
         expect(links(h1)).toStrictEqual([ "hidden", null ]);
         expect(links(lonely, lonely)).toStrictEqual([ null, null ]);
+        expect(links(elsewhere)).toStrictEqual([ null, null ]);
     });
 });
 
@@ -335,6 +339,7 @@ describe("getPageLanguages", () => {
         expect(languages("en", "en", "de").content).toBeNull();
         expect(languages(null, "en", "de").content).toStrictEqual({ lang: "de", dir: "ltr" });
         expect(languages("he", "en").content).toStrictEqual({ lang: "he", dir: "rtl" });
+        expect(languages(null, "").content).toBeNull();
     });
 });
 
@@ -402,7 +407,7 @@ interface FakeNoteOptions {
     labels?: Record<string, string>;
     relations?: Record<string, string>;
     snippets?: (ShareNote | null)[];
-    content?: string;
+    content?: string | Uint8Array;
     type?: string;
     mime?: string;
     icon?: string;

@@ -25,5 +25,14 @@ describe("setupThemeSelector", () => {
         input.dispatchEvent(new Event("change"));
         expect(document.documentElement.className).toBe("theme-light");
         expect(localStorage.getItem("theme")).toBe("light");
+
+        input.checked = true;
+        input.dispatchEvent(new Event("change"));
+        expect(document.documentElement.className).toBe("theme-dark");
+        expect(localStorage.getItem("theme")).toBe("dark");
+    });
+
+    it("does nothing on a page without the switch", () => {
+        expect(() => setupThemeSelector()).not.toThrow();
     });
 });

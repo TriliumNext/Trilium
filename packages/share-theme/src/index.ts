@@ -17,7 +17,6 @@ import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
 import setupMath from "./content/math.js";
 import setupMermaid from "./content/mermaid.js";
-import api from "./api.js";
 import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
@@ -26,16 +25,25 @@ import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
 import { applyTabs, revealFragment } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { enhanceLinkPreviews } from "@triliumnext/commons/src/lib/link_embed_dom.js";
 
-function $try<T extends (...a: unknown[]) => unknown>(func: T, ...args: Parameters<T>) {
+/** Runs a setup function, logging what it throws or rejects with instead of stopping the others. */
+function $try(func: () => unknown) {
     try {
-        func.apply(func, args);
-    }
-    catch (e) {
-        console.error(e); // eslint-disable-line no-console
+        Promise.resolve(func()).catch(console.error);
+    } catch (e) {
+        console.error(e);
     }
 }
 
-Object.assign(window, api);
+/**
+ * Fetches a shared note as JSON, the page's own note by default. Scripts added with `~shareJs` call
+ * it as `fetchNote()`.
+ */
+async function fetchNote(noteId: string | null = null) {
+    const resp = await fetch(`api/notes/${noteId ?? document.body.dataset.noteId}`);
+    return await resp.json();
+}
+
+Object.assign(window, { fetchNote });
 $try(setupThemeSelector);
 $try(setupToC);
 $try(setupExpanders);
@@ -50,19 +58,14 @@ function setupTextNote() {
     $try(setupTabs);
 }
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-        const noteType = determineNoteType();
-
-        if (noteType === "text" || document.querySelector("#content.ck-content")) {
-            setupTextNote();
-        } else if (noteType === "mermaid") {
-            $try(setupMermaid);
-        }
-    },
-    false
-);
+document.addEventListener("DOMContentLoaded", () => {
+    const { classList } = document.body;
+    if (classList.contains("type-text") || document.querySelector("#content.ck-content")) {
+        setupTextNote();
+    } else if (classList.contains("type-mermaid")) {
+        $try(setupMermaid);
+    }
+});
 
 function setupTabs() {
     const content = document.getElementById("content");
@@ -74,10 +77,4 @@ function setupTabs() {
     const showFragment = () => revealFragment(location.hash)?.scrollIntoView();
     showFragment();
     window.addEventListener("hashchange", showFragment);
-}
-
-function determineNoteType() {
-    const bodyClass = document.body.className;
-    const match = bodyClass.match(/type-([^\s]+)/);
-    return match ? match[1] : null;
 }

@@ -1,7 +1,8 @@
+// @vitest-environment happy-dom
 import type { FuseResultMatch } from "fuse.js";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { buildStaticSnippet } from "./search.js";
+import setupSearch, { buildStaticSnippet } from "./search.js";
 
 describe("buildStaticSnippet", () => {
     const contentMatch = (...indices: [number, number][]): FuseResultMatch => ({
@@ -101,3 +102,110 @@ describe("buildStaticSnippet", () => {
         expect(result).toBe("abc def ghi");
     });
 });
+
+describe("setupSearch", () => {
+    afterEach(() => {
+        document.head.innerHTML = "";
+        document.body.innerHTML = "";
+        delete window.glob;
+        vi.unstubAllGlobals();
+        vi.useRealTimers();
+    });
+
+    it("asks the server once typing pauses and lists the first five results", async () => {
+        const fetchMock = vi.fn(async (_url: string) => Response.json({ results: [
+            { id: "a", title: "<A>", path: "Home > Docs", highlightedSnippet: "<b>abc</b>" },
+            { id: "b", title: "B", path: "", snippet: "<plain>" },
+            { id: "c", title: "C", path: "Docs" },
+            { id: "d", title: "D", path: "Docs" },
+            { id: "e", title: "E", path: "Docs" },
+            { id: "f", title: "F", path: "Docs" }
+        ] }));
+        const input = renderSearch(fetchMock);
+        document.body.dataset.ancestorNoteId = "root";
+
+        await type(input, "ab");
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        await type(input, "a&b c");
+        expect(fetchMock.mock.calls.map(([ url ]) => url))
+            .toEqual([ "api/notes?search=a%26b+c&ancestorNoteId=root" ]);
+        const items = [ ...document.querySelectorAll<HTMLAnchorElement>(".search-results a") ];
+        expect(items.map((item) => item.getAttribute("href")))
+            .toEqual([ "./a", "./b", "./c", "./d", "./e" ]);
+        expect(items[0].querySelector(".search-result-title")?.textContent).toBe("<A>");
+        expect(items[0].querySelector(".search-result-snippet")?.innerHTML).toBe("<b>abc</b>");
+        expect(items[1].querySelector(".search-result-note")?.textContent).toBe("Home");
+        expect(items[1].querySelector(".search-result-snippet")?.textContent).toBe("<plain>");
+        expect(items[2].querySelector(".search-result-snippet")).toBeNull();
+
+        delete document.body.dataset.ancestorNoteId;
+        await type(input, "abc");
+        expect(fetchMock).toHaveBeenLastCalledWith("api/notes?search=abc&ancestorNoteId=");
+        expect(document.querySelectorAll(".search-results")).toHaveLength(1);
+    });
+
+    it("closes the results on a click outside them and the search box", async () => {
+        const input = renderSearch(vi.fn(async () => Response.json({ results: [] })));
+        document.body.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+        await type(input, "abc");
+        const click = () => new MouseEvent("click", { bubbles: true });
+        document.querySelector(".search-results")?.dispatchEvent(click());
+        input.dispatchEvent(click());
+        expect(document.querySelector(".search-results")).not.toBeNull();
+
+        document.body.dispatchEvent(click());
+        expect(document.querySelector(".search-results")).toBeNull();
+    });
+
+    it("searches the index of a static export, loaded once", async () => {
+        window.glob = { isStatic: true, theme: "light" };
+        document.head.innerHTML = `<link rel="stylesheet" href="../../assets/style.css">`;
+        const fetchMock = vi.fn(async (_url: string) => Response.json([
+            { id: "drip", title: "Treatment", path: "Home", content: "Patient on magnesium drip." },
+            { id: "other", title: "Unrelated", path: "Home", content: "Nothing here." }
+        ]));
+        const input = renderSearch(fetchMock);
+
+        await type(input, "'magnesium");
+        await type(input, "'treatment");
+
+        const item = await vi.waitFor(() => {
+            const result = document.querySelector<HTMLAnchorElement>(".search-results a");
+            expect(result).not.toBeNull();
+            return result;
+        });
+        expect(fetchMock.mock.calls.map(([ url ]) => url)).toEqual([ "../../search-index.json" ]);
+        expect(document.querySelectorAll(".search-results a")).toHaveLength(1);
+        expect(item?.getAttribute("href")).toBe("./../../drip");
+        expect(item?.querySelector(".search-result-snippet")?.textContent)
+            .toBe("Patient on magnesium drip.");
+    });
+
+    it("does nothing on a page without a search box", () => {
+        expect(() => setupSearch()).not.toThrow();
+    });
+});
+
+function renderSearch(fetchMock: (url: string) => Promise<Response>) {
+    vi.useFakeTimers();
+    vi.stubGlobal("fetch", fetchMock);
+    document.body.innerHTML = `<div class="search-item"><input class="search-input"></div>`;
+    setupSearch();
+    const input = document.querySelector<HTMLInputElement>(".search-input");
+    if (!input) {
+        throw new Error("The search box is missing.");
+    }
+    return input;
+}
+
+/** Types a query key by key and waits out the pause after which the search runs. */
+async function type(input: HTMLInputElement, query: string) {
+    for (const length of query.split("").keys()) {
+        input.value = query.slice(0, length + 1);
+        input.dispatchEvent(new KeyboardEvent("keyup"));
+        await vi.advanceTimersByTimeAsync(100);
+    }
+    await vi.advanceTimersByTimeAsync(500);
+}

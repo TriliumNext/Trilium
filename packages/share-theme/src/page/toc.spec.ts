@@ -36,6 +36,24 @@ describe("setupToC", () => {
 
         expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
     });
+
+    it("leaves an entry without a heading to the browser, and a page without one alone", () => {
+        expect(() => setupToC()).not.toThrow();
+
+        document.body.innerHTML = `
+            <div id="right-pane">
+                <ul id="toc"><li><a href="#missing">Missing</a></li><li><a>No link</a></li></ul>
+            </div>
+        `;
+        setupToC();
+
+        for (const link of document.querySelectorAll("#toc a")) {
+            const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+            link.dispatchEvent(click);
+            expect(click.defaultPrevented).toBe(false);
+        }
+        expect(activeEntry()).toBeUndefined();
+    });
 });
 
 /**

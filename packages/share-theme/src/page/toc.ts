@@ -18,12 +18,11 @@ export default function setupToC() {
     const toc = document.getElementById("toc");
     if (!toc || !container) return;
 
-    // Get all relevant elements
     const sections = [ ...document.querySelectorAll("#content .toc-anchor") ]
-        .map((anchor) => anchor.parentElement);
-    const links = toc.querySelectorAll("a");
+        .map((anchor) => anchor.parentElement)
+        .filter((heading) => heading !== null);
+    const links = [ ...toc.querySelectorAll("a") ];
 
-    // Setup smooth scroll on click
     for (const link of links) {
         link.addEventListener("click", e => {
             const target = document.getElementById(link.getAttribute("href")?.slice(1) ?? "");
@@ -37,19 +36,18 @@ export default function setupToC() {
         });
     }
 
-    // Setup a moving "active" in the ToC that adjusts with the scroll state
-    function changeLinkState() {
+    // Marks the entry of the last section scrolled past, or the first entry above every section.
+    const changeLinkState = () => {
         let index = sections.length;
+        while (--index > 0 && container.scrollTop + 50 < sections[index].offsetTop) {
+            // Walk back to the last section scrolled past.
+        }
 
-        // Work backwards to find the first matching section
-        while (--index && container!.scrollTop + 50 < (sections[index] as HTMLElement).offsetTop) {} // eslint-disable-line no-empty
+        for (const [ linkIndex, link ] of links.entries()) {
+            link.classList.toggle("active", linkIndex === index);
+        }
+    };
 
-        // Update the "active" item in ToC
-        links.forEach((link) => link.classList.remove("active"));
-        links[index].classList.add("active");
-    }
-
-    // Initial render
     changeLinkState();
     container.addEventListener("scroll", changeLinkState);
 }

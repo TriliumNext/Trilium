@@ -26,4 +26,16 @@ describe("setupFooter", () => {
         expect(valid.textContent).toMatch(/Oktober 2026$/);
         expect(invalid.textContent).toBe("kept");
     });
+
+    it("writes the dates out in the browser's language when the page has none", () => {
+        document.body.innerHTML = `
+            <footer id="content-footer"><time datetime="2026-10-09T12:00:00.000Z"></time></footer>
+        `;
+
+        setupFooter();
+
+        const expected = new Intl.DateTimeFormat(undefined, { dateStyle: "long" })
+            .format(new Date("2026-10-09T12:00:00.000Z"));
+        expect(document.querySelector("time")?.textContent).toBe(expected);
+    });
 });
