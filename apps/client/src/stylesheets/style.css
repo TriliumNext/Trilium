@@ -2206,11 +2206,6 @@ button.close:hover {
     display: none;
 }
 
-.reference-link .tn-icon {
-    position: relative;
-    top: 1px;
-}
-
 .reference-link small {
     display: inline-block;
 }
