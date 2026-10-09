@@ -341,6 +341,27 @@ describe("content_renderer", () => {
             expect(page.querySelector(".navigation .next")?.text).toBe("Second");
         });
 
+        it("anchors a heading spanning lines and lists it in the table of contents", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "multilineHeadings",
+                    content: `<h2>First</h2><p>a</p><h2>Spans\n    two lines</h2><p>b</p>`
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+
+            expect(page.querySelector("#content h2:last-of-type .toc-anchor")?.id)
+                .toBe("spans-two-lines");
+            expect(page.querySelectorAll("#toc a").map((link) => [
+                link.getAttribute("href"), link.text.trim()
+            ])).toStrictEqual([
+                [ "#first", "First" ],
+                [ "#spans-two-lines", "Spans two lines" ]
+            ]);
+        });
+
         it("keeps the alt text of an image on the page", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
