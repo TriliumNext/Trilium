@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="<%= faviconUrl %>">
+    <% for (const font of fontPreloads) { %>
+        <link rel="preload" href="<%= font.href %>" as="font" type="<%= font.type %>" crossorigin>
+    <% } %>
     <% for (const url of cssToLoad) { %>
         <link href="<%= url %>" rel="stylesheet">
     <% } %>

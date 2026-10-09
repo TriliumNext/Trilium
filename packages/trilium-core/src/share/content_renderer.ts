@@ -10,7 +10,7 @@ import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumne
 import {
     getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
-    type PageHeading
+    type NavigationItem, type PageHeading
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -116,14 +116,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
         isStatic: true,
-        iconPackCss: [
-            ...iconPacks.map(p => iconPackService.generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`)),
-            iconPackService.generateIconTransformCss(),
-            task_states.generateTaskStateCss()
-        ]
-            .filter(Boolean)
-            .join("\n\n"),
-        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
+        ...getIconPackArgs(iconPacks, (p) => `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`)
     });
 }
 
@@ -167,18 +160,53 @@ export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) 
         isStatic: false,
         canAccessEmbed,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
+        ...getIconPackArgs(iconPacks, (p) => p.builtin
+            ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+            : `api/attachments/${p.fontAttachmentId}/download`)
+    });
+}
+
+/**
+ * Returns the render arguments of the icon packs `iconPacks`, whose fonts `getFontUrl` locates: their
+ * CSS, their prefixes and their fonts.
+ */
+function getIconPackArgs(
+    iconPacks: iconPackService.ProcessedIconPack[],
+    getFontUrl: (iconPack: iconPackService.ProcessedIconPack) => string
+) {
+    const fonts = iconPacks.map((iconPack) => ({ iconPack, url: getFontUrl(iconPack) }));
+    return {
         iconPackCss: [
-            ...iconPacks.map(p => iconPackService.generateCss(p, p.builtin
-                ? `assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/${p.fontAttachmentId}/download`
-            )),
+            ...fonts.map(({ iconPack, url }) => iconPackService.generateCss(iconPack, url)),
             iconPackService.generateIconTransformCss(),
             task_states.generateTaskStateCss()
         ]
             .filter(Boolean)
             .join("\n\n"),
-        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
-    });
+        iconPackSupportedPrefixes: iconPacks.map((iconPack) => iconPack.prefix),
+        iconPackFonts: fonts.map(({ iconPack, url }) => ({
+            prefix: iconPack.prefix,
+            href: url,
+            type: iconPack.fontMime
+        }))
+    };
+}
+
+/**
+ * Returns the fonts of `fonts` to preload: Boxicons, which the theme's own controls use, and every
+ * pack one of `iconClasses` (the icons of the page's logo, tree and subpages) belongs to. A pack
+ * only the content uses loads when the content is laid out, as without a preload, since Chrome
+ * warns about a preload the page does not use.
+ */
+function getFontPreloads(fonts: IconPackFont[], iconClasses: string[]) {
+    const usedPrefixes = new Set([ "bx", ...iconClasses.flatMap((classes) => classes.split(/\s+/)) ]);
+    return fonts
+        .filter((font) => usedPrefixes.has(font.prefix))
+        .map(({ href, type }) => ({ href, type }));
+}
+
+function getNavigationIcons(items: NavigationItem[]): string[] {
+    return items.flatMap((item) => [ item.icon, ...getNavigationIcons(item.children) ]);
 }
 
 interface RenderArgs {
@@ -195,6 +223,15 @@ interface RenderArgs {
     faviconUrl: string;
     iconPackCss: string;
     iconPackSupportedPrefixes: string[];
+    /** The font of each icon pack, which the page preloads when its own icons use the pack. */
+    iconPackFonts: IconPackFont[];
+}
+
+interface IconPackFont {
+    prefix: string;
+    href: string;
+    /** The font's media type. */
+    type: string;
 }
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
@@ -206,6 +243,20 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const siteRoot = renderArgs.subRoot.note;
     const displayLanguage = options.getOptionOrNull("locale") || "en";
+    const logo = getSiteLogo(siteRoot, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        image: renderArgs.logoImageUrl ?? null,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+    });
+    const navigation = getNavigationTree(siteRoot, note, renderArgs.ancestors, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+    });
+    const childLinks = getChildLinks(note, {
+        sanitizeUrl: sanitize.sanitizeUrl,
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+        getText: (child) => getExcerptSource(child as SNote | BNote, renderArgs.canAccessEmbed)
+    });
     const opts = {
         note,
         header,
@@ -220,21 +271,10 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         sanitizeUrl: sanitize.sanitizeUrl,
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
-        logo: getSiteLogo(siteRoot, {
-            sanitizeUrl: sanitize.sanitizeUrl,
-            image: renderArgs.logoImageUrl ?? null,
-            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
-        }),
+        logo,
         prevNext: getPrevNextLinks(note, siteRoot),
-        navigation: getNavigationTree(siteRoot, note, renderArgs.ancestors, {
-            sanitizeUrl: sanitize.sanitizeUrl,
-            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
-        }),
-        childLinks: getChildLinks(note, {
-            sanitizeUrl: sanitize.sanitizeUrl,
-            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
-            getText: (child) => getExcerptSource(child as SNote | BNote, renderArgs.canAccessEmbed)
-        }),
+        navigation,
+        childLinks,
         childLinksLayout: getChildLinksLayout(note),
         contentClasses: getContentClasses(note, isEmpty),
         language: getPageLanguages(note, {
@@ -242,6 +282,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
         lastUpdated: getLastUpdated(note, displayLanguage),
+        fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
+            logo.icon,
+            ...getNavigationIcons(navigation),
+            ...childLinks.flatMap((child) => [ child.icon, ...child.children.map((grandchild) => grandchild.icon) ])
+        ]),
         ...renderArgs,
     };
 

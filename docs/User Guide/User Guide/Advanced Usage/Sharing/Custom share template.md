@@ -43,6 +43,7 @@ Your template is rendered with a context object exposing the note and its render
 | `subRoot` | The root of the shared subtree as `{ note, branch }` — handy for a site-wide title or logo. |
 | `cssToLoad` / `jsToLoad` | Arrays of stylesheet / script URLs the default theme would inject (includes anything added via `~shareCss` / `~shareJs`). |
 | `faviconUrl` / `logoUrl` | Resolved favicon and logo URLs. Without `~shareLogo`, `logoUrl` is the Trilium logo. |
+| `fontPreloads` | The icon fonts to preload, each with `href` and `type` (the font's media type): Boxicons, and the icon packs used by the logo, the navigation tree or the subpages. The default template adds a `<link rel="preload" as="font" crossorigin>` for each, so that the icons do not appear only after the first paint. |
 | `isStatic` | `true` during a static HTML export, `false` for a live server render. |
 | `t` | The `i18next` translation function. |
 | `utils` | Helper utilities such as `slugify()` and `stripTags()`. |

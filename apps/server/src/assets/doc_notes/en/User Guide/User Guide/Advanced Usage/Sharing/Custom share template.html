@@ -156,6 +156,14 @@
           the Trilium logo.</td>
       </tr>
       <tr>
+        <td><code>fontPreloads</code>
+        </td>
+        <td>The icon fonts to preload, each with <code>href</code> and <code>type</code> (the
+          font's media type): Boxicons, and the icon packs used by the logo, the
+          navigation tree or the subpages. The default template adds a <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> for
+          each, so that the icons do not appear only after the first paint.</td>
+      </tr>
+      <tr>
         <td><code>isStatic</code>
         </td>
         <td><code>true</code> during a static HTML export, <code>false</code> for a live

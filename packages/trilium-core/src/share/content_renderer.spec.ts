@@ -1434,6 +1434,7 @@ describe("content_renderer", () => {
                 faviconUrl: "",
                 iconPackCss: "",
                 iconPackSupportedPrefixes: [],
+                fontPreloads: [],
                 head: getPageHead(note, note),
                 snippets: getHtmlSnippets(note),
                 logo: getSiteLogo(note, { sanitizeUrl: sanitize.sanitizeUrl, image: null }),
@@ -1516,6 +1517,31 @@ describe("content_renderer pages", () => {
 
         expect(css).toContain("api/attachments/sharedFont/download");
         expect(css).not.toContain("privateFont");
+    });
+
+    it("preloads the fonts of the icon packs the page's own icons use", () => {
+        buildShareNote({ id: "usedPackManifest", content: "{}" });
+        buildShareNote({ id: "unusedPackManifest", content: "{}" });
+        const builtinPacks = iconPackService.getIconPacks();
+        vi.spyOn(iconPackService, "getIconPacks").mockReturnValue([
+            ...builtinPacks,
+            customIconPack("used", "usedPackManifest"),
+            customIconPack("unused", "unusedPackManifest")
+        ]);
+
+        const page = parse(String(renderNoteContent(buildSitePage({
+            "content": "<p>x</p>",
+            "#iconClass": "used used-star"
+        }))));
+        const preloads = page.querySelectorAll("link[rel=preload]").map((tag) => [
+            tag.getAttribute("href"), tag.getAttribute("as"), tag.getAttribute("type"),
+            tag.hasAttribute("crossorigin")
+        ]);
+
+        expect(preloads).toStrictEqual([
+            [ "assets/fonts/boxicons.woff2", "font", "font/woff2", true ],
+            [ "api/attachments/usedFont/download", "font", "font/woff2", true ]
+        ]);
     });
 
     it("renders a page with its ~shareTemplate and the template's child notes", () => {
@@ -1718,6 +1744,8 @@ describe("content_renderer pages", () => {
             ]);
         expect(page.querySelector("#trilium-icon-packs")?.text)
             .toContain("../assets/icon-pack-bx.");
+        expect(page.querySelectorAll("link[rel=preload]").map((tag) => tag.getAttribute("href")))
+            .toStrictEqual([ "../assets/icon-pack-bx.woff2" ]);
         const [ other, file ] = page.querySelectorAll("#content a");
         expect(other.getAttribute("href")).toBe("./exportOther");
         expect(file.hasAttribute("href")).toBe(false);
