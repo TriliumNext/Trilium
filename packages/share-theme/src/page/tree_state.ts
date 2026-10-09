@@ -45,8 +45,15 @@ export default function setupTreeState() {
     let activePath: string[] | undefined;
     pane.addEventListener("click", (e) => {
         const item = e.target instanceof Element && e.target.closest("#menu a")?.closest("li");
-        if (item) {
-            activePath = getItemPath(item);
+        if (!item) {
+            return;
+        }
+        activePath = getItemPath(item);
+        // An entry of the page shown, maybe another clone of it, is selected in place.
+        const opensNewTab = e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0;
+        if (!opensNewTab && item.getAttribute("data-note-id") === document.body.dataset.noteId) {
+            e.preventDefault();
+            selectItem(pane, item);
         }
     });
 
@@ -82,13 +89,7 @@ function restoreTree(pane: HTMLElement, state: TreeState) {
     const path = state.activePath;
     const clicked = path?.at(-1) === document.body.dataset.noteId && path && findItem(pane, path);
     if (clicked) {
-        for (const selected of pane.querySelectorAll("#menu .active")) {
-            selected.classList.remove("active");
-        }
-        const rowAndLink = ":scope > .tree-item-row, :scope > * > a, :scope > a";
-        for (const selected of clicked.querySelectorAll(rowAndLink)) {
-            selected.classList.add("active");
-        }
+        selectItem(pane, clicked);
         const ancestors = getAncestorItems(clicked);
         for (const ancestor of ancestors) {
             expandItem(ancestor);
@@ -106,6 +107,17 @@ function restoreTree(pane: HTMLElement, state: TreeState) {
     // Applies the expanded styles while transitions are off, so the chevrons do not rotate.
     void pane.offsetHeight;
     pane.classList.remove("tree-restoring");
+}
+
+/** Moves the current note's card to `item`, one of its entries. */
+function selectItem(pane: HTMLElement, item: Element) {
+    for (const selected of pane.querySelectorAll("#menu .active")) {
+        selected.classList.remove("active");
+    }
+    const rowAndLink = ":scope > .tree-item-row, :scope > * > a, :scope > a";
+    for (const selected of item.querySelectorAll(rowAndLink)) {
+        selected.classList.add("active");
+    }
 }
 
 function expandItem(item: Element) {

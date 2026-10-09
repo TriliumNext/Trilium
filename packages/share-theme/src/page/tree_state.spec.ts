@@ -115,6 +115,40 @@ describe("setupTreeState", () => {
             .toStrictEqual([ "" ]);
     });
 
+    it("stays on the page when an entry of the current note is clicked, selecting it", () => {
+        const click = (link: HTMLElement, init: MouseEventInit = {}) => {
+            const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
+            link.dispatchEvent(event);
+            return event.defaultPrevented;
+        };
+        renderPane("site1", { activeTop: 50, menu: CLONES });
+        document.body.dataset.noteId = "c";
+        setupTreeState();
+
+        expect(click(cloneLink("x"))).toBe(true);
+        expect(selected()).toStrictEqual([ "x/row", "x/link" ]);
+
+        expect(click(cloneLink("y"))).toBe(true);
+        expect(selected()).toStrictEqual([ "y/row", "y/link" ]);
+        window.dispatchEvent(new Event("pagehide"));
+        expect(JSON.parse(sessionStorage.getItem("share-tree-state") ?? "null").activePath)
+            .toStrictEqual([ "y", "c" ]);
+
+        // Opening it in another tab is left to the browser, as is a link to another note.
+        const newTab = [ { ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { button: 1 } ];
+        for (const init of newTab) {
+            const event = new MouseEvent("click", { bubbles: true, cancelable: true, ...init });
+            event.preventDefault = vi.fn();
+            cloneLink("x").dispatchEvent(event);
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        }
+        document.body.dataset.noteId = "other";
+        const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+        event.preventDefault = vi.fn();
+        cloneLink("x").dispatchEvent(event);
+        expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+
     it("centers the current note when it is out of view, and leaves it when it is in view", () => {
         renderPane("site1", { activeTop: 700 });
         setupTreeState();
