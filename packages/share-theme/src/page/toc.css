@@ -19,70 +19,44 @@
 }
 
 #toc-pane h3 {
-    text-transform: uppercase;
+    margin: 0 0 0.5em;
+    padding-inline: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.3pt;
+    color: var(--right-pane-heading-color);
 }
 
-#toc {
-    position: relative;
-    height: fit-content;
+#toc,
+#toc ul {
     margin: 0;
-    border-radius: 6px;
-    padding: 0 0 0 16px;
-    max-width: 100%;
-}
-
-#toc, #toc ul {
+    padding: 0;
     list-style: none;
 }
 
 #toc ul {
-    padding-left: 16px;
-}
-
-#toc span {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    display: inline-block;
+    margin-inline-start: 12px;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
 }
 
 #toc li a {
-    display: flex;
-    align-items: center;
-    color: var(--text-heading);
-    transition: color 200ms ease;
-    white-space: nowrap;
+    display: block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    line-height: 1.3;
+    overflow-wrap: break-word;
+    transition: background-color 150ms ease-in;
 }
 
-#toc li a:hover,
-#toc li a.active {
-    color: var(--text-link);
+#toc li a:hover {
+    background: var(--right-pane-item-hover-background);
     text-decoration: none;
 }
 
-#toc li a::before {
-    content: "";
-    display: flex;
-    position: absolute;
-    width: 2px;
-    height: 16px;
-    background: transparent;
-    left: 0;
-    transition: background-color 200ms ease;
-}
-
-#toc li a.active::before {
-    background: var(--text-link);
-}
-
-#toc::before {
-    content: "";
-    display: block;
-    position: absolute;
-    left: 0px;
-    top: 4px;
-    width: 2px;
-    height: calc(100% - 8px);
-    background: var(--background-highlight);
+#toc li a.active {
+    font-weight: bold;
 }
 
 #content :is(h1, h2, h3, h4, h5, h6) {

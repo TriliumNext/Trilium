@@ -44,6 +44,10 @@ html.theme-light {
     --quick-search-focus-color: #000000;
     --quick-search-button-active-background: rgba(0, 0, 0, 0.11);
     --quick-search-button-active-color: #383838;
+    /* The right pane colors of `theme-next-light.css`. */
+    --main-border-color: #dbdbdb;
+    --right-pane-heading-color: gray;
+    --right-pane-item-hover-background: #00000013;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -75,6 +79,10 @@ html.theme-dark {
     --quick-search-focus-color: #ffffff;
     --quick-search-button-active-background: #ffffff73;
     --quick-search-button-active-color: #000000;
+    /* The right pane colors of `theme-next-dark.css`. */
+    --main-border-color: #454545;
+    --right-pane-heading-color: gray;
+    --right-pane-item-hover-background: #ffffff26;
     --mermaid-theme: dark;
     color-scheme: dark;
 }
