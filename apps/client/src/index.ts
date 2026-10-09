@@ -3,6 +3,7 @@
 // which loads ahead of the stylesheets `loadStylesheets()` appends.
 import "@triliumnext/ckeditor5/src/theme/adaptive_colors.css";
 import "@triliumnext/ckeditor5/src/theme/footnotes.css";
+import "@triliumnext/ckeditor5/src/theme/headings.css";
 import "@triliumnext/ckeditor5/src/theme/reference_links.css";
 
 import { createFontStylesheetLink } from "./services/font";

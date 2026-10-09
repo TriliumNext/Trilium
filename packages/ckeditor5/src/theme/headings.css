@@ -1,0 +1,48 @@
+/* The heading scale of Bootstrap 5, which the app also loads; the values must stay equal to its. */
+.ck-content :is(h1, h2, h3, h4, h5, h6) {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.ck-content h1 {
+    font-size: calc(1.375rem + 1.5vw);
+}
+
+.ck-content h2 {
+    font-size: calc(1.325rem + 0.9vw);
+}
+
+.ck-content h3 {
+    font-size: calc(1.3rem + 0.6vw);
+}
+
+.ck-content h4 {
+    font-size: calc(1.275rem + 0.3vw);
+}
+
+.ck-content h5 {
+    font-size: 1.25rem;
+}
+
+.ck-content h6 {
+    font-size: 1rem;
+}
+
+@media (min-width: 1200px) {
+    .ck-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .ck-content h2 {
+        font-size: 2rem;
+    }
+
+    .ck-content h3 {
+        font-size: 1.75rem;
+    }
+
+    .ck-content h4 {
+        font-size: 1.5rem;
+    }
+}

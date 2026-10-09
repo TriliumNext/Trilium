@@ -1,3 +1,4 @@
+@import "@triliumnext/ckeditor5/src/theme/headings.css";
 @import "@triliumnext/ckeditor5/src/theme/reference_links.css";
 
 :root {
@@ -7,9 +8,13 @@
     --ck-content-line-height: inherit !important;
 }
 
-#title {
+#content #title {
     margin: 0;
     padding-top: 10px;
+    font-size: 2em;
+    line-height: 1.2;
+    color: var(--text-heading);
+    border-bottom: 1px solid var(--background-highlight);
 }
 
 iframe.pdf-view {
@@ -52,15 +57,11 @@ iframe.pdf-view {
     right: 0.5em;
 }
 
-#content h1,
-#content h2,
-#content h3,
-#content h4,
-#content h5,
-#content h6 {
-    color: var(--text-heading);
+/* The heading weight of the app's default theme (`theme-next/notes/text.css`) and its default
+   `headingStyle`, "underline" (`ReadOnlyText.css`). */
+.ck-content :is(h1, h2, h3, h4, h5, h6) {
+    font-weight: 300;
     border-bottom: 1px solid var(--background-highlight);
-    padding-bottom: 5px;
 }
 
 #content img {
