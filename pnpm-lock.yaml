@@ -1361,21 +1361,18 @@ importers:
         specifier: 0.19.0
         version: 0.19.0
     devDependencies:
-      '@digitak/esrun':
-        specifier: 3.2.26
-        version: 3.2.26
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../ckeditor5
+      '@triliumnext/highlightjs':
+        specifier: workspace:*
+        version: link:../highlightjs
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
       happy-dom:
         specifier: 20.14.5
         version: 20.14.5
-      highlight.js:
-        specifier: 11.12.0
-        version: 11.12.0
       sass:
         specifier: 1.105.1
         version: 1.105.1
@@ -2241,14 +2238,6 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       postcss-selector-parser: ^7.1.1
-
-  '@digitak/esrun@3.2.26':
-    resolution: {integrity: sha512-mL0bw7NhKVghp7mVsPwnAMhCn4NGAsk0KKFmAfnrYAZ/QCXR5xLXIYP82zLMjcsQag8DD6i1c+Yrm/57StYVzg==}
-    engines: {node: '>=14.0'}
-    hasBin: true
-
-  '@digitak/grubber@3.1.4':
-    resolution: {integrity: sha512-pqsnp2BUYlDoTXWG34HWgEJse/Eo1okRgNex8IG84wHrJp8h3SakeR5WhB4VxSA2+/D+frNYJ0ch3yXzsfNDoA==}
 
   '@electron-forge/cli@8.0.1':
     resolution: {integrity: sha512-zbkmgt7vtL8OBY7YDwVizhCfAHJLpmQtA35iOKGWPpLWRZbGADVyIUZz3QZrbc2V81/BkrBerURIBXdd/fnyhQ==}
@@ -12595,14 +12584,6 @@ snapshots:
   '@csstools/selector-specificity@6.0.0(postcss-selector-parser@7.1.6)':
     dependencies:
       postcss-selector-parser: 7.1.6
-
-  '@digitak/esrun@3.2.26':
-    dependencies:
-      '@digitak/grubber': 3.1.4
-      chokidar: 3.6.0
-      esbuild: 0.28.2
-
-  '@digitak/grubber@3.1.4': {}
 
   '@electron-forge/cli@8.0.1(supports-color@10.2.2)':
     dependencies:

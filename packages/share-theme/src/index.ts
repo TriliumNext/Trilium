@@ -18,7 +18,7 @@ import setupLinkEmbeds from "./content/link_embed.js";
 import setupMath from "./content/math.js";
 import setupMermaid from "./content/mermaid.js";
 import api from "./api.js";
-import "highlight.js/styles/default.css";
+import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";

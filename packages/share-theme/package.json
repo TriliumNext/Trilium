@@ -4,9 +4,9 @@
   "description": "Default theme for shared notes and static HTML exports",
   "type": "module",
   "scripts": {
-    "dev": "esrun scripts/build.ts -- --watch",
-    "build": "esrun scripts/build.ts",
-    "dist": "esrun scripts/build.ts -- --minify",
+    "dev": "tsx scripts/build.ts --watch",
+    "build": "tsx scripts/build.ts",
+    "dist": "tsx scripts/build.ts --minify",
     "test": "vitest run"
   },
   "exports": {
@@ -24,11 +24,10 @@
     "katex": "0.19.0"
   },
   "devDependencies": {
-    "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
+    "@triliumnext/highlightjs": "workspace:*",
     "esbuild": "0.28.2",
     "happy-dom": "20.14.5",
-    "highlight.js": "11.12.0",
     "sass": "1.105.1",
     "typescript": "6.0.3",
     "vitest": "5.0.3"

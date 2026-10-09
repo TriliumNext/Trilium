@@ -38,7 +38,7 @@ Interaction:
 
 Note that when editing a text note, syntax highlighting is automatically disabled if the code block is too big (somewhere around 500 lines). This value is currently not configurable. For <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md">Read-Only Notes</a>, this limitation is not applied.
 
-In order to configure this new feature, a section has been added in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js.
+In order to configure this new feature, a section has been added in <a class="reference-link" href="../../../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Appearance_ to control the syntax highlighting. There the color scheme can be chosen, from a builtin selection of themes from Highlight.js. _VS Code (Light)_ and _VS Code (Dark)_ use the same colors as the default themes of <a class="reference-link" href="../../Code.md">Code</a> notes, so a code block and a code note color the same code alike.
 
 *   It is possible to disable the syntax highlighting for all the notes by selecting “No syntax highlighting” in the “Color scheme” option.
 *   Word wrapping is disabled by default, but can be configured from the same section.
