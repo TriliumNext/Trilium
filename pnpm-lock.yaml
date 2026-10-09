@@ -139,8 +139,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       eslint-plugin-playwright:
-        specifier: 2.12.0
-        version: 2.12.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
+        specifier: 2.12.1
+        version: 2.12.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
       eslint-plugin-simple-import-sort:
         specifier: 14.0.0
         version: 14.0.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))
@@ -7085,8 +7085,8 @@ packages:
     peerDependencies:
       eslint: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
 
-  eslint-plugin-playwright@2.12.0:
-    resolution: {integrity: sha512-7HpSKR/D2oCH4RKRauFskcrnDrHvLQKopW7Nen8lqrFZtx/SB+FgqVaH+zyQd32noZSZy9Lrsa+DsYrVUpn6hg==}
+  eslint-plugin-playwright@2.12.1:
+    resolution: {integrity: sha512-JhavNuYBIq7SE/Zg9Esf9RGHkXoDbzrEKS383cowzMyvZ4JMbmdNCN6CoW+RU1Cjzwcoea1tou0je58uXmT/9A==}
     engines: {node: '>=16.9.0'}
     peerDependencies:
       eslint: '>=8.40.0'
@@ -18521,7 +18521,7 @@ snapshots:
       lodash.memoize: 4.1.2
       semver: 7.8.5
 
-  eslint-plugin-playwright@2.12.0(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2)):
+  eslint-plugin-playwright@2.12.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2)):
     dependencies:
       eslint: 10.12.0(jiti@2.7.0)(supports-color@10.2.2)
       globals: 17.12.0
