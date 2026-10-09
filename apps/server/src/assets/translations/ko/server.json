@@ -442,7 +442,8 @@
     "toggle-navigation": "탐색 메뉴 전환",
     "toggle-toc": "목차 전환",
     "logo-alt": "로고",
-    "login": "로그인"
+    "login": "로그인",
+    "tab-title": "탭 제목"
   },
   "hidden_subtree_templates": {
     "text-snippet": "텍스트 스니펫",
