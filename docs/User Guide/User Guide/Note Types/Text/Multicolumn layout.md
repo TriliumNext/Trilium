@@ -25,7 +25,7 @@ While the cursor is inside a layout, a toolbar appears above it with a button th
 
 ## Removing a layout
 
-*   To remove the layout but keep its content, click the <span class="tn-icon cke cke-cancel"></span> _Remove layout_ button in the layout's toolbar. The content of the columns is placed one after another where the layout was, and empty columns are left out.
+*   To remove the layout but keep its content, click the <span class="tn-icon cke cke-remove"></span> _Remove layout_ button in the layout's toolbar. The content of the columns is placed one after another where the layout was, and empty columns are left out.
 *   To delete the layout together with its content, click the handle at its top-left corner to select it, then press <kbd>Delete</kbd>.
 
 ## Narrow screens

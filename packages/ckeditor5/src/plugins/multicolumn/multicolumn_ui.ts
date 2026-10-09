@@ -5,7 +5,7 @@ import {
     type Command,
     createDropdown,
     focusChildOnDropdownOpen,
-    IconCancel,
+    IconRemove,
     type ListDropdownItemDefinition,
     type Locale,
     Plugin,
@@ -42,7 +42,7 @@ export default class MulticolumnUI extends Plugin {
         const factory = this.editor.ui.componentFactory;
         factory.add("multicolumnLayout", locale => this.createInsertDropdown(locale));
         factory.add("columnLayout", locale => this.createLayoutDropdown(locale));
-        this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconCancel);
+        this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconRemove);
     }
 
     public afterInit(): void {

@@ -6,7 +6,7 @@ import {
     ContextualBalloon,
     DropdownView,
     Essentials,
-    IconCancel,
+    IconRemove,
     type ListItemView,
     type ModelElement,
     Paragraph,
@@ -156,7 +156,7 @@ describe("MulticolumnUI", () => {
         setModelData(editor.model, layout("1-3", paragraph("A[]"), paragraph("B")));
         const button = editor.ui.componentFactory.create("removeMulticolumnLayout") as ButtonView;
         expect([button.label, button.icon, button.tooltip])
-            .toEqual(["Remove layout", IconCancel, true]);
+            .toEqual(["Remove layout", IconRemove, true]);
         expect(button.isEnabled).toBe(true);
         const focus = vi.spyOn(editor.editing.view, "focus");
 
@@ -260,7 +260,7 @@ describe("MulticolumnUI", () => {
             const buttons = items.map(item => "buttonView" in item ? item.buttonView : item);
             expect(buttons.map(button => [button.label, button.icon])).toEqual([
                 ["Column layout", createLayoutFigure("1-3", 20)],
-                ["Remove layout", IconCancel]
+                ["Remove layout", IconRemove]
             ]);
         });
 
