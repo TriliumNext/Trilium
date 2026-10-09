@@ -1,7 +1,7 @@
 import "./SearchDefinition.css";
 
 import { SaveSearchNoteResponse } from "@triliumnext/commons";
-import { useContext, useEffect, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 
 import appContext from "../../components/app_context";
@@ -31,6 +31,13 @@ export default function SearchDefinition({ note, ntxId }: {
     const parentComponent = useContext(ParentComponent);
     const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
     const [ error, setError ] = useState<{ message: string }>();
+    const flushRef = useRef<() => Promise<void>>(null);
+
+    // The server reads the search options from the note's attributes, so a value still waiting
+    // in a `SpacedUpdate` is saved first.
+    async function savePendingOptions() {
+        await flushRef.current?.();
+    }
 
     function refreshOptions() {
         if (!note) return;
@@ -56,6 +63,7 @@ export default function SearchDefinition({ note, ntxId }: {
             return;
         }
 
+        await savePendingOptions();
         const result = await search.runSearchNote(parentComponent, noteId, ntxId);
         if (result) {
             setError(result.error ? { message: result.error } : undefined);
@@ -118,6 +126,7 @@ export default function SearchDefinition({ note, ntxId }: {
                                     attributeType={attributeType}
                                     note={note}
                                     refreshResults={refreshResults}
+                                    flushRef={flushRef}
                                     error={error}
                                     additionalAttributesToDelete={additionalAttributesToDelete}
                                     defaultValue={defaultValue}
@@ -125,7 +134,11 @@ export default function SearchDefinition({ note, ntxId }: {
                             })}
                         </tbody>
                         <BulkActionsList note={note} />
-                        <SearchButtonBar note={note} refreshResults={refreshResults} />
+                        <SearchButtonBar
+                            note={note}
+                            refreshResults={refreshResults}
+                            savePendingOptions={savePendingOptions}
+                        />
                     </table>
                 )}
             </div>
@@ -133,11 +146,13 @@ export default function SearchDefinition({ note, ntxId }: {
     );
 }
 
-function SearchButtonBar({ note, refreshResults }: {
+function SearchButtonBar({ note, refreshResults, savePendingOptions }: {
     note: FNote;
     refreshResults(): void;
+    savePendingOptions(): Promise<void>;
 }) {
     async function searchAndExecuteActions() {
+        await savePendingOptions();
         await server.post(`search-and-execute-note/${note.noteId}`);
         refreshResults();
         toast.showMessage(t("search_definition.actions_executed"), 3000);

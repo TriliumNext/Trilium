@@ -98,6 +98,7 @@ function renderOption(note: FNote, container?: HTMLDivElement, error?: { message
             <Component
                 note={note}
                 refreshResults={() => {}}
+                flushRef={{ current: null }}
                 error={error}
                 attributeName="searchString"
                 attributeType="label"

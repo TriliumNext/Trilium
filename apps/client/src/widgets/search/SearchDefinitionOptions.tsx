@@ -1,11 +1,11 @@
 import { AttributeType } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChildren, VNode } from "preact";
+import { ComponentChildren, RefObject, VNode } from "preact";
 import { useCallback, useEffect, useMemo, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
-import { removeOwnedAttributesByNameOrType } from "../../services/attributes";
+import attributes, { removeOwnedAttributesByNameOrType } from "../../services/attributes";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import SpacedUpdate from "../../services/spaced_update";
@@ -33,6 +33,8 @@ export interface SearchOption {
 interface SearchOptionProps {
     note: FNote;
     refreshResults: () => void;
+    /** Set by an option that saves its value with a delay, to a function that saves it at once. */
+    flushRef: RefObject<(() => Promise<void>) | null>;
     attributeName: string;
     attributeType: "label" | "relation";
     additionalAttributesToDelete?: { type: "label" | "relation", name: string }[];
@@ -143,21 +145,22 @@ function SearchOption({ note, className, title, titleIcon, children, help, attri
     );
 }
 
-function SearchStringOption({ note, refreshResults, error, ...restProps }: SearchOptionProps) {
-    const [ searchString, setSearchString ] = useNoteLabel(note, "searchString");
+function SearchStringOption({ note, refreshResults, flushRef, error, ...restProps }: SearchOptionProps) {
+    const [ searchString ] = useNoteLabel(note, "searchString");
     const currentValue = useRef(searchString ?? "");
 
     const prepare = useCallback(() => currentValue.current, []);
     const commit = useCallback(async (text: string) => {
         appContext.lastSearchString = text;
-        setSearchString(text);
+        // Awaited, so a search run after the flush reads the saved label.
+        await attributes.setLabel(note.noteId, "searchString", text);
 
         if (note.title.startsWith(t("search_string.search_prefix"))) {
             await server.put(`notes/${note.noteId}/title`, {
                 title: `${t("search_string.search_prefix")} ${text.length < 30 ? text : `${text.substr(0, 30)}…`}`
             });
         }
-    }, [ note, setSearchString ]);
+    }, [ note ]);
 
     const spacedUpdateRef = useRef<SpacedUpdate<string> | undefined>(undefined);
     if (!spacedUpdateRef.current) {
@@ -178,6 +181,13 @@ function SearchStringOption({ note, refreshResults, error, ...restProps }: Searc
         // what is being typed.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ note ]);
+
+    useEffect(() => {
+        flushRef.current = () => spacedUpdate.updateNowIfNecessary();
+        return () => {
+            flushRef.current = null;
+        };
+    }, [ flushRef, spacedUpdate ]);
 
     return <>
         <SearchOption
@@ -210,10 +220,7 @@ function SearchStringOption({ note, refreshResults, error, ...restProps }: Searc
                     currentValue.current = text;
                     spacedUpdate.scheduleUpdate();
                 }}
-                onEnter={async () => {
-                    await spacedUpdate.updateNowIfNecessary();
-                    refreshResults();
-                }}
+                onEnter={refreshResults}
             />
         </SearchOption>
         {error?.message && (
