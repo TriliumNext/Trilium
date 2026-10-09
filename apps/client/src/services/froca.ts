@@ -5,15 +5,10 @@ import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBlob, { type FBlobRow } from "../entities/fblob.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import FNote, { type FNoteRow } from "../entities/fnote.js";
-import type { Froca } from "./froca-interface.js";
+import type { Froca, FrocaSource, SubtreeResponse } from "./froca-interface.js";
 import server from "./server.js";
 import { isPreAuthScreen } from "./utils.js";
 
-interface SubtreeResponse {
-    notes: FNoteRow[];
-    branches: FBranchRow[];
-    attributes: FAttributeRow[];
-}
 
 interface SearchNoteResponse {
     searchResultNoteIds: string[];
@@ -42,10 +37,16 @@ class FrocaImpl implements Froca {
     attributes!: Record<string, FAttribute>;
     attachments!: Record<string, FAttachment>;
     blobPromises!: Record<string, Promise<FBlob | null> | null>;
+    private source: FrocaSource = SERVER_SOURCE;
 
     constructor() {
         this.initializedPromise = this.loadInitialTree();
         this.#clear();
+    }
+
+    /** Reads what froca does not hold from `source` instead of the app's API. */
+    setSource(source: FrocaSource) {
+        this.source = source;
     }
 
     async loadInitialTree() {
@@ -189,7 +190,7 @@ class FrocaImpl implements Froca {
 
         noteIds = Array.from(new Set(noteIds)); // make noteIds unique
 
-        const resp = await server.post<SubtreeResponse>("tree/load", { noteIds });
+        const resp = await this.source.loadNotes(noteIds);
 
         this.addResp(resp);
 
@@ -349,7 +350,7 @@ class FrocaImpl implements Froca {
         // load all attachments for the given note even if one is requested, don't load one by one
         let attachmentRows;
         try {
-            attachmentRows = await server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`);
+            attachmentRows = await this.source.getSiblingAttachments(attachmentId);
         } catch (e: any) {
             if (silentNotFoundError) {
                 logInfo(`Attachment '${attachmentId}' not found, but silentNotFoundError is enabled: ${e.message}`);
@@ -378,7 +379,7 @@ class FrocaImpl implements Froca {
     }
 
     async getAttachmentsForNote(noteId: string) {
-        const attachmentRows = await server.get<FAttachmentRow[]>(`notes/${noteId}/attachments`);
+        const attachmentRows = await this.source.getAttachments(noteId);
         return this.processAttachmentRows(attachmentRows);
     }
 
@@ -405,8 +406,8 @@ class FrocaImpl implements Froca {
         const key = `${entityType}-${entityId}`;
 
         if (!this.blobPromises[key]) {
-            this.blobPromises[key] = server
-                .getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`)
+            this.blobPromises[key] = this.source
+                .getBlob(entityType, entityId)
                 .then((row) => new FBlob(row))
                 .catch((e) => {
                     console.error(`Cannot get blob for ${entityType} '${entityId}'`, e);
@@ -422,6 +423,16 @@ class FrocaImpl implements Froca {
         return await this.blobPromises[key];
     }
 }
+
+/** Reads from the app's API. */
+const SERVER_SOURCE: FrocaSource = {
+    loadNotes: (noteIds) => server.post<SubtreeResponse>("tree/load", { noteIds }),
+    getSiblingAttachments: (attachmentId) =>
+        server.getWithSilentNotFound<FAttachmentRow[]>(`attachments/${attachmentId}/all`),
+    getAttachments: (noteId) => server.get<FAttachmentRow[]>(`notes/${noteId}/attachments`),
+    getBlob: (entityType, entityId) =>
+        server.getWithSilentNotFound<FBlobRow>(`${entityType}/${entityId}/blob`)
+};
 
 const froca = new FrocaImpl();
 

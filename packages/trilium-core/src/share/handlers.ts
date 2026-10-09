@@ -8,6 +8,7 @@ import SearchContext from "../services/search/search_context.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { readShareTemplate, renderNoteContent } from "./content_renderer.js";
+import { buildFrocaRows, getAttachmentRow, getBlobRow } from "./froca_payload.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { isShareReady } from "./share_provider.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
@@ -80,11 +81,16 @@ export function handleShareRequest(route: ShareRoute, req: ShareRequest): ShareR
 const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/notes/:noteId/download": downloadNote,
     "/share/api/notes/:noteId/view": viewNote,
+    "/share/api/notes/:noteId/attachments": getNoteAttachments,
+    "/share/api/notes/:noteId/blob": getNoteBlob,
     "/share/api/notes/:noteId": getNote,
     "/share/api/notes": searchNotes,
     "/share/api/images/:noteId/:filename": getImage,
     "/share/api/attachments/:attachmentId/image/:filename": getAttachmentImage,
     "/share/api/attachments/:attachmentId/download": downloadAttachment,
+    "/share/api/attachments/:attachmentId/all": getSiblingAttachments,
+    "/share/api/attachments/:attachmentId/blob": getAttachmentBlob,
+    "/share/api/tree": loadTree,
     "/share/": getShareRoot,
     "/share/:shareId": getShareNote
 };
@@ -162,6 +168,41 @@ function getNote(req: ShareRequest): ShareReply {
     const note = checkNoteAccess(req.params.noteId ?? "", req);
 
     return jsonReply(200, note.getPojo(), noIndexHeaders(note));
+}
+
+/**
+ * The notes named by `?noteIds=` (comma-separated), as the rows the client's froca loads, so that an
+ * app view on a shared page reads notes the page did not embed. Notes the caller cannot access are
+ * left out.
+ */
+function loadTree(req: ShareRequest): ShareReply {
+    const noteIds = String(req.query.noteIds ?? "").split(",").filter(Boolean);
+    const canAccess = (note: SNote) => hasCredentialAccess(note, req);
+    const notes = noteIds.flatMap((noteId) => {
+        const note = shaca.getNote(noteId);
+        return note ? [ note ] : [];
+    });
+    return jsonReply(200, buildFrocaRows(notes, canAccess));
+}
+
+function getNoteAttachments(req: ShareRequest): ShareReply {
+    const note = checkNoteContentAccess(req.params.noteId ?? "", req);
+    return jsonReply(200, note.getAttachments().map(getAttachmentRow));
+}
+
+function getNoteBlob(req: ShareRequest): ShareReply {
+    const note = checkNoteContentAccess(req.params.noteId ?? "", req);
+    return jsonReply(200, getBlobRow(note));
+}
+
+function getSiblingAttachments(req: ShareRequest): ShareReply {
+    const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
+    return jsonReply(200, attachment.note.getAttachments().map(getAttachmentRow));
+}
+
+function getAttachmentBlob(req: ShareRequest): ShareReply {
+    const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
+    return jsonReply(200, getBlobRow(attachment));
 }
 
 function downloadNote(req: ShareRequest): ShareReply {

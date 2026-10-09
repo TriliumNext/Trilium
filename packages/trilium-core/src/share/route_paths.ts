@@ -9,12 +9,17 @@
 export const SHARE_ROUTE_PATHS = [
     "/share/api/notes/:noteId/download",
     "/share/api/notes/:noteId/view",
+    "/share/api/notes/:noteId/attachments",
+    "/share/api/notes/:noteId/blob",
     "/share/api/notes/:noteId",
     "/share/api/notes",
     // :filename is not used by trilium, but instead used for "save as" to assign a human-readable filename
     "/share/api/images/:noteId/:filename",
     "/share/api/attachments/:attachmentId/image/:filename",
     "/share/api/attachments/:attachmentId/download",
+    "/share/api/attachments/:attachmentId/all",
+    "/share/api/attachments/:attachmentId/blob",
+    "/share/api/tree",
     "/share/",
     "/share/:shareId"
 ] as const;

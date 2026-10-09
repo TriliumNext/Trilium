@@ -10,6 +10,7 @@ import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_uti
 import { render } from "preact";
 
 import type { FrocaPayload } from "./calendar_view.js";
+import { createShareFrocaSource } from "./share_froca_source.js";
 
 interface GeoMapPayload extends FrocaPayload {
     options: Record<string, OptionValue | null>;
@@ -17,9 +18,10 @@ interface GeoMapPayload extends FrocaPayload {
 }
 
 /**
- * Loads the map's notes into froca and the display options into `options`, then mounts the app's
- * `GeoView` over them, under a component of its own as the app mounts every view. A `#readOnly` label added to the collection's note turns off every editing
- * control the view has.
+ * Loads the map's notes into froca, which reads any other note from the share, and the display
+ * options into `options`, then mounts the app's `GeoView` over them, under a component of its own
+ * as the app mounts every view. A `#readOnly` label added to the collection's note turns off every
+ * editing control the view has.
  */
 export default function mountGeoMap(container: HTMLElement, payload: GeoMapPayload) {
     const { options: optionValues, links, viewConfig, ...rows } = payload;
@@ -27,6 +29,7 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
     const noteId = container.dataset.noteId ?? "";
+    froca.setSource(createShareFrocaSource(links));
     froca.addResp({
         ...rows,
         attributes: [ ...rows.attributes, {
