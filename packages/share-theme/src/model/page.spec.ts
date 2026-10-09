@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getHtmlSnippets, getPageHead, getSiteLogo, getTableOfContents, type PageHeading, type ShareNote
+    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo, getTableOfContents, type PageHeading,
+    type ShareNote
 } from "./page.js";
 
 describe("getPageHead", () => {
@@ -134,6 +135,44 @@ describe("getTableOfContents", () => {
     });
 });
 
+describe("getPrevNextLinks", () => {
+    // share root ─┬─ elsewhere ── a2 (clone, first parent)
+    //             ├─ site ─┬─ a ─┬─ a1
+    //             │        │     └─ a2
+    //             │        ├─ b
+    //             │        └─ hidden (hidden from the tree) ── h1
+    //             └─ lonely (a site without pages)
+    const shareRoot = fakeNote({ noteId: "shareRoot" });
+    const [ elsewhere, site, lonely ] = [ "elsewhere", "site", "lonely" ]
+        .map((noteId) => addChild(shareRoot, fakeNote({ noteId })));
+    const a = addChild(site, fakeNote({ noteId: "a" }));
+    const a1 = addChild(a, fakeNote({ noteId: "a1" }));
+    const a2 = addChild(elsewhere, fakeNote({ noteId: "a2" }));
+    addChild(a, a2);
+    const b = addChild(site, fakeNote({ noteId: "b" }));
+    const hidden = addChild(site, fakeNote({ noteId: "hidden" }), true);
+    const h1 = addChild(hidden, fakeNote({ noteId: "h1" }));
+    const links = (note: ShareNote, siteRoot = site) => {
+        const { previous, next } = getPrevNextLinks(note, siteRoot);
+        return [ previous?.title ?? null, next?.title ?? null ];
+    };
+
+    it("walks the site's pages in tree order, inside the site", () => {
+        expect(links(site)).toStrictEqual([ null, "a" ]);
+        expect(links(a)).toStrictEqual([ "site", "a1" ]);
+        expect(links(a1)).toStrictEqual([ "a", "a2" ]);
+        expect(links(a2)).toStrictEqual([ "a1", "b" ]);
+        expect(links(b)).toStrictEqual([ "a2", null ]);
+        expect(getPrevNextLinks(a, site).next).toStrictEqual({ title: "a1", href: "./a1-alias" });
+    });
+
+    it("gives no links to a note hidden from the tree, nor past a site without pages", () => {
+        expect(links(hidden)).toStrictEqual([ null, null ]);
+        expect(links(h1)).toStrictEqual([ "hidden", null ]);
+        expect(links(lonely, lonely)).toStrictEqual([ null, null ]);
+    });
+});
+
 interface FakeNoteOptions {
     noteId: string;
     title?: string;
@@ -143,10 +182,16 @@ interface FakeNoteOptions {
     content?: string;
 }
 
-function fakeNote(options: FakeNoteOptions): ShareNote {
+function fakeNote(options: FakeNoteOptions): FakeNote {
     const labels = options.labels ?? {};
     const relations = options.relations ?? {};
+    const parents: ShareNote[] = [];
+    const children: { note: ShareNote; hidden: boolean }[] = [];
     return {
+        parents,
+        children,
+        getParentNotes: () => parents,
+        getVisibleChildNotes: () => children.filter((child) => !child.hidden).map((child) => child.note),
         noteId: options.noteId,
         shareId: `${options.noteId}-alias`,
         title: options.title ?? options.noteId,
@@ -158,4 +203,15 @@ function fakeNote(options: FakeNoteOptions): ShareNote {
             .map((targetNote) => ({ targetNote })),
         getContent: () => options.content ?? ""
     };
+}
+
+interface FakeNote extends ShareNote {
+    parents: ShareNote[];
+    children: { note: ShareNote; hidden: boolean }[];
+}
+
+function addChild(parent: FakeNote, child: FakeNote, hidden = false) {
+    parent.children.push({ note: child, hidden });
+    child.parents.push(parent);
+    return child;
 }

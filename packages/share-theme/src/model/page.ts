@@ -14,6 +14,14 @@ export interface ShareNote {
     hasRelation(name: string): boolean;
     getRelations(name: string): { targetNote?: ShareNote | null }[];
     getContent(): string | Uint8Array | null | undefined;
+    getParentNotes(): ShareNote[];
+    getVisibleChildNotes(): ShareNote[];
+}
+
+/** A link to another page of the site. */
+export interface PageLink {
+    title: string;
+    href: string;
 }
 
 /** What goes into the `<head>` of a shared page, besides the stylesheets and scripts. */
@@ -159,4 +167,79 @@ export function getTableOfContents(headings: PageHeading[]): TableOfContentsEntr
         open.push(entry);
     }
     return toc;
+}
+
+/**
+ * Returns the pages before and after `note` when the site starting at `siteRoot` is read in tree
+ * order: a page, then its children, then its next sibling. A note in several places follows the
+ * first parent inside the site. A note hidden from the tree has neither link.
+ */
+export function getPrevNextLinks(note: ShareNote, siteRoot: ShareNote) {
+    const previous = getPreviousPage(note, siteRoot);
+    const next = getNextPage(note, siteRoot);
+    return {
+        previous: previous && toPageLink(previous),
+        next: next && toPageLink(next)
+    };
+}
+
+function getPreviousPage(note: ShareNote, siteRoot: ShareNote) {
+    const position = getSitePosition(note, siteRoot);
+    if (!position) {
+        return null;
+    }
+    if (position.index === 0) {
+        return position.parent;
+    }
+
+    let previous = position.siblings[position.index - 1];
+    for (let children = previous.getVisibleChildNotes(); children.length;
+        children = previous.getVisibleChildNotes()) {
+        previous = children[children.length - 1];
+    }
+    return previous;
+}
+
+function getNextPage(note: ShareNote, siteRoot: ShareNote) {
+    const notePosition = getSitePosition(note, siteRoot);
+    if (!notePosition && note.noteId !== siteRoot.noteId) {
+        return null;
+    }
+    const firstChild = note.getVisibleChildNotes()[0];
+    if (firstChild) {
+        return firstChild;
+    }
+
+    for (let position = notePosition; position;
+        position = getSitePosition(position.parent, siteRoot)) {
+        const nextSibling = position.siblings[position.index + 1];
+        if (nextSibling) {
+            return nextSibling;
+        }
+    }
+    return null;
+}
+
+/**
+ * Returns where `note` stands among the visible children of its first parent inside the site, or
+ * `null` for the site root and for a note outside the site or hidden from the tree.
+ */
+function getSitePosition(note: ShareNote, siteRoot: ShareNote) {
+    if (note.noteId === siteRoot.noteId) {
+        return null;
+    }
+
+    const parent = note.getParentNotes().find((candidate) => isInSite(candidate, siteRoot));
+    const siblings = parent?.getVisibleChildNotes() ?? [];
+    const index = siblings.findIndex((sibling) => sibling.noteId === note.noteId);
+    return parent && index !== -1 ? { parent, siblings, index } : null;
+}
+
+function isInSite(note: ShareNote, siteRoot: ShareNote): boolean {
+    return note.noteId === siteRoot.noteId
+        || note.getParentNotes().some((parent) => isInSite(parent, siteRoot));
+}
+
+function toPageLink(note: ShareNote): PageLink {
+    return { title: note.title, href: `./${note.shareId}` };
 }

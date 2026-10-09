@@ -8,7 +8,7 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getHtmlSnippets, getPageHead, getSiteLogo, getTableOfContents, type PageHeading
+    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo, getTableOfContents, type PageHeading
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -231,6 +231,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo: getSiteLogo(siteRoot, sanitize.sanitizeUrl),
+        prevNext: getPrevNextLinks(note, siteRoot),
         ...renderArgs,
     };
 

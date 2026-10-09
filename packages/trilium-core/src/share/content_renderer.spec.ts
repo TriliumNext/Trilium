@@ -1,5 +1,7 @@
 import { trimIndentation } from "@triliumnext/commons";
-import { getHtmlSnippets, getPageHead, getSiteLogo } from "@triliumnext/share-theme/model/page";
+import {
+    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
+} from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
 import { describe, expect, it, vi } from "vitest";
@@ -317,6 +319,26 @@ describe("content_renderer", () => {
             expect(toc?.querySelectorAll(":scope > li > a").map((link) => link.text.trim()))
                 .toStrictEqual([ "Plain" ]);
             expect(toc?.querySelector("li li a")?.getAttribute("href")).toBe("#referenced");
+        });
+
+        it("links a page to the pages before and after it in the site", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "navSite",
+                    title: "Site",
+                    children: [
+                        { id: "navFirst", title: "First", content: "<p>1</p>" },
+                        { id: "navSecond", title: "Second", content: "<p>2</p>" }
+                    ]
+                }]
+            });
+
+            const page = parse(String(renderNoteContent(
+                shareRootNote.getChildNotes()[0].getChildNotes()[0])));
+
+            expect(page.querySelector(".navigation .previous")?.getAttribute("href")).toBe("./navSite");
+            expect(page.querySelector(".navigation .next")?.text).toBe("Second");
         });
 
         it("leaves an include-note section untouched when the referenced note is missing", () => {
@@ -1135,6 +1157,7 @@ describe("content_renderer", () => {
                 head: getPageHead(note, note),
                 snippets: getHtmlSnippets(note),
                 logo: getSiteLogo(note, sanitize.sanitizeUrl),
+                prevNext: getPrevNextLinks(note, note),
                 headings: [],
                 toc: []
             }, {
