@@ -1,6 +1,6 @@
 import {
     BlockButtonView, ClipboardObserver, DomEmitterMixin, DragDrop, env, IconDragIndicator,
-    type ModelElement, ModelLiveRange, type ModelRange, Plugin, Rect
+    type Model, type ModelElement, ModelLiveRange, type ModelRange, Plugin, Rect
 } from "ckeditor5";
 
 /**
@@ -179,10 +179,10 @@ export default class BlockDragHandle extends Plugin {
             return;
         }
 
-        const range = model.createRange(
+        const range = widenToWholeContainers(model, model.createRange(
             model.createPositionBefore(firstBlock),
             model.createPositionAfter(lastBlock)
-        );
+        ));
         model.change((writer) => writer.setSelection(range));
 
         this.isDragging = true;
@@ -237,6 +237,30 @@ interface BlockTarget {
 /** The block that the handle drags for `block`: the whole collapsible for its title. */
 function getDraggedBlock(block: ModelElement) {
     return block.is("element", "summary") ? block.parent as ModelElement : block;
+}
+
+/**
+ * Widens `range` over each container whose content it covers whole, such as an admonition or a
+ * block quote, so that the drag moves the container instead of leaving it empty. Stops at limit
+ * elements, such as table cells and the root.
+ */
+function widenToWholeContainers(model: Model, range: ModelRange) {
+    for (;;) {
+        const { start, end } = range;
+        const container = [ start.parent, end.parent ].find((parent): parent is ModelElement => (
+            parent.is("element")
+            && !model.schema.isLimit(parent)
+            && range.containsRange(model.createRangeIn(parent), true)
+        ));
+        if (!container) {
+            return range;
+        }
+
+        range = model.createRange(
+            start.parent === container ? model.createPositionBefore(container) : start,
+            end.parent === container ? model.createPositionAfter(container) : end
+        );
+    }
 }
 
 /**

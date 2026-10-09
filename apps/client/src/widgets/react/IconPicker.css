@@ -21,6 +21,9 @@
  * leaves room for the search row above the grid, the panel's padding, and the toggle.
  */
 .icon-picker .icon-list {
+    --scroll-fade-top: 20px;
+    /* Added to the width set in IconPicker.tsx, so the inset cells do not overflow sideways. */
+    --icon-list-inset: 6px;
     height: clamp(12rem, 100vh - 8rem, 500px);
     overflow: auto;
 }
@@ -31,14 +34,18 @@
     cursor: pointer;
     border: 1px solid transparent;
     font-size: 180%;
+    /* Keeps the first row clear of the `.scroll-edge-fade` mask while the grid is at the top. */
+    top: var(--scroll-fade-top);
+    /* The cells carry an inline `left`, so a margin is what moves them off the edge. */
+    margin-inline-start: var(--icon-list-inset);
 }
 
 .icon-picker .icon-list span:hover {
-    border: 1px solid var(--main-border-color);
+    border: 1px solid var(--hover-item-border-color);
 }
 
 .icon-picker.compact .filter-row {
-    padding: 6px;
+    padding: 6px 6px 0;
     gap: 0.5em;
     font-size: 0.85em;
 }
@@ -49,6 +56,10 @@
 }
 
 /* The glyph, its padding and its border have to stay inside `COMPACT_ICON_SIZE` in IconPicker.tsx. */
+.icon-picker.compact .icon-list {
+    --scroll-fade-top: 12px;
+}
+
 .icon-picker.compact .icon-list span {
     padding: 6px;
     font-size: 24px;

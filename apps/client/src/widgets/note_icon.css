@@ -45,7 +45,13 @@ div.note-icon-widget {
     border-radius: 10px;
     border-width: 2px;
     box-shadow: 10px 10px 93px -25px black;
-    padding: 10px 15px 10px 15px !important;
+    --padding: 0;
+    padding: 0 !important;
+    overflow: clip;
+
+    .filter-row {
+        padding: 10px 15px 0;
+    }
 }
 
 .note-icon-widget button.note-icon {
@@ -106,6 +112,8 @@ body.mobile .modal.icon-switcher {
     }
 
     .icon-list {
+        --scroll-fade-top: 0px;
+        --icon-list-inset: 0px;
         margin: auto;
         flex-grow: 1;
         height: 100%;

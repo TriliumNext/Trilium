@@ -151,6 +151,16 @@ body.background-effects .ck.ck-balloon-panel.ck-dropdown-menu__nested-menu__pane
     backdrop-filter: none;
 }
 
+/* Inline icon picker: the icon grid scrolls, so it runs to the balloon's edges. */
+:root .ck.ck-balloon-panel:has(.icon-picker-balloon) {
+    --ck-editor-popup-padding: 0px;
+}
+
+.ck.ck-balloon-panel .icon-picker-balloon {
+    border-radius: calc(var(--dropdown-border-radius) - 1px);
+    overflow: clip;
+}
+
 /* Submenu arrow */
 :root .ck.ck-button.ck-dropdown-menu-list__nested-menu__button > .ck-dropdown-menu-list__nested-menu__button__arrow {
     color: var(--menu-item-arrow-color);

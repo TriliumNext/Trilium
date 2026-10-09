@@ -1327,7 +1327,7 @@ body.desktop .title-row {
  */
 
 .note-icon-widget .icon-list span {
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .note-icon-widget .icon-list span:hover {

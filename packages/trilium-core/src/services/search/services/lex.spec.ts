@@ -184,6 +184,18 @@ describe("Lexer expression", () => {
         expect(lex(`hello fulltext note.labels.capital = Prague`).expressionTokens.map((t) => t.token)).toEqual(["note", ".", "labels", ".", "capital", "=", "prague"]);
     });
 
+    it("an AND joining the fulltext to the expression is not a fulltext word", () => {
+        const lexed = lex(`"Trilium" AND note.noteId != abc`);
+        expect(lexed.fulltextTokens.map((t) => t.token)).toEqual(["trilium"]);
+        expect(lexed.fulltextQuery).toBe(lex(`"Trilium"`).fulltextQuery);
+        expect(lexed.expressionTokens.map((t) => t.token)).toEqual(["note", ".", "noteid", "!=", "abc"]);
+
+        expect(lex(`rings and #book`).fulltextTokens.map((t) => t.token)).toEqual(["rings"]);
+        // Quoted, or not followed by an expression, "and" is searched for.
+        expect(lex(`rings "and" #book`).fulltextTokens.map((t) => t.token)).toEqual(["rings", "and"]);
+        expect(lex(`rock and roll`).fulltextTokens.map((t) => t.token)).toEqual(["rock", "and", "roll"]);
+    });
+
     it("note. prefix in quotes will note start expression", () => {
         expect(lex(`hello fulltext "note.txt"`).expressionTokens.map((t) => t.token)).toEqual([]);
 

@@ -1,11 +1,12 @@
 import {
-    _getModelData as getModelData, _setModelData as setModelData, type ClassicEditor, DragDrop,
-    env, Essentials, Paragraph, Table, TableCaption
+    _getModelData as getModelData, _setModelData as setModelData, BlockQuote, type ClassicEditor,
+    DragDrop, env, Essentials, Paragraph, Table, TableCaption
 } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 import { createTestEditor } from "../../test/editor-kit.js";
+import Admonition from "./admonition/admonition.js";
 import BlockDragHandle from "./block_drag_handle.js";
 import Collapsible from "./collapsible/collapsible.js";
 
@@ -127,6 +128,47 @@ describe("BlockDragHandle", () => {
         }
     });
 
+    it("drags whole containers when the selection covers all their content", async () => {
+        const note = (content: string) => `<aside admonitionType="note">${content}</aside>`;
+        const one = "<paragraph>one</paragraph>";
+        const after = "<paragraph>after</paragraph>";
+        const cases = [ {
+            modelData: note("<paragraph>on[]e</paragraph>"),
+            dropped: after + note(one)
+        }, {
+            modelData: note("<paragraph>on[e</paragraph><paragraph>tw]o</paragraph>"),
+            dropped: after + note(`${one}<paragraph>two</paragraph>`)
+        }, {
+            modelData: note("<paragraph>on[]e</paragraph><paragraph>two</paragraph>"),
+            dropped: note("<paragraph>two</paragraph>") + after + one
+        }, {
+            modelData: `<blockQuote>${note("<paragraph>on[]e</paragraph>")}</blockQuote>`,
+            dropped: `${after}<blockQuote>${note(one)}</blockQuote>`
+        }, {
+            modelData: `${note("<paragraph>on[e</paragraph>")}<paragraph>tw]o</paragraph>`,
+            dropped: `${after}${note(one)}<paragraph>two</paragraph>`
+        }, {
+            modelData: "<table><tableRow><tableCell><paragraph>ce[]ll</paragraph></tableCell>"
+                + "</tableRow></table>",
+            dropped: "<table><tableRow><tableCell><paragraph></paragraph></tableCell>"
+                + `</tableRow></table>${after}<paragraph>cell</paragraph>`
+        } ];
+        for (const { modelData, dropped } of cases) {
+            const { editor, button } = await createEditor(modelData + after);
+            // The editors of the earlier cases stay on the page until the test ends.
+            editor.ui.view.element?.scrollIntoView();
+            const editable = getEditable(editor);
+            const lastBlockRect = getBlock(editor, editable.childElementCount - 1)
+                .getBoundingClientRect();
+
+            drop(button, startDrag(button), {
+                clientX: editable.getBoundingClientRect().left - 50,
+                clientY: lastBlockRect.bottom - 2
+            });
+            expect(getModelData(editor.model, { withoutSelection: true })).toBe(dropped);
+        }
+    });
+
     it("takes drops beside a narrow editor or far out in a wide margin", async () => {
         const layouts = [
             { width: "90px", margin: "0 100px", distance: 10 },
@@ -240,7 +282,10 @@ async function createEditor(
     config: Parameters<typeof createTestEditor>[1] = {}
 ) {
     const editor = await createTestEditor(
-        [ Essentials, Paragraph, Table, TableCaption, Collapsible, BlockDragHandle ],
+        [
+            Essentials, Paragraph, Table, TableCaption, BlockQuote, Admonition, Collapsible,
+            BlockDragHandle
+        ],
         config
     );
     editor.ui.view.element?.style.setProperty("margin", "0 100px");

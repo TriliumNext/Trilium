@@ -309,6 +309,13 @@ describe("searchCompletionAt", () => {
             // `@` is a name character to the lexer, so the names go on being offered.
             expect(complete("#foo@")).toMatchObject({ kind: "attributes", query: "foo@" });
         });
+
+        it("keeps a title with spaces in the query, up to the next attribute or bracket", () => {
+            expect(complete("@Lord of the ")).toEqual({ kind: "notes", from: 0, query: "Lord of the " });
+            expect(complete("#author = @J. R. R")).toEqual({ kind: "notes", from: 10, query: "J. R. R" });
+
+            expect(complete("@Lord of #bo")).toMatchObject({ kind: "attributes", query: "bo" });
+        });
     });
 });
 

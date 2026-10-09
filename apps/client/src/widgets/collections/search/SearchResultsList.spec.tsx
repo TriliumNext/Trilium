@@ -3,7 +3,7 @@
  * - {@link SearchResultCard}: renders title/icon/breadcrumb/snippet/badges from server details,
  *   the loading skeleton, the "snippet unavailable" fallback, and the bare-noteId link href.
  * - {@link SearchResultsToolbar}: the always-visible result count and the page-size selector.
- * - the pure {@link getBreadcrumbTitle} / {@link toPlainSearchTerms} helpers.
+ * - the pure {@link getBreadcrumbTitle} / {@link searchTermsFor} / {@link toPlainSearchTerms} helpers.
  *
  * The lazy page fetch + stale-response guard live in `useSearchResultDetails.spec.tsx`; this file
  * exercises the rendering that consumes those details.
@@ -24,7 +24,7 @@ import { calculateHash } from "../../../services/link";
 import server from "../../../services/server";
 import { buildNote, buildNotes } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import SearchResultCard, { getBreadcrumbTitle, toPlainSearchTerms } from "./SearchResultCard";
+import SearchResultCard, { getBreadcrumbTitle, searchTermsFor, toPlainSearchTerms } from "./SearchResultCard";
 import SearchResultsList, { SearchResultsToolbar } from "./SearchResultsList";
 
 function makeDetails(overrides: Partial<SearchResultDetails> = {}): SearchResultDetails {
@@ -221,5 +221,14 @@ describe("toPlainSearchTerms", () => {
         ).toEqual(["sync", "backup"]);
         expect(toPlainSearchTerms(null)).toEqual([]);
         expect(toPlainSearchTerms([])).toEqual([]);
+    });
+});
+
+describe("searchTermsFor", () => {
+    it("prefers the terms the note matched and falls back to the query's plain tokens", () => {
+        const tokens = [ "ktory", { token: "k.*", type: "regex" as const } ];
+        expect(searchTermsFor({ matchedTerms: [ "ktorý" ] }, tokens)).toEqual([ "ktorý" ]);
+        expect(searchTermsFor({ matchedTerms: [] }, tokens)).toEqual([ "ktory" ]);
+        expect(searchTermsFor(undefined, tokens)).toEqual([ "ktory" ]);
     });
 });

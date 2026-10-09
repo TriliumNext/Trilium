@@ -28,9 +28,7 @@ export default function SearchResultCard({ noteId, details, loading, highlighted
     const icon = note?.getIcon() ?? details?.icon ?? "bx bx-note";
     const breadcrumb = getBreadcrumbTitle(details?.notePathTitle);
 
-    // The words as the note spells them, so the find bar matches "ktorý" for the query "ktory".
-    const searchTerms = details?.matchedTerms?.length ? details.matchedTerms : toPlainSearchTerms(highlightedTokens);
-    const viewScope: ViewScope = { searchTerms };
+    const viewScope: ViewScope = { searchTerms: searchTermsFor(details, highlightedTokens) };
     const href = calculateHash({ notePath: noteId, viewScope });
 
     return (
@@ -74,6 +72,17 @@ export function getBreadcrumbTitle(notePathTitle: string | undefined): string {
     const parts = notePathTitle.split(" › ");
     parts.pop();
     return parts.join(" › ");
+}
+
+/**
+ * The terms the find bar looks for in a result opened from a search: the words as the note spells
+ * them, so it matches "ktorý" for the query "ktory", or the query's plain tokens without details.
+ */
+export function searchTermsFor(
+    details: Pick<SearchResultDetails, "matchedTerms"> | undefined,
+    highlightedTokens: (string | HighlightedTokenInfo)[] | null | undefined
+): string[] {
+    return details?.matchedTerms?.length ? details.matchedTerms : toPlainSearchTerms(highlightedTokens);
 }
 
 /** Plain tokens only (regex tokens can't round-trip as literal search terms). */
