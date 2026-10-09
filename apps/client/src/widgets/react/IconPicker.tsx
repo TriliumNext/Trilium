@@ -90,7 +90,7 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount, 
                 class="icon-list"
                 ref={iconListRef}
                 style={{
-                    width: `${columnCount * iconSize + 10}px`,
+                    width: `calc(${columnCount * iconSize + 10}px + var(--icon-list-inset))`,
                     // The CSS sets the height of the regular grid; the compact grid shows
                     // `COMPACT_ROWS` rows.
                     ...(compact && { height: `${COMPACT_ROWS * iconSize}px` })

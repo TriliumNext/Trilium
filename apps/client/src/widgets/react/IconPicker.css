@@ -22,6 +22,8 @@
  */
 .icon-picker .icon-list {
     --scroll-fade-top: 20px;
+    /* Added to the width set in IconPicker.tsx, so the inset cells do not overflow sideways. */
+    --icon-list-inset: 6px;
     height: clamp(12rem, 100vh - 8rem, 500px);
     overflow: auto;
 }
@@ -34,6 +36,8 @@
     font-size: 180%;
     /* Keeps the first row clear of the `.scroll-edge-fade` mask while the grid is at the top. */
     top: var(--scroll-fade-top);
+    /* The cells carry an inline `left`, so a margin is what moves them off the edge. */
+    margin-inline-start: var(--icon-list-inset);
 }
 
 .icon-picker .icon-list span:hover {

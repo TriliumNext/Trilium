@@ -113,6 +113,7 @@ body.mobile .modal.icon-switcher {
 
     .icon-list {
         --scroll-fade-top: 0px;
+        --icon-list-inset: 0px;
         margin: auto;
         flex-grow: 1;
         height: 100%;
