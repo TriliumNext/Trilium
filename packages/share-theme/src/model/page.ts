@@ -237,29 +237,6 @@ const CHILD_LIST_NOTE_TYPES = [ "book", "text", "code" ];
 /** The most children of a child its card lists, as many as the app's card does. */
 const CHILD_PREVIEW_LENGTH = 10;
 
-/** The most characters of a child's text its excerpt shows. */
-const EXCERPT_LENGTH = 160;
-
-/**
- * Shortens `text` to an excerpt of at most {@link EXCERPT_LENGTH} characters: whole sentences when
- * they fill at least a third of it, else whole words followed by an ellipsis.
- */
-function toExcerpt(text: string) {
-    const plain = text.replace(/\s+/g, " ").trim();
-    if (plain.length <= EXCERPT_LENGTH) {
-        return plain || null;
-    }
-
-    const head = plain.slice(0, EXCERPT_LENGTH);
-    const sentenceEnd = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
-    if (sentenceEnd >= EXCERPT_LENGTH / 3) {
-        return head.slice(0, sentenceEnd + 1);
-    }
-
-    const wordEnd = head.lastIndexOf(" ");
-    return `${wordEnd > 0 ? head.slice(0, wordEnd) : head}…`;
-}
-
 /** Resolves `address` against `base` unless it is already absolute or `base` is not a URL. */
 function toAbsoluteUrl(address: string, base: string) {
     if (URL.canParse(address) || !URL.canParse(base)) {
@@ -445,6 +422,29 @@ export function getChildLinks(note: ShareNote, options: ChildLinksOptions): Chil
             }))
         };
     });
+}
+
+/** The most characters of a child's text its excerpt shows. */
+const EXCERPT_LENGTH = 160;
+
+/**
+ * Shortens `text` to an excerpt of at most {@link EXCERPT_LENGTH} characters: whole sentences when
+ * they fill at least a third of it, else whole words followed by an ellipsis.
+ */
+function toExcerpt(text: string) {
+    const plain = text.replace(/\s+/g, " ").trim();
+    if (plain.length <= EXCERPT_LENGTH) {
+        return plain || null;
+    }
+
+    const head = plain.slice(0, EXCERPT_LENGTH);
+    const sentenceEnd = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
+    if (sentenceEnd >= EXCERPT_LENGTH / 3) {
+        return head.slice(0, sentenceEnd + 1);
+    }
+
+    const wordEnd = head.lastIndexOf(" ");
+    return `${wordEnd > 0 ? head.slice(0, wordEnd) : head}…`;
 }
 
 /**
