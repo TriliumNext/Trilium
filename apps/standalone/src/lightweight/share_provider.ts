@@ -1,6 +1,7 @@
 import { getSql } from "@triliumnext/core";
 import { initShare } from "@triliumnext/core/src/share/index.js";
 import template404 from "@triliumnext/share-theme/templates/404.ejs?raw";
+import templateBootScript from "@triliumnext/share-theme/templates/boot_script.ejs?raw";
 import templatePage from "@triliumnext/share-theme/templates/page.ejs?raw";
 import templatePrevNext from "@triliumnext/share-theme/templates/prev_next.ejs?raw";
 import templateTocItem from "@triliumnext/share-theme/templates/toc_item.ejs?raw";
@@ -12,6 +13,7 @@ import templateTreeItem from "@triliumnext/share-theme/templates/tree_item.ejs?r
  */
 const TEMPLATES: Record<string, string> = {
     "404": template404,
+    boot_script: templateBootScript,
     page: templatePage,
     prev_next: templatePrevNext,
     toc_item: templateTocItem,

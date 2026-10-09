@@ -1,0 +1,20 @@
+<script>
+    // Load dark/light theme as soon as possible to avoid color flashes.
+    let theme = localStorage.getItem("theme");
+    if (!theme) {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+    }
+    document.documentElement.classList.add(`theme-${theme}`);
+
+    window.glob = {
+        isStatic: <%= !!isStatic %>,
+        theme
+    };
+
+    (function() {
+        const leftCollapsed = localStorage.getItem("left-pane-collapsed") === "true";
+        const tocCollapsed = localStorage.getItem("toc-pane-collapsed") === "true";
+        if (leftCollapsed) document.documentElement.classList.add("left-pane-collapsed");
+        if (tocCollapsed) document.documentElement.classList.add("toc-pane-collapsed");
+    })();
+</script>
