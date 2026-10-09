@@ -40,6 +40,7 @@ export interface ShareLink {
 
 /** An entry of the navigation tree, with the entries below it. */
 export interface NavigationItem extends ShareLink {
+    noteId: string;
     title: string;
     type: string;
     icon: string;
@@ -375,6 +376,7 @@ export function getNavigationTree(
     const expandedIds = new Set([ activeNote.noteId, ...ancestorIds ]);
     const toItem = (note: ShareNote): NavigationItem => ({
         ...getShareLink(note, options.sanitizeUrl),
+        noteId: note.noteId,
         title: note.title,
         type: note.type,
         icon: note.getIcon(options.iconPackPrefixes),

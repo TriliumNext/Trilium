@@ -1,6 +1,6 @@
 <ul>
     <% for (const item of items) { %>
-        <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>">
+        <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>" data-note-id="<%= item.noteId %>">
             <div class="tree-item-row<%= item.isActive ? " active" : "" %>">
                 <% if (item.children.length) { %><button type="button" class="collapse-button" aria-expanded="<%= item.isExpanded %>" aria-label="<%= t("share_theme.subpages-of", { title: item.title }) %>"><span class="tn-icon bx bx-chevron-down" aria-hidden="true"></span></button><% } %>
                 <a class="type-<%= item.type %> no-arrow<%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>

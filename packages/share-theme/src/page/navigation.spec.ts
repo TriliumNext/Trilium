@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import setupExpanders, { setupTreeScroll } from "./navigation.js";
+import setupExpanders, { setupTreeState } from "./navigation.js";
 
 describe("setupExpanders", () => {
     afterEach(() => {
@@ -70,7 +70,7 @@ describe("setupExpanders", () => {
     });
 });
 
-describe("setupTreeScroll", () => {
+describe("setupTreeState", () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         document.body.innerHTML = "";
@@ -80,45 +80,73 @@ describe("setupTreeScroll", () => {
 
     it("restores the pane's position on another page of the same site only", () => {
         renderPane("site1", { activeTop: 120 });
-        sessionStorage.setItem("share-tree-scroll", JSON.stringify({ siteId: "site1", top: 80 }));
-        setupTreeScroll();
+        sessionStorage.setItem("share-tree-state", JSON.stringify({ siteId: "site1", top: 80 }));
+        setupTreeState();
         expect(pane().scrollTop).toBe(80);
 
         pane().scrollTop = 30;
         window.dispatchEvent(new Event("pagehide"));
-        expect(JSON.parse(sessionStorage.getItem("share-tree-scroll") ?? "null"))
-            .toStrictEqual({ siteId: "site1", top: 30 });
+        expect(JSON.parse(sessionStorage.getItem("share-tree-state") ?? "null"))
+            .toStrictEqual({ siteId: "site1", top: 30, expanded: [] });
 
         renderPane("site2", { activeTop: 120 });
-        setupTreeScroll();
+        setupTreeState();
         expect(pane().scrollTop).toBe(0);
+    });
+
+    it("remembers the expanded pages of a site, also on pages that expand others", () => {
+        renderPane("site1", { menu: TREE });
+        setupExpanders();
+        setupTreeState();
+        toggle("section").click();
+        window.dispatchEvent(new Event("pagehide"));
+        expect(JSON.parse(sessionStorage.getItem("share-tree-state") ?? "null").expanded)
+            .toStrictEqual([ "chapter", "section" ]);
+
+        const collapsedChapter = TREE.replace(`"submenu-item expanded" data-note-id="chapter"`,
+            `"submenu-item" data-note-id="chapter"`);
+        renderPane("site1", { menu: collapsedChapter });
+        setupTreeState();
+        expect(expandedIds()).toStrictEqual([ "chapter", "section" ]);
+        expect([ "chapter", "section" ].map((id) => toggle(id).getAttribute("aria-expanded")))
+            .toStrictEqual([ "true", "true" ]);
+
+        renderPane("site2", { menu: TREE });
+        setupTreeState();
+        expect(expandedIds()).toStrictEqual([ "chapter" ]);
+
+        const malformed = { siteId: "site1", top: 0, expanded: "x" };
+        sessionStorage.setItem("share-tree-state", JSON.stringify(malformed));
+        renderPane("site1", { menu: TREE });
+        setupTreeState();
+        expect(expandedIds()).toStrictEqual([ "chapter" ]);
     });
 
     it("centers the current note when it is out of view, and leaves it when it is in view", () => {
         renderPane("site1", { activeTop: 700 });
-        setupTreeScroll();
+        setupTreeState();
         // 700 - 0 - (400 - 32) / 2
         expect(pane().scrollTop).toBe(516);
 
         renderPane("site1", { activeTop: 380 });
-        setupTreeScroll();
+        setupTreeState();
         expect(pane().scrollTop).toBe(196);
 
-        sessionStorage.setItem("share-tree-scroll", JSON.stringify({ siteId: "site1", top: 300 }));
+        sessionStorage.setItem("share-tree-state", JSON.stringify({ siteId: "site1", top: 300 }));
         renderPane("site1", { activeTop: 250 });
-        setupTreeScroll();
+        setupTreeState();
         expect(pane().scrollTop).toBe(66);
         sessionStorage.clear();
 
         renderPane("site1", { activeTop: 368 });
-        setupTreeScroll();
+        setupTreeState();
         expect(pane().scrollTop).toBe(0);
     });
 
     it("ignores a malformed position and works with blocked storage or without a pane", () => {
         renderPane("site1");
-        sessionStorage.setItem("share-tree-scroll", "{");
-        setupTreeScroll();
+        sessionStorage.setItem("share-tree-state", "{");
+        setupTreeState();
         expect(pane().scrollTop).toBe(0);
 
         const blocked = () => {
@@ -126,16 +154,16 @@ describe("setupTreeScroll", () => {
         };
         vi.stubGlobal("sessionStorage", { getItem: blocked, setItem: blocked });
         renderPane("site1");
-        setupTreeScroll();
+        setupTreeState();
         expect(() => window.dispatchEvent(new Event("pagehide"))).not.toThrow();
 
         vi.unstubAllGlobals();
         renderPane("site1");
         delete document.body.dataset.ancestorNoteId;
-        expect(() => setupTreeScroll()).not.toThrow();
+        expect(() => setupTreeState()).not.toThrow();
 
         document.body.innerHTML = "";
-        expect(() => setupTreeScroll()).not.toThrow();
+        expect(() => setupTreeState()).not.toThrow();
     });
 });
 
@@ -143,16 +171,14 @@ describe("setupTreeScroll", () => {
  * Renders a 400px tall pane at the top of the window, with a current note of 32px at `activeTop`
  * when it is given; happy-dom has no layout, so the geometry is set by hand.
  */
-function renderPane(siteId: string, { activeTop }: { activeTop?: number } = {}) {
+function renderPane(siteId: string, options: { activeTop?: number; menu?: string } = {}) {
+    const { activeTop, menu = NOTE } = options;
     document.body.dataset.ancestorNoteId = siteId;
-    document.body.innerHTML = `
-        <div id="left-pane">
-            <nav id="menu"><ul><li><a class="active" href="./note">Note</a></li></ul></nav>
-        </div>`;
+    document.body.innerHTML = `<div id="left-pane"><nav id="menu">${menu}</nav></div>`;
     const paneEl = pane();
     Object.defineProperty(paneEl, "clientHeight", { value: 400 });
     paneEl.getBoundingClientRect = () => new DOMRect(0, 0, 200, 400);
-    const active = paneEl.querySelector("a");
+    const active = paneEl.querySelector<HTMLElement>("a.active");
     if (activeTop === undefined) {
         active?.remove();
     } else if (active) {
@@ -166,4 +192,47 @@ function pane() {
         throw new Error("The pane is missing.");
     }
     return paneEl;
+}
+
+const NOTE = `<ul><li><a class="active" href="./note">Note</a></li></ul>`;
+
+/** A chapter the server expanded, with a section inside it and a section of another chapter. */
+const TREE = `
+    <ul>
+        <li class="submenu-item expanded" data-note-id="chapter">
+            <div class="tree-item-row">
+                <button class="collapse-button" aria-expanded="true"></button>
+                <a href="./chapter">Chapter</a>
+            </div>
+            <ul>
+                <li class="submenu-item" data-note-id="section">
+                    <div class="tree-item-row">
+                        <button class="collapse-button" aria-expanded="false"></button>
+                        <a href="./section">Section</a>
+                    </div>
+                    <ul><li class="item" data-note-id="page"><a href="./page">Page</a></li></ul>
+                </li>
+            </ul>
+        </li>
+        <li class="submenu-item" data-note-id="other">
+            <div class="tree-item-row">
+                <button class="collapse-button" aria-expanded="false"></button>
+                <a href="./other">Other</a>
+            </div>
+            <ul><li class="item" data-note-id="leaf"><a href="./leaf">Leaf</a></li></ul>
+        </li>
+    </ul>`;
+
+function toggle(noteId: string) {
+    const selector = `li[data-note-id="${noteId}"] .collapse-button`;
+    const button = document.querySelector<HTMLButtonElement>(selector);
+    if (!button) {
+        throw new Error(`The tree has no button for ${noteId}.`);
+    }
+    return button;
+}
+
+function expandedIds() {
+    return [ ...document.querySelectorAll<HTMLElement>("#menu li.expanded") ]
+        .map((li) => li.dataset.noteId);
 }

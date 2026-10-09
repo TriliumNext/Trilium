@@ -49,22 +49,30 @@ export default function setupExpanders() {
     }
 }
 
-const TREE_SCROLL_KEY = "share-tree-scroll";
+const TREE_STATE_KEY = "share-tree-state";
+
+/** What the navigation pane keeps from one page of a site to the next. */
+interface TreeState {
+    siteId: string | undefined;
+    top: number;
+    expanded: string[];
+}
 
 /**
- * Keeps the navigation pane's scroll position across the pages of a site, which are separate
- * documents, and brings the current note into view when that position would hide it. The position
- * is kept per site, keyed by `data-ancestor-note-id`, in `sessionStorage`.
+ * Keeps the navigation pane's expanded pages and scroll position across the pages of a site, which
+ * are separate documents, and brings the current note into view when that position would hide it.
+ * The state is kept per site, keyed by `data-ancestor-note-id`, in `sessionStorage`.
  */
-export function setupTreeScroll() {
+export function setupTreeState() {
     const pane = document.getElementById("left-pane");
     if (!pane) {
         return;
     }
     const siteId = document.body.dataset.ancestorNoteId;
 
-    const saved = readTreeScroll();
+    const saved = readTreeState();
     if (saved && saved.siteId === siteId) {
+        expandItems(pane, saved.expanded);
         pane.scrollTop = saved.top;
     }
 
@@ -79,18 +87,33 @@ export function setupTreeScroll() {
     }
 
     window.addEventListener("pagehide", () => {
+        const expandedItems = pane.querySelectorAll<HTMLElement>("#menu li.expanded[data-note-id]");
+        const expanded = [ ...expandedItems ].map((item) => item.dataset.noteId);
+        const state = { siteId, top: pane.scrollTop, expanded };
         try {
-            const position = JSON.stringify({ siteId, top: pane.scrollTop });
-            sessionStorage.setItem(TREE_SCROLL_KEY, position);
+            sessionStorage.setItem(TREE_STATE_KEY, JSON.stringify(state));
         } catch {
-            // The next page then starts from the current note.
+            // The next page then starts from the server's expansion and the current note.
         }
     });
 }
 
-function readTreeScroll(): { siteId: string; top: number } | null {
+/** Expands the entries of the notes in `noteIds`, every clone of each, without animating. */
+function expandItems(pane: HTMLElement, noteIds: string[]) {
+    const ids = new Set(noteIds);
+    for (const item of pane.querySelectorAll<HTMLElement>("#menu li.submenu-item[data-note-id]")) {
+        if (!item.dataset.noteId || !ids.has(item.dataset.noteId)) {
+            continue;
+        }
+        item.classList.add("expanded");
+        item.querySelector(":scope > * > .collapse-button")?.setAttribute("aria-expanded", "true");
+    }
+}
+
+function readTreeState(): TreeState | null {
     try {
-        return JSON.parse(sessionStorage.getItem(TREE_SCROLL_KEY) ?? "null");
+        const state = JSON.parse(sessionStorage.getItem(TREE_STATE_KEY) ?? "null");
+        return state && { ...state, expanded: Array.isArray(state.expanded) ? state.expanded : [] };
     } catch {
         return null;
     }

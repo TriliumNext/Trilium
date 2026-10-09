@@ -1260,6 +1260,8 @@ describe("content_renderer", () => {
             const toggleAttributes = [ "type", "aria-expanded", "aria-label" ]
                 .map((name) => toggles[0].getAttribute(name));
             expect(toggleAttributes).toStrictEqual([ "button", "true", "Subpages of Section" ]);
+            expect(menu?.querySelectorAll("li").map((item) => item.getAttribute("data-note-id")))
+                .toStrictEqual([ "treeSection", "treeShown", "treeExternal" ]);
             expect(menu?.querySelectorAll("li.expanded").map((item) => item.querySelector("a")?.text.trim()))
                 .toStrictEqual([ "Section", "Shown" ]);
         });
