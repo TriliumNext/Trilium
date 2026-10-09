@@ -17,13 +17,14 @@ A new block contains two tabs, named “Tab 1” and “Tab 2”. The title of t
 
 *   To show a tab, click its title or move the cursor into it.
 *   To move from a title into its panel, press <kbd>Enter</kbd>.
+*   The label of a tab can be formatted just like normal text, including support for <a class="reference-link" href="Insert%20buttons/Icons.md">Icons</a>.
 
 While the cursor is inside a tabs block, a toolbar appears above it with the following buttons:
 
-*   _Add tab_ inserts a tab after the current one and selects its title.
-*   _Remove tab_ removes the current tab. Removing the last tab removes the whole block.
-*   _Move tab left_ and _Move tab right_ change the order of the tabs.
-*   _Copy link to tab_ copies a link to the current tab, as described below.
+*   <span class="tn-icon cke cke-plus"></span> _(Add tab)_ inserts a tab after the current one and selects its title.
+*   <span class="tn-icon cke cke-remove"></span> _(Remove tab)_ removes the current tab. Removing the last tab removes the whole block.
+*   <span class="tn-icon cke cke-chevron-right bx-flip-horizontal"></span> _(Move tab left)_ and <span class="tn-icon cke cke-chevron-right"></span> (_Move tab right)_ change the order of the tabs.
+*   <span class="tn-icon cke cke-link"></span> _(Copy link to tab)_ copies a link to the current tab, as described below.
 
 The tab that is showing is not saved with the note: every tabs block opens on its first tab.
 
