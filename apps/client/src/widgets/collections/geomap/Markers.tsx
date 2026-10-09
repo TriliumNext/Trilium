@@ -391,9 +391,15 @@ function selectionPinSize(selectedNoteId: string | null): ExpressionSpecificatio
     return selectedNoteId ? [ "case", isSelected(selectedNoteId), SELECTED_PIN_SCALE, 1 ] : 1;
 }
 
-/** The selected pin sorted above its neighbours, higher keys being drawn later and so on top. */
-function selectionSortKey(selectedNoteId: string | null): ExpressionSpecification | number {
-    return selectedNoteId ? [ "case", isSelected(selectedNoteId), 1, 0 ] : 0;
+/**
+ * The selected pin sorted above its neighbours, higher keys being drawn later and so on top.
+ *
+ * An expression even when nothing is selected. A constant key built into the tiles makes MapLibre
+ * place none of their symbols once the key becomes an expression, so every marker fades out and
+ * back in until the tiles are rebuilt.
+ */
+function selectionSortKey(selectedNoteId: string | null): ExpressionSpecification {
+    return [ "case", isSelected(selectedNoteId), 1, 0 ];
 }
 
 /**

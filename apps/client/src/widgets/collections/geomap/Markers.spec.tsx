@@ -620,6 +620,10 @@ describe("Markers", () => {
             // The glow stands from the start, aimed at nothing: no note's id is the empty string.
             expect(map.layer(SELECTION_LAYER)?.filter).toEqual([ "==", [ "get", "id" ], "" ]);
             expect(map.layer(MARKER_LAYER)?.layout?.["icon-size"]).toBe(1);
+            // An expression even with nothing to sort, so selecting a marker never turns it from a
+            // constant into one (see selectionSortKey).
+            expect(map.layer(MARKER_LAYER)?.layout?.["symbol-sort-key"])
+                .toEqual([ "case", [ "==", [ "get", "id" ], "" ], 1, 0 ]);
             const layersBefore = map.calls.addLayer;
 
             // A marker is selected: everything is repointed rather than rebuilt.
@@ -640,6 +644,8 @@ describe("Markers", () => {
             await mount([ note ], map, parent, { isDarkTheme: true });
             expect(map.property(SELECTION_LAYER, "filter")).toEqual([ "==", [ "get", "id" ], "" ]);
             expect(map.property(MARKER_LAYER, "icon-size")).toBe(1);
+            expect(map.property(MARKER_LAYER, "symbol-sort-key"))
+                .toEqual([ "case", [ "==", [ "get", "id" ], "" ], 1, 0 ]);
         });
 
         /**
