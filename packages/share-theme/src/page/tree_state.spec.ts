@@ -86,6 +86,12 @@ describe("setupTreeState", () => {
         expect(expandedIds()).toStrictEqual([ "x", "c", "y", "c" ]);
         expect(toggle("y").getAttribute("aria-expanded")).toBe("true");
 
+        // A reload without another click keeps the clicked clone.
+        window.dispatchEvent(new Event("pagehide"));
+        renderPane("site1", { activeTop: 50, menu: CLONES });
+        setupTreeState();
+        expect(selected()).toStrictEqual([ "y/row", "y/link" ]);
+
         // The server's way to its own clone opens nothing above the clicked one that was closed.
         const fromY = { siteId: "site1", top: 0, expanded: [ "y" ], activePath: [ "y", "c" ] };
         sessionStorage.setItem("share-tree-state", JSON.stringify(fromY));

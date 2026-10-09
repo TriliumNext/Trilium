@@ -23,8 +23,9 @@ export default function setupTreeState() {
     const siteId = document.body.dataset.ancestorNoteId;
 
     const saved = readTreeState();
+    let activePath: string[] | undefined;
     if (saved && saved.siteId === siteId) {
-        restoreTree(pane, saved);
+        activePath = restoreTree(pane, saved);
         pane.scrollTop = saved.top;
     }
 
@@ -42,7 +43,6 @@ export default function setupTreeState() {
         }
     }
 
-    let activePath: string[] | undefined;
     pane.addEventListener("click", (e) => {
         const item = e.target instanceof Element && e.target.closest("#menu a")?.closest("li");
         if (!item) {
@@ -74,7 +74,7 @@ export default function setupTreeState() {
 
 /**
  * Expands the saved entries, every clone of each, and selects the clicked entry of the current
- * note, all without animating.
+ * note, all without animating. Returns the path to that entry when the tree still has it.
  */
 function restoreTree(pane: HTMLElement, state: TreeState) {
     pane.classList.add("tree-restoring");
@@ -107,6 +107,7 @@ function restoreTree(pane: HTMLElement, state: TreeState) {
     // Applies the expanded styles while transitions are off, so the chevrons do not rotate.
     void pane.offsetHeight;
     pane.classList.remove("tree-restoring");
+    return clicked ? path : undefined;
 }
 
 /** Moves the current note's card to `item`, one of its entries. */
