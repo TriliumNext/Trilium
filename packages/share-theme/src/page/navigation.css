@@ -80,7 +80,7 @@
 
 #menu a.active {
     background: var(--background-active);
-    color: var(--background-secondary);
+    color: var(--text-menu-active);
     font-weight: 700;
 }
 
@@ -101,7 +101,7 @@
 
 .active .collapse-button {
     background: none;
-    color: var(--background-secondary);
+    color: var(--text-menu-active);
 }
 
 .collapse-button {

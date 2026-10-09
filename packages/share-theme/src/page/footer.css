@@ -7,7 +7,7 @@
 
 #content-footer .navigation a {
     border-radius: 3px;
-    border: 2px solid #ffffff0d;
+    border: 2px solid var(--background-highlight);
     color: var(--text-primary);
     display: flex;
     justify-content: center;
@@ -22,7 +22,7 @@
 
 #content-footer .navigation a:hover {
     background: var(--background-active);
-    color: var(--background-secondary);
+    color: var(--text-menu-active);
     text-decoration: none;
     transform: translateY(-2px);
 }

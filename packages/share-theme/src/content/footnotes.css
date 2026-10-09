@@ -1,16 +1,16 @@
 @import "@triliumnext/ckeditor5/src/theme/footnotes.css";
 
 .ck-content .footnote-section {
-    border-top: 1px solid #c4c4c4;
+    border-top: 1px solid var(--background-highlight);
 }
 
 .ck-content .footnote-item:target .footnote-content {
-    background: #eee;
+    background: var(--background-highlight);
 }
 
 /* Markdown footnotes (marked-footnote plugin) */
 .ck-content section.footnotes[data-footnotes] {
-    border-top: 1px solid #c4c4c4;
+    border-top: 1px solid var(--background-highlight);
     margin: 1em 0;
     padding: 10px;
     font-size: 0.9em;
@@ -25,6 +25,6 @@
 }
 
 .ck-content section.footnotes[data-footnotes] li:target p {
-    background: #eee;
+    background: var(--background-highlight);
     border-radius: 2px;
 }
