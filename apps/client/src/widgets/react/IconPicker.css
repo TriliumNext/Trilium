@@ -41,7 +41,7 @@
 }
 
 .icon-picker .icon-list span:hover {
-    border: 1px solid var(--main-border-color);
+    border: 1px solid var(--hover-item-border-color);
 }
 
 .icon-picker.compact .filter-row {
