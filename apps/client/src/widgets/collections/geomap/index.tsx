@@ -65,7 +65,7 @@ const PLACEMENT_TOAST_ID = "geo-placement";
  */
 const OUTLINE_DELAY_MS = 250;
 
-interface MapData {
+export interface MapData {
     view?: SavedView;
     /** The view of the same map drawn over its image (`~map:image`), whose positions say nothing
      *  about the world map's, so that switching between the two restores each. */

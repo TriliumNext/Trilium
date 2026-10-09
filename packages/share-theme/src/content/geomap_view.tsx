@@ -5,7 +5,7 @@ import Component from "@triliumnext/client/src/components/component.js";
 import TabManager from "@triliumnext/client/src/components/tab_manager.js";
 import froca from "@triliumnext/client/src/services/froca.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
-import GeoView from "@triliumnext/client/src/widgets/collections/geomap/index.js";
+import GeoView, { type MapData } from "@triliumnext/client/src/widgets/collections/geomap/index.js";
 import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
 import { render } from "preact";
 
@@ -13,6 +13,7 @@ import type { FrocaPayload } from "./calendar_view.js";
 
 interface GeoMapPayload extends FrocaPayload {
     options: Record<string, OptionValue | null>;
+    viewConfig?: MapData;
 }
 
 /**
@@ -21,7 +22,7 @@ interface GeoMapPayload extends FrocaPayload {
  * control the view has.
  */
 export default function mountGeoMap(container: HTMLElement, payload: GeoMapPayload) {
-    const { options: optionValues, links, ...rows } = payload;
+    const { options: optionValues, links, viewConfig, ...rows } = payload;
     options.load(Object.fromEntries(Object.entries(optionValues)
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
@@ -51,7 +52,7 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
                 notePath={noteId}
                 noteIds={note.getChildNoteIds()}
                 highlightedTokens={null}
-                viewConfig={undefined}
+                viewConfig={viewConfig}
                 saveConfig={() => {}}
                 media="screen"
                 onReady={() => {}}
