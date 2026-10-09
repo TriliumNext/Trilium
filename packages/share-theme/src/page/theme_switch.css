@@ -91,6 +91,7 @@ input:focus + .slider {
 
 .theme-options {
     display: flex;
+    margin-inline-start: auto;
     gap: 2px;
     padding: 2px;
     border-radius: 8px;

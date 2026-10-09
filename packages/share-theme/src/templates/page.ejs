@@ -46,8 +46,8 @@
         <div id="navigation">
             <div id="site-header">
                 <%- include("site_logo", { id: "site-logo" }) %>
-                <div class="theme-selection" role="group" aria-labelledby="sitetheme">
-                    <span id="sitetheme"><%= t("share_theme.site-theme") %></span>
+                <div class="theme-selection" role="group" aria-labelledby="theme-selection-label">
+                    <span id="theme-selection-label" class="visually-hidden"><%= t("share_theme.appearance") %></span>
                     <div class="theme-options">
                         <button type="button" class="theme-option" data-theme="light" aria-label="<%= t("share_theme.theme-light") %>" title="<%= t("share_theme.theme-light") %>"><span class="tn-icon bx bx-sun" aria-hidden="true"></span></button>
                         <button type="button" class="theme-option" data-theme="dark" aria-label="<%= t("share_theme.theme-dark") %>" title="<%= t("share_theme.theme-dark") %>"><span class="tn-icon bx bx-moon" aria-hidden="true"></span></button>

@@ -6,7 +6,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 ## Features, interaction and limitations
 
 *   Searching by note title.
-*   Light and dark mode, following the visitor's system setting by default, also while the page is open. The visitor can pick _Light_, _Dark_ or _System_ with the buttons next to _Site Theme_ at the top of the navigation pane, or on narrow screens with the button in the header, which cycles through the three; the choice is remembered by the browser.
+*   Light and dark mode, following the visitor's system setting by default, also while the page is open. The visitor can pick _Light_, _Dark_ or _System_ with the buttons at the top of the navigation pane, or on narrow screens with the button in the header, which cycles through the three; the choice is remembered by the browser.
 *   A layout centered on wide screens, with the navigation tree and the table of contents at either side of the content, and a mobile-friendly layout with sliding panes on narrow ones.
 *   Collapsible tree with the same note icons as the application.
 *   Customizable logo.
