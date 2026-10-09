@@ -28,6 +28,7 @@ export default function setupExpanders() {
                 ul.offsetHeight;
 
                 li.classList.remove("expanded");
+                expander.setAttribute("aria-expanded", "false");
                 ul.style.height = "0";
             } else {
                 // Expanding
@@ -36,6 +37,7 @@ export default function setupExpanders() {
                 ul.offsetHeight;
 
                 li.classList.add("expanded");
+                expander.setAttribute("aria-expanded", "true");
                 ul.style.height = `${ul.scrollHeight}px`;
             }
 

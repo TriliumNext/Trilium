@@ -1248,8 +1248,18 @@ describe("content_renderer", () => {
                 .toStrictEqual([ "./treeSection", "./treeShown", "https://example.com/page" ]);
             expect(Object.keys(anchors[0].attributes).sort()).toEqual([ "class", "href" ]);
             expect(anchors[1].classList.contains("active")).toBe(true);
+            expect(anchors[1].parentNode?.classList.contains("active")).toBe(true);
             expect(anchors[2].getAttribute("target")).toBe("_blank");
             expect(anchors[2].getAttribute("rel")).toBe("noopener noreferrer");
+
+            // A page with subpages opens from its link; the button beside the link expands it.
+            const toggles = menu?.querySelectorAll(".collapse-button") ?? [];
+            expect(toggles.length).toBe(1);
+            expect(anchors[0].querySelector(".collapse-button") === null).toBe(true);
+            expect(toggles[0].parentNode === anchors[0].parentNode).toBe(true);
+            const toggleAttributes = [ "type", "aria-expanded", "aria-label" ]
+                .map((name) => toggles[0].getAttribute(name));
+            expect(toggleAttributes).toStrictEqual([ "button", "true", "Subpages of Section" ]);
             expect(menu?.querySelectorAll("li.expanded").map((item) => item.querySelector("a")?.text.trim()))
                 .toStrictEqual([ "Section", "Shown" ]);
         });

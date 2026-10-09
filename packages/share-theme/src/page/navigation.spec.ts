@@ -15,7 +15,10 @@ describe("setupExpanders", () => {
             <nav id="menu">
                 <ul>
                     <li class="submenu-item">
-                        <a href="./parent">Parent <span class="collapse-button"></span></a>
+                        <div class="tree-item-row">
+                            <button class="collapse-button" aria-expanded="false"></button>
+                            <a href="./parent">Parent</a>
+                        </div>
                         <ul><li><a href="./child">Child</a></li></ul>
                     </li>
                 </ul>
@@ -34,6 +37,7 @@ describe("setupExpanders", () => {
         expander.dispatchEvent(click);
         expect(click.defaultPrevented).toBe(true);
         expect(item.classList.contains("expanded")).toBe(true);
+        expect(expander.getAttribute("aria-expanded")).toBe("true");
         expect(subtree.style.height).toBe("40px");
         expect(subtree.style.overflow).toBe("hidden");
         vi.advanceTimersByTime(200);
@@ -42,6 +46,7 @@ describe("setupExpanders", () => {
 
         expander.click();
         expect(item.classList.contains("expanded")).toBe(false);
+        expect(expander.getAttribute("aria-expanded")).toBe("false");
         expect(subtree.style.height).toBe("0px");
         vi.advanceTimersByTime(200);
         expect(subtree.style.height).toBe("");

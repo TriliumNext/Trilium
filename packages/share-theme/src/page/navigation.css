@@ -59,37 +59,59 @@
     overflow: hidden;
 }
 
-/* The tree items of the app's default theme (`theme-next/shell.css`, "TREE PANE"). */
+/* The tree items of the app's default theme (`theme-next/shell.css`, "TREE PANE"). `li > a` is the
+   row of a `tree_item` partial copied from an earlier theme, whose button sits inside its link. */
+#menu :is(.tree-item-row, li > a) {
+    display: flex;
+    flex: 1;
+    border-radius: 6px;
+    color: var(--text-menu);
+    transition: background-color 150ms ease;
+}
+
+#menu :is(.tree-item-row, li > a):hover {
+    background: var(--tree-item-hover-background);
+}
+
+#menu :is(.tree-item-row, li > a).active {
+    background: var(--tree-item-active-background);
+    box-shadow: var(--tree-item-active-shadow);
+    color: var(--tree-item-active-color);
+}
+
+#menu .tree-item-row {
+    padding-inline-start: 4px;
+}
+
 #menu a {
     display: flex;
     flex: 1;
     align-items: center;
     gap: 6px;
-    padding: 7px 8px;
+    min-width: 0;
+    padding: 7px 8px 7px 6px;
     border-radius: 6px;
-    color: var(--text-menu);
+    color: inherit;
     font-weight: 400;
     text-decoration: none;
-    transition: background-color 150ms ease;
+}
+
+#menu li.item > .tree-item-row > a {
+    padding-inline-start: 34px;
+}
+
+#menu li > a {
+    padding: 7px 8px;
 }
 
 #menu li.item > a {
     padding-inline-start: 38px;
 }
 
-#menu a:hover {
-    background: var(--tree-item-hover-background);
-}
-
-#menu a:focus-visible {
+#menu a:focus-visible,
+.collapse-button:focus-visible {
     outline: 2px solid var(--link-focus-outline-color);
     outline-offset: -2px;
-}
-
-#menu a.active {
-    background: var(--tree-item-active-background);
-    box-shadow: var(--tree-item-active-shadow);
-    color: var(--tree-item-active-color);
 }
 
 #menu a > .tn-icon {
@@ -111,24 +133,33 @@
     width: 24px;
     padding: 0;
     border: 0;
+    border-radius: 6px;
     background: transparent;
     color: inherit;
     opacity: 0.65;
     cursor: pointer;
-    transform: rotate(-90deg);
-    transition: transform 200ms ease, opacity 150ms ease;
+    transition: opacity 150ms ease;
+}
+
+.tree-item-row > .collapse-button {
+    width: 28px;
 }
 
 .collapse-button:hover {
     opacity: 1;
 }
 
-.collapse-button:dir(rtl) {
+.collapse-button > * {
+    transform: rotate(-90deg);
+    transition: transform 200ms ease;
+}
+
+.collapse-button:dir(rtl) > * {
     transform: rotate(90deg);
 }
 
-.expanded > .collapse-button,
-.expanded > a > .collapse-button {
+.expanded > .tree-item-row > .collapse-button > *,
+.expanded > a > .collapse-button > * {
     transform: rotate(0);
 }
 
@@ -138,8 +169,9 @@
 
 @media (prefers-reduced-motion: reduce) {
     #menu li > ul,
-    #menu a,
-    .collapse-button {
+    #menu :is(.tree-item-row, li > a),
+    .collapse-button,
+    .collapse-button > * {
         transition: none;
     }
 }

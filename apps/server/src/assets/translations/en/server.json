@@ -459,6 +459,7 @@
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
     "expand": "Expand",
+    "subpages-of": "Subpages of {{- title}}",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",
