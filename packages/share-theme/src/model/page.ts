@@ -23,6 +23,7 @@ export interface ShareNote {
     getParentNotes(): ShareNote[];
     getVisibleChildNotes(): ShareNote[];
     type: string;
+    mime: string;
     /** The icon's CSS classes, among the icon packs whose prefixes are given. */
     getIcon(iconPackPrefixes?: string[]): string;
 }
@@ -307,6 +308,20 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
     return externalLink
         ? { href: sanitizeUrl(externalLink), isExternal: true }
         : { href: `./${note.shareId}`, isExternal: false };
+}
+
+/**
+ * Returns the classes of the content element: the note's type, `ck-content` for content the text
+ * editor's styles apply to (text notes and Markdown code notes), and `no-content` when empty.
+ */
+export function getContentClasses(note: ShareNote, isEmpty = false) {
+    const isEditorContent = note.type === "text"
+        || (note.type === "code" && note.mime === "text/x-markdown");
+    return [
+        `type-${note.type}`,
+        isEditorContent && "ck-content",
+        isEmpty && "no-content"
+    ].filter(Boolean).join(" ");
 }
 
 /** Returns the links to the visible children of `note`, for its list of subpages. */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getChildLinks, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
     type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
@@ -349,6 +349,18 @@ describe("getLastUpdated", () => {
     });
 });
 
+describe("getContentClasses", () => {
+    const classes = (type: string, mime: string, isEmpty = false) =>
+        getContentClasses(fakeNote({ noteId: "page", type, mime }), isEmpty);
+
+    it("styles text and Markdown notes as the editor's content, and marks empty content", () => {
+        expect(classes("text", "text/html")).toBe("type-text ck-content");
+        expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
+        expect(classes("code", "application/javascript")).toBe("type-code");
+        expect(classes("book", "", true)).toBe("type-book no-content");
+    });
+});
+
 describe("getChildLinks", () => {
     it("links to the visible children of a note, in order", () => {
         const parent = fakeNote({ noteId: "parent" });
@@ -388,6 +400,7 @@ interface FakeNoteOptions {
     snippets?: (ShareNote | null)[];
     content?: string;
     type?: string;
+    mime?: string;
     icon?: string;
 }
 
@@ -405,6 +418,7 @@ function fakeNote(options: FakeNoteOptions): FakeNote {
         shareId: `${options.noteId}-alias`,
         title: options.title ?? options.noteId,
         type: options.type ?? "text",
+        mime: options.mime ?? "text/html",
         getIcon: (prefixes) => [ options.icon ?? "bx bx-note", ...prefixes ?? [] ].join(" "),
         getLabelValue: (name) => labels[name] ?? null,
         hasLabel: (name) => name in labels,

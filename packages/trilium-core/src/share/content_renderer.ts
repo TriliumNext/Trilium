@@ -8,7 +8,7 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getChildLinks, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
     type PageHeading
 } from "@triliumnext/share-theme/model/page";
@@ -231,6 +231,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
         }),
         childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+        contentClasses: getContentClasses(note, isEmpty),
         language: getPageLanguages(note, {
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")

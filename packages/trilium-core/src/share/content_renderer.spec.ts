@@ -1,6 +1,6 @@
 import { trimIndentation } from "@triliumnext/commons";
 import {
-    getChildLinks, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
+    getChildLinks, getContentClasses, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
@@ -418,6 +418,23 @@ describe("content_renderer", () => {
             expect(time).toBeTruthy();
             expect(time?.text).toBe(new Intl.DateTimeFormat("de", { dateStyle: "long" })
                 .format(new Date(time?.getAttribute("datetime") ?? "")));
+        });
+
+        it("shows a subpage list only when there are subpages", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "emptyBook", type: "book", content: "" },
+                    { id: "fullBook", type: "book", content: "", children: [ { id: "bookChild", title: "Child" } ] }
+                ]
+            });
+            const [ emptyBook, fullBook ] = shareRootNote.getChildNotes()
+                .map((note) => parse(String(renderNoteContent(note))));
+
+            expect(emptyBook.querySelector("#childLinks") === null).toBe(true);
+            expect(emptyBook.querySelector("#content")?.classList.contains("no-content")).toBe(true);
+            expect(fullBook.querySelectorAll("#childLinks a").map((link) => link.text))
+                .toStrictEqual([ "Child" ]);
         });
 
         it("keeps the alt text of an image on the page", () => {
@@ -1267,6 +1284,7 @@ describe("content_renderer", () => {
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
                 childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+                contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
                 headings: [],

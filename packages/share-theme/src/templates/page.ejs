@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="<%= language.page.lang %>" dir="<%= language.page.dir %>">
 <head>
-    <% const hasTree = subRoot.note.hasVisibleChildren(); %>
     <%- snippets["head:start"] %>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,13 +28,13 @@
 <body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
 <%- snippets["body:start"] %>
 <div id="header">
-    <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg></button>
+    <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="bx bx-menu" aria-hidden="true"></span></button>
     <a href="<%= logo.href %>" id="header-logo">
         <img src="<%= logoUrl %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
         <%= subRoot.note.title %>
     </a>
     <% if (headings.length > 1) { %>
-        <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9h14V7H3v2zm0 4h14v-2H3v2zm0 4h14v-2H3v2zm16 0h2v-2h-2v2zm0-10V7h2v2h-2zm0 6h2v-2h-2v2z"></path></svg></button>
+        <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="bx bx-list-ul" aria-hidden="true"></span></button>
     <% } else { %>
         <div class="header-button-placeholder"></div>
     <% } %>
@@ -49,18 +48,18 @@
                     <label class="switch">
                       <input type="checkbox" aria-labelledby="sitetheme">
                       <span class="slider"></span>
-                      <svg class="dark-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.742 13.045a8.088 8.088 0 0 1-2.077.271c-2.135 0-4.14-.83-5.646-2.336a8.025 8.025 0 0 1-2.064-7.723A1 1 0 0 0 9.73 2.034a10.014 10.014 0 0 0-4.489 2.582c-3.898 3.898-3.898 10.243 0 14.143a9.937 9.937 0 0 0 7.072 2.93 9.93 9.93 0 0 0 7.07-2.929 10.007 10.007 0 0 0 2.583-4.491 1.001 1.001 0 0 0-1.224-1.224zm-2.772 4.301a7.947 7.947 0 0 1-5.656 2.343 7.953 7.953 0 0 1-5.658-2.344c-3.118-3.119-3.118-8.195 0-11.314a7.923 7.923 0 0 1 2.06-1.483 10.027 10.027 0 0 0 2.89 7.848 9.972 9.972 0 0 0 7.848 2.891 8.036 8.036 0 0 1-1.484 2.059z"></path></svg>
-                      <svg class="light-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.993 12c0 2.761 2.246 5.007 5.007 5.007s5.007-2.246 5.007-5.007S14.761 6.993 12 6.993 6.993 9.239 6.993 12zM12 8.993c1.658 0 3.007 1.349 3.007 3.007S13.658 15.007 12 15.007 8.993 13.658 8.993 12 10.342 8.993 12 8.993zM10.998 19h2v3h-2zm0-17h2v3h-2zm-9 9h3v2h-3zm17 0h3v2h-3zM4.219 18.363l2.12-2.122 1.415 1.414-2.12 2.122zM16.24 6.344l2.122-2.122 1.414 1.414-2.122 2.122zM6.342 7.759 4.22 5.637l1.415-1.414 2.12 2.122zm13.434 10.605-1.414 1.414-2.122-2.122 1.414-1.414z"></path></svg>
+                      <span class="dark-icon bx bx-moon" aria-hidden="true"></span>
+                      <span class="light-icon bx bx-sun" aria-hidden="true"></span>
                     </label>
                 </div>
-                <% if (hasTree) { %>
+                <% if (navigation.length) { %>
                     <div class="search-item">
-                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396 1.414-1.414-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8 3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6-6-2.691-6-6 2.691-6 6-6z"></path></svg>
+                        <span class="search-icon bx bx-search" aria-hidden="true"></span>
                         <input type="text" class="search-input" placeholder="<%= t("share_theme.search_placeholder") %>">
                     </div>
                 <% } %>
             </div>
-        <% if (hasTree) { %>
+        <% if (navigation.length) { %>
             <nav id="menu">
                 <%- include("tree_item", { items: navigation }) %>
             </nav>
@@ -69,10 +68,10 @@
     </div>
     <div id="right-pane">
         <div id="main">
-            <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
+            <div id="content" class="<%= contentClasses %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
                 <%- snippets["content:start"] %>
                     <h1 id="title"><%= note.title %></h1>
-                <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>
+                <% if (isEmpty && !childLinks.length && note.type !== "book") { %>
                     <p><%= t("share_page.no-content") %></p>
                 <% } else { %>
                     <%- content %>
@@ -80,7 +79,7 @@
                 <%- snippets["content:end"] %>
             </div>
 
-            <% if (note.hasVisibleChildren() || note.type === "book") { %>
+            <% if (childLinks.length) { %>
                 <nav id="childLinks" class="<% if (isEmpty) { %>grid<% } else { %>list<% } %>">
                     <% if (!isEmpty) { %>
                         <span><%= t("share_theme.subpages") %></span>
@@ -103,7 +102,7 @@
                     </div>
                 <% } %>
 
-                <% if (hasTree) { %>
+                <% if (navigation.length) { %>
                     <%- include("prev_next") %>
                 <% } %>
 
