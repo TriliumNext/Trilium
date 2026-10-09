@@ -63,6 +63,15 @@ export interface PageHead {
         /** The kind of Twitter card: a large picture when there is an image. */
         card: "summary_large_image" | "summary";
     };
+    /** The description, OpenGraph and Twitter `<meta>` tags of the values that are set. */
+    metaTags: MetaTag[];
+}
+
+/** A `<meta>` tag, such as `<meta property="og:title" content="…">`. */
+export interface MetaTag {
+    attribute: "name" | "property";
+    key: string;
+    content: string;
 }
 
 /** The site logo in the page header. */
@@ -107,18 +116,42 @@ export function getPageHead(note: ShareNote, siteRoot: ShareNote): PageHead {
         ? `api/images/${siteRoot.getRelationValue("shareOpenGraphImage")}/image.png`
         : readLabel(siteRoot, "shareOpenGraphImage");
 
+    const description = readLabel(note, "shareDescription");
+    const openGraph: PageHead["openGraph"] = {
+        url,
+        domain: readLabel(siteRoot, "shareOpenGraphDomain"),
+        image: image && url ? toAbsoluteUrl(image, url) : image,
+        color: readLabel(siteRoot, "shareOpenGraphColor"),
+        card: image ? "summary_large_image" : "summary"
+    };
+
     return {
         title,
-        description: readLabel(note, "shareDescription"),
+        description,
         noIndex: note.hasLabel("shareDisallowRobotIndexing"),
-        openGraph: {
-            url,
-            domain: readLabel(siteRoot, "shareOpenGraphDomain"),
-            image: image && url ? toAbsoluteUrl(image, url) : image,
-            color: readLabel(siteRoot, "shareOpenGraphColor"),
-            card: image ? "summary_large_image" : "summary"
-        }
+        openGraph,
+        metaTags: getMetaTags(title, description, openGraph)
     };
+}
+
+function getMetaTags(title: string, description: string | null, openGraph: PageHead["openGraph"]) {
+    const tags: [ MetaTag["attribute"], string, string | null ][] = [
+        [ "name", "description", description ],
+        [ "property", "og:type", "website" ],
+        [ "property", "og:title", title ],
+        [ "property", "og:description", description ],
+        [ "property", "og:url", openGraph.url ],
+        [ "property", "og:image", openGraph.image ],
+        [ "name", "twitter:card", openGraph.card ],
+        [ "name", "twitter:title", title ],
+        [ "name", "twitter:description", description ],
+        [ "property", "twitter:domain", openGraph.domain ],
+        [ "property", "twitter:url", openGraph.url ],
+        [ "name", "twitter:image", openGraph.image ],
+        [ "name", "theme-color", openGraph.color ]
+    ];
+    return tags.flatMap(([ attribute, key, content ]): MetaTag[] =>
+        (content ? [ { attribute, key, content } ] : []));
 }
 
 /** Returns the trimmed value of the label, or `null` when it is missing or blank. */

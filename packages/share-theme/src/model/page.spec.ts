@@ -23,7 +23,7 @@ describe("getPageHead", () => {
             labels: { shareDescription: "About the page", shareDisallowRobotIndexing: "" }
         });
 
-        expect(getPageHead(page, site)).toStrictEqual({
+        expect(getPageHead(page, site)).toMatchObject({
             title: "Page - My site",
             description: "About the page",
             noIndex: true,
@@ -45,7 +45,7 @@ describe("getPageHead", () => {
             relations: { shareOpenGraphImage: "imageNote" }
         });
 
-        expect(getPageHead(site, site)).toStrictEqual({
+        expect(getPageHead(site, site)).toMatchObject({
             title: "My site",
             description: null,
             noIndex: false,
@@ -92,6 +92,44 @@ describe("getPageHead", () => {
             description: null,
             openGraph: { url: null, domain: null, image: null, color: null, card: "summary" }
         });
+    });
+
+    it("lists the meta tags that have a value, ready to print", () => {
+        const site = fakeNote({
+            noteId: "site",
+            title: "Site",
+            labels: {
+                shareDescription: "About",
+                shareOpenGraphURL: "https://example.com/share/",
+                shareOpenGraphDomain: "example.com",
+                shareOpenGraphImage: "cover.png",
+                shareOpenGraphColor: "#fff"
+            }
+        });
+        const tags = (note: ShareNote) => getPageHead(note, note).metaTags
+            .map(({ attribute, key, content }) => `${attribute}:${key}=${content}`);
+
+        expect(tags(site)).toStrictEqual([
+            "name:description=About",
+            "property:og:type=website",
+            "property:og:title=Site",
+            "property:og:description=About",
+            "property:og:url=https://example.com/share/",
+            "property:og:image=https://example.com/share/cover.png",
+            "name:twitter:card=summary_large_image",
+            "name:twitter:title=Site",
+            "name:twitter:description=About",
+            "property:twitter:domain=example.com",
+            "property:twitter:url=https://example.com/share/",
+            "name:twitter:image=https://example.com/share/cover.png",
+            "name:theme-color=#fff"
+        ]);
+        expect(tags(fakeNote({ noteId: "bare", title: "Bare" }))).toStrictEqual([
+            "property:og:type=website",
+            "property:og:title=Bare",
+            "name:twitter:card=summary",
+            "name:twitter:title=Bare"
+        ]);
     });
 });
 

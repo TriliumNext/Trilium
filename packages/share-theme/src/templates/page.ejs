@@ -18,37 +18,8 @@
     <% } %>
     <title><%= head.title %></title>
     <%- include("boot_script") %>
-    <% const { description, openGraph } = head; %>
-    <% if (description) { %>
-        <meta name="description" content="<%= description %>">
-    <% } %>
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="<%= head.title %>">
-    <% if (description) { %>
-        <meta property="og:description" content="<%= description %>">
-    <% } %>
-    <% if (openGraph.url) { %>
-        <meta property="og:url" content="<%= openGraph.url %>">
-    <% } %>
-    <% if (openGraph.image) { %>
-        <meta property="og:image" content="<%= openGraph.image %>">
-    <% } %>
-    <meta name="twitter:card" content="<%= openGraph.card %>">
-    <meta name="twitter:title" content="<%= head.title %>">
-    <% if (description) { %>
-        <meta name="twitter:description" content="<%= description %>">
-    <% } %>
-    <% if (openGraph.domain) { %>
-        <meta property="twitter:domain" content="<%= openGraph.domain %>">
-    <% } %>
-    <% if (openGraph.url) { %>
-        <meta property="twitter:url" content="<%= openGraph.url %>">
-    <% } %>
-    <% if (openGraph.image) { %>
-        <meta name="twitter:image" content="<%= openGraph.image %>">
-    <% } %>
-    <% if (openGraph.color) { %>
-        <meta name="theme-color" content="<%= openGraph.color %>">
+    <% for (const meta of head.metaTags) { %>
+        <meta <%= meta.attribute %>="<%= meta.key %>" content="<%= meta.content %>">
     <% } %>
     <style id="trilium-icon-packs">
       <%- utils.escapeInlineStylesheet(iconPackCss) %>

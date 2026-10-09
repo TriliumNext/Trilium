@@ -30,7 +30,7 @@ Your template is rendered with a context object exposing the note and its render
 | `content` | The note's already-rendered HTML content, as a string. |
 | `header` | Extra HTML to place in the document head for this note (used by some note types). |
 | `isEmpty` | `true` when the note has no content of its own. |
-| `head` | The values of the page's `<head>`: `title` (the note's title, followed by the site's), `description` (`#shareDescription`), `noIndex` (`#shareDisallowRobotIndexing`) and `openGraph` with `url`, `domain`, `image`, `color` and `card` (`summary_large_image` with an image, `summary` without). A value whose label is not set is `null`. |
+| `head` | The values of the page's `<head>`: `title` (the note's title, followed by the site's), `description` (`#shareDescription`), `noIndex` (`#shareDisallowRobotIndexing`) and `openGraph` with `url`, `domain`, `image`, `color` and `card` (`summary_large_image` with an image, `summary` without). A value whose label is not set is `null`. `metaTags` lists the description, OpenGraph and Twitter `<meta>` tags of the values that are set, each with `attribute` (`name` or `property`), `key` and `content`. |
 | `logo` | The site logo in the header: `href` (`#shareRootLink`, otherwise the site's root page), `width` and `height`. |
 | `navigation` | The navigation tree of the site: its visible pages, each with `title`, `href`, `isExternal`, `type`, `icon`, `isActive` (the page being shown), `isExpanded` (that page or one of its ancestors) and `children`. |
 | `childLinks` | The links to the note's visible children, each with `title`, `href`, `isExternal` and `type`. |
