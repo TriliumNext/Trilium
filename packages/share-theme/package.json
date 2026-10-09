@@ -27,6 +27,8 @@
   "devDependencies": {
     "@triliumnext/ckeditor5": "workspace:*",
     "@triliumnext/highlightjs": "workspace:*",
+    "@types/ejs": "3.1.5",
+    "ejs": "7.0.1",
     "esbuild": "0.28.2",
     "happy-dom": "20.14.5",
     "sass": "1.105.1",

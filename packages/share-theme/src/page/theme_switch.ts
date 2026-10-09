@@ -3,15 +3,18 @@ import "./theme_switch.css";
 const themeRootEl = document.documentElement;
 
 /**
- * Note:
- *
- * - Setting of the .theme-dark or .theme-light is done in the share template's <head> to avoid a flash.
- * - Setting of the value of the checkbox is also done in the template, near the definition of the input box.
+ * Wires the dark mode switch. `boot_script.ejs` applies the theme class before the first paint, and
+ * the switch is styled from that class, so this only syncs the checkbox for assistive technologies
+ * and switches the theme on change.
  */
-
 export default function setupThemeSelector() {
-    const themeSwitch: HTMLInputElement = document.querySelector(".theme-selection input")!;
-    themeSwitch?.addEventListener("change", () => {
+    const themeSwitch = document.querySelector<HTMLInputElement>(".theme-selection input");
+    if (!themeSwitch) {
+        return;
+    }
+
+    themeSwitch.checked = themeRootEl.classList.contains("theme-dark");
+    themeSwitch.addEventListener("change", () => {
         const theme = themeSwitch.checked ? "dark" : "light";
         setTheme(theme);
         localStorage.setItem("theme", theme);

@@ -1,20 +1,26 @@
 <script>
-    // Load dark/light theme as soon as possible to avoid color flashes.
-    let theme = localStorage.getItem("theme");
-    if (!theme) {
-        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
-    }
-    document.documentElement.classList.add(`theme-${theme}`);
+    // Applies the theme and the collapsed panes before the first paint, to avoid color flashes. The
+    // function keeps its names out of the global scope, which `~shareHtml` snippets share.
+    (function () {
+        function read(key) {
+            try {
+                return localStorage.getItem(key);
+            } catch {
+                return null;
+            }
+        }
 
-    window.glob = {
-        isStatic: <%= !!isStatic %>,
-        theme
-    };
+        const root = document.documentElement;
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme = read("theme") || (prefersDark ? "dark" : "light");
+        root.classList.add(`theme-${theme}`);
 
-    (function() {
-        const leftCollapsed = localStorage.getItem("left-pane-collapsed") === "true";
-        const tocCollapsed = localStorage.getItem("toc-pane-collapsed") === "true";
-        if (leftCollapsed) document.documentElement.classList.add("left-pane-collapsed");
-        if (tocCollapsed) document.documentElement.classList.add("toc-pane-collapsed");
+        window.glob = {
+            isStatic: <%= !!isStatic %>,
+            theme
+        };
+
+        if (read("left-pane-collapsed") === "true") root.classList.add("left-pane-collapsed");
+        if (read("toc-pane-collapsed") === "true") root.classList.add("toc-pane-collapsed");
     })();
 </script>

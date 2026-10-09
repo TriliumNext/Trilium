@@ -36,7 +36,7 @@
     z-index: 2;
 }
 
-input:checked + .slider {
+.theme-dark .slider {
     background-color: var(--background-highlight);
 }
 
@@ -44,7 +44,7 @@ input:focus + .slider {
     box-shadow: 0 0 1px var(--background-highlight);
 }
 
-input:checked + .slider:before {
+.theme-dark .slider::before {
     transform: translateX(33px);
 }
 
@@ -69,11 +69,11 @@ input:checked + .slider:before {
     width: 24px;
 }
 
-input:not(:checked) ~ .light-icon {
+.theme-light .light-icon {
     opacity: 1;
 }
 
-input:checked ~ .dark-icon {
+.theme-dark .dark-icon {
     opacity: 1;
 }
 

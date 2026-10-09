@@ -1370,6 +1370,12 @@ importers:
       '@triliumnext/highlightjs':
         specifier: workspace:*
         version: link:../highlightjs
+      '@types/ejs':
+        specifier: 3.1.5
+        version: 3.1.5
+      ejs:
+        specifier: 7.0.1
+        version: 7.0.1
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
