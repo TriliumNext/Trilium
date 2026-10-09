@@ -705,6 +705,34 @@ describe("content_renderer", () => {
                 expect(externalLink.text).toBe("Ext");
             });
 
+            it("links a note with either external link label out, as the navigation does", () => {
+                buildShareNote({
+                    "id": "legacyExt0001",
+                    "title": "Legacy",
+                    "#shareExternal": "https://example.com/legacy"
+                });
+                buildShareNote({
+                    "id": "spacedExt0001",
+                    "title": "Spaced",
+                    "#shareExternalLink": "   ",
+                    "#shareExternal": " https://example.com/spaced "
+                });
+                const note = buildShareNote({
+                    id: "note",
+                    content: `<p><a href="#root/legacyExt0001">Legacy</a>`
+                        + ` <a href="#root/spacedExt0001">Spaced</a></p>`
+                });
+
+                const links = parse(String(getContent(note).content)).querySelectorAll("a");
+
+                expect(links.map((link) => link.getAttribute("href")))
+                    .toStrictEqual([ "https://example.com/legacy", "https://example.com/spaced" ]);
+                for (const link of links) {
+                    expect(link.getAttribute("target")).toBe("_blank");
+                    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+                }
+            });
+
             it("replaces a reference link to a missing attachment with its text", () => {
                 buildShareNote({ id: "attachOwner01", title: "Owner" });
                 const href = "#root/attachOwner01?viewMode=attachments&amp;attachmentId=missing01";

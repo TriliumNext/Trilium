@@ -598,13 +598,11 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const noteId = getNoteIdFromLink(href);
         const linkedNote = getNote(noteId);
         if (linkedNote) {
-            const isExternalLink = linkedNote.hasLabel("shareExternalLink");
-            const rawHref = linkedNote.getLabelValue("shareExternalLink") ?? "";
-            const href = isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${linkedNote.shareId}`;
-            if (href) {
-                linkEl.setAttribute("href", href);
+            const link = getShareLink(linkedNote, sanitize.sanitizeUrl);
+            if (link.href) {
+                linkEl.setAttribute("href", link.href);
             }
-            if (isExternalLink) {
+            if (link.isExternal) {
                 linkEl.setAttribute("target", "_blank");
                 linkEl.setAttribute("rel", "noopener noreferrer");
             }
