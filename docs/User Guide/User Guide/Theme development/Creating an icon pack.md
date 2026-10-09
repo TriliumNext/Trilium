@@ -64,7 +64,7 @@ Example minimal manifest:
 > *   You can supply glyph as the escaped `\uXXXX` sequence or as the actual UTF‑8 character. The CSS form (`\ea3f`, as written in a stylesheet's `content`) is accepted too, so glyphs copied out of the font's own CSS work as they stand.
 > *   It is also possible to use the unescaped glyph inside the JSON. It will appear strange (e.g. ), but it will be rendered properly regardless.
 > *   The manifest keys (e.g. `ph-acorn`) should match the class names used by the font (prefix + name is a common pattern).
-> *   Like the prefix, a manifest key becomes a CSS class name, so it can contain only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation and whitespace (e.g. `ph.acorn` or `ph acorn`) are not usable as class names; icons with such a key are skipped and an error is logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>, while the rest of the pack still loads.
+> *   Like the prefix, a manifest key becomes a CSS class name, so it can contain only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation and whitespace (e.g. `ph.acorn` or `ph acorn`) are not usable as class names; icons with such a key are skipped and an error is logged in <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a>, while the rest of the pack still loads.
 
 ## Concrete example: Phosphor Icons
 
@@ -102,10 +102,10 @@ Sample `selection.json` excerpt:
 }
 ```
 
-A tiny Node.js script to produce the manifest (place `selection.json` in the same directory and run with Node 20+):
-
-```javascript
-import { join } from "node:path";
+<details open="">
+    <summary>A tiny Node.js script to produce the manifest</summary>
+    <p>Place <code>selection.json</code> in the same directory and run with Node 20+):</p>
+    <pre><code class="language-text-javascript">import { join } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";
 
 function processIconPack(packName) {
@@ -130,14 +130,14 @@ function processIconPack(packName) {
     console.log("manifest.json created");
 }
 
-processIconPack("light");
-```
-
-What to do with the script:
-
-*   Put `selection.json` and `build-manifest.js` in a folder.
-*   Run: node build-manifest.js
-*   The script writes `manifest.json` — open it, verify contents, then copy into a Trilium Code note (language: JSON).
+processIconPack("light");</code></pre>
+    <p>What to do with the script:</p>
+    <ul>
+        <li>Put <code>selection.json</code> and <code>build-manifest.js</code> in a folder.</li>
+        <li>Run: node build-manifest.js</li>
+        <li>The script writes <code>manifest.json</code> — open it, verify contents, then copy into a Trilium Code note (language: JSON).</li>
+    </ul>
+</details>
 
 > [!TIP]
 > **Mind the escape format when processing CSS**

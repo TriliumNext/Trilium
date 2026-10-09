@@ -61,107 +61,19 @@ sudo systemctl enable --now -q trilium
 
 *   You can now open a browser to http://\[your-server-hostname\]:8080 and you should see the Trilium initialization page.
 
-## Simple Autoupdate for Server
+## Simple auto-update for Server
 
-Run as the same User Trilium runs
+The script is available in <a class="reference-link" href="Packaged%20version%20for%20Linux/Simple%20auto-update%20for%20server.dat">Simple auto-update for server</a>.
 
-if you run as root please remove 'sudo' from the commands
+*   Run as the same User Trilium runs.
+    *   If you run as `root` please remove `sudo` from the commands.
+*   Requires `jq`:
+    
+    ```sh
+    apt install jq
+    ```
 
-requires "jq" `apt install jq`
-
-It will stop the service above, overwrite everything (i expect no config.ini), and start service It also creates a version file in the Trilium directory so it updates only with a newer Version
-
-```
-#!/bin/bash
-
-# Configuration
-REPO="TriliumNext/Trilium"
-PATTERN="TriliumNotes-Server-.*-linux-x64.tar.xz"
-DOWNLOAD_DIR="/var/tmp/trilium_download"
-OUTPUT_DIR="/opt/trilium"
-SERVICE_NAME="trilium"
-VERSION_FILE="$OUTPUT_DIR/version.txt"
-
-# Ensure dependencies are installed
-command -v curl >/dev/null 2>&1 || { echo "Error: curl is required"; exit 1; }
-command -v jq >/dev/null 2>&1 || { echo "Error: jq is required"; exit 1; }
-command -v tar >/dev/null 2>&1 || { echo "Error: tar is required"; exit 1; }
-
-# Create download directory
-mkdir -p "$DOWNLOAD_DIR" || { echo "Error: Cannot create $DOWNLOAD_DIR"; exit 1; }
-
-# Get the latest release version
-LATEST_VERSION=$(curl -sL https://api.github.com/repos/$REPO/releases/latest | jq -r '.tag_name')
-if [ -z "$LATEST_VERSION" ]; then
-  echo "Error: Could not fetch latest release version"
-  exit 1
-fi
-
-# Check current installed version (from version.txt or existing tarball)
-CURRENT_VERSION=""
-if [ -f "$VERSION_FILE" ]; then
-  CURRENT_VERSION=$(cat "$VERSION_FILE")
-elif [ -f "$DOWNLOAD_DIR/TriliumNotes-Server-$LATEST_VERSION-linux-x64.tar.xz" ]; then
-  CURRENT_VERSION="$LATEST_VERSION"
-fi
-
-# Compare versions
-if [ "$CURRENT_VERSION" = "$LATEST_VERSION" ]; then
-  echo "Latest version ($LATEST_VERSION) is already installed"
-  exit 0
-fi
-
-# Download the latest release
-LATEST_URL=$(curl -sL https://api.github.com/repos/$REPO/releases/latest | jq -r ".assets[] | select(.name | test(\"$PATTERN\")) | .browser_download_url")
-if [ -z "$LATEST_URL" ]; then
-  echo "Error: No asset found matching pattern '$PATTERN'"
-  exit 1
-fi
-
-FILE_NAME=$(basename "$LATEST_URL")
-FILE_PATH="$DOWNLOAD_DIR/$FILE_NAME"
-
-# Download if not already present
-if [ -f "$FILE_PATH" ]; then
-  echo "Latest release $FILE_NAME already downloaded"
-else
-  curl -LO --output-dir "$DOWNLOAD_DIR" "$LATEST_URL" || { echo "Error: Download failed"; exit 1; }
-  echo "Downloaded $FILE_NAME to $DOWNLOAD_DIR"
-fi
-
-# Extract the tarball
-EXTRACT_DIR="$DOWNLOAD_DIR/extracted"
-mkdir -p "$EXTRACT_DIR"
-tar -xJf "$FILE_PATH" -C "$EXTRACT_DIR" || { echo "Error: Extraction failed"; exit 1; }
-
-# Find the extracted directory (e.g., TriliumNotes-Server-0.97.2-linux-x64)
-INNER_DIR=$(find "$EXTRACT_DIR" -maxdepth 1 -type d -name "TriliumNotes-Server-*-linux-x64" | head -n 1)
-if [ -z "$INNER_DIR" ]; then
-  echo "Error: Could not find extracted directory matching TriliumNotes-Server-*-linux-x64"
-  exit 1
-fi
-
-# Stop the trilium-server service
-if systemctl is-active --quiet "$SERVICE_NAME"; then
-  echo "Stopping $SERVICE_NAME service..."
-  sudo systemctl stop "$SERVICE_NAME" || { echo "Error: Failed to stop $SERVICE_NAME"; exit 1; }
-fi
-
-# Copy contents to /opt/trilium, overwriting existing files
-echo "Copying contents from $INNER_DIR to $OUTPUT_DIR..."
-sudo mkdir -p "$OUTPUT_DIR"
-sudo cp -r "$INNER_DIR"/* "$OUTPUT_DIR"/ || { echo "Error: Copy failed"; exit 1; }
-echo "$LATEST_VERSION" | sudo tee "$VERSION_FILE" >/dev/null
-echo "Files copied to $OUTPUT_DIR"
-
-# Start the trilium-server service
-echo "Starting $SERVICE_NAME service..."
-sudo systemctl start "$SERVICE_NAME" || { echo "Error: Failed to start $SERVICE_NAME"; exit 1; }
-
-# Clean up
-rm -rf "$EXTRACT_DIR"
-echo "Cleanup complete. Trilium updated to $LATEST_VERSION."
-```
+It will stop the service above, overwrite everything (expecting no `config.ini`), and start service. It also creates a version file in the Trilium directory so it updates only with a newer version.
 
 ## Common issues
 

@@ -334,7 +334,7 @@ When a map is [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%2
 *   Keeping a place as a marker, whether you found it by searching or clicked it on the map. You can still search and click, and you can still look at a place and copy its coordinates.
 *   Drawing [shapes](Geo%20Map/Drawing%20shapes.md).
 
-To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note buttons</a> → _Editable_ → _Read-only_.
+To set a map as read-only, go to <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20menu.md">Note menu</a> → _Editable_ → _Read-only_.
 
 ## Configuration
 

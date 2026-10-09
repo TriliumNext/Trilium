@@ -37,7 +37,20 @@
 <p>Let's start by creating a widget that shows a message near the content
   area. Follow the previous section to create a code note, and use the following
   content.</p>
-<h3>Legacy version (jQuery)</h3><pre><code class="language-text-x-trilium-auto">class HelloCenterPane extends api.BasicWidget {
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-react"></span>&nbsp;Preact</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
+
+export default defineWidget({
+    parent: "center-pane",
+    render: () =&gt; &lt;span&gt;Center pane from Preact.&lt;/span&gt;
+});</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-javascript"></span>&nbsp;Legacy</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">class HelloCenterPane extends api.BasicWidget {
 
     constructor() {
         super();
@@ -53,14 +66,9 @@
 }
 
 module.exports = new HelloCenterPane();</code></pre>
-<p><a href="#root/_help_s8alTXmpFR61">Refresh the application</a> and the
-  widget should appear underneath the content area.</p>
-<h3>Preact version</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
-
-export default defineWidget({
-    parent: "center-pane",
-    render: () =&gt; &lt;span&gt;Center pane from Preact.&lt;/span&gt;
-});</code></pre>
+    </div>
+  </section>
+</div>
 <p><a href="#root/_help_s8alTXmpFR61">Refresh the application</a> and the
   widget should appear underneath the content area.</p>
 <h2>Widget location (parent widget)</h2>
@@ -150,18 +158,10 @@ class="table">
   parents and positions. A widget that is missing its <code>parentWidget</code> (or <code>parent</code> for
   Preact) is reported as an error without affecting the other widgets of
   the note.</p>
-<h3>Legacy version (jQuery)</h3><pre><code class="language-text-x-trilium-auto">class TreeWidget extends api.BasicWidget {
-    get parentWidget() { return "left-pane"; }
-    doRender() { this.$widget = $("&lt;span&gt;Left pane&lt;/span&gt;"); }
-}
-
-class SidebarWidget extends api.BasicWidget {
-    get parentWidget() { return "right-pane"; }
-    doRender() { this.$widget = $("&lt;span&gt;Right pane&lt;/span&gt;"); }
-}
-
-module.exports = [ new TreeWidget(), new SidebarWidget() ];</code></pre>
-<h3>Preact version</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
+<div class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-react"></span>&nbsp;Preact</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">import { defineWidget } from "trilium:preact";
 
 export default [
     defineWidget({
@@ -173,6 +173,24 @@ export default [
         render: () =&gt; &lt;span&gt;Right pane from Preact.&lt;/span&gt;
     })
 ];</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-javascript"></span>&nbsp;Legacy</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">class TreeWidget extends api.BasicWidget {
+    get parentWidget() { return "left-pane"; }
+    doRender() { this.$widget = $("&lt;span&gt;Left pane&lt;/span&gt;"); }
+}
+
+class SidebarWidget extends api.BasicWidget {
+    get parentWidget() { return "right-pane"; }
+    doRender() { this.$widget = $("&lt;span&gt;Right pane&lt;/span&gt;"); }
+}
+
+module.exports = [ new TreeWidget(), new SidebarWidget() ];</code></pre>
+    </div>
+  </section>
+</div>
 <h2>Launch bar widgets</h2>
 <p>Launch bar widgets are similar to <em>Custom widgets</em> but are specific
   to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
@@ -180,11 +198,22 @@ export default [
   more information.</p>
 <h2>Custom position</h2>
 <p>The position of a custom widget is defined via a <code>position</code> integer.</p>
-<p>In legacy widgets:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
-	// [..
-	get position() { return 10; }
-}</code></pre>
-<p>In Preact widgets:</p><pre><code class="language-text-x-trilium-auto">export default defineWidget({
+<div
+class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-react"></span>&nbsp;Preact</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">export default defineWidget({
     // [...]
     position: 10
 });</code></pre>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-javascript"></span>&nbsp;Legacy</p>
+    <div class="trilium-tab-panel"><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
+	// [..
+	get position() { return 10; }
+}</code></pre>
+    </div>
+  </section>
+</div>

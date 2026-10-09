@@ -14,19 +14,19 @@ Note that <a class="reference-link" href="Synchronization.md">Synchronization</
 
 ## Creating a backup
 
-### On the desktop application and web client:
+=== "<span class="tn-icon bx bx-desktop"></span> On the desktop app & web client"
 
-1.  Go to **Settings → Backup** and press the **Backup Now** button.
-2.  The backup creation process may take a few moments, especially for larger databases. A notification will inform you when the backup is complete.
-3.  The backup will be saved as **backup-now** in the **Existing Backups** list, where you can download it.
+    1.  Go to **Settings → Backup** and press the **Backup Now** button.
+    2.  The backup creation process may take a few moments, especially for larger databases. A notification will inform you when the backup is complete.
+    3.  The backup will be saved as **backup-now** in the **Existing Backups** list, where you can download it.
 
-### On the standalone client
+=== "<span class="tn-icon bx bx-globe"></span> On the standalone client"
 
-1.  **Go to Settings → Backup** and press the "**Download backup**" button.
-2.  You will be prompted to **restart the app**. Confirm, and the app will restart automatically.
-3.  Set a **backup name** or **password** (both optional), then press "**Continue**".
-4.  Press the "**Generate and download"** button and wait for the download to complete.
-5.  Once you confirm the download is saved on your device, press **"Finish"** to complete
+    1.  **Go to Settings → Backup** and press the "**Download backup**" button.
+    2.  You will be prompted to **restart the app**. Confirm, and the app will restart automatically.
+    3.  Set a **backup name** or **password** (both optional), then press "**Continue**".
+    4.  Press the "**Generate and download"** button and wait for the download to complete.
+    5.  Once you confirm the download is saved on your device, press **"Finish"** to complete
 
 ## Downloading a backup
 

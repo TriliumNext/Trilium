@@ -163,7 +163,7 @@
       </tr>
       <tr>
         <td>Select</td>
-        <td>The order in which the options are declared.&nbsp;&nbsp;&nbsp;
+        <td>The order in which the options are declared.&nbsp;&nbsp;&nbsp;&nbsp;
           <br>For example, a select attribute declared with “Low”, “Medium”, and “High”
           options will be sorted as follows: Low → Medium → High.</td>
       </tr>
@@ -322,7 +322,7 @@
   or colors, deleting them, or archiving them.</p>
 <p>You can select multiple cards in the following ways:</p>
 <ul>
-  <li><strong>Using a mouse and keyboard:</strong>
+  <li class="ck-list-marker-bold"><strong>Using a mouse and keyboard:</strong>
     <ul>
       <li>To add a card to the selection, hold <kbd>Ctrl</kbd> and click the card.
         Repeat this for other cards until all the desired cards are selected. Clicking
@@ -333,7 +333,7 @@
       <li>Press <kbd>Esc</kbd> to clear the selection.</li>
     </ul>
   </li>
-  <li><strong>On mobile:</strong>
+  <li class="ck-list-marker-bold"><strong>On mobile:</strong>
     <ol>
       <li>To enter selection mode, tap the&nbsp;<span class="tn-icon bx bx-select-multiple"></span> button
         at the top of the screen. A selection toolbar will appear in the header,
@@ -345,7 +345,7 @@
       <li>Use the side toolbar to apply actions to the selected cards.</li>
     </ol>
   </li>
-  <li><strong>Using only the keyboard:</strong>
+  <li class="ck-list-marker-bold"><strong>Using only the keyboard:</strong>
     <ul>
       <li>To add the currently focused card to the selection, press <kbd>Ctrl</kbd> + <kbd>Space</kbd>.
         Repeat this for the other cards you want to select. Pressing <kbd>Ctrl</kbd> + <kbd>Space</kbd> again
@@ -354,7 +354,7 @@
         use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to expand or shrink the
         selection.</li>
       <li>To select every card in the column the focus is in, press <kbd>Ctrl</kbd> + <kbd>A</kbd>.
-        The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span>  <strong>Select all cards</strong>.</li>
+        The same action is available from the column menu, as <span class="tn-icon bx bx-selection"></span><strong>Select all cards</strong>.</li>
       <li>Press <kbd>Esc</kbd> to clear the selection.</li>
     </ul>
   </li>
@@ -499,9 +499,9 @@ class="admonition warning">
   <p>For each newly created attribute, Trilium creates an attribute definition
     on the board collection note. A card displays the attributes declared as
     inheritable on the board note, as well as any attribute the card gets a
-    definition for from elsewhere, for example through <a class="reference-link"
-    href="#root/_help_KC1HB96bqqHX">Templates</a> or another parent note it
-    is cloned under. Attributes that only the cards define are listed after
+    definition for from elsewhere, for example through&nbsp;<a class="reference-link"
+    href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;or another parent note
+    it is cloned under. Attributes that only the cards define are listed after
     the board's own.</p>
 </aside>
 <p>Here is an example of the attributes you can define for a typical Kanban
@@ -658,17 +658,11 @@ class="admonition warning">
 </ul>
 <p>To use relations for grouping:</p>
 <ol>
-  <li>
-    <p>Create a Kanban board from scratch rather than from a template.</p>
-  </li>
-  <li>
-    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
-      default template.</p>
-  </li>
-  <li>
-    <p>Set <code>#board:groupBy</code> to the name of a relation, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (for
-      example, <code>~status</code>).</p>
-  </li>
+  <li>Create a Kanban board from scratch rather than from a template.</li>
+  <li>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
+    default template.</li>
+  <li>Set <code>#board:groupBy</code> to the name of a relation, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (for
+    example, <code>~status</code>).</li>
   <li>
     <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;to
       make changing the status within the note easier:</p><pre><code class="language-text-x-trilium-auto">#relation:status(inheritable)="promoted,alias=Status,single"</code></pre>

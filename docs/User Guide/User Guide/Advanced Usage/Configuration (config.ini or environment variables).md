@@ -26,92 +26,66 @@ Additionally, shorter aliases are available for common configurations (see Alter
 
 ## Environment Variable Reference
 
-### General Section
+=== "General"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_GENERAL_INSTANCENAME` | string | "" | Instance name for API identification |
-| `TRILIUM_GENERAL_NOAUTHENTICATION` | boolean | false | Disable authentication (server only) |
-| `TRILIUM_GENERAL_NOBACKUP` | boolean | false | Disable automatic backups |
-| `TRILIUM_GENERAL_NODESKTOPICON` | boolean | false | Disable desktop icon creation |
-| `TRILIUM_GENERAL_READONLY` | boolean | false | Enable read-only mode |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_GENERAL_INSTANCENAME` | string | "" | Instance name for API identification |
+    | `TRILIUM_GENERAL_NOAUTHENTICATION` | boolean | false | Disable authentication (server only) |
+    | `TRILIUM_GENERAL_NOBACKUP` | boolean | false | Disable automatic backups |
+    | `TRILIUM_GENERAL_NODESKTOPICON` | boolean | false | Disable desktop icon creation |
+    | `TRILIUM_GENERAL_READONLY` | boolean | false | Enable read-only mode |
 
-### Network Section
+=== "Network"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_NETWORK_HOST` | string | "0.0.0.0" | Server host binding |
-| `TRILIUM_NETWORK_PORT` | string | "8080" | Server port |
-| `TRILIUM_NETWORK_HTTPS` | boolean | false | Enable HTTPS |
-| `TRILIUM_NETWORK_CERTPATH` | string | "" | SSL certificate path |
-| `TRILIUM_NETWORK_KEYPATH` | string | "" | SSL key path |
-| `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY` | boolean/string | false | Reverse proxy trust settings |
-| `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | "" | CORS allowed origins |
-| `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | "" | CORS allowed methods |
-| `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | "" | CORS allowed headers |
-| `TRILIUM_NETWORK_CORSRESOURCEPOLICY` | string | same-origin | CORS Resource Policy allows same-origin/same-site/cross-origin as values, will error if not |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_NETWORK_HOST` | string | "0.0.0.0" | Server host binding |
+    | `TRILIUM_NETWORK_PORT` | string | "8080" | Server port |
+    | `TRILIUM_NETWORK_HTTPS` | boolean | false | Enable HTTPS |
+    | `TRILIUM_NETWORK_CERTPATH` | string | "" | SSL certificate path |
+    | `TRILIUM_NETWORK_KEYPATH` | string | "" | SSL key path |
+    | `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY` | boolean/string | false | Reverse proxy trust settings |
+    | `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | "" | CORS allowed origins |
+    | `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | "" | CORS allowed methods |
+    | `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | "" | CORS allowed headers |
+    | `TRILIUM_NETWORK_CORSRESOURCEPOLICY` | string | same-origin | CORS Resource Policy allows same-origin/same-site/cross-origin as values, will error if not |
 
-### Session Section
+=== "Session"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_SESSION_COOKIEMAXAGE` | integer | 1814400 | Session cookie max age in seconds (21 days) |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_SESSION_COOKIEMAXAGE` | integer | 1814400 | Session cookie max age in seconds (21 days) |
 
-### Sync Section
+=== "Sync"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_SYNC_SYNCSERVERHOST` | string | "" | Sync server host URL |
-| `TRILIUM_SYNC_SYNCSERVERTIMEOUT` | string | "120000" | Sync server timeout in milliseconds |
-| `TRILIUM_SYNC_SYNCPROXY` | string | "" | Sync proxy URL |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_SYNC_SYNCSERVERHOST` | string | "" | Sync server host URL |
+    | `TRILIUM_SYNC_SYNCSERVERTIMEOUT` | string | "120000" | Sync server timeout in milliseconds |
+    | `TRILIUM_SYNC_SYNCPROXY` | string | "" | Sync proxy URL |
 
-### MultiFactorAuthentication Section
+=== "MultiFactorAuthentication"
 
-See <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation/Signing%20in%20with%20OpenID%20Connect.md">Signing in with OpenID Connect</a>.
+    See <a class="reference-link" href="../Installation%20%26%20Setup/Server%20Installation/Signing%20in%20with%20OpenID%20Connect.md">Signing in with OpenID Connect</a>.
 
-### Logging Section
+=== "Logging"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90 | Number of days to retain log files |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90 | Number of days to retain log files |
 
-### Development Section
+=== "Development"
 
-| Environment Variable | Type | Default | Description |
-| --- | --- | --- | --- |
-| `TRILIUM_MANUAL_DB_MIGRATION` | boolean | false | If `true`, the application will not start if automatic database migrations are pending and would modify the database schema. |
+    | Environment Variable | Type | Default | Description |
+    | --- | --- | --- | --- |
+    | `TRILIUM_MANUAL_DB_MIGRATION` | boolean | false | If `true`, the application will not start if automatic database migrations are pending and would modify the database schema. |
 
-## Alternative Environment Variables
-
-The following alternative environment variable names are also supported and work identically to their longer counterparts:
-
-### Network CORS Variables
-
-*   `TRILIUM_NETWORK_CORS_ALLOW_ORIGIN` (alternative to `TRILIUM_NETWORK_CORSALLOWORIGIN`)
-*   `TRILIUM_NETWORK_CORS_ALLOW_METHODS` (alternative to `TRILIUM_NETWORK_CORSALLOWMETHODS`)
-*   `TRILIUM_NETWORK_CORS_ALLOW_HEADERS` (alternative to `TRILIUM_NETWORK_CORSALLOWHEADERS`)
-*   `TRILIUM_NETWORK_CORS_RESOURCE_POLICY` (alternative to `TRILIUM_NETWORK_CORSRESOURCEPOLICY`)
-
-### Sync Variables
-
-*   `TRILIUM_SYNC_SERVER_HOST` (alternative to `TRILIUM_SYNC_SYNCSERVERHOST`)
-*   `TRILIUM_SYNC_SERVER_TIMEOUT` (alternative to `TRILIUM_SYNC_SYNCSERVERTIMEOUT`)
-*   `TRILIUM_SYNC_SERVER_PROXY` (alternative to `TRILIUM_SYNC_SYNCPROXY`)
-
-### OAuth/MFA Variables
-
-*   `TRILIUM_OAUTH_BASE_URL` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL`)
-*   `TRILIUM_OAUTH_CLIENT_ID` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID`)
-*   `TRILIUM_OAUTH_CLIENT_SECRET` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET`)
-*   `TRILIUM_OAUTH_ISSUER_BASE_URL` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL`)
-*   `TRILIUM_OAUTH_ISSUER_NAME` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME`)
-*   `TRILIUM_OAUTH_ISSUER_ICON` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON`)
-*   `TRILIUM_OAUTH_HTTP_TIMEOUT` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT`)
-*   `TRILIUM_OAUTH_SCOPE` (alternative to `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE`)
-
-### Logging Variables
-
-*   `TRILIUM_LOGGING_RETENTION_DAYS` (alternative to `TRILIUM_LOGGING_RETENTIONDAYS`)
+<details>
+    <summary>Alternative environment variables</summary>
+    <p>The following alternative environment variable names are also supported and work identically to their longer counterparts.</p>
+    <div class="trilium-tabs"><section class="trilium-tab"><p class="trilium-tab-title">Network CORS</p><div class="trilium-tab-panel"><ul><li><code>TRILIUM_NETWORK_CORS_ALLOW_ORIGIN</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWORIGIN</code>)</li><li><code>TRILIUM_NETWORK_CORS_ALLOW_METHODS</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWMETHODS</code>)</li><li><code>TRILIUM_NETWORK_CORS_ALLOW_HEADERS</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWHEADERS</code>)</li><li><code>TRILIUM_NETWORK_CORS_RESOURCE_POLICY</code> (alternative to <code>TRILIUM_NETWORK_CORSRESOURCEPOLICY</code>)</li></ul></div></section><section class="trilium-tab"><p class="trilium-tab-title">Sync</p><div class="trilium-tab-panel"><ul><li><code>TRILIUM_SYNC_SERVER_HOST</code> (alternative to <code>TRILIUM_SYNC_SYNCSERVERHOST</code>)</li><li><code>TRILIUM_SYNC_SERVER_TIMEOUT</code> (alternative to <code>TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>)</li><li><code>TRILIUM_SYNC_SERVER_PROXY</code> (alternative to <code>TRILIUM_SYNC_SYNCPROXY</code>)</li></ul></div></section><section class="trilium-tab"><p class="trilium-tab-title">OAuth/MFA</p><div class="trilium-tab-panel"><ul><li><code>TRILIUM_OAUTH_BASE_URL</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>)</li><li><code>TRILIUM_OAUTH_CLIENT_ID</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>)</li><li><code>TRILIUM_OAUTH_CLIENT_SECRET</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>)</li><li><code>TRILIUM_OAUTH_ISSUER_BASE_URL</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>)</li><li><code>TRILIUM_OAUTH_ISSUER_NAME</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>)</li><li><code>TRILIUM_OAUTH_ISSUER_ICON</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>)</li><li><code>TRILIUM_OAUTH_HTTP_TIMEOUT</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHHTTPTIMEOUT</code>)</li><li><code>TRILIUM_OAUTH_SCOPE</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHSCOPE</code>)</li></ul></div></section><section class="trilium-tab"><p class="trilium-tab-title">Logging</p><div class="trilium-tab-panel"><ul><li><code>TRILIUM_LOGGING_RETENTION_DAYS</code> (alternative to <code>TRILIUM_LOGGING_RETENTIONDAYS</code>)</li></ul></div></section></div>
+</details>
 
 ## Boolean Values
 
@@ -167,4 +141,4 @@ Both naming patterns are fully supported and can be used interchangeably:
 
 ## config.ini Reference
 
-For the complete list of configuration options and their INI file format, please review the [config-sample.ini](https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/config-sample.ini) file in the Trilium repository
+For the complete list of configuration options and their INI file format, please review the [config-sample.ini](https://github.com/TriliumNext/Trilium/blob/main/apps/server/src/assets/config-sample.ini) file in the Trilium repository.

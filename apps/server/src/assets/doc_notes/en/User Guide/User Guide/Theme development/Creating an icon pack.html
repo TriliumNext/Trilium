@@ -107,7 +107,7 @@
       only letters, digits, hyphens, underscores and non-ASCII characters. Punctuation
       and whitespace (e.g. <code>ph.acorn</code> or <code>ph acorn</code>) are not
       usable as class names; icons with such a key are skipped and an error is
-      logged in <a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>,
+      logged in&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>,
       while the rest of the pack still loads.</li>
   </ul>
 </aside>
@@ -142,8 +142,10 @@
     /* [...] */
   ]
 }</code></pre>
-<p>A tiny Node.js script to produce the manifest (place <code>selection.json</code> in
-  the same directory and run with Node 20+):</p><pre><code class="language-text-javascript">import { join } from "node:path";
+<details class="trilium-collapsible" open="">
+  <summary>A tiny Node.js script to produce the manifest</summary>
+  <p>Place <code>selection.json</code> in the same directory and run with Node
+    20+):</p><pre><code class="language-text-javascript">import { join } from "node:path";
 import { readFileSync, writeFileSync } from "node:fs";
 
 function processIconPack(packName) {
@@ -169,13 +171,14 @@ function processIconPack(packName) {
 }
 
 processIconPack("light");</code></pre>
-<p>What to do with the script:</p>
-<ul>
-  <li>Put <code>selection.json</code> and <code>build-manifest.js</code> in a folder.</li>
-  <li>Run: node build-manifest.js</li>
-  <li>The script writes <code>manifest.json</code> — open it, verify contents,
-    then copy into a Trilium Code note (language: JSON).</li>
-</ul>
+  <p>What to do with the script:</p>
+  <ul>
+    <li>Put <code>selection.json</code> and <code>build-manifest.js</code> in a folder.</li>
+    <li>Run: node build-manifest.js</li>
+    <li>The script writes <code>manifest.json</code> — open it, verify contents,
+      then copy into a Trilium Code note (language: JSON).</li>
+  </ul>
+</details>
 <aside class="admonition tip">
   <p><strong>Mind the escape format when processing CSS</strong>
   </p>

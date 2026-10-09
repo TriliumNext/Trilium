@@ -13,10 +13,11 @@ Trilium supports custom user themes, allowing you to personalize the application
 
 1.  **Create a CSS Code Note**: Start by creating a new [code note](../Note%20Types/Code.md) with the `CSS` type.
 2.  **Annotate with** `#appTheme`: Add the [attribute](../Advanced%20Usage/Attributes.md) `#appTheme=my-theme-name` to your note, where `my-theme-name` is the name of your custom theme.
-3.  **Define Your Styles**: Write your custom CSS within the note. Below is an example of a custom theme:
+3.  **Define Your Styles**: Write your custom CSS within the note.
 
-```
-@font-face {
+<details open="">
+    <summary>Example of a custom theme</summary>
+    <pre><code class="language-text-x-trilium-auto">@font-face {
   font-family: 'Raleway';
   font-style: normal;
   font-weight: 400;
@@ -68,8 +69,11 @@ body .note-detail-text {
 
 body .CodeMirror {
     filter: invert(100%) hue-rotate(180deg);
-}
-```
+}</code></pre>
+    <p>&nbsp;</p>
+</details>
+
+ 
 
 ### Activating Your Custom Theme
 

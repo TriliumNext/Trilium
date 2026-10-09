@@ -42,9 +42,13 @@
 <h2>Reverse Proxy Setup</h2>
 <p>To configure a reverse proxy for Trilium, you can use either <strong>nginx</strong> or <strong>Apache</strong>.
   You can also check out the documentation stored in the Reverse proxy folder.</p>
-<h3>nginx</h3>
-<p>Add the following configuration to your <code>nginx</code> setup to proxy
-  requests to Trilium:</p><pre><code class="language-text-x-trilium-auto">location /trilium/ {
+<div
+class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title">nginx</p>
+    <div class="trilium-tab-panel">
+      <p>Add the following configuration to your <code>nginx</code> setup to proxy
+        requests to Trilium:</p><pre><code class="language-text-x-trilium-auto">location /trilium/ {
     proxy_pass http://127.0.0.1:8080/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -52,7 +56,14 @@
     proxy_set_header Host $host;
     proxy_cache_bypass $http_upgrade;
 }</code></pre>
-<p>To avoid limiting the size of payloads, include this in the <code>server {}</code> block:</p><pre><code class="language-text-x-trilium-auto"># Set to 0 for unlimited. Default is 1M.
+      <p>To avoid limiting the size of payloads, include this in the <code>server {}</code> block:</p><pre><code class="language-text-x-trilium-auto"># Set to 0 for unlimited. Default is 1M.
 client_max_body_size 0;</code></pre>
-<h3>Apache</h3>
-<p>For an Apache setup, refer to the <a href="#root/_help_fDLvzOx29Pfg">Apache proxy setup</a> guide.</p>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title">Apache</p>
+    <div class="trilium-tab-panel">
+      <p>For an Apache setup, refer to the&nbsp;<a class="reference-link" href="#root/_help_fDLvzOx29Pfg">Apache using Docker</a>&nbsp;guide.</p>
+    </div>
+  </section>
+</div>

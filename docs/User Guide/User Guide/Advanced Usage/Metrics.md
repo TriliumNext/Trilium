@@ -1,14 +1,14 @@
 # Metrics
 The Trilium Metrics API provides comprehensive monitoring data about your Trilium instance, designed for external monitoring systems like Prometheus.
 
-## **Endpoint**
+## Endpoint
 
 *   **URL**: `/etapi/metrics`
 *   **Method**: `GET`
 *   **Authentication**: ETAPI token required
 *   **Default Format**: Prometheus text format
 
-## **Authentication**
+## Authentication
 
 You need an ETAPI token to access the metrics endpoint. Get one by:
 
@@ -20,46 +20,45 @@ curl -X POST http://localhost:8080/etapi/auth/login \
 
 ```
 
-## **Usage**
+## Usage
 
-### **Prometheus Format (Default)**
+=== "Prometheus Format (Default)"
 
-```
-curl -H "Authorization: YOUR_ETAPI_TOKEN" \
-  http://localhost:8080/etapi/metrics
+    ```
+    curl -H "Authorization: YOUR_ETAPI_TOKEN" \
+      http://localhost:8080/etapi/metrics
 
-```
+    ```
 
-Returns metrics in Prometheus text format:
+    Returns metrics in Prometheus text format:
 
-```
-# HELP trilium_info Trilium instance information
-# TYPE trilium_info gauge
-trilium_info{version="0.91.6",db_version="231",node_version="v18.17.0"} 1 1701432000
+    ```
+    # HELP trilium_info Trilium instance information
+    # TYPE trilium_info gauge
+    trilium_info{version="0.91.6",db_version="231",node_version="v18.17.0"} 1 1701432000
 
-# HELP trilium_notes_total Total number of notes including deleted
-# TYPE trilium_notes_total gauge
-trilium_notes_total 1234 1701432000
+    # HELP trilium_notes_total Total number of notes including deleted
+    # TYPE trilium_notes_total gauge
+    trilium_notes_total 1234 1701432000
+    ```
 
-```
+=== "JSON Format"
 
-### **JSON Format**
+    ```
+    curl -H "Authorization: YOUR_ETAPI_TOKEN" \
+      "http://localhost:8080/etapi/metrics?format=json"
 
-```
-curl -H "Authorization: YOUR_ETAPI_TOKEN" \
-  "http://localhost:8080/etapi/metrics?format=json"
+    ```
 
-```
+    Returns detailed metrics in JSON format for debugging or custom integrations.
 
-Returns detailed metrics in JSON format for debugging or custom integrations.
+## Available Metrics
 
-## **Available Metrics**
-
-### **Instance Information**
+### Instance Information
 
 *   `trilium_info` - Version and build information with labels
 
-### **Database Metrics**
+### Database Metrics
 
 *   `trilium_notes_total` - Total notes (including deleted)
 *   `trilium_notes_deleted` - Number of deleted notes
@@ -74,19 +73,19 @@ Returns detailed metrics in JSON format for debugging or custom integrations.
 *   `trilium_etapi_tokens_total` - Active ETAPI tokens
 *   `trilium_embeddings_total` - Note embeddings (if available)
 
-### **Categorized Metrics**
+### Categorized Metrics
 
 *   `trilium_notes_by_type{type="text|code|image|file"}` - Notes by type
 *   `trilium_attachments_by_type{mime_type="..."}` - Attachments by MIME type
 
-### **Statistics**
+### Statistics
 
 *   `trilium_database_size_bytes` - Database size in bytes
 *   `trilium_oldest_note_timestamp` - Timestamp of oldest note
 *   `trilium_newest_note_timestamp` - Timestamp of newest note
 *   `trilium_last_modified_timestamp` - Last modification timestamp
 
-## **Prometheus Configuration**
+## Prometheus Configuration
 
 Add to your `prometheus.yml`:
 
@@ -101,13 +100,13 @@ scrape_configs:
 
 ```
 
-## **Error Responses**
+## Error Responses
 
 *   `400` - Invalid format parameter
 *   `401` - Missing or invalid ETAPI token
 *   `500` - Internal server error
 
-## **Grafana Dashboard**
+## Grafana Dashboard
 
 <figure class="image"><img style="aspect-ratio:2594/1568;" src="1_Metrics_image.png" width="2594" height="1568"></figure>
 

@@ -1,21 +1,31 @@
 <p>The desktop version of Trilium supports all three main operating systems:</p>
-<ul>
-  <li>Windows
-    <ul>
-      <li>Windows 11 is officially supported.</li>
-      <li>Windows on ARM is also supported</li>
-    </ul>
-  </li>
-  <li>Linux:
-    <ul>
-      <li>Most modern distributions are supported, including NixOS.</li>
-      <li>ARM is supported in <code>aarch64</code> (no ARM v7 support).</li>
-    </ul>
-  </li>
-  <li>macOS
-    <ul>
-      <li>Minimum supported operating system: macOS Ventura</li>
-      <li>Both Intel and Apple Silicon devices are supported.</li>
-    </ul>
-  </li>
-</ul>
+<div
+class="trilium-tabs">
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-windows"></span>&nbsp;Windows</p>
+    <div class="trilium-tab-panel">
+      <ul>
+        <li>Windows 11 is officially supported.</li>
+        <li>Windows on ARM is also supported</li>
+      </ul>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-tux"></span>&nbsp;Linux</p>
+    <div class="trilium-tab-panel">
+      <ul>
+        <li>Most modern distributions are supported, including NixOS.</li>
+        <li>ARM is supported in <code>aarch64</code> (no ARM v7 support).</li>
+      </ul>
+    </div>
+  </section>
+  <section class="trilium-tab">
+    <p class="trilium-tab-title"><span class="tn-icon bx bxl-apple"></span>&nbsp;macOS</p>
+    <div class="trilium-tab-panel">
+      <ul>
+        <li>Minimum supported operating system: macOS Ventura</li>
+        <li>Both Intel and Apple Silicon devices are supported.</li>
+      </ul>
+    </div>
+  </section>
+</div>

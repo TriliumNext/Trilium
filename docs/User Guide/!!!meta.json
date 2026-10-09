@@ -446,7 +446,31 @@
                                             ],
                                             "format": "markdown",
                                             "dataFileName": "Packaged version for Linux.md",
-                                            "attachments": []
+                                            "attachments": [],
+                                            "dirFileName": "Packaged version for Linux",
+                                            "children": [
+                                                {
+                                                    "isClone": false,
+                                                    "noteId": "ZNAjFcxqHr9V",
+                                                    "notePath": [
+                                                        "pOsGYCXsbNQG",
+                                                        "Otzi9La2YAUX",
+                                                        "WOcw2SLH6tbX",
+                                                        "Dgg7bR3b6K9j",
+                                                        "3tW6mORuTHnB",
+                                                        "ZNAjFcxqHr9V"
+                                                    ],
+                                                    "title": "Simple auto-update for server",
+                                                    "notePosition": 10,
+                                                    "prefix": null,
+                                                    "isExpanded": false,
+                                                    "type": "code",
+                                                    "mime": "text/x-sh",
+                                                    "attributes": [],
+                                                    "dataFileName": "Simple auto-update for server.dat",
+                                                    "attachments": []
+                                                }
+                                            ]
                                         },
                                         {
                                             "isClone": false,
