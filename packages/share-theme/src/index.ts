@@ -3,7 +3,7 @@
 import "./base.css";
 import setupLayout from "./page/layout.js";
 import "./page/header.css";
-import setupExpanders, { setupTreeState } from "./page/navigation.js";
+import setupExpanders from "./page/navigation.js";
 import setupThemeSelector from "./page/theme_switch.js";
 import setupSearch from "./page/search.js";
 import setupToC from "./page/toc.js";
@@ -45,11 +45,11 @@ async function fetchNote(noteId: string | null = null) {
 }
 
 Object.assign(window, { fetchNote });
-// A prerendered page reads the theme and the tree's state once it is shown, not while prerendering.
+// A prerendered page reads the theme once it is shown, not while prerendering. `tree.ts` restores
+// the tree, before the page is first drawn.
 whenActivated(() => $try(setupThemeSelector));
 $try(setupToC);
 $try(setupExpanders);
-whenActivated(() => $try(setupTreeState));
 $try(setupLayout);
 $try(setupSearch);
 $try(setupFooter);

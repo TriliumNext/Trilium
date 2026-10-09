@@ -1480,9 +1480,10 @@ describe("content_renderer pages", () => {
             page.querySelectorAll(selector).map((element) => element.getAttribute(attribute));
         expect(urls("link[rel=stylesheet]", "href")).toStrictEqual([ "api/notes/pageCss/download" ]);
         expect(urls("script[src]", "src"))
-            .toStrictEqual([ "assets/scripts.js", "api/notes/pageJs/download" ]);
-        // The theme's script restores the tree before the first paint; the page's own scripts wait.
-        expect(urls("script[src]", "blocking")).toStrictEqual([ "render", undefined ]);
+            .toStrictEqual([ "assets/tree.js", "assets/scripts.js", "api/notes/pageJs/download" ]);
+        // The tree is restored before the first paint; the rest of the theme and the page's own
+        // scripts wait.
+        expect(urls("script[src]", "blocking")).toStrictEqual([ "render", undefined, undefined ]);
         expect(urls("link[rel='shortcut icon']", "href"))
             .toStrictEqual([ "api/notes/pageIcon/download" ]);
     });
@@ -1698,7 +1699,9 @@ describe("content_renderer pages", () => {
         expect(page.querySelectorAll("link[rel=stylesheet]").map((tag) => tag.getAttribute("href")))
             .toStrictEqual([ "../assets/scripts.css" ]);
         expect(page.querySelectorAll("script[src]").map((tag) => tag.getAttribute("src")))
-            .toStrictEqual([ "../assets/scripts.js", "api/notes/exportJs/download" ]);
+            .toStrictEqual([
+                "../assets/tree.js", "../assets/scripts.js", "api/notes/exportJs/download"
+            ]);
         expect(page.querySelector("#trilium-icon-packs")?.text)
             .toContain("../assets/icon-pack-bx.");
         const [ other, file ] = page.querySelectorAll("#content a");

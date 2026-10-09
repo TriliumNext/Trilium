@@ -100,6 +100,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
 
     // Determine JS to load.
     const jsToLoad: string[] = [
+        `${basePath}assets/tree.js`,
         `${basePath}assets/scripts.js`
     ];
     for (const jsRelation of note.getRelations("shareJs")) {
@@ -141,7 +142,9 @@ export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) 
     }
 
     // Determine JS to load.
+    // `page.ejs` makes the first one, which restores the tree, block the page's first paint.
     const jsToLoad: string[] = [
+        "assets/tree.js",
         "assets/scripts.js"
     ];
     for (const jsRelation of note.getRelations("shareJs")) {

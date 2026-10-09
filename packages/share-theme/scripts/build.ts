@@ -93,11 +93,22 @@ async function runBuild(watch: boolean) {
         metafile: true,
         minify: process.argv.includes("--minify")
     };
+    // `tree.js` runs before the page is first drawn, so it is built without splitting: the code it
+    // shares with `scripts.js` is inlined rather than moved into a chunk it would wait for.
+    const treeOpts: esbuild.BuildOptions = {
+        entryPoints: [ { in: path.join(rootDir, "src", "tree.ts"), out: "tree" } ],
+        bundle: true,
+        outdir: outDir,
+        format: "esm",
+        target: opts.target,
+        logLevel: "info",
+        minify: opts.minify
+    };
     if (watch) {
-        const ctx = esbuild.context(opts);
-        (await ctx).watch();
+        const contexts = await Promise.all([ esbuild.context(opts), esbuild.context(treeOpts) ]);
+        await Promise.all(contexts.map((context) => context.watch()));
     } else {
-        const result = await esbuild.build(opts);
+        const [ result ] = await Promise.all([ esbuild.build(opts), esbuild.build(treeOpts) ]);
         const after = performance.now();
         writeFileSync("meta.json", JSON.stringify(result.metafile, null, 2));
         console.log(`Build actually took ${(after - before).toFixed(2)}ms`);
