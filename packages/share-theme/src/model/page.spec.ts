@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo, getTableOfContents, type PageHeading,
-    type ShareNote
+    getChildLinks, getHtmlSnippets, getNavigationTree, getPageHead, getPrevNextLinks, getShareLink, getSiteAncestorIds,
+    getSiteLogo, getTableOfContents, type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
 
 describe("getPageHead", () => {
@@ -173,6 +173,102 @@ describe("getPrevNextLinks", () => {
     });
 });
 
+describe("getShareLink", () => {
+    const sanitizeUrl = (url: string) => (url.startsWith("javascript:") ? "about:blank" : url);
+    const link = (labels: Record<string, string>) =>
+        getShareLink(fakeNote({ noteId: "page", labels }), sanitizeUrl);
+
+    it("links to the page itself without an external link", () => {
+        expect(link({})).toStrictEqual({ href: "./page-alias", isExternal: false });
+        expect(link({ shareExternal: "" })).toStrictEqual({ href: "./page-alias", isExternal: false });
+        expect(link({ shareExternalLink: "   " }).isExternal).toBe(false);
+    });
+
+    it("links to the first non-empty external link, #shareExternalLink first, made safe", () => {
+        const external = (href: string) => ({ href, isExternal: true });
+
+        expect(link({ shareExternal: "https://example.com/legacy" }))
+            .toStrictEqual(external("https://example.com/legacy"));
+        expect(link({
+            shareExternal: "https://example.com/legacy",
+            shareExternalLink: "https://example.com/documented"
+        })).toStrictEqual(external("https://example.com/documented"));
+        expect(link({ shareExternal: "https://example.com/legacy", shareExternalLink: "   " }))
+            .toStrictEqual(external("https://example.com/legacy"));
+        expect(link({ shareExternalLink: " javascript:alert(1) " })).toStrictEqual(external("about:blank"));
+    });
+});
+
+describe("getNavigationTree", () => {
+    // site ─┬─ a ─┬─ a1
+    //       │     └─ hidden (hidden from the tree)
+    //       └─ b (external) ── b1
+    const site = fakeNote({ noteId: "site" });
+    const a = addChild(site, fakeNote({ noteId: "a", icon: "bx bx-folder" }));
+    const a1 = addChild(a, fakeNote({ noteId: "a1", type: "code" }));
+    addChild(a, fakeNote({ noteId: "hidden" }), true);
+    const b = addChild(site, fakeNote({ noteId: "b", labels: { shareExternalLink: "https://example.com" } }));
+    addChild(b, fakeNote({ noteId: "b1" }));
+    const outline = (items: NavigationItem[]): unknown[] => items.map((item) => {
+        const flags = `${item.isActive ? "*" : ""}${item.isExpanded ? "+" : ""}`;
+        return item.children.length
+            ? [ item.title + flags, outline(item.children) ]
+            : item.title + flags;
+    });
+
+    it("lists the visible pages below the site root, expanding the active one and its ancestors", () => {
+        const tree = getNavigationTree(site, a1, [ "a" ], { sanitizeUrl: (url) => url });
+
+        expect(outline(tree)).toStrictEqual([ [ "a+", [ "a1*+" ] ], [ "b", [ "b1" ] ] ]);
+        expect(tree[0]).toMatchObject({
+            type: "text", icon: "bx bx-folder", href: "./a-alias", isExternal: false
+        });
+        expect(tree[0].children[0].type).toBe("code");
+        expect(tree[1]).toMatchObject({ href: "https://example.com", isExternal: true });
+    });
+
+    it("passes the icon pack prefixes to the notes", () => {
+        const tree = getNavigationTree(site, site, [], {
+            sanitizeUrl: (url) => url,
+            iconPackPrefixes: [ "custom" ]
+        });
+
+        expect(tree[1].icon).toBe("bx bx-note custom");
+        expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
+    });
+});
+
+describe("getChildLinks", () => {
+    it("links to the visible children of a note, in order", () => {
+        const parent = fakeNote({ noteId: "parent" });
+        addChild(parent, fakeNote({ noteId: "x", type: "book" }));
+        addChild(parent, fakeNote({ noteId: "hidden" }), true);
+        addChild(parent, fakeNote({ noteId: "y", labels: { shareExternal: "https://example.com" } }));
+
+        expect(getChildLinks(parent, (url) => url)).toStrictEqual([
+            { href: "./x-alias", isExternal: false, title: "x", type: "book" },
+            { href: "https://example.com", isExternal: true, title: "y", type: "text" }
+        ]);
+    });
+});
+
+describe("getSiteAncestorIds", () => {
+    // elsewhere ── deep (clone, first parent)
+    // site ── a ── b ── deep
+    const elsewhere = fakeNote({ noteId: "elsewhere" });
+    const site = fakeNote({ noteId: "site" });
+    const a = addChild(site, fakeNote({ noteId: "a" }));
+    const b = addChild(a, fakeNote({ noteId: "b" }));
+    const deep = addChild(elsewhere, fakeNote({ noteId: "deep" }));
+    addChild(b, deep);
+
+    it("lists the parents up to the site root, following the first parent inside the site", () => {
+        expect(getSiteAncestorIds(deep, site)).toStrictEqual([ "b", "a" ]);
+        expect(getSiteAncestorIds(a, site)).toStrictEqual([]);
+        expect(getSiteAncestorIds(site, site)).toStrictEqual([]);
+    });
+});
+
 interface FakeNoteOptions {
     noteId: string;
     title?: string;
@@ -180,6 +276,8 @@ interface FakeNoteOptions {
     relations?: Record<string, string>;
     snippets?: (ShareNote | null)[];
     content?: string;
+    type?: string;
+    icon?: string;
 }
 
 function fakeNote(options: FakeNoteOptions): FakeNote {
@@ -195,6 +293,8 @@ function fakeNote(options: FakeNoteOptions): FakeNote {
         noteId: options.noteId,
         shareId: `${options.noteId}-alias`,
         title: options.title ?? options.noteId,
+        type: options.type ?? "text",
+        getIcon: (prefixes) => [ options.icon ?? "bx bx-note", ...prefixes ?? [] ].join(" "),
         getLabelValue: (name) => labels[name] ?? null,
         hasLabel: (name) => name in labels,
         getRelationValue: (name) => relations[name] ?? null,

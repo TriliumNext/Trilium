@@ -16,6 +16,28 @@ export interface ShareNote {
     getContent(): string | Uint8Array | null | undefined;
     getParentNotes(): ShareNote[];
     getVisibleChildNotes(): ShareNote[];
+    type: string;
+    /** The icon's CSS classes, among the icon packs whose prefixes are given. */
+    getIcon(iconPackPrefixes?: string[]): string;
+}
+
+/** Where a link to a note goes: its page, or the address of its external link. */
+export interface ShareLink {
+    href: string;
+    /** Whether the link goes to `#shareExternalLink` or `#shareExternal`. */
+    isExternal: boolean;
+}
+
+/** An entry of the navigation tree, with the entries below it. */
+export interface NavigationItem extends ShareLink {
+    title: string;
+    type: string;
+    icon: string;
+    /** Whether the entry is the page being shown. */
+    isActive: boolean;
+    /** Whether the entry is the page being shown or one of its ancestors. */
+    isExpanded: boolean;
+    children: NavigationItem[];
 }
 
 /** A link to another page of the site. */
@@ -167,6 +189,69 @@ export function getTableOfContents(headings: PageHeading[]): TableOfContentsEntr
         open.push(entry);
     }
     return toc;
+}
+
+/**
+ * Returns where a link to `note` goes: the first of `#shareExternalLink` and `#shareExternal` that
+ * is not blank, made safe by `sanitizeUrl`, otherwise the note's page.
+ */
+export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => string): ShareLink {
+    const externalLink = note.getLabelValue("shareExternalLink")?.trim()
+        || note.getLabelValue("shareExternal")?.trim();
+    return externalLink
+        ? { href: sanitizeUrl(externalLink), isExternal: true }
+        : { href: `./${note.shareId}`, isExternal: false };
+}
+
+/** Returns the links to the visible children of `note`, for its list of subpages. */
+export function getChildLinks(note: ShareNote, sanitizeUrl: (url: string) => string) {
+    return note.getVisibleChildNotes().map((child) => ({
+        ...getShareLink(child, sanitizeUrl),
+        title: child.title,
+        type: child.type
+    }));
+}
+
+/** What {@link getNavigationTree} needs besides the notes. */
+export interface NavigationTreeOptions {
+    sanitizeUrl: (url: string) => string;
+    /** The prefixes of the icon packs available to the page, for the notes' icons. */
+    iconPackPrefixes?: string[];
+}
+
+/**
+ * Returns the navigation tree of the site starting at `siteRoot`: its visible pages, below one
+ * another as in the note tree. The entries of `activeNote` and of the notes in `ancestorIds` are
+ * expanded.
+ */
+export function getNavigationTree(
+    siteRoot: ShareNote, activeNote: ShareNote, ancestorIds: string[], options: NavigationTreeOptions
+): NavigationItem[] {
+    const expandedIds = new Set([ activeNote.noteId, ...ancestorIds ]);
+    const toItem = (note: ShareNote): NavigationItem => ({
+        ...getShareLink(note, options.sanitizeUrl),
+        title: note.title,
+        type: note.type,
+        icon: note.getIcon(options.iconPackPrefixes),
+        isActive: note.noteId === activeNote.noteId,
+        isExpanded: expandedIds.has(note.noteId),
+        children: note.getVisibleChildNotes().map(toItem)
+    });
+    return siteRoot.getVisibleChildNotes().map(toItem);
+}
+
+/**
+ * Returns the IDs of the notes between `note` and `siteRoot`, from its parent up, following the
+ * first parent inside the site.
+ */
+export function getSiteAncestorIds(note: ShareNote, siteRoot: ShareNote) {
+    const ancestorIds: string[] = [];
+    for (let position = getSitePosition(note, siteRoot);
+        position && position.parent.noteId !== siteRoot.noteId;
+        position = getSitePosition(position.parent, siteRoot)) {
+        ancestorIds.push(position.parent.noteId);
+    }
+    return ancestorIds;
 }
 
 /**

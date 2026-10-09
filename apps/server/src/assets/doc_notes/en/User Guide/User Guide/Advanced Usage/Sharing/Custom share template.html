@@ -76,6 +76,24 @@
           otherwise the site's root page), <code>width</code> and <code>height</code>.</td>
       </tr>
       <tr>
+        <td><code>navigation</code>
+        </td>
+        <td>The navigation tree of the site: its visible pages, each with <code>title</code>, <code>href</code>, <code>isExternal</code>, <code>type</code>, <code>icon</code>, <code>isActive</code> (the
+          page being shown), <code>isExpanded</code> (that page or one of its ancestors)
+          and <code>children</code>.</td>
+      </tr>
+      <tr>
+        <td><code>childLinks</code>
+        </td>
+        <td>The links to the note's visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>type</code>.</td>
+      </tr>
+      <tr>
+        <td><code>prevNext</code>
+        </td>
+        <td>The pages before and after the note in the navigation tree, as <code>previous</code> and <code>next</code>,
+          each with <code>title</code> and <code>href</code>, or <code>null</code>.</td>
+      </tr>
+      <tr>
         <td><code>snippets</code>
         </td>
         <td>The HTML of the <code>~shareHtml</code> snippets for each location, such

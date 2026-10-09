@@ -1,36 +1,13 @@
-<%
-const linkClass = `type-${note.type}` + (activeNote.noteId === note.noteId ? " active" : "");
-const externalHref = note.getLabelValue("shareExternalLink")?.trim()
-    || note.getLabelValue("shareExternal")?.trim();
-const isExternalLink = !!externalHref;
-let linkHref;
-
-if (isExternalLink) {
-    linkHref = sanitizeUrl(externalHref);
-} else if (note.shareId) {
-    linkHref = `./${note.shareId}`;
-}
-%>
-
-    <% if (note.noteId !== subRoot.note.noteId) { %>
-    <a class="<%= linkClass %>" href="<%= linkHref %>"<% if (isExternalLink) { %> target="_blank" rel="noopener noreferrer"<% } %>>
-        <% if (note.hasVisibleChildren()) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg></button><% } %>
-        <span><i class="<%= note.getIcon(iconPackSupportedPrefixes) %>"></i> <%= note.title %></span>
-    </a>
-<% } %>
-
-
-<% if (note.hasVisibleChildren()) { %>
 <ul>
-    <% note.getVisibleChildNotes().forEach(function (childNote) { %>
-    <%
-        const hasChildren = childNote.hasVisibleChildren();
-        const isAncestorOfActive = ancestors.some(p => p === childNote.noteId);
-        const expandedClass = childNote.noteId === activeNote.noteId || isAncestorOfActive ? " expanded" : "";
-    %>
-        <li class="<% if (hasChildren) { %>submenu-<% } %>item<%= expandedClass %>">
-            <%- include('tree_item', {note: childNote, subRoot: subRoot}) %>
+    <% for (const item of items) { %>
+        <li class="<%= item.children.length ? "submenu-item" : "item" %><%= item.isExpanded ? " expanded" : "" %>">
+            <a class="type-<%= item.type %><%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
+                <% if (item.children.length) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg></button><% } %>
+                <span><i class="<%= item.icon %>"></i> <%= item.title %></span>
+            </a>
+            <% if (item.children.length) { %>
+                <%- include("tree_item", { items: item.children }) %>
+            <% } %>
         </li>
-    <% }) %>
+    <% } %>
 </ul>
-<% } %>

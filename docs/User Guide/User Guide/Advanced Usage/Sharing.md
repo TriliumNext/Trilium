@@ -220,6 +220,7 @@ Sometimes it's useful to include a link to an external website alongside your sh
 Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
 
 *   the listing produced by the `#shareIndex` label;
+*   the navigation tree of the shared site;
 *   the "Subpages" list shown under a parent note;
 *   inline links to this note from within other shared notes.
 

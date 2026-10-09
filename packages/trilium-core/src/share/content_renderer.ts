@@ -8,7 +8,8 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo, getTableOfContents, type PageHeading
+    getChildLinks, getHtmlSnippets, getNavigationTree, getPageHead, getPrevNextLinks, getShareLink,
+    getSiteAncestorIds, getSiteLogo, getTableOfContents, type PageHeading
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -129,16 +130,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
 export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) {
     const subRoot = getSharedSubTreeRoot(note);
 
-    const ancestors: string[] = [];
-    let notePointer = note;
-    while (notePointer.parents[0]?.noteId !== subRoot.note?.noteId) {
-        const pointerParent = notePointer.parents[0];
-        if (!pointerParent) {
-            break;
-        }
-        ancestors.push(pointerParent.noteId);
-        notePointer = pointerParent;
-    }
+    const ancestors = subRoot.note ? getSiteAncestorIds(note, subRoot.note) : [];
 
     // Determine CSS to load.
     const cssToLoad: string[] = [];
@@ -232,6 +224,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         snippets: getHtmlSnippets(note),
         logo: getSiteLogo(siteRoot, sanitize.sanitizeUrl),
         prevNext: getPrevNextLinks(note, siteRoot),
+        navigation: getNavigationTree(siteRoot, note, renderArgs.ancestors, {
+            sanitizeUrl: sanitize.sanitizeUrl,
+            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+        }),
+        childLinks: getChildLinks(note, sanitize.sanitizeUrl),
         ...renderArgs,
     };
 
@@ -395,11 +392,10 @@ function renderIndex(result: Result) {
     const rootNote = shaca.getNote(shareRoot.SHARE_ROOT_NOTE_ID);
 
     for (const childNote of rootNote.getChildNotes()) {
-        const isExternalLink = childNote.hasLabel("shareExternalLink");
-        const rawHref = childNote.getLabelValue("shareExternalLink") ?? "";
-        const href = escapeHtml(isExternalLink ? sanitize.sanitizeUrl(rawHref) : `./${childNote.shareId}`);
-        const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
-        result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
+        const link = getShareLink(childNote, sanitize.sanitizeUrl);
+        const target = link.isExternal ? ` target="_blank" rel="noopener noreferrer"` : "";
+        result.content += `<li><a class="${childNote.type}" href="${escapeHtml(link.href)}"${target}>`
+            + `${childNote.escapedTitle}</a></li>`;
     }
 
     result.content += "</ul>";

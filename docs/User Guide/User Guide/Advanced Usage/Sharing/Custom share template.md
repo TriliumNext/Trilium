@@ -32,6 +32,9 @@ Your template is rendered with a context object exposing the note and its render
 | `isEmpty` | `true` when the note has no content of its own. |
 | `head` | The values of the page's `<head>`: `title` (the note's title, followed by the site's), `description` (`#shareDescription`), `noIndex` (`#shareDisallowRobotIndexing`) and `openGraph` with `url`, `domain`, `image` and `color`. |
 | `logo` | The site logo in the header: `href` (`#shareRootLink`, otherwise the site's root page), `width` and `height`. |
+| `navigation` | The navigation tree of the site: its visible pages, each with `title`, `href`, `isExternal`, `type`, `icon`, `isActive` (the page being shown), `isExpanded` (that page or one of its ancestors) and `children`. |
+| `childLinks` | The links to the note's visible children, each with `title`, `href`, `isExternal` and `type`. |
+| `prevNext` | The pages before and after the note in the navigation tree, as `previous` and `next`, each with `title` and `href`, or `null`. |
 | `snippets` | The HTML of the `~shareHtml` snippets for each location, such as `snippets["head:end"]`. Every location is present, empty when no snippet goes there. |
 | `subRoot` | The root of the shared subtree as `{ note, branch }` — handy for a site-wide title or logo. |
 | `cssToLoad` / `jsToLoad` | Arrays of stylesheet / script URLs the default theme would inject (includes anything added via `~shareCss` / `~shareJs`). |

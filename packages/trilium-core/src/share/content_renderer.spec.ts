@@ -1,6 +1,6 @@
 import { trimIndentation } from "@triliumnext/commons";
 import {
-    getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
+    getChildLinks, getHtmlSnippets, getPageHead, getPrevNextLinks, getSiteLogo
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { parse } from "node-html-parser";
@@ -929,6 +929,26 @@ describe("content_renderer", () => {
             expect(anchor?.getAttribute("href")).toBe(`./my alias"x`);
             expect(Object.keys(anchor?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
         });
+
+        it("points an entry with either external link label at that link, in a new tab", () => {
+            buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { "id": "legacyExternal", "#shareExternal": "https://example.com/legacy" },
+                    { "id": "documentedExternal", "#shareExternalLink": " https://example.com/doc " }
+                ]
+            });
+            const note = buildShareNote({ "id": "indexNote2", "content": "<p>Index</p>", "#shareIndex": "" });
+
+            const anchors = parse(String(getContent(note).content)).querySelectorAll("#index a");
+
+            expect(anchors.map((anchor) => anchor.getAttribute("href")))
+                .toStrictEqual([ "https://example.com/legacy", "https://example.com/doc" ]);
+            for (const anchor of anchors) {
+                expect(anchor.getAttribute("target")).toBe("_blank");
+                expect(anchor.getAttribute("rel")).toBe("noopener noreferrer");
+            }
+        });
     });
     describe("anchorHeadings", () => {
         it("anchors every heading and lists it with its level, text and unique slug", () => {
@@ -960,91 +980,37 @@ describe("content_renderer", () => {
         });
     });
 
-    describe("Tree item template", () => {
-        it("sets a working target and rel on external tree links only", () => {
-            const external = renderTreeItemAnchor({
-                "id": "external1",
-                "#shareExternal": "https://example.com/page"
+    describe("Navigation tree", () => {
+        it("links each page of the site, expanding the way to the page shown", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "treeSite",
+                    title: "Site",
+                    children: [
+                        {
+                            id: "treeSection",
+                            title: "Section",
+                            children: [ { id: "treeShown", title: "Shown", content: "<p>x</p>" } ]
+                        },
+                        { "id": "treeExternal", "title": "External", "#shareExternal": "https://example.com/page" }
+                    ]
+                }]
             });
+            const shown = shareRootNote.getChildNotes()[0].getChildNotes()[0].getChildNotes()[0];
 
-            expect(external?.getAttribute("href")).toBe("https://example.com/page");
-            expect(external?.getAttribute("target")).toBe("_blank");
-            expect(external?.getAttribute("rel")).toBe("noopener noreferrer");
-            expect(Object.keys(external?.attributes ?? {}).sort())
-                .toEqual([ "class", "href", "rel", "target" ]);
+            const menu = parse(String(renderNoteContent(shown))).querySelector("#menu");
+            const anchors = menu?.querySelectorAll("a") ?? [];
 
-            const internal = renderTreeItemAnchor({ id: "internal1" });
-
-            expect(internal?.getAttribute("href")).toBe("./internal1");
-            expect(Object.keys(internal?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
+            expect(anchors.map((anchor) => anchor.getAttribute("href")))
+                .toStrictEqual([ "./treeSection", "./treeShown", "https://example.com/page" ]);
+            expect(Object.keys(anchors[0].attributes).sort()).toEqual([ "class", "href" ]);
+            expect(anchors[1].classList.contains("active")).toBe(true);
+            expect(anchors[2].getAttribute("target")).toBe("_blank");
+            expect(anchors[2].getAttribute("rel")).toBe("noopener noreferrer");
+            expect(menu?.querySelectorAll("li.expanded").map((item) => item.querySelector("a")?.text.trim()))
+                .toStrictEqual([ "Section", "Shown" ]);
         });
-
-        it("links to the first non-empty value of either external link label", () => {
-            const documented = renderTreeItemAnchor({
-                "id": "external2",
-                "#shareExternalLink": "https://example.com/page"
-            });
-            const bothLabels = renderTreeItemAnchor({
-                "id": "external3",
-                "#shareExternal": "",
-                "#shareExternalLink": "https://example.com/page"
-            });
-
-            for (const anchor of [ documented, bothLabels ]) {
-                expect(anchor?.getAttribute("href")).toBe("https://example.com/page");
-                expect(anchor?.getAttribute("target")).toBe("_blank");
-                expect(anchor?.getAttribute("rel")).toBe("noopener noreferrer");
-                expect(Object.keys(anchor?.attributes ?? {}).sort())
-                    .toEqual([ "class", "href", "rel", "target" ]);
-            }
-
-            const noUrl = renderTreeItemAnchor({ "id": "external4", "#shareExternal": "" });
-
-            expect(noUrl?.getAttribute("href")).toBe("./external4");
-            expect(Object.keys(noUrl?.attributes ?? {}).sort()).toEqual([ "class", "href" ]);
-
-            const twoUrls = renderTreeItemAnchor({
-                "id": "external5",
-                "#shareExternal": "https://example.com/legacy",
-                "#shareExternalLink": "https://example.com/documented"
-            });
-
-            expect(twoUrls?.getAttribute("href")).toBe("https://example.com/documented");
-
-            const whitespaceWithLegacy = renderTreeItemAnchor({
-                "id": "external6",
-                "#shareExternal": "https://example.com/legacy2",
-                "#shareExternalLink": "   "
-            });
-
-            expect(whitespaceWithLegacy?.getAttribute("href")).toBe("https://example.com/legacy2");
-
-            const whitespaceOnly = renderTreeItemAnchor({
-                "id": "external7",
-                "#shareExternalLink": "   "
-            });
-
-            expect(whitespaceOnly?.getAttribute("href")).toBe("./external7");
-            expect(Object.keys(whitespaceOnly?.attributes ?? {}).sort())
-                .toEqual([ "class", "href" ]);
-        });
-
-        function renderTreeItemAnchor(noteDef: Parameters<typeof buildShareNote>[0]) {
-            const note = buildShareNote(noteDef);
-            const subRootNote = buildShareNote({ id: `subRoot-${noteDef.id}` });
-
-            const html = ejs.render(readShareTemplate("tree_item"), {
-                note,
-                activeNote: subRootNote,
-                subRoot: { note: subRootNote },
-                ancestors: [],
-                sanitizeUrl: sanitize.sanitizeUrl,
-                iconPackSupportedPrefixes: [],
-                t: (key: string) => key
-            });
-
-            return parse(html).querySelector("a");
-        }
     });
     describe("Subpage list template", () => {
         it("sets a working target and rel on external subpage links only", () => {
@@ -1158,6 +1124,8 @@ describe("content_renderer", () => {
                 snippets: getHtmlSnippets(note),
                 logo: getSiteLogo(note, sanitize.sanitizeUrl),
                 prevNext: getPrevNextLinks(note, note),
+                navigation: [],
+                childLinks: getChildLinks(note, sanitize.sanitizeUrl),
                 headings: [],
                 toc: []
             }, {
