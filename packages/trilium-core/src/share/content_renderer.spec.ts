@@ -11,8 +11,8 @@ import * as sanitize from "../services/sanitizer.js";
 import * as utils from "../services/utils/index.js";
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import {
-    anchorHeadings, ensureShareHighlighting, getContent, readShareTemplate, renderCode, renderNoteContent,
-    type Result
+    ensureShareHighlighting, getContent, preparePageContent, readShareTemplate, renderCode,
+    renderNoteContent, type Result
 } from "./content_renderer.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
@@ -339,6 +339,22 @@ describe("content_renderer", () => {
 
             expect(page.querySelector(".navigation .previous")?.getAttribute("href")).toBe("./navSite");
             expect(page.querySelector(".navigation .next")?.text).toBe("Second");
+        });
+
+        it("keeps the alt text of an image on the page", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{
+                    id: "altPage",
+                    content: `<p><img src="chart.png" alt="Chart"></p><p><img src="plain.png"></p>`
+                }]
+            });
+
+            const page = String(renderNoteContent(shareRootNote.getChildNotes()[0]));
+
+            expect(page).not.toMatch(/<img[^>]*\salt=[^>]*\salt=/);
+            expect(page).toContain(`<img src="chart.png" alt="Chart" loading="lazy">`);
+            expect(page).toMatch(/<img src="plain.png" alt="[^"]+" loading="lazy">/);
         });
 
         it("leaves an include-note section untouched when the referenced note is missing", () => {
@@ -950,9 +966,9 @@ describe("content_renderer", () => {
             }
         });
     });
-    describe("anchorHeadings", () => {
+    describe("preparePageContent", () => {
         it("anchors every heading and lists it with its level, text and unique slug", () => {
-            const { content, headings } = anchorHeadings(trimIndentation`
+            const { content, headings } = prepare(trimIndentation`
                 <h1>Intro</h1>
                 <p>Text</p>
                 <h2 class="x">Q&amp;A <strong>now</strong></h2>
@@ -974,10 +990,28 @@ describe("content_renderer", () => {
             expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
         });
 
-        it("returns content without headings as it is", () => {
-            const html = `<p>No <b>headings</b> here &amp; there</p>`;
-            expect(anchorHeadings(html)).toStrictEqual({ content: html, headings: [] });
+        it("gives an image without alt text the generic one and lazy loading, keeping its own", () => {
+            const { content } = prepare(trimIndentation`
+                <p><img src="a.png"></p>
+                <p><img src="b.png" alt="Chart" loading="eager"></p>
+                <p><img src="c.png" alt=""></p>
+            `);
+
+            expect(content).toContain(`<img src="a.png" alt="Image" loading="lazy">`);
+            expect(content).toContain(`<img src="b.png" alt="Chart" loading="eager">`);
+            const decorative = parse(content).querySelector(`img[src="c.png"]`);
+            expect(decorative?.getAttribute("alt")).toBe("");
+            expect(decorative?.getAttribute("loading")).toBe("lazy");
         });
+
+        it("returns content without headings or images as it is", () => {
+            const html = `<p>No <b>headings</b> here &amp; there</p>`;
+            expect(prepare(html)).toStrictEqual({ content: html, headings: [] });
+        });
+
+        function prepare(html: string) {
+            return preparePageContent(html, { imageAlt: "Image" });
+        }
     });
 
     describe("Navigation tree", () => {

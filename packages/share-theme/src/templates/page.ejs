@@ -93,9 +93,6 @@
                 <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>
                     <p><%= t("share_page.no-content") %></p>
                 <% } else { %>
-                    <%
-                    content = content.replace(/<img /g, `<img alt="${t("share_theme.image_alt")}" loading="lazy" `);
-                    %>
                     <%- content %>
                 <% } %>
                 <%- snippets["content:end"] %>

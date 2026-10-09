@@ -267,27 +267,38 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     }
 
     // Render with the default view otherwise. Custom templates get `content` without the heading
-    // anchors, which templates derived from an earlier `page.ejs` add themselves.
-    const { content: anchoredContent, headings } = typeof content === "string"
-        ? anchorHeadings(content)
+    // anchors and image attributes, which templates derived from an earlier `page.ejs` add
+    // themselves.
+    const { content: pageContent, headings } = typeof content === "string"
+        ? preparePageContent(content, { imageAlt: t("share_theme.image_alt") })
         : { content, headings: [] };
-    const pageOpts = { ...opts, content: anchoredContent, headings, toc: getTableOfContents(headings) };
+    const pageOpts = { ...opts, content: pageContent, headings, toc: getTableOfContents(headings) };
     return ejs.render(readShareTemplate("page"), pageOpts, {
         includer: (path) => ({ template: readShareTemplate(path) })
     });
 }
 
 /**
- * Gives every heading of `html` a `#` link to itself, with an ID made from its text that is
- * unique on the page, and returns the headings in document order. HTML without headings comes
- * back as it is.
+ * Prepares the content of a share page for the default template. Every heading gets a `#` link to
+ * itself, with an ID made from its text that is unique on the page, and the headings are returned
+ * in document order. An image without `alt` gets `imageAlt`, and one without `loading` loads
+ * lazily. HTML without headings or images comes back as it is.
  */
-export function anchorHeadings(html: string): { content: string; headings: PageHeading[] } {
-    if (!/<h[1-6][\s>]/i.test(html)) {
-        return { content: html, headings: [] };
+export function preparePageContent(html: string, options: { imageAlt: string }) {
+    if (!/<(h[1-6]|img)[\s>]/i.test(html)) {
+        return { content: html, headings: [] as PageHeading[] };
     }
 
     const document = parse(html, { comment: true });
+    for (const image of document.querySelectorAll("img")) {
+        if (!image.hasAttribute("alt")) {
+            image.setAttribute("alt", options.imageAlt);
+        }
+        if (!image.hasAttribute("loading")) {
+            image.setAttribute("loading", "lazy");
+        }
+    }
+
     const elements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
     const slugs = utils.slugifyHeadings(elements.map((element) => element.innerHTML));
     const headings = elements.map((element, index) => {
