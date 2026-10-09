@@ -84,6 +84,40 @@ describe("MulticolumnEditing", () => {
         });
     });
 
+    describe("placeholder", () => {
+        /** Whether the first block of each column shows the placeholder. */
+        function placeholders() {
+            const root = editor.editing.view.getDomRoot();
+            const columns = root?.querySelectorAll(".trilium-multicolumn-layout > section") ?? [];
+            return [...columns].map(column =>
+                column.firstElementChild?.classList.contains("ck-placeholder") ?? false);
+        }
+
+        it("shows in each column holding only an empty block, until text is typed there", () => {
+            editor.editing.view.document.isFocused = true;
+            setModelData(editor.model,
+                "<multicolumnLayout columnRatios=\"1-1-1-1\">" +
+                    "<multicolumnColumn><paragraph>Text</paragraph></multicolumnColumn>" +
+                    "<multicolumnColumn><paragraph>[]</paragraph></multicolumnColumn>" +
+                    "<multicolumnColumn>" +
+                        "<paragraph></paragraph><paragraph>Text</paragraph>" +
+                    "</multicolumnColumn>" +
+                    "<multicolumnColumn></multicolumnColumn>" +
+                "</multicolumnLayout>"
+            );
+
+            expect(placeholders()).toEqual([false, true, false, true]);
+            const host = editor.editing.view.getDomRoot()?.querySelector(".ck-placeholder");
+            expect(host?.getAttribute("data-placeholder")).toBe("Type content here…");
+
+            editor.model.change(writer => {
+                editor.model.insertContent(writer.createText("Typed"));
+            });
+
+            expect(placeholders()).toEqual([false, false, false, true]);
+        });
+    });
+
     describe("schema", () => {
         it("allows a layout at the top level, in a column, a tab panel and a collapsible", () => {
             const schema = editor.model.schema;
