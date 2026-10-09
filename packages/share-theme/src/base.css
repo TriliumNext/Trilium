@@ -67,6 +67,15 @@ html.theme-light {
     --kbd-border: #c9c9c9;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #00000013;
+    /* The menu colors of `theme-next-light.css`, which panels over content are drawn in. */
+    --menu-text-color: #272727;
+    --menu-background-color: #ffffffd9;
+    --dropdown-border-color: #ccc;
+    --more-accented-background-color: var(--card-background-hover-color);
+    --hover-item-text-color: black;
+    --icon-button-hover-background: #0000001a;
+    --active-item-text-color: #383838;
+    --active-item-background-color: #ddd;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -121,6 +130,15 @@ html.theme-dark {
     --kbd-border: #3a3a3a;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #ffffff26;
+    /* The menu colors of `theme-next-dark.css`, which panels over content are drawn in. */
+    --menu-text-color: #e3e3e3;
+    --menu-background-color: #222222d9;
+    --dropdown-border-color: #404040;
+    --more-accented-background-color: var(--card-background-hover-color);
+    --hover-item-text-color: #efefef;
+    --icon-button-hover-background: #ffffff16;
+    --active-item-text-color: #aaaaaa;
+    --active-item-background-color: #777;
     --mermaid-theme: dark;
     color-scheme: dark;
 }
@@ -128,6 +146,8 @@ html.theme-dark {
 /* The page background under the name the content styles shared with the app read it by. */
 :root {
     --main-background-color: var(--background-primary);
+    /* The frosting of `theme-next/shell.css` behind the translucent menus. */
+    --dropdown-backdrop-filter: blur(20px) saturate(6);
 }
 
 body {
