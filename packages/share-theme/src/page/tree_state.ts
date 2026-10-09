@@ -51,7 +51,8 @@ export default function setupTreeState() {
         }
         activePath = getItemPath(item);
         // An entry of the page shown, maybe another clone of it, is selected in place.
-        const opensNewTab = e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0;
+        const opensNewTab = e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button !== 0
+            || link.getAttribute("target") === "_blank";
         if (!opensNewTab && item.getAttribute("data-note-id") === document.body.dataset.noteId) {
             e.preventDefault();
             selectItem(pane, item);

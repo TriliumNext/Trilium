@@ -148,6 +148,10 @@ describe("setupTreeState", () => {
             cloneLink("x").dispatchEvent(event);
             expect(event.preventDefault).not.toHaveBeenCalled();
         }
+        // The external link of a note with `#shareExternalLink` opens in a new tab.
+        cloneLink("x").setAttribute("target", "_blank");
+        expect(click(cloneLink("x"))).toBe(false);
+        expect(selected()).toStrictEqual([ "y/row", "y/link" ]);
         document.body.dataset.noteId = "other";
         const event = new MouseEvent("click", { bubbles: true, cancelable: true });
         event.preventDefault = vi.fn();
