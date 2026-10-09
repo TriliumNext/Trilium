@@ -505,6 +505,7 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderWebView(note, result);
     } else if (note.type === "spreadsheet") {
         renderSpreadsheet(result);
+        hostNoteView(result, note);
     } else {
         result.content = `<p>${t("content_renderer.note-cannot-be-displayed")}</p>`;
     }
@@ -918,11 +919,11 @@ function renderCollectionView(result: Result, note: SNote) {
 
 /**
  * Has the share theme show a shared note with the app's own widget for its type, keeping the content
- * rendered here for a visitor without scripts. The static export and binary content keep the
- * content alone.
+ * rendered here for a visitor without scripts. The static export, binary content and an empty note
+ * keep the content alone.
  */
 function hostNoteView(result: Result, note: SNote | BNote) {
-    if (!(note instanceof BNote) && typeof result.content === "string") {
+    if (!(note instanceof BNote) && typeof result.content === "string" && !result.isEmpty) {
         hostInAppView(result, note, "share-note-view");
     }
 }

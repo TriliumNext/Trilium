@@ -1703,8 +1703,11 @@ describe("content_renderer pages", () => {
         expect(file("zipNote", "application/zip"))
             .toContain(`location.href='api/notes/zipNote/download'`);
         expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
-        expect(render({ type: "spreadsheet", content: "{}" }).content)
-            .toBe("<p>Empty spreadsheet.</p>");
+        const spreadsheet = render({ id: "sheetNote", type: "spreadsheet", content: "{}" });
+        expect(spreadsheet.isAppView).toBe(true);
+        expect(parse(String(spreadsheet.content))
+            .querySelector(".share-note-view[data-note-id=sheetNote] > p")?.textContent)
+            .toBe("Empty spreadsheet.");
         expect(render({ type: "relationMap", content: "{}" }).content)
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
     });
