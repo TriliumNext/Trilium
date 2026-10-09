@@ -92,13 +92,30 @@
     background: var(--background-highlight);
 }
 
-#content h1 a.toc-anchor,
-#content h2 a.toc-anchor,
-#content h3 a.toc-anchor,
-#content h4 a.toc-anchor,
-#content h5 a.toc-anchor,
-#content h6 a.toc-anchor {
-    margin-left: 10px;
+#content :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: 16px;
+}
+
+#content .toc-anchor {
+    margin-inline-start: 0.3em;
+    font-size: 0.6em;
+    vertical-align: middle;
+    color: var(--text-menu);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 150ms ease;
+}
+
+#content :is(h1, h2, h3, h4, h5, h6):hover > .toc-anchor,
+#content .toc-anchor:focus-visible,
+#content .toc-anchor.copied {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    #content .toc-anchor {
+        opacity: 0.5;
+    }
 }
 
 @media (max-width: 48em) {

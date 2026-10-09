@@ -64,8 +64,8 @@ iframe.pdf-view {
     border-bottom: 1px solid var(--background-highlight);
 }
 
-/* The links of the app's default theme, `theme-next/forms.css`; link previews have their own. */
-.ck-content a:where(:not(.link-embed-mention, .link-embed-card)) {
+/* The links of the app's default theme, `theme-next/forms.css`; link previews and heading links have their own. */
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)) {
     --background: transparent;
 
     box-shadow: 0 0 0 0 var(--background);
@@ -80,12 +80,12 @@ iframe.pdf-view {
         color 300ms ease-out;
 }
 
-.ck-content a:where(:not(.link-embed-mention, .link-embed-card)):focus-visible {
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)):focus-visible {
     outline: 2px solid var(--link-focus-outline-color);
     outline-offset: 2px;
 }
 
-.ck-content a:where(:not(.link-embed-mention, .link-embed-card)):hover {
+.ck-content a:where(:not(.link-embed-mention, .link-embed-card, .toc-anchor)):hover {
     --background: var(--link-hover-background);
 
     box-shadow: 0 0 0 4px var(--link-hover-background);

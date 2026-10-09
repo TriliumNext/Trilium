@@ -275,7 +275,10 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     // anchors and image attributes, which templates derived from an earlier `page.ejs` add
     // themselves.
     const { content: pageContent, headings } = typeof content === "string"
-        ? preparePageContent(content, { imageAlt: t("share_theme.image_alt") })
+        ? preparePageContent(content, {
+            imageAlt: t("share_theme.image_alt"),
+            headingLinkLabel: t("share_theme.heading-link")
+        })
         : { content, headings: [] };
     const pageOpts = { ...opts, content: pageContent, headings, toc: getTableOfContents(headings) };
     return ejs.render(readShareTemplate("page"), pageOpts, {
@@ -284,12 +287,15 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
 }
 
 /**
- * Prepares the content of a share page for the default template. Every heading gets a `#` link to
- * itself, with an ID made from its text that is unique on the page, and the headings are returned
- * in document order. An image without `alt` gets `imageAlt`, and one without `loading` loads
- * lazily. HTML without headings or images comes back as it is.
+ * Prepares the content of a share page for the default template. Every heading gets an ID made from
+ * its text that is unique on the page, and a link to itself labeled `headingLinkLabel`; the
+ * headings are returned in document order. An image without `alt` gets `imageAlt`, and one without
+ * `loading` loads lazily. HTML without headings or images comes back as it is.
  */
-export function preparePageContent(html: string, options: { imageAlt: string }) {
+export function preparePageContent(
+    html: string,
+    options: { imageAlt: string; headingLinkLabel: string }
+) {
     if (!/<(h[1-6]|img)[\s>]/i.test(html)) {
         return { content: html, headings: [] as PageHeading[] };
     }
@@ -310,8 +316,10 @@ export function preparePageContent(html: string, options: { imageAlt: string }) 
         const slug = slugs[index];
         const text = element.text.replace(/\s+/g, " ").trim();
         const heading = { level: Number(element.tagName.slice(1)), text, slug };
-        element.insertAdjacentHTML("beforeend",
-            `<a id="${slug}" class="toc-anchor" name="${slug}" href="#${slug}">#</a>`);
+        element.setAttribute("id", slug);
+        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="#${slug}"`
+            + ` aria-label="${escapeHtml(options.headingLinkLabel)}">`
+            + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`);
         return heading;
     });
     return { content: document.toString(), headings };

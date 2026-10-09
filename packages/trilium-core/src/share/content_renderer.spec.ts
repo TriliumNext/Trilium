@@ -317,8 +317,8 @@ describe("content_renderer", () => {
 
             const page = renderNoteContent(shareRootNote.getChildNotes()[0]);
 
-            expect(page).toContain(`<h3 data-trilium-block-id="b1">Referenced`
-                + `<a id="referenced" class="toc-anchor"`);
+            expect(page).toContain(`<h3 data-trilium-block-id="b1" id="referenced">Referenced`
+                + `<a class="toc-anchor"`);
             expect(page).toContain(`href="#referenced"`);
 
             const toc = parse(String(page)).querySelector("#toc");
@@ -358,7 +358,7 @@ describe("content_renderer", () => {
 
             const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
 
-            expect(page.querySelector("#content h2:last-of-type .toc-anchor")?.id)
+            expect(page.querySelector("#content h2:last-of-type")?.id)
                 .toBe("spans-two-lines");
             expect(page.querySelectorAll("#toc a").map((link) => [
                 link.getAttribute("href"), link.text.trim()
@@ -1115,8 +1115,9 @@ describe("content_renderer", () => {
                 { level: 2, text: "Intro", slug: "intro-1" }
             ]);
             expect(content).toContain(
-                `<h2 class="x">Q&amp;A <strong>now</strong>`
-                + `<a id="q-amp-a-now" class="toc-anchor" name="q-amp-a-now" href="#q-amp-a-now">#</a></h2>`);
+                `<h2 class="x" id="q-amp-a-now">Q&amp;A <strong>now</strong>`
+                + `<a class="toc-anchor" href="#q-amp-a-now" aria-label="Link &quot;here&quot;">`
+                + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a></h2>`);
             expect(content).toContain(`<p>Text</p>`);
             expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
         });
@@ -1141,7 +1142,7 @@ describe("content_renderer", () => {
         });
 
         function prepare(html: string) {
-            return preparePageContent(html, { imageAlt: "Image" });
+            return preparePageContent(html, { imageAlt: "Image", headingLinkLabel: `Link "here"` });
         }
     });
 

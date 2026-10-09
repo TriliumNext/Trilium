@@ -7,6 +7,8 @@ describe("setupToC", () => {
     afterEach(() => {
         document.body.innerHTML = "";
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        vi.useRealTimers();
     });
 
     it("marks the entry of the last heading scrolled past, whatever the heading levels", () => {
@@ -54,6 +56,59 @@ describe("setupToC", () => {
         }
         expect(activeEntry()).toBeUndefined();
     });
+
+    it("copies the address of a heading's section, showing a check mark for a moment", async () => {
+        vi.useFakeTimers();
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal("navigator", { clipboard: { writeText } });
+        renderPage([ [ 2, "intro", 100 ] ]);
+        const link = headingLink("intro");
+        const icon = () => link.querySelector(".tn-icon")?.className;
+
+        link.click();
+        await vi.waitFor(() => expect(icon()).toBe("tn-icon bx bx-check"));
+        expect(writeText).toHaveBeenCalledWith(new URL("#intro", location.href).href);
+        expect(link.classList.contains("copied")).toBe(true);
+
+        vi.advanceTimersByTime(1000);
+        link.click();
+        await Promise.resolve();
+        vi.advanceTimersByTime(1000);
+        expect(icon()).toBe("tn-icon bx bx-check");
+
+        vi.advanceTimersByTime(500);
+        expect(icon()).toBe("tn-icon bx bx-link");
+        expect(link.classList.contains("copied")).toBe(false);
+    });
+
+    it("only jumps to the section when the address cannot be copied", async () => {
+        const writeText = vi.fn().mockRejectedValue(new Error("denied"));
+        vi.stubGlobal("navigator", { clipboard: { writeText } });
+        renderPage([ [ 2, "intro", 100 ] ]);
+        const link = headingLink("intro");
+
+        const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+        link.dispatchEvent(click);
+        await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+        await Promise.resolve();
+        expect(click.defaultPrevented).toBe(false);
+        expect(link.classList.contains("copied")).toBe(false);
+
+        vi.stubGlobal("navigator", {});
+        expect(() => link.click()).not.toThrow();
+    });
+
+    it("sets the heading links up on a page without a table of contents", async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        vi.stubGlobal("navigator", { clipboard: { writeText } });
+        document.body.innerHTML = `<div id="content"><h2 id="only">Only${anchor("only")}</h2></div>`;
+        setupToC();
+
+        const link = headingLink("only");
+        link.querySelector(".tn-icon")?.remove();
+        link.click();
+        await vi.waitFor(() => expect(link.classList.contains("copied")).toBe(true));
+    });
 });
 
 /**
@@ -64,8 +119,8 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
     document.body.innerHTML = `
         <div id="right-pane">
             <div id="content">
-                ${headings.map(([ level, slug ]) => `<h${level}>${slug}`
-                    + `<a id="${slug}" class="toc-anchor" href="#${slug}">#</a></h${level}>`).join("")}
+                ${headings.map(([ level, slug ]) => `<h${level} id="${slug}">${slug}${anchor(slug)}`
+                    + `</h${level}>`).join("")}
             </div>
             <ul id="toc">
                 ${headings.map(([ , slug ]) => `<li><a href="#${slug}">${slug}</a></li>`).join("")}
@@ -73,7 +128,7 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
         </div>
     `;
     for (const [ , slug, offsetTop ] of headings) {
-        const heading = document.getElementById(slug)?.parentElement;
+        const heading = document.getElementById(slug);
         if (heading) {
             Object.defineProperty(heading, "offsetTop", { value: offsetTop });
         }
@@ -89,4 +144,18 @@ function renderPage(headings: [ level: number, slug: string, offsetTop: number ]
 
 function activeEntry() {
     return document.querySelector("#toc a.active")?.textContent;
+}
+
+/** The link core's `preparePageContent()` gives a heading. */
+function anchor(slug: string) {
+    return `<a class="toc-anchor" href="#${slug}" aria-label="Link to This Section">`
+        + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`;
+}
+
+function headingLink(slug: string) {
+    const link = document.querySelector<HTMLAnchorElement>(`#content a.toc-anchor[href="#${slug}"]`);
+    if (!link) {
+        throw new Error(`The link of ${slug} is missing.`);
+    }
+    return link;
 }

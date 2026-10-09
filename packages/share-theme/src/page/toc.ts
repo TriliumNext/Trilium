@@ -14,6 +14,8 @@ import "./toc.css";
  * entry as the user scrolls.
  */
 export default function setupToC() {
+    setupHeadingLinks();
+
     const container = document.getElementById("right-pane");
     const toc = document.getElementById("toc");
     if (!toc || !container) return;
@@ -50,4 +52,31 @@ export default function setupToC() {
 
     changeLinkState();
     container.addEventListener("scroll", changeLinkState);
+}
+
+/** How long a heading link shows its check mark after copying, in milliseconds. */
+const COPIED_DURATION = 1500;
+
+/**
+ * Makes the link of each heading copy the address of its section when clicked, besides jumping to
+ * it, and show a check mark for a moment. Without clipboard access, a click only jumps.
+ */
+function setupHeadingLinks() {
+    for (const link of document.querySelectorAll<HTMLAnchorElement>("#content .toc-anchor")) {
+        let resetTimer: ReturnType<typeof setTimeout> | undefined;
+        const setCopied = (copied: boolean) => {
+            link.classList.toggle("copied", copied);
+            const icon = link.querySelector(".tn-icon");
+            icon?.classList.toggle("bx-link", !copied);
+            icon?.classList.toggle("bx-check", copied);
+        };
+
+        link.addEventListener("click", () => {
+            navigator.clipboard?.writeText(link.href).then(() => {
+                setCopied(true);
+                clearTimeout(resetTimer);
+                resetTimer = setTimeout(() => setCopied(false), COPIED_DURATION);
+            }, () => undefined);
+        });
+    }
 }
