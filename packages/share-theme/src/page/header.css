@@ -5,7 +5,7 @@ html {
 #header {
     background: var(--background-secondary);
     display: none;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: 1fr minmax(0, auto) 1fr;
     justify-items: start;
     align-items: center;
     height: var(--header-height);
