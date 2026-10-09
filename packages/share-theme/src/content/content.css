@@ -1,3 +1,5 @@
+@import "@triliumnext/ckeditor5/src/theme/reference_links.css";
+
 :root {
     --ck-content-font-family: inherit !important;
     --ck-content-font-size: inherit !important;
@@ -64,22 +66,6 @@ iframe.pdf-view {
 #content img {
     max-width: 100%;
     height: auto;
-}
-
-a.reference-link > span > .tn-icon {
-    /* These three rules must match `.reference-link .tn-icon` in
-       apps/client/src/stylesheets/style.css, which explains them. */
-    display: inline;
-    margin-inline-end: 3px;
-    white-space: nowrap;
-}
-
-a.reference-link > span > .tn-icon::before {
-    display: inline-block;
-}
-
-a.reference-link > span > .tn-icon::after {
-    content: "\2060";
 }
 
 body:not(.math-loaded) .math-tex {
