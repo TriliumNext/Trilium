@@ -287,10 +287,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
 }
 
 /**
- * Prepares the content of a share page for the default template. Every heading gets an ID made from
- * its text that is unique on the page, and a link to itself labeled `headingLinkLabel`; the
- * headings are returned in document order. An image without `alt` gets `imageAlt`, and one without
- * `loading` loads lazily. HTML without headings or images comes back as it is.
+ * Prepares the content of a share page for the default template. A heading without an ID gets one
+ * made from its text that is unique on the page. Every heading gets a link to its ID labeled
+ * `headingLinkLabel`; the headings are returned in document order. An image without `alt` gets
+ * `imageAlt`, and one without `loading` loads lazily. HTML without headings or images comes back as
+ * it is.
  */
 export function preparePageContent(
     html: string,
@@ -311,13 +312,16 @@ export function preparePageContent(
     }
 
     const elements = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
-    const slugs = utils.slugifyHeadings(elements.map((element) => element.innerHTML));
-    const headings = elements.map((element, index) => {
-        const slug = slugs[index];
+    const unnamed = elements.filter((element) => !element.id);
+    const slugs = utils.slugifyHeadings(unnamed.map((element) => element.innerHTML),
+        document.querySelectorAll("[id]").map((element) => element.id));
+    let slugIndex = 0;
+    const headings = elements.map((element) => {
+        const slug = element.id || slugs[slugIndex++];
         const text = element.text.replace(/\s+/g, " ").trim();
         const heading = { level: Number(element.tagName.slice(1)), text, slug };
         element.setAttribute("id", slug);
-        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="#${slug}"`
+        element.insertAdjacentHTML("beforeend", `<a class="toc-anchor" href="#${escapeHtml(slug)}"`
             + ` aria-label="${escapeHtml(options.headingLinkLabel)}">`
             + `<span class="tn-icon bx bx-link" aria-hidden="true"></span></a>`);
         return heading;

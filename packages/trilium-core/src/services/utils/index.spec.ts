@@ -852,6 +852,10 @@ describe("#slugifyHeadings", () => {
         expect(utils.slugifyHeadings(["Notes", "Notes 1", "Notes"])).toStrictEqual(["notes", "notes-1", "notes-2"]);
     });
 
+    it("skips the reserved slugs", () => {
+        expect(utils.slugifyHeadings(["Notes", "Notes"], ["notes", "notes-1"])).toStrictEqual(["notes-2", "notes-3"]);
+    });
+
     it("strips HTML tags before slugifying", () => {
         expect(utils.slugifyHeadings(["<b>Bold</b> Heading"])).toStrictEqual(["bold-heading"]);
     });

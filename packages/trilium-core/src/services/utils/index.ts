@@ -517,9 +517,10 @@ export function stripTags(text: string) {
  *
  * This keeps anchor IDs and their table-of-contents links unique on shared
  * pages, so clicking a duplicate heading in the ToC jumps to the right one.
+ * No slug is one of `reserved`, the IDs the page already uses.
  */
-export function slugifyHeadings(titles: string[]): string[] {
-    const used = new Set<string>();
+export function slugifyHeadings(titles: string[], reserved: Iterable<string> = []): string[] {
+    const used = new Set(reserved);
     return titles.map((title) => {
         const base = slugify(stripTags(title));
         let slug = base;

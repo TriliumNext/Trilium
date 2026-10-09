@@ -1122,6 +1122,23 @@ describe("content_renderer", () => {
             expect(parse(content).querySelectorAll(".toc-anchor")).toHaveLength(4);
         });
 
+        it("keeps a heading's own ID and gives no other heading an ID already on the page", () => {
+            const { content, headings } = prepare(trimIndentation`
+                <h2 id="footnote-label" class="sr-only">Footnotes</h2>
+                <p><a id="footnotes">Bookmark</a> <sup><a aria-describedby="footnote-label">1</a></sup></p>
+                <h2>Footnotes</h2>
+            `);
+
+            expect(headings).toStrictEqual([
+                { level: 2, text: "Footnotes", slug: "footnote-label" },
+                { level: 2, text: "Footnotes", slug: "footnotes-1" }
+            ]);
+            expect(content).toContain(
+                `<h2 id="footnote-label" class="sr-only">Footnotes`
+                + `<a class="toc-anchor" href="#footnote-label"`);
+            expect(content).toContain(`<h2 id="footnotes-1">Footnotes<a class="toc-anchor" href="#footnotes-1"`);
+        });
+
         it("gives an image without alt text the generic one and lazy loading, keeping its own", () => {
             const { content } = prepare(trimIndentation`
                 <p><img src="a.png"></p>
