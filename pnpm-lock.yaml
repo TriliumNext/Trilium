@@ -23,7 +23,7 @@ overrides:
   preact: 11.0.0
   roughjs: 4.6.6
   '@types/express-serve-static-core': 5.1.3
-  node-abi: 4.35.0
+  node-abi: 4.36.0
   flat@<5.0.1: '>=5.0.1'
   debug@>=3.2.0 <3.2.7: '>=3.2.7'
   nanoid@<3.3.8: '>=3.3.8'
@@ -9046,8 +9046,8 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  node-abi@4.35.0:
-    resolution: {integrity: sha512-ymk4aIzxdPopw2giv8Fs1Ec6vybGkjmyxUwVqhkI4MCy2tVfXdkOGGWieWVjL0THgH+7a8lRdevyupoYj3Js/Q==}
+  node-abi@4.36.0:
+    resolution: {integrity: sha512-zrvE1Qy5ElbZVqmJFSiNfwzNZzUCepasgp/4dw0Z0fsn40LJkAk9FA9oMh2SKMeNFRRe/3IfeOKvWwWr8u4SmQ==}
     engines: {node: '>=22.12.0'}
 
   node-addon-api@8.9.2:
@@ -12917,7 +12917,7 @@ snapshots:
     dependencies:
       '@malept/cross-spawn-promise': 2.0.0
       debug: 4.4.3(supports-color@10.2.2)
-      node-abi: 4.35.0
+      node-abi: 4.36.0
       node-api-version: 0.2.1
       node-gyp: 12.4.0
       read-binary-file-arch: 1.0.6(supports-color@10.2.2)
@@ -20820,7 +20820,7 @@ snapshots:
   nice-try@1.0.5:
     optional: true
 
-  node-abi@4.35.0:
+  node-abi@4.36.0:
     dependencies:
       semver: 7.8.5
 
