@@ -1,56 +1,169 @@
-#childLinks,
-#childLinks ul,
-#childLinks li {
-    list-style: none;
-    display: flex;
-    align-items: center;
-}
-
 #childLinks {
-    padding-top: 10px;
-    flex-direction: column;
-    gap: 0px;
-    justify-content: center;
-    border-top: 1px solid var(--background-highlight);
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--main-border-color);
 }
 
 .no-content + #childLinks {
+    margin-top: 0;
+    padding-top: 0;
     border: 0;
 }
 
-#childLinks ul {
+#childLinks > span {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.3pt;
+    color: var(--right-pane-heading-color);
+}
+
+#childLinks > ul {
+    margin: 0;
     padding: 0;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
+    list-style: none;
 }
 
 #childLinks li {
-    padding: 0;
-    background: var(--background-highlight);
-    border-radius: 12px;
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 8px;
 }
 
-#childLinks li a {
-    padding: 2px 12px;
-    background: var(--background-highlight);
-    border-radius: 12px;
-    transform: translateY(0);
-    transition: transform 200ms ease, background-color 200ms ease, color 200ms ease;
+#childLinks li > .tn-icon {
+    font-size: 1.2em;
 }
 
-#childLinks li a:hover {
-    background: var(--background-active);
-    color: var(--background-secondary);
-    text-decoration: none;
-    transform: translateY(-2px);
-}
-
-#childLinks.grid li a {
-    padding: 50px;
+.child-link-title {
+    font-weight: 500;
     color: var(--text-primary);
+    overflow-wrap: break-word;
 }
 
-#childLinks.grid li a:hover {
-    transform: translateY(-5px);
+.child-link-title:hover {
+    text-decoration: none;
+}
+
+/* The title's link covers the whole entry; the links to the child's own children sit above it. */
+.child-link-title::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+}
+
+.child-link-children a {
+    position: relative;
+}
+
+.child-link-excerpt,
+.child-link-children {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.child-link-excerpt {
+    white-space: pre-line;
+}
+
+.child-link-children {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* `.ck-content` in `ck-content.css`, which loads later, sets the size of the note's text. */
+#childLinks .child-link-children {
+    font-size: 0.8rem;
+}
+
+.child-link-children a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#childLinks.list > ul {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#childLinks.list li {
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: background-color 150ms ease-in;
+}
+
+#childLinks.list li:hover {
+    background: var(--right-pane-item-hover-background);
+}
+
+#childLinks.list li > .tn-icon,
+#childLinks.list .child-link-excerpt {
+    color: var(--muted-text-color);
+}
+
+#childLinks.list :is(.child-link-excerpt, .child-link-children) {
+    grid-column: 2;
+    margin-top: 0.25rem;
+}
+
+#childLinks.list .child-link-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+#childLinks.grid > ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#childLinks.grid li {
+    flex: 1 0 max(300px, (100% - 2 * 10px) / 3);
+    grid-template-rows: minmax(calc(32px + 1rem), auto);
+    align-content: start;
+    padding: 0 1rem 1rem;
+    border-radius: 8px;
+    background: var(--card-background-color);
+    transition: background-color 200ms ease-out;
+}
+
+#childLinks.grid li:hover {
+    background-color: var(--card-background-hover-color);
+}
+
+#childLinks.grid li:not(:has(.child-link-children a:active)):active {
+    transform: scale(0.98);
+}
+
+#childLinks.grid .child-link-title {
+    padding-block: 0.5rem;
+}
+
+#childLinks.grid :is(.child-link-excerpt, .child-link-children) {
+    max-height: 220px;
+    overflow: hidden;
+    padding-top: 0.5rem;
+    /* Stops in pixels fade only a preview that reaches the cap, as the app's card does. */
+    mask-image: linear-gradient(to bottom, black 145px, transparent 220px);
+}
+
+#childLinks.grid .child-link-excerpt {
+    font-size: calc(0.8rem * 1.1);
+}
+
+@media (max-width: 48em) {
+    #childLinks.grid li {
+        flex-basis: 150px;
+    }
 }

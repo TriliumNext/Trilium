@@ -1,14 +1,37 @@
 #navigation {
+    --site-header-fade: 16px;
+
     display: flex;
     flex-direction: column;
-    padding: 25px;
-    gap: 10px;
+    padding: 0 6px 40px;
 }
 
+/* Stays at the top of the pane while the tree scrolls, which fades out under its bottom edge. */
 #site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    margin-inline: -6px;
+    padding: var(--page-top-spacing) 25px var(--site-header-fade);
+    background: linear-gradient(
+        to bottom,
+        var(--tree-background) calc(100% - var(--site-header-fade)),
+        transparent
+    );
+}
+
+#site-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#site-title-row .theme-selection {
+    flex: none;
+    margin-inline-start: auto;
 }
 
 #menu {
@@ -18,18 +41,16 @@
 }
 
 #menu > ul {
-    overflow-y: auto;
     list-style: none;
-    padding-left: 0!important;
+    padding-inline-start: 0 !important;
 }
 
 #menu ul {
-    overflow-y: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
     list-style: none;
-    padding-left: 20px;
+    padding-inline-start: 10px;
 }
 
 #menu li {
@@ -37,14 +58,6 @@
     display: flex;
     flex-direction: column;
     list-style: none;
-    cursor: pointer;
-    max-width: 350px;
-}
-
-#menu li span {
-    display: inline-block;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 #menu li > ul {
@@ -56,72 +69,148 @@
     overflow: hidden;
 }
 
-#menu li.item > a {
-    padding-left: 24px;
+/* The tree items of the app's default theme (`theme-next/shell.css`, "TREE PANE"). `li > a` is the
+   row of a `tree_item` partial copied from an earlier theme, whose button sits inside its link. */
+#menu :is(.tree-item-row, li > a) {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex: 1;
+    border-radius: 6px;
+    color: var(--tree-item-color);
+}
+
+#menu :is(.tree-item-row, li > a):hover {
+    background: var(--tree-item-hover-background);
+}
+
+#menu :is(.tree-item-row, li > a).active {
+    background: transparent;
+    color: var(--tree-item-active-color);
+}
+
+/* The current note's card, inset by 2px as the app's `--left-pane-item-selected-shadow-size`. */
+#menu :is(.tree-item-row, li > a).active::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: -1;
+    border-radius: 6px;
+    background: var(--tree-item-active-background);
+    box-shadow: var(--tree-item-active-shadow);
+    animation: tree-item-select 200ms ease-out;
+}
+
+@keyframes tree-item-select {
+    from {
+        opacity: 0;
+    }
+}
+
+#menu .tree-item-row {
+    padding-inline-start: 4px;
 }
 
 #menu a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-    color: var(--text-menu);
-    text-decoration: none;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    flex: 1;
-    padding: 2px 6px;
-    font-weight: 400;
-}
-
-#menu a:hover {
-    border-color: var(--text-menu);
-}
-
-#menu a.active {
-    background: var(--background-active);
-    color: var(--text-menu-active);
-    font-weight: 700;
-}
-
-#menu li ul {
-    position: relative;
-}
-
-#menu li ul::before {
-    content: "";
     display: flex;
-    position: absolute;
-    top: 5px;
-    bottom: 5px;
-    left: 10px;
-    width: 2px;
-    background: var(--background-highlight);
+    flex: 1;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 7px 8px 7px 0;
+    border-radius: 6px;
+    color: inherit;
+    font-weight: 400;
+    text-decoration: none;
 }
 
-.active .collapse-button {
-    background: none;
-    color: var(--text-menu-active);
+#menu li.item > .tree-item-row > a {
+    padding-inline-start: 29px;
+}
+
+#menu li > a {
+    padding: 7px 8px;
+}
+
+#menu li.item > a {
+    padding-inline-start: 38px;
+}
+
+#menu a:focus-visible,
+.collapse-button:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: -2px;
+}
+
+#menu a > .tn-icon {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    width: 1em;
+    font-size: 1.2em;
+    color: var(--tree-item-icon-color);
+}
+
+#menu .tree-item-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .collapse-button {
-    cursor: pointer;
-    display: inline-flex;
+    display: flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
+    width: 24px;
     padding: 0;
-    background: var(--background-secondary);
     border: 0;
-    color: var(--text-menu);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    opacity: 0.65;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+
+.tree-item-row > .collapse-button {
+    margin-inline-end: 5px;
+}
+
+.collapse-button:hover {
+    opacity: 1;
+}
+
+.collapse-button > * {
     transform: rotate(-90deg);
     transition: transform 200ms ease;
 }
 
-.expanded > .collapse-button,
-.expanded > a > .collapse-button {
+.collapse-button:dir(rtl) > * {
+    transform: rotate(90deg);
+}
+
+.expanded > .tree-item-row > .collapse-button > *,
+.expanded > a > .collapse-button > * {
     transform: rotate(0);
 }
 
 .collapse-button .tn-icon {
-    font-size: 14px;
+    font-size: 24px;
+}
+
+.tree-restoring .collapse-button > * {
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #menu li > ul,
+    .collapse-button,
+    .collapse-button > * {
+        transition: none;
+    }
+
+    #menu :is(.tree-item-row, li > a).active::before {
+        animation: none;
+    }
 }

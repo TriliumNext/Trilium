@@ -194,6 +194,10 @@ describe("SNote", () => {
 
         expect([ parent, aliased, root ].map((note) => note.shareId))
             .toEqual([ "parent", "my-alias", "" ]);
+
+        // `/share/my-alias` opens the note that took the alias last, so the other one links by ID.
+        const sameAlias = buildShareNote({ id: "sameAlias", "#shareAlias": " my-alias " });
+        expect([ aliased, sameAlias ].map((note) => note.shareId)).toEqual([ "aliased", "my-alias" ]);
         expect(parent.escapedTitle).toBe("Tom &amp; Jerry");
         expect(parent.encodedTitle).toBe("Tom%20%26%20Jerry");
         expect(parent.getAttachmentByTitle("Diagram")?.getPojo().attachmentId).toBe("att");

@@ -1,20 +1,22 @@
 @import "@triliumnext/ckeditor5/src/theme/headings.css";
 @import "@triliumnext/ckeditor5/src/theme/reference_links.css";
 
+/* The app's text is 1.1em of the 16px base, as `style.css` sets `--ck-content-font-size`. */
 :root {
     --ck-content-font-family: inherit !important;
-    --ck-content-font-size: inherit !important;
+    --ck-content-font-size: 1.1em !important;
     --ck-content-font-color: inherit !important;
     --ck-content-line-height: inherit !important;
 }
 
+/* The app's note title is 180% of the 16px base (`note_title.css`), whatever the content's size. */
 #content #title {
-    margin: 0;
-    padding-top: 10px;
-    font-size: 2em;
+    margin: 0 0 0.5em;
+    font-size: 1.8rem;
+    font-weight: 300;
     line-height: 1.2;
     color: var(--text-heading);
-    border-bottom: 1px solid var(--background-highlight);
+    border-bottom: 1px solid var(--main-border-color);
 }
 
 iframe.pdf-view {
@@ -22,33 +24,38 @@ iframe.pdf-view {
     height: 800px;
 }
 
-.ck-content code,
-.ck-content pre {
-    color: var(--text-primary);
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-active);
-    border-radius: 6px;
-}
-
-/* Only a code block preserves the source's own line breaks. Inline code used to inherit this from
- * the rule above, which kept a long snippet on one line and pushed the page sideways on mobile. */
-.ck-content pre {
-    white-space: pre;
-}
-
+/* The inline code of the app, `style.css`. */
 .ck-content code:not(pre code) {
-    padding: 2px 5px;
+    padding: 0.1em 0.35em;
+    border-radius: 5px;
+    background-color: var(--inline-code-background-color);
+    font-size: 0.8em;
     overflow-wrap: break-word;
 }
 
-.ck-content pre code {
+/* The code blocks of the app's default theme, `theme-next/notes/text.css`. `:root` outranks
+   `ckeditor5-content.css`, which `index.ts` imports after this file. */
+:root .ck-content pre {
+    position: relative;
+    min-width: unset;
+    margin-top: 2px;
     border: 0;
+    border-radius: 6px;
+    padding: 1em;
+    color: var(--text-primary);
+    background-color: var(--background-secondary);
+    box-shadow: var(--code-block-box-shadow);
+    white-space: pre;
 }
 
-.ck-content pre {
+:root .ck-content pre:has(> code) {
+    padding: 0;
+}
+
+:root .ck-content pre code {
+    display: block;
+    padding: 1em;
     overflow: auto;
-    position: relative;
-    min-width: unset !important;
 }
 
 .ck-content pre .copy-button {
@@ -57,11 +64,125 @@ iframe.pdf-view {
     right: 0.5em;
 }
 
-/* The heading weight of the app's default theme (`theme-next/notes/text.css`) and its default
-   `headingStyle`, "underline" (`ReadOnlyText.css`). */
+/* The heading weight of the app's default theme (`theme-next/notes/text.css`), and the sizes and
+   default `headingStyle`, "underline", of its read-only text (`ReadOnlyText.css`). */
 .ck-content :is(h1, h2, h3, h4, h5, h6) {
     font-weight: 300;
-    border-bottom: 1px solid var(--background-highlight);
+}
+
+.ck-content :is(h1, h2, h3, h4:not(.include-note-title), h5, h6) {
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.ck-content {
+    h1 { font-size: 1.8em; }
+    h2 { font-size: 1.6em; }
+    h3 { font-size: 1.4em; }
+    h4 { font-size: 1.2em; }
+    h5 { font-size: 1.1em; }
+    h6 { font-size: 1em; }
+}
+
+.ck-content strong {
+    font-weight: 600;
+}
+
+/* The block spacing of Bootstrap's reboot, which the app loads. */
+.ck-content :where(p, ul, ol, pre, blockquote, table) {
+    margin-top: 0;
+}
+
+.ck-content :where(p, ul, ol, pre, blockquote) {
+    margin-bottom: 1rem;
+}
+
+.ck-content :where(ul, ol) {
+    padding-inline-start: 2rem;
+}
+
+.ck-content :where(ul, ol) :where(ul, ol) {
+    margin-bottom: 0;
+}
+
+.ck-content mark {
+    padding: 0.1875em;
+    background-color: #fff3cd;
+    color: #212529;
+}
+
+::selection {
+    background-color: var(--selection-background-color);
+}
+
+/* The blockquotes of the app's default theme, `theme-next/notes/text.css`. */
+:root .ck-content blockquote {
+    position: relative;
+    margin: 0 0 1rem;
+    border: 1px solid transparent !important;
+    border-radius: 10px;
+    padding: 1em 2.5em;
+    background: var(--card-background-color);
+    font-style: normal;
+}
+
+.ck-content blockquote p:last-of-type {
+    margin-bottom: 0;
+}
+
+.ck-content blockquote::before,
+.ck-content blockquote::after {
+    position: absolute;
+    top: 0;
+    font-size: 48px;
+    opacity: 0.1;
+}
+
+.ck-content blockquote::before {
+    content: "“";
+    inset-inline-start: 0.2em;
+}
+
+.ck-content blockquote::after {
+    content: "”";
+    inset-inline-end: 0.35em;
+}
+
+:root .ck-content hr {
+    margin-block: 5px;
+    height: 0;
+    border: thin solid var(--main-border-color);
+    background: none;
+    opacity: 1;
+}
+
+/* The keyboard shortcuts of the app's default theme, `theme-next/dialogs.css`. */
+.ck-content kbd {
+    display: inline-block;
+    margin: 0 2px 2px;
+    border: 1px solid var(--kbd-border);
+    border-radius: 5px;
+    padding: 2px 8px;
+    background: var(--kbd-background);
+    box-shadow:
+        0 2px 0 var(--kbd-border),
+        inset 0 -1px 0 var(--kbd-border);
+    color: var(--kbd-color);
+    font-family: inherit;
+    font-size: 0.75em;
+    font-weight: normal;
+    line-height: 1.4;
+    letter-spacing: 0.5pt;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+:root .ck-content .table table:not(.layout-table) th {
+    background-color: var(--accented-background-color);
+}
+
+:root .ck-content :is(.table, .image) > figcaption {
+    background-color: var(--accented-background-color);
+    color: var(--text-primary);
 }
 
 /* The links of the app's default theme, `theme-next/forms.css`; link previews and heading links have their own. */
@@ -107,8 +228,11 @@ body:not(.math-loaded) .math-tex {
 }
 
 body.type-webView {
+    #right-pane {
+        height: 100vh;
+    }
+
     #main {
-        max-width: unset;
         padding: 0;
         height: 100%;
     }
@@ -128,24 +252,23 @@ body.type-webView {
             border: 0;
         }
     }
+
+    @media (max-width: 48em) {
+        #right-pane {
+            height: calc(100dvh - var(--header-height));
+        }
+    }
 }
 
-/* table styles */
-.ck-content table {
-    border-collapse: collapse;
+/* The tables of the app, which draws them with `ckeditor5-content.css`: Bootstrap's `.table` class
+   stretches the `<figure>` to the content's width, and `style.css` centers the cells vertically. A
+   resized table keeps the width the figure carries in its `style`. */
+.ck-content figure.table {
     width: 100%;
 }
 
-.ck-content table td,
-.ck-content table th {
-    min-width: 120px;
-    border: 1px solid var(--background-highlight);
-    padding: 8px;
-}
-
-.ck-content table th {
-    background-color: var(--background-secondary);
-    font-weight: bold;
+.ck-content .table :is(td, th) {
+    vertical-align: middle;
 }
 
 /* Spreadsheet (Univer) tables are emitted as a static <table> whose cells carry their

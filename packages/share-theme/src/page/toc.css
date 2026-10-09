@@ -5,91 +5,105 @@
     position: sticky;
     top: 0;
     order: 3;
-    transition: width 0.3s ease, margin-right 0.3s ease;
     width: 250px;
     flex-shrink: 0;
     max-height: 100vh;
     overflow-y: auto;
-    padding-top: 20px;
+    padding-top: var(--page-top-spacing);
     z-index: 1;
     background: var(--background-primary);
 }
 
-.toc-pane-collapsed #toc-pane {
-    width: 0;
-    overflow: hidden;
-}
-
-.toc-pane-collapsed #toc-pane h3,
-.toc-pane-collapsed #toc-pane #toc {
+#split-pane:has(#content.full-content-width) #toc-pane:empty {
     display: none;
 }
 
-#toc-pane h3 {
-    text-transform: uppercase;
+#toc-pane h3,
+#tree-toc-title {
+    margin: 0 0 0.5em;
+    padding-inline: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.3pt;
+    color: var(--right-pane-heading-color);
 }
 
-#toc {
-    position: relative;
-    height: fit-content;
+#toc,
+#toc ul {
     margin: 0;
-    border-radius: 6px;
-    padding: 0 0 0 16px;
-    max-width: 100%;
-}
-
-#toc, #toc ul {
+    padding: 0;
     list-style: none;
 }
 
 #toc ul {
-    padding-left: 16px;
-}
-
-#toc span {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    display: inline-block;
+    margin-inline-start: 12px;
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
 }
 
 #toc li a {
-    display: flex;
-    align-items: center;
-    color: var(--text-heading);
-    transition: color 200ms ease;
-    white-space: nowrap;
+    display: block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--text-primary);
+    line-height: 1.3;
+    overflow-wrap: break-word;
+    transition: background-color 150ms ease-in;
 }
 
-#toc li a:hover,
-#toc li a.active {
-    color: var(--text-link);
+#toc li a:hover {
+    background: var(--right-pane-item-hover-background);
     text-decoration: none;
 }
 
-#toc li a::before {
-    content: "";
-    display: flex;
-    position: absolute;
-    width: 2px;
-    height: 16px;
-    background: transparent;
-    left: 0;
-    transition: background-color 200ms ease;
+#toc li a.active {
+    font-weight: bold;
 }
 
-#toc li a.active::before {
-    background: var(--text-link);
+/* The copy of the table of contents that narrow screens show in the navigation pane: below the
+   page's entry in the tree, or at the top of the pane for a page the tree does not list. */
+.tree-toc {
+    display: none;
 }
 
-#toc::before {
-    content: "";
+#menu .tree-toc,
+.tree-toc-children {
+    padding-inline-start: 8px;
+    border-inline-start: 1px solid var(--main-border-color);
+}
+
+#menu .tree-toc {
+    margin-block: 2px 6px;
+    margin-inline-start: 40px;
+}
+
+.tree-toc-children {
+    margin-inline-start: 12px;
+}
+
+#navigation > .tree-toc {
+    margin-bottom: 16px;
+    padding-inline: 4px;
+}
+
+#navigation .tree-toc a {
     display: block;
-    position: absolute;
-    left: 0px;
-    top: 4px;
-    width: 2px;
-    height: calc(100% - 8px);
-    background: var(--background-highlight);
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--tree-item-color);
+    font-size: 0.9em;
+    line-height: 1.3;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+#navigation .tree-toc a:hover {
+    background: var(--tree-item-hover-background);
+}
+
+#navigation .tree-toc a.active {
+    color: var(--tree-item-active-color);
+    font-weight: 600;
 }
 
 #content :is(h1, h2, h3, h4, h5, h6) {
@@ -135,12 +149,19 @@
         overflow-y: auto;
     }
 
-    #toc-pane h3,
-    #toc-pane #toc {
+    .toc-open #toc-pane {
+        transform: translateX(0);
+    }
+
+    .tree-toc {
         display: block;
     }
 
-    .toc-open #toc-pane {
-        transform: translateX(0);
+    #menu li:not(.expanded) > .tree-toc {
+        display: none;
+    }
+
+    #toc-pane:empty {
+        display: none;
     }
 }

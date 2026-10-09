@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-    getChildLinks, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
-    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
+    getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
     type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
 
@@ -318,7 +318,7 @@ describe("getNavigationTree", () => {
     const site = fakeNote({ noteId: "site" });
     const a = addChild(site, fakeNote({ noteId: "a", icon: "bx bx-folder" }));
     const a1 = addChild(a, fakeNote({ noteId: "a1", type: "code" }));
-    addChild(a, fakeNote({ noteId: "hidden" }), true);
+    const hidden = addChild(a, fakeNote({ noteId: "hidden" }), true);
     const b = addChild(site, fakeNote({ noteId: "b", labels: { shareExternalLink: "https://example.com" } }));
     addChild(b, fakeNote({ noteId: "b1" }));
     const outline = (items: NavigationItem[]): unknown[] => items.map((item) => {
@@ -339,6 +339,22 @@ describe("getNavigationTree", () => {
         expect(tree[1]).toMatchObject({ href: "https://example.com", isExternal: true });
     });
 
+    it("marks as active only the clone of the note below its ancestors", () => {
+        // clones ─┬─ x ── c (first parent)
+        //         └─ y ── c (clone)
+        const clones = fakeNote({ noteId: "clones" });
+        const [ x, y ] = [ "x", "y" ].map((noteId) => addChild(clones, fakeNote({ noteId })));
+        const c = addChild(x, fakeNote({ noteId: "c" }));
+        addChild(y, c);
+
+        const outlineOf = (ancestorIds: string[]) =>
+            outline(getNavigationTree(clones, c, ancestorIds, { sanitizeUrl: (url) => url }));
+        expect(outlineOf([ "x" ])).toStrictEqual([ [ "x+", [ "c*+" ] ], [ "y", [ "c+" ] ] ]);
+        expect(outlineOf([ "y" ])).toStrictEqual([ [ "x", [ "c+" ] ], [ "y+", [ "c*+" ] ] ]);
+        // The static export passes the path from the site root down.
+        expect(outlineOf([ "clones", "y" ])).toStrictEqual(outlineOf([ "y" ]));
+    });
+
     it("passes the icon pack prefixes to the notes", () => {
         const tree = getNavigationTree(site, site, [], {
             sanitizeUrl: (url) => url,
@@ -347,6 +363,14 @@ describe("getNavigationTree", () => {
 
         expect(tree[1].icon).toBe("bx bx-note custom");
         expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
+    });
+
+    it("tells whether the page has an entry, which the site root and a hidden note do not", () => {
+        const options = { sanitizeUrl: (url: string) => url };
+
+        expect(hasActiveItem(getNavigationTree(site, a1, [ "a" ], options))).toBe(true);
+        expect(hasActiveItem(getNavigationTree(site, site, [], options))).toBe(false);
+        expect(hasActiveItem(getNavigationTree(site, hidden, [ "a" ], options))).toBe(false);
     });
 });
 
@@ -393,8 +417,7 @@ describe("getContentClasses", () => {
     it("styles text and Markdown notes as the editor's content, and marks empty content", () => {
         expect(classes("text", "text/html")).toBe("type-text ck-content");
         expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
-        expect(classes("code", "application/javascript")).toBe("type-code");
-        expect(classes("book", "", true)).toBe("type-book no-content");
+        expect(classes("text", "text/html", true)).toBe("type-text ck-content no-content");
     });
 
     it("marks content as full width with #fullContentWidth, as the app does", () => {
@@ -403,19 +426,137 @@ describe("getContentClasses", () => {
         expect(classes("text", "text/html", false, { fullContentWidth: "false" }))
             .toBe("type-text ck-content");
     });
+
+    it("marks the types the app always shows at full width, but not a Markdown note", () => {
+        expect(classes("canvas", "application/json")).toBe("type-canvas full-content-width");
+        expect(classes("file", "application/pdf")).toBe("type-file full-content-width");
+        expect(classes("code", "application/javascript")).toBe("type-code full-content-width");
+        expect(classes("code", "text/x-markdown")).toBe("type-code ck-content");
+        expect(classes("file", "application/zip")).toBe("type-file");
+        expect(classes("file", "application/zip", false, { fullContentWidth: "" }))
+            .toBe("type-file full-content-width");
+    });
 });
 
 describe("getChildLinks", () => {
-    it("links to the visible children of a note, in order", () => {
+    const options = { sanitizeUrl: (url: string) => url, iconPackPrefixes: [ "pack" ] };
+
+    it("links to the visible children of a note, in order, with their icon and own children", () => {
         const parent = fakeNote({ noteId: "parent" });
-        addChild(parent, fakeNote({ noteId: "x", type: "book" }));
+        const x = addChild(parent, fakeNote({ noteId: "x", type: "book", icon: "bx bx-book" }));
+        addChild(x, fakeNote({ noteId: "grandchild" }));
+        addChild(x, fakeNote({ noteId: "far", labels: { shareExternal: "https://example.org" } }));
         addChild(parent, fakeNote({ noteId: "hidden" }), true);
         addChild(parent, fakeNote({ noteId: "y", labels: { shareExternal: "https://example.com" } }));
 
-        expect(getChildLinks(parent, (url) => url)).toStrictEqual([
-            { href: "./x-alias", isExternal: false, title: "x", type: "book" },
-            { href: "https://example.com", isExternal: true, title: "y", type: "text" }
+        expect(getChildLinks(parent, options)).toStrictEqual([
+            {
+                href: "./x-alias", isExternal: false, title: "x", type: "book",
+                icon: "bx bx-book pack", excerpt: null,
+                children: [
+                    { href: "./grandchild-alias", isExternal: false, title: "grandchild", icon: "bx bx-note pack" },
+                    { href: "https://example.org", isExternal: true, title: "far", icon: "bx bx-note pack" }
+                ]
+            },
+            {
+                href: "https://example.com", isExternal: true, title: "y", type: "text",
+                icon: "bx bx-note pack", excerpt: null, children: []
+            }
         ]);
+    });
+
+    it("lists the first ten children of a child only when it has no excerpt, as the app does", () => {
+        const parent = fakeNote({ noteId: "parent" });
+        for (const noteId of [ "empty", "described" ]) {
+            const child = addChild(parent, fakeNote({
+                noteId,
+                labels: noteId === "described" ? { shareDescription: "About it" } : {}
+            }));
+            for (let index = 0; index < 12; index++) {
+                addChild(child, fakeNote({ noteId: `${noteId}-${index}` }));
+            }
+        }
+
+        const [ empty, described ] = getChildLinks(parent, options);
+
+        expect(empty.children.map((child) => child.title))
+            .toStrictEqual(Array.from({ length: 10 }, (_, index) => `empty-${index}`));
+        expect(described.children).toStrictEqual([]);
+    });
+
+    it("lists the children only under the note types the app does, unless #hideChildrenOverview", () => {
+        const withChild = (note: FakeNote) => {
+            addChild(note, fakeNote({ noteId: `${note.noteId}-child` }));
+            return getChildLinks(note, options).length;
+        };
+
+        expect(withChild(fakeNote({ noteId: "text" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "code", type: "code", mime: "text/x-markdown" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "book", type: "book" }))).toBe(1);
+        expect(withChild(fakeNote({ noteId: "canvas", type: "canvas" }))).toBe(0);
+        expect(withChild(fakeNote({ noteId: "hidden", labels: { hideChildrenOverview: "" } }))).toBe(0);
+        expect(withChild(fakeNote({ noteId: "shown", labels: { hideChildrenOverview: "false" } }))).toBe(1);
+    });
+
+    it("describes a child by #shareDescription, else by the start of its text", () => {
+        const parent = fakeNote({ noteId: "parent" });
+        const sentence = "Sentence number one is here. ";
+        const texts: Record<string, string | null> = {
+            described: "Ignored",
+            short: "  A short\n  note.  ",
+            paragraphs: "First paragraph.\n\n \n\nSecond\n  paragraph.",
+            sentences: sentence.repeat(20),
+            paragraphEnd: `${"word ".repeat(40)}\n\n${"word ".repeat(150)}`,
+            words: "word ".repeat(150),
+            unbroken: "x".repeat(600),
+            empty: " ",
+            unreadable: null
+        };
+        for (const noteId of Object.keys(texts)) {
+            addChild(parent, fakeNote({
+                noteId,
+                labels: noteId === "described" ? { shareDescription: "About it" } : {}
+            }));
+        }
+
+        const excerpts = getChildLinks(parent, { ...options, getText: (note) => texts[note.noteId] })
+            .map((link) => link.excerpt);
+
+        expect(excerpts).toStrictEqual([
+            "About it",
+            "A short note.",
+            "First paragraph.\nSecond paragraph.",
+            sentence.repeat(17).trim(),
+            "word ".repeat(40).trim(),
+            `${"word ".repeat(100).trim()}…`,
+            `${"x".repeat(500)}…`,
+            null,
+            null
+        ]);
+        expect(getChildLinks(parent, options).map((link) => link.excerpt))
+            .toStrictEqual([ "About it", null, null, null, null, null, null, null, null ]);
+
+        const denied = getChildLinks(parent, {
+            ...options,
+            getText: (note) => texts[note.noteId],
+            canAccess: (note) => note.noteId !== "described" && note.noteId !== "short"
+        });
+        expect(denied.map((link) => link.excerpt).slice(0, 3))
+            .toStrictEqual([ null, null, "First paragraph.\nSecond paragraph." ]);
+    });
+});
+
+describe("getChildLinksLayout", () => {
+    const layout = (type: string, labels: Record<string, string> = {}) =>
+        getChildLinksLayout(fakeNote({ noteId: "page", type, labels }));
+
+    it("shows a grid, unless a collection asks for a list", () => {
+        expect(layout("book")).toBe("grid");
+        expect(layout("book", { viewType: "grid" })).toBe("grid");
+        expect(layout("book", { viewType: "list" })).toBe("list");
+        expect(layout("book", { viewType: "calendar" })).toBe("grid");
+        expect(layout("text")).toBe("grid");
+        expect(layout("text", { viewType: "list" })).toBe("grid");
     });
 });
 

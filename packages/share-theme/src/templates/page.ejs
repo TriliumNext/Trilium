@@ -6,11 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="<%= faviconUrl %>">
+    <% for (const font of fontPreloads) { %>
+        <link rel="preload" href="<%= font.href %>" as="font" type="<%= font.type %>" crossorigin>
+    <% } %>
     <% for (const url of cssToLoad) { %>
         <link href="<%= url %>" rel="stylesheet">
     <% } %>
-    <% for (const url of jsToLoad) { %>
-        <script type="module" src="<%= url %>"></script>
+    <% for (const [ index, url ] of jsToLoad.entries()) { %>
+        <script type="module" src="<%= url %>"<% if (index === 0) { %> blocking="render"<% } %>></script>
     <% } %>
     <% if (head.noIndex) { %>
         <meta name="robots" content="noindex,follow" />
@@ -29,40 +32,36 @@
 <%- snippets["body:start"] %>
 <div id="header">
     <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-menu" aria-hidden="true"></span></button>
-    <a href="<%= logo.href %>" id="header-logo" class="no-arrow">
-        <% if (logo.image) { %>
-            <img src="<%= logo.image %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
-        <% } else { %>
-            <span class="tn-icon <%= logo.icon %>" aria-hidden="true"></span>
-        <% } %>
-        <%= subRoot.note.title %>
-    </a>
-    <% if (headings.length > 1) { %>
-        <button aria-label="<%= t("share_theme.toggle-toc") %>" id="toc-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-list-ul" aria-hidden="true"></span></button>
-    <% } else { %>
-        <div class="header-button-placeholder"></div>
-    <% } %>
+    <%- include("site_logo", { id: "header-logo" }) %>
 </div>
 <div id="split-pane">
     <div id="left-pane">
         <div id="navigation">
             <div id="site-header">
-                <div class="theme-selection">
-                    <span id="sitetheme"><%= t("share_theme.site-theme") %></span>
-                    <label class="switch">
-                      <input type="checkbox" aria-labelledby="sitetheme">
-                      <span class="slider"></span>
-                      <span class="dark-icon tn-icon bx bx-moon" aria-hidden="true"></span>
-                      <span class="light-icon tn-icon bx bx-sun" aria-hidden="true"></span>
-                    </label>
+                <div id="site-title-row">
+                    <%- include("site_logo", { id: "site-logo" }) %>
+                    <div class="theme-selection" role="group" aria-labelledby="theme-selection-label">
+                        <span id="theme-selection-label" class="visually-hidden"><%= t("share_theme.appearance") %></span>
+                        <div class="theme-options">
+                            <button type="button" class="theme-option" data-theme="light" aria-label="<%= t("share_theme.theme-light") %>" title="<%= t("share_theme.theme-light") %>"><span class="tn-icon bx bx-sun" aria-hidden="true"></span></button>
+                            <button type="button" class="theme-option" data-theme="dark" aria-label="<%= t("share_theme.theme-dark") %>" title="<%= t("share_theme.theme-dark") %>"><span class="tn-icon bx bx-moon" aria-hidden="true"></span></button>
+                            <button type="button" class="theme-option" data-theme="system" aria-label="<%= t("share_theme.theme-system") %>" title="<%= t("share_theme.theme-system") %>"><span class="tn-icon bx bx-desktop" aria-hidden="true"></span></button>
+                        </div>
+                    </div>
                 </div>
                 <% if (navigation.length) { %>
                     <div class="search-item">
+                        <input type="text" class="search-input" placeholder="<%= t("share_theme.search_placeholder") %>" aria-label="<%= t("share_theme.search_placeholder") %>">
                         <span class="search-icon tn-icon bx bx-search" aria-hidden="true"></span>
-                        <input type="text" class="search-input" placeholder="<%= t("share_theme.search_placeholder") %>">
                     </div>
                 <% } %>
             </div>
+        <% if (headings.length > 1 && !isPageInNavigation) { %>
+            <nav class="tree-toc" aria-labelledby="tree-toc-title">
+                <h3 id="tree-toc-title"><%= t("share_theme.on-this-page") %></h3>
+                <%- include("tree_toc", { entries: toc }) %>
+            </nav>
+        <% } %>
         <% if (navigation.length) { %>
             <nav id="menu">
                 <%- include("tree_item", { items: navigation }) %>
@@ -84,7 +83,7 @@
             </div>
 
             <% if (childLinks.length) { %>
-                <nav id="childLinks" class="<% if (isEmpty) { %>grid<% } else { %>list<% } %>">
+                <nav id="childLinks" class="<%= childLinksLayout %>">
                     <% if (!isEmpty) { %>
                         <span><%= t("share_theme.subpages") %></span>
                     <% } %>
@@ -92,7 +91,18 @@
                     <ul>
                         <% for (const child of childLinks) { %>
                             <li>
-                                <a class="type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
+                                <span class="tn-icon <%= child.icon %>" aria-hidden="true"></span>
+                                <a class="child-link-title type-<%= child.type %> no-arrow" href="<%= child.href %>"<% if (child.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><%= child.title %></a>
+                                <% if (child.excerpt) { %>
+                                    <p class="child-link-excerpt"><%= child.excerpt %></p>
+                                <% } %>
+                                <% if (child.children.length) { %>
+                                    <div class="child-link-children ck-content">
+                                        <% for (const grandchild of child.children) { %>
+                                            <a class="reference-link" href="<%= grandchild.href %>"<% if (grandchild.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>><span class="tn-icon <%= grandchild.icon %>" aria-hidden="true"></span><%= grandchild.title %></a>
+                                        <% } %>
+                                    </div>
+                                <% } %>
                             </li>
                         <% } %>
                     </ul>
@@ -126,6 +136,8 @@
                     <% } %>
                 </ul>
             </div>
+        <% } else { %>
+            <div id="toc-pane"></div>
         <% } %>
     </div>
 </div>

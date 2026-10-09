@@ -482,9 +482,10 @@ class SNote extends AbstractShacaEntity {
             return "";
         }
 
-        const sharedAlias = this.getOwnedLabelValue("shareAlias");
-
-        return sharedAlias || this.noteId;
+        // Of notes sharing an alias, `/share/<alias>` opens one; the others link by their ID.
+        const sharedAlias = this.getOwnedLabelValue("shareAlias")?.trim();
+        const ownsAlias = sharedAlias && this.shaca.aliasToNote[sharedAlias] === this;
+        return ownsAlias ? sharedAlias : this.noteId;
     }
 
     get escapedTitle() {

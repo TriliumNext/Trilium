@@ -1,0 +1,10 @@
+<% for (const entry of entries) { %>
+    <div class="tree-toc-entry">
+        <a href="<%= entry.href %>"><%= entry.text %></a>
+        <% if (entry.children.length) { %>
+            <div class="tree-toc-children">
+                <%- include("tree_toc", { entries: entry.children }) %>
+            </div>
+        <% } %>
+    </div>
+<% } %>

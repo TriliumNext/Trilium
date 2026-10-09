@@ -9,12 +9,25 @@ class="image">
 <h2>Features, interaction and limitations</h2>
 <ul>
   <li>Searching by note title.</li>
-  <li>Automatic dark/light mode based on the user's browser settings.</li>
-  <li>Mobile-friendly layout, with sidebar.</li>
-  <li>Collapsible tree with the same note icons as the application.</li>
+  <li>Light and dark mode, following the visitor's system setting by default,
+    also while the page is open. The visitor can pick <em>Light</em>, <em>Dark</em> or <em>System</em> with
+    the buttons at the top of the navigation pane; the choice is remembered
+    by the browser.</li>
+  <li>A layout centered on wide screens, with the navigation tree and the table
+    of contents at either side of the content, and a mobile-friendly layout
+    on narrow ones. There, the navigation tree slides in from the menu button
+    in the header, and lists the headings of the current page below its entry
+    (at the top of the pane, for a page the tree does not show).</li>
+  <li>Collapsible tree with the same note icons as the application. It keeps
+    the sections the visitor expanded and its scroll position while they move
+    between the pages of the site, and shows the current note.</li>
   <li>Customizable logo.</li>
-  <li>Toggle button for dark/light mode, which also stores the user preferences.</li>
   <li>Quick navigation buttons (previous and next note).</li>
+  <li>The subpages of a text or code note shown below its content as cards,
+    as in the application. Each card shows the icon of the subpage and the
+    start of its text (or its <code>#shareDescription</code>), or, for a subpage
+    without text, links to its own first subpages. The cards can be hidden
+    with <code>#hideChildrenOverview</code>.</li>
   <li>Displaying the date of the last update of the note, written out in the
     application's language.</li>
   <li>Marking the page with the application's language and its text direction,
@@ -103,12 +116,16 @@ class="image">
         </th>
         <td>
           <ul>
-            <li>The child notes are displayed in a fixed format.&nbsp;</li>
+            <li>The child notes are shown as cards, or as a list when the view type of
+              the collection is <em>List</em>. Each shows its icon and the start of its
+              text (or its <code>#shareDescription</code>), or, for a child note without
+              text, links to its own first child notes.</li>
           </ul>
         </td>
         <td>
           <ul>
-            <li>More advanced view types such as the calendar view are not supported.</li>
+            <li>The other view types (such as the calendar, the table or the board) are
+              not supported, and the child notes are shown as cards instead.</li>
           </ul>
         </td>
       </tr>
@@ -397,7 +414,9 @@ class="admonition note">
       <tr>
         <td><code>#shareDescription</code>
         </td>
-        <td>define text to be added to the HTML meta tag for description</td>
+        <td>define text to be added to the HTML meta tag for description. It also
+          describes the note in the list of subpages of its parent, in place of the
+          start of its text.</td>
       </tr>
       <tr>
         <td><code>#shareRaw</code>
@@ -442,8 +461,8 @@ class="admonition note">
   </table>
 </figure>
 <h3>Customizing logo</h3>
-<p>It's possible to adjust the logo which is displayed on the top-left of
-  the left pane.</p>
+<p>It's possible to adjust the logo which is displayed above the navigation
+  tree (in the header, on a narrow screen).</p>
 <figure class="table">
   <table>
     <thead>
@@ -457,8 +476,8 @@ class="admonition note">
         <td><code>~shareLogo</code>
         </td>
         <td>Relation set to an image to use as logo. The image must be part of the
-          share tree (it can be hidden if needed). Without it, the header shows the
-          icon of the shared root note.</td>
+          share tree (it can be hidden if needed). Without it, the logo is the icon
+          of the shared root note.</td>
       </tr>
       <tr>
         <td><code>#shareLogoWidth</code>

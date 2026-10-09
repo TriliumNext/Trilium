@@ -88,3 +88,60 @@ input:focus + .slider {
     right: 5px;
     color: var(--background-highlight);
 }
+
+.theme-options {
+    display: flex;
+    margin-inline-start: auto;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background: var(--background-highlight);
+}
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-menu);
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.theme-option:hover {
+    color: var(--text-primary);
+}
+
+.theme-option:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 1px;
+}
+
+.theme-preference-light .theme-option[data-theme="light"],
+.theme-preference-dark .theme-option[data-theme="dark"],
+.theme-preference-system .theme-option[data-theme="system"] {
+    background: var(--background-primary);
+    color: var(--text-primary);
+}
+
+.theme-cycle-option {
+    display: none;
+}
+
+.theme-preference-light .theme-cycle-option[data-theme="light"],
+.theme-preference-dark .theme-cycle-option[data-theme="dark"],
+.theme-preference-system .theme-cycle-option[data-theme="system"] {
+    display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-option {
+        transition: none;
+    }
+}

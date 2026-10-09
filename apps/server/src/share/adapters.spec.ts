@@ -70,21 +70,23 @@ describe("share routes", () => {
 });
 
 describe("share provider", () => {
-    it("registers once and reads each template once, from the sources in development", async () => {
+    it("registers once and reads a template from the sources on every use in development", async () => {
         const { provider, readFileSync } = await registerProvider("development");
 
         expect(provider.readTemplate("page")).toBe("template");
         expect(provider.readTemplate("page")).toBe("template");
-        expect(readFileSync).toHaveBeenCalledOnce();
+        expect(readFileSync).toHaveBeenCalledTimes(2);
         expect(String(readFileSync.mock.calls[0][0]).replaceAll("\\", "/"))
             .toMatch(/packages\/share-theme\/src\/templates\/page\.ejs$/);
     });
 
-    it("reads the templates from the resource directory outside development", async () => {
+    it("reads each template once, from the resource directory, outside development", async () => {
         const { provider, readFileSync } = await registerProvider("production");
 
-        provider.readTemplate("404");
+        expect(provider.readTemplate("404")).toBe("template");
+        expect(provider.readTemplate("404")).toBe("template");
 
+        expect(readFileSync).toHaveBeenCalledOnce();
         expect(String(readFileSync.mock.calls[0][0]).replaceAll("\\", "/"))
             .toMatch(/^\/resources\/share-theme\/templates\/404\.ejs$/);
     });

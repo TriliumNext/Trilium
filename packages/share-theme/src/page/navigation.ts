@@ -18,6 +18,8 @@ export default function setupExpanders() {
             }
 
             const isExpanded = li.classList.contains("expanded");
+            // Only a moving subtree is clipped, so the current note's shadow shows otherwise.
+            ul.style.overflow = "hidden";
 
             if (isExpanded) {
                 // Collapsing
@@ -26,6 +28,7 @@ export default function setupExpanders() {
                 ul.offsetHeight;
 
                 li.classList.remove("expanded");
+                expander.setAttribute("aria-expanded", "false");
                 ul.style.height = "0";
             } else {
                 // Expanding
@@ -34,11 +37,13 @@ export default function setupExpanders() {
                 ul.offsetHeight;
 
                 li.classList.add("expanded");
+                expander.setAttribute("aria-expanded", "true");
                 ul.style.height = `${ul.scrollHeight}px`;
             }
 
             setTimeout(() => {
                 ul.style.height = "";
+                ul.style.overflow = "";
             }, 200);
         });
     }

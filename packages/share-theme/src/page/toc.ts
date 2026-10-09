@@ -16,16 +16,16 @@ import "./toc.css";
 export default function setupToC() {
     setupHeadingLinks();
 
-    const container = document.getElementById("right-pane");
-    const toc = document.getElementById("toc");
-    if (!toc || !container) return;
+    // The ToC pane, and the copy in the navigation pane that narrow screens show instead.
+    const tocs = [ ...document.querySelectorAll("#toc, .tree-toc") ];
+    if (!tocs.length) return;
 
     const sections = [ ...document.querySelectorAll("#content .toc-anchor") ]
         .map((anchor) => anchor.parentElement)
         .filter((heading) => heading !== null);
-    const links = [ ...toc.querySelectorAll("a") ];
+    const linkLists = tocs.map((toc) => [ ...toc.querySelectorAll("a") ]);
 
-    for (const link of links) {
+    for (const link of linkLists.flat()) {
         link.addEventListener("click", e => {
             const target = document.getElementById(decodeURIComponent(link.hash.slice(1)));
             if (!target) return;
@@ -41,17 +41,19 @@ export default function setupToC() {
     // Marks the entry of the last section scrolled past, or the first entry above every section.
     const changeLinkState = () => {
         let index = sections.length;
-        while (--index > 0 && container.scrollTop + 50 < sections[index].offsetTop) {
+        while (--index > 0 && sections[index].getBoundingClientRect().top > 50) {
             // Walk back to the last section scrolled past.
         }
 
-        for (const [ linkIndex, link ] of links.entries()) {
-            link.classList.toggle("active", linkIndex === index);
+        for (const links of linkLists) {
+            for (const [ linkIndex, link ] of links.entries()) {
+                link.classList.toggle("active", linkIndex === index);
+            }
         }
     };
 
     changeLinkState();
-    container.addEventListener("scroll", changeLinkState);
+    window.addEventListener("scroll", changeLinkState, { passive: true });
 }
 
 /** How long a heading link shows its check mark after copying, in milliseconds. */

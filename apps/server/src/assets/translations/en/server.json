@@ -448,18 +448,27 @@
   },
   "share_theme": {
     "site-theme": "Site Theme",
+    "appearance": "Appearance",
+    "theme-light": "Light",
+    "theme-dark": "Dark",
+    "theme-system": "System",
+    "theme-current": "Appearance: {{- theme}}",
     "search_placeholder": "Search...",
     "image_alt": "Article Image",
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
     "expand": "Expand",
+    "subpages-of": "Subpages of {{- title}}",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",
     "login": "Login",
     "tab-title": "Tab title",
-    "heading-link": "Link to This Section"
+    "heading-link": "Link to This Section",
+    "previous": "Previous",
+    "next": "Next",
+    "page-navigation": "Previous and next pages"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

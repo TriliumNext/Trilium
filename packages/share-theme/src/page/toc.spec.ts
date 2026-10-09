@@ -12,17 +12,39 @@ describe("setupToC", () => {
     });
 
     it("marks the entry of the last heading scrolled past, whatever the heading levels", () => {
-        const container = renderPage([ [ 1, "intro", 100 ], [ 2, "details", 500 ], [ 3, "more", 900 ] ]);
+        const scrollTo = renderPage([ [ 1, "intro", 100 ], [ 2, "details", 500 ], [ 3, "more", 900 ] ]);
 
         expect(activeEntry()).toBe("intro");
 
-        container.scrollTop = 520;
-        container.dispatchEvent(new Event("scroll"));
+        scrollTo(520);
         expect(activeEntry()).toBe("details");
 
-        container.scrollTop = 900;
-        container.dispatchEvent(new Event("scroll"));
+        scrollTo(900);
         expect(activeEntry()).toBe("more");
+    });
+
+    it("keeps the copy in the navigation pane in step, and closes the pane on a click", () => {
+        const scrollTo = renderPage([ [ 2, "intro", 100 ], [ 2, "details", 500 ] ]);
+        const treeEntry = (selector: string) =>
+            document.querySelector<HTMLAnchorElement>(`.tree-toc a${selector}`);
+
+        expect(treeEntry(".active")?.textContent).toBe("intro");
+        scrollTo(520);
+        expect(treeEntry(".active")?.textContent).toBe("details");
+        expect(activeEntry()).toBe("details");
+
+        const heading = document.getElementById("intro");
+        const entry = treeEntry('[href="#intro"]');
+        if (!heading || !entry) {
+            throw new Error("The heading or its entry in the navigation pane is missing.");
+        }
+        heading.scrollIntoView = vi.fn();
+        document.body.classList.add("menu-open");
+
+        entry.click();
+
+        expect(heading.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
+        expect(document.body.classList.contains("menu-open")).toBe(false);
     });
 
     it("scrolls to the heading of a clicked entry, whose ID can start with a digit or hold a %", () => {
@@ -47,7 +69,7 @@ describe("setupToC", () => {
         expect(() => setupToC()).not.toThrow();
 
         document.body.innerHTML = `
-            <div id="right-pane">
+            <div>
                 <ul id="toc"><li><a href="#missing">Missing</a></li><li><a>No link</a></li></ul>
             </div>
         `;
@@ -147,33 +169,38 @@ describe("setupToC", () => {
 
 /**
  * Renders the content and the table of contents of a page with headings given as level, slug and
- * distance from the top, sets the table of contents up and returns the scrolling container.
+ * distance from the top of the page, sets the table of contents up and returns a function that
+ * scrolls the page.
  */
 function renderPage(headings: [ level: number, slug: string, offsetTop: number ][]) {
+    const link = (slug: string) => `<a href="#${encodeURIComponent(slug)}">${slug}</a>`;
     document.body.innerHTML = `
-        <div id="right-pane">
+        <div>
             <div id="content">
                 ${headings.map(([ level, slug ]) => `<h${level} id="${slug}">${slug}${anchor(slug)}`
                     + `</h${level}>`).join("")}
             </div>
             <ul id="toc">
-                ${headings.map(([ , slug ]) => `<li><a href="#${encodeURIComponent(slug)}">${slug}</a></li>`).join("")}
+                ${headings.map(([ , slug ]) => `<li>${link(slug)}</li>`).join("")}
             </ul>
+            <nav class="tree-toc">
+                ${headings.map(([ , slug ]) => `<div>${link(slug)}</div>`).join("")}
+            </nav>
         </div>
     `;
+    let scrolled = 0;
     for (const [ , slug, offsetTop ] of headings) {
         const heading = document.getElementById(slug);
         if (heading) {
-            Object.defineProperty(heading, "offsetTop", { value: offsetTop });
+            heading.getBoundingClientRect = () => DOMRect.fromRect({ y: offsetTop - scrolled });
         }
     }
 
     setupToC();
-    const container = document.getElementById("right-pane");
-    if (!container) {
-        throw new Error("The container is missing.");
-    }
-    return container;
+    return (y: number) => {
+        scrolled = y;
+        window.dispatchEvent(new Event("scroll"));
+    };
 }
 
 function activeEntry() {

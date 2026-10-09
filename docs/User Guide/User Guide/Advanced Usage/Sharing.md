@@ -6,12 +6,12 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 ## Features, interaction and limitations
 
 *   Searching by note title.
-*   Automatic dark/light mode based on the user's browser settings.
-*   Mobile-friendly layout, with sidebar.
-*   Collapsible tree with the same note icons as the application.
+*   Light and dark mode, following the visitor's system setting by default, also while the page is open. The visitor can pick _Light_, _Dark_ or _System_ with the buttons at the top of the navigation pane; the choice is remembered by the browser.
+*   A layout centered on wide screens, with the navigation tree and the table of contents at either side of the content, and a mobile-friendly layout on narrow ones. There, the navigation tree slides in from the menu button in the header, and lists the headings of the current page below its entry (at the top of the pane, for a page the tree does not show).
+*   Collapsible tree with the same note icons as the application. It keeps the sections the visitor expanded and its scroll position while they move between the pages of the site, and shows the current note.
 *   Customizable logo.
-*   Toggle button for dark/light mode, which also stores the user preferences.
 *   Quick navigation buttons (previous and next note).
+*   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage and the start of its text (or its `#shareDescription`), or, for a subpage without text, links to its own first subpages. The cards can be hidden with `#hideChildrenOverview`.
 *   Displaying the date of the last update of the note, written out in the application's language.
 *   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
@@ -63,8 +63,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Collections.md">Collections</a></th>
-            <td><ul><li>The child notes are displayed in a fixed format.&nbsp;</li></ul></td>
-            <td><ul><li>More advanced view types such as the calendar view are not supported.</li></ul></td>
+            <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon and the start of its text (or its <code>#shareDescription</code>), or, for a child note without text, links to its own first child notes.</li></ul></td>
+            <td><ul><li>The other view types (such as the calendar, the table or the board) are not supported, and the child notes are shown as cards instead.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
@@ -266,7 +266,7 @@ The URL must be absolute and include the scheme (e.g. `https://`).
         </tr>
         <tr>
             <td><code>#shareDescription</code></td>
-            <td>define text to be added to the HTML meta tag for description</td>
+            <td>define text to be added to the HTML meta tag for description. It also describes the note in the list of subpages of its parent, in place of the start of its text.</td>
         </tr>
         <tr>
             <td><code>#shareRaw</code></td>
@@ -293,11 +293,11 @@ The URL must be absolute and include the scheme (e.g. `https://`).
 
 ### Customizing logo
 
-It's possible to adjust the logo which is displayed on the top-left of the left pane.
+It's possible to adjust the logo which is displayed above the navigation tree (in the header, on a narrow screen).
 
 | Attribute | Description |
 | --- | --- |
-| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). Without it, the header shows the icon of the shared root note. |
+| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). Without it, the logo is the icon of the shared root note. |
 | `#shareLogoWidth` | The width of the logo, as a number without unit. With `#shareLogoHeight`, it sets the proportions of the logo, which is shown 32 pixels wide. Default is `53`. |
 | `#shareLogoHeight` | The height of the logo, as a number without unit. With `#shareLogoWidth`, it sets the proportions of the logo. Default is `40`. |
 | `#shareRootLink` | URL to navigate to when the logo is pressed. |

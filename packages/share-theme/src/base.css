@@ -30,12 +30,49 @@ html.theme-light {
     --link-hover-background: #3c7fa017;
     --link-focus-outline-color: #00000063;
     --text-menu-active: var(--background-secondary);
+    /* The code colors of `theme-next-light.css`. */
+    --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
+    --inline-code-background-color: rgba(0, 0, 0, 0.05);
+    /* The task checkbox colors of `theme-next-light.css`. */
+    --task-checkbox-without-state-background: #00000029;
+    --task-checkbox-with-state-background: gray;
+    --task-checkbox-done-color: #339933;
+    /* The tree pane colors of `theme-next-light.css`. */
+    --tree-background: #f2f2f2;
+    --tree-item-color: #383838;
+    --tree-item-icon-color: currentColor;
+    --tree-item-hover-background: rgba(0, 0, 0, 0.032);
+    --tree-item-active-background: #FFFFFF;
+    --tree-item-active-color: #000000;
+    --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    /* The quick search colors of `theme-next-light.css`. */
+    --quick-search-background: #00000012;
+    --quick-search-color: #06060682;
+    --quick-search-hover-background: #00000020;
+    --quick-search-focus-border: #00000029;
+    --quick-search-focus-background: #ffffff80;
+    --quick-search-focus-color: #000000;
+    --quick-search-button-active-background: rgba(0, 0, 0, 0.11);
+    --quick-search-button-active-color: #383838;
+    /* The right pane colors of `theme-next-light.css`. */
+    --main-border-color: #dbdbdb;
+    --muted-text-color: #666;
+    --card-background-color: #0000000d;
+    --card-background-hover-color: #0000001c;
+    /* The content colors of `theme-next-light.css`. */
+    --accented-background-color: #f5f5f5;
+    --selection-background-color: #3399FF70;
+    --kbd-color: #3f3f3f;
+    --kbd-background: #f5f5f5;
+    --kbd-border: #c9c9c9;
+    --right-pane-heading-color: gray;
+    --right-pane-item-hover-background: #00000013;
     --mermaid-theme: default;
     color-scheme: light;
 }
 
 html.theme-dark {
-    --background-primary: #333333;
+    --background-primary: #242424;
     --background-secondary: #1F1F1F;
     --background-highlight: #484848;
     --background-active: #777777;
@@ -47,8 +84,50 @@ html.theme-dark {
     --link-hover-background: #75c2e324;
     --link-focus-outline-color: #ffffff57;
     --text-menu-active: var(--background-secondary);
+    /* The code colors of `theme-next-dark.css`. */
+    --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    --inline-code-background-color: rgba(255, 255, 255, 0.08);
+    /* The task checkbox colors of `theme-next-dark.css`. */
+    --task-checkbox-without-state-background: #ffffff26;
+    --task-checkbox-with-state-background: #ffffff3b;
+    --task-checkbox-done-color: #408b40;
+    /* The tree pane colors of `theme-next-dark.css`. */
+    --tree-background: #1f1f1f;
+    --tree-item-color: #aaaaaa;
+    --tree-item-icon-color: #c5c5c5;
+    --tree-item-hover-background: #ffffff0d;
+    --tree-item-active-background: #ffffff25;
+    --tree-item-active-color: #dfdfdf;
+    --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    /* The quick search colors of `theme-next-dark.css`. */
+    --quick-search-background: #ffffff12;
+    --quick-search-color: #ffffff52;
+    --quick-search-hover-background: #ffffff1f;
+    --quick-search-focus-border: #80808095;
+    --quick-search-focus-background: #ffffff1f;
+    --quick-search-focus-color: #ffffff;
+    --quick-search-button-active-background: #ffffff73;
+    --quick-search-button-active-color: #000000;
+    /* The right pane colors of `theme-next-dark.css`. */
+    --main-border-color: #454545;
+    --muted-text-color: #bbb;
+    --card-background-color: #ffffff12;
+    --card-background-hover-color: #ffffff20;
+    /* The content colors of `theme-next-dark.css`. */
+    --accented-background-color: #555;
+    --selection-background-color: #3399FF70;
+    --kbd-color: #e0e0e0;
+    --kbd-background: #4a4a4a;
+    --kbd-border: #3a3a3a;
+    --right-pane-heading-color: gray;
+    --right-pane-item-hover-background: #ffffff26;
     --mermaid-theme: dark;
     color-scheme: dark;
+}
+
+/* The page background under the name the content styles shared with the app read it by. */
+:root {
+    --main-background-color: var(--background-primary);
 }
 
 body {
@@ -71,6 +150,15 @@ a:hover {
 /* An inline-block glyph does not take the underline of its link. */
 .tn-icon::before {
     display: inline-block;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 pre, code, kbd, samp {

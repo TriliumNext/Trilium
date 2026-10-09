@@ -30,7 +30,8 @@ packages/share-theme/
   src/page/            page chrome: one script next to its CSS (layout, header, navigation,
                        search, toc, theme_switch, footer)
   src/content/         content enhancements (math, mermaid) and content CSS
-  scripts/build.ts     esbuild → dist/scripts.js + dist/scripts.css (run by tsx)
+  scripts/build.ts     esbuild → dist/scripts.js + dist/scripts.css, and dist/tree.js on its own
+                       (no code splitting, so it loads as one file) (run by tsx)
 ```
 
 `packages/share-theme/package.json` exports `./templates/*` and `./model/*` **from source** (core
@@ -53,7 +54,9 @@ imports the model as `@triliumnext/share-theme/model/page`); everything else res
    the content as it is. The default `page.ejs` additionally gets the output of
    `preparePageContent()`: content with heading anchors and image `alt`/`loading`, `headings` and
    `toc`.
-5. **Browser** — `scripts.js` wires the tree, search, ToC scroll tracking, theme switch, footer
+5. **Browser** — `tree.js`, the first entry of `jsToLoad` and the only `blocking="render"` one,
+   restores the tree's expansion, scroll position and clicked clone before the first paint.
+   `scripts.js` then wires the expand buttons, search, ToC scroll tracking, theme switch, footer
    date, math, Mermaid, link previews and tabs. `boot_script.ejs` runs inline in `<head>` before the
    first paint (theme class, collapsed panes, `window.glob`).
 
@@ -107,6 +110,9 @@ template* page of the User Guide. So:
 - **No inline scripts besides `boot_script.ejs`.** Top-level `const`/`let` in a classic inline
   script is a global binding shared with `~shareHtml` snippets — keep everything inside the IIFE.
   `boot_script.spec.ts` enforces both and that `page.ejs` has no `<script>`.
+- Code that must run before the first paint and needs the DOM goes in `tree.ts`'s bundle, which is
+  render-blocking; keep it small, since every page waits for it. Everything else stays in
+  `scripts.js`, and `~shareJs` scripts never block.
 - Anything needed before the first paint is driven from the root class the boot script sets
   (`theme-dark`/`theme-light`, `left-pane-collapsed`) — the theme switch is styled from it, not
   from `:checked`, so it needs no script to look right.

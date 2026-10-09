@@ -6,6 +6,7 @@
 import {
     isRightToLeftLanguage, resolveContentLanguage, toLanguageTag
 } from "@triliumnext/commons/src/lib/i18n.js";
+import { isFullWidthNoteType } from "@triliumnext/commons/src/lib/notes.js";
 
 /** The parts of a note the page model reads; core's `SNote` and `BNote` both provide them. */
 export interface ShareNote {
@@ -39,6 +40,7 @@ export interface ShareLink {
 
 /** An entry of the navigation tree, with the entries below it. */
 export interface NavigationItem extends ShareLink {
+    noteId: string;
     title: string;
     type: string;
     icon: string;
@@ -230,6 +232,11 @@ function readLabel(note: ShareNote, name: string) {
     return note.getLabelValue(name)?.trim() || null;
 }
 
+const CHILD_LIST_NOTE_TYPES = [ "book", "text", "code" ];
+
+/** The most children of a child its card lists, as many as the app's card does. */
+const CHILD_PREVIEW_LENGTH = 10;
+
 /** Resolves `address` against `base` unless it is already absolute or `base` is not a URL. */
 function toAbsoluteUrl(address: string, base: string) {
     if (URL.canParse(address) || !URL.canParse(base)) {
@@ -333,26 +340,123 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
 /**
  * Returns the classes of the content element: the note's type, `ck-content` for content the text
  * editor's styles apply to (text notes and Markdown code notes), `full-content-width` for a note
- * with `#fullContentWidth`, as in the app, and `no-content` when empty.
+ * with `#fullContentWidth` or of a type the app always shows at full width, and `no-content` when
+ * empty. A Markdown note reads as text, so its type does not make it full width.
  */
 export function getContentClasses(note: ShareNote, isEmpty = false) {
     const isEditorContent = note.type === "text"
         || (note.type === "code" && note.mime === "text/x-markdown");
+    const isFullWidth = (!isEditorContent && isFullWidthNoteType(note.type, note.mime))
+        || note.isLabelTruthy("fullContentWidth");
     return [
         `type-${note.type}`,
         isEditorContent && "ck-content",
-        note.isLabelTruthy("fullContentWidth") && "full-content-width",
+        isFullWidth && "full-content-width",
         isEmpty && "no-content"
     ].filter(Boolean).join(" ");
 }
 
-/** Returns the links to the visible children of `note`, for its list of subpages. */
-export function getChildLinks(note: ShareNote, sanitizeUrl: (url: string) => string) {
-    return note.getVisibleChildNotes().map((child) => ({
-        ...getShareLink(child, sanitizeUrl),
-        title: child.title,
-        type: child.type
-    }));
+/** A child of a page, as its list of subpages shows it. */
+export interface ChildLink extends ShareLink {
+    title: string;
+    type: string;
+    /** The icon's CSS classes. */
+    icon: string;
+    /** `#shareDescription`, else the start of the child's text, or `null`. */
+    excerpt: string | null;
+    /**
+     * The first visible children of the child, which the app's card shows in place of a preview
+     * when the child has none; empty when it has an excerpt.
+     */
+    children: ChildLinkChild[];
+}
+
+/** A child of a child of a page, as its card lists it. */
+export interface ChildLinkChild extends ShareLink {
+    title: string;
+    /** The icon's CSS classes. */
+    icon: string;
+}
+
+/** What {@link getChildLinks} needs besides the note. */
+export interface ChildLinksOptions {
+    sanitizeUrl: (url: string) => string;
+    /** The prefixes of the icon packs available to the page, for the children's icons. */
+    iconPackPrefixes?: string[];
+    /**
+     * The plain text a child's excerpt starts from, or `null` for none, such as a child the
+     * visitor is not allowed to read. Without it, only `#shareDescription` describes a child.
+     */
+    getText?: (note: ShareNote) => string | null;
+    /**
+     * Whether the visitor is allowed to read a child. A child they are not allowed to read has no
+     * excerpt, not even its `#shareDescription`.
+     */
+    canAccess?: (note: ShareNote) => boolean;
+}
+
+/**
+ * Returns the links to the visible children of `note`, for its list of subpages. As in the app,
+ * only a collection, a text note and a code note list their children, and `#hideChildrenOverview`
+ * hides the list.
+ */
+export function getChildLinks(note: ShareNote, options: ChildLinksOptions): ChildLink[] {
+    if (!CHILD_LIST_NOTE_TYPES.includes(note.type) || note.isLabelTruthy("hideChildrenOverview")) {
+        return [];
+    }
+
+    return note.getVisibleChildNotes().map((child) => {
+        const excerpt = options.canAccess?.(child) === false ? null
+            : readLabel(child, "shareDescription") ?? toExcerpt(options.getText?.(child) ?? "");
+        const children = excerpt ? [] : child.getVisibleChildNotes().slice(0, CHILD_PREVIEW_LENGTH);
+        return {
+            ...getShareLink(child, options.sanitizeUrl),
+            title: child.title,
+            type: child.type,
+            icon: child.getIcon(options.iconPackPrefixes),
+            excerpt,
+            children: children.map((grandchild) => ({
+                ...getShareLink(grandchild, options.sanitizeUrl),
+                title: grandchild.title,
+                icon: grandchild.getIcon(options.iconPackPrefixes)
+            }))
+        };
+    });
+}
+
+/** The most characters of a child's text its excerpt shows, about what fills its card's preview. */
+const EXCERPT_LENGTH = 500;
+
+/**
+ * Shortens `text`, whose paragraphs are separated by blank lines, to an excerpt of at most
+ * {@link EXCERPT_LENGTH} characters with a line break between paragraphs: whole sentences or
+ * paragraphs when they fill at least a third of it, else whole words followed by an ellipsis.
+ */
+function toExcerpt(text: string) {
+    const plain = text.split(/\n\s*\n/)
+        .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join("\n");
+    if (plain.length <= EXCERPT_LENGTH) {
+        return plain || null;
+    }
+
+    const head = plain.slice(0, EXCERPT_LENGTH);
+    const end = [ ...head.matchAll(/[.!?](?=\s)|[^\n](?=\n)/g) ].at(-1);
+    if (end && end.index >= EXCERPT_LENGTH / 3) {
+        return head.slice(0, end.index + 1);
+    }
+
+    const wordEnd = head.lastIndexOf(" ");
+    return `${wordEnd > 0 ? head.slice(0, wordEnd) : head}…`;
+}
+
+/**
+ * Returns how the list of subpages is laid out: a grid, unless the note is a collection whose
+ * `#viewType` is `list`.
+ */
+export function getChildLinksLayout(note: ShareNote): "grid" | "list" {
+    return note.type === "book" && note.getLabelValue("viewType") === "list" ? "list" : "grid";
 }
 
 /** What {@link getNavigationTree} needs besides the notes. */
@@ -365,22 +469,37 @@ export interface NavigationTreeOptions {
 /**
  * Returns the navigation tree of the site starting at `siteRoot`: its visible pages, below one
  * another as in the note tree. The entries of `activeNote` and of the notes in `ancestorIds` are
- * expanded.
+ * expanded. Of a cloned `activeNote`, only the entry below exactly the notes in `ancestorIds` is
+ * the active one; their order and whether they include `siteRoot` do not matter.
  */
 export function getNavigationTree(
     siteRoot: ShareNote, activeNote: ShareNote, ancestorIds: string[], options: NavigationTreeOptions
 ): NavigationItem[] {
     const expandedIds = new Set([ activeNote.noteId, ...ancestorIds ]);
-    const toItem = (note: ShareNote): NavigationItem => ({
+    const activeAncestorIds = new Set(ancestorIds.filter((noteId) => noteId !== siteRoot.noteId));
+    const isActive = (note: ShareNote, path: string[]) => note.noteId === activeNote.noteId
+        && path.length === activeAncestorIds.size
+        && path.every((noteId) => activeAncestorIds.has(noteId));
+    const toItem = (note: ShareNote, path: string[]): NavigationItem => ({
         ...getShareLink(note, options.sanitizeUrl),
+        noteId: note.noteId,
         title: note.title,
         type: note.type,
         icon: note.getIcon(options.iconPackPrefixes),
-        isActive: note.noteId === activeNote.noteId,
+        isActive: isActive(note, path),
         isExpanded: expandedIds.has(note.noteId),
-        children: note.getVisibleChildNotes().map(toItem)
+        children: note.getVisibleChildNotes()
+            .map((child) => toItem(child, [ ...path, note.noteId ]))
     });
-    return siteRoot.getVisibleChildNotes().map(toItem);
+    return siteRoot.getVisibleChildNotes().map((note) => toItem(note, []));
+}
+
+/**
+ * Returns whether a navigation tree has an entry for the page being shown, which the site root
+ * and a note hidden from the tree do not.
+ */
+export function hasActiveItem(items: NavigationItem[]): boolean {
+    return items.some((item) => item.isActive || hasActiveItem(item.children));
 }
 
 /**

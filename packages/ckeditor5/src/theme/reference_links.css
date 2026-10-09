@@ -2,6 +2,8 @@
     /* A line can wrap after an inline-block. An inline box that does not wrap and ends with a
        word joiner keeps the icon on the line of the first title character. */
     display: inline;
+    position: relative;
+    top: 1px;
     margin-inline-end: 3px;
     white-space: nowrap;
 }

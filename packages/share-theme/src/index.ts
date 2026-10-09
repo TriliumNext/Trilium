@@ -9,6 +9,7 @@ import setupSearch from "./page/search.js";
 import setupToC from "./page/toc.js";
 import "./page/child_links.css";
 import setupFooter from "./page/footer.js";
+import setupSpeculation, { whenActivated } from "./page/speculation.js";
 import "./content/content.css";
 import "./content/footnotes.css";
 import "./content/external_links.css";
@@ -21,6 +22,8 @@ import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
+import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
+import "@triliumnext/ckeditor5/src/theme/todo_lists.css";
 
 import { applyTabs, revealFragment } from "@triliumnext/ckeditor5/src/plugins/tabs/tabs_read_only.js";
 import { enhanceLinkPreviews } from "@triliumnext/commons/src/lib/link_embed_dom.js";
@@ -44,12 +47,15 @@ async function fetchNote(noteId: string | null = null) {
 }
 
 Object.assign(window, { fetchNote });
-$try(setupThemeSelector);
+// A prerendered page reads the theme once it is shown, not while prerendering. `tree.ts` restores
+// the tree, before the page is first drawn.
+whenActivated(() => $try(setupThemeSelector));
 $try(setupToC);
 $try(setupExpanders);
 $try(setupLayout);
 $try(setupSearch);
 $try(setupFooter);
+$try(setupSpeculation);
 
 function setupTextNote() {
     $try(setupMermaid);

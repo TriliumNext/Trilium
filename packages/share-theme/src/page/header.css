@@ -1,55 +1,145 @@
+html {
+    --header-height: 3.5rem;
+}
+
 #header {
     background: var(--background-secondary);
-    display: flex;
-    justify-content: space-between;
+    display: none;
+    grid-template-columns: 1fr minmax(0, auto) 1fr;
+    justify-items: start;
     align-items: center;
-    padding: 6px 12px;
-    border-bottom: 1px solid var(--background-highlight);
+    height: var(--header-height);
+    padding: 0 12px;
+    border-bottom: 1px solid var(--main-border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
-#header-logo {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: bold;
+/* A frosted surface, lighter than that of the app's menus (`--dropdown-backdrop-filter`). */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    #header {
+        background: color-mix(in srgb, var(--background-secondary) 50%, transparent);
+        -webkit-backdrop-filter: blur(16px) saturate(6);
+        backdrop-filter: blur(16px) saturate(6);
+    }
 }
 
-#header-logo img {
+@media (prefers-reduced-transparency: reduce) {
+    #header {
+        background: var(--background-secondary);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+:is(#header-logo, #site-logo) {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    color: var(--text-heading);
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1.25;
+    text-decoration: none;
+}
+
+:is(#header-logo, #site-logo):hover {
+    color: var(--text-link);
+    text-decoration: none;
+}
+
+:is(#header-logo, #site-logo):focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 2px;
+}
+
+:is(#header-logo, #site-logo) img {
+    flex-shrink: 0;
     max-width: 32px;
 }
 
-#header-logo .tn-icon {
-    font-size: 24px;
+:is(#header-logo, #site-logo) .tn-icon {
+    flex-shrink: 0;
+    font-size: 1.6em;
 }
 
+#site-logo .site-logo-title {
+    text-wrap: balance;
+}
+
+#header-logo {
+    font-size: 1rem;
+}
+
+#header-logo .tn-icon {
+    font-size: 1.4em;
+}
+
+#header-logo img {
+    max-width: 24px;
+    height: auto;
+}
+
+#header-logo .site-logo-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The icon buttons of the app's default theme, `theme-next/forms.css`. */
 .header-button {
     color: var(--text-menu);
     background: transparent;
+    width: 32px;
+    height: 32px;
     margin: 0;
-    padding: 4px;
+    padding: 0;
     border: 0;
     outline: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: background-color 200ms ease, transform 200ms ease;
 }
 
 .header-button .tn-icon {
-    font-size: 24px;
+    font-size: 21px;
 }
 
 .header-button:hover {
     background-color: var(--background-highlight);
 }
 
+.header-button:focus-visible {
+    outline: 2px solid var(--link-focus-outline-color);
+    outline-offset: 1px;
+}
+
 .header-button-placeholder {
     width: 32px;
 }
 
+#header > :nth-child(3) {
+    justify-self: end;
+}
+
+.header-actions {
+    display: flex;
+    gap: 4px;
+}
+
 @media (max-width: 48em) {
-    #header .header-button .tn-icon {
-        font-size: 32px;
+    #header {
+        display: grid;
+    }
+
+    #site-logo {
+        display: none;
     }
 }

@@ -75,11 +75,11 @@
       <tr>
         <td><code>logo</code>
         </td>
-        <td>The site logo in the header: <code>href</code> (<code>#shareRootLink</code>,
-          otherwise the site's root page), <code>image</code> (the <code>~shareLogo</code> image,
-          or <code>null</code>), <code>icon</code> (the icon classes of the site's root
-          note, shown when there is no <code>image</code>), and <code>width</code> and <code>height</code> for
-          the image.</td>
+        <td>The site logo above the navigation tree and, on a narrow screen, in the
+          header: <code>href</code> (<code>#shareRootLink</code>, otherwise the site's
+          root page), <code>image</code> (the <code>~shareLogo</code> image, or <code>null</code>), <code>icon</code> (the
+          icon classes of the site's root note, shown when there is no <code>image</code>),
+          and <code>width</code> and <code>height</code> for the image.</td>
       </tr>
       <tr>
         <td><code>navigation</code>
@@ -98,7 +98,19 @@
       <tr>
         <td><code>childLinks</code>
         </td>
-        <td>The links to the note's visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>type</code>.</td>
+        <td>The links to the note's visible children, each with <code>title</code>, <code>href</code>, <code>isExternal</code>, <code>type</code>, <code>icon</code> (its
+          icon classes), <code>excerpt</code> (its <code>#shareDescription</code> or
+          the start of its text, with a line break between paragraphs, or <code>null</code>)
+          and <code>children</code> (when it has no excerpt, its first ten visible
+          children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>icon</code>).
+          Empty for a note that is not a collection, a text note or a code note,
+          and with <code>#hideChildrenOverview</code>.</td>
+      </tr>
+      <tr>
+        <td><code>childLinksLayout</code>
+        </td>
+        <td>How the default template lays <code>childLinks</code> out: <code>list</code> for
+          a collection whose view type is list, <code>grid</code> otherwise.</td>
       </tr>
       <tr>
         <td><code>prevNext</code>
@@ -143,6 +155,14 @@
         </td>
         <td>Resolved favicon and logo URLs. Without <code>~shareLogo</code>, <code>logoUrl</code> is
           the Trilium logo.</td>
+      </tr>
+      <tr>
+        <td><code>fontPreloads</code>
+        </td>
+        <td>The icon fonts to preload, each with <code>href</code> and <code>type</code> (the
+          font's media type): Boxicons, and the icon packs used by the logo, the
+          navigation tree or the subpages. The default template adds a <code>&lt;link rel="preload" as="font" crossorigin&gt;</code> for
+          each, so that the icons do not appear only after the first paint.</td>
       </tr>
       <tr>
         <td><code>isStatic</code>

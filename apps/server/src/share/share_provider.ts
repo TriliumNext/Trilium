@@ -28,8 +28,13 @@ export function registerShareProvider() {
     registered = true;
 }
 
+/** Reads a template of the share theme, from disk on every call in development so edits show at once. */
 function readTemplate(name: string) {
     const path = getDefaultTemplatePath(name);
+    if (process.env.NODE_ENV === "development") {
+        return readFileSync(path, "utf-8");
+    }
+
     const cachedTemplate = templateCache.get(path);
 
     if (cachedTemplate) {

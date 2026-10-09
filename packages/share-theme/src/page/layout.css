@@ -1,49 +1,57 @@
-html,
-body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+html {
+    --page-top-spacing: 2rem;
 }
 
+/* Past 90rem the navigation pane widens into the space beside the layout, up to 24rem; the padding
+   keeps the content where the 90rem layout puts it. */
 #split-pane {
+    --left-pane-width: clamp(min(18rem, 25vw), 18rem + (100vw - 90rem) / 2, 24rem);
+    --left-pane-growth: max(0rem, var(--left-pane-width) - 18rem);
+
     display: flex;
     flex-direction: row;
-    width: 100vw;
-    flex: 1;
-    overflow: hidden;
+    max-width: calc(90rem + 2 * var(--left-pane-growth));
+    margin-inline: auto;
+    padding-inline-end: var(--left-pane-growth);
+}
+
+#split-pane:has(#content.full-content-width) {
+    max-width: none;
+    padding-inline-end: 0;
 }
 
 #left-pane {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    width: 20vw;
-    height: 100%;
-    background: var(--background-secondary);
-    border-right: 5px solid var(--background-highlight);
+    width: var(--left-pane-width);
+    height: 100vh;
+    border-inline-end: 1px solid var(--background-highlight);
+    background: var(--tree-background);
     justify-content: flex-start;
     position: sticky;
     top: 0;
     overflow-y: auto;
     flex-shrink: 0;
-    transition: width 0.3s ease, margin-left 0.3s ease;
 }
 
-.left-pane-collapsed #left-pane {
-    width: 0;
-    min-width: 0;
-    margin-left: -5px; /* offset the border */
-    overflow: hidden;
-    border-right-width: 0;
+/* Extends the pane's background to the edge of the window when the layout is narrower than it. */
+@media not all and (max-width: 48em) {
+    #left-pane {
+        box-shadow: -100vw 0 0 100vw var(--tree-background);
+        clip-path: inset(0 0 0 -100vw);
+    }
+
+    #left-pane:dir(rtl) {
+        box-shadow: 100vw 0 0 100vw var(--tree-background);
+        clip-path: inset(0 -100vw 0 0);
+    }
 }
 
 #right-pane {
     flex: 1;
-    overflow: auto;
+    min-width: 0;
     position: relative;
-    min-height: 100%;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
@@ -51,20 +59,16 @@ body {
 
 #main {
     order: 2;
-    max-width: 1600px;
     flex: 1;
     min-width: 0;
     overflow-x: auto;
-    margin: 0 auto;
-    padding: 20px;
-    box-sizing: border-box;
+    padding: var(--page-top-spacing) 20px;
     width: 100%;
-    transition: max-width 0.3s ease, margin 0.3s ease;
 }
 
 @media (min-width: 1200px) {
     #main {
-        padding: 0 50px;
+        padding: var(--page-top-spacing) 50px;
     }
 }
 
@@ -80,12 +84,11 @@ body {
 }
 
 @media (max-width: 48em) {
-    html,
-    body {
-        height: 100%;
+    html {
+        scroll-padding-top: var(--header-height);
     }
 
-    #split-pane {
+    body:is(.menu-open, .toc-open) {
         overflow: hidden;
     }
 
@@ -95,7 +98,7 @@ body {
     }
 
     #main {
-        padding: 1rem;
+        padding: 1.5rem 1rem 1rem;
     }
 
     #left-pane {
@@ -105,7 +108,7 @@ body {
         left: 0;
         width: 80%;
         max-width: 300px;
-        background: var(--background-secondary);
+        height: auto;
         transform: translateX(-100%);
         transition: transform 200ms ease;
         z-index: 2;

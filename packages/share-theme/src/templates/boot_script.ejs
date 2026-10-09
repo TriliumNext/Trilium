@@ -1,5 +1,5 @@
 <script>
-    // Applies the theme and the collapsed panes before the first paint, to avoid color flashes. The
+    // Applies the theme before the first paint, to avoid color flashes. The
     // function keeps its names out of the global scope, which `~shareHtml` snippets share.
     (function () {
         function read(key) {
@@ -12,15 +12,14 @@
 
         const root = document.documentElement;
         const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const theme = read("theme") || (prefersDark ? "dark" : "light");
-        root.classList.add(`theme-${theme}`);
+        const stored = read("theme");
+        const preference = stored === "light" || stored === "dark" ? stored : "system";
+        const theme = preference === "system" ? (prefersDark ? "dark" : "light") : preference;
+        root.classList.add(`theme-${theme}`, `theme-preference-${preference}`);
 
         window.glob = {
             isStatic: <%= !!isStatic %>,
             theme
         };
-
-        if (read("left-pane-collapsed") === "true") root.classList.add("left-pane-collapsed");
-        if (read("toc-pane-collapsed") === "true") root.classList.add("toc-pane-collapsed");
     })();
 </script>
