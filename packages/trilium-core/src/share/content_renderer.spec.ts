@@ -1504,6 +1504,7 @@ describe("content_renderer", () => {
                 contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
+                showTitle: true,
                 headings: [],
                 toc: [],
                 isPageInNavigation: false

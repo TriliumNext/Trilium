@@ -59,6 +59,11 @@ export interface Result {
     content: string | Uint8Array | undefined;
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
+    /**
+     * Set to `true` if the content is a collection view, such as a map, which takes the page
+     * without the title, the subpages, the date and the links to the neighboring pages.
+     */
+    isCollectionView?: boolean;
 }
 
 interface Subroot {
@@ -237,7 +242,7 @@ interface IconPackFont {
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
     // Static export preserves full embed nesting; the live share view renders only the first level.
-    const { header, content, isEmpty } = getContent(note, {
+    const { header, content, isEmpty, isCollectionView } = getContent(note, {
         expandNestedEmbeds: renderArgs.isStatic,
         canAccessEmbed: renderArgs.canAccessEmbed
     });
@@ -253,7 +258,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
     });
-    const childLinks = getChildLinks(note, {
+    const childLinks = isCollectionView ? [] : getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
         getText: (child) => getExcerptSource(child as SNote | BNote),
@@ -275,7 +280,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo,
-        prevNext: getPrevNextLinks(note, siteRoot),
+        prevNext: isCollectionView ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
         navigation,
         childLinks,
         childLinksLayout: getChildLinksLayout(note),
@@ -284,7 +289,8 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
-        lastUpdated: getLastUpdated(note, displayLanguage),
+        lastUpdated: isCollectionView ? null : getLastUpdated(note, displayLanguage),
+        showTitle: !isCollectionView,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
             logo.icon,
             ...getNavigationIcons(navigation),
@@ -907,6 +913,7 @@ function getViewType(note: SNote) {
  */
 function renderCalendar(result: Result, note: SNote) {
     const payload = JSON.stringify(buildFrocaPayload(note)).replace(/</g, "\\u003c");
+    result.isCollectionView = true;
     result.content = `<div class="share-calendar" data-note-id="${note.noteId}"></div>`
         + `<script type="application/json" class="share-froca">${payload}</script>`;
 }
@@ -922,6 +929,7 @@ function renderGeoMap(result: Result, note: SNote) {
         options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ]))
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    result.isCollectionView = true;
     result.content = `<div class="share-geomap" data-note-id="${note.noteId}"></div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
 }
