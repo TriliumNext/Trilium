@@ -15,6 +15,7 @@
     min-width: 0;
     width: min(18rem, 25vw);
     height: 100vh;
+    border-inline-end: 1px solid var(--background-highlight);
     justify-content: flex-start;
     position: sticky;
     top: 0;
