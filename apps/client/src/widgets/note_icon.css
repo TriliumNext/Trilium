@@ -50,7 +50,7 @@ div.note-icon-widget {
     overflow: clip;
 
     .filter-row {
-        padding: 10px 15px;
+        padding: 10px 15px 0;
     }
 }
 
@@ -112,6 +112,7 @@ body.mobile .modal.icon-switcher {
     }
 
     .icon-list {
+        --scroll-fade-top: 0px;
         margin: auto;
         flex-grow: 1;
         height: 100%;

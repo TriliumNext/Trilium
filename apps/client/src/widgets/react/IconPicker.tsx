@@ -105,6 +105,7 @@ export default function IconPicker({ onSelect, onReset, resetText, columnCount, 
             >
                 {filteredIcons.length ? (
                     <Grid
+                        className="scroll-edge-fade"
                         columnCount={columnCount}
                         columnWidth={iconSize}
                         rowCount={Math.ceil(filteredIcons.length / columnCount)}
