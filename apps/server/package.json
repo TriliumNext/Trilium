@@ -40,7 +40,7 @@
     "better-sqlite3": "13.0.3",
     "i18next": "26.4.2",
     "ipaddr.js": "^2.4.0",
-    "js-yaml": "5.4.2",
+    "js-yaml": "5.4.3",
     "unpdf": "1.8.1"
   },
   "devDependencies": {

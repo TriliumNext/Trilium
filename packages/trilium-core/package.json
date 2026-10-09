@@ -24,7 +24,7 @@
     "escape-html": "1.0.3",
     "html-to-text": "10.0.1",
     "i18next": "26.4.2",
-    "js-yaml": "5.4.2",
+    "js-yaml": "5.4.3",
     "lz-string": "1.5.0",
     "mime-types": "3.0.2",
     "node-html-parser": "9.0.4",
