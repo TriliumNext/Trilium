@@ -18,6 +18,8 @@ export default function setupExpanders() {
             }
 
             const isExpanded = li.classList.contains("expanded");
+            // Only a moving subtree is clipped, so the current note's shadow shows otherwise.
+            ul.style.overflow = "hidden";
 
             if (isExpanded) {
                 // Collapsing
@@ -39,6 +41,7 @@ export default function setupExpanders() {
 
             setTimeout(() => {
                 ul.style.height = "";
+                ul.style.overflow = "";
             }, 200);
         });
     }

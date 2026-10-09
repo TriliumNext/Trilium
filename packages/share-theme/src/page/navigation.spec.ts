@@ -35,8 +35,10 @@ describe("setupExpanders", () => {
         expect(click.defaultPrevented).toBe(true);
         expect(item.classList.contains("expanded")).toBe(true);
         expect(subtree.style.height).toBe("40px");
+        expect(subtree.style.overflow).toBe("hidden");
         vi.advanceTimersByTime(200);
         expect(subtree.style.height).toBe("");
+        expect(subtree.style.overflow).toBe("");
 
         expander.click();
         expect(item.classList.contains("expanded")).toBe(false);

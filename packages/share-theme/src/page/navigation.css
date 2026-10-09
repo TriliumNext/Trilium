@@ -18,13 +18,11 @@
 }
 
 #menu > ul {
-    overflow-y: auto;
     list-style: none;
     padding-inline-start: 0 !important;
 }
 
 #menu ul {
-    overflow-y: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -56,7 +54,7 @@
     flex: 1;
     align-items: center;
     gap: 6px;
-    padding: 4px 8px;
+    padding: 7px 8px;
     border-radius: 6px;
     color: var(--text-menu);
     font-weight: 400;
@@ -65,7 +63,7 @@
 }
 
 #menu li.item > a {
-    padding-inline-start: 32px;
+    padding-inline-start: 38px;
 }
 
 #menu a:hover {
@@ -79,6 +77,7 @@
 
 #menu a.active {
     background: var(--tree-item-active-background);
+    box-shadow: var(--tree-item-active-shadow);
     color: var(--tree-item-active-color);
 }
 
@@ -98,7 +97,7 @@
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 18px;
+    width: 24px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -123,7 +122,7 @@
 }
 
 .collapse-button .tn-icon {
-    font-size: 18px;
+    font-size: 24px;
 }
 
 @media (prefers-reduced-motion: reduce) {

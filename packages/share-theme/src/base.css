@@ -30,9 +30,11 @@ html.theme-light {
     --link-hover-background: #3c7fa017;
     --link-focus-outline-color: #00000063;
     --text-menu-active: var(--background-secondary);
-    --tree-item-hover-background: rgba(0, 0, 0, 0.04);
-    --tree-item-active-background: rgba(0, 0, 0, 0.075);
+    /* The tree item colors of `theme-next-light.css`. */
+    --tree-item-hover-background: rgba(0, 0, 0, 0.032);
+    --tree-item-active-background: #FFFFFF;
     --tree-item-active-color: #000000;
+    --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -54,6 +56,7 @@ html.theme-dark {
     --tree-item-hover-background: #ffffff0d;
     --tree-item-active-background: #ffffff25;
     --tree-item-active-color: #dfdfdf;
+    --tree-item-active-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     --mermaid-theme: dark;
     color-scheme: dark;
 }
