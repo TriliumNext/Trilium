@@ -11,6 +11,17 @@
     gap: 20px;
 }
 
+#site-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#site-title-row .theme-selection {
+    flex: none;
+    margin-inline-start: auto;
+}
+
 #menu {
     order: 1;
     white-space: nowrap;
