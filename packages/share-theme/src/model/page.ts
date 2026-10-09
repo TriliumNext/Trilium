@@ -3,11 +3,17 @@
  * `~shareTemplate` templates receive them too.
  */
 
+import {
+    isRightToLeftLanguage, resolveContentLanguage, toLanguageTag
+} from "@triliumnext/commons/src/lib/i18n.js";
+
 /** The parts of a note the page model reads; core's `SNote` and `BNote` both provide them. */
 export interface ShareNote {
     noteId: string;
     shareId: string;
     title: string;
+    /** When the note was last changed, as Trilium stores it (`2026-10-09 12:00:00.000Z`). */
+    utcDateModified?: string;
     getLabelValue(name: string): string | null | undefined;
     hasLabel(name: string): boolean;
     getRelationValue(name: string): string | null | undefined;
@@ -152,6 +158,52 @@ function getMetaTags(title: string, description: string | null, openGraph: PageH
     ];
     return tags.flatMap(([ attribute, key, content ]): MetaTag[] =>
         (content ? [ { attribute, key, content } ] : []));
+}
+
+/** A language and its writing direction, for the `lang` and `dir` attributes of an element. */
+export interface PageLanguage {
+    lang: string;
+    dir: "ltr" | "rtl";
+}
+
+/** The languages Trilium is set to, as the `locale` and `defaultContentLanguage` options give them. */
+export interface LanguageSettings {
+    displayLanguage: string;
+    defaultContentLanguage?: string | null;
+}
+
+/**
+ * Returns the language of the page, which is the display language its own texts are translated
+ * to, and the language of the note's content when it is another: the note's `#language`,
+ * otherwise the default content language.
+ */
+export function getPageLanguages(note: ShareNote, settings: LanguageSettings) {
+    const page = toPageLanguage(settings.displayLanguage);
+    const content = toPageLanguage(resolveContentLanguage(note.getLabelValue("language"),
+        settings.defaultContentLanguage, settings.displayLanguage) ?? settings.displayLanguage);
+    return {
+        page,
+        content: content.lang === page.lang && content.dir === page.dir ? null : content
+    };
+}
+
+function toPageLanguage(localeId: string): PageLanguage {
+    return { lang: toLanguageTag(localeId), dir: isRightToLeftLanguage(localeId) ? "rtl" : "ltr" };
+}
+
+/**
+ * Returns when `note` was last changed, as an ISO date for a `<time>` element and as a date
+ * written out in the display language, or `null` when the note has no valid date.
+ */
+export function getLastUpdated(note: ShareNote, displayLanguage: string) {
+    const date = new Date(note.utcDateModified ?? Number.NaN);
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+    return {
+        iso: date.toISOString(),
+        text: new Intl.DateTimeFormat(toLanguageTag(displayLanguage), { dateStyle: "long" }).format(date)
+    };
 }
 
 /** Returns the trimmed value of the label, or `null` when it is missing or blank. */

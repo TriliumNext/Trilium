@@ -12,7 +12,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 *   Customizable logo.
 *   Toggle button for dark/light mode, which also stores the user preferences.
 *   Quick navigation buttons (previous and next note).
-*   Displaying the date of the last update of the note.
+*   Displaying the date of the last update of the note, written out in the application's language.
+*   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
 
 ### By note type
 

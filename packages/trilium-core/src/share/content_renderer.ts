@@ -8,8 +8,9 @@ import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/l
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
 import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumnext/highlightjs";
 import {
-    getChildLinks, getHtmlSnippets, getNavigationTree, getPageHead, getPrevNextLinks, getShareLink,
-    getSiteAncestorIds, getSiteLogo, getTableOfContents, type PageHeading
+    getChildLinks, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
+    type PageHeading
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -208,6 +209,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const siteRoot = renderArgs.subRoot.note ?? note;
+    const displayLanguage = options.getOptionOrNull("locale") || "en";
     const opts = {
         note,
         header,
@@ -229,6 +231,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
         }),
         childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+        language: getPageLanguages(note, {
+            displayLanguage,
+            defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
+        }),
+        lastUpdated: getLastUpdated(note, displayLanguage),
         ...renderArgs,
     };
 

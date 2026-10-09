@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    getChildLinks, getHtmlSnippets, getNavigationTree, getPageHead, getPrevNextLinks, getShareLink, getSiteAncestorIds,
-    getSiteLogo, getTableOfContents, type NavigationItem, type PageHeading, type ShareNote
+    getChildLinks, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
+    getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents,
+    type NavigationItem, type PageHeading, type ShareNote
 } from "./page.js";
 
 describe("getPageHead", () => {
@@ -310,6 +311,41 @@ describe("getNavigationTree", () => {
 
         expect(tree[1].icon).toBe("bx bx-note custom");
         expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
+    });
+});
+
+describe("getPageLanguages", () => {
+    const languages = (noteLanguage: string | null, displayLanguage: string, defaultContentLanguage?: string) =>
+        getPageLanguages(
+            fakeNote({ noteId: "page", labels: noteLanguage ? { language: noteLanguage } : {} }),
+            { displayLanguage, defaultContentLanguage });
+
+    it("gives the page the display language and its direction", () => {
+        expect(languages(null, "pt_br").page).toStrictEqual({ lang: "pt-BR", dir: "ltr" });
+        expect(languages(null, "ar").page).toStrictEqual({ lang: "ar", dir: "rtl" });
+        expect(languages(null, "en_rtl").page).toStrictEqual({ lang: "en", dir: "rtl" });
+    });
+
+    it("gives the content its own language only where it differs from the page's", () => {
+        expect(languages(null, "en").content).toBeNull();
+        expect(languages("en", "en", "de").content).toBeNull();
+        expect(languages(null, "en", "de").content).toStrictEqual({ lang: "de", dir: "ltr" });
+        expect(languages("he", "en").content).toStrictEqual({ lang: "he", dir: "rtl" });
+    });
+});
+
+describe("getLastUpdated", () => {
+    it("gives the modification date as an ISO date and as text in the display language", () => {
+        const modified = (utcDateModified?: string) => ({ ...fakeNote({ noteId: "page" }), utcDateModified });
+
+        expect(getLastUpdated(modified("2026-10-09 12:00:00.000Z"), "en")).toStrictEqual({
+            iso: "2026-10-09T12:00:00.000Z",
+            text: "October 9, 2026"
+        });
+        expect(getLastUpdated(modified("2026-10-09 12:00:00.000Z"), "de")?.text).toBe("9. Oktober 2026");
+        expect(getLastUpdated(modified("2026-10-09 12:00:00.000Z"), "en_rtl")?.text).toBe("October 9, 2026");
+        expect(getLastUpdated(modified(undefined), "en")).toBeNull();
+        expect(getLastUpdated(modified("never"), "en")).toBeNull();
     });
 });
 

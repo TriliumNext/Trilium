@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= language.page.lang %>" dir="<%= language.page.dir %>">
 <head>
     <% const hasTree = subRoot.note.hasVisibleChildren(); %>
     <%- snippets["head:start"] %>
@@ -73,7 +73,7 @@
     </div>
     <div id="right-pane">
         <div id="main">
-            <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>" data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
+            <div id="content" class="type-<%= note.type %><% if (note.type === "text" || (note.type === "code" && note.mime === "text/x-markdown")) { %> ck-content<% } %><% if (isEmpty) { %> no-content<% } %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
                 <%- snippets["content:start"] %>
                     <h1 id="title"><%= note.title %></h1>
                 <% if (isEmpty && (!note.hasVisibleChildren() && note.type !== "book")) { %>
@@ -101,10 +101,9 @@
             <% } %>
 
             <footer id="content-footer">
-                <% if (!isEmpty && !isStatic) { %>
+                <% if (!isEmpty && !isStatic && lastUpdated) { %>
                     <div class="updated">
-                        <% const lastUpdated = new Date(note.utcDateModified); %>
-                        <%- t("share_theme.last-updated", { date: `<time datetime="${lastUpdated.toISOString()}">${lastUpdated.toLocaleDateString("en-US")}</time>`}) %>
+                        <%- t("share_theme.last-updated", { date: `<time datetime="${lastUpdated.iso}">${lastUpdated.text}</time>` }) %>
                     </div>
                 <% } %>
 

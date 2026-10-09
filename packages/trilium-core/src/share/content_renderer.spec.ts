@@ -397,6 +397,29 @@ describe("content_renderer", () => {
             ]));
         });
 
+        it("declares the display language on the page and the note's own on its content", () => {
+            const getOption = options.getOptionOrNull.bind(options);
+            vi.spyOn(options, "getOptionOrNull").mockImplementation((name) =>
+                (name === "locale" ? "de" : getOption(name)));
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [ { "id": "hebrewPage", "content": "<p>שלום</p>", "#language": "he" } ]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+            vi.restoreAllMocks();
+
+            const language = (selector: string) => [ "lang", "dir" ]
+                .map((name) => page.querySelector(selector)?.getAttribute(name));
+            expect(language("html")).toStrictEqual([ "de", "ltr" ]);
+            expect(language("#content")).toStrictEqual([ "he", "rtl" ]);
+
+            const time = page.querySelector(".updated time");
+            expect(time).toBeTruthy();
+            expect(time?.text).toBe(new Intl.DateTimeFormat("de", { dateStyle: "long" })
+                .format(new Date(time?.getAttribute("datetime") ?? "")));
+        });
+
         it("keeps the alt text of an image on the page", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,
@@ -1216,6 +1239,8 @@ describe("content_renderer", () => {
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
                 childLinks: getChildLinks(note, sanitize.sanitizeUrl),
+                language: { page: { lang: "en", dir: "ltr" }, content: null },
+                lastUpdated: null,
                 headings: [],
                 toc: []
             }, {

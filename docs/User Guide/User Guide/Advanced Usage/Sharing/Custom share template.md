@@ -35,6 +35,8 @@ Your template is rendered with a context object exposing the note and its render
 | `navigation` | The navigation tree of the site: its visible pages, each with `title`, `href`, `isExternal`, `type`, `icon`, `isActive` (the page being shown), `isExpanded` (that page or one of its ancestors) and `children`. |
 | `childLinks` | The links to the note's visible children, each with `title`, `href`, `isExternal` and `type`. |
 | `prevNext` | The pages before and after the note in the navigation tree, as `previous` and `next`, each with `title` and `href`, or `null`. |
+| `language` | The languages of the page: `page` with the `lang` and `dir` of the application's language, and `content` with those of the note's content language, or `null` when they are the same. |
+| `lastUpdated` | When the note was last changed, as `iso` for a `<time>` element and as `text` in the application's language, or `null`. |
 | `snippets` | The HTML of the `~shareHtml` snippets for each location, such as `snippets["head:end"]`. Every location is present, empty when no snippet goes there. |
 | `subRoot` | The root of the shared subtree as `{ note, branch }` — handy for a site-wide title or logo. |
 | `cssToLoad` / `jsToLoad` | Arrays of stylesheet / script URLs the default theme would inject (includes anything added via `~shareCss` / `~shareJs`). |

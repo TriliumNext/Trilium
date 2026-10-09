@@ -1,6 +1,8 @@
-import { normalizeLocale } from "@triliumnext/commons";
+import {
+    isRightToLeftLanguage, normalizeLocale, resolveContentLanguage as resolveLanguage
+} from "@triliumnext/commons";
 
-import { getLocaleById, t } from "../services/i18n";
+import { t } from "../services/i18n";
 import options from "../services/options";
 import type { MeasurementSystem } from "./units";
 
@@ -198,12 +200,12 @@ function parseDate(date: string | Date | number): Date {
  * setting promises to affect — text direction, typographic quotes — actually follows it everywhere.
  */
 export function resolveContentLanguage(noteLanguage: string | null | undefined): string | null {
-    return noteLanguage || options.get("defaultContentLanguage") || options.get("locale") || null;
+    return resolveLanguage(noteLanguage, options.get("defaultContentLanguage"), options.get("locale"));
 }
 
 /** Whether a note's resolved language is written right-to-left. */
 export function isContentRightToLeft(noteLanguage: string | null | undefined): boolean {
-    return getLocaleById(resolveContentLanguage(noteLanguage))?.rtl ?? false;
+    return isRightToLeftLanguage(resolveContentLanguage(noteLanguage));
 }
 
 /**
