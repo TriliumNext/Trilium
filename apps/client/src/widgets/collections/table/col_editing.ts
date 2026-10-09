@@ -1,17 +1,18 @@
-import { useLegacyImperativeHandlers } from "../../react/hooks";
-import { Attribute } from "../../../services/attribute_parser";
 import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
-import { RefObject } from "preact";
-import { Tabulator } from "tabulator-tables";
-import { useRef } from "preact/hooks";
-import { CommandListenerData, EventData } from "../../../components/app_context";
-import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
-import attributes from "../../../services/attributes";
-import FNote from "../../../entities/fnote";
-import { getAttributeFromField } from "./utils";
-import dialog from "../../../services/dialog";
 import { t } from "i18next";
+import { RefObject } from "preact";
+import { useRef } from "preact/hooks";
+import { Tabulator } from "tabulator-tables";
+
+import { CommandListenerData, EventData } from "../../../components/app_context";
+import FNote from "../../../entities/fnote";
+import { Attribute } from "../../../services/attribute_parser";
+import attributes from "../../../services/attributes";
 import { executeBulkActions } from "../../../services/bulk_action";
+import dialog from "../../../services/dialog";
+import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
+import { useLegacyImperativeHandlers } from "../../react/hooks";
+import { getAttributeFromField } from "./utils";
 
 export default function useColTableEditing(api: RefObject<Tabulator | null>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote) {
 
