@@ -1,3 +1,18 @@
+/* The app's own font files, matching the faces in the client's `theme-next/base.css` and `style.css`. */
+@font-face {
+    font-family: "Inter";
+    src: url("../../../apps/client/src/fonts/Inter/Inter-VariableFont_opsz,wght.woff2") format("woff2-variations");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: JetBrainsLight;
+    src: url("../../../apps/client/src/fonts/JetBrainsMono-Light.woff2") format("woff2");
+    font-display: swap;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -32,7 +47,7 @@ html.theme-dark {
 
 body {
     background: var(--background-primary);
-    font-family: 'Montserrat', 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0;
@@ -48,7 +63,7 @@ a:hover {
 }
 
 pre, code, kbd, samp {
-    font-family: "JetBrains Mono", Consolas, monospace;
+    font-family: JetBrainsLight, ui-monospace, monospace;
 }
 
 img {
