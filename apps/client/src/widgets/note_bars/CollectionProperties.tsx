@@ -10,7 +10,7 @@ import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import { getErrorMessage } from "../../services/utils";
+import { getErrorMessage, isShare } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
 import { searchTermsFor } from "../collections/search/SearchResultCard";
 import ActionButton from "../react/ActionButton";
@@ -45,18 +45,25 @@ export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
 
 const MAX_OPEN_TABS = 50;
 
-export default function CollectionProperties({
-    note,
-    centerChildren,
-    rightChildren,
-    optionsChildren
-}: {
+interface CollectionPropertiesProps {
     note: FNote;
     centerChildren?: ComponentChildren;
     rightChildren?: ComponentChildren;
     /** Entries appended below a divider at the end of the settings dropdown. */
     optionsChildren?: ComponentChildren;
-}) {
+}
+
+/** The bar above a collection that switches its view and sets its options; a shared page has none. */
+export default function CollectionProperties(props: CollectionPropertiesProps) {
+    return isShare ? null : <CollectionPropertiesBar {...props} />;
+}
+
+function CollectionPropertiesBar({
+    note,
+    centerChildren,
+    rightChildren,
+    optionsChildren
+}: CollectionPropertiesProps) {
     const [ viewType, setViewType ] = useViewType(note);
     const noteType = useNoteProperty(note, "type");
     const [ isOpening, setIsOpening ] = useState(false);
