@@ -362,6 +362,41 @@ describe("content_renderer", () => {
             ]);
         });
 
+        it("prints only the OpenGraph tags that have a value, with an absolute image", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { id: "plainSite", title: "Plain", content: "<p>a</p>" },
+                    {
+                        "id": "previewSite",
+                        "title": "Preview",
+                        "content": "<p>b</p>",
+                        "#shareOpenGraphURL": "https://example.com/share/previewSite",
+                        "~shareOpenGraphImage": "plainSite"
+                    }
+                ]
+            });
+            const [ plainSite, previewSite ] = shareRootNote.getChildNotes();
+            const metaTags = (note: SNote) => parse(String(renderNoteContent(note)))
+                .querySelectorAll("head meta[content]")
+                .map((meta) => [ meta.getAttribute("property") ?? meta.getAttribute("name"),
+                    meta.getAttribute("content") ])
+                .filter(([ name ]) => name !== "viewport");
+
+            expect(metaTags(plainSite).filter(([ , content ]) => !content)).toStrictEqual([]);
+            expect(metaTags(plainSite)).toStrictEqual([
+                [ "og:type", "website" ],
+                [ "og:title", "Plain" ],
+                [ "twitter:card", "summary" ],
+                [ "twitter:title", "Plain" ]
+            ]);
+            expect(metaTags(previewSite)).toEqual(expect.arrayContaining([
+                [ "og:url", "https://example.com/share/previewSite" ],
+                [ "og:image", "https://example.com/share/api/images/plainSite/image.png" ],
+                [ "twitter:card", "summary_large_image" ]
+            ]));
+        });
+
         it("keeps the alt text of an image on the page", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,

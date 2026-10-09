@@ -303,12 +303,14 @@ It's possible to adjust the logo which is displayed on the top-left of the left 
 
 ### Customizing OpenGraph
 
+A meta-property is left out of the page when its attribute is not set. Without an image, link previews use a small card.
+
 | Attribute | Description |
 | --- | --- |
 | `#shareOpenGraphColor` | This adjusts the `theme-color` meta-property. |
-| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. |
+| `#shareOpenGraphURL` | This adjusts the `og:url` and `twitter:url` meta-properties. It is also the address a relative `og:image` is completed with, so it should be the public address of the shared site, such as `https://example.com/share/`. |
 | `#shareOpenGraphDomain` | Adjusts the `twitter:domain` meta-property. |
-| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label, case in which the value is passed on as-is, or it can be a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. |
+| `#shareOpenGraphImage`   <br>`~shareOpenGraphImage` | Can be either a label with the address of an image, or a relation to an image <a class="reference-link" href="../Note%20Types/File.md">File</a>. This controls the `og:image` meta-property. Sites that show a preview of the link load the image from their own servers, so a relative address, which the relation always gives, is completed with `#shareOpenGraphURL`; without it, the image does not show in such previews. |
 
 ## Credits
 

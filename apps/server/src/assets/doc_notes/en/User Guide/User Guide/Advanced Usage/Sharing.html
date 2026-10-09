@@ -474,6 +474,8 @@ class="admonition note">
   </table>
 </figure>
 <h3>Customizing OpenGraph</h3>
+<p>A meta-property is left out of the page when its attribute is not set.
+  Without an image, link previews use a small card.</p>
 <figure class="table">
   <table>
     <thead>
@@ -491,7 +493,9 @@ class="admonition note">
       <tr>
         <td><code>#shareOpenGraphURL</code>
         </td>
-        <td>This adjusts the <code>og:url</code> and <code>twitter:url</code> meta-properties.</td>
+        <td>This adjusts the <code>og:url</code> and <code>twitter:url</code> meta-properties.
+          It is also the address a relative <code>og:image</code> is completed with,
+          so it should be the public address of the shared site, such as <code>https://example.com/share/</code>.</td>
       </tr>
       <tr>
         <td><code>#shareOpenGraphDomain</code>
@@ -502,9 +506,12 @@ class="admonition note">
         <td><code>#shareOpenGraphImage</code>&nbsp;
           <br><code>~shareOpenGraphImage</code>
         </td>
-        <td>Can be either a label, case in which the value is passed on as-is, or
-          it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
-          This controls the <code>og:image</code> meta-property.</td>
+        <td>Can be either a label with the address of an image, or a relation to an
+          image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
+          This controls the <code>og:image</code> meta-property. Sites that show a
+          preview of the link load the image from their own servers, so a relative
+          address, which the relation always gives, is completed with <code>#shareOpenGraphURL</code>;
+          without it, the image does not show in such previews.</td>
       </tr>
     </tbody>
   </table>

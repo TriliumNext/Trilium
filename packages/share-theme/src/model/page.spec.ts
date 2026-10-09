@@ -31,7 +31,8 @@ describe("getPageHead", () => {
                 url: "https://example.com",
                 domain: "example.com",
                 image: "https://example.com/cover.png",
-                color: "#123456"
+                color: "#123456",
+                card: "summary_large_image"
             }
         });
     });
@@ -52,8 +53,44 @@ describe("getPageHead", () => {
                 url: null,
                 domain: null,
                 image: "api/images/imageNote/image.png",
-                color: null
+                color: null,
+                card: "summary_large_image"
             }
+        });
+    });
+
+    it("makes a relative image address absolute against #shareOpenGraphURL", () => {
+        const image = (labels: Record<string, string>, relations: Record<string, string> = {}) => {
+            const site = fakeNote({
+                noteId: "site",
+                labels: { shareOpenGraphURL: "https://example.com/share/site", ...labels },
+                relations
+            });
+            return getPageHead(site, site).openGraph.image;
+        };
+
+        expect(image({}, { shareOpenGraphImage: "imageNote" }))
+            .toBe("https://example.com/share/api/images/imageNote/image.png");
+        expect(image({ shareOpenGraphImage: "cover.png" })).toBe("https://example.com/share/cover.png");
+        expect(image({ shareOpenGraphImage: "https://cdn.example.com" })).toBe("https://cdn.example.com");
+        expect(image({ shareOpenGraphImage: "cover.png", shareOpenGraphURL: "not a URL" })).toBe("cover.png");
+    });
+
+    it("leaves out the values whose labels are blank, and uses a small card without an image", () => {
+        const site = fakeNote({
+            noteId: "site",
+            labels: {
+                shareDescription: " ",
+                shareOpenGraphURL: "",
+                shareOpenGraphDomain: "",
+                shareOpenGraphImage: "  ",
+                shareOpenGraphColor: ""
+            }
+        });
+
+        expect(getPageHead(site, site)).toMatchObject({
+            description: null,
+            openGraph: { url: null, domain: null, image: null, color: null, card: "summary" }
         });
     });
 });

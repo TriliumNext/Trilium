@@ -18,23 +18,38 @@
     <% } %>
     <title><%= head.title %></title>
     <%- include("boot_script") %>
-    <!-- HTML Meta Tags -->
-    <meta name="description" content="<%= head.description %>">
-    <!-- Facebook Meta Tags -->
-    <meta property="og:url" content="<%= head.openGraph.url %>">
+    <% const { description, openGraph } = head; %>
+    <% if (description) { %>
+        <meta name="description" content="<%= description %>">
+    <% } %>
     <meta property="og:type" content="website">
     <meta property="og:title" content="<%= head.title %>">
-    <meta property="og:description" content="<%= head.description %>">
-    <meta property="og:image" content="<%= head.openGraph.image %>">
-    <!-- Twitter Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="<%= head.openGraph.domain %>">
-    <meta property="twitter:url" content="<%= head.openGraph.url %>">
+    <% if (description) { %>
+        <meta property="og:description" content="<%= description %>">
+    <% } %>
+    <% if (openGraph.url) { %>
+        <meta property="og:url" content="<%= openGraph.url %>">
+    <% } %>
+    <% if (openGraph.image) { %>
+        <meta property="og:image" content="<%= openGraph.image %>">
+    <% } %>
+    <meta name="twitter:card" content="<%= openGraph.card %>">
     <meta name="twitter:title" content="<%= head.title %>">
-    <meta name="twitter:description" content="<%= head.description %>">
-    <meta name="twitter:image" content="<%= head.openGraph.image %>">
-    <!-- Meta Tags Generated via https://opengraph.dev -->
-    <meta name="theme-color" content="<%= head.openGraph.color %>">
+    <% if (description) { %>
+        <meta name="twitter:description" content="<%= description %>">
+    <% } %>
+    <% if (openGraph.domain) { %>
+        <meta property="twitter:domain" content="<%= openGraph.domain %>">
+    <% } %>
+    <% if (openGraph.url) { %>
+        <meta property="twitter:url" content="<%= openGraph.url %>">
+    <% } %>
+    <% if (openGraph.image) { %>
+        <meta name="twitter:image" content="<%= openGraph.image %>">
+    <% } %>
+    <% if (openGraph.color) { %>
+        <meta name="theme-color" content="<%= openGraph.color %>">
+    <% } %>
     <style id="trilium-icon-packs">
       <%- utils.escapeInlineStylesheet(iconPackCss) %>
     </style>

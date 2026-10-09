@@ -50,14 +50,18 @@ export interface PageLink {
 export interface PageHead {
     /** The note's title, followed by the site's unless the note is the site's root. */
     title: string;
-    description: string | null | undefined;
+    /** `#shareDescription`; this and the other values are `null` when their label is blank. */
+    description: string | null;
     /** Whether search engines are asked not to index the page (`#shareDisallowRobotIndexing`). */
     noIndex: boolean;
     openGraph: {
-        url: string | null | undefined;
-        domain: string | null | undefined;
-        image: string | null | undefined;
-        color: string | null | undefined;
+        url: string | null;
+        domain: string | null;
+        /** Absolute when `url` is set and is a valid address, relative to the page otherwise. */
+        image: string | null;
+        color: string | null;
+        /** The kind of Twitter card: a large picture when there is an image. */
+        card: "summary_large_image" | "summary";
     };
 }
 
@@ -69,7 +73,7 @@ export interface SiteLogo {
     height: number;
 }
 
-/** A heading of the page's content, as core's `anchorHeadings()` finds it. */
+/** A heading of the page's content, as core's `preparePageContent()` finds it. */
 export interface PageHeading {
     /** 1 for `<h1>`, up to 6 for `<h6>`. */
     level: number;
@@ -90,27 +94,44 @@ export type HtmlSnippetLocation =
 
 /**
  * Returns the `<head>` values of the page of `note`, whose site starts at `siteRoot`. The
- * OpenGraph values come from the site root, so that every page of a site shares them.
+ * OpenGraph values come from the site root, so that every page of a site shares them. Sites that
+ * show a link preview load the image from their own servers, so a relative image address is made
+ * absolute against `#shareOpenGraphURL`, the only public address of the site Trilium knows.
  */
 export function getPageHead(note: ShareNote, siteRoot: ShareNote): PageHead {
     const title = note.noteId === siteRoot.noteId
         ? note.title
         : `${note.title} - ${siteRoot.title}`;
+    const url = readLabel(siteRoot, "shareOpenGraphURL");
     const image = siteRoot.hasRelation("shareOpenGraphImage")
         ? `api/images/${siteRoot.getRelationValue("shareOpenGraphImage")}/image.png`
-        : siteRoot.getLabelValue("shareOpenGraphImage");
+        : readLabel(siteRoot, "shareOpenGraphImage");
 
     return {
         title,
-        description: note.getLabelValue("shareDescription"),
+        description: readLabel(note, "shareDescription"),
         noIndex: note.hasLabel("shareDisallowRobotIndexing"),
         openGraph: {
-            url: siteRoot.getLabelValue("shareOpenGraphURL"),
-            domain: siteRoot.getLabelValue("shareOpenGraphDomain"),
-            image,
-            color: siteRoot.getLabelValue("shareOpenGraphColor")
+            url,
+            domain: readLabel(siteRoot, "shareOpenGraphDomain"),
+            image: image && url ? toAbsoluteUrl(image, url) : image,
+            color: readLabel(siteRoot, "shareOpenGraphColor"),
+            card: image ? "summary_large_image" : "summary"
         }
     };
+}
+
+/** Returns the trimmed value of the label, or `null` when it is missing or blank. */
+function readLabel(note: ShareNote, name: string) {
+    return note.getLabelValue(name)?.trim() || null;
+}
+
+/** Resolves `address` against `base` unless it is already absolute or `base` is not a URL. */
+function toAbsoluteUrl(address: string, base: string) {
+    if (URL.canParse(address) || !URL.canParse(base)) {
+        return address;
+    }
+    return new URL(address, base).href;
 }
 
 /**
