@@ -167,6 +167,10 @@
     font-size: 24px;
 }
 
+.tree-restoring .collapse-button > * {
+    transition: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #menu li > ul,
     #menu :is(.tree-item-row, li > a),

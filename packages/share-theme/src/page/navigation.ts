@@ -101,6 +101,7 @@ export function setupTreeState() {
 /** Expands the entries of the notes in `noteIds`, every clone of each, without animating. */
 function expandItems(pane: HTMLElement, noteIds: string[]) {
     const ids = new Set(noteIds);
+    pane.classList.add("tree-restoring");
     for (const item of pane.querySelectorAll<HTMLElement>("#menu li.submenu-item[data-note-id]")) {
         if (!item.dataset.noteId || !ids.has(item.dataset.noteId)) {
             continue;
@@ -108,6 +109,9 @@ function expandItems(pane: HTMLElement, noteIds: string[]) {
         item.classList.add("expanded");
         item.querySelector(":scope > * > .collapse-button")?.setAttribute("aria-expanded", "true");
     }
+    // Applies the expanded styles while transitions are off, so the chevrons do not rotate.
+    void pane.offsetHeight;
+    pane.classList.remove("tree-restoring");
 }
 
 function readTreeState(): TreeState | null {
