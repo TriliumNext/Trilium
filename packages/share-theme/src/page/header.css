@@ -16,6 +16,23 @@ html {
     z-index: 1;
 }
 
+/* A frosted surface, lighter than that of the app's menus (`--dropdown-backdrop-filter`). */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    #header {
+        background: color-mix(in srgb, var(--background-secondary) 50%, transparent);
+        -webkit-backdrop-filter: blur(16px) saturate(6);
+        backdrop-filter: blur(16px) saturate(6);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    #header {
+        background: var(--background-secondary);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 :is(#header-logo, #site-logo) {
     display: flex;
     align-items: center;
