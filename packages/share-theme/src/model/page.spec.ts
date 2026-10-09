@@ -500,15 +500,15 @@ describe("getChildLinks", () => {
 
     it("describes a child by #shareDescription, else by the start of its text", () => {
         const parent = fakeNote({ noteId: "parent" });
-        const sentences = "First sentence of the note, which says what it is about. "
-            + "A second one goes on about it at length, well past where a summary should stop. "
-            + "A third one is there only to make the whole too long for a summary.";
+        const sentence = "Sentence number one is here. ";
         const texts: Record<string, string | null> = {
             described: "Ignored",
             short: "  A short\n  note.  ",
-            sentences,
-            words: "word ".repeat(60),
-            unbroken: "x".repeat(200),
+            paragraphs: "First paragraph.\n\n \n\nSecond\n  paragraph.",
+            sentences: sentence.repeat(20),
+            paragraphEnd: `${"word ".repeat(40)}\n\n${"word ".repeat(150)}`,
+            words: "word ".repeat(150),
+            unbroken: "x".repeat(600),
             empty: " ",
             unreadable: null
         };
@@ -525,15 +525,16 @@ describe("getChildLinks", () => {
         expect(excerpts).toStrictEqual([
             "About it",
             "A short note.",
-            "First sentence of the note, which says what it is about. "
-                + "A second one goes on about it at length, well past where a summary should stop.",
-            `${"word ".repeat(32).trim()}…`,
-            `${"x".repeat(160)}…`,
+            "First paragraph.\nSecond paragraph.",
+            sentence.repeat(17).trim(),
+            "word ".repeat(40).trim(),
+            `${"word ".repeat(100).trim()}…`,
+            `${"x".repeat(500)}…`,
             null,
             null
         ]);
         expect(getChildLinks(parent, options).map((link) => link.excerpt))
-            .toStrictEqual([ "About it", null, null, null, null, null, null ]);
+            .toStrictEqual([ "About it", null, null, null, null, null, null, null, null ]);
 
         const denied = getChildLinks(parent, {
             ...options,
@@ -541,8 +542,7 @@ describe("getChildLinks", () => {
             canAccess: (note) => note.noteId !== "described" && note.noteId !== "short"
         });
         expect(denied.map((link) => link.excerpt).slice(0, 3))
-            .toStrictEqual([ null, null, "First sentence of the note, which says what it is about. "
-                + "A second one goes on about it at length, well past where a summary should stop." ]);
+            .toStrictEqual([ null, null, "First paragraph.\nSecond paragraph." ]);
     });
 });
 

@@ -408,9 +408,9 @@ function getShareAssetPath() {
 }
 
 /**
- * Returns the text of the paragraphs of a text note, which the excerpt of its entry in its parent's
- * list of subpages starts from, or `null` for a note of another type or a protected one. Only the
- * start of the note is parsed, enough for any excerpt.
+ * Returns the text of the paragraphs of a text note, separated by blank lines, which the excerpt
+ * of its entry in its parent's list of subpages starts from, or `null` for a note of another type
+ * or a protected one. Only the start of the note is parsed, enough for any excerpt.
  */
 function getExcerptSource(note: SNote | BNote) {
     if (note.type !== "text" || note.isProtected) {
@@ -424,7 +424,7 @@ function getExcerptSource(note: SNote | BNote) {
 
     return parse(content.slice(0, EXCERPT_SOURCE_LENGTH)).querySelectorAll("p")
         .map((paragraph) => paragraph.text)
-        .join(" ");
+        .join("\n\n");
 }
 
 /** How much of a text note's HTML {@link getExcerptSource} parses. */

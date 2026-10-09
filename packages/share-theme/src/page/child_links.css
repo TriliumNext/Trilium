@@ -65,6 +65,10 @@
     font-size: 0.8rem;
 }
 
+.child-link-excerpt {
+    white-space: pre-line;
+}
+
 .child-link-children {
     display: flex;
     flex-direction: column;
@@ -103,6 +107,14 @@
 #childLinks.list :is(.child-link-excerpt, .child-link-children) {
     grid-column: 2;
     margin-top: 0.25rem;
+}
+
+#childLinks.list .child-link-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
 }
 
 #childLinks.grid > ul {

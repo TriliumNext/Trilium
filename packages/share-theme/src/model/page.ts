@@ -424,23 +424,27 @@ export function getChildLinks(note: ShareNote, options: ChildLinksOptions): Chil
     });
 }
 
-/** The most characters of a child's text its excerpt shows. */
-const EXCERPT_LENGTH = 160;
+/** The most characters of a child's text its excerpt shows, about what fills its card's preview. */
+const EXCERPT_LENGTH = 500;
 
 /**
- * Shortens `text` to an excerpt of at most {@link EXCERPT_LENGTH} characters: whole sentences when
- * they fill at least a third of it, else whole words followed by an ellipsis.
+ * Shortens `text`, whose paragraphs are separated by blank lines, to an excerpt of at most
+ * {@link EXCERPT_LENGTH} characters with a line break between paragraphs: whole sentences or
+ * paragraphs when they fill at least a third of it, else whole words followed by an ellipsis.
  */
 function toExcerpt(text: string) {
-    const plain = text.replace(/\s+/g, " ").trim();
+    const plain = text.split(/\n\s*\n/)
+        .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .join("\n");
     if (plain.length <= EXCERPT_LENGTH) {
         return plain || null;
     }
 
     const head = plain.slice(0, EXCERPT_LENGTH);
-    const sentenceEnd = Math.max(head.lastIndexOf(". "), head.lastIndexOf("! "), head.lastIndexOf("? "));
-    if (sentenceEnd >= EXCERPT_LENGTH / 3) {
-        return head.slice(0, sentenceEnd + 1);
+    const end = [ ...head.matchAll(/[.!?](?=\s)|[^\n](?=\n)/g) ].at(-1);
+    if (end && end.index >= EXCERPT_LENGTH / 3) {
+        return head.slice(0, end.index + 1);
     }
 
     const wordEnd = head.lastIndexOf(" ");

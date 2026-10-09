@@ -559,7 +559,7 @@ describe("content_renderer", () => {
 
             expect(page.querySelector("#childLinks")?.classList.contains("grid")).toBe(true);
             expect(items).toStrictEqual([
-                { icon: true, excerpt: "First & bold. Second.", children: [] },
+                { icon: true, excerpt: "First & bold.\nSecond.", children: [] },
                 {
                     icon: false,
                     excerpt: undefined,
