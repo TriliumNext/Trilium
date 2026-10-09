@@ -368,6 +368,18 @@ describe("content_renderer", () => {
             ]);
         });
 
+        it("keeps an empty table of contents pane, and its toggle out, for fewer than two headings", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [{ id: "oneHeading", content: `<h2>Only</h2><p>a</p>` }]
+            });
+
+            const page = parse(String(renderNoteContent(shareRootNote.getChildNotes()[0])));
+
+            expect(page.querySelector("#toc-pane")?.innerHTML).toBe("");
+            expect(page.querySelector("#toc-pane-toggle-button") === null).toBe(true);
+        });
+
         it("prints only the OpenGraph tags that have a value, with an absolute image", () => {
             const shareRootNote = buildShareNote({
                 id: shareRoot.SHARE_ROOT_NOTE_ID,

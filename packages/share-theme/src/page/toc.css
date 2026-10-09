@@ -14,6 +14,10 @@
     background: var(--background-primary);
 }
 
+#split-pane:has(#content.full-content-width) #toc-pane:empty {
+    display: none;
+}
+
 #toc-pane h3 {
     text-transform: uppercase;
 }
@@ -126,5 +130,9 @@
 
     .toc-open #toc-pane {
         transform: translateX(0);
+    }
+
+    #toc-pane:empty {
+        display: none;
     }
 }
