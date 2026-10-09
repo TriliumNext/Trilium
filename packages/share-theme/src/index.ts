@@ -18,6 +18,7 @@ import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
 import setupMath from "./content/math.js";
 import setupCalendar from "./content/calendar.js";
+import setupGeoMap from "./content/geomap.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -73,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
         $try(setupMermaid);
     } else if (classList.contains("type-book")) {
         $try(setupCalendar);
+        $try(setupGeoMap);
     }
 });
 

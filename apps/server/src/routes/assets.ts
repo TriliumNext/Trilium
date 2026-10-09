@@ -108,6 +108,7 @@ async function register(app: express.Application) {
         app.use(`/${assetUrlFragment}/translations/`, persistentCacheStatic(path.join(publicDir, "translations")));
         app.use(`/node_modules/`, persistentCacheStatic(path.join(publicDir, "node_modules")));
         app.use(`/share/assets/`, express.static(getShareThemeAssetDir(), STATIC_OPTIONS));
+        app.use(`/share/assets/`, express.static(path.join(publicDir, "assets"), STATIC_OPTIONS));
     }
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));

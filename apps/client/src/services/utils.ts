@@ -5,7 +5,7 @@ import type { ViewMode, ViewScope } from "./link.js";
 
 const SVG_MIME = "image/svg+xml";
 
-export const isShare = !window.glob;
+export const isShare = !window.glob || !!window.glob.isShare;
 
 /**
  * True when the client is showing a *pre-auth* SPA screen — the login screen (`loggedIn: false`),

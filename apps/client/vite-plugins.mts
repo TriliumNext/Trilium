@@ -138,6 +138,10 @@ const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = 
     ],
     calendar: [
         { specifier: "./calendar_view.js", importer: "content/calendar.ts" }
+    ],
+    geomap: [
+        { specifier: "./app_globals.js", importer: "content/geomap.ts" },
+        { specifier: "./geomap_view.js", importer: "content/geomap.ts" }
     ]
 };
 
@@ -476,9 +480,14 @@ function collectFiles(bundle: Record<string, BundleOutput>, entries: string[], o
     return files;
 }
 
-/** Sorts `files` and makes them relative to the manifest, checking they share its directory. */
+/**
+ * Sorts `files` and makes them relative to the manifest, checking they share its directory or are
+ * in `assets/`. A chunk refers to a file there as `../assets/<file>`, which from
+ * `/share/assets/` is the same directory, so both are listed by their name alone.
+ */
 function toManifestPaths(files: string[]) {
-    const outside = files.filter((file) => posix.dirname(file) !== SHARE_THEME_DIR);
+    const outside = files.filter((file) =>
+        posix.dirname(file) !== SHARE_THEME_DIR && posix.dirname(file) !== "assets");
     if (outside.length) {
         const list = outside.join(", ");
         throw new Error(`The share theme's files must all be in '${SHARE_THEME_DIR}/': ${list}.`);

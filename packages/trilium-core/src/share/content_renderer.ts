@@ -490,6 +490,9 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "book" && !(note instanceof BNote)
         && getViewType(note) === "calendar") {
         renderCalendar(result, note);
+    } else if (note.type === "book" && !(note instanceof BNote)
+        && getViewType(note) === "geoMap") {
+        renderGeoMap(result, note);
     } else if (note.type === "book") {
         result.isEmpty = true;
     } else if (note.type === "webView") {
@@ -907,6 +910,23 @@ function renderCalendar(result: Result, note: SNote) {
     result.content = `<div class="share-calendar" data-note-id="${note.noteId}"></div>`
         + `<script type="application/json" class="share-froca">${payload}</script>`;
 }
+
+/**
+ * Renders a geo map collection as an element the share theme's script mounts the app's whole map
+ * view into, read-only, from the notes and the display options embedded next to it.
+ */
+function renderGeoMap(result: Result, note: SNote) {
+    const payload = {
+        ...buildFrocaPayload(note),
+        options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ]))
+    };
+    const json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    result.content = `<div class="share-geomap" data-note-id="${note.noteId}"></div>`
+        + `<script type="application/json" class="share-froca">${json}</script>`;
+}
+
+/** The options the app's collection views read, which a shared page needs to draw them alike. */
+const SHARED_OPTIONS = [ "locale", "formattingLocale", "firstDayOfWeek" ] as const;
 
 /** The `data-*` attributes of a Mermaid note that label its viewer, and their translations. */
 const MERMAID_VIEWER_LABELS = {

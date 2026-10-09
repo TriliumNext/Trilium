@@ -1091,6 +1091,8 @@ export type BootstrapDefinition = {
     arch?: string;
     isElectron: boolean;
     isStandalone: boolean;
+    /** Set by a shared page's boot script, which defines a `glob` of its own. */
+    isShare?: boolean;
     /**
      * Absolute URL prefix for the WebSocket (e.g. `ws://127.0.0.1:8080/`),
      * sent by the desktop app because the renderer page lives on the

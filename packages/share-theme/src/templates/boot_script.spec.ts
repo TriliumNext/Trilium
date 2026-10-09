@@ -11,7 +11,7 @@ describe("boot_script.ejs", () => {
         });
 
         expect([ ...classes ]).toStrictEqual([ "theme-dark", "theme-preference-dark" ]);
-        expect(context.glob).toEqual({ isStatic: true, theme: "dark" });
+        expect(context.glob).toEqual({ isShare: true, isStatic: true, theme: "dark" });
         expect(() => runInContext(`const el = 1; let theme = 2; let root = 3;`, context)).not.toThrow();
     });
 
