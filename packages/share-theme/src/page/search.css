@@ -1,3 +1,28 @@
+.search-item {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.search-input {
+    color: var(--text-primary);
+    background: var(--background-highlight);
+    outline: 0;
+    border: 0;
+    flex: 1;
+    padding: 5px 5px 5px 32px;
+    width: 200px;
+    border-radius: 6px;
+}
+
+.search-icon {
+    display: flex;
+    color: var(--text-primary);
+    position: absolute;
+    width: 20px;
+    left: 5px;
+}
+
 .search-results {
     display: flex;
     flex-direction: column;

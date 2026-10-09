@@ -100,3 +100,30 @@
 #content h6 a.toc-anchor {
     margin-left: 10px;
 }
+
+@media (max-width: 48em) {
+    #toc-pane {
+        display: flex;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 80%;
+        max-width: 300px;
+        padding: 20px;
+        background: var(--background-secondary);
+        transform: translateX(100%);
+        transition: transform 200ms ease;
+        z-index: 2;
+        overflow-y: auto;
+    }
+
+    #toc-pane h3,
+    #toc-pane #toc {
+        display: block;
+    }
+
+    .toc-open #toc-pane {
+        transform: translateX(0);
+    }
+}

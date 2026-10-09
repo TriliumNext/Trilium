@@ -1,14 +1,14 @@
-import setupToC from "./modules/toc.js";
-import setupExpanders from "./modules/expanders.js";
-import setupMobileMenu from "./modules/mobile.js";
-import setupSearch from "./modules/search.js";
-import setupThemeSelector from "./modules/theme.js";
-import setupMermaid from "./modules/mermaid.js";
-import setupMath from "./modules/math.js";
-import setupSidebars from "./modules/sidebar.js";
-import setupVideoFacades from "./modules/video_facade.js";
-import setupFaviconContrast from "./modules/favicon_contrast.js";
-import api from "./modules/api.js";
+import setupToC from "./page/toc.js";
+import setupExpanders from "./page/navigation.js";
+import setupLayout from "./page/layout.js";
+import setupSearch from "./page/search.js";
+import setupThemeSelector from "./page/theme_switch.js";
+import setupMermaid from "./content/mermaid.js";
+import setupMath from "./content/math.js";
+import setupVideoFacades from "./content/video_facade.js";
+import setupFaviconContrast from "./content/favicon_contrast.js";
+import api from "./api.js";
+// These go to `scripts.css`, which the page loads after `styles.css` (built from `index.css`).
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
@@ -29,9 +29,8 @@ Object.assign(window, api);
 $try(setupThemeSelector);
 $try(setupToC);
 $try(setupExpanders);
-$try(setupMobileMenu);
+$try(setupLayout);
 $try(setupSearch);
-$try(setupSidebars);
 
 function setupTextNote() {
     $try(setupMermaid);

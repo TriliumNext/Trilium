@@ -1,5 +1,5 @@
 import { KATEX_MACROS } from "@triliumnext/commons/src/lib/katex_macros.js";
-import "../../styles/katex.scss";
+import "./katex.scss";
 
 export default async function setupMath() {
     const anyMathBlock = document.querySelector("#content .math-tex");

@@ -11,7 +11,7 @@ import {
  * which disappears on the dark theme, and a mark drawn white for a dark header disappears on the
  * light one. Each icon's own pixels are measured (the shared logic lives in commons, so the app and
  * the shared page reach the same verdict about the same picture) and the answer is left on the
- * element as a class for `link-embed.css` to act on — which is what lets the visitor's theme switch
+ * element as a class for `link_embed.css` to act on — which is what lets the visitor's theme switch
  * correct the icons with nothing measured again.
  */
 export default function setupFaviconContrast() {

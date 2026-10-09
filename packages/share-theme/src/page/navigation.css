@@ -5,6 +5,12 @@
     gap: 10px;
 }
 
+#site-header {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 #menu {
     order: 1;
     white-space: nowrap;

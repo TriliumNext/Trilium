@@ -67,3 +67,61 @@ body {
         padding: 0 50px;
     }
 }
+
+#mobile-backdrop {
+    display: none;
+}
+
+@media (max-width: 48em) {
+    html,
+    body {
+        height: 100%;
+    }
+
+    #split-pane {
+        overflow: hidden;
+    }
+
+    #right-pane, #main {
+        width: 100%;
+        padding: 0;
+    }
+
+    #main {
+        padding: 1rem;
+    }
+
+    #left-pane {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 80%;
+        max-width: 300px;
+        background: var(--background-secondary);
+        transform: translateX(-100%);
+        transition: transform 200ms ease;
+        z-index: 2;
+        overflow-y: auto;
+    }
+
+    .menu-open #left-pane {
+        transform: translateX(0);
+    }
+
+    #mobile-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0);
+        pointer-events: none;
+        transition: background-color 200ms ease;
+        z-index: 1;
+    }
+
+    body.menu-open #mobile-backdrop,
+    body.toc-open #mobile-backdrop {
+        background: rgba(0,0,0, 0.6);
+        pointer-events: auto;
+    }
+}

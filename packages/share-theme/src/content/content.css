@@ -5,6 +5,16 @@
     --ck-content-line-height: inherit !important;
 }
 
+#title {
+    margin: 0;
+    padding-top: 10px;
+}
+
+iframe.pdf-view {
+    width: 100%;
+    height: 800px;
+}
+
 .ck-content code,
 .ck-content pre {
     color: var(--text-primary);

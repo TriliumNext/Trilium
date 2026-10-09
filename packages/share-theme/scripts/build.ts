@@ -25,7 +25,7 @@ function makeEntry(mod: string) {
     }
 
     return {
-        "in": path.join(rootDir, "src", mod, entrypoint),
+        "in": path.join(rootDir, "src", entrypoint),
         "out": mod
     };
 }

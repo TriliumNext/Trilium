@@ -13,8 +13,6 @@
   },
   "exports": {
     "./templates/*": "./src/templates/*",
-    "./styles/*": "./src/styles/*",
-    "./scripts/*": "./src/scripts/*",
     "./*": "./dist/*"
   },
   "author": "Elian Doran <contact@eliandoran.me>",

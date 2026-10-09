@@ -1,22 +1,3 @@
-#title {
-    margin: 0;
-    padding-top: 10px;
-}
-
-img {
-    max-width: 100%;
-}
-
-pre {
-    white-space: pre-wrap;
-    word-wrap: anywhere;
-}
-
-iframe.pdf-view {
-    width: 100%;
-    height: 800px;
-}
-
 .ck-content .footnote-section {
     border-top: 1px solid #c4c4c4;
     border-radius: 2px;
