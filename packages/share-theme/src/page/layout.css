@@ -41,13 +41,13 @@ html {
     flex: 1;
     min-width: 0;
     overflow-x: auto;
-    padding: var(--page-top-spacing) 20px 20px;
+    padding: var(--page-top-spacing) 20px;
     width: 100%;
 }
 
 @media (min-width: 1200px) {
     #main {
-        padding: var(--page-top-spacing) 50px 0;
+        padding: var(--page-top-spacing) 50px;
     }
 }
 
