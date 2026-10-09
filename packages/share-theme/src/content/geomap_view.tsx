@@ -1,6 +1,8 @@
 import "./geomap_view.css";
 
+import appContext from "@triliumnext/client/src/components/app_context.js";
 import Component from "@triliumnext/client/src/components/component.js";
+import TabManager from "@triliumnext/client/src/components/tab_manager.js";
 import froca from "@triliumnext/client/src/services/froca.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import GeoView from "@triliumnext/client/src/widgets/collections/geomap/index.js";
@@ -43,7 +45,7 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
     }
 
     render(
-        <ParentComponent.Provider value={new Component()}>
+        <ParentComponent.Provider value={startAppContext()}>
             <GeoView
                 note={note}
                 notePath={noteId}
@@ -57,4 +59,20 @@ export default function mountGeoMap(container: HTMLElement, payload: GeoMapPaylo
         </ParentComponent.Provider>,
         container
     );
+}
+
+/**
+ * Gives `appContext` the part of `start()` that the view relies on, a `TabManager` for the note
+ * contexts its panes register, and returns a component under it for the view to mount below.
+ * The app's layout, commands and shortcuts are left out.
+ */
+function startAppContext() {
+    if (!appContext.tabManager) {
+        appContext.tabManager = new TabManager();
+        appContext.child(appContext.tabManager);
+    }
+
+    const component = new Component();
+    appContext.child(component);
+    return component;
 }
