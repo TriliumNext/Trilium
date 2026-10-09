@@ -503,7 +503,12 @@ describe("content_renderer", () => {
                             ]
                         },
                         { id: "locked", content: "<p>Secret</p>", isProtected: true },
-                        { "id": "guarded", "content": "<p>Guarded</p>", "#shareCredentials": "u:p" },
+                        {
+                            "id": "guarded",
+                            "content": "<p>Guarded</p>",
+                            "#shareCredentials": "u:p",
+                            "#shareDescription": "Guarded description"
+                        },
                         { id: "drawing", type: "canvas", content: "{}" },
                         { id: "bytes", content: Buffer.from("<p>Bytes</p>") }
                     ]

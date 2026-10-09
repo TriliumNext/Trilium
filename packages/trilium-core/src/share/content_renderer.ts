@@ -255,7 +255,9 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     const childLinks = getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
-        getText: (child) => getExcerptSource(child as SNote | BNote, renderArgs.canAccessEmbed)
+        getText: (child) => getExcerptSource(child as SNote | BNote),
+        // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
+        canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
     });
     const opts = {
         note,
@@ -401,12 +403,11 @@ function getShareAssetPath() {
 
 /**
  * Returns the text of the paragraphs of a text note, which the excerpt of its entry in its parent's
- * list of subpages starts from, or `null` for a note of another type, a protected one, or one the
- * caller is not allowed to read. Only the start of the note is parsed, enough for any excerpt.
+ * list of subpages starts from, or `null` for a note of another type or a protected one. Only the
+ * start of the note is parsed, enough for any excerpt.
  */
-function getExcerptSource(note: SNote | BNote, canAccessEmbed?: CanAccessEmbed) {
-    // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
-    if (note.type !== "text" || note.isProtected || canAccessEmbed?.(note as SNote) === false) {
+function getExcerptSource(note: SNote | BNote) {
+    if (note.type !== "text" || note.isProtected) {
         return null;
     }
 

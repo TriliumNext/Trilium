@@ -526,6 +526,15 @@ describe("getChildLinks", () => {
         ]);
         expect(getChildLinks(parent, options).map((link) => link.excerpt))
             .toStrictEqual([ "About it", null, null, null, null, null, null ]);
+
+        const denied = getChildLinks(parent, {
+            ...options,
+            getText: (note) => texts[note.noteId],
+            canAccess: (note) => note.noteId !== "described" && note.noteId !== "short"
+        });
+        expect(denied.map((link) => link.excerpt).slice(0, 3))
+            .toStrictEqual([ null, null, "First sentence of the note, which says what it is about. "
+                + "A second one goes on about it at length, well past where a summary should stop." ]);
     });
 });
 

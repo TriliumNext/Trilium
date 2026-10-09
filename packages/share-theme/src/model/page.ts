@@ -411,6 +411,11 @@ export interface ChildLinksOptions {
      * visitor is not allowed to read. Without it, only `#shareDescription` describes a child.
      */
     getText?: (note: ShareNote) => string | null;
+    /**
+     * Whether the visitor is allowed to read a child. A child they are not allowed to read has no
+     * excerpt, not even its `#shareDescription`.
+     */
+    canAccess?: (note: ShareNote) => boolean;
 }
 
 /**
@@ -424,8 +429,8 @@ export function getChildLinks(note: ShareNote, options: ChildLinksOptions): Chil
     }
 
     return note.getVisibleChildNotes().map((child) => {
-        const excerpt = readLabel(child, "shareDescription")
-            ?? toExcerpt(options.getText?.(child) ?? "");
+        const excerpt = options.canAccess?.(child) === false ? null
+            : readLabel(child, "shareDescription") ?? toExcerpt(options.getText?.(child) ?? "");
         const children = excerpt ? [] : child.getVisibleChildNotes().slice(0, CHILD_PREVIEW_LENGTH);
         return {
             ...getShareLink(child, options.sanitizeUrl),
