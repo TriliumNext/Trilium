@@ -85,8 +85,22 @@ export interface MetaTag {
 export interface SiteLogo {
     /** `#shareRootLink` when set, otherwise the site's root page. */
     href: string;
+    /** The `~shareLogo` image, or `null` to show {@link SiteLogo.icon} instead. */
+    image: string | null;
+    /** The icon classes of the site root's note icon. */
+    icon: string;
+    /** The size to draw {@link SiteLogo.image} at. */
     width: number;
     height: number;
+}
+
+/** What {@link getSiteLogo} needs besides the site root. */
+export interface SiteLogoOptions {
+    /** Makes `#shareRootLink` safe to use as a link. */
+    sanitizeUrl: (url: string) => string;
+    /** The URL of the `~shareLogo` image, if any. */
+    image: string | null;
+    iconPackPrefixes?: string[];
 }
 
 /** A heading of the page's content, as core's `preparePageContent()` finds it. */
@@ -257,17 +271,19 @@ export function getHtmlSnippets(note: ShareNote): Record<HtmlSnippetLocation, st
 const LOGO_WIDTH = 32;
 
 /**
- * Returns the site logo of the site starting at `siteRoot`. `#shareLogoWidth` and
- * `#shareLogoHeight` give the logo's proportions; a label that is not a positive number falls back
- * to the default logo's. `sanitizeUrl` makes `#shareRootLink` safe to use as a link.
+ * Returns the site logo of the site starting at `siteRoot`: the `~shareLogo` image when there is
+ * one, otherwise the site root's note icon. `#shareLogoWidth` and `#shareLogoHeight` give the
+ * image's proportions; a label that is not a positive number falls back to 53 by 40.
  */
-export function getSiteLogo(siteRoot: ShareNote, sanitizeUrl: (url: string) => string): SiteLogo {
+export function getSiteLogo(siteRoot: ShareNote, options: SiteLogoOptions): SiteLogo {
     const width = readPositiveNumber(siteRoot.getLabelValue("shareLogoWidth")) ?? 53;
     const height = readPositiveNumber(siteRoot.getLabelValue("shareLogoHeight")) ?? 40;
     const rootLink = siteRoot.getLabelValue("shareRootLink");
 
     return {
-        href: rootLink ? sanitizeUrl(rootLink) : `./${siteRoot.shareId}`,
+        href: rootLink ? options.sanitizeUrl(rootLink) : `./${siteRoot.shareId}`,
+        image: options.image,
+        icon: siteRoot.getIcon(options.iconPackPrefixes),
         width: LOGO_WIDTH,
         height: Math.round(LOGO_WIDTH * height / width)
     };

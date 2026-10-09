@@ -151,7 +151,8 @@ export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) 
     }
 
     const customLogoId = note.getRelation("shareLogo")?.value;
-    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+    const logoImageUrl = customLogoId ? `api/images/${customLogoId}/image.png` : null;
+    const logoUrl = logoImageUrl ?? `../${assetUrlFragment}/images/icon-color.svg`;
     const iconPacks = iconPackService.getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
@@ -160,6 +161,7 @@ export function renderNoteContent(note: SNote, canAccessEmbed?: CanAccessEmbed) 
         cssToLoad,
         jsToLoad,
         logoUrl,
+        logoImageUrl,
         ancestors,
         isStatic: false,
         canAccessEmbed,
@@ -184,6 +186,8 @@ interface RenderArgs {
     cssToLoad: string[];
     jsToLoad: string[];
     logoUrl: string;
+    /** The `~shareLogo` image; without it, the default template shows the site's note icon. */
+    logoImageUrl?: string | null;
     ancestors: string[];
     isStatic: boolean;
     canAccessEmbed?: CanAccessEmbed;
@@ -224,7 +228,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         sanitizeUrl: sanitize.sanitizeUrl,
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
-        logo: getSiteLogo(siteRoot, sanitize.sanitizeUrl),
+        logo: getSiteLogo(siteRoot, {
+            sanitizeUrl: sanitize.sanitizeUrl,
+            image: renderArgs.logoImageUrl ?? null,
+            iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+        }),
         prevNext: getPrevNextLinks(note, siteRoot),
         navigation: getNavigationTree(siteRoot, note, renderArgs.ancestors, {
             sanitizeUrl: sanitize.sanitizeUrl,

@@ -297,7 +297,7 @@ It's possible to adjust the logo which is displayed on the top-left of the left 
 
 | Attribute | Description |
 | --- | --- |
-| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). |
+| `~shareLogo` | Relation set to an image to use as logo. The image must be part of the share tree (it can be hidden if needed). Without it, the header shows the icon of the shared root note. |
 | `#shareLogoWidth` | The width of the logo, as a number without unit. With `#shareLogoHeight`, it sets the proportions of the logo, which is shown 32 pixels wide. Default is `53`. |
 | `#shareLogoHeight` | The height of the logo, as a number without unit. With `#shareLogoWidth`, it sets the proportions of the logo. Default is `40`. |
 | `#shareRootLink` | URL to navigate to when the logo is pressed. |

@@ -164,23 +164,27 @@ describe("getHtmlSnippets", () => {
 
 describe("getSiteLogo", () => {
     const sanitizeUrl = (url: string) => (url.startsWith("javascript:") ? "about:blank" : url);
+    const logo = (labels: Record<string, string>, image: string | null = null) =>
+        getSiteLogo(fakeNote({ noteId: "site", labels, icon: "bx bx-book" }), {
+            sanitizeUrl, image, iconPackPrefixes: [ "custom" ]
+        });
 
-    it("draws the logo 32 pixels wide, in the proportions of its labels", () => {
-        const logo = (labels: Record<string, string>) =>
-            getSiteLogo(fakeNote({ noteId: "site", labels }), sanitizeUrl);
+    it("shows the site root's note icon without a logo image", () => {
+        expect(logo({})).toStrictEqual({
+            href: "./site-alias", image: null, icon: "bx bx-book custom", width: 32, height: 24
+        });
+    });
 
-        expect(logo({})).toStrictEqual({ href: "./site-alias", width: 32, height: 24 });
+    it("draws a logo image 32 pixels wide, in the proportions of its labels", () => {
+        expect(logo({}, "api/images/logo/image.png").image).toBe("api/images/logo/image.png");
         expect(logo({ shareLogoWidth: "100", shareLogoHeight: "50" }).height).toBe(16);
         expect(logo({ shareLogoWidth: "auto", shareLogoHeight: "" }).height).toBe(24);
         expect(logo({ shareLogoWidth: "0", shareLogoHeight: "-5" }).height).toBe(24);
     });
 
     it("links to #shareRootLink, made safe", () => {
-        const logo = (shareRootLink: string) => getSiteLogo(
-            fakeNote({ noteId: "site", labels: { shareRootLink } }), sanitizeUrl);
-
-        expect(logo("https://example.com").href).toBe("https://example.com");
-        expect(logo("javascript:alert(1)").href).toBe("about:blank");
+        expect(logo({ shareRootLink: "https://example.com" }).href).toBe("https://example.com");
+        expect(logo({ shareRootLink: "javascript:alert(1)" }).href).toBe("about:blank");
     });
 });
 

@@ -1138,6 +1138,28 @@ describe("content_renderer", () => {
         }
     });
 
+    describe("Site logo", () => {
+        it("shows the site root's note icon, or the ~shareLogo image when there is one", () => {
+            const shareRootNote = buildShareNote({
+                id: shareRoot.SHARE_ROOT_NOTE_ID,
+                children: [
+                    { "id": "iconSite", "title": "Icon", "content": "<p>a</p>", "#iconClass": "bx bx-book" },
+                    { "id": "imageSite", "title": "Image", "content": "<p>b</p>", "~shareLogo": "iconSite" }
+                ]
+            });
+            const [ iconSite, imageSite ] = shareRootNote.getChildNotes();
+            const logoOf = (note: SNote) => parse(String(renderNoteContent(note))).querySelector("#header-logo");
+
+            const iconLogo = logoOf(iconSite);
+            expect(iconLogo?.querySelector("img") === null).toBe(true);
+            expect(iconLogo?.querySelector(".tn-icon")?.classList.contains("bx-book")).toBe(true);
+
+            const imageLogo = logoOf(imageSite);
+            expect(imageLogo?.querySelector(".tn-icon") === null).toBe(true);
+            expect(imageLogo?.querySelector("img")?.getAttribute("src")).toBe("api/images/iconSite/image.png");
+        });
+    });
+
     describe("Navigation tree", () => {
         it("links each page of the site, expanding the way to the page shown", () => {
             const shareRootNote = buildShareNote({
@@ -1280,7 +1302,7 @@ describe("content_renderer", () => {
                 iconPackSupportedPrefixes: [],
                 head: getPageHead(note, note),
                 snippets: getHtmlSnippets(note),
-                logo: getSiteLogo(note, sanitize.sanitizeUrl),
+                logo: getSiteLogo(note, { sanitizeUrl: sanitize.sanitizeUrl, image: null }),
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
                 childLinks: getChildLinks(note, sanitize.sanitizeUrl),

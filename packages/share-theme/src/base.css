@@ -62,6 +62,11 @@ a:hover {
     text-decoration: underline;
 }
 
+/* An inline-block glyph does not take the underline of its link. */
+.tn-icon::before {
+    display: inline-block;
+}
+
 pre, code, kbd, samp {
     font-family: JetBrainsLight, ui-monospace, monospace;
 }

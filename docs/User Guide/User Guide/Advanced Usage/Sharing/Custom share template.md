@@ -31,7 +31,7 @@ Your template is rendered with a context object exposing the note and its render
 | `header` | Extra HTML to place in the document head for this note (used by some note types). |
 | `isEmpty` | `true` when the note has no content of its own. |
 | `head` | The values of the page's `<head>`: `title` (the note's title, followed by the site's), `description` (`#shareDescription`), `noIndex` (`#shareDisallowRobotIndexing`) and `openGraph` with `url`, `domain`, `image`, `color` and `card` (`summary_large_image` with an image, `summary` without). A value whose label is not set is `null`. `metaTags` lists the description, OpenGraph and Twitter `<meta>` tags of the values that are set, each with `attribute` (`name` or `property`), `key` and `content`. |
-| `logo` | The site logo in the header: `href` (`#shareRootLink`, otherwise the site's root page), `width` and `height`. |
+| `logo` | The site logo in the header: `href` (`#shareRootLink`, otherwise the site's root page), `image` (the `~shareLogo` image, or `null`), `icon` (the icon classes of the site's root note, shown when there is no `image`), and `width` and `height` for the image. |
 | `navigation` | The navigation tree of the site: its visible pages, each with `title`, `href`, `isExternal`, `type`, `icon`, `isActive` (the page being shown), `isExpanded` (that page or one of its ancestors) and `children`. |
 | `contentClasses` | The classes of the content element: `type-<note type>`, `ck-content` for text and Markdown notes, and `no-content` when the note has no content of its own. |
 | `childLinks` | The links to the note's visible children, each with `title`, `href`, `isExternal` and `type`. |
@@ -41,7 +41,7 @@ Your template is rendered with a context object exposing the note and its render
 | `snippets` | The HTML of the `~shareHtml` snippets for each location, such as `snippets["head:end"]`. Every location is present, empty when no snippet goes there. |
 | `subRoot` | The root of the shared subtree as `{ note, branch }` — handy for a site-wide title or logo. |
 | `cssToLoad` / `jsToLoad` | Arrays of stylesheet / script URLs the default theme would inject (includes anything added via `~shareCss` / `~shareJs`). |
-| `faviconUrl` / `logoUrl` | Resolved favicon and logo URLs. |
+| `faviconUrl` / `logoUrl` | Resolved favicon and logo URLs. Without `~shareLogo`, `logoUrl` is the Trilium logo. |
 | `isStatic` | `true` during a static HTML export, `false` for a live server render. |
 | `t` | The `i18next` translation function. |
 | `utils` | Helper utilities such as `slugify()` and `stripTags()`. |

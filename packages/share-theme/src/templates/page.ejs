@@ -30,7 +30,11 @@
 <div id="header">
     <button aria-label="<%= t("share_theme.toggle-navigation") %>" id="left-pane-toggle-button" class="header-button"><span class="tn-icon bx bx-menu" aria-hidden="true"></span></button>
     <a href="<%= logo.href %>" id="header-logo">
-        <img src="<%= logoUrl %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
+        <% if (logo.image) { %>
+            <img src="<%= logo.image %>" width="<%= logo.width %>" height="<%= logo.height %>" alt="<%= t("share_theme.logo-alt") %>" />
+        <% } else { %>
+            <span class="tn-icon <%= logo.icon %>" aria-hidden="true"></span>
+        <% } %>
         <%= subRoot.note.title %>
     </a>
     <% if (headings.length > 1) { %>

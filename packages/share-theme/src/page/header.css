@@ -18,6 +18,10 @@
     max-width: 32px;
 }
 
+#header-logo .tn-icon {
+    font-size: 24px;
+}
+
 .header-button {
     color: var(--text-menu);
     background: transparent;

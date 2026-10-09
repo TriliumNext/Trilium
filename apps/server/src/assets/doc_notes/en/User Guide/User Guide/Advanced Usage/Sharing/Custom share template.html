@@ -76,7 +76,10 @@
         <td><code>logo</code>
         </td>
         <td>The site logo in the header: <code>href</code> (<code>#shareRootLink</code>,
-          otherwise the site's root page), <code>width</code> and <code>height</code>.</td>
+          otherwise the site's root page), <code>image</code> (the <code>~shareLogo</code> image,
+          or <code>null</code>), <code>icon</code> (the icon classes of the site's root
+          note, shown when there is no <code>image</code>), and <code>width</code> and <code>height</code> for
+          the image.</td>
       </tr>
       <tr>
         <td><code>navigation</code>
@@ -138,7 +141,8 @@
       <tr>
         <td><code>faviconUrl</code> / <code>logoUrl</code>
         </td>
-        <td>Resolved favicon and logo URLs.</td>
+        <td>Resolved favicon and logo URLs. Without <code>~shareLogo</code>, <code>logoUrl</code> is
+          the Trilium logo.</td>
       </tr>
       <tr>
         <td><code>isStatic</code>
