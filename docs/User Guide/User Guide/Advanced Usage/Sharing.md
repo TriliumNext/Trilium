@@ -67,8 +67,8 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
-            <td><ul><li>The diagram is displayed as a vector image.</li></ul></td>
-            <td><ul><li>No further interaction supported.</li><li>The image is the one saved when the note was last edited, in the light or dark theme the application had then, so it does not follow the page's light or dark mode.</li></ul></td>
+            <td><ul><li>The diagram is drawn in the page's light or dark mode and redrawn when the visitor switches it. Until it is drawn, and in browsers with JavaScript disabled, the image saved when the note was last edited is shown instead.</li><li>The source of the diagram can be expanded below it.</li></ul></td>
+            <td><ul><li>No further interaction supported.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a></th>

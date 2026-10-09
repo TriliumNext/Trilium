@@ -854,18 +854,24 @@ export function renderCode(result: Result, mime?: string) {
     }
 }
 
+/**
+ * Renders a Mermaid note as the image the app saved, which the share theme's script replaces with
+ * a diagram drawn from `.mermaid-note-source` in the page's light or dark theme.
+ */
 function renderMermaid(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") {
         return;
     }
 
     result.content = `
-<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
+<div class="mermaid-note">
+<img class="mermaid-note-image" src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
 <hr>
 <details>
     <summary>Chart source</summary>
-    <pre>${escapeHtml(result.content)}</pre>
-</details>`;
+    <pre class="mermaid-note-source">${escapeHtml(result.content)}</pre>
+</details>
+</div>`;
 }
 
 function renderImage(result: Result, note: SNote | BNote) {

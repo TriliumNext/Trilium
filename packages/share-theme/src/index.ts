@@ -55,6 +55,8 @@ document.addEventListener(
 
         if (noteType === "text" || document.querySelector("#content.ck-content")) {
             setupTextNote();
+        } else if (noteType === "mermaid") {
+            $try(setupMermaid);
         }
 
         // Format <time> elements using the browser's locale.

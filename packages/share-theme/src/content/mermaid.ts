@@ -1,24 +1,23 @@
 import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
 
+/**
+ * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes, whose saved
+ * image stays in place until Mermaid has loaded.
+ */
 export default async function setupMermaid() {
-    const codeBlocks = document.querySelectorAll("#content pre code.language-mermaid");
-    if (codeBlocks.length === 0) {
+    const placeholders = findPlaceholders();
+    if (placeholders.length === 0) {
         return;
     }
 
     const mermaid = await loadMermaid();
 
     const diagrams: Diagram[] = [];
-    for (const codeBlock of codeBlocks) {
-        const parentPre = codeBlock.parentElement;
-        if (!parentPre) {
-            continue;
-        }
-
+    for (const { placeholder, source } of placeholders) {
         const element = document.createElement("div");
         element.classList.add("mermaid");
-        parentPre.replaceWith(element);
-        diagrams.push({ element, source: codeBlock.textContent ?? "" });
+        placeholder.replaceWith(element);
+        diagrams.push({ element, source });
     }
 
     let theme = readMermaidTheme();
@@ -41,6 +40,27 @@ export default async function setupMermaid() {
 interface Diagram {
     element: HTMLElement;
     source: string;
+}
+
+/** The elements a drawn diagram replaces, each with the source it is drawn from. */
+function findPlaceholders() {
+    const placeholders: { placeholder: Element; source: string }[] = [];
+
+    for (const codeBlock of document.querySelectorAll("#content pre code.language-mermaid")) {
+        if (codeBlock.parentElement) {
+            placeholders.push({ placeholder: codeBlock.parentElement, source: codeBlock.textContent ?? "" });
+        }
+    }
+
+    for (const note of document.querySelectorAll("#content .mermaid-note")) {
+        const image = note.querySelector(":scope > .mermaid-note-image");
+        const source = note.querySelector(".mermaid-note-source");
+        if (image && source) {
+            placeholders.push({ placeholder: image, source: source.textContent ?? "" });
+        }
+    }
+
+    return placeholders;
 }
 
 interface Mermaid {

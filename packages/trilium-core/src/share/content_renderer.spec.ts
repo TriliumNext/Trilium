@@ -701,6 +701,25 @@ describe("content_renderer", () => {
         });
     });
 
+    describe("Mermaid note", () => {
+        it("shows the saved image and keeps the source for the share theme to draw", () => {
+            const note = buildShareNote({
+                id: "mermaidNote",
+                type: "mermaid",
+                mime: "text/vnd.mermaid",
+                content: "graph TD; A-->B[<script>]"
+            });
+            const root = parse(String(getContent(note).content));
+            const container = root.querySelector("div.mermaid-note");
+
+            expect(container?.querySelector("img.mermaid-note-image")?.getAttribute("src"))
+                .toMatch(/^api\/images\/mermaidNote\//);
+            expect(container?.querySelector("details pre.mermaid-note-source")?.textContent)
+                .toBe("graph TD; A-->B[<script>]");
+            expect(root.querySelector("script")).toBeNull();
+        });
+    });
+
     describe("Web view note", () => {
         const SANDBOX = "allow-same-origin allow-scripts allow-popups";
 
