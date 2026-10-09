@@ -56,6 +56,7 @@ export default function setupTreeState() {
         if (!opensNewTab && item.getAttribute("data-note-id") === document.body.dataset.noteId) {
             e.preventDefault();
             selectItem(pane, item);
+            document.body.classList.remove("menu-open");
         }
     });
 

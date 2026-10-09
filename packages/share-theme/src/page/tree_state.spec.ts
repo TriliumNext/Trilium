@@ -134,8 +134,11 @@ describe("setupTreeState", () => {
         expect(click(cloneLink("x"))).toBe(true);
         expect(selected()).toStrictEqual([ "x/row", "x/link" ]);
 
+        // The narrow-screen drawer closes, as it would on the next page.
+        document.body.classList.add("menu-open");
         expect(click(cloneLink("y"))).toBe(true);
         expect(selected()).toStrictEqual([ "y/row", "y/link" ]);
+        expect(document.body.classList.contains("menu-open")).toBe(false);
         window.dispatchEvent(new Event("pagehide"));
         expect(JSON.parse(sessionStorage.getItem("share-tree-state") ?? "null").activePath)
             .toStrictEqual([ "y", "c" ]);
