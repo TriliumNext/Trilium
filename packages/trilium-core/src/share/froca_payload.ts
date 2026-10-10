@@ -1,10 +1,15 @@
 import { getShareLink } from "@triliumnext/share-theme/model/page";
 
 import becca from "../becca/becca.js";
+import type BAttachment from "../becca/entities/battachment.js";
 import type BAttribute from "../becca/entities/battribute.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
+import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
+import { buildRelationMap } from "../routes/api/relation-map.js";
 import * as sanitize from "../services/sanitizer.js";
+import { decodeUtf8 } from "../services/utils/binary.js";
+import scriptService from "../services/script.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SAttribute from "./shaca/entities/sattribute.js";
 import type SBranch from "./shaca/entities/sbranch.js";
@@ -110,21 +115,28 @@ export function buildFrocaRows<T extends PayloadNote>(
 }
 
 /** An attachment as the row `froca` reads attachments from. */
-export function getAttachmentRow(attachment: SAttachment) {
-    const pojo = attachment.getPojo();
+export function getAttachmentRow(attachment: SAttachment | BAttachment) {
+    const { attachmentId, role, mime, title, blobId, utcDateModified } = attachment.getPojo();
     return {
-        ...pojo,
+        attachmentId,
+        role,
+        mime,
+        title,
+        blobId,
+        utcDateModified,
         ownerId: attachment.ownerId,
-        dateModified: pojo.utcDateModified,
+        dateModified: utcDateModified,
         utcDateScheduledForErasureSince: null,
         contentLength: 0
     };
 }
 
 /** The content of a note or an attachment as the blob row `froca.getBlob()` reads. */
-export function getBlobRow(entity: SNote | SAttachment) {
-    const content = entity.hasStringContent() ? String(entity.getContent()) : null;
-    const utcDateModified = "noteId" in entity ? entity.utcDateModified : entity.getPojo().utcDateModified;
+export function getBlobRow(entity: SNote | BNote | SAttachment | BAttachment) {
+    const raw = entity.hasStringContent() ? entity.getContent() : null;
+    const content = raw instanceof Uint8Array ? decodeUtf8(raw) : raw ?? null;
+    const utcDateModified = ("ownerId" in entity
+        ? entity.getPojo().utcDateModified : entity.utcDateModified) ?? "";
     return {
         blobId: utcDateModified,
         content,
@@ -132,6 +144,73 @@ export function getBlobRow(entity: SNote | SAttachment) {
         dateModified: utcDateModified,
         utcDateModified
     };
+}
+
+/** Whether a note can appear in a hosted view's data, by its ID. */
+export type IsVisibleNote = (noteId: string) => boolean;
+
+/**
+ * The note map of `mapRoot` the app draws, as a tree or as its relations, with only the notes
+ * `isVisible` accepts and the links between them.
+ */
+export function buildVisibleNoteMap(
+    mapRoot: BNote,
+    mapType: "tree" | "link",
+    filters: { excludeRelations: string[]; includeRelations: string[] },
+    isVisible: IsVisibleNote
+) {
+    const map = mapType === "tree" ? buildTreeMap(mapRoot) : buildLinkMap(mapRoot, filters);
+    const notes = map.notes.filter(([ noteId ]) => isVisible(noteId));
+    const noteIds = new Set(notes.map(([ noteId ]) => noteId));
+    return {
+        notes,
+        links: map.links.filter((link) => noteIds.has(link.sourceNoteId) && noteIds.has(link.targetNoteId)),
+        noteIdToDescendantCountMap: Object.fromEntries(Object.entries(map.noteIdToDescendantCountMap)
+            .filter(([ noteId ]) => noteIds.has(noteId)))
+    };
+}
+
+/**
+ * The relations the relation map note `mapNoteId` draws between the notes its `content` places
+ * on the map, of which only those `isVisible` accepts.
+ */
+export function buildVisibleRelationMap(
+    mapNoteId: string,
+    content: string | Uint8Array | null | undefined,
+    isVisible: IsVisibleNote
+) {
+    const noteIds = readPlacedNoteIds(content).filter(isVisible);
+    return buildRelationMap(becca.getNote(mapNoteId), noteIds);
+}
+
+/**
+ * The frontend bundle of the script note `note`, which a render note runs, or `undefined` when
+ * `note` is a backend script, a module is protected, or `isVisible` refuses a note the bundle is
+ * built from, as the bundle carries the source of each.
+ */
+export function buildVisibleScriptBundle(note: BNote, isVisible: IsVisibleNote) {
+    if (note.isJavaScript() && note.getScriptEnv() === "backend") {
+        return undefined;
+    }
+
+    let bundle;
+    try {
+        bundle = scriptService.getScriptBundleForFrontend(note);
+    } catch {
+        // A protected module cannot be read.
+        return undefined;
+    }
+    return bundle && (bundle.allNoteIds ?? []).every(isVisible) ? bundle : undefined;
+}
+
+/** Returns the IDs of the notes a relation map's content places on the map. */
+function readPlacedNoteIds(content: string | Uint8Array | null | undefined) {
+    try {
+        const data = JSON.parse(typeof content === "string" ? content : "") as { notes?: { noteId?: unknown }[] };
+        return (data.notes ?? []).map((entry) => entry.noteId).filter((noteId) => typeof noteId === "string");
+    } catch {
+        return [];
+    }
 }
 
 function getBranchRow(branch: SBranch | BBranch) {

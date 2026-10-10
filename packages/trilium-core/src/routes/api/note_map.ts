@@ -6,7 +6,7 @@ import type { Request } from "../../http_interface";
 
 import { findExcerpts, findLlmChatExcerpts, findMindMapExcerpts } from "../../services/backlink_excerpts";
 
-interface TreeLink {
+export interface TreeLink {
     sourceNoteId: string;
     targetNoteId: string;
 }

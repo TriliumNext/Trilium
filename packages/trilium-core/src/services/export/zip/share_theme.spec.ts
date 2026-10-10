@@ -29,6 +29,13 @@ vi.mock("../../log.js", () => ({ getLog: () => mockLog }));
 const mockOptions = { getOptionOrNull: vi.fn((_name: string): string | null => null) };
 vi.mock("../../options.js", () => ({ default: mockOptions }));
 
+const buildShareData = vi.hoisted(() => vi.fn((..._args: unknown[]) =>
+    new Map([ [ "data/rows.json", "{}" ] ])));
+vi.mock("./share_data.js", async (importOriginal) => ({
+    ...await importOriginal<typeof import("./share_data.js")>(),
+    buildShareData
+}));
+
 const {
     default: ShareThemeExportProvider,
     hasMermaidDiagrams,
@@ -322,6 +329,37 @@ describe("ShareThemeExportProvider", () => {
             expect(appendCalls.map((c) => c.options.name)).not.toContain("index.html");
             // 404 + search-index are still written.
             expect(appendCalls.map((c) => c.options.name)).toContain("404.html");
+        });
+
+        it("writes the data of the app views, with the paths of the notes and attachments", () => {
+            const p = makeProvider();
+            (p as any).indexMeta = null;
+            (p as any).getNoteTargetUrl.mockImplementation((id: string) => `dir/${id}.html`);
+            const rootMeta: any = {
+                noteId: "rootNote",
+                title: "Root",
+                children: [
+                    { noteId: "child", attachments: [
+                        { attachmentId: "att", dataFileName: "child_a b.svg" },
+                        { dataFileName: "untracked.svg" }
+                    ] },
+                    { noteId: "clone", isClone: true, attachments: [
+                        { attachmentId: "cloneAtt", dataFileName: "clone.svg" }
+                    ] }
+                ]
+            };
+
+            p.afterDone(rootMeta);
+
+            expect(findAppend("data/rows.json").data).toBe("{}");
+            const paths = buildShareData.mock.lastCall?.[1] as {
+                getNotePath(noteId: string): string | null;
+                getAttachmentPath(attachmentId: string): string | null;
+            } | undefined;
+            expect(paths?.getNotePath("rootNote")).toBe("");
+            expect(paths?.getNotePath("child")).toBe("dir/child.html");
+            expect(paths?.getAttachmentPath("att")).toBe("dir/child_a%20b.svg");
+            expect(paths?.getAttachmentPath("cloneAtt")).toBeNull();
         });
 
         it("logs an error and skips a font when its data cannot be found", () => {

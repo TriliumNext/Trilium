@@ -3,17 +3,17 @@ import ejs from "ejs";
 import { t } from "i18next";
 
 import becca from "../becca/becca.js";
-import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
-import { buildRelationMap } from "../routes/api/relation-map.js";
 import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
-import scriptService from "../services/script.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { readShareTemplate, renderNoteContent } from "./content_renderer.js";
-import { buildFrocaRows, getAttachmentRow, getBlobRow } from "./froca_payload.js";
+import {
+    buildFrocaRows, buildVisibleNoteMap, buildVisibleRelationMap, buildVisibleScriptBundle,
+    getAttachmentRow, getBlobRow
+} from "./froca_payload.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { isShareReady } from "./share_provider.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
@@ -209,24 +209,10 @@ function getNoteMap(req: ShareRequest): ShareReply {
     }
 
     const toNames = (value: string | string[] | undefined) => [ value ?? [] ].flat();
-    const map = mapType === "tree"
-        ? buildTreeMap(mapRoot)
-        : buildLinkMap(mapRoot, {
-            excludeRelations: toNames(req.query.excludeRelation),
-            includeRelations: toNames(req.query.includeRelation)
-        });
-
-    const notes = map.notes.filter(([ noteId ]) => {
-        const note = shaca.getNote(noteId);
-        return !!note && !note.isProtected && hasCredentialAccess(note, req);
-    });
-    const noteIds = new Set(notes.map(([ noteId ]) => noteId));
-    return jsonReply(200, {
-        notes,
-        links: map.links.filter((link) => noteIds.has(link.sourceNoteId) && noteIds.has(link.targetNoteId)),
-        noteIdToDescendantCountMap: Object.fromEntries(Object.entries(map.noteIdToDescendantCountMap)
-            .filter(([ noteId ]) => noteIds.has(noteId)))
-    });
+    return jsonReply(200, buildVisibleNoteMap(mapRoot, mapType, {
+        excludeRelations: toNames(req.query.excludeRelation),
+        includeRelations: toNames(req.query.includeRelation)
+    }, (noteId) => isReadable(noteId, req)));
 }
 
 /**
@@ -235,13 +221,8 @@ function getNoteMap(req: ShareRequest): ShareReply {
  */
 function getRelationMap(req: ShareRequest): ShareReply {
     const mapNote = checkNoteContentAccess(req.params.noteId ?? "", req);
-    const placedNoteIds = readPlacedNoteIds(mapNote.getContent());
-    const noteIds = placedNoteIds.filter((noteId) => {
-        const note = shaca.getNote(noteId);
-        return !!note && !note.isProtected && hasCredentialAccess(note, req);
-    });
-
-    return jsonReply(200, buildRelationMap(becca.getNote(mapNote.noteId), noteIds));
+    return jsonReply(200, buildVisibleRelationMap(mapNote.noteId, mapNote.getContent(),
+        (noteId) => isReadable(noteId, req)));
 }
 
 /**
@@ -252,38 +233,16 @@ function getRelationMap(req: ShareRequest): ShareReply {
 function getScriptBundle(req: ShareRequest): ShareReply {
     const scriptNote = checkNoteContentAccess(req.params.noteId ?? "", req);
     const note = becca.getNote(scriptNote.noteId);
-    const notFound = jsonReply(404, { message: `Note '${scriptNote.noteId}' has no script to run.` });
-    if (!note || (note.isJavaScript() && note.getScriptEnv() === "backend")) {
-        return notFound;
-    }
-
-    let bundle;
-    try {
-        bundle = scriptService.getScriptBundleForFrontend(note);
-    } catch {
-        // A protected module cannot be read.
-        return notFound;
-    }
-
-    const isReadable = (noteId: string) => {
-        const module = shaca.getNote(noteId);
-        return !!module && !module.isProtected && hasCredentialAccess(module, req);
-    };
-    if (!bundle || !(bundle.allNoteIds ?? []).every(isReadable)) {
-        return notFound;
-    }
-
-    return jsonReply(200, bundle);
+    const bundle = note && buildVisibleScriptBundle(note, (noteId) => isReadable(noteId, req));
+    return bundle
+        ? jsonReply(200, bundle)
+        : jsonReply(404, { message: `Note '${scriptNote.noteId}' has no script to run.` });
 }
 
-/** Returns the IDs of the notes a relation map's content places on the map. */
-function readPlacedNoteIds(content: string | Uint8Array | null | undefined) {
-    try {
-        const data = JSON.parse(typeof content === "string" ? content : "") as { notes?: { noteId?: unknown }[] };
-        return (data.notes ?? []).map((entry) => entry.noteId).filter((noteId) => typeof noteId === "string");
-    } catch {
-        return [];
-    }
+/** Whether the shared note `noteId` is one the caller can read. */
+function isReadable(noteId: string, req: ShareRequest) {
+    const note = shaca.getNote(noteId);
+    return !!note && !note.isProtected && hasCredentialAccess(note, req);
 }
 
 function getNoteAttachments(req: ShareRequest): ShareReply {

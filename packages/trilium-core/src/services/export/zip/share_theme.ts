@@ -1,7 +1,4 @@
-import {
-    getShareThemeGroupFiles, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
-    type ShareThemeManifest
-} from "@triliumnext/commons";
+import { getShareThemeGroupFiles, type ShareThemeManifest } from "@triliumnext/commons";
 import ejs from "ejs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
@@ -15,6 +12,7 @@ import * as iconPackService from "../../icon_packs.js";
 import { getLog } from "../../log.js";
 import options from "../../options.js";
 import { ZipExportProvider, type ZipExportProviderData } from "./abstract_provider.js";
+import { buildShareData, getViewTypeOf, isHostedNote } from "./share_data.js";
 
 /** The static files a share-theme export copies into the archive, read by each platform its own way. */
 export interface ShareThemeExportAssets {
@@ -125,6 +123,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         this.#saveAssets();
         this.#saveIndex(rootMeta);
         this.#save404();
+        this.#saveData(rootMeta);
 
         // Search index
         for (const item of this.searchIndex.values()) {
@@ -184,6 +183,34 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         }
     }
 
+    #saveData(rootMeta: NoteMeta) {
+        const attachmentPaths = new Map<string, string>();
+        const collect = (noteMeta: NoteMeta) => {
+            const notePath = noteMeta.isClone || !noteMeta.noteId
+                ? null : this.getNoteTargetUrl(noteMeta.noteId, rootMeta);
+            const directory = notePath?.slice(0, notePath.lastIndexOf("/") + 1);
+            for (const attachment of notePath === null ? [] : noteMeta.attachments ?? []) {
+                if (attachment.attachmentId) {
+                    attachmentPaths.set(attachment.attachmentId,
+                        `${directory}${encodeURIComponent(attachment.dataFileName)}`);
+                }
+            }
+            for (const child of noteMeta.children ?? []) {
+                collect(child);
+            }
+        };
+        collect(rootMeta);
+
+        const data = buildShareData(this.branch.getNote(), {
+            getNotePath: (noteId) => (noteId === rootMeta.noteId
+                ? "" : this.getNoteTargetUrl(noteId, rootMeta)),
+            getAttachmentPath: (attachmentId) => attachmentPaths.get(attachmentId) ?? null
+        });
+        for (const [ name, content ] of data) {
+            this.archive.append(content, { name });
+        }
+    }
+
     #save404() {
         const content = ejs.render(readShareTemplate("404"), { t });
         this.archive.append(content, { name: "404.html" });
@@ -232,8 +259,12 @@ export function getAppViewGroups(note: BNote) {
             continue;
         }
 
+        if (!isHostedNote(subtreeNote)) {
+            continue;
+        }
+
         const viewType = getViewTypeOf(subtreeNote);
-        if (viewType && SHARE_HOSTED_VIEW_TYPES.includes(viewType)) {
+        if (viewType) {
             groups.add(`view:${viewType}`);
             if (CONTENT_VIEW_TYPES.includes(viewType)) {
                 for (const drawn of getDrawnNotes(subtreeNote)) {
@@ -244,7 +275,7 @@ export function getAppViewGroups(note: BNote) {
                     }
                 }
             }
-        } else if (SHARE_HOSTED_NOTE_TYPES.includes(subtreeNote.type)) {
+        } else {
             groups.add(`type:${subtreeNote.type}`);
         }
     }
@@ -260,11 +291,6 @@ export function getAppViewGroups(note: BNote) {
 
 /** The view types of the collections that draw the content of their notes. */
 const CONTENT_VIEW_TYPES = [ "dashboard", "presentation" ];
-
-/** The view type of a collection, the grid when it names none, or `null` for another note. */
-function getViewTypeOf(note: BNote) {
-    return note.type === "book" ? note.getLabelValue("viewType") || "grid" : null;
-}
 
 /** The notes a dashboard or a presentation draws: its children and, as vertical slides, theirs. */
 function getDrawnNotes(collection: BNote) {
