@@ -12,11 +12,15 @@ import dialog from "../../../services/dialog";
 import { t } from "i18next";
 import { executeBulkActions } from "../../../services/bulk_action";
 
-export default function useColTableEditing(api: RefObject<Tabulator | null>, attributeDetailWidget: AttributeDetailWidget, parentNote: FNote) {
+export default function useColTableEditing(
+    api: RefObject<Tabulator | null>,
+    attributeDetailWidget: AttributeDetailWidget,
+    parentNote: FNote,
+    newAttributePosition: RefObject<number | undefined>
+) {
 
     const existingAttributeToEdit = useRef<Attribute | undefined>(undefined);
     const newAttribute = useRef<Attribute | undefined>(undefined);
-    const newAttributePosition = useRef<number | undefined>(undefined);
 
     useLegacyImperativeHandlers({
         addNewTableColumnCommand({ referenceColumn, columnToEdit, direction, type }: EventData<"addNewTableColumn">) {
@@ -113,7 +117,7 @@ export default function useColTableEditing(api: RefObject<Tabulator | null>, att
         existingAttributeToEdit.current = undefined;
     }
 
-    return { newAttributePosition, resetNewAttributePosition };
+    return { resetNewAttributePosition };
 }
 
 async function deleteColumn(parentNoteId: string, type: "label" | "relation", columnName: string) {

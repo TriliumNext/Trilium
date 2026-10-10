@@ -31,12 +31,12 @@ describe("useData", () => {
     });
 
     /** Runs the hook as the table does, under a parent that can hand it a reload. */
-    function Probe({ note, noteIds }: { note: FNote; noteIds: string[] }) {
-        captured = useData(note, noteIds, undefined, { current: undefined }, resetNewAttributePosition);
+    function Probe({ note, noteIds, isReadOnly }: { note: FNote; noteIds: string[]; isReadOnly?: boolean }) {
+        captured = useData(note, noteIds, undefined, { current: undefined }, resetNewAttributePosition, isReadOnly);
         return null;
     }
 
-    async function mount(note: FNote, noteIds: string[]) {
+    async function mount(note: FNote, noteIds: string[], isReadOnly?: boolean) {
         const parent = {
             componentId: "table-cid",
             registerHandler: (name: string, callback: (data: unknown) => void) => handlers.set(name, callback),
@@ -44,7 +44,7 @@ describe("useData", () => {
         } as unknown as Component;
         await act(async () => render(
             <ParentComponent.Provider value={parent}>
-                <Probe note={note} noteIds={noteIds} />
+                <Probe note={note} noteIds={noteIds} isReadOnly={isReadOnly} />
             </ParentComponent.Provider>,
             container
         ));
@@ -98,6 +98,19 @@ describe("useData", () => {
         const editorParams = statusColumn?.editorParams;
         if (typeof editorParams !== "function") throw new Error("expected the params to be a function");
         expect(editorParams(undefined as never)).toMatchObject({ options: [ "Todo", "Done" ] });
+    });
+
+    it("builds a read-only table's columns without editors and keeps its rows from being dragged", async () => {
+        const { note, noteIds } = collection();
+        await mount(note, noteIds);
+        expect(captured?.columnDefs?.some((column) => column.editor)).toBe(true);
+        expect(captured?.movableRows).toBe(true);
+
+        render(null, container);
+        await mount(note, noteIds, true);
+        expect(captured?.columnDefs?.map((column) => column.field)).toContain("labels.status");
+        expect(captured?.columnDefs?.some((column) => column.editor || column.editorParams)).toBe(false);
+        expect(captured?.movableRows).toBe(false);
     });
 
     it("refreshes only the rows for a row change, leaving the columns be", async () => {

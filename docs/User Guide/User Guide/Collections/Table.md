@@ -86,6 +86,10 @@ It is possible to edit a column by right clicking it and selecting _Edit column.
 
 If the _Name_ field of a column is changed, this will trigger a batch operation in which the corresponding label/relation will be renamed in all the children.
 
+### Read-only tables
+
+On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) table, the cells can't be edited and the rows can't be dragged. The _New row_ and _New column_ buttons are hidden, and the context menus offer only what leaves the notes as they are: sorting and hiding columns, and opening the notes. Columns can still be resized and reordered, but the layout isn't saved.
+
 ## Working with the data
 
 ### Sorting by column
