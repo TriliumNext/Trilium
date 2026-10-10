@@ -21,7 +21,15 @@ export default defineConfig({
             provider: "v8" as const,
             include: [ "entrypoints/**/*.{ts,tsx}", "utils.ts" ],
             exclude: [ "**/*.{test,spec}.{ts,tsx}", "**/*.d.ts" ],
-            reporter: [ "text", "lcov" ]
+            // Repo-root-relative `SF:` paths, so Codecov does not match a bare `utils.ts` or
+            // `entrypoints/…/index.ts` to another project of the monorepo.
+            reporter: [ "text", [ "lcov", { projectRoot: join(import.meta.dirname, "../..") } ] ],
+            thresholds: {
+                lines: 95,
+                statements: 95,
+                functions: 95,
+                branches: 90
+            }
         }
     }
 });

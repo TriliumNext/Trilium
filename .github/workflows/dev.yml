@@ -199,6 +199,30 @@ jobs:
           disable_search: true
           fail_ci_if_error: false
 
+      - name: Run the web clipper tests
+        id: test-web-clipper
+        run: pnpm run --filter=web-clipper test --coverage
+
+      - name: Upload web clipper coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        if: ${{ !cancelled() && steps.test-web-clipper.outcome == 'success' }}
+        with:
+          files: apps/web-clipper/test-output/vitest/coverage/lcov.info
+          flags: web-clipper
+          disable_search: true
+          fail_ci_if_error: false
+
+      - name: Upload web clipper test results to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        if: ${{ !cancelled() && steps.test-web-clipper.outcome != 'skipped' }}
+        with:
+          report_type: test_results
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: apps/web-clipper/test-output/vitest/junit.xml
+          flags: web-clipper
+          disable_search: true
+          fail_ci_if_error: false
+
       - name: Run the codemirror tests
         id: test-codemirror
         run: pnpm run --filter=codemirror test --coverage
@@ -296,7 +320,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Run the rest of the tests
-        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!ckeditor5 --filter=\!codemirror --filter=\!highlightjs --filter=\!pdfjs-viewer --filter=\!share-theme test
+        run: pnpm run --filter=\!client --filter=\!standalone --filter=\!server --filter=\!desktop --filter=\!commons --filter=\!web-clipper --filter=\!ckeditor5 --filter=\!codemirror --filter=\!highlightjs --filter=\!pdfjs-viewer --filter=\!share-theme test
 
   # The two suites below are split out of test_dev so they run concurrently with
   # it (and each other) rather than queueing behind the client/package suites.
