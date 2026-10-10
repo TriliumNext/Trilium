@@ -6,7 +6,7 @@ import {
     ContextualBalloon,
     DropdownView,
     Essentials,
-    IconCancel,
+    IconRemove,
     type ListItemView,
     type ModelElement,
     Paragraph,
@@ -156,7 +156,7 @@ describe("MulticolumnUI", () => {
         setModelData(editor.model, layout("1-3", paragraph("A[]"), paragraph("B")));
         const button = editor.ui.componentFactory.create("removeMulticolumnLayout") as ButtonView;
         expect([button.label, button.icon, button.tooltip])
-            .toEqual(["Remove layout", IconCancel, true]);
+            .toEqual(["Remove layout", IconRemove, true]);
         expect(button.isEnabled).toBe(true);
         const focus = vi.spyOn(editor.editing.view, "focus");
 
@@ -183,6 +183,18 @@ describe("MulticolumnUI", () => {
             return [...row.tiles];
         }
 
+        /** The visible text, the tooltip and the accessible name of the dropdown's button. */
+        function labelsOf(dropdown: DropdownView) {
+            const button = dropdown.buttonView.element;
+            expect(button?.classList.contains("ck-button_with-text")).toBe(true);
+            expect(button?.hasAttribute("aria-labelledby")).toBe(false);
+            return [
+                button?.querySelector(".ck-button__label")?.textContent,
+                dropdown.buttonView.tooltip,
+                button?.getAttribute("aria-label")
+            ];
+        }
+
         it("shows a figure of every layout, with the current one on and focused", () => {
             setModelData(editor.model, layout("1-3", paragraph("A[]"), paragraph("B")));
             const dropdown = createDropdown();
@@ -203,7 +215,8 @@ describe("MulticolumnUI", () => {
             expect(tiles.filter(tile => tile.isOn).map(tile => tile.label))
                 .toEqual(["2 columns (25%-75%)"]);
             expect(document.activeElement).toBe(tiles[1].element);
-            expect(dropdown.buttonView.label).toBe("Column layout");
+            expect(labelsOf(dropdown))
+                .toEqual(["2 columns", "Column layout", "2 columns, Column layout"]);
             expect(dropdown.buttonView.icon).toBe(createLayoutFigure("1-3", 20));
             expect(dropdown.isEnabled).toBe(true);
         });
@@ -218,6 +231,8 @@ describe("MulticolumnUI", () => {
             expect(getModelData(editor.model, { withoutSelection: true }))
                 .toBe(layout("1-2-1", paragraph("A"), paragraph("B"), paragraph("")));
             expect(dropdown.buttonView.icon).toBe(createLayoutFigure("1-2-1", 20));
+            expect(labelsOf(dropdown))
+                .toEqual(["3 columns", "Column layout", "3 columns, Column layout"]);
             expect(dropdown.isOpen).toBe(false);
             expect(focus).toHaveBeenCalled();
         });
@@ -228,6 +243,8 @@ describe("MulticolumnUI", () => {
 
             expect(dropdown.isEnabled).toBe(false);
             expect(dropdown.buttonView.icon).toBe(multicolumnIcon);
+            expect(labelsOf(dropdown))
+                .toEqual(["Column layout", "Column layout", "Column layout"]);
             expect(tilesOf(dropdown).some(tile => tile.isOn)).toBe(false);
         });
     });
@@ -259,8 +276,8 @@ describe("MulticolumnUI", () => {
             const items = [...toolbar.items] as (DropdownView | ButtonView)[];
             const buttons = items.map(item => "buttonView" in item ? item.buttonView : item);
             expect(buttons.map(button => [button.label, button.icon])).toEqual([
-                ["Column layout", createLayoutFigure("1-3", 20)],
-                ["Remove layout", IconCancel]
+                ["2 columns", createLayoutFigure("1-3", 20)],
+                ["Remove layout", IconRemove]
             ]);
         });
 

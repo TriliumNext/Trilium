@@ -1,4 +1,4 @@
-import { Essentials, Paragraph, Table } from "ckeditor5";
+import { _setModelData as setModelData, Essentials, Paragraph, Table } from "ckeditor5";
 import editorStylesheetUrl from "ckeditor5/ckeditor5.css?url";
 import { beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
@@ -102,48 +102,34 @@ describe("multicolumn layout styles", () => {
         }
     });
 
-    it("rounds the widget and the outer corners of the columns, in either direction", async () => {
+    it("rounds the widget and pads its columns only in the editor, without borders", async () => {
         const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
         const editable = editor.ui.view.editable.element as HTMLElement;
         editable.style.width = "800px";
-        editor.setData(layoutHtml("1-1-1-1", ["<p>A</p>", "<p>B</p>", "<p>C</p>", "<p>D</p>"]));
+        editor.editing.view.document.isFocused = true;
+        setModelData(editor.model,
+            "<multicolumnLayout columnRatios=\"1-1\">" +
+                "<multicolumnColumn><paragraph>[]A</paragraph></multicolumnColumn>" +
+                "<multicolumnColumn><paragraph>B</paragraph></multicolumnColumn>" +
+            "</multicolumnLayout>"
+        );
         const widget = editable.querySelector(".trilium-multicolumn-layout");
-
-        expect([widget, ...columnsOf(widget)].map(cornersOf)).toEqual([
-            "8px 8px 8px 8px",
-            "8px 0px 0px 8px",
-            "0px 0px 0px 0px",
-            "0px 0px 0px 0px",
-            "0px 8px 8px 0px"
-        ]);
-
-        const rtlEditor = await createTestEditor([Essentials, Paragraph, Multicolumn], {
-            language: { content: "ar" }
-        });
-        const rtlEditable = rtlEditor.ui.view.editable.element as HTMLElement;
-        rtlEditable.style.width = "800px";
-        rtlEditor.setData(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]));
-        expect(rtlEditable.dir).toBe("rtl");
-        const columns = columnsOf(rtlEditable.querySelector(".trilium-multicolumn-layout"));
-        expect(columns.map(cornersOf)).toEqual(["0px 8px 8px 0px", "8px 0px 0px 8px"]);
-    });
-
-    it("borders and pads the columns only in the editor", async () => {
-        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
-        const editable = editor.ui.view.editable.element as HTMLElement;
-        editable.style.width = "800px";
-        editor.setData(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]));
-        const editingColumns = columnsOf(editable.querySelector(".trilium-multicolumn-layout"));
+        const editingColumns = columnsOf(widget);
 
         const container = renderContent(layoutHtml("1-1", ["<p>A</p>", "<p>B</p>"]), 800);
         const savedColumns = columnsOf(container.querySelector(".trilium-multicolumn-layout"));
 
-        expect(editingColumns).toHaveLength(2);
+        expect(cornersOf(widget)).toBe("8px 8px 8px 8px");
+        expect(editingColumns.map(column =>
+            column.classList.contains("ck-editor__nested-editable_focused")))
+            .toEqual([true, false]);
         expect(savedColumns).toHaveLength(2);
         for (const column of editingColumns) {
             const style = getComputedStyle(column);
-            expect([style.borderTopWidth, style.paddingLeft, style.paddingRight])
-                .toEqual(["1px", "16px", "16px"]);
+            expect([style.borderTopWidth, style.borderLeftWidth, style.boxShadow])
+                .toEqual(["0px", "0px", "none"]);
+            expect([style.paddingLeft, style.paddingRight, cornersOf(column)])
+                .toEqual(["16px", "16px", "0px 0px 0px 0px"]);
         }
         for (const column of savedColumns) {
             const style = getComputedStyle(column);
@@ -151,6 +137,43 @@ describe("multicolumn layout styles", () => {
                 .toEqual(["0px", "0px", "0px"]);
             expect([style.paddingRight, cornersOf(column)]).toEqual(["0px", "0px 0px 0px 0px"]);
         }
+    });
+
+    it("outlines the widget like a selected one while the caret is in a column", async () => {
+        const editor = await createTestEditor([Essentials, Paragraph, Multicolumn]);
+        const editable = editor.ui.view.editable.element as HTMLElement;
+        const viewDocument = editor.editing.view.document;
+        viewDocument.isFocused = true;
+        setModelData(editor.model,
+            "<paragraph>[]Before</paragraph>" +
+            "<multicolumnLayout columnRatios=\"1-1\">" +
+                "<multicolumnColumn><paragraph>A</paragraph></multicolumnColumn>" +
+                "<multicolumnColumn><paragraph>B</paragraph></multicolumnColumn>" +
+            "</multicolumnLayout>"
+        );
+        const widget = editable.querySelector(".trilium-multicolumn-layout") as HTMLElement;
+        const outline = () => {
+            const style = getComputedStyle(widget);
+            return `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor}`;
+        };
+        document.documentElement.style.setProperty("--link-color", "rgb(12, 34, 56)");
+        onTestFinished(() => {
+            document.documentElement.style.removeProperty("--link-color");
+        });
+
+        expect(outline()).toBe("solid 3px rgba(0, 0, 0, 0)");
+
+        editor.model.change(writer => {
+            const root = editor.model.document.getRoot();
+            if (root) {
+                writer.setSelection(writer.createPositionFromPath(root, [1, 1, 0, 0]));
+            }
+        });
+        await expect.poll(outline).toBe("solid 3px rgb(12, 34, 56)");
+
+        viewDocument.isFocused = false;
+        editor.editing.view.forceRender();
+        await expect.poll(outline).toBe("solid 3px rgba(0, 0, 0, 0)");
     });
 
     it("lines the text of saved content up with the content around it, 2em apart", () => {

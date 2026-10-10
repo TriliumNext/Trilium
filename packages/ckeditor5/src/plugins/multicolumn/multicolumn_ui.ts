@@ -5,7 +5,7 @@ import {
     type Command,
     createDropdown,
     focusChildOnDropdownOpen,
-    IconCancel,
+    IconRemove,
     type ListDropdownItemDefinition,
     type Locale,
     Plugin,
@@ -42,7 +42,7 @@ export default class MulticolumnUI extends Plugin {
         const factory = this.editor.ui.componentFactory;
         factory.add("multicolumnLayout", locale => this.createInsertDropdown(locale));
         factory.add("columnLayout", locale => this.createLayoutDropdown(locale));
-        this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconCancel);
+        this.addCommandButton("removeMulticolumnLayout", t("Remove layout"), IconRemove);
     }
 
     public afterInit(): void {
@@ -113,15 +113,26 @@ export default class MulticolumnUI extends Plugin {
         return dropdown;
     }
 
-    /** A dropdown with a figure of every column layout, grouped by column count. */
+    /**
+     * A dropdown with a figure of every column layout, grouped by column count. Its button shows
+     * the figure and the column count of the current layout.
+     */
     private createLayoutDropdown(locale: Locale) {
         const editor = this.editor;
         const label = editor.t("Column layout");
         const command = editor.commands.get("columnLayout") as ColumnLayoutCommand;
+        const getCountLabel = (ratios: string | undefined) =>
+            ratios && editor.t("%0 columns", getColumnCount(ratios));
         const dropdown = createDropdown(locale);
-        dropdown.buttonView.set({ label, tooltip: true });
+        dropdown.buttonView.set({ ariaLabelledBy: undefined, withText: true, tooltip: label });
         dropdown.buttonView.bind("icon").to(command, "value", value =>
             value ? createLayoutFigure(value, BUTTON_ICON_SIZE) : multicolumnIcon);
+        dropdown.buttonView.bind("label").to(command, "value", value =>
+            getCountLabel(value) || label);
+        dropdown.buttonView.bind("ariaLabel").to(command, "value", value => {
+            const countLabel = getCountLabel(value);
+            return countLabel ? `${countLabel}, ${label}` : label;
+        });
         dropdown.bind("isEnabled").to(command, "isEnabled");
 
         const groups = new Map<number, ButtonView[]>();

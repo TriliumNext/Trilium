@@ -1,11 +1,14 @@
 import {
+    enableViewPlaceholder,
     type ModelElement,
     type ModelNode,
     type ModelPosition,
     type ModelWriter,
+    type PlaceholderableViewElement,
     Plugin,
     toWidget,
     toWidgetEditable,
+    type ViewEditableElement,
     type ViewElement,
     Widget
 } from "ckeditor5";
@@ -103,7 +106,15 @@ export default class MulticolumnEditing extends Plugin {
         conversion.for("editingDowncast").elementToElement({
             model: ELEMENTS.column,
             view: (_model, { writer }) => {
-                const section = writer.createEditableElement("section");
+                const section: ViewEditableElement & PlaceholderableViewElement =
+                    writer.createEditableElement("section");
+                section.placeholder = t("Type content here…");
+                enableViewPlaceholder({
+                    view: editor.editing.view,
+                    element: section,
+                    isDirectHost: false,
+                    keepOnFocus: true
+                });
                 return toWidgetEditable(section, writer, { label: t("Column") });
             }
         });

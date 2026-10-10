@@ -1,5 +1,5 @@
 :where(:root) {
-    --multicolumn-layout-border-color: var(--main-border-color, var(--ck-color-base-border));
+    --multicolumn-layout-focus-border-color: var(--link-color, var(--ck-color-focus-border));
     --multicolumn-layout-stacked-background: var(--accented-background-color,
                                                  var(--ck-color-base-foreground));
     --multicolumn-layout-border-radius: 8px;
@@ -50,20 +50,15 @@
         column-gap: 12px;
         border-radius: var(--multicolumn-layout-border-radius);
 
-        & > section {
-            border: 1px solid var(--multicolumn-layout-border-color);
-            border-radius: var(--multicolumn-layout-border-radius);
+        &:has(.ck-editor__nested-editable_focused) {
+            outline: var(--ck-widget-outline-thickness, 3px) solid
+                     var(--multicolumn-layout-focus-border-color);
+        }
+
+        & > section.ck-editor__nested-editable {
+            border: 0;
             padding-inline: 1rem;
-
-            &:not(:first-of-type) {
-                border-start-start-radius: 0;
-                border-end-start-radius: 0;
-            }
-
-            &:not(:last-of-type) {
-                border-start-end-radius: 0;
-                border-end-end-radius: 0;
-            }
+            box-shadow: none;
         }
     }
 }
@@ -73,12 +68,7 @@
         grid-column: 1 / -1;
     }
 
-    .ck-content .trilium-multicolumn-layout.ck-widget > section {
-        border: 0;
-        border-radius: 0;
-
-        &:nth-of-type(even) {
-            background: var(--multicolumn-layout-stacked-background);
-        }
+    .ck-content .trilium-multicolumn-layout.ck-widget > section:nth-of-type(even) {
+        background: var(--multicolumn-layout-stacked-background);
     }
 }
