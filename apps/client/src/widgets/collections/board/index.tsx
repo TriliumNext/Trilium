@@ -38,7 +38,7 @@ import { FormListItem } from "../../react/FormList";
 import FormTextArea from "../../react/FormTextArea";
 import FormTextBox from "../../react/FormTextBox";
 import {
-    useContextualShortcutHints, useLingeringTrue, useNoteContext, useNoteLabel,
+    useContextualShortcutHints, useEffectiveReadOnly, useLingeringTrue, useNoteContext, useNoteLabel,
     useNoteLabelBoolean, useNoteLabelWithDefault, useNoteTypeOptions, useSetContextData,
     useTrackedElement, useTriliumEvent
 } from "../../react/hooks";
@@ -363,6 +363,7 @@ export default function BoardView({
     note: parentNote, noteIds, viewConfig: storedConfig, saveConfig, onOpenNote
 }: ViewModeProps<BoardViewData>) {
     const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(parentNote, noteContext);
     const [ requestedGroupBy, setRequestedGroupBy ] =
         useNoteLabelWithDefault(parentNote, "board:groupBy", DEFAULT_GROUP_BY);
     /**
@@ -605,6 +606,7 @@ export default function BoardView({
     // pane other than the focused one.
     api.noteContext = noteContext;
     api.onOpenNote = onOpenNote;
+    api.isReadOnly = isReadOnly;
     // Every member is one of useState's own setters, so this value is built once and never changes
     // identity -- a drag cannot reach anything that reads only this.
     const collapseAllColumns = useCallback(() => {
@@ -622,7 +624,8 @@ export default function BoardView({
     const openBoardMenu = useCallback((event: ContextMenuEvent) => {
         // Only the ground the columns stand on. A column and a card answer for their own presses,
         // and what they leave alone, such as the button that makes a card, is left alone here too.
-        if ((event.target as HTMLElement)?.closest(".board-column, .board-add-column")) {
+        // Every entry of the board's menu changes the board.
+        if (isReadOnly || (event.target as HTMLElement)?.closest(".board-column, .board-add-column")) {
             return;
         }
 
@@ -634,7 +637,7 @@ export default function BoardView({
             onCollapseAll: collapseAllColumns,
             onExpandAll: expandAllColumns
         });
-    }, [ api, collapseAllColumns, expandAllColumns, inboxEnabled, includeArchived ]);
+    }, [ api, collapseAllColumns, expandAllColumns, inboxEnabled, includeArchived, isReadOnly ]);
 
     // Read from the api rather than from the prop, since a pick moves the api's own copy ahead of
     // the board's; keyed on the prop so that a change from anywhere else is followed too.
@@ -1525,14 +1528,14 @@ export default function BoardView({
 
                         </div>
 
-                        <AddNewColumn
+                        {!isReadOnly && <AddNewColumn
                             api={api}
                             isInRelationMode={isInRelationMode}
                             columnCount={shownColumns.length}
                             onCreated={setCreatedColumn}
                             isCreating={isCreatingColumn}
                             setIsCreating={setIsCreatingColumn}
-                        />
+                        />}
                         {/* Where what is being carried is put. Preact draws the layer and never
                             its contents, so the copy is not among the children it places. */}
                         <div className="board-drag-layer" />

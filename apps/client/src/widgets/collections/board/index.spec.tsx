@@ -5600,3 +5600,90 @@ describe("Column toolbar on mobile", () => {
         show.mockRestore();
     });
 });
+
+describe("BoardView, read-only", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        saved.length = 0;
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    async function setup() {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            "#readOnly": "",
+            children: [
+                { id: "roCard1", title: "First", "#status": "To Do" },
+                { id: "roCard2", title: "Second", "#status": "Done" }
+            ]
+        });
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={new Component()}>
+                    <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+        return mountPoint;
+    }
+
+    /** The titles of the entries of the menu last shown. */
+    const menuTitles = (show: { mock: { calls: unknown[][] } }) =>
+        ((show.mock.calls.at(-1)?.[0] as { items: { title?: string }[] } | undefined)?.items ?? [])
+            .map((item) => item.title);
+
+    it("offers no way to add a card or a column, nor to rename either", async () => {
+        const board = await setup();
+        const column = board.querySelector<HTMLElement>(".board-column");
+        const card = board.querySelector<HTMLElement>(".board-note");
+        expect(column === null || card === null).toBe(false);
+
+        expect(board.querySelector(".board-new-item")).toBeNull();
+        expect(board.querySelector(".board-add-column")).toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon.static")).not.toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon button")).toBeNull();
+
+        await act(async () => {
+            if (column) startEditingTitle(column);
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "F2", bubbles: true }));
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await flush();
+        });
+        expect(board.querySelector(".board-column h3.editing")).toBeNull();
+        expect(board.querySelectorAll(".board-note.editing, .board-new-item").length).toBe(0);
+    });
+
+    it("keeps only the entries that change nothing in the menus, and shows none for the board", async () => {
+        const board = await setup();
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+        await withTabManager(async () => {
+            board.querySelector(".board-note")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        });
+        const cardMenu = menuTitles(show);
+        expect(cardMenu).toContain("board_view.copy-reference");
+        expect(cardMenu).not.toContain("board_view.edit-title");
+        expect(cardMenu).not.toContain("board_view.delete-note");
+
+        board.querySelector(".board-column h3")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(menuTitles(show)).toEqual([ "board_view.copy-reference" ]);
+
+        const calls = show.mock.calls.length;
+        board.querySelector(".board-view-container")
+            ?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(show.mock.calls.length).toBe(calls);
+    });
+});

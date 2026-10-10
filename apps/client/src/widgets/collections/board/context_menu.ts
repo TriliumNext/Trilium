@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 
 import type { CommandNames } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import contextMenu, { ContextMenuEvent, MenuItem } from "../../../menus/context_menu";
+import contextMenu, { ContextMenuEvent, MenuHandler, MenuItem } from "../../../menus/context_menu";
 import { getArchiveMenuItems, menuName } from "../../../menus/context_menu_utils";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
@@ -66,6 +66,18 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
 
     // What the column is, which a collapsed column that is not the inbox has nothing of. Kept in
     // a group of its own only while it holds something, or the menu opens on a divider.
+    const copyReference: MenuItem<string> = {
+        title: t("board_view.copy-reference"),
+        uiIcon: "bx bx-copy",
+        handler: async () => copyReferenceWithToast(await api.getColumnReference(column.value))
+    };
+
+    // Everything else the menu offers changes the board.
+    if (api.isReadOnly) {
+        contextMenu.show({ x: event.pageX, y: event.pageY, items: [ copyReference ], selectMenuItemHandler() {} });
+        return;
+    }
+
     const identity: MenuItem<string>[] = [
         ...(column.canRename ? [ {
             title: t("board_view.rename-column"),
@@ -79,11 +91,7 @@ export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column:
             checked: column.nested,
             handler: () => api.setInboxNested(!column.nested)
         } ] : []),
-        {
-            title: t("board_view.copy-reference"),
-            uiIcon: "bx bx-copy",
-            handler: async () => copyReferenceWithToast(await api.getColumnReference(column.value))
-        }
+        copyReference
     ];
 
     contextMenu.show({
@@ -555,26 +563,34 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
     const identity: MenuItem<CommandNames>[] = !isSingle ? [] : [
         // Space opens the same popup for the card the cursor stands on.
         { ...link_context_menu.getQuickEditItem(), shortcut: "Space" },
-        {
+        ...(api.isReadOnly ? [] : [ {
             title: t("board_view.edit-title"),
             uiIcon: "bx bx-rename",
             shortcut: "F2",
             handler: () => api.startEditing(branchId)
-        },
+        } ]),
         link_context_menu.getOpenNoteItem(event),
         {
             title: t("board_view.copy-reference"),
             uiIcon: "bx bx-copy",
             handler: () => copyReferenceWithToast(api.getCardReference(note.noteId))
-        },
-        { kind: "separator" }
+        }
     ];
+    const selectMenuItemHandler: MenuHandler<CommandNames> = ({ command }) =>
+        link_context_menu.handleLinkContextMenuItem(command, event, note.noteId);
+
+    // What a read-only board's menu keeps: the card's own entries, which change nothing.
+    if (api.isReadOnly) {
+        contextMenu.show({ x: event.pageX, y: event.pageY, items: identity, selectMenuItemHandler });
+        return;
+    }
 
     contextMenu.show({
         x: event.pageX,
         y: event.pageY,
         items: [
             ...identity,
+            ...(identity.length ? [ { kind: "separator" } as MenuItem<CommandNames> ] : []),
             ...placement,
             { kind: "header", title: api.getStatusLabel() },
             ...buildColumnItems(api, target),
@@ -606,7 +622,7 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
                     : CardsColorPicker({ notes })
             }
         ],
-        selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, event, note.noteId),
+        selectMenuItemHandler
     });
 }
 

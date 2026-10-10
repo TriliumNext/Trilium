@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Fragment, TargetedMouseEvent, TargetedWheelEvent } from "preact";
-import { flushSync } from "preact/compat";
+import { flushSync, lazy, Suspense } from "preact/compat";
 import {
     useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState
 } from "preact/hooks";
@@ -17,7 +17,6 @@ import { isMobile } from "../../../services/utils";
 import { DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
 import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
-import { IconPickerButton } from "../../react/IconPicker";
 import { useIsOnScreen, useLingeringTrue, useStaticTooltip } from "../../react/hooks";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
@@ -463,7 +462,7 @@ export default function Column({
     }, [ column, isActive, isPeeked, setActiveColumn ]);
 
     // Only for a sorted column. The arrow shows which way the order runs.
-    const sortButton = sort && (
+    const sortButton = sort && !api.isReadOnly && (
         <ActionButton
             className="column-sort"
             icon={sort.isDescending ? "bx bx-sort-down" : "bx bx-sort-up"}
@@ -531,6 +530,10 @@ export default function Column({
     }, [ color ]);
 
     const handleTitleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (api.isReadOnly) {
+            return;
+        }
+
         if (e.key === "F2" && !isCollapsed) {
             setColumnNameToEdit(column);
         }
@@ -556,7 +559,7 @@ export default function Column({
                 beginInsert(0);
             }
         }
-    }, [ beginInsert, beginNewItem, collapse, column, isCollapsed, isSorted ]);
+    }, [ api, beginInsert, beginNewItem, collapse, column, isCollapsed, isSorted ]);
 
     const overlayHost = useContext(BoardOverlayHostContext);
     /** Whether the heading holds the focus, which on mobile floats the column's rail. */
@@ -664,7 +667,7 @@ export default function Column({
 
     // The field a card is inserted in, drawn where the reader asked for the card. The same field
     // as the one below the column, so a card is made the same way wherever it goes.
-    const insertField = insertBefore && (
+    const insertField = insertBefore && !api.isReadOnly && (
         <AddNewItem
             api={api}
             cardTemplates={cardTemplates}
@@ -775,15 +778,19 @@ export default function Column({
                 ) : (<>
                 {/* In relation mode the column is a note, and NoteLink already shows that note's
                     own icon, which is not the board's to change. */}
-                {!isInRelationMode && (
-                    <IconPickerButton
-                        className="column-icon"
-                        icon={api.getColumnIcon(column) ?? DEFAULT_COLUMN_ICON}
-                        title={t("board_view.change-column-icon")}
-                        onSelect={(picked) => api.setColumnIcon(column, picked)}
-                        onReset={icon ? () => api.setColumnIcon(column, undefined) : undefined}
-                    />
-                )}
+                {!isInRelationMode && (api.isReadOnly
+                    ? <StaticColumnIcon api={api} column={column} />
+                    : (
+                        <Suspense fallback={<StaticColumnIcon api={api} column={column} />}>
+                            <IconPickerButton
+                                className="column-icon"
+                                icon={api.getColumnIcon(column) ?? DEFAULT_COLUMN_ICON}
+                                title={t("board_view.change-column-icon")}
+                                onSelect={(picked) => api.setColumnIcon(column, picked)}
+                                onReset={icon ? () => api.setColumnIcon(column, undefined) : undefined}
+                            />
+                        </Suspense>
+                    ))}
 
                 {!isEditing ? (
                     <>
@@ -866,7 +873,7 @@ export default function Column({
                 <div ref={roomRef} className="board-drop-room" />
             </div>}
 
-            {isRailDrawn && overlayHost.current && (
+            {isRailDrawn && overlayHost.current && !api.isReadOnly && (
                 <ColumnToolbar
                     host={overlayHost.current}
                     isLeaving={!isRailShown}
@@ -877,7 +884,7 @@ export default function Column({
                     onFocusOut={handleHeaderFocusOut}
                 />
             )}
-            {!isCollapsed && <AddNewItem
+            {!isCollapsed && !api.isReadOnly && <AddNewItem
                 api={api}
                 cardTemplates={cardTemplates}
                 column={column}
@@ -888,6 +895,18 @@ export default function Column({
             />}
         </div>
     );
+}
+
+/**
+ * Loaded once a column can change its icon, so a read-only board never loads the picker and the
+ * grid of every icon pack it brings.
+ */
+const IconPickerButton = lazy(() => import("../../react/IconPicker")
+    .then(({ IconPickerButton: button }) => ({ default: button })));
+
+/** The column's icon on its ring, as the picker's button draws it, for a column that cannot change it. */
+function StaticColumnIcon({ api, column }: { api: BoardApi; column: string }) {
+    return <Icon className="column-icon static" icon={api.getColumnIcon(column) ?? DEFAULT_COLUMN_ICON} />;
 }
 
 /**

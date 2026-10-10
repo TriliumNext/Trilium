@@ -147,6 +147,8 @@ export default class BoardApi {
     noteContext: NoteContext | null | undefined;
     /** Opens a note where the board's host shows notes, in place of the quick edit popup. */
     onOpenNote: ((noteId: string) => void) | undefined;
+    /** Whether the board only shows its cards, set by the board on every render. */
+    isReadOnly = false;
 
     /**
      * Stands in for the stored collapse flags while a filter is on, set by the board on every
@@ -1486,7 +1488,9 @@ export default class BoardApi {
     }
 
     startEditing(branchId: string) {
-        this.setBranchIdToEdit(branchId);
+        if (!this.isReadOnly) {
+            this.setBranchIdToEdit(branchId);
+        }
     }
 
     dismissEditingTitle() {

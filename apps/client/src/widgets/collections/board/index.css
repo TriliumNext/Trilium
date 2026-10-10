@@ -288,6 +288,18 @@ body.mobile .board-view-container .board-add-column {
   margin-inline-end: 0.4em;
 }
 
+.board-view-container .board-column h3 > .column-icon.static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(1em + var(--note-icon-container-padding-size) * 2);
+  height: calc(1em + var(--note-icon-container-padding-size) * 2);
+  border-radius: 50%;
+  background: var(--note-icon-custom-background-color, var(--note-icon-background-color));
+  color: var(--note-icon-custom-color, var(--note-icon-color));
+  font-size: var(--note-icon-size);
+}
+
 .board-view-container .board-column h3 > .column-icon button.note-icon {
   /* Cap height rather than the glyph box, so the icon sits on the title's own line. */
   line-height: 1;
