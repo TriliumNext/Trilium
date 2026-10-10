@@ -59,7 +59,11 @@
 </aside>
 <h2>Configuration</h2>
 <p>The extension needs to connect to a running Trilium instance. By default,
-  it scans a port range on the local computer to find a desktop Trilium instance.</p>
+  it looks for the desktop application on port 37840 of the local computer.
+  If the desktop application runs on a different port (for example because
+  it was started with the <code>TRILIUM_PORT</code> environment variable),
+  enter that port in the extension's options. The extension checks for Trilium
+  again every minute, or right away when pressing <em>check</em> in its popup.</p>
 <p>It's also possible to configure the <a href="#root/_help_WOcw2SLH6tbX">server</a> address
   if you don't run the desktop application, or want it to work without the
   desktop application running.</p>

@@ -52,7 +52,7 @@ To set custom shortcuts, follow the directions for your browser.
 
 ## Configuration
 
-The extension needs to connect to a running Trilium instance. By default, it scans a port range on the local computer to find a desktop Trilium instance.
+The extension needs to connect to a running Trilium instance. By default, it looks for the desktop application on port 37840 of the local computer. If the desktop application runs on a different port (for example because it was started with the `TRILIUM_PORT` environment variable), enter that port in the extension's options. The extension checks for Trilium again every minute, or right away when pressing _check_ in its popup.
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
 
