@@ -998,7 +998,9 @@ function hostInAppView(
             ? `${exportHosting.basePath}assets`
             : `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
         // The note the app would show the note below, such as the root of a note map note's map.
-        parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null
+        parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null,
+        // On a page of the export, the views read their notes from the files under `data/`.
+        exportBasePath: exportHosting?.basePath
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
     result.isAppView = true;

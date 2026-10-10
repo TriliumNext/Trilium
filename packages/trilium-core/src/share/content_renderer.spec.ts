@@ -1756,6 +1756,7 @@ describe("content_renderer pages", () => {
         const payload = JSON.parse(page.querySelector("script.share-froca")?.textContent ?? "{}");
         expect(payload.notes.map((note: { noteId: string }) => note.noteId)).toEqual([ "lockedBoard", "openCard" ]);
         expect(payload.attributes.map((attribute: { name: string }) => attribute.name)).toEqual([ "viewType" ]);
+        expect("exportBasePath" in payload).toBe(false);
     });
 
     it("lists the subpages of a collection whose template makes it a list", () => {
@@ -1955,6 +1956,7 @@ describe("content_renderer pages", () => {
         expect(payload.branches.map((row: { noteId: string }) => row.noteId))
             .toStrictEqual([ "hostEvent" ]);
         expect(payload.assetPath).toBe("../assets");
+        expect(payload.exportBasePath).toBe("../");
 
         // Without the export's links, a page keeps the content rendered for it.
         const staticPage = parse(String(renderNoteForExport(calendar, branch, "../", [], [])));

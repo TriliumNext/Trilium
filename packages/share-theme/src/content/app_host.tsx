@@ -4,13 +4,16 @@ import TabManager from "@triliumnext/client/src/components/tab_manager.js";
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import linkContextMenu from "@triliumnext/client/src/menus/link_context_menu.js";
 import froca from "@triliumnext/client/src/services/froca.js";
+import type { FrocaSource, SubtreeResponse } from "@triliumnext/client/src/services/froca-interface.js";
 import { parseNavigationStateFromUrl } from "@triliumnext/client/src/services/link.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
 import type { ComponentChildren } from "preact";
 import { useLayoutEffect, useState } from "preact/hooks";
 
-import { createShareFrocaSource, type ShareFrocaRows } from "./share_froca_source.js";
+import {
+    createShareFrocaSource, createStaticFrocaSource, type ShareFrocaRows, type StaticFrocaSource
+} from "./share_froca_source.js";
 
 /** What core embeds next to an app view on a shared page. */
 export interface AppPayload extends ShareFrocaRows {
@@ -19,6 +22,11 @@ export interface AppPayload extends ShareFrocaRows {
     assetPath: string;
     /** The parent of the note on the share, which the note is shown below. */
     parentNoteId: string | null;
+    /**
+     * On a page of the static export, the path of the export's root from the page, such as
+     * `../`, under which the notes the views read are files instead of the share's API.
+     */
+    exportBasePath?: string;
 }
 
 export interface HostedApp {
@@ -30,6 +38,8 @@ export interface HostedApp {
     openNote(noteId: string): void;
     /** Whether the note has a shared page to open. */
     hasLink(noteId: string): boolean;
+    /** On a page of the static export, the source that resolves the views' image URLs. */
+    staticSource?: StaticFrocaSource;
 }
 
 interface ShareAppHostProps {
@@ -42,12 +52,20 @@ interface ShareAppHostProps {
  * Hosts app views on a shared page: fills `options` and froca from `payload`, has froca read any
  * other note from the share, marks the note `#readOnly` so the views leave out their editing
  * controls, starts the part of `appContext` the views rely on and mounts them under a component of
- * their own, as the app mounts every view. A click on a link into the note tree the views render,
+ * their own, as the app mounts every view. On a page of the static export, froca first takes every
+ * note of the export, so a collection a view draws has its children. A click on a link into the note tree the views render,
  * which the app's link handler opens in the app, opens the note's shared page.
  */
 export default function ShareAppHost({ noteId, payload, children }: ShareAppHostProps) {
     const [ app ] = useState(() => loadPayload(noteId, payload));
     const [ component ] = useState(() => new Component());
+    const [ isLoaded, setLoaded ] = useState(!app?.staticSource);
+
+    useLayoutEffect(() => {
+        if (app?.staticSource) {
+            void froca.reloadNotes([ app.note.noteId ]).then(() => setLoaded(true));
+        }
+    }, [ app ]);
 
     useLayoutEffect(() => {
         startAppContext();
@@ -61,10 +79,14 @@ export default function ShareAppHost({ noteId, payload, children }: ShareAppHost
         }
         const onClick = (event: MouseEvent) => openNoteLink(event, app);
         document.addEventListener("click", onClick);
-        return () => document.removeEventListener("click", onClick);
+        const stopImages = app.staticSource && watchImageUrls(app.staticSource);
+        return () => {
+            document.removeEventListener("click", onClick);
+            stopImages?.();
+        };
     }, [ app ]);
 
-    return app && (
+    return app && isLoaded && (
         <ParentComponent.Provider value={component}>
             {children(app)}
         </ParentComponent.Provider>
@@ -76,10 +98,12 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
     options.load(Object.fromEntries(Object.entries(optionValues)
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
-    froca.setSource(createShareFrocaSource(links));
+    const staticSource = payload.exportBasePath === undefined
+        ? undefined : createStaticFrocaSource(links, payload.exportBasePath);
+    froca.setSource(withRootAnchors(staticSource ?? createShareFrocaSource(links)));
     linkContextMenu.setShareLinkResolver((linkedNoteId) => links[linkedNoteId] ?? null);
     froca.addResp({
-        ...rows,
+        ...anchorAtRoot(rows),
         attributes: [ ...rows.attributes, {
             attributeId: `${noteId}-share-readOnly`,
             noteId,
@@ -105,8 +129,81 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
                 window.location.href = link;
             }
         },
-        hasLink: (linkedNoteId) => !!links[linkedNoteId]
+        hasLink: (linkedNoteId) => !!links[linkedNoteId],
+        staticSource
     };
+}
+
+/** Has `source` answer every note it loads with {@link anchorAtRoot}. */
+function withRootAnchors(source: FrocaSource): FrocaSource {
+    return { ...source, loadNotes: async (noteIds) => anchorAtRoot(await source.loadNotes(noteIds)) };
+}
+
+/**
+ * Places each note of `rows` that has no parent among them below a stand-in `root`, which a
+ * page holds none of, so that each note has a path, which a collection a view draws needs to mount.
+ * The built-in templates, such as `_template_calendar`, stay outside the tree.
+ */
+function anchorAtRoot<T extends SubtreeResponse>(rows: T): T {
+    const childNoteIds = new Set(rows.branches.map((branch) => branch.noteId));
+    const orphans = rows.notes.filter((note) =>
+        !childNoteIds.has(note.noteId) && note.noteId !== "root" && !note.noteId.startsWith("_"));
+    const rootRows = froca.getNoteFromCache("root") ? [] : [ {
+        noteId: "root", title: "root", isProtected: false, type: "text" as const,
+        mime: "text/html", blobId: ""
+    } ];
+    return {
+        ...rows,
+        notes: [ ...rootRows, ...rows.notes ],
+        branches: [ ...rows.branches, ...orphans.map((note) => ({
+            branchId: `root_${note.noteId}`,
+            noteId: note.noteId,
+            parentNoteId: "root",
+            notePosition: 0,
+            fromSearchNote: false
+        })) ]
+    };
+}
+
+/**
+ * Points the images the views draw in `#content` from the app's API, such as a card's
+ * `api/images/<noteId>/…`, at their files in the static export, as they are added or changed.
+ * Returns the function that stops watching.
+ */
+function watchImageUrls(source: StaticFrocaSource) {
+    const root = document.getElementById("content") ?? document.body;
+    const update = async (image: HTMLImageElement) => {
+        const src = image.getAttribute("src");
+        const resolved = src ? await source.resolveImageUrl(src) : null;
+        if (resolved && image.getAttribute("src") === src) {
+            image.setAttribute("src", resolved);
+        }
+    };
+    const updateWithin = (node: Node) => {
+        if (node instanceof HTMLImageElement) {
+            void update(node);
+        } else if (node instanceof Element) {
+            for (const image of node.querySelectorAll("img")) {
+                void update(image);
+            }
+        }
+    };
+
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.type === "attributes") {
+                updateWithin(mutation.target);
+            }
+            for (const node of mutation.addedNodes) {
+                updateWithin(node);
+            }
+        }
+    });
+    observer.observe(root, {
+        childList: true, subtree: true, attributes: true, attributeFilter: [ "src" ]
+    });
+    updateWithin(root);
+    return () => observer.disconnect();
 }
 
 /**
