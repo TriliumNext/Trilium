@@ -329,10 +329,10 @@ function LinkWithNoteForm({ onBack }: { onBack: () => void }) {
                 {" "}Keep page title as note title
             </label>
 
-            <div className="save-link-with-note-buttons">
-                <span className="hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save</span>
-                <button type="submit" className="btn btn-primary" onClick={save}>Save</button>
-            </div>
+            <button type="submit" className="btn btn-primary primary-action" onClick={save}>
+                <span className="action-label">Save</span>
+                <Shortcut keys="Ctrl+Enter" />
+            </button>
         </div>
     );
 }

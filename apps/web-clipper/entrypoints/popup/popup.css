@@ -194,18 +194,6 @@ body {
         }
     }
 
-    .save-link-with-note-buttons {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-
-        .hint {
-            color: var(--muted-text-color);
-            font-size: 0.9em;
-        }
-    }
-
     .connection {
         display: flex;
         align-items: center;

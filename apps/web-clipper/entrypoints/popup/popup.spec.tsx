@@ -234,7 +234,9 @@ describe("popup", () => {
         expect(captureButtons()).toHaveLength(0);
         expect(container.querySelector(".view-header h4")?.textContent).toBe("Link with a note");
         expect(textArea?.placeholder).toBe("The first sentence becomes the note's title, the rest its text.");
-        expect(container.querySelector(".hint")?.textContent).toBe("Ctrl+Enter to save");
+        expect(shortcutOf("Save")).toBe("Ctrl+Enter");
+        expect(button("Save")?.querySelectorAll("kbd")).toHaveLength(1);
+        expect(container.querySelector(".hint")).toBeNull();
 
         await click("Back");
         expect(container.querySelector("textarea")).toBeNull();
