@@ -485,6 +485,28 @@ describe("background", () => {
             expect(await lastToast()).toMatchObject({ noteId: "saved", tabIds: [ 1, 2, 4, 5 ] });
         });
 
+        it("skips tabs without a URL and escapes the titles", async () => {
+            tabs = [
+                { id: 1, title: "Loading" },
+                { id: 2, title: "<b>Bold</b> & \"quoted\"", url: "https://a.com/?x=1&y=\"2\"" },
+                { id: 3, url: "https://a.com/untitled" }
+            ];
+
+            await onCommand("saveTabs");
+
+            expect(lastPayload()).toEqual({
+                title: "2 browser tabs: a.com",
+                content: "<ul><li><a href=\"https://a.com/?x=1&amp;y=&quot;2&quot;\">"
+                    + "&lt;b&gt;Bold&lt;/b&gt; &amp; &quot;quoted&quot;</a></li>"
+                    + "<li><a href=\"https://a.com/untitled\">https://a.com/untitled</a></li></ul>",
+                clipType: "tabs"
+            });
+            expect(await lastToast()).toMatchObject({
+                message: "2 links have been saved to Trilium.",
+                tabIds: [ 2, 3 ]
+            });
+        });
+
         it("adds no ellipsis for up to three tabs and shows why saving failed", async () => {
             tabs = [
                 { id: 1, title: "A", url: "https://a.com/" },

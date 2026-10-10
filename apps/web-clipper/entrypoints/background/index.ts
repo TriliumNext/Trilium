@@ -246,7 +246,7 @@ export default defineBackground(() => {
             if (await postProcessImage(image)) {
                 downloaded.push(image);
             } else {
-                payload.content = payload.content?.replaceAll(image.imageId, escapeAttribute(image.src));
+                payload.content = payload.content?.replaceAll(image.imageId, escapeHtml(image.src));
             }
         }
 
@@ -342,16 +342,16 @@ export default defineBackground(() => {
         return true;
     }
 
-    async function getTabsPayload(tabs: Browser.tabs.Tab[]) {
+    async function getTabsPayload(tabs: (Browser.tabs.Tab & { url: string })[]) {
         let content = '<ul>';
-        tabs.forEach(tab => {
-            content += `<li><a href="${tab.url}">${tab.title}</a></li>`;
-        });
+        for (const tab of tabs) {
+            content += `<li><a href="${escapeHtml(tab.url)}">${escapeHtml(tab.title ?? tab.url)}</a></li>`;
+        }
         content += '</ul>';
 
         const domainsCount = tabs.map(tab => tab.url)
             .reduce((acc, url) => {
-                const hostname = new URL(url ?? "").hostname;
+                const hostname = new URL(url).hostname;
                 return acc.set(hostname, (acc.get(hostname) || 0) + 1);
             }, new Map());
 
@@ -371,7 +371,8 @@ export default defineBackground(() => {
     }
 
     async function saveTabs() {
-        const tabs = await getWindowTabs();
+        const tabs = (await getWindowTabs())
+            .filter((tab): tab is Browser.tabs.Tab & { url: string } => !!tab.url);
 
         const payload = await getTabsPayload(tabs);
 
@@ -485,7 +486,7 @@ function savedMessage(subject: string, failedImages: number) {
     return `${subject} has been saved to Trilium, but ${images} could not be downloaded.`;
 }
 
-function escapeAttribute(value: string) {
+function escapeHtml(value: string) {
     return value
         .replaceAll("&", "&amp;")
         .replaceAll("\"", "&quot;")
