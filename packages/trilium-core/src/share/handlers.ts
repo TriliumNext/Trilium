@@ -6,6 +6,7 @@ import becca from "../becca/becca.js";
 import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
 import { buildRelationMap } from "../routes/api/relation-map.js";
 import { getCrypto } from "../services/encryption/crypto.js";
+import scriptService from "../services/script.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
@@ -96,6 +97,7 @@ const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/tree": loadTree,
     "/share/api/note-map/:noteId/:mapType": getNoteMap,
     "/share/api/relation-map/:noteId": getRelationMap,
+    "/share/api/script/bundle/:noteId": getScriptBundle,
     "/share/": getShareRoot,
     "/share/:shareId": getShareNote
 };
@@ -236,6 +238,38 @@ function getRelationMap(req: ShareRequest): ShareReply {
     });
 
     return jsonReply(200, buildRelationMap(becca.getNote(mapNote.noteId), noteIds));
+}
+
+/**
+ * Answers the frontend bundle of a shared script note, which a shared render note runs, only when
+ * every note it is built from is one a visitor of the share can read, as the bundle carries the
+ * source of each. A backend script has no frontend bundle.
+ */
+function getScriptBundle(req: ShareRequest): ShareReply {
+    const scriptNote = checkNoteContentAccess(req.params.noteId ?? "", req);
+    const note = becca.getNote(scriptNote.noteId);
+    const notFound = jsonReply(404, { message: `Note '${scriptNote.noteId}' has no script to run.` });
+    if (!note || (note.isJavaScript() && note.getScriptEnv() === "backend")) {
+        return notFound;
+    }
+
+    let bundle;
+    try {
+        bundle = scriptService.getScriptBundleForFrontend(note);
+    } catch {
+        // A protected module cannot be read.
+        return notFound;
+    }
+
+    const isReadable = (noteId: string) => {
+        const module = shaca.getNote(noteId);
+        return !!module && !module.isProtected && hasCredentialAccess(module, req);
+    };
+    if (!bundle || !(bundle.allNoteIds ?? []).every(isReadable)) {
+        return notFound;
+    }
+
+    return jsonReply(200, bundle);
 }
 
 /** Returns the IDs of the notes a relation map's content places on the map. */

@@ -10,6 +10,7 @@ import type FBranch from "../entities/fbranch.js";
 import type { FBranchRow } from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import type { FNoteRow } from "../entities/fnote.js";
+import type { Bundle } from "./bundle.js";
 
 /** The relations a note map draws or leaves out, by name; an empty `includeRelations` draws all. */
 export interface NoteMapFilters {
@@ -41,6 +42,8 @@ export interface FrocaSource {
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     /** The relations the relation map note `relationMapNoteId` draws between the notes `noteIds`. */
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
+    /** The frontend bundle of the script note `noteId` and its modules, or nothing if it has none. */
+    getScriptBundle(noteId: string): Promise<Bundle | undefined>;
 }
 
 export interface Froca {
@@ -63,4 +66,5 @@ export interface Froca {
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
+    getScriptBundle(noteId: string): Promise<Bundle | undefined>;
 }

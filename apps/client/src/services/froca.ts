@@ -5,6 +5,7 @@ import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FBlob, { type FBlobRow } from "../entities/fblob.js";
 import FBranch, { type FBranchRow } from "../entities/fbranch.js";
 import FNote, { type FNoteRow } from "../entities/fnote.js";
+import type { Bundle } from "./bundle.js";
 import type { Froca, FrocaSource, NoteMapFilters, SubtreeResponse } from "./froca-interface.js";
 import server from "./server.js";
 import { isPreAuthScreen } from "./utils.js";
@@ -411,6 +412,10 @@ class FrocaImpl implements Froca {
         return this.source.getRelationMap(relationMapNoteId, noteIds);
     }
 
+    getScriptBundle(noteId: string) {
+        return this.source.getScriptBundle(noteId);
+    }
+
     async getBlob(entityType: string, entityId: string): Promise<FBlob | null> {
         // I'm not sure why we're not using blobIds directly, it would save us this composite key ...
         // perhaps one benefit is that we're always requesting the latest blob, not relying on perhaps faulty/slow
@@ -451,7 +456,8 @@ const SERVER_SOURCE: FrocaSource = {
     getNoteMap: (mapRootNoteId, mapType, filters) =>
         server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters),
     getRelationMap: (relationMapNoteId, noteIds) =>
-        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId })
+        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId }),
+    getScriptBundle: (noteId) => server.postWithSilentInternalServerError<Bundle>(`script/bundle/${noteId}`)
 };
 
 const froca = new FrocaImpl();

@@ -1,6 +1,6 @@
 import "./Render.css";
 
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -13,7 +13,7 @@ import FormGroup from "../react/FormGroup";
 import { FormListItem } from "../react/FormList";
 import { useNoteRelation, useTriliumEvent } from "../react/hooks";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import { refToJQuerySelector } from "../react/react_utils";
+import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import RenderErrorCard from "../react/RenderErrorCard";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
@@ -49,11 +49,12 @@ export default function Render(props: TypeWidgetProps) {
 function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [ error, setError ] = useState<{ error: unknown; noteId?: string } | null>(null);
+    const parentComponent = useContext(ParentComponent);
 
     function refresh() {
         if (!contentRef) return;
         setError(null);
-        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }));
+        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }), parentComponent ?? undefined);
     }
 
     useEffect(refresh, [ note ]);

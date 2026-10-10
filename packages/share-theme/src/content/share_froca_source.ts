@@ -36,7 +36,8 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
         },
         // The share reads the notes from the map's own content, so a visitor cannot name others.
         getRelationMap: (relationMapNoteId) =>
-            getJson(`api/relation-map/${encodeURIComponent(relationMapNoteId)}`)
+            getJson(`api/relation-map/${encodeURIComponent(relationMapNoteId)}`),
+        getScriptBundle: (noteId) => getJson(`api/script/bundle/${encodeURIComponent(noteId)}`)
     };
 }
 
