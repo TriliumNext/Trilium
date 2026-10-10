@@ -17,6 +17,41 @@ describe("createShareFrocaSource", () => {
         await source.loadNotes([ "aliased" ]);
         expect(source.getNoteLink("aliased")).toBe("./nice-name");
     });
+
+    it("reads what froca lacks from the share's API, relative to the page", async () => {
+        const fetch = vi.fn(async (url: string) => Response.json(url.startsWith("api/notes?")
+            ? { results: [ { noteId: "found" } ] }
+            : { url }));
+        vi.stubGlobal("fetch", fetch);
+        const source = createShareFrocaSource({});
+
+        await source.getSiblingAttachments("att 1");
+        await source.getAttachments("note 1");
+        await source.getBlob("notes", "note 1");
+        expect(await source.searchNoteIds("tag", "root")).toEqual([ "found" ]);
+        await source.saveAttachment("note 1", {} as never);
+        await source.removeAttachment("att 1");
+        await source.searchInSubtree("#done", "root");
+        await source.getAttributeNames("label", "do");
+        await source.lintSearch("#done");
+        await source.getNoteMap("map 1", "link",
+            { excludeRelations: [ "template" ], includeRelations: [ "author" ] });
+        await source.getRelationMap("rel 1", []);
+        await source.getScriptBundle("script 1");
+
+        expect(fetch.mock.calls.map(([ url ]) => url)).toEqual([
+            "api/attachments/att%201/all",
+            "api/notes/note%201/attachments",
+            "api/notes/note%201/blob",
+            "api/notes?search=tag&ancestorNoteId=root",
+            "api/search?searchString=%23done&ancestorNoteId=root",
+            "api/attribute-names?type=label&query=do",
+            "api/search/lint?searchString=%23done",
+            "api/note-map/map%201/link?excludeRelation=template&includeRelation=author",
+            "api/relation-map/rel%201",
+            "api/script/bundle/script%201"
+        ]);
+    });
 });
 
 describe("createStaticFrocaSource", () => {
