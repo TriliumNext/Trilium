@@ -48,6 +48,8 @@ export interface NavigationItem extends ShareLink {
     isActive: boolean;
     /** Whether the entry is the page being shown or one of its ancestors. */
     isExpanded: boolean;
+    /** How many children the note keeps out of the tree with `#subtreeHidden`, or 0. */
+    hiddenChildCount: number;
     children: NavigationItem[];
 }
 
@@ -472,6 +474,8 @@ export interface NavigationTreeOptions {
     sanitizeUrl: (url: string) => string;
     /** The prefixes of the icon packs available to the page, for the notes' icons. */
     iconPackPrefixes?: string[];
+    /** Whether the note keeps its children out of the tree; none does by default. */
+    isSubtreeHidden?: (note: ShareNote) => boolean;
 }
 
 /**
@@ -479,6 +483,9 @@ export interface NavigationTreeOptions {
  * another as in the note tree. The entries of `activeNote` and of the notes in `ancestorIds` are
  * expanded. Of a cloned `activeNote`, only the entry below exactly the notes in `ancestorIds` is
  * the active one; their order and whether they include `siteRoot` do not matter.
+ *
+ * A note whose subtree is hidden lists none of its children, except the one leading to
+ * `activeNote`, so the page being shown keeps its place in the tree.
  */
 export function getNavigationTree(
     siteRoot: ShareNote, activeNote: ShareNote, ancestorIds: string[], options: NavigationTreeOptions
@@ -488,17 +495,22 @@ export function getNavigationTree(
     const isActive = (note: ShareNote, path: string[]) => note.noteId === activeNote.noteId
         && path.length === activeAncestorIds.size
         && path.every((noteId) => activeAncestorIds.has(noteId));
-    const toItem = (note: ShareNote, path: string[]): NavigationItem => ({
-        ...getShareLink(note, options.sanitizeUrl),
-        noteId: note.noteId,
-        title: note.title,
-        type: note.type,
-        icon: note.getIcon(options.iconPackPrefixes),
-        isActive: isActive(note, path),
-        isExpanded: expandedIds.has(note.noteId),
-        children: note.getVisibleChildNotes()
-            .map((child) => toItem(child, [ ...path, note.noteId ]))
-    });
+    const toItem = (note: ShareNote, path: string[]): NavigationItem => {
+        const children = note.getVisibleChildNotes();
+        const isHidden = children.length > 0 && !!options.isSubtreeHidden?.(note);
+        return {
+            ...getShareLink(note, options.sanitizeUrl),
+            noteId: note.noteId,
+            title: note.title,
+            type: note.type,
+            icon: note.getIcon(options.iconPackPrefixes),
+            isActive: isActive(note, path),
+            isExpanded: expandedIds.has(note.noteId),
+            hiddenChildCount: isHidden ? children.length : 0,
+            children: (isHidden ? children.filter((child) => expandedIds.has(child.noteId)) : children)
+                .map((child) => toItem(child, [ ...path, note.noteId ]))
+        };
+    };
     return siteRoot.getVisibleChildNotes().map((note) => toItem(note, []));
 }
 
@@ -527,18 +539,36 @@ export function getSiteAncestorIds(note: ShareNote, siteRoot: ShareNote) {
 /**
  * Returns the pages before and after `note` when the site starting at `siteRoot` is read in tree
  * order: a page, then its children, then its next sibling. A note in several places follows the
- * first parent inside the site. A note hidden from the tree has neither link.
+ * first parent inside the site. A note hidden from the tree has neither link. `isSubtreeHidden` names
+ * the notes whose children are left out of that order; a page below one of them has neither link.
  */
-export function getPrevNextLinks(note: ShareNote, siteRoot: ShareNote) {
-    const previous = getPreviousPage(note, siteRoot);
-    const next = getNextPage(note, siteRoot);
+export function getPrevNextLinks(
+    note: ShareNote, siteRoot: ShareNote, isSubtreeHidden: (note: ShareNote) => boolean = () => false
+) {
+    if (isInHiddenSubtree(note, siteRoot, isSubtreeHidden)) {
+        return { previous: null, next: null };
+    }
+    const getTreeChildren = (parent: ShareNote) => (isSubtreeHidden(parent) ? [] : parent.getVisibleChildNotes());
+    const previous = getPreviousPage(note, siteRoot, getTreeChildren);
+    const next = getNextPage(note, siteRoot, getTreeChildren);
     return {
         previous: previous && toPageLink(previous),
         next: next && toPageLink(next)
     };
 }
 
-function getPreviousPage(note: ShareNote, siteRoot: ShareNote) {
+/** Whether a note between `note` and `siteRoot` keeps its children out of the tree. */
+function isInHiddenSubtree(note: ShareNote, siteRoot: ShareNote, isSubtreeHidden: (note: ShareNote) => boolean) {
+    for (let position = getSitePosition(note, siteRoot); position;
+        position = getSitePosition(position.parent, siteRoot)) {
+        if (isSubtreeHidden(position.parent)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getPreviousPage(note: ShareNote, siteRoot: ShareNote, getTreeChildren: (note: ShareNote) => ShareNote[]) {
     const position = getSitePosition(note, siteRoot);
     if (!position) {
         return null;
@@ -548,19 +578,19 @@ function getPreviousPage(note: ShareNote, siteRoot: ShareNote) {
     }
 
     let previous = position.siblings[position.index - 1];
-    for (let children = previous.getVisibleChildNotes(); children.length;
-        children = previous.getVisibleChildNotes()) {
+    for (let children = getTreeChildren(previous); children.length;
+        children = getTreeChildren(previous)) {
         previous = children[children.length - 1];
     }
     return previous;
 }
 
-function getNextPage(note: ShareNote, siteRoot: ShareNote) {
+function getNextPage(note: ShareNote, siteRoot: ShareNote, getTreeChildren: (note: ShareNote) => ShareNote[]) {
     const notePosition = getSitePosition(note, siteRoot);
     if (!notePosition && note.noteId !== siteRoot.noteId) {
         return null;
     }
-    const firstChild = note.getVisibleChildNotes()[0];
+    const firstChild = getTreeChildren(note)[0];
     if (firstChild) {
         return firstChild;
     }

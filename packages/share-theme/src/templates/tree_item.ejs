@@ -6,6 +6,7 @@
                 <a class="type-<%= item.type %> no-arrow<%= item.isActive ? " active" : "" %>" href="<%= item.href %>"<% if (item.isExternal) { %> target="_blank" rel="noopener noreferrer"<% } %>>
                     <span class="tn-icon <%= item.icon %>" aria-hidden="true"></span><span class="tree-item-title"><%= item.title %></span>
                 </a>
+                <% if (item.hiddenChildCount) { %><span class="tree-item-hidden-count" title="<%= t("share_theme.hidden-subpages", { count: item.hiddenChildCount }) %>"><%= item.hiddenChildCount %></span><% } %>
             </div>
             <% if (item.isActive && headings.length > 1) { %>
                 <nav class="tree-toc" aria-label="<%= t("share_theme.on-this-page") %>">

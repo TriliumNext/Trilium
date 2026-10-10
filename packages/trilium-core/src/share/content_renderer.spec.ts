@@ -1740,6 +1740,39 @@ describe("content_renderer pages", () => {
         expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
     });
 
+    it("counts a board's cards in the tree in place of listing them, its template hiding them", () => {
+        buildNote({ id: "_template_testBoard", title: "Board template", "#subtreeHidden": "" });
+        const board = buildSitePage({
+            id: "hidingBoard",
+            title: "Board",
+            content: "<p>Board</p>",
+            "~template": "_template_testBoard",
+            children: [
+                { id: "boardCard1", title: "Card 1", content: "<p>1</p>" },
+                { id: "boardCard2", title: "Card 2", content: "<p>2</p>" }
+            ]
+        });
+        const page = parse(String(renderNoteContent(board)));
+        const entry = page.querySelector("#menu li[data-note-id=hidingBoard]");
+        expect(entry?.querySelector(".tree-item-hidden-count")?.textContent).toBe("2");
+        expect(entry?.querySelector(".tree-item-hidden-count")?.getAttribute("title"))
+            .toBe("2 subpages that are hidden from the tree");
+        expect(entry?.querySelector("li") === null).toBe(true);
+
+        const card = parse(String(renderNoteContent(shaca.getNote("boardCard1"))));
+        expect(card.querySelectorAll("#menu li[data-note-id=hidingBoard] li").map((item) =>
+            item.getAttribute("data-note-id"))).toEqual([ "boardCard1" ]);
+
+        const shown = buildSitePage({
+            id: "showingBoard", content: "<p>Board</p>", "#subtreeHidden": "false",
+            "~template": "_template_testBoard",
+            children: [ { id: "shownCard", title: "Card", content: "<p>Card</p>" } ]
+        });
+        const shownPage = parse(String(renderNoteContent(shown)));
+        expect(shownPage.querySelector("#menu .tree-item-hidden-count") === null).toBe(true);
+        expect(shownPage.querySelector("#menu li[data-note-id=shownCard]") === null).toBe(false);
+    });
+
     it("leaves content that is not text as it is, and empty text as empty", () => {
         const binary = Buffer.from("<p>x</p>");
         for (const type of [ "text", "mermaid", "code" ]) {

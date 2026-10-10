@@ -10,7 +10,7 @@ import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumne
 import {
     getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
-    type NavigationItem, type PageHeading
+    type NavigationItem, type PageHeading, type ShareNote
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -262,7 +262,8 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     });
     const navigation = getNavigationTree(siteRoot, note, renderArgs.ancestors, {
         sanitizeUrl: sanitize.sanitizeUrl,
-        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+        isSubtreeHidden
     });
     const childLinks = isFullHeight ? [] : getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
@@ -287,7 +288,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo,
-        prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
+        prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot, isSubtreeHidden),
         navigation,
         childLinks,
         childLinksLayout: getChildLinksLayout(note),
@@ -917,6 +918,20 @@ function getViewType(note: SNote) {
         }
     }
     return null;
+}
+
+/**
+ * Returns whether the note keeps its children out of the tree with `#subtreeHidden`, which a board
+ * has from its built-in template. Shaca holds only shared notes, so becca answers for the template.
+ */
+function isSubtreeHidden(note: ShareNote) {
+    const shared = note as SNote | BNote;
+    if (shared instanceof BNote || shared.hasLabel("subtreeHidden")) {
+        return shared.isLabelTruthy("subtreeHidden");
+    }
+
+    return shared.getOwnedRelations("template").some((relation) => relation.value.startsWith("_template_")
+        && !!becca.getNote(relation.value)?.isLabelTruthy("subtreeHidden"));
 }
 
 /**

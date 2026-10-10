@@ -257,6 +257,29 @@ describe("getPrevNextLinks", () => {
         expect(links(elsewhere)).toStrictEqual([ null, null ]);
     });
 
+    it("leaves the children of a note hiding its subtree out of the order, and links none of them", () => {
+        // board ─┬─ card1 ── detail
+        //        └─ card2
+        const boardSite = fakeNote({ noteId: "boardSite" });
+        const intro = addChild(boardSite, fakeNote({ noteId: "intro" }));
+        const board = addChild(boardSite, fakeNote({ noteId: "board" }));
+        const card1 = addChild(board, fakeNote({ noteId: "card1" }));
+        const detail = addChild(card1, fakeNote({ noteId: "detail" }));
+        addChild(board, fakeNote({ noteId: "card2" }));
+        const outro = addChild(boardSite, fakeNote({ noteId: "outro" }));
+        const isSubtreeHidden = (note: ShareNote) => note.noteId === "board";
+        const boardLinks = (note: ShareNote) => {
+            const { previous, next } = getPrevNextLinks(note, boardSite, isSubtreeHidden);
+            return [ previous?.title ?? null, next?.title ?? null ];
+        };
+
+        expect(boardLinks(intro)).toStrictEqual([ "boardSite", "board" ]);
+        expect(boardLinks(board)).toStrictEqual([ "intro", "outro" ]);
+        expect(boardLinks(outro)).toStrictEqual([ "board", null ]);
+        expect(boardLinks(card1)).toStrictEqual([ null, null ]);
+        expect(boardLinks(detail)).toStrictEqual([ null, null ]);
+    });
+
     it("reads the parents of each note outside the site once, however many paths lead to it", () => {
         // Sixteen layers of two clones each, every clone a child of both clones of the layer above,
         // make 2^16 paths from `page` up to the share root outside the site.
@@ -363,6 +386,28 @@ describe("getNavigationTree", () => {
 
         expect(tree[1].icon).toBe("bx bx-note custom");
         expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
+    });
+
+    it("counts the children of a note hiding its subtree in place of listing them, but the one shown", () => {
+        // board ─┬─ card1 ── detail
+        //        └─ card2
+        const boardSite = fakeNote({ noteId: "boardSite" });
+        const board = addChild(boardSite, fakeNote({ noteId: "board" }));
+        const card1 = addChild(board, fakeNote({ noteId: "card1" }));
+        const detail = addChild(card1, fakeNote({ noteId: "detail" }));
+        addChild(board, fakeNote({ noteId: "card2" }));
+        const options = { sanitizeUrl: (url: string) => url, isSubtreeHidden: (note: ShareNote) => note.noteId === "board" };
+
+        const onBoard = getNavigationTree(boardSite, board, [], options);
+        expect(outline(onBoard)).toStrictEqual([ "board*+" ]);
+        expect(onBoard[0].hiddenChildCount).toBe(2);
+
+        const onDetail = getNavigationTree(boardSite, detail, [ "card1", "board" ], options);
+        expect(outline(onDetail)).toStrictEqual([ [ "board+", [ [ "card1+", [ "detail*+" ] ] ] ] ]);
+        expect(onDetail[0].hiddenChildCount).toBe(2);
+        expect(onDetail[0].children[0].hiddenChildCount).toBe(0);
+        expect(getNavigationTree(boardSite, card1, [ "board" ], { sanitizeUrl: (url: string) => url })[0]
+            .hiddenChildCount).toBe(0);
     });
 
     it("tells whether the page has an entry, which the site root and a hidden note do not", () => {
