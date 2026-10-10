@@ -4,6 +4,7 @@ import becca from "../../../becca/becca.js";
 import { buildNote } from "../../../test/becca_easy_mocking.js";
 import scriptService from "../../script.js";
 import { getSql } from "../../sql/index.js";
+import { encodeUtf8 } from "../../utils/binary.js";
 import { buildShareData, isHostedNote } from "./share_data.js";
 
 describe("buildShareData", () => {
@@ -45,7 +46,7 @@ describe("buildShareData", () => {
         const image = becca.getNoteOrThrow("image");
         image.getContent = () => new Uint8Array([ 1, 2 ]);
         const [ svg ] = becca.getNoteOrThrow("canvas").getAttachments();
-        svg.getContent = () => new TextEncoder().encode("<svg/>");
+        svg.getContent = () => encodeUtf8("<svg/>");
         const bundle = vi.spyOn(scriptService, "getScriptBundleForFrontend")
             .mockReturnValue({ script: "run()", html: "", allNoteIds: [ "script" ] } as never);
         // The fixtures are in becca alone, so the query for the placed notes finds each.
