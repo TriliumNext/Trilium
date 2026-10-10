@@ -317,8 +317,8 @@ importers:
         specifier: 0.19.0
         version: 0.19.0
       maplibre-gl:
-        specifier: 6.12.0
-        version: 6.12.0
+        specifier: 6.13.0
+        version: 6.13.0
       mark.js:
         specifier: 8.11.1
         version: 8.11.1
@@ -363,7 +363,7 @@ importers:
         version: 1.37.0
       terra-draw-maplibre-gl-adapter:
         specifier: 1.4.1
-        version: 1.4.1(maplibre-gl@6.12.0)(terra-draw@1.37.0)
+        version: 1.4.1(maplibre-gl@6.13.0)(terra-draw@1.37.0)
     devDependencies:
       '@ckeditor/ckeditor5-inspector':
         specifier: 5.0.3
@@ -943,8 +943,8 @@ importers:
         specifier: 0.19.0
         version: 0.19.0
       maplibre-gl:
-        specifier: 6.12.0
-        version: 6.12.0
+        specifier: 6.13.0
+        version: 6.13.0
       mark.js:
         specifier: 8.11.1
         version: 8.11.1
@@ -3358,8 +3358,8 @@ packages:
   '@mapbox/vector-tile@3.0.0':
     resolution: {integrity: sha512-Qf10S1uIHMk20ri/IVBnpS+esUEkVaR5Hftmz88jTInrpmWgPGJfPe3LVjjlE77trLx8tH6qjTG7uWH9hIq/0Q==}
 
-  '@maplibre/geojson-vt@6.1.1':
-    resolution: {integrity: sha512-FVMOcmSP/yqol45t7StApEyTL5/vmqBCuFhH9n+fFuINenhaX+YgHHIt1yJ86S8kln3uJLcMvmEU2cfn6E2eCQ==}
+  '@maplibre/geojson-vt@6.1.2':
+    resolution: {integrity: sha512-2ZYhobdAY+y4/P/z1xe0698165LywD0yDdWugdu3NRUrajgVWut+tLkcz7i/RJguMTURwK7gxwmwYMFJbgbQFw==}
 
   '@maplibre/maplibre-gl-style-spec@26.4.4':
     resolution: {integrity: sha512-hG4RZR4PBd/+6A3ODdZ3AnQRF106ZQk1y3bhwDg8bH/A4Oz2tnRUJVVWs9BZa6gXZ1d3UKe89C+Mm+olGBELvA==}
@@ -8543,8 +8543,8 @@ packages:
     resolution: {integrity: sha512-1DiZmDHPXMBgMRjeUtHy1q1VYmeJscHxhIAexX9z/zjRMP80+0ETuPfssi8z+kMY4DwUgsKuHqpjxgmeA9gBNA==}
     engines: {node: '>=18'}
 
-  maplibre-gl@6.12.0:
-    resolution: {integrity: sha512-DwgganVi2BhNxOpD7ob3lJC0dQQz4HfJfuQQV3XxCY3XdOzFrMqp9ylMXhRzryRsOnIezdZcklWXIIs/Q8JPjA==}
+  maplibre-gl@6.13.0:
+    resolution: {integrity: sha512-ELXk4h+xl0URFQEnVbAN6MGn61P6jq4amUWHiskLVsvHCaKdf1Zq6G8UNOD0AQ3UaXoL5ECc8ovz8yqYEBGPKw==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
 
   mark.js@8.11.1:
@@ -13988,7 +13988,7 @@ snapshots:
       '@types/geojson': 7946.0.16
       pbf: 5.1.2
 
-  '@maplibre/geojson-vt@6.1.1':
+  '@maplibre/geojson-vt@6.1.2':
     dependencies:
       kdbush: 4.1.0
 
@@ -20109,13 +20109,13 @@ snapshots:
 
   many-keys-map@3.0.3: {}
 
-  maplibre-gl@6.12.0:
+  maplibre-gl@6.13.0:
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@mapbox/tiny-sdf': 2.2.0
       '@mapbox/unitbezier': 1.0.0
       '@mapbox/vector-tile': 3.0.0
-      '@maplibre/geojson-vt': 6.1.1
+      '@maplibre/geojson-vt': 6.1.2
       '@maplibre/maplibre-gl-style-spec': 26.4.4
       '@maplibre/mlt': 1.3.0
       '@maplibre/vt-pbf': 4.3.2
@@ -22385,9 +22385,9 @@ snapshots:
 
   terminal-size@4.0.1: {}
 
-  terra-draw-maplibre-gl-adapter@1.4.1(maplibre-gl@6.12.0)(terra-draw@1.37.0):
+  terra-draw-maplibre-gl-adapter@1.4.1(maplibre-gl@6.13.0)(terra-draw@1.37.0):
     dependencies:
-      maplibre-gl: 6.12.0
+      maplibre-gl: 6.13.0
       terra-draw: 1.37.0
 
   terra-draw@1.37.0: {}
