@@ -48,7 +48,7 @@ This is a list of labels that Trilium natively supports.
 | `excludeFromExport` | Excludes this note and its children when exporting. |
 | `run`, `runOnInstance`, `runAtHour` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Backend%20Events.md">Backend Events</a>. |
 | `disableInclusion` | Scripts with this label won't be included into parent script execution. |
-| `sorted`, `sortDirection`, `sortFoldersFirst`, `sortNatural`, `sortLocale`, `top`, `bottom` | Manages automatic/permanent sorting. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Sorting%20Notes.md">Sorting Notes</a>. |
+| `sorted`, `sortDirection`, `sortFoldersFirst`, `sortArchivedLast`, `sortNatural`, `sortLocale`, `top`, `bottom` | Manages automatic/permanent sorting. See <a class="reference-link" href="../../Basic%20Concepts%20and%20Features/Notes/Sorting%20Notes.md">Sorting Notes</a>. |
 | `hidePromotedAttributes` | Hide <a class="reference-link" href="Promoted%20Attributes.md">Promoted Attributes</a> on this note. Generally useful when defining inherited attributes, but the parent note doesn't need them. |
 | `readOnly` | Marks a note to always be [read-only](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md), if it's a supported note (text, code, mermaid). |
 | `autoReadOnlyDisabled` | Disables automatic [read-only mode](../../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) for the given note. |

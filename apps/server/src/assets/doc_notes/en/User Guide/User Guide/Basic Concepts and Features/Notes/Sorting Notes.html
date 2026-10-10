@@ -60,6 +60,14 @@
           and the rest will be sorted.</td>
       </tr>
       <tr>
+        <td><code>#sortArchivedLast</code>
+        </td>
+        <td>If <code>sorted</code> is applied, <a href="#root/_help_MKmLg5x6xkor">archived notes</a> will
+          be sorted as a group at the bottom, whatever the <code>#sortDirection</code>,
+          and the rest will be sorted above them. This takes precedence over <code>#top</code> and <code>#bottom</code>,
+          which then only apply within each of the two groups.</td>
+      </tr>
+      <tr>
         <td><code>#sortNatural</code>
         </td>
         <td>Sort numbers naturally instead of alphabetically, so 2 comes before 10.</td>
@@ -86,9 +94,11 @@
   </table>
 </figure>
 <p>Sorting is done by comparing note properties or specific labels on child
-  notes. There are four sorting levels, with the first having the highest
-  priority. Lower priority levels are applied only if higher priority comparisons
-  result in equality.</p>
+  notes. If <code>#sortArchivedLast</code> is set, archived notes are first
+  separated from the rest and placed after them; the levels below then apply
+  within each group. There are four sorting levels, with the first having
+  the highest priority. Lower priority levels are applied only if higher
+  priority comparisons result in equality.</p>
 <ol>
   <li><strong>Top Label Sorting</strong>: Child notes with the <code>#top</code> label
     will appear at the top of the folder.</li>

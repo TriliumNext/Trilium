@@ -15,6 +15,10 @@ import { DefinitionObject } from "@triliumnext/commons";
 
 type Handler = (definition: DefinitionObject, note: BNote, targetNote: BNote) => void;
 
+const SORTING_LABELS = [
+    "sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale", "sortArchivedLast"
+];
+
 function runAttachedRelations(note: BNote, relationName: string, originEntity: AbstractBeccaEntity<any>) {
     if (!note || !isScriptingEnabled()) {
         return;
@@ -55,7 +59,7 @@ eventService.subscribe([eventService.ENTITY_CHANGED, eventService.ENTITY_DELETED
     if (entityName === "attributes") {
         runAttachedRelations(entity.getNote(), "runOnAttributeChange", entity);
 
-        if (entity.type === "label" && ["sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale"].includes(entity.name)) {
+        if (entity.type === "label" && SORTING_LABELS.includes(entity.name)) {
             handleSortedAttribute(entity);
         } else if (entity.type === "label") {
             handleMaybeSortingLabel(entity);
@@ -127,7 +131,7 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
             if (note.getChildNotes().length === 0 && !note.isDescendantOfNote(templateNote.noteId)) {
                 noteService.duplicateSubtreeWithoutRoot(templateNote.noteId, note.noteId);
             }
-        } else if (entity.type === "label" && ["sorted", "sortDirection", "sortFoldersFirst", "sortNatural", "sortLocale"].includes(entity.name)) {
+        } else if (entity.type === "label" && SORTING_LABELS.includes(entity.name)) {
             handleSortedAttribute(entity);
         } else if (entity.type === "label") {
             handleMaybeSortingLabel(entity);
@@ -201,6 +205,30 @@ function handleMaybeSortingLabel(entity: BAttribute) {
             ) {
                 treeService.sortNotesIfNeeded(parentNote.noteId);
             }
+        }
+
+        if (entity.name === "archived") {
+            sortArchivedLastParents(entity, note);
+        }
+    }
+}
+
+function sortArchivedLastParents(entity: BAttribute, note: BNote) {
+    // An inheritable or template `#archived` also archives the notes that inherit it.
+    const affectedNotes = entity.isInheritable
+        ? note.getSubtreeNotesIncludingTemplated()
+        : note.getInheritingNotes();
+    const parentNoteIds = new Set<string>();
+
+    for (const affectedNote of affectedNotes) {
+        for (const parentNote of affectedNote.getParentNotes()) {
+            parentNoteIds.add(parentNote.noteId);
+        }
+    }
+
+    for (const parentNoteId of parentNoteIds) {
+        if (becca.notes[parentNoteId]?.isLabelTruthy("sortArchivedLast")) {
+            treeService.sortNotesIfNeeded(parentNoteId);
         }
     }
 }

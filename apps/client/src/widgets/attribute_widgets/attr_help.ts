@@ -20,6 +20,7 @@ export const ATTR_HELP: AttrHelpMap = {
         sorted: t("attribute_detail.sorted"),
         sortDirection: t("attribute_detail.sort_direction"),
         sortFoldersFirst: t("attribute_detail.sort_folders_first"),
+        sortArchivedLast: t("attribute_detail.sort_archived_last"),
         top: t("attribute_detail.top"),
         hidePromotedAttributes: t("attribute_detail.hide_promoted_attributes"),
         readOnly: t("attribute_detail.read_only"),
