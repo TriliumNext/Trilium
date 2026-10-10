@@ -17,9 +17,12 @@ export interface FrocaRows {
     links: Record<string, string>;
 }
 
-/** The notes a collection view reads, embedded in its page so the view draws without a request. */
-export function buildFrocaPayload(note: SNote) {
-    return buildFrocaRows([ note ]);
+/**
+ * The notes a collection view reads, embedded in its page so the view draws without a request, of
+ * those that `canAccess` lets the visitor read.
+ */
+export function buildFrocaPayload(note: SNote, canAccess?: (note: SNote) => boolean) {
+    return buildFrocaRows([ note ], canAccess);
 }
 
 /**
@@ -28,6 +31,7 @@ export function buildFrocaPayload(note: SNote) {
  * holds only shared notes, so a relation to a note outside the share is left out, as is every note
  * that is protected or that `canAccess` refuses. A built-in template such as `_template_calendar`
  * is read from becca instead, as it lives in the hidden subtree, so the notes inherit its labels.
+ * `#shareCredentials` is always left out, as it holds the password of the notes.
  */
 export function buildFrocaRows(roots: SNote[], canAccess: (note: SNote) => boolean = () => true): FrocaRows {
     const notes = new Map<string, SNote>();
@@ -79,6 +83,9 @@ export function buildFrocaRows(roots: SNote[], canAccess: (note: SNote) => boole
             }
         }
         for (const attribute of included.ownedAttributes) {
+            if (attribute.name === "shareCredentials") {
+                continue;
+            }
             if (attribute.type === "label" || notes.has(attribute.value) || templates.has(attribute.value)) {
                 rows.attributes.push(attribute.getPojo());
             }

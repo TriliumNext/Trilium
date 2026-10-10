@@ -1744,6 +1744,20 @@ describe("content_renderer pages", () => {
         expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
     });
 
+    it("embeds in a hosted view neither the credentials nor the notes the visitor has not presented them for", () => {
+        const board = buildSitePage({
+            id: "lockedBoard", type: "book", content: "", "#viewType": "board", "#shareCredentials": "user:secret",
+            children: [
+                { id: "openCard", title: "Open", content: "<p>Open</p>" },
+                { id: "lockedCard", title: "Locked", content: "<p>Locked</p>", "#shareCredentials": "other:secret" }
+            ]
+        });
+        const page = parse(String(renderNoteContent(board, (note) => note.noteId !== "lockedCard")));
+        const payload = JSON.parse(page.querySelector("script.share-froca")?.textContent ?? "{}");
+        expect(payload.notes.map((note: { noteId: string }) => note.noteId)).toEqual([ "lockedBoard", "openCard" ]);
+        expect(payload.attributes.map((attribute: { name: string }) => attribute.name)).toEqual([ "viewType" ]);
+    });
+
     it("lists the subpages of a collection whose template makes it a list", () => {
         buildNote({ id: "_template_testList", title: "List template", "#viewType": "list" });
         const list = buildSitePage({

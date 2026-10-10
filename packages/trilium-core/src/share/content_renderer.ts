@@ -499,25 +499,25 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderCode(result, note.mime);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
-        hostNoteView(result, note);
+        hostNoteView(result, note, options.canAccessEmbed);
     } else if ([ "image", "canvas", "mindMap" ].includes(note.type)) {
         renderImage(result, note);
-        hostNoteView(result, note);
+        hostNoteView(result, note, options.canAccessEmbed);
     } else if (note.type === "file") {
         renderFile(note, result);
     } else if (note.type === "book" && !(note instanceof BNote)
         && HOSTED_VIEW_TYPES.has(getViewType(note) ?? "")) {
-        renderCollectionView(result, note);
+        renderCollectionView(result, note, options.canAccessEmbed);
     } else if (note.type === "book") {
         result.isEmpty = true;
     } else if (note.type === "webView") {
         renderWebView(note, result);
     } else if ([ "noteMap", "relationMap", "render" ].includes(note.type)) {
         result.content = "";
-        hostNoteView(result, note);
+        hostNoteView(result, note, options.canAccessEmbed);
     } else if (note.type === "spreadsheet") {
         renderSpreadsheet(result);
-        hostNoteView(result, note);
+        hostNoteView(result, note, options.canAccessEmbed);
     } else {
         result.content = `<p>${t("content_renderer.note-cannot-be-displayed")}</p>`;
     }
@@ -929,9 +929,9 @@ function isSubtreeHidden(note: ShareNote) {
  * Renders a collection the share theme shows with the app's own view, through its note list: an
  * element to mount it into, beside the notes and the display options it starts from.
  */
-function renderCollectionView(result: Result, note: SNote) {
+function renderCollectionView(result: Result, note: SNote, canAccess: CanAccessEmbed | undefined) {
     result.content = "";
-    hostInAppView(result, note, "share-collection");
+    hostInAppView(result, note, "share-collection", canAccess);
 }
 
 /**
@@ -939,9 +939,9 @@ function renderCollectionView(result: Result, note: SNote) {
  * rendered here for a visitor without scripts. The static export, binary content and an empty note
  * keep the content alone.
  */
-function hostNoteView(result: Result, note: SNote | BNote) {
+function hostNoteView(result: Result, note: SNote | BNote, canAccess: CanAccessEmbed | undefined) {
     if (!(note instanceof BNote) && typeof result.content === "string" && !result.isEmpty) {
-        hostInAppView(result, note, "share-note-view");
+        hostInAppView(result, note, "share-note-view", canAccess);
     }
 }
 
@@ -950,9 +950,9 @@ function hostNoteView(result: Result, note: SNote | BNote) {
  * notes and the display options the view starts from. The content stays for a visitor without
  * scripts until the view replaces it.
  */
-function hostInAppView(result: Result, note: SNote, container: string) {
+function hostInAppView(result: Result, note: SNote, container: string, canAccess: CanAccessEmbed | undefined) {
     const payload = {
-        ...buildFrocaPayload(note),
+        ...buildFrocaPayload(note, canAccess),
         options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
         // The app's assets, such as its translations, from a page directly below `/share/`.
         assetPath: `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
