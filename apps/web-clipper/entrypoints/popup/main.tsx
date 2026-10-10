@@ -102,20 +102,6 @@ export function Popup() {
 
     return (
         <div className="popup">
-            <div className="popup-header">
-                <img className="logo" src="/icons/48.png" alt="" />
-                <h3>Trilium Web Clipper</h3>
-
-                <div className="popup-header-buttons">
-                    <button className="icon-action" title="Options" aria-label="Options" onClick={() => browser.runtime.openOptionsPage()}>
-                        <Icon icon={Cog} />
-                    </button>
-                    <button className="icon-action" title="Help" aria-label="Help" onClick={() => window.open(HELP_URL, "_blank")}>
-                        <Icon icon={HelpCircle} />
-                    </button>
-                </div>
-            </div>
-
             {clippedNoteId && (
                 <div className="callout callout-info already-visited">
                     <span>Web page already clipped.</span>
@@ -146,12 +132,19 @@ export function Popup() {
                 </span>
 
                 <button
-                    className="icon-action"
+                    className="icon-action refresh"
                     title="Check the connection again"
                     aria-label="Check the connection again"
                     onClick={() => sendMessage({ name: "trigger-trilium-search" })}
                 >
                     <Icon icon={RefreshCw} />
+                </button>
+
+                <button className="icon-action" title="Options" aria-label="Options" onClick={() => browser.runtime.openOptionsPage()}>
+                    <Icon icon={Cog} />
+                </button>
+                <button className="icon-action" title="Help" aria-label="Help" onClick={() => window.open(HELP_URL, "_blank")}>
+                    <Icon icon={HelpCircle} />
                 </button>
             </div>
         </div>

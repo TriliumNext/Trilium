@@ -29,13 +29,12 @@ The extension is available from the official browser web stores:
 
 Clicking the extension's button in the browser toolbar opens its popup:
 
-*   The header has buttons for the extension's options and for this help page.
 *   The popup reads the current page as an article and shows a preview of what will be saved: the note's title, which can be edited before saving, the website and the publication date (when the page states one), and the article's text and images. _Save page to Trilium_ saves it. Pages the extension cannot read, such as the browser's own pages, say so instead. The keyboard shortcut and the context menu still save the page right away, without a preview.
 *   Below the preview, a row of buttons offers the other actions: _Crop_ (a screenshot of an area you select), _Screenshot_ (of the visible part of the page), _Note_ (a link with a note) and _Tabs_ (saves the links of every tab in the current window as a list). Hovering over a button shows its full name and, if it has one, its keyboard shortcut.
 *   _Note_ opens a small editor in place of the actions. The first sentence or line of the text becomes the note's title, unless _Keep page title as note title_ is checked. Press _Save_ or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save it, or the back arrow to return to the actions.
 *   If the current page was already clipped, a notice at the top offers to open the note in Trilium.
 *   If Trilium cannot be found, the popup explains why instead of showing the actions, with buttons to look for Trilium again and to open the options.
-*   The bottom of the popup shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found) next to a description of the connection. A button to check the connection again appears when hovering over it, and stays visible while Trilium cannot be reached or is not compatible.
+*   The bottom of the popup shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found) next to a description of the connection, followed by the buttons for the extension's options and for this help page. A button to check the connection again appears next to them when hovering over the bar, and stays visible while Trilium cannot be reached or is not compatible.
 
 ## Location of clippings
 

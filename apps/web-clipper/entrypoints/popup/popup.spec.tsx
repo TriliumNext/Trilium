@@ -58,7 +58,9 @@ describe("popup", () => {
         expect(sendMessage).toHaveBeenCalledWith({ name: "send-trilium-search-status" });
         expect(status()).toEqual({ dot: "status-dot status-dot-pending", text: "Looking for Trilium…" });
         expect(captureButtons()).toHaveLength(5);
-        expect(container.querySelector(".popup-header .status-dot")).toBeNull();
+        expect(container.querySelector(".popup-header")).toBeNull();
+        expect([ ...container.querySelectorAll(".connection button") ].map((b) => b.getAttribute("aria-label")))
+            .toEqual([ "Check the connection again", "Options", "Help" ]);
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
         await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });

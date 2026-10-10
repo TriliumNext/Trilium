@@ -8,28 +8,6 @@ body {
     gap: 12px;
     padding: 12px;
 
-    .popup-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        .logo {
-            width: 24px;
-            height: 24px;
-        }
-
-        h3 {
-            margin: 0;
-            font-size: 1.1em;
-        }
-    }
-
-    .popup-header-buttons {
-        display: flex;
-        gap: 2px;
-        margin-inline-start: auto;
-    }
-
     .callout {
         padding: 8px 10px;
         border-radius: 6px;
@@ -248,8 +226,7 @@ body {
     .connection {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 8px;
+        gap: 2px;
         min-height: 26px;
         margin: 0 -12px -12px;
         padding: 4px 12px;
@@ -263,6 +240,7 @@ body {
             align-items: center;
             gap: 6px;
             min-width: 0;
+            margin-inline-end: auto;
         }
 
         .status-dot {
@@ -289,11 +267,11 @@ body {
             background: var(--status-error-color);
         }
 
-        .icon-action {
+        .refresh {
             transition: opacity 150ms ease-out;
         }
 
-        &:has(.status-ok, .status-pending):not(:hover, :focus-within) .icon-action {
+        &:has(.status-ok, .status-pending):not(:hover, :focus-within) .refresh {
             opacity: 0;
         }
     }
