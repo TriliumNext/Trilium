@@ -20,7 +20,9 @@ import { t } from "../../../services/i18n";
 import { getCreationDate, loadCreationDates } from "../../../services/note_dates";
 import type LoadResults from "../../../services/load_results";
 import { ContextMenuEvent } from "../../../menus/context_menu";
-import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
+import type {
+    ShortcutHint, ShortcutHintDefinition, ShortcutHintSection
+} from "../../../services/shortcut_hints";
 import ws from "../../../services/ws";
 import { isMobile } from "../../../services/utils";
 import { type NoteTypeOption, resolveNoteTypeOptions } from "../../../services/note_types";
@@ -286,15 +288,32 @@ const NO_COLUMNS: ReadonlySet<string> = new Set();
 /** Shared empty map for a filter under which no column has been opened or closed by hand. */
 const NO_FILTER_COLLAPSE: ReadonlyMap<string, boolean> = new Map();
 
+const NAVIGATION_HINTS: ShortcutHint[] = [
+    { keys: [ "Up", "Down" ], labelKey: "board_view.hints.navigate_items" },
+    { keys: [ "Left", "Right" ], labelKey: "board_view.hints.navigate_columns" },
+    { keys: [ "Home", "End" ], labelKey: "board_view.hints.first_last_item" }
+];
+
+const OPEN_HINTS: ShortcutHint[] = [
+    { keys: [ "Space" ], labelKey: "board_view.hints.open_item" },
+    { keys: [ "Space" ], labelKey: "board_view.hints.toggle_column" }
+];
+
+const SELECTION_HINTS: ShortcutHintSection = {
+    titleKey: "board_view.hints.selection",
+    hints: [
+        { keys: [ "Ctrl+Space" ], labelKey: "board_view.hints.toggle_selection" },
+        {
+            keys: [ "Shift+Down", "Shift+Up" ],
+            labelKey: "board_view.hints.extend_selection"
+        },
+        { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
+        { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
+    ]
+};
+
 const BOARD_HINTS: ShortcutHintDefinition = [
-    {
-        titleKey: "board_view.hints.navigation",
-        hints: [
-            { keys: [ "Up", "Down" ], labelKey: "board_view.hints.navigate_items" },
-            { keys: [ "Left", "Right" ], labelKey: "board_view.hints.navigate_columns" },
-            { keys: [ "Home", "End" ], labelKey: "board_view.hints.first_last_item" }
-        ]
-    },
+    { titleKey: "board_view.hints.navigation", hints: NAVIGATION_HINTS },
     {
         titleKey: "board_view.hints.editing",
         hints: [
@@ -303,8 +322,7 @@ const BOARD_HINTS: ShortcutHintDefinition = [
                 keys: [ "Ctrl+Enter", "Ctrl+Shift+Enter" ],
                 labelKey: "board_view.hints.insert_column"
             },
-            { keys: [ "Space" ], labelKey: "board_view.hints.open_item" },
-            { keys: [ "Space" ], labelKey: "board_view.hints.toggle_column" },
+            ...OPEN_HINTS,
             { keys: [ "F2" ], labelKey: "board_view.hints.rename" },
             { keys: [ "Delete" ], labelKey: "board_view.hints.remove_item" },
             { keys: [ "Shift+Delete" ], labelKey: "board_view.hints.delete_item" },
@@ -331,18 +349,13 @@ const BOARD_HINTS: ShortcutHintDefinition = [
             }
         ]
     },
-    {
-        titleKey: "board_view.hints.selection",
-        hints: [
-            { keys: [ "Ctrl+Space" ], labelKey: "board_view.hints.toggle_selection" },
-            {
-                keys: [ "Shift+Down", "Shift+Up" ],
-                labelKey: "board_view.hints.extend_selection"
-            },
-            { keys: [ "Ctrl+A" ], labelKey: "board_view.hints.select_column" },
-            { keys: [ "Escape" ], labelKey: "board_view.hints.clear_selection" }
-        ]
-    }
+    SELECTION_HINTS
+];
+
+/** The keys a read-only board answers for, which change nothing on it. */
+const READ_ONLY_BOARD_HINTS: ShortcutHintDefinition = [
+    { titleKey: "board_view.hints.navigation", hints: [ ...NAVIGATION_HINTS, ...OPEN_HINTS ] },
+    SELECTION_HINTS
 ];
 
 /**
@@ -511,7 +524,7 @@ function Board({
     // here, so that another view of the same board reads the same record; moving to another board
     // takes up that board's own, leaving a write still in flight to undo into the one it recorded
     // itself in. Done while rendering, so the `api` below is handed the map the refresh reads.
-    useContextualShortcutHints(BOARD_HINTS);
+    useContextualShortcutHints(isReadOnly ? READ_ONLY_BOARD_HINTS : BOARD_HINTS);
     const boardIdentity = `${parentNote.noteId}|${groupBy}`;
     if (pendingRenamesRef.current.board !== boardIdentity) {
         pendingRenamesRef.current = {

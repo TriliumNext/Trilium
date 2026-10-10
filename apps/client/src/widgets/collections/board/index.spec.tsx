@@ -5618,7 +5618,7 @@ describe("BoardView, read-only", () => {
         }
     });
 
-    async function setup() {
+    async function setup(host = new Component()) {
         const note = buildNote({
             title: "Board",
             "#collection": "",
@@ -5634,7 +5634,7 @@ describe("BoardView, read-only", () => {
         document.body.appendChild(mountPoint);
         await act(async () => {
             render(
-                <ParentComponent.Provider value={new Component()}>
+                <ParentComponent.Provider value={host}>
                     <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} />
                 </ParentComponent.Provider>,
                 mountPoint
@@ -5672,6 +5672,28 @@ describe("BoardView, read-only", () => {
         });
         expect(board.querySelector(".board-column h3.editing")).toBeNull();
         expect(board.querySelectorAll(".board-note.editing, .board-new-item").length).toBe(0);
+    });
+
+    it("offers as hints only the keys that change nothing", async () => {
+        const host = new Component();
+        await setup(host);
+
+        const sections = collectShortcutHints(host);
+        expect(sections.map((section) => section.titleKey)).toEqual([
+            "board_view.hints.navigation",
+            "board_view.hints.selection"
+        ]);
+        expect(sections.flatMap((section) => section.hints.map((hint) => hint.labelKey))).toEqual([
+            "board_view.hints.navigate_items",
+            "board_view.hints.navigate_columns",
+            "board_view.hints.first_last_item",
+            "board_view.hints.open_item",
+            "board_view.hints.toggle_column",
+            "board_view.hints.toggle_selection",
+            "board_view.hints.extend_selection",
+            "board_view.hints.select_column",
+            "board_view.hints.clear_selection"
+        ]);
     });
 
     it("changes nothing from the keyboard or from a note dropped from the tree", async () => {
