@@ -12,8 +12,8 @@ import { ZoomViewer } from "./zoom_viewer.js";
 
 /**
  * Mounts the note in place of the content the page rendered for visitors without scripts: an
- * image, a canvas or a Mermaid note's diagram in a viewer that pans and zooms it, any other note
- * with the app's own widget for its type, read-only.
+ * image, a canvas, a mind map or a Mermaid note's diagram in a viewer that pans and zooms it, any
+ * other note with the app's own widget for its type, read-only.
  */
 export default function mountNoteView(container: HTMLElement, payload: AppPayload) {
     container.replaceChildren();
@@ -29,6 +29,7 @@ function SharedNoteView({ note }: { note: FNote }) {
     switch (note.type) {
         case "image":
         case "canvas":
+        case "mindMap":
             return <ImageView note={note} />;
         case "mermaid":
             return <MermaidView note={note} />;
@@ -63,8 +64,8 @@ function NoteView({ note }: { note: FNote }) {
 }
 
 /**
- * Shows the image the share serves for an image note, or the SVG a canvas note keeps of its
- * drawing, in a viewer that takes the page.
+ * Shows the image the share serves for an image note, or the SVG a canvas or a mind map note keeps
+ * of its drawing, in a viewer that takes the page.
  */
 function ImageView({ note }: { note: FNote }) {
     const src = `api/images/${note.noteId}/${encodeURIComponent(note.title)}?${note.blobId}`;

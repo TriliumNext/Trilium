@@ -494,11 +494,9 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
         hostNoteView(result, note);
-    } else if (note.type === "image" || note.type === "canvas") {
+    } else if ([ "image", "canvas", "mindMap" ].includes(note.type)) {
         renderImage(result, note);
         hostNoteView(result, note);
-    } else if (note.type === "mindMap") {
-        renderImage(result, note);
     } else if (note.type === "file") {
         renderFile(note, result);
     } else if (note.type === "book" && !(note instanceof BNote)

@@ -1693,9 +1693,7 @@ describe("content_renderer pages", () => {
         expect(auto.classList.contains("hljs")).toBe(false);
         expect(render({ type: "code", mime: "text/x-markdown", content: "  " }).isEmpty).toBe(true);
 
-        expect(render({ id: "mindMapNote", type: "mindMap", title: "A picture", content: "" }).content)
-            .toMatch(/^<img src="api\/images\/mindMapNote\/A%20picture\?/);
-        for (const type of [ "image", "canvas" ]) {
+        for (const type of [ "image", "canvas", "mindMap" ]) {
             const image = render({ id: `${type}Note`, type, title: "A picture", content: "" });
             expect(image.isAppView).toBe(true);
             expect(parse(String(image.content))
