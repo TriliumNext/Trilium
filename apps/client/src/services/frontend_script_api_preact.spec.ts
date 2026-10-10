@@ -1,6 +1,7 @@
 import { Fragment, h, render as renderPreact } from "preact";
 import { describe, expect, it } from "vitest";
 
+import { ScriptModal } from "../widgets/react/Modal.js";
 import { preactAPI } from "./frontend_script_api_preact.js";
 
 describe("preactAPI", () => {
@@ -19,6 +20,7 @@ describe("preactAPI", () => {
         // Spread preact hooks land directly on the object.
         expect(typeof (preactAPI as Record<string, unknown>).useState).toBe("function");
         expect(typeof (preactAPI as Record<string, unknown>).useEffect).toBe("function");
+        expect(preactAPI.Modal).toBe(ScriptModal);
     });
 
     it("applies compat's `defaultProps` and `px` units to what scripts render through `h`", () => {

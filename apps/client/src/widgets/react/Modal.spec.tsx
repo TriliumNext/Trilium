@@ -1,5 +1,5 @@
-import { render } from "preact";
-import { useState } from "preact/hooks";
+import { createContext, render } from "preact";
+import { useContext, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -46,7 +46,7 @@ vi.mock("./modal_focustrap", () => ({
     suspendModalFocusTraps: mocks.suspendModalFocusTraps
 }));
 
-import Modal from "./Modal";
+import Modal, { ScriptModal } from "./Modal";
 
 let container: HTMLDivElement;
 
@@ -80,6 +80,72 @@ function DialogWithTypedInto({ show, onHidden }: { show: boolean; onHidden(): vo
 }
 
 describe("Modal", () => {
+    it("mounts a script modal above a contained render note while preserving context and cleanup", async () => {
+        const Context = createContext("missing");
+        const onClick = vi.fn();
+
+        function Content() {
+            return <button onClick={onClick}>{useContext(Context)}</button>;
+        }
+
+        container.classList.add("note-detail-render-content");
+        container.dataset.ntxId = "source-pane";
+        container.style.contain = "size";
+        container.style.overflow = "auto";
+        await act(async () => {
+            render(<Context.Provider value="from render note">
+                <ScriptModal className="script-dialog" size="md" show onHidden={() => {}}>
+                    <Content />
+                </ScriptModal>
+            </Context.Provider>, container);
+        });
+
+        const dialog = document.querySelector<HTMLElement>(".script-dialog");
+        expect(dialog?.parentElement?.parentElement).toBe(document.body);
+        expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(true);
+        expect(container.contains(dialog)).toBe(false);
+        expect(mocks.openDialog).toHaveBeenCalledWith(expect.anything(), true, { focus: true }, undefined);
+
+        const button = dialog?.querySelector<HTMLButtonElement>(".modal-body button");
+        expect(button?.textContent).toBe("from render note");
+        expect(button?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("source-pane");
+        await act(async () => button?.click());
+        expect(onClick).toHaveBeenCalledOnce();
+
+        await act(async () => render(null, container));
+        expect(document.querySelector(".script-dialog")).toBeNull();
+        expect(mocks.hide).toHaveBeenCalled();
+    });
+
+    it("keeps a script modal's pane without applying render-note styles outside a render note", async () => {
+        container.dataset.ntxId = "script-pane";
+
+        await act(async () => {
+            render(<ScriptModal className="script-dialog" size="md" show onHidden={() => {}}>body</ScriptModal>, container);
+        });
+
+        const dialog = document.querySelector<HTMLElement>(".script-dialog");
+        expect(dialog?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("script-pane");
+        expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(false);
+    });
+
+    it("carries the render-note scope and pane into a nested script modal", async () => {
+        container.classList.add("note-detail-render-content");
+        container.dataset.ntxId = "nested-source-pane";
+
+        await act(async () => {
+            render(<ScriptModal className="outer-script" size="md" show onHidden={() => {}}>
+                <ScriptModal className="inner-script" size="sm" show stackable onHidden={() => {}}>nested</ScriptModal>
+            </ScriptModal>, container);
+        });
+
+        for (const className of [ "outer-script", "inner-script" ]) {
+            const dialog = document.querySelector<HTMLElement>(`.${className}`);
+            expect(dialog?.parentElement?.classList.contains("render-note-scope")).toBe(true);
+            expect(dialog?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id")).toBe("nested-source-pane");
+        }
+    });
+
     /**
      * The bug this pins: `modalRef.current` stood among the effect's dependencies, and a ref holds
      * nothing while the render that names them runs and the element by the time the effect does —

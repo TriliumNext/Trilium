@@ -2,12 +2,13 @@ import "./Modal.css";
 
 import { Modal as BootstrapModal } from "bootstrap";
 import clsx from "clsx";
-import { ComponentChildren, CSSProperties, RefObject } from "preact";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "preact/hooks";
+import { ComponentChildren, createPortal, CSSProperties, RefObject } from "preact";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { openDialog } from "../../services/dialog";
 import { t } from "../../services/i18n";
+import { RENDER_SCOPE_CLASS } from "../../services/render_css_scope";
 import { openInAppHelpFromUrl } from "../../services/utils";
 import { useSyncedRef } from "./hooks";
 import { suspendModalFocusTraps } from "./modal_focustrap";
@@ -324,6 +325,23 @@ export default function Modal({ children, className, size, title, customTitleBar
             </div></ContainerVisibilityContext.Provider>}
         </div>
     );
+}
+
+/** Mounts a script modal beside Bootstrap's body-level backdrop while retaining its source context. */
+export function ScriptModal(props: ModalProps) {
+    const [ origin, setOrigin ] = useState<HTMLTemplateElement | null>(null);
+    const ntxId = origin?.closest("[data-ntx-id]")?.getAttribute("data-ntx-id");
+    const isRenderNote = !!origin?.closest(`.note-detail-render-content, .${RENDER_SCOPE_CLASS}`);
+
+    return <>
+        <template ref={setOrigin} />
+        {origin && createPortal(
+            <div className={isRenderNote ? RENDER_SCOPE_CLASS : undefined} data-ntx-id={ntxId} style={{ display: "contents" }}>
+                <Modal {...props} />
+            </div>,
+            document.body
+        )}
+    </>;
 }
 
 /** The classes a host asked for, as `classList` takes them. */
