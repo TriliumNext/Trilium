@@ -27,7 +27,7 @@ import Button, { ButtonGroup } from "../../react/Button";
 import CollapseOnOverflow from "../../react/CollapseOnOverflow";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
-import { useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { useEffectiveReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
@@ -123,6 +123,8 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
 
 export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarViewData>) {
     const parentComponent = useContext(ParentComponent);
+    const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const containerRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<FullCalendar>(null);
     // The event the view's popovers stand for — a chip clicked, or a range just dragged out (see
@@ -143,7 +145,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     // FullCalendar v7 sizes itself from its own ResizeObserver; the v6 `updateSize()` nudge this
     // used to need is gone along with the method.
     const isCalendarRoot = (calendarRoot || workspaceCalendarRoot);
-    const isEditable = !isCalendarRoot;
+    const isEditable = !isCalendarRoot && !isReadOnly;
     // Worked out once and handed to both the grid and the tap that makes an event of one of its
     // slots (see draftFromDateClick), so that the two cannot come to disagree on a slot's length.
     const effectiveSlotDuration = isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION;
@@ -329,7 +331,9 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
 
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
-            <CalendarCollectionProperties note={note} calendarRef={calendarRef} containerRef={containerRef} />
+            <CalendarCollectionProperties
+                note={note} calendarRef={calendarRef} containerRef={containerRef} isReadOnly={isReadOnly}
+            />
             <Calendar
                 events={eventBuilder}
                 calendarRef={calendarRef}
@@ -376,7 +380,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 eventInnerClass={eventInnerClass}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
-                    if (initialView.current !== view.type) {
+                    // A read-only calendar keeps the view it was switched to only while it is shown.
+                    if (initialView.current !== view.type && !isReadOnly) {
                         initialView.current = view.type;
                         viewSpacedUpdate.scheduleUpdate();
                     }
@@ -409,10 +414,11 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     );
 }
 
-function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
+function CalendarCollectionProperties({ note, calendarRef, containerRef, isReadOnly }: {
     note: FNote;
     calendarRef: RefObject<FullCalendar | null>;
     containerRef: RefObject<HTMLDivElement | null>;
+    isReadOnly: boolean;
 }) {
     const { title, viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewData = CALENDAR_VIEWS.find(v => calendarRef.current && v.type === currentViewType);
@@ -426,7 +432,7 @@ function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
                 <span className="title">{title}</span>
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
-                <PinDateButton note={note} calendarRef={calendarRef} />
+                {!isReadOnly && <PinDateButton note={note} calendarRef={calendarRef} />}
                 {/* On a phone the switcher is a menu whatever the width, and stands with the date
                     rather than on a right-hand end the wrapped bar no longer has. */}
                 {isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}

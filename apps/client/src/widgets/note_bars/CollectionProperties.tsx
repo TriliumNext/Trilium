@@ -53,12 +53,12 @@ interface CollectionPropertiesProps {
     optionsChildren?: ComponentChildren;
 }
 
-/** The bar above a collection that switches its view and sets its options; a shared page has none. */
-export default function CollectionProperties(props: CollectionPropertiesProps) {
-    return isShare ? null : <CollectionPropertiesBar {...props} />;
-}
-
-function CollectionPropertiesBar({
+/**
+ * The bar above a collection that switches its view, sets its options and holds the view's own
+ * controls, such as a calendar's navigation. A shared page keeps only the view's own controls, as a
+ * visitor cannot change the note.
+ */
+export default function CollectionProperties({
     note,
     centerChildren,
     rightChildren,
@@ -71,15 +71,17 @@ function CollectionPropertiesBar({
     return ([ "book", "search" ].includes(noteType ?? "") &&
         <div className="collection-properties">
             <div className="left-container">
-                <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
-                <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                {!isShare && <>
+                    <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
+                    <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                </>}
             </div>
             <div className="center-container">
                 {centerChildren}
             </div>
             <div className="right-container">
                 {rightChildren}
-                {noteType === "search" && (
+                {noteType === "search" && !isShare && (
                     <OpenAllButton note={note} isOpening={isOpening} setIsOpening={setIsOpening} />
                 )}
             </div>
