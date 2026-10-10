@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [ manifestVersionGlobal(), WxtVitest() ],
     test: {
         environment: "happy-dom",
-        include: [ "**/*.{test,spec}.ts" ],
+        include: [ "**/*.{test,spec}.{ts,tsx}" ],
         exclude: [ "**/node_modules/**", ".output/**", ".wxt/**" ],
         reporters: [
             "default",
@@ -19,8 +19,8 @@ export default defineConfig({
         coverage: {
             reportsDirectory: join(import.meta.dirname, "test-output/vitest/coverage"),
             provider: "v8" as const,
-            include: [ "entrypoints/**/*.ts", "utils.ts" ],
-            exclude: [ "**/*.{test,spec}.ts", "**/*.d.ts" ],
+            include: [ "entrypoints/**/*.{ts,tsx}", "utils.ts" ],
+            exclude: [ "**/*.{test,spec}.{ts,tsx}", "**/*.d.ts" ],
             reporter: [ "text", "lcov" ]
         }
     }
