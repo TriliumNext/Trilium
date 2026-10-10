@@ -232,7 +232,8 @@
   "content_renderer": {
     "note-cannot-be-displayed": "此笔记类型无法显示。",
     "included-note-requires-credentials": "此包含的笔记受密码保护，无法在此显示。",
-    "broken-block-reference": "引用已损坏"
+    "broken-block-reference": "引用已损坏",
+    "play-video": "播放视频"
   },
   "pdf": {
     "export_filter": "PDF 文档 (*.pdf)",
@@ -384,7 +385,17 @@
     "toggle-toc": "切换目录",
     "logo-alt": "Logo",
     "login": "登录",
-    "tab-title": "标签页标题"
+    "tab-title": "标签页标题",
+    "appearance": "外观",
+    "theme-light": "浅色",
+    "theme-dark": "深色",
+    "theme-system": "跟随系统",
+    "theme-current": "外观：{{- theme}}",
+    "subpages-of": "{{- title}} 的子页面",
+    "heading-link": "链接到此章节",
+    "previous": "上一页",
+    "next": "下一页",
+    "page-navigation": "上一页和下一页"
   },
   "hidden_subtree_templates": {
     "text-snippet": "文本片段",
