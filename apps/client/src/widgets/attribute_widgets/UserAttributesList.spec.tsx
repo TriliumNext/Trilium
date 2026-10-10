@@ -72,6 +72,14 @@ describe("UserAttributesDisplay", () => {
         expect(values()).toEqual([ "Ada", "red", "green" ]);
     });
 
+    it("draws an attribute whose name contains a colon under the full colon-carrying name", () => {
+        const note = noteWith({ "sometool:parameter": [ "value1" ] });
+
+        draw({ note });
+
+        expect(values()).toEqual([ "value1" ]);
+    });
+
     it("leaves out what it is told to ignore, whichever way it is ordered", () => {
         draw({ ignoredAttributes: [ "stage" ], shownAttributes: [ "stage", "owner" ] });
 

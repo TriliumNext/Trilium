@@ -3,6 +3,7 @@ import "./PromotedAttributesCard.css";
 import { createPortal } from "preact";
 import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 
+import { extractAttributeDefinitionTypeAndName } from "@triliumnext/commons";
 import type FNote from "../../entities/fnote";
 import type { Attribute } from "../../services/attribute_parser";
 import attributes, { removeOwnedAttributesByNameOrType } from "../../services/attributes";
@@ -177,10 +178,10 @@ export default function PromotedAttributesCard({
             return;
         }
 
-        const [ type, name ] = definition.name.split(":", 2) as [ "label" | "relation", string ];
+        const [ type, name ] = extractAttributeDefinitionTypeAndName(definition.name);
         const isRenamed = !!was && was.name !== definition.name;
         if (isRenamed && was) {
-            const [ , previous ] = was.name.split(":", 2);
+            const [ , previous ] = extractAttributeDefinitionTypeAndName(was.name);
             await renameAttributeInSubtree(note.noteId, type, previous, name);
         }
 
@@ -197,7 +198,7 @@ export default function PromotedAttributesCard({
      * panel instead leaves the items carrying values no definition describes.
      */
     const erase = useCallback(async (definitionName: string) => {
-        const [ type, name ] = definitionName.split(":", 2) as [ "label" | "relation", string ];
+        const [ type, name ] = extractAttributeDefinitionTypeAndName(definitionName);
         await deleteAttributeInSubtree(note.noteId, type, name);
         await removeOwnedAttributesByNameOrType(note, "label", definitionName);
     }, [ note ]);

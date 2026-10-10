@@ -88,7 +88,9 @@ export function resolvePromotedAttributes(
     const defined = new Map<string, PromotedAttribute>();
 
     const add = (definition: FAttribute, isDefinedByItems: boolean) => {
-        const [ type, name ] = definition.name.split(":", 2);
+        const firstColon = definition.name.indexOf(":");
+        const type = firstColon >= 0 ? definition.name.substring(0, firstColon) : definition.name;
+        const name = firstColon >= 0 ? definition.name.substring(firstColon + 1) : "";
         if ((type !== "label" && type !== "relation") || !name
                 || (!isDefinedByItems && !definition.isInheritable)) {
             return;
