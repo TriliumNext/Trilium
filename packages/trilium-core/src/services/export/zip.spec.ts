@@ -13,6 +13,7 @@ import type { ExportFormat, NoteMetaFile } from "../../meta.js";
 import { getContext } from "../context.js";
 import noteService from "../notes.js";
 import sql_init from "../sql_init.js";
+import { decodeUtf8 } from "../utils/binary.js";
 import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
 import { getZipProvider, initZipProvider } from "../zip_provider.js";
 import zip, { shouldStoreUncompressed } from "./zip.js";
@@ -383,7 +384,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const { note } = createNote("root", { title: "BinaryAttachHost", content: "<p>host</p>" });
             // Bytes that are not valid UTF-8 (0x00, 0xFF, lone 0x80 continuation byte)
             // so any accidental string coercion in the export path would corrupt them.
-            const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80, 0x01, 0xfe]);
+            const binaryContent = new Uint8Array([ 0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80, 0x01, 0xfe ]);
             getContext().init(() =>
                 note.saveAttachment({ role: "image", mime: "image/png", title: "pixel.png", content: binaryContent })
             );
@@ -397,7 +398,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             const attFileName = attMeta.dataFileName ?? "";
             expect(entries[attFileName]).toBeDefined();
             // The exported bytes must equal the stored bytes exactly.
-            expect(Buffer.compare(entries[attFileName], binaryContent)).toBe(0);
+            expect([ ...entries[attFileName] ]).toEqual([ ...binaryContent ]);
         });
 
         it("resolves embedded mermaid/canvas images to their rendered image attachment", async () => {
@@ -655,7 +656,7 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
         });
 
         it("writes an image or file note of a share export as a page plus its raw file", async () => {
-            const bytes = Buffer.from([ 0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80 ]);
+            const bytes = new Uint8Array([ 0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80 ]);
             const { note: host } = createNote("root", { title: "BinaryShareHost", content: "" });
             const { note: image } = createNote(host.noteId, { title: "Photo.png", type: "image", mime: "image/png" });
             const { note: pdf } = createNote(host.noteId, { title: "Manual", type: "file", mime: "application/pdf" });
@@ -674,12 +675,12 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect([ pageOf(image.noteId), pageOf(pdf.noteId), pageOf(file.noteId) ])
                 .toEqual([ "Photo.png.html", "Manual.html", "Data.bin.html" ]);
             for (const raw of [ "Photo.png", "Manual.pdf", "Data.bin" ]) {
-                expect(Buffer.compare(entries[raw] ?? Buffer.alloc(0), bytes), raw).toBe(0);
+                expect([ ...entries[raw] ?? [] ], raw).toEqual([ ...bytes ]);
             }
-            expect(entries["Photo.png.html"].toString("utf-8")).toContain(`<img src="Photo.png"`);
-            expect(entries["Manual.html"].toString("utf-8")).toContain(`src="Manual.pdf"`);
-            expect(entries["Data.bin.html"].toString("utf-8")).toContain(`location.href='Data.bin'`);
-            expect(entries[parseMeta(entries).files[0].dataFileName ?? ""].toString("utf-8"))
+            expect(decodeUtf8(entries["Photo.png.html"])).toContain(`<img src="Photo.png"`);
+            expect(decodeUtf8(entries["Manual.html"])).toContain(`src="Manual.pdf"`);
+            expect(decodeUtf8(entries["Data.bin.html"])).toContain(`location.href='Data.bin'`);
+            expect(decodeUtf8(entries[parseMeta(entries).files[0].dataFileName ?? ""]))
                 .toContain(`<img src="Photo.png"`);
         });
 
