@@ -15,6 +15,12 @@ export interface Contributor {
 export interface ShareThemeManifest {
     /** The files every page can load. */
     files: string[];
-    /** The further files of each library loaded on demand, such as `mermaid`, by its name. */
+    /**
+     * The further files of each group loaded on demand, by its name: a library such as `mermaid`,
+     * `app` for what every app view loads, `view:<viewType>` for a collection's view and
+     * `type:<noteType>` for a note type's widget.
+     */
     lazy: Record<string, string[]>;
+    /** The other groups whose files each group loads, by its name. */
+    requires: Record<string, string[]>;
 }

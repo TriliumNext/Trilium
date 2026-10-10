@@ -2,7 +2,7 @@ import {
     getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl,
     isImageAttachmentRole, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor, readLinkPreviewData,
     renderLinkEmbedHtml, renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes,
-    shouldSyntaxHighlight, sliceToBlockReference
+    SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight, sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -506,7 +506,7 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "file") {
         renderFile(note, result);
     } else if (note.type === "book" && !(note instanceof BNote)
-        && HOSTED_VIEW_TYPES.has(getViewType(note) ?? "")) {
+        && SHARE_HOSTED_VIEW_TYPES.includes(getViewType(note) ?? "")) {
         renderCollectionView(result, note, options.canAccessEmbed);
     } else if (note.type === "book") {
         result.isEmpty = true;
@@ -940,7 +940,8 @@ function renderCollectionView(result: Result, note: SNote, canAccess: CanAccessE
  * keep the content alone.
  */
 function hostNoteView(result: Result, note: SNote | BNote, canAccess: CanAccessEmbed | undefined) {
-    if (!(note instanceof BNote) && typeof result.content === "string" && !result.isEmpty) {
+    if (!(note instanceof BNote) && typeof result.content === "string" && !result.isEmpty
+        && SHARE_HOSTED_NOTE_TYPES.includes(note.type)) {
         hostInAppView(result, note, "share-note-view", canAccess);
     }
 }
@@ -966,9 +967,6 @@ function hostInAppView(result: Result, note: SNote, container: string, canAccess
     result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
 }
-
-/** The view types of the collections the share theme shows with the app's own view. */
-const HOSTED_VIEW_TYPES = new Set([ "board", "calendar", "dashboard", "geoMap", "presentation", "table" ]);
 
 /**
  * The options the app's views read to draw a note as the app does, which a shared page receives. Only

@@ -2,14 +2,14 @@ import "@triliumnext/client/src/widgets/type_widgets/NoteMap.css";
 
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
-import NoteMap from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
+import type NoteMapWidget from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
 import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
 import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
 import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
-import { render } from "preact";
+import type RelationMapWidget from "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js";
+import { type ComponentType, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
-import type RelationMapWidget from "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js";
 import ShareAppHost, { type AppPayload, type HostedApp } from "./app_host.js";
 import { drawMermaid, loadMermaid, readMermaidTheme } from "./mermaid.js";
 import { ZoomViewer } from "./zoom_viewer.js";
@@ -29,22 +29,43 @@ export default function mountNoteView(container: HTMLElement, payload: AppPayloa
     );
 }
 
-function SharedNoteView({ app }: { app: HostedApp }) {
-    const { note } = app;
-    switch (note.type) {
-        case "image":
-        case "canvas":
-        case "mindMap":
-            return <ImageView note={note} />;
-        case "mermaid":
-            return <MermaidView note={note} />;
-        case "noteMap":
-            return <NoteMapView app={app} />;
-        case "relationMap":
-            return <RelationMapView app={app} />;
-        default:
-            return <NoteView note={note} />;
+type SharedView = ComponentType<{ app: HostedApp }>;
+
+/**
+ * The views of the note types the share theme draws its own way, by type, each loading what it
+ * draws with. The app build reads the `import()` of each entry to give the type its group of
+ * files in the share theme's manifest; the other types use `TYPE_MAPPINGS`, read the same way.
+ */
+const SHARE_NOTE_VIEWS: Partial<Record<string, () => Promise<SharedView>>> = {
+    image: async () => ImageView,
+    canvas: async () => ImageView,
+    mindMap: async () => ImageView,
+    // Loads the library ahead of the view, which draws with it.
+    mermaid: () => import("mermaid").then(() => MermaidView),
+    noteMap: async () => {
+        const { default: NoteMap } = await import(
+            "@triliumnext/client/src/widgets/note_map/NoteMap.js");
+        return ({ app }) => <NoteMapView app={app} NoteMap={NoteMap} />;
+    },
+    relationMap: async () => {
+        const { default: RelationMap } = await import(
+            "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js");
+        return ({ app }) => <RelationMapView app={app} RelationMap={RelationMap} />;
     }
+};
+
+function SharedNoteView({ app }: { app: HostedApp }) {
+    const load = SHARE_NOTE_VIEWS[app.note.type];
+    const [ View, setView ] = useState<SharedView>();
+
+    useEffect(() => {
+        load?.().then((view) => setView(() => view));
+    }, [ load ]);
+
+    if (!load) {
+        return <NoteView note={app.note} />;
+    }
+    return View && <View app={app} />;
 }
 
 function NoteView({ note }: { note: FNote }) {
@@ -76,7 +97,7 @@ function NoteView({ note }: { note: FNote }) {
  * Shows the image the share serves for an image note, or the SVG a canvas or a mind map note keeps
  * of its drawing, in a viewer that takes the page.
  */
-function ImageView({ note }: { note: FNote }) {
+function ImageView({ app: { note } }: { app: HostedApp }) {
     const src = `api/images/${note.noteId}/${encodeURIComponent(note.title)}?${note.blobId}`;
     return (
         <ZoomViewer labels={getZoomPanLabels("image_viewer.viewport")} fillsPage>
@@ -89,7 +110,7 @@ function ImageView({ note }: { note: FNote }) {
  * Draws a Mermaid note the way the page draws the diagrams of a text note, in a viewer that takes
  * the page, and draws it again when the theme changes.
  */
-function MermaidView({ note }: { note: FNote }) {
+function MermaidView({ app: { note } }: { app: HostedApp }) {
     const blob = useNoteBlob(note);
     const theme = useMermaidTheme();
     const [ svg, setSvg ] = useState<string>();
@@ -120,7 +141,7 @@ function MermaidView({ note }: { note: FNote }) {
  * Draws a note map note's map, from the note's parent on the share unless the note names another
  * root, and opens a clicked note on its shared page.
  */
-function NoteMapView({ app }: { app: HostedApp }) {
+function NoteMapView({ app, NoteMap }: { app: HostedApp; NoteMap: typeof NoteMapWidget }) {
     const containerRef = useRef<HTMLDivElement>(null);
     return (
         <div ref={containerRef} className="note-detail-note-map">
@@ -136,15 +157,11 @@ function NoteMapView({ app }: { app: HostedApp }) {
 }
 
 /** Draws a relation map note's map, and opens a clicked note on its shared page. */
-function RelationMapView({ app }: { app: HostedApp }) {
-    const [ RelationMap, setRelationMap ] = useState<typeof RelationMapWidget>();
-
-    useEffect(() => {
-        import("@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js")
-            .then(({ default: widget }) => setRelationMap(() => widget));
-    }, []);
-
-    return RelationMap && (
+function RelationMapView({ app, RelationMap }: {
+    app: HostedApp;
+    RelationMap: typeof RelationMapWidget;
+}) {
+    return (
         <div className="note-detail-relation-map">
             <RelationMap
                 note={app.note}

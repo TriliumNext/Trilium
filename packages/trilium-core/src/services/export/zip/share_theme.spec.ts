@@ -352,7 +352,8 @@ describe("hasMermaidDiagrams", () => {
 describe("getShareThemeExportFiles", () => {
     const manifest = {
         files: [ "scripts.js", "scripts.css" ],
-        lazy: { mermaid: [ "mermaid.core-a.js" ] }
+        lazy: { mermaid: [ "mermaid.core-a.js" ] },
+        requires: {}
     };
 
     it("adds the files of mermaid only for a subtree with a diagram", () => {
@@ -363,7 +364,7 @@ describe("getShareThemeExportFiles", () => {
         const withoutDiagram = subtreeOf({ type: "text", content: "<p>No diagram.</p>" });
         expect(getShareThemeExportFiles(manifest, withoutDiagram))
             .toEqual([ "scripts.js", "scripts.css" ]);
-        expect(getShareThemeExportFiles({ files: [ "scripts.js" ], lazy: {} },
+        expect(getShareThemeExportFiles({ files: [ "scripts.js" ], lazy: {}, requires: {} },
             subtreeOf({ type: "text", content: diagram }))).toEqual([ "scripts.js" ]);
     });
 });

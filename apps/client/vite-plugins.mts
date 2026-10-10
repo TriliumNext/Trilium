@@ -1,8 +1,12 @@
+import { readFile } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
 import { join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { ShareThemeManifest } from "@triliumnext/commons";
+import {
+    resolveShareThemeGroups, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES
+} from "@triliumnext/commons/src/lib/share_hosting.js";
 import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
@@ -109,6 +113,9 @@ function replaceOnce(code: string, pattern: RegExp, replacer: (match: string, ..
 /** The share theme's sources, which the app build bundles into the files shared pages load. */
 const SHARE_THEME_SRC = join(import.meta.dirname, "../../packages/share-theme/src");
 
+/** The app's sources, whose views the share theme reuses. */
+const CLIENT_SRC = join(import.meta.dirname, "src");
+
 /**
  * The directory the share theme's files go to: the one the app's chunks go to, so the share theme
  * imports the chunks it shares with the app by their file name.
@@ -130,21 +137,79 @@ const SHARE_THEME_TARGET = "chrome96";
 /**
  * The modules the share theme imports on demand that a share-theme export copies only for the
  * pages that use them, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid, and the
- * viewer a Mermaid note's diagram goes into.
+ * viewer a Mermaid note's diagram goes into; the script API a render note runs its scripts with;
+ * and what every app view loads first.
  */
 const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = {
     mermaid: [
-        { specifier: "mermaid", importer: "content/mermaid.ts" },
-        { specifier: "./zoom_viewer.js", importer: "content/mermaid.ts" }
+        { specifier: "mermaid", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") },
+        { specifier: "./zoom_viewer.js", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") }
+    ],
+    scripting: [
+        {
+            specifier: "./frontend_script_api.js",
+            importer: join(CLIENT_SRC, "services/script_context.ts")
+        }
     ],
     app: [
-        { specifier: "./app_globals.js", importer: "content/app_view.ts" },
-        { specifier: "@triliumnext/client/src/components/app_context.js", importer: "content/app_view.ts" },
-        { specifier: "@triliumnext/client/src/services/i18n.js", importer: "content/app_view.ts" },
-        { specifier: "./content/collection_view.js", importer: "index.ts" },
-        { specifier: "./content/note_view.js", importer: "index.ts" }
+        { specifier: "./app_globals.js", importer: join(SHARE_THEME_SRC, "content/app_view.ts") },
+        {
+            specifier: "@triliumnext/client/src/components/app_context.js",
+            importer: join(SHARE_THEME_SRC, "content/app_view.ts")
+        },
+        {
+            specifier: "@triliumnext/client/src/services/i18n.js",
+            importer: join(SHARE_THEME_SRC, "content/app_view.ts")
+        },
+        { specifier: "./content/collection_view.js", importer: join(SHARE_THEME_SRC, "index.ts") },
+        { specifier: "./content/note_view.js", importer: join(SHARE_THEME_SRC, "index.ts") }
     ]
 };
+
+/**
+ * The tables of loaders by which the app picks the view of a collection or the widget of a note
+ * type, each giving its keys a group of the manifest, `<prefix><key>`, of the modules the
+ * `import()` expressions of `property` load. A later table replaces the groups of an earlier one.
+ */
+const TYPE_TABLES: LoaderTable[] = [
+    {
+        file: join(CLIENT_SRC, "widgets/collections/NoteList.tsx"),
+        name: "ViewComponents",
+        property: "normal",
+        prefix: "view:"
+    },
+    {
+        file: join(CLIENT_SRC, "widgets/note_types.tsx"),
+        name: "TYPE_MAPPINGS",
+        property: "view",
+        prefix: "type:"
+    },
+    {
+        file: join(SHARE_THEME_SRC, "content/note_view.tsx"),
+        name: "SHARE_NOTE_VIEWS",
+        prefix: "type:"
+    },
+    {
+        file: join(CLIENT_SRC, "services/content_renderer.ts"),
+        name: "CONTENT_RENDERERS",
+        prefix: "content:"
+    }
+];
+
+/**
+ * The groups of {@link LAZY_MODULES} a page loads by what its content holds, such as a diagram or
+ * a render note, which the share-theme export finds in the notes it writes.
+ */
+const CONTENT_GROUPS = [ "mermaid", "scripting" ];
+
+interface LoaderTable {
+    file: string;
+    /** The variable holding the table, an object literal keyed by type. */
+    name: string;
+    /** The property of each entry whose `import()` expressions make the group, else the entry. */
+    property?: string;
+    prefix: string;
+}
 
 const CODE_THEMES_ID = "virtual:code-themes.css";
 
@@ -298,18 +363,31 @@ async function emitShareTheme(
     config: ResolvedConfig | undefined,
     options: ShareThemeOptions
 ) {
-    const lazyEntries: Record<string, string[]> = {};
-    for (const [ name, modules ] of Object.entries(LAZY_MODULES)) {
-        lazyEntries[name] = [];
-        for (const { specifier, importer } of modules) {
-            const resolved = await context.resolve(specifier, join(SHARE_THEME_SRC, importer));
-            if (!resolved) {
-                const source = `'${specifier}' from the share theme's ${importer}`;
-                throw new Error(`Unable to resolve ${source}.`);
-            }
-            lazyEntries[name].push(resolved.id);
+    const resolve = async (specifier: string, importer: string) => {
+        const resolved = await context.resolve(specifier, importer);
+        if (!resolved) {
+            throw new Error(`Unable to resolve '${specifier}' from ${importer}.`);
         }
+        return resolved.id;
+    };
+
+    const groups: ShareThemeGroups = {
+        shared: {}, byContent: CONTENT_GROUPS, typed: {}, gated: []
+    };
+    for (const [ name, modules ] of Object.entries(LAZY_MODULES)) {
+        groups.shared[name] = await Promise.all(modules.map(({ specifier, importer }) =>
+            resolve(specifier, importer)));
     }
+    for (const table of TYPE_TABLES) {
+        const { entries, all } = await readLoaderTable(table);
+        for (const [ key, specifiers ] of Object.entries(entries)) {
+            groups.typed[`${table.prefix}${key}`] = await Promise.all(specifiers.map((specifier) =>
+                resolve(specifier, table.file)));
+        }
+        groups.gated.push(...await Promise.all(all.map((specifier) =>
+            resolve(specifier, table.file))));
+    }
+    checkHostedGroups(Object.keys(groups.typed));
 
     const [ tree, styles ] = await Promise.all([ buildTreeScript(config), buildStyles(config) ]);
     const emit = (fileName: string, source: string | Uint8Array) =>
@@ -327,7 +405,7 @@ async function emitShareTheme(
     }
 
     const assetNames = styleAssets.map((asset) => asset.fileName);
-    const manifest = buildShareThemeManifest(bundle, lazyEntries, assetNames);
+    const manifest = buildShareThemeManifest(bundle, groups, assetNames);
     emit(SHARE_THEME_MANIFEST_FILE, JSON.stringify(manifest));
 
     const { stubDir } = options;
@@ -445,31 +523,67 @@ type BundleOutput =
         viteMetadata?: { importedCss: Set<string>; importedAssets: Set<string> };
     };
 
+/** The modules of the share theme's groups of files, as the IDs the build resolves them to. */
+export interface ShareThemeGroups {
+    /** The groups a page loads whole when it needs them, such as `mermaid`, by their name. */
+    shared: Record<string, string[]>;
+    /**
+     * The shared groups a page loads by what its content holds, such as `mermaid` for a diagram.
+     * Reaching one of their modules adds them to a group's `requires` only from the group's own
+     * modules.
+     */
+    byContent: string[];
+    /** The groups a page loads by the type of what it shows, such as `view:<viewType>`. */
+    typed: Record<string, string[]>;
+    /**
+     * Every module the type tables load, those of no group included, such as a print view. The
+     * files of a group stop where they load one that is not their own on demand, as the type of a
+     * note decides whether a page loads it.
+     */
+    gated: string[];
+}
+
 /**
  * Lists the files the share theme loads: the page's three files, `styleAssets` that `scripts.css`
  * references, and every chunk `scripts.js` loads, statically or on demand, with what each loads in
  * turn. The styles of the chunks `scripts.js` imports statically are in `scripts.css`, so their
- * stylesheets are listed only when a chunk loaded on demand imports them, which preloads them. What
- * only the modules in `lazyEntries` load is listed under the name of their group, each module given
- * as the ID the build resolves it to.
+ * stylesheets are listed only when a chunk loaded on demand imports them, which preloads them.
+ *
+ * What only the modules of a group in `groups` load is listed under the name of the group, without
+ * the files of the groups it requires. The files of a group stop where they load the modules of
+ * another group or of `groups.gated` on demand; loading those of a shared group adds that group to
+ * the group's `requires`.
  */
 export function buildShareThemeManifest(
     bundle: Record<string, BundleOutput>,
-    lazyEntries: Record<string, string[]>,
+    groups: ShareThemeGroups,
     styleAssets: string[]
 ): ShareThemeManifest {
-    const lazyChunks = new Map<string, string>();
-    for (const [ name, ids ] of Object.entries(lazyEntries)) {
-        for (const id of ids) {
-            const chunk = Object.values(bundle).find((output) =>
-                output.type === "chunk" && output.facadeModuleId === id);
-            if (!chunk) {
-                throw new Error(`The bundle has no chunk for '${id}' of the share theme's`
-                    + ` '${name}'.`);
-            }
-            lazyChunks.set(chunk.fileName, name);
+    const findChunk = (id: string, name: string) => {
+        const chunk = Object.values(bundle).find((output) =>
+            output.type === "chunk" && output.facadeModuleId === id);
+        if (!chunk) {
+            throw new Error(`The bundle has no chunk for '${id}' of the share theme's '${name}'.`);
+        }
+        return chunk.fileName;
+    };
+
+    const entries = new Map<string, string[]>();
+    const sharedGroupOf = new Map<string, string>();
+    for (const [ name, ids ] of Object.entries(groups.shared)) {
+        const chunks = ids.map((id) => findChunk(id, name));
+        entries.set(name, chunks);
+        for (const chunk of chunks) {
+            sharedGroupOf.set(chunk, name);
         }
     }
+    for (const [ name, ids ] of Object.entries(groups.typed)) {
+        entries.set(name, ids.map((id) => findChunk(id, name)));
+    }
+    const stops = new Set([
+        ...[ ...entries.values() ].flat(),
+        ...groups.gated.map((id) => findChunk(id, "type tables"))
+    ]);
 
     const appOnly = new Set(Object.values(bundle).flatMap((output) =>
         (output.type === "chunk" && output.moduleIds?.some(isAppOnlyModule) ? [ output.fileName ] : [])));
@@ -480,33 +594,184 @@ export function buildShareThemeManifest(
     });
     const files = new Set([
         ...pageFiles,
-        ...collectFiles(bundle, onDemand, { dynamic: true, excluded: new Set([ ...lazyChunks.keys(), ...appOnly ]) }),
+        ...collectFiles(bundle, onDemand, {
+            dynamic: true, excluded: new Set([ ...stops, ...appOnly ])
+        }),
         TREE_FILE,
         STYLES_FILE,
         ...styleAssets
     ]);
 
-    const lazy: Record<string, string[]> = {};
-    for (const name of Object.keys(lazyEntries)) {
-        const chunks = [ ...lazyChunks ].flatMap(([ fileName, group ]) =>
-            (group === name ? [ fileName ] : []));
-        const lazyFiles = collectFiles(bundle, chunks, { dynamic: true, excluded: appOnly });
-        lazy[name] = toManifestPaths([ ...lazyFiles ].filter((file) => !files.has(file)));
+    const collected = new Map<string, Set<string>>();
+    const requires: Record<string, string[]> = {};
+    for (const [ name, own ] of entries) {
+        const isShared = name in groups.shared;
+        const required = new Set<string>();
+        const groupFiles = new Set<string>();
+        const pending: [ string, boolean ][] = own.map((fileName) => [ fileName, true ]);
+        for (let item = pending.pop(); item !== undefined; item = pending.pop()) {
+            const [ fileName, onDemand ] = item;
+            const isOwn = own.includes(fileName);
+            if (groupFiles.has(fileName)) {
+                continue;
+            }
+            const output = bundle[fileName];
+            if (files.has(fileName)) {
+                // The group's chunks preload the stylesheets of the page's chunks they import,
+                // which `scripts.css` holds and the page does not load apart.
+                if (output?.type === "chunk") {
+                    for (const stylesheet of output.viteMetadata?.importedCss ?? []) {
+                        pending.push([ stylesheet, false ]);
+                    }
+                }
+                continue;
+            }
+            const sharedGroup = sharedGroupOf.get(fileName);
+            if (sharedGroup !== undefined && sharedGroup !== name && (onDemand || isOwn)) {
+                if (isOwn || !groups.byContent.includes(sharedGroup)) {
+                    required.add(sharedGroup);
+                }
+                continue;
+            }
+            const isGated = stops.has(fileName) || (isShared && appOnly.has(fileName));
+            if (onDemand && !isOwn && isGated) {
+                continue;
+            }
+
+            groupFiles.add(fileName);
+            if (output?.type === "chunk") {
+                const { importedAssets = [], importedCss = [] } = output.viteMetadata ?? {};
+                for (const imported of [ ...output.imports, ...importedAssets, ...importedCss ]) {
+                    pending.push([ imported, false ]);
+                }
+                for (const imported of output.dynamicImports) {
+                    pending.push([ imported, true ]);
+                }
+            }
+        }
+        collected.set(name, groupFiles);
+        requires[name] = [ ...required ].sort();
     }
 
-    return { files: toManifestPaths([ ...files ]), lazy };
+    const lazy: Record<string, string[]> = {};
+    for (const [ name, groupFiles ] of collected) {
+        const inherited = new Set(resolveShareThemeGroups(requires, [ name ]).flatMap((other) =>
+            (other === name ? [] : [ ...collected.get(other) ?? [] ])));
+        lazy[name] = toManifestPaths([ ...groupFiles ].filter((file) => !inherited.has(file)));
+    }
+
+    return { files: toManifestPaths([ ...files ]), lazy, requires };
+}
+
+/**
+ * Reads the type table `table`: for each key, the specifiers of the `import()` expressions in its
+ * entry's `property`, and every specifier the table imports.
+ */
+export async function readLoaderTable(table: LoaderTable) {
+    const code = await readFile(table.file, "utf-8");
+    const { program } = await parse(table.file, code);
+    const declarator = program.body
+        .flatMap((node) => {
+            const declaration = node.type === "ExportNamedDeclaration" ? node.declaration : node;
+            return declaration?.type === "VariableDeclaration" ? declaration.declarations : [];
+        })
+        .find((candidate) =>
+            candidate.id.type === "Identifier" && candidate.id.name === table.name);
+    let init: AstNode | null | undefined = declarator?.init as AstNode | null | undefined;
+    while (init && (init.type === "TSSatisfiesExpression" || init.type === "TSAsExpression")) {
+        init = init.expression as AstNode;
+    }
+    if (init?.type !== "ObjectExpression") {
+        throw new Error(`${table.file} has no object literal '${table.name}' to read the types`
+            + " from.");
+    }
+
+    const entries: Record<string, string[]> = {};
+    for (const property of init.properties as AstNode[]) {
+        const key = readPropertyKey(property);
+        if (key === undefined) {
+            throw new Error(`'${table.name}' in ${table.file} has an entry whose key is not a`
+                + " literal.");
+        }
+        const value = property.value as AstNode;
+        const properties = value.type === "ObjectExpression" ? value.properties as AstNode[] : [];
+        const selected = table.property
+            ? properties.find((inner) => readPropertyKey(inner) === table.property)?.value
+            : value;
+        entries[key] = selected ? collectImportSpecifiers(selected as AstNode) : [];
+    }
+    return { entries, all: collectImportSpecifiers(init) };
+}
+
+/** A node of the tree `parse()` returns, read loosely. */
+type AstNode = { type: string; [key: string]: unknown };
+
+function readPropertyKey(property: AstNode) {
+    const key = property.key as AstNode | undefined;
+    if (property.type !== "Property" || !key || property.computed) {
+        return undefined;
+    }
+    if (key.type === "Identifier") {
+        return key.name as string;
+    }
+    return key.type === "Literal" && typeof key.value === "string" ? key.value : undefined;
+}
+
+/** Returns the specifiers of the `import()` expressions below `node` that are string literals. */
+function collectImportSpecifiers(node: AstNode) {
+    const specifiers: string[] = [];
+    const visit = (value: unknown) => {
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                visit(item);
+            }
+            return;
+        }
+        if (!value || typeof value !== "object" || !("type" in value)) {
+            return;
+        }
+        const child = value as AstNode;
+        const source = child.source as AstNode | undefined;
+        if (child.type === "ImportExpression" && source?.type === "Literal"
+            && typeof source.value === "string") {
+            specifiers.push(source.value);
+        }
+        for (const [ key, nested ] of Object.entries(child)) {
+            if (key !== "type") {
+                visit(nested);
+            }
+        }
+    };
+    visit(node);
+    return specifiers;
+}
+
+/**
+ * Checks that every view type and note type core shows with an app view on a shared page has a
+ * group among `groupNames`, so that a page of the type finds its files in an export.
+ */
+export function checkHostedGroups(groupNames: string[]) {
+    const names = new Set(groupNames);
+    const missing = [
+        ...SHARE_HOSTED_VIEW_TYPES.map((type) => `view:${type}`),
+        ...SHARE_HOSTED_NOTE_TYPES.map((type) => `type:${type}`)
+    ].filter((name) => !names.has(name));
+    if (missing.length) {
+        throw new Error("The share theme hosts types with no group of files:"
+            + ` ${missing.join(", ")}. Add them to a type table of \`TYPE_TABLES\`.`);
+    }
 }
 
 /**
  * Whether `id` is one of the app's modules that the client code the share theme reuses imports on
- * demand, on paths a shared page never takes, such as running a script note.
+ * demand, on paths a shared page never takes unless it shows a type that needs them, such as
+ * running a script note.
  */
 function isAppOnlyModule(id: string) {
     return APP_ONLY_MODULES.some((module) => id.endsWith(module));
 }
 
 const APP_ONLY_MODULES = [
-    "/apps/client/src/components/app_context.ts",
     "/apps/client/src/services/search.ts",
     "/apps/client/src/services/bundle.ts",
     "/apps/client/src/services/backend_scripting.ts",
@@ -542,8 +807,9 @@ function collectFiles(bundle: Record<string, BundleOutput>, entries: string[], o
 
 /**
  * Sorts `files` and makes them relative to the manifest, checking they share its directory or are
- * in `assets/`. A chunk refers to a file there as `../assets/<file>`, which from
- * `/share/assets/` is the same directory, so both are listed by their name alone.
+ * in `assets/`, such as a worker, which they list as `../assets/<file>`. A chunk refers to a file
+ * there as `../assets/<file>`, which from `/share/assets/` and from an export's `assets/` is the
+ * same directory, so an export writes both by their name alone.
  */
 function toManifestPaths(files: string[]) {
     const outside = files.filter((file) =>
@@ -552,5 +818,5 @@ function toManifestPaths(files: string[]) {
         const list = outside.join(", ");
         throw new Error(`The share theme's files must all be in '${SHARE_THEME_DIR}/': ${list}.`);
     }
-    return files.map((file) => posix.basename(file)).sort();
+    return files.map((file) => posix.relative(SHARE_THEME_DIR, file)).sort();
 }
