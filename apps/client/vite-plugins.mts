@@ -136,14 +136,12 @@ const SHARE_THEME_TARGET = "chrome96";
 
 /**
  * The modules the share theme imports on demand that a share-theme export copies only for the
- * pages that use them, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid, and the
- * viewer a Mermaid note's diagram goes into; the script API a render note runs its scripts with;
- * and what every app view loads first.
+ * pages that use them, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid; the
+ * script API a render note runs its scripts with; and what every app view loads first.
  */
 const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = {
     mermaid: [
-        { specifier: "mermaid", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") },
-        { specifier: "./zoom_viewer.js", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") }
+        { specifier: "mermaid", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") }
     ],
     scripting: [
         {
