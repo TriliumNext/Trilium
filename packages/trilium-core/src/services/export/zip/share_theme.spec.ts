@@ -425,7 +425,10 @@ describe("getAppViewGroups", () => {
             { type: "book", viewType: "calendar" },
             { type: "book", viewType: "geoMap", isProtected: true },
             { type: "book", viewType: "dashboard", children: [
-                { type: "code" },
+                { type: "code", mime: "text/x-markdown" },
+                { type: "file", mime: "application/pdf" },
+                { type: "code", mime: "application/json", labels: [ "disabled:iconPack" ] },
+                { type: "code", mime: "application/javascript" },
                 { type: "book", viewType: "table" }
             ] },
             { type: "book", viewType: "presentation", children: [
@@ -435,10 +438,12 @@ describe("getAppViewGroups", () => {
             { type: "book" }
         ] });
 
+        // A drawn note names the group of the renderer the app loads for its content, and a note
+        // drawn with nothing loaded on demand, such as text or code, names none.
         expect([ ...getAppViewGroups(site) ].sort()).toEqual([
-            "app", "content:book", "content:code", "content:render", "content:text", "scripting",
-            "type:mermaid", "type:render", "view:calendar", "view:dashboard", "view:presentation",
-            "view:table"
+            "app", "content:file", "content:iconPack", "content:markdown", "content:render",
+            "scripting", "type:mermaid", "type:render", "view:calendar", "view:dashboard",
+            "view:presentation", "view:table"
         ]);
         const withoutViews = viewTree({ type: "text", children: [ { type: "book" } ] });
         expect(getAppViewGroups(withoutViews).size).toBe(0);
@@ -497,6 +502,8 @@ describe("getShareThemeExportFiles", () => {
 
 interface FakeViewNote {
     type: string;
+    mime?: string;
+    labels?: string[];
     viewType?: string;
     isProtected?: boolean;
     children?: FakeViewNote[];
@@ -507,8 +514,9 @@ function viewTree(definition: FakeViewNote): any {
     const children = (definition.children ?? []).map(viewTree);
     const note = {
         type: definition.type,
-        mime: "text/html",
+        mime: definition.mime ?? "text/html",
         isProtected: !!definition.isProtected,
+        hasLabel: (name: string) => !!definition.labels?.includes(name),
         isContentAvailable: () => true,
         getContent: () => "",
         getLabelValue: (name: string) => (name === "viewType" ? definition.viewType ?? null : null),

@@ -1,4 +1,6 @@
-import { getShareThemeGroupFiles, type ShareThemeManifest } from "@triliumnext/commons";
+import {
+    getContentRendererGroup, getNoteContentType, getShareThemeGroupFiles, type ShareThemeManifest
+} from "@triliumnext/commons";
 import ejs from "ejs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
@@ -246,8 +248,9 @@ export function getShareThemeTranslationFiles(note: BNote) {
 /**
  * Returns the groups of the share theme's manifest the pages of the export of `note` load to host
  * app views: `view:<viewType>` for each collection and `type:<noteType>` for each note type with
- * one, `content:<noteType>` for the notes a dashboard or a presentation draws and `view:` for a
- * collection among them, `app` beside any of them and `scripting` for a render note.
+ * one, `content:<group>` for the renderer of each note a dashboard or a presentation draws, as
+ * `CONTENT_RENDERER_GROUPS` names it, and `view:` for a collection among them, `app` beside any
+ * of them and `scripting` for a render note.
  */
 export function getAppViewGroups(note: BNote) {
     const groups = new Set<string>();
@@ -265,7 +268,11 @@ export function getAppViewGroups(note: BNote) {
             groups.add(`view:${viewType}`);
             if (CONTENT_VIEW_TYPES.includes(viewType)) {
                 for (const drawn of getDrawnNotes(subtreeNote)) {
-                    groups.add(`content:${drawn.type}`);
+                    const contentGroup = getContentRendererGroup(getNoteContentType(drawn.type,
+                        drawn.mime, drawn.hasLabel("iconPack") || drawn.hasLabel("disabled:iconPack")));
+                    if (contentGroup) {
+                        groups.add(`content:${contentGroup}`);
+                    }
                     const drawnViewType = getViewTypeOf(drawn);
                     if (drawnViewType) {
                         groups.add(`view:${drawnViewType}`);

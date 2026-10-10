@@ -2,12 +2,12 @@ import "./content_renderer.css";
 
 import {
     attachmentIcon,
-    CANVAS_ATTACHMENT_MIME,
     getEditableBlockRun,
+    getFileContentType,
     getMimeTypeFromFileName,
+    getNoteContentType,
     isAcceptedImageMime,
     isImageAttachmentRole,
-    isOfficeMimeType,
     normalizeMimeTypeForCKEditor,
     type TextRepresentationResponse
 } from "@triliumnext/commons";
@@ -141,7 +141,6 @@ export interface NoteEditor {
     subscribeSaveState(listener: () => void): () => void;
 }
 
-const CODE_MIME_TYPES = new Set(["application/json"]);
 
 /** The size of an attached text or code file above which it shows as a file: highlighting is slow. */
 const MAX_ATTACHED_CODE_SIZE = 256 * 1024;
@@ -280,7 +279,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
  * group of files in the share theme's manifest, `content:<key>`; the editors of an embed are kept
  * under keys of their own, which a read-only page never loads.
  */
-const CONTENT_RENDERERS = {
+export const CONTENT_RENDERERS = {
     markdown: () => import("@triliumnext/commons/src/lib/markdown_renderer"),
     iconPack: () => import("../widgets/type_widgets/icon_pack/IconPackPreview"),
     image: () => import("../widgets/react/ImageViewer"),
@@ -1011,15 +1010,9 @@ function getRenderingType(entity: FNote | FAttachment) {
 
 /** The kind of content `entity` holds, from its note type or attachment role and its media type. */
 function getContentType(entity: FNote | FAttachment) {
-    if (entity instanceof FNote && entity.isIconPack()) {
-        // Icon packs (JSON `code`/`file` notes with #iconPack) render as their glyph grid, not as raw JSON.
-        return "iconPack";
-    }
-    if (entity instanceof FNote && entity.isMarkdown()) {
-        return "markdown";
-    }
-    if ("type" in entity) {
-        return getFileContentType(entity.type, entity.mime);
+    if (entity instanceof FNote) {
+        // Disabled icon packs (#disabled:iconPack, e.g. from a safe import) still preview.
+        return getNoteContentType(entity.type, entity.mime, entity.hasLabelOrDisabled("iconPack"));
     }
     if (!("role" in entity)) {
         return "";
@@ -1051,17 +1044,6 @@ function getAttachedFileContentType(mime: string, size = 0) {
         || (type === "file" && (mime.startsWith("text/") || ATTACHED_CODE_MIME_TYPES.has(mime)));
     if (!isCode) return type;
     return size <= MAX_ATTACHED_CODE_SIZE ? "code" : "file";
-}
-
-/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
-function getFileContentType(type: string, mime: string) {
-    if (type === "file" && mime === "application/pdf") return "pdf";
-    if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
-    if ((type === "file" || type === "viewConfig") && CODE_MIME_TYPES.has(mime)) return "code";
-    if (type === "file" && mime.startsWith("audio/")) return "audio";
-    if (type === "file" && mime.startsWith("video/")) return "video";
-    if (type === "file" && isOfficeMimeType(mime)) return "office";
-    return type;
 }
 
 export default {

@@ -1,4 +1,4 @@
-import { attachmentIcon } from "@triliumnext/commons";
+import { attachmentIcon, CONTENT_RENDERER_GROUPS } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -138,6 +138,7 @@ import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
 import {
+    CONTENT_RENDERERS,
     disposeInteractiveContent,
     getEmbedBoxSize,
     getRenderedContent as rawGetRenderedContent,
@@ -181,6 +182,14 @@ beforeEach(() => {
     vi.clearAllMocks();
     isProtectedSessionAvailable.mockReturnValue(false);
     (window as any).electronApi = undefined;
+});
+
+describe("CONTENT_RENDERERS", () => {
+    /** The static export reads the groups from the table in commons, the build from this one. */
+    it("has an entry for every group the static export names a renderer by", () => {
+        const groups = new Set(Object.values(CONTENT_RENDERER_GROUPS));
+        expect([ ...groups ].filter((group) => !Object.hasOwn(CONTENT_RENDERERS, group))).toEqual([]);
+    });
 });
 
 describe("getEmbedBoxSize", () => {

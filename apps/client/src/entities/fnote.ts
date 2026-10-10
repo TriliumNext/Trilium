@@ -1,4 +1,4 @@
-import { getNoteIcon, HighlightedTokenInfo } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime } from "@triliumnext/commons";
 
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
@@ -1180,7 +1180,7 @@ export default class FNote {
     }
 
     isMarkdown() {
-        return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
+        return this.type === "code" && isMarkdownMime(this.mime);
     }
 
     isIconPack() {
