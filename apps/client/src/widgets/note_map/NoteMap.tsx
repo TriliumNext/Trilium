@@ -5,6 +5,7 @@ import { RefObject } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
+import type NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import link_context_menu from "../../menus/link_context_menu";
 import hoisted_note from "../../services/hoisted_note";
@@ -12,7 +13,7 @@ import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
-import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
+import { useColorScheme, useEffectiveReadOnly, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
 import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../react/OverlayControlGroup";
 import Slider from "../react/Slider";
@@ -33,12 +34,15 @@ interface NoteMapProps {
     defaultRootNoteId?: string | null;
     /** Opens a clicked note where the map's host shows notes, in place of the active note context. */
     onOpenNote?: (noteId: string) => void;
+    /** The note context the map is shown in, which can make a read-only note temporarily editable. */
+    noteContext?: NoteContext;
 }
 
-export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId, onOpenNote }: NoteMapProps) {
+export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId, onOpenNote, noteContext }: NoteMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const styleResolverRef = useRef<HTMLDivElement>(null);
-    const [ mapType, setMapType ] = useMapType(note, widgetMode);
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    const [ mapType, setMapType ] = useMapType(note, widgetMode, isReadOnly);
     const [ mapRootIdLabel ] = useNoteLabel(note, "mapRootNoteId");
 
     const graphRef =
@@ -275,14 +279,22 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
  * The connections tab's map is a lens on whatever note is being read, so which map it draws is the
  * reader's own preference and is kept as an option (see {@link usesReaderPreference}). Everywhere
  * else the map is a note's own thing — a note map note or a hoisted map — and the
- * note it belongs to says which to draw through its `mapType` label.
+ * note it belongs to says which to draw through its `mapType` label. A read-only note keeps its
+ * label, so the reader's choice holds only while the note is shown, as on a shared page.
  */
-function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (mapType: MapType) => void ] {
+function useMapType(note: FNote, widgetMode: NoteMapWidgetMode, isReadOnly: boolean): [ MapType, (mapType: MapType) => void ] {
     const [ label, setLabel ] = useNoteLabel(note, "mapType");
     const [ option, setOption ] = useTriliumOption(NOTE_MAP_TYPE_OPTION);
+    const [ viewedMapType, setViewedMapType ] = useState<MapType>();
 
-    return usesReaderPreference(widgetMode)
-        ? [ toMapType(option), (mapType) => void setOption(mapType) ]
+    useEffect(() => setViewedMapType(undefined), [ note ]);
+
+    if (usesReaderPreference(widgetMode)) {
+        return [ toMapType(option), (mapType) => void setOption(mapType) ];
+    }
+
+    return isReadOnly
+        ? [ viewedMapType ?? toMapType(label), setViewedMapType ]
         : [ toMapType(label), setLabel ];
 }
 
