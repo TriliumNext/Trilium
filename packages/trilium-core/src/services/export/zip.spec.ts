@@ -654,6 +654,35 @@ describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
             expect(parseMeta(entries).files[0].dataFileName).toBe("public-alias.html");
         });
 
+        it("writes an image or file note of a share export as a page plus its raw file", async () => {
+            const bytes = Buffer.from([ 0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80 ]);
+            const { note: host } = createNote("root", { title: "BinaryShareHost", content: "" });
+            const { note: image } = createNote(host.noteId, { title: "Photo.png", type: "image", mime: "image/png" });
+            const { note: pdf } = createNote(host.noteId, { title: "Manual", type: "file", mime: "application/pdf" });
+            const { note: file } = createNote(host.noteId, { title: "Data.bin", type: "file", mime: "application/octet-stream" });
+            getContext().init(() => {
+                for (const note of [ image, pdf, file ]) note.setContent(bytes);
+                host.setContent(`<p><img src="api/images/${image.noteId}/Photo.png"></p>`);
+            });
+
+            const { entries } = await exportSubtree(host.getParentBranches()[0], "share");
+            const pageOf = (noteId: string) => {
+                const meta = (parseMeta(entries).files[0].children ?? []).find((c) => c.noteId === noteId);
+                return meta?.dataFileName ?? "";
+            };
+
+            expect([ pageOf(image.noteId), pageOf(pdf.noteId), pageOf(file.noteId) ])
+                .toEqual([ "Photo.png.html", "Manual.html", "Data.bin.html" ]);
+            for (const raw of [ "Photo.png", "Manual.pdf", "Data.bin" ]) {
+                expect(Buffer.compare(entries[raw] ?? Buffer.alloc(0), bytes), raw).toBe(0);
+            }
+            expect(entries["Photo.png.html"].toString("utf-8")).toContain(`<img src="Photo.png"`);
+            expect(entries["Manual.html"].toString("utf-8")).toContain(`src="Manual.pdf"`);
+            expect(entries["Data.bin.html"].toString("utf-8")).toContain(`location.href='Data.bin'`);
+            expect(entries[parseMeta(entries).files[0].dataFileName ?? ""].toString("utf-8"))
+                .toContain(`<img src="Photo.png"`);
+        });
+
         it("rewrites links to notes inside the export and leaves outside ones alone", async () => {
             const { note: outside } = createNote("root", { title: "Outside", content: "<p>out</p>" });
             const { note: parent } = createNote("root", { title: "LinkParent", content: "" });

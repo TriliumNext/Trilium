@@ -135,16 +135,13 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     }
 
     mapExtension(type: string | null, mime: string, existingExtension: string, format: ExportFormat): string | null {
-        if (mime.startsWith("image/")) {
-            return null;
-        }
-
         if (mime.startsWith("application/javascript")) {
             return "js";
         }
 
-        // Don't add .html if the file already has .zip extension (for attachments).
-        if (existingExtension === ".zip") {
+        // An attachment keeps its file; an image or file note becomes a page, with its file
+        // written beside it.
+        if (type === null && (mime.startsWith("image/") || existingExtension === ".zip")) {
             return null;
         }
 

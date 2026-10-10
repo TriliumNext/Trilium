@@ -116,11 +116,13 @@ describe("ShareThemeExportProvider", () => {
     });
 
     describe("mapExtension", () => {
-        it("returns null for images, js for javascript, null for .zip, html otherwise", () => {
+        it("keeps an attachment's image or .zip file, js for javascript, html otherwise", () => {
             const p = makeProvider();
-            expect(p.mapExtension("image", "image/png", "", "share")).toBeNull();
+            expect(p.mapExtension(null, "image/png", ".png", "share")).toBeNull();
+            expect(p.mapExtension(null, "application/zip", ".zip", "share")).toBeNull();
             expect(p.mapExtension("code", "application/javascript", "", "share")).toBe("js");
-            expect(p.mapExtension("file", "application/zip", ".zip", "share")).toBeNull();
+            expect(p.mapExtension("image", "image/png", ".png", "share")).toBe("html");
+            expect(p.mapExtension("file", "application/zip", ".zip", "share")).toBe("html");
             expect(p.mapExtension("text", "text/html", "", "share")).toBe("html");
         });
     });
