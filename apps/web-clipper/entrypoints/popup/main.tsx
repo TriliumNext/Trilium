@@ -1,6 +1,15 @@
 import "@/assets/theme.css";
 import "./popup.css";
 
+import type { IconData, IconDefinition } from "@boxicons/js";
+import Article from "@boxicons/js/icons/Article";
+import Cog from "@boxicons/js/icons/Cog";
+import Crop from "@boxicons/js/icons/Crop";
+import HelpCircle from "@boxicons/js/icons/HelpCircle";
+import Link from "@boxicons/js/icons/Link";
+import RefreshCw from "@boxicons/js/icons/RefreshCw";
+import Screenshot from "@boxicons/js/icons/Screenshot";
+import Tabs from "@boxicons/js/icons/Tabs";
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -64,8 +73,12 @@ export function Popup() {
                 <h3>Trilium Web Clipper</h3>
 
                 <div className="popup-header-buttons">
-                    <button className="btn btn-sm" onClick={() => browser.runtime.openOptionsPage()}>Options</button>
-                    <button className="btn btn-sm" onClick={() => window.open(HELP_URL, "_blank")}>Help</button>
+                    <button className="icon-action" title="Options" aria-label="Options" onClick={() => browser.runtime.openOptionsPage()}>
+                        <Icon icon={Cog} />
+                    </button>
+                    <button className="icon-action" title="Help" aria-label="Help" onClick={() => window.open(HELP_URL, "_blank")}>
+                        <Icon icon={HelpCircle} />
+                    </button>
                 </div>
             </div>
 
@@ -86,18 +99,23 @@ export function Popup() {
 
             <div className="capture-buttons">
                 <button className="btn btn-secondary" {...needsConnection} onClick={() => sendAndClose("save-cropped-screenshot")}>
+                    <Icon icon={Crop} />
                     Crop screenshot
                 </button>
                 <button className="btn btn-secondary" {...needsConnection} onClick={() => sendAndClose("save-whole-screenshot")}>
+                    <Icon icon={Screenshot} />
                     Save whole screenshot
                 </button>
                 <button className="btn btn-secondary" {...needsConnection} onClick={() => sendMessage({ name: "save-whole-page" })}>
+                    <Icon icon={Article} />
                     Save whole page
                 </button>
                 <button className="btn btn-secondary" {...needsConnection} onClick={() => setIsWritingNote(true)}>
+                    <Icon icon={Link} />
                     Save link with a note
                 </button>
                 <button className="btn btn-secondary" {...needsConnection} onClick={() => sendMessage({ name: "save-tabs" })}>
+                    <Icon icon={Tabs} />
                     Save window's tabs as a list
                 </button>
             </div>
@@ -107,8 +125,13 @@ export function Popup() {
             <div className="connection">
                 <div>Status: <ConnectionStatus status={searchStatus} /></div>
 
-                <button className="btn btn-sm" onClick={() => sendMessage({ name: "trigger-trilium-search" })}>
-                    check
+                <button
+                    className="icon-action"
+                    title="Check the connection again"
+                    aria-label="Check the connection again"
+                    onClick={() => sendMessage({ name: "trigger-trilium-search" })}
+                >
+                    <Icon icon={RefreshCw} />
                 </button>
             </div>
         </div>
@@ -194,6 +217,29 @@ function ConnectionStatus({ status }: { status: TriliumSearchStatus | undefined 
         case "found-server":
             return <span className="status-ok" title={`Connected to ${status.url}`}>Connected to the server</span>;
     }
+}
+
+/** A Boxicons v3 icon, drawn inline in the current text color. */
+function Icon({ icon }: { icon: IconDefinition }) {
+    const { viewBox, content } = basicIcon(icon);
+    return (
+        <svg
+            className="icon"
+            viewBox={viewBox}
+            fill="currentColor"
+            aria-hidden="true"
+            dangerouslySetInnerHTML={{ __html: content }}
+        />
+    );
+}
+
+/** The outlined variant of an icon, the one matching the app's Boxicons. */
+export function basicIcon(icon: IconDefinition): IconData {
+    const data = icon.packs.basic;
+    if (!data) {
+        throw new Error(`Boxicons has no basic variant of '${icon.name}'.`);
+    }
+    return data;
 }
 
 /** A version mismatch counts as connected, so the buttons stay enabled and report it on use. */

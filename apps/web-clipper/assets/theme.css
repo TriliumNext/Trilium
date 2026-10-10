@@ -1,4 +1,6 @@
-/* The Next theme's buttons, text boxes and check boxes, as the app draws them. */
+/* The Next theme's buttons, icon buttons, text boxes and check boxes, as the app draws them, in the
+   order the app loads them. */
+@import "@triliumnext/client/src/stylesheets/buttons.css";
 @import "@triliumnext/client/src/stylesheets/theme-next/forms.css";
 
 /* The app's own font file, matching the face in the client's `theme-next/base.css`. */
@@ -46,6 +48,16 @@
     --radio-checkbox-hover-background: #0000004f;
     --radio-checkbox-indicator-color: black;
 
+    --hover-item-background-color: #0000001a;
+    --hover-item-text-color: black;
+
+    --button-text-color: currentColor;
+    --icon-button-size: 32px;
+    --icon-button-icon-ratio: 0.65;
+    --icon-button-color: currentColor;
+    --icon-button-hover-background: var(--hover-item-background-color);
+    --icon-button-hover-color: var(--hover-item-text-color);
+
     /* The log status colors, for the connection status. */
     --status-ok-color: #32b323;
     --status-warning-color: #b7bd10;
@@ -88,6 +100,9 @@
         --radio-checkbox-hover-background: #ffffff61;
         --radio-checkbox-indicator-color: white;
 
+        --hover-item-background-color: #ffffff16;
+        --hover-item-text-color: #efefef;
+
         --status-ok-color: #74d369;
         --status-warning-color: #d3c769;
         --status-error-color: #d36969;
@@ -113,9 +128,39 @@ textarea {
     font: inherit;
 }
 
-button.btn {
+button.btn,
+button.icon-action {
     cursor: pointer;
     line-height: 1.5;
+}
+
+/* The Boxicons drawn as inline SVG, sized and spaced as the app sizes and spaces its icon font. */
+svg.icon {
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+}
+
+button.btn > svg.icon {
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-end: 0.35em;
+    color: var(--cmd-button-icon-color);
+}
+
+button.icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    > svg.icon {
+        width: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+        height: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+    }
+
+    &:active > svg.icon {
+        transform: scale(0.85);
+    }
 }
 
 input[type="text"],

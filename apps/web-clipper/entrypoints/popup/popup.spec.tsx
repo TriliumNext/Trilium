@@ -3,7 +3,9 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { parseLinkNote, Popup, textToHtml } from "./main";
+import Crop from "@boxicons/js/icons/Crop";
+
+import { basicIcon, parseLinkNote, Popup, textToHtml } from "./main";
 
 const sendMessage = vi.fn(async (_message: object): Promise<unknown> => undefined);
 const openOptionsPage = vi.fn(async () => {});
@@ -100,7 +102,7 @@ describe("popup", () => {
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-page" });
         await click("Save window's tabs as a list");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-tabs" });
-        await click("check");
+        await click("Check the connection again");
         expect(sendMessage).toHaveBeenCalledWith({ name: "trigger-trilium-search" });
         await click("Options");
         expect(openOptionsPage).toHaveBeenCalledOnce();
@@ -193,6 +195,33 @@ describe("popup", () => {
     });
 });
 
+describe("icons", () => {
+    it("draws each button's Boxicon inline, hidden from assistive technology", async () => {
+        vi.spyOn(console, "log").mockImplementation(() => {});
+        const container = document.createElement("div");
+        await act(() => render(<Popup />, container));
+
+        const icons = container.querySelectorAll("button > svg.icon");
+        expect(icons).toHaveLength(8);
+        for (const icon of icons) {
+            expect(icon.getAttribute("aria-hidden")).toBe("true");
+            expect(icon.getAttribute("viewBox")).toBe("0 0 24 24");
+            expect(icon.querySelector("path")).not.toBeNull();
+        }
+        for (const button of container.querySelectorAll("button.icon-action")) {
+            expect(button.getAttribute("aria-label")).toBe(button.getAttribute("title"));
+        }
+
+        await act(() => render(null, container));
+    });
+
+    it("uses the outlined variant, and refuses an icon that has none", () => {
+        expect(basicIcon(Crop)).toBe(Crop.packs.basic);
+        expect(() => basicIcon({ name: "brand", defaultPack: "brands", packs: {} }))
+            .toThrow("Boxicons has no basic variant of 'brand'.");
+    });
+});
+
 describe("parseLinkNote", () => {
     it("takes the first sentence or line as the title, unless the page title is kept", () => {
         expect(parseLinkNote("   ", false)).toEqual({ title: "", content: "" });
@@ -216,8 +245,10 @@ async function receive(message: object) {
     });
 }
 
+/** Clicks the button with the given label, or with that `aria-label` when it shows only an icon. */
 async function click(text: string) {
-    const button = [ ...container.querySelectorAll("button") ].find((b) => b.textContent?.trim() === text);
+    const button = [ ...container.querySelectorAll("button") ]
+        .find((b) => b.textContent?.trim() === text || b.getAttribute("aria-label") === text);
     expect(button, text).toBeDefined();
     await act(() => button?.click());
 }

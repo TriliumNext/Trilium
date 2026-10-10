@@ -1024,6 +1024,9 @@ importers:
 
   apps/web-clipper:
     dependencies:
+      '@boxicons/js':
+        specifier: 1.0.1
+        version: 1.0.1
       preact:
         specifier: 11.0.0
         version: 11.0.0(preact-render-to-string@6.8.0)
@@ -1787,6 +1790,9 @@ packages:
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
+
+  '@boxicons/js@1.0.1':
+    resolution: {integrity: sha512-DY4Z4uggmU+iKVcgQBvTK05AtbRweMa3mWLLoPnWhjH7DWPeCdI9It7rHNEi3RlI0YQqWu6WCfo5aC7oETIWng==}
 
   '@braintree/sanitize-url@6.0.2':
     resolution: {integrity: sha512-Tbsj02wXCbqGmzdnXNk0SOF19ChhRU70BsroIi4Pm6Ehp56in6vch94mfbdQ17DozxkL3BAVjbZ4Qc1a0HFRAg==}
@@ -12143,6 +12149,8 @@ snapshots:
   '@blazediff/core@1.10.0': {}
 
   '@borewit/text-codec@0.2.2': {}
+
+  '@boxicons/js@1.0.1': {}
 
   '@braintree/sanitize-url@6.0.2': {}
 

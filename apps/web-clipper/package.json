@@ -24,6 +24,7 @@
     "wxt": "0.21.4"
   },
   "dependencies": {
+    "@boxicons/js": "1.0.1",
     "preact": "11.0.0"
   }
 }
