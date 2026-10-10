@@ -9,6 +9,7 @@ import Crop from "@boxicons/js/icons/Crop";
 import FileX from "@boxicons/js/icons/FileX";
 import Globe from "@boxicons/js/icons/Globe";
 import HelpCircle from "@boxicons/js/icons/HelpCircle";
+import Highlight from "@boxicons/js/icons/Highlight";
 import Link from "@boxicons/js/icons/Link";
 import Lock from "@boxicons/js/icons/Lock";
 import RefreshCw from "@boxicons/js/icons/RefreshCw";
@@ -36,18 +37,29 @@ type PopupMessage = {
 /** The keyboard shortcut of each command, by command name; unbound commands are absent. */
 type Shortcuts = Record<string, string>;
 
-/** A page as the content script extracts it, its images referenced in `content` by `imageId`. */
-interface ExtractedPage {
+/** Content as the content script reads it from the page, its images referenced in `content` by `imageId`. */
+interface SelectedContent {
     title: string;
     content: string;
     images: { imageId: string, src: string }[];
     pageUrl: string;
+}
+
+/** The readable page, as the content script extracts it. */
+interface ExtractedPage extends SelectedContent {
     clipType: "page";
     labels: Record<string, string>;
 }
 
 /** The current page: its readable version, or why there is none. */
 type PageState = ExtractedPage | "unreadable" | "inaccessible";
+
+/** What the active tab offers to save. */
+interface TabContent {
+    page: PageState;
+    /** `null` when nothing is selected, or the page is out of reach. */
+    selection: SelectedContent | null;
+}
 
 const PREVIEW_STYLE = `
     :root { color-scheme: light dark; }
@@ -168,10 +180,10 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
     onWriteNote: () => void;
 }) {
     /** `undefined` while the page is read. */
-    const [ page, setPage ] = useState<PageState>();
+    const [ tab, setTab ] = useState<TabContent>();
 
     useEffect(() => {
-        void extractPage().then(setPage);
+        void readActiveTab().then(setTab);
     }, []);
 
     function sendAndClose(name: string) {
@@ -180,19 +192,26 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
     }
 
     const disabledReason = disabled ? DISCONNECTED_TITLE : undefined;
-    const pageDisabledReason = disabledReason ?? (page === "inaccessible" ? UNREACHABLE_TITLE : undefined);
+    const pageDisabledReason = disabledReason ?? (tab?.page === "inaccessible" ? UNREACHABLE_TITLE : undefined);
 
     let main: ComponentChildren;
-    if (page === "inaccessible") {
+    if (tab?.page === "inaccessible") {
         main = (
             <EmptyState icon={Lock}>
                 {"The extension cannot access this page.\nIf it is a regular web page, reload it."}
             </EmptyState>
         );
-    } else if (page === "unreadable") {
+    } else if (tab?.page === "unreadable" && !tab.selection) {
         main = <EmptyState icon={FileX}>This page has no article to save.</EmptyState>;
     } else {
-        main = <PagePreview page={page} disabled={disabled} shortcut={shortcuts.saveWholePage} />;
+        main = (
+            <PagePreview
+                article={typeof tab?.page === "object" ? tab.page : undefined}
+                selection={tab?.selection ?? undefined}
+                disabled={disabled}
+                shortcuts={shortcuts}
+            />
+        );
     }
 
     return (
@@ -259,29 +278,39 @@ function EmptyState({ icon, className, children }: {
 }
 
 /**
- * The readable version of the current page, with its title editable, and the button that saves it.
- * The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed frame.
+ * What the popup saves from the page, with its title editable, and the button that saves it: the
+ * selection when there is one, otherwise the readable page, with a switch between the two when the
+ * page has both. The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed
+ * frame.
  */
-function PagePreview({ page, disabled, shortcut }: {
-    /** `undefined` while the page is read. */
-    page: ExtractedPage | undefined;
+function PagePreview({ article, selection, disabled, shortcuts }: {
+    /** `undefined` while the page is read, or when it has no article. */
+    article: ExtractedPage | undefined;
+    selection: SelectedContent | undefined;
     disabled: boolean;
-    shortcut: string | undefined;
+    shortcuts: Shortcuts;
 }) {
-    const [ title, setTitle ] = useState("");
+    const [ mode, setMode ] = useState<"selection" | "page">("selection");
+    /** `undefined` until the user edits the title. */
+    const [ title, setTitle ] = useState<string>();
 
-    useEffect(() => setTitle(page?.title ?? ""), [ page ]);
+    const clip = selection && (mode === "selection" || !article) ? selection : article;
+    const isSelection = !!clip && clip === selection;
+    const shownTitle = title ?? (article ?? selection)?.title ?? "";
 
-    function save(extracted: ExtractedPage) {
-        void sendMessage({ name: "save-whole-page", page: { ...extracted, title: title.trim() || extracted.title } });
+    function save(content: SelectedContent | ExtractedPage) {
+        const titled = { ...content, title: shownTitle.trim() || content.title };
+        void sendMessage(isSelection
+            ? { name: "save-selection", selection: titled }
+            : { name: "save-whole-page", page: titled });
         window.close();
     }
 
-    const published = page?.labels.publishedDate;
+    const published = clip && !isSelection ? article?.labels.publishedDate : undefined;
 
     return (
         <div className="page-preview">
-            {page && (
+            {clip && (
                 <div className="page-heading">
                     <span className="page-icon"><Icon icon={Globe} /></span>
                     <div className="page-heading-text">
@@ -290,31 +319,38 @@ function PagePreview({ page, disabled, shortcut }: {
                             className="page-title"
                             aria-label="Note title"
                             placeholder="Note title"
-                            value={title}
+                            value={shownTitle}
                             onInput={(e) => setTitle(e.currentTarget.value)}
                         />
                         <div className="page-meta">
-                            {new URL(page.pageUrl).hostname}{published && ` · Published ${published}`}
+                            {new URL(clip.pageUrl).hostname}{published && ` · Published ${published}`}
                         </div>
                     </div>
                 </div>
             )}
 
+            {article && selection && (
+                <div className="clip-mode" role="group" aria-label="What to save">
+                    <button aria-pressed={mode === "selection"} onClick={() => setMode("selection")}>Selection</button>
+                    <button aria-pressed={mode === "page"} onClick={() => setMode("page")}>Whole page</button>
+                </div>
+            )}
+
             <div className="page-body">
-                {page
-                    ? <iframe className="page-content" title="Preview of the page" sandbox="" srcDoc={previewDocument(page)} />
+                {clip
+                    ? <iframe className="page-content" title="Preview of the page" sandbox="" srcDoc={previewDocument(clip)} />
                     : <div className="page-preview-placeholder">Reading the page…</div>}
             </div>
 
             <button
                 className="btn btn-primary primary-action"
-                disabled={disabled || !page}
+                disabled={disabled || !clip}
                 title={disabled ? DISCONNECTED_TITLE : undefined}
-                onClick={page ? () => save(page) : undefined}
+                onClick={clip ? () => save(clip) : undefined}
             >
-                <Icon icon={Article} />
-                <span className="action-label">Save page to Trilium</span>
-                <Shortcut keys={shortcut} />
+                <Icon icon={isSelection ? Highlight : Article} />
+                <span className="action-label">{isSelection ? "Save selection" : "Save page to Trilium"}</span>
+                <Shortcut keys={isSelection ? shortcuts.saveSelection : shortcuts.saveWholePage} />
             </button>
         </div>
     );
@@ -430,22 +466,40 @@ function describeStatus(status: TriliumSearchStatus | undefined) {
     }
 }
 
+/** Asks the content script of the active tab for its readable page and its selection, together. */
+async function readActiveTab(): Promise<TabContent> {
+    const [ tab ] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined) return { page: "inaccessible", selection: null };
+
+    const [ page, selection ] = await Promise.all([ extractPage(tab.id), readSelection(tab.id) ]);
+    return { page, selection };
+}
+
 /**
- * Asks the content script of the active tab for its readable page, as it extracts it for saving.
- * Returns `null` on pages where no content script runs (browser pages, extension stores) and when
- * the page cannot be extracted.
+ * The content script answers `undefined` when Readability cannot parse the page, and the message
+ * fails where no content script runs.
  */
-/**
- * Asks the content script of the active tab for its readable page. The script answers `undefined`
- * when Readability cannot parse the page, and the message fails where no content script runs.
- */
-async function extractPage(): Promise<PageState> {
+async function extractPage(tabId: number): Promise<PageState> {
     try {
-        const [ tab ] = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id === undefined) return "inaccessible";
-        return await browser.tabs.sendMessage(tab.id, { name: "trilium-save-page" }) ?? "unreadable";
+        return await browser.tabs.sendMessage(tabId, { name: "trilium-save-page" }) ?? "unreadable";
     } catch {
         return "inaccessible";
+    }
+}
+
+/**
+ * The selection on the page, or `null` when there is none. A click on the page leaves a collapsed
+ * selection, which the content script still answers with, empty.
+ */
+async function readSelection(tabId: number): Promise<SelectedContent | null> {
+    try {
+        const selection: SelectedContent | undefined = await browser.tabs.sendMessage(tabId, { name: "trilium-save-selection" });
+        if (!selection) return null;
+
+        const text = new DOMParser().parseFromString(selection.content, "text/html").body.textContent;
+        return text.trim() || selection.images.length ? selection : null;
+    } catch {
+        return null;
     }
 }
 

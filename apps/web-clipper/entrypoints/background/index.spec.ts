@@ -308,6 +308,24 @@ describe("background", () => {
             });
             expect(await lastToast()).toMatchObject({ message: "Page has been saved to Trilium.", noteId: "saved" });
         });
+
+        it("saves the selection the popup read as a clipping, without reading it again", async () => {
+            const selection = {
+                title: "Edited title",
+                content: `<p>Quote</p><img src="i1">`,
+                images: [ { imageId: "i1", src: "https://example.com/a.png" } ],
+                pageUrl: PAGE_URL
+            };
+
+            await sendRuntimeMessage({ name: "save-selection", selection });
+
+            expect(tabsSendMessage).not.toHaveBeenCalledWith(7, { name: "trilium-save-selection" });
+            expect(facade.callService).toHaveBeenCalledWith("POST", "clippings", {
+                ...selection,
+                images: [ { ...selection.images[0], dataUrl: expect.stringMatching(PNG_DATA_URL) } ]
+            });
+            expect(await lastToast()).toMatchObject({ message: "Selection has been saved to Trilium.", noteId: "saved" });
+        });
     });
 
     describe("screenshots", () => {

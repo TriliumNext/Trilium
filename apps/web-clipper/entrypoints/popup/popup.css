@@ -100,6 +100,35 @@ body {
             text-overflow: ellipsis;
         }
 
+        .clip-mode {
+            display: flex;
+            gap: 2px;
+            padding: 2px;
+            border-radius: 8px;
+            background: var(--input-background-color);
+
+            button {
+                flex: 1;
+                padding: 3px 8px;
+                border: 0;
+                border-radius: 6px;
+                background: transparent;
+                color: var(--muted-text-color);
+                font-size: 0.9em;
+                cursor: pointer;
+
+                &:hover {
+                    color: var(--main-text-color);
+                }
+
+                &[aria-pressed="true"] {
+                    background: var(--cmd-button-background-color);
+                    box-shadow: 1px 1px 1px var(--cmd-button-shadow-color);
+                    color: var(--cmd-button-text-color);
+                }
+            }
+        }
+
         .page-body {
             position: relative;
             overflow: hidden;
@@ -159,6 +188,9 @@ body {
 
         .action-label {
             flex-grow: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
             text-align: start;
         }
     }

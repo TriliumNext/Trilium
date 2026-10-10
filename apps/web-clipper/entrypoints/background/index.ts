@@ -256,8 +256,9 @@ export default defineBackground(() => {
         return failedCount;
     }
 
-    async function saveSelection() {
-        const payload = await requestFromPage({name: 'trilium-save-selection'});
+    /** Saves the selection on the page, or the one the popup already read and the user titled. */
+    async function saveSelection(selection?: object) {
+        const payload = selection ?? await requestFromPage({name: 'trilium-save-selection'});
 
         const failedImages = await postProcessImages(payload);
 
@@ -460,6 +461,9 @@ export default defineBackground(() => {
         }
         else if (request.name === 'save-whole-page') {
             return await saveWholePage(request.page);
+        }
+        else if (request.name === 'save-selection') {
+            return await saveSelection(request.selection);
         }
         else if (request.name === 'save-link-with-note') {
             return await saveLinkWithNote(request.title, request.content);

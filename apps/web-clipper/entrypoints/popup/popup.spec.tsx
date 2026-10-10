@@ -28,13 +28,23 @@ const PAGE = {
     labels: { publishedDate: "2024-05-01" }
 };
 const tabsQuery = vi.fn(async (): Promise<{ id?: number }[]> => [ { id: 7 } ]);
-const tabsSendMessage = vi.fn(async (_tabId: number, _message: object): Promise<unknown> => PAGE);
+const SELECTION = {
+    title: "Page title",
+    content: `<p>A quote</p><img src="i2">`,
+    images: [ { imageId: "i2", src: "https://example.com/c.png" } ],
+    pageUrl: "https://example.com/post?id=1#part"
+};
+/** What the content script answers to `trilium-save-selection`; nothing is selected unless a test says so. */
+let selection: unknown;
+const tabsSendMessage = vi.fn(async (_tabId: number, message: { name: string }): Promise<unknown> =>
+    message.name === "trilium-save-page" ? PAGE : selection);
 const closeWindow = vi.fn();
 let container: HTMLElement;
 
 describe("popup", () => {
     beforeEach(async () => {
         fakeBrowser.reset();
+        selection = undefined;
         Object.assign(fakeBrowser.runtime, { sendMessage, openOptionsPage });
         Object.assign(fakeBrowser.commands, { getAll: getAllCommands });
         Object.assign(fakeBrowser.tabs, { query: tabsQuery, sendMessage: tabsSendMessage });
@@ -242,7 +252,9 @@ describe("popup", () => {
     });
 
     it("keeps only the actions that need no access to a page out of reach", async () => {
-        tabsSendMessage.mockRejectedValueOnce(new Error("Could not establish connection."));
+        tabsSendMessage
+            .mockRejectedValueOnce(new Error("Could not establish connection."))
+            .mockRejectedValueOnce(new Error("Could not establish connection."));
         await rerender();
         expect(unavailable()).toBe(
             "The extension cannot access this page.\nIf it is a regular web page, reload it."
@@ -256,7 +268,52 @@ describe("popup", () => {
         tabsQuery.mockResolvedValueOnce([ {} ]);
         await rerender();
         expect(unavailable()).toContain("The extension cannot access this page.");
-        expect(tabsSendMessage).toHaveBeenCalledTimes(2);
+        expect(tabsSendMessage).toHaveBeenCalledTimes(4);
+    });
+
+    it("previews the selection first, and switches to the whole page", async () => {
+        selection = SELECTION;
+        await rerender();
+        expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-selection" });
+        expect(modes()).toEqual([ [ "Selection", "true" ], [ "Whole page", "false" ] ]);
+        expect(frameDocument()).toBe(previewDocument(SELECTION));
+        expect(shortcutOf("Save selection").keys).toEqual([ "Ctrl", "Shift", "S" ]);
+        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com");
+
+        await click("Whole page");
+        expect(modes()).toEqual([ [ "Selection", "false" ], [ "Whole page", "true" ] ]);
+        expect(frameDocument()).toBe(previewDocument(PAGE));
+        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
+        await click("Save page to Trilium");
+        expect(sendMessage).toHaveBeenLastCalledWith({ name: "save-whole-page", page: PAGE });
+
+        await click("Selection");
+        await type(".page-title", " Quote ");
+        await click("Save selection");
+        expect(sendMessage).toHaveBeenLastCalledWith({ name: "save-selection", selection: { ...SELECTION, title: "Quote" } });
+        expect(closeWindow).toHaveBeenCalledTimes(2);
+    });
+
+    it("saves the selection of a page that has no article, and ignores an empty one", async () => {
+        selection = SELECTION;
+        tabsSendMessage.mockResolvedValueOnce(undefined);
+        await rerender();
+        expect(container.querySelector(".no-items")).toBeNull();
+        expect(container.querySelector(".clip-mode")).toBeNull();
+        expect(frameDocument()).toBe(previewDocument(SELECTION));
+        expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("Page title");
+        await click("Save selection");
+        expect(sendMessage).toHaveBeenLastCalledWith({ name: "save-selection", selection: SELECTION });
+
+        selection = { ...SELECTION, content: " <p> </p>", images: [] };
+        await rerender();
+        expect(container.querySelector(".clip-mode")).toBeNull();
+        expect(frameDocument()).toBe(previewDocument(PAGE));
+
+        selection = { ...SELECTION, content: `<img src="i2">` };
+        await rerender();
+        expect(modes()).toHaveLength(2);
+        expect(frameDocument()).toBe(previewDocument(selection as typeof SELECTION));
     });
 
     it("tells the user when the background script cannot be reached", async () => {
@@ -499,6 +556,18 @@ function toolbar() {
         expect(action.getAttribute("aria-label")).toBe(action.title.replace(/ \(.*\)$/, ""));
         return { label: action.querySelector(".action-label")?.textContent, title: action.title };
     });
+}
+
+/** The clip mode switch's options, each with whether it is the current one. */
+function modes() {
+    return [ ...container.querySelectorAll(".clip-mode button") ]
+        .map((option) => [ option.textContent, option.getAttribute("aria-pressed") ]);
+}
+
+function frameDocument() {
+    const frame = container.querySelector(".page-body iframe.page-content");
+    expect(frame).not.toBeNull();
+    return frame?.getAttribute("srcdoc");
 }
 
 /** The class names of the preview card's parts, in order. */
