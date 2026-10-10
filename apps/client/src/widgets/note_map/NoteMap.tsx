@@ -151,7 +151,7 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
                     void appContext.triggerEvent("closePopupEditor", {});
                 })
                 .onNodeRightClick((node, e) => {
-                    if (!node.id || onOpenNote) return;
+                    if (!node.id) return;
                     link_context_menu.openContextMenu(node.id, e);
                 });
 
