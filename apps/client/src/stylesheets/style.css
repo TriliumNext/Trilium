@@ -1,6 +1,7 @@
 @import "./boxicons-compat.css";
 @import "./adaptive-colors.css";
 @import "./menus.css";
+@import "./buttons.css";
 
 @font-face {
     font-family: Montserrat;
@@ -332,43 +333,6 @@ button.custom-title-bar-button {
     overflow-y: auto;
     /* prevent horizontal scrollbar */
     overflow-x: hidden;
-}
-
-.icon-action {
-    border: 1px solid transparent;
-    padding: 5px;
-    width: 37px;
-    height: 35px;
-    cursor: pointer;
-    font-size: 1.5em;
-    color: var(--button-text-color);
-    background: var(--button-background-color);
-    border-radius: var(--button-border-radius);
-}
-
-.icon-action-always-border {
-    border-color: var(--button-border-color);
-}
-
-.icon-action:hover:not(.disabled) {
-    text-decoration: none;
-    border-color: var(--button-border-color);
-}
-
-/* An action that takes something away, marked as such the way destructive menu items are. */
-.icon-action.destructive-action-icon {
-    color: var(--dropdown-item-icon-destructive-color);
-}
-
-.icon-action.disabled {
-    color: var(--muted-text-color) !important;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.icon-action.btn {
-    padding: 0 8px;
-    min-width: unset !important;
 }
 
 .ui-widget-content a:not(.ui-tabs-anchor) {

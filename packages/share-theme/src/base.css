@@ -96,6 +96,21 @@ html.theme-light {
     --more-accented-background-color: var(--card-background-hover-color);
     --hover-item-text-color: black;
     --icon-button-hover-background: #0000001a;
+    /* The buttons of `theme-next-light.css`, which the app views' toolbars draw from. */
+    --input-background-color: #00000012;
+    --cmd-button-background-color: #0000000f;
+    --cmd-button-text-color: #000000ad;
+    --cmd-button-hover-background-color: #00000016;
+    --cmd-button-hover-text-color: #000;
+    --cmd-button-shadow-color: #00000040;
+    --cmd-button-icon-color: black;
+    --cmd-button-keyboard-shortcut-background: #00000017;
+    --cmd-button-keyboard-shortcut-color: black;
+    --button-group-background-color: var(--input-background-color);
+    --button-group-active-button-background-color: white;
+    --button-group-active-button-color: black;
+    --button-group-active-button-shadow-color: #00000056;
+    --tab-close-button-hover-background: #c95a5a;
     --active-item-text-color: #383838;
     --active-item-background-color: #ddd;
     /* The overlay buttons of `theme-next-light.css`. */
@@ -185,6 +200,21 @@ html.theme-dark {
     --more-accented-background-color: var(--card-background-hover-color);
     --hover-item-text-color: #efefef;
     --icon-button-hover-background: #ffffff16;
+    /* The buttons of `theme-next-dark.css`. */
+    --input-background-color: #ffffff12;
+    --cmd-button-background-color: #ffffff28;
+    --cmd-button-text-color: #ffffffc2;
+    --cmd-button-hover-background-color: #ffffff37;
+    --cmd-button-hover-text-color: white;
+    --cmd-button-shadow-color: #00000080;
+    --cmd-button-icon-color: white;
+    --cmd-button-keyboard-shortcut-background: #0000004d;
+    --cmd-button-keyboard-shortcut-color: white;
+    --button-group-background-color: #00000051;
+    --button-group-active-button-background-color: #4f4f4f;
+    --button-group-active-button-color: white;
+    --button-group-active-button-shadow-color: #000000;
+    --tab-close-button-hover-background: #a45353;
     --active-item-text-color: #aaaaaa;
     --active-item-background-color: #777;
     /* The overlay buttons of `theme-next-dark.css`. */
@@ -217,6 +247,14 @@ html.theme-dark {
     /* The frosting of `theme-next/base.css` behind the translucent overlay buttons. */
     --overlay-button-backdrop-filter: blur(32px) saturate(1000%);
     --opaque-icon-button-hover-color: var(--hover-item-text-color);
+    /* The buttons shared by both modes, from `theme-next-light.css` and `theme-next/base.css`. */
+    --button-text-color: currentColor;
+    --cmd-button-disabled-opacity: 0.5;
+    --icon-button-color: currentColor;
+    --icon-button-hover-color: var(--hover-item-text-color);
+    --icon-button-size: 32px;
+    --icon-button-icon-ratio: 0.65;
+    --tab-close-button-hover-color: white;
 }
 
 /* The context menu's own offset in `theme-next/shell.css`, for its smaller icons. */
