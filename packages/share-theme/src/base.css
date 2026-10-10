@@ -219,6 +219,11 @@ html.theme-dark {
     --opaque-icon-button-hover-color: var(--hover-item-text-color);
 }
 
+/* The context menu's own offset in `theme-next/shell.css`, for its smaller icons. */
+#context-menu-container {
+    --menu-item-icon-vert-offset: -1px;
+}
+
 body {
     background: var(--background-primary);
     font-family: "Inter", system-ui, sans-serif;
