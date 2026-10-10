@@ -145,6 +145,8 @@ export default class BoardApi {
      * one split of several, and the focused one is often the pane the reader came from.
      */
     noteContext: NoteContext | null | undefined;
+    /** Opens a note where the board's host shows notes, in place of the quick edit popup. */
+    onOpenNote: ((noteId: string) => void) | undefined;
 
     /**
      * Stands in for the stored collapse flags while a filter is on, set by the board on every
@@ -1452,8 +1454,12 @@ export default class BoardApi {
         return { note, branch };
     }
 
-    openNote(noteId: string) {
-        appContext.triggerCommand("openInPopup", { noteIdOrPath: noteId });
+    openNote(noteIdOrPath: string) {
+        if (this.onOpenNote) {
+            this.onOpenNote(noteIdOrPath.split("/").at(-1) ?? noteIdOrPath);
+            return;
+        }
+        appContext.triggerCommand("openInPopup", { noteIdOrPath });
     }
 
     /**
@@ -1466,6 +1472,10 @@ export default class BoardApi {
     openCard(note: FNote) {
         const target = note.getRelationValue(CARD_REDIRECT_RELATION)
             ?? note.getRelationValue(CARD_REDIRECT_RELATION_LEGACY);
+        if (target && this.onOpenNote) {
+            this.onOpenNote(target);
+            return;
+        }
         if (target) {
             const context = this.noteContext ?? appContext.tabManager?.getActiveContext();
             void context?.setNote(target);

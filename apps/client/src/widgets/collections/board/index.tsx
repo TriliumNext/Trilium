@@ -360,7 +360,7 @@ const BOARD_HINTS: ShortcutHintDefinition = [
 ];
 
 export default function BoardView({
-    note: parentNote, noteIds, viewConfig: storedConfig, saveConfig
+    note: parentNote, noteIds, viewConfig: storedConfig, saveConfig, onOpenNote
 }: ViewModeProps<BoardViewData>) {
     const { noteContext } = useNoteContext();
     const [ requestedGroupBy, setRequestedGroupBy ] =
@@ -604,6 +604,7 @@ export default function BoardView({
     // Set here rather than passed in: the api outlives a refresh, and the board can be drawn in a
     // pane other than the focused one.
     api.noteContext = noteContext;
+    api.onOpenNote = onOpenNote;
     // Every member is one of useState's own setters, so this value is built once and never changes
     // identity -- a drag cannot reach anything that reads only this.
     const collapseAllColumns = useCallback(() => {
