@@ -133,6 +133,7 @@ vi.mock("@triliumnext/commons/src/lib/markdown_renderer", async (orig) => ({
 
 // --- Imports AFTER the mocks. ---
 import appContext from "../components/app_context.js";
+import Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
@@ -815,6 +816,12 @@ describe("getRenderedContent render / doc / protectedSession / mermaid", () => {
         expect(type).toBe("render");
         expect(renderServiceRender).toHaveBeenCalledOnce();
         expect($renderedContent.find(".render-ok").length).toBe(1);
+    });
+
+    it("mounts a JSX render note under the given parent component", async () => {
+        const parentComponent = new Component();
+        await getRenderedContent(buildNote({ title: "R", type: "render" }), { parentComponent });
+        expect(renderServiceRender.mock.lastCall?.[3]).toBe(parentComponent);
     });
 
     it("render error callback shows an admonition with the error message", async () => {

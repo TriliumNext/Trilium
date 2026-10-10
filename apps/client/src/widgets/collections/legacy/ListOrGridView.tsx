@@ -2,7 +2,7 @@ import "./ListOrGridView.css";
 import { Card, CardFrame, CardSection } from "../../react/Card";
 
 import type { HighlightedTokenInfo } from "@triliumnext/commons";
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import attribute_renderer from "../../../services/attribute_renderer";
@@ -13,6 +13,7 @@ import CollectionProperties from "../../note_bars/CollectionProperties";
 import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
+import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { Pager, usePagination, PaginationContext } from "../Pagination";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
@@ -297,6 +298,7 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
+    const parentComponent = useContext(ParentComponent);
 
     const [ready, setReady] = useState(false);
     const [noteType, setNoteType] = useState<string>("none");
@@ -328,7 +330,8 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
             noContentEmbeds: true,
             includeArchivedNotes,
             showTextRepresentation,
-            interactive
+            interactive,
+            parentComponent: parentComponent ?? undefined
         })
             .then(({ $renderedContent, type }) => {
                 if (cancelled || !contentRef.current) {

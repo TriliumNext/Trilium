@@ -14,6 +14,7 @@ import {
 import DOMPurify from "dompurify";
 import { h, type JSX, render } from "preact";
 
+import type Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import FNote from "../entities/fnote.js";
@@ -108,6 +109,8 @@ export interface RenderOptions {
      * Without it, that content is read-only.
      */
     noteEditor?: NoteEditor;
+    /** The component a JSX render note mounts under, by default the one of the closest `.component` element. */
+    parentComponent?: Component;
 }
 
 /** Saves the changes that rendered content makes to attachments of the note that shows it. */
@@ -212,7 +215,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
         await renderService.render(entity, $content, (e, noteId) => {
             showRenderError($content, e, noteId).catch((cardError) => console.error("Failed to render the script error card:", cardError));
-        });
+        }, options.parentComponent);
 
         $renderedContent.append($content);
     } else if (type === "doc" && "noteId" in entity) {
