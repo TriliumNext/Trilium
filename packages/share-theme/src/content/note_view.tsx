@@ -1,10 +1,9 @@
 import "@triliumnext/client/src/widgets/type_widgets/NoteMap.css";
 
-import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
 import { getNoteImageUrl } from "@triliumnext/client/src/services/image_urls.js";
 import type NoteMapWidget from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
-import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
+import { TYPE_MAPPINGS } from "@triliumnext/client/src/widgets/note_types.js";
 import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
 import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
 import type RelationMapWidget from "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js";
@@ -18,13 +17,16 @@ import { ZoomViewer } from "./zoom_viewer.js";
 /**
  * Mounts the note in place of the content the page rendered for visitors without scripts: an
  * image, a canvas, a mind map or a Mermaid note's diagram in a viewer that pans and zooms it, any
- * other note with the app's own widget for its type, read-only.
+ * other note with the app's own widget for its type, read-only. The rendered content stays until
+ * the view has loaded, and stays for good if the view fails to load.
  */
-export default function mountNoteView(container: HTMLElement, payload: AppPayload) {
+export default async function mountNoteView(container: HTMLElement, payload: AppPayload) {
+    const noteId = container.dataset.noteId ?? "";
+    const View = await loadView(payload.notes.find((note) => note.noteId === noteId)?.type);
     container.replaceChildren();
     render(
-        <ShareAppHost noteId={container.dataset.noteId ?? ""} payload={payload}>
-            {(app) => <SharedNoteView app={app} />}
+        <ShareAppHost noteId={noteId} payload={payload}>
+            {(app) => <View app={app} />}
         </ShareAppHost>,
         container
     );
@@ -55,35 +57,20 @@ const SHARE_NOTE_VIEWS: Partial<Record<string, () => Promise<SharedView>>> = {
     }
 };
 
-function SharedNoteView({ app }: { app: HostedApp }) {
-    const load = SHARE_NOTE_VIEWS[app.note.type];
-    const [ View, setView ] = useState<SharedView>();
-
-    useEffect(() => {
-        load?.().then((view) => setView(() => view));
-    }, [ load ]);
-
-    if (!load) {
-        return <NoteView note={app.note} />;
+/** The view of a note of `type`, once the files it draws with have loaded. */
+async function loadView(type: string | undefined): Promise<SharedView> {
+    const load = type ? SHARE_NOTE_VIEWS[type] : undefined;
+    if (load) {
+        return load();
     }
-    return View && <View app={app} />;
-}
 
-function NoteView({ note }: { note: FNote }) {
-    const [ Widget, setWidget ] = useState<TypeWidget>();
-    const mapping = TYPE_MAPPINGS[note.type as keyof typeof TYPE_MAPPINGS];
-
-    useEffect(() => {
-        Promise.resolve(mapping.view()).then((view) => {
-            const widget = "default" in view ? view.default : view;
-            setWidget(() => widget);
-        });
-    }, [ mapping ]);
-
-    return Widget && (
+    const mapping = TYPE_MAPPINGS[type as keyof typeof TYPE_MAPPINGS];
+    const view = await mapping.view();
+    const Widget = "default" in view ? view.default : view;
+    return ({ app }) => (
         <div className={mapping.className}>
             <Widget
-                note={note}
+                note={app.note}
                 viewScope={undefined}
                 ntxId={null}
                 parentComponent={undefined}

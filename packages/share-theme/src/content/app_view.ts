@@ -4,7 +4,7 @@ import type { AppPayload } from "./app_host.js";
 
 /** A module mounting an app view, which `setupAppView()` loads on demand. */
 export interface AppViewModule {
-    default(container: HTMLElement, payload: AppPayload): void;
+    default(container: HTMLElement, payload: AppPayload): void | Promise<void>;
 }
 
 /**
@@ -48,5 +48,5 @@ async function mountAppView(container: string, load: () => Promise<AppViewModule
     await initLocale((payload.options.locale as LOCALE_IDS | null) ?? "en");
 
     const { default: mount } = await load();
-    mount(element, payload);
+    await mount(element, payload);
 }
