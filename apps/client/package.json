@@ -19,7 +19,7 @@
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",
     "@floating-ui/dom": "1.8.0",
-    "@fullcalendar/rrule": "7.1.0",
+    "@fullcalendar/rrule": "7.1.1",
     "@popperjs/core": "2.11.8",
     "@preact/signals": "2.11.3",
     "@triliumnext/ckeditor5": "workspace:*",
@@ -46,7 +46,7 @@
     "dompurify": "3.4.16",
     "draggabilly": "3.0.0",
     "force-graph": "1.52.0",
-    "fullcalendar": "7.1.0",
+    "fullcalendar": "7.1.1",
     "gridstack": "14.0.0",
     "htmldiff-js": "1.0.5",
     "i18next": "26.4.2",
