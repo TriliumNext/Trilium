@@ -115,7 +115,14 @@ describe("popup", () => {
         await receive({ name: "trilium-search-status", triliumSearch: { status: "not-found" } });
         expect(status()).toEqual({ dot: "status-dot status-dot-error", text: "Not found" });
         expect(captureButtons()).toHaveLength(0);
-        expect(container.querySelector(".not-found strong")?.textContent).toBe("Trilium was not found.");
+        const notFound = container.querySelector(".no-items.not-found");
+        expect(notFound).not.toBeNull();
+        expect(notFound?.querySelector(":scope > svg.icon path")).not.toBeNull();
+        expect(notFound?.querySelector("h4")?.textContent).toBe("Trilium was not found");
+        expect(notFound?.querySelector("p")?.textContent)
+            .toBe("Start the desktop app, or connect to a server in the options.");
+        expect([ ...notFound?.querySelectorAll("button") ?? [] ].map((b) => [ b.textContent, !!b.querySelector("svg.icon") ]))
+            .toEqual([ [ "Retry", true ], [ "Open options", true ] ]);
         expect(sendMessage).not.toHaveBeenCalledWith({ name: "trigger-trilium-search-note-url" });
 
         await click("Retry");

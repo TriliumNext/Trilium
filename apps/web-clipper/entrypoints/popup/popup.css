@@ -144,7 +144,7 @@ body {
         text-align: center;
         white-space: pre-line;
 
-        svg.icon {
+        > svg.icon {
             width: 2em;
             height: 2em;
             margin-bottom: 0.5rem;
@@ -204,27 +204,28 @@ body {
         }
     }
 
-    .not-found {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 12px;
-        border-radius: 6px;
-        background: var(--input-background-color);
+    .no-items.not-found {
+        h4 {
+            margin: 0 0 4px;
+            color: var(--main-text-color);
+            font-size: 1.1em;
+            font-weight: 500;
+        }
 
         p {
-            margin: 0 0 8px;
-            color: var(--muted-text-color);
+            margin: 0;
         }
     }
 
     .not-found-buttons {
         display: flex;
-        gap: 6px;
+        gap: 8px;
+        width: 100%;
+        margin-top: 16px;
 
         button.btn {
+            flex: 1;
             min-width: 0;
-            flex-grow: 1;
         }
     }
 

@@ -14,6 +14,7 @@ import Lock from "@boxicons/js/icons/Lock";
 import RefreshCw from "@boxicons/js/icons/RefreshCw";
 import Screenshot from "@boxicons/js/icons/Screenshot";
 import Tabs from "@boxicons/js/icons/Tabs";
+import Unlink from "@boxicons/js/icons/Unlink";
 import type { ComponentChildren } from "preact";
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -244,9 +245,13 @@ function ToolbarAction({ icon, label, name, shortcut, disabledReason, onClick }:
 }
 
 /** Takes the place of the page preview when the page cannot be saved, in the style of the app's `NoItems`. */
-function EmptyState({ icon, children }: { icon: IconDefinition, children: ComponentChildren }) {
+function EmptyState({ icon, className, children }: {
+    icon: IconDefinition;
+    className?: string;
+    children: ComponentChildren;
+}) {
     return (
-        <div className="no-items">
+        <div className={className ? `no-items ${className}` : "no-items"}>
             <Icon icon={icon} />
             {children}
         </div>
@@ -321,15 +326,19 @@ function Shortcut({ keys }: { keys: string | undefined }) {
 
 function TriliumNotFound() {
     return (
-        <div className="not-found">
-            <strong>Trilium was not found.</strong>
-            <p>Start the Trilium desktop application, or connect to a Trilium server in the options.</p>
+        <EmptyState icon={Unlink} className="not-found">
+            <h4>Trilium was not found</h4>
+            <p>Start the desktop app, or connect to a server in the options.</p>
 
             <div className="not-found-buttons">
-                <button className="btn btn-primary" onClick={() => sendMessage({ name: "trigger-trilium-search" })}>Retry</button>
-                <button className="btn btn-secondary" onClick={() => browser.runtime.openOptionsPage()}>Open options</button>
+                <button className="btn btn-primary" onClick={() => sendMessage({ name: "trigger-trilium-search" })}>
+                    <Icon icon={RefreshCw} />Retry
+                </button>
+                <button className="btn btn-secondary" onClick={() => browser.runtime.openOptionsPage()}>
+                    <Icon icon={Cog} />Open options
+                </button>
             </div>
-        </div>
+        </EmptyState>
     );
 }
 
