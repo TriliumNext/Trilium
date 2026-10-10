@@ -1,7 +1,7 @@
 import { randomString, type Rect } from "@/utils";
 
 import setupContextMenu from "./context_menu";
-import TriliumServerFacade from "./trilium_server_facade";
+import TriliumServerFacade, { TriliumError } from "./trilium_server_facade";
 
 type BackgroundMessage = {
     name: "toast";
@@ -16,11 +16,17 @@ type BackgroundMessage = {
     name: "trilium-save-page";
 };
 
+/** An image of a clipping; `content` references it by `imageId` until Trilium stores it. */
+type ClippedImage = { imageId: string, src: string, dataUrl?: string };
+
+/** `linkText` is only available on Firefox. */
+type ContextMenuInfo = Browser.contextMenus.OnClickData & { linkText?: string };
+
 export default defineBackground(() => {
     const triliumServerFacade = new TriliumServerFacade();
 
     // Keyboard shortcuts
-    browser.commands.onCommand.addListener(async (command) => {
+    browser.commands.onCommand.addListener((command) => showFailures(async () => {
         switch (command) {
             case "saveSelection":
                 await saveSelection();
@@ -39,7 +45,7 @@ export default defineBackground(() => {
             default:
                 console.log("Unrecognized command", command);
         }
-    });
+    }));
 
     setupContextMenu();
 
@@ -156,7 +162,28 @@ export default defineBackground(() => {
             message,
             noteId,
             tabIds
+        }).catch(() => {
+            // Browser pages and the extension stores run no content script to show it.
         });
+    }
+
+    /** Runs a user action, and reports its failure in a toast instead of rejecting. */
+    async function showFailures<T>(action: () => Promise<T>) {
+        try {
+            return await action();
+        } catch (e) {
+            console.error("Web clipper action failed", e);
+            toast(failureMessage(e));
+            return undefined;
+        }
+    }
+
+    async function requestFromPage(message: BackgroundMessage) {
+        const response = await sendMessageToActiveTab(message);
+        if (!response) {
+            throw new Error("The page could not be read. Reload it and try again.");
+        }
+        return response;
     }
 
     function blob2base64(blob: Blob) {
@@ -171,79 +198,100 @@ export default defineBackground(() => {
 
     async function fetchImage(url: string) {
         const resp = await fetch(url);
-        const blob = await resp.blob();
+        if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+        }
 
-        return await blob2base64(blob);
+        const blob = await resp.blob();
+        if (!blob.type.startsWith("image/")) {
+            throw new Error(`Not an image: '${blob.type}'`);
+        }
+
+        const dataUrl = await blob2base64(blob);
+        if (!dataUrl) {
+            throw new Error("The image could not be read.");
+        }
+
+        return dataUrl;
     }
 
-    async function postProcessImage(image: { src: string, dataUrl?: string | null }) {
+    /** Inlines the image as a data URL, and returns whether it could be downloaded. */
+    async function postProcessImage(image: ClippedImage) {
         if (image.src.startsWith("data:image/")) {
             image.dataUrl = image.src;
             const mimeSubtype = image.src.match(/data:image\/(.*?);/)?.[1];
-            if (!mimeSubtype) return;
+            if (!mimeSubtype) return true;
             image.src = `inline.${mimeSubtype}`; // this should extract file type - png/jpg
+            return true;
         }
-        else {
-            try {
-                image.dataUrl = await fetchImage(image.src);
-            } catch (e) {
-                console.error(`Cannot fetch image from ${image.src}`, e);
-            }
+
+        try {
+            image.dataUrl = await fetchImage(image.src);
+            return true;
+        } catch (e) {
+            console.error(`Cannot fetch image from ${image.src}`, e);
+            return false;
         }
     }
 
-    async function postProcessImages(resp: { images?: { src: string, dataUrl?: string }[] }) {
-        if (resp.images) {
-            for (const image of resp.images) {
-                await postProcessImage(image);
+    /**
+     * Inlines the payload's images, and returns how many could not be downloaded. Those go back to
+     * their original URL in the content, which Trilium downloads itself or shows from the website.
+     */
+    async function postProcessImages(payload: { content?: string, images?: ClippedImage[] }) {
+        if (!payload.images) return 0;
+
+        const downloaded: ClippedImage[] = [];
+        for (const image of payload.images) {
+            if (await postProcessImage(image)) {
+                downloaded.push(image);
+            } else {
+                // A callback, so `$&` and `$$` in the URL are not read as replacement patterns.
+                payload.content = payload.content?.replaceAll(image.imageId, () => escapeHtml(image.src));
             }
         }
+
+        const failedCount = payload.images.length - downloaded.length;
+        payload.images = downloaded;
+        return failedCount;
     }
 
     async function saveSelection() {
-        const payload = await sendMessageToActiveTab({name: 'trilium-save-selection'});
+        const payload = await requestFromPage({name: 'trilium-save-selection'});
 
-        await postProcessImages(payload);
+        const failedImages = await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'clippings', payload);
 
-        if (!resp) {
-            return;
-        }
-
-        toast("Selection has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Selection", failedImages), resp.noteId);
     }
 
     async function getImagePayloadFromSrc(src: string, pageUrl: string | null | undefined) {
-        const image = {
-            imageId: randomString(20),
-            src
-        };
-
-        await postProcessImage(image);
-
+        const imageId = randomString(20);
         const activeTab = await getActiveTab();
-
-        return {
+        const payload = {
             title: activeTab.title,
-            content: `<img src="${image.imageId}">`,
-            images: [image],
+            content: `<img src="${imageId}">`,
+            images: [ { imageId, src } ],
             pageUrl
         };
+
+        const failedImages = await postProcessImages(payload);
+
+        return { payload, failedImages };
     }
 
     async function saveCroppedScreenshot(pageUrl: string | null | undefined) {
-        const { rect, devicePixelRatio } = await sendMessageToActiveTab({name: 'trilium-get-rectangle-for-screenshot'});
+        const { rect, devicePixelRatio } = await requestFromPage({
+            name: 'trilium-get-rectangle-for-screenshot'
+        });
+        if (!rect) return;
 
         const src = await takeCroppedScreenshot(rect, devicePixelRatio);
 
-        const payload = await getImagePayloadFromSrc(src, pageUrl);
+        const { payload } = await getImagePayloadFromSrc(src, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
-
-        if (!resp) {
-            return;
-        }
 
         toast("Screenshot has been saved to Trilium.", resp.noteId);
     }
@@ -251,41 +299,29 @@ export default defineBackground(() => {
     async function saveWholeScreenshot(pageUrl: string | null | undefined) {
         const src = await takeWholeScreenshot();
 
-        const payload = await getImagePayloadFromSrc(src, pageUrl);
+        const { payload } = await getImagePayloadFromSrc(src, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
-
-        if (!resp) {
-            return;
-        }
 
         toast("Screenshot has been saved to Trilium.", resp.noteId);
     }
 
     async function saveImage(srcUrl: string, pageUrl: string | null | undefined) {
-        const payload = await getImagePayloadFromSrc(srcUrl, pageUrl);
+        const { payload, failedImages } = await getImagePayloadFromSrc(srcUrl, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
-        if (!resp) {
-            return;
-        }
-
-        toast("Image has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Image", failedImages), resp.noteId);
     }
 
     async function saveWholePage() {
-        const payload = await sendMessageToActiveTab({name: 'trilium-save-page'});
+        const payload = await requestFromPage({name: 'trilium-save-page'});
 
-        await postProcessImages(payload);
+        const failedImages = await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'notes', payload);
 
-        if (!resp) {
-            return;
-        }
-
-        toast("Page has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Page", failedImages), resp.noteId);
     }
 
     async function saveLinkWithNote(title: string, content: string) {
@@ -302,25 +338,21 @@ export default defineBackground(() => {
             pageUrl: activeTab.url
         });
 
-        if (!resp) {
-            return false;
-        }
-
         toast("Link with note has been saved to Trilium.", resp.noteId);
 
         return true;
     }
 
-    async function getTabsPayload(tabs: Browser.tabs.Tab[]) {
+    async function getTabsPayload(tabs: (Browser.tabs.Tab & { url: string })[]) {
         let content = '<ul>';
-        tabs.forEach(tab => {
-            content += `<li><a href="${tab.url}">${tab.title}</a></li>`;
-        });
+        for (const tab of tabs) {
+            content += `<li><a href="${escapeHtml(tab.url)}">${escapeHtml(tab.title ?? tab.url)}</a></li>`;
+        }
         content += '</ul>';
 
         const domainsCount = tabs.map(tab => tab.url)
             .reduce((acc, url) => {
-                const hostname = new URL(url ?? "").hostname;
+                const hostname = new URL(url).hostname;
                 return acc.set(hostname, (acc.get(hostname) || 0) + 1);
             }, new Map());
 
@@ -340,18 +372,18 @@ export default defineBackground(() => {
     }
 
     async function saveTabs() {
-        const tabs = await getWindowTabs();
+        const tabs = (await getWindowTabs())
+            .filter((tab): tab is Browser.tabs.Tab & { url: string } => !!tab.url);
 
         const payload = await getTabsPayload(tabs);
 
         const resp = await triliumServerFacade.callService('POST', 'notes', payload);
-        if (!resp) return;
 
         const tabIds = tabs.map(tab => tab.id).filter(id => id !== undefined) as number[];
         toast(`${tabs.length} links have been saved to Trilium.`, resp.noteId, tabIds);
     }
 
-    browser.contextMenus.onClicked.addListener(async (info: globalThis.Browser.contextMenus.OnClickData & { linkText?: string; }) => {
+    browser.contextMenus.onClicked.addListener((info: ContextMenuInfo) => showFailures(async () => {
         if (info.menuItemId === 'trilium-save-selection') {
             await saveSelection();
         }
@@ -378,7 +410,6 @@ export default defineBackground(() => {
                 pageUrl: info.pageUrl
             });
 
-            if (!resp) return;
             toast("Link has been saved to Trilium.", resp.noteId);
         }
         else if (info.menuItemId === 'trilium-save-page') {
@@ -387,17 +418,13 @@ export default defineBackground(() => {
         else {
             console.log("Unrecognized menuItemId", info.menuItemId);
         }
-    });
+    }));
 
-    browser.runtime.onMessage.addListener(async request => {
+    browser.runtime.onMessage.addListener((request) => showFailures(async () => {
         console.log("Received", request);
 
         if (request.name === 'openNoteInTrilium') {
             const resp = await triliumServerFacade.callService('POST', `open/${request.noteId}`);
-
-            if (!resp) {
-                return;
-            }
 
             // desktop app is not available so we need to open in browser
             if (resp.result === 'open-in-browser') {
@@ -451,5 +478,25 @@ export default defineBackground(() => {
                 triliumServerFacade.triggerSearchNoteByUrl(activeTab.url);
             }
         }
-    });
+    }));
 });
+
+function savedMessage(subject: string, failedImages: number) {
+    if (!failedImages) return `${subject} has been saved to Trilium.`;
+    const images = failedImages === 1 ? "1 image" : `${failedImages} images`;
+    return `${subject} has been saved to Trilium, but ${images} could not be downloaded.`;
+}
+
+function escapeHtml(value: string) {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+}
+
+function failureMessage(error: unknown) {
+    if (error instanceof TriliumError) return error.message;
+    const details = error instanceof Error ? error.message : "";
+    return details ? `Saving to Trilium failed: ${details}` : "Saving to Trilium failed.";
+}

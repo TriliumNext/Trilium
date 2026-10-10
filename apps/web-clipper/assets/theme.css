@@ -1,0 +1,198 @@
+/* The Next theme's buttons, icon buttons, text boxes and check boxes, as the app draws them, in the
+   order the app loads them. */
+@import "@triliumnext/client/src/stylesheets/buttons.css";
+@import "@triliumnext/client/src/stylesheets/theme-next/forms.css";
+
+/* The app's own font file, matching the face in the client's `theme-next/base.css`. */
+@font-face {
+    font-family: "Inter";
+    src: url("../../client/src/fonts/Inter/Inter-VariableFont_opsz,wght.woff2") format("woff2-variations");
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* The colors of `theme-next-light.css` that the stylesheets above read. */
+:root {
+    color-scheme: light;
+
+    --main-background-color: white;
+    --main-text-color: black;
+    --main-border-color: #dbdbdb;
+    --muted-text-color: #666;
+
+    --link-color: #0076af;
+    --link-hover-color: var(--link-color);
+    --link-hover-background: #3c7fa017;
+
+    --cmd-button-background-color: #0000000f;
+    --cmd-button-text-color: #000000ad;
+    --cmd-button-hover-background-color: #00000016;
+    --cmd-button-hover-text-color: #000;
+    --cmd-button-shadow-color: #00000040;
+    --cmd-button-icon-color: black;
+    --cmd-button-disabled-opacity: 0.5;
+    --cmd-button-keyboard-shortcut-background: #00000017;
+    --cmd-button-keyboard-shortcut-color: black;
+
+    --input-background-color: #00000012;
+    --input-text-color: black;
+    --input-placeholder-color: #06060682;
+    --input-selection-background: gray;
+    --input-selection-text-color: white;
+    --input-hover-background: #00000020;
+    --input-hover-color: black;
+    --input-focus-outline-color: #00000063;
+    --input-focus-background: #ffffff80;
+    --input-focus-color: #000;
+
+    --radio-checkbox-background: #0000002e;
+    --radio-checkbox-hover-background: #0000004f;
+    --radio-checkbox-indicator-color: black;
+
+    --hover-item-background-color: #0000001a;
+    --hover-item-text-color: black;
+
+    --button-text-color: currentColor;
+    --icon-button-size: 32px;
+    --icon-button-icon-ratio: 0.65;
+    --icon-button-color: currentColor;
+    --icon-button-hover-background: var(--hover-item-background-color);
+    --icon-button-hover-color: var(--hover-item-text-color);
+
+    /* The log status colors, for the connection status. */
+    --status-ok-color: #32b323;
+    --status-warning-color: #b7bd10;
+    --status-error-color: #b32323;
+
+    /* Bootstrap's default, which the Next theme's text boxes are rounded by. */
+    --bs-border-radius: 0.375rem;
+}
+
+/* The same colors from `theme-next-dark.css`. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+
+        --main-background-color: #242424;
+        --main-text-color: #ccc;
+        --main-border-color: #454545;
+        --muted-text-color: #bbb;
+
+        --link-color: #95c3d9;
+        --link-hover-background: #75c2e324;
+
+        --cmd-button-background-color: #ffffff28;
+        --cmd-button-text-color: #ffffffc2;
+        --cmd-button-hover-background-color: #ffffff37;
+        --cmd-button-hover-text-color: white;
+        --cmd-button-shadow-color: #00000080;
+        --cmd-button-icon-color: white;
+        --cmd-button-keyboard-shortcut-background: #0000004d;
+        --cmd-button-keyboard-shortcut-color: white;
+
+        --input-background-color: #ffffff12;
+        --input-text-color: #ffffffc7;
+        --input-placeholder-color: #b7b7b782;
+        --input-hover-background: #ffffff1f;
+        --input-hover-color: var(--input-text-color);
+        --input-focus-outline-color: #ffffff57;
+        --input-focus-background: #ffffff1f;
+        --input-focus-color: white;
+
+        --radio-checkbox-background: #ffffff30;
+        --radio-checkbox-hover-background: #ffffff61;
+        --radio-checkbox-indicator-color: white;
+
+        --hover-item-background-color: #ffffff16;
+        --hover-item-text-color: #efefef;
+
+        --status-ok-color: #74d369;
+        --status-warning-color: #d3c769;
+        --status-error-color: #d36969;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--main-background-color);
+    color: var(--main-text-color);
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+}
+
+/* Bootstrap's reboot, which the app loads and an extension page does not. */
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button.btn,
+button.icon-action {
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+/* The Boxicons drawn as inline SVG, sized and spaced as the app sizes and spaces its icon font. */
+svg.icon {
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+}
+
+button.btn > svg.icon {
+    width: 1.2em;
+    height: 1.2em;
+    margin-inline-end: 0.35em;
+    color: var(--cmd-button-icon-color);
+}
+
+button.icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    > svg.icon {
+        width: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+        height: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+    }
+
+    &:active > svg.icon {
+        transform: scale(0.85);
+    }
+}
+
+input[type="text"],
+input[type="password"],
+textarea {
+    padding: 4px 8px;
+}
+
+a {
+    color: var(--link-color);
+    border-radius: 4px;
+    text-decoration: none;
+
+    &:hover {
+        background: var(--link-hover-background);
+        color: var(--link-hover-color);
+    }
+}
+
+kbd {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--input-background-color);
+    font-family: inherit;
+    font-size: 0.85em;
+}
+
+h2,
+h3 {
+    font-weight: 500;
+}

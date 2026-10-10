@@ -66,6 +66,11 @@ flags:
     paths:
       - packages/share-theme/src/
     carryforward: true
+  web-clipper:
+    paths:
+      - apps/web-clipper/entrypoints/
+      - apps/web-clipper/utils.ts
+    carryforward: true
 
 comment:
   layout: "condensed_header, condensed_files, condensed_footer"

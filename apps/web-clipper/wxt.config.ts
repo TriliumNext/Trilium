@@ -6,6 +6,14 @@ let originalTsConfig: object;
 
 export default defineConfig({
     modules: ['@wxt-dev/auto-icons'],
+    vite: () => ({
+        oxc: {
+            jsx: {
+                runtime: "automatic",
+                importSource: "preact"
+            }
+        }
+    }),
     manifest: ({ manifestVersion }) => ({
         name: "Trilium Web Clipper",
         description: "Save web clippings to Trilium Notes.",
@@ -53,6 +61,9 @@ export default defineConfig({
                 suggested_key: {
                     default: "Ctrl+Shift+E"
                 }
+            },
+            saveTabs: {
+                description: "Save all tabs of the current window into a note"
             }
         }
     }),

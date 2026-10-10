@@ -10,16 +10,21 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
     "postinstall": "wxt prepare"
   },
   "keywords": [],
   "packageManager": "pnpm@12.10.1",
   "devDependencies": {
+    "@triliumnext/client": "workspace:*",
     "@wxt-dev/auto-icons": "1.1.2",
     "jszip": "3.10.2",
+    "web-ext": "^10.7.0",
     "wxt": "0.21.4"
   },
   "dependencies": {
-    "cash-dom": "8.1.5"
+    "@boxicons/js": "1.0.1",
+    "preact": "11.0.0"
   }
 }

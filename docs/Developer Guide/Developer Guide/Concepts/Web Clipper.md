@@ -27,7 +27,7 @@ This will open a separate browser instance in which the extension is automatical
 
 The default port is:
 
-*   `37742` if in development mode. This makes it possible to use `pnpm desktop:start` to spin up a desktop instance to use the Clipper with.
+*   `37743` if in development mode, the port `pnpm desktop:start` runs the desktop app on, so a dev build of the Clipper finds a dev desktop instance.
 *   `37840` in production, the default Trilium port.
 
 ## Building

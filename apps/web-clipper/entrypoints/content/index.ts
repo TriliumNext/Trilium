@@ -1,30 +1,11 @@
 import Readability from "@/lib/Readability.js";
-import { createLink, getBaseUrl, getPageLocationOrigin, randomString, type Rect } from "@/utils.js";
+import { createLink, getPageLocationOrigin, randomString, type Rect } from "@/utils.js";
 
 export default defineContentScript({
     matches: [
         "<all_urls>"
     ],
     main: () => {
-        function absoluteUrl(url: string | undefined) {
-            if (!url) {
-                return url;
-            }
-
-            const protocol = url.toLowerCase().split(':')[0] ?? "";
-            if (['http', 'https', 'file'].indexOf(protocol) >= 0) {
-                return url;
-            }
-
-            if (url.indexOf('//') === 0) {
-                return location.protocol + url;
-            } else if (url[0] === '/') {
-                return `${location.protocol}//${location.host}${url}`;
-            }
-            return `${getBaseUrl()}/${url}`;
-
-        }
-
         function pageTitle() {
             const titleElements = document.getElementsByTagName("title");
 
@@ -132,14 +113,8 @@ export default defineContentScript({
                 function setSelectionSizeFromMouse(event: MouseEvent) {
                     if (!draggingStartPos) return;
 
-                    if (event.clientX < draggingStartPos.x) {
-                        selectionArea.x = event.clientX;
-                    }
-
-                    if (event.clientY < draggingStartPos.y) {
-                        selectionArea.y = event.clientY;
-                    }
-
+                    selectionArea.x = Math.min(event.clientX, draggingStartPos.x);
+                    selectionArea.y = Math.min(event.clientY, draggingStartPos.y);
                     selectionArea.width = Math.max(1, Math.abs(event.clientX - draggingStartPos.x));
                     selectionArea.height = Math.max(1, Math.abs(event.clientY - draggingStartPos.y));
                     updateSelection();
@@ -202,11 +177,11 @@ export default defineContentScript({
         }
 
         function makeLinksAbsolute(container: HTMLElement) {
+            // `link.href` reads the URL the browser resolved against the page, and leaves
+            // `mailto:`, `tel:` and other non-web schemes unchanged.
             for (const link of container.getElementsByTagName('a')) {
                 if (link.href) {
-                    const newUrl = absoluteUrl(link.href);
-                    if (!newUrl) continue;
-                    link.href = newUrl;
+                    link.setAttribute("href", link.href);
                 }
             }
         }

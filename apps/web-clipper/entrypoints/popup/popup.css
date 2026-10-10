@@ -1,48 +1,195 @@
 body {
-  width: 300px;
-  font-size: 12px;
-  font-family: sans-serif;
+    width: 340px;
 }
 
-.button {
-  margin: 3% auto;
-  padding: 4px;
-  text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background-color: #eee;
-  cursor: pointer;
-  color: black;
-}
+.popup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
 
-.wide {
-  min-width: 8em;
-}
+    .popup-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
 
-.full {
-  display: block;
-  width: 100%;
-}
+        .logo {
+            width: 24px;
+            height: 24px;
+        }
 
-#save-link-with-note-wrapper {
-  display: none;
-}
+        h3 {
+            margin: 0;
+            font-size: 1.1em;
+        }
+    }
 
-#save-link-with-note-textarea {
-  width: 100%;
-}
+    .popup-header-buttons {
+        display: flex;
+        gap: 2px;
+        margin-inline-start: auto;
+    }
 
-#save-button {
-  border-color: #0062cc;
-  background-color: #0069d9;
-  color: white;
-}
+    .status-dot {
+        flex-shrink: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
 
-#check-connection-button {
-  float: right;
-  margin-top: -6px;
-}
+    .status-dot-pending {
+        background: var(--muted-text-color);
+        opacity: 0.5;
+    }
 
-button[disabled] {
-  color: #aaa;
+    .status-dot-ok {
+        background: var(--status-ok-color);
+    }
+
+    .status-dot-warning {
+        background: var(--status-warning-color);
+    }
+
+    .status-dot-error {
+        background: var(--status-error-color);
+    }
+
+    .callout {
+        padding: 8px 10px;
+        border-radius: 6px;
+    }
+
+    .callout-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: var(--link-hover-background);
+    }
+
+    .callout-warning {
+        background: color-mix(in srgb, var(--status-warning-color) 18%, transparent);
+    }
+
+    .capture-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .primary-action {
+        justify-content: flex-start;
+        width: 100%;
+        padding: 8px 12px;
+
+        .action-label {
+            flex-grow: 1;
+            text-align: start;
+        }
+    }
+
+    .action-tiles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    button.btn.action-tile {
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        padding: 10px 8px;
+
+        > svg.icon {
+            width: 1.6em;
+            height: 1.6em;
+            margin: 0;
+        }
+
+        kbd {
+            margin: 0;
+        }
+    }
+
+    .not-found {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px;
+        border-radius: 6px;
+        background: var(--input-background-color);
+
+        p {
+            margin: 0 0 8px;
+            color: var(--muted-text-color);
+        }
+    }
+
+    .not-found-buttons {
+        display: flex;
+        gap: 6px;
+
+        button.btn {
+            min-width: 0;
+            flex-grow: 1;
+        }
+    }
+
+    .save-link-with-note {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
+    }
+
+    .view-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        --icon-button-size: 28px;
+
+        h4 {
+            margin: 0;
+            font-weight: 500;
+        }
+    }
+
+    .save-link-with-note-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+
+        .hint {
+            color: var(--muted-text-color);
+            font-size: 0.9em;
+        }
+    }
+
+    .connection {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--main-border-color);
+        color: var(--muted-text-color);
+        --icon-button-size: 26px;
+    }
+
+    .status-ok {
+        color: var(--status-ok-color);
+    }
+
+    .status-warning {
+        color: var(--status-warning-color);
+    }
+
+    .status-error {
+        color: var(--status-error-color);
+    }
 }

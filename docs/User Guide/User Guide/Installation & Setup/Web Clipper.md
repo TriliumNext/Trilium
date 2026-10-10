@@ -25,6 +25,17 @@ The extension is available from the official browser web stores:
 *   save screenshot (with crop tool) from either popup or context menu
 *   create short text note from popup
 
+## The popup
+
+Clicking the extension's button in the browser toolbar opens its popup:
+
+*   The header shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found), next to the buttons for the extension's options and for this help page.
+*   _Save whole page_ is the main action. Below it are _Crop screenshot_, _Visible area screenshot_, _Link with a note_ and _All tabs in window_ (which saves the links of every tab in the current window as a list). An action that has a keyboard shortcut shows it.
+*   _Link with a note_ opens a small editor in place of the actions. The first sentence or line of the text becomes the note's title, unless _Keep page title as note title_ is checked. Press _Save_ or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save it, or the back arrow to return to the actions.
+*   If the current page was already clipped, a notice at the top offers to open the note in Trilium.
+*   If Trilium cannot be found, the popup explains why instead of showing the actions, with buttons to look for Trilium again and to open the options.
+*   The bottom of the popup describes the connection, with a button to check it again.
+
 ## Location of clippings
 
 Trilium will save these clippings as a new child note under a "clipper inbox" note.
@@ -40,6 +51,7 @@ Keyboard shortcuts are available for most functions:
 *   Save selected text: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
 *   Save whole page: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌥</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)
 *   Save screenshot: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>E</kbd>)
+*   Save all tabs of the current window: no default shortcut, but one can be assigned as described below.
 
 To set custom shortcuts, follow the directions for your browser.
 
@@ -51,9 +63,23 @@ To set custom shortcuts, follow the directions for your browser.
 
 ## Configuration
 
-The extension needs to connect to a running Trilium instance. By default, it scans a port range on the local computer to find a desktop Trilium instance.
+The extension needs to connect to a running Trilium instance. By default, it looks for the desktop application on port 37840 of the local computer. If the desktop application runs on a different port (for example because it was started with the `TRILIUM_PORT` environment variable), enter that port in the extension's options. The extension checks for Trilium again every minute, or right away when pressing the refresh button at the bottom of its popup.
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
+
+To connect to a server, enter its address and your password in the extension's options and press _Login to the server instance_. If the server uses [multi-factor authentication](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), also fill in _Authentication code_ with the current code from your authenticator app (or one of your recovery codes); otherwise leave it empty. The password and the code are used only once, to obtain a token for the extension, and are not stored.
+
+### When a clipping fails
+
+After each clipping, a notification in the corner of the page confirms that it was saved, with a link to open the new note in Trilium. If the clipping could not be saved, the notification says why instead:
+
+*   Trilium was not found: start the desktop application, or check the server address and token in the extension's options.
+*   The versions of Trilium and the extension are not compatible: update the one the message names.
+*   Trilium rejected the request: the message includes the reason Trilium gave.
+
+The extension downloads the images of a clipping itself, so that they are stored in Trilium together with the note. If some of them cannot be downloaded (for example because the website refuses the request), the clipping is still saved, and the notification says how many images are missing. Those images keep their address on the original website: Trilium tries to download them once more if _Download images automatically_ is enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_, and otherwise the note shows them from the website for as long as it serves them.
+
+The notification is shown on the page itself, so it does not appear on pages where extensions cannot run (such as the browser's own settings pages and the extension stores).
 
 ## Testing development versions
 
