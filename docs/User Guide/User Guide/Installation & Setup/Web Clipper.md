@@ -55,6 +55,8 @@ The extension needs to connect to a running Trilium instance. By default, it sca
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
 
+To connect to a server, enter its address and your password in the extension's options and press _Login to the server instance_. If the server uses [multi-factor authentication](Server%20Installation/Multi-factor%20authentication%20with%20TOTP.md), also fill in _Authentication code_ with the current code from your authenticator app (or one of your recovery codes); otherwise leave it empty. The password and the code are used only once, to obtain a token for the extension, and are not stored.
+
 ### When a clipping fails
 
 After each clipping, a notification in the corner of the page confirms that it was saved, with a link to open the new note in Trilium. If the clipping could not be saved, the notification says why instead:

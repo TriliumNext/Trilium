@@ -2,6 +2,7 @@ import $ from "cash-dom";
 
 const $triliumServerUrl = $("#trilium-server-url");
 const $triliumServerPassword = $("#trilium-server-password");
+const $triliumServerTotp = $("#trilium-server-totp");
 
 const $errorMessage = $("#error-message");
 const $successMessage = $("#success-message");
@@ -38,7 +39,8 @@ async function saveTriliumServerSetup(e) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                password: $triliumServerPassword.val()
+                password: $triliumServerPassword.val(),
+                totpToken: ($triliumServerTotp.val() as string | undefined)?.trim()
             })
         });
     }
@@ -49,7 +51,17 @@ async function saveTriliumServerSetup(e) {
     }
 
     if (resp.status === 401) {
-        showError("Incorrect credentials.");
+        const { factor } = await resp.json().catch(() => ({}));
+
+        if (factor === "totp") {
+            const totpWasEntered = ($triliumServerTotp.val() as string | undefined)?.trim();
+            $triliumServerTotp.val("").trigger("focus");
+            showError(totpWasEntered
+                ? "Incorrect authentication code."
+                : "Two-factor authentication is enabled. Enter the code from your authenticator app or a recovery code.");
+        } else {
+            showError("Incorrect credentials.");
+        }
     }
     else if (resp.status !== 200) {
         showError(`Unrecognised response with status code ${  resp.status}`);
@@ -118,6 +130,7 @@ async function restoreOptions() {
 
     $triliumServerUrl.val('');
     $triliumServerPassword.val('');
+    $triliumServerTotp.val('');
 
     if (triliumServerUrl && authToken) {
         $triliumServerSetupForm.hide();
