@@ -56,6 +56,8 @@ html.theme-light {
     --quick-search-button-active-color: #383838;
     /* The right pane colors of `theme-next-light.css`. */
     --main-border-color: #dbdbdb;
+    --tooltip-background-color: rgba(0, 0, 0, 0.818);
+    --tooltip-foreground-color: #ffffffeb;
     --muted-text-color: #666;
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
@@ -121,6 +123,8 @@ html.theme-dark {
     --quick-search-button-active-color: #000000;
     /* The right pane colors of `theme-next-dark.css`. */
     --main-border-color: #454545;
+    --tooltip-background-color: rgba(67, 67, 67, 0.86);
+    --tooltip-foreground-color: #ffffffeb;
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
@@ -147,9 +151,10 @@ html.theme-dark {
     color-scheme: dark;
 }
 
-/* The page background under the name the content styles shared with the app read it by. */
+/* The page's colors under the names the styles shared with the app read them by. */
 :root {
     --main-background-color: var(--background-primary);
+    --main-text-color: var(--text-primary);
     /* The frosting of `theme-next/shell.css` behind the translucent menus. */
     --dropdown-backdrop-filter: blur(20px) saturate(6);
 }

@@ -104,6 +104,25 @@
             pointer-events: none;
         }
     }
+
+    > :where(:not(button)) {
+        display: flex;
+        align-items: center;
+        height: var(--_overlay-height);
+        backdrop-filter: var(--overlay-button-backdrop-filter, none);
+        background-color: var(--_overlay-surface);
+        color: var(--_overlay-ink);
+
+        &:first-child {
+            border-start-start-radius: var(--_overlay-radius);
+            border-end-start-radius: var(--_overlay-radius);
+        }
+
+        &:last-child {
+            border-start-end-radius: var(--_overlay-radius);
+            border-end-end-radius: var(--_overlay-radius);
+        }
+    }
 }
 
 /* A rail down one side of the content instead of a bar across it (see `vertical` on

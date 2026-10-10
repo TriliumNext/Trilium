@@ -10,13 +10,13 @@ import link_context_menu from "../../menus/link_context_menu";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
-import ActionButton from "../react/ActionButton";
 import Button from "../react/Button";
 import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
+import OverlayControlGroup, { OverlayControlButton } from "../react/OverlayControlGroup";
 import Slider from "../react/Slider";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import MapTypeSwitcher from "./MapTypeSwitcher";
+import { MapTypeOverlayButtons } from "./MapTypeSwitcher";
 import { CssData, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
 
@@ -203,35 +203,31 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
 
     return (
         <div className="note-map-widget">
-            {/* The sidebar offers the choice in its card's header instead, where the pane keeps the
-                controls of a widget — see sidebar/NoteMap.tsx. */}
+            {/* The sidebar offers the map type in its card's header instead, where the pane keeps the
+                controls of a widget (see sidebar/NoteMap.tsx), and neither pinning nor link distance:
+                its map is rebuilt for every note it is read for, so both would be gone by the next. */}
             {widgetMode !== "sidebar" && (
-                <MapTypeSwitcher
-                    mapType={mapType} setMapType={setMapType}
-                    className="btn-group-sm content-floating-buttons top-left" frame
-                />
-            )}
+                <>
+                    <OverlayControlGroup className="note-map-type-controls" placement="top-start" overCanvas>
+                        <MapTypeOverlayButtons mapType={mapType} setMapType={setMapType} />
+                    </OverlayControlGroup>
 
-            {/* Not in the sidebar, where neither has anything to hold on to: a map that small is not
-                one to arrange by hand, and it is rebuilt from scratch on every note it is read for,
-                which is what a connections panel is for — so a pinned node and a chosen link distance
-                are both gone by the next note. */}
-            {widgetMode !== "sidebar" && (
-                <div class="btn-group-sm fixnodes-type-switcher content-floating-buttons bottom-left" role="group">
-                    <ActionButton
-                        icon="bx bx-lock-alt"
-                        text={t("note_map.fix-nodes")}
-                        className={fixNodes ? "active" : ""}
-                        onClick={() => setFixNodes(!fixNodes)}
-                        frame
-                    />
-
-                    <Slider
-                        min={1} max={100}
-                        value={linkDistance} onChange={setLinkDistance}
-                        title={t("note_map.link-distance")}
-                    />
-                </div>
+                    <OverlayControlGroup className="note-map-layout-controls" placement="bottom-start" overCanvas>
+                        <OverlayControlButton
+                            icon="bx-lock-alt"
+                            title={t("note_map.fix-nodes")}
+                            active={fixNodes}
+                            onClick={() => setFixNodes(!fixNodes)}
+                        />
+                        <div className="note-map-link-distance">
+                            <Slider
+                                min={1} max={100}
+                                value={linkDistance} onChange={setLinkDistance}
+                                title={t("note_map.link-distance")}
+                            />
+                        </div>
+                    </OverlayControlGroup>
+                </>
             )}
 
             {/* What the map is drawn in, asked of the theme — see getCssData. */}
