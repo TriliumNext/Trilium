@@ -2,16 +2,74 @@ import type { CommandListenerData, EventData, EventNames } from "../../component
 import type NoteContext from "../../components/note_context.js";
 import type BasicWidget from "../basic_widget.js";
 import Container from "./container.js";
+import { findScrollAnchor, restoreScrollAnchor, type ScrollAnchor } from "./scroll_anchor.js";
 import "./scrolling_container.css";
 
 export default class ScrollingContainer extends Container<BasicWidget> {
 
     private noteContext?: NoteContext;
+    private scrollAnchor: ScrollAnchor | null = null;
+    private pendingAnchorFrame: number | null = null;
+    private resizeObserver?: ResizeObserver;
+    private scrollListener?: AbortController;
 
     constructor() {
         super();
 
         this.class("scrolling-container");
+    }
+
+    doRender() {
+        super.doRender();
+        this.keepScrollAnchorWhileHidden(this.$widget[0]);
+    }
+
+    /**
+     * Puts the block at the top of the view back in place when the container is shown again: the
+     * browser restores only `scrollTop`, which is stale if the width changed while it was hidden.
+     */
+    private keepScrollAnchorWhileHidden(container: HTMLElement) {
+        const recordAnchor = () => {
+            // A hidden container reads `scrollTop` as 0, so the recorded anchor stays.
+            if (!container.getClientRects().length) return;
+            this.scrollAnchor = container.scrollTop > 0
+                ? findScrollAnchor(container, this.scrollAnchor?.element)
+                : null;
+        };
+
+        this.scrollListener = new AbortController();
+        container.addEventListener("scroll", () => {
+            if (this.pendingAnchorFrame !== null) return;
+            this.pendingAnchorFrame = requestAnimationFrame(() => {
+                this.pendingAnchorFrame = null;
+                recordAnchor();
+            });
+        }, { passive: true, signal: this.scrollListener.signal });
+
+        let wasHidden = false;
+        this.resizeObserver = new ResizeObserver(([ entry ]) => {
+            const isHidden = entry.contentRect.width === 0 && entry.contentRect.height === 0;
+            if (isHidden) {
+                wasHidden = true;
+                return;
+            }
+
+            if (wasHidden && this.scrollAnchor) {
+                restoreScrollAnchor(container, this.scrollAnchor);
+            }
+            wasHidden = false;
+            recordAnchor();
+        });
+        this.resizeObserver.observe(container);
+    }
+
+    cleanup() {
+        this.scrollListener?.abort();
+        this.resizeObserver?.disconnect();
+        if (this.pendingAnchorFrame !== null) {
+            cancelAnimationFrame(this.pendingAnchorFrame);
+            this.pendingAnchorFrame = null;
+        }
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {
