@@ -1921,6 +1921,45 @@ describe("content_renderer pages", () => {
         expect(renderNoteForExport(script, branch, "../", [], []))
             .toBe(`console.log("Protected note cannot be exported.");`);
     });
+
+    it("hosts an exported collection with the app's view, linking the exported notes", () => {
+        const site = buildNote({
+            id: "hostSite",
+            title: "Site",
+            content: "",
+            children: [ {
+                id: "hostCalendar",
+                title: "Calendar",
+                type: "book",
+                content: "",
+                "#viewType": "calendar",
+                children: [
+                    { id: "hostEvent", title: "Event", content: "" },
+                    { id: "hostLeftOut", title: "Left out", content: "" }
+                ]
+            } ]
+        });
+        const [ calendar ] = site.getChildNotes();
+        const branch = calendar.getParentBranches()[0];
+        const getLink = (noteId: string) =>
+            (noteId === "hostLeftOut" ? null : `../pages/${noteId}.html`);
+
+        const page = parse(String(renderNoteForExport(calendar, branch, "../", [], [], getLink)));
+        const payload = JSON.parse(page.querySelector("#content .share-froca")?.text ?? "{}");
+        expect(page.querySelector("#content .share-collection")?.getAttribute("data-note-id"))
+            .toBe("hostCalendar");
+        expect(payload.links).toStrictEqual({
+            hostCalendar: "../pages/hostCalendar.html",
+            hostEvent: "../pages/hostEvent.html"
+        });
+        expect(payload.branches.map((row: { noteId: string }) => row.noteId))
+            .toStrictEqual([ "hostEvent" ]);
+        expect(payload.assetPath).toBe("../assets");
+
+        // Without the export's links, a page keeps the content rendered for it.
+        const staticPage = parse(String(renderNoteForExport(calendar, branch, "../", [], [])));
+        expect(staticPage.querySelector("#content .share-collection") === null).toBe(true);
+    });
 });
 
 let sitePageCount = 0;

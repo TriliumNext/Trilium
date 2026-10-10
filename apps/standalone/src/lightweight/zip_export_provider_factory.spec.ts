@@ -9,10 +9,13 @@ vi.mock("@triliumnext/ckeditor5/src/theme/admonitions.css?raw", () => ({ default
 vi.mock("@triliumnext/ckeditor5/src/theme/ck-content.css?raw", () => ({ default: ".content {}" }));
 vi.mock("@triliumnext/ckeditor5/src/theme/multicolumn.css?raw", () => ({ default: ".columns {}" }));
 
-function makeData(content = "<p>No diagrams.</p>"): ZipExportProviderData {
+function makeData(content = "<p>No diagrams.</p>", ...others: object[]): ZipExportProviderData {
     const note = {
         getSubtree: () => ({
-            notes: [ { type: "text", isContentAvailable: () => true, getContent: () => content } ]
+            notes: [
+                { type: "text", isContentAvailable: () => true, getContent: () => content },
+                ...others
+            ]
         })
     };
     return {
@@ -73,6 +76,36 @@ describe("standaloneZipExportProviderFactory", () => {
         const { files } = (provider as unknown as WithAssets).assets;
         expect(new TextDecoder().decode(files.get("assets/mermaid.core-a.js") as Uint8Array))
             .toBe("content of /src/mermaid.core-a.js");
+        expect(new TextDecoder().decode(files.get("assets/worker-b.js") as Uint8Array))
+            .toBe("content of /src/../assets/worker-b.js");
+    });
+
+    it("adds the app's catalogues an app view reads, leaving out one the build lacks", async () => {
+        vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+            if (url.endsWith("entry.json")) {
+                return new Response("", { status: 404 });
+            }
+            return new Response(url.endsWith("share_theme.json")
+                ? JSON.stringify(MANIFEST)
+                : `content of ${url}`);
+        }));
+        const calendar = {
+            type: "book",
+            getLabelValue: () => "calendar",
+            getChildNotes: () => [],
+            isContentAvailable: () => true,
+            getContent: () => ""
+        };
+
+        const provider = await standaloneZipExportProviderFactory("share",
+            makeData(undefined, calendar));
+
+        type WithAssets = { assets: { files: Map<string, string | Uint8Array> } };
+        const { files } = (provider as unknown as WithAssets).assets;
+        const catalogue = files.get("assets/translations/en/translation.json") as Uint8Array;
+        expect(new TextDecoder().decode(catalogue))
+            .toBe("content of /translations/en/translation.json");
+        expect(files.has("assets/translations/en/entry.json")).toBe(false);
     });
 
     it("fails the share-theme export when the development server serves no manifest", async () => {
@@ -100,7 +133,8 @@ describe("standaloneZipExportProviderFactory", () => {
 
 const MANIFEST = {
     files: [ "scripts.js", "scripts.css" ],
-    lazy: { mermaid: [ "mermaid.core-a.js" ] }
+    lazy: { mermaid: [ "mermaid.core-a.js", "../assets/worker-b.js" ] },
+    requires: {}
 };
 
 /** Serves {@link MANIFEST} and, for every other file, its path. */

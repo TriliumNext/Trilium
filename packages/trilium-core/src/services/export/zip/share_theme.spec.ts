@@ -26,10 +26,15 @@ vi.mock("../../../becca/becca.js", () => ({ default: mockBecca }));
 const mockLog = { error: vi.fn(), info: vi.fn() };
 vi.mock("../../log.js", () => ({ getLog: () => mockLog }));
 
+const mockOptions = { getOptionOrNull: vi.fn((_name: string): string | null => null) };
+vi.mock("../../options.js", () => ({ default: mockOptions }));
+
 const {
     default: ShareThemeExportProvider,
     hasMermaidDiagrams,
-    getShareThemeExportFiles
+    getAppViewGroups,
+    getShareThemeExportFiles,
+    getShareThemeTranslationFiles
 } = await import("./share_theme.js");
 
 // --- Test scaffolding -------------------------------------------------------
@@ -201,6 +206,31 @@ describe("ShareThemeExportProvider", () => {
             expect(out).toContain('href=""');
         });
 
+        it("links the notes of an app view to their pages, the root to the base path", () => {
+            const note = { noteId: "viewNote", getBestNotePath: () => [ "root", "viewNote" ] };
+            mockBecca.getNote.mockReturnValue(null);
+            const p = makeProvider();
+            (p as any).rootMeta = { noteId: "rootNote1234" };
+            const noteMeta: any = {
+                notePath: [ "root", "rootNote1234", "dir", "viewNote" ],
+                attachments: []
+            };
+
+            const { mock } = mockContentRenderer.renderNoteForExport;
+            const lastCall = () => mock.lastCall as unknown[] | undefined;
+            const getLink = (noteId: string) =>
+                (lastCall()?.[5] as ((id: string) => string | null) | undefined)?.(noteId);
+
+            p.prepareContent("t", "<p>c</p>", noteMeta, note as any, {} as any);
+            expect(getLink("rootNote1234")).toBe("../../");
+            expect(getLink("other")).toBe("url/other");
+
+            (p as any).rootMeta = { noteId: "viewNote" };
+            const rootMeta: any = { notePath: [ "root", "viewNote" ], attachments: [] };
+            p.prepareContent("t", "<p>c</p>", rootMeta, note as any, {} as any);
+            expect(getLink("viewNote")).toBe("./");
+        });
+
         it("leaves binary (non-string) content untouched but still indexes the note", () => {
             const note = { noteId: "binNote", getBestNotePath: () => ["root", "binNote12345"] };
             mockBecca.getNote.mockReturnValue(null);
@@ -349,7 +379,63 @@ describe("hasMermaidDiagrams", () => {
     });
 });
 
+describe("getAppViewGroups", () => {
+    it("names the groups of the views, note types and drawn notes the subtree hosts", () => {
+        const site = viewTree({ type: "text", children: [
+            { type: "book", viewType: "calendar" },
+            { type: "book", viewType: "geoMap", isProtected: true },
+            { type: "book", viewType: "dashboard", children: [
+                { type: "code" },
+                { type: "book", viewType: "table" }
+            ] },
+            { type: "book", viewType: "presentation", children: [
+                { type: "text", children: [ { type: "render" } ] }
+            ] },
+            { type: "mermaid" },
+            { type: "book" }
+        ] });
+
+        expect([ ...getAppViewGroups(site) ].sort()).toEqual([
+            "app", "content:book", "content:code", "content:render", "content:text", "scripting",
+            "type:mermaid", "type:render", "view:calendar", "view:dashboard", "view:presentation",
+            "view:table"
+        ]);
+        const withoutViews = viewTree({ type: "text", children: [ { type: "book" } ] });
+        expect(getAppViewGroups(withoutViews).size).toBe(0);
+    });
+});
+
+describe("getShareThemeTranslationFiles", () => {
+    it("lists the catalogues of English and the display language only for app views", () => {
+        const calendar = viewTree({ type: "book", viewType: "calendar" });
+
+        expect(getShareThemeTranslationFiles(viewTree({ type: "text" }))).toEqual([]);
+        expect(getShareThemeTranslationFiles(calendar))
+            .toEqual([ "en/translation.json", "en/entry.json" ]);
+        mockOptions.getOptionOrNull.mockReturnValueOnce("ro");
+        expect(getShareThemeTranslationFiles(calendar)).toEqual([
+            "en/translation.json", "en/entry.json", "ro/translation.json", "ro/entry.json"
+        ]);
+    });
+});
+
 describe("getShareThemeExportFiles", () => {
+    it("adds the files of the app views the subtree hosts, with the groups they require", () => {
+        const manifest = {
+            files: [ "scripts.js" ],
+            lazy: {
+                app: [ "app.js" ],
+                "view:calendar": [ "calendar.js" ],
+                "view:table": [ "table.js" ]
+            },
+            requires: { "view:calendar": [ "app" ] }
+        };
+
+        const calendar = viewTree({ type: "book", viewType: "calendar" });
+        expect(getShareThemeExportFiles(manifest, calendar).sort())
+            .toEqual([ "app.js", "calendar.js", "scripts.js" ]);
+    });
+
     const manifest = {
         files: [ "scripts.js", "scripts.css" ],
         lazy: { mermaid: [ "mermaid.core-a.js" ] },
@@ -368,6 +454,31 @@ describe("getShareThemeExportFiles", () => {
             subtreeOf({ type: "text", content: diagram }))).toEqual([ "scripts.js" ]);
     });
 });
+
+interface FakeViewNote {
+    type: string;
+    viewType?: string;
+    isProtected?: boolean;
+    children?: FakeViewNote[];
+}
+
+/** A note with the children of `definition`, read for the app views it hosts. */
+function viewTree(definition: FakeViewNote): any {
+    const children = (definition.children ?? []).map(viewTree);
+    const note = {
+        type: definition.type,
+        mime: "text/html",
+        isProtected: !!definition.isProtected,
+        isContentAvailable: () => true,
+        getContent: () => "",
+        getLabelValue: (name: string) => (name === "viewType" ? definition.viewType ?? null : null),
+        getChildNotes: () => children,
+        getSubtree: () => ({
+            notes: [ note, ...children.flatMap((child) => child.getSubtree().notes) ]
+        })
+    };
+    return note;
+}
 
 type FakeNote = { type: string; mime?: string; available?: boolean; content: string };
 

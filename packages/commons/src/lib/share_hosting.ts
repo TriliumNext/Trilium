@@ -1,3 +1,5 @@
+import type { ShareThemeManifest } from "./shared_types.js";
+
 /**
  * The view types of the collections a shared page shows with the app's own view. The app build
  * checks that each has a `view:<viewType>` group in the share theme's manifest.
@@ -32,4 +34,10 @@ export function resolveShareThemeGroups(
         }
     }
     return [ ...resolved ];
+}
+
+/** Returns the files of `manifest`'s groups `names` and of the groups they require, each once. */
+export function getShareThemeGroupFiles(manifest: ShareThemeManifest, names: Iterable<string>) {
+    const groups = resolveShareThemeGroups(manifest.requires, names);
+    return [ ...new Set(groups.flatMap((name) => manifest.lazy[name] ?? [])) ];
 }

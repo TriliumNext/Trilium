@@ -1,4 +1,7 @@
-import type { ShareThemeManifest } from "@triliumnext/commons";
+import {
+    getShareThemeGroupFiles, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES,
+    type ShareThemeManifest
+} from "@triliumnext/commons";
 import ejs from "ejs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
@@ -10,6 +13,7 @@ import type { ExportFormat, NoteMeta, NoteMetaFile } from "../../../meta.js";
 import { readShareTemplate, renderNoteForExport } from "../../../share/index.js";
 import * as iconPackService from "../../icon_packs.js";
 import { getLog } from "../../log.js";
+import options from "../../options.js";
 import { ZipExportProvider, type ZipExportProviderData } from "./abstract_provider.js";
 
 /** The static files a share-theme export copies into the archive, read by each platform its own way. */
@@ -75,7 +79,12 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             }) : "";
 
             // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
-            content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1), this.iconPacks);
+            const getLink = (noteId: string) => (noteId === this.rootMeta?.noteId
+                ? basePath || "./"
+                : this.getNoteTargetUrl(noteId, noteMeta));
+            const ancestors = noteMeta.notePath.slice(0, -1);
+            content = renderNoteForExport(note, branch, basePath, ancestors, this.iconPacks,
+                getLink);
             if (typeof content === "string") {
                 // Rewrite attachment download links
                 content = content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g, (match, attachmentId) => {
@@ -184,11 +193,82 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
 /**
  * Returns the files of `manifest` the export of `note` copies into `assets/`: those every page can
- * load, and mermaid's only when {@link hasMermaidDiagrams} finds a diagram.
+ * load, those of the app views the pages host, by {@link getAppViewGroups}, and mermaid's only
+ * when {@link hasMermaidDiagrams} finds a diagram.
  */
 export function getShareThemeExportFiles(manifest: ShareThemeManifest, note: BNote) {
-    const mermaidFiles = hasMermaidDiagrams(note) ? manifest.lazy.mermaid ?? [] : [];
-    return [ ...manifest.files, ...mermaidFiles ];
+    const groups = [ ...getAppViewGroups(note) ];
+    if (hasMermaidDiagrams(note)) {
+        groups.push("mermaid");
+    }
+    return [ ...manifest.files, ...getShareThemeGroupFiles(manifest, groups) ];
+}
+
+/**
+ * Returns the app's catalogues the app views of the export of `note` read, relative to the app's
+ * `translations/`: those of the display language and of English, which they fall back to. The
+ * export copies them into `assets/translations/`; a locale without one of them leaves it out.
+ */
+export function getShareThemeTranslationFiles(note: BNote) {
+    if (!getAppViewGroups(note).size) {
+        return [];
+    }
+
+    const locales = new Set([ "en", options.getOptionOrNull("locale") || "en" ]);
+    return [ ...locales ].flatMap((locale) =>
+        [ `${locale}/translation.json`, `${locale}/entry.json` ]);
+}
+
+/**
+ * Returns the groups of the share theme's manifest the pages of the export of `note` load to host
+ * app views: `view:<viewType>` for each collection and `type:<noteType>` for each note type with
+ * one, `content:<noteType>` for the notes a dashboard or a presentation draws and `view:` for a
+ * collection among them, `app` beside any of them and `scripting` for a render note.
+ */
+export function getAppViewGroups(note: BNote) {
+    const groups = new Set<string>();
+    for (const subtreeNote of note.getSubtree().notes) {
+        if (subtreeNote.isProtected) {
+            continue;
+        }
+
+        const viewType = getViewTypeOf(subtreeNote);
+        if (viewType && SHARE_HOSTED_VIEW_TYPES.includes(viewType)) {
+            groups.add(`view:${viewType}`);
+            if (CONTENT_VIEW_TYPES.includes(viewType)) {
+                for (const drawn of getDrawnNotes(subtreeNote)) {
+                    groups.add(`content:${drawn.type}`);
+                    const drawnViewType = getViewTypeOf(drawn);
+                    if (drawnViewType) {
+                        groups.add(`view:${drawnViewType}`);
+                    }
+                }
+            }
+        } else if (SHARE_HOSTED_NOTE_TYPES.includes(subtreeNote.type)) {
+            groups.add(`type:${subtreeNote.type}`);
+        }
+    }
+
+    if (groups.size) {
+        groups.add("app");
+    }
+    if (groups.has("type:render") || groups.has("content:render")) {
+        groups.add("scripting");
+    }
+    return groups;
+}
+
+/** The view types of the collections that draw the content of their notes. */
+const CONTENT_VIEW_TYPES = [ "dashboard", "presentation" ];
+
+/** The view type of a collection, the grid when it names none, or `null` for another note. */
+function getViewTypeOf(note: BNote) {
+    return note.type === "book" ? note.getLabelValue("viewType") || "grid" : null;
+}
+
+/** The notes a dashboard or a presentation draws: its children and, as vertical slides, theirs. */
+function getDrawnNotes(collection: BNote) {
+    return collection.getChildNotes().flatMap((child) => [ child, ...child.getChildNotes() ]);
 }
 
 /**

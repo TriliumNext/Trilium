@@ -32,8 +32,11 @@ export async function standaloneZipExportProviderFactory(format: ExportFormat, d
                 import("./share_provider.js"),
                 loadShareThemeManifest()
             ]);
-            const files = shareTheme.getShareThemeExportFiles(manifest, data.branch.getNote());
-            const assets = await loadShareThemeExportAssets(files);
+            const note = data.branch.getNote();
+            const assets = await loadShareThemeExportAssets(
+                shareTheme.getShareThemeExportFiles(manifest, note),
+                shareTheme.getShareThemeTranslationFiles(note)
+            );
             registerShareProvider();
             return new shareTheme.default(data, assets);
         }
@@ -57,25 +60,38 @@ async function loadShareThemeManifest(): Promise<ShareThemeManifest> {
 }
 
 /**
- * Fetches the share theme's `files` from `src/` and the built-in icon fonts from `share/assets`,
- * where the build places them for the share pages. The export reads them synchronously, so they
- * are all loaded before it starts.
+ * Fetches the share theme's `files` from `src/`, or `assets/` for those the manifest lists as
+ * `../assets/<file>`, the app's catalogues `translationFiles` from
+ * `translations/` and the built-in icon fonts from `share/assets`, where the build places them
+ * for the app and the share pages. The export reads them synchronously, so they are all loaded
+ * before it starts. A catalogue the locale lacks is left out.
  */
-async function loadShareThemeExportAssets(themeFiles: string[]): Promise<ShareThemeExportAssets> {
+async function loadShareThemeExportAssets(
+    themeFiles: string[],
+    translationFiles: string[]
+): Promise<ShareThemeExportAssets> {
     const { default: iconColorSvg } =
         await import("../../../server/src/assets/images/icon-color.svg?raw");
     const fontFiles = icon_packs.getIconPacks()
         .filter((iconPack) => iconPack.builtin)
         .map((iconPack) => `${iconPack.fontAttachmentId}.${icon_packs.MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime]}`);
 
-    const [ themeContents, fontContents ] = await Promise.all([
+    const [ themeContents, translationContents, fontContents ] = await Promise.all([
         Promise.all(themeFiles.map((file) => fetchAsset(`/src/${file}`))),
+        Promise.all(translationFiles.map((file) =>
+            fetchAsset(`/translations/${file}`).catch(() => null))),
         Promise.all(fontFiles.map((file) => fetchAsset(`/share/assets/fonts/${file}`)))
     ]);
 
     const files = new Map<string, string | Uint8Array>([ [ "icon-color.svg", iconColorSvg ] ]);
     for (const [ index, file ] of themeFiles.entries()) {
-        files.set(`assets/${file}`, themeContents[index]);
+        files.set(`assets/${file.split("/").at(-1) ?? file}`, themeContents[index]);
+    }
+    for (const [ index, file ] of translationFiles.entries()) {
+        const content = translationContents[index];
+        if (content) {
+            files.set(`assets/translations/${file}`, content);
+        }
     }
     const fonts = new Map(fontFiles.map((file, index) => [ file, fontContents[index] ]));
 
