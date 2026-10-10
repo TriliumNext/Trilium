@@ -53,6 +53,9 @@ export default defineConfig({
                 suggested_key: {
                     default: "Ctrl+Shift+E"
                 }
+            },
+            saveTabs: {
+                description: "Save all tabs of the current window into a note"
             }
         }
     }),
