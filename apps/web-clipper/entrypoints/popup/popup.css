@@ -126,24 +126,44 @@ body {
         }
     }
 
-    .action-tiles {
+    .toolbar {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
     }
 
-    button.btn.action-tile {
-        justify-content: flex-start;
-        min-width: 0;
-        padding: 4px 8px;
-        font-size: 0.95em;
+    .toolbar-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 4px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--main-text-color);
+        font-size: 0.85em;
+        line-height: 1.3;
+        cursor: pointer;
 
-        .action-label {
-            overflow: hidden;
-            flex-grow: 1;
-            text-align: start;
-            white-space: nowrap;
-            text-overflow: ellipsis;
+        svg.icon {
+            width: 22px;
+            height: 22px;
+            color: var(--cmd-button-icon-color);
+        }
+
+        &:hover:not(:disabled) {
+            background: var(--icon-button-hover-background);
+            color: var(--icon-button-hover-color);
+        }
+
+        &:active:not(:disabled) svg.icon {
+            transform: scale(0.9);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.5;
         }
     }
 

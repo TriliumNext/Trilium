@@ -63,7 +63,9 @@ describe("popup", () => {
         await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });
         expect(status()).toEqual({ dot: "status-dot status-dot-ok", text: "Connected to the desktop app on port 37840" });
         expect(container.querySelector(".connection .status-ok")).not.toBeNull();
-        expect(captureButtons().every((button) => !button.disabled && !button.title)).toBe(true);
+        expect(captureButtons().every((button) => !button.disabled)).toBe(true);
+        expect(button("Save page to Trilium")?.title).toBe("");
+        expect(button("Crop screenshot")?.title).toBe("Crop screenshot (Ctrl+Shift+E)");
         expect(sendMessage).toHaveBeenCalledWith({ name: "trigger-trilium-search-note-url" });
 
         await receive({
@@ -155,10 +157,13 @@ describe("popup", () => {
     it("shows the keyboard shortcut of each action that has one", () => {
         expect(getAllCommands).toHaveBeenCalledOnce();
         expect(shortcutOf("Save page to Trilium")).toBe("Alt+Shift+S");
-        expect(shortcutOf("Crop screenshot")).toBe("Ctrl+Shift+E");
-        expect(shortcutOf("All tabs in window")).toBeUndefined();
-        expect(shortcutOf("Visible area screenshot")).toBeUndefined();
-        expect(shortcutOf("Link with a note")).toBeUndefined();
+        expect(toolbar()).toEqual([
+            { label: "Crop", title: "Crop screenshot (Ctrl+Shift+E)" },
+            { label: "Screenshot", title: "Visible area screenshot" },
+            { label: "Note", title: "Link with a note" },
+            { label: "Tabs", title: "All tabs in window" }
+        ]);
+        expect(container.querySelectorAll(".toolbar-action kbd")).toHaveLength(0);
     });
 
     it("previews the readable page with its title, source and date", () => {
@@ -436,6 +441,13 @@ async function click(text: string) {
 
 function shortcutOf(text: string) {
     return button(text)?.querySelector("kbd")?.textContent;
+}
+
+function toolbar() {
+    return [ ...container.querySelectorAll<HTMLButtonElement>(".toolbar-action") ].map((action) => {
+        expect(action.getAttribute("aria-label")).toBe(action.title.replace(/ \(.*\)$/, ""));
+        return { label: action.querySelector(".action-label")?.textContent, title: action.title };
+    });
 }
 
 function captureButtons() {

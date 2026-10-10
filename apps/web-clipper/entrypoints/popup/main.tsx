@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { TriliumSearchNoteStatus, TriliumSearchStatus } from "../background/trilium_server_facade";
 
 const HELP_URL = "https://docs.triliumnotes.org/user-guide/setup/web-clipper";
+const DISCONNECTED_TITLE = "This action can't be performed without active connection to Trilium.";
 
 type PopupMessage = {
     name: "trilium-search-status";
@@ -159,11 +160,6 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
     shortcuts: Shortcuts;
     onWriteNote: () => void;
 }) {
-    const actionProps = {
-        disabled,
-        title: disabled ? "This action can't be performed without active connection to Trilium." : undefined
-    };
-
     function sendAndClose(name: string) {
         void sendMessage({ name });
         window.close();
@@ -173,27 +169,46 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
         <div className="capture-actions">
             <PagePreview disabled={disabled} shortcut={shortcuts.saveWholePage} />
 
-            <div className="action-tiles">
-                <button className="btn btn-secondary action-tile" {...actionProps} onClick={() => sendAndClose("save-cropped-screenshot")}>
-                    <Icon icon={Crop} />
-                    <span className="action-label">Crop screenshot</span>
-                    <Shortcut keys={shortcuts.saveCroppedScreenshot} />
-                </button>
-                <button className="btn btn-secondary action-tile" {...actionProps} onClick={() => sendAndClose("save-whole-screenshot")}>
-                    <Icon icon={Screenshot} />
-                    <span className="action-label">Visible area screenshot</span>
-                </button>
-                <button className="btn btn-secondary action-tile" {...actionProps} onClick={onWriteNote}>
-                    <Icon icon={Link} />
-                    <span className="action-label">Link with a note</span>
-                </button>
-                <button className="btn btn-secondary action-tile" {...actionProps} onClick={() => sendMessage({ name: "save-tabs" })}>
-                    <Icon icon={Tabs} />
-                    <span className="action-label">All tabs in window</span>
-                    <Shortcut keys={shortcuts.saveTabs} />
-                </button>
+            <div className="toolbar">
+                <ToolbarAction
+                    icon={Crop} label="Crop" name="Crop screenshot"
+                    shortcut={shortcuts.saveCroppedScreenshot} disabled={disabled}
+                    onClick={() => sendAndClose("save-cropped-screenshot")}
+                />
+                <ToolbarAction
+                    icon={Screenshot} label="Screenshot" name="Visible area screenshot" disabled={disabled}
+                    onClick={() => sendAndClose("save-whole-screenshot")}
+                />
+                <ToolbarAction icon={Link} label="Note" name="Link with a note" disabled={disabled} onClick={onWriteNote} />
+                <ToolbarAction
+                    icon={Tabs} label="Tabs" name="All tabs in window"
+                    shortcut={shortcuts.saveTabs} disabled={disabled}
+                    onClick={() => sendMessage({ name: "save-tabs" })}
+                />
             </div>
         </div>
+    );
+}
+
+/** A secondary action: an icon over a short label, its full name and shortcut in the tooltip. */
+function ToolbarAction({ icon, label, name, shortcut, disabled, onClick }: {
+    icon: IconDefinition;
+    label: string;
+    name: string;
+    shortcut?: string;
+    disabled: boolean;
+    onClick: () => void;
+}) {
+    let title = shortcut ? `${name} (${shortcut})` : name;
+    if (disabled) {
+        title = DISCONNECTED_TITLE;
+    }
+
+    return (
+        <button className="toolbar-action" disabled={disabled} title={title} aria-label={name} onClick={onClick}>
+            <Icon icon={icon} />
+            <span className="action-label">{label}</span>
+        </button>
     );
 }
 
@@ -249,7 +264,7 @@ function PagePreview({ disabled, shortcut }: { disabled: boolean, shortcut: stri
             <button
                 className="btn btn-primary primary-action"
                 disabled={disabled || !page}
-                title={disabled ? "This action can't be performed without active connection to Trilium." : undefined}
+                title={disabled ? DISCONNECTED_TITLE : undefined}
                 onClick={page ? () => save(page) : undefined}
             >
                 <Icon icon={Article} />
