@@ -17,6 +17,10 @@ body:has(#content.app-view) {
         min-height: 0;
     }
 
+    #content-footer {
+        margin-top: 0;
+    }
+
     #content > :is(.share-collection, .share-note-view) {
         position: relative;
         display: flex;
