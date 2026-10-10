@@ -27,6 +27,9 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
             const { results } = await getJson<{ results: { noteId: string }[] }>(`api/notes?${params}`);
             return results.map((result) => result.noteId);
         },
+        // A visitor cannot change notes, so what a view saves holds only while the page is open.
+        saveAttachment: async () => {},
+        removeAttachment: async () => {},
         getNoteMap: (mapRootNoteId, mapType, { excludeRelations, includeRelations }) => {
             const params = new URLSearchParams([
                 ...excludeRelations.map((name) => [ "excludeRelation", name ]),

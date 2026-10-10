@@ -18,6 +18,15 @@ export interface NoteMapFilters {
     includeRelations: string[];
 }
 
+/** An attachment a view saves on a note, such as its stored config. */
+export interface SavedAttachment {
+    role: string;
+    title: string;
+    mime: string;
+    content: string;
+    position: number;
+}
+
 /** The rows of notes with their branches and attributes, which `froca.addResp()` takes. */
 export interface SubtreeResponse {
     notes: FNoteRow[];
@@ -44,6 +53,9 @@ export interface FrocaSource {
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
     /** The frontend bundle of the script note `noteId` and its modules, or nothing if it has none. */
     getScriptBundle(noteId: string): Promise<Bundle | undefined>;
+    /** Saves `attachment` on the note, in place of the one of the same title if there is one. */
+    saveAttachment(noteId: string, attachment: SavedAttachment): Promise<void>;
+    removeAttachment(attachmentId: string): Promise<void>;
 }
 
 export interface Froca {
@@ -67,4 +79,6 @@ export interface Froca {
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
     getScriptBundle(noteId: string): Promise<Bundle | undefined>;
+    saveAttachment(noteId: string, attachment: SavedAttachment): Promise<void>;
+    removeAttachment(attachmentId: string): Promise<void>;
 }
