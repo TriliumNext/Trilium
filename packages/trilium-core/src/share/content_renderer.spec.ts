@@ -1716,7 +1716,11 @@ describe("content_renderer pages", () => {
         expect(relationMap.isAppView).toBe(true);
         expect(parse(String(relationMap.content))
             .querySelector(".share-note-view[data-note-id=relationMapNote]")?.innerHTML).toBe("");
-        expect(render({ type: "render", content: "" }).content)
+        const renderNote = render({ id: "renderNote", type: "render", content: "" });
+        expect(renderNote.isAppView).toBe(true);
+        expect(parse(String(renderNote.content))
+            .querySelector(".share-note-view[data-note-id=renderNote]")?.innerHTML).toBe("");
+        expect(render({ type: "launcher", content: "" }).content)
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
     });
 
@@ -1741,7 +1745,9 @@ describe("content_renderer pages", () => {
     });
 
     it("counts a board's cards in the tree in place of listing them, its template hiding them", () => {
-        buildNote({ id: "_template_testBoard", title: "Board template", "#subtreeHidden": "" });
+        buildNote({
+            id: "_template_testBoard", title: "Board template", "#subtreeHidden": "", "#iconClass": "bx bx-columns"
+        });
         const board = buildSitePage({
             id: "hidingBoard",
             title: "Board",
@@ -1758,19 +1764,22 @@ describe("content_renderer pages", () => {
         expect(entry?.querySelector(".tree-item-hidden-count")?.getAttribute("title"))
             .toBe("2 subpages that are hidden from the tree");
         expect(entry?.querySelector("li") === null).toBe(true);
+        expect(entry?.querySelector(".tree-item-row a > .tn-icon")?.classList.contains("bx-columns")).toBe(true);
 
         const card = parse(String(renderNoteContent(shaca.getNote("boardCard1"))));
         expect(card.querySelectorAll("#menu li[data-note-id=hidingBoard] li").map((item) =>
             item.getAttribute("data-note-id"))).toEqual([ "boardCard1" ]);
 
         const shown = buildSitePage({
-            id: "showingBoard", content: "<p>Board</p>", "#subtreeHidden": "false",
+            id: "showingBoard", content: "<p>Board</p>", "#subtreeHidden": "false", "#iconClass": "bx bx-rocket",
             "~template": "_template_testBoard",
             children: [ { id: "shownCard", title: "Card", content: "<p>Card</p>" } ]
         });
         const shownPage = parse(String(renderNoteContent(shown)));
         expect(shownPage.querySelector("#menu .tree-item-hidden-count") === null).toBe(true);
         expect(shownPage.querySelector("#menu li[data-note-id=shownCard]") === null).toBe(false);
+        expect(shownPage.querySelector("#menu li[data-note-id=showingBoard] > .tree-item-row a > .tn-icon")
+            ?.classList.contains("bx-rocket")).toBe(true);
     });
 
     it("leaves content that is not text as it is, and empty text as empty", () => {

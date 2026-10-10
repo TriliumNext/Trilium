@@ -904,20 +904,7 @@ function renderMermaid(result: Result, note: SNote | BNote) {
  * `_template_calendar`, which lives in the hidden subtree and so is never in shaca.
  */
 function getViewType(note: SNote) {
-    const viewType = note.getLabelValue("viewType");
-    if (viewType) {
-        return viewType;
-    }
-
-    for (const relation of note.getOwnedRelations("template")) {
-        if (relation.value.startsWith("_template_")) {
-            const templateViewType = becca.getNote(relation.value)?.getLabelValue("viewType");
-            if (templateViewType) {
-                return templateViewType;
-            }
-        }
-    }
-    return null;
+    return note.getLabelValue("viewType") || note.getBuiltInTemplateLabelValue("viewType");
 }
 
 /**
@@ -930,8 +917,8 @@ function isSubtreeHidden(note: ShareNote) {
         return shared.isLabelTruthy("subtreeHidden");
     }
 
-    return shared.getOwnedRelations("template").some((relation) => relation.value.startsWith("_template_")
-        && !!becca.getNote(relation.value)?.isLabelTruthy("subtreeHidden"));
+    const value = shared.getBuiltInTemplateLabelValue("subtreeHidden");
+    return value !== null && value !== "false";
 }
 
 /**

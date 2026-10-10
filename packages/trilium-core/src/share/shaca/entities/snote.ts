@@ -2,6 +2,8 @@ import { BlobRow, getNoteIcon, NoteType } from "@triliumnext/commons";
 import { decodeUtf8 } from "../../../services/utils/binary.js";
 import escape from "escape-html";
 
+import becca from "../../../becca/becca.js";
+
 import { isStringNote } from "../../../services/utils/index.js";
 import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
@@ -515,18 +517,17 @@ class SNote extends AbstractShacaEntity {
     }
 
     getIcon(filterByPrefix: string[] = []) {
-        const iconClassLabels = this.getLabels("iconClass").filter(label => {
-            if (filterByPrefix.length === 0) {
-                return true;
-            }
-            return filterByPrefix.some(prefix => label.value.startsWith(prefix));
-        });
+        const isAvailable = (iconClass: string) =>
+            filterByPrefix.length === 0 || filterByPrefix.some((prefix) => iconClass.startsWith(prefix));
+        const templateIconClass = this.getBuiltInTemplateLabelValue("iconClass");
+        const iconClass = this.getLabels("iconClass").map((label) => label.value).find(isAvailable)
+            ?? (templateIconClass && isAvailable(templateIconClass) ? templateIconClass : undefined);
         const icon = getNoteIcon({
             noteId: this.noteId,
             type: this.type,
             mime: this.mime,
             workspaceIconClass: undefined,
-            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            iconClass,
             isFolder: this.isFolder.bind(this),
             getLabelValue: this.getLabelValue.bind(this)
         });
@@ -536,6 +537,23 @@ class SNote extends AbstractShacaEntity {
 
     isFolder() {
         return this.getChildBranches().length > 0;
+    }
+
+    /**
+     * Returns the value of the label on the first built-in template (`_template_*`) the note names
+     * with `~template` that has one, or `null`. Shaca holds only shared notes, so the label the app
+     * reads from such a template, such as a collection's icon, is read from becca.
+     */
+    getBuiltInTemplateLabelValue(name: string): string | null {
+        for (const relation of this.getOwnedRelations("template")) {
+            const value = relation.value.startsWith("_template_")
+                ? becca.getNote(relation.value)?.getLabelValue(name)
+                : null;
+            if (value !== null && value !== undefined) {
+                return value;
+            }
+        }
+        return null;
     }
 }
 
