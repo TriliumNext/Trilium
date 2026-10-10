@@ -104,7 +104,7 @@ export function useZoomPanWheel(
 }
 
 /** What one press of a zoom step multiplies the scale by. */
-const ZOOM_STEP = 1.2;
+export const ZOOM_STEP = 1.2;
 /** What one wheel notch multiplies the scale by. Below {@link ZOOM_STEP}: notches arrive in bursts. */
 const WHEEL_STEP = 1.1;
 /** The pixel `deltaY` of one mouse-wheel notch. A trackpad reports a fraction of this per event. */

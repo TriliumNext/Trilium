@@ -10,14 +10,16 @@ import link_context_menu from "../../menus/link_context_menu";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
+import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
 import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
-import OverlayControlGroup, { OverlayControlButton } from "../react/OverlayControlGroup";
+import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../react/OverlayControlGroup";
 import Slider from "../react/Slider";
+import { ZOOM_STEP } from "../react/zoom_pan";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
 import { MapTypeOverlayButtons } from "./MapTypeSwitcher";
-import { CssData, setupRendering } from "./rendering";
+import { CssData, type MapRendering, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
 
 /** Maximum number of notes to render in the note map before showing a warning. */
@@ -52,6 +54,9 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
     const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData | undefined>(undefined);
+    const renderingRef = useRef<MapRendering | undefined>(undefined);
+    const [ canZoomIn, setCanZoomIn ] = useState(true);
+    const [ canZoomOut, setCanZoomOut ] = useState(true);
 
     const mapRootId = useMemo(() => {
         if (note.noteId && isRootedAtCurrentNote(widgetMode)) {
@@ -84,7 +89,7 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
 
         // Navigating away mid-load must not let the outgoing note's data land on the new graph.
         let disposed = false;
-        let teardownRendering: (() => void) | undefined;
+        let rendering: MapRendering | undefined;
         const labelValues = (name: string) => note.getLabels(name).map(l => l.value) ?? [];
         const excludeRelations = labelValues("mapExcludeRelation");
         const includeRelations = labelValues("mapIncludeRelation");
@@ -109,7 +114,7 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
             const iconGlyphs = resolveIconGlyphs(notesAndRelations.nodes.map((node) => node.icon), containerRef.current);
 
             // Configure rendering properties.
-            teardownRendering = setupRendering(graph, {
+            rendering = setupRendering(graph, {
                 note,
                 mapRootId,
                 noteIdToSizeMap: notesAndRelations.noteIdToSizeMap,
@@ -118,8 +123,13 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
                 themeStyle,
                 widgetMode,
                 container,
-                iconGlyphs
+                iconGlyphs,
+                onZoom: (scale) => {
+                    setCanZoomIn(scale < graph.maxZoom());
+                    setCanZoomOut(scale > graph.minZoom());
+                }
             });
+            renderingRef.current = rendering;
 
             // Interaction
             graph
@@ -148,7 +158,8 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
 
         return () => {
             disposed = true;
-            teardownRendering?.();
+            rendering?.teardown();
+            renderingRef.current = undefined;
             // Stops the render loop; without it the discarded graph keeps animating against a
             // detached canvas for the rest of the session.
             graph._destructor();
@@ -226,6 +237,23 @@ export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId
                                 title={t("note_map.link-distance")}
                             />
                         </div>
+                    </OverlayControlGroup>
+
+                    {/* The steps stay home on mobile, as on the geo map: the fingers already zoom. */}
+                    <OverlayControlGroup className="note-map-zoom-controls" placement="bottom-end" overCanvas>
+                        {!isMobile() && (
+                            <ZoomControls
+                                canZoomIn={canZoomIn}
+                                canZoomOut={canZoomOut}
+                                onZoomIn={() => renderingRef.current?.zoomBy(ZOOM_STEP)}
+                                onZoomOut={() => renderingRef.current?.zoomBy(1 / ZOOM_STEP)}
+                            />
+                        )}
+                        <OverlayControlButton
+                            title={t("note_map.fit-to-view")}
+                            icon="bx-scan"
+                            onClick={() => renderingRef.current?.fitToView()}
+                        />
                     </OverlayControlGroup>
                 </>
             )}

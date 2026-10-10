@@ -30,6 +30,9 @@ The note map comes into multiple flavors:
     *   To have the notes remain in the same position as they were dragged, press the _Fix nodes_ button. The position of the notes is not saved, so it will return to normal once you navigate to another note or restart the application.
 *   When hovering over a node, the adjacent relations and nodes are highlighted.
 *   The distance between nodes can be adjusted via the slider in the bottom-left. Similarly, this value is not saved.
+*   To zoom, use the mouse wheel, pinch on a touch screen, or press the <span class="tn-icon bx bx-plus-circle"></span> and <span class="tn-icon bx bx-minus-circle"></span> buttons in the bottom-right corner.
+    *   To bring the whole map back into view, press the <span class="tn-icon bx bx-scan"></span> _Fit to view_ button next to them.
+    *   The zoom buttons are not shown on mobile, where pinching zooms instead. The _Fit to view_ button is always shown.
 *   <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Archived%20Notes.md">Archived Notes</a> are generally ignored by the note map in order to reduce clutter. There is one exception: if the root note is also archived, then all archived notes are displayed too.
 
 ## Link Map

@@ -1340,6 +1340,7 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
+    "fit-to-view": "Fit to view",
     "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
     "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
     "show-anyway": "Show map"
