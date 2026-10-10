@@ -1604,7 +1604,7 @@ function Board({
                             host={containerRef.current}
                             isLeaving={!isSelecting}
                             count={selectionCount}
-                            onDelete={() => branches.deleteNotes(
+                            onDelete={isReadOnly ? undefined : () => branches.deleteNotes(
                                 api.getCards(selection.keys).map((card) => card.branch.branchId),
                                 false, false)}
                             onMore={(e) => {

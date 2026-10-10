@@ -5237,7 +5237,7 @@ describe("Selection mode on mobile", () => {
     });
 
     /** A collection note, so the header the mode is switched on from is drawn. */
-    async function setup() {
+    async function setup(labels: Record<string, string> = {}) {
         disposeShownModals();
 
         const note = buildNote({
@@ -5245,6 +5245,7 @@ describe("Selection mode on mobile", () => {
             type: "book",
             "#collection": "",
             "#viewType": "board",
+            ...labels,
             children: [
                 { id: "pick1", title: "First", "#status": "To Do" },
                 { id: "pick2", title: "Second", "#status": "To Do" },
@@ -5321,6 +5322,16 @@ describe("Selection mode on mobile", () => {
         await act(async () => { headerButton("bx-x").click(); });
         expect(bar()).toBeNull();
         expect(board()?.classList.contains("selecting")).toBe(false);
+    });
+
+    it("offers no way to delete what is picked out of a read-only board", async () => {
+        await setup({ "#readOnly": "" });
+        await startSelecting();
+        await tap("pick1");
+
+        expect(selected()).toEqual([ "pick1" ]);
+        expect(railButton("bx-dots-vertical-rounded")).toBeTruthy();
+        expect(container.querySelector(".board-card-toolbar button.bx-trash")).toBeNull();
     });
 
     it("is left out off mobile", async () => {
