@@ -21,6 +21,36 @@ body:has(#content.app-view) {
         margin-top: 0;
     }
 
+    #title-row {
+        display: flex;
+        flex: none;
+        align-items: center;
+        height: 50px;
+        border-bottom: 1px solid var(--main-border-color);
+
+        > .tn-icon {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            font-size: 30px;
+            color: var(--muted-text-color);
+        }
+
+        > #title {
+            min-width: 0;
+            margin: 0;
+            padding-inline: 12px;
+            border-bottom: 0;
+            line-height: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+
     #content > :is(.share-collection, .share-note-view) {
         position: relative;
         display: flex;
@@ -46,5 +76,45 @@ body:has(#content.app-view) {
         #right-pane {
             height: calc(100dvh - var(--header-height));
         }
+    }
+}
+
+html.has-scripts:not(.app-view-shown) #content.app-view > :is(.share-collection, .share-note-view) {
+    > :not(img) {
+        visibility: hidden;
+        overflow: hidden;
+        animation: app-view-show 0s 10s forwards;
+    }
+
+    &:not(:has(> img))::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 32px;
+        height: 32px;
+        margin: auto;
+        border: 3px solid var(--background-highlight);
+        border-top-color: var(--text-menu);
+        border-radius: 50%;
+        animation: app-view-spin 800ms linear infinite, app-view-hide 0s 10s forwards;
+    }
+}
+
+@keyframes app-view-show {
+    to {
+        visibility: visible;
+        overflow: auto;
+    }
+}
+
+@keyframes app-view-hide {
+    to {
+        visibility: hidden;
+    }
+}
+
+@keyframes app-view-spin {
+    to {
+        transform: rotate(360deg);
     }
 }

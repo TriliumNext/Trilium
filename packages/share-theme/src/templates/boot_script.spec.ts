@@ -10,18 +10,18 @@ describe("boot_script.ejs", () => {
             "theme": "dark"
         });
 
-        expect([ ...classes ]).toStrictEqual([ "theme-dark", "theme-preference-dark" ]);
+        expect([ ...classes ]).toStrictEqual([ "theme-dark", "theme-preference-dark", "has-scripts" ]);
         expect(context.glob).toEqual({ isShare: true, isStatic: true, theme: "dark" });
         expect(() => runInContext(`const el = 1; let theme = 2; let root = 3;`, context)).not.toThrow();
     });
 
     it("follows the system theme when storage holds no theme or cannot be read", () => {
         expect([ ...runBootScript({}, true).classes ])
-            .toStrictEqual([ "theme-dark", "theme-preference-system" ]);
+            .toStrictEqual([ "theme-dark", "theme-preference-system", "has-scripts" ]);
         expect([ ...runBootScript(null, false).classes ])
-            .toStrictEqual([ "theme-light", "theme-preference-system" ]);
+            .toStrictEqual([ "theme-light", "theme-preference-system", "has-scripts" ]);
         expect([ ...runBootScript({ theme: "sepia" }, true).classes ])
-            .toStrictEqual([ "theme-dark", "theme-preference-system" ]);
+            .toStrictEqual([ "theme-dark", "theme-preference-system", "has-scripts" ]);
     });
 
     it("leaves no inline script in the page template besides the boot script", () => {
