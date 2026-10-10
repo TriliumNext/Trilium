@@ -74,7 +74,7 @@ const PREVIEW_STYLE = `
     h1 { font-size: 1.3em; } h2 { font-size: 1.15em; } h3, h4, h5, h6 { font-size: 1em; }
     img, video, svg, iframe { max-width: 100%; height: auto; }
     pre { white-space: pre-wrap; }
-    a { color: light-dark(#0076af, #95c3d9); text-decoration: none; pointer-events: none; }
+    a { color: light-dark(#0076af, #95c3d9); text-decoration: none; }
 `;
 
 const MODE_LABELS: Record<ClipMode, string> = { selection: "Selection", page: "Page", note: "Bookmark" };
@@ -507,6 +507,14 @@ export function previewDocument({ content, images }: Pick<ExtractedPage, "conten
         if (image) {
             img.setAttribute("src", image.src);
         }
+    }
+    // An empty `sandbox` still lets the frame navigate itself: through a link, which the keyboard
+    // can follow, or through a `<meta http-equiv="refresh">`.
+    for (const link of doc.querySelectorAll("a[href], area[href]")) {
+        link.removeAttribute("href");
+    }
+    for (const meta of doc.querySelectorAll("meta[http-equiv]")) {
+        meta.remove();
     }
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${PREVIEW_STYLE}</style></head>`

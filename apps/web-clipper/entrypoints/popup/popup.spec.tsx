@@ -419,6 +419,20 @@ describe("previewDocument", () => {
         expect(doc.querySelector("style")?.textContent).toContain("max-width: 100%");
     });
 
+    it("leaves the frame nothing to navigate to, by mouse, keyboard or refresh", () => {
+        const doc = new DOMParser().parseFromString(previewDocument({
+            content: `<p>See <a href="https://example.com/next">the next page</a></p>`
+                + `<meta http-equiv="refresh" content="0; url=https://example.com/elsewhere">`
+                + `<map><area href="https://example.com/area" alt="Area"></map>`,
+            images: []
+        }), "text/html");
+        const link = doc.querySelector("p a");
+        expect(link?.textContent).toBe("the next page");
+        expect(link?.hasAttribute("href")).toBe(false);
+        expect(doc.querySelector("area")?.hasAttribute("href")).toBe(false);
+        expect(doc.querySelector("meta[http-equiv]")).toBeNull();
+    });
+
     it("colors links with the theme's link colors, which the frame cannot read from the popup", () => {
         const theme = readFileSync(join(import.meta.dirname, "../../assets/theme.css"), "utf8");
         const [ light, dark ] = [ ...theme.matchAll(/--link-color: (#[0-9a-f]+);/g) ].map((match) => match[1]);
