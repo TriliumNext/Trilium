@@ -1749,11 +1749,19 @@ describe("content_renderer pages", () => {
                 { id: "lockedCard", title: "Locked", content: "<p>Locked</p>", "#shareCredentials": "other:secret" }
             ]
         });
-        const page = parse(String(renderNoteContent(board, (note) => note.noteId !== "lockedCard")));
-        const payload = JSON.parse(page.querySelector("script.share-froca")?.textContent ?? "{}");
+        const setDevMode = mockDevMode();
+        const readPayload = () => {
+            const content = renderNoteContent(board, (note) => note.noteId !== "lockedCard");
+            const page = parse(String(content));
+            return JSON.parse(page.querySelector("script.share-froca")?.textContent ?? "{}");
+        };
+        const payload = readPayload();
         expect(payload.notes.map((note: { noteId: string }) => note.noteId)).toEqual([ "lockedBoard", "openCard" ]);
         expect(payload.attributes.map((attribute: { name: string }) => attribute.name)).toEqual([ "viewType" ]);
         expect("exportBasePath" in payload).toBe(false);
+        expect(payload.assetPath).toBe(`../${assetUrlFragment}`);
+        setDevMode(true);
+        expect(readPayload().assetPath).toBe(`../${assetUrlFragment}/src`);
     });
 
     it("lists the subpages of a collection whose template makes it a list", () => {

@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { PassThrough } from "stream";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { isLocalPreviewImageSrc } from "@triliumnext/commons";
 
@@ -16,6 +16,12 @@ import sql_init from "../sql_init.js";
 import type { ZipArchive, ZipArchiveEntryOptions, ZipProvider } from "../zip_provider.js";
 import { getZipProvider, initZipProvider } from "../zip_provider.js";
 import zip, { shouldStoreUncompressed } from "./zip.js";
+import ShareThemeExportProvider from "./zip/share_theme.js";
+import {
+    getZipExportProviderFactory,
+    initZipExportProviderFactory,
+    type ZipExportProviderFactory
+} from "./zip_export_provider_factory.js";
 
 // happy-dom (standalone/WASM) exposes `window`; the Node server suite does not.
 const isBrowserRuntime = typeof window !== "undefined";
@@ -113,10 +119,19 @@ function parseMeta(entries: Record<string, Buffer>): NoteMetaFile {
 // provider does not support (createFileStream throws). The browser zip provider
 // has different streaming semantics and is validated separately.
 describe.skipIf(isBrowserRuntime)("zip export (real DB)", () => {
+    // The server's share factory reads the theme from the client build, which a test run lacks.
+    let platformFactory: ZipExportProviderFactory;
     beforeAll(async () => {
         sql_init.initializeDb();
         await sql_init.dbReady;
+        platformFactory = getZipExportProviderFactory();
+        const noAssets = { files: new Map(), readBuiltinFont: () => undefined };
+        initZipExportProviderFactory(async (format, data) => (format === "share"
+            ? new ShareThemeExportProvider(data, noAssets)
+            : platformFactory(format, data)));
     });
+
+    afterAll(() => initZipExportProviderFactory(platformFactory));
 
     describe("exportToZip", () => {
         it("produces a meta file plus the note's data file and sets the zip headers", async () => {

@@ -43,17 +43,6 @@ vi.mock("./react/hooks", async (importOriginal) => ({
     })
 }));
 
-// Keep the global setup.ts websocket mock (subscribeToMessages et al.) and only add logError,
-// which the unknown-attribute-type branch reports through.
-const logErrorMock = vi.hoisted(() => vi.fn());
-vi.mock("../services/ws", async (importOriginal) => {
-    const original = await importOriginal<{ default: object }>();
-    return {
-        ...original,
-        default: { ...original.default, logError: (...args: unknown[]) => logErrorMock(...args) }
-    };
-});
-
 import type Component from "../components/component";
 import FAttribute from "../entities/fattribute";
 import type FNote from "../entities/fnote";
@@ -62,6 +51,7 @@ import type LoadResults from "../services/load_results";
 import noteAttributeCache from "../services/note_attribute_cache";
 import server from "../services/server";
 import { randomString } from "../services/utils";
+import ws from "../services/ws";
 import { buildNote } from "../test/easy-froca";
 import { renderInto } from "../test/render";
 import { ParentComponent } from "./react/react_utils";
@@ -75,6 +65,10 @@ const serverRemoveMock = vi.fn(async () => undefined);
 server.get = serverGetMock as unknown as typeof server.get;
 server.put = serverPutMock as unknown as typeof server.put;
 server.remove = serverRemoveMock as unknown as typeof server.remove;
+// The global websocket mock in setup.ts has no logError, which the unknown-attribute-type branch
+// reports through.
+const logErrorMock = vi.fn();
+ws.logError = logErrorMock;
 
 describe("buildPromotedCells", () => {
     it("gathers a label allowing several values into one field, leaving a single-valued one its own", () => {

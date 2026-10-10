@@ -1001,7 +1001,7 @@ function hostInAppView(
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
     result.isAppView = true;
     result.isFullHeight = true;
-    const content = String(result.content ?? "");
+    const content = String(result.content);
     result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
 }
@@ -1012,8 +1012,9 @@ function hostInAppView(
  */
 function buildExportRows(note: BNote, exportHosting: ExportHosting | undefined) {
     const getLink = (linked: BNote) => exportHosting?.getLink(linked.noteId) ?? null;
+    // `canAccess` admits only the notes with a link, so `getLink` is never asked for another.
     return buildFrocaRows([ note ], (candidate) => getLink(candidate) !== null,
-        (candidate) => getLink(candidate) ?? "");
+        (candidate) => String(getLink(candidate)));
 }
 
 /**
