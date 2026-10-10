@@ -65,7 +65,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         <tr>
             <th><a class="reference-link" href="../Collections.md">Collections</a></th>
             <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon and the start of its text (or its <code>#shareDescription</code>), or, for a child note without text, links to its own first child notes.</li></ul></td>
-            <td><ul><li>The other view types (such as the calendar, the table or the board) are not supported, and the child notes are shown as cards instead.</li></ul></td>
+            <td><ul><li>The calendar, table, board, geo map and dashboard view types are shown as in the app, but read-only. The presentation view type is not supported, and its child notes are shown as cards instead.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
