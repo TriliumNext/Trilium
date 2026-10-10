@@ -1,0 +1,395 @@
+/*
+ * MENUS
+ *
+ * Note: apply the "tn-dropdown-list" class for scrollable dropdown menus. Submenus are not
+ * supported when this class is used.
+ */
+
+ .dropdown-menu:not(.static),
+ :root .excalidraw .popover {
+    border-radius: var(--dropdown-border-radius);
+    padding: var(--padding, var(--menu-padding-size)) !important;
+    font-size: 0.9rem !important;
+}
+
+.dropdown-menu.note-autocomplete-menu {
+    --padding: var(--suggestion-list-padding);
+}
+
+/* Use this class for non-legacy menus */
+.dropdown-menu.tn-dropdown-menu {
+    --menu-item-icon-vert-offset: 0;
+    white-space-collapse: discard;
+}
+
+/* The row's own icon is spaced by the `.tn-menu-gap` beside it. */
+.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon:not(.dropdown-item > span > :first-child, .menu-trailing-icon) {
+    margin-inline-end: 6px;
+}
+
+body.desktop .dropdown-menu::before,
+:root .ck.ck-dropdown__panel::before,
+:root .excalidraw .popover::before {
+    content: "";
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    border-radius: var(--dropdown-border-radius);
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    z-index: -1;
+}
+
+body.desktop .dropdown-menu.tn-dropdown-list {
+    backdrop-filter: var(--dropdown-backdrop-filter);
+}
+
+body.desktop .dropdown-submenu .dropdown-menu::before {
+    content: unset;
+}
+
+body.desktop .dropdown-menu.tn-dropdown-list::before {
+    display: none;
+}
+
+body.desktop .dropdown-submenu .dropdown-menu {
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    background: transparent;
+}
+
+/*
+ * With background effects on, the Electron window is transparent, and that breaks the
+ * list-style menus specifically: they carry `backdrop-filter` on the menu element itself
+ * (a scrollable menu can't use the `::before` layer — the pseudo scrolls away with the
+ * content), and an element that both filters and paints a translucent background gets
+ * flattened into one render surface, which composites wrongly over window-transparent
+ * regions — the background is lost with the filter and the menu renders see-through.
+ * Regular menus survive because their filter is isolated on the background-less pseudo.
+ * The blur also has nothing to sample there anyway: CSS can only blur web-painted pixels,
+ * never the OS-composited material behind the window. So list menus fall back to the
+ * opaque menu color, the same one used when backdrop effects are disabled.
+ */
+body.background-effects .dropdown-menu.tn-dropdown-list {
+    --menu-background-color: var(--menu-background-color-no-backdrop);
+    backdrop-filter: none;
+}
+
+.dropdown-item,
+.excalidraw .context-menu .context-menu-item {
+    --menu-item-start-padding: 8px;
+    --menu-item-end-padding: 22px;
+    --menu-item-vertical-padding: 2px;
+
+    /* Note: the right padding should also accommodate the submenu arrow. */
+    border-radius: 6px;
+    cursor: default !important;
+}
+
+.dropdown-item:not(.dropdown-submenu),
+body.desktop .dropdown-item.dropdown-submenu .dropdown-toggle,
+.excalidraw .context-menu .context-menu-item {
+    padding-top: var(--menu-item-vertical-padding) !important;
+    padding-bottom: var(--menu-item-vertical-padding) !important;
+    padding-inline-start: var(--menu-item-start-padding) !important;
+    padding-inline-end: var(--menu-item-end-padding) !important;
+}
+
+.dropdown-item:not(.dropdown-submenu) span.menu-trailing-icon {
+    margin-inline-end: calc(var(--menu-item-start-padding) - var(--menu-item-end-padding));
+}
+
+.dropdown-item.dropdown-submenu {
+    padding: 0 !important;
+
+    .dropdown-toggle {
+        flex-grow: 1;
+    }
+}
+
+:root .dropdown-item:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color) !important;
+    background-color: transparent;
+    color: unset;
+}
+
+:root .dropdown-item:active {
+    background: unset;
+}
+
+body.mobile .dropdown-submenu {
+    padding: 0 !important;
+}
+
+body.mobile .dropdown-item:not(:last-of-type):where(:not(.note-autocomplete-menu .dropdown-item)) {
+    margin-bottom: 0.5em;
+}
+
+html body .dropdown-item.disabled,
+html body .dropdown-item[disabled] {
+    color: var(--menu-text-color) !important;
+    opacity: var(--menu-item-disabled-opacity);
+}
+
+.dropdown-item:not(.disabled) .destructive-action-icon,
+.dropdown-item:not(.disabled) .bx-trash {
+    --menu-item-icon-color: var(--dropdown-item-icon-destructive-color);
+}
+/* Badges */
+:root .badge {
+    --bs-badge-color: var(--badge-text-color);
+    --bs-badge-font-weight: 500;
+
+    background: var(--badge-background-color);
+    text-transform: uppercase;
+    letter-spacing: .2pt;
+}
+
+/* Menu item icon */
+.dropdown-item .tn-icon {
+    translate: 0 var(--menu-item-icon-vert-offset);
+    color: var(--menu-item-icon-color) !important;
+    font-size: 1.1em;
+}
+
+/* Menu item keyboard shortcut */
+.dropdown-item kbd,
+.excalidraw .context-menu-item__shortcut {
+    font-family: unset !important;
+    font-size: unset !important;
+    color: var(--menu-item-keyboard-shortcut-color) !important;
+    padding-top: 0;
+}
+
+.dropdown-item span.keyboard-shortcut {
+    color: var(--menu-item-keyboard-shortcut-color) !important;
+    margin-inline-start: 16px;
+}
+
+.dropdown-divider,
+.excalidraw .context-menu hr {
+    position: relative;
+    border-color: transparent !important;
+    overflow: visible;
+}
+
+.dropdown-divider::after,
+.excalidraw .context-menu hr::before {
+    position: absolute;
+    content: "";
+    top: -1px;
+    inset-inline-start: calc(0px - var(--padding, var(--menu-padding-size)));
+    inset-inline-end: calc(0px - var(--padding, var(--menu-padding-size)));
+    border-top: 1px solid var(--menu-item-delimiter-color);
+}
+
+/* Menu item arrow */
+body.mobile .dropdown-submenu .dropdown-toggle::after,
+body.desktop .dropdown-submenu .dropdown-toggle::after {
+    content: "\ed3b" !important;
+    position: absolute;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    inset-inline-end: 0;
+    margin: unset !important;
+    border: unset !important;
+    padding: 0 4px;
+    font-family: boxicons;
+    font-size: 1.2em;
+    color: var(--menu-item-arrow-color) !important;
+}
+
+/* Right to left, the end side is the left, so the arrow points the other way. */
+body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
+    content: "\ea4d" !important;
+}
+
+/* Menu item group heading */
+
+/* The heading body */
+.dropdown-menu h6,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"] {
+    position: relative;
+    background: transparent;
+    padding: 1em 8px 14px 8px;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 1pt;
+    color: var(--menu-item-group-header-color) !important;
+}
+
+/* The delimiter line */
+.dropdown-menu h6::before,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title::before,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"]::before {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    inset-inline-start: calc(0px - var(--menu-padding-size));
+    inset-inline-end: calc(0px - var(--menu-padding-size));
+    border-top: 1px solid var(--menu-item-delimiter-color);
+}
+
+/* Static menus (used as a list, such as on the note revisions dialog) */
+body.desktop .dropdown-menu.static {
+    box-shadow: unset;
+    border-radius: 4px;
+    border: unset;
+    background-color: var(--card-background-color) !important;
+    padding: var(--menu-padding-size) !important;
+    user-select: none;
+}
+
+body.desktop .dropdown-menu.static .dropdown-item.active {
+    --active-item-text-color: var(--menu-text-color);
+}
+
+/* #region Mobile tweaks for dropdown menus */
+body.mobile #context-menu-cover {
+    transition: background-color 150ms ease-in;
+
+    &.show {
+        background: rgba(0, 0, 0, 0.32);
+
+        /* A tablet's menus open beside what opened them, undimmed; the cover only takes the tap
+           that closes them. */
+        @media (min-width: 992px) {
+            background: transparent;
+        }
+    }
+
+    &.global-menu-cover {
+        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+
+        @media (min-width: 992px) {
+            bottom: 0;
+        }
+    }
+}
+
+body.mobile .dropdown-menu.mobile-bottom-menu {
+    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+}
+
+/* A list of suggestions keeps its desktop look, in place of the context menu's cards. */
+body.mobile .dropdown-menu.note-autocomplete-menu {
+    /* Matches `body.desktop .dropdown-menu` in style.css. */
+    border: 1px solid var(--dropdown-border-color);
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    --padding: 6px;
+    font-size: 0.95rem !important;
+
+    .dropdown-item {
+        --menu-item-vertical-padding: 7px;
+        --menu-item-start-padding: 12px;
+        --menu-item-end-padding: 12px;
+    }
+}
+
+/* Pinned to the bottom like a sheet only in the phone layout; see style.css. */
+@media (max-width: 991px) {
+    body.mobile .tn-dropdown-portal.global-menu .dropdown-menu {
+        border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+    }
+}
+
+/* Beside its toggle in a tablet's wider mobile layout, wide enough for its rows to be tapped. */
+@media (min-width: 992px) {
+    body.mobile .tn-popup.tn-menu {
+        min-width: 260px;
+    }
+
+    /* Matches `body.desktop .dropdown-menu` in style.css. */
+    body.mobile .tn-popup.dropdown-menu {
+        box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
+    }
+}
+
+body.mobile .dropdown-menu:where(:not(.note-autocomplete-menu)) {
+    --dropdown-menu-padding-vertical: 0.7em;
+    --dropdown-menu-padding-horizontal: 1em;
+    --hover-item-background-color: var(--card-background-color);
+    font-size: 1rem !important;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    position: relative;
+
+    .dropdown-submenu .dropdown-toggle::after {
+        bottom: 0;
+        inset-inline-end: calc(var(--dropdown-menu-padding-horizontal) / 2);
+    }
+
+    .dropdown-item,
+    .dropdown-custom-item {
+        margin-bottom: 0;
+        padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal) !important;
+        background: var(--card-background-color);
+        border-bottom: 1px solid var(--menu-item-delimiter-color) !important;
+        border-radius: 0;
+    }
+
+    .dropdown-item:first-of-type,
+    .dropdown-divider + .dropdown-item,
+    .dropdown-custom-item:first-of-type,
+    .dropdown-divider + .dropdown-custom-item {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .dropdown-item:last-of-type,
+    .dropdown-item:has(+ .dropdown-divider),
+    .dropdown-custom-item:last-of-type,
+    .dropdown-custom-item:has(+ .dropdown-divider) {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom: 0 !important;
+    }
+
+    .dropdown-divider {
+        visibility: hidden;
+    }
+
+    .dropdown-custom-item:has(.note-color-picker) {
+        overflow-x: auto;
+    }
+
+    .note-color-picker {
+        padding: 0;
+        width: fit-content;
+
+        .color-cell {
+            --color-picker-cell-size: 26px;
+            flex-shrink: 0;
+        }
+    }
+}
+/* #endregion */
+
+body.desktop .dropdown-menu .dropdown-toggle::after {
+    height: 100%;
+}
+
+
+
+/* Dropdown item button (used in zoom buttons in global menu) */
+
+li.dropdown-item a.dropdown-item-button {
+    border: unset;
+}
+
+li.dropdown-item a.dropdown-item-button.tn-icon {
+    color: var(--menu-text-color) !important;
+}
+
+li.dropdown-item a.dropdown-item-button:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color) !important;
+}
+
+:root .dropdown-menu .note-color-picker {
+    padding: 4px 10px;
+    --note-color-picker-clear-color-cell-background: var(--main-text-color);
+    --note-color-picker-clear-color-cell-selection-outline-color: var(--main-text-color);
+}

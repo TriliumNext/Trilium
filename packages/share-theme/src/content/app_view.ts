@@ -34,6 +34,9 @@ async function mountAppView(container: string, load: () => Promise<AppViewModule
     }
 
     const payload = JSON.parse(data.textContent) as AppPayload;
+    // The views behave as on desktop, `isMobile()` being false on a shared page, and the app's
+    // stylesheets draw them so from this class.
+    document.body.classList.add("desktop");
     await import("./app_globals.js");
     await import("@triliumnext/client/src/components/app_context.js");
 

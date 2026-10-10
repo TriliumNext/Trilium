@@ -1,0 +1,9 @@
+// The parts of Bootstrap the app's views use on a shared page, a page that loads no Bootstrap
+// stylesheet: its tooltips and its dropdown menus, which the app's own stylesheets draw over.
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/tooltip";
+@import "bootstrap/scss/dropdown";
