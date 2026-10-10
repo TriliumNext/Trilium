@@ -33,10 +33,14 @@
   <li>The popup reads the current page as an article and shows a preview of
     what will be saved: the note's title, which can be edited before saving,
     the website and the publication date (when the page states one), and the
-    article's text and images. <em>Save page to Trilium</em> saves it. Pages
-    the extension cannot read, such as the browser's own pages, say so instead.
-    The keyboard shortcut and the context menu still save the page right away,
-    without a preview.</li>
+    article's text and images. <em>Save page to Trilium</em> saves it. When the
+    page has no article (Readability cannot find one), the popup says so in
+    place of the preview, and the other actions still work. Pages the extension
+    cannot access (the browser's own pages, the extension stores, and pages
+    that were open before the extension was installed until they are reloaded)
+    cannot be saved or captured, so only <em>Note</em> and <em>Tabs</em> remain
+    available there. The keyboard shortcut and the context menu still save
+    the page right away, without a preview.</li>
   <li>Below the preview, a row of buttons offers the other actions: <em>Crop</em> (a
     screenshot of an area you select), <em>Screenshot</em> (of the visible part
     of the page), <em>Note</em> (a link with a note) and <em>Tabs</em> (saves the

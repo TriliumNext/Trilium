@@ -6,9 +6,11 @@ import ArrowLeft from "@boxicons/js/icons/ArrowLeft";
 import Article from "@boxicons/js/icons/Article";
 import Cog from "@boxicons/js/icons/Cog";
 import Crop from "@boxicons/js/icons/Crop";
+import FileX from "@boxicons/js/icons/FileX";
 import Globe from "@boxicons/js/icons/Globe";
 import HelpCircle from "@boxicons/js/icons/HelpCircle";
 import Link from "@boxicons/js/icons/Link";
+import Lock from "@boxicons/js/icons/Lock";
 import RefreshCw from "@boxicons/js/icons/RefreshCw";
 import Screenshot from "@boxicons/js/icons/Screenshot";
 import Tabs from "@boxicons/js/icons/Tabs";
@@ -20,6 +22,7 @@ import type { TriliumSearchNoteStatus, TriliumSearchStatus } from "../background
 
 const HELP_URL = "https://docs.triliumnotes.org/user-guide/setup/web-clipper";
 const DISCONNECTED_TITLE = "This action can't be performed without active connection to Trilium.";
+const UNREACHABLE_TITLE = "This action is not available on this page.";
 
 type PopupMessage = {
     name: "trilium-search-status";
@@ -41,6 +44,9 @@ interface ExtractedPage {
     clipType: "page";
     labels: Record<string, string>;
 }
+
+/** The current page: its readable version, or why there is none. */
+type PageState = ExtractedPage | "unreadable" | "inaccessible";
 
 const PREVIEW_STYLE = `
     :root { color-scheme: light dark; }
@@ -160,29 +166,56 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
     shortcuts: Shortcuts;
     onWriteNote: () => void;
 }) {
+    /** `undefined` while the page is read. */
+    const [ page, setPage ] = useState<PageState>();
+
+    useEffect(() => {
+        void extractPage().then(setPage);
+    }, []);
+
     function sendAndClose(name: string) {
         void sendMessage({ name });
         window.close();
     }
 
+    const disabledReason = disabled ? DISCONNECTED_TITLE : undefined;
+    const pageDisabledReason = disabledReason ?? (page === "inaccessible" ? UNREACHABLE_TITLE : undefined);
+
+    let main: ComponentChildren;
+    if (page === "inaccessible") {
+        main = (
+            <EmptyState icon={Lock}>
+                {"The extension cannot access this page.\nIf it is a regular web page, reload it."}
+            </EmptyState>
+        );
+    } else if (page === "unreadable") {
+        main = <EmptyState icon={FileX}>This page has no article to save.</EmptyState>;
+    } else {
+        main = <PagePreview page={page} disabled={disabled} shortcut={shortcuts.saveWholePage} />;
+    }
+
     return (
         <div className="capture-actions">
-            <PagePreview disabled={disabled} shortcut={shortcuts.saveWholePage} />
+            {main}
 
             <div className="toolbar">
                 <ToolbarAction
                     icon={Crop} label="Crop" name="Crop screenshot"
-                    shortcut={shortcuts.saveCroppedScreenshot} disabled={disabled}
+                    shortcut={shortcuts.saveCroppedScreenshot} disabledReason={pageDisabledReason}
                     onClick={() => sendAndClose("save-cropped-screenshot")}
                 />
                 <ToolbarAction
-                    icon={Screenshot} label="Screenshot" name="Visible area screenshot" disabled={disabled}
+                    icon={Screenshot} label="Screenshot" name="Visible area screenshot"
+                    disabledReason={pageDisabledReason}
                     onClick={() => sendAndClose("save-whole-screenshot")}
                 />
-                <ToolbarAction icon={Link} label="Note" name="Link with a note" disabled={disabled} onClick={onWriteNote} />
+                <ToolbarAction
+                    icon={Link} label="Note" name="Link with a note"
+                    disabledReason={disabledReason} onClick={onWriteNote}
+                />
                 <ToolbarAction
                     icon={Tabs} label="Tabs" name="All tabs in window"
-                    shortcut={shortcuts.saveTabs} disabled={disabled}
+                    shortcut={shortcuts.saveTabs} disabledReason={disabledReason}
                     onClick={() => sendMessage({ name: "save-tabs" })}
                 />
             </div>
@@ -191,24 +224,32 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
 }
 
 /** A secondary action: an icon over a short label, its full name and shortcut in the tooltip. */
-function ToolbarAction({ icon, label, name, shortcut, disabled, onClick }: {
+function ToolbarAction({ icon, label, name, shortcut, disabledReason, onClick }: {
     icon: IconDefinition;
     label: string;
     name: string;
     shortcut?: string;
-    disabled: boolean;
+    /** Why the action is disabled, shown in place of its name; the action is enabled without one. */
+    disabledReason: string | undefined;
     onClick: () => void;
 }) {
-    let title = shortcut ? `${name} (${shortcut})` : name;
-    if (disabled) {
-        title = DISCONNECTED_TITLE;
-    }
+    const title = disabledReason ?? (shortcut ? `${name} (${shortcut})` : name);
 
     return (
-        <button className="toolbar-action" disabled={disabled} title={title} aria-label={name} onClick={onClick}>
+        <button className="toolbar-action" disabled={!!disabledReason} title={title} aria-label={name} onClick={onClick}>
             <Icon icon={icon} />
             <span className="action-label">{label}</span>
         </button>
+    );
+}
+
+/** Takes the place of the page preview when the page cannot be saved, in the style of the app's `NoItems`. */
+function EmptyState({ icon, children }: { icon: IconDefinition, children: ComponentChildren }) {
+    return (
+        <div className="no-items">
+            <Icon icon={icon} />
+            {children}
+        </div>
     );
 }
 
@@ -216,17 +257,15 @@ function ToolbarAction({ icon, label, name, shortcut, disabled, onClick }: {
  * The readable version of the current page, with its title editable, and the button that saves it.
  * The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed frame.
  */
-function PagePreview({ disabled, shortcut }: { disabled: boolean, shortcut: string | undefined }) {
-    /** `undefined` while the page is read, `null` when it cannot be. */
-    const [ page, setPage ] = useState<ExtractedPage | null>();
+function PagePreview({ page, disabled, shortcut }: {
+    /** `undefined` while the page is read. */
+    page: ExtractedPage | undefined;
+    disabled: boolean;
+    shortcut: string | undefined;
+}) {
     const [ title, setTitle ] = useState("");
 
-    useEffect(() => {
-        void extractPage().then((extracted) => {
-            setPage(extracted);
-            setTitle(extracted?.title ?? "");
-        });
-    }, []);
+    useEffect(() => setTitle(page?.title ?? ""), [ page ]);
 
     function save(extracted: ExtractedPage) {
         void sendMessage({ name: "save-whole-page", page: { ...extracted, title: title.trim() || extracted.title } });
@@ -257,16 +296,9 @@ function PagePreview({ disabled, shortcut }: { disabled: boolean, shortcut: stri
             )}
 
             <div className="page-body">
-                {page === undefined && <div className="page-preview-placeholder">Reading the page…</div>}
-                {page === null && <div className="page-preview-placeholder">This page cannot be saved as an article.</div>}
-                {page && (
-                    <iframe
-                        className="page-content"
-                        title="Preview of the page"
-                        sandbox=""
-                        srcDoc={previewDocument(page)}
-                    />
-                )}
+                {page
+                    ? <iframe className="page-content" title="Preview of the page" sandbox="" srcDoc={previewDocument(page)} />
+                    : <div className="page-preview-placeholder">Reading the page…</div>}
             </div>
 
             <button
@@ -382,13 +414,17 @@ function describeStatus(status: TriliumSearchStatus | undefined) {
  * Returns `null` on pages where no content script runs (browser pages, extension stores) and when
  * the page cannot be extracted.
  */
-async function extractPage(): Promise<ExtractedPage | null> {
+/**
+ * Asks the content script of the active tab for its readable page. The script answers `undefined`
+ * when Readability cannot parse the page, and the message fails where no content script runs.
+ */
+async function extractPage(): Promise<PageState> {
     try {
         const [ tab ] = await browser.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id === undefined) return null;
-        return await browser.tabs.sendMessage(tab.id, { name: "trilium-save-page" }) ?? null;
+        if (tab?.id === undefined) return "inaccessible";
+        return await browser.tabs.sendMessage(tab.id, { name: "trilium-save-page" }) ?? "unreadable";
     } catch {
-        return null;
+        return "inaccessible";
     }
 }
 

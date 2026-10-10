@@ -9,6 +9,7 @@ import { fakeBrowser } from "wxt/testing/fake-browser";
 import { basicIcon, parseLinkNote, Popup, previewDocument, shortcutsByCommand, textToHtml } from "./main";
 
 const DISCONNECTED = "This action can't be performed without active connection to Trilium.";
+const UNREACHABLE = "This action is not available on this page.";
 
 const sendMessage = vi.fn(async (_message: object): Promise<unknown> => undefined);
 const openOptionsPage = vi.fn(async () => {});
@@ -206,7 +207,7 @@ describe("popup", () => {
         expect(container.querySelector(".page-meta")?.textContent).toBe("example.com");
     });
 
-    it("says so while the page is read, and when it cannot be", async () => {
+    it("says so while the page is read", async () => {
         let resolvePage: (page: unknown) => void = () => {};
         tabsSendMessage.mockReturnValueOnce(new Promise((resolve) => {
             resolvePage = resolve;
@@ -216,20 +217,35 @@ describe("popup", () => {
         expect(cardParts()).toEqual([ "page-body", "btn btn-primary primary-action" ]);
         expect(button("Save page to Trilium")?.disabled).toBe(true);
 
-        resolvePage(undefined);
+        resolvePage(PAGE);
         await flush();
-        expect(placeholder()).toBe("This page cannot be saved as an article.");
-        expect(button("Save page to Trilium")?.disabled).toBe(true);
-        expect(container.querySelector("iframe")).toBeNull();
+        expect(container.querySelector(".page-body iframe")).not.toBeNull();
+    });
 
+    it("keeps every other action on a page with no article", async () => {
+        tabsSendMessage.mockResolvedValueOnce(undefined);
+        await rerender();
+        expect(unavailable()).toBe("This page has no article to save.");
+        expect(container.querySelector(".page-preview")).toBeNull();
+        expect(captureButtons().map((action) => action.disabled)).toEqual([ false, false, false, false ]);
+    });
+
+    it("keeps only the actions that need no access to a page out of reach", async () => {
         tabsSendMessage.mockRejectedValueOnce(new Error("Could not establish connection."));
         await rerender();
-        expect(placeholder()).toBe("This page cannot be saved as an article.");
+        expect(unavailable()).toBe(
+            "The extension cannot access this page.\nIf it is a regular web page, reload it."
+        );
+        expect(container.querySelector(".page-preview")).toBeNull();
+        expect(captureButtons().map((action) => action.disabled)).toEqual([ true, true, false, false ]);
+        expect(button("Crop screenshot")?.title).toBe(UNREACHABLE);
+        expect(button("Visible area screenshot")?.title).toBe(UNREACHABLE);
+        expect(button("Link with a note")?.title).toBe("Link with a note");
 
         tabsQuery.mockResolvedValueOnce([ {} ]);
         await rerender();
-        expect(placeholder()).toBe("This page cannot be saved as an article.");
-        expect(tabsSendMessage).toHaveBeenCalledTimes(3);
+        expect(unavailable()).toContain("The extension cannot access this page.");
+        expect(tabsSendMessage).toHaveBeenCalledTimes(2);
     });
 
     it("tells the user when the background script cannot be reached", async () => {
@@ -440,6 +456,13 @@ async function type(selector: string, value: string) {
         input.value = value;
         input.dispatchEvent(new Event("input", { bubbles: true }));
     });
+}
+
+function unavailable() {
+    const empty = container.querySelector(".capture-actions > .no-items");
+    expect(empty).not.toBeNull();
+    expect(empty?.querySelector("svg.icon path")).not.toBeNull();
+    return empty?.textContent;
 }
 
 function placeholder() {

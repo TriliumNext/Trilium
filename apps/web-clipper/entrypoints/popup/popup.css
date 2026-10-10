@@ -135,6 +135,23 @@ body {
         }
     }
 
+    .no-items {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.25em 0.75em;
+        color: var(--muted-text-color);
+        text-align: center;
+        white-space: pre-line;
+
+        svg.icon {
+            width: 2em;
+            height: 2em;
+            margin-bottom: 0.5rem;
+            opacity: 0.65;
+        }
+    }
+
     .primary-action {
         justify-content: flex-start;
         width: 100%;
