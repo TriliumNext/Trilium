@@ -28,9 +28,17 @@ body:has(#content.app-view) {
         flex: 1;
         min-height: 0;
 
+        justify-content: center;
+
         > * {
             flex: 1;
             min-height: 0;
+        }
+
+        > img {
+            flex: 0 1 auto;
+            align-self: center;
+            object-fit: contain;
         }
     }
 
