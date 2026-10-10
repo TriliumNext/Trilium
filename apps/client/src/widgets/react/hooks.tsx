@@ -2148,9 +2148,10 @@ export function useNoteColorClass(note: FNote | null | undefined) {
  * reader's own.
  *
  * Read when the caller mounts and again whenever a template is made, deleted, renamed or given
- * another icon, so what is offered is what exists now.
+ * another icon, so what is offered is what exists now. Not read at all while `enabled` is off,
+ * for a caller that has nothing to create, such as a read-only board.
  */
-export function useNoteTypeOptions() {
+export function useNoteTypeOptions(enabled = true) {
     const [ options, setOptions ] = useState<NoteTypeOption[]>([]);
     /** How many reads were asked for, and the newest one answered. */
     const asked = useRef(0);
@@ -2171,10 +2172,13 @@ export function useNoteTypeOptions() {
     }, []);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
         read();
         // A read still in flight when the caller goes has nothing left to answer.
         return () => { answered.current = asked.current + 1; };
-    }, [ read ]);
+    }, [ read, enabled ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const offered = new Set(options
@@ -2191,7 +2195,7 @@ export function useNoteTypeOptions() {
             option.options.templateNoteId
                 && loadResults.isNoteReloaded(option.options.templateNoteId));
 
-        if (templated || renamed) {
+        if (enabled && (templated || renamed)) {
             read();
         }
     });

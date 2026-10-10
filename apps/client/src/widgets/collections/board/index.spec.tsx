@@ -5646,7 +5646,10 @@ describe("BoardView, read-only", () => {
             .map((item) => item.title);
 
     it("offers no way to add a card or a column, nor to rename either", async () => {
+        vi.mocked(getNoteTypeOptions).mockClear();
         const board = await setup();
+        // What a card can be made from is read for making one, which a read-only board never does.
+        expect(getNoteTypeOptions).not.toHaveBeenCalled();
         const column = board.querySelector<HTMLElement>(".board-column");
         const card = board.querySelector<HTMLElement>(".board-note");
         expect(column === null || card === null).toBe(false);

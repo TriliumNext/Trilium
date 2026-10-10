@@ -457,7 +457,7 @@ export default function BoardView({
     /** Whether the editor a column is named in is open, which the board's own menu also opens. */
     const [ isCreatingColumn, setIsCreatingColumn ] = useState(false);
     /** Everything a card could be made from: the note types and every template. */
-    const availableTemplates = useNoteTypeOptions();
+    const availableTemplates = useNoteTypeOptions(!isReadOnly);
     const [ isEditingProperties, setIsEditingProperties ] = useState(false);
     /** Adds `frozen`, which takes `pointer-events` off the cards. Set once the backdrop has faded in. */
     const [ isFrozen, setIsFrozen ] = useState(false);
