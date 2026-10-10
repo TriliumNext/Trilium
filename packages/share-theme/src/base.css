@@ -80,6 +80,10 @@ html.theme-light {
     --icon-button-hover-background: #0000001a;
     --active-item-text-color: #383838;
     --active-item-background-color: #ddd;
+    /* The overlay buttons of `theme-next-light.css`. */
+    --overlay-button-background: #e6e6e6d7;
+    --opaque-icon-button-hover-background-color: #cbcbcbd7;
+    --overlay-button-shadow-color: #00000048;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -147,6 +151,10 @@ html.theme-dark {
     --icon-button-hover-background: #ffffff16;
     --active-item-text-color: #aaaaaa;
     --active-item-background-color: #777;
+    /* The overlay buttons of `theme-next-dark.css`. */
+    --overlay-button-background: #646464d7;
+    --opaque-icon-button-hover-background-color: #868686b2;
+    --overlay-button-shadow-color: #00000048;
     --mermaid-theme: dark;
     color-scheme: dark;
 }
@@ -157,6 +165,9 @@ html.theme-dark {
     --main-text-color: var(--text-primary);
     /* The frosting of `theme-next/shell.css` behind the translucent menus. */
     --dropdown-backdrop-filter: blur(20px) saturate(6);
+    /* The frosting of `theme-next/base.css` behind the translucent overlay buttons. */
+    --overlay-button-backdrop-filter: blur(32px) saturate(1000%);
+    --opaque-icon-button-hover-color: var(--hover-item-text-color);
 }
 
 body {
