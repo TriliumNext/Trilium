@@ -61,8 +61,8 @@ export interface Result {
     isEmpty?: boolean;
     /**
      * Set to `true` if the content is shown with the app's own view, such as a map or the viewer of
-     * an image, which takes the page without the title, the subpages, the date and the links to the
-     * neighboring pages.
+     * an image, which takes the page below a title row like the app's, without the subpages, the
+     * date and the links to the neighboring pages.
      */
     isAppView?: boolean;
 }
@@ -266,6 +266,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
         canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
     });
+    const titleIcon = isAppView ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
     const opts = {
         note,
         header,
@@ -291,9 +292,11 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
         lastUpdated: isAppView ? null : getLastUpdated(note, displayLanguage),
-        showTitle: !isAppView,
+        showTitle: true,
+        titleIcon,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
             logo.icon,
+            ...(titleIcon ? [ titleIcon ] : []),
             ...getNavigationIcons(navigation),
             ...childLinks.flatMap((child) => [ child.icon, ...child.children.map((grandchild) => grandchild.icon) ])
         ]),

@@ -73,7 +73,12 @@
         <div id="main">
             <div id="content" class="<%= contentClasses %>"<% if (language.content) { %> lang="<%= language.content.lang %>" dir="<%= language.content.dir %>"<% } %> data-tab-title-placeholder="<%= t("share_theme.tab-title") %>">
                 <%- snippets["content:start"] %>
-                <% if (showTitle) { %>
+                <% if (showTitle && titleIcon) { %>
+                    <div id="title-row">
+                        <span class="tn-icon <%= titleIcon %>" aria-hidden="true"></span>
+                        <h1 id="title"><%= note.title %></h1>
+                    </div>
+                <% } else if (showTitle) { %>
                     <h1 id="title"><%= note.title %></h1>
                 <% } %>
                 <% if (isEmpty && !childLinks.length && note.type !== "book") { %>

@@ -1513,6 +1513,7 @@ describe("content_renderer", () => {
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
                 showTitle: true,
+                titleIcon: null,
                 headings: [],
                 toc: [],
                 isPageInNavigation: false
@@ -1715,6 +1716,19 @@ describe("content_renderer pages", () => {
             .toBe("Empty spreadsheet.");
         expect(render({ type: "relationMap", content: "{}" }).content)
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
+    });
+
+    it("titles an app view with its icon in a row of its own, and other pages with a heading", () => {
+        const appPage = parse(String(renderNoteContent(buildSitePage({
+            type: "image", title: "A <picture>", content: "", "#iconClass": "bx bx-rocket"
+        }))));
+        expect(appPage.querySelector("#content > #title-row > .tn-icon")?.classList.contains("bx-rocket"))
+            .toBe(true);
+        expect(appPage.querySelector("#title-row > h1#title")?.textContent).toBe("A <picture>");
+
+        const textPage = parse(String(renderNoteContent(buildSitePage({ content: "<p>a</p>" }))));
+        expect(textPage.querySelector("#title-row") === null).toBe(true);
+        expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
     });
 
     it("leaves content that is not text as it is, and empty text as empty", () => {

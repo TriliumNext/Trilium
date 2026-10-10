@@ -59,6 +59,8 @@ html.theme-light {
     --muted-text-color: #666;
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
+    --note-icon-background-color: #4f4f4f;
+    --note-icon-color: white;
     /* The content colors of `theme-next-light.css`. */
     --accented-background-color: #f5f5f5;
     --selection-background-color: #3399FF70;
@@ -122,6 +124,8 @@ html.theme-dark {
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
+    --note-icon-background-color: #444444;
+    --note-icon-color: #d4d4d4;
     /* The content colors of `theme-next-dark.css`. */
     --accented-background-color: #555;
     --selection-background-color: #3399FF70;

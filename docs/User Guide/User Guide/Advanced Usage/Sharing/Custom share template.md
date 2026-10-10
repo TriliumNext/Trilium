@@ -39,7 +39,8 @@ Your template is rendered with a context object exposing the note and its render
 | `prevNext` | The pages before and after the note in the navigation tree, as `previous` and `next`, each with `title` and `href`, or `null`. Both `null` for a calendar or a geo map. |
 | `language` | The languages of the page: `page` with the `lang` and `dir` of the application's language, and `content` with those of the note's content language, or `null` when they are the same. |
 | `lastUpdated` | When the note was last changed, as `iso` for a `<time>` element and as `text` in the application's language, or `null`, which it also is for a calendar or a geo map. |
-| `showTitle` | Whether the default template shows the note's title above the content: `false` for a calendar or a geo map, which take the whole page. |
+| `showTitle` | Whether the default template shows the note's title above the content. Always `true`. |
+| `titleIcon` | The icon classes of the note, which the default template shows beside the title in a row of its own for a note that takes the whole page, such as a calendar, a geo map or an image; `null` for any other note. |
 | `snippets` | The HTML of the `~shareHtml` snippets for each location, such as `snippets["head:end"]`. Every location is present, empty when no snippet goes there. |
 | `subRoot` | The root of the shared subtree as `{ note, branch }` — handy for a site-wide title or logo. |
 | `cssToLoad` / `jsToLoad` | Arrays of stylesheet / script URLs the default theme would inject (includes anything added via `~shareCss` / `~shareJs`). |
