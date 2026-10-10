@@ -35,7 +35,6 @@ import utils, { getErrorMessage, isShare, randomString, reloadFrontendApp } from
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
-import { DragData } from "../note_tree";
 import { noteSavedDataStore } from "./NoteStore";
 import { findClosestNoteContext, NoteContextContext, ParentComponent, refToJQuerySelector } from "./react_utils";
 import type FAttachment from "../../entities/fattachment";
@@ -1696,6 +1695,16 @@ export function useImperativeSearchHighlighlighting(
         el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
     };
 }
+
+/** A note the note tree's drag carries, as JSON under the `text` type. */
+export interface DragData {
+    noteId: string;
+    branchId: string;
+    title: string;
+}
+
+/** The type that marks a drag as holding notes from the note tree, as fancytree's `dnd5` sets. */
+export const TREE_CLIPBOARD_TYPE = "application/x-fancytree-node";
 
 export function useNoteTreeDrag(containerRef: RefObject<HTMLElement | null | undefined>, { dragEnabled, dragNotEnabledMessage, callback }: {
     dragEnabled: boolean,

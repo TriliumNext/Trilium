@@ -546,10 +546,10 @@ describe("PromotedAttributesCard", () => {
         });
     }
 
+    /** Lets the card's writes run, the bulk action among them, which loads its service first. */
     async function flush() {
-        for (let step = 0; step < 4; step++) {
-            await Promise.resolve();
-        }
+        await import("../../services/bulk_action");
+        await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     function press(target: Element, key: string, options: KeyboardEventInit = {}) {

@@ -8,8 +8,8 @@ import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import BoardApi, { CARD_REDIRECT_RELATION, CARD_REDIRECT_RELATION_LEGACY } from "./api";
 import {
-    BoardActionsContext, BoardHighlightTokensContext, BoardKeptCardsContext,
-    BoardOverlayHostContext, BoardPromotedAttributesContext, BoardSelectionModeContext, TitleEditor
+    BoardActionsContext, BoardEditingContext, BoardHighlightTokensContext, BoardKeptCardsContext,
+    BoardOverlayHostContext, BoardPromotedAttributesContext, BoardSelectionModeContext
 } from ".";
 import { ContextMenuEvent } from "../../../menus/context_menu";
 import { cardFollows } from "./columns";
@@ -26,9 +26,10 @@ import {
 } from "../../react/hooks";
 import { TooltipIcon } from "../../react/Icon";
 import { HighlightedText } from "../../react/RawHtml";
-import { useIsOnScreen, useLingeringTrue } from "../../react/hooks";
+import {
+    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue
+} from "../../react/hooks";
 import { useIsSelected, useSelection } from "../../react/selection";
-import { type DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
 import CardToolbar, { RAIL_EXIT_MS } from "./card_toolbar";
 
 function Card({
@@ -77,6 +78,7 @@ function Card({
     onNewItem: () => void
 }) {
     const { setBranchIdToEdit } = useContext(BoardActionsContext);
+    const editing = useContext(BoardEditingContext);
     const shownAttributes = useContext(BoardPromotedAttributesContext);
     const highlightedTokens = useContext(BoardHighlightTokensContext);
     const isOutsideFilter = useContext(BoardKeptCardsContext).has(note.noteId);
@@ -343,8 +345,8 @@ function Card({
                         onClick={handleEdit}
                     />}
                 </>
-            ) : (
-                <TitleEditor
+            ) : editing && (
+                <editing.TitleEditor
                     returnFocusTo={cardRef}
                     currentValue={note.title}
                     save={newTitle => {

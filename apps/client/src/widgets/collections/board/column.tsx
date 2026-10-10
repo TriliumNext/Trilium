@@ -14,10 +14,11 @@ import { getHue, parseColor } from "../../../services/css_class_manager";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
-import { DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
 import ActionButton from "../../react/ActionButton";
 import Icon from "../../react/Icon";
-import { useIsOnScreen, useLingeringTrue, useStaticTooltip } from "../../react/hooks";
+import {
+    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue, useStaticTooltip
+} from "../../react/hooks";
 import { useFlip } from "../../react/flip";
 import { useScrollFade } from "../../react/scroll_fade";
 import { useSelection } from "../../react/selection";
@@ -39,8 +40,8 @@ const MIN_CARD_HEIGHT = 32;
 export const EXPAND_MS = 200;
 import NoteLink from "../../react/NoteLink";
 import {
-    BoardActionsContext, BoardDragStateContext, BoardOverlayHostContext, BoardSelectionModeContext,
-    TitleEditor
+    BoardActionsContext, BoardDragStateContext, BoardEditingContext, BoardOverlayHostContext,
+    BoardSelectionModeContext
 } from ".";
 import BoardApi from "./api";
 import Card from "./card";
@@ -574,6 +575,7 @@ export default function Column({
         setIsHeaderFocused(false);
     }, []);
     const isSelecting = useContext(BoardSelectionModeContext);
+    const editing = useContext(BoardEditingContext);
     // Off the heading while its title is edited, since the rename it offers is under way, and in
     // selection mode, where the board's own rail stands for the selection.
     const isRailWanted = isMobile() && isHeaderFocused && !isEditing && !isSelecting;
@@ -814,8 +816,8 @@ export default function Column({
                             }}
                         />
                     </>
-                ) : (
-                    <TitleEditor
+                ) : editing && (
+                    <editing.TitleEditor
                         currentValue={api.getColumnTitle(column)}
                         save={newTitle => api.setColumnTitle(column, newTitle)}
                         dismiss={() => setColumnNameToEdit(undefined)}
@@ -1037,6 +1039,7 @@ function AddNewItem({
     const close = useCallback(
         () => insert ? insert.close() : setIsCreating?.(false),
         [ insert, setIsCreating ]);
+    const editing = useContext(BoardEditingContext);
     // What the editor opens with: empty to begin with, then whatever was typed into it and left
     // unsaved, so that reaching for something else and coming back does not cost the title.
     const [ initialTitle, setInitialTitle ] = useState("");
@@ -1124,8 +1127,8 @@ function AddNewItem({
                     <Icon icon="bx bx-plus" />{" "}
                     {t("board_view.new-item")}
                 </>
-            ) : (
-                <TitleEditor
+            ) : editing && (
+                <editing.TitleEditor
                     currentValue={initialTitle}
                     placeholder={t("board_view.new-item-placeholder")}
                     save={create}
@@ -1242,7 +1245,8 @@ function useDragging({
     }, [setDraggedColumn]);
 
     const handleDragOver = useCallback((e: DragEvent) => {
-        if (isEditing || draggedColumn || isDraggingRef.current) return; // Don't handle card drops when dragging columns
+        // Don't handle card drops when dragging columns
+        if (api.isReadOnly || isEditing || draggedColumn || isDraggingRef.current) return;
         // Cards are carried by pointer now; what still arrives this way comes from the note tree.
         if (!e.dataTransfer?.types.includes(TREE_CLIPBOARD_TYPE)) return;
 
@@ -1285,7 +1289,8 @@ function useDragging({
     }, [setDropTarget, setDropPosition]);
 
     const handleDrop = useCallback(async (e: DragEvent) => {
-        if (draggedColumn) return; // Don't handle card drops when dragging columns
+        // Don't handle card drops when dragging columns
+        if (api.isReadOnly || draggedColumn) return;
         e.preventDefault();
         // Taken before the gap is closed, which is what says where the note goes.
         const standing = dropState.get().position;

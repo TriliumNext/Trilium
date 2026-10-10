@@ -5,15 +5,15 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import branches from "../../../services/branches";
 import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
-import { TREE_CLIPBOARD_TYPE } from "../../note_tree";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { placeCard, settleCards } from "./column";
 
 vi.mock("../../../services/branches", () => ({
@@ -33,6 +33,9 @@ vi.mock("../../../services/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("../../../services/utils")>()),
     isMobile: () => layout.onMobile
 }));
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Board drag and drop", () => {
     let container: HTMLElement | undefined;

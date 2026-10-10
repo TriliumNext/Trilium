@@ -5,7 +5,6 @@ import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
-import { executeBulkActions } from "../../../services/bulk_action";
 import cssClassManager from "../../../services/css_class_manager";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
@@ -548,8 +547,10 @@ export default class BoardApi {
             : this.isRelationMode
                 ? { name: "deleteRelation", relationName: this.statusAttribute }
                 : { name: "deleteLabel", labelName: this.statusAttribute };
-        await this.retiredWhile(column, undefined,
-            () => executeBulkActions(noteIds, [ action ], { silent: true }));
+        await this.retiredWhile(column, undefined, async () => {
+            const { executeBulkActions } = await loadBulkActions();
+            return executeBulkActions(noteIds, [ action ], { silent: true });
+        });
 
         this.storeColumns(this.storedColumns.filter(col => col.value !== column));
     }
@@ -1766,3 +1767,10 @@ export default class BoardApi {
 
 }
 
+let bulkActions: Promise<typeof import("../../../services/bulk_action")> | undefined;
+
+/** Loads the bulk action service once, whose dialogs a board has no use for until it edits. */
+function loadBulkActions() {
+    bulkActions ??= import("../../../services/bulk_action");
+    return bulkActions;
+}

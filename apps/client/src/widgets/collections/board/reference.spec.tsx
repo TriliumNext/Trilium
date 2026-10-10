@@ -4,7 +4,7 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../../components/component";
 import type NoteContext from "../../../components/note_context";
@@ -13,7 +13,7 @@ import type { ViewScope } from "../../../services/link";
 import toast from "../../../services/toast";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import BoardView, { type BoardViewData } from ".";
+import BoardView, { type BoardViewData, loadBoardEditing } from ".";
 import {
     cardReference, columnReference, COLUMN_ID_LENGTH, findColumnById, newColumnId, readColumnId,
     waitFor
@@ -37,6 +37,9 @@ vi.mock("../../../services/i18n", () => ({
 const TODO_ID = "colTodo00001";
 const DONE_ID = "colDone00001";
 const HIGH_ID = "colHigh00001";
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("board reference links", () => {
     it("names a column and a card in a note path the app can follow", () => {

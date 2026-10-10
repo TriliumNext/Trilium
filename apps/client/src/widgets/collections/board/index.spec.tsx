@@ -6,7 +6,7 @@ import $ from "jquery";
 import { render } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Modal as BootstrapModal, Tooltip } from "bootstrap";
 
@@ -26,12 +26,13 @@ import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
 import { RAIL_EXIT_MS } from "./card_toolbar";
 import { DEFAULT_COLUMN_ICON } from "./columns";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -239,6 +240,9 @@ function contextStub(context: object) {
 function columnTitles(container: HTMLElement) {
     return [ ...container.querySelectorAll(".board-column h3 .title") ].map(el => el.textContent);
 }
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Collapsed board columns", () => {
     let container: HTMLElement | undefined;
@@ -5668,6 +5672,62 @@ describe("BoardView, read-only", () => {
         });
         expect(board.querySelector(".board-column h3.editing")).toBeNull();
         expect(board.querySelectorAll(".board-note.editing, .board-new-item").length).toBe(0);
+    });
+
+    it("changes nothing from the keyboard or from a note dropped from the tree", async () => {
+        const board = await setup();
+        // Opening the board records its columns, which is not the reader's doing.
+        saved.length = 0;
+        const writes = [
+            ...([
+                "removeFromBoard", "confirmAndRemoveColumn", "insertColumn", "moveToColumnEnd",
+                "reorderColumn", "changeColumn"
+            ] as const).map((name) => vi.spyOn(BoardApi.prototype, name)),
+            ...([ "deleteNotes", "moveAfterBranch" ] as const)
+                .map((name) => vi.spyOn(branches, name).mockResolvedValue(undefined as never))
+        ];
+        const card = board.querySelector<HTMLElement>(".board-note");
+        const header = board.querySelector<HTMLElement>(".board-column h3");
+        const column = board.querySelector<HTMLElement>(".board-column");
+        expect([ card, header, column ]).not.toContain(null);
+
+        const presses: [ HTMLElement | null, KeyboardEventInit ][] = [
+            [ card, { key: "Delete" } ],
+            [ card, { key: "Delete", shiftKey: true } ],
+            [ card, { key: "ArrowRight", ctrlKey: true } ],
+            [ card, { key: "ArrowDown", ctrlKey: true } ],
+            [ header, { key: "Enter", ctrlKey: true } ],
+            [ header, { key: "ArrowRight", ctrlKey: true } ],
+            [ header, { key: "Delete" } ]
+        ];
+        for (const [ target, init ] of presses) {
+            await act(async () => {
+                target?.focus();
+                target?.dispatchEvent(
+                    new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true }));
+                await flush();
+            });
+        }
+
+        const dragged = JSON.stringify(
+            [ { noteId: "roCard2", branchId: "roBranch", title: "Second" } ]);
+        for (const type of [ "dragover", "drop" ]) {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "dataTransfer", {
+                value: { types: [ TREE_CLIPBOARD_TYPE ], getData: () => dragged }
+            });
+            await act(async () => {
+                column?.dispatchEvent(event);
+                await flush();
+            });
+        }
+
+        expect({
+            saved,
+            called: writes
+                .filter((write) => write.mock.calls.length)
+                .map((write) => write.getMockName())
+        }).toEqual({ saved: [], called: [] });
     });
 
     it("keeps only the entries that change nothing in the menus, and shows none for the board", async () => {

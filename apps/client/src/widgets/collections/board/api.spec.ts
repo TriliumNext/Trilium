@@ -403,9 +403,9 @@ describe("BoardApi column mutations", () => {
         );
 
         let releaseSecond = () => {};
+        const second = new Promise<void>((resolve) => { releaseSecond = resolve; });
         failNextRename();
-        vi.mocked(executeBulkActions).mockImplementationOnce(
-            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+        vi.mocked(executeBulkActions).mockImplementationOnce(() => second);
 
         const failing = api.renameColumn("Done", "Shipped");
         const running = api.removeColumn("To Do");
@@ -478,9 +478,9 @@ describe("BoardApi column mutations", () => {
         );
 
         let releaseSecond = () => {};
+        const second = new Promise<void>((resolve) => { releaseSecond = resolve; });
         vi.mocked(executeBulkActions).mockRejectedValueOnce(new Error("offline"));
-        vi.mocked(executeBulkActions).mockImplementationOnce(
-            () => new Promise<void>((resolve) => { releaseSecond = resolve; }));
+        vi.mocked(executeBulkActions).mockImplementationOnce(() => second);
 
         // The same column, deleted twice over before either has answered.
         const failing = api.removeColumn("Done");

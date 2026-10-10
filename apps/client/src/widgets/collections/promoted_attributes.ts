@@ -2,7 +2,6 @@ import type { BulkAction } from "@triliumnext/commons";
 
 import type FAttribute from "../../entities/fattribute";
 import type FNote from "../../entities/fnote";
-import { executeBulkActions } from "../../services/bulk_action";
 import { t } from "../../services/i18n";
 
 /** How one promoted attribute is shown, as a collection's view config stores it. */
@@ -188,13 +187,14 @@ export function storedPromotedAttributes(attributes: PromotedAttribute[]): Promo
  * Renames an attribute on the collection and everything under it, so the values follow the
  * definition they were written against.
  */
-export function renameAttributeInSubtree(
+export async function renameAttributeInSubtree(
     parentNoteId: string, type: "label" | "relation", oldName: string, newName: string
 ) {
     const action: BulkAction = type === "label"
         ? { name: "renameLabel", oldLabelName: oldName, newLabelName: newName }
         : { name: "renameRelation", oldRelationName: oldName, newRelationName: newName };
 
+    const { executeBulkActions } = await import("../../services/bulk_action");
     return executeBulkActions([ parentNoteId ], [ action ], { includeDescendants: true });
 }
 
@@ -202,13 +202,14 @@ export function renameAttributeInSubtree(
  * Deletes an attribute from the collection and everything under it. Silent: the attribute leaving
  * the list and the items reports it, and a toast over the dialog reads as something else.
  */
-export function deleteAttributeInSubtree(
+export async function deleteAttributeInSubtree(
     parentNoteId: string, type: "label" | "relation", name: string
 ) {
     const action: BulkAction = type === "label"
         ? { name: "deleteLabel", labelName: name }
         : { name: "deleteRelation", relationName: name };
 
+    const { executeBulkActions } = await import("../../services/bulk_action");
     return executeBulkActions(
         [ parentNoteId ], [ action ], { includeDescendants: true, silent: true });
 }
