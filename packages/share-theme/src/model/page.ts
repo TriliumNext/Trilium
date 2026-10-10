@@ -462,11 +462,11 @@ function toExcerpt(text: string) {
 }
 
 /**
- * Returns how the list of subpages is laid out: a grid, unless the note is a collection whose
- * `#viewType` is `list`.
+ * Returns how the list of subpages is laid out: a grid, unless the note is a collection whose view
+ * type is `list`. The caller resolves the view type, which can come from a template outside the share.
  */
-export function getChildLinksLayout(note: ShareNote): "grid" | "list" {
-    return note.type === "book" && note.getLabelValue("viewType") === "list" ? "list" : "grid";
+export function getChildLinksLayout(note: ShareNote, viewType: string | null): "grid" | "list" {
+    return note.type === "book" && viewType === "list" ? "list" : "grid";
 }
 
 /** What {@link getNavigationTree} needs besides the notes. */

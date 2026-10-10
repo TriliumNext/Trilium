@@ -291,7 +291,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot, isSubtreeHidden),
         navigation,
         childLinks,
-        childLinksLayout: getChildLinksLayout(note),
+        childLinksLayout: getChildLinksLayout(note, getViewType(note)),
         contentClasses: getContentClasses(note, isEmpty, { isAppView, isFullHeight }),
         language: getPageLanguages(note, {
             displayLanguage,
@@ -901,9 +901,13 @@ function renderMermaid(result: Result, note: SNote | BNote) {
 
 /**
  * The view type of a collection: its own `#viewType`, else the one of a built-in template such as
- * `_template_calendar`, which lives in the hidden subtree and so is never in shaca.
+ * `_template_calendar`, which lives in the hidden subtree and so is never in shaca. A becca note,
+ * as the static export renders, reads its templates itself.
  */
-function getViewType(note: SNote) {
+function getViewType(note: SNote | BNote) {
+    if (note instanceof BNote) {
+        return note.getLabelValue("viewType");
+    }
     return note.getLabelValue("viewType") || note.getBuiltInTemplateLabelValue("viewType");
 }
 

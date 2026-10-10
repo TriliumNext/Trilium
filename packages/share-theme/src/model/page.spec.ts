@@ -600,16 +600,16 @@ describe("getChildLinks", () => {
 });
 
 describe("getChildLinksLayout", () => {
-    const layout = (type: string, labels: Record<string, string> = {}) =>
-        getChildLinksLayout(fakeNote({ noteId: "page", type, labels }));
+    const layout = (type: string, viewType: string | null = null) =>
+        getChildLinksLayout(fakeNote({ noteId: "page", type }), viewType);
 
     it("shows a grid, unless a collection asks for a list", () => {
         expect(layout("book")).toBe("grid");
-        expect(layout("book", { viewType: "grid" })).toBe("grid");
-        expect(layout("book", { viewType: "list" })).toBe("list");
-        expect(layout("book", { viewType: "calendar" })).toBe("grid");
+        expect(layout("book", "grid")).toBe("grid");
+        expect(layout("book", "list")).toBe("list");
+        expect(layout("book", "calendar")).toBe("grid");
         expect(layout("text")).toBe("grid");
-        expect(layout("text", { viewType: "list" })).toBe("grid");
+        expect(layout("text", "list")).toBe("grid");
     });
 });
 

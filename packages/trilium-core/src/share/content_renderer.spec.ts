@@ -1508,7 +1508,7 @@ describe("content_renderer", () => {
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
                 childLinks: getChildLinks(note, { sanitizeUrl: sanitize.sanitizeUrl }),
-                childLinksLayout: getChildLinksLayout(note),
+                childLinksLayout: getChildLinksLayout(note, note.getLabelValue("viewType")),
                 contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
@@ -1742,6 +1742,16 @@ describe("content_renderer pages", () => {
         const textPage = parse(String(renderNoteContent(buildSitePage({ content: "<p>a</p>" }))));
         expect(textPage.querySelector("#title-row") === null).toBe(true);
         expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
+    });
+
+    it("lists the subpages of a collection whose template makes it a list", () => {
+        buildNote({ id: "_template_testList", title: "List template", "#viewType": "list" });
+        const list = buildSitePage({
+            id: "templateList", type: "book", content: "", "~template": "_template_testList",
+            children: [ { id: "listItem", title: "Item", content: "<p>Item</p>" } ]
+        });
+        expect(parse(String(renderNoteContent(list))).querySelector("#childLinks")?.classList.value)
+            .toStrictEqual([ "list" ]);
     });
 
     it("counts a board's cards in the tree in place of listing them, its template hiding them", () => {
