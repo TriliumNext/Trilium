@@ -60,9 +60,9 @@ export interface Result {
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
     /**
-     * Set to `true` if the content is shown with the app's own view, such as a map or a Mermaid
-     * note's editor, which takes the page without the title, the subpages, the date and the links
-     * to the neighboring pages.
+     * Set to `true` if the content is shown with the app's own view, such as a map or the viewer of
+     * an image, which takes the page without the title, the subpages, the date and the links to the
+     * neighboring pages.
      */
     isAppView?: boolean;
 }
@@ -491,7 +491,10 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
         hostNoteView(result, note);
-    } else if (["image", "canvas", "mindMap"].includes(note.type)) {
+    } else if (note.type === "image") {
+        renderImage(result, note);
+        hostNoteView(result, note);
+    } else if (["canvas", "mindMap"].includes(note.type)) {
         renderImage(result, note);
     } else if (note.type === "file") {
         renderFile(note, result);

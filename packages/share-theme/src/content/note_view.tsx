@@ -11,18 +11,26 @@ import { drawMermaid, loadMermaid, readMermaidTheme } from "./mermaid.js";
 import { ZoomViewer } from "./zoom_viewer.js";
 
 /**
- * Mounts the note in place of the content the page rendered for visitors without scripts: a
- * Mermaid note as a diagram that pans and zooms, any other note with the app's own widget for its
- * type, read-only.
+ * Mounts the note in place of the content the page rendered for visitors without scripts: an image
+ * or a Mermaid note's diagram in a viewer that pans and zooms it, any other note with the app's own
+ * widget for its type, read-only.
  */
 export default function mountNoteView(container: HTMLElement, payload: AppPayload) {
     container.replaceChildren();
     render(
         <ShareAppHost noteId={container.dataset.noteId ?? ""} payload={payload}>
-            {({ note }) => (note.type === "mermaid" ? <MermaidView note={note} /> : <NoteView note={note} />)}
+            {({ note }) => <SharedNoteView note={note} />}
         </ShareAppHost>,
         container
     );
+}
+
+function SharedNoteView({ note }: { note: FNote }) {
+    switch (note.type) {
+        case "image": return <ImageView note={note} />;
+        case "mermaid": return <MermaidView note={note} />;
+        default: return <NoteView note={note} />;
+    }
 }
 
 function NoteView({ note }: { note: FNote }) {
@@ -47,6 +55,16 @@ function NoteView({ note }: { note: FNote }) {
                 isVisible
             />
         </div>
+    );
+}
+
+/** Shows an image note's image, which the share serves, in a viewer that takes the page. */
+function ImageView({ note }: { note: FNote }) {
+    const src = `api/images/${note.noteId}/${encodeURIComponent(note.title)}?${note.blobId}`;
+    return (
+        <ZoomViewer labels={getZoomPanLabels("image_viewer.viewport")} fillsPage>
+            <img src={src} alt={note.title} />
+        </ZoomViewer>
     );
 }
 
@@ -75,7 +93,7 @@ function MermaidView({ note }: { note: FNote }) {
     }, [ blob, theme ]);
 
     return (
-        <ZoomViewer labels={getZoomPanLabels()} fillsPage>
+        <ZoomViewer labels={getZoomPanLabels("svg.preview")} fillsPage>
             {svg && <RawHtmlBlock className="mermaid" html={svg} />}
         </ZoomViewer>
     );
@@ -94,10 +112,10 @@ function useMermaidTheme() {
     return theme;
 }
 
-/** The texts of the viewer, from the app's catalogue. */
-function getZoomPanLabels() {
+/** The texts of a viewer, from the app's catalogue, with `labelKey` naming what it shows. */
+function getZoomPanLabels(labelKey: string) {
     return {
-        label: t("svg.preview"),
+        label: t(labelKey),
         zoomIn: t("zoom_controls.zoom_in"),
         zoomOut: t("zoom_controls.zoom_out"),
         zoomReset: t("zoom_controls.reset")
