@@ -649,7 +649,8 @@ describe("share handlers", () => {
         expect(tree.notes.map(([ noteId ]: [ string ]) => noteId).sort())
             .toEqual([ "mapReadable", "mapRoot" ]);
         expect(tree.links).toHaveLength(1);
-        expect(Object.keys(tree.noteIdToDescendantCountMap)).not.toContain("mapLocked");
+        // Counted from the notes the caller can read, so a count reveals no locked or unshared note.
+        expect(tree.noteIdToDescendantCountMap).toEqual({ mapRoot: 1, mapReadable: 0 });
         const linkMap = noteMap("link",
             { excludeRelation: "imageLink", includeRelation: [ "author" ] });
         expect(JSON.parse(String(linkMap.body)).links).toEqual([]);

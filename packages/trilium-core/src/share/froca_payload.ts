@@ -151,7 +151,7 @@ export type IsVisibleNote = (noteId: string) => boolean;
 
 /**
  * The note map of `mapRoot` the app draws, as a tree or as its relations, with only the notes
- * `isVisible` accepts and the links between them.
+ * `isVisible` accepts, the links between them, and descendant counts made of those notes alone.
  */
 export function buildVisibleNoteMap(
     mapRoot: BNote,
@@ -159,7 +159,9 @@ export function buildVisibleNoteMap(
     filters: { excludeRelations: string[]; includeRelations: string[] },
     isVisible: IsVisibleNote
 ) {
-    const map = mapType === "tree" ? buildTreeMap(mapRoot) : buildLinkMap(mapRoot, filters);
+    const map = mapType === "tree"
+        ? buildTreeMap(mapRoot, isVisible)
+        : buildLinkMap(mapRoot, filters, isVisible);
     const notes = map.notes.filter(([ noteId ]) => isVisible(noteId));
     const noteIds = new Set(notes.map(([ noteId ]) => noteId));
     return {
