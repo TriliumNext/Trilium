@@ -330,7 +330,8 @@
   "content_renderer": {
     "note-cannot-be-displayed": "このノートタイプは表示できません。",
     "included-note-requires-credentials": "この埋め込みノートはパスワードで保護されているため、ここでは表示できません。",
-    "broken-block-reference": "参照が壊れています"
+    "broken-block-reference": "参照が壊れています",
+    "play-video": "動画を再生"
   },
   "pdf": {
     "export_filter": "PDFドキュメント (*.pdf)",
@@ -372,7 +373,17 @@
     "toggle-toc": "目次の切り替え",
     "logo-alt": "ロゴ",
     "login": "ログイン",
-    "tab-title": "タブ名"
+    "tab-title": "タブ名",
+    "appearance": "外観",
+    "theme-light": "ライト",
+    "theme-dark": "ダーク",
+    "theme-system": "システム",
+    "theme-current": "外観: {{- theme}}",
+    "subpages-of": "{{- title}} のサブページ",
+    "heading-link": "このセクションへのリンク",
+    "previous": "前へ",
+    "next": "次へ",
+    "page-navigation": "前後のページ"
   },
   "hidden_subtree_templates": {
     "text-snippet": "テキストスニペット",
