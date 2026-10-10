@@ -8,7 +8,9 @@ interface MockAgent {
     close(): void;
 }
 
-const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
+type GetLog = () => { info: (message: string) => void };
+
+const { agentInstances, getLogMock, MockAgent, undiciFetch } = vi.hoisted(() => {
     const agentInstances: MockAgent[] = [];
 
     class MockAgent {
@@ -25,7 +27,13 @@ const { agentInstances, MockAgent, undiciFetch } = vi.hoisted(() => {
         }
     }
 
-    return { agentInstances, MockAgent, undiciFetch: vi.fn() };
+    // getLog() throws until initializeCore() runs; the spec setup initializes it, so the throw is
+    // the default here. The wiring test overrides it to record the dropped-token warning.
+    const getLogMock = vi.fn<() => { info: (message: string) => void }>(() => {
+        throw new Error("Log service not initialized.");
+    });
+
+    return { agentInstances, getLogMock, MockAgent, undiciFetch: vi.fn() };
 });
 
 // safeFetch calls undici's own `fetch` (not the global one) so that it and the `Agent` it passes as
@@ -38,7 +46,27 @@ vi.mock("undici", () => ({
     fetch: undiciFetch
 }));
 
-import { safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
+// request.ts loads before initializeCore() initializes the log service, so getLog() must throw
+// until then; see the getLogMock comment above.
+vi.mock("@triliumnext/core", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@triliumnext/core")>();
+    return {
+        ...actual,
+        getLog: (): ReturnType<GetLog> => getLogMock()
+    };
+});
+
+import { parseAllowlist, safeFetch, validateHostResolution, validateUrl } from "./safe_fetch.js";
+
+// A minimal response-shaped object for tests that run outside the safeFetch describe block.
+function makeResponseStub(body: ReadableStream | null, init: ResponseInit) {
+    return {
+        status: init.status ?? 200,
+        statusText: init.statusText ?? "OK",
+        headers: new Headers(init.headers),
+        body
+    } as unknown as Response;
+}
 
 describe("validateUrl", () => {
     it("accepts http URLs", () => {
@@ -197,6 +225,187 @@ describe("validateHostResolution, for a destination the operator configured", ()
 
         const error: Error = await validateHostResolution("169.254.169.254", true).then(() => new Error("resolved"), e => e);
         expect(error.message).not.toContain("private/internal");
+    });
+});
+
+describe("validateHostResolution, with an allowlist of the operator's addresses", () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it("permits a tailnet node the operator allowlisted, on the operator path", async () => {
+        // The exact node, allowed.
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+    });
+
+    it("applies the allowlist only to the addresses listed, not to the whole carrier-grade-NAT range", async () => {
+        // The point of scoping to specific addresses: the rest of the range stays refused.
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        // A different tailnet node, not on the list, is still refused.
+        await expect(validateHostResolution("100.64.0.5", true, ["100.83.121.222"])).rejects.toThrow("link-local");
+    });
+
+    it("accepts a CIDR entry covering the allowed subnet", async () => {
+        await expect(validateHostResolution("100.83.121.222", true, ["100.83.121.0/24"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+        // Outside the subnet.
+        await expect(validateHostResolution("100.83.122.222", true, ["100.83.121.0/24"])).rejects.toThrow("link-local");
+    });
+
+    it("still reaches a listed address when an IPv6 token precedes it in the list", async () => {
+        // An IPv6 entry before the matching IPv4 entry must not block the match.
+        await expect(validateHostResolution("100.83.121.222", true, ["2001:db8::1", "100.83.121.222"])).resolves.toEqual([
+            { address: "100.83.121.222", family: 4 }
+        ]);
+    });
+
+    it("masks a CIDR whose host bits are set", async () => {
+        await expect(validateHostResolution("100.83.121.5", true, ["100.83.121.222/24"])).resolves.toEqual([
+            { address: "100.83.121.5", family: 4 }
+        ]);
+    });
+
+    it("is not applied on the strict path, so note content cannot steer the server to a tailnet node", async () => {
+        await expect(validateHostResolution("100.83.121.222", false, ["100.83.121.222"])).rejects.toThrow("private/internal");
+    });
+
+    it("reaches an allowlisted tailnet host end to end when the caller permits private addresses", async () => {
+        const fetchMock = undiciFetch;
+        fetchMock.mockReset();
+        agentInstances.length = 0;
+        fetchMock.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await expect(safeFetch("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true, allowedAddresses: ["100.83.121.222"] })).resolves.toBeDefined();
+        // Without the operator flag the address stays refused.
+        await expect(safeFetch("http://100.83.121.222/v1")).rejects.toThrow("private/internal");
+    });
+
+    it("unwraps an IPv4-mapped IPv6 literal so an IPv4 allowlist entry matches it", async () => {
+        // ::ffff:100.83.121.222 maps to 100.83.121.222 in the IPv4 space; the allowlist lists that
+        // address, so the literal must be permitted on the relaxed path.
+        await expect(validateHostResolution("::ffff:100.83.121.222", true, ["100.83.121.222"])).resolves.toEqual([
+            { address: "::ffff:100.83.121.222", family: 6 }
+        ]);
+    });
+});
+
+describe("parseAllowlist", () => {
+    it("returns empty entries and an empty dropped list for an empty input", () => {
+        expect(parseAllowlist([])).toEqual({ entries: [], dropped: [] });
+    });
+
+    it("parses exact addresses and CIDRs into entries, with no drops", () => {
+        // `entries` holds ipaddr.js objects, so its length is the readable assertion.
+        const result = parseAllowlist(["100.83.121.222", "100.83.121.0/24", "192.0.2.1"]);
+        expect(result.dropped).toEqual([]);
+        expect(result.entries).toHaveLength(3);
+    });
+
+    it("surfaces unparseable tokens in `dropped` so the operator can see which entry to fix", () => {
+        const result = parseAllowlist(["100.83.121.222", "not-an-address", "100.83.121.211.0/24", ""]);
+        // The two valid tokens land in entries; the other two are in `dropped`.
+        expect(result.entries).toHaveLength(1);
+        // Whitespace-only tokens are not surfaced — they are not "unparseable", just empty.
+        // The two genuinely malformed tokens are reported with their trimmed form.
+        expect(result.dropped).toEqual(["not-an-address", "100.83.121.211.0/24"]);
+    });
+
+    it("drops mistyped tokens instead of honoring them", () => {
+        // A hostname, five octets, a malformed CIDR network part, and an IPv4 mask above 32.
+        const result = parseAllowlist(["my-tailnet.tail.ts.net", "100.83.121.222.1", "100.83.121.211.0/24", "100.83.121.0/64"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["my-tailnet.tail.ts.net", "100.83.121.222.1", "100.83.121.211.0/24", "100.83.121.0/64"]);
+    });
+
+    it("drops ipaddr.js shorthand forms, which name a different network than the operator typed", () => {
+        // "100.64/10" parses as 100.0.0.64/10, which does not overlap the carrier-grade NAT range.
+        const result = parseAllowlist(["100", "0x64.83.121.222", "0300.83.121.222", "100.64/10"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["100", "0x64.83.121.222", "0300.83.121.222", "100.64/10"]);
+    });
+
+    it("drops IPv6 tokens, which cannot match the carrier-grade NAT range the allowlist opens", () => {
+        const result = parseAllowlist(["fd7a:115c:a1e0::abcd", "2001:db8::/48", "::ffff:100.83.121.222"]);
+        expect(result.entries).toHaveLength(0);
+        expect(result.dropped).toEqual(["fd7a:115c:a1e0::abcd", "2001:db8::/48", "::ffff:100.83.121.222"]);
+    });
+});
+
+describe("request.ts allowlist wiring", () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        getLogMock.mockReset();
+        getLogMock.mockImplementation(() => {
+            throw new Error("Log service not initialized.");
+        });
+    });
+
+    it("loads with a malformed TRILIUM_SAFE_FETCH_ALLOWLIST; nothing at module scope calls getLog()", async () => {
+        // getLog() throws until initializeCore() runs, and main.ts imports request.ts before that.
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address");
+        await expect(import("./request.js")).resolves.toBeDefined();
+    });
+
+    it("feeds the env list into fetchApi and warns about dropped tokens once", async () => {
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        // The listed tailnet address is reachable through fetchApi; drop the allowedAddresses
+        // wiring and this rejects with the carrier-grade NAT refusal.
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true });
+        expect(infoMessages).toHaveLength(1);
+        expect(infoMessages[0]).toContain("not-an-address");
+    });
+
+    it("emits no warning when the env list has only valid entries", async () => {
+        // No dropped tokens means the `dropped.length > 0` branch in warnDroppedAllowlistTokens
+        // must not run, and `getLog` is never called for a clean env.
+        vi.resetModules();
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,100.83.121.0/24");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        expect(infoMessages).toHaveLength(0);
+    });
+
+    it("uses the plural \"entries\" form when the env list drops more than one token", async () => {
+        // Two malformed tokens → the ternary picks "entries" over "entry" and both names appear.
+        vi.resetModules();
+        vi.stubEnv("TRILIUM_SAFE_FETCH_ALLOWLIST", "100.83.121.222,not-an-address,also-bad");
+        const infoMessages: string[] = [];
+        getLogMock.mockImplementation(() => ({
+            info: (message: string) => infoMessages.push(message)
+        }));
+        const requestModule = await import("./request.js");
+        undiciFetch.mockReset();
+        agentInstances.length = 0;
+        const provider = new requestModule.default();
+        undiciFetch.mockResolvedValueOnce(makeResponseStub(null, { status: 200 }));
+        await expect(provider.fetchApi("http://100.83.121.222/v1", {}, { allowPrivateNetwork: true })).resolves.toBeDefined();
+        expect(infoMessages).toHaveLength(1);
+        expect(infoMessages[0]).toMatch(/ignoring 2 entries/);
+        expect(infoMessages[0]).toContain("not-an-address");
+        expect(infoMessages[0]).toContain("also-bad");
     });
 });
 
