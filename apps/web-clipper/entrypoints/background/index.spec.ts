@@ -288,6 +288,26 @@ describe("background", () => {
             await onCommand("saveWholePage");
             expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
+
+        it("saves the page the popup extracted, with the user's title, without reading it again", async () => {
+            const page = {
+                title: "Edited title",
+                content: `<img src="i1">`,
+                images: [ { imageId: "i1", src: "https://example.com/a.png" } ],
+                pageUrl: PAGE_URL,
+                clipType: "page",
+                labels: {}
+            };
+
+            await sendRuntimeMessage({ name: "save-whole-page", page });
+
+            expect(tabsSendMessage).not.toHaveBeenCalledWith(7, { name: "trilium-save-page" });
+            expect(facade.callService).toHaveBeenCalledWith("POST", "notes", {
+                ...page,
+                images: [ { ...page.images[0], dataUrl: expect.stringMatching(PNG_DATA_URL) } ]
+            });
+            expect(await lastToast()).toMatchObject({ message: "Page has been saved to Trilium.", noteId: "saved" });
+        });
     });
 
     describe("screenshots", () => {

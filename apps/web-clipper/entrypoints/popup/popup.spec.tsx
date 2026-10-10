@@ -4,7 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { basicIcon, parseLinkNote, Popup, shortcutsByCommand, textToHtml } from "./main";
+import { basicIcon, parseLinkNote, Popup, previewDocument, shortcutsByCommand, textToHtml } from "./main";
 
 const DISCONNECTED = "This action can't be performed without active connection to Trilium.";
 
@@ -16,6 +16,16 @@ const getAllCommands = vi.fn(async () => [
     { name: "saveCroppedScreenshot", shortcut: "Ctrl+Shift+E" },
     { name: "saveTabs", shortcut: "" }
 ]);
+const PAGE = {
+    title: "An article",
+    content: `<p>Body</p><img src="i1"><img src="https://example.com/b.png">`,
+    images: [ { imageId: "i1", src: "https://example.com/a.png" } ],
+    pageUrl: "https://example.com/post?id=1",
+    clipType: "page",
+    labels: { publishedDate: "2024-05-01" }
+};
+const tabsQuery = vi.fn(async (): Promise<{ id?: number }[]> => [ { id: 7 } ]);
+const tabsSendMessage = vi.fn(async (_tabId: number, _message: object): Promise<unknown> => PAGE);
 const closeWindow = vi.fn();
 let container: HTMLElement;
 
@@ -24,6 +34,7 @@ describe("popup", () => {
         fakeBrowser.reset();
         Object.assign(fakeBrowser.runtime, { sendMessage, openOptionsPage });
         Object.assign(fakeBrowser.commands, { getAll: getAllCommands });
+        Object.assign(fakeBrowser.tabs, { query: tabsQuery, sendMessage: tabsSendMessage });
         vi.spyOn(window, "close").mockImplementation(closeWindow);
         vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -120,16 +131,12 @@ describe("popup", () => {
     });
 
     it("sends the capture actions, closing the popup for screenshots", async () => {
-        expect(container.querySelector(".primary-action .action-label")?.textContent).toBe("Save whole page");
-
         await click("Crop screenshot");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-cropped-screenshot" });
         await click("Visible area screenshot");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-screenshot" });
         expect(closeWindow).toHaveBeenCalledTimes(2);
 
-        await click("Save whole page");
-        expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-page" });
         await click("All tabs in window");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-tabs" });
         await click("Check the connection again");
@@ -145,11 +152,65 @@ describe("popup", () => {
 
     it("shows the keyboard shortcut of each action that has one", () => {
         expect(getAllCommands).toHaveBeenCalledOnce();
-        expect(shortcutOf("Save whole page")).toBe("Alt+Shift+S");
+        expect(shortcutOf("Save page to Trilium")).toBe("Alt+Shift+S");
         expect(shortcutOf("Crop screenshot")).toBe("Ctrl+Shift+E");
         expect(shortcutOf("All tabs in window")).toBeUndefined();
         expect(shortcutOf("Visible area screenshot")).toBeUndefined();
         expect(shortcutOf("Link with a note")).toBeUndefined();
+    });
+
+    it("previews the readable page with its title, source and date", () => {
+        expect(tabsQuery).toHaveBeenCalledWith({ active: true, currentWindow: true });
+        expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-page" });
+
+        expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("An article");
+        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
+        const frame = container.querySelector<HTMLIFrameElement>("iframe.page-content");
+        expect(frame?.getAttribute("sandbox")).toBe("");
+        expect(frame?.getAttribute("srcdoc")).toBe(previewDocument(PAGE));
+        expect(button("Save page to Trilium")?.disabled).toBe(false);
+    });
+
+    it("saves the extracted page with the edited title, and closes", async () => {
+        await type(".page-title", "  My title ");
+        await click("Save page to Trilium");
+        expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-page", page: { ...PAGE, title: "My title" } });
+        expect(closeWindow).toHaveBeenCalledOnce();
+
+        await type(".page-title", "   ");
+        await click("Save page to Trilium");
+        expect(sendMessage).toHaveBeenLastCalledWith({ name: "save-whole-page", page: PAGE });
+    });
+
+    it("leaves out the date of a page that has none", async () => {
+        tabsSendMessage.mockResolvedValueOnce({ ...PAGE, labels: {} });
+        await rerender();
+        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com");
+    });
+
+    it("says so while the page is read, and when it cannot be", async () => {
+        let resolvePage: (page: unknown) => void = () => {};
+        tabsSendMessage.mockReturnValueOnce(new Promise((resolve) => {
+            resolvePage = resolve;
+        }));
+        await rerender();
+        expect(placeholder()).toBe("Reading the page…");
+        expect(button("Save page to Trilium")?.disabled).toBe(true);
+
+        resolvePage(undefined);
+        await flush();
+        expect(placeholder()).toBe("This page cannot be saved as an article.");
+        expect(button("Save page to Trilium")?.disabled).toBe(true);
+        expect(container.querySelector("iframe")).toBeNull();
+
+        tabsSendMessage.mockRejectedValueOnce(new Error("Could not establish connection."));
+        await rerender();
+        expect(placeholder()).toBe("This page cannot be saved as an article.");
+
+        tabsQuery.mockResolvedValueOnce([ {} ]);
+        await rerender();
+        expect(placeholder()).toBe("This page cannot be saved as an article.");
+        expect(tabsSendMessage).toHaveBeenCalledTimes(3);
     });
 
     it("tells the user when the background script cannot be reached", async () => {
@@ -157,7 +218,7 @@ describe("popup", () => {
         vi.stubGlobal("alert", alertMock);
         sendMessage.mockRejectedValueOnce(new Error("Receiving end does not exist."));
 
-        await click("Save whole page");
+        await click("All tabs in window");
 
         expect(alertMock).toHaveBeenCalledWith("Calling browser runtime failed. Refreshing page might help.");
     });
@@ -245,6 +306,16 @@ describe("popup", () => {
     });
 });
 
+describe("previewDocument", () => {
+    it("loads the page's images from the website, and keeps the rest of its content", () => {
+        const doc = new DOMParser().parseFromString(previewDocument(PAGE), "text/html");
+        expect([ ...doc.querySelectorAll("img") ].map((img) => img.getAttribute("src")))
+            .toEqual([ "https://example.com/a.png", "https://example.com/b.png" ]);
+        expect(doc.querySelector("p")?.textContent).toBe("Body");
+        expect(doc.querySelector("style")?.textContent).toContain("max-width: 100%");
+    });
+});
+
 describe("shortcutsByCommand", () => {
     it("keeps only the commands that have a shortcut", () => {
         expect(shortcutsByCommand([
@@ -260,6 +331,7 @@ describe("icons", () => {
     it("draws each button's Boxicon inline, hidden from assistive technology", async () => {
         vi.spyOn(console, "log").mockImplementation(() => {});
         Object.assign(fakeBrowser.commands, { getAll: getAllCommands });
+        Object.assign(fakeBrowser.tabs, { query: tabsQuery, sendMessage: tabsSendMessage });
         const container = document.createElement("div");
         await act(() => render(<Popup />, container));
 
@@ -322,6 +394,27 @@ function button(text: string) {
     });
     expect(found, text).toBeDefined();
     return found;
+}
+
+/** Renders the popup again, so that it extracts the page anew. */
+async function rerender() {
+    await act(() => render(null, container));
+    await act(() => render(<Popup />, container));
+    await flush();
+}
+
+async function type(selector: string, value: string) {
+    const input = container.querySelector<HTMLInputElement>(selector);
+    expect(input, selector).not.toBeNull();
+    await act(() => {
+        if (!input) return;
+        input.value = value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+}
+
+function placeholder() {
+    return container.querySelector(".page-preview-placeholder")?.textContent;
 }
 
 async function click(text: string) {

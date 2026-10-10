@@ -314,8 +314,9 @@ export default defineBackground(() => {
         toast(savedMessage("Image", failedImages), resp.noteId);
     }
 
-    async function saveWholePage() {
-        const payload = await requestFromPage({name: 'trilium-save-page'});
+    /** Saves the readable page, or the page the popup already extracted and the user edited. */
+    async function saveWholePage(page?: object) {
+        const payload = page ?? await requestFromPage({name: 'trilium-save-page'});
 
         const failedImages = await postProcessImages(payload);
 
@@ -458,7 +459,7 @@ export default defineBackground(() => {
             return await saveWholeScreenshot(activeTab.url);
         }
         else if (request.name === 'save-whole-page') {
-            return await saveWholePage();
+            return await saveWholePage(request.page);
         }
         else if (request.name === 'save-link-with-note') {
             return await saveLinkWithNote(request.title, request.content);

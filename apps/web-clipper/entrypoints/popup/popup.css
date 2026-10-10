@@ -74,7 +74,45 @@ body {
     .capture-actions {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
+    }
+
+    .page-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .page-title {
+            width: 100%;
+            font-weight: 500;
+        }
+
+        .page-meta {
+            overflow: hidden;
+            color: var(--muted-text-color);
+            font-size: 0.9em;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .page-content {
+            width: 100%;
+            height: 200px;
+            border: 1px solid var(--main-border-color);
+            border-radius: 6px;
+            background: var(--main-background-color);
+        }
+
+        .page-preview-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 120px;
+            border: 1px dashed var(--main-border-color);
+            border-radius: 6px;
+            color: var(--muted-text-color);
+            text-align: center;
+        }
     }
 
     .primary-action {
@@ -91,23 +129,21 @@ body {
     .action-tiles {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 8px;
+        gap: 6px;
     }
 
     button.btn.action-tile {
-        flex-direction: column;
-        gap: 4px;
+        justify-content: flex-start;
         min-width: 0;
-        padding: 10px 8px;
+        padding: 4px 8px;
+        font-size: 0.95em;
 
-        > svg.icon {
-            width: 1.6em;
-            height: 1.6em;
-            margin: 0;
-        }
-
-        kbd {
-            margin: 0;
+        .action-label {
+            overflow: hidden;
+            flex-grow: 1;
+            text-align: start;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
     }
 

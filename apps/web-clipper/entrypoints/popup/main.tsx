@@ -30,6 +30,25 @@ type PopupMessage = {
 /** The keyboard shortcut of each command, by command name; unbound commands are absent. */
 type Shortcuts = Record<string, string>;
 
+/** A page as the content script extracts it, its images referenced in `content` by `imageId`. */
+interface ExtractedPage {
+    title: string;
+    content: string;
+    images: { imageId: string, src: string }[];
+    pageUrl: string;
+    clipType: "page";
+    labels: Record<string, string>;
+}
+
+const PREVIEW_STYLE = `
+    :root { color-scheme: light dark; }
+    body { margin: 8px; font: 12px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
+    h1 { font-size: 1.3em; } h2 { font-size: 1.15em; } h3, h4, h5, h6 { font-size: 1em; }
+    img, video, svg, iframe { max-width: 100%; height: auto; }
+    pre { white-space: pre-wrap; }
+    a { pointer-events: none; }
+`;
+
 const root = document.getElementById("root");
 if (root) {
     render(<Popup />, root);
@@ -152,11 +171,7 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
 
     return (
         <div className="capture-actions">
-            <button className="btn btn-primary primary-action" {...actionProps} onClick={() => sendMessage({ name: "save-whole-page" })}>
-                <Icon icon={Article} />
-                <span className="action-label">Save whole page</span>
-                <Shortcut keys={shortcuts.saveWholePage} />
-            </button>
+            <PagePreview disabled={disabled} shortcut={shortcuts.saveWholePage} />
 
             <div className="action-tiles">
                 <button className="btn btn-secondary action-tile" {...actionProps} onClick={() => sendAndClose("save-cropped-screenshot")}>
@@ -178,6 +193,69 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
                     <Shortcut keys={shortcuts.saveTabs} />
                 </button>
             </div>
+        </div>
+    );
+}
+
+/**
+ * The readable version of the current page, with its title editable, and the button that saves it.
+ * The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed frame.
+ */
+function PagePreview({ disabled, shortcut }: { disabled: boolean, shortcut: string | undefined }) {
+    /** `undefined` while the page is read, `null` when it cannot be. */
+    const [ page, setPage ] = useState<ExtractedPage | null>();
+    const [ title, setTitle ] = useState("");
+
+    useEffect(() => {
+        void extractPage().then((extracted) => {
+            setPage(extracted);
+            setTitle(extracted?.title ?? "");
+        });
+    }, []);
+
+    function save(extracted: ExtractedPage) {
+        void sendMessage({ name: "save-whole-page", page: { ...extracted, title: title.trim() || extracted.title } });
+        window.close();
+    }
+
+    const published = page?.labels.publishedDate;
+
+    return (
+        <div className="page-preview">
+            {page === undefined && <div className="page-preview-placeholder">Reading the page…</div>}
+            {page === null && <div className="page-preview-placeholder">This page cannot be saved as an article.</div>}
+            {page && (
+                <>
+                    <input
+                        type="text"
+                        className="page-title"
+                        aria-label="Note title"
+                        placeholder="Note title"
+                        value={title}
+                        onInput={(e) => setTitle(e.currentTarget.value)}
+                    />
+                    <div className="page-meta">
+                        {new URL(page.pageUrl).hostname}{published && ` · Published ${published}`}
+                    </div>
+                    <iframe
+                        className="page-content"
+                        title="Preview of the page"
+                        sandbox=""
+                        srcDoc={previewDocument(page)}
+                    />
+                </>
+            )}
+
+            <button
+                className="btn btn-primary primary-action"
+                disabled={disabled || !page}
+                title={disabled ? "This action can't be performed without active connection to Trilium." : undefined}
+                onClick={page ? () => save(page) : undefined}
+            >
+                <Icon icon={Article} />
+                <span className="action-label">Save page to Trilium</span>
+                <Shortcut keys={shortcut} />
+            </button>
         </div>
     );
 }
@@ -274,6 +352,35 @@ function describeStatus(status: TriliumSearchStatus | undefined) {
         case "found-server":
             return { kind: "ok", text: "Connected to the server", title: `Connected to ${status.url}` };
     }
+}
+
+/**
+ * Asks the content script of the active tab for its readable page, as it extracts it for saving.
+ * Returns `null` on pages where no content script runs (browser pages, extension stores) and when
+ * the page cannot be extracted.
+ */
+async function extractPage(): Promise<ExtractedPage | null> {
+    try {
+        const [ tab ] = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id === undefined) return null;
+        return await browser.tabs.sendMessage(tab.id, { name: "trilium-save-page" }) ?? null;
+    } catch {
+        return null;
+    }
+}
+
+/** A standalone document showing the page's content, its images loaded from the website. */
+export function previewDocument({ content, images }: Pick<ExtractedPage, "content" | "images">) {
+    const doc = new DOMParser().parseFromString(content, "text/html");
+    for (const img of doc.querySelectorAll("img")) {
+        const image = images.find(({ imageId }) => imageId === img.getAttribute("src"));
+        if (image) {
+            img.setAttribute("src", image.src);
+        }
+    }
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${PREVIEW_STYLE}</style></head>`
+        + `<body>${doc.body.innerHTML}</body></html>`;
 }
 
 /** Maps each bound command to its shortcut, as the browser shows it. */
