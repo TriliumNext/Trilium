@@ -170,8 +170,11 @@ describe("popup", () => {
         expect(tabsQuery).toHaveBeenCalledWith({ active: true, currentWindow: true });
         expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-page" });
 
-        expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("An article");
-        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
+        const heading = container.querySelector(".page-heading");
+        expect(heading).not.toBeNull();
+        expect(heading?.querySelector(".page-icon svg path")).not.toBeNull();
+        expect(heading?.querySelector<HTMLInputElement>(".page-title")?.value).toBe("An article");
+        expect(heading?.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
         const frame = container.querySelector<HTMLIFrameElement>("iframe.page-content");
         expect(frame?.getAttribute("sandbox")).toBe("");
         expect(frame?.getAttribute("srcdoc")).toBe(previewDocument(PAGE));
