@@ -8,9 +8,13 @@ body {
     gap: 12px;
     padding: 12px;
 
+    .notices {
+        margin: -12px -12px 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
     .callout {
-        padding: 8px 10px;
-        border-radius: 6px;
+        padding: 10px 12px;
     }
 
     .callout-info {
@@ -18,11 +22,18 @@ body {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        background: var(--link-hover-background);
+        background: color-mix(in srgb, var(--admonition-note-accent-color) 15%, var(--main-background-color));
+
+        a {
+            flex-shrink: 0;
+            margin: -4px -8px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
     }
 
     .callout-warning {
-        background: color-mix(in srgb, var(--status-warning-color) 18%, transparent);
+        background: color-mix(in srgb, var(--admonition-warning-accent-color) 15%, var(--main-background-color));
     }
 
     .capture-actions {

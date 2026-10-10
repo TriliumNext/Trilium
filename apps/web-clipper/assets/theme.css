@@ -70,6 +70,10 @@
     --status-warning-color: #b7bd10;
     --status-error-color: #b32323;
 
+    /* The text editor's admonition accents, which the app uses for its notices in both themes. */
+    --admonition-note-accent-color: #69c7ff;
+    --admonition-warning-accent-color: #e2aa03;
+
     /* Bootstrap's default, which the Next theme's text boxes are rounded by. */
     --bs-border-radius: 0.375rem;
 }

@@ -84,6 +84,7 @@ export function Popup() {
     }, []);
 
     const status = describeStatus(searchStatus);
+    const isMismatch = searchStatus?.status === "version-mismatch";
 
     let body: ComponentChildren;
     if (isWritingNote) {
@@ -102,24 +103,27 @@ export function Popup() {
 
     return (
         <div className="popup">
-            {clippedNoteId && (
-                <div className="callout callout-info already-visited">
-                    <span>Web page already clipped.</span>
-                    <a
-                        href="#"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            void sendMessage({ name: "openNoteInTrilium", noteId: clippedNoteId });
-                        }}
-                    >Open in Trilium</a>
-                </div>
-            )}
-
-            {searchStatus?.status === "version-mismatch" && (
-                <div className="callout callout-warning">
-                    Trilium instance found, but it is not compatible with this extension version.
-                    Please update {searchStatus.extensionMajor > searchStatus.triliumMajor ? "Trilium Notes" : "this extension"} to
-                    the latest version.
+            {(clippedNoteId || isMismatch) && (
+                <div className="notices">
+                    {clippedNoteId && (
+                        <div className="callout callout-info already-visited">
+                            <span>Web page already clipped.</span>
+                            <a
+                                href="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    void sendMessage({ name: "openNoteInTrilium", noteId: clippedNoteId });
+                                }}
+                            >Open in Trilium</a>
+                        </div>
+                    )}
+                    {searchStatus?.status === "version-mismatch" && (
+                        <div className="callout callout-warning">
+                            Trilium instance found, but it is not compatible with this extension version.
+                            Please update {searchStatus.extensionMajor > searchStatus.triliumMajor ? "Trilium Notes" : "this extension"} to
+                            the latest version.
+                        </div>
+                    )}
                 </div>
             )}
 

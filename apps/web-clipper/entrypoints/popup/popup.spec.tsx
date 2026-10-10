@@ -99,7 +99,8 @@ describe("popup", () => {
             triliumSearch: { status: "version-mismatch", extensionMajor: 2, triliumMajor: 1 }
         });
         expect(status()).toEqual({ dot: "status-dot status-dot-warning", text: "Incompatible version" });
-        expect(container.querySelector(".callout-warning")?.textContent).toContain("Please update Trilium Notes");
+        expect(container.querySelector(".popup > .notices:first-child > .callout-warning")?.textContent)
+            .toContain("Please update Trilium Notes");
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
         await receive({
@@ -127,7 +128,8 @@ describe("popup", () => {
         expect(container.querySelector(".already-visited")).toBeNull();
 
         await receive({ name: "trilium-previously-visited", searchNote: { status: "found", noteId: "clipped" } });
-        expect(container.querySelector(".already-visited span")?.textContent).toBe("Web page already clipped.");
+        expect(container.querySelector(".popup > .notices:first-child > .already-visited span")?.textContent)
+            .toBe("Web page already clipped.");
         const link = container.querySelector<HTMLAnchorElement>(".already-visited a");
         expect(link?.textContent).toBe("Open in Trilium");
 
@@ -136,6 +138,7 @@ describe("popup", () => {
 
         await receive({ name: "trilium-previously-visited", searchNote: { status: "not-found", noteId: null } });
         expect(container.querySelector(".already-visited")).toBeNull();
+        expect(container.querySelector(".notices")).toBeNull();
     });
 
     it("sends the capture actions, closing the popup for screenshots", async () => {
