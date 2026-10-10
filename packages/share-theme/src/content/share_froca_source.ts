@@ -26,6 +26,13 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
             const params = new URLSearchParams({ search: query, ancestorNoteId });
             const { results } = await getJson<{ results: { noteId: string }[] }>(`api/notes?${params}`);
             return results.map((result) => result.noteId);
+        },
+        getNoteMap: (mapRootNoteId, mapType, { excludeRelations, includeRelations }) => {
+            const params = new URLSearchParams([
+                ...excludeRelations.map((name) => [ "excludeRelation", name ]),
+                ...includeRelations.map((name) => [ "includeRelation", name ])
+            ]);
+            return getJson(`api/note-map/${encodeURIComponent(mapRootNoteId)}/${mapType}?${params}`);
         }
     };
 }

@@ -99,7 +99,18 @@ function getNeighbors(note: BNote, depth: number): string[] {
 }
 
 function getLinkMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    const toNames = (data: unknown) => (data instanceof Array ? data.map(String) : []);
+    return buildLinkMap(becca.getNoteOrThrow(req.params.noteId), {
+        excludeRelations: toNames(req.body.excludeRelations),
+        includeRelations: toNames(req.body.includeRelations)
+    });
+}
+
+/**
+ * Returns the notes of the link map of `mapRootNote` (its subtree, or a search note's results, and
+ * the notes within three relations of it) and the relations between them, which `filters` narrow.
+ */
+export function buildLinkMap(mapRootNote: BNote, filters: { excludeRelations: string[]; includeRelations: string[] }) {
 
     // if the map root itself has "excludeFromNoteMap" attribute (journal typically) then there wouldn't be anything
     // to display, so we'll just ignore it
@@ -111,10 +122,8 @@ function getLinkMap(req: Request<{ noteId: string }>) {
     const includeArchived = mapRootNote.isArchived;
     let unfilteredNotes;
 
-    const toSet = (data: unknown) => new Set<string>(data instanceof Array ? data : []);
-
-    const excludeRelations = toSet(req.body.excludeRelations);
-    const includeRelations = toSet(req.body.includeRelations);
+    const excludeRelations = new Set(filters.excludeRelations);
+    const includeRelations = new Set(filters.includeRelations);
 
     if (mapRootNote.type === "search") {
         // for search notes, we want to consider the direct search results only without the descendants
@@ -182,7 +191,11 @@ function getLinkMap(req: Request<{ noteId: string }>) {
 }
 
 function getTreeMap(req: Request<{ noteId: string }>) {
-    const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
+    return buildTreeMap(becca.getNoteOrThrow(req.params.noteId));
+}
+
+/** Returns the notes of the subtree of `mapRootNote` and the branches between them. */
+export function buildTreeMap(mapRootNote: BNote) {
     // if the map root itself has "excludeFromNoteMap" (journal typically) then there wouldn't be anything to display,
     // so we'll just ignore it
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");

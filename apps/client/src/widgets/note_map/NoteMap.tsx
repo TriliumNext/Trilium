@@ -27,9 +27,13 @@ interface NoteMapProps {
     note: FNote;
     widgetMode: NoteMapWidgetMode;
     parentRef: RefObject<HTMLElement | null>;
+    /** The note the map starts from when the note names none, in place of the active note's parent. */
+    defaultRootNoteId?: string | null;
+    /** Opens a clicked note where the map's host shows notes, in place of the active note context. */
+    onOpenNote?: (noteId: string) => void;
 }
 
-export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
+export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId, onOpenNote }: NoteMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const styleResolverRef = useRef<HTMLDivElement>(null);
     const [ mapType, setMapType ] = useMapType(note, widgetMode);
@@ -57,7 +61,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         } else if (mapRootIdLabel) {
             return mapRootIdLabel;
         }
-        return appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
+        return defaultRootNoteId ?? appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
 
     }, [ note ]);
 
@@ -121,6 +125,10 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             graph
                 .onNodeClick((node) => {
                     if (!node.id) return;
+                    if (onOpenNote) {
+                        onOpenNote(node.id);
+                        return;
+                    }
                     appContext.tabManager.getActiveContext()?.setNote(node.id);
                     // The map always sends the reader to the pane behind it, never to its own host — so a
                     // map shown in the quick-edit popup has to dismiss it, or it would be left covering the
@@ -129,7 +137,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                     void appContext.triggerEvent("closePopupEditor", {});
                 })
                 .onNodeRightClick((node, e) => {
-                    if (!node.id) return;
+                    if (!node.id || onOpenNote) return;
                     link_context_menu.openContextMenu(node.id, e);
                 });
 

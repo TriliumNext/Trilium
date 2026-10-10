@@ -1,12 +1,15 @@
+import "@triliumnext/client/src/widgets/type_widgets/NoteMap.css";
+
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
+import NoteMap from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
 import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
 import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
 import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
 import { render } from "preact";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
-import ShareAppHost, { type AppPayload } from "./app_host.js";
+import ShareAppHost, { type AppPayload, type HostedApp } from "./app_host.js";
 import { drawMermaid, loadMermaid, readMermaidTheme } from "./mermaid.js";
 import { ZoomViewer } from "./zoom_viewer.js";
 
@@ -19,13 +22,14 @@ export default function mountNoteView(container: HTMLElement, payload: AppPayloa
     container.replaceChildren();
     render(
         <ShareAppHost noteId={container.dataset.noteId ?? ""} payload={payload}>
-            {({ note }) => <SharedNoteView note={note} />}
+            {(app) => <SharedNoteView app={app} />}
         </ShareAppHost>,
         container
     );
 }
 
-function SharedNoteView({ note }: { note: FNote }) {
+function SharedNoteView({ app }: { app: HostedApp }) {
+    const { note } = app;
     switch (note.type) {
         case "image":
         case "canvas":
@@ -33,6 +37,8 @@ function SharedNoteView({ note }: { note: FNote }) {
             return <ImageView note={note} />;
         case "mermaid":
             return <MermaidView note={note} />;
+        case "noteMap":
+            return <NoteMapView app={app} />;
         default:
             return <NoteView note={note} />;
     }
@@ -104,6 +110,25 @@ function MermaidView({ note }: { note: FNote }) {
         <ZoomViewer labels={getZoomPanLabels("svg.preview")} fillsPage>
             {svg && <RawHtmlBlock className="mermaid" html={svg} />}
         </ZoomViewer>
+    );
+}
+
+/**
+ * Draws a note map note's map, from the note's parent on the share unless the note names another
+ * root, and opens a clicked note on its shared page.
+ */
+function NoteMapView({ app }: { app: HostedApp }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    return (
+        <div ref={containerRef} className="note-detail-note-map">
+            <NoteMap
+                parentRef={containerRef}
+                note={app.note}
+                widgetMode="type"
+                defaultRootNoteId={app.parentNoteId}
+                onOpenNote={app.openNote}
+            />
+        </div>
     );
 }
 

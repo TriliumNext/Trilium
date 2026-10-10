@@ -2,6 +2,8 @@ import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@
 import ejs from "ejs";
 import { t } from "i18next";
 
+import becca from "../becca/becca.js";
+import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
@@ -91,6 +93,7 @@ const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/attachments/:attachmentId/all": getSiblingAttachments,
     "/share/api/attachments/:attachmentId/blob": getAttachmentBlob,
     "/share/api/tree": loadTree,
+    "/share/api/note-map/:noteId/:mapType": getNoteMap,
     "/share/": getShareRoot,
     "/share/:shareId": getShareNote
 };
@@ -183,6 +186,39 @@ function loadTree(req: ShareRequest): ShareReply {
         return note ? [ note ] : [];
     });
     return jsonReply(200, buildFrocaRows(notes, canAccess));
+}
+
+/**
+ * Answers the note map the app draws of a shared note, as a tree or as its relations, with only the
+ * notes a visitor of the share can read and the links between them. The relations to leave out or
+ * to keep come as repeated `excludeRelation` and `includeRelation` parameters.
+ */
+function getNoteMap(req: ShareRequest): ShareReply {
+    const mapRoot = becca.getNote(checkNoteAccess(req.params.noteId ?? "", req).noteId);
+    const { mapType } = req.params;
+    if (!mapRoot || (mapType !== "tree" && mapType !== "link")) {
+        return jsonReply(404, { message: `No note map of '${req.params.noteId}'.` });
+    }
+
+    const toNames = (value: string | string[] | undefined) => [ value ?? [] ].flat();
+    const map = mapType === "tree"
+        ? buildTreeMap(mapRoot)
+        : buildLinkMap(mapRoot, {
+            excludeRelations: toNames(req.query.excludeRelation),
+            includeRelations: toNames(req.query.includeRelation)
+        });
+
+    const notes = map.notes.filter(([ noteId ]) => {
+        const note = shaca.getNote(noteId);
+        return !!note && !note.isProtected && hasCredentialAccess(note, req);
+    });
+    const noteIds = new Set(notes.map(([ noteId ]) => noteId));
+    return jsonReply(200, {
+        notes,
+        links: map.links.filter((link) => noteIds.has(link.sourceNoteId) && noteIds.has(link.targetNoteId)),
+        noteIdToDescendantCountMap: Object.fromEntries(Object.entries(map.noteIdToDescendantCountMap)
+            .filter(([ noteId ]) => noteIds.has(noteId)))
+    });
 }
 
 function getNoteAttachments(req: ShareRequest): ShareReply {

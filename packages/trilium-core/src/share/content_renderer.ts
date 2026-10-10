@@ -511,6 +511,9 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         result.isEmpty = true;
     } else if (note.type === "webView") {
         renderWebView(note, result);
+    } else if (note.type === "noteMap") {
+        result.content = "";
+        hostNoteView(result, note);
     } else if (note.type === "spreadsheet") {
         renderSpreadsheet(result);
         hostNoteView(result, note);
@@ -946,7 +949,9 @@ function hostInAppView(result: Result, note: SNote, container: string) {
         ...buildFrocaPayload(note),
         options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
         // The app's assets, such as its translations, from a page directly below `/share/`.
-        assetPath: `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`
+        assetPath: `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
+        // The note the app would show the note below, such as the root of a note map note's map.
+        parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
     result.isAppView = true;

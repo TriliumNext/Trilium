@@ -1,3 +1,5 @@
+import type { NoteMapPostResponse } from "@triliumnext/commons";
+
 import type FAttachment from "../entities/fattachment.js";
 import type { FAttachmentRow } from "../entities/fattachment.js";
 import type FAttribute from "../entities/fattribute.js";
@@ -8,6 +10,12 @@ import type FBranch from "../entities/fbranch.js";
 import type { FBranchRow } from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
 import type { FNoteRow } from "../entities/fnote.js";
+
+/** The relations a note map draws or leaves out, by name; an empty `includeRelations` draws all. */
+export interface NoteMapFilters {
+    excludeRelations: string[];
+    includeRelations: string[];
+}
 
 /** The rows of notes with their branches and attributes, which `froca.addResp()` takes. */
 export interface SubtreeResponse {
@@ -29,6 +37,8 @@ export interface FrocaSource {
     getBlob(entityType: string, entityId: string): Promise<FBlobRow>;
     /** The ids of the notes below `ancestorNoteId` that match the search `query`. */
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    /** The notes and the links of the note map of `mapRootNoteId`, as a tree or as its relations. */
+    getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
 }
 
 export interface Froca {
@@ -49,4 +59,5 @@ export interface Froca {
 
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
 }

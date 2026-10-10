@@ -15,11 +15,15 @@ export interface AppPayload extends ShareFrocaRows {
     options: Record<string, OptionValue | null>;
     /** Where the app's assets are, such as the translations its views read. */
     assetPath: string;
+    /** The parent of the note on the share, which the note is shown below. */
+    parentNoteId: string | null;
 }
 
 export interface HostedApp {
     /** The note the page shows, read-only. */
     note: FNote;
+    /** The parent of the note on the share, which the note is shown below. */
+    parentNoteId: string | null;
     /** Opens a note on its shared page, in place of the app's own way. */
     openNote(noteId: string): void;
 }
@@ -79,6 +83,7 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
 
     return {
         note,
+        parentNoteId: payload.parentNoteId,
         openNote: (openedNoteId) => {
             const link = links[openedNoteId];
             if (link) {
