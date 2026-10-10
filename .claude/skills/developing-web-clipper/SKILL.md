@@ -94,8 +94,8 @@ against older versions of the other.** Prefer changes that need nothing new from
   `new URL("")` throws, so `saveTabs()` filters them out.
 - `fetchImage()` rejects a non-OK response and a non-image `Content-Type` — otherwise an error page
   gets saved as the "image".
-- Readability (`lib/Readability.js`) is an old vendored copy that the README admits to; Firefox
-  review flags its `innerHTML` use.
+- Readability is `@mozilla/readability`, installed from npm; Firefox
+  review flags its `innerHTML` use, which the README explains to the reviewer.
 
 ## The popup and options page: Preact in the Next theme
 

@@ -1,4 +1,4 @@
-import Readability from "@/lib/Readability.js";
+import { Readability } from "@mozilla/readability";
 import { createLink, getPageLocationOrigin, randomString, type Rect } from "@/utils.js";
 
 export default defineContentScript({
@@ -13,15 +13,16 @@ export default defineContentScript({
         }
 
         function getReadableDocument() {
-            // Readability directly change the passed document, so clone to preserve the original web page.
-            const documentCopy = document.cloneNode(true);
+            // Readability changes the document it parses, so it reads a copy of the page.
+            const documentCopy = document.cloneNode(true) as Document;
             const readability = new Readability(documentCopy, {
-                serializer: el => el // so that .content is returned as DOM element instead of HTML
+                // Returns the content as an element rather than as HTML.
+                serializer: (node) => node as HTMLElement
             });
 
             const article = readability.parse();
 
-            if (!article) {
+            if (!article?.content) {
                 throw new Error('Could not parse HTML document with Readability');
             }
 
