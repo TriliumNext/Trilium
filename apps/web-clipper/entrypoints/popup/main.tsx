@@ -1,3 +1,4 @@
+import "@/assets/theme.css";
 import "./popup.css";
 
 import { render } from "preact";
@@ -63,8 +64,8 @@ export function Popup() {
                 <h3>Trilium Web Clipper</h3>
 
                 <div className="popup-header-buttons">
-                    <button className="button" onClick={() => browser.runtime.openOptionsPage()}>Options</button>
-                    <button className="button" onClick={() => window.open(HELP_URL, "_blank")}>Help</button>
+                    <button className="btn btn-sm" onClick={() => browser.runtime.openOptionsPage()}>Options</button>
+                    <button className="btn btn-sm" onClick={() => window.open(HELP_URL, "_blank")}>Help</button>
                 </div>
             </div>
 
@@ -83,30 +84,32 @@ export function Popup() {
                 )}
             </div>
 
-            <button className="button full" {...needsConnection} onClick={() => sendAndClose("save-cropped-screenshot")}>
-                Crop screenshot
-            </button>
-            <button className="button full" {...needsConnection} onClick={() => sendAndClose("save-whole-screenshot")}>
-                Save whole screenshot
-            </button>
-            <button className="button full" {...needsConnection} onClick={() => sendMessage({ name: "save-whole-page" })}>
-                Save whole page
-            </button>
-            <button className="button full" {...needsConnection} onClick={() => setIsWritingNote(true)}>
-                Save link with a note
-            </button>
-            <button className="button full" {...needsConnection} onClick={() => sendMessage({ name: "save-tabs" })}>
-                Save window's tabs as a list
-            </button>
+            <div className="capture-buttons">
+                <button className="btn btn-secondary" {...needsConnection} onClick={() => sendAndClose("save-cropped-screenshot")}>
+                    Crop screenshot
+                </button>
+                <button className="btn btn-secondary" {...needsConnection} onClick={() => sendAndClose("save-whole-screenshot")}>
+                    Save whole screenshot
+                </button>
+                <button className="btn btn-secondary" {...needsConnection} onClick={() => sendMessage({ name: "save-whole-page" })}>
+                    Save whole page
+                </button>
+                <button className="btn btn-secondary" {...needsConnection} onClick={() => setIsWritingNote(true)}>
+                    Save link with a note
+                </button>
+                <button className="btn btn-secondary" {...needsConnection} onClick={() => sendMessage({ name: "save-tabs" })}>
+                    Save window's tabs as a list
+                </button>
+            </div>
 
             {isWritingNote && <LinkWithNoteForm onCancel={() => setIsWritingNote(false)} />}
 
             <div className="connection">
-                <button className="button check-connection-button" onClick={() => sendMessage({ name: "trigger-trilium-search" })}>
+                <div>Status: <ConnectionStatus status={searchStatus} /></div>
+
+                <button className="btn btn-sm" onClick={() => sendMessage({ name: "trigger-trilium-search" })}>
                     check
                 </button>
-
-                <div>Status: <ConnectionStatus status={searchStatus} /></div>
             </div>
         </div>
     );
@@ -145,7 +148,7 @@ function LinkWithNoteForm({ onCancel }: { onCancel: () => void }) {
             />
 
             <div>
-                <label>
+                <label className="tn-checkbox">
                     <input
                         type="checkbox"
                         checked={keepTitle}
@@ -155,10 +158,10 @@ function LinkWithNoteForm({ onCancel }: { onCancel: () => void }) {
                 </label>
             </div>
             <div className="save-link-with-note-buttons">
-                <button type="submit" className="button wide save-button" onClick={save}>Save</button>
+                <button type="submit" className="btn btn-primary" onClick={save}>Save</button>
                 <button
                     type="submit"
-                    className="button wide"
+                    className="btn btn-secondary"
                     onClick={() => {
                         onCancel();
                         window.close();

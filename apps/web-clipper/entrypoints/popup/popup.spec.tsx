@@ -156,7 +156,7 @@ async function click(text: string) {
 }
 
 function captureButtons() {
-    return [ ...container.querySelectorAll<HTMLButtonElement>("button.full") ];
+    return [ ...container.querySelectorAll<HTMLButtonElement>(".capture-buttons button") ];
 }
 
 function statusText() {

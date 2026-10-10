@@ -1,3 +1,4 @@
+import "@/assets/theme.css";
 import "./options.css";
 
 import { render } from "preact";
@@ -80,7 +81,7 @@ function DesktopPortForm({ showMessage }: { showMessage: ShowMessage }) {
                 {" "}(normally keep this empty)
             </p>
 
-            <input type="submit" value="Save" />
+            <button type="submit" className="btn btn-primary">Save</button>
         </form>
     );
 }
@@ -194,7 +195,7 @@ function ServerLoginForm({ showMessage, onLoggedIn }: {
                 </tr>
                 <tr>
                     <th></th>
-                    <td><input type="submit" value="Login to the server instance" /></td>
+                    <td><button type="submit" className="btn btn-primary">Login to the server instance</button></td>
                 </tr>
             </table>
 

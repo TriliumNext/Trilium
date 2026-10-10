@@ -1,80 +1,89 @@
 body {
-    width: 300px;
-    font-size: 12px;
-    font-family: sans-serif;
+    width: 320px;
 }
 
 .popup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+
     .popup-header {
         display: flex;
+        align-items: center;
         justify-content: space-between;
-    }
+        gap: 8px;
 
-    .popup-header-buttons {
-        position: relative;
-        top: 6px;
-    }
-
-    .button {
-        margin: 3% auto;
-        padding: 4px;
-        text-align: center;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-        background-color: #eee;
-        cursor: pointer;
-        color: black;
-
-        &[disabled] {
-            color: #aaa;
+        h3 {
+            margin: 0;
+            font-size: 1.1em;
         }
     }
 
-    .wide {
-        min-width: 8em;
+    .popup-header-buttons {
+        display: flex;
+        gap: 4px;
     }
 
-    .full {
-        display: block;
-        width: 100%;
+    button.btn.btn-sm {
+        min-width: unset;
+        padding: 2px 10px;
     }
 
-    .already-visited a {
-        color: lightskyblue;
+    .already-visited:empty {
+        display: none;
     }
 
-    .save-link-with-note textarea {
-        width: 100%;
+    .capture-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        button.btn {
+            width: 100%;
+        }
+    }
+
+    .save-link-with-note {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+        }
     }
 
     .save-link-with-note-buttons {
         display: flex;
-    }
+        justify-content: flex-end;
+        gap: 6px;
 
-    .save-button {
-        border-color: #0062cc;
-        background-color: #0069d9;
-        color: white;
+        button.btn {
+            min-width: 80px;
+        }
     }
 
     .connection {
-        margin-top: 15px;
-    }
-
-    .check-connection-button {
-        float: right;
-        margin-top: -6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid var(--main-border-color);
+        color: var(--muted-text-color);
     }
 
     .status-ok {
-        color: green;
+        color: var(--status-ok-color);
     }
 
     .status-warning {
-        color: orange;
+        color: var(--status-warning-color);
     }
 
     .status-error {
-        color: red;
+        color: var(--status-error-color);
     }
 }
