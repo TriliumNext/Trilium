@@ -172,7 +172,7 @@ describe("background", () => {
                 title: "Page",
                 content: `<img src="i1"><img src="i2"><img src="i3"><img src="i4">`,
                 images: [
-                    { imageId: "i1", src: "https://example.com/blocked.png" },
+                    { imageId: "i1", src: "https://example.com/blocked$&$$.png" },
                     { imageId: "i2", src: "https://example.com/forbidden.png?a=1&b=\"2\"" },
                     { imageId: "i3", src: "https://example.com/page.html" },
                     { imageId: "i4", src: "https://example.com/ok.png" }
@@ -183,7 +183,7 @@ describe("background", () => {
 
             expect(lastPayload()).toEqual({
                 title: "Page",
-                content: `<img src="https://example.com/blocked.png">`
+                content: `<img src="https://example.com/blocked$&amp;$$.png">`
                     + `<img src="https://example.com/forbidden.png?a=1&amp;b=&quot;2&quot;">`
                     + `<img src="https://example.com/page.html"><img src="i4">`,
                 images: [ {

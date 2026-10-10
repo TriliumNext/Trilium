@@ -246,7 +246,8 @@ export default defineBackground(() => {
             if (await postProcessImage(image)) {
                 downloaded.push(image);
             } else {
-                payload.content = payload.content?.replaceAll(image.imageId, escapeHtml(image.src));
+                // A callback, so `$&` and `$$` in the URL are not read as replacement patterns.
+                payload.content = payload.content?.replaceAll(image.imageId, () => escapeHtml(image.src));
             }
         }
 
