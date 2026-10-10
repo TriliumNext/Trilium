@@ -222,11 +222,20 @@ describe("TriliumServerFacade", () => {
         const facade = await createFacade();
         vi.setSystemTime(new Date("2026-03-04T10:20:30.456Z"));
 
-        vi.spyOn(Date.prototype, "getTimezoneOffset").mockReturnValue(-120);
-        expect(facade.localNowDateTime()).toBe("2026-03-04 12:20:30.456+02:00");
-
-        vi.spyOn(Date.prototype, "getTimezoneOffset").mockReturnValue(300);
-        expect(facade.localNowDateTime()).toBe("2026-03-04 05:20:30.456-05:00");
+        const offsets: [ number, string ][] = [
+            [ -120, "2026-03-04 12:20:30.456+02:00" ],
+            [ 300, "2026-03-04 05:20:30.456-05:00" ],
+            [ 0, "2026-03-04 10:20:30.456+00:00" ],
+            [ -330, "2026-03-04 15:50:30.456+05:30" ],
+            [ -345, "2026-03-04 16:05:30.456+05:45" ],
+            [ 210, "2026-03-04 06:50:30.456-03:30" ],
+            [ -630, "2026-03-04 20:50:30.456+10:30" ]
+        ];
+        const getTimezoneOffset = vi.spyOn(Date.prototype, "getTimezoneOffset");
+        for (const [ offset, expected ] of offsets) {
+            getTimezoneOffset.mockReturnValue(offset);
+            expect.soft(facade.localNowDateTime(), `offset ${offset}`).toBe(expected);
+        }
     });
 });
 

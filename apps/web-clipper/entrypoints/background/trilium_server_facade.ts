@@ -237,9 +237,12 @@ export default class TriliumServerFacade {
         const date = new Date();
         const off = date.getTimezoneOffset();
         const absoff = Math.abs(off);
-        return (`${new Date(date.getTime() - off * 60 * 1000).toISOString().substr(0,23).replace("T",  " ") +
-			(off > 0 ? '-' : '+') +
-			(absoff / 60).toFixed(0).padStart(2,'0')  }:${
-            (absoff % 60).toString().padStart(2,'0')}`);
+        const localTime = new Date(date.getTime() - off * 60 * 1000).toISOString()
+            .substring(0, 23)
+            .replace("T", " ");
+        const sign = off > 0 ? "-" : "+";
+        const hours = String(Math.floor(absoff / 60)).padStart(2, "0");
+        const minutes = String(absoff % 60).padStart(2, "0");
+        return `${localTime}${sign}${hours}:${minutes}`;
     }
 }
