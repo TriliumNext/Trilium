@@ -21,6 +21,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestEditor } from "../../../test/editor-kit.js";
 import { installGlobMock } from "../../../test/globals-test-kit.js";
+import LinkEmbed from "../link_embed/link_embed.js";
 import ReferenceLink from "../referencelink.js";
 import ContentEmbed, {
     BOX_SIZE_COMMAND_NAME,
@@ -325,6 +326,96 @@ describe("ContentEmbed", () => {
         // The widget should now be selected (the mousedown handler selects it).
         const selected = editor.model.document.selection.getSelectedElement();
         expect(selected?.name).toBe("contentEmbed");
+    });
+
+    describe("renderer focus after a press in the widget", () => {
+        /** Presses the embed of a focused editor, which turns `_renderer.isFocused` off. */
+        function pressWidgetOfFocusedEditor() {
+            setModelData(editor.model, "<paragraph>foo[]</paragraph>"
+                + "<contentEmbed noteId=\"noteFocus\" boxSize=\"small\"></contentEmbed>"
+                + "<paragraph>bar</paragraph>");
+            // A headless page cannot take the real focus, so set the flag the renderer reads.
+            editor.editing.view.document.isFocused = true;
+            pressWidget();
+        }
+
+        function pressWidget() {
+            const wrapper = getDomRoot(editor).querySelector("div.include-note-wrapper");
+            if (!wrapper) {
+                throw new Error("The embed was not rendered.");
+            }
+            wrapper.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+            expect(editor.model.document.selection.getSelectedElement()?.name).toBe("contentEmbed");
+            expect(rendererIsFocused(editor)).toBe(false);
+        }
+
+        it("turns the renderer's focus back on for a press in the text, not in the widget", () => {
+            pressWidgetOfFocusedEditor();
+            const wrapper = getDomRoot(editor).querySelector("div.include-note-wrapper");
+            wrapper?.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+            expect(rendererIsFocused(editor)).toBe(false);
+
+            const paragraph = getDomRoot(editor).children[2];
+            paragraph.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            expect(rendererIsFocused(editor)).toBe(true);
+
+            pressWidget();
+        });
+
+        it("turns the renderer's focus back on for the key that deletes the widget", () => {
+            pressWidgetOfFocusedEditor();
+
+            const domRoot = getDomRoot(editor);
+            domRoot.dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace" }));
+            expect(rendererIsFocused(editor)).toBe(true);
+            editor.execute("delete");
+            expect(getModelData(editor.model)).toBe(
+                "<paragraph>foo</paragraph><paragraph>[]</paragraph><paragraph>bar</paragraph>");
+            // The DOM selection follows the model selection into the new empty paragraph.
+            const domSelection = window.getSelection();
+            expect(domRoot.children[1].contains(domSelection?.anchorNode ?? null)).toBe(true);
+        });
+
+        it("keeps the renderer's focus off for a press on a link preview", async () => {
+            installGlobMock({
+                getComponentByEl: () => ({
+                    triggerCommand,
+                    loadEmbeddedNote,
+                    renderLinkMention: vi.fn(),
+                    detectEmbedType: vi.fn(() => "opengraph")
+                })
+            });
+            const linkEditor = await createTestEditor([
+                Essentials, Paragraph, Widget, ContentEmbed, LinkEmbed
+            ]);
+            setModelData(linkEditor.model, "<paragraph>foo[]"
+                + "<linkMention url=\"https://e.com/\" embedType=\"opengraph\"></linkMention>"
+                + "</paragraph>");
+            linkEditor.editing.view.document.isFocused = true;
+
+            const mention = getDomRoot(linkEditor).querySelector(".link-mention-inner");
+            if (!mention) {
+                throw new Error("The link mention was not rendered.");
+            }
+            mention.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+
+            const selected = linkEditor.model.document.selection.getSelectedElement();
+            expect(selected?.name).toBe("linkMention");
+            expect(rendererIsFocused(linkEditor)).toBe(false);
+        });
+
+        function getDomRoot(target: ClassicEditor) {
+            const domRoot = target.editing.view.getDomRoot();
+            if (!domRoot) {
+                throw new Error("The editor has no DOM root.");
+            }
+            return domRoot;
+        }
+
+        function rendererIsFocused(target: ClassicEditor) {
+            //@ts-expect-error: The renderer is a private field.
+            return target.editing.view._renderer.isFocused as boolean;
+        }
     });
 
     it("suppresses the native caret on a non-interactive mousedown but not on interactive targets", () => {
