@@ -1,6 +1,6 @@
 ---
 name: developing-web-clipper
-description: Use when working on Trilium's browser extension, the web clipper (`apps/web-clipper`, built with WXT for Chrome MV3 and Firefox MV2) — its background script, content script (Readability, screenshots, toasts), the Preact popup and options page, `wxt.config.ts` (manifest, keyboard `commands`, the Firefox sources zip), or the server side it talks to (`apps/server/src/routes/api/clipper.ts`, `/api/login/token`, the desktop port). Covers the message protocol between the extension's parts, how it finds and authenticates to Trilium, the compatibility rule with older Trilium versions, styling the pages in the Next theme from the client's own stylesheets, running and building it, the `fakeBrowser` spec patterns, and the traps already hit (undeclared commands, image placeholders, `javascript:` links, the sources zip).
+description: Use when working on Trilium's browser extension, the web clipper (`apps/web-clipper`, built with WXT for Chrome MV3 and Firefox MV2) — its background script, content script (Readability, screenshots, toasts), the Preact popup and options page, `wxt.config.ts` (manifest, keyboard `commands`, the Firefox sources zip), or the server side it talks to (`apps/server/src/routes/api/clipper.ts`, `/api/login/token`, the desktop port). Covers the message protocol between the extension's parts, how it finds and authenticates to Trilium, the compatibility rule with older Trilium versions, styling the pages in the Next theme from the client's own stylesheets, running and building it, the `fakeBrowser` spec patterns and the 100% coverage gate, and the traps already hit (undeclared commands, image placeholders, `$&` in `replaceAll()` replacements, `javascript:` links, the sources zip).
 ---
 
 # Developing the web clipper
@@ -29,8 +29,8 @@ Everything goes through `browser.runtime.sendMessage` / `browser.tabs.sendMessag
   `save-link-with-note` (`title`, `content`), `save-tabs`, `trigger-trilium-search`,
   `send-trilium-search-status`, `trigger-trilium-search-note-url`, `openNoteInTrilium` (`noteId`),
   `closeTabs`.
-- **background → popup:** `trilium-search-status` (`triliumSearch: TriliumSearchStatus`, which is
-  `undefined` before the first search) and `trilium-previously-visited` (`searchNote`). Both types
+- **background → popup:** `trilium-search-status` (`triliumSearch: TriliumSearchStatus`, which
+  starts as `searching`) and `trilium-previously-visited` (`searchNote`). Both types
   are exported from `trilium_server_facade.ts`; the popup imports them.
 - **background → content script:** `trilium-save-selection`, `trilium-save-page`,
   `trilium-get-rectangle-for-screenshot` (the content script answers with the payload), and `toast`
@@ -73,6 +73,10 @@ against older versions of the other.** Prefer changes that need nothing new from
 - The image-failure fix put a failed image's original URL back into the content instead of adding a
   server field, so the server's existing `downloadImages()` retries it on every version.
 - `/api/sender/login` (Trilium Sender) shares the token handler; keep its 401 status unchanged.
+- A server-side change reaches beyond the clipper spec: `apps/server/src/routes/transport.spec.ts`
+  used `/api/login/token` to check plain-text tuple results, and the JSON body broke it. Grep the
+  server specs for the route (`grep -rn "api/login/token" apps/server/src apps/server/spec`) and run
+  every hit, not only the route's own spec.
 
 ## Content and images
 
@@ -80,8 +84,14 @@ against older versions of the other.** Prefer changes that need nothing new from
   (`randomString(20)`) and lists the images; the background fetches each one into a data URL; the
   server stores them as attachments and rewrites the placeholder. `downloadImages()` in core skips
   20-character URLs on purpose, so **an image left with its placeholder is a broken image**.
-  `postProcessImages()` therefore restores the original URL (attribute-escaped) for every image it
-  cannot download and reports the count in the toast.
+  `postProcessImages()` therefore restores the original URL (escaped with `escapeHtml()`) for every
+  image it cannot download and reports the count in the toast.
+- **A `replaceAll()`/`replace()` replacement built from page data is a callback**
+  (`replaceAll(id, () => escapeHtml(src))`). A string replacement reads `$&`, `$$`, `` $` `` and
+  `$'` as patterns, so an image URL containing `$&` came back with the placeholder inside it.
+- **HTML built by concatenation escapes every page-derived value** with `escapeHtml()` — the
+  save-tabs list once put tab titles in raw. Tabs can also lack a `url` (still loading), and
+  `new URL("")` throws, so `saveTabs()` filters them out.
 - `fetchImage()` rejects a non-OK response and a non-image `Content-Type` — otherwise an error page
   gets saved as the "image".
 - Readability (`lib/Readability.js`) is an old vendored copy that the README admits to; Firefox
@@ -146,7 +156,9 @@ pnpm --filter web-clipper zip            # store zips (+ sources zip for Firefox
 Check a manifest change in the built `manifest.json`, e.g.
 `grep -o '"saveTabs":{[^}]*}' apps/web-clipper/.output/firefox-mv2/manifest.json`.
 
-CI (`.github/workflows/web-clipper.yml`) builds both zips. **Mozilla's review rebuilds from the
+CI (`.github/workflows/web-clipper.yml`) builds both zips; it runs no tests, so a
+`web-clipper-v*` tag ships whatever the tagged commit holds — the tests run only in `dev.yml`, on
+pushes and pull requests. **Mozilla's review rebuilds from the
 sources zip**, which the `zip:sources:*` hooks assemble from `apps/web-clipper` plus a copied
 `tsconfig.base.json` and the Chrome-only offscreen page. Since the pages import
 `@triliumnext/client` stylesheets and fonts, those files must go into the sources zip as well — the
@@ -162,6 +174,14 @@ Specs are Vitest with happy-dom (`vitest.config.mts`, `.ts` and `.tsx`), run wit
 `pnpm --filter web-clipper test [pattern]`. The extension has no i18n, so strings are asserted
 literally.
 
+**Coverage is held at 100%** of lines, statements, functions and branches by the `thresholds` in
+`vitest.config.mts`. CI runs the suite in its own `dev.yml` step
+(`pnpm run --filter=web-clipper test --coverage`, excluded from "Run the rest of the tests") and
+uploads to Codecov under the `web-clipper` flag (`codecov.yml`). Run the same command locally; for
+the exact uncovered lines and branches, use the **`analyzing-coverage`** skill on
+`apps/web-clipper/test-output/vitest/coverage/lcov.info`. A branch no input can reach is restructured
+(narrow the type instead of re-checking it), not tested around.
+
 - **The browser API** is WXT's `fakeBrowser` (`wxt/testing/fake-browser`): call `fakeBrowser.reset()`
   in `beforeEach`, override what the code calls with `Object.assign(fakeBrowser.runtime,
   { sendMessage, openOptionsPage })`, and deliver a message with
@@ -173,10 +193,25 @@ literally.
 - **Preact pages** render with `render(<Popup />, container)` inside `act()` from
   `preact/test-utils`; unmount with `render(null, container)` in `act()`. After an effect starts an
   async storage read, flush with a `setTimeout` inside `act()` before asserting.
-- Stub `fetch`, `window.close` and `alert` (`vi.stubGlobal`, `vi.spyOn`) — the popup closes itself.
+- Stub `fetch` with `vi.stubGlobal` and `window.close` with `vi.spyOn` — the popup closes itself.
+  happy-dom has no `window.alert`, so `vi.spyOn(window, "alert")` throws; use
+  `vi.stubGlobal("alert", vi.fn())`. Undo stubs in `afterEach` (`vi.unstubAllGlobals()`,
+  `vi.unstubAllEnvs()`), not at the end of a test, so a failing assertion does not leak them.
+- **A mocked `Response` can be read once.** `fetchMock.mockResolvedValue(response)` hands the same
+  object to every call, so the second `text()` throws "body already used" and the code takes its
+  error path instead of the branch under test. Use `mockImplementation(async () => Response.json(…))`.
+- **`document.title = …` creates a `<title>` element**, so it cannot test a page without one; clear
+  `document.head` and leave the title unset.
+- **The production port** is reached with `vi.stubEnv("DEV", false)`; Vitest runs with `DEV` true.
+- **The render into `#root`** at the top of each `main.tsx` is covered by appending a `#root`
+  element, calling `vi.resetModules()` and `await import("./main")`.
 - When the code came before the spec, break it on purpose a few ways (copy the file to the
   scratchpad, `sed` one change, run, restore with `cp`) and make sure each break fails a test; one
   that passes shows an assertion to add.
+
+Hardcoded English is expected: reviewers (Greptile) cite `CLAUDE.md`'s translation rule, but its
+catalogues are the app's. Translating the extension is a project of its own (`_locales` or i18next),
+not something to start for a few new strings.
 
 The VS Code TypeScript server can keep showing "Cannot use JSX" after `tsconfig.json` changes;
 "TypeScript: Restart TS Server" clears it. `pnpm typecheck` is the authority.
