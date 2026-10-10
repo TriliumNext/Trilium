@@ -135,33 +135,15 @@ export const SHARE_THEME_MANIFEST_FILE = `${SHARE_THEME_DIR}/share_theme.json`;
 const SHARE_THEME_TARGET = "chrome96";
 
 /**
- * The modules the share theme imports on demand that a share-theme export copies only for the
- * pages that use them, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid; the
- * script API a render note runs its scripts with; and what every app view loads first.
+ * The modules whose `import()` expressions load what a share-theme export copies only for the
+ * pages that use it, grouped by their name in {@link ShareThemeManifest.lazy}: mermaid; the script
+ * API a render note runs its scripts with; and what every app view loads first. Every module such
+ * a module imports on demand joins its group.
  */
-const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = {
-    mermaid: [
-        { specifier: "mermaid", importer: join(SHARE_THEME_SRC, "content/mermaid.ts") }
-    ],
-    scripting: [
-        {
-            specifier: "./frontend_script_api.js",
-            importer: join(CLIENT_SRC, "services/script_context.ts")
-        }
-    ],
-    app: [
-        { specifier: "./app_globals.js", importer: join(SHARE_THEME_SRC, "content/app_view.ts") },
-        {
-            specifier: "@triliumnext/client/src/components/app_context.js",
-            importer: join(SHARE_THEME_SRC, "content/app_view.ts")
-        },
-        {
-            specifier: "@triliumnext/client/src/services/i18n.js",
-            importer: join(SHARE_THEME_SRC, "content/app_view.ts")
-        },
-        { specifier: "./content/collection_view.js", importer: join(SHARE_THEME_SRC, "index.ts") },
-        { specifier: "./content/note_view.js", importer: join(SHARE_THEME_SRC, "index.ts") }
-    ]
+const LAZY_IMPORTERS: Record<string, string[]> = {
+    mermaid: [ join(SHARE_THEME_SRC, "content/mermaid.ts") ],
+    scripting: [ join(CLIENT_SRC, "services/script_context.ts") ],
+    app: [ join(SHARE_THEME_SRC, "content/app_view.ts"), join(SHARE_THEME_SRC, "index.ts") ]
 };
 
 /**
@@ -195,7 +177,7 @@ const TYPE_TABLES: LoaderTable[] = [
 ];
 
 /**
- * The groups of {@link LAZY_MODULES} a page loads by what its content holds, such as a diagram or
+ * The groups of {@link LAZY_IMPORTERS} a page loads by what its content holds, such as a diagram or
  * a render note, which the share-theme export finds in the notes it writes.
  */
 const CONTENT_GROUPS = [ "mermaid", "scripting" ];
@@ -356,7 +338,7 @@ async function collectStyleUrls(server: ViteDevServer, entryUrl: string) {
  * the stubs of `options` to the app's `bundle`, which holds `scripts.js` and its chunks.
  */
 async function emitShareTheme(
-    context: Pick<Rollup.PluginContext, "emitFile" | "resolve">,
+    context: Pick<Rollup.PluginContext, "emitFile" | "getModuleInfo" | "resolve">,
     bundle: Record<string, BundleOutput>,
     config: ResolvedConfig | undefined,
     options: ShareThemeOptions
@@ -372,9 +354,15 @@ async function emitShareTheme(
     const groups: ShareThemeGroups = {
         shared: {}, byContent: CONTENT_GROUPS, typed: {}, gated: []
     };
-    for (const [ name, modules ] of Object.entries(LAZY_MODULES)) {
-        groups.shared[name] = await Promise.all(modules.map(({ specifier, importer }) =>
-            resolve(specifier, importer)));
+    for (const [ name, importers ] of Object.entries(LAZY_IMPORTERS)) {
+        groups.shared[name] = importers.flatMap((importer) => {
+            const info = context.getModuleInfo(importer);
+            if (!info) {
+                throw new Error(`The share theme's '${name}' group names ${importer}, `
+                    + "which the build does not include.");
+            }
+            return info.dynamicallyImportedIds;
+        });
     }
     for (const table of TYPE_TABLES) {
         const { entries, all } = await readLoaderTable(table);
