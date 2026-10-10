@@ -29,7 +29,7 @@ import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
-import utils, { getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
+import utils, { getErrorMessage, isShare, randomString, reloadFrontendApp } from "../../services/utils";
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
@@ -148,8 +148,9 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
     }, [ note, getData ]);
 
     const commit = useCallback(async (data: SavedData | undefined) => {
-        // for read only notes, or if note is not yet available (e.g. lazy creation)
-        if (data === undefined || !note || note.type !== noteType) return;
+        // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a
+        // shared page cannot save
+        if (data === undefined || !note || note.type !== noteType || isShare) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 

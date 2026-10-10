@@ -1712,7 +1712,11 @@ describe("content_renderer pages", () => {
         expect(parse(String(spreadsheet.content))
             .querySelector(".share-note-view[data-note-id=sheetNote] > p")?.textContent)
             .toBe("Empty spreadsheet.");
-        expect(render({ type: "relationMap", content: "{}" }).content)
+        const relationMap = render({ id: "relationMapNote", type: "relationMap", content: "{}" });
+        expect(relationMap.isAppView).toBe(true);
+        expect(parse(String(relationMap.content))
+            .querySelector(".share-note-view[data-note-id=relationMapNote]")?.innerHTML).toBe("");
+        expect(render({ type: "render", content: "" }).content)
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
     });
 

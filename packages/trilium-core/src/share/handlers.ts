@@ -4,6 +4,7 @@ import { t } from "i18next";
 
 import becca from "../becca/becca.js";
 import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
+import { buildRelationMap } from "../routes/api/relation-map.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
@@ -94,6 +95,7 @@ const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/attachments/:attachmentId/blob": getAttachmentBlob,
     "/share/api/tree": loadTree,
     "/share/api/note-map/:noteId/:mapType": getNoteMap,
+    "/share/api/relation-map/:noteId": getRelationMap,
     "/share/": getShareRoot,
     "/share/:shareId": getShareNote
 };
@@ -219,6 +221,31 @@ function getNoteMap(req: ShareRequest): ShareReply {
         noteIdToDescendantCountMap: Object.fromEntries(Object.entries(map.noteIdToDescendantCountMap)
             .filter(([ noteId ]) => noteIds.has(noteId)))
     });
+}
+
+/**
+ * Answers the relations a shared relation map note draws between the notes placed on it, of which
+ * only those a visitor of the share can read. The notes are read from the map's own content.
+ */
+function getRelationMap(req: ShareRequest): ShareReply {
+    const mapNote = checkNoteContentAccess(req.params.noteId ?? "", req);
+    const placedNoteIds = readPlacedNoteIds(mapNote.getContent());
+    const noteIds = placedNoteIds.filter((noteId) => {
+        const note = shaca.getNote(noteId);
+        return !!note && !note.isProtected && hasCredentialAccess(note, req);
+    });
+
+    return jsonReply(200, buildRelationMap(becca.getNote(mapNote.noteId), noteIds));
+}
+
+/** Returns the IDs of the notes a relation map's content places on the map. */
+function readPlacedNoteIds(content: string | Uint8Array | null | undefined) {
+    try {
+        const data = JSON.parse(typeof content === "string" ? content : "") as { notes?: { noteId?: unknown }[] };
+        return (data.notes ?? []).map((entry) => entry.noteId).filter((noteId) => typeof noteId === "string");
+    } catch {
+        return [];
+    }
 }
 
 function getNoteAttachments(req: ShareRequest): ShareReply {

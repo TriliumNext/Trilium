@@ -33,7 +33,10 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
                 ...includeRelations.map((name) => [ "includeRelation", name ])
             ]);
             return getJson(`api/note-map/${encodeURIComponent(mapRootNoteId)}/${mapType}?${params}`);
-        }
+        },
+        // The share reads the notes from the map's own content, so a visitor cannot name others.
+        getRelationMap: (relationMapNoteId) =>
+            getJson(`api/relation-map/${encodeURIComponent(relationMapNoteId)}`)
     };
 }
 

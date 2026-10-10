@@ -1,4 +1,4 @@
-import type { NoteMapPostResponse } from "@triliumnext/commons";
+import type { NoteMapPostResponse, RelationMapPostResponse } from "@triliumnext/commons";
 
 import type FAttachment from "../entities/fattachment.js";
 import type { FAttachmentRow } from "../entities/fattachment.js";
@@ -39,6 +39,8 @@ export interface FrocaSource {
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
     /** The notes and the links of the note map of `mapRootNoteId`, as a tree or as its relations. */
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
+    /** The relations the relation map note `relationMapNoteId` draws between the notes `noteIds`. */
+    getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
 }
 
 export interface Froca {
@@ -60,4 +62,5 @@ export interface Froca {
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
+    getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
 }

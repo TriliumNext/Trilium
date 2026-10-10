@@ -511,7 +511,7 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         result.isEmpty = true;
     } else if (note.type === "webView") {
         renderWebView(note, result);
-    } else if (note.type === "noteMap") {
+    } else if (note.type === "noteMap" || note.type === "relationMap") {
         result.content = "";
         hostNoteView(result, note);
     } else if (note.type === "spreadsheet") {

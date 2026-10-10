@@ -9,6 +9,7 @@ import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
 import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
+import type RelationMapWidget from "@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js";
 import ShareAppHost, { type AppPayload, type HostedApp } from "./app_host.js";
 import { drawMermaid, loadMermaid, readMermaidTheme } from "./mermaid.js";
 import { ZoomViewer } from "./zoom_viewer.js";
@@ -39,6 +40,8 @@ function SharedNoteView({ app }: { app: HostedApp }) {
             return <MermaidView note={note} />;
         case "noteMap":
             return <NoteMapView app={app} />;
+        case "relationMap":
+            return <RelationMapView app={app} />;
         default:
             return <NoteView note={note} />;
     }
@@ -126,6 +129,30 @@ function NoteMapView({ app }: { app: HostedApp }) {
                 note={app.note}
                 widgetMode="type"
                 defaultRootNoteId={app.parentNoteId}
+                onOpenNote={app.openNote}
+            />
+        </div>
+    );
+}
+
+/** Draws a relation map note's map, and opens a clicked note on its shared page. */
+function RelationMapView({ app }: { app: HostedApp }) {
+    const [ RelationMap, setRelationMap ] = useState<typeof RelationMapWidget>();
+
+    useEffect(() => {
+        import("@triliumnext/client/src/widgets/type_widgets/relation_map/RelationMap.js")
+            .then(({ default: widget }) => setRelationMap(() => widget));
+    }, []);
+
+    return RelationMap && (
+        <div className="note-detail-relation-map">
+            <RelationMap
+                note={app.note}
+                viewScope={undefined}
+                ntxId={null}
+                parentComponent={undefined}
+                noteContext={undefined}
+                isVisible
                 onOpenNote={app.openNote}
             />
         </div>

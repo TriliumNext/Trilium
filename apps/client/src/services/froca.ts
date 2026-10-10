@@ -1,4 +1,4 @@
-import type { HighlightedTokenInfo, NoteMapPostResponse } from "@triliumnext/commons";
+import type { HighlightedTokenInfo, NoteMapPostResponse, RelationMapPostResponse } from "@triliumnext/commons";
 
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
@@ -407,6 +407,10 @@ class FrocaImpl implements Froca {
         return this.source.getNoteMap(mapRootNoteId, mapType, filters);
     }
 
+    getRelationMap(relationMapNoteId: string, noteIds: string[]) {
+        return this.source.getRelationMap(relationMapNoteId, noteIds);
+    }
+
     async getBlob(entityType: string, entityId: string): Promise<FBlob | null> {
         // I'm not sure why we're not using blobIds directly, it would save us this composite key ...
         // perhaps one benefit is that we're always requesting the latest blob, not relying on perhaps faulty/slow
@@ -445,7 +449,9 @@ const SERVER_SOURCE: FrocaSource = {
         return await search.searchForNoteIds(query);
     },
     getNoteMap: (mapRootNoteId, mapType, filters) =>
-        server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters)
+        server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters),
+    getRelationMap: (relationMapNoteId, noteIds) =>
+        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId })
 };
 
 const froca = new FrocaImpl();
