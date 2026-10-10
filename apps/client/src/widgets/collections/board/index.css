@@ -571,7 +571,7 @@ body.mobile .board-view-container .board-add-column {
 }
 
 /* Centred on the first line, in a box the size of the glyph. The size is rounded to whole pixels,
-   as `note_icon.css` rounds the picker's glyph. */
+   as `IconPickerButton.css` rounds the picker's glyph. */
 .board-view-container .board-note > .title > .icon {
   position: absolute;
   inset-inline-start: var(--card-icon-inset);
@@ -1039,7 +1039,7 @@ body#trilium-app.motion-disabled .board-view.editing-open :is(
  * worked out where it is used, and both sit in the card's own font.
  */
 .board-view-container .title-editor-field .title-editor-icon {
-  /* Rounded here, not in `note_icon.css`: that file rounds the glyph but not the box, and the
+  /* Rounded here, not in `IconPickerButton.css`: that file rounds the glyph but not the box, and the
      insets below are computed from the box. */
   --note-icon-size: round(var(--card-icon-size), 1px);
   --note-icon-container-padding-size: 4px;
