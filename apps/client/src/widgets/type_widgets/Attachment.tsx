@@ -22,6 +22,7 @@ import { attachmentRoleLabel } from "../../services/attachment_role_names";
 import content_renderer, { hasRenderedPreview } from "../../services/content_renderer";
 import froca from "../../services/froca";
 import image from "../../services/image";
+import { getAttachmentImageUrl } from "../../services/image_urls";
 import { type ViewScope } from "../../services/link";
 import options from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
@@ -236,7 +237,7 @@ function AttachmentInfo({ attachment, isFullDetail, ownerNote, noteContext, view
         && attachment.mime === CANVAS_ATTACHMENT_MIME
         && (!attachment.isProtected || protected_session_holder.isProtectedSessionAvailable());
     const rendersItself = isZoomableImage || isPlayableMedia || isEditableDrawing;
-    const imageSrc = `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}?${modified}`;
+    const imageSrc = getAttachmentImageUrl(attachment.attachmentId, attachment.title, modified);
 
     /** Unmounts whatever the content renderer previously mounted here (a media player), so that replacing
      *  or discarding the content doesn't leak its Preact root — or leave its audio playing. */

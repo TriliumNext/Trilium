@@ -7,6 +7,7 @@ import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { getNoteImageUrl } from "../../../services/image_urls";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { fileAccept } from "../../../services/utils";
@@ -602,7 +603,7 @@ function useImageMap(note: FNote): ImageMapState {
 
             // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
             const url = imageNote && new URL(
-                `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}?v=${version}`, document.baseURI).href;
+                getNoteImageUrl(imageNote.noteId, imageNote.title, `v=${version}`), document.baseURI).href;
             const size = url ? await measureImage(url) : null;
             if (!url || !size) {
                 fail("unloadable");

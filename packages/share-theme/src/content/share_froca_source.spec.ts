@@ -46,18 +46,17 @@ describe("createStaticFrocaSource", () => {
         expect(fetch.mock.calls.filter(([ url ]) => url === "../data/rows.json")).toHaveLength(1);
     });
 
-    it("resolves the image URLs of the app's API to the export's files", async () => {
+    it("finds the images of the export once it has read its rows", async () => {
         stubFiles({ "data/rows.json": ROWS });
         const source = createStaticFrocaSource({}, "");
 
-        expect(await source.resolveImageUrl("api/images/image/Photo.png?123"))
-            .toBe("data/images/image.png");
-        expect(await source.resolveImageUrl("http://host/page/api/images/canvas/x"))
-            .toBe("pages/canvas_svg.svg");
-        expect(await source.resolveImageUrl("api/attachments/svg/image/a.svg"))
-            .toBe("pages/canvas_svg.svg");
-        expect(await source.resolveImageUrl("api/images/unknown/x")).toBeNull();
-        expect(await source.resolveImageUrl("pages/photo.png")).toBeNull();
+        expect(source.getImageUrl({ noteId: "image" })).toBeNull();
+        await source.loadNotes([]);
+        expect(source.getImageUrl({ noteId: "image" })).toBe("data/images/image.png");
+        expect(source.getImageUrl({ noteId: "canvas" })).toBe("pages/canvas_svg.svg");
+        expect(source.getImageUrl({ attachmentId: "svg" })).toBe("pages/canvas_svg.svg");
+        expect(source.getImageUrl({ noteId: "unknown" })).toBeNull();
+        expect(source.getImageUrl({ attachmentId: "unknown" })).toBeNull();
     });
 
     it("lists a note's children that are not archived, the one search it answers", async () => {

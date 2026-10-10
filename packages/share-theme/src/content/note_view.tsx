@@ -2,6 +2,7 @@ import "@triliumnext/client/src/widgets/type_widgets/NoteMap.css";
 
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
+import { getNoteImageUrl } from "@triliumnext/client/src/services/image_urls.js";
 import type NoteMapWidget from "@triliumnext/client/src/widgets/note_map/NoteMap.js";
 import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
 import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
@@ -98,7 +99,7 @@ function NoteView({ note }: { note: FNote }) {
  * of its drawing, in a viewer that takes the page.
  */
 function ImageView({ app: { note } }: { app: HostedApp }) {
-    const src = `api/images/${note.noteId}/${encodeURIComponent(note.title)}?${note.blobId}`;
+    const src = getNoteImageUrl(note.noteId, note.title, note.blobId);
     return (
         <ZoomViewer labels={getZoomPanLabels("image_viewer.viewport")} fillsPage>
             <img src={src} alt={note.title} />

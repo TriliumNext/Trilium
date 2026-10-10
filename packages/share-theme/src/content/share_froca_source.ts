@@ -1,6 +1,7 @@
 import type { FAttachmentRow } from "@triliumnext/client/src/entities/fattachment.js";
 import type { Bundle } from "@triliumnext/client/src/services/bundle.js";
 import type { FrocaSource, SubtreeResponse } from "@triliumnext/client/src/services/froca-interface.js";
+import type { ImageUrlResolver } from "@triliumnext/client/src/services/image_urls.js";
 import { getNoteMapDataKey } from "@triliumnext/commons/src/lib/share_hosting.js";
 
 /** Rows of notes as the share answers them, with the share link of each note. */
@@ -65,13 +66,13 @@ interface StaticShareRows extends ShareFrocaRows {
     noteMaps: Record<string, string>;
 }
 
-/** A source of froca's notes that also resolves the app's image URLs on a page of the export. */
+/** A source of froca's notes that also finds the images of the export. */
 export interface StaticFrocaSource extends FrocaSource {
     /**
-     * The URL of the file of an `api/images/<noteId>/…` or `api/attachments/<id>/image/…` URL,
-     * relative to the page, or `null` for another URL or a file the export does not hold.
+     * The URL of the file of a note's image or of an image attachment, relative to the page, or
+     * `null` for one the export does not hold or before the source has read `rows.json`.
      */
-    resolveImageUrl(url: string): Promise<string | null>;
+    getImageUrl: ImageUrlResolver;
 }
 
 /**
@@ -85,9 +86,13 @@ export function createStaticFrocaSource(
     links: Record<string, string>,
     basePath: string
 ): StaticFrocaSource {
+    let rows: StaticShareRows | undefined;
     let rowsPromise: Promise<StaticShareRows> | undefined;
     const readRows = () => {
-        rowsPromise ??= getJson<StaticShareRows>(`${basePath}data/rows.json`);
+        rowsPromise ??= getJson<StaticShareRows>(`${basePath}data/rows.json`).then((read) => {
+            rows = read;
+            return read;
+        });
         return rowsPromise;
     };
     const resolve = (path: string) => (path ? `${basePath}${path}` : basePath || "./");
@@ -146,14 +151,10 @@ export function createStaticFrocaSource(
             readData(`relation-map/${encodeURIComponent(relationMapNoteId)}.json`),
         getScriptBundle: (noteId) =>
             readData<Bundle>(`script/${encodeURIComponent(noteId)}.json`).catch(() => undefined),
-        resolveImageUrl: async (url) => {
-            const match = IMAGE_URL.exec(url);
-            if (!match) {
-                return null;
-            }
-            const [ , noteId, attachmentId ] = match;
-            const { images, attachmentPaths } = await readRows();
-            const path = noteId ? images[noteId] : attachmentPaths[attachmentId ?? ""];
+        getImageUrl: (target) => {
+            const path = "noteId" in target
+                ? rows?.images[target.noteId]
+                : rows?.attachmentPaths[target.attachmentId];
             return path ? resolve(path) : null;
         }
     };
@@ -161,9 +162,6 @@ export function createStaticFrocaSource(
 
 /** The search `FNote.getChildNoteIdsWithArchiveFiltering()` lists a note's children with. */
 const UNARCHIVED_CHILDREN = /^note\.parents\.noteId="(\w+)" #!archived$/;
-
-/** An image URL of the app's API, naming a note's image or an image attachment. */
-const IMAGE_URL = /(?:^|\/)api\/(?:images\/(\w+)\/|attachments\/(\w+)\/image\/)/;
 
 async function getJson<T>(url: string): Promise<T> {
     const response = await fetch(url);

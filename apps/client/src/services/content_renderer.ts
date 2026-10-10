@@ -27,6 +27,7 @@ import renderText, {
     postProcessRichContent, renderChildrenList, renderTextContent
 } from "./content_renderer_text.js";
 import renderDoc from "./doc_renderer.js";
+import { getAttachmentImageUrl, getNoteImageUrl } from "./image_urls.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
 import { renderOfficeToHtml } from "./office_renderer.js";
 import openService from "./open.js";
@@ -581,13 +582,11 @@ async function renderCanvasDrawing(
 }
 
 function getImageUrl(entity: FNote | FAttachment) {
-    const encodedTitle = encodeURIComponent(entity.title);
-
     if (entity instanceof FNote) {
-        return `api/images/${entity.noteId}/${encodedTitle}?${Math.random()}`;
+        return getNoteImageUrl(entity.noteId, entity.title, String(Math.random()));
     } else if (entity instanceof FAttachment) {
-        const { attachmentId, utcDateModified } = entity;
-        return `api/attachments/${attachmentId}/image/${encodedTitle}?${utcDateModified}`;
+        const { attachmentId, title, utcDateModified } = entity;
+        return getAttachmentImageUrl(attachmentId, title, utcDateModified);
     }
     return "";
 }

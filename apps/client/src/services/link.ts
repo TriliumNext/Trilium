@@ -7,6 +7,7 @@ import { getCachedBlockReferenceLabel, loadBlockReferenceLabel } from "./block_e
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { getNoteImageUrl } from "./image_urls.js";
 import { showError } from "./toast.js";
 import treeService from "./tree.js";
 import utils, { isShare } from "./utils.js";
@@ -191,10 +192,8 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     const note = await froca.getNote(noteId);
 
     if (autoConvertToImage && note?.type && ["image", "canvas", "mermaid"].includes(note.type) && viewMode === "default") {
-        const encodedTitle = encodeURIComponent(linkTitle || "");
-
         return $("<img>")
-            .attr("src", `api/images/${noteId}/${encodedTitle}?${Math.random()}`)
+            .attr("src", getNoteImageUrl(noteId, linkTitle || "", String(Math.random())))
             .attr("alt", linkTitle || "");
     }
 

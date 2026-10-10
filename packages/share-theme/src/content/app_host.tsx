@@ -5,6 +5,7 @@ import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import linkContextMenu from "@triliumnext/client/src/menus/link_context_menu.js";
 import froca from "@triliumnext/client/src/services/froca.js";
 import type { FrocaSource, SubtreeResponse } from "@triliumnext/client/src/services/froca-interface.js";
+import { setImageUrlResolver } from "@triliumnext/client/src/services/image_urls.js";
 import { parseNavigationStateFromUrl } from "@triliumnext/client/src/services/link.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
@@ -38,7 +39,7 @@ export interface HostedApp {
     openNote(noteId: string): void;
     /** Whether the note has a shared page to open. */
     hasLink(noteId: string): boolean;
-    /** On a page of the static export, the source that resolves the views' image URLs. */
+    /** On a page of the static export, the source reading the export's files. */
     staticSource?: StaticFrocaSource;
 }
 
@@ -79,11 +80,7 @@ export default function ShareAppHost({ noteId, payload, children }: ShareAppHost
         }
         const onClick = (event: MouseEvent) => openNoteLink(event, app);
         document.addEventListener("click", onClick);
-        const stopImages = app.staticSource && watchImageUrls(app.staticSource);
-        return () => {
-            document.removeEventListener("click", onClick);
-            stopImages?.();
-        };
+        return () => document.removeEventListener("click", onClick);
     }, [ app ]);
 
     return app && isLoaded && (
@@ -101,6 +98,7 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
     const staticSource = payload.exportBasePath === undefined
         ? undefined : createStaticFrocaSource(links, payload.exportBasePath);
     froca.setSource(withRootAnchors(staticSource ?? createShareFrocaSource(links)));
+    setImageUrlResolver(staticSource?.getImageUrl);
     linkContextMenu.setShareLinkResolver((linkedNoteId) => links[linkedNoteId] ?? null);
     froca.addResp({
         ...anchorAtRoot(rows),
@@ -163,47 +161,6 @@ function anchorAtRoot<T extends SubtreeResponse>(rows: T): T {
             fromSearchNote: false
         })) ]
     };
-}
-
-/**
- * Points the images the views draw in `#content` from the app's API, such as a card's
- * `api/images/<noteId>/…`, at their files in the static export, as they are added or changed.
- * Returns the function that stops watching.
- */
-function watchImageUrls(source: StaticFrocaSource) {
-    const root = document.getElementById("content") ?? document.body;
-    const update = async (image: HTMLImageElement) => {
-        const src = image.getAttribute("src");
-        const resolved = src ? await source.resolveImageUrl(src) : null;
-        if (resolved && image.getAttribute("src") === src) {
-            image.setAttribute("src", resolved);
-        }
-    };
-    const updateWithin = (node: Node) => {
-        if (node instanceof HTMLImageElement) {
-            void update(node);
-        } else if (node instanceof Element) {
-            for (const image of node.querySelectorAll("img")) {
-                void update(image);
-            }
-        }
-    };
-
-    const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            if (mutation.type === "attributes") {
-                updateWithin(mutation.target);
-            }
-            for (const node of mutation.addedNodes) {
-                updateWithin(node);
-            }
-        }
-    });
-    observer.observe(root, {
-        childList: true, subtree: true, attributes: true, attributeFilter: [ "src" ]
-    });
-    updateWithin(root);
-    return () => observer.disconnect();
 }
 
 /**
