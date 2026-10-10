@@ -1,85 +1,20 @@
-body:has(#content.app-view) {
-    #right-pane {
-        height: 100vh;
-    }
+#content.app-view > :is(.share-collection, .share-note-view) {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    justify-content: center;
 
-    #main {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        padding: 0;
-    }
-
-    #content {
-        display: flex;
-        flex-direction: column;
+    > * {
         flex: 1;
         min-height: 0;
     }
 
-    #content-footer {
-        margin-top: 0;
-    }
-
-    #title-row {
-        display: flex;
-        flex: none;
-        gap: 12px;
-        align-items: center;
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--main-border-color);
-
-        > .tn-icon {
-            display: flex;
-            flex-shrink: 0;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--note-icon-background-color);
-            color: var(--note-icon-color);
-            font-size: 22px;
-        }
-
-        > #title {
-            min-width: 0;
-            margin: 0;
-            border-bottom: 0;
-            font-size: 1.5rem;
-            font-weight: 400;
-            line-height: 1;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-    }
-
-    #content > :is(.share-collection, .share-note-view) {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        min-height: 0;
-
-        justify-content: center;
-
-        > * {
-            flex: 1;
-            min-height: 0;
-        }
-
-        > img {
-            flex: 0 1 auto;
-            align-self: center;
-            object-fit: contain;
-        }
-    }
-
-    @media (max-width: 48em) {
-        #right-pane {
-            height: calc(100dvh - var(--header-height));
-        }
+    > img {
+        flex: 0 1 auto;
+        align-self: center;
+        object-fit: contain;
     }
 }
 

@@ -227,39 +227,6 @@ body:not(.math-loaded) .math-tex {
     visibility: hidden;
 }
 
-body.type-webView {
-    #right-pane {
-        height: 100vh;
-    }
-
-    #main {
-        padding: 0;
-        height: 100%;
-    }
-
-    #content {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-
-        h1 {
-            display: none;
-        }
-
-        iframe.webview {
-            width: 100%;
-            flex-grow: 1;
-            border: 0;
-        }
-    }
-
-    @media (max-width: 48em) {
-        #right-pane {
-            height: calc(100dvh - var(--header-height));
-        }
-    }
-}
-
 /* The tables of the app, which draws them with `ckeditor5-content.css`: Bootstrap's `.table` class
    stretches the `<figure>` to the content's width, and `style.css` centers the cells vertically. A
    resized table keeps the width the figure carries in its `style`. */

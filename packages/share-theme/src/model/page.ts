@@ -340,18 +340,25 @@ export function getShareLink(note: ShareNote, sanitizeUrl: (url: string) => stri
 /**
  * Returns the classes of the content element: the note's type, `ck-content` for content the text
  * editor's styles apply to (text notes and Markdown code notes), `full-content-width` for a note
- * with `#fullContentWidth` or of a type the app always shows at full width, and `no-content` when
- * empty. A Markdown note reads as text, so its type does not make it full width.
+ * with `#fullContentWidth`, of a type the app always shows at full width or taking the page's full
+ * height, `full-height` and `app-view` for content that takes the page's full height and for an
+ * app view, and `no-content` when empty. A Markdown note reads as text, so its type does not make it
+ * full width.
  */
-export function getContentClasses(note: ShareNote, isEmpty = false, isAppView = false) {
+export function getContentClasses(
+    note: ShareNote,
+    isEmpty = false,
+    { isAppView = false, isFullHeight = false }: { isAppView?: boolean; isFullHeight?: boolean } = {}
+) {
     const isEditorContent = note.type === "text"
         || (note.type === "code" && note.mime === "text/x-markdown");
     const isFullWidth = (!isEditorContent && isFullWidthNoteType(note.type, note.mime))
-        || note.isLabelTruthy("fullContentWidth") || isAppView;
+        || note.isLabelTruthy("fullContentWidth") || isFullHeight;
     return [
         `type-${note.type}`,
         isEditorContent && "ck-content",
         isFullWidth && "full-content-width",
+        isFullHeight && "full-height",
         isAppView && "app-view",
         isEmpty && "no-content"
     ].filter(Boolean).join(" ");

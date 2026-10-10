@@ -1716,13 +1716,20 @@ describe("content_renderer pages", () => {
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
     });
 
-    it("titles an app view with its icon in a row of its own, and other pages with a heading", () => {
+    it("titles full-height content with its icon in a row of its own, and other pages with a heading", () => {
         const appPage = parse(String(renderNoteContent(buildSitePage({
             type: "image", title: "A <picture>", content: "", "#iconClass": "bx bx-rocket"
         }))));
         expect(appPage.querySelector("#content > #title-row > .tn-icon")?.classList.contains("bx-rocket"))
             .toBe(true);
         expect(appPage.querySelector("#title-row > h1#title")?.textContent).toBe("A <picture>");
+
+        const pdfPage = parse(String(renderNoteContent(buildSitePage({
+            type: "file", mime: "application/pdf", title: "Manual", content: ""
+        }))));
+        expect(pdfPage.querySelector("#content")?.classList.contains("full-height")).toBe(true);
+        expect(pdfPage.querySelector("#content")?.classList.contains("app-view")).toBe(false);
+        expect(pdfPage.querySelector("#title-row > h1#title")?.textContent).toBe("Manual");
 
         const textPage = parse(String(renderNoteContent(buildSitePage({ content: "<p>a</p>" }))));
         expect(textPage.querySelector("#title-row") === null).toBe(true);

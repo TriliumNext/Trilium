@@ -16,6 +16,7 @@ import "./content/external_links.css";
 import "./content/task_states.css";
 import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
+import "./content/full_height.css";
 import "./content/app_view.css";
 import setupMath from "./content/math.js";
 import setupAppView from "./content/app_view.js";

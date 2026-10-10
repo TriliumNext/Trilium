@@ -60,9 +60,14 @@ export interface Result {
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
     /**
+     * Set to `true` if the content takes the page's full height, such as a PDF, a web view or an
+     * app view, below a title row like the app's and without the subpages, the date and the links
+     * to the neighboring pages.
+     */
+    isFullHeight?: boolean;
+    /**
      * Set to `true` if the content is shown with the app's own view, such as a map or the viewer of
-     * an image, which takes the page below a title row like the app's, without the subpages, the
-     * date and the links to the neighboring pages.
+     * an image. An app view also takes the page's full height.
      */
     isAppView?: boolean;
 }
@@ -243,7 +248,7 @@ interface IconPackFont {
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
     // Static export preserves full embed nesting; the live share view renders only the first level.
-    const { header, content, isEmpty, isAppView } = getContent(note, {
+    const { header, content, isEmpty, isAppView, isFullHeight } = getContent(note, {
         expandNestedEmbeds: renderArgs.isStatic,
         canAccessEmbed: renderArgs.canAccessEmbed
     });
@@ -259,14 +264,14 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
     });
-    const childLinks = isAppView ? [] : getChildLinks(note, {
+    const childLinks = isFullHeight ? [] : getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
         getText: (child) => getExcerptSource(child as SNote | BNote),
         // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
         canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
     });
-    const titleIcon = isAppView ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
+    const titleIcon = isFullHeight ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
     const opts = {
         note,
         header,
@@ -282,16 +287,16 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo,
-        prevNext: isAppView ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
+        prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot),
         navigation,
         childLinks,
         childLinksLayout: getChildLinksLayout(note),
-        contentClasses: getContentClasses(note, isEmpty, isAppView),
+        contentClasses: getContentClasses(note, isEmpty, { isAppView, isFullHeight }),
         language: getPageLanguages(note, {
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
-        lastUpdated: isAppView ? null : getLastUpdated(note, displayLanguage),
+        lastUpdated: isFullHeight ? null : getLastUpdated(note, displayLanguage),
         showTitle: true,
         titleIcon,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
@@ -945,6 +950,7 @@ function hostInAppView(result: Result, note: SNote, container: string) {
     };
     const json = JSON.stringify(payload).replace(/</g, "\\u003c");
     result.isAppView = true;
+    result.isFullHeight = true;
     const content = String(result.content ?? "");
     result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
         + `<script type="application/json" class="share-froca">${json}</script>`;
@@ -979,6 +985,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.isFullHeight = true;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
@@ -1015,6 +1022,7 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+    result.isFullHeight = true;
 }
 
 /**
