@@ -10,6 +10,8 @@
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
     "postinstall": "wxt prepare"
   },
   "keywords": [],

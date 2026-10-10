@@ -1,0 +1,508 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeBrowser } from "wxt/testing/fake-browser";
+
+const facade = vi.hoisted(() => ({
+    callService: vi.fn<(method: string, path: string, body?: unknown) => Promise<any>>(),
+    triggerSearchForTrilium: vi.fn(),
+    sendTriliumSearchStatusToPopup: vi.fn(),
+    triggerSearchNoteByUrl: vi.fn()
+}));
+
+vi.mock("./trilium_server_facade", () => ({
+    default: class {
+
+        callService = facade.callService;
+        triggerSearchForTrilium = facade.triggerSearchForTrilium;
+        sendTriliumSearchStatusToPopup = facade.sendTriliumSearchStatusToPopup;
+        triggerSearchNoteByUrl = facade.triggerSearchNoteByUrl;
+
+    }
+}));
+
+import background from "./index";
+
+type Tab = { id?: number, title?: string, url?: string };
+type ContextMenuClick = {
+    menuItemId: string,
+    pageUrl?: string,
+    srcUrl?: string,
+    linkUrl?: string,
+    linkText?: string
+};
+
+const PNG = "data:image/png;base64,iVBORw0KGgo=";
+const CROPPED_PNG = "data:image/png;base64,Q1JPUA==";
+const PNG_DATA_URL = /^data:image\/png;base64,/;
+const PAGE_URL = "https://example.com/page";
+const MENU_URL = "https://example.com/menu";
+const ACTIVE_TAB: Tab = { id: 7, title: "Active page", url: PAGE_URL };
+
+let onCommand: (command: string) => Promise<void>;
+let onContextMenuClicked: (info: ContextMenuClick) => Promise<void>;
+let tabs: Tab[];
+let tabMessageHandler: (message: { name: string }) => unknown;
+const tabsSendMessage = vi.fn(
+    (_tabId: number, message: { name: string }) => Promise.resolve(tabMessageHandler(message)));
+const contextMenusCreate = vi.fn();
+const contextMenusRemoveAll = vi.fn(async () => {});
+const getContexts = vi.fn(async (): Promise<unknown[]> => []);
+const createDocument = vi.fn(async () => {});
+const runtimeSendMessage = vi.fn(async (_message: unknown): Promise<unknown> => PNG);
+const fetchMock = vi.fn(
+    async (_url: string) => new Response(new Blob([ "img" ], { type: "image/png" })));
+
+describe("background", () => {
+    beforeEach(async () => {
+        fakeBrowser.reset();
+        tabs = [ ACTIVE_TAB ];
+        tabMessageHandler = () => undefined;
+        facade.callService.mockResolvedValue({ noteId: "saved" });
+        vi.stubGlobal("fetch", fetchMock);
+        vi.spyOn(console, "log").mockImplementation(() => {});
+        vi.spyOn(console, "error").mockImplementation(() => {});
+
+        Object.assign(fakeBrowser.commands.onCommand, {
+            addListener: (listener: typeof onCommand) => {
+                onCommand = listener;
+            }
+        });
+        Object.assign(fakeBrowser.contextMenus, {
+            create: contextMenusCreate,
+            removeAll: contextMenusRemoveAll,
+            onClicked: {
+                addListener: (listener: typeof onContextMenuClicked) => {
+                    onContextMenuClicked = listener;
+                }
+            }
+        });
+        Object.assign(fakeBrowser.tabs, {
+            query: async ({ active }: { active?: boolean }) => (active ? tabs.slice(0, 1) : tabs),
+            sendMessage: tabsSendMessage,
+            getZoom: async () => 1.5,
+            captureVisibleTab: async () => PNG
+        });
+        Object.assign(fakeBrowser.runtime, { getContexts, sendMessage: runtimeSendMessage });
+        Object.assign(fakeBrowser, { offscreen: { createDocument } });
+
+        background.main();
+        await vi.waitFor(() => expect(contextMenusCreate).toHaveBeenCalledTimes(6));
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it("registers the context menu items once", () => {
+        expect(contextMenusRemoveAll).toHaveBeenCalledBefore(contextMenusCreate);
+        expect(contextMenusCreate.mock.calls.map(([ item ]) => item.id)).toEqual([
+            "trilium-save-selection",
+            "trilium-save-cropped-screenshot",
+            "trilium-save-whole-screenshot",
+            "trilium-save-page",
+            "trilium-save-link",
+            "trilium-save-image"
+        ]);
+    });
+
+    describe("saving the selection", () => {
+        it("inlines the images, saves a clipping and shows a toast", async () => {
+            fetchMock.mockRejectedValueOnce(new Error("blocked"));
+            tabMessageHandler = () => ({
+                title: "Page",
+                content: "<p>Selected</p>",
+                images: [
+                    { imageId: "i1", src: "https://example.com/missing.png" },
+                    { imageId: "i2", src: "https://example.com/a.png" },
+                    { imageId: "i3", src: "data:image/jpeg;base64,/9j/4AAQ" },
+                    { imageId: "i4", src: "data:image/;base64,AAAA" }
+                ]
+            });
+
+            await onContextMenuClicked({ menuItemId: "trilium-save-selection" });
+
+            expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-selection" });
+            expect(facade.callService).toHaveBeenCalledWith("POST", "clippings", {
+                title: "Page",
+                content: "<p>Selected</p>",
+                images: [
+                    { imageId: "i1", src: "https://example.com/missing.png" },
+                    {
+                        imageId: "i2",
+                        src: "https://example.com/a.png",
+                        dataUrl: expect.stringMatching(PNG_DATA_URL)
+                    },
+                    {
+                        imageId: "i3",
+                        src: "inline.jpeg",
+                        dataUrl: "data:image/jpeg;base64,/9j/4AAQ"
+                    },
+                    {
+                        imageId: "i4",
+                        src: "data:image/;base64,AAAA",
+                        dataUrl: "data:image/;base64,AAAA"
+                    }
+                ]
+            });
+            expect(console.error).toHaveBeenCalledOnce();
+            expect(await lastToast())
+                .toMatchObject({ name: "toast", noteId: "saved", tabIds: null });
+        });
+
+        it("is bound to the keyboard shortcut and shows no toast when saving fails", async () => {
+            tabMessageHandler = () => ({ title: "Page", content: "x" });
+            facade.callService.mockResolvedValue(null);
+
+            await onCommand("saveSelection");
+
+            expect(facade.callService)
+                .toHaveBeenCalledWith("POST", "clippings", { title: "Page", content: "x" });
+            expect(await lastToast()).toBeUndefined();
+        });
+
+        it("fails when there is no active tab", async () => {
+            tabs = [];
+            await expect(onCommand("saveSelection")).rejects.toThrow("No active tab.");
+
+            tabs = [ { title: "Tab without id" } ];
+            await expect(onCommand("saveSelection")).rejects.toThrow("No active tab.");
+            expect(facade.callService).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("saving the whole page", () => {
+        it("saves the readable page from the shortcut, the menu and the popup", async () => {
+            const page = { title: "Article", content: "<p>Body</p>", images: [], clipType: "page" };
+            tabMessageHandler = () => page;
+
+            await onCommand("saveWholePage");
+            await onContextMenuClicked({ menuItemId: "trilium-save-page" });
+            await sendRuntimeMessage({ name: "save-whole-page" });
+
+            expect(facade.callService).toHaveBeenCalledTimes(3);
+            expect(facade.callService).toHaveBeenLastCalledWith("POST", "notes", page);
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            facade.callService.mockResolvedValue(null);
+            tabsSendMessage.mockClear();
+            await onCommand("saveWholePage");
+            expect(await lastToast()).toBeUndefined();
+        });
+    });
+
+    describe("screenshots", () => {
+        it("crops the screenshot in an offscreen document and saves it as an image", async () => {
+            tabMessageHandler = () => ({
+                rect: { x: 10, y: 20, width: 100, height: 50 },
+                devicePixelRatio: 2
+            });
+
+            await onCommand("saveCroppedScreenshot");
+
+            expect(createDocument).toHaveBeenCalledOnce();
+            expect(runtimeSendMessage).toHaveBeenCalledWith({
+                type: "CROP_IMAGE",
+                dataUrl: PNG,
+                cropRect: { x: 30, y: 60, width: 300, height: 150 }
+            });
+            const [ method, path, payload ] = facade.callService.mock.calls[0] ?? [];
+            expect([ method, path ]).toEqual([ "POST", "clippings" ]);
+            expect(payload).toEqual({
+                title: "Active page",
+                content: expect.stringMatching(/^<img src="[A-Za-z0-9]{20}">$/),
+                images: [ { imageId: expect.any(String), src: "inline.png", dataUrl: PNG } ],
+                pageUrl: PAGE_URL
+            });
+            const { content, images } = payload as {
+                content: string,
+                images: { imageId: string }[]
+            };
+            expect(content).toContain(images[0]?.imageId);
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+        });
+
+        it("reuses the offscreen document and uses the context menu's page URL", async () => {
+            tabMessageHandler = () => ({ rect: { x: 0, y: 0, width: 10, height: 10 } });
+            getContexts.mockResolvedValue([ { contextType: "OFFSCREEN_DOCUMENT" } ]);
+
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-cropped-screenshot",
+                pageUrl: MENU_URL
+            });
+
+            expect(createDocument).not.toHaveBeenCalled();
+            expect(runtimeSendMessage).toHaveBeenCalledWith(expect.objectContaining({
+                cropRect: { x: 0, y: 0, width: 15, height: 15 }
+            }));
+            expect(lastPayload()).toMatchObject({ pageUrl: MENU_URL });
+
+            facade.callService.mockResolvedValue(null);
+            tabsSendMessage.mockClear();
+            await sendRuntimeMessage({ name: "save-cropped-screenshot" });
+            expect(lastPayload()).toMatchObject({ pageUrl: PAGE_URL });
+            expect(await lastToast()).toBeUndefined();
+        });
+
+        it("saves the visible part of the page", async () => {
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-whole-screenshot",
+                pageUrl: MENU_URL
+            });
+            expect(lastPayload()).toMatchObject({
+                images: [ { src: "inline.png", dataUrl: PNG } ],
+                pageUrl: MENU_URL
+            });
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            facade.callService.mockResolvedValue(null);
+            tabsSendMessage.mockClear();
+            await sendRuntimeMessage({ name: "save-whole-screenshot" });
+            expect(lastPayload()).toMatchObject({ pageUrl: PAGE_URL });
+            expect(await lastToast()).toBeUndefined();
+        });
+
+        it("crops the screenshot on a canvas under Manifest V2", async () => {
+            vi.stubGlobal("__MANIFEST_VERSION__", 2);
+            const drawImage = vi.fn();
+            const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext")
+                .mockReturnValue({ drawImage } as unknown as CanvasRenderingContext2D);
+            vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(CROPPED_PNG);
+            const image = stubImageLoading();
+            tabMessageHandler = () => ({
+                rect: { x: 10, y: 20, width: 100, height: 50 },
+                devicePixelRatio: 1
+            });
+
+            await onCommand("saveCroppedScreenshot");
+
+            expect(runtimeSendMessage).not.toHaveBeenCalled();
+            expect(drawImage)
+                .toHaveBeenCalledWith(image.instances[0], 15, 30, 150, 75, 0, 0, 150, 75);
+            expect(lastPayload()).toMatchObject({
+                images: [ { src: "inline.png", dataUrl: CROPPED_PNG } ]
+            });
+
+            getContext.mockReturnValue(null);
+            await expect(onCommand("saveCroppedScreenshot")).rejects.toBeUndefined();
+
+            image.fail = true;
+            await expect(onCommand("saveCroppedScreenshot")).rejects.toBeInstanceOf(Event);
+        });
+    });
+
+    describe("context menu", () => {
+        it("saves an image by fetching it", async () => {
+            await onContextMenuClicked({ menuItemId: "trilium-save-image", pageUrl: PAGE_URL });
+            expect(facade.callService).not.toHaveBeenCalled();
+
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-image",
+                srcUrl: "https://example.com/cat.png",
+                pageUrl: PAGE_URL
+            });
+            expect(fetchMock).toHaveBeenCalledWith("https://example.com/cat.png");
+            expect(lastPayload()).toMatchObject({
+                title: "Active page",
+                images: [ {
+                    src: "https://example.com/cat.png",
+                    dataUrl: expect.stringMatching(PNG_DATA_URL)
+                } ],
+                pageUrl: PAGE_URL
+            });
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            facade.callService.mockResolvedValue(null);
+            tabsSendMessage.mockClear();
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-image",
+                srcUrl: "https://example.com/cat.png"
+            });
+            expect(await lastToast()).toBeUndefined();
+        });
+
+        it("saves a link, with its URL as the text when the browser gives none", async () => {
+            await onContextMenuClicked({ menuItemId: "trilium-save-link", pageUrl: PAGE_URL });
+            expect(facade.callService).not.toHaveBeenCalled();
+
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-link",
+                linkUrl: "https://example.com/target",
+                linkText: "Target",
+                pageUrl: PAGE_URL
+            });
+            expect(facade.callService).toHaveBeenLastCalledWith("POST", "clippings", {
+                title: "Active page",
+                content: "<a href=\"https://example.com/target\">Target</a>",
+                pageUrl: PAGE_URL
+            });
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            facade.callService.mockResolvedValue(null);
+            tabsSendMessage.mockClear();
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-link",
+                linkUrl: "https://example.com/target"
+            });
+            expect(lastPayload()).toMatchObject({
+                content: "<a href=\"https://example.com/target\">https://example.com/target</a>"
+            });
+            expect(await lastToast()).toBeUndefined();
+        });
+
+        it("ignores unknown items and commands", async () => {
+            await onContextMenuClicked({ menuItemId: "unknown" });
+            await onCommand("unknown");
+            expect(facade.callService).not.toHaveBeenCalled();
+            expect(tabsSendMessage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("saving tabs", () => {
+        it("saves the tabs as a list of links, titled by the most common domains", async () => {
+            tabs = [
+                { id: 1, title: "A1", url: "https://a.com/1" },
+                { id: 2, title: "B1", url: "https://b.com/1" },
+                { title: "B2", url: "https://b.com/2" },
+                { id: 4, title: "C1", url: "https://c.com/1" },
+                { id: 5, title: "D1", url: "https://d.com/1" }
+            ];
+
+            await onCommand("saveTabs");
+
+            expect(facade.callService).toHaveBeenCalledWith("POST", "notes", {
+                title: "5 browser tabs: b.com, a.com, c.com...",
+                content: "<ul>"
+                    + "<li><a href=\"https://a.com/1\">A1</a></li>"
+                    + "<li><a href=\"https://b.com/1\">B1</a></li>"
+                    + "<li><a href=\"https://b.com/2\">B2</a></li>"
+                    + "<li><a href=\"https://c.com/1\">C1</a></li>"
+                    + "<li><a href=\"https://d.com/1\">D1</a></li>"
+                    + "</ul>",
+                clipType: "tabs"
+            });
+            expect(await lastToast()).toMatchObject({ noteId: "saved", tabIds: [ 1, 2, 4, 5 ] });
+        });
+
+        it("adds no ellipsis for up to three tabs and shows no toast on failure", async () => {
+            tabs = [
+                { id: 1, title: "A", url: "https://a.com/" },
+                { id: 2, title: "B", url: "https://b.com/" }
+            ];
+            facade.callService.mockResolvedValue(null);
+
+            await sendRuntimeMessage({ name: "save-tabs" });
+
+            expect(lastPayload()).toMatchObject({ title: "2 browser tabs: a.com, b.com" });
+            expect(await lastToast()).toBeUndefined();
+        });
+    });
+
+    describe("popup and toast messages", () => {
+        it("saves a link with a note, titled after the tab when the title is blank", async () => {
+            const saveWithTitle = (title: string, content = "") => sendRuntimeMessage({
+                name: "save-link-with-note",
+                title,
+                content
+            });
+
+            await expect(saveWithTitle("  ", "Note")).resolves.toBe(true);
+            expect(facade.callService).toHaveBeenLastCalledWith("POST", "notes", {
+                title: "Active page",
+                content: "Note",
+                clipType: "note",
+                pageUrl: PAGE_URL
+            });
+            expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            facade.callService.mockResolvedValue(null);
+            await expect(saveWithTitle("Mine")).resolves.toBe(false);
+            expect(lastPayload()).toMatchObject({ title: "Mine" });
+
+            tabs = [ { id: 7, url: "https://example.com/untitled" } ];
+            await saveWithTitle("");
+            expect(lastPayload()).toMatchObject({ title: "" });
+        });
+
+        it("opens a note in the browser when the desktop app cannot", async () => {
+            const create = vi.fn(async (_properties: { url: string }) => ({}));
+            Object.assign(fakeBrowser.tabs, { create });
+            const openNote = () => sendRuntimeMessage({ name: "openNoteInTrilium", noteId: "n1" });
+
+            facade.callService.mockResolvedValue({ result: "ok" });
+            await openNote();
+            expect(facade.callService).toHaveBeenLastCalledWith("POST", "open/n1");
+
+            facade.callService.mockResolvedValue(null);
+            await openNote();
+
+            facade.callService.mockResolvedValue({ result: "open-in-browser" });
+            await openNote();
+            expect(console.error).toHaveBeenCalledOnce();
+            expect(create).not.toHaveBeenCalled();
+
+            await fakeBrowser.storage.sync.set({ triliumServerUrl: "https://trilium.example" });
+            await openNote();
+            expect(create).toHaveBeenCalledExactlyOnceWith({ url: "https://trilium.example/#n1" });
+        });
+
+        it("closes the saved tabs", async () => {
+            const remove = vi.spyOn(fakeBrowser.tabs, "remove").mockResolvedValue(undefined);
+            await sendRuntimeMessage({ name: "closeTabs", tabIds: [ 1, 2 ] });
+            expect(remove).toHaveBeenCalledWith([ 1, 2 ]);
+        });
+
+        it("forwards Trilium searches to the server facade", async () => {
+            await sendRuntimeMessage({ name: "trigger-trilium-search" });
+            expect(facade.triggerSearchForTrilium).toHaveBeenCalledOnce();
+
+            await sendRuntimeMessage({ name: "send-trilium-search-status" });
+            expect(facade.sendTriliumSearchStatusToPopup).toHaveBeenCalledOnce();
+
+            await sendRuntimeMessage({ name: "trigger-trilium-search-note-url" });
+            expect(facade.triggerSearchNoteByUrl).toHaveBeenCalledWith(PAGE_URL);
+
+            tabs = [ { id: 7 } ];
+            await sendRuntimeMessage({ name: "trigger-trilium-search-note-url" });
+            expect(facade.triggerSearchNoteByUrl).toHaveBeenCalledOnce();
+
+            await expect(sendRuntimeMessage({ name: "unknown" })).resolves.toBeUndefined();
+        });
+    });
+});
+
+async function sendRuntimeMessage(message: object) {
+    const [ result ] = await fakeBrowser.runtime.onMessage.trigger(message, {}, () => {});
+    return result;
+}
+
+function lastPayload() {
+    return facade.callService.mock.lastCall?.[2];
+}
+
+async function lastToast() {
+    await new Promise((resolve) => setTimeout(resolve));
+    return tabsSendMessage.mock.calls
+        .map(([ , message ]) => message)
+        .filter((message) => message.name === "toast")
+        .at(-1);
+}
+
+function stubImageLoading() {
+    const state = { fail: false, instances: [] as object[] };
+    vi.stubGlobal("Image", class {
+
+        onload: (() => void) | null = null;
+        onerror: ((event: Event) => void) | null = null;
+
+        constructor() {
+            state.instances.push(this);
+        }
+
+        set src(_value: string) {
+            setTimeout(() => (state.fail ? this.onerror?.(new Event("error")) : this.onload?.()));
+        }
+
+    });
+    return state;
+}
