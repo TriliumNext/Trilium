@@ -132,14 +132,8 @@ export default defineContentScript({
                 function setSelectionSizeFromMouse(event: MouseEvent) {
                     if (!draggingStartPos) return;
 
-                    if (event.clientX < draggingStartPos.x) {
-                        selectionArea.x = event.clientX;
-                    }
-
-                    if (event.clientY < draggingStartPos.y) {
-                        selectionArea.y = event.clientY;
-                    }
-
+                    selectionArea.x = Math.min(event.clientX, draggingStartPos.x);
+                    selectionArea.y = Math.min(event.clientY, draggingStartPos.y);
                     selectionArea.width = Math.max(1, Math.abs(event.clientX - draggingStartPos.x));
                     selectionArea.height = Math.max(1, Math.abs(event.clientY - draggingStartPos.y));
                     updateSelection();

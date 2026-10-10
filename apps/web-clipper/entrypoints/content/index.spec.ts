@@ -150,6 +150,24 @@ describe("content script", () => {
             });
         });
 
+        it("keeps the rectangle between the start and the cursor when the drag reverses", async () => {
+            vi.useFakeTimers();
+            const response = send({ name: "trilium-get-rectangle-for-screenshot" });
+            const [ overlay, , selection ] = [ ...document.body.children ] as HTMLElement[];
+
+            mouse(overlay, "mousedown", 200, 150);
+            mouse(overlay, "mousemove", 100, 100);
+            mouse(overlay, "mousemove", 300, 250);
+            const { left, top, width, height } = selection?.style ?? {};
+            expect([ left, top, width, height ]).toEqual([ "200px", "150px", "100px", "100px" ]);
+            mouse(overlay, "mouseup", 300, 250);
+
+            await vi.advanceTimersByTimeAsync(100);
+            await expect(response).resolves.toMatchObject({
+                rect: { x: 200, y: 150, width: 100, height: 100 }
+            });
+        });
+
         it("returns no rectangle without a drag on the overlay or after Escape", async () => {
             const release = send({ name: "trilium-get-rectangle-for-screenshot" });
             mouse(document.body.firstElementChild, "mouseup", 10, 10);
