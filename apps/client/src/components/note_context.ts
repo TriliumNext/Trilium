@@ -38,17 +38,25 @@ const READ_ONLY_CAPABLE_TYPES: string[] = [
     "mermaid",
     "canvas",
     "mindMap",
-    "spreadsheet"
+    "spreadsheet",
+    "noteMap",
+    "relationMap",
+    "render"
 ];
 
 /**
  * Collection view types that honour `#readOnly`, making a `book` note read-only capable.
  *
  * Listed by view type rather than by note type because the other views ignore the label: reporting
- * a table or a board as read-only would put a badge over a collection that can still be edited.
+ * a list or a grid as read-only would put a badge over a collection that can still be edited.
  */
 const READ_ONLY_CAPABLE_VIEW_TYPES: string[] = [
-    "geoMap"
+    "board",
+    "calendar",
+    "dashboard",
+    "geoMap",
+    "presentation",
+    "table"
 ];
 
 export interface NoteContextDataMap {

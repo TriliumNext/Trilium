@@ -16,7 +16,7 @@ import { pasteNotes } from "../../../services/note_paste";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useContextualShortcutHints, useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks";
+import { useContextualShortcutHints, useEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard, ZOOM_PAN_HINTS } from "../../react/zoom_pan_keyboard";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
@@ -39,8 +39,7 @@ interface RelationMapProps extends TypeWidgetProps {
 
 export default function RelationMap({ note, noteContext, ntxId, onOpenNote }: RelationMapProps) {
     const [ data, setData ] = useState<MapData>();
-    // The same read-only the note's own bar of actions read while the + stood there.
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);

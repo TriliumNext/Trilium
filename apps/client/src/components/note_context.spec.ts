@@ -32,16 +32,28 @@ describe("NoteContext read-only capability", () => {
     });
 
     it("reports a collection read-only only where its view honours the label", async () => {
-        // The geo map is the one view that reads #readOnly, so it is the one that can report it:
-        // a table wearing the same label is still editable, and saying otherwise would put a
+        // A list or a grid wearing #readOnly is still editable, so reporting it would put a
         // read-only badge over a collection that can be changed.
-        for (const [ viewType, expected ] of [ [ "geoMap", true ], [ "table", false ] ] as const) {
+        const viewTypes = [
+            [ "board", true ], [ "calendar", true ], [ "dashboard", true ], [ "geoMap", true ],
+            [ "presentation", true ], [ "table", true ], [ "list", false ], [ "grid", false ]
+        ] as const;
+        for (const [ viewType, expected ] of viewTypes) {
             const note = buildNote({
                 "title": viewType, "type": "book", "#viewType": viewType, "#readOnly": ""
             });
             noteContext.noteId = note.noteId;
 
-            expect(await noteContext.isReadOnly()).toBe(expected);
+            expect(await noteContext.isReadOnly(), viewType).toBe(expected);
+        }
+    });
+
+    it("reports the note maps and render notes read-only under the label", async () => {
+        for (const type of [ "noteMap", "relationMap", "render" ] as const) {
+            const note = buildNote({ "title": type, "type": type, "#readOnly": "" });
+            noteContext.noteId = note.noteId;
+
+            expect(await noteContext.isReadOnly(), type).toBe(true);
         }
     });
 
