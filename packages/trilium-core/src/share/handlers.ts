@@ -18,6 +18,7 @@ import {
 } from "./froca_payload.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { isShareReady } from "./share_provider.js";
+import shareRoot from "./share_root.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
@@ -212,7 +213,8 @@ function loadTree(req: ShareRequest): ShareReply {
 
 /**
  * Answers the note map the app draws of a shared note, as a tree or as its relations, with only the
- * notes a visitor of the share can read and the links between them. The relations to leave out or
+ * notes a visitor of the share can read and the links between them. The tree leaves out the notes
+ * the share tree does not list. The relations to leave out or
  * to keep come as repeated `excludeRelation` and `includeRelation` parameters.
  */
 function getNoteMap(req: ShareRequest): ShareReply {
@@ -226,7 +228,7 @@ function getNoteMap(req: ShareRequest): ShareReply {
     return jsonReply(200, buildVisibleNoteMap(mapRoot, mapType, {
         excludeRelations: toNames(req.query.excludeRelation),
         includeRelations: toNames(req.query.includeRelation)
-    }, (noteId) => isReadable(noteId, req)));
+    }, (noteId) => isReadable(noteId, req) && (mapType === "link" || isListedInShareTree(noteId))));
 }
 
 /**
@@ -257,6 +259,26 @@ function getScriptBundle(req: ShareRequest): ShareReply {
 function isReadable(noteId: string, req: ShareRequest) {
     const note = shaca.getNote(noteId);
     return !!note && !note.isProtected && hasCredentialAccess(note, req);
+}
+
+/**
+ * Whether the share's navigation tree lists the note `noteId`: a path from the share root reaches
+ * it through branches that are not hidden and notes without `#shareHiddenFromTree`, as
+ * `SNote.getVisibleChildBranches()` walks it.
+ */
+function isListedInShareTree(noteId: string, visited = new Set<string>()): boolean {
+    if (noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        return true;
+    }
+
+    const note = shaca.getNote(noteId);
+    if (!note || visited.has(noteId) || note.isLabelTruthy("shareHiddenFromTree")) {
+        return false;
+    }
+
+    visited.add(noteId);
+    return note.getParentBranches().some((branch) => !branch.isHidden
+        && isListedInShareTree(branch.parentNoteId, visited));
 }
 
 function getNoteAttachments(req: ShareRequest): ShareReply {
@@ -389,7 +411,7 @@ function searchInSubtree(req: ShareRequest): ShareReply {
 
 /**
  * Completes an attribute name for the search editor from the attributes of the notes a visitor can
- * read, and the built-in names. The names in the rest of the database are none of a visitor's
+ * read and the share tree lists, and the built-in names. The names in the rest of the database are none of a visitor's
  * business.
  */
 function getAttributeNames(req: ShareRequest): ShareReply {
@@ -403,7 +425,8 @@ function getAttributeNames(req: ShareRequest): ShareReply {
     for (const attribute of Object.values(shaca.attributes)) {
         const { note } = attribute;
         if (attribute.type === type && attribute.name.toLowerCase().includes(nameLike)
-            && !note.isProtected && hasCredentialAccess(note, req)) {
+            && !note.isProtected && hasCredentialAccess(note, req)
+            && isListedInShareTree(note.noteId)) {
             names.add(attribute.name);
         }
     }

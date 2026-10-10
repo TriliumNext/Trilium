@@ -546,12 +546,14 @@ describe("share handlers", () => {
         expect(filter({ searchString: "seen", ancestorNoteId: "missing" }).status).toBe(404);
     });
 
-    it("completes attribute names only from the notes the caller can read", () => {
+    it("completes attribute names only from the notes the caller can read in the tree", () => {
         buildShareTree([
             { "id": "open", "title": "Open", "content": "", "#projectPhase": "", "~projectOwner": "open" },
             { "id": "guarded", "title": "Guarded", "content": "", "#projectBudget": "",
                 "#shareCredentials": "root:hunter2" },
-            { "id": "secret", "title": "Secret", "content": "", "#projectSecret": "", "isProtected": true }
+            { "id": "secret", "title": "Secret", "content": "", "#projectSecret": "", "isProtected": true },
+            { "id": "hidden", "title": "Hidden", "content": "", "#shareHiddenFromTree": "", "#projectHidden": "",
+                "children": [ { "id": "belowHidden", "title": "Below", "content": "", "#projectDraft": "" } ] }
         ]);
         const names = (query: ShareRequest["query"], authorization?: string) => {
             const reply = request("/share/api/attribute-names",
@@ -624,7 +626,11 @@ describe("share handlers", () => {
                 content: "",
                 children: [
                     { id: "mapReadable", content: "" },
-                    { "id": "mapLocked", "content": "", "#shareCredentials": "root:hunter2" }
+                    { "id": "mapLocked", "content": "", "#shareCredentials": "root:hunter2" },
+                    {
+                        "id": "mapHidden", "content": "", "#shareHiddenFromTree": "",
+                        "children": [ { id: "mapBelowHidden", content: "" } ]
+                    }
                 ]
             },
             {
@@ -637,7 +643,10 @@ describe("share handlers", () => {
         buildNote({
             id: "mapRoot",
             type: "noteMap",
-            children: [ { id: "mapReadable" }, { id: "mapLocked" }, { id: "mapUnshared" } ]
+            children: [
+                { id: "mapReadable" }, { id: "mapLocked" }, { id: "mapUnshared" },
+                { id: "mapHidden", children: [ { id: "mapBelowHidden" } ] }
+            ]
         });
         buildNote({ id: "relationMap", type: "relationMap" });
         buildNote({ id: "scriptNote", type: "code", mime: frontendMime });
@@ -649,7 +658,8 @@ describe("share handlers", () => {
         expect(tree.notes.map(([ noteId ]: [ string ]) => noteId).sort())
             .toEqual([ "mapReadable", "mapRoot" ]);
         expect(tree.links).toHaveLength(1);
-        // Counted from the notes the caller can read, so a count reveals no locked or unshared note.
+        // Counted from the notes the caller can read and the share tree lists, so a count reveals
+        // no locked, unshared or hidden note.
         expect(tree.noteIdToDescendantCountMap).toEqual({ mapRoot: 1, mapReadable: 0 });
         const linkMap = noteMap("link",
             { excludeRelation: "imageLink", includeRelation: [ "author" ] });

@@ -247,7 +247,7 @@ The URL must be absolute and include the scheme (e.g. `https://`).
     <tbody>
         <tr>
             <td><code>#shareHiddenFromTree</code></td>
-            <td>this note is hidden from the left navigation tree and from its parent's list of subpages, but still accessible with its URL</td>
+            <td>this note is hidden from the left navigation tree, from its parent's list of subpages, from shared note maps and from the share's search, but still accessible with its URL</td>
         </tr>
         <tr>
             <td><code>#shareExternalLink</code></td>
