@@ -103,6 +103,11 @@
             "groupName": "capacitor"
         },
         {
+            "description": "terra-draw and its MapLibre adapter are released together from one monorepo, and a feature in one usually needs the matching release of the other",
+            "matchPackageNames": ["terra-draw", "terra-draw-**"],
+            "groupName": "terra-draw monorepo"
+        },
+        {
             "matchPackageNames": "@univerjs/**",
             "groupName": "univer monorepo"
         },
