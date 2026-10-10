@@ -125,6 +125,8 @@
         2px 2px 8px var(--tooltip-shadow-color);
     --tooltip-backdrop-filter: blur(5px);
     --tooltip-font-size: 0.9rem;
+    --tooltip-border: none;
+    --tooltip-arrow-display: none;
 
     --note-tooltip-box-shadow: 10px 10px 93px -25px var(--tool-dialog-shadow-color);
 }

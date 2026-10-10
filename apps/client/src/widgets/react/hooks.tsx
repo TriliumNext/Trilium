@@ -1,3 +1,5 @@
+import "./tooltip.css";
+
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { FilterLabelsByType, HighlightedTokenInfo, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";

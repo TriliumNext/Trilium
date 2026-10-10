@@ -757,27 +757,6 @@ table.promoted-attributes-in-tooltip th {
     padding: 10px;
 }
 
-.tooltip {
-    font-size: var(--main-font-size) !important;
-    /* Above every layer the app opens over the page: a tooltip is appended to `<body>`, so it
-       competes with a dialog in the root stacking context rather than painting inside it, and any
-       lower layer leaves it unreadable behind the very dialog it was asked for. Bootstrap's modal
-       sits at 1055, the dialogs the app lifts itself at up to 3000, the context menu at 2500.
-
-       This layer used to be chained to CKEditor's own — `calc(var(--ck-z-panel) - 1)` — which
-       `ckeditor-theme.css` raised to 10000 for exactly this reason, landing tooltips at 9999.
-       Upstream renamed the variable (`--ck-z-modal` → `--ck-z-panel`) and the override went dead
-       with the old name, dropping tooltips to 999 — under every dialog. Nothing showed it because
-       the math form's rescue rule named a bare `[role="tooltip"]`, lifting every tooltip in the app
-       to 3000; keeping that rule to MathLive's own UI is what finally uncovered it. Stated here in
-       full, and no longer read from a variable another package owns. */
-    z-index: 9999 !important;
-}
-
-.tooltip.tooltip-top {
-    z-index: 32767 !important;
-}
-
 /* Note tooltips are appended to <body> and are frequently triggered from inside a dialog (a link,
    a deleted-note entry), including the few that lift themselves above the base tooltip layer — the
    content manager's active-content overlay among them. Held at the same "above everything" layer
@@ -889,18 +868,6 @@ table.promoted-attributes-in-tooltip th {
     display: none;
 }
 
-.tooltip-inner {
-    padding: 15px;
-    background-color: var(--tooltip-background-color) !important;
-    border: 1px solid var(--main-border-color);
-    border-radius: 5px;
-    text-align: start;
-    color: var(--main-text-color) !important;
-    max-width: 500px;
-    white-space: pre-line;
-    box-shadow: 10px 10px 93px -25px #aaaaaa;
-}
-
 .tooltip-inner p:last-of-type {
     margin-bottom: 0;
 }
@@ -956,10 +923,6 @@ table.promoted-attributes-in-tooltip th {
 
 .tooltip-inner figure.image-style-side {
     float: inline-end;
-}
-
-.tooltip.show {
-    opacity: 1;
 }
 
 .help-button,

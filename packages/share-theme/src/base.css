@@ -58,6 +58,7 @@ html.theme-light {
     --main-border-color: #dbdbdb;
     --tooltip-background-color: rgba(0, 0, 0, 0.818);
     --tooltip-foreground-color: #ffffffeb;
+    --tooltip-shadow-color: rgba(0, 0, 0, 0.2);
     --muted-text-color: #666;
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
@@ -129,6 +130,7 @@ html.theme-dark {
     --main-border-color: #454545;
     --tooltip-background-color: rgba(67, 67, 67, 0.86);
     --tooltip-foreground-color: #ffffffeb;
+    --tooltip-shadow-color: rgba(0, 0, 0, 0.4);
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
@@ -165,6 +167,14 @@ html.theme-dark {
     --main-text-color: var(--text-primary);
     /* The frosting of `theme-next/shell.css` behind the translucent menus. */
     --dropdown-backdrop-filter: blur(20px) saturate(6);
+    /* The tooltips of `theme-next/base.css`, which the app's `tooltip.css` draws from. */
+    --tooltip-border-radius: 6px;
+    --tooltip-padding: 2px 8px 4px 8px;
+    --tooltip-box-shadow: -1px -1px 2px var(--tooltip-shadow-color), 2px 2px 8px var(--tooltip-shadow-color);
+    --tooltip-backdrop-filter: blur(5px);
+    --tooltip-font-size: 0.9rem;
+    --tooltip-border: none;
+    --tooltip-arrow-display: none;
     /* The frosting of `theme-next/base.css` behind the translucent overlay buttons. */
     --overlay-button-backdrop-filter: blur(32px) saturate(1000%);
     --opaque-icon-button-hover-color: var(--hover-item-text-color);

@@ -66,7 +66,11 @@ export default defineConfig(() => ({
     },
     css: {
         transformer: 'lightningcss',
-        devSourcemap: isDev
+        devSourcemap: isDev,
+        preprocessorOptions: {
+            // The share theme builds Bootstrap's tooltips from its partials, which only `@import` loads.
+            scss: { silenceDeprecations: [ "import" ], quietDeps: true }
+        }
     },
     server: {
         watch: {

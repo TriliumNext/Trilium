@@ -368,20 +368,6 @@ body.layout-horizontal > .horizontal {
     --hover-item-background-color: transparent;
 }
 
-.tooltip .tooltip-arrow {
-    display: none;
-}
-
-.tooltip .tooltip-inner {
-    padding: var(--tooltip-padding) !important;
-    box-shadow: var(--tooltip-box-shadow) !important;
-    border: unset !important;
-    border-radius: var(--tooltip-border-radius);
-    backdrop-filter: var(--tooltip-backdrop-filter);
-    font-size: var(--tooltip-font-size);
-    color: var(--tooltip-foreground-color) !important;
-}
-
 /*
  * Calendar
  */
