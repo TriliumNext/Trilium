@@ -362,6 +362,21 @@ describe("popup", () => {
         expect(closeWindow).toHaveBeenCalledOnce();
     });
 
+    it("keeps a draft bookmark while Trilium is briefly not found", async () => {
+        await click("Bookmark");
+        await type(".page-title", "My title");
+        await type(".page-body textarea", "Half-written note");
+
+        await receive({ name: "trilium-search-status", triliumSearch: { status: "not-found" } });
+        expect(container.querySelector(".page-body textarea")).toBeNull();
+        await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });
+        await flush();
+
+        expect(modes()).toEqual([ [ "Page", "false" ], [ "Bookmark", "true" ] ]);
+        expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("My title");
+        expect(container.querySelector<HTMLTextAreaElement>(".page-body textarea")?.value).toBe("Half-written note");
+    });
+
     it("saves the title and the text as they are, on Ctrl+Enter from either field", async () => {
         await click("Bookmark");
         await type(".page-title", "  Read later. Soon ");

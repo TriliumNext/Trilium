@@ -68,6 +68,14 @@ interface TabContent {
  */
 type ClipMode = "selection" | "page" | "note";
 
+/** What the user has chosen and typed in the card, kept by `Popup` so a reconnection does not lose it. */
+interface Draft {
+    mode?: ClipMode;
+    /** `undefined` until the user edits the title. */
+    title?: string;
+    text: string;
+}
+
 const PREVIEW_STYLE = `
     :root { color-scheme: light dark; }
     body { margin: 8px; font: 12px/1.5 system-ui, sans-serif; overflow-wrap: anywhere; }
@@ -95,6 +103,7 @@ export function Popup() {
     const [ searchStatus, setSearchStatus ] = useState<TriliumSearchStatus>();
     const [ clippedNoteId, setClippedNoteId ] = useState<string | null>(null);
     const [ shortcuts, setShortcuts ] = useState<Shortcuts>({});
+    const [ draft, setDraft ] = useState<Draft>({ text: "" });
 
     useEffect(() => {
         function onMessage(message: PopupMessage) {
@@ -125,7 +134,12 @@ export function Popup() {
         body = <TriliumNotFound />;
     } else {
         body = (
-            <CaptureActions disabled={!!searchStatus && !isConnected(searchStatus)} shortcuts={shortcuts} />
+            <CaptureActions
+                disabled={!!searchStatus && !isConnected(searchStatus)}
+                shortcuts={shortcuts}
+                draft={draft}
+                onDraftChange={setDraft}
+            />
         );
     }
 
@@ -183,7 +197,12 @@ export function Popup() {
     );
 }
 
-function CaptureActions({ disabled, shortcuts }: { disabled: boolean, shortcuts: Shortcuts }) {
+function CaptureActions({ disabled, shortcuts, draft, onDraftChange }: {
+    disabled: boolean;
+    shortcuts: Shortcuts;
+    draft: Draft;
+    onDraftChange: (draft: Draft) => void;
+}) {
     /** `undefined` while the page is read. */
     const [ tab, setTab ] = useState<TabContent>();
 
@@ -207,7 +226,7 @@ function CaptureActions({ disabled, shortcuts }: { disabled: boolean, shortcuts:
             </EmptyState>
         );
     } else {
-        main = <PagePreview tab={tab} disabled={disabled} shortcuts={shortcuts} />;
+        main = <PagePreview tab={tab} disabled={disabled} shortcuts={shortcuts} draft={draft} onDraftChange={onDraftChange} />;
     }
 
     return (
@@ -275,16 +294,15 @@ function EmptyState({ icon, className, children }: {
  * page offers. The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed
  * frame.
  */
-function PagePreview({ tab, disabled, shortcuts }: {
+function PagePreview({ tab, disabled, shortcuts, draft, onDraftChange }: {
     /** `undefined` while the page is read. */
     tab: TabContent | undefined;
     disabled: boolean;
     shortcuts: Shortcuts;
+    draft: Draft;
+    onDraftChange: (draft: Draft) => void;
 }) {
-    const [ chosenMode, setChosenMode ] = useState<ClipMode>();
-    /** `undefined` until the user edits the title. */
-    const [ title, setTitle ] = useState<string>();
-    const [ text, setText ] = useState("");
+    const { mode: chosenMode, title, text } = draft;
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
     const article = typeof tab?.page === "object" ? tab.page : undefined;
@@ -347,7 +365,7 @@ function PagePreview({ tab, disabled, shortcuts }: {
                             aria-label="Note title"
                             placeholder="Note title"
                             value={shownTitle}
-                            onInput={(e) => setTitle(e.currentTarget.value)}
+                            onInput={(e) => onDraftChange({ ...draft, title: e.currentTarget.value })}
                             onKeyDown={saveNoteOnCtrlEnter}
                         />
                         {pageUrl && (
@@ -362,7 +380,7 @@ function PagePreview({ tab, disabled, shortcuts }: {
             {modes.length > 1 && (
                 <div className="clip-mode" role="group" aria-label="What to save">
                     {modes.map((option) => (
-                        <button key={option} aria-pressed={option === mode} onClick={() => setChosenMode(option)}>
+                        <button key={option} aria-pressed={option === mode} onClick={() => onDraftChange({ ...draft, mode: option })}>
                             {MODE_LABELS[option]}
                         </button>
                     ))}
@@ -380,7 +398,7 @@ function PagePreview({ tab, disabled, shortcuts }: {
                         className="note-text"
                         value={text}
                         placeholder="Add a note about this page"
-                        onInput={(e) => setText(e.currentTarget.value)}
+                        onInput={(e) => onDraftChange({ ...draft, text: e.currentTarget.value })}
                         onKeyDown={saveNoteOnCtrlEnter}
                     />
                 )}
