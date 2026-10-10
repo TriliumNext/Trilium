@@ -3606,7 +3606,7 @@
       "copy-to-clipboard": "复制到剪贴板",
       "cut-selection-into-a-sub-note": "将选中内容剪切为子笔记",
       "decrease-the-indentation-of-the-current-block": "减少当前块的缩进。",
-      "display-mode": "显示模式",
+      "display-mode": "块级公式模式",
       "edit-anchor": "编辑锚点",
       "enter-the-anchor-name-without-spaces": "输入不含空格的锚点名称。",
       "equation-preview": "公式预览",
