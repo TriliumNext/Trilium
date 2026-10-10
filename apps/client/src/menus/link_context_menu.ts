@@ -8,7 +8,7 @@ import type FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import type { ViewScope } from "../services/link.js";
-import utils, { escapeHtml, isMobile } from "../services/utils.js";
+import utils, { escapeHtml, isMobile, isShare } from "../services/utils.js";
 import { getClosestNtxId } from "../widgets/widget_utils.js";
 import contextMenu, { type ContextMenuOptions, type MenuItem } from "./context_menu.js";
 import { submenuItem } from "./context_menu_utils.js";
@@ -87,8 +87,24 @@ function getOriginBelow(anchor: Element, target: Element = anchor): LinkMenuOrig
     return { pageX: left + window.scrollX, pageY: bottom + window.scrollY, target };
 }
 
+/**
+ * The ways of opening a link. A shared page has no splits and no popup, so it offers only a new tab
+ * and a new window, which open the note's shared page in the browser.
+ */
 function getItems(e: LinkMenuOrigin | GeoMouseEvent): MenuItem<CommandNames>[] {
+    if (isShare) {
+        return getOpenItems(e).filter((item) => "command" in item && item.command !== "openNoteInNewSplit");
+    }
+
     return [ ...getOpenItems(e), getQuickEditItem() ];
+}
+
+/** On a shared page, the URL of a note's shared page, or `null` for a note that has none. */
+let resolveShareLink: ((noteId: string) => string | null) | undefined;
+
+/** Sets how a shared page finds the shared page of a note it opens, which only its host knows. */
+function setShareLinkResolver(resolver: ((noteId: string) => string | null) | undefined) {
+    resolveShareLink = resolver;
 }
 
 /** The places the note can be opened in, without the quick edit popup. */
@@ -125,6 +141,10 @@ function getOpenNoteItem(e: LinkMenuOrigin | GeoMouseEvent): MenuItem<CommandNam
 }
 
 function handleLinkContextMenuItem(command: string | undefined, e: LinkMenuOrigin | GeoMouseEvent, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
+    if (isShare) {
+        return openSharedPage(command, notePath);
+    }
+
     if (!hoistedNoteId) {
         hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId ?? null;
     }
@@ -148,6 +168,17 @@ function handleLinkContextMenuItem(command: string | undefined, e: LinkMenuOrigi
     }
 
     return false;
+}
+
+/** Opens the shared page of the note at `notePath` in a new browser tab or window. */
+function openSharedPage(command: string | undefined, notePath: string) {
+    const link = resolveShareLink?.(notePath.split("/").at(-1) ?? notePath);
+    if (!link || (command !== "openNoteInNewTab" && command !== "openNoteInNewWindow")) {
+        return false;
+    }
+
+    window.open(link, "_blank", command === "openNoteInNewWindow" ? "noopener,popup" : "noopener");
+    return true;
 }
 
 /**
@@ -398,5 +429,6 @@ export default {
     getQuickEditItem,
     getOpenNoteItem,
     handleLinkContextMenuItem,
-    openContextMenu
+    openContextMenu,
+    setShareLinkResolver
 };

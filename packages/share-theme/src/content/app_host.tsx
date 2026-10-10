@@ -2,6 +2,7 @@ import appContext from "@triliumnext/client/src/components/app_context.js";
 import Component from "@triliumnext/client/src/components/component.js";
 import TabManager from "@triliumnext/client/src/components/tab_manager.js";
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
+import linkContextMenu from "@triliumnext/client/src/menus/link_context_menu.js";
 import froca from "@triliumnext/client/src/services/froca.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
@@ -63,6 +64,7 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
         .flatMap(([ name, value ]) => (value === null ? [] : [ [ name, value ] ]))));
 
     froca.setSource(createShareFrocaSource(links));
+    linkContextMenu.setShareLinkResolver((linkedNoteId) => links[linkedNoteId] ?? null);
     froca.addResp({
         ...rows,
         attributes: [ ...rows.attributes, {
