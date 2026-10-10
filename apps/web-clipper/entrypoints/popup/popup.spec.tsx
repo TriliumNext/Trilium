@@ -170,12 +170,13 @@ describe("popup", () => {
         expect(tabsQuery).toHaveBeenCalledWith({ active: true, currentWindow: true });
         expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-page" });
 
+        expect(cardParts()).toEqual([ "page-heading", "page-body", "btn btn-primary primary-action" ]);
         const heading = container.querySelector(".page-heading");
         expect(heading).not.toBeNull();
         expect(heading?.querySelector(".page-icon svg path")).not.toBeNull();
         expect(heading?.querySelector<HTMLInputElement>(".page-title")?.value).toBe("An article");
         expect(heading?.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
-        const frame = container.querySelector<HTMLIFrameElement>("iframe.page-content");
+        const frame = container.querySelector<HTMLIFrameElement>(".page-body iframe.page-content");
         expect(frame?.getAttribute("sandbox")).toBe("");
         expect(frame?.getAttribute("srcdoc")).toBe(previewDocument(PAGE));
         expect(button("Save page to Trilium")?.disabled).toBe(false);
@@ -205,6 +206,7 @@ describe("popup", () => {
         }));
         await rerender();
         expect(placeholder()).toBe("Reading the page…");
+        expect(cardParts()).toEqual([ "page-body", "btn btn-primary primary-action" ]);
         expect(button("Save page to Trilium")?.disabled).toBe(true);
 
         resolvePage(undefined);
@@ -434,7 +436,7 @@ async function type(selector: string, value: string) {
 }
 
 function placeholder() {
-    return container.querySelector(".page-preview-placeholder")?.textContent;
+    return container.querySelector(".page-body > .page-preview-placeholder")?.textContent;
 }
 
 async function click(text: string) {
@@ -451,6 +453,13 @@ function toolbar() {
         expect(action.getAttribute("aria-label")).toBe(action.title.replace(/ \(.*\)$/, ""));
         return { label: action.querySelector(".action-label")?.textContent, title: action.title };
     });
+}
+
+/** The class names of the preview card's parts, in order. */
+function cardParts() {
+    const card = container.querySelector(".page-preview");
+    expect(card).not.toBeNull();
+    return [ ...card?.children ?? [] ].map((part) => part.className);
 }
 
 function captureButtons() {

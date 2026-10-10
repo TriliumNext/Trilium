@@ -56,6 +56,8 @@
     --note-icon-background-color: #4f4f4f;
     --note-icon-color: white;
 
+    --card-background-color: #0000000d;
+
     --button-text-color: currentColor;
     --icon-button-size: 32px;
     --icon-button-icon-ratio: 0.65;
@@ -112,6 +114,8 @@
 
         --note-icon-background-color: #444444;
         --note-icon-color: #d4d4d4;
+
+        --card-background-color: #ffffff12;
 
         --status-ok-color: #74d369;
         --status-warning-color: #d3c769;

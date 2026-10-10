@@ -238,34 +238,37 @@ function PagePreview({ disabled, shortcut }: { disabled: boolean, shortcut: stri
 
     return (
         <div className="page-preview">
-            {page === undefined && <div className="page-preview-placeholder">Reading the page…</div>}
-            {page === null && <div className="page-preview-placeholder">This page cannot be saved as an article.</div>}
             {page && (
-                <>
-                    <div className="page-heading">
-                        <span className="page-icon"><Icon icon={Globe} /></span>
-                        <div className="page-heading-text">
-                            <input
-                                type="text"
-                                className="page-title"
-                                aria-label="Note title"
-                                placeholder="Note title"
-                                value={title}
-                                onInput={(e) => setTitle(e.currentTarget.value)}
-                            />
-                            <div className="page-meta">
-                                {new URL(page.pageUrl).hostname}{published && ` · Published ${published}`}
-                            </div>
+                <div className="page-heading">
+                    <span className="page-icon"><Icon icon={Globe} /></span>
+                    <div className="page-heading-text">
+                        <input
+                            type="text"
+                            className="page-title"
+                            aria-label="Note title"
+                            placeholder="Note title"
+                            value={title}
+                            onInput={(e) => setTitle(e.currentTarget.value)}
+                        />
+                        <div className="page-meta">
+                            {new URL(page.pageUrl).hostname}{published && ` · Published ${published}`}
                         </div>
                     </div>
+                </div>
+            )}
+
+            <div className="page-body">
+                {page === undefined && <div className="page-preview-placeholder">Reading the page…</div>}
+                {page === null && <div className="page-preview-placeholder">This page cannot be saved as an article.</div>}
+                {page && (
                     <iframe
                         className="page-content"
                         title="Preview of the page"
                         sandbox=""
                         srcDoc={previewDocument(page)}
                     />
-                </>
-            )}
+                )}
+            </div>
 
             <button
                 className="btn btn-primary primary-action"
