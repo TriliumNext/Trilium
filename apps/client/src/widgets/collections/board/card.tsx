@@ -8,8 +8,8 @@ import FBranch from "../../../entities/fbranch";
 import FNote from "../../../entities/fnote";
 import BoardApi, { CARD_REDIRECT_RELATION, CARD_REDIRECT_RELATION_LEGACY } from "./api";
 import {
-    BoardActionsContext, BoardHighlightTokensContext, BoardKeptCardsContext,
-    BoardOverlayHostContext, BoardPromotedAttributesContext, BoardSelectionModeContext, TitleEditor
+    BoardActionsContext, BoardEditingContext, BoardHighlightTokensContext, BoardKeptCardsContext,
+    BoardOverlayHostContext, BoardPromotedAttributesContext, BoardSelectionModeContext
 } from ".";
 import { ContextMenuEvent } from "../../../menus/context_menu";
 import { cardFollows } from "./columns";
@@ -26,9 +26,10 @@ import {
 } from "../../react/hooks";
 import { TooltipIcon } from "../../react/Icon";
 import { HighlightedText } from "../../react/RawHtml";
-import { useIsOnScreen, useLingeringTrue } from "../../react/hooks";
+import {
+    type DragData, TREE_CLIPBOARD_TYPE, useIsOnScreen, useLingeringTrue
+} from "../../react/hooks";
 import { useIsSelected, useSelection } from "../../react/selection";
-import { type DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
 import CardToolbar, { RAIL_EXIT_MS } from "./card_toolbar";
 
 function Card({
@@ -77,6 +78,7 @@ function Card({
     onNewItem: () => void
 }) {
     const { setBranchIdToEdit } = useContext(BoardActionsContext);
+    const editing = useContext(BoardEditingContext);
     const shownAttributes = useContext(BoardPromotedAttributesContext);
     const highlightedTokens = useContext(BoardHighlightTokensContext);
     const isOutsideFilter = useContext(BoardKeptCardsContext).has(note.noteId);
@@ -149,7 +151,8 @@ function Card({
             selection.clear();
         }
 
-        const cards = api.getCards(selection.keys);
+        // A read-only board offers only what concerns the card itself, so the menu is this card's.
+        const cards = api.isReadOnly ? [] : api.getCards(selection.keys);
         openNoteContextMenu(api, e, {
             note,
             branchId: branch.branchId,
@@ -237,6 +240,11 @@ function Card({
     }, [ setBranchIdToEdit, branch ]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        // Both keys edit the board.
+        if (api.isReadOnly) {
+            return;
+        }
+
         if (e.key === "Enter" && !e.ctrlKey) {
             // Enter adds a card the way it adds a row in a spreadsheet, and Space is what opens
             // one. Shift adds it above instead of below.
@@ -245,7 +253,7 @@ function Card({
         } else if (e.key === "F2") {
             setBranchIdToEdit(branch.branchId);
         }
-    }, [ branch, index, setBranchIdToEdit, onInsert ]);
+    }, [ api, branch, index, setBranchIdToEdit, onInsert ]);
 
     useEffect(() => {
         editorRef.current?.focus();
@@ -331,14 +339,14 @@ function Card({
                     </span>
                     {/* On mobile the rail offers the rename, and a hover-revealed icon has no
                         hover to be revealed by. */}
-                    {!isMobile() && <span
+                    {!isMobile() && !api.isReadOnly && <span
                         className="edit-icon icon bx bx-rename"
                         title={t("board_view.edit-note-title")}
                         onClick={handleEdit}
                     />}
                 </>
-            ) : (
-                <TitleEditor
+            ) : editing && (
+                <editing.TitleEditor
                     returnFocusTo={cardRef}
                     currentValue={note.title}
                     save={newTitle => {
@@ -363,7 +371,7 @@ function Card({
                 badges={isOutsideFilter && <OutsideFilterBadge />}
             />
         </div>
-        {isRailDrawn && overlayHost.current && (
+        {isRailDrawn && overlayHost.current && !api.isReadOnly && (
             <CardToolbar
                 host={overlayHost.current}
                 isLeaving={!isRailShown}

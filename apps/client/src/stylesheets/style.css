@@ -1,5 +1,7 @@
 @import "./boxicons-compat.css";
 @import "./adaptive-colors.css";
+@import "./menus.css";
+@import "./buttons.css";
 
 @font-face {
     font-family: Montserrat;
@@ -333,43 +335,6 @@ button.custom-title-bar-button {
     overflow-x: hidden;
 }
 
-.icon-action {
-    border: 1px solid transparent;
-    padding: 5px;
-    width: 37px;
-    height: 35px;
-    cursor: pointer;
-    font-size: 1.5em;
-    color: var(--button-text-color);
-    background: var(--button-background-color);
-    border-radius: var(--button-border-radius);
-}
-
-.icon-action-always-border {
-    border-color: var(--button-border-color);
-}
-
-.icon-action:hover:not(.disabled) {
-    text-decoration: none;
-    border-color: var(--button-border-color);
-}
-
-/* An action that takes something away, marked as such the way destructive menu items are. */
-.icon-action.destructive-action-icon {
-    color: var(--dropdown-item-icon-destructive-color);
-}
-
-.icon-action.disabled {
-    color: var(--muted-text-color) !important;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.icon-action.btn {
-    padding: 0 8px;
-    min-width: unset !important;
-}
-
 .ui-widget-content a:not(.ui-tabs-anchor) {
     color: #337ab7 !important;
 }
@@ -419,176 +384,6 @@ button kbd {
 
 .suppressed {
     display: none;
-}
-
-.dropdown-divider {
-    border-color: var(--dropdown-border-color);
-}
-
-@keyframes dropdown-menu-opening {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.dropdown-menu,
-.tabulator-popup-container,
-:root .excalidraw .popover {
-    color: var(--menu-text-color) !important;
-    font-size: inherit;
-    background: var(--menu-background-color) !important;
-    user-select: none;
-    -webkit-user-select: none;
-    --bs-dropdown-zindex: 999;
-    --bs-dropdown-link-active-bg: var(--active-item-background-color) !important;
-}
-
-/* Only carries the dropdown's classes to the menu, for the CSS scoped under them, so it takes no
-   part in the page's layout. */
-.tn-dropdown-portal {
-    display: contents;
-}
-
-/* Just under its popup, whose z-index (1200) is set in `Popup.css`. Styled as a dialog's
-   backdrop. */
-body > .tn-dropdown-portal > .tn-dropdown-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1199;
-    background-color: var(--modal-backdrop-color);
-    opacity: var(--bs-backdrop-opacity, 0.5);
-}
-
-body.desktop .dropdown-menu,
-body.desktop .tabulator-popup-container,
-:root .excalidraw .dropdown-menu .dropdown-menu-container,
-:root .excalidraw .popover {
-    border: 1px solid var(--dropdown-border-color);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
-    animation: dropdown-menu-opening 100ms ease-in;
-}
-
-@supports (animation-fill-mode: forwards) {
-    /* Delay the opening of submenus */
-    body.desktop:not(.motion-disabled) .dropdown-submenu .dropdown-menu {
-        opacity: 0;
-        animation-fill-mode: forwards;
-        animation-delay: var(--submenu-opening-delay);
-    }
-}
-
-.dropdown-menu.static {
-    box-shadow: unset;
-    backdrop-filter: unset !important;
-}
-
-.dropend .dropdown-toggle::after {
-    margin-inline-start: 0.5em;
-    color: var(--muted-text-color);
-}
-
-.dropdown-menu .disabled {
-    color: #888 !important;
-    pointer-events: none;
-}
-
-.dropdown-menu .disabled .contextual-help {
-    pointer-events: all;
-    margin-inline-start: 8px;
-    font-size: 0.75rem;
-    color: var(--contextual-help-icon-color);
-    cursor: help;
-    opacity: 0.75;
-}
-
-.dropdown-menu .disabled .contextual-help:hover {
-    opacity: 1;
-}
-
-.dropdown-item:hover:not(.disabled, .active, .dropdown-container-item),
-.tabulator-menu-item:hover,
-:root .excalidraw .context-menu .context-menu-item:hover {
-    color: var(--hover-item-text-color) !important;
-    background-color: var(--hover-item-background-color) !important;
-    border-color: var(--hover-item-border-color) !important;
-    cursor: pointer;
-}
-
-.dropdown-container-item,
-.dropdown-item.dropdown-container-item:hover,
-.dropdown-container-item:active {
-    background: transparent;
-    cursor: default;
-}
-
-.dropdown-menu a:not(.selected) .check {
-    visibility: hidden;
-}
-
-.dropdown-menu:not(#context-menu-container) .dropdown-item,
-body.desktop .dropdown-menu .dropdown-toggle,
-.dropdown-item > span:not([class]),
-body.mobile .dropdown-menu .dropdown-submenu > span {
-    display: flex;
-    align-items: center;
-}
-
-
-.dropdown-item span.keyboard-shortcut,
-.dropdown-item span.menu-trailing-icon,
-.dropdown-item *:not(.keyboard-shortcut) > kbd {
-    flex-grow: 1;
-    text-align: end;
-    padding-inline-start: 12px;
-}
-
-.dropdown-menu kbd {
-    color: var(--muted-text-color);
-    border: none;
-    background-color: transparent;
-    box-shadow: none;
-    padding-bottom: 0;
-    padding: 0;
-}
-
-.dropdown-item,
-.dropdown-header,
-:root .excalidraw .context-menu .context-menu-item:hover {
-    color: var(--menu-text-color) !important;
-    border: 1px solid transparent !important;
-}
-
-.dropdown-item.disabled,
-.dropdown-item.disabled kbd {
-    color: #aaa !important;
-}
-
-.dropdown-item.active,
-.dropdown-item:focus {
-    color: var(--active-item-text-color);
-    background-color: var(--active-item-background-color);
-    border-color: var(--active-item-border-color);
-    outline: none;
-}
-
-.dropdown-item .destructive-action-icon {
-    color: var(--dropdown-item-icon-destructive-color);
-}
-
-.dropdown-item .tn-icon.use-note-color {
-    --menu-item-icon-color: var(--custom-color);
-    color: var(--custom-color, inherit);
-}
-
-.dropdown-item > span:not([class]) {
-    width: 100%;
-}
-
-.dropdown-menu .note-color-picker {
-    padding: 4px 12px 8px 12px;
 }
 
 .cm-editor {
@@ -757,27 +552,6 @@ table.promoted-attributes-in-tooltip th {
     padding: 10px;
 }
 
-.tooltip {
-    font-size: var(--main-font-size) !important;
-    /* Above every layer the app opens over the page: a tooltip is appended to `<body>`, so it
-       competes with a dialog in the root stacking context rather than painting inside it, and any
-       lower layer leaves it unreadable behind the very dialog it was asked for. Bootstrap's modal
-       sits at 1055, the dialogs the app lifts itself at up to 3000, the context menu at 2500.
-
-       This layer used to be chained to CKEditor's own — `calc(var(--ck-z-panel) - 1)` — which
-       `ckeditor-theme.css` raised to 10000 for exactly this reason, landing tooltips at 9999.
-       Upstream renamed the variable (`--ck-z-modal` → `--ck-z-panel`) and the override went dead
-       with the old name, dropping tooltips to 999 — under every dialog. Nothing showed it because
-       the math form's rescue rule named a bare `[role="tooltip"]`, lifting every tooltip in the app
-       to 3000; keeping that rule to MathLive's own UI is what finally uncovered it. Stated here in
-       full, and no longer read from a variable another package owns. */
-    z-index: 9999 !important;
-}
-
-.tooltip.tooltip-top {
-    z-index: 32767 !important;
-}
-
 /* Note tooltips are appended to <body> and are frequently triggered from inside a dialog (a link,
    a deleted-note entry), including the few that lift themselves above the base tooltip layer — the
    content manager's active-content overlay among them. Held at the same "above everything" layer
@@ -889,18 +663,6 @@ table.promoted-attributes-in-tooltip th {
     display: none;
 }
 
-.tooltip-inner {
-    padding: 15px;
-    background-color: var(--tooltip-background-color) !important;
-    border: 1px solid var(--main-border-color);
-    border-radius: 5px;
-    text-align: start;
-    color: var(--main-text-color) !important;
-    max-width: 500px;
-    white-space: pre-line;
-    box-shadow: 10px 10px 93px -25px #aaaaaa;
-}
-
 .tooltip-inner p:last-of-type {
     margin-bottom: 0;
 }
@@ -956,10 +718,6 @@ table.promoted-attributes-in-tooltip th {
 
 .tooltip-inner figure.image-style-side {
     float: inline-end;
-}
-
-.tooltip.show {
-    opacity: 1;
 }
 
 .help-button,
@@ -1653,77 +1411,6 @@ body.mobile .modal-content-with-sidebar > .modal-main > .modal-header > .modal-t
 
 .hidden-ext.note-split + .gutter {
     display: none;
-}
-
-#context-menu-cover.show {
-    position: fixed;
-    top: 0;
-    inset-inline-start: 0;
-    inset-inline-end: 0;
-    bottom: 0;
-    z-index: 2500;
-    background: rgba(0, 0, 0, 0.1);
-}
-
-#context-menu-container {
-    max-height: 100vh;
-}
-
-body.mobile #context-menu-container.mobile-bottom-menu {
-    position: fixed !important;
-    inset-inline-start: 0 !important;
-    inset-inline-end: 0 !important;
-    bottom: 0 !important;
-    top: unset !important;
-    max-height: var(--tn-modal-max-height);
-    overflow-y: auto !important;
-    user-select: none;
-    -webkit-user-select: none;
-    padding-bottom: max(var(--safe-area-inset-bottom, env(safe-area-inset-bottom)), var(--padding, var(--menu-padding-size))) !important;
-}
-
-body.mobile .dropdown-menu {
-    position: fixed !important;
-    z-index: 3000 !important;
-}
-
-#context-menu-container,
-#context-menu-container .dropdown-menu,
-.tabulator-popup-container {
-    padding: 3px 0;
-    z-index: 2000;
-}
-
-#context-menu-container .dropdown-item,
-.tabulator-menu .tabulator-menu-item {
-    padding: 0 7px 0 10px;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-}
-
-/* What stands between a menu item's icon and its title. */
-.dropdown-item .tn-menu-gap {
-    flex: none;
-    width: 0.5em;
-}
-
-/* A name the user wrote, boxed by `menuName()`: clipped rather than widening the menu. */
-.dropdown-item .tn-menu-name {
-    display: block;
-    max-width: 300px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.dropdown-submenu {
-    position: relative;
-}
-
-body.desktop .dropdown-submenu > .dropdown-menu {
-    min-width: max-content;
-    max-width: 300px;
 }
 
 .right-dropdown-widget {

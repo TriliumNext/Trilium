@@ -91,17 +91,31 @@
 #childLinks.list > ul {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
 }
 
 #childLinks.list li {
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    transition: background-color 150ms ease-in;
+    padding: 8px 12px;
+    background: var(--card-background-color);
+    transition: background-color 200ms ease-out;
+}
+
+#childLinks.list li:first-child {
+    border-start-start-radius: 8px;
+    border-start-end-radius: 8px;
+}
+
+#childLinks.list li:last-child {
+    border-end-start-radius: 8px;
+    border-end-end-radius: 8px;
 }
 
 #childLinks.list li:hover {
-    background: var(--right-pane-item-hover-background);
+    background-color: var(--card-background-hover-color);
+}
+
+#childLinks.list .child-link-title {
+    font-weight: normal;
 }
 
 #childLinks.list li > .tn-icon,

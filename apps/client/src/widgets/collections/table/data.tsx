@@ -15,7 +15,8 @@ export interface TableConfig {
     };
 }
 
-export default function useData(note: FNote, noteIds: string[], viewConfig: TableConfig | undefined, newAttributePosition: RefObject<number | undefined> | undefined, resetNewAttributePosition: () => void) {
+/** `isReadOnly` builds the columns without editors and keeps the rows from being dragged. */
+export default function useData(note: FNote, noteIds: string[], viewConfig: TableConfig | undefined, newAttributePosition: RefObject<number | undefined> | undefined, resetNewAttributePosition: () => void, isReadOnly = false) {
     const [ maxDepth ] = useNoteLabelInt(note, "maxNestingDepth");
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
     // Whose writes these are, so that the table can tell a definition it changed itself from one
@@ -52,14 +53,14 @@ export default function useData(note: FNote, noteIds: string[], viewConfig: Tabl
                     .find((definition) => definition.name === columnName)?.options,
                 onCreateSelectOption: (columnName, option) => addSelectOption(note, columnName, option, componentId)
             });
-            setColumnDefs(columnDefs);
+            setColumnDefs(isReadOnly ? columnDefs.map(withoutEditor) : columnDefs);
             resetNewAttributePosition();
         }
         setRowData(rowData);
         setHasChildren(hasChildren);
     }
 
-    useEffect(() => { refresh() }, [ note, noteIds, maxDepth, movableRows ]);
+    useEffect(() => { refresh() }, [ note, noteIds, maxDepth, movableRows, isReadOnly ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults}) => {
         if (glob.device === "print") return;
@@ -91,10 +92,14 @@ export default function useData(note: FNote, noteIds: string[], viewConfig: Tabl
 
     // Identify if movable rows.
     useEffect(() => {
-        setMovableRows(!isSorted && note.type !== "search" && !hasChildren);
-    }, [ isSorted, note, hasChildren ]);
+        setMovableRows(!isReadOnly && !isSorted && note.type !== "search" && !hasChildren);
+    }, [ isReadOnly, isSorted, note, hasChildren ]);
 
     return { columnDefs, rowData, movableRows, hasChildren };
+}
+
+function withoutEditor({ editor, editorParams, ...column }: ColumnDefinition): ColumnDefinition {
+    return column;
 }
 
 /**

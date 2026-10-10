@@ -1,70 +1,49 @@
-import type { ShareMermaidManifest } from "@triliumnext/commons";
+import type { ShareThemeManifest } from "@triliumnext/commons";
 import type { ZipExportProviderData } from "@triliumnext/core";
 import ShareThemeExportProvider, {
-    hasMermaidDiagrams,
-    mapMermaidExportFiles,
+    getShareThemeExportFiles,
+    getShareThemeTranslationFiles,
     type ShareThemeExportAssets
 } from "@triliumnext/core/src/services/export/zip/share_theme.js";
-import { getLog } from "@triliumnext/core/src/services/log.js";
-import { existsSync, readdirSync, readFileSync } from "fs";
-import { join } from "path";
+import { existsSync, readFileSync } from "fs";
+import { basename, join } from "path";
 
-import { getClientBuildDir, getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
+import { getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
 import { registerShareProvider } from "../../../share/share_provider.js";
 import { RESOURCE_DIR } from "../../resource_dir";
 
 /**
- * Builds a share-theme export over the theme's built files, the client's fonts and, when a note
- * has a diagram, the client's mermaid, all read from disk.
+ * Builds a share-theme export over the files the client build lists in its share theme manifest,
+ * the client's catalogues the app views read and the client's fonts, all read from disk.
  */
 export function createShareThemeExportProvider(data: ZipExportProviderData) {
     registerShareProvider();
 
-    const assets = readShareThemeExportAssets();
-    if (hasMermaidDiagrams(data.branch.getNote())) {
-        addMermaidFiles(assets.files);
+    const assetDir = getShareThemeAssetDir();
+    const manifestPath = join(assetDir, "share_theme.json");
+    if (!existsSync(manifestPath)) {
+        throw new Error(`Unable to export with the share theme, since ${manifestPath} is missing.`
+            + " Build the client first.");
     }
 
-    return new ShareThemeExportProvider(data, assets);
-}
-
-function readShareThemeExportAssets(): ShareThemeExportAssets {
-    const shareThemeAssetDir = getShareThemeAssetDir();
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as ShareThemeManifest;
     const files = new Map<string, Uint8Array>([
         [ "icon-color.svg", readFileSync(join(RESOURCE_DIR, "images", "icon-color.svg")) ]
     ]);
-
-    for (const file of readdirSync(shareThemeAssetDir)) {
-        files.set(`assets/${file}`, readFileSync(join(shareThemeAssetDir, file)));
+    const note = data.branch.getNote();
+    for (const file of getShareThemeExportFiles(manifest, note)) {
+        files.set(`assets/${basename(file)}`, readFileSync(join(assetDir, file)));
+    }
+    for (const file of getShareThemeTranslationFiles(note)) {
+        const path = join(getClientDir(), "translations", file);
+        if (existsSync(path)) {
+            files.set(`assets/translations/${file}`, readFileSync(path));
+        }
     }
 
-    return {
+    const assets: ShareThemeExportAssets = {
         files,
         readBuiltinFont: (fileName) => readFileSync(join(getClientDir(), "fonts", fileName))
     };
-}
-
-/**
- * Copies the client's mermaid into the export. Without a client build to copy from, which a
- * development server might lack, the exported pages show diagrams as code blocks.
- */
-function addMermaidFiles(files: Map<string, string | Uint8Array>) {
-    const manifestDir = join(getClientBuildDir(), "src");
-    const manifestPath = join(manifestDir, "share_mermaid.json");
-    if (!existsSync(manifestPath)) {
-        getLog().info(`Exporting without mermaid, since ${manifestPath} is missing.`);
-        return;
-    }
-
-    const manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as ShareMermaidManifest;
-    const mapped = mapMermaidExportFiles(manifest);
-    if (!mapped) {
-        getLog().info(`Exporting without mermaid, since ${manifestPath} lists no built files.`);
-        return;
-    }
-
-    files.set(mapped.manifest.path, mapped.manifest.content);
-    for (const { source, target } of mapped.files) {
-        files.set(target, readFileSync(join(manifestDir, source)));
-    }
+    return new ShareThemeExportProvider(data, assets);
 }

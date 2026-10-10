@@ -10,7 +10,7 @@ import FNote from "../../entities/fnote";
 import dialogService from "../../services/dialog";
 import server from "../../services/server";
 import toast from "../../services/toast";
-import { getErrorMessage } from "../../services/utils";
+import { getErrorMessage, isShare } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
 import { searchTermsFor } from "../collections/search/SearchResultCard";
 import ActionButton from "../react/ActionButton";
@@ -45,18 +45,31 @@ export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
 
 const MAX_OPEN_TABS = 50;
 
-export default function CollectionProperties({
-    note,
-    centerChildren,
-    rightChildren,
-    optionsChildren
-}: {
+interface CollectionPropertiesProps {
     note: FNote;
     centerChildren?: ComponentChildren;
     rightChildren?: ComponentChildren;
     /** Entries appended below a divider at the end of the settings dropdown. */
     optionsChildren?: ComponentChildren;
-}) {
+}
+
+/**
+ * The bar above a collection that switches its view, sets its options and holds the view's own
+ * controls, such as a calendar's navigation. A shared page keeps only the view's own controls, as a
+ * visitor cannot change the note, and has no bar for a view without any.
+ */
+export default function CollectionProperties(props: CollectionPropertiesProps) {
+    return isShare && !props.centerChildren && !props.rightChildren
+        ? null
+        : <CollectionPropertiesBar {...props} />;
+}
+
+function CollectionPropertiesBar({
+    note,
+    centerChildren,
+    rightChildren,
+    optionsChildren
+}: CollectionPropertiesProps) {
     const [ viewType, setViewType ] = useViewType(note);
     const noteType = useNoteProperty(note, "type");
     const [ isOpening, setIsOpening ] = useState(false);
@@ -64,15 +77,17 @@ export default function CollectionProperties({
     return ([ "book", "search" ].includes(noteType ?? "") &&
         <div className="collection-properties">
             <div className="left-container">
-                <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
-                <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                {!isShare && <>
+                    <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
+                    <ViewOptions note={note} viewType={viewType} optionsChildren={optionsChildren} />
+                </>}
             </div>
             <div className="center-container">
                 {centerChildren}
             </div>
             <div className="right-container">
                 {rightChildren}
-                {noteType === "search" && (
+                {noteType === "search" && !isShare && (
                     <OpenAllButton note={note} isOpening={isOpening} setIsOpening={setIsOpening} />
                 )}
             </div>

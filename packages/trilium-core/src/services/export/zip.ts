@@ -1,4 +1,5 @@
 import { getImageAttachmentTitle, NoteType } from "@triliumnext/commons";
+import mimeTypes from "mime-types";
 import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
@@ -39,6 +40,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     const log = getLog();
 
     const noteIdToMeta: Record<string, NoteMeta> = {};
+    /** The file holding the content of an image or file note in a share export, beside its page. */
+    const noteIdToRawFileName: Record<string, string> = {};
 
     async function buildProvider() {
         const providerData: ZipExportProviderData = {
@@ -94,6 +97,15 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // name so the whole entry (extension included) stays within the 255-byte
         // filesystem limit without ever chopping the extension off long / multi-byte
         // titles and attachment names. This replaces the old arbitrary 30-char cap.
+        const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
+
+        return getUniqueFilename(existingFileNames, `${base}${extension}`);
+    }
+
+    /** Names the file that holds a note's content as it is, keeping or deriving its extension. */
+    function getRawFileName(mime: string, baseFileName: string, existingFileNames: Record<string, number>): string {
+        const fileName = baseFileName.trim() || "note";
+        const extension = extname(fileName) ? "" : `.${mimeTypes.extension(mime) || "dat"}`;
         const base = truncateUtf8Bytes(sanitize(fileName), MAX_FILENAME_BYTES - extension.length);
 
         return getUniqueFilename(existingFileNames, `${base}${extension}`);
@@ -183,6 +195,9 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
         // if it's a leaf, then we'll export it even if it's empty
         if (shouldIncludeFile) {
+            if (format === "share" && (note.type === "image" || note.type === "file")) {
+                noteIdToRawFileName[note.noteId] = getRawFileName(note.mime, baseFileName, existingFileNames);
+            }
             meta.dataFileName = getDataFileName(note.type, note.mime, baseFileName, existingFileNames);
         }
 
@@ -279,7 +294,8 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             : undefined;
 
         // Falls back to the note's own data file when the attachment was never generated.
-        return getNoteTargetUrl(targetNoteId, sourceMeta, attachmentMeta?.dataFileName);
+        return getNoteTargetUrl(targetNoteId, sourceMeta,
+            attachmentMeta?.dataFileName ?? noteIdToRawFileName[targetNoteId]);
     }
 
     function rewriteLinks(content: string, noteMeta: NoteMeta): string {
@@ -311,10 +327,12 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         });
 
         if (format === "share") {
-            content = content.replace(/src="[^"]*api\/notes\/([a-zA-Z0-9_]+)\/download"/g, (match, targetNoteId) => {
-                const url = getNoteTargetUrl(targetNoteId, noteMeta);
+            // A PDF's frame and a file's download button reach the note's content through the API.
+            const apiUrl = /(src="|location\.href=')[^"']*api\/notes\/([a-zA-Z0-9_]+)\/(?:download|view)(["'])/g;
+            content = content.replace(apiUrl, (match, prefix, targetNoteId, quote) => {
+                const url = getNoteTargetUrl(targetNoteId, noteMeta, noteIdToRawFileName[targetNoteId]);
 
-                return url ? `src="${url}"` : match;
+                return url ? `${prefix}${url}${quote}` : match;
             });
         }
 
@@ -397,6 +415,17 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             // Pace the synchronous tree walk against the archive's drain so the
             // whole export isn't buffered into archiver's queue at once.
+            await archive.waitForCapacity?.();
+        }
+
+        const rawFileName = noteIdToRawFileName[noteMeta.noteId];
+        if (rawFileName) {
+            archive.append(note.getContent(), {
+                name: filePathPrefix + rawFileName,
+                date: dateUtils.parseDateTime(note.utcDateModified),
+                store: shouldStoreUncompressed(noteMeta.mime)
+            });
+
             await archive.waitForCapacity?.();
         }
 

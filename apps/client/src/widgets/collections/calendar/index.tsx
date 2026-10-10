@@ -12,6 +12,7 @@ import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import clsx from "clsx";
 import { Calendar as FullCalendar, DateClickInfo, DateSelectInfo, EventChangeInfo, EventClickInfo, EventDisplayInfo, EventSourceFuncInfo, LocaleInput, MountInfo, PluginInput } from "fullcalendar";
 import { RefObject } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -27,13 +28,11 @@ import Button, { ButtonGroup } from "../../react/Button";
 import CollapseOnOverflow from "../../react/CollapseOnOverflow";
 import Dropdown from "../../react/Dropdown";
 import { FormListItem } from "../../react/FormList";
-import { useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { useEffectiveReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
 import Calendar from "./calendar";
-import EventPopover from "./EventPopover";
-import GhostPopover from "./GhostPopover";
 import { openCalendarContextMenu } from "./context_menu";
 import { CalendarSelection, EventDraft } from "./selection";
 import { buildEvents, buildEventsForCalendar } from "./event_builder";
@@ -121,8 +120,10 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     ar: () => import("fullcalendar/locales/ar")
 };
 
-export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarViewData>) {
+export default function CalendarView({ note, noteIds, onOpenNote }: ViewModeProps<CalendarViewData>) {
     const parentComponent = useContext(ParentComponent);
+    const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const containerRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<FullCalendar>(null);
     // The event the view's popovers stand for — a chip clicked, or a range just dragged out (see
@@ -143,7 +144,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     // FullCalendar v7 sizes itself from its own ResizeObserver; the v6 `updateSize()` nudge this
     // used to need is gone along with the method.
     const isCalendarRoot = (calendarRoot || workspaceCalendarRoot);
-    const isEditable = !isCalendarRoot;
+    const isEditable = !isCalendarRoot && !isReadOnly;
     // Worked out once and handed to both the grid and the tap that makes an event of one of its
     // slots (see draftFromDateClick), so that the two cannot come to disagree on a slot's length.
     const effectiveSlotDuration = isValidDuration(slotDuration) ? slotDuration : DEFAULT_SLOT_DURATION;
@@ -171,7 +172,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         return true;
     }, []);
 
-    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface);
+    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface, isReadOnly);
     const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId,
         setSelection, effectiveSlotDuration);
 
@@ -275,11 +276,13 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         if (contextMenu.dismissedByLastPress) return;
 
         const noteId = e.event.extendedProps.noteId;
-        if (noteId) {
+        if (noteId && onOpenNote) {
+            onOpenNote(noteId);
+        } else if (noteId) {
             // The click names which of the event's chips to stand by (see eventAnchorRect).
             setSelection({ noteId, anchor: { x: e.jsEvent.clientX, y: e.jsEvent.clientY } });
         }
-    }, []);
+    }, [ onOpenNote ]);
 
     // React to changes.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
@@ -329,7 +332,9 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
 
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
-            <CalendarCollectionProperties note={note} calendarRef={calendarRef} containerRef={containerRef} />
+            <CalendarCollectionProperties
+                note={note} calendarRef={calendarRef} containerRef={containerRef} isReadOnly={isReadOnly}
+            />
             <Calendar
                 events={eventBuilder}
                 calendarRef={calendarRef}
@@ -376,43 +381,49 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 eventInnerClass={eventInnerClass}
                 eventDidMount={eventDidMount}
                 viewDidMount={({ view }) => {
-                    if (initialView.current !== view.type) {
+                    // A read-only calendar keeps the view it was switched to only while it is shown.
+                    if (initialView.current !== view.type && !isReadOnly) {
                         initialView.current = view.type;
                         viewSpacedUpdate.scheduleUpdate();
                     }
                 }}
             />
             {selection && "noteId" in selection && (
-                <EventPopover
-                    noteId={selection.noteId}
-                    anchor={selection.anchor}
-                    container={containerRef.current}
-                    parentNote={note}
-                    isEditable={isEditable}
-                    onClose={() => setSelection(null)}
-                    onFollowLink={followLink}
-                />
+                <Suspense fallback={null}>
+                    <EventPopover
+                        noteId={selection.noteId}
+                        anchor={selection.anchor}
+                        container={containerRef.current}
+                        parentNote={note}
+                        isEditable={isEditable}
+                        onClose={() => setSelection(null)}
+                        onFollowLink={followLink}
+                    />
+                </Suspense>
             )}
             {selection && "draft" in selection && (
-                <GhostPopover
-                    draft={selection.draft}
-                    anchor={selection.anchor}
-                    container={containerRef.current}
-                    /* Handed over whole rather than fired and forgotten: a creation that fails has
-                       to reach the ghost, which is what opens its form again for another try. */
-                    onCommit={commitDraft}
-                    onCancel={cancelDraft}
-                    onDismiss={dismissDraft}
-                />
+                <Suspense fallback={null}>
+                    <GhostPopover
+                        draft={selection.draft}
+                        anchor={selection.anchor}
+                        container={containerRef.current}
+                        /* Handed over whole rather than fired and forgotten: a creation that fails has
+                           to reach the ghost, which is what opens its form again for another try. */
+                        onCommit={commitDraft}
+                        onCancel={cancelDraft}
+                        onDismiss={dismissDraft}
+                    />
+                </Suspense>
             )}
         </div>
     );
 }
 
-function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
+function CalendarCollectionProperties({ note, calendarRef, containerRef, isReadOnly }: {
     note: FNote;
     calendarRef: RefObject<FullCalendar | null>;
     containerRef: RefObject<HTMLDivElement | null>;
+    isReadOnly: boolean;
 }) {
     const { title, viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewData = CALENDAR_VIEWS.find(v => calendarRef.current && v.type === currentViewType);
@@ -426,7 +437,7 @@ function CalendarCollectionProperties({ note, calendarRef, containerRef }: {
                 <span className="title">{title}</span>
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
                 <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
-                <PinDateButton note={note} calendarRef={calendarRef} />
+                {!isReadOnly && <PinDateButton note={note} calendarRef={calendarRef} />}
                 {/* On a phone the switcher is a menu whatever the width, and stands with the date
                     rather than on a right-hand end the wrapped bar no longer has. */}
                 {isMobileLocal && <CalendarViewSwitcher calendarRef={calendarRef} containerRef={containerRef} />}
@@ -662,7 +673,9 @@ function draftFromDateClick(e: DateClickInfo, slotDuration: string): EventDraft 
 
 function useEventDisplayCustomization(parentNote: FNote, componentId: string | undefined,
     /** Puts away whatever surface stands over the calendar, answering whether there was one. */
-    dismissSurface: () => boolean) {
+    dismissSurface: () => boolean,
+    /** Whether the calendar is read-only, whose events' menu offers only the places to open them in. */
+    isReadOnly: boolean) {
     /**
      * The chip's own content, drawn so the note's icon can lead its title.
      *
@@ -724,13 +737,13 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
-            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId);
+            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId, isReadOnly);
         }
 
         // A long press raises it on a phone, as a right-click does on a desktop; the tap itself now
         // belongs to the event sheet, which offers what the menu offers and more (see onEventClick).
         e.el.addEventListener("contextmenu", onContextMenu);
-    }, [ dismissSurface ]);
+    }, [ dismissSurface, isReadOnly ]);
     return { eventContent, eventDidMount, eventInnerClass };
 }
 
@@ -795,3 +808,8 @@ function useOnDatesSet(calendarRef: RefObject<FullCalendar | null>) {
     }, [calendarRef]);
     return { title, viewType };
 }
+
+/** Loaded on the first event opened, so a calendar that opens none, such as a shared one, never loads it. */
+const EventPopover = lazy(() => import("./EventPopover"));
+/** Loaded on the first event drafted, as only an editable calendar drafts one. */
+const GhostPopover = lazy(() => import("./GhostPopover"));

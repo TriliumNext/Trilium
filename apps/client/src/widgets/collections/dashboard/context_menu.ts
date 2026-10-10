@@ -4,21 +4,23 @@ import link_context_menu from "../../../menus/link_context_menu";
 import branches from "../../../services/branches";
 import { t } from "../../../services/i18n";
 
-export default function openWidgetContextMenu(notePath: string, branchId: string, e: ContextMenuEvent, { onRefresh }: {
+export default function openWidgetContextMenu(notePath: string, branchId: string, e: ContextMenuEvent, { isReadOnly, onRefresh }: {
+    /** Whether the dashboard is read-only, which leaves out removing the widget. */
+    isReadOnly: boolean;
     /** When provided (i.e. the widget is a render note or web view), adds a "Refresh" item that re-renders it. */
     onRefresh?: () => void;
 }) {
-    const items: MenuItem<CommandNames>[] = [
-        ...link_context_menu.getItems(e),
-        { kind: "separator" }
-    ];
+    const items: MenuItem<CommandNames>[] = [ ...link_context_menu.getItems(e) ];
 
     if (onRefresh) {
-        items.push({ title: t("dashboard_view.refresh-widget"), uiIcon: "bx bx-refresh", handler: () => onRefresh() });
         items.push({ kind: "separator" });
+        items.push({ title: t("dashboard_view.refresh-widget"), uiIcon: "bx bx-refresh", handler: () => onRefresh() });
     }
 
-    items.push({ title: t("dashboard_view.remove-widget"), uiIcon: "bx bx-trash", handler: () => branches.deleteNotes([ branchId ], false, false) });
+    if (!isReadOnly) {
+        items.push({ kind: "separator" });
+        items.push({ title: t("dashboard_view.remove-widget"), uiIcon: "bx bx-trash", handler: () => branches.deleteNotes([ branchId ], false, false) });
+    }
 
     contextMenu.show({
         x: e.pageX,

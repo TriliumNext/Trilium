@@ -12,6 +12,9 @@ const TICKS_UNTIL_DAMPED = 60;
 /** What a map of a single note is shown at, there being no extent to fit — see {@link setupFraming}. */
 const LONE_NOTE_ZOOM = 4;
 
+/** How long a zoom step or a fit to the view takes to play out. */
+const ZOOM_ANIMATION_MS = 250;
+
 /** How large a note's dot has to come out on screen, in pixels, before its icon is drawn inside it. */
 const MIN_ICON_RADIUS = 7;
 
@@ -115,10 +118,20 @@ interface RenderData {
     container: HTMLElement;
     /** What each note's icon class resolves to, as the icon pack draws it — see icon_glyphs.ts. */
     iconGlyphs: Map<string, IconGlyph>;
+    /** Called with the scale of the view after every zoom, for controls that depend on it. */
+    onZoom?: (scale: number) => void;
 }
 
-/** @returns a teardown function to call when the graph is discarded. */
-export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs }: RenderData) {
+/** What the map's controls drive the drawn graph through. */
+export interface MapRendering {
+    /** Fits the view to the notes the map is framed on as it loads, and stops following the layout. */
+    fitToView(): void;
+    /** Zooms the view by `factor` around its middle, and stops following the layout. */
+    zoomBy(factor: number): void;
+    /** Undoes the setup, to call when the graph is discarded. */
+    teardown(): void;
+}
+export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, { note, mapRootId, themeStyle, widgetMode, noteIdToSizeMap, notesAndRelations, cssData, container, iconGlyphs, onZoom }: RenderData): MapRendering {
     // What the map is showing of the note under the pointer: the note itself, the notes a relation
     // runs between it and, and those relations. Worked out once when the hover changes rather than
     // while painting, so that every note of a frame is painted knowing the same thing.
@@ -463,7 +476,10 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
             ctx.fill();
         })
         .nodeLabel((node) => getTooltip(node))
-        .onZoom((zoom) => zoomLevel = zoom.k);
+        .onZoom((zoom) => {
+            zoomLevel = zoom.k;
+            onZoom?.(zoom.k);
+        });
 
     graph
         .linkWidth((link) => LINK_WIDTH + (HIGHLIGHT_LINK_WIDTH - LINK_WIDTH) * Math.max(0, linkFocus.get(link)))
@@ -492,11 +508,21 @@ export function setupRendering(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkO
     graph.d3Force("charge")?.strength(boundedCharge);
     graph.d3Force("charge")?.distanceMax(1000);
 
-    const stopFraming = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
+    const framing = setupFraming(graph, container, { note, widgetMode, notesAndRelations, hopDistances });
 
-    return () => {
-        clearTimeout(fadeTimer);
-        stopFraming();
+    return {
+        fitToView() {
+            framing.release();
+            framing.fit(ZOOM_ANIMATION_MS);
+        },
+        zoomBy(factor) {
+            framing.release();
+            graph.zoom(graph.zoom() * factor, ZOOM_ANIMATION_MS);
+        },
+        teardown() {
+            clearTimeout(fadeTimer);
+            framing.stop();
+        }
     };
 }
 
@@ -718,7 +744,8 @@ export function createFade<T>(elements: T[], getTarget: (element: T) => number) 
  * force-graph's default zoom meanwhile (a few nodes around the origin, the rest already spread out
  * of sight) and then jumps to the real framing when it finally fires.
  *
- * @returns a teardown function to call when the graph is discarded.
+ * @returns `fit()`, which frames the view as the map does while it settles, `release()`, which stops
+ * the framing, and `stop()`, to call when the graph is discarded.
  */
 function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, container: HTMLElement, { note, widgetMode, notesAndRelations, hopDistances }: Pick<RenderData, "note" | "widgetMode" | "notesAndRelations"> & { hopDistances: Map<string, number> }) {
     const { framedNoteIds, framesSubset, padding, fittedNoteCount } = planFraming({ widgetMode, noteType: note?.type, notesAndRelations, hopDistances });
@@ -740,15 +767,19 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
     container.addEventListener("wheel", releaseFraming, listenerOptions);
     container.addEventListener("pointerdown", releaseFraming, listenerOptions);
 
+    // Fitting is what centres the view on the note, whether or not its zoom is kept.
+    const fit = (duration: number) => {
+        graph.zoomToFit(duration, padding, nodeFilter);
+
+        if (fittedNoteCount <= 1) {
+            graph.zoom(LONE_NOTE_ZOOM, duration);
+        }
+    };
+
     let ticks = 0;
     graph.onEngineTick(() => {
         if (framing) {
-            // Fitting is what centres the view on the note, whether or not its zoom is kept.
-            graph.zoomToFit(0, padding, nodeFilter);
-
-            if (fittedNoteCount <= 1) {
-                graph.zoom(LONE_NOTE_ZOOM, 0);
-            }
+            fit(0);
         }
 
         // Damping, once the graph has had the room to spread out, so that a small map comes to rest
@@ -758,9 +789,13 @@ function setupFraming(graph: ForceGraph<NoteMapNodeObject, NoteMapLinkObject>, c
         }
     });
 
-    return () => {
-        container.removeEventListener("wheel", releaseFraming, listenerOptions);
-        container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+    return {
+        fit,
+        release: releaseFraming,
+        stop() {
+            container.removeEventListener("wheel", releaseFraming, listenerOptions);
+            container.removeEventListener("pointerdown", releaseFraming, listenerOptions);
+        }
     };
 }
 

@@ -1,12 +1,16 @@
-import { readdirSync, readFileSync } from "fs";
+import { SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES } from "@triliumnext/commons";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { createRequire } from "module";
+import { tmpdir } from "os";
 import { dirname, join } from "path";
 import { describe, expect, it } from "vitest";
 
 import {
-    buildShareMermaidManifest,
+    buildShareThemeManifest,
+    checkHostedGroups,
     ENGINE_RENDER_ENTRY,
     LANGUAGE_DETECTOR_PACKAGE,
+    readLoaderTable,
     resolveUniverHyphenationStub,
     stripUniverEmojiSource,
     UI_ENTRY
@@ -121,59 +125,197 @@ describe("stripUniverEmojiData", () => {
     });
 });
 
-describe("buildShareMermaidManifest", () => {
-    const chunk = (fileName: string, extra: { name?: string; isEntry?: boolean; imports?: string[];
-        dynamicImports?: string[]; css?: string[] } = {}) => ({
+describe("buildShareThemeManifest", () => {
+    const MERMAID_ID = "/node_modules/mermaid/dist/mermaid.core.mjs";
+    const VIEWER_ID = "/packages/share-theme/src/content/zoom_viewer.tsx";
+    const COLLECTION_ID = "/packages/share-theme/src/content/collection_view.tsx";
+    const SCRIPT_API_ID = "/apps/client/src/services/frontend_script_api.ts";
+    const CALENDAR_ID = "/apps/client/src/widgets/collections/calendar/index.tsx";
+    const GEOMAP_ID = "/apps/client/src/widgets/collections/geomap/index.tsx";
+    const PRINT_ID = "/apps/client/src/widgets/collections/table/TablePrintView.tsx";
+    const chunk = (fileName: string, extra: { facade?: string; imports?: string[];
+        dynamicImports?: string[]; css?: string[]; assets?: string[] } = {}) => ({
         type: "chunk" as const,
         fileName,
-        name: extra.name ?? fileName,
-        isEntry: extra.isEntry ?? false,
+        facadeModuleId: extra.facade ?? null,
         imports: extra.imports ?? [],
         dynamicImports: extra.dynamicImports ?? [],
-        viteMetadata: { importedCss: new Set(extra.css ?? []), importedAssets: new Set<string>() }
+        viteMetadata: {
+            importedCss: new Set(extra.css ?? []),
+            importedAssets: new Set(extra.assets ?? [])
+        }
     });
+    const asset = (fileName: string) => ({ type: "asset" as const, fileName });
     const bundle = Object.fromEntries([
-        chunk("src/share_mermaid-a.js", {
-            name: "share_mermaid",
-            isEntry: true,
-            imports: [ "src/core-b.js" ]
+        chunk("src/scripts.js", {
+            imports: [ "src/shared-a.js", "src/shared-k.js" ],
+            dynamicImports: [
+                "src/fuse-b.js", "src/mermaid.core-c.js", "src/zoom_viewer-l.js",
+                "src/collection_view-n.js"
+            ],
+            css: [ "src/scripts-j.css" ]
         }),
-        chunk("src/core-b.js", {
-            dynamicImports: [ "src/flowchart-c.js", "src/elk-d.js" ],
-            css: [ "src/core-e.css" ]
+        chunk("src/shared-a.js", { css: [ "src/shared-a.css" ] }),
+        chunk("src/shared-k.js", { css: [ "src/shared-k.css" ] }),
+        chunk("src/fuse-b.js", {
+            imports: [ "src/shared-a.js" ],
+            css: [ "src/fuse-d.css" ],
+            assets: [ "src/font-e.woff2" ]
         }),
-        chunk("src/flowchart-c.js", { imports: [ "src/core-b.js" ] }),
-        chunk("src/elk-d.js"),
-        { type: "asset" as const, fileName: "src/core-e.css" },
-        chunk("src/index-f.js", { name: "index", isEntry: true, imports: [ "src/core-b.js" ] })
+        chunk("src/mermaid.core-c.js", {
+            facade: MERMAID_ID,
+            imports: [ "src/shared-k.js", "src/dagre-f.js" ],
+            dynamicImports: [ "src/flowchart-g.js" ]
+        }),
+        chunk("src/zoom_viewer-l.js", { facade: VIEWER_ID, imports: [ "src/preact-m.js" ] }),
+        chunk("src/preact-m.js"),
+        chunk("src/dagre-f.js"),
+        chunk("src/flowchart-g.js"),
+        chunk("src/index-h.js", { imports: [ "src/shared-a.js" ] }),
+        chunk("src/collection_view-n.js", {
+            facade: COLLECTION_ID,
+            imports: [ "src/NoteList-o.js" ]
+        }),
+        chunk("src/NoteList-o.js", {
+            imports: [ "src/content_renderer-s.js" ],
+            dynamicImports: [ "src/calendar-p.js", "src/geomap-q.js", "src/print-r.js" ]
+        }),
+        chunk("src/content_renderer-s.js", {
+            dynamicImports: [ "src/mermaid.core-c.js", "src/script_api-t.js" ]
+        }),
+        chunk("src/script_api-t.js", { facade: SCRIPT_API_ID, imports: [ "src/ckeditor-w.js" ] }),
+        chunk("src/ckeditor-w.js"),
+        chunk("src/calendar-p.js", { facade: CALENDAR_ID, imports: [ "src/fullcalendar-v.js" ] }),
+        chunk("src/fullcalendar-v.js"),
+        chunk("src/geomap-q.js", {
+            facade: GEOMAP_ID,
+            imports: [ "src/NoteList-o.js", "src/zoom_viewer-l.js" ],
+            dynamicImports: [ "src/collection_view-n.js" ],
+            assets: [ "assets/worker-x.js" ]
+        }),
+        chunk("src/print-r.js", { facade: PRINT_ID }),
+        ...[ "scripts-j.css", "shared-a.css", "shared-k.css", "fuse-d.css", "font-e.woff2" ]
+            .map((name) => asset(`src/${name}`))
     ].map((output) => [ output.fileName, output ]));
+    const groups = {
+        shared: {
+            mermaid: [ MERMAID_ID, VIEWER_ID ],
+            scripting: [ SCRIPT_API_ID ],
+            app: [ COLLECTION_ID ]
+        },
+        byContent: [ "mermaid", "scripting" ],
+        typed: { "view:calendar": [ CALENDAR_ID ], "view:geoMap": [ GEOMAP_ID ] },
+        gated: [ CALENDAR_ID, GEOMAP_ID, PRINT_ID ]
+    };
 
-    it("lists the entry and everything it loads, relative to the manifest", () => {
-        const files = [
-            "core-b.js", "core-e.css", "elk-d.js", "flowchart-c.js", "share_mermaid-a.js"
-        ];
-
-        expect(buildShareMermaidManifest(bundle, "src/share_mermaid.json"))
-            .toEqual({ entry: "share_mermaid-a.js", files });
-        const standaloneManifest = "share/assets/client/share_mermaid.json";
-        expect(buildShareMermaidManifest(bundle, standaloneManifest)).toEqual({
-            entry: "../../../src/share_mermaid-a.js",
-            files: files.map((file) => `../../../src/${file}`)
-        });
+    it("lists what every page loads apart from what only the modules of each group load", () => {
+        // The styles of the chunks `scripts.js` imports are in `scripts.css`, but a chunk loaded on
+        // demand preloads the stylesheets of the chunks it imports.
+        const manifest = buildShareThemeManifest(bundle, groups, [ "src/KaTeX-i.woff2" ]);
+        expect(manifest.files).toEqual([
+            "KaTeX-i.woff2", "font-e.woff2", "fuse-b.js", "fuse-d.css", "scripts.css",
+            "scripts.js", "shared-a.css", "shared-a.js", "shared-k.js", "tree.js"
+        ]);
+        expect(manifest.lazy.mermaid).toEqual([
+            "dagre-f.js", "flowchart-g.js", "mermaid.core-c.js", "preact-m.js", "shared-k.css",
+            "zoom_viewer-l.js"
+        ]);
+        expect(manifest.lazy.scripting).toEqual([ "ckeditor-w.js", "script_api-t.js" ]);
     });
 
-    it("rejects a bundle without the entry or with files outside one directory", () => {
-        const MANIFEST = "src/share_mermaid.json";
-        const { "src/share_mermaid-a.js": _, ...withoutEntry } = bundle;
-        expect(() => buildShareMermaidManifest(withoutEntry, MANIFEST))
-            .toThrow("no 'share_mermaid' entry");
+    it("stops a group where it loads another group on demand, requiring the shared ones", () => {
+        const { lazy, requires } = buildShareThemeManifest(bundle, groups, []);
+
+        // The note list loads every view and the content renderer loads the script API and mermaid
+        // on demand, by the type and the content of a note, so none of them joins the app's files.
+        expect(lazy.app)
+            .toEqual([ "NoteList-o.js", "collection_view-n.js", "content_renderer-s.js" ]);
+        expect(requires.app).toEqual([]);
+        expect(lazy["view:calendar"]).toEqual([ "calendar-p.js", "fullcalendar-v.js" ]);
+        expect(requires["view:calendar"]).toEqual([]);
+
+        // The map loads the app on demand, so it requires it and leaves out the files the app
+        // holds, and imports the viewer statically, which it then holds itself.
+        // A worker the build writes to `assets/` is listed by its path from the manifest.
+        expect(lazy["view:geoMap"])
+            .toEqual([ "../assets/worker-x.js", "geomap-q.js", "preact-m.js", "zoom_viewer-l.js" ]);
+        expect(requires["view:geoMap"]).toEqual([ "app" ]);
+        expect(Object.values(lazy).flat()).not.toContain("print-r.js");
+    });
+
+    it("requires a shared group that is a group's own module, even one chosen by content", () => {
+        const { lazy, requires } = buildShareThemeManifest(bundle,
+            { ...groups, typed: { ...groups.typed, "type:mermaid": [ MERMAID_ID ] } }, []);
+
+        expect(lazy["type:mermaid"]).toEqual([]);
+        expect(requires["type:mermaid"]).toEqual([ "mermaid" ]);
+    });
+
+    it("rejects a bundle without a group's chunk or with files outside one directory", () => {
+        const withMermaid = (ids: string[]) => ({ ...groups, shared: { mermaid: ids } });
+        expect(() => buildShareThemeManifest(bundle, withMermaid([ "/elsewhere/mermaid.mjs" ]), []))
+            .toThrow("no chunk for '/elsewhere/mermaid.mjs' of the share theme's 'mermaid'");
 
         const nested = {
             ...bundle,
-            "src/elk-d.js": chunk("src/elk-d.js", { imports: [ "src/nested/g.js" ] }),
-            "src/nested/g.js": chunk("src/nested/g.js")
+            "src/fuse-b.js": chunk("src/fuse-b.js", { imports: [ "src/nested/k.js" ] }),
+            "src/nested/k.js": chunk("src/nested/k.js")
         };
-        expect(() => buildShareMermaidManifest(nested, MANIFEST)).toThrow("several directories");
+        expect(() => buildShareThemeManifest(nested, withMermaid([ MERMAID_ID ]), []))
+            .toThrow("must all be in 'src/': src/nested/k.js");
+    });
+});
+
+describe("readLoaderTable", () => {
+    const writeTable = (source: string) => {
+        const file = join(mkdtempSync(join(tmpdir(), "loader-table-")), "table.tsx");
+        writeFileSync(file, source);
+        return file;
+    };
+
+    it("reads the imports of each entry's property, and of the whole table", async () => {
+        const file = writeTable(`
+            const VIEWS: Record<string, { normal: () => unknown; print?: () => unknown }> = {
+                list: {
+                    normal: lazy(() => import("./list.js").then((m) => m.List)),
+                    print: () => import("./print.js")
+                },
+                "geo-map": { normal: async () => (await import("./geomap.js")).default },
+                empty: { normal: () => (props: unknown) => <></> },
+                inline: () => import("./inline.js")
+            } satisfies Views;
+            export const OTHER = { list: () => import("./other.js") };
+        `);
+
+        const table = { file, name: "VIEWS", property: "normal", prefix: "view:" };
+        expect(await readLoaderTable(table)).toEqual({
+            entries: { list: [ "./list.js" ], "geo-map": [ "./geomap.js" ], empty: [], inline: [] },
+            all: [ "./list.js", "./print.js", "./geomap.js", "./inline.js" ]
+        });
+        expect((await readLoaderTable({ file, name: "OTHER", prefix: "type:" })).entries)
+            .toEqual({ list: [ "./other.js" ] });
+    });
+
+    it("rejects a table it cannot read the types from", async () => {
+        const file = writeTable(`const COMPUTED = { [key]: () => import("./a.js") };`);
+
+        await expect(readLoaderTable({ file, name: "MISSING", prefix: "type:" }))
+            .rejects.toThrow("has no object literal 'MISSING'");
+        await expect(readLoaderTable({ file, name: "COMPUTED", prefix: "type:" }))
+            .rejects.toThrow("has an entry whose key is not a literal");
+    });
+});
+
+describe("checkHostedGroups", () => {
+    it("accepts groups for every hosted type and names those missing one", () => {
+        const all = [
+            ...SHARE_HOSTED_VIEW_TYPES.map((type) => `view:${type}`),
+            ...SHARE_HOSTED_NOTE_TYPES.map((type) => `type:${type}`)
+        ];
+        expect(() => checkHostedGroups(all)).not.toThrow();
+        const partial = all.filter((name) => name !== "view:calendar" && name !== "type:noteMap");
+        expect(() => checkHostedGroups(partial))
+            .toThrow("hosts types with no group of files: view:calendar, type:noteMap.");
     });
 });
 

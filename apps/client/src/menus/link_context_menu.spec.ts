@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     triggerCommand: vi.fn(),
     openContextWithNote: vi.fn(),
     isMobile: vi.fn(() => false),
+    isShare: false,
     isDesktop: vi.fn(() => true),
     getClosestNtxId: vi.fn((): string | null => null),
     /** The splits of the active tab, which decide the "new split" vs "other split" wording. */
@@ -47,7 +48,10 @@ vi.mock("../services/i18n", () => ({ t: (key: string) => key }));
 vi.mock("../services/utils", () => ({
     default: { isDesktop: mocks.isDesktop },
     escapeHtml: (text: string) => text,
-    isMobile: mocks.isMobile
+    isMobile: mocks.isMobile,
+    get isShare() {
+        return mocks.isShare;
+    }
 }));
 
 vi.mock("../widgets/widget_utils", () => ({ getClosestNtxId: mocks.getClosestNtxId }));
@@ -116,6 +120,16 @@ describe("getItems", () => {
             .toMatchObject({ title: "link_context_menu.open_note_in_new_split" });
     });
 
+    it("offers only a new tab and a new window on a shared page, which has no splits or popup", () => {
+        mocks.isShare = true;
+        try {
+            expect(linkContextMenu.getItems(contextMenuEvent()).map((item) => "command" in item && item.command))
+                .toEqual([ "openNoteInNewTab", "openNoteInNewWindow" ]);
+        } finally {
+            mocks.isShare = false;
+        }
+    });
+
     /** For a menu with entries of its own, which lists quick edit and folds the rest away. */
     it("folds the three places into one submenu, quick edit standing on its own", () => {
         const open = linkContextMenu.getOpenNoteItem(contextMenuEvent());
@@ -135,6 +149,29 @@ describe("getItems", () => {
 });
 
 describe("handleLinkContextMenuItem", () => {
+    it("opens the note's shared page in a browser tab or window on a shared page", () => {
+        const open = vi.spyOn(window, "open").mockReturnValue(null);
+        mocks.isShare = true;
+        linkContextMenu.setShareLinkResolver((noteId) => (noteId === "n1" ? "./first-note" : null));
+        try {
+            expect(handle("openNoteInNewTab")).toBe(true);
+            expect(open).toHaveBeenLastCalledWith("./first-note", "_blank", "noopener");
+            expect(handle("openNoteInNewWindow")).toBe(true);
+            expect(open).toHaveBeenLastCalledWith("./first-note", "_blank", "noopener,popup");
+            expect(mocks.openContextWithNote).not.toHaveBeenCalled();
+            expect(mocks.triggerCommand).not.toHaveBeenCalled();
+
+            // A note without a shared page has nowhere to be opened.
+            open.mockClear();
+            expect(linkContextMenu.handleLinkContextMenuItem("openNoteInNewTab", contextMenuEvent(), "root/n2")).toBe(false);
+            expect(open).not.toHaveBeenCalled();
+        } finally {
+            mocks.isShare = false;
+            linkContextMenu.setShareLinkResolver(undefined);
+            open.mockRestore();
+        }
+    });
+
     it("opens a new tab under the given hoisting, falling back to the active context's", () => {
         expect(handle("openNoteInNewTab", VIEW_SCOPE, "explicitHoist")).toBe(true);
         expect(mocks.openContextWithNote).toHaveBeenCalledWith("root/n1", {

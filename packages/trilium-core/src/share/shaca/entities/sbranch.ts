@@ -54,6 +54,18 @@ class SBranch extends AbstractShacaEntity {
     getParentNote() {
         return this.parentNote;
     }
+
+    getPojo() {
+        return {
+            branchId: this.branchId,
+            noteId: this.noteId,
+            parentNoteId: this.parentNoteId,
+            notePosition: this.parentNote.children.indexOf(this.childNote) * 10,
+            prefix: this.prefix,
+            isExpanded: this.isExpanded,
+            fromSearchNote: false
+        };
+    }
 }
 
 export default SBranch;

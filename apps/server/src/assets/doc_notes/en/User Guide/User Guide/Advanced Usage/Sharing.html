@@ -23,6 +23,11 @@ class="image">
     between the pages of the site, and shows the current note.</li>
   <li>Customizable logo.</li>
   <li>Quick navigation buttons (previous and next note).</li>
+  <li>Notes that hide their children from the tree with <code>#subtreeHidden</code> (such
+    as a <a class="reference-link" href="#root/_help_CtBQqbwXDx1w">Kanban Board</a>)
+    show a badge counting them in place of listing them. The page of one of
+    those children shows only that child below its parent, and the previous
+    and next buttons skip them.</li>
   <li>The subpages of a text or code note shown below its content as cards,
     as in the application. Each card shows the icon of the subpage and the
     start of its text (or its <code>#shareDescription</code>), or, for a subpage
@@ -124,8 +129,8 @@ class="image">
         </td>
         <td>
           <ul>
-            <li>The other view types (such as the calendar, the table or the board) are
-              not supported, and the child notes are shown as cards instead.</li>
+            <li>The calendar, table, board, geo map, dashboard and presentation view types
+              are shown as in the app, but read-only.</li>
           </ul>
         </td>
       </tr>
@@ -135,16 +140,18 @@ class="image">
         <td>
           <ul>
             <li>The diagram is drawn in the page's light or dark mode and redrawn when
-              the visitor switches it. Until it is drawn, and in browsers with JavaScript
-              disabled, the image saved when the note was last edited is shown instead.</li>
-            <li>The source of the diagram can be expanded below it.</li>
+              the visitor switches it. In browsers with JavaScript disabled, the image
+              saved when the note was last edited is shown instead, and the source of
+              the diagram can be expanded below it.</li>
+            <li>The diagram fills the page and can be zoomed with the <span class="tn-icon bx bx-minus-circle"></span> and <span
+              class="tn-icon bx bx-plus-circle"></span> buttons in its bottom corner
+              or with the mouse wheel, between 50% and 1000% of its fitted size, and
+              on touch screens by pinching. Clicking the percentage between the buttons,
+              or double-clicking the diagram, shows it whole again. The diagram can be
+              panned by dragging it.</li>
           </ul>
         </td>
-        <td>
-          <ul>
-            <li>No further interaction supported.</li>
-          </ul>
-        </td>
+        <td>&nbsp;</td>
       </tr>
       <tr>
         <th><a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>
@@ -312,7 +319,8 @@ for (const attr of parentNote.attributes) {
 <p>Shared notes typically have URLs like <code>http://domain.tld/share/knvU8aJy4dJ7</code>,
   where the last part is the note's ID. You can make these URLs more user-friendly
   by adding the <code>#shareAlias</code> label to individual notes (e.g., <code>#shareAlias=highlighting</code>).
-  This will change the URL to <code>http://domain.tld/share/highlighting</code>.</p>
+  This will change the URL to <code>http://domain.tld/share/highlighting</code>.
+  The URL with the note's ID keeps working and redirects to the alias.</p>
 <p><strong>Important</strong>:</p>
 <ol>
   <li>Ensure that aliases are unique.</li>
@@ -353,7 +361,8 @@ for (const attr of parentNote.attributes) {
   target URL as its value (e.g. <code>#shareExternalLink="https://example.com"</code>).</p>
 <p>Any link pointing to this note will then redirect to the external website
   and open in a new browser tab, instead of opening the note's own shared
-  page. This applies to:</p>
+  page. Opening the note's shared URL by its ID also redirects to the external
+  website. This applies to:</p>
 <ul>
   <li>the listing produced by the <code>#shareIndex</code> label;</li>
   <li>the navigation tree of the shared site;</li>
@@ -383,8 +392,9 @@ class="admonition note">
       <tr>
         <td><code>#shareHiddenFromTree</code>
         </td>
-        <td>this note is hidden from the left navigation tree and from its parent's
-          list of subpages, but still accessible with its URL</td>
+        <td>this note is hidden from the left navigation tree, from its parent's list
+          of subpages, from shared note maps and from the share's search, but still
+          accessible with its URL</td>
       </tr>
       <tr>
         <td><code>#shareExternalLink</code>

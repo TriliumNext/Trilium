@@ -11,20 +11,21 @@ import Component from "../../../components/component.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import { RefObject } from "preact";
 
-export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator | null>): Partial<EventCallBackMethods> {
+/** The table's context menus; a read-only table offers only what leaves the notes as they are. */
+export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator | null>, isReadOnly = false): Partial<EventCallBackMethods> {
     const events: Partial<EventCallBackMethods> = {};
     if (!tabulator || !parentComponent) return events;
 
-    events["rowContext"] = (e, row) => tabulator.current && showRowContextMenu(parentComponent, e as MouseEvent, row, parentNote, tabulator.current);
-    events["headerContext"] = (e, col) => tabulator.current && showColumnContextMenu(parentComponent, e as MouseEvent, col, parentNote, tabulator.current);
+    events["rowContext"] = (e, row) => tabulator.current && showRowContextMenu(parentComponent, e as MouseEvent, row, parentNote, tabulator.current, isReadOnly);
+    events["headerContext"] = (e, col) => tabulator.current && showColumnContextMenu(parentComponent, e as MouseEvent, col, parentNote, tabulator.current, isReadOnly);
     events["renderComplete"] = () => {
         const headerRow = tabulator.current?.element.querySelector(".tabulator-header-contents");
-        headerRow?.addEventListener("contextmenu", (e) => showHeaderContextMenu(parentComponent, e as MouseEvent, tabulator.current!));
+        headerRow?.addEventListener("contextmenu", (e) => showHeaderContextMenu(parentComponent, e as MouseEvent, tabulator.current!, isReadOnly));
     }
     return events;
 }
 
-function showColumnContextMenu(parentComponent: Component, e: MouseEvent, column: ColumnComponent, parentNote: FNote, tabulator: Tabulator) {
+function showColumnContextMenu(parentComponent: Component, e: MouseEvent, column: ColumnComponent, parentNote: FNote, tabulator: Tabulator, isReadOnly: boolean) {
     const { title, field } = column.getDefinition();
 
     const sorters = tabulator.getSorters();
@@ -81,43 +82,7 @@ function showColumnContextMenu(parentComponent: Component, e: MouseEvent, column
                 uiIcon: "bx bx-columns",
                 items: buildColumnItems(tabulator)
             },
-            { kind: "separator" },
-            {
-                title: t("table_view.add-column-to-the-left"),
-                uiIcon: "bx bx-horizontal-left",
-                enabled: !column.getDefinition().frozen,
-                items: buildInsertSubmenu(parentComponent, column, "before"),
-                handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
-                    referenceColumn: column
-                })
-            },
-            {
-                title: t("table_view.add-column-to-the-right"),
-                uiIcon: "bx bx-horizontal-right",
-                items: buildInsertSubmenu(parentComponent, column, "after"),
-                handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
-                    referenceColumn: column,
-                    direction: "after"
-                })
-            },
-            { kind: "separator" },
-            {
-                title: t("table_view.edit-column"),
-                uiIcon: "bx bxs-edit-alt",
-                enabled: isUserDefinedColumn,
-                handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
-                    referenceColumn: column,
-                    columnToEdit: column
-                })
-            },
-            {
-                title: t("table_view.delete-column"),
-                uiIcon: "bx bx-trash",
-                enabled: isUserDefinedColumn,
-                handler: () => parentComponent?.triggerCommand("deleteTableColumn", {
-                    columnToDelete: column
-                })
-            }
+            ...(isReadOnly ? [] : buildColumnEditingItems(parentComponent, column, isUserDefinedColumn))
         ],
         selectMenuItemHandler() {},
         x: e.pageX,
@@ -126,11 +91,54 @@ function showColumnContextMenu(parentComponent: Component, e: MouseEvent, column
     e.preventDefault();
 }
 
+/** The column menu's entries that add, change or delete a column. */
+function buildColumnEditingItems(parentComponent: Component, column: ColumnComponent, isUserDefinedColumn: boolean): MenuItem<unknown>[] {
+    return [
+        { kind: "separator" },
+        {
+            title: t("table_view.add-column-to-the-left"),
+            uiIcon: "bx bx-horizontal-left",
+            enabled: !column.getDefinition().frozen,
+            items: buildInsertSubmenu(parentComponent, column, "before"),
+            handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
+                referenceColumn: column
+            })
+        },
+        {
+            title: t("table_view.add-column-to-the-right"),
+            uiIcon: "bx bx-horizontal-right",
+            items: buildInsertSubmenu(parentComponent, column, "after"),
+            handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
+                referenceColumn: column,
+                direction: "after"
+            })
+        },
+        { kind: "separator" },
+        {
+            title: t("table_view.edit-column"),
+            uiIcon: "bx bxs-edit-alt",
+            enabled: isUserDefinedColumn,
+            handler: () => parentComponent?.triggerCommand("addNewTableColumn", {
+                referenceColumn: column,
+                columnToEdit: column
+            })
+        },
+        {
+            title: t("table_view.delete-column"),
+            uiIcon: "bx bx-trash",
+            enabled: isUserDefinedColumn,
+            handler: () => parentComponent?.triggerCommand("deleteTableColumn", {
+                columnToDelete: column
+            })
+        }
+    ];
+}
+
 /**
  * Shows a context menu which has options dedicated to the header area (the part where the columns are, but in the empty space).
  * Provides generic options such as toggling columns.
  */
-function showHeaderContextMenu(parentComponent: Component, e: MouseEvent, tabulator: Tabulator) {
+function showHeaderContextMenu(parentComponent: Component, e: MouseEvent, tabulator: Tabulator, isReadOnly: boolean) {
     contextMenu.show({
         items: [
             {
@@ -138,13 +146,15 @@ function showHeaderContextMenu(parentComponent: Component, e: MouseEvent, tabula
                 uiIcon: "bx bx-columns",
                 items: buildColumnItems(tabulator)
             },
-            { kind: "separator" },
-            {
-                title: t("table_view.new-column"),
-                uiIcon: "bx bx-empty",
-                enabled: false
-            },
-            ...buildInsertSubmenu(parentComponent)
+            ...(isReadOnly ? [] : [
+                { kind: "separator" } as const,
+                {
+                    title: t("table_view.new-column"),
+                    uiIcon: "bx bx-empty",
+                    enabled: false
+                },
+                ...buildInsertSubmenu(parentComponent)
+            ])
         ],
         selectMenuItemHandler() {},
         x: e.pageX,
@@ -153,7 +163,7 @@ function showHeaderContextMenu(parentComponent: Component, e: MouseEvent, tabula
     e.preventDefault();
 }
 
-export function showRowContextMenu(parentComponent: Component, e: MouseEvent, row: RowComponent, parentNote: FNote, tabulator: Tabulator) {
+export function showRowContextMenu(parentComponent: Component, e: MouseEvent, row: RowComponent, parentNote: FNote, tabulator: Tabulator, isReadOnly = false) {
     const rowData = row.getData() as TableData;
     const sorters = tabulator.getSorters();
 
@@ -167,7 +177,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
     }
 
     contextMenu.show({
-        items: [
+        items: isReadOnly ? link_context_menu.getItems(e) : [
             ...link_context_menu.getItems(e),
             { kind: "separator" },
             {

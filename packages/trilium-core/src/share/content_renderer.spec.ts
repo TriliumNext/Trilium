@@ -1014,14 +1014,22 @@ describe("content_renderer", () => {
                 mime: "text/vnd.mermaid",
                 content: "graph TD; A-->B[<script>]"
             });
-            const root = parse(String(getContent(note).content));
-            const container = root.querySelector("div.mermaid-note");
+            const result = getContent(note);
+            const root = parse(String(result.content));
+            const container = root.querySelector("div.share-note-view > div.mermaid-note");
 
+            expect(result.isAppView).toBe(true);
+            expect(root.querySelector("div.share-note-view")?.getAttribute("data-note-id"))
+                .toBe("mermaidNote");
             expect(container?.querySelector("img.mermaid-note-image")?.getAttribute("src"))
                 .toMatch(/^api\/images\/mermaidNote\//);
             expect(container?.querySelector("details pre.mermaid-note-source")?.textContent)
                 .toBe("graph TD; A-->B[<script>]");
-            expect(root.querySelector("script")).toBeNull();
+            // The only script is the payload the app's view reads, which the browser never runs.
+            const scripts = root.querySelectorAll("script");
+            expect(scripts.map((script) => script.getAttribute("type"))).toEqual([ "application/json" ]);
+            expect(JSON.parse(scripts[0].textContent).notes.map((row: { noteId: string }) => row.noteId))
+                .toContain("mermaidNote");
         });
     });
 
@@ -1497,10 +1505,12 @@ describe("content_renderer", () => {
                 prevNext: getPrevNextLinks(note, note),
                 navigation: [],
                 childLinks: getChildLinks(note, { sanitizeUrl: sanitize.sanitizeUrl }),
-                childLinksLayout: getChildLinksLayout(note),
+                childLinksLayout: getChildLinksLayout(note, note.getLabelValue("viewType")),
                 contentClasses: getContentClasses(note, isEmpty),
                 language: { page: { lang: "en", dir: "ltr" }, content: null },
                 lastUpdated: null,
+                showTitle: true,
+                titleIcon: null,
                 headings: [],
                 toc: [],
                 isPageInNavigation: false
@@ -1681,8 +1691,11 @@ describe("content_renderer pages", () => {
         expect(render({ type: "code", mime: "text/x-markdown", content: "  " }).isEmpty).toBe(true);
 
         for (const type of [ "image", "canvas", "mindMap" ]) {
-            expect(render({ id: `${type}Note`, type, title: "A picture", content: "" }).content)
-                .toMatch(new RegExp(`^<img src="api/images/${type}Note/A%20picture\\?`));
+            const image = render({ id: `${type}Note`, type, title: "A picture", content: "" });
+            expect(image.isAppView).toBe(true);
+            expect(parse(String(image.content))
+                .querySelector(`.share-note-view[data-note-id=${type}Note] > img`)?.getAttribute("src"))
+                .toMatch(new RegExp(`^api/images/${type}Note/A%20picture\\?`));
         }
         const file = (id: string, mime: string) =>
             render({ id, type: "file", mime, content: "" }).content;
@@ -1691,10 +1704,112 @@ describe("content_renderer pages", () => {
         expect(file("zipNote", "application/zip"))
             .toContain(`location.href='api/notes/zipNote/download'`);
         expect(render({ type: "spreadsheet", content: "" }).isEmpty).toBe(true);
-        expect(render({ type: "spreadsheet", content: "{}" }).content)
-            .toBe("<p>Empty spreadsheet.</p>");
-        expect(render({ type: "relationMap", content: "{}" }).content)
+        const spreadsheet = render({ id: "sheetNote", type: "spreadsheet", content: "{}" });
+        expect(spreadsheet.isAppView).toBe(true);
+        expect(parse(String(spreadsheet.content))
+            .querySelector(".share-note-view[data-note-id=sheetNote] > p")?.textContent)
+            .toBe("Empty spreadsheet.");
+        const relationMap = render({ id: "relationMapNote", type: "relationMap", content: "{}" });
+        expect(relationMap.isAppView).toBe(true);
+        expect(parse(String(relationMap.content))
+            .querySelector(".share-note-view[data-note-id=relationMapNote]")?.innerHTML).toBe("");
+        const renderNote = render({ id: "renderNote", type: "render", content: "" });
+        expect(renderNote.isAppView).toBe(true);
+        expect(parse(String(renderNote.content))
+            .querySelector(".share-note-view[data-note-id=renderNote]")?.innerHTML).toBe("");
+        expect(render({ type: "launcher", content: "" }).content)
             .toBe(`<p>${t("content_renderer.note-cannot-be-displayed")}</p>`);
+    });
+
+    it("titles full-height content with its icon in a row of its own, and other pages with a heading", () => {
+        const appPage = parse(String(renderNoteContent(buildSitePage({
+            type: "image", title: "A <picture>", content: "", "#iconClass": "bx bx-rocket"
+        }))));
+        expect(appPage.querySelector("#content > #title-row > .tn-icon")?.classList.contains("bx-rocket"))
+            .toBe(true);
+        expect(appPage.querySelector("#title-row > h1#title")?.textContent).toBe("A <picture>");
+
+        const pdfPage = parse(String(renderNoteContent(buildSitePage({
+            type: "file", mime: "application/pdf", title: "Manual", content: ""
+        }))));
+        expect(pdfPage.querySelector("#content")?.classList.contains("full-height")).toBe(true);
+        expect(pdfPage.querySelector("#content")?.classList.contains("app-view")).toBe(false);
+        expect(pdfPage.querySelector("#title-row > h1#title")?.textContent).toBe("Manual");
+
+        const textPage = parse(String(renderNoteContent(buildSitePage({ content: "<p>a</p>" }))));
+        expect(textPage.querySelector("#title-row") === null).toBe(true);
+        expect(textPage.querySelector("#content > h1#title") === null).toBe(false);
+    });
+
+    it("embeds in a hosted view neither the credentials nor the notes the visitor has not presented them for", () => {
+        const board = buildSitePage({
+            id: "lockedBoard", type: "book", content: "", "#viewType": "board", "#shareCredentials": "user:secret",
+            children: [
+                { id: "openCard", title: "Open", content: "<p>Open</p>" },
+                { id: "lockedCard", title: "Locked", content: "<p>Locked</p>", "#shareCredentials": "other:secret" }
+            ]
+        });
+        const setDevMode = mockDevMode();
+        const readPayload = () => {
+            const content = renderNoteContent(board, (note) => note.noteId !== "lockedCard");
+            const page = parse(String(content));
+            return JSON.parse(page.querySelector("script.share-froca")?.textContent ?? "{}");
+        };
+        const payload = readPayload();
+        expect(payload.notes.map((note: { noteId: string }) => note.noteId)).toEqual([ "lockedBoard", "openCard" ]);
+        expect(payload.attributes.map((attribute: { name: string }) => attribute.name)).toEqual([ "viewType" ]);
+        expect("exportBasePath" in payload).toBe(false);
+        expect(payload.assetPath).toBe(`../${assetUrlFragment}`);
+        setDevMode(true);
+        expect(readPayload().assetPath).toBe(`../${assetUrlFragment}/src`);
+    });
+
+    it("lists the subpages of a collection whose template makes it a list", () => {
+        buildNote({ id: "_template_testList", title: "List template", "#viewType": "list" });
+        const list = buildSitePage({
+            id: "templateList", type: "book", content: "", "~template": "_template_testList",
+            children: [ { id: "listItem", title: "Item", content: "<p>Item</p>" } ]
+        });
+        expect(parse(String(renderNoteContent(list))).querySelector("#childLinks")?.classList.value)
+            .toStrictEqual([ "list" ]);
+    });
+
+    it("counts a board's cards in the tree in place of listing them, its template hiding them", () => {
+        buildNote({
+            id: "_template_testBoard", title: "Board template", "#subtreeHidden": "", "#iconClass": "bx bx-columns"
+        });
+        const board = buildSitePage({
+            id: "hidingBoard",
+            title: "Board",
+            content: "<p>Board</p>",
+            "~template": "_template_testBoard",
+            children: [
+                { id: "boardCard1", title: "Card 1", content: "<p>1</p>" },
+                { id: "boardCard2", title: "Card 2", content: "<p>2</p>" }
+            ]
+        });
+        const page = parse(String(renderNoteContent(board)));
+        const entry = page.querySelector("#menu li[data-note-id=hidingBoard]");
+        expect(entry?.querySelector(".tree-item-hidden-count")?.textContent).toBe("2");
+        expect(entry?.querySelector(".tree-item-hidden-count")?.getAttribute("title"))
+            .toBe("2 subpages that are hidden from the tree");
+        expect(entry?.querySelector("li") === null).toBe(true);
+        expect(entry?.querySelector(".tree-item-row a > .tn-icon")?.classList.contains("bx-columns")).toBe(true);
+
+        const card = parse(String(renderNoteContent(shaca.getNote("boardCard1"))));
+        expect(card.querySelectorAll("#menu li[data-note-id=hidingBoard] li").map((item) =>
+            item.getAttribute("data-note-id"))).toEqual([ "boardCard1" ]);
+
+        const shown = buildSitePage({
+            id: "showingBoard", content: "<p>Board</p>", "#subtreeHidden": "false", "#iconClass": "bx bx-rocket",
+            "~template": "_template_testBoard",
+            children: [ { id: "shownCard", title: "Card", content: "<p>Card</p>" } ]
+        });
+        const shownPage = parse(String(renderNoteContent(shown)));
+        expect(shownPage.querySelector("#menu .tree-item-hidden-count") === null).toBe(true);
+        expect(shownPage.querySelector("#menu li[data-note-id=shownCard]") === null).toBe(false);
+        expect(shownPage.querySelector("#menu li[data-note-id=showingBoard] > .tree-item-row a > .tn-icon")
+            ?.classList.contains("bx-rocket")).toBe(true);
     });
 
     it("leaves content that is not text as it is, and empty text as empty", () => {
@@ -1811,6 +1926,46 @@ describe("content_renderer pages", () => {
         script.isProtected = true;
         expect(renderNoteForExport(script, branch, "../", [], []))
             .toBe(`console.log("Protected note cannot be exported.");`);
+    });
+
+    it("hosts an exported collection with the app's view, linking the exported notes", () => {
+        const site = buildNote({
+            id: "hostSite",
+            title: "Site",
+            content: "",
+            children: [ {
+                id: "hostCalendar",
+                title: "Calendar",
+                type: "book",
+                content: "",
+                "#viewType": "calendar",
+                children: [
+                    { id: "hostEvent", title: "Event", content: "" },
+                    { id: "hostLeftOut", title: "Left out", content: "" }
+                ]
+            } ]
+        });
+        const [ calendar ] = site.getChildNotes();
+        const branch = calendar.getParentBranches()[0];
+        const getLink = (noteId: string) =>
+            (noteId === "hostLeftOut" ? null : `../pages/${noteId}.html`);
+
+        const page = parse(String(renderNoteForExport(calendar, branch, "../", [], [], getLink)));
+        const payload = JSON.parse(page.querySelector("#content .share-froca")?.text ?? "{}");
+        expect(page.querySelector("#content .share-collection")?.getAttribute("data-note-id"))
+            .toBe("hostCalendar");
+        expect(payload.links).toStrictEqual({
+            hostCalendar: "../pages/hostCalendar.html",
+            hostEvent: "../pages/hostEvent.html"
+        });
+        expect(payload.branches.map((row: { noteId: string }) => row.noteId))
+            .toStrictEqual([ "hostEvent" ]);
+        expect(payload.assetPath).toBe("../assets");
+        expect(payload.exportBasePath).toBe("../");
+
+        // Without the export's links, a page keeps the content rendered for it.
+        const staticPage = parse(String(renderNoteForExport(calendar, branch, "../", [], [])));
+        expect(staticPage.querySelector("#content .share-collection") === null).toBe(true);
     });
 });
 

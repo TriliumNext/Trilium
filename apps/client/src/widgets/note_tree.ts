@@ -184,17 +184,6 @@ interface RefreshContext {
     noteIdsToReload: Set<string>;
 }
 
-/**
- * The information contained within a drag event.
- */
-export interface DragData {
-    noteId: string;
-    branchId: string;
-    title: string;
-}
-
-export const TREE_CLIPBOARD_TYPE = "application/x-fancytree-node";
-
 /** Entity changes below the given threshold will be processed without batching to avoid performance degradation. */
 const BATCH_UPDATE_THRESHOLD = 10;
 

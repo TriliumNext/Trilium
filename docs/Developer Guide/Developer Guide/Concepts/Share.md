@@ -7,15 +7,16 @@ The share theme represents the layout, styles and scripts behind the Share notes
 *   The HTML is defined in `src/templates` using EJS templating.
 *   `src/page` holds the parts of the page around the note (layout, header, navigation tree, theme switch, search, table of contents, footer) and `src/content` the styles and scripts for the note's own content (math, Mermaid, link embeds, adaptive colors). A script imports its own stylesheet, which sits next to it under the same name: `toc.ts` imports `./toc.css`.
 *   `src/index.ts` is the single entry point. It sets every script up and imports the stylesheets that have no script; the order of its imports is the order of the bundled stylesheet.
-*   The build emits `dist/scripts.js` and `dist/scripts.css`, the only stylesheet a shared page loads (`#shareOmitDefaultCss` drops it).
+*   The build emits `scripts.js`, `tree.js` and `scripts.css`, the only stylesheet a shared page loads (`#shareOmitDefaultCss` drops it).
 
 ## Building the share theme
 
-*   In `packages/share-theme`, run `pnpm build` to trigger a build. This will generate `dist` which will then be used by the server.
-*   Alternatively, use `pnpm dev` to watch for changes.
-*   `pnpm dist` is the same build, minified. It is what the app builds run, so a release ships the minified assets while local development keeps readable ones.
+The share theme has no build of its own: the client's Vite build bundles it, through `shareTheme()` in `apps/client/vite-plugins.mts`, which standalone's build uses as well.
 
-Both scripts clear `dist` first, since esbuild writes into it without removing what an earlier build left there — a minified release build would otherwise be copied alongside the unminified files `pnpm install` produces.
+*   `scripts.js` and its chunks are written to the client's `src/`, next to the app's chunks, so the theme and the app share one copy of what both use (such as Mermaid). The theme imports Mermaid with a plain `import("mermaid")`.
+*   `scripts.css` and `tree.js` are built on their own, for older browsers than the app (`chrome96`). `scripts.css` keeps the order in which `index.ts` imports the stylesheets, which the app's build would change by moving the ones the app shares into its chunks. `tree.js` builds to one file, since the page's first paint waits for it.
+*   `share_theme.json` lists the files a page can load, with those only Mermaid loads apart, for the static export.
+*   The development servers answer `scripts.js` and `tree.js` from source and `scripts.css` empty, since Vite injects the styles from the modules. A change to a script or a style needs no rebuild.
 
 ## Where the code lives
 
@@ -37,10 +38,9 @@ What differs per platform goes through the `ShareProvider` (`share_provider.ts`)
 
 The server renders the templates using EJS templating from the share theme and hosts the assets.
 
-*   In dev mode, the templates and assets are served directly from `packages/share-theme/dist`.
-    *   Modifications to the assets (scripts or styles) will reflect without having to restart the server. However the share theme needs to be built first (see previous section).
+*   In dev mode, the client's Vite server answers the theme's scripts from source (see the previous section), and the templates are read from `packages/share-theme/src/templates`.
     *   Changes to the template will require a restart of the server, since they are cached. Simply press Enter in the console with `pnpm server:start` to quickly trigger a restart.
-*   In production mode, the share theme is automatically built by the server build script and copied to `dist/share-theme`.
+*   In production mode, `/share/assets/` is served from the client build's `src/`, and the templates are copied to `dist/share-theme`.
 
 `apps/server/src/share/routes.ts` is the Express adapter over the core handlers, and `apps/server/src/share/share_provider.ts` registers the provider above.
 
@@ -50,14 +50,14 @@ The server renders the templates using EJS templating from the share theme and h
 
 *   The subsystem is loaded by a dynamic `import()` on the first `/share/` request, which keeps EJS, the share theme and the syntax highlighter (~950 KB together) out of the worker's startup bundle. That only holds while nothing in the eager graph imports `share/index.ts`, which is why it is not re-exported from the `@triliumnext/core` barrel.
 *   `ejs` is aliased to its own browser build in `vite.config.mts`: the package's ESM entry imports `node:fs` and `node:path`, which it only needs when no `includer` is passed, and the renderer always passes one.
-*   The share theme's assets are copied into the build at the paths `content_renderer.ts` writes into the page (`share/assets`, `assets/v<version>/images`), in place of the `express.static` routes the server registers.
+*   The share theme's files are in `src/` with the app's chunks, and a static host cannot serve `share/assets` from there, so the build writes `scripts.js`, `scripts.css` and `tree.js` to `share/assets` as well, the first two loading their namesakes in `src/`. The icon fonts and images are copied to the paths `content_renderer.ts` writes into the page (`share/assets/fonts`, `assets/v<version>/images`), in place of the `express.static` routes the server registers.
 *   The pages are rendered by the tab holding the database, so at least one app tab must be open for a `/share/` URL to resolve.
 
 ## Exporting to static HTML files
 
 The static export lives in `packages/trilium-core/src/services/export/zip/share_theme.ts`, so both the server and the standalone build offer it. It works quite similar to the normal sharing functionality, but it uses `BNote` instead of `SNote` (and so on for other entity types), in order to work regardless of whether a note is shared or not.
 
-The same templates are used, except that the rendered pages are stored in the archive instead of served to web clients. The theme's built files and the built-in icon fonts reach the provider through `ShareThemeExportAssets`, which each platform fills in its zip export factory:
+The same templates are used, except that the rendered pages are stored in the archive instead of served to web clients. The theme's built files and the built-in icon fonts reach the provider through `ShareThemeExportAssets`, which each platform fills in its zip export factory. Both copy the files `share_theme.json` lists into `assets/`, and those of Mermaid only when a note of the subtree has a diagram (`getShareThemeExportFiles()`):
 
-*   The server reads them from disk (`apps/server/src/services/export/zip/share_theme.ts`).
-*   The standalone build fetches them from `share/assets`, where it already copies them for the share pages. The file names come from the `virtual:share-theme-assets` module, which `vite.config.mts` generates from `packages/share-theme/dist` for both the page and the worker bundle.
+*   The server reads them from the client build's `src/` (`apps/server/src/services/export/zip/share_theme.ts`), so exporting from a development server needs `pnpm client:build` first.
+*   The standalone build fetches them from `/src/`. Its development server builds no share theme, so exporting needs a production build.

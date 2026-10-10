@@ -1340,6 +1340,7 @@
     "title": "Note Map",
     "fix-nodes": "Fix nodes",
     "link-distance": "Link distance",
+    "fit-to-view": "Fit to view",
     "too-many-notes_one": "There is {{count}} note here. Showing it may slow things down.",
     "too-many-notes_other": "There are {{count}} notes here. Showing them all may slow things down.",
     "show-anyway": "Show map"
@@ -1699,6 +1700,8 @@
     "setup_sample_created": "A sample note was created as a child note.",
     "disabled_description": "This render notes comes from an external source. To protect you from malicious content, it is not enabled by default. Make sure you trust the source before enabling it.",
     "disabled_button_enable": "Enable render note",
+    "disabled_read_only": "This render note comes from an external source, so it is not enabled.",
+    "nothing_to_display": "This note has nothing to display.",
     "error_title": "The script note failed to run",
     "error_show_details": "Show details",
     "error_note_label": "Script note:"

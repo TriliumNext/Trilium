@@ -238,6 +238,9 @@ export function useBoardKeyboard({
                 return;
             }
 
+            // Every key below edits the board.
+            if (api.isReadOnly) return;
+
             // A column beside the one focus is in, wherever inside it focus sits. The button that
             // adds a column stands beside none, and is the plain way to add one at the end anyway.
             if (e.key === "Enter" && !e.altKey && spot.kind !== "add-column") {
@@ -369,6 +372,8 @@ export function useBoardKeyboard({
             return;
         }
 
+        if (api.isReadOnly) return;
+
         if (e.key === "Delete" && spot.kind === "header" && !e.shiftKey) {
             take(e);
 
@@ -445,18 +450,19 @@ function neighbourOf(
 }
 
 /**
- * Asks the focused card or header for its menu the way a right click does, rather than by opening
- * one here: both already answer for `contextmenu`, and what each menu offers is theirs to say.
+ * Asks a card or a header for its menu the way a right click does, rather than by opening one
+ * here: both already answer for `contextmenu`, and what each menu offers is theirs to say.
  *
- * The press is taken first, so the browser sends no `contextmenu` of its own and the menu is not
- * opened twice. Where it opens is named here, a key press carrying no position of its own.
+ * The menu opens at `at`, else below the element's leading corner, for a key press, which carries
+ * no position of its own. A key press is taken first, so the browser sends no `contextmenu` of its
+ * own and the menu is not opened twice.
  */
-function askForMenu(element: HTMLElement) {
+export function askForMenu(element: HTMLElement, at?: { x: number, y: number }) {
     const { left, bottom } = element.getBoundingClientRect();
     element.dispatchEvent(new MouseEvent("contextmenu", {
         bubbles: true,
-        clientX: left,
-        clientY: bottom
+        clientX: at?.x ?? left,
+        clientY: at?.y ?? bottom
     }));
 }
 

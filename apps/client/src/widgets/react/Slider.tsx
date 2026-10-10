@@ -1,3 +1,5 @@
+import "./Slider.css";
+
 interface SliderProps {
     value: number;
     onChange(newValue: number);

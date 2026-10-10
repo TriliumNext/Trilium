@@ -11,6 +11,7 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
 *   Collapsible tree with the same note icons as the application. It keeps the sections the visitor expanded and its scroll position while they move between the pages of the site, and shows the current note.
 *   Customizable logo.
 *   Quick navigation buttons (previous and next note).
+*   Notes that hide their children from the tree with `#subtreeHidden` (such as a <a class="reference-link" href="../Collections/Kanban%20Board.md">Kanban Board</a>) show a badge counting them in place of listing them. The page of one of those children shows only that child below its parent, and the previous and next buttons skip them.
 *   The subpages of a text or code note shown below its content as cards, as in the application. Each card shows the icon of the subpage and the start of its text (or its `#shareDescription`), or, for a subpage without text, links to its own first subpages. The cards can be hidden with `#hideChildrenOverview`.
 *   Displaying the date of the last update of the note, written out in the application's language.
 *   Marking the page with the application's language and its text direction, and the content of the note with its own [content language](../Note%20Types/Text/Content%20language%20%26%20Right-to-left%20support.md), for screen readers and right-to-left text.
@@ -64,12 +65,12 @@ Trilium allows you to share selected notes as **publicly accessible** read-only 
         <tr>
             <th><a class="reference-link" href="../Collections.md">Collections</a></th>
             <td><ul><li>The child notes are shown as cards, or as a list when the view type of the collection is <em>List</em>. Each shows its icon and the start of its text (or its <code>#shareDescription</code>), or, for a child note without text, links to its own first child notes.</li></ul></td>
-            <td><ul><li>The other view types (such as the calendar, the table or the board) are not supported, and the child notes are shown as cards instead.</li></ul></td>
+            <td><ul><li>The calendar, table, board, geo map, dashboard and presentation view types are shown as in the app, but read-only.</li></ul></td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a></th>
-            <td><ul><li>The diagram is drawn in the page's light or dark mode and redrawn when the visitor switches it. Until it is drawn, and in browsers with JavaScript disabled, the image saved when the note was last edited is shown instead.</li><li>The source of the diagram can be expanded below it.</li></ul></td>
-            <td><ul><li>No further interaction supported.</li></ul></td>
+            <td><ul><li>The diagram is drawn in the page's light or dark mode and redrawn when the visitor switches it. In browsers with JavaScript disabled, the image saved when the note was last edited is shown instead, and the source of the diagram can be expanded below it.</li><li>The diagram fills the page and can be zoomed with the <span class="tn-icon bx bx-minus-circle"></span> and <span class="tn-icon bx bx-plus-circle"></span> buttons in its bottom corner or with the mouse wheel, between 50% and 1000% of its fitted size, and on touch screens by pinching. Clicking the percentage between the buttons, or double-clicking the diagram, shows it whole again. The diagram can be panned by dragging it.</li></ul></td>
+            <td>&nbsp;</td>
         </tr>
         <tr>
             <th><a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a></th>
@@ -186,7 +187,7 @@ To completely redesign the share, it is possible to create or use an existing [c
 
 ### Creating human-readable URL aliases
 
-Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`.
+Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`. The URL with the note's ID keeps working and redirects to the alias.
 
 **Important**:
 
@@ -218,7 +219,7 @@ To do so, create a shared text note and apply the `shareIndex` label. When viewe
 
 Sometimes it's useful to include a link to an external website alongside your shared notes — for example in the shared navigation or in an index. To do so, add the `#shareExternalLink` label to a note, with the target URL as its value (e.g. `#shareExternalLink="https://example.com"`).
 
-Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
+Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. Opening the note's shared URL by its ID also redirects to the external website. This applies to:
 
 *   the listing produced by the `#shareIndex` label;
 *   the navigation tree of the shared site;
@@ -246,7 +247,7 @@ The URL must be absolute and include the scheme (e.g. `https://`).
     <tbody>
         <tr>
             <td><code>#shareHiddenFromTree</code></td>
-            <td>this note is hidden from the left navigation tree and from its parent's list of subpages, but still accessible with its URL</td>
+            <td>this note is hidden from the left navigation tree, from its parent's list of subpages, from shared note maps and from the share's search, but still accessible with its URL</td>
         </tr>
         <tr>
             <td><code>#shareExternalLink</code></td>

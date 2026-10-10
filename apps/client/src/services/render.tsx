@@ -1,18 +1,23 @@
 import { Component, h, VNode } from "preact";
 
+import type AppComponent from "../components/component.js";
+
 import type FNote from "../entities/fnote.js";
 import { renderReactWidgetAtElement } from "../widgets/react/react_utils.jsx";
 import { type Bundle, executeBundleWithoutErrorHandling } from "./bundle.js";
 import froca from "./froca.js";
 import { keepStylesScoped, RENDER_SCOPE_CLASS } from "./render_css_scope.js";
-import server from "./server.js";
 
 /**
  * @param noteId the render note the error is attributed to, so the caller can link back to it.
  */
 type ErrorHandler = (e: unknown, noteId?: string) => void;
 
-export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+/**
+ * @param parentComponent the component a JSX render note's element is mounted under, by default the
+ *                        one of the closest `.component` element.
+ */
+export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: ErrorHandler, parentComponent?: AppComponent) {
     const relations = note.getRelations("renderNote");
     const renderNoteIds = relations.map((rel) => rel.value).filter((noteId) => noteId);
 
@@ -22,7 +27,7 @@ export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: Er
     try {
         for (const renderNoteId of renderNoteIds) {
             currentRenderNoteId = renderNoteId;
-            const bundle = await server.postWithSilentInternalServerError<Bundle>(`script/bundle/${renderNoteId}`);
+            const bundle = await froca.getScriptBundle(renderNoteId);
 
             if (!bundle) {
                 throw new Error(`Script note '${renderNoteId}' could not be loaded. It may be protected and require an active protected session.`);
@@ -40,7 +45,7 @@ export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: Er
                 .then(result => {
                     // Render JSX
                     if (bundle.html === "") {
-                        renderIfJsx(bundle, result, $el, onError).catch((e) => onError?.(e, bundle.noteId));
+                        renderIfJsx(bundle, result, $el, onError, parentComponent).catch((e) => onError?.(e, bundle.noteId));
                     }
                 });
         }
@@ -59,7 +64,7 @@ export async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: Er
     }
 }
 
-export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler) {
+export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<HTMLElement>, onError?: ErrorHandler, parentComponent?: AppComponent) {
     // Ensure the root script note is actually a JSX.
     const rootScriptNoteId = await froca.getNote(bundle.noteId);
     if (rootScriptNoteId?.mime !== "text/jsx") return;
@@ -68,7 +73,7 @@ export async function renderIfJsx(bundle: Bundle, result: unknown, $el: JQuery<H
     if (typeof result !== "function") return;
 
     // Obtain the parent component.
-    const closestComponent = glob.getComponentByEl($el.closest(".component")[0]);
+    const closestComponent = parentComponent ?? glob.getComponentByEl($el.closest(".component")[0]);
     if (!closestComponent) return;
 
     // Render the element.

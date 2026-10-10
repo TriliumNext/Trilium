@@ -92,8 +92,9 @@
         <td><code>contentClasses</code>
         </td>
         <td>The classes of the content element: <code>type-&lt;note type&gt;</code>, <code>ck-content</code> for
-          text and Markdown notes, and <code>no-content</code> when the note has no
-          content of its own.</td>
+          text and Markdown notes, <code>full-height</code> for a note that takes the
+          whole page (such as a PDF, a web view, a calendar, a geo map or an image),
+          and <code>no-content</code> when the note has no content of its own.</td>
       </tr>
       <tr>
         <td><code>childLinks</code>
@@ -104,7 +105,7 @@
           and <code>children</code> (when it has no excerpt, its first ten visible
           children, each with <code>title</code>, <code>href</code>, <code>isExternal</code> and <code>icon</code>).
           Empty for a note that is not a collection, a text note or a code note,
-          and with <code>#hideChildrenOverview</code>.</td>
+          for a note that takes the whole page, and with <code>#hideChildrenOverview</code>.</td>
       </tr>
       <tr>
         <td><code>childLinksLayout</code>
@@ -116,7 +117,8 @@
         <td><code>prevNext</code>
         </td>
         <td>The pages before and after the note in the navigation tree, as <code>previous</code> and <code>next</code>,
-          each with <code>title</code> and <code>href</code>, or <code>null</code>.</td>
+          each with <code>title</code> and <code>href</code>, or <code>null</code>. Both <code>null</code> for
+          a note that takes the whole page.</td>
       </tr>
       <tr>
         <td><code>language</code>
@@ -129,7 +131,21 @@
         <td><code>lastUpdated</code>
         </td>
         <td>When the note was last changed, as <code>iso</code> for a <code>&lt;time&gt;</code> element
-          and as <code>text</code> in the application's language, or <code>null</code>.</td>
+          and as <code>text</code> in the application's language, or <code>null</code>,
+          which it also is for a note that takes the whole page.</td>
+      </tr>
+      <tr>
+        <td><code>showTitle</code>
+        </td>
+        <td>Whether the default template shows the note's title above the content.
+          Always <code>true</code>.</td>
+      </tr>
+      <tr>
+        <td><code>titleIcon</code>
+        </td>
+        <td>The icon classes of the note, which the default template shows beside
+          the title in a row of its own for a note that takes the whole page; <code>null</code> for
+          any other note.</td>
       </tr>
       <tr>
         <td><code>snippets</code>

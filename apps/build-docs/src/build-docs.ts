@@ -289,7 +289,7 @@ export async function buildDocsFromConfig(configPath?: string, gitRootDir?: stri
     const config = await loadConfig(configPath);
 
     if (gitRootDir) {
-        // Only a Trilium checkout (a gitRootDir) has the share theme and the client to build.
+        // Only a Trilium checkout (a gitRootDir) has the client to build the share theme with.
         buildShareThemeAssets(gitRootDir);
     }
 
@@ -323,12 +323,10 @@ export default async function buildDocs({ gitRootDir }: BuildContext) {
 }
 
 /**
- * Builds the share theme and the client, whose mermaid the export copies next to the theme for
- * the pages that have a diagram. The client builds for production: this process runs with
- * `NODE_ENV=development`, under which the client's Vite config writes no `share_mermaid.json`.
+ * Builds the client, which writes the share theme the export copies. It builds for production
+ * rather than under this process's `NODE_ENV=development`.
  */
 function buildShareThemeAssets(gitRootDir: string) {
-    execSync("pnpm run --filter share-theme dist", { stdio: "inherit", cwd: gitRootDir });
     execSync("pnpm run --filter client build", {
         stdio: "inherit",
         cwd: gitRootDir,

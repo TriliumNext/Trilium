@@ -1,3 +1,5 @@
+import "./tooltip.css";
+
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { FilterLabelsByType, HighlightedTokenInfo, KeyboardActionNames, NoteType, OptionNames, RelationNames } from "@triliumnext/commons";
 import { Tooltip } from "bootstrap";
@@ -29,11 +31,10 @@ import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import { getEffectiveThemeStyle } from "../../services/theme";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
-import utils, { getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
+import utils, { getErrorMessage, isShare, randomString, reloadFrontendApp } from "../../services/utils";
 import ws from "../../services/ws";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
-import { DragData } from "../note_tree";
 import { noteSavedDataStore } from "./NoteStore";
 import { findClosestNoteContext, NoteContextContext, ParentComponent, refToJQuerySelector } from "./react_utils";
 import type FAttachment from "../../entities/fattachment";
@@ -148,8 +149,9 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
     }, [ note, getData ]);
 
     const commit = useCallback(async (data: SavedData | undefined) => {
-        // for read only notes, or if note is not yet available (e.g. lazy creation)
-        if (data === undefined || !note || note.type !== noteType) return;
+        // for read only notes, or if note is not yet available (e.g. lazy creation); a visitor of a
+        // shared page cannot save
+        if (data === undefined || !note || note.type !== noteType || isShare) return;
 
         protected_session_holder.touchProtectedSessionIfNecessary(note);
 
@@ -1694,6 +1696,16 @@ export function useImperativeSearchHighlighlighting(
     };
 }
 
+/** A note the note tree's drag carries, as JSON under the `text` type. */
+export interface DragData {
+    noteId: string;
+    branchId: string;
+    title: string;
+}
+
+/** The type that marks a drag as holding notes from the note tree, as fancytree's `dnd5` sets. */
+export const TREE_CLIPBOARD_TYPE = "application/x-fancytree-node";
+
 export function useNoteTreeDrag(containerRef: RefObject<HTMLElement | null | undefined>, { dragEnabled, dragNotEnabledMessage, callback }: {
     dragEnabled: boolean,
     dragNotEnabledMessage: Omit<ToastOptions, "id">;
@@ -2145,9 +2157,10 @@ export function useNoteColorClass(note: FNote | null | undefined) {
  * reader's own.
  *
  * Read when the caller mounts and again whenever a template is made, deleted, renamed or given
- * another icon, so what is offered is what exists now.
+ * another icon, so what is offered is what exists now. Not read at all while `enabled` is off,
+ * for a caller that has nothing to create, such as a read-only board.
  */
-export function useNoteTypeOptions() {
+export function useNoteTypeOptions(enabled = true) {
     const [ options, setOptions ] = useState<NoteTypeOption[]>([]);
     /** How many reads were asked for, and the newest one answered. */
     const asked = useRef(0);
@@ -2168,10 +2181,13 @@ export function useNoteTypeOptions() {
     }, []);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
         read();
         // A read still in flight when the caller goes has nothing left to answer.
         return () => { answered.current = asked.current + 1; };
-    }, [ read ]);
+    }, [ read, enabled ]);
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const offered = new Set(options
@@ -2188,7 +2204,7 @@ export function useNoteTypeOptions() {
             option.options.templateNoteId
                 && loadResults.isNoteReloaded(option.options.templateNoteId));
 
-        if (templated || renamed) {
+        if (enabled && (templated || renamed)) {
             read();
         }
     });

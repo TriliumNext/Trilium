@@ -149,7 +149,7 @@ describe("BoardGroupBy", () => {
     });
 
     /** Renders the dropdown with its menu open, which is where its items are drawn. */
-    async function setup(current = "status") {
+    async function setup(current = "status", canCreate = true) {
         const onSelect = vi.fn();
         const mountPoint = document.createElement("div");
         container = mountPoint;
@@ -160,6 +160,7 @@ describe("BoardGroupBy", () => {
                 <ParentComponent.Provider value={new Component()}>
                     <BoardGroupBy
                         note={board()}
+                        canCreate={canCreate}
                         options={groupingOptions(board(), undefined, current)}
                         current={current}
                         onSelect={onSelect}
@@ -182,6 +183,13 @@ describe("BoardGroupBy", () => {
 
     const items = (mountPoint: HTMLElement) =>
         [ ...document.querySelectorAll(".dropdown-menu .dropdown-item") ];
+
+    it("offers no grouping to make where none can be, only the ones the board has", async () => {
+        const { mountPoint } = await setup("status", false);
+
+        expect(items(mountPoint).map(item => item.textContent?.trim())).toEqual([ "Status", "Priority" ]);
+        expect(document.querySelector(".dropdown-menu .dropdown-divider")).toBeNull();
+    });
 
     it("offers making a grouping after the ones the board has, behind a divider", async () => {
         const { mountPoint } = await setup();

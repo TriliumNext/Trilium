@@ -1,15 +1,24 @@
 import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { getShareLink } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
 
+import becca from "../becca/becca.js";
+import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
+import * as sanitize from "../services/sanitizer.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { readShareTemplate, renderNoteContent } from "./content_renderer.js";
+import {
+    buildFrocaRows, buildVisibleNoteMap, buildVisibleRelationMap, buildVisibleScriptBundle,
+    getAttachmentRow, getBlobRow
+} from "./froca_payload.js";
 import { SHARE_ROUTE_PATHS, type ShareRoutePath } from "./route_paths.js";
 import { isShareReady } from "./share_provider.js";
+import shareRoot from "./share_root.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
@@ -80,11 +89,22 @@ export function handleShareRequest(route: ShareRoute, req: ShareRequest): ShareR
 const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/notes/:noteId/download": downloadNote,
     "/share/api/notes/:noteId/view": viewNote,
+    "/share/api/notes/:noteId/attachments": getNoteAttachments,
+    "/share/api/notes/:noteId/blob": getNoteBlob,
     "/share/api/notes/:noteId": getNote,
     "/share/api/notes": searchNotes,
     "/share/api/images/:noteId/:filename": getImage,
     "/share/api/attachments/:attachmentId/image/:filename": getAttachmentImage,
     "/share/api/attachments/:attachmentId/download": downloadAttachment,
+    "/share/api/attachments/:attachmentId/all": getSiblingAttachments,
+    "/share/api/attachments/:attachmentId/blob": getAttachmentBlob,
+    "/share/api/tree": loadTree,
+    "/share/api/search/lint": lintSearch,
+    "/share/api/search": searchInSubtree,
+    "/share/api/attribute-names": getAttributeNames,
+    "/share/api/note-map/:noteId/:mapType": getNoteMap,
+    "/share/api/relation-map/:noteId": getRelationMap,
+    "/share/api/script/bundle/:noteId": getScriptBundle,
     "/share/": getShareRoot,
     "/share/:shareId": getShareNote
 };
@@ -110,8 +130,20 @@ function getShareRoot(req: ShareRequest): ShareReply {
 
 function getShareNote(req: ShareRequest): ShareReply {
     const shareId = req.params.shareId ?? "";
-    const note = shaca.aliasToNote[shareId] || shaca.notes[shareId];
+    const aliasedNote = shaca.aliasToNote[shareId];
+    if (aliasedNote) {
+        return renderNote(aliasedNote, req);
+    }
 
+    // An app view links a note it knows only by ID to `./<noteId>`, which lands on its own link.
+    const note = shaca.notes[shareId];
+    if (note && typeof req.query.raw === "undefined") {
+        checkNoteAccess(note.noteId, req);
+        const link = getShareLink(note, sanitize.sanitizeUrl).href;
+        if (link !== `./${note.noteId}`) {
+            return { status: 302, headers: {}, redirect: link };
+        }
+    }
     return renderNote(note, req);
 }
 
@@ -162,6 +194,111 @@ function getNote(req: ShareRequest): ShareReply {
     const note = checkNoteAccess(req.params.noteId ?? "", req);
 
     return jsonReply(200, note.getPojo(), noIndexHeaders(note));
+}
+
+/**
+ * The notes named by `?noteIds=` (comma-separated), as the rows the client's froca loads, so that an
+ * app view on a shared page reads notes the page did not embed. Notes the caller cannot access are
+ * left out.
+ */
+function loadTree(req: ShareRequest): ShareReply {
+    const noteIds = String(req.query.noteIds ?? "").split(",").filter(Boolean);
+    const canAccess = (note: SNote) => hasCredentialAccess(note, req);
+    const notes = noteIds.flatMap((noteId) => {
+        const note = shaca.getNote(noteId);
+        return note ? [ note ] : [];
+    });
+    return jsonReply(200, buildFrocaRows(notes, canAccess));
+}
+
+/**
+ * Answers the note map the app draws of a shared note, as a tree or as its relations, with only the
+ * notes a visitor of the share can read and the links between them. The tree leaves out the notes
+ * the share tree does not list. The relations to leave out or
+ * to keep come as repeated `excludeRelation` and `includeRelation` parameters.
+ */
+function getNoteMap(req: ShareRequest): ShareReply {
+    const mapRoot = becca.getNote(checkNoteAccess(req.params.noteId ?? "", req).noteId);
+    const { mapType } = req.params;
+    if (!mapRoot || (mapType !== "tree" && mapType !== "link")) {
+        return jsonReply(404, { message: `No note map of '${req.params.noteId}'.` });
+    }
+
+    const toNames = (value: string | string[] | undefined) => [ value ?? [] ].flat();
+    return jsonReply(200, buildVisibleNoteMap(mapRoot, mapType, {
+        excludeRelations: toNames(req.query.excludeRelation),
+        includeRelations: toNames(req.query.includeRelation)
+    }, (noteId) => isReadable(noteId, req) && (mapType === "link" || isListedInShareTree(noteId))));
+}
+
+/**
+ * Answers the relations a shared relation map note draws between the notes placed on it, of which
+ * only those a visitor of the share can read. The notes are read from the map's own content.
+ */
+function getRelationMap(req: ShareRequest): ShareReply {
+    const mapNote = checkNoteContentAccess(req.params.noteId ?? "", req);
+    return jsonReply(200, buildVisibleRelationMap(mapNote.noteId, mapNote.getContent(),
+        (noteId) => isReadable(noteId, req)));
+}
+
+/**
+ * Answers the frontend bundle of a shared script note, which a shared render note runs, only when
+ * every note it is built from is one a visitor of the share can read, as the bundle carries the
+ * source of each. A backend script has no frontend bundle.
+ */
+function getScriptBundle(req: ShareRequest): ShareReply {
+    const scriptNote = checkNoteContentAccess(req.params.noteId ?? "", req);
+    const note = becca.getNote(scriptNote.noteId);
+    const bundle = note && buildVisibleScriptBundle(note, (noteId) => isReadable(noteId, req));
+    return bundle
+        ? jsonReply(200, bundle)
+        : jsonReply(404, { message: `Note '${scriptNote.noteId}' has no script to run.` });
+}
+
+/** Whether the shared note `noteId` is one the caller can read. */
+function isReadable(noteId: string, req: ShareRequest) {
+    const note = shaca.getNote(noteId);
+    return !!note && !note.isProtected && hasCredentialAccess(note, req);
+}
+
+/**
+ * Whether the share's navigation tree lists the note `noteId`: a path from the share root reaches
+ * it through branches that are not hidden and notes without `#shareHiddenFromTree`, as
+ * `SNote.getVisibleChildBranches()` walks it.
+ */
+function isListedInShareTree(noteId: string, visited = new Set<string>()): boolean {
+    if (noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        return true;
+    }
+
+    const note = shaca.getNote(noteId);
+    if (!note || visited.has(noteId) || note.isLabelTruthy("shareHiddenFromTree")) {
+        return false;
+    }
+
+    visited.add(noteId);
+    return note.getParentBranches().some((branch) => !branch.isHidden
+        && isListedInShareTree(branch.parentNoteId, visited));
+}
+
+function getNoteAttachments(req: ShareRequest): ShareReply {
+    const note = checkNoteContentAccess(req.params.noteId ?? "", req);
+    return jsonReply(200, note.getAttachments().map(getAttachmentRow));
+}
+
+function getNoteBlob(req: ShareRequest): ShareReply {
+    const note = checkNoteContentAccess(req.params.noteId ?? "", req);
+    return jsonReply(200, getBlobRow(note));
+}
+
+function getSiblingAttachments(req: ShareRequest): ShareReply {
+    const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
+    return jsonReply(200, attachment.note.getAttachments().map(getAttachmentRow));
+}
+
+function getAttachmentBlob(req: ShareRequest): ShareReply {
+    const attachment = checkAttachmentAccess(req.params.attachmentId ?? "", req);
+    return jsonReply(200, getBlobRow(attachment));
 }
 
 function downloadNote(req: ShareRequest): ShareReply {
@@ -239,6 +376,72 @@ function downloadAttachment(req: ShareRequest): ShareReply {
 }
 
 /** Used for searching; requires a noteId so the subtree root is known. */
+/**
+ * Runs a search below a shared note the way the app filters a collection, answering the matches a
+ * visitor can read with the tokens to highlight and the query's error.
+ */
+function searchInSubtree(req: ShareRequest): ShareReply {
+    const { searchString, ancestorNoteId } = req.query;
+    if (typeof searchString !== "string" || !searchString || typeof ancestorNoteId !== "string") {
+        return jsonReply(400, { message: "'searchString' and 'ancestorNoteId' parameters are mandatory." });
+    }
+    checkNoteAccess(ancestorNoteId, req);
+
+    const searchContext = new SearchContext({
+        fastSearch: false,
+        includeArchivedNotes: true,
+        fuzzyAttributeSearch: false,
+        ignoreHoistedNote: true,
+        ancestorNoteId
+    });
+    const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
+        .filter((result) => {
+            const note = shaca.notes[result.noteId];
+            return note && !note.isProtected && hasCredentialAccess(note, req)
+                && isVisibleInShareTree(ancestorNoteId, result.notePathArray);
+        })
+        .map((result) => result.noteId);
+
+    return jsonReply(200, {
+        searchResultNoteIds: noteIds,
+        highlightedTokens: searchContext.getHighlightedTokenInfos(),
+        error: searchContext.getError()
+    });
+}
+
+/**
+ * Completes an attribute name for the search editor from the attributes of the notes a visitor can
+ * read and the share tree lists, and the built-in names. The names in the rest of the database are none of a visitor's
+ * business.
+ */
+function getAttributeNames(req: ShareRequest): ShareReply {
+    const { type, query } = req.query;
+    if ((type !== "label" && type !== "relation") || typeof query !== "string") {
+        return jsonReply(400, { message: "'type' and 'query' parameters are mandatory." });
+    }
+
+    const nameLike = query.toLowerCase();
+    const names = new Set<string>();
+    for (const attribute of Object.values(shaca.attributes)) {
+        const { note } = attribute;
+        if (attribute.type === type && attribute.name.toLowerCase().includes(nameLike)
+            && !note.isProtected && hasCredentialAccess(note, req)
+            && isListedInShareTree(note.noteId)) {
+            names.add(attribute.name);
+        }
+    }
+    return jsonReply(200, attributeService.completeAttributeNames([ ...names ], type, query));
+}
+
+/** Reads a search string without running it, for the search editor's own checks. */
+function lintSearch(req: ShareRequest): ShareReply {
+    const { searchString } = req.query;
+    if (typeof searchString !== "string") {
+        return jsonReply(400, { message: "'searchString' parameter is mandatory." });
+    }
+    return jsonReply(200, { error: searchService.validateSearchQuery(searchString) });
+}
+
 function searchNotes(req: ShareRequest): ShareReply {
     const ancestorNoteId = req.query.ancestorNoteId ?? "_share";
 
@@ -284,6 +487,7 @@ function searchNotes(req: ShareRequest): ShareReply {
 
         return {
             id: fullNote.shareId,
+            noteId: fullNote.noteId,
             title: fullNote.title,
             score: sr.score,
             path: pathTitle,

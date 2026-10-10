@@ -6,7 +6,7 @@
 import $ from "jquery";
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -19,7 +19,7 @@ import server from "../../../services/server";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import BoardApi from "./api";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 
 vi.mock("../../../services/branches", () => ({
     default: {
@@ -44,6 +44,9 @@ vi.mock("../../../services/i18n", () => ({
     t: (key: string) => key,
     translationsInitializedPromise: $.Deferred().resolve()
 }));
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Board keyboard", () => {
     let container: HTMLElement | undefined;

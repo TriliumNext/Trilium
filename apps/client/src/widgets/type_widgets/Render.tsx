@@ -1,6 +1,6 @@
 import "./Render.css";
 
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -11,9 +11,10 @@ import toast from "../../services/toast";
 import Button, { SplitButton } from "../react/Button";
 import FormGroup from "../react/FormGroup";
 import { FormListItem } from "../react/FormList";
-import { useNoteRelation, useTriliumEvent } from "../react/hooks";
+import { useEffectiveReadOnly, useNoteRelation, useTriliumEvent } from "../react/hooks";
+import NoItems from "../react/NoItems";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import { refToJQuerySelector } from "../react/react_utils";
+import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
 import RenderErrorCard from "../react/RenderErrorCard";
 import SetupForm from "./helpers/SetupForm";
 import { TypeWidgetProps } from "./type_widget";
@@ -31,16 +32,22 @@ const HTML_SAMPLE = /*html*/`\
 `;
 
 export default function Render(props: TypeWidgetProps) {
-    const { note } = props;
+    const { note, noteContext } = props;
     const [ renderNote ] = useNoteRelation(note, "renderNote");
     const [ disabledRenderNote ] = useNoteRelation(note, "disabled:renderNote");
+    // A read-only note, such as a shared one, is not offered the setup that would change it.
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
 
     if (disabledRenderNote) {
-        return <DisabledRender {...props} />;
+        return isReadOnly
+            ? <NoItems icon="bx bx-extension" text={t("render.disabled_read_only")} />
+            : <DisabledRender {...props} />;
     }
 
     if (!renderNote) {
-        return <SetupRenderContent {...props} />;
+        return isReadOnly
+            ? <NoItems icon="bx bx-extension" text={t("render.nothing_to_display")} />
+            : <SetupRenderContent {...props} />;
     }
 
     return <RenderContent {...props} />;
@@ -49,11 +56,12 @@ export default function Render(props: TypeWidgetProps) {
 function RenderContent({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const [ error, setError ] = useState<{ error: unknown; noteId?: string } | null>(null);
+    const parentComponent = useContext(ParentComponent);
 
     function refresh() {
         if (!contentRef) return;
         setError(null);
-        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }));
+        render.render(note, refToJQuerySelector(contentRef), (e, noteId) => setError({ error: e, noteId }), parentComponent ?? undefined);
     }
 
     useEffect(refresh, [ note ]);

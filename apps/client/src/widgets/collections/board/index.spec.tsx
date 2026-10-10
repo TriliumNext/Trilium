@@ -6,7 +6,7 @@ import $ from "jquery";
 import { render } from "preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Modal as BootstrapModal, Tooltip } from "bootstrap";
 
@@ -26,12 +26,13 @@ import noteAttributeCache from "../../../services/note_attribute_cache";
 import searchService from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import BoardView, { BoardViewData } from ".";
+import BoardView, { BoardViewData, loadBoardEditing } from ".";
 import { getNoteTypeOptions, type NoteTypeOption } from "../../../services/note_types";
 import { collectShortcutHints } from "../../../services/shortcut_hints";
 import BoardApi, { getPendingWrites } from "./api";
 import { RAIL_EXIT_MS } from "./card_toolbar";
 import { DEFAULT_COLUMN_ICON } from "./columns";
+import { TREE_CLIPBOARD_TYPE } from "../../react/hooks";
 
 // Stands in for the server: by the time the bulk action resolves, the notes carry the new value,
 // which is what makes the old column empty rather than merely renamed.
@@ -239,6 +240,9 @@ function contextStub(context: object) {
 function columnTitles(container: HTMLElement) {
     return [ ...container.querySelectorAll(".board-column h3 .title") ].map(el => el.textContent);
 }
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Collapsed board columns", () => {
     let container: HTMLElement | undefined;
@@ -5233,7 +5237,7 @@ describe("Selection mode on mobile", () => {
     });
 
     /** A collection note, so the header the mode is switched on from is drawn. */
-    async function setup() {
+    async function setup(labels: Record<string, string> = {}) {
         disposeShownModals();
 
         const note = buildNote({
@@ -5241,6 +5245,7 @@ describe("Selection mode on mobile", () => {
             type: "book",
             "#collection": "",
             "#viewType": "board",
+            ...labels,
             children: [
                 { id: "pick1", title: "First", "#status": "To Do" },
                 { id: "pick2", title: "Second", "#status": "To Do" },
@@ -5317,6 +5322,16 @@ describe("Selection mode on mobile", () => {
         await act(async () => { headerButton("bx-x").click(); });
         expect(bar()).toBeNull();
         expect(board()?.classList.contains("selecting")).toBe(false);
+    });
+
+    it("offers no way to delete what is picked out of a read-only board", async () => {
+        await setup({ "#readOnly": "" });
+        await startSelecting();
+        await tap("pick1");
+
+        expect(selected()).toEqual([ "pick1" ]);
+        expect(railButton("bx-dots-vertical-rounded")).toBeTruthy();
+        expect(container.querySelector(".board-card-toolbar button.bx-trash")).toBeNull();
     });
 
     it("is left out off mobile", async () => {
@@ -5598,5 +5613,175 @@ describe("Column toolbar on mobile", () => {
         expect(toolbar()).toBeNull();
 
         show.mockRestore();
+    });
+});
+
+describe("BoardView, read-only", () => {
+    let container: HTMLElement | undefined;
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        saved.length = 0;
+        if (container) {
+            render(null, container);
+            container.remove();
+            container = undefined;
+        }
+    });
+
+    async function setup(host = new Component()) {
+        const note = buildNote({
+            title: "Board",
+            "#collection": "",
+            "#viewType": "board",
+            "#readOnly": "",
+            children: [
+                { id: "roCard1", title: "First", "#status": "To Do" },
+                { id: "roCard2", title: "Second", "#status": "Done" }
+            ]
+        });
+        const mountPoint = document.createElement("div");
+        container = mountPoint;
+        document.body.appendChild(mountPoint);
+        await act(async () => {
+            render(
+                <ParentComponent.Provider value={host}>
+                    <Harness note={note} noteIds={[ ...note.getChildNoteIds() ]} initialConfig={{}} />
+                </ParentComponent.Provider>,
+                mountPoint
+            );
+        });
+        await act(async () => { await flush(); });
+        return mountPoint;
+    }
+
+    /** The titles of the entries of the menu last shown. */
+    const menuTitles = (show: { mock: { calls: unknown[][] } }) =>
+        ((show.mock.calls.at(-1)?.[0] as { items: { title?: string }[] } | undefined)?.items ?? [])
+            .map((item) => item.title);
+
+    it("offers no way to add a card or a column, nor to rename either", async () => {
+        vi.mocked(getNoteTypeOptions).mockClear();
+        const board = await setup();
+        // What a card can be made from is read for making one, which a read-only board never does.
+        expect(getNoteTypeOptions).not.toHaveBeenCalled();
+        const column = board.querySelector<HTMLElement>(".board-column");
+        const card = board.querySelector<HTMLElement>(".board-note");
+        expect(column === null || card === null).toBe(false);
+
+        expect(board.querySelector(".board-new-item")).toBeNull();
+        expect(board.querySelector(".board-add-column")).toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon.static")).not.toBeNull();
+        expect(board.querySelector(".board-column h3 > .column-icon button")).toBeNull();
+        expect(board.querySelector(".board-note .edit-icon")).toBeNull();
+
+        await act(async () => {
+            if (column) startEditingTitle(column);
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "F2", bubbles: true }));
+            card?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await flush();
+        });
+        expect(board.querySelector(".board-column h3.editing")).toBeNull();
+        expect(board.querySelectorAll(".board-note.editing, .board-new-item").length).toBe(0);
+    });
+
+    it("offers as hints only the keys that change nothing", async () => {
+        const host = new Component();
+        await setup(host);
+
+        const sections = collectShortcutHints(host);
+        expect(sections.map((section) => section.titleKey)).toEqual([
+            "board_view.hints.navigation",
+            "board_view.hints.selection"
+        ]);
+        expect(sections.flatMap((section) => section.hints.map((hint) => hint.labelKey))).toEqual([
+            "board_view.hints.navigate_items",
+            "board_view.hints.navigate_columns",
+            "board_view.hints.first_last_item",
+            "board_view.hints.open_item",
+            "board_view.hints.toggle_column",
+            "board_view.hints.toggle_selection",
+            "board_view.hints.extend_selection",
+            "board_view.hints.select_column",
+            "board_view.hints.clear_selection"
+        ]);
+    });
+
+    it("changes nothing from the keyboard or from a note dropped from the tree", async () => {
+        const board = await setup();
+        // Opening the board records its columns, which is not the reader's doing.
+        saved.length = 0;
+        const writes = [
+            ...([
+                "removeFromBoard", "confirmAndRemoveColumn", "insertColumn", "moveToColumnEnd",
+                "reorderColumn", "changeColumn"
+            ] as const).map((name) => vi.spyOn(BoardApi.prototype, name)),
+            ...([ "deleteNotes", "moveAfterBranch" ] as const)
+                .map((name) => vi.spyOn(branches, name).mockResolvedValue(undefined as never))
+        ];
+        const card = board.querySelector<HTMLElement>(".board-note");
+        const header = board.querySelector<HTMLElement>(".board-column h3");
+        const column = board.querySelector<HTMLElement>(".board-column");
+        expect([ card, header, column ]).not.toContain(null);
+
+        const presses: [ HTMLElement | null, KeyboardEventInit ][] = [
+            [ card, { key: "Delete" } ],
+            [ card, { key: "Delete", shiftKey: true } ],
+            [ card, { key: "ArrowRight", ctrlKey: true } ],
+            [ card, { key: "ArrowDown", ctrlKey: true } ],
+            [ header, { key: "Enter", ctrlKey: true } ],
+            [ header, { key: "ArrowRight", ctrlKey: true } ],
+            [ header, { key: "Delete" } ]
+        ];
+        for (const [ target, init ] of presses) {
+            await act(async () => {
+                target?.focus();
+                target?.dispatchEvent(
+                    new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true }));
+                await flush();
+            });
+        }
+
+        const dragged = JSON.stringify(
+            [ { noteId: "roCard2", branchId: "roBranch", title: "Second" } ]);
+        for (const type of [ "dragover", "drop" ]) {
+            const event = new Event(type, { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "dataTransfer", {
+                value: { types: [ TREE_CLIPBOARD_TYPE ], getData: () => dragged }
+            });
+            await act(async () => {
+                column?.dispatchEvent(event);
+                await flush();
+            });
+        }
+
+        expect({
+            saved,
+            called: writes
+                .filter((write) => write.mock.calls.length)
+                .map((write) => write.getMockName())
+        }).toEqual({ saved: [], called: [] });
+    });
+
+    it("keeps only the entries that change nothing in the menus, and shows none for the board", async () => {
+        const board = await setup();
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+
+        await withTabManager(async () => {
+            board.querySelector(".board-note")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        });
+        const cardMenu = menuTitles(show);
+        expect(cardMenu).toContain("board_view.copy-reference");
+        expect(cardMenu).not.toContain("board_view.edit-title");
+        expect(cardMenu).not.toContain("link_context_menu.open_note_in_popup");
+        expect(cardMenu).not.toContain("board_view.delete-note");
+
+        board.querySelector(".board-column h3")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(menuTitles(show)).toEqual([ "board_view.copy-reference" ]);
+
+        const calls = show.mock.calls.length;
+        board.querySelector(".board-view-container")
+            ?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
+        expect(show.mock.calls.length).toBe(calls);
     });
 });

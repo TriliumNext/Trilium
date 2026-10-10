@@ -12,7 +12,7 @@ describe("assets path helpers", () => {
 
     it("resolves dev paths under development", () => {
         process.env.NODE_ENV = "development";
-        expect(getShareThemeAssetDir()).toContain("share-theme");
+        expect(getShareThemeAssetDir()).toBe(path.join(getClientBuildDir(), "src"));
         expect(getPdfjsAssetDir()).toContain("pdfjs-viewer");
         expect(getClientDir()).toContain("client");
         expect(getClientBuildDir()).toBe(path.join(getClientDir(), "..", "dist"));
@@ -20,7 +20,7 @@ describe("assets path helpers", () => {
 
     it("resolves resource-dir paths under production", () => {
         process.env.NODE_ENV = "production";
-        expect(getShareThemeAssetDir()).toContain("share-theme");
+        expect(getShareThemeAssetDir()).toBe(path.join(getClientBuildDir(), "src"));
         expect(getPdfjsAssetDir()).toContain("pdfjs-viewer");
         expect(typeof getClientDir()).toBe("string");
         expect(getClientBuildDir()).toBe(getClientDir());

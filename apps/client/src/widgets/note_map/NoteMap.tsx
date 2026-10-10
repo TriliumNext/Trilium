@@ -5,19 +5,22 @@ import { RefObject } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
+import type NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import link_context_menu from "../../menus/link_context_menu";
 import hoisted_note from "../../services/hoisted_note";
 import { resolveIconGlyphs, warmIconFonts } from "../../services/icon_glyphs";
 import { t } from "../../services/i18n";
-import ActionButton from "../react/ActionButton";
+import { isMobile } from "../../services/utils";
 import Button from "../react/Button";
-import { useColorScheme, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
+import { useColorScheme, useEffectiveReadOnly, useElementSize, useNoteLabel, useTriliumOption } from "../react/hooks";
 import NoItems from "../react/NoItems";
+import OverlayControlGroup, { OverlayControlButton, ZoomControls } from "../react/OverlayControlGroup";
 import Slider from "../react/Slider";
+import { ZOOM_STEP } from "../react/zoom_pan";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
-import MapTypeSwitcher from "./MapTypeSwitcher";
-import { CssData, setupRendering } from "./rendering";
+import { MapTypeOverlayButtons } from "./MapTypeSwitcher";
+import { CssData, type MapRendering, setupRendering } from "./rendering";
 import { isRootedAtCurrentNote, MapType, NOTE_MAP_TYPE_OPTION, NoteMapWidgetMode, rgb2hex, toMapType, usesReaderPreference } from "./utils";
 
 /** Maximum number of notes to render in the note map before showing a warning. */
@@ -27,12 +30,19 @@ interface NoteMapProps {
     note: FNote;
     widgetMode: NoteMapWidgetMode;
     parentRef: RefObject<HTMLElement | null>;
+    /** The note the map starts from when the note names none, in place of the active note's parent. */
+    defaultRootNoteId?: string | null;
+    /** Opens a clicked note where the map's host shows notes, in place of the active note context. */
+    onOpenNote?: (noteId: string) => void;
+    /** The note context the map is shown in, which can make a read-only note temporarily editable. */
+    noteContext?: NoteContext;
 }
 
-export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
+export default function NoteMap({ note, widgetMode, parentRef, defaultRootNoteId, onOpenNote, noteContext }: NoteMapProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const styleResolverRef = useRef<HTMLDivElement>(null);
-    const [ mapType, setMapType ] = useMapType(note, widgetMode);
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
+    const [ mapType, setMapType ] = useMapType(note, widgetMode, isReadOnly);
     const [ mapRootIdLabel ] = useNoteLabel(note, "mapRootNoteId");
 
     const graphRef =
@@ -48,6 +58,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
     const [ tooManyNotes, setTooManyNotes ] = useState<number | null>(null);
     const [ bypassLimit, setBypassLimit ] = useState(false);
     const notesAndRelationsRef = useRef<NotesAndRelationsData | undefined>(undefined);
+    const renderingRef = useRef<MapRendering | undefined>(undefined);
+    const [ canZoomIn, setCanZoomIn ] = useState(true);
+    const [ canZoomOut, setCanZoomOut ] = useState(true);
 
     const mapRootId = useMemo(() => {
         if (note.noteId && isRootedAtCurrentNote(widgetMode)) {
@@ -57,7 +70,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         } else if (mapRootIdLabel) {
             return mapRootIdLabel;
         }
-        return appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
+        return defaultRootNoteId ?? appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
 
     }, [ note ]);
 
@@ -80,7 +93,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
         // Navigating away mid-load must not let the outgoing note's data land on the new graph.
         let disposed = false;
-        let teardownRendering: (() => void) | undefined;
+        let rendering: MapRendering | undefined;
         const labelValues = (name: string) => note.getLabels(name).map(l => l.value) ?? [];
         const excludeRelations = labelValues("mapExcludeRelation");
         const includeRelations = labelValues("mapIncludeRelation");
@@ -105,7 +118,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             const iconGlyphs = resolveIconGlyphs(notesAndRelations.nodes.map((node) => node.icon), containerRef.current);
 
             // Configure rendering properties.
-            teardownRendering = setupRendering(graph, {
+            rendering = setupRendering(graph, {
                 note,
                 mapRootId,
                 noteIdToSizeMap: notesAndRelations.noteIdToSizeMap,
@@ -114,13 +127,22 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 themeStyle,
                 widgetMode,
                 container,
-                iconGlyphs
+                iconGlyphs,
+                onZoom: (scale) => {
+                    setCanZoomIn(scale < graph.maxZoom());
+                    setCanZoomOut(scale > graph.minZoom());
+                }
             });
+            renderingRef.current = rendering;
 
             // Interaction
             graph
                 .onNodeClick((node) => {
                     if (!node.id) return;
+                    if (onOpenNote) {
+                        onOpenNote(node.id);
+                        return;
+                    }
                     appContext.tabManager.getActiveContext()?.setNote(node.id);
                     // The map always sends the reader to the pane behind it, never to its own host — so a
                     // map shown in the quick-edit popup has to dismiss it, or it would be left covering the
@@ -140,7 +162,8 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
         return () => {
             disposed = true;
-            teardownRendering?.();
+            rendering?.teardown();
+            renderingRef.current = undefined;
             // Stops the render loop; without it the discarded graph keeps animating against a
             // detached canvas for the rest of the session.
             graph._destructor();
@@ -195,35 +218,48 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
     return (
         <div className="note-map-widget">
-            {/* The sidebar offers the choice in its card's header instead, where the pane keeps the
-                controls of a widget — see sidebar/NoteMap.tsx. */}
+            {/* The sidebar offers the map type in its card's header instead, where the pane keeps the
+                controls of a widget (see sidebar/NoteMap.tsx), and neither pinning nor link distance:
+                its map is rebuilt for every note it is read for, so both would be gone by the next. */}
             {widgetMode !== "sidebar" && (
-                <MapTypeSwitcher
-                    mapType={mapType} setMapType={setMapType}
-                    className="btn-group-sm content-floating-buttons top-left" frame
-                />
-            )}
+                <>
+                    <OverlayControlGroup className="note-map-type-controls" placement="top-start" overCanvas>
+                        <MapTypeOverlayButtons mapType={mapType} setMapType={setMapType} />
+                    </OverlayControlGroup>
 
-            {/* Not in the sidebar, where neither has anything to hold on to: a map that small is not
-                one to arrange by hand, and it is rebuilt from scratch on every note it is read for,
-                which is what a connections panel is for — so a pinned node and a chosen link distance
-                are both gone by the next note. */}
-            {widgetMode !== "sidebar" && (
-                <div class="btn-group-sm fixnodes-type-switcher content-floating-buttons bottom-left" role="group">
-                    <ActionButton
-                        icon="bx bx-lock-alt"
-                        text={t("note_map.fix-nodes")}
-                        className={fixNodes ? "active" : ""}
-                        onClick={() => setFixNodes(!fixNodes)}
-                        frame
-                    />
+                    <OverlayControlGroup className="note-map-layout-controls" placement="bottom-start" overCanvas>
+                        <OverlayControlButton
+                            icon="bx-lock-alt"
+                            title={t("note_map.fix-nodes")}
+                            active={fixNodes}
+                            onClick={() => setFixNodes(!fixNodes)}
+                        />
+                        <div className="note-map-link-distance">
+                            <Slider
+                                min={1} max={100}
+                                value={linkDistance} onChange={setLinkDistance}
+                                title={t("note_map.link-distance")}
+                            />
+                        </div>
+                    </OverlayControlGroup>
 
-                    <Slider
-                        min={1} max={100}
-                        value={linkDistance} onChange={setLinkDistance}
-                        title={t("note_map.link-distance")}
-                    />
-                </div>
+                    {/* The steps stay home on mobile, as on the geo map: the fingers already zoom. */}
+                    <OverlayControlGroup className="note-map-zoom-controls" placement="bottom-end" overCanvas>
+                        {!isMobile() && (
+                            <ZoomControls
+                                canZoomIn={canZoomIn}
+                                canZoomOut={canZoomOut}
+                                onZoomIn={() => renderingRef.current?.zoomBy(ZOOM_STEP)}
+                                onZoomOut={() => renderingRef.current?.zoomBy(1 / ZOOM_STEP)}
+                            />
+                        )}
+                        <OverlayControlButton
+                            title={t("note_map.fit-to-view")}
+                            icon="bx-scan"
+                            onClick={() => renderingRef.current?.fitToView()}
+                        />
+                    </OverlayControlGroup>
+                </>
             )}
 
             {/* What the map is drawn in, asked of the theme — see getCssData. */}
@@ -243,14 +279,22 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
  * The connections tab's map is a lens on whatever note is being read, so which map it draws is the
  * reader's own preference and is kept as an option (see {@link usesReaderPreference}). Everywhere
  * else the map is a note's own thing — a note map note or a hoisted map — and the
- * note it belongs to says which to draw through its `mapType` label.
+ * note it belongs to says which to draw through its `mapType` label. A read-only note keeps its
+ * label, so the reader's choice holds only while the note is shown, as on a shared page.
  */
-function useMapType(note: FNote, widgetMode: NoteMapWidgetMode): [ MapType, (mapType: MapType) => void ] {
+function useMapType(note: FNote, widgetMode: NoteMapWidgetMode, isReadOnly: boolean): [ MapType, (mapType: MapType) => void ] {
     const [ label, setLabel ] = useNoteLabel(note, "mapType");
     const [ option, setOption ] = useTriliumOption(NOTE_MAP_TYPE_OPTION);
+    const [ viewedMapType, setViewedMapType ] = useState<MapType>();
 
-    return usesReaderPreference(widgetMode)
-        ? [ toMapType(option), (mapType) => void setOption(mapType) ]
+    useEffect(() => setViewedMapType(undefined), [ note ]);
+
+    if (usesReaderPreference(widgetMode)) {
+        return [ toMapType(option), (mapType) => void setOption(mapType) ];
+    }
+
+    return isReadOnly
+        ? [ viewedMapType ?? toMapType(label), setViewedMapType ]
         : [ toMapType(label), setLabel ];
 }
 

@@ -1,6 +1,7 @@
 import { DEFAULT_BOARD_GROUP_BY, normalizeBoardGroupBy } from "@triliumnext/commons";
 
 import { createPortal } from "preact";
+import { lazy, Suspense } from "preact/compat";
 import { useCallback, useRef, useState } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
@@ -8,9 +9,7 @@ import type { Attribute } from "../../../services/attribute_parser";
 import attributes from "../../../services/attributes";
 import { t } from "../../../services/i18n";
 import toast from "../../../services/toast";
-import {
-    AttributeDetail, type AttributeDetailOpts
-} from "../../attribute_widgets/attribute_detail";
+import type { AttributeDetailOpts } from "../../attribute_widgets/attribute_detail";
 import Dropdown from "../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../react/FormList";
 import Icon from "../../react/Icon";
@@ -41,9 +40,11 @@ const NEW_GROUPING: Attribute = {
 };
 
 /** Switches which attribute the board's columns are made from, and makes new ones. */
-export default function BoardGroupBy({ note, options, current, onSelect }: {
+export default function BoardGroupBy({ note, canCreate = true, options, current, onSelect }: {
     /** The board note, which carries the definitions and any made here. */
     note: FNote;
+    /** Whether a new grouping can be made, which writes its definition onto the board. */
+    canCreate?: boolean;
     options: GroupingOption[];
     /** The grouping in force, as {@link groupingOptions} spells its value. */
     current: string;
@@ -120,30 +121,38 @@ export default function BoardGroupBy({ note, options, current, onSelect }: {
                     >{option.title}</FormListItem>
                 ))}
 
-                <FormDropdownDivider />
+                {canCreate && <>
+                    <FormDropdownDivider />
 
-                <FormListItem
-                    className="board-group-by-create"
-                    icon="bx bx-plus"
-                    onClick={create}
-                >{t("promoted_attributes.create_attribute")}</FormListItem>
+                    <FormListItem
+                        className="board-group-by-create"
+                        icon="bx bx-plus"
+                        onClick={create}
+                    >{t("promoted_attributes.create_attribute")}</FormListItem>
+                </>}
             </Dropdown>
 
             {/* Outside the menu, which takes its items down as it closes: the editor is opened by
                 one of them and outlives it. */}
-            {createPortal(
-                <AttributeDetail
-                    opts={detail}
-                    currentNoteId={note.noteId}
-                    onDismiss={() => setDetail(null)}
-                    onCancel={() => setDetail(null)}
-                    onAttributesChanged={([ definition ]) => { edited.current = definition; }}
-                    onSaveAndClose={save}
-                />,
+            {canCreate && createPortal(
+                <Suspense fallback={null}>
+                    <AttributeDetail
+                        opts={detail}
+                        currentNoteId={note.noteId}
+                        onDismiss={() => setDetail(null)}
+                        onCancel={() => setDetail(null)}
+                        onAttributesChanged={([ definition ]) => { edited.current = definition; }}
+                        onSaveAndClose={save}
+                    />
+                </Suspense>,
                 document.body)}
         </>
     );
 }
+
+/** The attribute editor, loaded only for a board a grouping can be made on. */
+const AttributeDetail = lazy(() => import("../../attribute_widgets/attribute_detail")
+    .then(({ AttributeDetail: editor }) => ({ default: editor })));
 
 /**
  * The attributes the board offers to group by: the default grouping, the select fields it defines,

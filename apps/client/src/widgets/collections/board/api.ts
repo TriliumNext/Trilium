@@ -5,7 +5,6 @@ import type NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
 import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
-import { executeBulkActions } from "../../../services/bulk_action";
 import cssClassManager from "../../../services/css_class_manager";
 import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
@@ -145,6 +144,10 @@ export default class BoardApi {
      * one split of several, and the focused one is often the pane the reader came from.
      */
     noteContext: NoteContext | null | undefined;
+    /** Opens a note where the board's host shows notes, in place of the quick edit popup. */
+    onOpenNote: ((noteId: string) => void) | undefined;
+    /** Whether the board only shows its cards, set by the board on every render. */
+    isReadOnly = false;
 
     /**
      * Stands in for the stored collapse flags while a filter is on, set by the board on every
@@ -544,8 +547,10 @@ export default class BoardApi {
             : this.isRelationMode
                 ? { name: "deleteRelation", relationName: this.statusAttribute }
                 : { name: "deleteLabel", labelName: this.statusAttribute };
-        await this.retiredWhile(column, undefined,
-            () => executeBulkActions(noteIds, [ action ], { silent: true }));
+        await this.retiredWhile(column, undefined, async () => {
+            const { executeBulkActions } = await loadBulkActions();
+            return executeBulkActions(noteIds, [ action ], { silent: true });
+        });
 
         this.storeColumns(this.storedColumns.filter(col => col.value !== column));
     }
@@ -1452,8 +1457,12 @@ export default class BoardApi {
         return { note, branch };
     }
 
-    openNote(noteId: string) {
-        appContext.triggerCommand("openInPopup", { noteIdOrPath: noteId });
+    openNote(noteIdOrPath: string) {
+        if (this.onOpenNote) {
+            this.onOpenNote(noteIdOrPath.split("/").at(-1) ?? noteIdOrPath);
+            return;
+        }
+        appContext.triggerCommand("openInPopup", { noteIdOrPath });
     }
 
     /**
@@ -1466,6 +1475,10 @@ export default class BoardApi {
     openCard(note: FNote) {
         const target = note.getRelationValue(CARD_REDIRECT_RELATION)
             ?? note.getRelationValue(CARD_REDIRECT_RELATION_LEGACY);
+        if (target && this.onOpenNote) {
+            this.onOpenNote(target);
+            return;
+        }
         if (target) {
             const context = this.noteContext ?? appContext.tabManager?.getActiveContext();
             void context?.setNote(target);
@@ -1476,7 +1489,9 @@ export default class BoardApi {
     }
 
     startEditing(branchId: string) {
-        this.setBranchIdToEdit(branchId);
+        if (!this.isReadOnly) {
+            this.setBranchIdToEdit(branchId);
+        }
     }
 
     dismissEditingTitle() {
@@ -1752,3 +1767,10 @@ export default class BoardApi {
 
 }
 
+let bulkActions: Promise<typeof import("../../../services/bulk_action")> | undefined;
+
+/** Loads the bulk action service once, whose dialogs a board has no use for until it edits. */
+function loadBulkActions() {
+    bulkActions ??= import("../../../services/bulk_action");
+    return bulkActions;
+}

@@ -2,7 +2,7 @@ import {
     getAttachmentEmbedHref, getEmbedKey, getNestedEmbedOptions, getNoteEmbedHref, isHttpUrl,
     isImageAttachmentRole, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor, readLinkPreviewData,
     renderLinkEmbedHtml, renderLinkMentionHtml, resolveContentEmbed, resolveEnabledMimeTypes,
-    shouldSyntaxHighlight, sliceToBlockReference
+    SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES, shouldSyntaxHighlight, sliceToBlockReference
 } from "@triliumnext/commons";
 import { renderToHtml as renderMarkdownToHtml } from "@triliumnext/commons/src/lib/markdown_renderer.js";
 import { renderSpreadsheetToHtml } from "@triliumnext/commons/src/lib/spreadsheet/render_to_html.js";
@@ -10,7 +10,7 @@ import { getLanguage, highlight, highlightAuto, syncMimeTypes } from "@triliumne
 import {
     getChildLinks, getChildLinksLayout, getContentClasses, getHtmlSnippets, getLastUpdated, getNavigationTree, getPageHead, getPageLanguages,
     getPrevNextLinks, getShareLink, getSiteAncestorIds, getSiteLogo, getTableOfContents, hasActiveItem,
-    type NavigationItem, type PageHeading
+    type NavigationItem, type PageHeading, type ShareNote
 } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import escapeHtml from "escape-html";
@@ -28,6 +28,7 @@ import options from "../services/options.js";
 import * as sanitize from "../services/sanitizer.js";
 import * as task_states from "../services/task_states.js";
 import * as utils from "../services/utils/index.js";
+import { buildFrocaPayload, buildFrocaRows } from "./froca_payload.js";
 import { getShareProvider } from "./share_provider.js";
 import SAttachment from "./shaca/entities/sattachment.js";
 import SBranch from "./shaca/entities/sbranch.js";
@@ -58,6 +59,17 @@ export interface Result {
     content: string | Uint8Array | undefined;
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
+    /**
+     * Set to `true` if the content takes the page's full height, such as a PDF, a web view or an
+     * app view, below a title row like the app's and without the subpages, the date and the links
+     * to the neighboring pages.
+     */
+    isFullHeight?: boolean;
+    /**
+     * Set to `true` if the content is shown with the app's own view, such as a map or the viewer of
+     * an image. An app view also takes the page's full height.
+     */
+    isAppView?: boolean;
 }
 
 interface Subroot {
@@ -87,7 +99,14 @@ function getSharedSubTreeRoot(note: SNote): Subroot {
     return getSharedSubTreeRoot(parentBranch.getParentNote());
 }
 
-export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: iconPackService.ProcessedIconPack[]) {
+export function renderNoteForExport(
+    note: BNote,
+    parentBranch: BBranch,
+    basePath: string,
+    ancestors: string[],
+    iconPacks: iconPackService.ProcessedIconPack[],
+    getLink?: ExportHosting["getLink"]
+) {
     // An exported JavaScript note stays a script.
     if (note.mime.startsWith("application/javascript")) {
         return note.isProtected ? `console.log("Protected note cannot be exported.");` : note.getContent();
@@ -116,6 +135,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
         isStatic: true,
+        exportHosting: getLink && { basePath, getLink },
         ...getIconPackArgs(iconPacks, (p) => `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`)
     });
 }
@@ -220,6 +240,8 @@ interface RenderArgs {
     ancestors: string[];
     isStatic: boolean;
     canAccessEmbed?: CanAccessEmbed;
+    /** How the page of the static export hosts app views. */
+    exportHosting?: ExportHosting;
     faviconUrl: string;
     iconPackCss: string;
     iconPackSupportedPrefixes: string[];
@@ -236,9 +258,10 @@ interface IconPackFont {
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
     // Static export preserves full embed nesting; the live share view renders only the first level.
-    const { header, content, isEmpty } = getContent(note, {
+    const { header, content, isEmpty, isAppView, isFullHeight } = getContent(note, {
         expandNestedEmbeds: renderArgs.isStatic,
-        canAccessEmbed: renderArgs.canAccessEmbed
+        canAccessEmbed: renderArgs.canAccessEmbed,
+        exportHosting: renderArgs.exportHosting
     });
     const showLoginInShareTheme = options.getOptionBool("showLoginInShareTheme");
     const siteRoot = renderArgs.subRoot.note;
@@ -250,15 +273,17 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
     });
     const navigation = getNavigationTree(siteRoot, note, renderArgs.ancestors, {
         sanitizeUrl: sanitize.sanitizeUrl,
-        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes
+        iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
+        isSubtreeHidden
     });
-    const childLinks = getChildLinks(note, {
+    const childLinks = isFullHeight ? [] : getChildLinks(note, {
         sanitizeUrl: sanitize.sanitizeUrl,
         iconPackPrefixes: renderArgs.iconPackSupportedPrefixes,
         getText: (child) => getExcerptSource(child as SNote | BNote),
         // `canAccessEmbed` is only given with a shaca note, whose children are shaca notes too.
         canAccess: (child) => renderArgs.canAccessEmbed?.(child as SNote) !== false
     });
+    const titleIcon = isFullHeight ? note.getIcon(renderArgs.iconPackSupportedPrefixes) : null;
     const opts = {
         note,
         header,
@@ -274,18 +299,21 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         head: getPageHead(note, siteRoot),
         snippets: getHtmlSnippets(note),
         logo,
-        prevNext: getPrevNextLinks(note, siteRoot),
+        prevNext: isFullHeight ? { previous: null, next: null } : getPrevNextLinks(note, siteRoot, isSubtreeHidden),
         navigation,
         childLinks,
-        childLinksLayout: getChildLinksLayout(note),
-        contentClasses: getContentClasses(note, isEmpty),
+        childLinksLayout: getChildLinksLayout(note, getViewType(note)),
+        contentClasses: getContentClasses(note, isEmpty, { isAppView, isFullHeight }),
         language: getPageLanguages(note, {
             displayLanguage,
             defaultContentLanguage: options.getOptionOrNull("defaultContentLanguage")
         }),
-        lastUpdated: getLastUpdated(note, displayLanguage),
+        lastUpdated: isFullHeight ? null : getLastUpdated(note, displayLanguage),
+        showTitle: true,
+        titleIcon,
         fontPreloads: getFontPreloads(renderArgs.iconPackFonts, [
             logo.icon,
+            ...(titleIcon ? [ titleIcon ] : []),
             ...getNavigationIcons(navigation),
             ...childLinks.flatMap((child) => [ child.icon, ...child.children.map((grandchild) => grandchild.icon) ])
         ]),
@@ -438,6 +466,14 @@ const EXCERPT_SOURCE_LENGTH = 10_000;
  */
 export type CanAccessEmbed = (note: SNote) => boolean;
 
+/** How a page of the static export hosts app views, which link to the export's own pages. */
+export interface ExportHosting {
+    /** The path of the export's root from the page, such as `../`. */
+    basePath: string;
+    /** The URL of a note's page relative to the page, or `null` for a note left out. */
+    getLink(noteId: string): string | null;
+}
+
 export interface ShareRenderOptions {
     /**
      * Keep expanding embeds recursively at every depth. Used for static export, which
@@ -452,6 +488,11 @@ export interface ShareRenderOptions {
     seenNoteIds?: Set<string>;
     /** See {@link CanAccessEmbed}. When omitted, every embedded note is expanded. */
     canAccessEmbed?: CanAccessEmbed;
+    /**
+     * How a page of the static export hosts app views. Without it, a note of becca keeps the
+     * content rendered here.
+     */
+    exportHosting?: ExportHosting;
     /**
      * The blocks of a text note to render, a `block` link parameter. The rest of the note is left
      * out, and a missing block renders as a broken reference.
@@ -482,16 +523,25 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderCode(result, note.mime);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
-    } else if (["image", "canvas", "mindMap"].includes(note.type)) {
+        hostNoteView(result, note, options);
+    } else if ([ "image", "canvas", "mindMap" ].includes(note.type)) {
         renderImage(result, note);
+        hostNoteView(result, note, options);
     } else if (note.type === "file") {
         renderFile(note, result);
+    } else if (note.type === "book" && canHostAppView(note, options)
+        && SHARE_HOSTED_VIEW_TYPES.includes(getViewType(note) ?? "")) {
+        renderCollectionView(result, note, options);
     } else if (note.type === "book") {
         result.isEmpty = true;
     } else if (note.type === "webView") {
         renderWebView(note, result);
+    } else if ([ "noteMap", "relationMap", "render" ].includes(note.type)) {
+        result.content = "";
+        hostNoteView(result, note, options);
     } else if (note.type === "spreadsheet") {
         renderSpreadsheet(result);
+        hostNoteView(result, note, options);
     } else {
         result.content = `<p>${t("content_renderer.note-cannot-be-displayed")}</p>`;
     }
@@ -869,6 +919,115 @@ function renderMermaid(result: Result, note: SNote | BNote) {
 </div>`;
 }
 
+/**
+ * The view type of a collection: its own `#viewType`, else the one of a built-in template such as
+ * `_template_calendar`, which lives in the hidden subtree and so is never in shaca. A becca note,
+ * as the static export renders, reads its templates itself.
+ */
+function getViewType(note: SNote | BNote) {
+    if (note instanceof BNote) {
+        return note.getLabelValue("viewType");
+    }
+    return note.getLabelValue("viewType") || note.getBuiltInTemplateLabelValue("viewType");
+}
+
+/**
+ * Returns whether the note keeps its children out of the tree with `#subtreeHidden`, which a board
+ * has from its built-in template. Shaca holds only shared notes, so becca answers for the template.
+ */
+function isSubtreeHidden(note: ShareNote) {
+    const shared = note as SNote | BNote;
+    if (shared instanceof BNote || shared.hasLabel("subtreeHidden")) {
+        return shared.isLabelTruthy("subtreeHidden");
+    }
+
+    const value = shared.getBuiltInTemplateLabelValue("subtreeHidden");
+    return value !== null && value !== "false";
+}
+
+/**
+ * Renders a collection the share theme shows with the app's own view, through its note list: an
+ * element to mount it into, beside the notes and the display options it starts from.
+ */
+function renderCollectionView(result: Result, note: SNote | BNote, options: ShareRenderOptions) {
+    result.content = "";
+    hostInAppView(result, note, "share-collection", options);
+}
+
+/**
+ * Has the share theme show a shared note, or a note of the static export, with the app's own widget
+ * for its type, keeping the content rendered here for a visitor without scripts. Binary content and
+ * an empty note keep the content alone.
+ */
+function hostNoteView(result: Result, note: SNote | BNote, options: ShareRenderOptions) {
+    if (canHostAppView(note, options) && typeof result.content === "string" && !result.isEmpty
+        && SHARE_HOSTED_NOTE_TYPES.includes(note.type)) {
+        hostInAppView(result, note, "share-note-view", options);
+    }
+}
+
+/** Whether `note` can have an app view: a shared note, or a note of the static export. */
+function canHostAppView(note: SNote | BNote, options: ShareRenderOptions) {
+    return !(note instanceof BNote) || !!options.exportHosting;
+}
+
+/**
+ * Wraps the content in a `container` the share theme's script mounts an app view into, beside the
+ * notes and the display options the view starts from. The content stays for a visitor without
+ * scripts until the view replaces it.
+ */
+function hostInAppView(
+    result: Result,
+    note: SNote | BNote,
+    container: string,
+    renderOptions: ShareRenderOptions
+) {
+    const { exportHosting } = renderOptions;
+    const payload = {
+        ...(note instanceof BNote
+            ? buildExportRows(note, exportHosting)
+            : buildFrocaPayload(note, renderOptions.canAccessEmbed)),
+        options: Object.fromEntries(SHARED_OPTIONS.map((name) => [ name, options.getOptionOrNull(name) ])),
+        // The app's assets, such as its translations: the export's `assets/`, else those of the
+        // app from a page directly below `/share/`.
+        assetPath: exportHosting
+            ? `${exportHosting.basePath}assets`
+            : `../${utils.isDev() ? `${assetUrlFragment}/src` : assetUrlFragment}`,
+        // The note the app would show the note below, such as the root of a note map note's map.
+        parentNoteId: note.getParentBranches()[0]?.parentNoteId ?? null,
+        // On a page of the export, the views read their notes from the files under `data/`.
+        exportBasePath: exportHosting?.basePath
+    };
+    const json = JSON.stringify(payload).replace(/</g, "\\u003c");
+    result.isAppView = true;
+    result.isFullHeight = true;
+    const content = String(result.content);
+    result.content = `<div class="${container}" data-note-id="${note.noteId}">${content}</div>`
+        + `<script type="application/json" class="share-froca">${json}</script>`;
+}
+
+/**
+ * The rows of a note of the static export, of the notes the export holds, each linked to its page
+ * in the export.
+ */
+function buildExportRows(note: BNote, exportHosting: ExportHosting | undefined) {
+    const getLink = (linked: BNote) => exportHosting?.getLink(linked.noteId) ?? null;
+    // `canAccess` admits only the notes with a link, so `getLink` is never asked for another.
+    return buildFrocaRows([ note ], (candidate) => getLink(candidate) !== null,
+        (candidate) => String(getLink(candidate)));
+}
+
+/**
+ * The options the app's views read to draw a note as the app does, which a shared page receives. Only
+ * display options: the rest of the options can hold secrets, such as API keys.
+ */
+const SHARED_OPTIONS = [
+    "locale", "formattingLocale", "firstDayOfWeek",
+    "codeNoteTheme", "codeNoteThemeLight", "codeNoteThemeDark", "codeNoteThemeMatchesApp",
+    "codeLineWrapEnabled", "codeNoteTabWidth", "codeNoteIndentWithTabs",
+    "splitEditorOrientation"
+] as const;
+
 function renderImage(result: Result, note: SNote | BNote) {
     result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;
 }
@@ -876,6 +1035,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.isFullHeight = true;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
@@ -912,6 +1072,7 @@ function renderWebView(note: SNote | BNote, result: Result) {
     // embedding it; only dropping allow-same-origin would isolate it.
     frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups");
     result.content = frame.toString();
+    result.isFullHeight = true;
 }
 
 /**

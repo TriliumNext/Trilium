@@ -460,6 +460,8 @@
     "on-this-page": "On This Page",
     "expand": "Expand",
     "subpages-of": "Subpages of {{- title}}",
+    "hidden-subpages_one": "{{count}} subpage that is hidden from the tree",
+    "hidden-subpages_other": "{{count}} subpages that are hidden from the tree",
     "toggle-navigation": "Toggle Navigation",
     "toggle-toc": "Toggle Table of Contents",
     "logo-alt": "Logo",

@@ -859,7 +859,7 @@ export const DEFINITION_TYPES: { value: string; title: string; icon: string; sta
 ];
 
 export function fetchAttributeNames(type: "label" | "relation", query: string) {
-    return server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(query)}`);
+    return froca.getAttributeNames(type, query);
 }
 
 /**

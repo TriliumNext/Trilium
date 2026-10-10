@@ -449,3 +449,7 @@ The filter persists even after you close the tab. When you reopen the collection
 You can create a link that opens the board and points out a specific column or card. Open the **column menu** or the card’s context menu, select <span class="tn-icon bx bx-copy"></span> **Copy reference**, and then paste the link where you need it.
 
 In a text note, the pasted link displays the title, icon, and color of the column or card it points to. In a Markdown or code note, the plain link address is pasted instead. Opening the link scrolls the board to the column or card and focuses it. If the column belongs to a different grouping attribute, the board switches to that attribute first.
+
+## Read-only boards
+
+A board marked as [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) only shows its cards. It has no buttons to add a card or a column, column and card titles can't be renamed, and column icons can't be changed. Cards and columns can't be dragged, moved or deleted with the keyboard, and notes dragged in from the note tree aren't added. The context menus of a card or a column keep only the entries that change nothing, such as opening the note or <span class="tn-icon bx bx-copy"></span> _Copy reference_, and the board's own menu doesn't open. The cards can still be grouped by another attribute, but the choice isn't saved, and no new grouping attribute can be created.

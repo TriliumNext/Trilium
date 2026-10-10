@@ -5,14 +5,17 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     plugins: [
         {
-            // Stands in for the build script's `virtual:code-themes.css`, which `index.ts` imports.
+            // Stands in for the client build's `virtual:code-themes.css`, which `index.ts` imports.
             name: "code-themes",
             resolveId: (id) => (id === "virtual:code-themes.css" ? `\0${id}` : null),
             load: (id) => (id === "\0virtual:code-themes.css" ? "" : null)
         }
     ],
+    oxc: {
+        jsx: { runtime: "automatic", importSource: "preact" }
+    },
     test: {
-        include: [ "src/**/*.spec.ts" ],
+        include: [ "src/**/*.spec.{ts,tsx}" ],
         environmentOptions: {
             happyDOM: {
                 settings: { disableCSSFileLoading: true, handleDisabledFileLoadingAsSuccess: true }
@@ -31,8 +34,8 @@ export default defineConfig({
             },
             reportsDirectory: "./test-output/vitest/coverage",
             provider: "v8",
-            include: [ "src/**/*.ts" ],
-            exclude: [ "src/**/*.spec.ts", "src/**/*.d.ts" ],
+            include: [ "src/**/*.{ts,tsx}" ],
+            exclude: [ "src/**/*.spec.{ts,tsx}", "src/**/*.d.ts" ],
             // Codecov matches an lcov `SF:` path against the files of the whole repository, where a
             // package-relative `src/index.ts` is ambiguous.
             reporter: [ "text", "html", [ "lcov", { projectRoot: resolve(__dirname, "../..") } ] ]

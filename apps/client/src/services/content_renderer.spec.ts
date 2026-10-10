@@ -1,4 +1,4 @@
-import { attachmentIcon } from "@triliumnext/commons";
+import { attachmentIcon, CONTENT_RENDERER_GROUPS } from "@triliumnext/commons";
 import { h, VNode } from "preact";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -133,10 +133,12 @@ vi.mock("@triliumnext/commons/src/lib/markdown_renderer", async (orig) => ({
 
 // --- Imports AFTER the mocks. ---
 import appContext from "../components/app_context.js";
+import Component from "../components/component.js";
 import type { SaveState } from "../components/note_context.js";
 import FAttachment from "../entities/fattachment.js";
 import { buildNote } from "../test/easy-froca.js";
 import {
+    CONTENT_RENDERERS,
     disposeInteractiveContent,
     getEmbedBoxSize,
     getRenderedContent as rawGetRenderedContent,
@@ -180,6 +182,14 @@ beforeEach(() => {
     vi.clearAllMocks();
     isProtectedSessionAvailable.mockReturnValue(false);
     (window as any).electronApi = undefined;
+});
+
+describe("CONTENT_RENDERERS", () => {
+    /** The static export reads the groups from the table in commons, the build from this one. */
+    it("has an entry for every group the static export names a renderer by", () => {
+        const groups = new Set(Object.values(CONTENT_RENDERER_GROUPS));
+        expect([ ...groups ].filter((group) => !Object.hasOwn(CONTENT_RENDERERS, group))).toEqual([]);
+    });
 });
 
 describe("getEmbedBoxSize", () => {
@@ -815,6 +825,12 @@ describe("getRenderedContent render / doc / protectedSession / mermaid", () => {
         expect(type).toBe("render");
         expect(renderServiceRender).toHaveBeenCalledOnce();
         expect($renderedContent.find(".render-ok").length).toBe(1);
+    });
+
+    it("mounts a JSX render note under the given parent component", async () => {
+        const parentComponent = new Component();
+        await getRenderedContent(buildNote({ title: "R", type: "render" }), { parentComponent });
+        expect(renderServiceRender.mock.lastCall?.[3]).toBe(parentComponent);
     });
 
     it("render error callback shows an admonition with the error message", async () => {

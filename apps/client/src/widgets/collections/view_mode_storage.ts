@@ -1,5 +1,5 @@
 import type FNote from "../../entities/fnote";
-import server from "../../services/server";
+import froca from "../../services/froca";
 import { ViewTypeOptions } from "../collections/interface";
 
 const ATTACHMENT_ROLE = "viewConfig";
@@ -61,10 +61,9 @@ export default class ViewModeStorage<T extends object> {
 
         // Caught before the queue is extended, so a write that fails does not hold back the next
         // one; the failure is still reported to whoever asked for this write.
-        const url = `notes/${this.note.noteId}/attachments?matchBy=title`;
         this.lastWrite = this.lastWrite
             .catch(() => {})
-            .then(() => server.post(url, payload));
+            .then(() => froca.saveAttachment(this.note.noteId, payload));
 
         try {
             await this.lastWrite;
@@ -121,11 +120,11 @@ export default class ViewModeStorage<T extends object> {
 
         if (existingAttachments.length > 1) {
             // Clean up duplicates.
-            await Promise.all(existingAttachments.slice(1).map(async a => await server.remove(`attachments/${a.attachmentId}`)));
+            await Promise.all(existingAttachments.slice(1).map((a) => froca.removeAttachment(a.attachmentId)));
         }
 
         const attachment = existingAttachments[0];
-        const attachmentData = await server.get<{ content: string } | null>(`attachments/${attachment.attachmentId}/blob`);
-        return attachmentData?.content ?? "{}";
+        const blob = await attachment.getBlob();
+        return blob?.content ?? "{}";
     }
 }

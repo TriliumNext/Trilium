@@ -4,15 +4,11 @@
   "description": "Default theme for shared notes and static HTML exports",
   "type": "module",
   "scripts": {
-    "dev": "tsx scripts/build.ts --watch",
-    "build": "tsx scripts/build.ts",
-    "dist": "tsx scripts/build.ts --minify",
     "test": "vitest run"
   },
   "exports": {
     "./templates/*": "./src/templates/*",
-    "./model/*": "./src/model/*.ts",
-    "./*": "./dist/*"
+    "./model/*": "./src/model/*.ts"
   },
   "author": "Elian Doran <contact@eliandoran.me>",
   "contributors": [
@@ -22,16 +18,15 @@
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "fuse.js": "7.5.0",
-    "katex": "0.19.0"
+    "katex": "0.19.0",
+    "mermaid": "12.1.0"
   },
   "devDependencies": {
     "@triliumnext/ckeditor5": "workspace:*",
-    "@triliumnext/highlightjs": "workspace:*",
+    "@triliumnext/client": "workspace:*",
     "@types/ejs": "3.1.5",
     "ejs": "7.0.1",
-    "esbuild": "0.28.2",
     "happy-dom": "20.14.5",
-    "sass": "1.105.1",
     "typescript": "6.0.3",
     "vitest": "5.0.3"
   }

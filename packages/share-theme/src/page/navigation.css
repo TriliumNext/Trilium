@@ -111,6 +111,18 @@
     padding-inline-start: 4px;
 }
 
+#menu .tree-item-hidden-count {
+    flex-shrink: 0;
+    align-self: center;
+    line-height: 1.5;
+    margin-inline-end: 8px;
+    padding: 0.1em 0.6em;
+    border-radius: 0.5em;
+    background: var(--background-highlight);
+    color: var(--text-menu);
+    font-size: 0.7rem;
+}
+
 #menu a {
     display: flex;
     flex: 1;

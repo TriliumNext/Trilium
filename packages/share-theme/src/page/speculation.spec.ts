@@ -12,7 +12,7 @@ describe("setupSpeculation", () => {
 
     it("prerenders the site's pages a visitor is about to open, leaving out files and the login", () => {
         stubSupport(true);
-        window.glob = { isStatic: false, theme: "light" };
+        window.glob = { isShare: true, isStatic: false, theme: "light" };
 
         setupSpeculation();
 
@@ -34,11 +34,11 @@ describe("setupSpeculation", () => {
 
     it("adds no rules to a static export or in a browser without speculation rules", () => {
         stubSupport(true);
-        window.glob = { isStatic: true, theme: "light" };
+        window.glob = { isShare: true, isStatic: true, theme: "light" };
         setupSpeculation();
 
         stubSupport(false);
-        window.glob = { isStatic: false, theme: "light" };
+        window.glob = { isShare: true, isStatic: false, theme: "light" };
         setupSpeculation();
 
         vi.stubGlobal("HTMLScriptElement", {});

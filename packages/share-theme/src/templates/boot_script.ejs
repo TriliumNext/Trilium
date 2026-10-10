@@ -1,6 +1,7 @@
 <script>
-    // Applies the theme before the first paint, to avoid color flashes. The
-    // function keeps its names out of the global scope, which `~shareHtml` snippets share.
+    // Applies the theme before the first paint, to avoid color flashes, and marks the page as
+    // running scripts, which hides what an app view replaces until it mounts. The function keeps
+    // its names out of the global scope, which `~shareHtml` snippets share.
     (function () {
         function read(key) {
             try {
@@ -15,9 +16,10 @@
         const stored = read("theme");
         const preference = stored === "light" || stored === "dark" ? stored : "system";
         const theme = preference === "system" ? (prefersDark ? "dark" : "light") : preference;
-        root.classList.add(`theme-${theme}`, `theme-preference-${preference}`);
+        root.classList.add(`theme-${theme}`, `theme-preference-${preference}`, "has-scripts");
 
         window.glob = {
+            isShare: true,
             isStatic: <%= !!isStatic %>,
             theme
         };

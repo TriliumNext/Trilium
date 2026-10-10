@@ -4,6 +4,7 @@
 
 import { isFontMimeType } from "./font_mimes.js";
 import { MIME_TYPES_DICT, type MimeTypeDefinition } from "./mime_type.js";
+import { isOfficeMimeType } from "./office.js";
 import { NoteType } from "./rows.js";
 
 export const NOTE_TYPE_ICONS = {
@@ -226,6 +227,65 @@ export function isFullWidthNoteType(type: string, mime: string) {
     return type === "file"
         && (mime === "application/pdf" || mime.startsWith("video/") || mime.startsWith("audio/"));
 }
+
+/** Whether a `code` note of `mime` holds Markdown, which renders as text rather than as code. */
+export function isMarkdownMime(mime: string) {
+    return MARKDOWN_MIME_TYPES.includes(mime);
+}
+
+/**
+ * The kind of content a note renders as, which picks its renderer: `iconPack` for an icon pack's
+ * manifest, `markdown` for a Markdown code note, else what {@link getFileContentType} names.
+ *
+ * @param hasIconPackLabel whether the note carries `#iconPack`, disabled or not.
+ */
+export function getNoteContentType(type: string, mime: string, hasIconPackLabel: boolean) {
+    if ((type === "code" || type === "file") && mime === "application/json" && hasIconPackLabel) {
+        return "iconPack";
+    }
+    if (type === "code" && isMarkdownMime(mime)) {
+        return "markdown";
+    }
+    return getFileContentType(type, mime);
+}
+
+/** Narrows a file, or a `viewConfig` attachment, to the kind of file its media type names. */
+export function getFileContentType(type: string, mime: string) {
+    if (type === "file" && mime === "application/pdf") return "pdf";
+    if (type === "file" && mime === CANVAS_ATTACHMENT_MIME) return "canvasDrawing";
+    if ((type === "file" || type === "viewConfig") && mime === "application/json") return "code";
+    if (type === "file" && mime.startsWith("audio/")) return "audio";
+    if (type === "file" && mime.startsWith("video/")) return "video";
+    if (type === "file" && isOfficeMimeType(mime)) return "office";
+    return type;
+}
+
+/**
+ * The group of the share theme's manifest, `content:<group>`, that holds the renderer the app
+ * loads on demand for each kind of content {@link getNoteContentType} names. A kind it renders
+ * with nothing loaded on demand, such as text or code, has none. Each group is a key of the
+ * client's `CONTENT_RENDERERS`.
+ */
+export const CONTENT_RENDERER_GROUPS: Readonly<Record<string, string>> = {
+    iconPack: "iconPack",
+    markdown: "markdown",
+    image: "image",
+    canvasDrawing: "file",
+    pdf: "file",
+    audio: "file",
+    video: "file",
+    mermaid: "mermaid",
+    render: "render",
+    webView: "webView",
+    llmChat: "llmChat"
+};
+
+/** The group {@link CONTENT_RENDERER_GROUPS} names for content of `kind`, or `undefined` for none. */
+export function getContentRendererGroup(kind: string) {
+    return lookUpMime(CONTENT_RENDERER_GROUPS, kind);
+}
+
+const MARKDOWN_MIME_TYPES = [ "text/markdown", "text/x-markdown", "text/x-gfm" ];
 
 const FULL_WIDTH_NOTE_TYPES = [
     "code", "image", "mermaid", "book", "render", "canvas", "webView", "noteMap", "relationMap",

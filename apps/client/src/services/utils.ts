@@ -1,11 +1,12 @@
 import { dayjs, filterAttributeName, isValidAttributeName } from "@triliumnext/commons";
 
 import FNote from "../entities/fnote";
+import { getNoteImageUrl } from "./image_urls.js";
 import type { ViewMode, ViewScope } from "./link.js";
 
 const SVG_MIME = "image/svg+xml";
 
-export const isShare = !window.glob;
+export const isShare = !window.glob || !!window.glob.isShare;
 
 /**
  * True when the client is showing a *pre-auth* SPA screen — the login screen (`loggedIn: false`),
@@ -677,7 +678,7 @@ function copyHtmlToClipboard(html: string, plainText: string = html) {
 }
 
 export function createImageSrcUrl(note: FNote) {
-    return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
+    return getNoteImageUrl(note.noteId, note.title, `timestamp=${Date.now()}`);
 }
 
 

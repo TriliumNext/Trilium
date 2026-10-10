@@ -1,4 +1,6 @@
-import type { ShareMermaidManifest } from "@triliumnext/commons";
+import {
+    getContentRendererGroup, getNoteContentType, getShareThemeGroupFiles, type ShareThemeManifest
+} from "@triliumnext/commons";
 import ejs from "ejs";
 import { convert as convertToText } from "html-to-text";
 import { t } from "i18next";
@@ -10,15 +12,15 @@ import type { ExportFormat, NoteMeta, NoteMetaFile } from "../../../meta.js";
 import { readShareTemplate, renderNoteForExport } from "../../../share/index.js";
 import * as iconPackService from "../../icon_packs.js";
 import { getLog } from "../../log.js";
-import { basename } from "../../utils/path.js";
+import options from "../../options.js";
 import { ZipExportProvider, type ZipExportProviderData } from "./abstract_provider.js";
+import { buildShareData, getViewTypeOf, isHostedNote } from "./share_data.js";
 
 /** The static files a share-theme export copies into the archive, read by each platform its own way. */
 export interface ShareThemeExportAssets {
     /**
-     * The share theme's files, keyed by their path in the archive: `icon-color.svg`,
-     * `assets/<file>`, and the client's mermaid under `assets/client/` when
-     * {@link hasMermaidDiagrams} finds a diagram.
+     * The share theme's files, keyed by their path in the archive: `icon-color.svg`, and
+     * `assets/<file>` for each of {@link getShareThemeExportFiles}.
      */
     files: Map<string, string | Uint8Array>;
     /** Returns the font of a built-in icon pack, such as `boxicons.woff2`. */
@@ -77,7 +79,12 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             }) : "";
 
             // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
-            content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1), this.iconPacks);
+            const getLink = (noteId: string) => (noteId === this.rootMeta?.noteId
+                ? basePath || "./"
+                : this.getNoteTargetUrl(noteId, noteMeta));
+            const ancestors = noteMeta.notePath.slice(0, -1);
+            content = renderNoteForExport(note, branch, basePath, ancestors, this.iconPacks,
+                getLink);
             if (typeof content === "string") {
                 // Rewrite attachment download links
                 content = content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g, (match, attachmentId) => {
@@ -118,6 +125,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         this.#saveAssets();
         this.#saveIndex(rootMeta);
         this.#save404();
+        this.#saveData(rootMeta);
 
         // Search index
         for (const item of this.searchIndex.values()) {
@@ -129,16 +137,13 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     }
 
     mapExtension(type: string | null, mime: string, existingExtension: string, format: ExportFormat): string | null {
-        if (mime.startsWith("image/")) {
-            return null;
-        }
-
         if (mime.startsWith("application/javascript")) {
             return "js";
         }
 
-        // Don't add .html if the file already has .zip extension (for attachments).
-        if (existingExtension === ".zip") {
+        // An attachment keeps its file; an image or file note becomes a page, with its file
+        // written beside it.
+        if (type === null && (mime.startsWith("image/") || existingExtension === ".zip")) {
             return null;
         }
 
@@ -177,6 +182,34 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         }
     }
 
+    #saveData(rootMeta: NoteMeta) {
+        const attachmentPaths = new Map<string, string>();
+        const collect = (noteMeta: NoteMeta) => {
+            const notePath = noteMeta.isClone || !noteMeta.noteId
+                ? null : this.getNoteTargetUrl(noteMeta.noteId, rootMeta);
+            const directory = notePath?.slice(0, notePath.lastIndexOf("/") + 1);
+            for (const attachment of notePath === null ? [] : noteMeta.attachments ?? []) {
+                if (attachment.attachmentId) {
+                    attachmentPaths.set(attachment.attachmentId,
+                        `${directory}${encodeURIComponent(attachment.dataFileName)}`);
+                }
+            }
+            for (const child of noteMeta.children ?? []) {
+                collect(child);
+            }
+        };
+        collect(rootMeta);
+
+        const data = buildShareData(this.branch.getNote(), {
+            getNotePath: (noteId) => (noteId === rootMeta.noteId
+                ? "" : this.getNoteTargetUrl(noteId, rootMeta)),
+            getAttachmentPath: (attachmentId) => attachmentPaths.get(attachmentId) ?? null
+        });
+        for (const [ name, content ] of data) {
+            this.archive.append(content, { name });
+        }
+    }
+
     #save404() {
         const content = ejs.render(readShareTemplate("404"), { t });
         this.archive.append(content, { name: "404.html" });
@@ -184,18 +217,104 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
 }
 
-/** Where the exported pages find the client's mermaid: `client/` next to `assets/scripts.js`. */
-const MERMAID_ARCHIVE_DIR = "assets/client";
+/**
+ * Returns the files of `manifest` the export of `note` copies into `assets/`: those every page can
+ * load, those of the app views the pages host, by {@link getAppViewGroups}, and mermaid's only
+ * when {@link hasMermaidDiagrams} finds a diagram.
+ */
+export function getShareThemeExportFiles(manifest: ShareThemeManifest, note: BNote) {
+    const groups = [ ...getAppViewGroups(note) ];
+    if (hasMermaidDiagrams(note)) {
+        groups.push("mermaid");
+    }
+    return [ ...manifest.files, ...getShareThemeGroupFiles(manifest, groups) ];
+}
 
 /**
- * Whether `note` or a note below it has a mermaid code block the shared page renders: a text note's
- * `language-mermaid` block or a Markdown note's fenced one. Only then does the export carry the
- * client's mermaid, several megabytes the pages load on demand.
+ * Returns the app's catalogues the app views of the export of `note` read, relative to the app's
+ * `translations/`: those of the display language and of English, which they fall back to. The
+ * export copies them into `assets/translations/`; a locale without one of them leaves it out.
+ */
+export function getShareThemeTranslationFiles(note: BNote) {
+    if (!getAppViewGroups(note).size) {
+        return [];
+    }
+
+    const locales = new Set([ "en", options.getOptionOrNull("locale") || "en" ]);
+    return [ ...locales ].flatMap((locale) =>
+        [ `${locale}/translation.json`, `${locale}/entry.json` ]);
+}
+
+/**
+ * Returns the groups of the share theme's manifest the pages of the export of `note` load to host
+ * app views: `view:<viewType>` for each collection and `type:<noteType>` for each note type with
+ * one, `content:<group>` for the renderer of each note a dashboard or a presentation draws, as
+ * `CONTENT_RENDERER_GROUPS` names it, and `view:` for a collection among them, `app` beside any
+ * of them and `scripting` for a render note.
+ */
+export function getAppViewGroups(note: BNote) {
+    const groups = new Set<string>();
+    for (const subtreeNote of note.getSubtree().notes) {
+        if (subtreeNote.isProtected) {
+            continue;
+        }
+
+        if (!isHostedNote(subtreeNote)) {
+            continue;
+        }
+
+        const viewType = getViewTypeOf(subtreeNote);
+        if (viewType) {
+            groups.add(`view:${viewType}`);
+            if (CONTENT_VIEW_TYPES.includes(viewType)) {
+                for (const drawn of getDrawnNotes(subtreeNote)) {
+                    const contentGroup = getContentRendererGroup(getNoteContentType(drawn.type,
+                        drawn.mime, drawn.hasLabel("iconPack") || drawn.hasLabel("disabled:iconPack")));
+                    if (contentGroup) {
+                        groups.add(`content:${contentGroup}`);
+                    }
+                    const drawnViewType = getViewTypeOf(drawn);
+                    if (drawnViewType) {
+                        groups.add(`view:${drawnViewType}`);
+                    }
+                }
+            }
+        } else {
+            groups.add(`type:${subtreeNote.type}`);
+        }
+    }
+
+    if (groups.size) {
+        groups.add("app");
+    }
+    if (groups.has("type:render") || groups.has("content:render")) {
+        groups.add("scripting");
+    }
+    return groups;
+}
+
+/** The view types of the collections that draw the content of their notes. */
+const CONTENT_VIEW_TYPES = [ "dashboard", "presentation" ];
+
+/** The notes a dashboard or a presentation draws: its children and, as vertical slides, theirs. */
+function getDrawnNotes(collection: BNote) {
+    return collection.getChildNotes().flatMap((child) => [ child, ...child.getChildNotes() ]);
+}
+
+/**
+ * Whether `note` or a note below it has a diagram the shared page draws with mermaid: a Mermaid
+ * note, a text note's `language-mermaid` block or a Markdown note's fenced one. Only then does the
+ * export carry the files of mermaid and of the viewer a Mermaid note's diagram goes into, several
+ * megabytes the pages load on demand.
  */
 export function hasMermaidDiagrams(note: BNote) {
     return note.getSubtree().notes.some((subtreeNote) => {
         if (!subtreeNote.isContentAvailable()) {
             return false;
+        }
+
+        if (subtreeNote.type === "mermaid") {
+            return true;
         }
 
         if (subtreeNote.type === "text") {
@@ -208,28 +327,3 @@ export function hasMermaidDiagrams(note: BNote) {
 }
 
 const MARKDOWN_MERMAID_FENCE = /^ {0,3}(`{3,}|~{3,})\s*mermaid\b/m;
-
-/**
- * Maps the files `manifest` lists to their place in the archive, flattened into `assets/client/`,
- * and returns the manifest the exported pages read there. Returns `undefined` when the manifest
- * does not list its own entry: a development server's points at a source module and lists no files.
- */
-export function mapMermaidExportFiles(manifest: ShareMermaidManifest) {
-    if (!manifest.files.includes(manifest.entry)) {
-        return undefined;
-    }
-
-    return {
-        manifest: {
-            path: `${MERMAID_ARCHIVE_DIR}/share_mermaid.json`,
-            content: JSON.stringify({
-                entry: basename(manifest.entry),
-                files: manifest.files.map(basename)
-            })
-        },
-        files: manifest.files.map((source) => ({
-            source,
-            target: `${MERMAID_ARCHIVE_DIR}/${basename(source)}`
-        }))
-    };
-}

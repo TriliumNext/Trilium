@@ -16,7 +16,10 @@ import "./content/external_links.css";
 import "./content/task_states.css";
 import "./content/adaptive_colors.css";
 import "./content/link_embed.css";
+import "./content/full_height.css";
+import "./content/app_view.css";
 import setupMath from "./content/math.js";
+import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -68,8 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const { classList } = document.body;
     if (classList.contains("type-text") || document.querySelector("#content.ck-content")) {
         setupTextNote();
+    } else if (document.querySelector("#content .share-note-view")) {
+        $try(() => setupAppView(".share-note-view", () => import("./content/note_view.js")));
     } else if (classList.contains("type-mermaid")) {
         $try(setupMermaid);
+    } else if (classList.contains("type-book")) {
+        $try(() => setupAppView(".share-collection", () => import("./content/collection_view.js")));
     }
 });
 

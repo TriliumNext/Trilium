@@ -9,6 +9,7 @@ import { highlightBlockReference } from "./block_reference.js";
 import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { resolveContentImageUrls } from "./image_urls.js";
 import link from "./link.js";
 import { applyLinkEmbeds } from "./link_embed.js";
 import { getMermaidConfig, postprocessMermaidSvg } from "./mermaid.js";
@@ -36,7 +37,7 @@ export async function renderTextContent(
 ) {
     const hasContent = content !== undefined && !isHtmlEmpty(content);
     const $content = $('<div class="ck-content">')
-        .html(hasContent ? sanitizeNoteContentHtml(content) : "");
+        .html(hasContent ? resolveContentImageUrls(sanitizeNoteContentHtml(content)) : "");
 
     if (options.block !== undefined && !sliceToBlockReference($content[0], options.block)) {
         $renderedContent.append($("<p>")

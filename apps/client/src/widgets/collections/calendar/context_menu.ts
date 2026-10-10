@@ -1,13 +1,17 @@
 import type { CommandNames } from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
-import contextMenu, { ContextMenuEvent } from "../../../menus/context_menu";
+import contextMenu, { ContextMenuEvent, type MenuItem } from "../../../menus/context_menu";
 import { getArchiveMenuItems } from "../../../menus/context_menu_utils";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
 import branches from "../../../services/branches";
 import { t } from "../../../services/i18n";
 
-export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parentNote: FNote, componentId?: string) {
+/**
+ * Opens the menu of an event's note: the places to open it in, and on a calendar that is not
+ * read-only, archiving, deleting and coloring it.
+ */
+export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parentNote: FNote, componentId?: string, isReadOnly = false) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -16,31 +20,37 @@ export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parent
         y: e.pageY,
         items: [
             ...link_context_menu.getItems(e),
-            { kind: "separator" },
-            ...getArchiveMenuItems<CommandNames>([ note ]),
-            {
-                title: t("calendar_view.delete_note"),
-                uiIcon: "bx bx-trash",
-                handler: async () => {
-                    let branchIdToDelete: string | null = null;
-                    for (const parentBranch of note.getParentBranches()) {
-                        const parentNote = await parentBranch.getNote();
-                        if (parentNote?.hasAncestor(parentNote.noteId)) {
-                            branchIdToDelete = parentBranch.branchId;
-                        }
-                    }
-
-                    if (branchIdToDelete) {
-                        await branches.deleteNotes([ branchIdToDelete ], false, false, componentId);
-                    }
-                }
-            },
-            { kind: "separator" },
-            {
-                kind: "custom",
-                componentFn: () => NoteColorPicker({note})
-            }
+            ...(isReadOnly ? [] : getEditingItems(note, componentId))
         ],
         selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, e, note.noteId),
     });
+}
+
+function getEditingItems(note: FNote, componentId: string | undefined): MenuItem<CommandNames>[] {
+    return [
+        { kind: "separator" },
+        ...getArchiveMenuItems<CommandNames>([ note ]),
+        {
+            title: t("calendar_view.delete_note"),
+            uiIcon: "bx bx-trash",
+            handler: async () => {
+                let branchIdToDelete: string | null = null;
+                for (const parentBranch of note.getParentBranches()) {
+                    const parentNote = await parentBranch.getNote();
+                    if (parentNote?.hasAncestor(parentNote.noteId)) {
+                        branchIdToDelete = parentBranch.branchId;
+                    }
+                }
+
+                if (branchIdToDelete) {
+                    await branches.deleteNotes([ branchIdToDelete ], false, false, componentId);
+                }
+            }
+        },
+        { kind: "separator" },
+        {
+            kind: "custom",
+            componentFn: () => NoteColorPicker({note})
+        }
+    ];
 }

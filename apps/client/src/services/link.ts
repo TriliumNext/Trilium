@@ -7,9 +7,10 @@ import { getCachedBlockReferenceLabel, loadBlockReferenceLabel } from "./block_e
 import cssClassManager from "./css_class_manager.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
+import { getNoteImageUrl } from "./image_urls.js";
 import { showError } from "./toast.js";
 import treeService from "./tree.js";
-import utils from "./utils.js";
+import utils, { isShare } from "./utils.js";
 
 /** The icon a column reference uses when the link carries no `columnIcon`. */
 const DEFAULT_COLUMN_REFERENCE_ICON = "bx bx-columns";
@@ -191,10 +192,8 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     const note = await froca.getNote(noteId);
 
     if (autoConvertToImage && note?.type && ["image", "canvas", "mermaid"].includes(note.type) && viewMode === "default") {
-        const encodedTitle = encodeURIComponent(linkTitle || "");
-
         return $("<img>")
-            .attr("src", `api/images/${noteId}/${encodedTitle}?${Math.random()}`)
+            .attr("src", getNoteImageUrl(noteId, linkTitle || "", String(Math.random())))
             .attr("alt", linkTitle || "");
     }
 
@@ -829,8 +828,9 @@ function getPdfReferenceLabel(pageNumber: string, annotation: string | undefined
     return t(annotation ? "pdf.annotation_reference" : "pdf.page_reference", { pageNumber });
 }
 
+// A shared page hosting an app view keeps its links as plain links to other shared pages.
 /* v8 ignore next -- the `print` device branch is evaluated once at module load; under test glob.device is undefined, so the false arm cannot be exercised */
-if (glob.device !== "print") {
+if (glob.device !== "print" && !isShare) {
     // TODO: Check why the event is not supported.
     //@ts-ignore
     $(document).on("click", "a", goToLink);

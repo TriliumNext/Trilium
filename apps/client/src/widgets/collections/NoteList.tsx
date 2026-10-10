@@ -32,6 +32,7 @@ interface NoteListProps {
     onReady?: (data: PrintReport) => void;
     onProgressChanged?(progress: number): void;
     showTextRepresentation?: boolean;
+    onOpenNote?: (noteId: string) => void;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);

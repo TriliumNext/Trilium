@@ -7,6 +7,7 @@ import FNote from "../../../entities/fnote";
 import branches from "../../../services/branches";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
+import { getNoteImageUrl } from "../../../services/image_urls";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import { fileAccept } from "../../../services/utils";
@@ -65,7 +66,7 @@ const PLACEMENT_TOAST_ID = "geo-placement";
  */
 const OUTLINE_DELAY_MS = 250;
 
-interface MapData {
+export interface MapData {
     view?: SavedView;
     /** The view of the same map drawn over its image (`~map:image`), whose positions say nothing
      *  about the world map's, so that switching between the two restores each. */
@@ -92,7 +93,7 @@ type Placement =
     | { mode: "move"; noteId: string }
     | { mode: "draw"; tool: DrawTool };
 
-export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewModeProps<MapData>) {
+export default function GeoView({ note, noteIds, viewConfig, saveConfig, onOpenNote }: ViewModeProps<MapData>) {
     const { noteContext } = useNoteContext();
     const [ placement, setPlacement ] = useState<Placement>();
     // Which marker the detail pane stands for. Held here rather than in the pane so that creating a
@@ -179,11 +180,16 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     /** Opens the pane on a note, which sends away the searched place the panel would otherwise share
      *  a corner with. */
     const selectNote = useCallback((next: PaneSelection | null) => {
+        if (next && onOpenNote) {
+            onOpenNote(next.noteId);
+            return;
+        }
+
         setSelection(next);
         if (next) {
             forgetPlace();
         }
-    }, [ forgetPlace ]);
+    }, [ forgetPlace, onOpenNote ]);
 
     /** Stands the map on a place found by searching, and fetches the ground it covers where it covers
      *  any (see PlaceMarker). */
@@ -597,7 +603,7 @@ function useImageMap(note: FNote): ImageMapState {
 
             // Absolute, as MapLibre resolves a source's URL against its worker rather than the page.
             const url = imageNote && new URL(
-                `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}?v=${version}`, document.baseURI).href;
+                getNoteImageUrl(imageNote.noteId, imageNote.title, `v=${version}`), document.baseURI).href;
             const size = url ? await measureImage(url) : null;
             if (!url || !size) {
                 fail("unloadable");

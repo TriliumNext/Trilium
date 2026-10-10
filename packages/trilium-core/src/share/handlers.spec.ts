@@ -1,10 +1,13 @@
 import { NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import becca from "../becca/becca.js";
 import { getCrypto } from "../services/encryption/crypto.js";
+import scriptService from "../services/script.js";
 import SearchResult from "../services/search/search_result.js";
 import searchService from "../services/search/services/search.js";
 import { encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
+import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote } from "../test/shaca_mocking.js";
 import {
     getShareRoute, getShareRoutes, handleShareRequest, type ShareReply, type ShareRequest
@@ -64,6 +67,27 @@ describe("share handlers", () => {
         expect(raw.status).toBe(200);
         expect(raw.headers["Content-Type"]).toBe("text/html");
         expect(raw.body).toBe("<p>Hello</p>");
+    });
+
+    it("sends a note opened by its ID to its alias or its external link", () => {
+        buildShareTree([
+            { "id": "aliasedNote", "content": "<p>Aliased</p>", "#shareAlias": "nice-name" },
+            { "id": "externalNote", "content": "", "#shareExternalLink": "https://example.com/" },
+            { "id": "lockedAlias", "content": "", "#shareAlias": "secret-name", "#shareCredentials": "root:hunter2" },
+            { id: "plainPage", content: "<p>Plain</p>" }
+        ]);
+        shaca.aliasToNote["nice-name"] = shaca.getNote("aliasedNote");
+        shaca.aliasToNote["secret-name"] = shaca.getNote("lockedAlias");
+        const page = (shareId: string, query: ShareRequest["query"] = {}) =>
+            request("/share/:shareId", { params: { shareId }, query });
+
+        expect(page("aliasedNote")).toMatchObject({ status: 302, redirect: "./nice-name" });
+        expect(page("externalNote")).toMatchObject({ status: 302, redirect: "https://example.com/" });
+        expect(page("lockedAlias")).toMatchObject({ status: 401 });
+        expect(page("lockedAlias").redirect).toBeUndefined();
+        expect(page("nice-name").status).toBe(200);
+        expect(page("plainPage").status).toBe(200);
+        expect(page("aliasedNote", { raw: "" })).toMatchObject({ status: 200, body: "<p>Aliased</p>" });
     });
 
     it("refuses a protected note's bytes on every route that streams them (GHSA-xmv9-3v98-7gq8)", () => {
@@ -212,7 +236,14 @@ describe("share handlers", () => {
             "/share/api/notes/:noteId/view",
             "/share/api/images/:noteId/:filename",
             "/share/api/attachments/:attachmentId/image/:filename",
-            "/share/api/attachments/:attachmentId/download"
+            "/share/api/attachments/:attachmentId/download",
+            "/share/api/notes/:noteId/attachments",
+            "/share/api/notes/:noteId/blob",
+            "/share/api/attachments/:attachmentId/all",
+            "/share/api/attachments/:attachmentId/blob",
+            "/share/api/note-map/:noteId/:mapType",
+            "/share/api/relation-map/:noteId",
+            "/share/api/script/bundle/:noteId"
         ] as const) {
             expect(request(path).status, path).toBe(404);
         }
@@ -457,6 +488,7 @@ describe("share handlers", () => {
         expect(JSON.parse(String(anonymous.body))).toEqual({
             results: [ {
                 id: "visible",
+                noteId: "visible",
                 title: "Visible",
                 score: 7,
                 path: "Docs / Visible",
@@ -478,6 +510,188 @@ describe("share handlers", () => {
         expect(search({ search: "   " }).status).toBe(400);
         expect(search({ search: [ "a", "b" ] }).status).toBe(400);
     });
+
+    it("filters a shared collection to the matches the caller can see, with the tokens to highlight", () => {
+        buildShareTree([ {
+            id: "board",
+            title: "Board",
+            content: "",
+            children: [
+                { id: "seen", title: "Seen", content: "" },
+                { "id": "guarded", "title": "Guarded", "content": "", "#shareCredentials": "root:hunter2" },
+                { id: "secret", title: "Secret", content: "", isProtected: true }
+            ]
+        } ]);
+        vi.spyOn(searchService, "findResultsWithQuery").mockImplementation((_query, context) => {
+            context.highlightedTokens.push("seen");
+            return [ "seen", "guarded", "secret", "unshared" ]
+                .map((noteId) => new SearchResult([ "root", "_share", "board", noteId ]));
+        });
+        const filter = (query: ShareRequest["query"], authorization?: string) => request(
+            "/share/api/search", { query, headers: authorization ? { authorization } : {} });
+
+        const reply = filter({ searchString: "seen", ancestorNoteId: "board" });
+        expect(reply.status).toBe(200);
+        expect(JSON.parse(String(reply.body))).toMatchObject({
+            searchResultNoteIds: [ "seen" ],
+            highlightedTokens: [ expect.objectContaining({ token: "seen" }) ],
+            error: null
+        });
+        const authorized = filter({ searchString: "seen", ancestorNoteId: "board" },
+            `Basic ${encodeBase64("root:hunter2")}`);
+        expect(JSON.parse(String(authorized.body)).searchResultNoteIds).toEqual([ "seen", "guarded" ]);
+
+        expect(filter({ ancestorNoteId: "board" }).status).toBe(400);
+        expect(filter({ searchString: "seen" }).status).toBe(400);
+        expect(filter({ searchString: "seen", ancestorNoteId: "missing" }).status).toBe(404);
+    });
+
+    it("completes attribute names only from the notes the caller can read in the tree", () => {
+        buildShareTree([
+            { "id": "open", "title": "Open", "content": "", "#projectPhase": "", "~projectOwner": "open" },
+            { "id": "guarded", "title": "Guarded", "content": "", "#projectBudget": "",
+                "#shareCredentials": "root:hunter2" },
+            { "id": "secret", "title": "Secret", "content": "", "#projectSecret": "", "isProtected": true },
+            { "id": "hidden", "title": "Hidden", "content": "", "#shareHiddenFromTree": "", "#projectHidden": "",
+                "children": [ { "id": "belowHidden", "title": "Below", "content": "", "#projectDraft": "" } ] }
+        ]);
+        const names = (query: ShareRequest["query"], authorization?: string) => {
+            const reply = request("/share/api/attribute-names",
+                { query, headers: authorization ? { authorization } : {} });
+            return reply.status === 200 ? JSON.parse(String(reply.body)) as string[] : reply.status;
+        };
+
+        // A note the share does not hold names nothing, whatever the database holds.
+        buildNote({ id: "unshared", title: "Unshared", "#projectPayroll": "" });
+        expect(names({ type: "label", query: "PROJECT" })).toEqual([ "projectPhase" ]);
+        expect(names({ type: "label", query: "project" }, `Basic ${encodeBase64("root:hunter2")}`))
+            .toEqual([ "projectBudget", "projectPhase" ]);
+        expect(names({ type: "relation", query: "project" })).toEqual([ "projectOwner" ]);
+        // The built-in names are the app's own, so a visitor is offered them too.
+        expect(names({ type: "label", query: "shareAlias" })).toEqual([ "shareAlias" ]);
+
+        expect(names({ type: "attribute", query: "project" })).toBe(400);
+        expect(names({ type: "label" })).toBe(400);
+    });
+
+    it("reads the notes, attachments and blobs of only the readable notes for an app view", () => {
+        buildShareTree([
+            {
+                id: "viewParent",
+                title: "Parent",
+                content: "<p>Parent body</p>",
+                children: [ { id: "viewChild", title: "Child", content: "" } ],
+                attachments: [
+                    { id: "firstAttachment", role: "file", mime: "text/plain", title: "a.txt" },
+                    { id: "secondAttachment", role: "file", mime: "text/plain", title: "b.txt" }
+                ]
+            },
+            { "id": "viewLocked", "content": "", "#shareCredentials": "root:hunter2" }
+        ]);
+        stubAttachmentContent("firstAttachment", "first text");
+        const noteIds = "viewParent,viewLocked,noSuchNote";
+
+        const tree = readJson("/share/api/tree", { query: { noteIds } });
+        expect(tree.notes.map((note: { noteId: string }) => note.noteId))
+            .toEqual([ "viewParent", "viewChild" ]);
+        expect(tree.branches)
+            .toMatchObject([ { noteId: "viewChild", parentNoteId: "viewParent" } ]);
+        expect(readJson("/share/api/tree").notes).toEqual([]);
+
+        const attachments = readJson("/share/api/notes/:noteId/attachments",
+            { params: { noteId: "viewParent" } });
+        expect(attachments).toMatchObject([
+            { attachmentId: "firstAttachment", ownerId: "viewParent", contentLength: 0 },
+            { attachmentId: "secondAttachment", ownerId: "viewParent", title: "b.txt" }
+        ]);
+        expect(readJson("/share/api/attachments/:attachmentId/all",
+            { params: { attachmentId: "secondAttachment" } })).toEqual(attachments);
+
+        expect(readJson("/share/api/notes/:noteId/blob", { params: { noteId: "viewParent" } }))
+            .toMatchObject({ content: "<p>Parent body</p>", contentLength: 18 });
+        expect(readJson("/share/api/attachments/:attachmentId/blob",
+            { params: { attachmentId: "firstAttachment" } }))
+            .toMatchObject({ content: "first text", contentLength: 10 });
+        const lockedBlob = request("/share/api/notes/:noteId/blob",
+            { params: { noteId: "viewLocked" } });
+        expect(lockedBlob.status).toBe(401);
+    });
+
+    it("draws a note map, a relation map and a script bundle of only the readable notes", () => {
+        const frontendMime = "application/javascript;env=frontend";
+        buildShareTree([
+            {
+                id: "mapRoot",
+                type: "noteMap",
+                content: "",
+                children: [
+                    { id: "mapReadable", content: "" },
+                    { "id": "mapLocked", "content": "", "#shareCredentials": "root:hunter2" },
+                    {
+                        "id": "mapHidden", "content": "", "#shareHiddenFromTree": "",
+                        "children": [ { id: "mapBelowHidden", content: "" } ]
+                    }
+                ]
+            },
+            {
+                id: "relationMap",
+                type: "relationMap",
+                content: JSON.stringify({ notes: [ { noteId: "mapLocked" }, {} ] })
+            },
+            { id: "scriptNote", type: "code", mime: frontendMime, content: "run()" }
+        ]);
+        buildNote({
+            id: "mapRoot",
+            type: "noteMap",
+            children: [
+                { id: "mapReadable" }, { id: "mapLocked" }, { id: "mapUnshared" },
+                { id: "mapHidden", children: [ { id: "mapBelowHidden" } ] }
+            ]
+        });
+        buildNote({ id: "relationMap", type: "relationMap" });
+        buildNote({ id: "scriptNote", type: "code", mime: frontendMime });
+        const noteMap = (mapType: string, query: ShareRequest["query"] = {}) =>
+            request("/share/api/note-map/:noteId/:mapType",
+                { params: { noteId: "mapRoot", mapType }, query });
+
+        const tree = JSON.parse(String(noteMap("tree").body));
+        expect(tree.notes.map(([ noteId ]: [ string ]) => noteId).sort())
+            .toEqual([ "mapReadable", "mapRoot" ]);
+        expect(tree.links).toHaveLength(1);
+        // Counted from the notes the caller can read and the share tree lists, so a count reveals
+        // no locked, unshared or hidden note.
+        expect(tree.noteIdToDescendantCountMap).toEqual({ mapRoot: 1, mapReadable: 0 });
+        const linkMap = noteMap("link",
+            { excludeRelation: "imageLink", includeRelation: [ "author" ] });
+        expect(JSON.parse(String(linkMap.body)).links).toEqual([]);
+        expect(noteMap("bogus").status).toBe(404);
+
+        expect(readJson("/share/api/relation-map/:noteId", { params: { noteId: "relationMap" } })
+            .noteTitles).toEqual({});
+
+        const scriptBundle = vi.spyOn(scriptService, "getScriptBundleForFrontend");
+        const bundle = () => request("/share/api/script/bundle/:noteId",
+            { params: { noteId: "scriptNote" } });
+        const bundleOf = (allNoteIds: string[]) =>
+            ({ script: "run()", html: "", allNoteIds }) as never;
+        scriptBundle.mockReturnValue(bundleOf([ "scriptNote" ]));
+        expect(JSON.parse(String(bundle().body))).toMatchObject({ script: "run()" });
+        scriptBundle.mockReturnValue(bundleOf([ "scriptNote", "mapLocked" ]));
+        expect(bundle().status).toBe(404);
+        becca.reset();
+        expect(JSON.parse(String(bundle().body)))
+            .toEqual({ message: "Note 'scriptNote' has no script to run." });
+    });
+
+    it("reads a search string without running it, answering its error", () => {
+        const lint = (query: ShareRequest["query"]) => request("/share/api/search/lint", { query });
+        vi.spyOn(searchService, "validateSearchQuery").mockImplementation((query) =>
+            (query === "#" ? "Misplaced or incomplete expression" : null));
+
+        expect(JSON.parse(String(lint({ searchString: "#" }).body))).toEqual({ error: "Misplaced or incomplete expression" });
+        expect(JSON.parse(String(lint({ searchString: "title" }).body))).toEqual({ error: null });
+        expect(lint({}).status).toBe(400);
+    });
 });
 
 function stubAttachmentContent(attachmentId: string, content: string | Uint8Array | undefined) {
@@ -492,6 +706,10 @@ function buildShareTree(children: Parameters<typeof buildShareNote>[0][]) {
 
 function request(path: ShareRoutePath, overrides: RequestOverrides = {}) {
     return handleShareRequest(getShareRoute(path), buildRequest(path, overrides));
+}
+
+function readJson(path: ShareRoutePath, overrides: RequestOverrides = {}) {
+    return JSON.parse(String(request(path, overrides).body));
 }
 
 type RequestOverrides = Partial<ShareRequest> & { headers?: Record<string, string> };

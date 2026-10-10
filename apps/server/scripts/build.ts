@@ -30,7 +30,6 @@ async function main() {
     build.copy("/node_modules/@hyzyla/pdfium/dist/pdfium.wasm", "assets/pdfium.wasm");
     // The Codex ACP adapter runs as a script of its own in a worker thread. See codex_binary.ts.
     build.copy("/node_modules/@agentclientprotocol/codex-acp/dist/index.js", "assets/codex-acp.mjs");
-    build.triggerBuildAndCopyTo("packages/share-theme", "share-theme/assets/", "dist");
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies

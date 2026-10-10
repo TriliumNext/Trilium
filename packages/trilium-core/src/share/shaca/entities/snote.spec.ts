@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import becca from "../../../becca/becca.js";
 import { encodeUtf8 } from "../../../services/utils/binary.js";
+import { buildNote } from "../../../test/becca_easy_mocking.js";
 import { buildShareNote, stubShareSql } from "../../../test/shaca_mocking.js";
 import shaca from "../shaca.js";
 import SAttribute from "./sattribute.js";
@@ -217,6 +219,19 @@ describe("SNote", () => {
         expect(pojo.attributes.map((attr) => attr.name)).toEqual([ "iconClass", "iconClass" ]);
         expect(pojo.attachments.map((attachment) => attachment.attachmentId)).toEqual([ "att" ]);
         expect(shaca.getNote("child").getPojo().parentNoteIds).toEqual([ "parent" ]);
+    });
+
+    it("reads a label from the first built-in template it names, skipping the user's", () => {
+        becca.reset();
+        buildNote({ "id": "_template_board", "#subtreeHidden": "true" });
+        buildNote({ "id": "userTemplate", "#subtreeHidden": "false" });
+        const note = buildShareNote({ "id": "templated", "~template": "userTemplate" });
+        addAttribute("builtInTemplate", "templated", "relation", "template", "_template_board");
+
+        expect(note.getBuiltInTemplateLabelValue("subtreeHidden")).toBe("true");
+        expect(note.getBuiltInTemplateLabelValue("viewType")).toBeNull();
+        const untemplated = buildShareNote({ id: "untemplated" });
+        expect(untemplated.getBuiltInTemplateLabelValue("subtreeHidden")).toBeNull();
     });
 
     it("hides a protected note's title", () => {

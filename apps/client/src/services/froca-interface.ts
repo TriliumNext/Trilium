@@ -1,8 +1,70 @@
+import type {
+    NoteMapPostResponse, RelationMapPostResponse, SearchLintResponse, SearchWithTokensResponse
+} from "@triliumnext/commons";
+
 import type FAttachment from "../entities/fattachment.js";
+import type { FAttachmentRow } from "../entities/fattachment.js";
 import type FAttribute from "../entities/fattribute.js";
+import type { FAttributeRow } from "../entities/fattribute.js";
 import type FBlob from "../entities/fblob.js";
+import type { FBlobRow } from "../entities/fblob.js";
 import type FBranch from "../entities/fbranch.js";
+import type { FBranchRow } from "../entities/fbranch.js";
 import type FNote from "../entities/fnote.js";
+import type { FNoteRow } from "../entities/fnote.js";
+import type { Bundle } from "./bundle.js";
+
+/** The relations a note map draws or leaves out, by name; an empty `includeRelations` draws all. */
+export interface NoteMapFilters {
+    excludeRelations: string[];
+    includeRelations: string[];
+}
+
+/** An attachment a view saves on a note, such as its stored config. */
+export interface SavedAttachment {
+    role: string;
+    title: string;
+    mime: string;
+    content: string;
+    position: number;
+}
+
+/** The rows of notes with their branches and attributes, which `froca.addResp()` takes. */
+export interface SubtreeResponse {
+    notes: FNoteRow[];
+    branches: FBranchRow[];
+    attributes: FAttributeRow[];
+}
+
+/**
+ * Where froca reads the notes, attachments and blobs it does not hold yet. The app reads them from
+ * its API; a page hosting an app view outside the app, such as a shared page, sets its own with
+ * `froca.setSource()`.
+ */
+export interface FrocaSource {
+    loadNotes(noteIds: string[]): Promise<SubtreeResponse>;
+    /** The attachments of the note owning `attachmentId`; rejects if there is no such attachment. */
+    getSiblingAttachments(attachmentId: string): Promise<FAttachmentRow[]>;
+    getAttachments(noteId: string): Promise<FAttachmentRow[]>;
+    getBlob(entityType: string, entityId: string): Promise<FBlobRow>;
+    /** The ids of the notes below `ancestorNoteId` that match the search `query`. */
+    searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    /** The notes below `ancestorNoteId` that match `query`, with the tokens to highlight and its error. */
+    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    /** What is wrong with the search string, read without running it. */
+    lintSearch(searchString: string): Promise<SearchLintResponse>;
+    /** The names of the attributes of `type` that contain `query`, to complete one with. */
+    getAttributeNames(type: "label" | "relation", query: string): Promise<string[]>;
+    /** The notes and the links of the note map of `mapRootNoteId`, as a tree or as its relations. */
+    getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
+    /** The relations the relation map note `relationMapNoteId` draws between the notes `noteIds`. */
+    getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
+    /** The frontend bundle of the script note `noteId` and its modules, or nothing if it has none. */
+    getScriptBundle(noteId: string): Promise<Bundle | undefined>;
+    /** Saves `attachment` on the note, in place of the one of the same title if there is one. */
+    saveAttachment(noteId: string, attachment: SavedAttachment): Promise<void>;
+    removeAttachment(attachmentId: string): Promise<void>;
+}
 
 export interface Froca {
     notes: Record<string, FNote>;
@@ -21,4 +83,13 @@ export interface Froca {
     getBranches(branchIds: string[], silentNotFoundError?: boolean): FBranch[];
 
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
+    searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    lintSearch(searchString: string): Promise<SearchLintResponse>;
+    getAttributeNames(type: "label" | "relation", query: string): Promise<string[]>;
+    getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
+    getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
+    getScriptBundle(noteId: string): Promise<Bundle | undefined>;
+    saveAttachment(noteId: string, attachment: SavedAttachment): Promise<void>;
+    removeAttachment(attachmentId: string): Promise<void>;
 }

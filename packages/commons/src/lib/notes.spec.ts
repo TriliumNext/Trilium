@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-    CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getImageAttachmentTitle,
-    getMimeIcon, getNoteIcon, isFullWidthNoteType, MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE,
-    NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS, parseMindMapNoteLink
+    CANVAS_ATTACHMENT_MIME, GEO_LOCATION_ATTRIBUTE, GEO_SHAPE_ATTRIBUTE, getContentRendererGroup,
+    getImageAttachmentTitle, getMimeIcon, getNoteContentType, getNoteIcon, isFullWidthNoteType,
+    MAP_POSITION_ATTRIBUTE, MAP_SHAPE_ATTRIBUTE, NOTE_TYPE_ICONS, NOTE_TYPE_IMAGE_ATTACHMENTS,
+    parseMindMapNoteLink
 } from "./notes.js";
 import { NoteType } from "./rows.js";
 
@@ -287,5 +288,43 @@ describe("isFullWidthNoteType", () => {
         expect(isFullWidthNoteType("text", "text/html")).toBe(false);
         expect(isFullWidthNoteType("file", "application/zip")).toBe(false);
         expect(isFullWidthNoteType("search", "")).toBe(false);
+    });
+});
+
+describe("getNoteContentType", () => {
+    it("names the content a note renders as, and the group of its renderer", () => {
+        const kinds = [
+            [ "code", "text/x-gfm", false ],
+            [ "code", "application/json", true ],
+            [ "file", "application/json", true ],
+            [ "code", "application/json", false ],
+            [ "file", "application/json", false ],
+            [ "file", "application/pdf", false ],
+            [ "file", CANVAS_ATTACHMENT_MIME, false ],
+            [ "file", "audio/mpeg", false ],
+            [ "file", "video/mp4", false ],
+            [ "file", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", false ],
+            [ "file", "application/zip", false ],
+            [ "mermaid", "text/vnd.mermaid", false ]
+        ] as const;
+
+        expect(kinds.map(([ type, mime, hasIconPackLabel ]) => {
+            const kind = getNoteContentType(type, mime, hasIconPackLabel);
+            return [ kind, getContentRendererGroup(kind) ];
+        })).toEqual([
+            [ "markdown", "markdown" ],
+            [ "iconPack", "iconPack" ],
+            [ "iconPack", "iconPack" ],
+            [ "code", undefined ],
+            [ "code", undefined ],
+            [ "pdf", "file" ],
+            [ "canvasDrawing", "file" ],
+            [ "audio", "file" ],
+            [ "video", "file" ],
+            [ "office", undefined ],
+            [ "file", undefined ],
+            [ "mermaid", "mermaid" ]
+        ]);
+        expect(getContentRendererGroup("constructor")).toBeUndefined();
     });
 });

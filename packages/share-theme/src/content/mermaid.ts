@@ -1,4 +1,5 @@
 import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
+import type { Mermaid } from "mermaid";
 
 /**
  * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes. A code
@@ -39,7 +40,7 @@ interface Diagram {
 
 /** The diagrams on the page, each with the element its drawing replaces. */
 function findDiagrams() {
-    const placeholders: { placeholder: Element; source: string }[] = [];
+    const placeholders: Omit<Diagram, "element">[] = [];
 
     for (const block of document.querySelectorAll("#content pre")) {
         const code = block.querySelector(":scope > code.language-mermaid");
@@ -48,7 +49,7 @@ function findDiagrams() {
         }
     }
 
-    for (const note of document.querySelectorAll("#content .mermaid-note")) {
+    for (const note of document.querySelectorAll<HTMLElement>("#content .mermaid-note")) {
         const image = note.querySelector(":scope > .mermaid-note-image");
         const source = note.querySelector(".mermaid-note-source");
         if (image && source) {
@@ -56,16 +57,11 @@ function findDiagrams() {
         }
     }
 
-    return placeholders.map(({ placeholder, source }): Diagram => {
+    return placeholders.map((placeholder): Diagram => {
         const element = document.createElement("div");
         element.classList.add("mermaid");
-        return { placeholder, element, source };
+        return { ...placeholder, element };
     });
-}
-
-interface Mermaid {
-    initialize(config: Record<string, unknown>): void;
-    render(id: string, source: string): Promise<{ svg: string }>;
 }
 
 let renderCount = 0;
@@ -75,11 +71,9 @@ let renderCount = 0;
  * for it before: its placeholder, or its drawing in the previous theme.
  */
 async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: MermaidTheme) {
-    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
     for (const { placeholder, element, source } of diagrams) {
         try {
-            const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
-            element.innerHTML = svg;
+            element.innerHTML = await drawMermaid(mermaid, source, theme);
         } catch (error) {
             console.error(error);
             continue;
@@ -91,22 +85,20 @@ async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: Merm
     }
 }
 
-function readMermaidTheme() {
-    return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
+/** Loads Mermaid, which only a page with a diagram needs. */
+export async function loadMermaid() {
+    const { default: mermaid } = await import("mermaid");
+    return mermaid;
 }
 
-/**
- * Imports the client's mermaid, which the server, the standalone build and the share-theme export
- * each place at `client/` next to this script, described by `share_mermaid.json`.
- */
-export async function loadMermaid(): Promise<Mermaid> {
-    const manifestUrl = new URL("client/share_mermaid.json", import.meta.url);
-    const response = await fetch(manifestUrl);
-    if (!response.ok) {
-        throw new Error(`Failed to load ${manifestUrl.href}: HTTP ${response.status}.`);
-    }
+/** Returns the SVG of the diagram `source` describes, drawn in `theme`. */
+export async function drawMermaid(mermaid: Mermaid, source: string, theme: MermaidTheme) {
+    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
+    const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
+    return svg;
+}
 
-    const { entry } = await response.json() as { entry: string };
-    const module = await import(new URL(entry, manifestUrl).href) as { default: Mermaid };
-    return module.default;
+/** The Mermaid theme of the page's current theme, which the theme switch changes. */
+export function readMermaidTheme() {
+    return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
 }

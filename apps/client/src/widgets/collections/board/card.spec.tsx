@@ -4,7 +4,7 @@
  */
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../../components/app_context";
 import Component from "../../../components/component";
@@ -19,7 +19,7 @@ import utils from "../../../services/utils";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
 import BoardApi from "./api";
-import BoardView from ".";
+import BoardView, { loadBoardEditing } from ".";
 import { OutsideFilterBadge } from "./card";
 
 // The card menu opens with the shared link items, which reach for the active note context.
@@ -55,6 +55,9 @@ vi.mock("../../attribute_widgets/UserAttributesList", () => ({
         );
     }
 }));
+
+// An editable board draws once its editing code has loaded, which the app fetches on demand.
+beforeAll(() => loadBoardEditing());
 
 describe("Board card", () => {
     let container: HTMLElement | undefined;

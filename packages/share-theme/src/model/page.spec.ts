@@ -257,6 +257,29 @@ describe("getPrevNextLinks", () => {
         expect(links(elsewhere)).toStrictEqual([ null, null ]);
     });
 
+    it("leaves the children of a note hiding its subtree out of the order, and links none of them", () => {
+        // board ─┬─ card1 ── detail
+        //        └─ card2
+        const boardSite = fakeNote({ noteId: "boardSite" });
+        const intro = addChild(boardSite, fakeNote({ noteId: "intro" }));
+        const board = addChild(boardSite, fakeNote({ noteId: "board" }));
+        const card1 = addChild(board, fakeNote({ noteId: "card1" }));
+        const detail = addChild(card1, fakeNote({ noteId: "detail" }));
+        addChild(board, fakeNote({ noteId: "card2" }));
+        const outro = addChild(boardSite, fakeNote({ noteId: "outro" }));
+        const isSubtreeHidden = (note: ShareNote) => note.noteId === "board";
+        const boardLinks = (note: ShareNote) => {
+            const { previous, next } = getPrevNextLinks(note, boardSite, isSubtreeHidden);
+            return [ previous?.title ?? null, next?.title ?? null ];
+        };
+
+        expect(boardLinks(intro)).toStrictEqual([ "boardSite", "board" ]);
+        expect(boardLinks(board)).toStrictEqual([ "intro", "outro" ]);
+        expect(boardLinks(outro)).toStrictEqual([ "board", null ]);
+        expect(boardLinks(card1)).toStrictEqual([ null, null ]);
+        expect(boardLinks(detail)).toStrictEqual([ null, null ]);
+    });
+
     it("reads the parents of each note outside the site once, however many paths lead to it", () => {
         // Sixteen layers of two clones each, every clone a child of both clones of the layer above,
         // make 2^16 paths from `page` up to the share root outside the site.
@@ -365,6 +388,28 @@ describe("getNavigationTree", () => {
         expect(outline(tree)).toStrictEqual([ [ "a", [ "a1" ] ], [ "b", [ "b1" ] ] ]);
     });
 
+    it("counts the children of a note hiding its subtree in place of listing them, but the one shown", () => {
+        // board ─┬─ card1 ── detail
+        //        └─ card2
+        const boardSite = fakeNote({ noteId: "boardSite" });
+        const board = addChild(boardSite, fakeNote({ noteId: "board" }));
+        const card1 = addChild(board, fakeNote({ noteId: "card1" }));
+        const detail = addChild(card1, fakeNote({ noteId: "detail" }));
+        addChild(board, fakeNote({ noteId: "card2" }));
+        const options = { sanitizeUrl: (url: string) => url, isSubtreeHidden: (note: ShareNote) => note.noteId === "board" };
+
+        const onBoard = getNavigationTree(boardSite, board, [], options);
+        expect(outline(onBoard)).toStrictEqual([ "board*+" ]);
+        expect(onBoard[0].hiddenChildCount).toBe(2);
+
+        const onDetail = getNavigationTree(boardSite, detail, [ "card1", "board" ], options);
+        expect(outline(onDetail)).toStrictEqual([ [ "board+", [ [ "card1+", [ "detail*+" ] ] ] ] ]);
+        expect(onDetail[0].hiddenChildCount).toBe(2);
+        expect(onDetail[0].children[0].hiddenChildCount).toBe(0);
+        expect(getNavigationTree(boardSite, card1, [ "board" ], { sanitizeUrl: (url: string) => url })[0]
+            .hiddenChildCount).toBe(0);
+    });
+
     it("tells whether the page has an entry, which the site root and a hidden note do not", () => {
         const options = { sanitizeUrl: (url: string) => url };
 
@@ -435,6 +480,14 @@ describe("getContentClasses", () => {
         expect(classes("file", "application/zip")).toBe("type-file");
         expect(classes("file", "application/zip", false, { fullContentWidth: "" }))
             .toBe("type-file full-content-width");
+    });
+
+    it("gives full-height content and app views the full width", () => {
+        expect(getContentClasses(fakeNote({ noteId: "site", type: "webView" }), false, { isFullHeight: true }))
+            .toBe("type-webView full-content-width full-height");
+        const map = fakeNote({ noteId: "map", type: "book" });
+        expect(getContentClasses(map, false, { isAppView: true, isFullHeight: true }))
+            .toBe("type-book full-content-width full-height app-view");
     });
 });
 
@@ -547,16 +600,16 @@ describe("getChildLinks", () => {
 });
 
 describe("getChildLinksLayout", () => {
-    const layout = (type: string, labels: Record<string, string> = {}) =>
-        getChildLinksLayout(fakeNote({ noteId: "page", type, labels }));
+    const layout = (type: string, viewType: string | null = null) =>
+        getChildLinksLayout(fakeNote({ noteId: "page", type }), viewType);
 
     it("shows a grid, unless a collection asks for a list", () => {
         expect(layout("book")).toBe("grid");
-        expect(layout("book", { viewType: "grid" })).toBe("grid");
-        expect(layout("book", { viewType: "list" })).toBe("list");
-        expect(layout("book", { viewType: "calendar" })).toBe("grid");
+        expect(layout("book", "grid")).toBe("grid");
+        expect(layout("book", "list")).toBe("list");
+        expect(layout("book", "calendar")).toBe("grid");
         expect(layout("text")).toBe("grid");
-        expect(layout("text", { viewType: "list" })).toBe("grid");
+        expect(layout("text", "list")).toBe("grid");
     });
 });
 

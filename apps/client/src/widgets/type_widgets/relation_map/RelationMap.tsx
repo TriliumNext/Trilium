@@ -13,11 +13,10 @@ import { t } from "../../../services/i18n";
 import { goToLinkExt } from "../../../services/link";
 import note_create from "../../../services/note_create";
 import { pasteNotes } from "../../../services/note_paste";
-import server from "../../../services/server";
 import type { ShortcutHintDefinition } from "../../../services/shortcut_hints";
 import toast from "../../../services/toast";
 import { isMobile } from "../../../services/utils";
-import { useContextualShortcutHints, useEditorSpacedUpdate, useNoteLabelBoolean, useTriliumEvent } from "../../react/hooks";
+import { useContextualShortcutHints, useEditorSpacedUpdate, useEffectiveReadOnly, useTriliumEvent } from "../../react/hooks";
 import { useZoomPanPinch, useZoomPanWheel } from "../../react/zoom_pan";
 import { useZoomPanKeyboard, ZOOM_PAN_HINTS } from "../../react/zoom_pan_keyboard";
 import ShortcutHintButton from "../../shortcut_hints/shortcut_hint_button";
@@ -33,10 +32,14 @@ import NotePane, { type NotePaneHandle, type PaneSelection } from "./NotePane";
 import RelationNamePopover, { useRelationNamePrompt } from "./RelationNamePopover";
 import { CLICK_TOLERANCE, fitTransform, getMousePosition, idToNoteId, noteIdToId, revealOffset } from "./utils";
 
-export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProps) {
+interface RelationMapProps extends TypeWidgetProps {
+    /** Opens a clicked note where the map's host shows notes, in place of the note pane and a tab. */
+    onOpenNote?: (noteId: string) => void;
+}
+
+export default function RelationMap({ note, noteContext, ntxId, onOpenNote }: RelationMapProps) {
     const [ data, setData ] = useState<MapData>();
-    // The same read-only the note's own bar of actions read while the + stood there.
-    const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);
@@ -115,9 +118,9 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
     const clickProps = useCanvasClicks({
         placing: placement.placing,
         onPlace: placement.placeAt,
-        onSelectNote: (noteId) => setSelection({ noteId }),
+        onSelectNote: (noteId) => (onOpenNote ? onOpenNote(noteId) : setSelection({ noteId })),
         onClickEmpty: () => paneRef.current?.close(),
-        onOpenNote: openNoteFromBox
+        onOpenNote: (noteId, e) => (onOpenNote ? onOpenNote(noteId) : openNoteFromBox(noteId, e))
     });
     const dragProps = useNoteDragging({ containerRef, mapApiRef, getScale });
     const paste = useMapPaste({ note, isReadOnly, viewport, containerRef, mapApiRef, getScale });
@@ -138,8 +141,8 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
 
     const onRelationContextMenu = useCallback((relation: ClientRelation, e: MouseEvent) => {
         const anchor = () => containerRef.current?.querySelector(`[data-connection-id="${CSS.escape(relation.attributeId)}"]`);
-        showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue));
-    }, [ relationNamePrompt.ask ]);
+        showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue), isReadOnly);
+    }, [ relationNamePrompt.ask, isReadOnly ]);
 
     const onCanvasContextMenu = useCallback((e: MouseEvent) => {
         const isOnItem = e.target instanceof Element && e.target.closest(PAN_EXCLUDED.map((name) => `.${name}`).join(","));
@@ -190,6 +193,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
                                 dropTarget={entry.noteId === pending?.targetNoteId}
                                 isReadOnly={isReadOnly}
                                 onPointerDown={(e) => {
+                                    if (isReadOnly) return;
                                     if (e.target instanceof Element && e.target.closest(".endpoint")) {
                                         startDrawing(e, entry.noteId);
                                     } else {
@@ -357,7 +361,7 @@ function useRelationData(noteId: string, mapData: MapData | undefined, mapApiRef
         if (!noteIds || !api) return;
 
         let isCurrent = true;
-        server.post<RelationMapPostResponse>("relation-map", { noteIds, relationMapNoteId: noteId }).then((data) => {
+        froca.getRelationMap(noteId, noteIds).then((data) => {
             if (!isCurrent) return;
 
             const relations = pairInverseRelations(data.relations, data.inverseRelations);

@@ -1,4 +1,5 @@
 import "./IconPicker.css";
+import "./IconPickerButton.css";
 
 import { IconRegistry } from "@triliumnext/commons";
 import type { Tooltip } from "bootstrap";

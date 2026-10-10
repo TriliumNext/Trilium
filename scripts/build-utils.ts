@@ -169,16 +169,10 @@ export default class BuildHelper {
         this.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");
     }
 
-    /**
-     * Builds another workspace package and copies its `dist` into this one.
-     *
-     * `script` names the package script to run, for a package whose release build is not its
-     * plain `build` — `share-theme` keeps `build` unminified for development and minifies in
-     * `dist`.
-     */
-    triggerBuildAndCopyTo(projectToBuild: string, destPath: string, script = "build") {
+    /** Builds another workspace package and copies its `dist` into this one. */
+    triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
-        execSync(`pnpm ${script}`, { cwd: projectDir, stdio: "inherit" });
+        execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });
         cpSync(join(projectDir, "dist"), join(this.projectDir, "dist", destPath), { recursive: true });
     }
 

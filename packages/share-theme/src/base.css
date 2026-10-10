@@ -56,9 +56,31 @@ html.theme-light {
     --quick-search-button-active-color: #383838;
     /* The right pane colors of `theme-next-light.css`. */
     --main-border-color: #dbdbdb;
+    --tooltip-background-color: rgba(0, 0, 0, 0.818);
+    --tooltip-foreground-color: #ffffffeb;
+    --tooltip-shadow-color: rgba(0, 0, 0, 0.2);
+    --dropdown-item-icon-destructive-color: #de4027;
+    --dropdown-shadow-opacity: 0.2;
+    --hover-item-background-color: #0000001a;
+    --hover-item-border-color: transparent;
+    --active-item-border-color: transparent;
+    --menu-background-color-no-backdrop: #fdfdfd;
+    --menu-item-arrow-color: #00000080;
+    --menu-item-delimiter-color: #00000030;
+    --menu-item-disabled-opacity: 0.6;
+    --menu-item-group-header-color: #00000061;
+    --menu-item-icon-color: #727272;
+    --menu-item-keyboard-shortcut-color: #666666a8;
+    --contextual-help-icon-color: #004382;
+    --badge-background-color: #00000011;
+    --badge-text-color: var(--muted-text-color);
+    --input-focus-outline-color: #00000063;
+    --modal-backdrop-color: #7c7c7c;
     --muted-text-color: #666;
     --card-background-color: #0000000d;
     --card-background-hover-color: #0000001c;
+    --note-icon-background-color: #4f4f4f;
+    --note-icon-color: white;
     /* The content colors of `theme-next-light.css`. */
     --accented-background-color: #f5f5f5;
     --selection-background-color: #3399FF70;
@@ -67,6 +89,34 @@ html.theme-light {
     --kbd-border: #c9c9c9;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #00000013;
+    /* The menu colors of `theme-next-light.css`, which panels over content are drawn in. */
+    --menu-text-color: #272727;
+    --menu-background-color: #ffffffd9;
+    --dropdown-border-color: #ccc;
+    --more-accented-background-color: var(--card-background-hover-color);
+    --hover-item-text-color: black;
+    --icon-button-hover-background: #0000001a;
+    /* The buttons of `theme-next-light.css`, which the app views' toolbars draw from. */
+    --input-background-color: #00000012;
+    --cmd-button-background-color: #0000000f;
+    --cmd-button-text-color: #000000ad;
+    --cmd-button-hover-background-color: #00000016;
+    --cmd-button-hover-text-color: #000;
+    --cmd-button-shadow-color: #00000040;
+    --cmd-button-icon-color: black;
+    --cmd-button-keyboard-shortcut-background: #00000017;
+    --cmd-button-keyboard-shortcut-color: black;
+    --button-group-background-color: var(--input-background-color);
+    --button-group-active-button-background-color: white;
+    --button-group-active-button-color: black;
+    --button-group-active-button-shadow-color: #00000056;
+    --tab-close-button-hover-background: #c95a5a;
+    --active-item-text-color: #383838;
+    --active-item-background-color: #ddd;
+    /* The overlay buttons of `theme-next-light.css`. */
+    --overlay-button-background: #e6e6e6d7;
+    --opaque-icon-button-hover-background-color: #cbcbcbd7;
+    --overlay-button-shadow-color: #00000048;
     --mermaid-theme: default;
     color-scheme: light;
 }
@@ -110,9 +160,31 @@ html.theme-dark {
     --quick-search-button-active-color: #000000;
     /* The right pane colors of `theme-next-dark.css`. */
     --main-border-color: #454545;
+    --tooltip-background-color: rgba(67, 67, 67, 0.86);
+    --tooltip-foreground-color: #ffffffeb;
+    --tooltip-shadow-color: rgba(0, 0, 0, 0.4);
+    --dropdown-item-icon-destructive-color: #d58477;
+    --dropdown-shadow-opacity: 0.6;
+    --hover-item-background-color: #ffffff16;
+    --hover-item-border-color: transparent;
+    --active-item-border-color: transparent;
+    --menu-background-color-no-backdrop: #1b1b1b;
+    --menu-item-arrow-color: #ffffffa3;
+    --menu-item-delimiter-color: #ffffff1c;
+    --menu-item-disabled-opacity: 0.5;
+    --menu-item-group-header-color: #ffffff91;
+    --menu-item-icon-color: #8c8c8c;
+    --menu-item-keyboard-shortcut-color: #ffffff8f;
+    --contextual-help-icon-color: #7fd2ef;
+    --badge-background-color: #ffffff1a;
+    --badge-text-color: var(--muted-text-color);
+    --input-focus-outline-color: #ffffff57;
+    --modal-backdrop-color: #000;
     --muted-text-color: #bbb;
     --card-background-color: #ffffff12;
     --card-background-hover-color: #ffffff20;
+    --note-icon-background-color: #444444;
+    --note-icon-color: #d4d4d4;
     /* The content colors of `theme-next-dark.css`. */
     --accented-background-color: #555;
     --selection-background-color: #3399FF70;
@@ -121,13 +193,73 @@ html.theme-dark {
     --kbd-border: #3a3a3a;
     --right-pane-heading-color: gray;
     --right-pane-item-hover-background: #ffffff26;
+    /* The menu colors of `theme-next-dark.css`, which panels over content are drawn in. */
+    --menu-text-color: #e3e3e3;
+    --menu-background-color: #222222d9;
+    --dropdown-border-color: #404040;
+    --more-accented-background-color: var(--card-background-hover-color);
+    --hover-item-text-color: #efefef;
+    --icon-button-hover-background: #ffffff16;
+    /* The buttons of `theme-next-dark.css`. */
+    --input-background-color: #ffffff12;
+    --cmd-button-background-color: #ffffff28;
+    --cmd-button-text-color: #ffffffc2;
+    --cmd-button-hover-background-color: #ffffff37;
+    --cmd-button-hover-text-color: white;
+    --cmd-button-shadow-color: #00000080;
+    --cmd-button-icon-color: white;
+    --cmd-button-keyboard-shortcut-background: #0000004d;
+    --cmd-button-keyboard-shortcut-color: white;
+    --button-group-background-color: #00000051;
+    --button-group-active-button-background-color: #4f4f4f;
+    --button-group-active-button-color: white;
+    --button-group-active-button-shadow-color: #000000;
+    --tab-close-button-hover-background: #a45353;
+    --active-item-text-color: #aaaaaa;
+    --active-item-background-color: #777;
+    /* The overlay buttons of `theme-next-dark.css`. */
+    --overlay-button-background: #646464d7;
+    --opaque-icon-button-hover-background-color: #868686b2;
+    --overlay-button-shadow-color: #00000048;
     --mermaid-theme: dark;
     color-scheme: dark;
 }
 
-/* The page background under the name the content styles shared with the app read it by. */
+/* The page's colors under the names the styles shared with the app read them by. */
 :root {
     --main-background-color: var(--background-primary);
+    --main-text-color: var(--text-primary);
+    /* The frosting of `theme-next/shell.css` behind the translucent menus. */
+    --dropdown-backdrop-filter: blur(20px) saturate(6);
+    /* The tooltips of `theme-next/base.css`, which the app's `tooltip.css` draws from. */
+    --tooltip-border-radius: 6px;
+    --tooltip-padding: 2px 8px 4px 8px;
+    --tooltip-box-shadow: -1px -1px 2px var(--tooltip-shadow-color), 2px 2px 8px var(--tooltip-shadow-color);
+    --tooltip-backdrop-filter: blur(5px);
+    --tooltip-font-size: 0.9rem;
+    --tooltip-border: none;
+    --tooltip-arrow-display: none;
+    /* The menus of `theme-next/menus.css` and `style.css`, which the app's context menus draw from. */
+    --dropdown-border-radius: 10px;
+    --menu-padding-size: 8px;
+    --menu-item-icon-vert-offset: -2px;
+    --submenu-opening-delay: 150ms;
+    /* The frosting of `theme-next/base.css` behind the translucent overlay buttons. */
+    --overlay-button-backdrop-filter: blur(32px) saturate(1000%);
+    --opaque-icon-button-hover-color: var(--hover-item-text-color);
+    /* The buttons shared by both modes, from `theme-next-light.css` and `theme-next/base.css`. */
+    --button-text-color: currentColor;
+    --cmd-button-disabled-opacity: 0.5;
+    --icon-button-color: currentColor;
+    --icon-button-hover-color: var(--hover-item-text-color);
+    --icon-button-size: 32px;
+    --icon-button-icon-ratio: 0.65;
+    --tab-close-button-hover-color: white;
+}
+
+/* The context menu's own offset in `theme-next/shell.css`, for its smaller icons. */
+#context-menu-container {
+    --menu-item-icon-vert-offset: -1px;
 }
 
 body {

@@ -1,12 +1,9 @@
-import { getNoteIcon, HighlightedTokenInfo } from "@triliumnext/commons";
+import { getNoteIcon, HighlightedTokenInfo, isMarkdownMime } from "@triliumnext/commons";
 
-import { runBackendScript } from "../services/backend_scripting.js";
-import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
-import search from "../services/search.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import type FAttachment from "./fattachment.js";
@@ -262,7 +259,8 @@ export default class FNote {
         const isHiddenNote = this.noteId.startsWith("_");
         const isSearchNote = this.type === "search";
         if (!includeArchived && !isHiddenNote && !isSearchNote) {
-            const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
+            const query = `note.parents.noteId="${this.noteId}" #!archived`;
+            const unorderedIds = new Set(await this.froca.searchNoteIds(query, this.noteId));
             const results: string[] = [];
             for (const id of this.children) {
                 if (unorderedIds.has(id)) {
@@ -1135,8 +1133,10 @@ export default class FNote {
         const env = this.getScriptEnv();
 
         if (env === "frontend") {
+            const { default: bundleService } = await import("../services/bundle.js");
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
+            const { runBackendScript } = await import("../services/backend_scripting.js");
             await runBackendScript(this.noteId);
         } else {
             throw new Error(`Unrecognized env type ${env} for note ${this.noteId}`);
@@ -1180,7 +1180,7 @@ export default class FNote {
     }
 
     isMarkdown() {
-        return this.type === "code" && (this.mime === "text/markdown" || this.mime === "text/x-markdown" || this.mime === "text/x-gfm");
+        return this.type === "code" && isMarkdownMime(this.mime);
     }
 
     isIconPack() {

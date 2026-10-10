@@ -81,19 +81,6 @@
 }
 
 /*
- * NOTE MAP
- */
-
-.note-detail-note-map .fixnodes-type-switcher .tn-tool-button,
-.note-map-widget .fixnodes-type-switcher .tn-tool-button {
-    padding: unset;
-}
-
- .note-detail-note-map .fixnodes-type-switcher .tn-tool-button.toggled {
-    color: var(--tab-close-button-hover-background);
-}
-
-/*
  * EMPTY NOTE PAGE
  */
 

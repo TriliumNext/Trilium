@@ -54,10 +54,10 @@ describe("relation map note context menu", () => {
         expect(container.querySelector(".note-color-picker")).toBeTruthy();
     });
 
-    it("offers no color picker on a read-only map", () => {
-        const custom = openMenu(true).filter((item) => item && "kind" in item && item.kind === "custom");
+    it("offers only the link's own items on a read-only map", () => {
+        vi.spyOn(link_context_menu, "getItems").mockReturnValue([ { title: "Open in a new tab" } ]);
 
-        expect(custom).toHaveLength(0);
+        expect(openMenu(true)).toEqual([ { title: "Open in a new tab" } ]);
     });
 });
 
@@ -98,7 +98,7 @@ describe("relation map relation context menu", () => {
     async function choose(command: string) {
         const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
         const event = new MouseEvent("contextmenu", { cancelable: true });
-        showRelationContextMenu(event, relation, mapApiRef, askRelationName);
+        showRelationContextMenu(event, relation, mapApiRef, askRelationName, false);
         expect(event.defaultPrevented).toBe(true);
 
         const options = show.mock.calls.at(-1)?.[0];
@@ -129,6 +129,15 @@ describe("relation map relation context menu", () => {
         renameRelation.mockResolvedValueOnce(false);
         await choose("rename");
         expect(showError).toHaveBeenCalledTimes(1);
+    });
+
+    it("offers nothing to do to a relation on a read-only map", () => {
+        const show = vi.spyOn(contextMenu, "show").mockImplementation(async () => {});
+        const event = new MouseEvent("contextmenu", { cancelable: true });
+        showRelationContextMenu(event, relation, mapApiRef, askRelationName, true);
+
+        expect(show).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
     });
 
     it("removes the relation once confirmed", async () => {

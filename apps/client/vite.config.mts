@@ -5,7 +5,7 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { shareMermaidManifest, stripUniverEmojiData, stripUniverHyphenation } from './vite-plugins.mjs';
+import { shareTheme, stripUniverEmojiData, stripUniverHyphenation } from './vite-plugins.mjs';
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
@@ -19,13 +19,14 @@ if (isDev) {
         // work on such a view; components then reload with the page instead of in place.
         ...(process.env.TRILIUM_NO_HMR ? [] : [ prefresh() ]),
         stripUniverHyphenation(),
-        stripUniverEmojiData()
+        stripUniverEmojiData(),
+        ...shareTheme()
     ];
 } else {
     plugins = [
         stripUniverHyphenation(),
         stripUniverEmojiData(),
-        shareMermaidManifest("src/share_mermaid.json"),
+        ...shareTheme(),
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/**/*`,
@@ -65,7 +66,11 @@ export default defineConfig(() => ({
     },
     css: {
         transformer: 'lightningcss',
-        devSourcemap: isDev
+        devSourcemap: isDev,
+        preprocessorOptions: {
+            // The share theme builds Bootstrap's tooltips from its partials, which only `@import` loads.
+            scss: { silenceDeprecations: [ "import" ], quietDeps: true }
+        }
     },
     server: {
         watch: {

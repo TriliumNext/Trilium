@@ -322,7 +322,7 @@
   or colors, deleting them, or archiving them.</p>
 <p>You can select multiple cards in the following ways:</p>
 <ul>
-  <li class="ck-list-marker-bold"><strong>Using a mouse and keyboard:</strong>
+  <li><strong>Using a mouse and keyboard:</strong>
     <ul>
       <li>To add a card to the selection, hold <kbd>Ctrl</kbd> and click the card.
         Repeat this for other cards until all the desired cards are selected. Clicking
@@ -333,7 +333,7 @@
       <li>Press <kbd>Esc</kbd> to clear the selection.</li>
     </ul>
   </li>
-  <li class="ck-list-marker-bold"><strong>On mobile:</strong>
+  <li><strong>On mobile:</strong>
     <ol>
       <li>To enter selection mode, tap the&nbsp;<span class="tn-icon bx bx-select-multiple"></span> button
         at the top of the screen. A selection toolbar will appear in the header,
@@ -345,7 +345,7 @@
       <li>Use the side toolbar to apply actions to the selected cards.</li>
     </ol>
   </li>
-  <li class="ck-list-marker-bold"><strong>Using only the keyboard:</strong>
+  <li><strong>Using only the keyboard:</strong>
     <ul>
       <li>To add the currently focused card to the selection, press <kbd>Ctrl</kbd> + <kbd>Space</kbd>.
         Repeat this for the other cards you want to select. Pressing <kbd>Ctrl</kbd> + <kbd>Space</kbd> again
@@ -658,11 +658,17 @@ class="admonition warning">
 </ul>
 <p>To use relations for grouping:</p>
 <ol>
-  <li>Create a Kanban board from scratch rather than from a template.</li>
-  <li>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
-    default template.</li>
-  <li>Set <code>#board:groupBy</code> to the name of a relation, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (for
-    example, <code>~status</code>).</li>
+  <li>
+    <p>Create a Kanban board from scratch rather than from a template.</p>
+  </li>
+  <li>
+    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
+      default template.</p>
+  </li>
+  <li>
+    <p>Set <code>#board:groupBy</code> to the name of a relation, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (for
+      example, <code>~status</code>).</p>
+  </li>
   <li>
     <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;to
       make changing the status within the note easier:</p><pre><code class="language-text-x-trilium-auto">#relation:status(inheritable)="promoted,alias=Status,single"</code></pre>
@@ -698,3 +704,14 @@ class="admonition warning">
   link address is pasted instead. Opening the link scrolls the board to the
   column or card and focuses it. If the column belongs to a different grouping
   attribute, the board switches to that attribute first.</p>
+<h2>Read-only boards</h2>
+<p>A board marked as <a href="#root/_help_CoFPLs3dRlXc">read-only</a> only
+  shows its cards. It has no buttons to add a card or a column, column and
+  card titles can't be renamed, and column icons can't be changed. Cards
+  and columns can't be dragged, moved or deleted with the keyboard, and notes
+  dragged in from the note tree aren't added. The context menus of a card
+  or a column keep only the entries that change nothing, such as opening
+  the note or <span class="tn-icon bx bx-copy"></span>  <em>Copy reference</em>,
+  and the board's own menu doesn't open. The cards can still be grouped by
+  another attribute, but the choice isn't saved, and no new grouping attribute
+  can be created.</p>

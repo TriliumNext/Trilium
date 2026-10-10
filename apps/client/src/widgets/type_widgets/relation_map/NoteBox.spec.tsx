@@ -36,16 +36,16 @@ describe("relation map NoteBox", () => {
 
     const onResize = vi.fn();
 
-    function Harness({ selected }: { selected: boolean }) {
+    function Harness({ selected, isReadOnly }: { selected: boolean; isReadOnly: boolean }) {
         const mapApiRef = useRef<RelationMapApi>(null);
-        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} isReadOnly={false} onPointerDown={() => {}} onResize={onResize} />;
+        return <NoteBox noteId="boxnote" x={10} y={20} mapApiRef={mapApiRef} selected={selected} isReadOnly={isReadOnly} onPointerDown={() => {}} onResize={onResize} />;
     }
 
-    async function mount(selected = false) {
+    async function mount(selected = false, isReadOnly = false) {
         await act(async () => {
             render(
                 <ParentComponent.Provider value={component}>
-                    <Harness selected={selected} />
+                    <Harness selected={selected} isReadOnly={isReadOnly} />
                 </ParentComponent.Provider>,
                 container as HTMLElement
             );
@@ -69,6 +69,15 @@ describe("relation map NoteBox", () => {
         expect(box()?.querySelector(".note-box-title")?.textContent).toBe("Specification");
         expect(box()?.querySelector("a")).toBeNull();
         expect(onResize).toHaveBeenCalledWith("boxnote", { width: 0, height: 0 });
+    });
+
+    it("offers a handle to draw a relation from only on a map that can be edited", async () => {
+        await mount();
+        expect(box()?.querySelector(".endpoint")).not.toBeNull();
+
+        await mount(false, true);
+        expect(box()).not.toBeNull();
+        expect(box()?.querySelector(".endpoint")).toBeNull();
     });
 
     it("follows the note's colour and the selection", async () => {
