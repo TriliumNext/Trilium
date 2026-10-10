@@ -160,7 +160,7 @@ describe("setupSearch", () => {
     });
 
     it("searches the index of a static export, loaded once", async () => {
-        window.glob = { isStatic: true, theme: "light" };
+        window.glob = { isShare: true, isStatic: true, theme: "light" };
         document.head.innerHTML = `<link rel="stylesheet" href="../../assets/style.css">`;
         const fetchMock = vi.fn(async (_url: string) => Response.json([
             { id: "drip", title: "Treatment", path: "Home", content: "Patient on magnesium drip." },
