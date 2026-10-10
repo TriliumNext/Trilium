@@ -30,6 +30,11 @@ export function createShareFrocaSource(links: Record<string, string>): FrocaSour
         // A visitor cannot change notes, so what a view saves holds only while the page is open.
         saveAttachment: async () => {},
         removeAttachment: async () => {},
+        searchInSubtree: (query, ancestorNoteId) => {
+            const params = new URLSearchParams({ searchString: query, ancestorNoteId });
+            return getJson(`api/search?${params}`);
+        },
+        lintSearch: (searchString) => getJson(`api/search/lint?${new URLSearchParams({ searchString })}`),
         getNoteMap: (mapRootNoteId, mapType, { excludeRelations, includeRelations }) => {
             const params = new URLSearchParams([
                 ...excludeRelations.map((name) => [ "excludeRelation", name ]),

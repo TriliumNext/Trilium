@@ -1,4 +1,6 @@
-import type { NoteMapPostResponse, RelationMapPostResponse } from "@triliumnext/commons";
+import type {
+    NoteMapPostResponse, RelationMapPostResponse, SearchLintResponse, SearchWithTokensResponse
+} from "@triliumnext/commons";
 
 import type FAttachment from "../entities/fattachment.js";
 import type { FAttachmentRow } from "../entities/fattachment.js";
@@ -47,6 +49,10 @@ export interface FrocaSource {
     getBlob(entityType: string, entityId: string): Promise<FBlobRow>;
     /** The ids of the notes below `ancestorNoteId` that match the search `query`. */
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    /** The notes below `ancestorNoteId` that match `query`, with the tokens to highlight and its error. */
+    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    /** What is wrong with the search string, read without running it. */
+    lintSearch(searchString: string): Promise<SearchLintResponse>;
     /** The notes and the links of the note map of `mapRootNoteId`, as a tree or as its relations. */
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     /** The relations the relation map note `relationMapNoteId` draws between the notes `noteIds`. */
@@ -76,6 +82,8 @@ export interface Froca {
 
     getAttachmentsForNote(noteId: string): Promise<FAttachment[]>;
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
+    searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
+    lintSearch(searchString: string): Promise<SearchLintResponse>;
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
     getScriptBundle(noteId: string): Promise<Bundle | undefined>;

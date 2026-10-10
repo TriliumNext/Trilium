@@ -479,6 +479,51 @@ describe("share handlers", () => {
         expect(search({ search: "   " }).status).toBe(400);
         expect(search({ search: [ "a", "b" ] }).status).toBe(400);
     });
+
+    it("filters a shared collection to the matches the caller can see, with the tokens to highlight", () => {
+        buildShareTree([ {
+            id: "board",
+            title: "Board",
+            content: "",
+            children: [
+                { id: "seen", title: "Seen", content: "" },
+                { "id": "guarded", "title": "Guarded", "content": "", "#shareCredentials": "root:hunter2" },
+                { id: "secret", title: "Secret", content: "", isProtected: true }
+            ]
+        } ]);
+        vi.spyOn(searchService, "findResultsWithQuery").mockImplementation((_query, context) => {
+            context.highlightedTokens.push("seen");
+            return [ "seen", "guarded", "secret", "unshared" ]
+                .map((noteId) => new SearchResult([ "root", "_share", "board", noteId ]));
+        });
+        const filter = (query: ShareRequest["query"], authorization?: string) => request(
+            "/share/api/search", { query, headers: authorization ? { authorization } : {} });
+
+        const reply = filter({ searchString: "seen", ancestorNoteId: "board" });
+        expect(reply.status).toBe(200);
+        expect(JSON.parse(String(reply.body))).toMatchObject({
+            searchResultNoteIds: [ "seen" ],
+            highlightedTokens: [ expect.objectContaining({ token: "seen" }) ],
+            error: null
+        });
+        const authorized = filter({ searchString: "seen", ancestorNoteId: "board" },
+            `Basic ${encodeBase64("root:hunter2")}`);
+        expect(JSON.parse(String(authorized.body)).searchResultNoteIds).toEqual([ "seen", "guarded" ]);
+
+        expect(filter({ ancestorNoteId: "board" }).status).toBe(400);
+        expect(filter({ searchString: "seen" }).status).toBe(400);
+        expect(filter({ searchString: "seen", ancestorNoteId: "missing" }).status).toBe(404);
+    });
+
+    it("reads a search string without running it, answering its error", () => {
+        const lint = (query: ShareRequest["query"]) => request("/share/api/search/lint", { query });
+        vi.spyOn(searchService, "validateSearchQuery").mockImplementation((query) =>
+            (query === "#" ? "Misplaced or incomplete expression" : null));
+
+        expect(JSON.parse(String(lint({ searchString: "#" }).body))).toEqual({ error: "Misplaced or incomplete expression" });
+        expect(JSON.parse(String(lint({ searchString: "title" }).body))).toEqual({ error: null });
+        expect(lint({}).status).toBe(400);
+    });
 });
 
 function stubAttachmentContent(attachmentId: string, content: string | Uint8Array | undefined) {

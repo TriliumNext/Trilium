@@ -1,5 +1,3 @@
-import type { SearchWithTokensResponse } from "@triliumnext/commons";
-
 import type Component from "../components/component.js";
 import froca from "./froca.js";
 import server from "./server.js";
@@ -21,9 +19,7 @@ async function searchForNotes(searchString: string) {
  * tokens to highlight and any parse error, for filtering a collection down to the matches.
  */
 async function searchInSubtree(searchString: string, ancestorNoteId: string) {
-    return await server.get<SearchWithTokensResponse>(
-        `search?searchString=${encodeURIComponent(searchString)}`
-        + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`);
+    return await froca.searchInSubtree(searchString, ancestorNoteId);
 }
 
 /**

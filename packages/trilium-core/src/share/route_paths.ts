@@ -20,6 +20,8 @@ export const SHARE_ROUTE_PATHS = [
     "/share/api/attachments/:attachmentId/all",
     "/share/api/attachments/:attachmentId/blob",
     "/share/api/tree",
+    "/share/api/search/lint",
+    "/share/api/search",
     "/share/api/note-map/:noteId/:mapType",
     "/share/api/relation-map/:noteId",
     "/share/api/script/bundle/:noteId",

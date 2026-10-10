@@ -95,6 +95,8 @@ const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/attachments/:attachmentId/all": getSiblingAttachments,
     "/share/api/attachments/:attachmentId/blob": getAttachmentBlob,
     "/share/api/tree": loadTree,
+    "/share/api/search/lint": lintSearch,
+    "/share/api/search": searchInSubtree,
     "/share/api/note-map/:noteId/:mapType": getNoteMap,
     "/share/api/relation-map/:noteId": getRelationMap,
     "/share/api/script/bundle/:noteId": getScriptBundle,
@@ -377,6 +379,48 @@ function downloadAttachment(req: ShareRequest): ShareReply {
 }
 
 /** Used for searching; requires a noteId so the subtree root is known. */
+/**
+ * Runs a search below a shared note the way the app filters a collection, answering the matches a
+ * visitor can read with the tokens to highlight and the query's error.
+ */
+function searchInSubtree(req: ShareRequest): ShareReply {
+    const { searchString, ancestorNoteId } = req.query;
+    if (typeof searchString !== "string" || !searchString || typeof ancestorNoteId !== "string") {
+        return jsonReply(400, { message: "'searchString' and 'ancestorNoteId' parameters are mandatory." });
+    }
+    checkNoteAccess(ancestorNoteId, req);
+
+    const searchContext = new SearchContext({
+        fastSearch: false,
+        includeArchivedNotes: true,
+        fuzzyAttributeSearch: false,
+        ignoreHoistedNote: true,
+        ancestorNoteId
+    });
+    const noteIds = searchService.findResultsWithQuery(searchString, searchContext)
+        .filter((result) => {
+            const note = shaca.notes[result.noteId];
+            return note && !note.isProtected && hasCredentialAccess(note, req)
+                && isVisibleInShareTree(ancestorNoteId, result.notePathArray);
+        })
+        .map((result) => result.noteId);
+
+    return jsonReply(200, {
+        searchResultNoteIds: noteIds,
+        highlightedTokens: searchContext.getHighlightedTokenInfos(),
+        error: searchContext.getError()
+    });
+}
+
+/** Reads a search string without running it, for the search editor's own checks. */
+function lintSearch(req: ShareRequest): ShareReply {
+    const { searchString } = req.query;
+    if (typeof searchString !== "string") {
+        return jsonReply(400, { message: "'searchString' parameter is mandatory." });
+    }
+    return jsonReply(200, { error: searchService.validateSearchQuery(searchString) });
+}
+
 function searchNotes(req: ShareRequest): ShareReply {
     const ancestorNoteId = req.query.ancestorNoteId ?? "_share";
 

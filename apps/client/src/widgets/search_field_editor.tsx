@@ -5,11 +5,9 @@ import { type NoteChip, triliumNoteChips } from "@triliumnext/codemirror/src/ext
 import { triliumSearchHighlighter } from "@triliumnext/codemirror/src/extensions/trilium_search_highlighter";
 import { type SearchLintMessages, triliumSearchLinter } from "@triliumnext/codemirror/src/extensions/trilium_search_lint";
 import { createFieldEditor, type FieldEditor, type FieldEditorConfig } from "@triliumnext/codemirror/src/field_editor";
-import type { SearchLintResponse } from "@triliumnext/commons";
 
 import froca from "../services/froca";
 import { t } from "../services/i18n";
-import server from "../services/server";
 import { AttributeNameSuggestion, fetchAttributeNames } from "./attribute_widgets/attribute_detail";
 import { AutocompleteList } from "./react/FormAutocomplete";
 import { CommandMentionList, createHostedList, filterCommandEntries, NoteMentionList } from "./react/NoteAutocomplete";
@@ -139,7 +137,7 @@ export function resolveNoteChip(noteId: string): NoteChip | Promise<NoteChip | n
  * no request.
  */
 async function validateOnServer(searchString: string) {
-    const { error } = await server.post<SearchLintResponse>("search/lint", { searchString });
+    const { error } = await froca.lintSearch(searchString);
 
     return error;
 }

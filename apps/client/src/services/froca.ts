@@ -1,4 +1,7 @@
-import type { HighlightedTokenInfo, NoteMapPostResponse, RelationMapPostResponse } from "@triliumnext/commons";
+import type {
+    HighlightedTokenInfo, NoteMapPostResponse, RelationMapPostResponse, SearchLintResponse,
+    SearchWithTokensResponse
+} from "@triliumnext/commons";
 
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
@@ -404,6 +407,14 @@ class FrocaImpl implements Froca {
         return this.source.searchNoteIds(query, ancestorNoteId);
     }
 
+    searchInSubtree(query: string, ancestorNoteId: string) {
+        return this.source.searchInSubtree(query, ancestorNoteId);
+    }
+
+    lintSearch(searchString: string) {
+        return this.source.lintSearch(searchString);
+    }
+
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters) {
         return this.source.getNoteMap(mapRootNoteId, mapType, filters);
     }
@@ -461,6 +472,10 @@ const SERVER_SOURCE: FrocaSource = {
         const { default: search } = await import("./search.js");
         return await search.searchForNoteIds(query);
     },
+    searchInSubtree: (query, ancestorNoteId) => server.get<SearchWithTokensResponse>(
+        `search?searchString=${encodeURIComponent(query)}`
+        + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`),
+    lintSearch: (searchString) => server.post<SearchLintResponse>("search/lint", { searchString }),
     getNoteMap: (mapRootNoteId, mapType, filters) =>
         server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters),
     getRelationMap: (relationMapNoteId, noteIds) =>
