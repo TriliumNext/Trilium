@@ -187,7 +187,7 @@ To completely redesign the share, it is possible to create or use an existing [c
 
 ### Creating human-readable URL aliases
 
-Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`.
+Shared notes typically have URLs like `http://domain.tld/share/knvU8aJy4dJ7`, where the last part is the note's ID. You can make these URLs more user-friendly by adding the `#shareAlias` label to individual notes (e.g., `#shareAlias=highlighting`). This will change the URL to `http://domain.tld/share/highlighting`. The URL with the note's ID keeps working and redirects to the alias.
 
 **Important**:
 
@@ -219,7 +219,7 @@ To do so, create a shared text note and apply the `shareIndex` label. When viewe
 
 Sometimes it's useful to include a link to an external website alongside your shared notes — for example in the shared navigation or in an index. To do so, add the `#shareExternalLink` label to a note, with the target URL as its value (e.g. `#shareExternalLink="https://example.com"`).
 
-Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. This applies to:
+Any link pointing to this note will then redirect to the external website and open in a new browser tab, instead of opening the note's own shared page. Opening the note's shared URL by its ID also redirects to the external website. This applies to:
 
 *   the listing produced by the `#shareIndex` label;
 *   the navigation tree of the shared site;

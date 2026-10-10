@@ -319,7 +319,8 @@ for (const attr of parentNote.attributes) {
 <p>Shared notes typically have URLs like <code>http://domain.tld/share/knvU8aJy4dJ7</code>,
   where the last part is the note's ID. You can make these URLs more user-friendly
   by adding the <code>#shareAlias</code> label to individual notes (e.g., <code>#shareAlias=highlighting</code>).
-  This will change the URL to <code>http://domain.tld/share/highlighting</code>.</p>
+  This will change the URL to <code>http://domain.tld/share/highlighting</code>.
+  The URL with the note's ID keeps working and redirects to the alias.</p>
 <p><strong>Important</strong>:</p>
 <ol>
   <li>Ensure that aliases are unique.</li>
@@ -360,7 +361,8 @@ for (const attr of parentNote.attributes) {
   target URL as its value (e.g. <code>#shareExternalLink="https://example.com"</code>).</p>
 <p>Any link pointing to this note will then redirect to the external website
   and open in a new browser tab, instead of opening the note's own shared
-  page. This applies to:</p>
+  page. Opening the note's shared URL by its ID also redirects to the external
+  website. This applies to:</p>
 <ul>
   <li>the listing produced by the <code>#shareIndex</code> label;</li>
   <li>the navigation tree of the shared site;</li>

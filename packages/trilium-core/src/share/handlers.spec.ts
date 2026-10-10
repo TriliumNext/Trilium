@@ -69,6 +69,27 @@ describe("share handlers", () => {
         expect(raw.body).toBe("<p>Hello</p>");
     });
 
+    it("sends a note opened by its ID to its alias or its external link", () => {
+        buildShareTree([
+            { "id": "aliasedNote", "content": "<p>Aliased</p>", "#shareAlias": "nice-name" },
+            { "id": "externalNote", "content": "", "#shareExternalLink": "https://example.com/" },
+            { "id": "lockedAlias", "content": "", "#shareAlias": "secret-name", "#shareCredentials": "root:hunter2" },
+            { id: "plainPage", content: "<p>Plain</p>" }
+        ]);
+        shaca.aliasToNote["nice-name"] = shaca.getNote("aliasedNote");
+        shaca.aliasToNote["secret-name"] = shaca.getNote("lockedAlias");
+        const page = (shareId: string, query: ShareRequest["query"] = {}) =>
+            request("/share/:shareId", { params: { shareId }, query });
+
+        expect(page("aliasedNote")).toMatchObject({ status: 302, redirect: "./nice-name" });
+        expect(page("externalNote")).toMatchObject({ status: 302, redirect: "https://example.com/" });
+        expect(page("lockedAlias")).toMatchObject({ status: 401 });
+        expect(page("lockedAlias").redirect).toBeUndefined();
+        expect(page("nice-name").status).toBe(200);
+        expect(page("plainPage").status).toBe(200);
+        expect(page("aliasedNote", { raw: "" })).toMatchObject({ status: 200, body: "<p>Aliased</p>" });
+    });
+
     it("refuses a protected note's bytes on every route that streams them (GHSA-xmv9-3v98-7gq8)", () => {
         buildShareTree([
             { id: "lockedUp", content: "<p>classified body</p>", isProtected: true },

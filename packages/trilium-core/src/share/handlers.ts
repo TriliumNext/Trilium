@@ -1,4 +1,5 @@
 import { isImageAttachmentRole, isSvgMime, NOTE_TYPE_IMAGE_ATTACHMENTS } from "@triliumnext/commons";
+import { getShareLink } from "@triliumnext/share-theme/model/page";
 import ejs from "ejs";
 import { t } from "i18next";
 
@@ -7,6 +8,7 @@ import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
+import * as sanitize from "../services/sanitizer.js";
 import { decodeBase64, decodeUtf8, encodeUtf8 } from "../services/utils/binary.js";
 import * as utils from "../services/utils/index.js";
 import { readShareTemplate, renderNoteContent } from "./content_renderer.js";
@@ -127,8 +129,20 @@ function getShareRoot(req: ShareRequest): ShareReply {
 
 function getShareNote(req: ShareRequest): ShareReply {
     const shareId = req.params.shareId ?? "";
-    const note = shaca.aliasToNote[shareId] || shaca.notes[shareId];
+    const aliasedNote = shaca.aliasToNote[shareId];
+    if (aliasedNote) {
+        return renderNote(aliasedNote, req);
+    }
 
+    // An app view links a note it knows only by ID to `./<noteId>`, which lands on its own link.
+    const note = shaca.notes[shareId];
+    if (note && typeof req.query.raw === "undefined") {
+        checkNoteAccess(note.noteId, req);
+        const link = getShareLink(note, sanitize.sanitizeUrl).href;
+        if (link !== `./${note.noteId}`) {
+            return { status: 302, headers: {}, redirect: link };
+        }
+    }
     return renderNote(note, req);
 }
 

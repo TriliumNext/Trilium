@@ -9,12 +9,20 @@ export interface ShareFrocaRows extends SubtreeResponse {
     links: Record<string, string>;
 }
 
+/** A source of froca's notes that also links each note to its page. */
+export interface ShareFrocaSource extends FrocaSource {
+    /** The URL of a note's page, relative to the page, or `null` for a note without one. */
+    getNoteLink(noteId: string): string | null;
+}
+
 /**
  * Reads the notes, attachments and blobs froca lacks from the share's API, relative to the page,
- * and records the share link of each note it loads in `links`.
+ * and records the share link of each note it loads in `links`. A note no row has linked yet links
+ * to `./<noteId>`, which the share redirects to the note's own link.
  */
-export function createShareFrocaSource(links: Record<string, string>): FrocaSource {
+export function createShareFrocaSource(links: Record<string, string>): ShareFrocaSource {
     return {
+        getNoteLink: (noteId) => links[noteId] ?? `./${encodeURIComponent(noteId)}`,
         loadNotes: async (noteIds) => {
             const query = noteIds.map(encodeURIComponent).join(",");
             const rows = await getJson<ShareFrocaRows>(`api/tree?noteIds=${query}`);
@@ -67,7 +75,7 @@ interface StaticShareRows extends ShareFrocaRows {
 }
 
 /** A source of froca's notes that also finds the images of the export. */
-export interface StaticFrocaSource extends FrocaSource {
+export interface StaticFrocaSource extends ShareFrocaSource {
     /**
      * The URL of the file of a note's image or of an image attachment, relative to the page, or
      * `null` for one the export does not hold or before the source has read `rows.json`.
@@ -99,6 +107,7 @@ export function createStaticFrocaSource(
     const readData = <T>(path: string) => getJson<T>(`${basePath}data/${path}`);
 
     return {
+        getNoteLink: (noteId) => links[noteId] ?? null,
         loadNotes: async () => {
             const { notes, branches, attributes, links: rootLinks } = await readRows();
             for (const [ noteId, link ] of Object.entries(rootLinks)) {

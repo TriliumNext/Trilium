@@ -97,9 +97,10 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
 
     const staticSource = payload.exportBasePath === undefined
         ? undefined : createStaticFrocaSource(links, payload.exportBasePath);
-    froca.setSource(withRootAnchors(staticSource ?? createShareFrocaSource(links)));
+    const source = staticSource ?? createShareFrocaSource(links);
+    froca.setSource(withRootAnchors(source));
     setImageUrlResolver(staticSource?.getImageUrl);
-    linkContextMenu.setShareLinkResolver((linkedNoteId) => links[linkedNoteId] ?? null);
+    linkContextMenu.setShareLinkResolver(source.getNoteLink);
     froca.addResp({
         ...anchorAtRoot(rows),
         attributes: [ ...rows.attributes, {
@@ -122,12 +123,12 @@ function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {
         note,
         parentNoteId: payload.parentNoteId,
         openNote: (openedNoteId) => {
-            const link = links[openedNoteId];
+            const link = source.getNoteLink(openedNoteId);
             if (link) {
                 window.location.href = link;
             }
         },
-        hasLink: (linkedNoteId) => !!links[linkedNoteId],
+        hasLink: (linkedNoteId) => source.getNoteLink(linkedNoteId) !== null,
         staticSource
     };
 }
@@ -165,7 +166,8 @@ function anchorAtRoot<T extends SubtreeResponse>(rows: T): T {
 
 /**
  * Opens the shared page of the note a clicked link into the note tree names, such as a table's
- * `.reference-link[data-href="#root/…"]` cell. A link to a note the share does not hold is left alone.
+ * `.reference-link[data-href="#root/…"]` cell. On a page of the static export, a link to a note the
+ * export does not hold is left alone.
  */
 function openNoteLink(event: MouseEvent, app: HostedApp) {
     const link = (event.target as Element | null)?.closest("[data-href], a[href^='#']");

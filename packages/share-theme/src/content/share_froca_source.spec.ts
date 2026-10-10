@@ -1,6 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createStaticFrocaSource } from "./share_froca_source.js";
+import { createShareFrocaSource, createStaticFrocaSource } from "./share_froca_source.js";
+
+describe("createShareFrocaSource", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("links a note to the page of its ID until a loaded row names its own link", async () => {
+        stubFiles({ "api/tree?noteIds=aliased": { notes: [], branches: [], attributes: [], links: { aliased: "./nice-name" } } });
+        const source = createShareFrocaSource({ shown: "./shown-alias" });
+
+        expect(source.getNoteLink("shown")).toBe("./shown-alias");
+        expect(source.getNoteLink("aliased")).toBe("./aliased");
+        expect(source.getNoteLink("a b")).toBe("./a%20b");
+        await source.loadNotes([ "aliased" ]);
+        expect(source.getNoteLink("aliased")).toBe("./nice-name");
+    });
+});
 
 describe("createStaticFrocaSource", () => {
     afterEach(() => {
@@ -23,6 +40,8 @@ describe("createStaticFrocaSource", () => {
             notes: ROWS.notes, branches: ROWS.branches, attributes: ROWS.attributes
         });
         expect(links).toEqual({ siteRoot: "../", event: "../pages/event.html" });
+        expect(source.getNoteLink("event")).toBe("../pages/event.html");
+        expect(source.getNoteLink("notExported")).toBeNull();
         expect(await source.getAttachments("canvas")).toEqual([ SVG ]);
         expect(await source.getAttachments("event")).toEqual([]);
         expect(await source.getSiblingAttachments("svg")).toEqual([ SVG ]);
