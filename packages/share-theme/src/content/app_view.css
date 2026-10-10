@@ -1,4 +1,7 @@
+/* The app's views pad themselves by the margin `scrolling_container.css` sets in the app. */
 #content.app-view > :is(.share-collection, .share-note-view) {
+    --content-margin-inline: 24px;
+
     position: relative;
     display: flex;
     flex-direction: column;
@@ -16,6 +19,16 @@
         align-self: center;
         object-fit: contain;
     }
+}
+
+@media (max-width: 48em) {
+    #content.app-view > :is(.share-collection, .share-note-view) {
+        --content-margin-inline: 8px;
+    }
+}
+
+#content.app-view:has(.collection-properties) > #title-row {
+    border-bottom: 0;
 }
 
 html.has-scripts:not(.app-view-shown) #content.app-view > :is(.share-collection, .share-note-view) {

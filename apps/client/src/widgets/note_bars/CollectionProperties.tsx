@@ -56,9 +56,15 @@ interface CollectionPropertiesProps {
 /**
  * The bar above a collection that switches its view, sets its options and holds the view's own
  * controls, such as a calendar's navigation. A shared page keeps only the view's own controls, as a
- * visitor cannot change the note.
+ * visitor cannot change the note, and has no bar for a view without any.
  */
-export default function CollectionProperties({
+export default function CollectionProperties(props: CollectionPropertiesProps) {
+    return isShare && !props.centerChildren && !props.rightChildren
+        ? null
+        : <CollectionPropertiesBar {...props} />;
+}
+
+function CollectionPropertiesBar({
     note,
     centerChildren,
     rightChildren,
