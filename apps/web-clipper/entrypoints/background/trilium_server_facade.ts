@@ -210,7 +210,7 @@ export default class TriliumServerFacade {
             return parseInt(triliumDesktopPort, 10);
         }
 
-        return import.meta.env.DEV ? 37742 : 37840;
+        return import.meta.env.DEV ? 37743 : 37840;
     }
 
     async callService(method: string, path: string, body?: string | object) {

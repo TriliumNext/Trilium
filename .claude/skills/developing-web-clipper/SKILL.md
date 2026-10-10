@@ -44,7 +44,7 @@ pages or the extension stores, where no content script runs.
 ## Finding and authenticating to Trilium
 
 - **Desktop first.** `getPort()` returns the port from the options page, or **37840** (production)
-  / **37742** (development build). It tries that one port — there is no port scan — with
+  / **37743** (development build, the port `pnpm desktop:start` uses). It tries that one port — there is no port scan — with
   `GET http://127.0.0.1:<port>/api/clipper/handshake`, then falls back to the configured server.
   It repeats every 60 seconds, and on the popup's **check** button.
 - **Version check.** The handshake returns `protocolVersion` (`CLIPPER_PROTOCOL_VERSION` in
@@ -57,8 +57,8 @@ pages or the extension stores, where no content script runs.
 - **Server routes** are in `apps/server/src/routes/routes.ts` (`/api/clipper/*`) with the handlers
   in `apps/server/src/routes/api/clipper.ts` (spec: `clipper.spec.ts`). They are **server-only**, not
   in `packages/trilium-core`, so the standalone and mobile builds cannot receive clippings.
-- The desktop dev script (`apps/desktop/package.json`) currently runs on **37743**, so a dev build of
-  the clipper does not find a dev desktop without setting the port in its options.
+- The dev port must match `TRILIUM_PORT` in `apps/desktop/package.json`'s `dev` script; when one
+  changes, change `getPort()` and the Developer Guide's *Web Clipper* page with it.
 
 ## Compatibility: the extension outlives the server version
 

@@ -36,10 +36,10 @@ describe("TriliumServerFacade", () => {
 
             await createFacade();
 
-            expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:37742/api/clipper/handshake");
+            expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:37743/api/clipper/handshake");
             expect(searchStatuses()).toEqual([
                 { status: "searching" },
-                { status: "found-desktop", port: 37742, url: "http://127.0.0.1:37742" }
+                { status: "found-desktop", port: 37743, url: "http://127.0.0.1:37743" }
             ]);
         });
 
@@ -173,7 +173,7 @@ describe("TriliumServerFacade", () => {
             fetchMock.mockResolvedValue(notFound);
             await expect(openNote()).rejects.toThrow(requestFailed("Note 'abc' not found"));
             expect(fetchMock).toHaveBeenLastCalledWith(
-                "http://127.0.0.1:37742/api/clipper/open/abc",
+                "http://127.0.0.1:37743/api/clipper/open/abc",
                 expect.objectContaining({
                     headers: expect.objectContaining({ Authorization: "" })
                 }));
@@ -238,7 +238,7 @@ describe("TriliumServerFacade", () => {
         fetchMock.mockResolvedValue(Response.json({ noteId: "n1" }));
         await facade.triggerSearchNoteByUrl("https://example.com/a?b=c");
         expect(fetchMock).toHaveBeenLastCalledWith(
-            "http://127.0.0.1:37742/api/clipper/notes-by-url/https%3A%2F%2Fexample.com%2Fa%3Fb%3Dc",
+            "http://127.0.0.1:37743/api/clipper/notes-by-url/https%3A%2F%2Fexample.com%2Fa%3Fb%3Dc",
             expect.objectContaining({ method: "GET" }));
         expect(sendMessage).toHaveBeenLastCalledWith({
             name: "trilium-previously-visited",
