@@ -374,7 +374,7 @@ function describeStatus(status: TriliumSearchStatus | undefined) {
         case "version-mismatch":
             return { kind: "warning", text: "Incompatible version" };
         case "found-desktop":
-            return { kind: "ok", text: `Connected to the desktop app on port ${status.port}` };
+            return { kind: "ok", text: "Connected to the desktop app", title: `Connected to port ${status.port}` };
         case "found-server":
             return { kind: "ok", text: "Connected to the server", title: `Connected to ${status.url}` };
     }

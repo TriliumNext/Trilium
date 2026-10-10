@@ -62,7 +62,8 @@ describe("popup", () => {
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
         await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });
-        expect(status()).toEqual({ dot: "status-dot status-dot-ok", text: "Connected to the desktop app on port 37840" });
+        expect(status()).toEqual({ dot: "status-dot status-dot-ok", text: "Connected to the desktop app" });
+        expect(container.querySelector<HTMLElement>(".connection .status-ok")?.title).toBe("Connected to port 37840");
         expect(container.querySelector(".connection .status-ok")).not.toBeNull();
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
         expect(button("Save page to Trilium")?.title).toBe("");

@@ -255,6 +255,7 @@ body {
         padding: 4px 12px;
         border-top: 1px solid var(--main-border-color);
         color: var(--muted-text-color);
+        font-size: 0.85em;
         --icon-button-size: 26px;
 
         > span {
