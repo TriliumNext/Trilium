@@ -80,6 +80,15 @@
   <li>Trilium rejected the request: the message includes the reason Trilium
     gave.</li>
 </ul>
+<p>The extension downloads the images of a clipping itself, so that they
+  are stored in Trilium together with the note. If some of them cannot be
+  downloaded (for example because the website refuses the request), the clipping
+  is still saved, and the notification says how many images are missing.
+  Those images keep their address on the original website: Trilium tries
+  to download them once more if <em>Download images automatically</em> is enabled
+  in <a class="reference-link" href="#root/_help_4TIF1oA4VQRO">Options</a> → <em>Media</em>,
+  and otherwise the note shows them from the website for as long as it serves
+  them.</p>
 <p>The notification is shown on the page itself, so it does not appear on
   pages where extensions cannot run (such as the browser's own settings pages
   and the extension stores).</p>

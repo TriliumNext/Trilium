@@ -16,6 +16,9 @@ type BackgroundMessage = {
     name: "trilium-save-page";
 };
 
+/** An image of a clipping; `content` references it by `imageId` until Trilium stores it. */
+type ClippedImage = { imageId: string, src: string, dataUrl?: string };
+
 /** `linkText` is only available on Firefox. */
 type ContextMenuInfo = Browser.contextMenus.OnClickData & { linkText?: string };
 
@@ -195,61 +198,86 @@ export default defineBackground(() => {
 
     async function fetchImage(url: string) {
         const resp = await fetch(url);
-        const blob = await resp.blob();
+        if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+        }
 
-        return await blob2base64(blob);
+        const blob = await resp.blob();
+        if (!blob.type.startsWith("image/")) {
+            throw new Error(`Not an image: '${blob.type}'`);
+        }
+
+        const dataUrl = await blob2base64(blob);
+        if (!dataUrl) {
+            throw new Error("The image could not be read.");
+        }
+
+        return dataUrl;
     }
 
-    async function postProcessImage(image: { src: string, dataUrl?: string | null }) {
+    /** Inlines the image as a data URL, and returns whether it could be downloaded. */
+    async function postProcessImage(image: ClippedImage) {
         if (image.src.startsWith("data:image/")) {
             image.dataUrl = image.src;
             const mimeSubtype = image.src.match(/data:image\/(.*?);/)?.[1];
-            if (!mimeSubtype) return;
+            if (!mimeSubtype) return true;
             image.src = `inline.${mimeSubtype}`; // this should extract file type - png/jpg
+            return true;
         }
-        else {
-            try {
-                image.dataUrl = await fetchImage(image.src);
-            } catch (e) {
-                console.error(`Cannot fetch image from ${image.src}`, e);
-            }
+
+        try {
+            image.dataUrl = await fetchImage(image.src);
+            return true;
+        } catch (e) {
+            console.error(`Cannot fetch image from ${image.src}`, e);
+            return false;
         }
     }
 
-    async function postProcessImages(resp: { images?: { src: string, dataUrl?: string }[] }) {
-        if (resp.images) {
-            for (const image of resp.images) {
-                await postProcessImage(image);
+    /**
+     * Inlines the payload's images, and returns how many could not be downloaded. Those go back to
+     * their original URL in the content, which Trilium downloads itself or shows from the website.
+     */
+    async function postProcessImages(payload: { content?: string, images?: ClippedImage[] }) {
+        if (!payload.images) return 0;
+
+        const downloaded: ClippedImage[] = [];
+        for (const image of payload.images) {
+            if (await postProcessImage(image)) {
+                downloaded.push(image);
+            } else {
+                payload.content = payload.content?.replaceAll(image.imageId, escapeAttribute(image.src));
             }
         }
+
+        const failedCount = payload.images.length - downloaded.length;
+        payload.images = downloaded;
+        return failedCount;
     }
 
     async function saveSelection() {
         const payload = await requestFromPage({name: 'trilium-save-selection'});
 
-        await postProcessImages(payload);
+        const failedImages = await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'clippings', payload);
 
-        toast("Selection has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Selection", failedImages), resp.noteId);
     }
 
     async function getImagePayloadFromSrc(src: string, pageUrl: string | null | undefined) {
-        const image = {
-            imageId: randomString(20),
-            src
-        };
-
-        await postProcessImage(image);
-
+        const imageId = randomString(20);
         const activeTab = await getActiveTab();
-
-        return {
+        const payload = {
             title: activeTab.title,
-            content: `<img src="${image.imageId}">`,
-            images: [image],
+            content: `<img src="${imageId}">`,
+            images: [ { imageId, src } ],
             pageUrl
         };
+
+        const failedImages = await postProcessImages(payload);
+
+        return { payload, failedImages };
     }
 
     async function saveCroppedScreenshot(pageUrl: string | null | undefined) {
@@ -260,7 +288,7 @@ export default defineBackground(() => {
 
         const src = await takeCroppedScreenshot(rect, devicePixelRatio);
 
-        const payload = await getImagePayloadFromSrc(src, pageUrl);
+        const { payload } = await getImagePayloadFromSrc(src, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
@@ -270,7 +298,7 @@ export default defineBackground(() => {
     async function saveWholeScreenshot(pageUrl: string | null | undefined) {
         const src = await takeWholeScreenshot();
 
-        const payload = await getImagePayloadFromSrc(src, pageUrl);
+        const { payload } = await getImagePayloadFromSrc(src, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
@@ -278,21 +306,21 @@ export default defineBackground(() => {
     }
 
     async function saveImage(srcUrl: string, pageUrl: string | null | undefined) {
-        const payload = await getImagePayloadFromSrc(srcUrl, pageUrl);
+        const { payload, failedImages } = await getImagePayloadFromSrc(srcUrl, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
-        toast("Image has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Image", failedImages), resp.noteId);
     }
 
     async function saveWholePage() {
         const payload = await requestFromPage({name: 'trilium-save-page'});
 
-        await postProcessImages(payload);
+        const failedImages = await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'notes', payload);
 
-        toast("Page has been saved to Trilium.", resp.noteId);
+        toast(savedMessage("Page", failedImages), resp.noteId);
     }
 
     async function saveLinkWithNote(title: string, content: string) {
@@ -450,6 +478,20 @@ export default defineBackground(() => {
         }
     }));
 });
+
+function savedMessage(subject: string, failedImages: number) {
+    if (!failedImages) return `${subject} has been saved to Trilium.`;
+    const images = failedImages === 1 ? "1 image" : `${failedImages} images`;
+    return `${subject} has been saved to Trilium, but ${images} could not be downloaded.`;
+}
+
+function escapeAttribute(value: string) {
+    return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+}
 
 function failureMessage(error: unknown) {
     if (error instanceof TriliumError) return error.message;

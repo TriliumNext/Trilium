@@ -121,12 +121,10 @@ describe("background", () => {
 
     describe("saving the selection", () => {
         it("inlines the images, saves a clipping and shows a toast", async () => {
-            fetchMock.mockRejectedValueOnce(new Error("blocked"));
             tabMessageHandler = () => ({
                 title: "Page",
-                content: "<p>Selected</p>",
+                content: `<img src="i2"><img src="i3"><img src="i4">`,
                 images: [
-                    { imageId: "i1", src: "https://example.com/missing.png" },
                     { imageId: "i2", src: "https://example.com/a.png" },
                     { imageId: "i3", src: "data:image/jpeg;base64,/9j/4AAQ" },
                     { imageId: "i4", src: "data:image/;base64,AAAA" }
@@ -138,9 +136,8 @@ describe("background", () => {
             expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-selection" });
             expect(facade.callService).toHaveBeenCalledWith("POST", "clippings", {
                 title: "Page",
-                content: "<p>Selected</p>",
+                content: `<img src="i2"><img src="i3"><img src="i4">`,
                 images: [
-                    { imageId: "i1", src: "https://example.com/missing.png" },
                     {
                         imageId: "i2",
                         src: "https://example.com/a.png",
@@ -158,9 +155,48 @@ describe("background", () => {
                     }
                 ]
             });
-            expect(console.error).toHaveBeenCalledOnce();
-            expect(await lastToast())
-                .toMatchObject({ name: "toast", noteId: "saved", tabIds: null });
+            expect(await lastToast()).toMatchObject({
+                name: "toast",
+                message: "Selection has been saved to Trilium.",
+                noteId: "saved",
+                tabIds: null
+            });
+        });
+
+        it("links the images it cannot download to their website and says so", async () => {
+            fetchMock
+                .mockRejectedValueOnce(new Error("blocked"))
+                .mockResolvedValueOnce(new Response("Forbidden", { status: 403 }))
+                .mockResolvedValueOnce(new Response("<html>", { headers: { "Content-Type": "text/html" } }));
+            tabMessageHandler = () => ({
+                title: "Page",
+                content: `<img src="i1"><img src="i2"><img src="i3"><img src="i4">`,
+                images: [
+                    { imageId: "i1", src: "https://example.com/blocked.png" },
+                    { imageId: "i2", src: "https://example.com/forbidden.png?a=1&b=\"2\"" },
+                    { imageId: "i3", src: "https://example.com/page.html" },
+                    { imageId: "i4", src: "https://example.com/ok.png" }
+                ]
+            });
+
+            await onContextMenuClicked({ menuItemId: "trilium-save-selection" });
+
+            expect(lastPayload()).toEqual({
+                title: "Page",
+                content: `<img src="https://example.com/blocked.png">`
+                    + `<img src="https://example.com/forbidden.png?a=1&amp;b=&quot;2&quot;">`
+                    + `<img src="https://example.com/page.html"><img src="i4">`,
+                images: [ {
+                    imageId: "i4",
+                    src: "https://example.com/ok.png",
+                    dataUrl: expect.stringMatching(PNG_DATA_URL)
+                } ]
+            });
+            expect(console.error).toHaveBeenCalledTimes(3);
+            expect(await lastToast()).toMatchObject({
+                message: "Selection has been saved to Trilium, but 3 images could not be downloaded.",
+                noteId: "saved"
+            });
         });
 
         it("is bound to the keyboard shortcut and shows why saving failed", async () => {
@@ -361,6 +397,21 @@ describe("background", () => {
                 pageUrl: PAGE_URL
             });
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
+
+            fetchMock.mockResolvedValueOnce(new Response("Not found", { status: 404 }));
+            await onContextMenuClicked({
+                menuItemId: "trilium-save-image",
+                srcUrl: "https://example.com/gone.png",
+                pageUrl: PAGE_URL
+            });
+            expect(lastPayload()).toMatchObject({
+                content: `<img src="https://example.com/gone.png">`,
+                images: []
+            });
+            expect(await lastToast()).toMatchObject({
+                message: "Image has been saved to Trilium, but 1 image could not be downloaded.",
+                noteId: "saved"
+            });
 
             facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();

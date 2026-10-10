@@ -65,6 +65,8 @@ After each clipping, a notification in the corner of the page confirms that it w
 *   The versions of Trilium and the extension are not compatible: update the one the message names.
 *   Trilium rejected the request: the message includes the reason Trilium gave.
 
+The extension downloads the images of a clipping itself, so that they are stored in Trilium together with the note. If some of them cannot be downloaded (for example because the website refuses the request), the clipping is still saved, and the notification says how many images are missing. Those images keep their address on the original website: Trilium tries to download them once more if _Download images automatically_ is enabled in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Options.md">Options</a> → _Media_, and otherwise the note shows them from the website for as long as it serves them.
+
 The notification is shown on the page itself, so it does not appear on pages where extensions cannot run (such as the browser's own settings pages and the extension stores).
 
 ## Testing development versions
