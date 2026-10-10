@@ -51,15 +51,18 @@ export async function setBooleanWithInheritance(note: FNote, labelName: string, 
 
     if (hasInheritedValue) {
         if (value) {
-            setLabel(note.noteId, labelName, "");
+            await setLabel(note.noteId, labelName, "");
         } else {
             // Label is inherited - override to false.
-            setLabel(note.noteId, labelName, "false");
+            await setLabel(note.noteId, labelName, "false");
         }
     } else if (value) {
-        setLabel(note.noteId, labelName, "");
+        await setLabel(note.noteId, labelName, "");
     } else {
-        removeOwnedLabelByName(note, labelName);
+        const label = note.getOwnedLabel(labelName);
+        if (label) {
+            await removeAttributeById(note.noteId, label.attributeId);
+        }
     }
 }
 

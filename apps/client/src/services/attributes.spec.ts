@@ -137,6 +137,18 @@ describe("Set boolean with inheritance", () => {
             isInheritable: false
         }, undefined);
     });
+
+    it("waits for the label write and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note" });
+        vi.mocked(server.put).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", true)).rejects.toThrow("offline");
+    });
+
+    it("waits for the label removal and surfaces its failure", async () => {
+        const note = buildNote({ title: "New note", "#foo": "" });
+        vi.mocked(server.remove).mockRejectedValueOnce(new Error("offline"));
+        await expect(setBooleanWithInheritance(note, "foo", false)).rejects.toThrow("offline");
+    });
 });
 
 describe("addLabel / setLabel / setRelation", () => {
