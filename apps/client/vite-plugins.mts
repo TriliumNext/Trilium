@@ -7,7 +7,8 @@ import {
     buildVsCodeThemeCss, VS_CODE_DARK, VS_CODE_LIGHT
 } from "@triliumnext/highlightjs/src/vs_code_theme.js";
 import {
-    build, type Connect, type InlineConfig, normalizePath, type Plugin, type ResolvedConfig, type Rollup
+    build, type Connect, type InlineConfig, normalizePath, parse, type Plugin,
+    type ResolvedConfig, type Rollup, type ViteDevServer
 } from "vite";
 
 /**
@@ -171,7 +172,7 @@ export function shareTheme(options: ShareThemeOptions = {}): Plugin[] {
             apply: "serve",
             configureServer(server) {
                 server.middlewares.use((req, res, next) => {
-                    serveFromSource(server.config.base, req, res, next);
+                    serveFromSource(server, req, res, next).catch(next);
                 });
             }
         },
@@ -201,12 +202,13 @@ const DEV_SOURCES: Record<string, string> = {
 };
 
 /** Answers the page's files under `${base}share/assets/` from the share theme's sources. */
-function serveFromSource(
-    base: string,
+async function serveFromSource(
+    server: ViteDevServer,
     req: Connect.IncomingMessage,
     res: ServerResponse,
-    next: () => void
+    next: (error?: unknown) => void
 ) {
+    const { base } = server.config;
     const prefix = `${base}share/assets/`;
     const [ path ] = (req.url ?? "").split("?");
     if (!path.startsWith(prefix)) {
@@ -216,17 +218,74 @@ function serveFromSource(
 
     const file = path.slice(prefix.length);
     if (file === "scripts.css") {
-        // The development server injects the styles of the modules `scripts.js` imports.
+        // The page links it in `<head>`, so the styles apply before the first paint, as the built
+        // file's do. `scripts.js` still injects the same styles, which keeps hot reloading working.
+        const styles = await collectStyleUrls(server, toFsUrl(DEV_SOURCES["scripts.js"]));
         res.setHeader("Content-Type", "text/css");
-        res.end("");
+        res.setHeader("Cache-Control", "no-cache");
+        res.end(styles.map((url) => `@import url("${base}${url.slice(1)}");\n`).join(""));
         return;
     }
 
     const source = DEV_SOURCES[file];
     if (source) {
-        req.url = `${base}@fs/${normalizePath(join(SHARE_THEME_SRC, source)).replace(/^\//, "")}`;
+        req.url = `${base}${toFsUrl(source).slice(1)}`;
     }
     next();
+}
+
+/** Returns the development server's URL, without its base, of a share theme source file. */
+function toFsUrl(source: string) {
+    return `/@fs/${normalizePath(join(SHARE_THEME_SRC, source)).replace(/^\//, "")}`;
+}
+
+/**
+ * Returns the URLs, without the base, of the stylesheets the module at `entryUrl` imports
+ * statically, directly or through other modules, in the order the browser applies them.
+ */
+async function collectStyleUrls(server: ViteDevServer, entryUrl: string) {
+    const environment = server.environments.client;
+    const { base } = server.config;
+    const styles: string[] = [];
+    const visited = new Set<string>();
+
+    async function visit(url: string) {
+        if (visited.has(url)) {
+            return;
+        }
+        visited.add(url);
+
+        if (url.endsWith(".css")) {
+            styles.push(url);
+            return;
+        }
+        if (url.includes("?") || url.startsWith("/@vite/")
+            || environment.depsOptimizer?.isOptimizedDepUrl(url)) {
+            return;
+        }
+
+        const result = await environment.transformRequest(url);
+        if (!result) {
+            return;
+        }
+        const { program } = await parse(`${url}.js`, result.code);
+        for (const node of program.body) {
+            const isStatic = node.type === "ImportDeclaration"
+                || node.type === "ExportAllDeclaration" || node.type === "ExportNamedDeclaration";
+            if (!isStatic || !node.source) {
+                continue;
+            }
+            const specifier = node.source.value.replace(/[?&]t=\d+$/, "");
+            if (specifier.startsWith(base)) {
+                await visit(`/${specifier.slice(base.length)}`);
+            } else if (specifier.startsWith("/")) {
+                await visit(specifier);
+            }
+        }
+    }
+
+    await visit(entryUrl);
+    return styles;
 }
 
 /**
@@ -289,7 +348,8 @@ function codeThemesPlugin(): Plugin {
     return {
         name: "share-theme-code-themes",
         resolveId: (id) => (id === CODE_THEMES_ID ? `\0${CODE_THEMES_ID}` : null),
-        load: (id) => (id === `\0${CODE_THEMES_ID}`
+        // The development server asks for `?direct` when `scripts.css` imports the themes.
+        load: (id) => (id.split("?")[0] === `\0${CODE_THEMES_ID}`
             ? [
                 buildVsCodeThemeCss(VS_CODE_LIGHT, ":where(html.theme-light)"),
                 buildVsCodeThemeCss(VS_CODE_DARK, ":where(html.theme-dark)")
