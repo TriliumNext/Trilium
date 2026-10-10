@@ -561,8 +561,8 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, target: N
     // What is done to the card itself, which a selection has none of: the menu it opens leads with
     // the columns instead.
     const identity: MenuItem<CommandNames>[] = !isSingle ? [] : [
-        // Space opens the same popup for the card the cursor stands on.
-        { ...link_context_menu.getQuickEditItem(), shortcut: "Space" },
+        // Space opens the same popup for the card the cursor stands on. It edits the card's note.
+        ...(api.isReadOnly ? [] : [ { ...link_context_menu.getQuickEditItem(), shortcut: "Space" } ]),
         ...(api.isReadOnly ? [] : [ {
             title: t("board_view.edit-title"),
             uiIcon: "bx bx-rename",

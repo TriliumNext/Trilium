@@ -364,8 +364,7 @@ export default function BoardView({
 }: ViewModeProps<BoardViewData>) {
     const { noteContext } = useNoteContext();
     const isReadOnly = useEffectiveReadOnly(parentNote, noteContext);
-    const [ requestedGroupBy, setRequestedGroupBy ] =
-        useNoteLabelWithDefault(parentNote, "board:groupBy", DEFAULT_GROUP_BY);
+    const [ requestedGroupBy, setRequestedGroupBy ] = useGroupBy(parentNote, isReadOnly);
     /**
      * The grouping the board draws and writes for.
      *
@@ -1429,6 +1428,7 @@ export default function BoardView({
                     >
                         <BoardGroupBy
                             note={parentNote}
+                            canCreate={!isReadOnly}
                             options={groupingChoices}
                             current={currentGrouping}
                             onSelect={setRequestedGroupBy}
@@ -1712,6 +1712,19 @@ export function findRefreshReason(loadResults: LoadResults, statusAttribute: str
     }
 
     return null;
+}
+
+/**
+ * The attribute the board groups its cards by, `#board:groupBy`. A read-only board keeps the label,
+ * so the reader's choice holds only while the board is shown.
+ */
+function useGroupBy(note: FNote, isReadOnly: boolean): [ string, (groupBy: string) => void ] {
+    const [ label, setLabel ] = useNoteLabelWithDefault(note, "board:groupBy", DEFAULT_GROUP_BY);
+    const [ viewed, setViewed ] = useState<string>();
+
+    useEffect(() => setViewed(undefined), [ note ]);
+
+    return isReadOnly ? [ viewed ?? label, setViewed ] : [ label, setLabel ];
 }
 
 function AddNewColumn({

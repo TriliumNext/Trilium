@@ -5655,6 +5655,7 @@ describe("BoardView, read-only", () => {
         expect(board.querySelector(".board-add-column")).toBeNull();
         expect(board.querySelector(".board-column h3 > .column-icon.static")).not.toBeNull();
         expect(board.querySelector(".board-column h3 > .column-icon button")).toBeNull();
+        expect(board.querySelector(".board-note .edit-icon")).toBeNull();
 
         await act(async () => {
             if (column) startEditingTitle(column);
@@ -5676,6 +5677,7 @@ describe("BoardView, read-only", () => {
         const cardMenu = menuTitles(show);
         expect(cardMenu).toContain("board_view.copy-reference");
         expect(cardMenu).not.toContain("board_view.edit-title");
+        expect(cardMenu).not.toContain("link_context_menu.open_note_in_popup");
         expect(cardMenu).not.toContain("board_view.delete-note");
 
         board.querySelector(".board-column h3")?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
