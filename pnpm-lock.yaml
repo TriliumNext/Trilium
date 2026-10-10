@@ -1024,9 +1024,6 @@ importers:
 
   apps/web-clipper:
     dependencies:
-      cash-dom:
-        specifier: 8.1.5
-        version: 8.1.5
       preact:
         specifier: 11.0.0
         version: 11.0.0(preact-render-to-string@6.8.0)
@@ -6130,9 +6127,6 @@ packages:
 
   canvas-roundrect-polyfill@0.0.1:
     resolution: {integrity: sha512-yWq+R3U3jE+coOeEb3a3GgE2j/0MMiDKM/QpLb6h9ihf5fGY9UXtvK9o4vNqjWXoZz7/3EaSVU3IX53TvFFUOw==}
-
-  cash-dom@8.1.5:
-    resolution: {integrity: sha512-/BS05CfzyHR5xT2ksKj1sDLPaOv5rSmIwoGxNgdKwUtnIuiJ5neMxVEmZxvfyJiSjGbOMD0Lwe+9v+fszDqHew==}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -17842,8 +17836,6 @@ snapshots:
       tinycolor2: 1.6.0
 
   canvas-roundrect-polyfill@0.0.1: {}
-
-  cash-dom@8.1.5: {}
 
   ccount@2.0.1: {}
 

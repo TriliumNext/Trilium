@@ -23,7 +23,6 @@
     "wxt": "0.21.4"
   },
   "dependencies": {
-    "cash-dom": "8.1.5",
     "preact": "11.0.0"
   }
 }

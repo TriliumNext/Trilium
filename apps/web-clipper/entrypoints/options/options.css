@@ -1,0 +1,21 @@
+.options {
+    .message {
+        font-weight: bold;
+    }
+
+    .message-error {
+        color: red;
+    }
+
+    .message-success {
+        color: green;
+    }
+
+    label[for="trilium-desktop-port"] {
+        font-weight: bold;
+    }
+
+    .desktop-port {
+        text-align: right;
+    }
+}
