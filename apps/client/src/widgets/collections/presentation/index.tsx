@@ -10,7 +10,7 @@ import FNote from "../../../entities/fnote";
 import { t } from "../../../services/i18n";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
-import { useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
+import { useEffectiveReadOnly, useNoteContext, useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
 import ShadowDom from "../../react/ShadowDom";
 import { ViewModeMedia, ViewModeProps } from "../interface";
 import { buildPresentationModel, PresentationModel, PresentationSlideBaseModel } from "./model";
@@ -22,6 +22,8 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
     const containerRef = useRef<HTMLDivElement>(null);
     const [ api, setApi ] = useState<RevealApi>();
     const stylesheets = usePresentationStylesheets(note, media);
+    const { noteContext } = useNoteContext();
+    const isReadOnly = useEffectiveReadOnly(note, noteContext);
 
     function refresh() {
         buildPresentationModel(note, onProgressChanged).then(setPresentation);
@@ -57,7 +59,7 @@ export default function PresentationView({ note, noteIds, media, onReady, onProg
             <div class="presentation-view">
                 <CollectionProperties
                     note={note}
-                    rightChildren={<ButtonOverlay containerRef={containerRef} api={api} />}
+                    rightChildren={<ButtonOverlay containerRef={containerRef} api={api} isReadOnly={isReadOnly} />}
                 />
                 <ShadowDom
                     className="presentation-container"
@@ -98,7 +100,7 @@ function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     return stylesheets;
 }
 
-function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivElement | null>, api: RevealApi | undefined }) {
+function ButtonOverlay({ containerRef, api, isReadOnly }: { containerRef: RefObject<HTMLDivElement | null>, api: RevealApi | undefined, isReadOnly: boolean }) {
     const [ isOverviewActive, setIsOverviewActive ] = useState(false);
     useEffect(() => {
         if (!api) return;
@@ -115,18 +117,20 @@ function ButtonOverlay({ containerRef, api }: { containerRef: RefObject<HTMLDivE
 
     return (
         <>
-            <ActionButton
-                icon="bx bx-edit"
-                text={t("presentation_view.edit-slide")}
-                onClick={e => {
-                    const currentSlide = api?.getCurrentSlide();
-                    const noteId = getNoteIdFromSlide(currentSlide);
+            {!isReadOnly && (
+                <ActionButton
+                    icon="bx bx-edit"
+                    text={t("presentation_view.edit-slide")}
+                    onClick={e => {
+                        const currentSlide = api?.getCurrentSlide();
+                        const noteId = getNoteIdFromSlide(currentSlide);
 
-                    if (noteId) {
-                        openInCurrentNoteContext(e, noteId);
-                    }
-                }}
-            />
+                        if (noteId) {
+                            openInCurrentNoteContext(e, noteId);
+                        }
+                    }}
+                />
+            )}
 
             <ActionButton
                 icon="bx bx-grid-horizontal"

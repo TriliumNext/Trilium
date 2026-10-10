@@ -964,7 +964,7 @@ function hostInAppView(result: Result, note: SNote, container: string) {
 }
 
 /** The view types of the collections the share theme shows with the app's own view. */
-const HOSTED_VIEW_TYPES = new Set([ "board", "calendar", "dashboard", "geoMap", "table" ]);
+const HOSTED_VIEW_TYPES = new Set([ "board", "calendar", "dashboard", "geoMap", "presentation", "table" ]);
 
 /**
  * The options the app's views read to draw a note as the app does, which a shared page receives. Only

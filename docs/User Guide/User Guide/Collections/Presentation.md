@@ -18,7 +18,7 @@ Right click on an existing note in the <a class="reference-link" href="../Basic
 
 In the floating toolbar (top-right):
 
-*   Edit button to go to the corresponding note of the current slide.
+*   Edit button to go to the corresponding note of the current slide. A [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) presentation doesn't show it.
 *   Press Overview button (or the <kbd>O</kbd> key) to show a birds-eye view of the slides. Press the button again to disable it.
 *   Press the “Start presentation” button to show the presentation in full-screen.
 
