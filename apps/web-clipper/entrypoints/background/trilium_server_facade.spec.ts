@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import TriliumServerFacade from "./trilium_server_facade";
+import TriliumServerFacade, { TriliumError } from "./trilium_server_facade";
 
 const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>();
 const SERVER = { triliumServerUrl: "https://trilium.example", authToken: "secret" };
@@ -150,20 +150,28 @@ describe("TriliumServerFacade", () => {
             expect(fetchMock.mock.lastCall?.[1]).not.toHaveProperty("body");
         });
 
-        it("sends no token to the desktop app and returns null when a request fails", async () => {
+        it("sends no token to the desktop app and reports why a request failed", async () => {
             fetchMock.mockResolvedValue(handshake("1.0"));
             const facade = await createFacade();
+            const openNote = () => facade.callService("POST", "open/abc");
 
-            fetchMock.mockResolvedValue(new Response("Note not found", { status: 404 }));
-            await expect(facade.callService("POST", "open/abc")).resolves.toBeNull();
+            const notFound = Response.json({ message: "Note 'abc' not found" }, { status: 404 });
+            fetchMock.mockResolvedValue(notFound);
+            await expect(openNote()).rejects.toThrow(requestFailed("Note 'abc' not found"));
             expect(fetchMock).toHaveBeenLastCalledWith(
                 "http://127.0.0.1:37742/api/clipper/open/abc",
                 expect.objectContaining({
                     headers: expect.objectContaining({ Authorization: "" })
                 }));
 
+            fetchMock.mockResolvedValue(new Response("Bad gateway", { status: 502 }));
+            await expect(openNote()).rejects.toThrow(requestFailed("Bad gateway"));
+
+            fetchMock.mockResolvedValue(new Response("", { status: 500 }));
+            await expect(openNote()).rejects.toThrow(requestFailed("500"));
+
             fetchMock.mockRejectedValue(new Error("connection reset"));
-            await expect(facade.callService("POST", "open/abc")).resolves.toBeNull();
+            await expect(openNote()).rejects.toThrow(requestFailed("connection reset"));
         });
 
         it("waits for a running search and rejects once Trilium is not found", async () => {
@@ -183,14 +191,18 @@ describe("TriliumServerFacade", () => {
             fetchMock.mockReset();
             fetchMock.mockRejectedValue(new Error("connection refused"));
             await facade.triggerSearchForTrilium();
-            await expect(facade.callService("GET", "notes-by-url/x")).rejects.toThrow();
+            await expect(facade.callService("GET", "notes-by-url/x"))
+                .rejects.toThrow(expect.objectContaining({ reason: "not-found" }));
         });
 
-        it("returns undefined while Trilium has a different protocol version", async () => {
+        it("rejects while Trilium has a different protocol version", async () => {
             fetchMock.mockResolvedValue(handshake("0.9"));
             const facade = await createFacade();
 
-            await expect(facade.callService("GET", "notes-by-url/x")).resolves.toBeUndefined();
+            const call = facade.callService("GET", "notes-by-url/x");
+            await expect(call).rejects.toBeInstanceOf(TriliumError);
+            await expect(call)
+                .rejects.toThrow(expect.objectContaining({ reason: "version-mismatch" }));
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
     });
@@ -209,12 +221,18 @@ describe("TriliumServerFacade", () => {
             searchNote: { status: "found", noteId: "n1" }
         });
 
-        fetchMock.mockResolvedValue(Response.json({ noteId: null }));
-        await facade.triggerSearchNoteByUrl("https://example.com/b");
-        expect(sendMessage).toHaveBeenLastCalledWith({
+        const notFound = {
             name: "trilium-previously-visited",
             searchNote: { status: "not-found", noteId: null }
-        });
+        };
+        fetchMock.mockResolvedValue(Response.json({ noteId: null }));
+        await facade.triggerSearchNoteByUrl("https://example.com/b");
+        expect(sendMessage).toHaveBeenLastCalledWith(notFound);
+
+        sendMessage.mockClear();
+        fetchMock.mockRejectedValue(new Error("connection reset"));
+        await facade.triggerSearchNoteByUrl("https://example.com/c");
+        expect(sendMessage).toHaveBeenLastCalledWith(notFound);
     });
 
     it("formats the local time with the time zone offset", async () => {
@@ -238,6 +256,13 @@ describe("TriliumServerFacade", () => {
         }
     });
 });
+
+function requestFailed(message: string) {
+    return expect.objectContaining({
+        reason: "request-failed",
+        message: expect.stringContaining(message)
+    });
+}
 
 function handshake(protocolVersion: string) {
     return Response.json({ appName: "trilium", protocolVersion });

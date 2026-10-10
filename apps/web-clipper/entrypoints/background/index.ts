@@ -1,7 +1,7 @@
 import { randomString, type Rect } from "@/utils";
 
 import setupContextMenu from "./context_menu";
-import TriliumServerFacade from "./trilium_server_facade";
+import TriliumServerFacade, { TriliumError } from "./trilium_server_facade";
 
 type BackgroundMessage = {
     name: "toast";
@@ -16,11 +16,14 @@ type BackgroundMessage = {
     name: "trilium-save-page";
 };
 
+/** `linkText` is only available on Firefox. */
+type ContextMenuInfo = Browser.contextMenus.OnClickData & { linkText?: string };
+
 export default defineBackground(() => {
     const triliumServerFacade = new TriliumServerFacade();
 
     // Keyboard shortcuts
-    browser.commands.onCommand.addListener(async (command) => {
+    browser.commands.onCommand.addListener((command) => showFailures(async () => {
         switch (command) {
             case "saveSelection":
                 await saveSelection();
@@ -39,7 +42,7 @@ export default defineBackground(() => {
             default:
                 console.log("Unrecognized command", command);
         }
-    });
+    }));
 
     setupContextMenu();
 
@@ -156,7 +159,28 @@ export default defineBackground(() => {
             message,
             noteId,
             tabIds
+        }).catch(() => {
+            // Browser pages and the extension stores run no content script to show it.
         });
+    }
+
+    /** Runs a user action, and reports its failure in a toast instead of rejecting. */
+    async function showFailures<T>(action: () => Promise<T>) {
+        try {
+            return await action();
+        } catch (e) {
+            console.error("Web clipper action failed", e);
+            toast(failureMessage(e));
+            return undefined;
+        }
+    }
+
+    async function requestFromPage(message: BackgroundMessage) {
+        const response = await sendMessageToActiveTab(message);
+        if (!response) {
+            throw new Error("The page could not be read. Reload it and try again.");
+        }
+        return response;
     }
 
     function blob2base64(blob: Blob) {
@@ -201,15 +225,11 @@ export default defineBackground(() => {
     }
 
     async function saveSelection() {
-        const payload = await sendMessageToActiveTab({name: 'trilium-save-selection'});
+        const payload = await requestFromPage({name: 'trilium-save-selection'});
 
         await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'clippings', payload);
-
-        if (!resp) {
-            return;
-        }
 
         toast("Selection has been saved to Trilium.", resp.noteId);
     }
@@ -233,17 +253,16 @@ export default defineBackground(() => {
     }
 
     async function saveCroppedScreenshot(pageUrl: string | null | undefined) {
-        const { rect, devicePixelRatio } = await sendMessageToActiveTab({name: 'trilium-get-rectangle-for-screenshot'});
+        const { rect, devicePixelRatio } = await requestFromPage({
+            name: 'trilium-get-rectangle-for-screenshot'
+        });
+        if (!rect) return;
 
         const src = await takeCroppedScreenshot(rect, devicePixelRatio);
 
         const payload = await getImagePayloadFromSrc(src, pageUrl);
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
-
-        if (!resp) {
-            return;
-        }
 
         toast("Screenshot has been saved to Trilium.", resp.noteId);
     }
@@ -255,10 +274,6 @@ export default defineBackground(() => {
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
-        if (!resp) {
-            return;
-        }
-
         toast("Screenshot has been saved to Trilium.", resp.noteId);
     }
 
@@ -267,23 +282,15 @@ export default defineBackground(() => {
 
         const resp = await triliumServerFacade.callService("POST", "clippings", payload);
 
-        if (!resp) {
-            return;
-        }
-
         toast("Image has been saved to Trilium.", resp.noteId);
     }
 
     async function saveWholePage() {
-        const payload = await sendMessageToActiveTab({name: 'trilium-save-page'});
+        const payload = await requestFromPage({name: 'trilium-save-page'});
 
         await postProcessImages(payload);
 
         const resp = await triliumServerFacade.callService('POST', 'notes', payload);
-
-        if (!resp) {
-            return;
-        }
 
         toast("Page has been saved to Trilium.", resp.noteId);
     }
@@ -301,10 +308,6 @@ export default defineBackground(() => {
             clipType: 'note',
             pageUrl: activeTab.url
         });
-
-        if (!resp) {
-            return false;
-        }
 
         toast("Link with note has been saved to Trilium.", resp.noteId);
 
@@ -345,13 +348,12 @@ export default defineBackground(() => {
         const payload = await getTabsPayload(tabs);
 
         const resp = await triliumServerFacade.callService('POST', 'notes', payload);
-        if (!resp) return;
 
         const tabIds = tabs.map(tab => tab.id).filter(id => id !== undefined) as number[];
         toast(`${tabs.length} links have been saved to Trilium.`, resp.noteId, tabIds);
     }
 
-    browser.contextMenus.onClicked.addListener(async (info: globalThis.Browser.contextMenus.OnClickData & { linkText?: string; }) => {
+    browser.contextMenus.onClicked.addListener((info: ContextMenuInfo) => showFailures(async () => {
         if (info.menuItemId === 'trilium-save-selection') {
             await saveSelection();
         }
@@ -378,7 +380,6 @@ export default defineBackground(() => {
                 pageUrl: info.pageUrl
             });
 
-            if (!resp) return;
             toast("Link has been saved to Trilium.", resp.noteId);
         }
         else if (info.menuItemId === 'trilium-save-page') {
@@ -387,17 +388,13 @@ export default defineBackground(() => {
         else {
             console.log("Unrecognized menuItemId", info.menuItemId);
         }
-    });
+    }));
 
-    browser.runtime.onMessage.addListener(async request => {
+    browser.runtime.onMessage.addListener((request) => showFailures(async () => {
         console.log("Received", request);
 
         if (request.name === 'openNoteInTrilium') {
             const resp = await triliumServerFacade.callService('POST', `open/${request.noteId}`);
-
-            if (!resp) {
-                return;
-            }
 
             // desktop app is not available so we need to open in browser
             if (resp.result === 'open-in-browser') {
@@ -451,5 +448,11 @@ export default defineBackground(() => {
                 triliumServerFacade.triggerSearchNoteByUrl(activeTab.url);
             }
         }
-    });
+    }));
 });
+
+function failureMessage(error: unknown) {
+    if (error instanceof TriliumError) return error.message;
+    const details = error instanceof Error ? error.message : "";
+    return details ? `Saving to Trilium failed: ${details}` : "Saving to Trilium failed.";
+}

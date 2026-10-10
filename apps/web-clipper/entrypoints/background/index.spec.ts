@@ -1,14 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-const facade = vi.hoisted(() => ({
-    callService: vi.fn<(method: string, path: string, body?: unknown) => Promise<any>>(),
-    triggerSearchForTrilium: vi.fn(),
-    sendTriliumSearchStatusToPopup: vi.fn(),
-    triggerSearchNoteByUrl: vi.fn()
+const { facade, TriliumError } = vi.hoisted(() => ({
+    facade: {
+        callService: vi.fn<(method: string, path: string, body?: unknown) => Promise<any>>(),
+        triggerSearchForTrilium: vi.fn(),
+        sendTriliumSearchStatusToPopup: vi.fn(),
+        triggerSearchNoteByUrl: vi.fn()
+    },
+    TriliumError: class extends Error {
+
+        constructor(readonly reason: string, message: string) {
+            super(message);
+        }
+
+    }
 }));
 
 vi.mock("./trilium_server_facade", () => ({
+    TriliumError,
     default: class {
 
         callService = facade.callService;
@@ -36,6 +46,9 @@ const PNG_DATA_URL = /^data:image\/png;base64,/;
 const PAGE_URL = "https://example.com/page";
 const MENU_URL = "https://example.com/menu";
 const ACTIVE_TAB: Tab = { id: 7, title: "Active page", url: PAGE_URL };
+const TRILIUM_FAILURE = new TriliumError("not-found", "Trilium was not found.");
+const FAILURE_TOAST = { name: "toast", message: "Trilium was not found.", noteId: null };
+const GENERIC_FAILURE_TOAST = { name: "toast", message: expect.any(String), noteId: null };
 
 let onCommand: (command: string) => Promise<void>;
 let onContextMenuClicked: (info: ContextMenuClick) => Promise<void>;
@@ -150,24 +163,46 @@ describe("background", () => {
                 .toMatchObject({ name: "toast", noteId: "saved", tabIds: null });
         });
 
-        it("is bound to the keyboard shortcut and shows no toast when saving fails", async () => {
+        it("is bound to the keyboard shortcut and shows why saving failed", async () => {
             tabMessageHandler = () => ({ title: "Page", content: "x" });
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
 
             await onCommand("saveSelection");
 
             expect(facade.callService)
                 .toHaveBeenCalledWith("POST", "clippings", { title: "Page", content: "x" });
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
 
-        it("fails when there is no active tab", async () => {
+        it("shows a toast when the page returns nothing or something else fails", async () => {
+            await onCommand("saveSelection");
+            expect(facade.callService).not.toHaveBeenCalled();
+            expect(await lastToast()).toMatchObject(GENERIC_FAILURE_TOAST);
+
+            tabMessageHandler = () => ({ title: "Page", content: "x" });
+            facade.callService.mockRejectedValue(new Error("unexpected"));
+            await onCommand("saveSelection");
+            expect(await lastToast()).toMatchObject({
+                ...GENERIC_FAILURE_TOAST,
+                message: expect.stringContaining("unexpected")
+            });
+        });
+
+        it("logs the failure when no page can show a toast", async () => {
             tabs = [];
-            await expect(onCommand("saveSelection")).rejects.toThrow("No active tab.");
+            await expect(onCommand("saveSelection")).resolves.toBeUndefined();
 
             tabs = [ { title: "Tab without id" } ];
-            await expect(onCommand("saveSelection")).rejects.toThrow("No active tab.");
+            await expect(onCommand("saveSelection")).resolves.toBeUndefined();
+
+            tabs = [ ACTIVE_TAB ];
+            tabMessageHandler = () => {
+                throw new Error("Could not establish connection.");
+            };
+            await expect(onCommand("saveSelection")).resolves.toBeUndefined();
+            await lastToast();
             expect(facade.callService).not.toHaveBeenCalled();
+            expect(console.error).toHaveBeenCalledTimes(3);
         });
     });
 
@@ -184,10 +219,10 @@ describe("background", () => {
             expect(facade.callService).toHaveBeenLastCalledWith("POST", "notes", page);
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();
             await onCommand("saveWholePage");
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
     });
 
@@ -237,10 +272,21 @@ describe("background", () => {
             }));
             expect(lastPayload()).toMatchObject({ pageUrl: MENU_URL });
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();
             await sendRuntimeMessage({ name: "save-cropped-screenshot" });
             expect(lastPayload()).toMatchObject({ pageUrl: PAGE_URL });
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
+        });
+
+        it("saves nothing and shows nothing when the crop is cancelled", async () => {
+            tabMessageHandler = (message) => {
+                return message.name === "toast" ? undefined : { rect: null };
+            };
+
+            await expect(onCommand("saveCroppedScreenshot")).resolves.toBeUndefined();
+
+            expect(facade.callService).not.toHaveBeenCalled();
             expect(await lastToast()).toBeUndefined();
         });
 
@@ -255,11 +301,11 @@ describe("background", () => {
             });
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();
             await sendRuntimeMessage({ name: "save-whole-screenshot" });
             expect(lastPayload()).toMatchObject({ pageUrl: PAGE_URL });
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
 
         it("crops the screenshot on a canvas under Manifest V2", async () => {
@@ -284,10 +330,14 @@ describe("background", () => {
             });
 
             getContext.mockReturnValue(null);
-            await expect(onCommand("saveCroppedScreenshot")).rejects.toBeUndefined();
+            tabsSendMessage.mockClear();
+            await onCommand("saveCroppedScreenshot");
+            expect(await lastToast()).toMatchObject(GENERIC_FAILURE_TOAST);
 
             image.fail = true;
-            await expect(onCommand("saveCroppedScreenshot")).rejects.toBeInstanceOf(Event);
+            tabsSendMessage.mockClear();
+            await onCommand("saveCroppedScreenshot");
+            expect(await lastToast()).toMatchObject(GENERIC_FAILURE_TOAST);
         });
     });
 
@@ -312,13 +362,13 @@ describe("background", () => {
             });
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();
             await onContextMenuClicked({
                 menuItemId: "trilium-save-image",
                 srcUrl: "https://example.com/cat.png"
             });
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
 
         it("saves a link, with its URL as the text when the browser gives none", async () => {
@@ -338,7 +388,7 @@ describe("background", () => {
             });
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             tabsSendMessage.mockClear();
             await onContextMenuClicked({
                 menuItemId: "trilium-save-link",
@@ -347,7 +397,7 @@ describe("background", () => {
             expect(lastPayload()).toMatchObject({
                 content: "<a href=\"https://example.com/target\">https://example.com/target</a>"
             });
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
 
         it("ignores unknown items and commands", async () => {
@@ -384,17 +434,17 @@ describe("background", () => {
             expect(await lastToast()).toMatchObject({ noteId: "saved", tabIds: [ 1, 2, 4, 5 ] });
         });
 
-        it("adds no ellipsis for up to three tabs and shows no toast on failure", async () => {
+        it("adds no ellipsis for up to three tabs and shows why saving failed", async () => {
             tabs = [
                 { id: 1, title: "A", url: "https://a.com/" },
                 { id: 2, title: "B", url: "https://b.com/" }
             ];
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
 
             await sendRuntimeMessage({ name: "save-tabs" });
 
             expect(lastPayload()).toMatchObject({ title: "2 browser tabs: a.com, b.com" });
-            expect(await lastToast()).toBeUndefined();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
         });
     });
 
@@ -415,8 +465,8 @@ describe("background", () => {
             });
             expect(await lastToast()).toMatchObject({ noteId: "saved" });
 
-            facade.callService.mockResolvedValue(null);
-            await expect(saveWithTitle("Mine")).resolves.toBe(false);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
+            await expect(saveWithTitle("Mine")).resolves.toBeUndefined();
             expect(lastPayload()).toMatchObject({ title: "Mine" });
 
             tabs = [ { id: 7, url: "https://example.com/untitled" } ];
@@ -433,10 +483,12 @@ describe("background", () => {
             await openNote();
             expect(facade.callService).toHaveBeenLastCalledWith("POST", "open/n1");
 
-            facade.callService.mockResolvedValue(null);
+            facade.callService.mockRejectedValue(TRILIUM_FAILURE);
             await openNote();
+            expect(await lastToast()).toMatchObject(FAILURE_TOAST);
 
             facade.callService.mockResolvedValue({ result: "open-in-browser" });
+            vi.mocked(console.error).mockClear();
             await openNote();
             expect(console.error).toHaveBeenCalledOnce();
             expect(create).not.toHaveBeenCalled();

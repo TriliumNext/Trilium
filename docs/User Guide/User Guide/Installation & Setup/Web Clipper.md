@@ -55,6 +55,16 @@ The extension needs to connect to a running Trilium instance. By default, it sca
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
 
+### When a clipping fails
+
+After each clipping, a notification in the corner of the page confirms that it was saved, with a link to open the new note in Trilium. If the clipping could not be saved, the notification says why instead:
+
+*   Trilium was not found: start the desktop application, or check the server address and token in the extension's options.
+*   The versions of Trilium and the extension are not compatible: update the one the message names.
+*   Trilium rejected the request: the message includes the reason Trilium gave.
+
+The notification is shown on the page itself, so it does not appear on pages where extensions cannot run (such as the browser's own settings pages and the extension stores).
+
 ## Testing development versions
 
 Development versions are version pre-release versions, generally meant for testing purposes. These are not available in the Google or Firefox web stores, but can be downloaded from either:

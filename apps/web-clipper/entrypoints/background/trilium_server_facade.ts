@@ -26,6 +26,18 @@ type TriliumSearchNoteStatus = {
     noteId: string
 };
 
+/** A request to Trilium that failed, with a message that can be shown to the user. */
+export class TriliumError extends Error {
+
+    constructor(
+        readonly reason: "not-found" | "version-mismatch" | "request-failed",
+        message: string
+    ) {
+        super(message);
+    }
+
+}
+
 export default class TriliumServerFacade {
     private triliumSearch?: TriliumSearchStatus;
     private triliumSearchNote?: TriliumSearchNoteStatus;
@@ -155,7 +167,8 @@ export default class TriliumServerFacade {
     }
 
     async triggerSearchNoteByUrl(noteUrl: string) {
-        const resp = await this.callService('GET', `notes-by-url/${encodeURIComponent(noteUrl)}`);
+        const resp = await this.callService('GET', `notes-by-url/${encodeURIComponent(noteUrl)}`)
+            .catch(() => null);
         let newStatus: TriliumSearchNoteStatus;
         if (resp && resp.noteId) {
             newStatus = {
@@ -176,7 +189,7 @@ export default class TriliumServerFacade {
                 if (this.triliumSearch?.status === "searching") {
                     setTimeout(checkStatus, 500);
                 } else if (this.triliumSearch?.status === 'not-found') {
-                    rej(new Error("Trilium instance has not been found."));
+                    rej(notFound());
                 } else {
                     res();
                 }
@@ -198,13 +211,23 @@ export default class TriliumServerFacade {
 
     async callService(method: string, path: string, body?: string | object) {
         await this.waitForTriliumSearch();
-        if (!this.triliumSearch || (this.triliumSearch.status !== 'found-desktop' && this.triliumSearch.status !== 'found-server')) return;
+        const search = this.triliumSearch;
+        if (search?.status === "version-mismatch") {
+            const { extensionMajor, triliumMajor } = search;
+            const outdated = extensionMajor > triliumMajor ? "Trilium" : "the web clipper";
+            throw new TriliumError("version-mismatch", "This version of the web clipper does not "
+                + `work with this version of Trilium. Update ${outdated} to the latest version.`);
+        }
+        if (search?.status !== "found-desktop" && search?.status !== "found-server") {
+            throw notFound();
+        }
 
+        let response: Response;
         try {
             const fetchOptions: RequestInit = {
                 method,
                 headers: {
-                    Authorization: "token" in this.triliumSearch ? this.triliumSearch.token ?? "" : "",
+                    Authorization: search.status === "found-server" ? search.token : "",
                     'Content-Type': 'application/json',
                     'trilium-local-now-datetime': this.localNowDateTime()
                 },
@@ -214,23 +237,21 @@ export default class TriliumServerFacade {
                 fetchOptions.body = typeof body === 'string' ? body : JSON.stringify(body);
             }
 
-            const url = `${this.triliumSearch.url}/api/clipper/${path}`;
+            const url = `${search.url}/api/clipper/${path}`;
 
             console.log(`Sending ${method} request to ${url}`);
 
-            const response = await fetch(url, fetchOptions);
-
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-
-            return await response.json();
+            response = await fetch(url, fetchOptions);
         }
         catch (e) {
-            console.log("Sending request to trilium failed", e);
-
-            return null;
+            throw requestFailed(e instanceof Error ? e.message : String(e));
         }
+
+        if (!response.ok) {
+            throw requestFailed(await readErrorMessage(response));
+        }
+
+        return await response.json();
     }
 
     localNowDateTime() {
@@ -245,4 +266,25 @@ export default class TriliumServerFacade {
         const minutes = String(absoff % 60).padStart(2, "0");
         return `${localTime}${sign}${hours}:${minutes}`;
     }
+}
+
+function notFound() {
+    return new TriliumError("not-found", "Trilium was not found. Start the desktop app, or check "
+        + "the server address and token in the clipper's options.");
+}
+
+function requestFailed(details: string) {
+    return new TriliumError("request-failed", `The request to Trilium failed: ${details}`);
+}
+
+/** Trilium answers a failed API request with `{ message }`; a proxy in front of it might not. */
+async function readErrorMessage(response: Response) {
+    const text = (await response.text()).trim();
+    try {
+        const { message } = JSON.parse(text) as { message?: unknown };
+        if (typeof message === "string" && message) return message;
+    } catch {
+        // Not JSON, so the text is the message.
+    }
+    return text || `HTTP ${response.status}`;
 }
