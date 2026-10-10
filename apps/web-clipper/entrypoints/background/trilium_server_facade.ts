@@ -1,6 +1,6 @@
 const PROTOCOL_VERSION_MAJOR = 1;
 
-type TriliumSearchStatus = {
+export type TriliumSearchStatus = {
     status: "searching";
 } | {
     status: "not-found"
@@ -18,7 +18,7 @@ type TriliumSearchStatus = {
     triliumMajor: number;
 };
 
-type TriliumSearchNoteStatus = {
+export type TriliumSearchNoteStatus = {
     status: "not-found",
     noteId: null
 } | {

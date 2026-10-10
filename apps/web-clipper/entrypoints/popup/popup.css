@@ -1,48 +1,80 @@
 body {
-  width: 300px;
-  font-size: 12px;
-  font-family: sans-serif;
+    width: 300px;
+    font-size: 12px;
+    font-family: sans-serif;
 }
 
-.button {
-  margin: 3% auto;
-  padding: 4px;
-  text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background-color: #eee;
-  cursor: pointer;
-  color: black;
-}
+.popup {
+    .popup-header {
+        display: flex;
+        justify-content: space-between;
+    }
 
-.wide {
-  min-width: 8em;
-}
+    .popup-header-buttons {
+        position: relative;
+        top: 6px;
+    }
 
-.full {
-  display: block;
-  width: 100%;
-}
+    .button {
+        margin: 3% auto;
+        padding: 4px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background-color: #eee;
+        cursor: pointer;
+        color: black;
 
-#save-link-with-note-wrapper {
-  display: none;
-}
+        &[disabled] {
+            color: #aaa;
+        }
+    }
 
-#save-link-with-note-textarea {
-  width: 100%;
-}
+    .wide {
+        min-width: 8em;
+    }
 
-#save-button {
-  border-color: #0062cc;
-  background-color: #0069d9;
-  color: white;
-}
+    .full {
+        display: block;
+        width: 100%;
+    }
 
-#check-connection-button {
-  float: right;
-  margin-top: -6px;
-}
+    .already-visited a {
+        color: lightskyblue;
+    }
 
-button[disabled] {
-  color: #aaa;
+    .save-link-with-note textarea {
+        width: 100%;
+    }
+
+    .save-link-with-note-buttons {
+        display: flex;
+    }
+
+    .save-button {
+        border-color: #0062cc;
+        background-color: #0069d9;
+        color: white;
+    }
+
+    .connection {
+        margin-top: 15px;
+    }
+
+    .check-connection-button {
+        float: right;
+        margin-top: -6px;
+    }
+
+    .status-ok {
+        color: green;
+    }
+
+    .status-warning {
+        color: orange;
+    }
+
+    .status-error {
+        color: red;
+    }
 }
