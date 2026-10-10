@@ -2,7 +2,7 @@ import type { Window as HappyDOMWindow } from "happy-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { createLink, getBaseUrl, getPageLocationOrigin, randomString } from "./utils";
+import { createLink, getPageLocationOrigin, randomString } from "./utils";
 
 describe("randomString", () => {
     it("returns alphanumeric strings of the requested length", () => {
@@ -12,22 +12,15 @@ describe("randomString", () => {
     });
 });
 
-describe("page location", () => {
+describe("getPageLocationOrigin", () => {
     afterEach(() => setUrl("about:blank"));
 
-    it("strips the file name from the base URL", () => {
+    it("returns the page's origin, and file:// for local files", () => {
         setUrl("https://example.com:8080/dir/page.html?q=1#hash");
         expect(getPageLocationOrigin()).toBe("https://example.com:8080");
-        expect(getBaseUrl()).toBe("https://example.com:8080/dir");
 
-        setUrl("https://example.com/dir/");
-        expect(getBaseUrl()).toBe("https://example.com/dir/");
-    });
-
-    it("uses file:// as the origin of local files", () => {
         setUrl("file:///home/user/page.html");
         expect(getPageLocationOrigin()).toBe("file://");
-        expect(getBaseUrl()).toBe("file:///home/user");
     });
 });
 

@@ -11,18 +11,6 @@ export function randomString(len: number) {
     return text;
 }
 
-export function getBaseUrl() {
-    let output = getPageLocationOrigin() + location.pathname;
-
-    if (output[output.length - 1] !== '/') {
-        const outputArr = output.split('/');
-        outputArr.pop();
-        output = outputArr.join('/');
-    }
-
-    return output;
-}
-
 export function getPageLocationOrigin() {
     // location.origin normally returns the protocol + domain + port (eg. https://example.com:8080)
     // but for file:// protocol this is browser dependant and in particular Firefox returns "null" in this case.

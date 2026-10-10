@@ -67,6 +67,25 @@ describe("content script", () => {
             ]);
         });
 
+        it("keeps links to schemes other than the web as they are", async () => {
+            const links = [
+                "mailto:jane@example.com",
+                "tel:+40123",
+                "ftp://ftp.example.com/file",
+                "magnet:?xt=urn:btih:abc"
+            ];
+            document.body.innerHTML = `<p id="p">${
+                links.map((href) => `<a href="${href}">link</a>`).join(" ")
+            }</p>`;
+            selectRange("p", "p");
+
+            const response = await send<Clipping>({ name: "trilium-save-selection" });
+
+            const container = document.createElement("div");
+            container.innerHTML = response.content;
+            expect(attributes(container, "a", "href")).toEqual(links);
+        });
+
         it("falls back to the document title and fails without a selection", async () => {
             document.head.innerHTML = "";
             document.title = " Fallback ";
@@ -91,7 +110,8 @@ describe("content script", () => {
                 <nav><a href="/">Home</a></nav>
                 <article>
                     <h1>Article title</h1>
-                    <p>${PARAGRAPH.repeat(3)}<a href="/docs">Docs</a></p>
+                    <p>${PARAGRAPH.repeat(3)}<a href="/docs">Docs</a>
+                        <a href="mailto:jane@example.com">Jane</a></p>
                     <p>${PARAGRAPH.repeat(3)}</p>
                     <img src="figure.png">
                     <p>${PARAGRAPH.repeat(3)}</p>
@@ -110,6 +130,7 @@ describe("content script", () => {
                 } ]
             });
             expect(response.content).toContain("href=\"https://example.com/docs\"");
+            expect(response.content).toContain("href=\"mailto:jane@example.com\"");
             expect(response.content).not.toContain("Home");
             expect(document.querySelector("nav")).not.toBeNull();
         });
