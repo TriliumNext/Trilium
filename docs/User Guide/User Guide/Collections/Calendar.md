@@ -42,7 +42,7 @@ After creating the event, it will show up on the calendar. To edit the content o
 *   Drag and drop an event on the calendar to move it to another day.
 *   The length of an event can be changed by placing the mouse to the right edge of the event and dragging the mouse around.
 
-On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) calendar, events can't be dragged, resized or created, and the button to pin the current date is hidden. Switching between the month, week and day views still works, but the choice isn't saved.
+On a [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md) calendar, events can't be dragged, resized or created, their context menu only offers the places to open them in, and the button to pin the current date is hidden. Switching between the month, week and day views still works, but the choice isn't saved.
 
 ### Popup view
 

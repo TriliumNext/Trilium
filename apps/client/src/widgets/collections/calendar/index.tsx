@@ -172,7 +172,7 @@ export default function CalendarView({ note, noteIds, onOpenNote }: ViewModeProp
         return true;
     }, []);
 
-    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface, !onOpenNote);
+    const { eventContent, eventDidMount, eventInnerClass } = useEventDisplayCustomization(note, parentComponent?.componentId, dismissSurface, isReadOnly);
     const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId,
         setSelection, effectiveSlotDuration);
 
@@ -674,8 +674,8 @@ function draftFromDateClick(e: DateClickInfo, slotDuration: string): EventDraft 
 function useEventDisplayCustomization(parentNote: FNote, componentId: string | undefined,
     /** Puts away whatever surface stands over the calendar, answering whether there was one. */
     dismissSurface: () => boolean,
-    /** Whether a right click on an event opens its context menu, which a host opening notes itself has none of. */
-    hasContextMenu: boolean) {
+    /** Whether the calendar is read-only, whose events' menu offers only the places to open them in. */
+    isReadOnly: boolean) {
     /**
      * The chip's own content, drawn so the note's icon can lead its title.
      *
@@ -737,15 +737,13 @@ function useEventDisplayCustomization(parentNote: FNote, componentId: string | u
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
-            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId);
+            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId, isReadOnly);
         }
 
         // A long press raises it on a phone, as a right-click does on a desktop; the tap itself now
         // belongs to the event sheet, which offers what the menu offers and more (see onEventClick).
-        if (hasContextMenu) {
-            e.el.addEventListener("contextmenu", onContextMenu);
-        }
-    }, [ dismissSurface, hasContextMenu ]);
+        e.el.addEventListener("contextmenu", onContextMenu);
+    }, [ dismissSurface, isReadOnly ]);
     return { eventContent, eventDidMount, eventInnerClass };
 }
 
