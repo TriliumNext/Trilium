@@ -29,12 +29,18 @@ The extension is available from the official browser web stores:
 
 Clicking the extension's button in the browser toolbar opens its popup:
 
-*   The header shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found), next to the buttons for the extension's options and for this help page.
-*   _Save whole page_ is the main action. Below it are _Crop screenshot_, _Visible area screenshot_, _Link with a note_ and _All tabs in window_ (which saves the links of every tab in the current window as a list). An action that has a keyboard shortcut shows it.
-*   _Link with a note_ opens a small editor in place of the actions. The first sentence or line of the text becomes the note's title, unless _Keep page title as note title_ is checked. Press _Save_ or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save it, or the back arrow to return to the actions.
+*   The popup shows what will be saved from the current page: the note's title, which can be edited before saving, the website, and below them a preview. A switch above the preview chooses what to save, among what the page offers:
+    
+    *   _Selection_, when text is selected on the page: _Save selection_ saves it into the note of that page's clippings, as the context menu does.
+    *   _Page_, when the page has an article: _Save page to Trilium_ saves the article's text and images, and the publication date shows next to the website when the page states one.
+    *   _Bookmark_, always: a text box for a note about the page replaces the preview, and _Save bookmark_ (or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>) saves a link to the page with that note. Left empty, the title stays the page's title.
+    
+    The popup opens on the selection if there is one, otherwise on the article. On a page with no article (Readability cannot find one) and no selection, it opens on _Bookmark_ and says the page has no article. The keyboard shortcuts and the context menu still save right away, without a preview.
+*   Pages the extension cannot access (the browser's own pages, the extension stores, and pages that were open before the extension was installed until they are reloaded) cannot be saved or captured, so the popup says so in place of the preview, and only _Tabs_ remains available there.
+*   Below the preview, a row of buttons offers the other actions: _Crop_ (a screenshot of an area you select), _Screenshot_ (of the visible part of the page) and _Tabs_ (saves the links of every tab in the current window as a list). Hovering over a button shows its full name and, if it has one, its keyboard shortcut.
 *   If the current page was already clipped, a notice at the top offers to open the note in Trilium.
 *   If Trilium cannot be found, the popup explains why instead of showing the actions, with buttons to look for Trilium again and to open the options.
-*   The bottom of the popup describes the connection, with a button to check it again.
+*   The bottom of the popup shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found) next to a description of the connection, followed by the buttons for the extension's options and for this help page. A button to check the connection again appears next to them when hovering over the bar, and stays visible while Trilium cannot be reached or is not compatible.
 
 ## Location of clippings
 

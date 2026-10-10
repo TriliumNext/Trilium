@@ -5,7 +5,6 @@ import { defineConfig } from "wxt";
 let originalTsConfig: object;
 
 export default defineConfig({
-    modules: ['@wxt-dev/auto-icons'],
     vite: () => ({
         oxc: {
             jsx: {
