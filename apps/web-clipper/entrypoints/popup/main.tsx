@@ -16,7 +16,7 @@ import Screenshot from "@boxicons/js/icons/Screenshot";
 import Tabs from "@boxicons/js/icons/Tabs";
 import Unlink from "@boxicons/js/icons/Unlink";
 import type { ComponentChildren } from "preact";
-import { render } from "preact";
+import { Fragment, render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import type { TriliumSearchNoteStatus, TriliumSearchStatus } from "../background/trilium_server_facade";
@@ -320,8 +320,20 @@ function PagePreview({ page, disabled, shortcut }: {
     );
 }
 
+/**
+ * A shortcut as the app draws it: a key cap per key, joined by "+". The browser formats the shortcut;
+ * on macOS, Chrome gives the glyphs without a "+" (`⌥⇧S`), which stay in one key cap there too.
+ */
 function Shortcut({ keys }: { keys: string | undefined }) {
-    return keys ? <kbd>{keys}</kbd> : null;
+    if (!keys) return null;
+
+    return (
+        <span className="shortcut">
+            {keys.split("+").map((key, index) => (
+                <Fragment key={index}>{index > 0 && "+"}<kbd>{key}</kbd></Fragment>
+            ))}
+        </span>
+    );
 }
 
 function TriliumNotFound() {

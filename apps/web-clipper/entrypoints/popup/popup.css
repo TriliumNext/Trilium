@@ -163,6 +163,20 @@ body {
         }
     }
 
+    button.btn .shortcut {
+        display: inline-flex;
+        align-items: center;
+        gap: 1px;
+        margin-inline-start: 0.5em;
+        font-size: 0.6em;
+        letter-spacing: 0.5pt;
+
+        kbd {
+            margin: 0;
+            font-size: inherit;
+        }
+    }
+
     .toolbar {
         display: grid;
         grid-template-columns: repeat(4, 1fr);

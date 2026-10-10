@@ -169,9 +169,9 @@ describe("popup", () => {
         expect(openWindow).toHaveBeenCalledWith("https://docs.triliumnotes.org/user-guide/setup/web-clipper", "_blank");
     });
 
-    it("shows the keyboard shortcut of each action that has one", () => {
+    it("shows the keyboard shortcut of each action that has one", async () => {
         expect(getAllCommands).toHaveBeenCalledOnce();
-        expect(shortcutOf("Save page to Trilium")).toBe("Alt+Shift+S");
+        expect(shortcutOf("Save page to Trilium")).toEqual({ text: "Alt+Shift+S", keys: [ "Alt", "Shift", "S" ] });
         expect(toolbar()).toEqual([
             { label: "Crop", title: "Crop screenshot (Ctrl+Shift+E)" },
             { label: "Screenshot", title: "Visible area screenshot" },
@@ -179,6 +179,10 @@ describe("popup", () => {
             { label: "Tabs", title: "All tabs in window" }
         ]);
         expect(container.querySelectorAll(".toolbar-action kbd")).toHaveLength(0);
+
+        getAllCommands.mockResolvedValueOnce([ { name: "saveWholePage", shortcut: "⌥⇧S" } ]);
+        await rerender();
+        expect(shortcutOf("Save page to Trilium")).toEqual({ text: "⌥⇧S", keys: [ "⌥⇧S" ] });
     });
 
     it("previews the readable page with its title, source and date", () => {
@@ -274,8 +278,7 @@ describe("popup", () => {
         expect(captureButtons()).toHaveLength(0);
         expect(container.querySelector(".view-header h4")?.textContent).toBe("Link with a note");
         expect(textArea?.placeholder).toBe("The first sentence becomes the note's title, the rest its text.");
-        expect(shortcutOf("Save")).toBe("Ctrl+Enter");
-        expect(button("Save")?.querySelectorAll("kbd")).toHaveLength(1);
+        expect(shortcutOf("Save")).toEqual({ text: "Ctrl+Enter", keys: [ "Ctrl", "Enter" ] });
         expect(container.querySelector(".hint")).toBeNull();
 
         await click("Back");
@@ -481,8 +484,14 @@ async function click(text: string) {
     await act(() => target?.click());
 }
 
+/** The shortcut shown on a button: its text, and the keys drawn as separate key caps. */
 function shortcutOf(text: string) {
-    return button(text)?.querySelector("kbd")?.textContent;
+    const shortcut = button(text)?.querySelector(".shortcut");
+    expect(shortcut, text).not.toBeNull();
+    return {
+        text: shortcut?.textContent,
+        keys: [ ...shortcut?.querySelectorAll(":scope > kbd") ?? [] ].map((key) => key.textContent)
+    };
 }
 
 function toolbar() {
