@@ -25,6 +25,17 @@ The extension is available from the official browser web stores:
 *   save screenshot (with crop tool) from either popup or context menu
 *   create short text note from popup
 
+## The popup
+
+Clicking the extension's button in the browser toolbar opens its popup:
+
+*   The header shows whether the extension is connected to Trilium, as a colored dot (green when connected, amber when the versions are not compatible, red when Trilium was not found), next to the buttons for the extension's options and for this help page.
+*   _Save whole page_ is the main action. Below it are _Crop screenshot_, _Visible area screenshot_, _Link with a note_ and _All tabs in window_ (which saves the links of every tab in the current window as a list). An action that has a keyboard shortcut shows it.
+*   _Link with a note_ opens a small editor in place of the actions. The first sentence or line of the text becomes the note's title, unless _Keep page title as note title_ is checked. Press _Save_ or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save it, or the back arrow to return to the actions.
+*   If the current page was already clipped, a notice at the top offers to open the note in Trilium.
+*   If Trilium cannot be found, the popup explains why instead of showing the actions, with buttons to look for Trilium again and to open the options.
+*   The bottom of the popup describes the connection, with a button to check it again.
+
 ## Location of clippings
 
 Trilium will save these clippings as a new child note under a "clipper inbox" note.
@@ -52,7 +63,7 @@ To set custom shortcuts, follow the directions for your browser.
 
 ## Configuration
 
-The extension needs to connect to a running Trilium instance. By default, it looks for the desktop application on port 37840 of the local computer. If the desktop application runs on a different port (for example because it was started with the `TRILIUM_PORT` environment variable), enter that port in the extension's options. The extension checks for Trilium again every minute, or right away when pressing _check_ in its popup.
+The extension needs to connect to a running Trilium instance. By default, it looks for the desktop application on port 37840 of the local computer. If the desktop application runs on a different port (for example because it was started with the `TRILIUM_PORT` environment variable), enter that port in the extension's options. The extension checks for Trilium again every minute, or right away when pressing the refresh button at the bottom of its popup.
 
 It's also possible to configure the [server](Server%20Installation.md) address if you don't run the desktop application, or want it to work without the desktop application running.
 

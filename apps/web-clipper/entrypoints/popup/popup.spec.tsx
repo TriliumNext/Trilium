@@ -1,14 +1,21 @@
+import Crop from "@boxicons/js/icons/Crop";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import Crop from "@boxicons/js/icons/Crop";
+import { basicIcon, parseLinkNote, Popup, shortcutsByCommand, textToHtml } from "./main";
 
-import { basicIcon, parseLinkNote, Popup, textToHtml } from "./main";
+const DISCONNECTED = "This action can't be performed without active connection to Trilium.";
 
 const sendMessage = vi.fn(async (_message: object): Promise<unknown> => undefined);
 const openOptionsPage = vi.fn(async () => {});
+const getAllCommands = vi.fn(async () => [
+    { name: "saveSelection", shortcut: "Ctrl+Shift+S" },
+    { name: "saveWholePage", shortcut: "Alt+Shift+S" },
+    { name: "saveCroppedScreenshot", shortcut: "Ctrl+Shift+E" },
+    { name: "saveTabs", shortcut: "" }
+]);
 const closeWindow = vi.fn();
 let container: HTMLElement;
 
@@ -16,12 +23,14 @@ describe("popup", () => {
     beforeEach(async () => {
         fakeBrowser.reset();
         Object.assign(fakeBrowser.runtime, { sendMessage, openOptionsPage });
+        Object.assign(fakeBrowser.commands, { getAll: getAllCommands });
         vi.spyOn(window, "close").mockImplementation(closeWindow);
         vi.spyOn(console, "log").mockImplementation(() => {});
 
         container = document.createElement("div");
         document.body.appendChild(container);
         await act(() => render(<Popup />, container));
+        await flush();
     });
 
     afterEach(async () => {
@@ -32,21 +41,15 @@ describe("popup", () => {
         vi.restoreAllMocks();
     });
 
-    it("asks for the connection status and shows it", async () => {
+    it("asks for the connection status and shows it in the header and the footer", async () => {
         expect(sendMessage).toHaveBeenCalledWith({ name: "send-trilium-search-status" });
-        expect(statusText()).toBe("unknown");
+        expect(status()).toEqual({ dot: "status-dot status-dot-pending", text: "Looking for Trilium…" });
+        expect(captureButtons()).toHaveLength(5);
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
-        await receive({ name: "trilium-search-status", triliumSearch: { status: "not-found" } });
-        expect(container.querySelector(".status-error")?.textContent).toBe("Not found");
-        for (const button of captureButtons()) {
-            expect(button.disabled).toBe(true);
-            expect(button.title).toBe("This action can't be performed without active connection to Trilium.");
-        }
-        expect(sendMessage).not.toHaveBeenCalledWith({ name: "trigger-trilium-search-note-url" });
-
         await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });
-        expect(container.querySelector(".status-ok")?.textContent).toBe("Connected on port 37840");
+        expect(status()).toEqual({ dot: "status-dot status-dot-ok", text: "Connected to the desktop app on port 37840" });
+        expect(container.querySelector(".connection .status-ok")).not.toBeNull();
         expect(captureButtons().every((button) => !button.disabled && !button.title)).toBe(true);
         expect(sendMessage).toHaveBeenCalledWith({ name: "trigger-trilium-search-note-url" });
 
@@ -54,53 +57,80 @@ describe("popup", () => {
             name: "trilium-search-status",
             triliumSearch: { status: "found-server", url: "https://trilium.example", token: "t" }
         });
-        const server = container.querySelector<HTMLElement>(".status-ok");
-        expect(server?.textContent).toBe("Connected to the server");
-        expect(server?.title).toBe("Connected to https://trilium.example");
+        expect(status().text).toBe("Connected to the server");
+        expect(container.querySelector<HTMLElement>(".connection .status-ok")?.title)
+            .toBe("Connected to https://trilium.example");
+
+        await receive({ name: "trilium-search-status", triliumSearch: { status: "searching" } });
+        expect(status()).toEqual({ dot: "status-dot status-dot-pending", text: "Looking for Trilium…" });
+        for (const button of captureButtons()) {
+            expect(button.disabled).toBe(true);
+            expect(button.title).toBe(DISCONNECTED);
+        }
+
+        await receive({ name: "unrelated" });
+        expect(status().text).toBe("Looking for Trilium…");
+    });
+
+    it("explains a version mismatch above the actions, which stay enabled", async () => {
+        expect(container.querySelector(".callout-warning")).toBeNull();
 
         await receive({
             name: "trilium-search-status",
             triliumSearch: { status: "version-mismatch", extensionMajor: 2, triliumMajor: 1 }
         });
-        expect(container.querySelector(".status-warning")?.textContent).toContain("Please update Trilium Notes");
+        expect(status()).toEqual({ dot: "status-dot status-dot-warning", text: "Incompatible version" });
+        expect(container.querySelector(".callout-warning")?.textContent).toContain("Please update Trilium Notes");
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
         await receive({
             name: "trilium-search-status",
             triliumSearch: { status: "version-mismatch", extensionMajor: 1, triliumMajor: 2 }
         });
-        expect(container.querySelector(".status-warning")?.textContent).toContain("Please update this extension");
+        expect(container.querySelector(".callout-warning")?.textContent).toContain("Please update this extension");
+    });
 
-        await receive({ name: "trilium-search-status", triliumSearch: { status: "searching" } });
-        expect(statusText()).toBe("searching");
-        expect(captureButtons().every((button) => button.disabled)).toBe(true);
+    it("replaces the actions with a way out when Trilium is not found", async () => {
+        await receive({ name: "trilium-search-status", triliumSearch: { status: "not-found" } });
+        expect(status()).toEqual({ dot: "status-dot status-dot-error", text: "Not found" });
+        expect(captureButtons()).toHaveLength(0);
+        expect(container.querySelector(".not-found strong")?.textContent).toBe("Trilium was not found.");
+        expect(sendMessage).not.toHaveBeenCalledWith({ name: "trigger-trilium-search-note-url" });
 
-        await receive({ name: "unrelated" });
-        expect(statusText()).toBe("searching");
+        await click("Retry");
+        expect(sendMessage).toHaveBeenCalledWith({ name: "trigger-trilium-search" });
+        await click("Open options");
+        expect(openOptionsPage).toHaveBeenCalledOnce();
+        expect(closeWindow).not.toHaveBeenCalled();
     });
 
     it("offers to open a page that was already clipped", async () => {
-        await receive({ name: "trilium-previously-visited", searchNote: { status: "found", noteId: "clipped" } });
-        expect(container.querySelector(".already-visited")?.textContent)
-            .toBe("Web page already clipped. Open in Trilium.");
+        expect(container.querySelector(".already-visited")).toBeNull();
 
-        await act(() => container.querySelector<HTMLAnchorElement>(".already-visited a")?.click());
+        await receive({ name: "trilium-previously-visited", searchNote: { status: "found", noteId: "clipped" } });
+        expect(container.querySelector(".already-visited span")?.textContent).toBe("Web page already clipped.");
+        const link = container.querySelector<HTMLAnchorElement>(".already-visited a");
+        expect(link?.textContent).toBe("Open in Trilium");
+
+        await act(() => link?.click());
         expect(sendMessage).toHaveBeenCalledWith({ name: "openNoteInTrilium", noteId: "clipped" });
 
         await receive({ name: "trilium-previously-visited", searchNote: { status: "not-found", noteId: null } });
-        expect(container.querySelector(".already-visited")?.textContent).toBe("");
+        expect(container.querySelector(".already-visited")).toBeNull();
     });
 
     it("sends the capture actions, closing the popup for screenshots", async () => {
+        expect(container.querySelector(".primary-action .action-label")?.textContent).toBe("Save whole page");
+
         await click("Crop screenshot");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-cropped-screenshot" });
-        await click("Save whole screenshot");
+        await click("Visible area screenshot");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-screenshot" });
         expect(closeWindow).toHaveBeenCalledTimes(2);
 
         await click("Save whole page");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-whole-page" });
-        await click("Save window's tabs as a list");
+        await click("All tabs in window");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-tabs" });
         await click("Check the connection again");
         expect(sendMessage).toHaveBeenCalledWith({ name: "trigger-trilium-search" });
@@ -113,6 +143,15 @@ describe("popup", () => {
         expect(openWindow).toHaveBeenCalledWith("https://docs.triliumnotes.org/user-guide/setup/web-clipper", "_blank");
     });
 
+    it("shows the keyboard shortcut of each action that has one", () => {
+        expect(getAllCommands).toHaveBeenCalledOnce();
+        expect(shortcutOf("Save whole page")).toBe("Alt+Shift+S");
+        expect(shortcutOf("Crop screenshot")).toBe("Ctrl+Shift+E");
+        expect(shortcutOf("All tabs in window")).toBeUndefined();
+        expect(shortcutOf("Visible area screenshot")).toBeUndefined();
+        expect(shortcutOf("Link with a note")).toBeUndefined();
+    });
+
     it("tells the user when the background script cannot be reached", async () => {
         const alertMock = vi.fn();
         vi.stubGlobal("alert", alertMock);
@@ -123,8 +162,46 @@ describe("popup", () => {
         expect(alertMock).toHaveBeenCalledWith("Calling browser runtime failed. Refreshing page might help.");
     });
 
+    it("writes a link note in a view of its own, and goes back to the actions", async () => {
+        expect(container.querySelector("textarea")).toBeNull();
+        await click("Link with a note");
+        const textArea = container.querySelector("textarea");
+        expect(textArea).not.toBeNull();
+        expect(document.activeElement).toBe(textArea);
+        expect(captureButtons()).toHaveLength(0);
+        expect(container.querySelector(".view-header h4")?.textContent).toBe("Link with a note");
+        expect(textArea?.placeholder).toBe("The first sentence becomes the note's title, the rest its text.");
+        expect(container.querySelector(".hint")?.textContent).toBe("Ctrl+Enter to save");
+
+        await click("Back");
+        expect(container.querySelector("textarea")).toBeNull();
+        expect(captureButtons()).toHaveLength(5);
+        expect(closeWindow).not.toHaveBeenCalled();
+    });
+
+    it("saves a link with a note on Ctrl+Enter", async () => {
+        await click("Link with a note");
+        const textArea = container.querySelector("textarea");
+
+        await act(() => {
+            if (!textArea) return;
+            textArea.value = "Read later. It has <b>tips</b>\nand more";
+            textArea.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        sendMessage.mockResolvedValueOnce(true);
+        await act(async () => {
+            textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
+        });
+        expect(sendMessage).toHaveBeenCalledWith({
+            name: "save-link-with-note",
+            title: "Read later.",
+            content: "<p>It has &lt;b&gt;tips&lt;/b&gt;</p><p>and more</p>"
+        });
+        expect(closeWindow).toHaveBeenCalledOnce();
+    });
+
     it("keeps the note open when it could not be saved, and keeps the page title on request", async () => {
-        await click("Save link with a note");
+        await click("Link with a note");
         const textArea = container.querySelector("textarea");
         const keepTitle = container.querySelector<HTMLInputElement>("input[type=checkbox]");
         expect(textArea).not.toBeNull();
@@ -137,6 +214,7 @@ describe("popup", () => {
             keepTitle.click();
         });
         expect(keepTitle?.checked).toBe(true);
+        expect(textArea?.placeholder).toBe("The note's text.");
 
         await act(async () => {
             textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
@@ -165,39 +243,23 @@ describe("popup", () => {
         expect(root.querySelector(".popup")).not.toBeNull();
         root.remove();
     });
+});
 
-    it("saves a link with a note on Ctrl+Enter, and cancels it", async () => {
-        expect(container.querySelector("textarea")).toBeNull();
-        await click("Save link with a note");
-        const textArea = container.querySelector("textarea");
-        expect(textArea).not.toBeNull();
-        expect(document.activeElement).toBe(textArea);
-
-        await act(() => {
-            if (!textArea) return;
-            textArea.value = "Read later. It has <b>tips</b>\nand more";
-            textArea.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-        sendMessage.mockResolvedValueOnce(true);
-        await act(async () => {
-            textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
-        });
-        expect(sendMessage).toHaveBeenCalledWith({
-            name: "save-link-with-note",
-            title: "Read later.",
-            content: "<p>It has &lt;b&gt;tips&lt;/b&gt;</p><p>and more</p>"
-        });
-        expect(closeWindow).toHaveBeenCalledOnce();
-
-        await click("Cancel");
-        expect(container.querySelector("textarea")).toBeNull();
-        expect(closeWindow).toHaveBeenCalledTimes(2);
+describe("shortcutsByCommand", () => {
+    it("keeps only the commands that have a shortcut", () => {
+        expect(shortcutsByCommand([
+            { name: "saveWholePage", shortcut: "Alt+Shift+S" },
+            { name: "saveTabs", shortcut: "" },
+            { name: "saveSelection" },
+            { shortcut: "Ctrl+Q" }
+        ])).toEqual({ saveWholePage: "Alt+Shift+S" });
     });
 });
 
 describe("icons", () => {
     it("draws each button's Boxicon inline, hidden from assistive technology", async () => {
         vi.spyOn(console, "log").mockImplementation(() => {});
+        Object.assign(fakeBrowser.commands, { getAll: getAllCommands });
         const container = document.createElement("div");
         await act(() => render(<Popup />, container));
 
@@ -245,18 +307,39 @@ async function receive(message: object) {
     });
 }
 
-/** Clicks the button with the given label, or with that `aria-label` when it shows only an icon. */
+/** Lets the promises the effects start, such as reading the shortcuts, settle. */
+async function flush() {
+    await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve));
+    });
+}
+
+/** The button with the given label, or with that `aria-label` when it shows only an icon. */
+function button(text: string) {
+    const found = [ ...container.querySelectorAll("button") ].find((b) => {
+        const label = b.querySelector(".action-label")?.textContent ?? b.textContent?.trim();
+        return label === text || b.getAttribute("aria-label") === text;
+    });
+    expect(found, text).toBeDefined();
+    return found;
+}
+
 async function click(text: string) {
-    const button = [ ...container.querySelectorAll("button") ]
-        .find((b) => b.textContent?.trim() === text || b.getAttribute("aria-label") === text);
-    expect(button, text).toBeDefined();
-    await act(() => button?.click());
+    const target = button(text);
+    await act(() => target?.click());
+}
+
+function shortcutOf(text: string) {
+    return button(text)?.querySelector("kbd")?.textContent;
 }
 
 function captureButtons() {
-    return [ ...container.querySelectorAll<HTMLButtonElement>(".capture-buttons button") ];
+    return [ ...container.querySelectorAll<HTMLButtonElement>(".capture-actions button") ];
 }
 
-function statusText() {
-    return container.querySelector(".connection > div")?.textContent?.replace("Status: ", "");
+function status() {
+    return {
+        dot: container.querySelector<HTMLElement>(".status-dot")?.className,
+        text: container.querySelector(".connection > span")?.textContent
+    };
 }

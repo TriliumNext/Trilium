@@ -1,5 +1,5 @@
 body {
-    width: 320px;
+    width: 340px;
 }
 
 .popup {
@@ -11,8 +11,12 @@ body {
     .popup-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 8px;
+
+        .logo {
+            width: 24px;
+            height: 24px;
+        }
 
         h3 {
             margin: 0;
@@ -22,21 +26,112 @@ body {
 
     .popup-header-buttons {
         display: flex;
-        gap: 4px;
+        gap: 2px;
+        margin-inline-start: auto;
     }
 
-    .already-visited:empty {
-        display: none;
+    .status-dot {
+        flex-shrink: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
     }
 
-    .capture-buttons {
+    .status-dot-pending {
+        background: var(--muted-text-color);
+        opacity: 0.5;
+    }
+
+    .status-dot-ok {
+        background: var(--status-ok-color);
+    }
+
+    .status-dot-warning {
+        background: var(--status-warning-color);
+    }
+
+    .status-dot-error {
+        background: var(--status-error-color);
+    }
+
+    .callout {
+        padding: 8px 10px;
+        border-radius: 6px;
+    }
+
+    .callout-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: var(--link-hover-background);
+    }
+
+    .callout-warning {
+        background: color-mix(in srgb, var(--status-warning-color) 18%, transparent);
+    }
+
+    .capture-actions {
         display: flex;
         flex-direction: column;
+        gap: 8px;
+    }
+
+    .primary-action {
+        justify-content: flex-start;
+        width: 100%;
+        padding: 8px 12px;
+
+        .action-label {
+            flex-grow: 1;
+            text-align: start;
+        }
+    }
+
+    .action-tiles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    button.btn.action-tile {
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        padding: 10px 8px;
+
+        > svg.icon {
+            width: 1.6em;
+            height: 1.6em;
+            margin: 0;
+        }
+
+        kbd {
+            margin: 0;
+        }
+    }
+
+    .not-found {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 12px;
+        border-radius: 6px;
+        background: var(--input-background-color);
+
+        p {
+            margin: 0 0 8px;
+            color: var(--muted-text-color);
+        }
+    }
+
+    .not-found-buttons {
+        display: flex;
         gap: 6px;
 
         button.btn {
-            justify-content: flex-start;
-            width: 100%;
+            min-width: 0;
+            flex-grow: 1;
         }
     }
 
@@ -51,13 +146,27 @@ body {
         }
     }
 
+    .view-header {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        --icon-button-size: 28px;
+
+        h4 {
+            margin: 0;
+            font-weight: 500;
+        }
+    }
+
     .save-link-with-note-buttons {
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: space-between;
         gap: 6px;
 
-        button.btn {
-            min-width: 80px;
+        .hint {
+            color: var(--muted-text-color);
+            font-size: 0.9em;
         }
     }
 
@@ -66,7 +175,7 @@ body {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding-top: 10px;
+        padding-top: 8px;
         border-top: 1px solid var(--main-border-color);
         color: var(--muted-text-color);
         --icon-button-size: 26px;

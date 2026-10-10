@@ -27,6 +27,27 @@
   <li>save screenshot (with crop tool) from either popup or context menu</li>
   <li>create short text note from popup</li>
 </ul>
+<h2>The popup</h2>
+<p>Clicking the extension's button in the browser toolbar opens its popup:</p>
+<ul>
+  <li>The header shows whether the extension is connected to Trilium, as a colored
+    dot (green when connected, amber when the versions are not compatible,
+    red when Trilium was not found), next to the buttons for the extension's
+    options and for this help page.</li>
+  <li><em>Save whole page</em> is the main action. Below it are <em>Crop screenshot</em>, <em>Visible area screenshot</em>, <em>Link with a note</em> and <em>All tabs in window</em> (which
+    saves the links of every tab in the current window as a list). An action
+    that has a keyboard shortcut shows it.</li>
+  <li><em>Link with a note</em> opens a small editor in place of the actions.
+    The first sentence or line of the text becomes the note's title, unless <em>Keep page title as note title</em> is
+    checked. Press <em>Save</em> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to save it,
+    or the back arrow to return to the actions.</li>
+  <li>If the current page was already clipped, a notice at the top offers to
+    open the note in Trilium.</li>
+  <li>If Trilium cannot be found, the popup explains why instead of showing
+    the actions, with buttons to look for Trilium again and to open the options.</li>
+  <li>The bottom of the popup describes the connection, with a button to check
+    it again.</li>
+</ul>
 <h2>Location of clippings</h2>
 <p>Trilium will save these clippings as a new child note under a "clipper
   inbox" note.</p>
@@ -63,7 +84,8 @@
   If the desktop application runs on a different port (for example because
   it was started with the <code>TRILIUM_PORT</code> environment variable),
   enter that port in the extension's options. The extension checks for Trilium
-  again every minute, or right away when pressing <em>check</em> in its popup.</p>
+  again every minute, or right away when pressing the refresh button at the
+  bottom of its popup.</p>
 <p>It's also possible to configure the <a href="#root/_help_WOcw2SLH6tbX">server</a> address
   if you don't run the desktop application, or want it to work without the
   desktop application running.</p>
