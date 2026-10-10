@@ -3,7 +3,12 @@ import { type ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import mountZoomPan, { ZoomViewer } from "./zoom_viewer.js";
+import { ZoomViewer } from "./zoom_viewer.js";
+
+// The real modules reach `window.glob`, which only the app's boot script defines, and the
+// Bootstrap tooltip needs real layout.
+vi.mock("@triliumnext/client/src/widgets/react/hooks.js", () => ({ useStaticTooltip: () => {} }));
+vi.mock("@triliumnext/client/src/services/i18n.js", () => ({ t: (key: string) => key }));
 
 // react-zoom-pan-pinch measures its boxes, which happy-dom cannot do. As in the client's
 // `SvgSplitEditor.spec.tsx`, this fake keeps what the controls drive: `zoomIn`/`zoomOut` add their
@@ -52,9 +57,9 @@ vi.mock("react-zoom-pan-pinch", async () => {
     };
 });
 
-describe("mountZoomPan", () => {
+describe("ZoomViewer", () => {
     afterEach(() => {
-        const host = document.querySelector(".zoom-viewer")?.parentElement;
+        const host = document.getElementById("content");
         if (host) {
             act(() => render(null, host));
         }
@@ -62,18 +67,19 @@ describe("mountZoomPan", () => {
         transformWrapperSpy.mockClear();
     });
 
-    it("moves the diagram into a labelled viewer in its place", () => {
-        const diagram = mountDiagram();
+    it("shows its content in a labelled viewer with the app's zoom controls", () => {
+        const diagram = mountViewer();
 
-        expect(document.querySelector("#content > div > .zoom-viewer:not(.fills-page)")).not.toBeNull();
+        expect(document.querySelector("#content > .zoom-viewer")).not.toBeNull();
         const viewport = document.querySelector(".zoom-viewer > .zoom-viewer-viewport");
         expect(viewport?.getAttribute("aria-label")).toBe("Diagram");
         expect(viewport?.getAttribute("tabindex")).toBe("0");
         expect(viewport?.querySelector(".zoom-viewer-content")?.contains(diagram)).toBe(true);
-        expect(buttons().map((button) => button.title))
-            .toEqual([ "Zoom out", "Reset zoom", "Zoom in" ]);
+        const group = document.querySelector(".zoom-viewer > .tn-overlay-control-group");
+        expect(group?.classList.contains("zoom-viewer-controls")).toBe(true);
+        expect(group?.getAttribute("data-placement")).toBe("bottom-end");
         expect(buttons().map((button) => button.getAttribute("aria-label")))
-            .toEqual([ "Zoom out", null, "Zoom in" ]);
+            .toEqual([ "zoom_controls.zoom_out", null, "zoom_controls.zoom_in" ]);
         expect(readout()).toBe("100%");
         expect(transformWrapperSpy).toHaveBeenLastCalledWith(expect.objectContaining({
             minScale: 0.5,
@@ -81,16 +87,15 @@ describe("mountZoomPan", () => {
             wheel: { disabled: true },
             doubleClick: { mode: "reset" }
         }));
+        expect(lastProps().panning).toBeUndefined();
     });
 
-    it("zooms in steps, pans only when zoomed in, and keeps the diagram it shows", () => {
-        const diagram = mountDiagram();
+    it("zooms in steps and keeps the content it shows", () => {
+        const diagram = mountViewer();
         const [ zoomOut, reset, zoomIn ] = buttons();
-        expect(lastProps().panning).toEqual({ disabled: true });
 
         act(() => zoomIn.click());
         expect(readout()).toBe("120%");
-        expect(lastProps().panning).toEqual({ disabled: false });
         expect(document.querySelector(".zoom-viewer-content")?.contains(diagram)).toBe(true);
 
         act(() => reset.click());
@@ -103,39 +108,22 @@ describe("mountZoomPan", () => {
         expect(zoomOut.disabled).toBe(true);
         expect(zoomIn.disabled).toBe(false);
     });
-
-    it("pans at any zoom when it takes the page", () => {
-        document.body.innerHTML = `<div id="content"></div>`;
-        const host = document.getElementById("content");
-        if (!host) {
-            throw new Error("The host is missing.");
-        }
-
-        act(() => render(<ZoomViewer labels={LABELS} fillsPage><svg /></ZoomViewer>, host));
-
-        expect(document.querySelector("#content > .zoom-viewer.fills-page .zoom-viewer-content > svg"))
-            .not.toBeNull();
-        expect(lastProps().panning).toEqual({ disabled: false });
-    });
 });
 
-const LABELS = {
-    label: "Diagram",
-    zoomIn: "Zoom in",
-    zoomOut: "Zoom out",
-    zoomReset: "Reset zoom"
-};
-
-/** Mounts a viewer over a drawn diagram in `#content` and returns the diagram. */
-function mountDiagram() {
-    document.body.innerHTML = `<div id="content"><div class="mermaid"><svg></svg></div></div>`;
-    const diagram = document.querySelector<HTMLElement>(".mermaid");
-    if (!diagram) {
-        throw new Error("The diagram is missing.");
+/** Mounts a viewer over a drawing in `#content` and returns the drawing. */
+function mountViewer() {
+    document.body.innerHTML = `<div id="content"></div>`;
+    const host = document.getElementById("content");
+    if (!host) {
+        throw new Error("The host is missing.");
     }
 
-    act(() => mountZoomPan(diagram, LABELS));
-    return diagram;
+    act(() => render(<ZoomViewer label="Diagram"><svg /></ZoomViewer>, host));
+    const drawing = host.querySelector("svg");
+    if (!drawing) {
+        throw new Error("The drawing is missing.");
+    }
+    return drawing;
 }
 
 function buttons() {
@@ -143,7 +131,7 @@ function buttons() {
 }
 
 function readout() {
-    return document.querySelector(".zoom-viewer-reset")?.textContent;
+    return document.querySelector(".zoom-viewer-controls .tn-overlay-text-button")?.textContent;
 }
 
 function lastProps() {

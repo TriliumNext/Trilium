@@ -1030,9 +1030,6 @@ describe("content_renderer", () => {
             expect(scripts.map((script) => script.getAttribute("type"))).toEqual([ "application/json" ]);
             expect(JSON.parse(scripts[0].textContent).notes.map((row: { noteId: string }) => row.noteId))
                 .toContain("mermaidNote");
-            expect([ "label", "zoom-in", "zoom-out", "zoom-reset" ]
-                .map((name) => container?.getAttribute(`data-${name}`)))
-                .toEqual([ "Diagram", "Zoom in", "Zoom out", "Reset zoom" ]);
         });
     });
 

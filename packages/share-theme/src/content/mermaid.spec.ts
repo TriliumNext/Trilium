@@ -18,12 +18,8 @@ vi.mock("mermaid", () => ({
     }
 }));
 
-const mountZoomPan = vi.hoisted(() => vi.fn());
-vi.mock("./zoom_viewer.js", () => ({ default: mountZoomPan }));
-
 describe("setupMermaid", () => {
     afterEach(() => {
-        mountZoomPan.mockReset();
         document.documentElement.removeAttribute("style");
         document.documentElement.removeAttribute("class");
         document.body.innerHTML = "";
@@ -56,10 +52,9 @@ describe("setupMermaid", () => {
         expect(document.querySelector("#content > .mermaid")).toBe(diagram);
         expect(diagram?.querySelectorAll("svg")).toHaveLength(1);
         expect(diagram?.querySelector("svg")?.id).not.toBe(firstId);
-        expect(mountZoomPan).not.toHaveBeenCalled();
     });
 
-    it("draws a Mermaid note in place of its image, in a viewer, keeping the source", async () => {
+    it("draws a Mermaid note in place of its image, keeping the source", async () => {
         const fakeMermaid = stubMermaid();
         document.body.innerHTML = MERMAID_NOTE;
 
@@ -70,27 +65,6 @@ describe("setupMermaid", () => {
         expect(container?.querySelectorAll(":scope > .mermaid > svg")).toHaveLength(1);
         expect(container?.querySelector("details pre.mermaid-note-source")).not.toBeNull();
         expect(fakeMermaid.render).toHaveBeenLastCalledWith(expect.any(String), "graph TD; A-->B");
-        const diagram = container?.querySelector(":scope > .mermaid");
-        expect(mountZoomPan).toHaveBeenCalledExactlyOnceWith(diagram, {
-            label: "Diagram", zoomIn: "Zoom in", zoomOut: "Zoom out", zoomReset: "Reset zoom"
-        });
-    });
-
-    it("keeps a Mermaid note's diagram as drawn when its viewer cannot be loaded", async () => {
-        stubMermaid();
-        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-        mountZoomPan.mockImplementationOnce(() => {
-            throw new Error("Failed to fetch the viewer");
-        });
-        document.body.innerHTML = MERMAID_NOTE;
-
-        await setupMermaid();
-
-        expect(document.querySelectorAll("#content > .mermaid-note > .mermaid > svg"))
-            .toHaveLength(1);
-        const error = expect.objectContaining({ message: "Failed to fetch the viewer" });
-        expect(consoleError).toHaveBeenCalledWith(error);
-        consoleError.mockRestore();
     });
 
     it("keeps what a diagram replaces until Mermaid draws it, and draws every diagram again on a theme change", async () => {
@@ -153,8 +127,7 @@ describe("setupMermaid without diagrams", () => {
     });
 });
 
-const MERMAID_NOTE = `<div id="content"><div class="mermaid-note" data-label="Diagram"`
-    + ` data-zoom-in="Zoom in" data-zoom-out="Zoom out" data-zoom-reset="Reset zoom">`
+const MERMAID_NOTE = `<div id="content"><div class="mermaid-note">`
     + `<img class="mermaid-note-image" src="api/images/abc/diagram">`
     + `<hr><details><summary>Chart source</summary>`
     + `<pre class="mermaid-note-source">graph TD; A--&gt;B</pre></details>`

@@ -88,7 +88,7 @@ async function loadView(type: string | undefined): Promise<SharedView> {
 function ImageView({ app: { note } }: { app: HostedApp }) {
     const src = getNoteImageUrl(note.noteId, note.title, note.blobId);
     return (
-        <ZoomViewer labels={getZoomPanLabels("image_viewer.viewport")} fillsPage>
+        <ZoomViewer label={t("image_viewer.viewport")}>
             <img src={src} alt={note.title} />
         </ZoomViewer>
     );
@@ -119,7 +119,7 @@ function MermaidView({ app: { note } }: { app: HostedApp }) {
     }, [ blob, theme ]);
 
     return (
-        <ZoomViewer labels={getZoomPanLabels("svg.preview")} fillsPage>
+        <ZoomViewer label={t("svg.preview")}>
             {svg && <RawHtmlBlock className="mermaid" html={svg} />}
         </ZoomViewer>
     );
@@ -175,14 +175,4 @@ function useMermaidTheme() {
     }, []);
 
     return theme;
-}
-
-/** The texts of a viewer, from the app's catalogue, with `labelKey` naming what it shows. */
-function getZoomPanLabels(labelKey: string) {
-    return {
-        label: t(labelKey),
-        zoomIn: t("zoom_controls.zoom_in"),
-        zoomOut: t("zoom_controls.zoom_out"),
-        zoomReset: t("zoom_controls.reset")
-    };
 }

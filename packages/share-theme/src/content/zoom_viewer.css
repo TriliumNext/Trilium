@@ -1,85 +1,18 @@
 .zoom-viewer {
     position: relative;
-}
-
-.zoom-viewer-viewport {
-    border-radius: 6px;
-    outline: 2px solid transparent;
-    outline-offset: 2px;
-}
-
-.zoom-viewer-viewport:focus-visible {
-    outline-color: var(--link-focus-outline-color);
-}
-
-.zoom-viewer .zoom-viewer-wrapper,
-.zoom-viewer .zoom-viewer-content {
-    width: 100%;
-}
-
-.zoom-viewer .zoom-viewer-content {
-    justify-content: center;
-}
-
-.zoom-viewer .zoom-viewer-content > div {
-    width: 100%;
-}
-
-.zoom-viewer-controls {
-    position: absolute;
-    bottom: 8px;
-    inset-inline-end: 8px;
-    display: flex;
-    gap: 2px;
-    padding: 2px;
-    border-radius: 8px;
-    background: var(--background-highlight);
-}
-
-.zoom-viewer-controls button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 30px;
-    height: 26px;
-    padding: 0 4px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-menu);
-    font-size: 18px;
-    cursor: pointer;
-    transition: background-color 150ms ease, color 150ms ease;
-}
-
-.zoom-viewer-controls button:hover:not(:disabled) {
-    background: var(--background-primary);
-    color: var(--text-primary);
-}
-
-.zoom-viewer-controls button:focus-visible {
-    outline: 2px solid var(--link-focus-outline-color);
-    outline-offset: 1px;
-}
-
-.zoom-viewer-controls button:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-.zoom-viewer-controls .zoom-viewer-reset {
-    min-width: 48px;
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-}
-
-.zoom-viewer.fills-page {
     display: flex;
     flex-direction: column;
 
     .zoom-viewer-viewport {
         flex: 1;
         min-height: 0;
+        border-radius: 6px;
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+
+        &:focus-visible {
+            outline-color: var(--link-focus-outline-color);
+        }
     }
 
     .zoom-viewer-viewport,
@@ -91,6 +24,7 @@
     }
 
     .zoom-viewer-content {
+        justify-content: center;
         align-items: center;
     }
 
@@ -103,5 +37,9 @@
         width: 100%;
         height: 100%;
         max-width: 100% !important;
+    }
+
+    .zoom-viewer-controls {
+        z-index: 10;
     }
 }
