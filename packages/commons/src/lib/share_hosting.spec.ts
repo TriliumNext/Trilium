@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { getShareThemeGroupFiles, resolveShareThemeGroups } from "./share_hosting.js";
+import {
+    getNoteMapDataKey, getShareThemeGroupFiles, resolveShareThemeGroups
+} from "./share_hosting.js";
+
+describe("getNoteMapDataKey", () => {
+    it("keys a note map request by its root, kind and filters in any order", () => {
+        const key = getNoteMapDataKey("root", "link",
+            { excludeRelations: [ "b", "a" ], includeRelations: [ "c d" ] });
+
+        expect(key).toBe("root/link?exclude=a&exclude=b&include=c+d");
+        expect(getNoteMapDataKey("root", "link",
+            { excludeRelations: [ "a", "b" ], includeRelations: [ "c d" ] })).toBe(key);
+        expect(getNoteMapDataKey("root", "tree", { excludeRelations: [], includeRelations: [] }))
+            .toBe("root/tree?");
+    });
+});
 
 describe("share theme groups", () => {
     const manifest = {

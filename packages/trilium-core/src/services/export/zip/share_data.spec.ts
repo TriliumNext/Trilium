@@ -30,6 +30,9 @@ describe("buildShareData", () => {
                     content: JSON.stringify({ notes: [ { noteId: "event" }, { noteId: "outside" } ] }) },
                 { id: "map", type: "noteMap", content: "", "#mapRootNoteId": "calendar",
                     "#mapExcludeRelation": "template", "#mapIncludeRelation": "related" },
+                { id: "twinMap", type: "noteMap", content: "", "#mapIncludeRelation": "related",
+                    "#mapExcludeRelation": "template", "#mapRootNoteId": "calendar" },
+                { id: "plainMap", type: "noteMap", content: "", "#mapRootNoteId": "calendar" },
                 { id: "hoistedMap", type: "noteMap", content: "", "#mapRootNoteId": "hoisted" },
                 { id: "parentMap", type: "noteMap", content: "" },
                 { id: "render", type: "render", content: "", "~renderNote": "script" },
@@ -63,13 +66,17 @@ describe("buildShareData", () => {
             "data/blobs/notes/image.json",
             "data/blobs/notes/map.json",
             "data/blobs/notes/parentMap.json",
+            "data/blobs/notes/plainMap.json",
             "data/blobs/notes/relations.json",
             "data/blobs/notes/render.json",
+            "data/blobs/notes/twinMap.json",
             "data/images/image.png",
-            "data/note-map/calendar-link.json",
-            "data/note-map/calendar-tree.json",
-            "data/note-map/siteRoot-link.json",
-            "data/note-map/siteRoot-tree.json",
+            "data/note-map/0.json",
+            "data/note-map/1.json",
+            "data/note-map/2.json",
+            "data/note-map/3.json",
+            "data/note-map/4.json",
+            "data/note-map/5.json",
             "data/relation-map/relations.json",
             "data/rows.json",
             "data/script/script.json"
@@ -79,7 +86,7 @@ describe("buildShareData", () => {
         const rows = read("data/rows.json");
         expect(rows.notes.map((note: { noteId: string }) => note.noteId).sort()).toEqual([
             "calendar", "canvas", "event", "hoistedMap", "image", "map", "parentMap", "plain",
-            "relations", "render", "script", "siteRoot"
+            "plainMap", "relations", "render", "script", "siteRoot", "twinMap"
         ]);
         expect(rows.links.siteRoot).toBe("");
         expect(rows.links.event).toBe("pages/event.html");
@@ -96,7 +103,11 @@ describe("buildShareData", () => {
         expect(files.get("data/images/image.png")).toEqual(new Uint8Array([ 1, 2 ]));
         expect(Object.keys(read("data/relation-map/relations.json").noteTitles))
             .toEqual([ "event" ]);
-        const treeMap = read("data/note-map/calendar-tree.json");
+        expect(Object.keys(rows.noteMaps).sort()).toEqual([
+            "calendar/link?", "calendar/link?exclude=template&include=related", "calendar/tree?",
+            "calendar/tree?exclude=template&include=related", "siteRoot/link?", "siteRoot/tree?"
+        ]);
+        const treeMap = read(rows.noteMaps["calendar/tree?exclude=template&include=related"]);
         expect(treeMap.notes.map(([ noteId ]: [ string ]) => noteId).sort())
             .toEqual([ "calendar", "event" ]);
         expect(read("data/script/script.json").script).toBe("run()");

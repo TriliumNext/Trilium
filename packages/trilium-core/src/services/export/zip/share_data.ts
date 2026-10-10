@@ -1,5 +1,5 @@
 import {
-    getImageAttachmentTitle, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES
+    getImageAttachmentTitle, getNoteMapDataKey, SHARE_HOSTED_NOTE_TYPES, SHARE_HOSTED_VIEW_TYPES
 } from "@triliumnext/commons";
 import mimeTypes from "mime-types";
 
@@ -22,12 +22,13 @@ export interface ShareDataPaths {
  * Builds the files under `data/` the app views of the export of `root` read in place of the
  * share's API, keyed by their path in the archive:
  *
- * - `data/rows.json`: the rows of every note of the export, with its attachments and the path of
- *   each note's page, of each attachment's file and of each note's image;
+ * - `data/rows.json`: the rows of every note of the export, with its attachments, the path of
+ *   each note's page, of each attachment's file and of each note's image, and the file of each
+ *   note map by its {@link getNoteMapDataKey} key;
  * - `data/blobs/{notes,attachments}/<id>.json`: the content of the notes the views read and of
  *   their attachments;
  * - `data/images/<noteId>.<extension>`: the image of an image note, whose page takes its file;
- * - `data/note-map/<mapRootNoteId>-{tree,link}.json`, `data/relation-map/<noteId>.json` and
+ * - `data/note-map/<index>.json`, `data/relation-map/<noteId>.json` and
  *   `data/script/<noteId>.json`: what a note map, a relation map and a render note draw.
  *
  * Only notes the export holds and that are not protected appear, as on a shared page.
@@ -59,10 +60,6 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
         }
     }
 
-    const rows = buildFrocaRows(notes, (note) => isVisible(note.noteId),
-        (note) => paths.getNotePath(note.noteId) ?? "");
-    writeJson("data/rows.json", { ...rows, attachments, attachmentPaths, images });
-
     for (const note of getNotesReadByViews(notes)) {
         writeJson(`data/blobs/notes/${note.noteId}.json`, getBlobRow(note));
         for (const attachment of note.getAttachments()) {
@@ -73,9 +70,10 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
         }
     }
 
+    const noteMaps: Record<string, string> = {};
     for (const note of notes) {
         if (note.type === "noteMap") {
-            writeNoteMaps(note, files, isVisible);
+            writeNoteMaps(note, files, noteMaps, isVisible);
         } else if (note.type === "relationMap") {
             writeJson(`data/relation-map/${note.noteId}.json`,
                 buildVisibleRelationMap(note.noteId, note.getContent(), isVisible));
@@ -89,6 +87,10 @@ export function buildShareData(root: BNote, paths: ShareDataPaths) {
             }
         }
     }
+
+    const rows = buildFrocaRows(notes, (note) => isVisible(note.noteId),
+        (note) => paths.getNotePath(note.noteId) ?? "");
+    writeJson("data/rows.json", { ...rows, attachments, attachmentPaths, images, noteMaps });
     return files;
 }
 
@@ -150,11 +152,14 @@ function writeImage(
 
 /**
  * Writes both maps of a note map note, which a reader can switch between, rooted where the app
- * roots it: at `#mapRootNoteId`, else at the note's parent.
+ * roots it: at `#mapRootNoteId`, else at the note's parent. Each goes into `noteMaps` by its
+ * request's key, so maps of one root with other relation filters keep their own file, and a request
+ * already written is not written again.
  */
 function writeNoteMaps(
     note: BNote,
     files: Map<string, string | Uint8Array>,
+    noteMaps: Record<string, string>,
     isVisible: IsVisibleNote
 ) {
     const mapRootNoteId = note.getLabelValue("mapRootNoteId")
@@ -169,7 +174,13 @@ function writeNoteMaps(
         includeRelations: note.getLabels("mapIncludeRelation").map((label) => label.value)
     };
     for (const mapType of [ "tree", "link" ] as const) {
-        files.set(`data/note-map/${mapRoot.noteId}-${mapType}.json`,
-            JSON.stringify(buildVisibleNoteMap(mapRoot, mapType, filters, isVisible)));
+        const key = getNoteMapDataKey(mapRoot.noteId, mapType, filters);
+        if (noteMaps[key]) {
+            continue;
+        }
+
+        const path = `data/note-map/${Object.keys(noteMaps).length}.json`;
+        noteMaps[key] = path;
+        files.set(path, JSON.stringify(buildVisibleNoteMap(mapRoot, mapType, filters, isVisible)));
     }
 }

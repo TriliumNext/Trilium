@@ -36,6 +36,22 @@ export function resolveShareThemeGroups(
     return [ ...resolved ];
 }
 
+/**
+ * Returns the key of a note map request, the same for the same root, kind and relation filters in
+ * any order, under which the static export indexes the map it computed for that request.
+ */
+export function getNoteMapDataKey(
+    mapRootNoteId: string,
+    mapType: "tree" | "link",
+    filters: { excludeRelations: string[]; includeRelations: string[] }
+) {
+    const params = new URLSearchParams([
+        ...[ ...filters.excludeRelations ].sort().map((name) => [ "exclude", name ]),
+        ...[ ...filters.includeRelations ].sort().map((name) => [ "include", name ])
+    ]);
+    return `${mapRootNoteId}/${mapType}?${params}`;
+}
+
 /** Returns the files of `manifest`'s groups `names` and of the groups they require, each once. */
 export function getShareThemeGroupFiles(manifest: ShareThemeManifest, names: Iterable<string>) {
     const groups = resolveShareThemeGroups(manifest.requires, names);
