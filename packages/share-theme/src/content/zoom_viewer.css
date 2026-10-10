@@ -1,31 +1,31 @@
-.mermaid-zoom {
+.zoom-viewer {
     position: relative;
 }
 
-.mermaid-zoom-viewport {
+.zoom-viewer-viewport {
     border-radius: 6px;
     outline: 2px solid transparent;
     outline-offset: 2px;
 }
 
-.mermaid-zoom-viewport:focus-visible {
+.zoom-viewer-viewport:focus-visible {
     outline-color: var(--link-focus-outline-color);
 }
 
-.mermaid-zoom .mermaid-zoom-wrapper,
-.mermaid-zoom .mermaid-zoom-content {
+.zoom-viewer .zoom-viewer-wrapper,
+.zoom-viewer .zoom-viewer-content {
     width: 100%;
 }
 
-.mermaid-zoom .mermaid-zoom-content {
+.zoom-viewer .zoom-viewer-content {
     justify-content: center;
 }
 
-.mermaid-zoom .mermaid-zoom-content > div {
+.zoom-viewer .zoom-viewer-content > div {
     width: 100%;
 }
 
-.mermaid-zoom-controls {
+.zoom-viewer-controls {
     position: absolute;
     bottom: 8px;
     inset-inline-end: 8px;
@@ -36,7 +36,7 @@
     background: var(--background-highlight);
 }
 
-.mermaid-zoom-controls button {
+.zoom-viewer-controls button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -52,23 +52,47 @@
     transition: background-color 150ms ease, color 150ms ease;
 }
 
-.mermaid-zoom-controls button:hover:not(:disabled) {
+.zoom-viewer-controls button:hover:not(:disabled) {
     background: var(--background-primary);
     color: var(--text-primary);
 }
 
-.mermaid-zoom-controls button:focus-visible {
+.zoom-viewer-controls button:focus-visible {
     outline: 2px solid var(--link-focus-outline-color);
     outline-offset: 1px;
 }
 
-.mermaid-zoom-controls button:disabled {
+.zoom-viewer-controls button:disabled {
     opacity: 0.4;
     cursor: default;
 }
 
-.mermaid-zoom-controls .mermaid-zoom-reset {
+.zoom-viewer-controls .zoom-viewer-reset {
     min-width: 48px;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
+}
+
+.zoom-viewer.fills-page {
+    display: flex;
+    flex-direction: column;
+
+    .zoom-viewer-viewport {
+        flex: 1;
+        min-height: 0;
+    }
+
+    .zoom-viewer-viewport,
+    .zoom-viewer-wrapper,
+    .zoom-viewer-content,
+    .zoom-viewer-content > * {
+        width: 100%;
+        height: 100%;
+    }
+
+    .zoom-viewer-content svg {
+        width: 100%;
+        height: 100%;
+        max-width: 100% !important;
+    }
 }

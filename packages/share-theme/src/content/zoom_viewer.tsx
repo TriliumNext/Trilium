@@ -1,13 +1,13 @@
-import "./mermaid_zoom.css";
+import "./zoom_viewer.css";
 
 import {
     useZoomPanPinch, useZoomPanWheel
 } from "@triliumnext/client/src/widgets/react/zoom_pan.js";
-import { render } from "preact";
+import { type ComponentChildren, render } from "preact";
 import { useLayoutEffect, useRef, useState } from "preact/hooks";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
-/** The texts of a viewer, which the page carries on the Mermaid note it shows. */
+/** The texts of a viewer, which the page or the app's catalogue gives in the visitor's language. */
 export interface ZoomPanLabels {
     label: string;
     zoomIn: string;
@@ -16,33 +16,40 @@ export interface ZoomPanLabels {
 }
 
 /**
- * Moves `diagram` into a viewer that pans and zooms it, with the zoom steps and wheel handling of
- * the app's diagram preview. The wheel zooms only while the viewer has focus, and dragging pans
- * only once the diagram is zoomed in, so that both scroll the page otherwise.
+ * Moves `element` into a viewer that pans and zooms it, in the flow of the page. The element
+ * stays the same node, so a script that draws into it, such as `mermaid.ts`, keeps drawing there.
  */
-export default function mountZoomPan(diagram: HTMLElement, labels: ZoomPanLabels) {
-    const container = document.createElement("div");
-    container.className = "mermaid-zoom";
-    diagram.replaceWith(container);
-    render(<ZoomPanViewer diagram={diagram} labels={labels} />, container);
+export default function mountZoomPan(element: HTMLElement, labels: ZoomPanLabels) {
+    const host = document.createElement("div");
+    element.replaceWith(host);
+    render(<ZoomViewer labels={labels}><ElementSlot element={element} /></ZoomViewer>, host);
 }
 
-function ZoomPanViewer({ diagram, labels }: { diagram: HTMLElement; labels: ZoomPanLabels }) {
+interface ZoomViewerProps {
+    labels: ZoomPanLabels;
+    /**
+     * Whether the viewer takes the page, so that the wheel and dragging always zoom and pan it, as
+     * there is no page around it to scroll.
+     */
+    fillsPage?: boolean;
+    children: ComponentChildren;
+}
+
+/**
+ * Pans and zooms its `children`, with the zoom steps and wheel handling of the app's diagram
+ * preview. In the flow of a page, the wheel zooms only while the viewer has focus and dragging pans
+ * only once the content is zoomed in, so that both scroll the page otherwise.
+ */
+export function ZoomViewer({ labels, fillsPage = false, children }: ZoomViewerProps) {
     const zoom = useZoomPanPinch({ minScale: MIN_ZOOM, maxScale: MAX_ZOOM });
     const [ viewport, setViewport ] = useState<HTMLDivElement | null>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-    useZoomPanWheel(zoom.ref, viewport, true);
-
-    // The diagram stays the element `mermaid.ts` draws into, so a theme change redraws it in place.
-    useLayoutEffect(() => {
-        contentRef.current?.append(diagram);
-    }, [ diagram ]);
+    useZoomPanWheel(zoom.ref, viewport, !fillsPage);
 
     return (
-        <>
+        <div className={fillsPage ? "zoom-viewer fills-page" : "zoom-viewer"}>
             <div
                 ref={setViewport}
-                className="mermaid-zoom-viewport"
+                className="zoom-viewer-viewport"
                 tabIndex={0}
                 role="group"
                 aria-label={labels.label}
@@ -53,19 +60,19 @@ function ZoomPanViewer({ diagram, labels }: { diagram: HTMLElement; labels: Zoom
                     maxScale={MAX_ZOOM}
                     centerZoomedOut
                     wheel={zoom.wheel}
-                    panning={{ disabled: zoom.scale <= 1 }}
+                    panning={{ disabled: !fillsPage && zoom.scale <= 1 }}
                     doubleClick={{ mode: "reset" }}
                     onTransform={zoom.onTransform}
                 >
                     <TransformComponent
-                        wrapperClass="mermaid-zoom-wrapper"
-                        contentClass="mermaid-zoom-content"
+                        wrapperClass="zoom-viewer-wrapper"
+                        contentClass="zoom-viewer-content"
                     >
-                        <div ref={contentRef} />
+                        {children}
                     </TransformComponent>
                 </TransformWrapper>
             </div>
-            <div className="mermaid-zoom-controls">
+            <div className="zoom-viewer-controls">
                 <button
                     type="button"
                     title={labels.zoomOut}
@@ -77,7 +84,7 @@ function ZoomPanViewer({ diagram, labels }: { diagram: HTMLElement; labels: Zoom
                 </button>
                 <button
                     type="button"
-                    className="mermaid-zoom-reset"
+                    className="zoom-viewer-reset"
                     title={labels.zoomReset}
                     onClick={zoom.reset}
                 >
@@ -93,10 +100,19 @@ function ZoomPanViewer({ diagram, labels }: { diagram: HTMLElement; labels: Zoom
                     <span className="tn-icon bx bx-plus-circle" aria-hidden="true" />
                 </button>
             </div>
-        </>
+        </div>
     );
 }
 
-/** The zoom bounds of the app's diagram preview, as a multiple of the diagram's fitted width. */
+/** Holds an element that something other than Preact renders. */
+function ElementSlot({ element }: { element: HTMLElement }) {
+    const ref = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        ref.current?.append(element);
+    }, [ element ]);
+    return <div ref={ref} />;
+}
+
+/** The zoom bounds of the app's diagram preview, as a multiple of the content's fitted width. */
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 10;

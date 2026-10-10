@@ -1,7 +1,7 @@
 import { getMermaidConfig, type MermaidTheme, parseMermaidTheme } from "@triliumnext/commons/src/lib/mermaid_config.js";
 import type { Mermaid } from "mermaid";
 
-import type { ZoomPanLabels } from "./mermaid_zoom.js";
+import type { ZoomPanLabels } from "./zoom_viewer.js";
 
 /**
  * Draws the Mermaid diagrams on the page: code blocks in a text note, and Mermaid notes. A code
@@ -14,7 +14,7 @@ export default async function setupMermaid() {
         return;
     }
 
-    const { default: mermaid } = await import("mermaid");
+    const mermaid = await loadMermaid();
 
     let theme = readMermaidTheme();
     let rendering = renderDiagrams(mermaid, diagrams, theme);
@@ -83,11 +83,9 @@ let renderCount = 0;
  * for it before: its placeholder, or its drawing in the previous theme.
  */
 async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: MermaidTheme) {
-    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
     for (const { placeholder, element, source, labels } of diagrams) {
         try {
-            const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
-            element.innerHTML = svg;
+            element.innerHTML = await drawMermaid(mermaid, source, theme);
         } catch (error) {
             console.error(error);
             continue;
@@ -102,19 +100,33 @@ async function renderDiagrams(mermaid: Mermaid, diagrams: Diagram[], theme: Merm
     }
 }
 
+/** Loads Mermaid, which only a page with a diagram needs. */
+export async function loadMermaid() {
+    const { default: mermaid } = await import("mermaid");
+    return mermaid;
+}
+
+/** Returns the SVG of the diagram `source` describes, drawn in `theme`. */
+export async function drawMermaid(mermaid: Mermaid, source: string, theme: MermaidTheme) {
+    mermaid.initialize({ ...getMermaidConfig(theme), startOnLoad: false });
+    const { svg } = await mermaid.render(`share-mermaid-${renderCount++}`, source);
+    return svg;
+}
+
 /**
  * Puts a drawn diagram in a viewer that pans and zooms it. Loaded on demand, so that only a page
  * with a Mermaid note loads it. A diagram whose viewer fails to load stays as it is.
  */
 async function addZoomPan(element: HTMLElement, labels: ZoomPanLabels) {
     try {
-        const { default: mountZoomPan } = await import("./mermaid_zoom.js");
+        const { default: mountZoomPan } = await import("./zoom_viewer.js");
         mountZoomPan(element, labels);
     } catch (error) {
         console.error(error);
     }
 }
 
-function readMermaidTheme() {
+/** The Mermaid theme of the page's current theme, which the theme switch changes. */
+export function readMermaidTheme() {
     return parseMermaidTheme(getComputedStyle(document.documentElement).getPropertyValue("--mermaid-theme"));
 }

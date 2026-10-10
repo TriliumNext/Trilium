@@ -3,8 +3,6 @@ import Component from "@triliumnext/client/src/components/component.js";
 import TabManager from "@triliumnext/client/src/components/tab_manager.js";
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import froca from "@triliumnext/client/src/services/froca.js";
-import LoadResults from "@triliumnext/client/src/services/load_results.js";
-import noteAttributeCache from "@triliumnext/client/src/services/note_attribute_cache.js";
 import options, { type OptionValue } from "@triliumnext/client/src/services/options.js";
 import { ParentComponent } from "@triliumnext/client/src/widgets/react/react_utils.js";
 import type { ComponentChildren } from "preact";
@@ -53,35 +51,6 @@ export default function ShareAppHost({ noteId, payload, children }: ShareAppHost
             {children(app)}
         </ParentComponent.Provider>
     );
-}
-
-/**
- * Sets a label on a note for this page only, as a visitor cannot change notes: froca takes the new
- * value and the views hear of it as they hear of a change in the app, through `entitiesReloaded`.
- */
-export function setLocalLabel(noteId: string, name: string, value: string) {
-    const row = {
-        attributeId: `${noteId}-share-${name}`,
-        noteId,
-        type: "label" as const,
-        name,
-        value,
-        position: 0,
-        isInheritable: false
-    };
-    froca.addResp({ notes: [], branches: [], attributes: [ row ] });
-    noteAttributeCache.invalidate();
-
-    const loadResults = new LoadResults([ {
-        entityName: "attributes",
-        entityId: row.attributeId,
-        entity: { ...row, isDeleted: false },
-        hash: "",
-        isSynced: false,
-        isErased: false
-    } ]);
-    loadResults.addAttribute(row.attributeId, "share");
-    appContext.triggerEvent("entitiesReloaded", { loadResults });
 }
 
 function loadPayload(noteId: string, payload: AppPayload): HostedApp | null {

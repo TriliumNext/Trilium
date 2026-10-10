@@ -19,7 +19,7 @@ vi.mock("mermaid", () => ({
 }));
 
 const mountZoomPan = vi.hoisted(() => vi.fn());
-vi.mock("./mermaid_zoom.js", () => ({ default: mountZoomPan }));
+vi.mock("./zoom_viewer.js", () => ({ default: mountZoomPan }));
 
 describe("setupMermaid", () => {
     afterEach(() => {

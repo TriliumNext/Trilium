@@ -135,7 +135,7 @@ const SHARE_THEME_TARGET = "chrome96";
 const LAZY_MODULES: Record<string, { specifier: string; importer: string }[]> = {
     mermaid: [
         { specifier: "mermaid", importer: "content/mermaid.ts" },
-        { specifier: "./mermaid_zoom.js", importer: "content/mermaid.ts" }
+        { specifier: "./zoom_viewer.js", importer: "content/mermaid.ts" }
     ],
     app: [
         { specifier: "./app_globals.js", importer: "content/app_view.ts" },

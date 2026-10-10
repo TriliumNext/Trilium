@@ -3,7 +3,7 @@ import { type ComponentChildren, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import mountZoomPan from "./mermaid_zoom.js";
+import mountZoomPan, { ZoomViewer } from "./zoom_viewer.js";
 
 // react-zoom-pan-pinch measures its boxes, which happy-dom cannot do. As in the client's
 // `SvgSplitEditor.spec.tsx`, this fake keeps what the controls drive: `zoomIn`/`zoomOut` add their
@@ -54,9 +54,9 @@ vi.mock("react-zoom-pan-pinch", async () => {
 
 describe("mountZoomPan", () => {
     afterEach(() => {
-        const container = document.querySelector<HTMLElement>(".mermaid-zoom");
-        if (container) {
-            act(() => render(null, container));
+        const host = document.querySelector(".zoom-viewer")?.parentElement;
+        if (host) {
+            act(() => render(null, host));
         }
         document.body.innerHTML = "";
         transformWrapperSpy.mockClear();
@@ -65,11 +65,11 @@ describe("mountZoomPan", () => {
     it("moves the diagram into a labelled viewer in its place", () => {
         const diagram = mountDiagram();
 
-        expect(document.querySelector("#content > .mermaid-zoom")).not.toBeNull();
-        const viewport = document.querySelector(".mermaid-zoom > .mermaid-zoom-viewport");
+        expect(document.querySelector("#content > div > .zoom-viewer:not(.fills-page)")).not.toBeNull();
+        const viewport = document.querySelector(".zoom-viewer > .zoom-viewer-viewport");
         expect(viewport?.getAttribute("aria-label")).toBe("Diagram");
         expect(viewport?.getAttribute("tabindex")).toBe("0");
-        expect(viewport?.querySelector(".mermaid-zoom-content")?.contains(diagram)).toBe(true);
+        expect(viewport?.querySelector(".zoom-viewer-content")?.contains(diagram)).toBe(true);
         expect(buttons().map((button) => button.title))
             .toEqual([ "Zoom out", "Reset zoom", "Zoom in" ]);
         expect(buttons().map((button) => button.getAttribute("aria-label")))
@@ -91,7 +91,7 @@ describe("mountZoomPan", () => {
         act(() => zoomIn.click());
         expect(readout()).toBe("120%");
         expect(lastProps().panning).toEqual({ disabled: false });
-        expect(document.querySelector(".mermaid-zoom-content")?.contains(diagram)).toBe(true);
+        expect(document.querySelector(".zoom-viewer-content")?.contains(diagram)).toBe(true);
 
         act(() => reset.click());
         expect(readout()).toBe("100%");
@@ -102,6 +102,20 @@ describe("mountZoomPan", () => {
         }
         expect(zoomOut.disabled).toBe(true);
         expect(zoomIn.disabled).toBe(false);
+    });
+
+    it("pans at any zoom when it takes the page", () => {
+        document.body.innerHTML = `<div id="content"></div>`;
+        const host = document.getElementById("content");
+        if (!host) {
+            throw new Error("The host is missing.");
+        }
+
+        act(() => render(<ZoomViewer labels={LABELS} fillsPage><svg /></ZoomViewer>, host));
+
+        expect(document.querySelector("#content > .zoom-viewer.fills-page .zoom-viewer-content > svg"))
+            .not.toBeNull();
+        expect(lastProps().panning).toEqual({ disabled: false });
     });
 });
 
@@ -125,11 +139,11 @@ function mountDiagram() {
 }
 
 function buttons() {
-    return [ ...document.querySelectorAll<HTMLButtonElement>(".mermaid-zoom-controls button") ];
+    return [ ...document.querySelectorAll<HTMLButtonElement>(".zoom-viewer-controls button") ];
 }
 
 function readout() {
-    return document.querySelector(".mermaid-zoom-reset")?.textContent;
+    return document.querySelector(".zoom-viewer-reset")?.textContent;
 }
 
 function lastProps() {

@@ -123,7 +123,7 @@ describe("stripUniverEmojiData", () => {
 
 describe("buildShareThemeManifest", () => {
     const MERMAID_ID = "/node_modules/mermaid/dist/mermaid.core.mjs";
-    const VIEWER_ID = "/packages/share-theme/src/content/mermaid_zoom.tsx";
+    const VIEWER_ID = "/packages/share-theme/src/content/zoom_viewer.tsx";
     const chunk = (fileName: string, extra: { facade?: string; imports?: string[];
         dynamicImports?: string[]; css?: string[]; assets?: string[] } = {}) => ({
         type: "chunk" as const,
@@ -140,7 +140,7 @@ describe("buildShareThemeManifest", () => {
     const bundle = Object.fromEntries([
         chunk("src/scripts.js", {
             imports: [ "src/shared-a.js", "src/shared-k.js" ],
-            dynamicImports: [ "src/fuse-b.js", "src/mermaid.core-c.js", "src/mermaid_zoom-l.js" ],
+            dynamicImports: [ "src/fuse-b.js", "src/mermaid.core-c.js", "src/zoom_viewer-l.js" ],
             css: [ "src/scripts-j.css" ]
         }),
         chunk("src/shared-a.js", { css: [ "src/shared-a.css" ] }),
@@ -155,7 +155,7 @@ describe("buildShareThemeManifest", () => {
             imports: [ "src/shared-k.js", "src/dagre-f.js" ],
             dynamicImports: [ "src/flowchart-g.js" ]
         }),
-        chunk("src/mermaid_zoom-l.js", { facade: VIEWER_ID, imports: [ "src/preact-m.js" ] }),
+        chunk("src/zoom_viewer-l.js", { facade: VIEWER_ID, imports: [ "src/preact-m.js" ] }),
         chunk("src/preact-m.js"),
         chunk("src/dagre-f.js"),
         chunk("src/flowchart-g.js"),
@@ -177,8 +177,8 @@ describe("buildShareThemeManifest", () => {
             ],
             lazy: {
                 mermaid: [
-                    "dagre-f.js", "flowchart-g.js", "mermaid.core-c.js", "mermaid_zoom-l.js",
-                    "preact-m.js", "shared-k.css"
+                    "dagre-f.js", "flowchart-g.js", "mermaid.core-c.js", "preact-m.js",
+                    "shared-k.css", "zoom_viewer-l.js"
                 ]
             }
         });

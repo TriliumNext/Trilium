@@ -1,27 +1,25 @@
 import type FNote from "@triliumnext/client/src/entities/fnote.js";
 import { t } from "@triliumnext/client/src/services/i18n.js";
 import { TYPE_MAPPINGS, type TypeWidget } from "@triliumnext/client/src/widgets/note_types.js";
-import { useNoteLabel } from "@triliumnext/client/src/widgets/react/hooks.js";
-import OverlayControlGroup, {
-    OverlayControlButton
-} from "@triliumnext/client/src/widgets/react/OverlayControlGroup.js";
-import {
-    type DisplayMode, resolveDisplayMode
-} from "@triliumnext/client/src/widgets/type_widgets/helpers/split_editor_mode.js";
+import { useNoteBlob } from "@triliumnext/client/src/widgets/react/hooks.js";
+import { RawHtmlBlock } from "@triliumnext/client/src/widgets/react/RawHtml.js";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
-import ShareAppHost, { type AppPayload, setLocalLabel } from "./app_host.js";
+import ShareAppHost, { type AppPayload } from "./app_host.js";
+import { drawMermaid, loadMermaid, readMermaidTheme } from "./mermaid.js";
+import { ZoomViewer } from "./zoom_viewer.js";
 
 /**
- * Mounts the app's own widget for the note's type, read-only, in place of the content the page
- * rendered for visitors without scripts.
+ * Mounts the note in place of the content the page rendered for visitors without scripts: a
+ * Mermaid note as a diagram that pans and zooms, any other note with the app's own widget for its
+ * type, read-only.
  */
 export default function mountNoteView(container: HTMLElement, payload: AppPayload) {
     container.replaceChildren();
     render(
         <ShareAppHost noteId={container.dataset.noteId ?? ""} payload={payload}>
-            {({ note }) => <NoteView note={note} />}
+            {({ note }) => (note.type === "mermaid" ? <MermaidView note={note} /> : <NoteView note={note} />)}
         </ShareAppHost>,
         container
     );
@@ -48,33 +46,60 @@ function NoteView({ note }: { note: FNote }) {
                 noteContext={undefined}
                 isVisible
             />
-            {note.type === "mermaid" && <DisplayModeSwitcher note={note} />}
         </div>
     );
 }
 
-/** The app's choice of source, split or preview, which a visitor makes for this page only. */
-function DisplayModeSwitcher({ note }: { note: FNote }) {
-    const [ displayMode ] = useNoteLabel(note, "displayMode");
-    const mode = resolveDisplayMode(displayMode, true);
+/**
+ * Draws a Mermaid note the way the page draws the diagrams of a text note, in a viewer that takes
+ * the page, and draws it again when the theme changes.
+ */
+function MermaidView({ note }: { note: FNote }) {
+    const blob = useNoteBlob(note);
+    const theme = useMermaidTheme();
+    const [ svg, setSvg ] = useState<string>();
+
+    useEffect(() => {
+        const source = blob?.content;
+        if (!source) {
+            return;
+        }
+
+        let isCurrent = true;
+        loadMermaid().then((mermaid) => drawMermaid(mermaid, source, theme)).then((drawn) => {
+            if (isCurrent) {
+                setSvg(drawn);
+            }
+        }, (error: unknown) => console.error(error));
+        return () => { isCurrent = false; };
+    }, [ blob, theme ]);
 
     return (
-        <OverlayControlGroup className="share-display-mode" placement="top-end">
-            {DISPLAY_MODES.map(({ value, icon, text }) => (
-                <OverlayControlButton
-                    key={value}
-                    icon={icon}
-                    title={t(text)}
-                    active={mode === value}
-                    onClick={() => setLocalLabel(note.noteId, "displayMode", value)}
-                />
-            ))}
-        </OverlayControlGroup>
+        <ZoomViewer labels={getZoomPanLabels()} fillsPage>
+            {svg && <RawHtmlBlock className="mermaid" html={svg} />}
+        </ZoomViewer>
     );
 }
 
-const DISPLAY_MODES: { value: DisplayMode; icon: string; text: string }[] = [
-    { value: "source", icon: "bx bx-code", text: "display_mode.source" },
-    { value: "split", icon: "bx bxs-dock-left", text: "display_mode.split" },
-    { value: "preview", icon: "bx bx-show", text: "display_mode.preview" }
-];
+/** The page's Mermaid theme, which follows the theme switch's class on `<html>`. */
+function useMermaidTheme() {
+    const [ theme, setTheme ] = useState(readMermaidTheme);
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => setTheme(readMermaidTheme()));
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: [ "class" ] });
+        return () => observer.disconnect();
+    }, []);
+
+    return theme;
+}
+
+/** The texts of the viewer, from the app's catalogue. */
+function getZoomPanLabels() {
+    return {
+        label: t("svg.preview"),
+        zoomIn: t("zoom_controls.zoom_in"),
+        zoomOut: t("zoom_controls.zoom_out"),
+        zoomReset: t("zoom_controls.reset")
+    };
+}
