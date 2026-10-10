@@ -46,7 +46,10 @@ export class SearchHighlighter {
         });
         this.searchRegexp = regex;
         this.#updateSearchData(this.view);
-        this.#scrollToMatchNearestSelection();
+        if (!this.#scrollToMatchNearestSelection()) {
+            // `EditorView` reads plugin decorations only on an update, so draw `matches` with one.
+            this.view.dispatch({});
+        }
     }
 
     replaceActiveMatch(replacementText: string) {
@@ -138,17 +141,20 @@ export class SearchHighlighter {
         this.totalFound = this.parsedMatches.length;
     }
 
+    /** Activates the first match at or after the cursor. Returns whether there was one. */
     #scrollToMatchNearestSelection() {
         const cursorPos = this.view.state.selection.main.head;
         let index = 0;
         for (const match of this.parsedMatches) {
             if (match.from >= cursorPos) {
                 this.scrollToMatch(index);
-                return;
+                return true;
             }
 
             index++;
         }
+
+        return false;
     }
 
     static deco = (v: SearchHighlighter) => v.matches;

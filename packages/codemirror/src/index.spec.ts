@@ -377,6 +377,17 @@ describe("CodeMirror", () => {
             expect(result.totalFound).toBe(2);
         });
 
+        it("paints the matches when every one of them is before the cursor", async () => {
+            // No match follows the cursor, so no `scrollToMatch()` call redraws the editor.
+            editor = build();
+            editor.setText("foo bar foo");
+            editor.dispatch({ selection: EditorSelection.cursor(11) });
+
+            const result = await editor.performFind("foo", false, false);
+            expect(result).toEqual({ totalFound: 2, currentFound: 0 });
+            expect(editor.contentDOM.querySelectorAll(".cm-searchMatch")).toHaveLength(2);
+        });
+
         it("replaces the active match and then all of them", async () => {
             editor = build();
             editor.setText("foo bar foo");

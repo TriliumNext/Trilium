@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
-import { render } from "preact";
+import type VanillaCodeMirror from "@triliumnext/codemirror";
+import { createRef, render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type Component from "../../../components/component";
 import FNote from "../../../entities/fnote";
+import options from "../../../services/options";
 import search from "../../../services/search";
 import { buildNote } from "../../../test/easy-froca";
 import { renderInto } from "../../../test/render";
 import { ParentComponent } from "../../react/react_utils";
-import { EditableCode, ReadOnlyCode } from "./Code";
+import { CodeEditor, EditableCode, ReadOnlyCode } from "./Code";
 
 describe("EditableCode", () => {
     const parent = { registerHandler() {}, removeHandler() {}, componentId: "c" } as any;
@@ -53,6 +56,79 @@ describe("EditableCode", () => {
         await act(async () => { renderInto(show(noteA, onContentChanged)); });
         await vi.waitFor(() => expect(onContentChanged).toHaveBeenCalledWith("# Note A"));
         expect(onContentChanged).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("CodeEditor", () => {
+    const handlers = new Map<string, ((data: unknown) => unknown)[]>();
+    const parent = {
+        registerHandler(name: string, handler: (data: unknown) => unknown) {
+            handlers.set(name, [ ...(handlers.get(name) ?? []), handler ]);
+        },
+        removeHandler(name: string, handler: (data: unknown) => unknown) {
+            handlers.set(name, (handlers.get(name) ?? []).filter((h) => h !== handler));
+        },
+        componentId: "c"
+    } as unknown as Component;
+
+    /** Fires an event at every listener, as `triggerCommand()` does for an unhandled command. */
+    async function trigger(name: string, data: unknown) {
+        await Promise.all((handlers.get(name) ?? []).map((handler) => handler(data)));
+    }
+
+    beforeEach(() => {
+        // Without `codeNoteTheme`, the theme effect throws and skips the effects of later editors.
+        options.load({ codeNoteTheme: "none" } as Parameters<typeof options.load>[0]);
+    });
+
+    afterEach(() => {
+        handlers.clear();
+    });
+
+    it("answers for its context only while it is the displayed editor", async () => {
+        // `NoteDetail` keeps earlier type widgets mounted but hidden, so they share the `ntxId`.
+        const hiddenRef = createRef<VanillaCodeMirror>();
+        const shownRef = createRef<VanillaCodeMirror>();
+        await act(async () => {
+            renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <CodeEditor
+                        ntxId="ntx" mime="text/plain" isVisible={false} editorRef={hiddenRef}
+                    />
+                    <CodeEditor ntxId="ntx" mime="text/plain" isVisible editorRef={shownRef} />
+                    <CodeEditor ntxId="other" mime="text/plain" />
+                </ParentComponent.Provider>
+            );
+        });
+        const shown = shownRef.current;
+        expect(hiddenRef.current).not.toBeNull();
+        if (!shown) throw new Error("The displayed editor did not initialize.");
+
+        const resolveEditor = vi.fn();
+        await trigger("executeWithCodeEditor", { resolve: resolveEditor, ntxId: "ntx" });
+        expect(resolveEditor).toHaveBeenCalledOnce();
+        expect(resolveEditor).toHaveBeenCalledWith(shown);
+
+        const resolveElement = vi.fn();
+        await trigger("executeWithContentElement", { resolve: resolveElement, ntxId: "ntx" });
+        expect(resolveElement).toHaveBeenCalledOnce();
+        expect(resolveElement.mock.calls[0][0][0]).toBe(shown.dom.parentElement);
+    });
+
+    it("answers when nothing tells it whether it is displayed", async () => {
+        const editorRef = createRef<VanillaCodeMirror>();
+        await act(async () => {
+            renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <CodeEditor ntxId="ntx" mime="text/plain" editorRef={editorRef} />
+                </ParentComponent.Provider>
+            );
+        });
+        expect(editorRef.current).not.toBeNull();
+
+        const resolve = vi.fn();
+        await trigger("executeWithCodeEditor", { resolve, ntxId: "ntx" });
+        expect(resolve).toHaveBeenCalledWith(editorRef.current);
     });
 });
 

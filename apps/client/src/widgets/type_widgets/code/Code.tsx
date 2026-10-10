@@ -35,7 +35,7 @@ export interface EditableCodeProps extends TypeWidgetProps {
     allowKeyboardSuggestions?: boolean;
 }
 
-export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
+export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, isVisible, editorRef }: TypeWidgetProps & { editorRef?: Ref<VanillaCodeMirror> }) {
     const [ content, setContent ] = useState("");
     const blob = useNoteBlob(note);
     // Read reactively so switching the language from the dropdown re-highlights live, rather than
@@ -64,6 +64,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, noteContext, editorRef }:
         <>
             <CodeEditor
                 ntxId={ntxId}
+                isVisible={isVisible}
                 editorRef={editorRef}
                 className="note-detail-readonly-code-content"
                 content={content}
@@ -190,7 +191,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     );
 }
 
-export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, allowKeyboardSuggestions, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId">) {
+export function CodeEditor({ ntxId, isVisible, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, allowKeyboardSuggestions, ...editorProps }: CodeMirrorProps & Pick<TypeWidgetProps, "ntxId" | "isVisible">) {
     const codeEditorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useSyncedRef(externalContainerRef);
     const initialized = useRef($.Deferred());
@@ -217,14 +218,15 @@ export function CodeEditor({ ntxId, containerRef: externalContainerRef, editorRe
         }
     }, [ codeEditorRef, effectiveTheme ]);
 
+    // Cached widgets share `ntxId`, so only the visible editor can answer these events.
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId) return;
+        if (eventNtxId !== ntxId || isVisible === false) return;
         await initialized.current.promise();
         resolve(codeEditorRef.current!);
     });
 
     useTriliumEvent("executeWithContentElement", async ({ resolve, ntxId: eventNtxId}) => {
-        if (eventNtxId !== ntxId) return;
+        if (eventNtxId !== ntxId || isVisible === false) return;
         await initialized.current.promise();
         resolve(refToJQuerySelector(containerRef));
     });
