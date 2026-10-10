@@ -199,8 +199,36 @@ describe("background", () => {
             });
         });
 
+        it("counts an image the browser cannot read as not downloaded", async () => {
+            vi.stubGlobal("FileReader", class {
+
+                result = null;
+                onloadend: (() => void) | null = null;
+
+                readAsDataURL() {
+                    setTimeout(() => this.onloadend?.());
+                }
+
+            });
+            tabMessageHandler = () => ({
+                title: "Page",
+                content: `<img src="i1">`,
+                images: [ { imageId: "i1", src: "https://example.com/a.png" } ]
+            });
+
+            await onContextMenuClicked({ menuItemId: "trilium-save-selection" });
+
+            expect(lastPayload()).toMatchObject({ content: `<img src="https://example.com/a.png">`, images: [] });
+            expect(await lastToast()).toMatchObject({
+                message: "Selection has been saved to Trilium, but 1 image could not be downloaded."
+            });
+        });
+
         it("is bound to the keyboard shortcut and shows why saving failed", async () => {
             tabMessageHandler = () => ({ title: "Page", content: "x" });
+            await onCommand("saveSelection");
+            expect(await lastToast()).toMatchObject({ message: "Selection has been saved to Trilium." });
+
             facade.callService.mockRejectedValue(TRILIUM_FAILURE);
 
             await onCommand("saveSelection");

@@ -88,6 +88,37 @@ describe("options page", () => {
         expect(container.querySelector("input[type=password]")).not.toBeNull();
     });
 
+    it("explains why the login failed", async () => {
+        await renderOptions();
+        await type("input[type=text]:not(#trilium-desktop-port)", "https://trilium.example");
+        await type("input[type=password]", "wrong");
+
+        fetchMock.mockResolvedValueOnce(Response.json({ message: "Incorrect credential", factor: "password" }, { status: 401 }));
+        await submit(1);
+        expect(message()).toEqual({ className: "message message-error", text: "Incorrect credentials." });
+
+        fetchMock.mockResolvedValueOnce(new Response("", { status: 502 }));
+        await submit(1);
+        expect(message()?.text).toBe("Unrecognised response with status code 502");
+
+        fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+        await submit(1);
+        expect(message()?.text).toBe("Unknown error: Failed to fetch");
+        expect(await stored("authToken")).toBeUndefined();
+    });
+
+    it("renders itself into the page's root element", async () => {
+        const root = document.createElement("div");
+        root.id = "root";
+        document.body.appendChild(root);
+        vi.resetModules();
+
+        await import("./main");
+
+        expect(root.querySelector(".options")).not.toBeNull();
+        root.remove();
+    });
+
     it("shows the configured server, which needs both an address and a token", async () => {
         await browser.storage.sync.set({ triliumServerUrl: "https://trilium.example", authToken: "" });
         await renderOptions();
@@ -123,6 +154,9 @@ describe("requestToken", () => {
 
         fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
         expect(await requestToken("https://s", "p", "")).toEqual({ kind: "network-error", message: "Failed to fetch" });
+
+        fetchMock.mockRejectedValueOnce("offline");
+        expect(await requestToken("https://s", "p", "")).toEqual({ kind: "network-error", message: "offline" });
     });
 });
 

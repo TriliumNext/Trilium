@@ -26,6 +26,7 @@ describe("popup", () => {
         await act(() => render(null, container));
         container.remove();
         vi.clearAllMocks();
+        vi.unstubAllGlobals();
         vi.restoreAllMocks();
     });
 
@@ -62,9 +63,18 @@ describe("popup", () => {
         expect(container.querySelector(".status-warning")?.textContent).toContain("Please update Trilium Notes");
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
+        await receive({
+            name: "trilium-search-status",
+            triliumSearch: { status: "version-mismatch", extensionMajor: 1, triliumMajor: 2 }
+        });
+        expect(container.querySelector(".status-warning")?.textContent).toContain("Please update this extension");
+
         await receive({ name: "trilium-search-status", triliumSearch: { status: "searching" } });
         expect(statusText()).toBe("searching");
         expect(captureButtons().every((button) => button.disabled)).toBe(true);
+
+        await receive({ name: "unrelated" });
+        expect(statusText()).toBe("searching");
     });
 
     it("offers to open a page that was already clipped", async () => {
@@ -95,6 +105,63 @@ describe("popup", () => {
         await click("Options");
         expect(openOptionsPage).toHaveBeenCalledOnce();
         expect(closeWindow).toHaveBeenCalledTimes(2);
+
+        const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
+        await click("Help");
+        expect(openWindow).toHaveBeenCalledWith("https://docs.triliumnotes.org/user-guide/setup/web-clipper", "_blank");
+    });
+
+    it("tells the user when the background script cannot be reached", async () => {
+        const alertMock = vi.fn();
+        vi.stubGlobal("alert", alertMock);
+        sendMessage.mockRejectedValueOnce(new Error("Receiving end does not exist."));
+
+        await click("Save whole page");
+
+        expect(alertMock).toHaveBeenCalledWith("Calling browser runtime failed. Refreshing page might help.");
+    });
+
+    it("keeps the note open when it could not be saved, and keeps the page title on request", async () => {
+        await click("Save link with a note");
+        const textArea = container.querySelector("textarea");
+        const keepTitle = container.querySelector<HTMLInputElement>("input[type=checkbox]");
+        expect(textArea).not.toBeNull();
+        expect(keepTitle?.checked).toBe(false);
+
+        await act(() => {
+            if (!textArea || !keepTitle) return;
+            textArea.value = "First. Second.";
+            textArea.dispatchEvent(new Event("input", { bubbles: true }));
+            keepTitle.click();
+        });
+        expect(keepTitle?.checked).toBe(true);
+
+        await act(async () => {
+            textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        });
+        expect(sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({ name: "save-link-with-note" }));
+
+        sendMessage.mockResolvedValueOnce(undefined);
+        await click("Save");
+        expect(sendMessage).toHaveBeenCalledWith({
+            name: "save-link-with-note",
+            title: "",
+            content: "<p>First. Second.</p>"
+        });
+        expect(textArea?.value).toBe("First. Second.");
+        expect(closeWindow).not.toHaveBeenCalled();
+    });
+
+    it("renders itself into the page's root element", async () => {
+        const root = document.createElement("div");
+        root.id = "root";
+        document.body.appendChild(root);
+        vi.resetModules();
+
+        await import("./main");
+
+        expect(root.querySelector(".popup")).not.toBeNull();
+        root.remove();
     });
 
     it("saves a link with a note on Ctrl+Enter, and cancels it", async () => {

@@ -18,6 +18,8 @@ export type TriliumSearchStatus = {
     triliumMajor: number;
 };
 
+type FoundStatus = Exclude<TriliumSearchStatus, { status: "searching" | "not-found" }>;
+
 export type TriliumSearchNoteStatus = {
     status: "not-found",
     noteId: null
@@ -39,7 +41,7 @@ export class TriliumError extends Error {
 }
 
 export default class TriliumServerFacade {
-    private triliumSearch?: TriliumSearchStatus;
+    private triliumSearch: TriliumSearchStatus = { status: "searching" };
     private triliumSearchNote?: TriliumSearchNoteStatus;
 
     constructor() {
@@ -183,15 +185,17 @@ export default class TriliumServerFacade {
         }
         this.setTriliumSearchNote(newStatus);
     }
+    /** Resolves with the outcome of the running search, and rejects if Trilium was not found. */
     async waitForTriliumSearch() {
-        return new Promise<void>((res, rej) => {
+        return new Promise<FoundStatus>((res, rej) => {
             const checkStatus = () => {
-                if (this.triliumSearch?.status === "searching") {
+                const search = this.triliumSearch;
+                if (search.status === "searching") {
                     setTimeout(checkStatus, 500);
-                } else if (this.triliumSearch?.status === 'not-found') {
+                } else if (search.status === "not-found") {
                     rej(notFound());
                 } else {
-                    res();
+                    res(search);
                 }
             };
 
@@ -210,16 +214,12 @@ export default class TriliumServerFacade {
     }
 
     async callService(method: string, path: string, body?: string | object) {
-        await this.waitForTriliumSearch();
-        const search = this.triliumSearch;
-        if (search?.status === "version-mismatch") {
+        const search = await this.waitForTriliumSearch();
+        if (search.status === "version-mismatch") {
             const { extensionMajor, triliumMajor } = search;
             const outdated = extensionMajor > triliumMajor ? "Trilium" : "the web clipper";
             throw new TriliumError("version-mismatch", "This version of the web clipper does not "
                 + `work with this version of Trilium. Update ${outdated} to the latest version.`);
-        }
-        if (search?.status !== "found-desktop" && search?.status !== "found-server") {
-            throw notFound();
         }
 
         let response: Response;

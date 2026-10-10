@@ -26,6 +26,7 @@ describe("TriliumServerFacade", () => {
         vi.clearAllTimers();
         vi.useRealTimers();
         vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
         vi.restoreAllMocks();
     });
 
@@ -40,6 +41,15 @@ describe("TriliumServerFacade", () => {
                 { status: "searching" },
                 { status: "found-desktop", port: 37742, url: "http://127.0.0.1:37742" }
             ]);
+        });
+
+        it("looks for a production desktop app on its own port", async () => {
+            vi.stubEnv("DEV", false);
+            fetchMock.mockResolvedValue(handshake("1.0"));
+
+            await createFacade();
+
+            expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:37840/api/clipper/handshake");
         });
 
         it("uses the configured desktop port and searches again every minute", async () => {
@@ -87,9 +97,13 @@ describe("TriliumServerFacade", () => {
 
         it("reports not-found when neither the desktop app nor the server is Trilium", async () => {
             await fakeBrowser.storage.sync.set(SERVER);
-            fetchMock.mockResolvedValue(new Response(JSON.stringify({ appName: "other" })));
+            fetchMock.mockImplementation(async () => Response.json({ appName: "other" }));
             await createFacade();
             expect(lastSearchStatus()).toEqual({ status: "not-found" });
+            expect(fetchMock).toHaveBeenLastCalledWith(
+                "https://trilium.example/api/clipper/handshake", { headers: { Authorization: "secret" } });
+            expect(console.log).not.toHaveBeenCalledWith(
+                "Request to the configured server instance failed with:", expect.anything());
 
             fetchMock.mockReset();
             fetchMock.mockImplementation(async (url) => {
@@ -172,6 +186,9 @@ describe("TriliumServerFacade", () => {
 
             fetchMock.mockRejectedValue(new Error("connection reset"));
             await expect(openNote()).rejects.toThrow(requestFailed("connection reset"));
+
+            fetchMock.mockRejectedValue("offline");
+            await expect(openNote()).rejects.toThrow(requestFailed("offline"));
         });
 
         it("waits for a running search and rejects once Trilium is not found", async () => {
@@ -195,15 +212,22 @@ describe("TriliumServerFacade", () => {
                 .rejects.toThrow(expect.objectContaining({ reason: "not-found" }));
         });
 
-        it("rejects while Trilium has a different protocol version", async () => {
+        it("rejects while Trilium has a different protocol version, naming the side to update", async () => {
             fetchMock.mockResolvedValue(handshake("0.9"));
             const facade = await createFacade();
 
             const call = facade.callService("GET", "notes-by-url/x");
             await expect(call).rejects.toBeInstanceOf(TriliumError);
-            await expect(call)
-                .rejects.toThrow(expect.objectContaining({ reason: "version-mismatch" }));
+            await expect(call).rejects.toThrow(expect.objectContaining({
+                reason: "version-mismatch",
+                message: expect.stringContaining("Update Trilium to the latest version.")
+            }));
             expect(fetchMock).toHaveBeenCalledTimes(1);
+
+            fetchMock.mockResolvedValue(handshake("2.0"));
+            await facade.triggerSearchForTrilium();
+            await expect(facade.callService("GET", "notes-by-url/x")).rejects.toThrow(
+                expect.objectContaining({ message: expect.stringContaining("Update the web clipper") }));
         });
     });
 

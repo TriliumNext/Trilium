@@ -25,10 +25,10 @@ export default defineConfig({
             // `entrypoints/…/index.ts` to another project of the monorepo.
             reporter: [ "text", [ "lcov", { projectRoot: join(import.meta.dirname, "../..") } ] ],
             thresholds: {
-                lines: 95,
-                statements: 95,
-                functions: 95,
-                branches: 90
+                lines: 100,
+                statements: 100,
+                functions: 100,
+                branches: 100
             }
         }
     }

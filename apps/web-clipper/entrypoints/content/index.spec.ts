@@ -88,9 +88,12 @@ describe("content script", () => {
 
         it("falls back to the document title and fails without a selection", async () => {
             document.head.innerHTML = "";
-            document.title = " Fallback ";
             document.body.innerHTML = "<p id=\"p\">Text</p>";
             selectRange("p", "p");
+            expect(document.getElementsByTagName("title")).toHaveLength(0);
+            expect(await send({ name: "trilium-save-selection" })).toMatchObject({ title: "" });
+
+            document.title = " Fallback ";
             expect(await send({ name: "trilium-save-selection" }))
                 .toMatchObject({ title: "Fallback" });
 
