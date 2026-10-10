@@ -12,6 +12,10 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import RelationMapApi, { type ClientRelation } from "./api";
 
+/**
+ * Returns the handler of a box's context menu: the link's own items, and on a map that can be
+ * edited, renaming the note, removing it from the map and its color.
+ */
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi | null>, isReadOnly: boolean) {
     return (e: MouseEvent) => {
         if (!note) return;
@@ -20,7 +24,7 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
         contextMenu.show({
             x: e.pageX,
             y: e.pageY,
-            items: [
+            items: isReadOnly ? link_context_menu.getItems(e) : [
                 ...link_context_menu.getItems(e),
                 { kind: "separator" },
                 {
@@ -47,10 +51,8 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
                     uiIcon: "bx bx-trash",
                     handler: () => confirmRemoveFromMap(note, mapApiRef)
                 },
-                ...(isReadOnly ? [] : [
-                    { kind: "separator" as const },
-                    { kind: "custom" as const, componentFn: () => NoteColorPicker({ note }) }
-                ]),
+                { kind: "separator" },
+                { kind: "custom", componentFn: () => NoteColorPicker({ note }) }
             ],
             selectMenuItemHandler({ command }) {
                 // Pass the events to the link context menu
@@ -97,9 +99,11 @@ export function showCanvasContextMenu(event: MouseEvent, { onPaste, onAddNote }:
 
 /**
  * Shows the context menu of a relation, which renames or removes it. `askRelationName` asks for the
- * new name next to the relation.
+ * new name next to the relation. A read-only map has nothing to offer, and leaves the event alone.
  */
-export function showRelationContextMenu(event: MouseEvent, relation: ClientRelation, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: (defaultValue: string) => Promise<string | null>) {
+export function showRelationContextMenu(event: MouseEvent, relation: ClientRelation, mapApiRef: RefObject<RelationMapApi | null>, askRelationName: (defaultValue: string) => Promise<string | null>, isReadOnly: boolean) {
+    if (isReadOnly) return;
+
     event.preventDefault();
     event.stopPropagation();
 

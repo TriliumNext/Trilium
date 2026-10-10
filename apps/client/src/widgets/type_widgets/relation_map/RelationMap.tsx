@@ -142,8 +142,8 @@ export default function RelationMap({ note, noteContext, ntxId, onOpenNote }: Re
 
     const onRelationContextMenu = useCallback((relation: ClientRelation, e: MouseEvent) => {
         const anchor = () => containerRef.current?.querySelector(`[data-connection-id="${CSS.escape(relation.attributeId)}"]`);
-        showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue));
-    }, [ relationNamePrompt.ask ]);
+        showRelationContextMenu(e, relation, mapApiRef, (defaultValue) => relationNamePrompt.ask(anchor, defaultValue), isReadOnly);
+    }, [ relationNamePrompt.ask, isReadOnly ]);
 
     const onCanvasContextMenu = useCallback((e: MouseEvent) => {
         const isOnItem = e.target instanceof Element && e.target.closest(PAN_EXCLUDED.map((name) => `.${name}`).join(","));
@@ -194,6 +194,7 @@ export default function RelationMap({ note, noteContext, ntxId, onOpenNote }: Re
                                 dropTarget={entry.noteId === pending?.targetNoteId}
                                 isReadOnly={isReadOnly}
                                 onPointerDown={(e) => {
+                                    if (isReadOnly) return;
                                     if (e.target instanceof Element && e.target.closest(".endpoint")) {
                                         startDrawing(e, entry.noteId);
                                     } else {

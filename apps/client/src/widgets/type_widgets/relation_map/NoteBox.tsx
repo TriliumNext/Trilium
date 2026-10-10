@@ -68,7 +68,7 @@ export function NoteBox({ noteId, x, y, mapApiRef, selected, highlighted, dropTa
         >
             <span className={clsx("note-box-icon", icon)} />
             <span className="note-box-title">{title}</span>
-            <div className="endpoint" title={t("relation_map.start_dragging_relations")} />
+            {!isReadOnly && <div className="endpoint" title={t("relation_map.start_dragging_relations")} />}
         </div>
     );
 }
