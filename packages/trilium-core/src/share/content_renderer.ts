@@ -488,7 +488,6 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
         renderMarkdown(result, note);
     } else if (note.type === "code") {
         renderCode(result, note.mime);
-        hostNoteView(result, note);
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
         hostNoteView(result, note);
