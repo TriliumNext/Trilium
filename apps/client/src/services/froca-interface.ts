@@ -53,6 +53,8 @@ export interface FrocaSource {
     searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
     /** What is wrong with the search string, read without running it. */
     lintSearch(searchString: string): Promise<SearchLintResponse>;
+    /** The names of the attributes of `type` that contain `query`, to complete one with. */
+    getAttributeNames(type: "label" | "relation", query: string): Promise<string[]>;
     /** The notes and the links of the note map of `mapRootNoteId`, as a tree or as its relations. */
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     /** The relations the relation map note `relationMapNoteId` draws between the notes `noteIds`. */
@@ -84,6 +86,7 @@ export interface Froca {
     searchNoteIds(query: string, ancestorNoteId: string): Promise<string[]>;
     searchInSubtree(query: string, ancestorNoteId: string): Promise<SearchWithTokensResponse>;
     lintSearch(searchString: string): Promise<SearchLintResponse>;
+    getAttributeNames(type: "label" | "relation", query: string): Promise<string[]>;
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters): Promise<NoteMapPostResponse>;
     getRelationMap(relationMapNoteId: string, noteIds: string[]): Promise<RelationMapPostResponse>;
     getScriptBundle(noteId: string): Promise<Bundle | undefined>;

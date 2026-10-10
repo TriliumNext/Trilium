@@ -5,6 +5,7 @@ import { t } from "i18next";
 import becca from "../becca/becca.js";
 import { buildLinkMap, buildTreeMap } from "../routes/api/note_map.js";
 import { buildRelationMap } from "../routes/api/relation-map.js";
+import attributeService from "../services/attributes.js";
 import { getCrypto } from "../services/encryption/crypto.js";
 import scriptService from "../services/script.js";
 import searchService from "../services/search/services/search.js";
@@ -97,6 +98,7 @@ const HANDLERS: Record<ShareRoutePath, (req: ShareRequest) => ShareReply> = {
     "/share/api/tree": loadTree,
     "/share/api/search/lint": lintSearch,
     "/share/api/search": searchInSubtree,
+    "/share/api/attribute-names": getAttributeNames,
     "/share/api/note-map/:noteId/:mapType": getNoteMap,
     "/share/api/relation-map/:noteId": getRelationMap,
     "/share/api/script/bundle/:noteId": getScriptBundle,
@@ -410,6 +412,29 @@ function searchInSubtree(req: ShareRequest): ShareReply {
         highlightedTokens: searchContext.getHighlightedTokenInfos(),
         error: searchContext.getError()
     });
+}
+
+/**
+ * Completes an attribute name for the search editor from the attributes of the notes a visitor can
+ * read, and the built-in names. The names in the rest of the database are none of a visitor's
+ * business.
+ */
+function getAttributeNames(req: ShareRequest): ShareReply {
+    const { type, query } = req.query;
+    if ((type !== "label" && type !== "relation") || typeof query !== "string") {
+        return jsonReply(400, { message: "'type' and 'query' parameters are mandatory." });
+    }
+
+    const nameLike = query.toLowerCase();
+    const names = new Set<string>();
+    for (const attribute of Object.values(shaca.attributes)) {
+        const { note } = attribute;
+        if (attribute.type === type && attribute.name.toLowerCase().includes(nameLike)
+            && !note.isProtected && hasCredentialAccess(note, req)) {
+            names.add(attribute.name);
+        }
+    }
+    return jsonReply(200, attributeService.completeAttributeNames([ ...names ], type, query));
 }
 
 /** Reads a search string without running it, for the search editor's own checks. */

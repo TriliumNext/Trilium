@@ -415,6 +415,10 @@ class FrocaImpl implements Froca {
         return this.source.lintSearch(searchString);
     }
 
+    getAttributeNames(type: "label" | "relation", query: string) {
+        return this.source.getAttributeNames(type, query);
+    }
+
     getNoteMap(mapRootNoteId: string, mapType: "tree" | "link", filters: NoteMapFilters) {
         return this.source.getNoteMap(mapRootNoteId, mapType, filters);
     }
@@ -476,6 +480,8 @@ const SERVER_SOURCE: FrocaSource = {
         `search?searchString=${encodeURIComponent(query)}`
         + `&ancestorNoteId=${encodeURIComponent(ancestorNoteId)}&includeTokens=true`),
     lintSearch: (searchString) => server.post<SearchLintResponse>("search/lint", { searchString }),
+    getAttributeNames: (type, query) =>
+        server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(query)}`),
     getNoteMap: (mapRootNoteId, mapType, filters) =>
         server.post<NoteMapPostResponse>(`note-map/${mapRootNoteId}/${mapType}`, filters),
     getRelationMap: (relationMapNoteId, noteIds) =>

@@ -185,6 +185,18 @@ describe("attributes service", () => {
         });
     });
 
+    describe("completeAttributeNames", () => {
+        it("adds the matching built-in names, drops the internal links and lists prefix matches first", () => {
+            expect(attributeService.completeAttributeNames([ "myShareNote", "shareAlias" ], "label", "SHARE"))
+                .toEqual(expect.arrayContaining([ "shareAlias", "shareRoot", "myShareNote" ]));
+            const names = attributeService.completeAttributeNames([ "myShareNote" ], "label", "share");
+            expect(names.indexOf("myShareNote")).toBe(names.length - 1);
+            expect(names.filter((name) => name === "shareAlias")).toHaveLength(1);
+            expect(attributeService.completeAttributeNames([ "internalLink", "zzLink" ], "relation", "zzlink"))
+                .toEqual([ "zzLink" ]);
+        });
+    });
+
     describe("getAttributeNames (real DB + built-ins)", () => {
         it("returns built-in names matching the search, sorted with prefix matches first", () => {
             const names = getAttributeNames("label", "share");

@@ -5,6 +5,7 @@ import { getCrypto } from "../services/encryption/crypto.js";
 import SearchResult from "../services/search/search_result.js";
 import searchService from "../services/search/services/search.js";
 import { encodeBase64, encodeUtf8 } from "../services/utils/binary.js";
+import { buildNote } from "../test/becca_easy_mocking.js";
 import { buildShareNote } from "../test/shaca_mocking.js";
 import {
     getShareRoute, getShareRoutes, handleShareRequest, type ShareReply, type ShareRequest
@@ -513,6 +514,32 @@ describe("share handlers", () => {
         expect(filter({ ancestorNoteId: "board" }).status).toBe(400);
         expect(filter({ searchString: "seen" }).status).toBe(400);
         expect(filter({ searchString: "seen", ancestorNoteId: "missing" }).status).toBe(404);
+    });
+
+    it("completes attribute names only from the notes the caller can read", () => {
+        buildShareTree([
+            { "id": "open", "title": "Open", "content": "", "#projectPhase": "", "~projectOwner": "open" },
+            { "id": "guarded", "title": "Guarded", "content": "", "#projectBudget": "",
+                "#shareCredentials": "root:hunter2" },
+            { "id": "secret", "title": "Secret", "content": "", "#projectSecret": "", "isProtected": true }
+        ]);
+        const names = (query: ShareRequest["query"], authorization?: string) => {
+            const reply = request("/share/api/attribute-names",
+                { query, headers: authorization ? { authorization } : {} });
+            return reply.status === 200 ? JSON.parse(String(reply.body)) as string[] : reply.status;
+        };
+
+        // A note the share does not hold names nothing, whatever the database holds.
+        buildNote({ id: "unshared", title: "Unshared", "#projectPayroll": "" });
+        expect(names({ type: "label", query: "PROJECT" })).toEqual([ "projectPhase" ]);
+        expect(names({ type: "label", query: "project" }, `Basic ${encodeBase64("root:hunter2")}`))
+            .toEqual([ "projectBudget", "projectPhase" ]);
+        expect(names({ type: "relation", query: "project" })).toEqual([ "projectOwner" ]);
+        // The built-in names are the app's own, so a visitor is offered them too.
+        expect(names({ type: "label", query: "shareAlias" })).toEqual([ "shareAlias" ]);
+
+        expect(names({ type: "attribute", query: "project" })).toBe(400);
+        expect(names({ type: "label" })).toBe(400);
     });
 
     it("reads a search string without running it, answering its error", () => {

@@ -22,6 +22,7 @@ export const SHARE_ROUTE_PATHS = [
     "/share/api/tree",
     "/share/api/search/lint",
     "/share/api/search",
+    "/share/api/attribute-names",
     "/share/api/note-map/:noteId/:mapType",
     "/share/api/relation-map/:noteId",
     "/share/api/script/bundle/:noteId",
