@@ -140,6 +140,16 @@ describe("FormatPainterEditing", () => {
             expect(data).not.toContain("italic");
         });
 
+        it("clears formatting that only part of the target carries", () => {
+            copyCommand().value = { italic: true };
+
+            // Clearing `bold` merges the three text nodes into one.
+            setModelData(editor.model, "<paragraph>[f<$text bold=\"true\">o</$text>o]</paragraph>");
+            pasteCommand().execute();
+
+            expect(model()).toBe("<paragraph><$text italic=\"true\">foo</$text></paragraph>");
+        });
+
         it("applies stored formatting as selection attributes at a collapsed caret, clearing existing ones", () => {
             copyCommand().value = { bold: true };
 
