@@ -491,10 +491,10 @@ export function getContent(note: SNote | BNote, options: ShareRenderOptions = {}
     } else if (note.type === "mermaid") {
         renderMermaid(result, note);
         hostNoteView(result, note);
-    } else if (note.type === "image") {
+    } else if (note.type === "image" || note.type === "canvas") {
         renderImage(result, note);
         hostNoteView(result, note);
-    } else if (["canvas", "mindMap"].includes(note.type)) {
+    } else if (note.type === "mindMap") {
         renderImage(result, note);
     } else if (note.type === "file") {
         renderFile(note, result);

@@ -1692,15 +1692,15 @@ describe("content_renderer pages", () => {
         expect(auto.classList.contains("hljs")).toBe(false);
         expect(render({ type: "code", mime: "text/x-markdown", content: "  " }).isEmpty).toBe(true);
 
-        for (const type of [ "canvas", "mindMap" ]) {
-            expect(render({ id: `${type}Note`, type, title: "A picture", content: "" }).content)
-                .toMatch(new RegExp(`^<img src="api/images/${type}Note/A%20picture\\?`));
+        expect(render({ id: "mindMapNote", type: "mindMap", title: "A picture", content: "" }).content)
+            .toMatch(/^<img src="api\/images\/mindMapNote\/A%20picture\?/);
+        for (const type of [ "image", "canvas" ]) {
+            const image = render({ id: `${type}Note`, type, title: "A picture", content: "" });
+            expect(image.isAppView).toBe(true);
+            expect(parse(String(image.content))
+                .querySelector(`.share-note-view[data-note-id=${type}Note] > img`)?.getAttribute("src"))
+                .toMatch(new RegExp(`^api/images/${type}Note/A%20picture\\?`));
         }
-        const image = render({ id: "imageNote", type: "image", title: "A picture", content: "" });
-        expect(image.isAppView).toBe(true);
-        expect(parse(String(image.content))
-            .querySelector(".share-note-view[data-note-id=imageNote] > img")?.getAttribute("src"))
-            .toMatch(/^api\/images\/imageNote\/A%20picture\?/);
         const file = (id: string, mime: string) =>
             render({ id, type: "file", mime, content: "" }).content;
         expect(file("pdfNote", "application/pdf"))
