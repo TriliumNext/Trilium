@@ -2,15 +2,13 @@ import "@/assets/theme.css";
 import "./popup.css";
 
 import type { IconData, IconDefinition } from "@boxicons/js";
-import ArrowLeft from "@boxicons/js/icons/ArrowLeft";
 import Article from "@boxicons/js/icons/Article";
+import Bookmark from "@boxicons/js/icons/Bookmark";
 import Cog from "@boxicons/js/icons/Cog";
 import Crop from "@boxicons/js/icons/Crop";
-import FileX from "@boxicons/js/icons/FileX";
 import Globe from "@boxicons/js/icons/Globe";
 import HelpCircle from "@boxicons/js/icons/HelpCircle";
 import Highlight from "@boxicons/js/icons/Highlight";
-import Link from "@boxicons/js/icons/Link";
 import Lock from "@boxicons/js/icons/Lock";
 import RefreshCw from "@boxicons/js/icons/RefreshCw";
 import Screenshot from "@boxicons/js/icons/Screenshot";
@@ -59,7 +57,16 @@ interface TabContent {
     page: PageState;
     /** `null` when nothing is selected, or the page is out of reach. */
     selection: SelectedContent | null;
+    /** The tab's own title and address, which a note clip saves. */
+    title?: string;
+    url?: string;
 }
+
+/**
+ * What the card saves: the selection, the readable page (`clipType: "page"`), or a note about the
+ * page with a link to it (`clipType: "note"`), which the popup calls a bookmark.
+ */
+type ClipMode = "selection" | "page" | "note";
 
 const PREVIEW_STYLE = `
     :root { color-scheme: light dark; }
@@ -70,6 +77,15 @@ const PREVIEW_STYLE = `
     a { color: light-dark(#0076af, #95c3d9); text-decoration: none; pointer-events: none; }
 `;
 
+const MODE_LABELS: Record<ClipMode, string> = { selection: "Selection", page: "Page", note: "Bookmark" };
+
+/** The save button of each mode, with the command whose shortcut it shows, or its own shortcut. */
+const SAVE_BUTTONS: Record<ClipMode, { icon: IconDefinition, label: string, command: string, shortcut?: string }> = {
+    selection: { icon: Highlight, label: "Save selection", command: "saveSelection" },
+    page: { icon: Article, label: "Save page to Trilium", command: "saveWholePage" },
+    note: { icon: Bookmark, label: "Save bookmark", command: "", shortcut: "Ctrl+Enter" }
+};
+
 const root = document.getElementById("root");
 if (root) {
     render(<Popup />, root);
@@ -78,7 +94,6 @@ if (root) {
 export function Popup() {
     const [ searchStatus, setSearchStatus ] = useState<TriliumSearchStatus>();
     const [ clippedNoteId, setClippedNoteId ] = useState<string | null>(null);
-    const [ isWritingNote, setIsWritingNote ] = useState(false);
     const [ shortcuts, setShortcuts ] = useState<Shortcuts>({});
 
     useEffect(() => {
@@ -106,17 +121,11 @@ export function Popup() {
     const isMismatch = searchStatus?.status === "version-mismatch";
 
     let body: ComponentChildren;
-    if (isWritingNote) {
-        body = <LinkWithNoteForm onBack={() => setIsWritingNote(false)} />;
-    } else if (searchStatus?.status === "not-found") {
+    if (searchStatus?.status === "not-found") {
         body = <TriliumNotFound />;
     } else {
         body = (
-            <CaptureActions
-                disabled={!!searchStatus && !isConnected(searchStatus)}
-                shortcuts={shortcuts}
-                onWriteNote={() => setIsWritingNote(true)}
-            />
+            <CaptureActions disabled={!!searchStatus && !isConnected(searchStatus)} shortcuts={shortcuts} />
         );
     }
 
@@ -174,11 +183,7 @@ export function Popup() {
     );
 }
 
-function CaptureActions({ disabled, shortcuts, onWriteNote }: {
-    disabled: boolean;
-    shortcuts: Shortcuts;
-    onWriteNote: () => void;
-}) {
+function CaptureActions({ disabled, shortcuts }: { disabled: boolean, shortcuts: Shortcuts }) {
     /** `undefined` while the page is read. */
     const [ tab, setTab ] = useState<TabContent>();
 
@@ -201,17 +206,8 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
                 {"The extension cannot access this page.\nIf it is a regular web page, reload it."}
             </EmptyState>
         );
-    } else if (tab?.page === "unreadable" && !tab.selection) {
-        main = <EmptyState icon={FileX}>This page has no article to save.</EmptyState>;
     } else {
-        main = (
-            <PagePreview
-                article={typeof tab?.page === "object" ? tab.page : undefined}
-                selection={tab?.selection ?? undefined}
-                disabled={disabled}
-                shortcuts={shortcuts}
-            />
-        );
+        main = <PagePreview tab={tab} disabled={disabled} shortcuts={shortcuts} />;
     }
 
     return (
@@ -228,10 +224,6 @@ function CaptureActions({ disabled, shortcuts, onWriteNote }: {
                     icon={Screenshot} label="Screenshot" name="Visible area screenshot"
                     disabledReason={pageDisabledReason}
                     onClick={() => sendAndClose("save-whole-screenshot")}
-                />
-                <ToolbarAction
-                    icon={Link} label="Note" name="Link with a note"
-                    disabledReason={disabledReason} onClick={onWriteNote}
                 />
                 <ToolbarAction
                     icon={Tabs} label="Tabs" name="All tabs in window"
@@ -279,38 +271,73 @@ function EmptyState({ icon, className, children }: {
 
 /**
  * What the popup saves from the page, with its title editable, and the button that saves it: the
- * selection when there is one, otherwise the readable page, with a switch between the two when the
- * page has both. The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed
+ * selection, the readable page, or a note about the page, with a switch between those the
+ * page offers. The page's HTML comes from an arbitrary website, so it is shown only in a sandboxed
  * frame.
  */
-function PagePreview({ article, selection, disabled, shortcuts }: {
-    /** `undefined` while the page is read, or when it has no article. */
-    article: ExtractedPage | undefined;
-    selection: SelectedContent | undefined;
+function PagePreview({ tab, disabled, shortcuts }: {
+    /** `undefined` while the page is read. */
+    tab: TabContent | undefined;
     disabled: boolean;
     shortcuts: Shortcuts;
 }) {
-    const [ mode, setMode ] = useState<"selection" | "page">("selection");
+    const [ chosenMode, setChosenMode ] = useState<ClipMode>();
     /** `undefined` until the user edits the title. */
     const [ title, setTitle ] = useState<string>();
+    const [ text, setText ] = useState("");
+    const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-    const clip = selection && (mode === "selection" || !article) ? selection : article;
-    const isSelection = !!clip && clip === selection;
-    const shownTitle = title ?? (article ?? selection)?.title ?? "";
+    const article = typeof tab?.page === "object" ? tab.page : undefined;
+    const selection = tab?.selection ?? undefined;
+    const modes = tab ? availableModes(article, selection) : [];
+    const mode = chosenMode && modes.includes(chosenMode) ? chosenMode : modes[0];
+    const clip = mode === "selection" ? selection : mode === "page" ? article : undefined;
+    const shownTitle = title ?? (article ?? selection)?.title ?? tab?.title ?? "";
 
-    function save(content: SelectedContent | ExtractedPage) {
+    useEffect(() => {
+        if (mode === "note") textAreaRef.current?.focus();
+    }, [ mode ]);
+
+    /** Keeps the popup open when the note could not be saved, so its text is not lost. */
+    async function saveNote() {
+        const content = text.trim();
+        const result = await sendMessage({
+            name: "save-link-with-note",
+            title: shownTitle.trim(),
+            content: content ? textToHtml(content) : ""
+        });
+        if (result) window.close();
+    }
+
+    function saveClip(content: SelectedContent) {
         const titled = { ...content, title: shownTitle.trim() || content.title };
-        void sendMessage(isSelection
+        void sendMessage(mode === "selection"
             ? { name: "save-selection", selection: titled }
             : { name: "save-whole-page", page: titled });
         window.close();
     }
 
-    const published = clip && !isSelection ? article?.labels.publishedDate : undefined;
+    function saveNoteOnCtrlEnter(e: KeyboardEvent) {
+        if (mode === "note" && e.key === "Enter" && e.ctrlKey) {
+            e.preventDefault();
+            void saveNote();
+        }
+    }
+
+    let onSave: (() => void) | undefined;
+    if (mode === "note") {
+        onSave = () => void saveNote();
+    } else if (clip) {
+        onSave = () => saveClip(clip);
+    }
+
+    const pageUrl = mode === "note" ? tab?.url : clip?.pageUrl;
+    const published = mode === "page" ? article?.labels.publishedDate : undefined;
+    const button = SAVE_BUTTONS[mode ?? "page"];
 
     return (
         <div className="page-preview">
-            {clip && (
+            {mode && (
                 <div className="page-heading">
                     <span className="page-icon"><Icon icon={Globe} /></span>
                     <div className="page-heading-text">
@@ -321,39 +348,67 @@ function PagePreview({ article, selection, disabled, shortcuts }: {
                             placeholder="Note title"
                             value={shownTitle}
                             onInput={(e) => setTitle(e.currentTarget.value)}
+                            onKeyDown={saveNoteOnCtrlEnter}
                         />
-                        <div className="page-meta">
-                            {new URL(clip.pageUrl).hostname}{published && ` · Published ${published}`}
-                        </div>
+                        {pageUrl && (
+                            <div className="page-meta">
+                                {new URL(pageUrl).hostname}{published && ` · Published ${published}`}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
-            {article && selection && (
+            {modes.length > 1 && (
                 <div className="clip-mode" role="group" aria-label="What to save">
-                    <button aria-pressed={mode === "selection"} onClick={() => setMode("selection")}>Selection</button>
-                    <button aria-pressed={mode === "page"} onClick={() => setMode("page")}>Whole page</button>
+                    {modes.map((option) => (
+                        <button key={option} aria-pressed={option === mode} onClick={() => setChosenMode(option)}>
+                            {MODE_LABELS[option]}
+                        </button>
+                    ))}
                 </div>
             )}
 
+            {mode === "note" && modes.length === 1 && (
+                <div className="clip-hint">This page has no article; save it as a bookmark.</div>
+            )}
+
             <div className="page-body">
-                {clip
-                    ? <iframe className="page-content" title="Preview of the page" sandbox="" srcDoc={previewDocument(clip)} />
-                    : <div className="page-preview-placeholder">Reading the page…</div>}
+                {mode === "note" && (
+                    <textarea
+                        ref={textAreaRef}
+                        className="note-text"
+                        value={text}
+                        placeholder="Add a note about this page"
+                        onInput={(e) => setText(e.currentTarget.value)}
+                        onKeyDown={saveNoteOnCtrlEnter}
+                    />
+                )}
+                {clip && <iframe className="page-content" title="Preview of the page" sandbox="" srcDoc={previewDocument(clip)} />}
+                {!mode && <div className="page-preview-placeholder">Reading the page…</div>}
             </div>
 
             <button
                 className="btn btn-primary primary-action"
-                disabled={disabled || !clip}
+                disabled={disabled || !mode}
                 title={disabled ? DISCONNECTED_TITLE : undefined}
-                onClick={clip ? () => save(clip) : undefined}
+                onClick={onSave}
             >
-                <Icon icon={isSelection ? Highlight : Article} />
-                <span className="action-label">{isSelection ? "Save selection" : "Save page to Trilium"}</span>
-                <Shortcut keys={isSelection ? shortcuts.saveSelection : shortcuts.saveWholePage} />
+                <Icon icon={button.icon} />
+                <span className="action-label">{button.label}</span>
+                <Shortcut keys={button.shortcut ?? shortcuts[button.command]} />
             </button>
         </div>
     );
+}
+
+/** The modes the page offers, the default first: the selection, then the article, then a note. */
+function availableModes(article: ExtractedPage | undefined, selection: SelectedContent | undefined): ClipMode[] {
+    const modes: ClipMode[] = [];
+    if (selection) modes.push("selection");
+    if (article) modes.push("page");
+    modes.push("note");
+    return modes;
 }
 
 /**
@@ -390,82 +445,6 @@ function TriliumNotFound() {
     );
 }
 
-function LinkWithNoteForm({ onBack }: { onBack: () => void }) {
-    const [ title, setTitle ] = useState("");
-    const [ pageUrl, setPageUrl ] = useState<string>();
-    const [ text, setText ] = useState("");
-    const textAreaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        textAreaRef.current?.focus();
-        void browser.tabs.query({ active: true, currentWindow: true }).then(([ tab ]) => {
-            setTitle(tab?.title ?? "");
-            setPageUrl(tab?.url);
-        });
-    }, []);
-
-    async function save() {
-        const content = text.trim();
-        const result = await sendMessage({
-            name: "save-link-with-note",
-            title: title.trim(),
-            content: content ? textToHtml(content) : ""
-        });
-
-        if (result) {
-            window.close();
-        }
-    }
-
-    function saveOnCtrlEnter(e: KeyboardEvent) {
-        if (e.key === "Enter" && e.ctrlKey) {
-            e.preventDefault();
-            void save();
-        }
-    }
-
-    return (
-        <div className="save-link-with-note">
-            <div className="view-header">
-                <button className="icon-action" title="Back" aria-label="Back" onClick={onBack}>
-                    <Icon icon={ArrowLeft} />
-                </button>
-                <h4>Link with a note</h4>
-            </div>
-
-            <div className="page-heading">
-                <span className="page-icon"><Icon icon={Globe} /></span>
-                <div className="page-heading-text">
-                    <input
-                        type="text"
-                        className="page-title"
-                        aria-label="Note title"
-                        placeholder="Note title"
-                        value={title}
-                        onInput={(e) => setTitle(e.currentTarget.value)}
-                        onKeyDown={saveOnCtrlEnter}
-                    />
-                    {pageUrl && <div className="page-meta">{new URL(pageUrl).hostname}</div>}
-                </div>
-            </div>
-
-            <textarea
-                ref={textAreaRef}
-                rows={5}
-                value={text}
-                placeholder="Your note about this page"
-                onInput={(e) => setText(e.currentTarget.value)}
-                onKeyDown={saveOnCtrlEnter}
-            />
-
-            <button type="submit" className="btn btn-primary primary-action" onClick={save}>
-                <span className="action-label">Save</span>
-                <Shortcut keys="Ctrl+Enter" />
-            </button>
-        </div>
-    );
-}
-
 /** The state of the connection to Trilium: a kind for its color, and its description. */
 function describeStatus(status: TriliumSearchStatus | undefined) {
     switch (status?.status) {
@@ -489,7 +468,7 @@ async function readActiveTab(): Promise<TabContent> {
     if (tab?.id === undefined) return { page: "inaccessible", selection: null };
 
     const [ page, selection ] = await Promise.all([ extractPage(tab.id), readSelection(tab.id) ]);
-    return { page, selection };
+    return { page, selection, title: tab.title, url: tab.url };
 }
 
 /**

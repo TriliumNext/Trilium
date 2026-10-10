@@ -68,7 +68,7 @@ describe("popup", () => {
     it("asks for the connection status and shows it in the footer", async () => {
         expect(sendMessage).toHaveBeenCalledWith({ name: "send-trilium-search-status" });
         expect(status()).toEqual({ dot: "status-dot status-dot-pending", text: "Looking for Trilium…" });
-        expect(captureButtons()).toHaveLength(5);
+        expect(captureButtons()).toHaveLength(4);
         expect(container.querySelector(".popup-header")).toBeNull();
         expect([ ...container.querySelectorAll(".connection button") ].map((b) => b.getAttribute("aria-label")))
             .toEqual([ "Check the connection again", "Options", "Help" ]);
@@ -185,7 +185,6 @@ describe("popup", () => {
         expect(toolbar()).toEqual([
             { label: "Crop", title: "Crop screenshot (Ctrl+Shift+E)" },
             { label: "Screenshot", title: "Visible area screenshot" },
-            { label: "Note", title: "Link with a note" },
             { label: "Tabs", title: "All tabs in window" }
         ]);
         expect(container.querySelectorAll(".toolbar-action kbd")).toHaveLength(0);
@@ -199,7 +198,8 @@ describe("popup", () => {
         expect(tabsQuery).toHaveBeenCalledWith({ active: true, currentWindow: true });
         expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-page" });
 
-        expect(cardParts()).toEqual([ "page-heading", "page-body", "btn btn-primary primary-action" ]);
+        expect(cardParts()).toEqual([ "page-heading", "clip-mode", "page-body", "btn btn-primary primary-action" ]);
+        expect(modes()).toEqual([ [ "Page", "true" ], [ "Bookmark", "false" ] ]);
         const heading = container.querySelector(".page-heading");
         expect(heading).not.toBeNull();
         expect(heading?.querySelector(".page-icon svg path")).not.toBeNull();
@@ -243,11 +243,15 @@ describe("popup", () => {
         expect(container.querySelector(".page-body iframe")).not.toBeNull();
     });
 
-    it("keeps every other action on a page with no article", async () => {
+    it("opens a page with no article on a bookmark, and keeps every other action", async () => {
         tabsSendMessage.mockResolvedValueOnce(undefined);
         await rerender();
-        expect(unavailable()).toBe("This page has no article to save.");
-        expect(container.querySelector(".page-preview")).toBeNull();
+        expect(container.querySelector(".no-items")).toBeNull();
+        expect(container.querySelector(".clip-mode")).toBeNull();
+        expect(container.querySelector(".clip-hint")?.textContent).toBe("This page has no article; save it as a bookmark.");
+        expect(document.activeElement).toBe(container.querySelector(".page-body textarea"));
+        expect(container.querySelector(".page-meta")).toBeNull();
+        expect(button("Save bookmark")?.disabled).toBe(false);
         expect(captureButtons().map((action) => action.disabled)).toEqual([ false, false, false, false ]);
     });
 
@@ -260,10 +264,9 @@ describe("popup", () => {
             "The extension cannot access this page.\nIf it is a regular web page, reload it."
         );
         expect(container.querySelector(".page-preview")).toBeNull();
-        expect(captureButtons().map((action) => action.disabled)).toEqual([ true, true, false, false ]);
+        expect(captureButtons().map((action) => action.disabled)).toEqual([ true, true, false ]);
         expect(button("Crop screenshot")?.title).toBe(UNREACHABLE);
         expect(button("Visible area screenshot")?.title).toBe(UNREACHABLE);
-        expect(button("Link with a note")?.title).toBe("Link with a note");
 
         tabsQuery.mockResolvedValueOnce([ {} ]);
         await rerender();
@@ -275,13 +278,13 @@ describe("popup", () => {
         selection = SELECTION;
         await rerender();
         expect(tabsSendMessage).toHaveBeenCalledWith(7, { name: "trilium-save-selection" });
-        expect(modes()).toEqual([ [ "Selection", "true" ], [ "Whole page", "false" ] ]);
+        expect(modes()).toEqual([ [ "Selection", "true" ], [ "Page", "false" ], [ "Bookmark", "false" ] ]);
         expect(frameDocument()).toBe(previewDocument(SELECTION));
         expect(shortcutOf("Save selection").keys).toEqual([ "Ctrl", "Shift", "S" ]);
         expect(container.querySelector(".page-meta")?.textContent).toBe("example.com");
 
-        await click("Whole page");
-        expect(modes()).toEqual([ [ "Selection", "false" ], [ "Whole page", "true" ] ]);
+        await click("Page");
+        expect(modes()).toEqual([ [ "Selection", "false" ], [ "Page", "true" ], [ "Bookmark", "false" ] ]);
         expect(frameDocument()).toBe(previewDocument(PAGE));
         expect(container.querySelector(".page-meta")?.textContent).toBe("example.com · Published 2024-05-01");
         await click("Save page to Trilium");
@@ -299,7 +302,7 @@ describe("popup", () => {
         tabsSendMessage.mockResolvedValueOnce(undefined);
         await rerender();
         expect(container.querySelector(".no-items")).toBeNull();
-        expect(container.querySelector(".clip-mode")).toBeNull();
+        expect(modes()).toEqual([ [ "Selection", "true" ], [ "Bookmark", "false" ] ]);
         expect(frameDocument()).toBe(previewDocument(SELECTION));
         expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("Page title");
         await click("Save selection");
@@ -307,12 +310,12 @@ describe("popup", () => {
 
         selection = { ...SELECTION, content: " <p> </p>", images: [] };
         await rerender();
-        expect(container.querySelector(".clip-mode")).toBeNull();
+        expect(modes()).toEqual([ [ "Page", "true" ], [ "Bookmark", "false" ] ]);
         expect(frameDocument()).toBe(previewDocument(PAGE));
 
         selection = { ...SELECTION, content: `<img src="i2">` };
         await rerender();
-        expect(modes()).toHaveLength(2);
+        expect(modes()).toHaveLength(3);
         expect(frameDocument()).toBe(previewDocument(selection as typeof SELECTION));
     });
 
@@ -326,42 +329,45 @@ describe("popup", () => {
         expect(alertMock).toHaveBeenCalledWith("Calling browser runtime failed. Refreshing page might help.");
     });
 
-    it("writes a link note in a view of its own, and goes back to the actions", async () => {
-        expect(container.querySelector("textarea")).toBeNull();
+    it("writes a bookmark in the card, keeping the note across modes", async () => {
         tabsQuery.mockResolvedValueOnce([ { id: 7, title: "A page", url: "https://example.com/post" } ]);
-        await click("Link with a note");
-        await flush();
-        const textArea = container.querySelector("textarea");
+        await rerender();
+        expect(container.querySelector("textarea")).toBeNull();
+
+        await click("Bookmark");
+        expect(modes()).toEqual([ [ "Page", "false" ], [ "Bookmark", "true" ] ]);
+        const textArea = container.querySelector(".page-body textarea");
         expect(textArea).not.toBeNull();
         expect(document.activeElement).toBe(textArea);
-        expect(textArea?.placeholder).toBe("Your note about this page");
-        expect(captureButtons()).toHaveLength(0);
-        expect(container.querySelector(".view-header h4")?.textContent).toBe("Link with a note");
-        const heading = container.querySelector(".save-link-with-note .page-heading");
-        expect(heading).not.toBeNull();
-        expect(heading?.querySelector(".page-icon svg path")).not.toBeNull();
-        expect(heading?.querySelector<HTMLInputElement>(".page-title")?.value).toBe("A page");
-        expect(heading?.querySelector(".page-meta")?.textContent).toBe("example.com");
-        expect(container.querySelector("input[type=checkbox]")).toBeNull();
-        expect(shortcutOf("Save")).toEqual({ text: "Ctrl+Enter", keys: [ "Ctrl", "Enter" ] });
+        expect(textArea?.getAttribute("placeholder")).toBe("Add a note about this page");
+        expect(container.querySelector(".page-body iframe")).toBeNull();
+        expect(container.querySelector<HTMLInputElement>(".page-title")?.value).toBe("An article");
+        expect(container.querySelector(".page-meta")?.textContent).toBe("example.com");
+        expect(shortcutOf("Save bookmark")).toEqual({ text: "Ctrl+Enter", keys: [ "Ctrl", "Enter" ] });
 
-        await click("Back");
+        await type(".page-body textarea", "Worth a read");
+        await click("Page");
         expect(container.querySelector("textarea")).toBeNull();
-        expect(captureButtons()).toHaveLength(5);
+        await click("Bookmark");
+        expect(container.querySelector<HTMLTextAreaElement>(".page-body textarea")?.value).toBe("Worth a read");
         expect(closeWindow).not.toHaveBeenCalled();
+
+        sendMessage.mockResolvedValueOnce(true);
+        await click("Save bookmark");
+        expect(sendMessage).toHaveBeenLastCalledWith({
+            name: "save-link-with-note",
+            title: "An article",
+            content: "<p>Worth a read</p>"
+        });
+        expect(closeWindow).toHaveBeenCalledOnce();
     });
 
     it("saves the title and the text as they are, on Ctrl+Enter from either field", async () => {
-        tabsQuery.mockResolvedValueOnce([ { id: 7, title: "A page", url: "https://example.com/post" } ]);
-        await click("Link with a note");
-        await flush();
-        await type(".save-link-with-note .page-title", "  Read later. Soon ");
-        await type(".save-link-with-note textarea", " It has <b>tips</b>\nand more ");
+        await click("Bookmark");
+        await type(".page-title", "  Read later. Soon ");
+        await type(".page-body textarea", " It has <b>tips</b>\nand more ");
         sendMessage.mockResolvedValueOnce(true);
-        await act(async () => {
-            container.querySelector(".save-link-with-note textarea")
-                ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
-        });
+        await ctrlEnter(".page-body textarea");
         expect(sendMessage).toHaveBeenCalledWith({
             name: "save-link-with-note",
             title: "Read later. Soon",
@@ -370,26 +376,25 @@ describe("popup", () => {
         expect(closeWindow).toHaveBeenCalledOnce();
     });
 
-    it("keeps the note open when it could not be saved, and leaves an empty title to the page", async () => {
-        tabsQuery.mockResolvedValueOnce([ {} ]);
-        await click("Link with a note");
-        await flush();
-        const title = container.querySelector<HTMLInputElement>(".save-link-with-note .page-title");
-        expect(title?.value).toBe("");
-        expect(container.querySelector(".save-link-with-note .page-meta")).toBeNull();
-
+    it("keeps the bookmark open when it could not be saved, and leaves an empty title to the page", async () => {
+        await click("Bookmark");
+        await type(".page-title", "");
+        const title = container.querySelector(".page-title");
         await act(async () => {
             title?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
         });
         expect(sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({ name: "save-link-with-note" }));
 
         sendMessage.mockResolvedValueOnce(undefined);
-        await act(async () => {
-            title?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
-        });
+        await ctrlEnter(".page-title");
         expect(sendMessage).toHaveBeenCalledWith({ name: "save-link-with-note", title: "", content: "" });
-        expect(container.querySelector(".save-link-with-note")).not.toBeNull();
+        expect(container.querySelector(".page-body textarea")).not.toBeNull();
         expect(closeWindow).not.toHaveBeenCalled();
+
+        const calls = sendMessage.mock.calls.length;
+        await click("Page");
+        await ctrlEnter(".page-title");
+        expect(sendMessage).toHaveBeenCalledTimes(calls);
     });
 
     it("renders itself into the page's root element", async () => {
@@ -443,7 +448,7 @@ describe("icons", () => {
         await act(() => render(<Popup />, container));
 
         const icons = container.querySelectorAll("button > svg.icon");
-        expect(icons).toHaveLength(8);
+        expect(icons).toHaveLength(7);
         for (const icon of icons) {
             expect(icon.getAttribute("aria-hidden")).toBe("true");
             expect(icon.getAttribute("viewBox")).toBe("0 0 24 24");
@@ -517,6 +522,14 @@ function unavailable() {
     return empty?.textContent;
 }
 
+async function ctrlEnter(selector: string) {
+    const field = container.querySelector(selector);
+    expect(field, selector).not.toBeNull();
+    await act(async () => {
+        field?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
+    });
+}
+
 function placeholder() {
     return container.querySelector(".page-body > .page-preview-placeholder")?.textContent;
 }
@@ -563,7 +576,8 @@ function cardParts() {
 }
 
 function captureButtons() {
-    return [ ...container.querySelectorAll<HTMLButtonElement>(".capture-actions button") ];
+    return [ ...container.querySelectorAll<HTMLButtonElement>(".capture-actions button") ]
+        .filter((button) => !button.closest(".clip-mode"));
 }
 
 function status() {
