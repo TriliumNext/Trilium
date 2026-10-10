@@ -391,19 +391,36 @@ function TriliumNotFound() {
 }
 
 function LinkWithNoteForm({ onBack }: { onBack: () => void }) {
+    const [ title, setTitle ] = useState("");
+    const [ pageUrl, setPageUrl ] = useState<string>();
     const [ text, setText ] = useState("");
-    const [ keepTitle, setKeepTitle ] = useState(false);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-    useEffect(() => textAreaRef.current?.focus(), []);
+    useEffect(() => {
+        textAreaRef.current?.focus();
+        void browser.tabs.query({ active: true, currentWindow: true }).then(([ tab ]) => {
+            setTitle(tab?.title ?? "");
+            setPageUrl(tab?.url);
+        });
+    }, []);
 
     async function save() {
-        const { title, content } = parseLinkNote(text, keepTitle);
-        const result = await sendMessage({ name: "save-link-with-note", title, content: textToHtml(content) });
+        const content = text.trim();
+        const result = await sendMessage({
+            name: "save-link-with-note",
+            title: title.trim(),
+            content: content ? textToHtml(content) : ""
+        });
 
         if (result) {
-            setText("");
             window.close();
+        }
+    }
+
+    function saveOnCtrlEnter(e: KeyboardEvent) {
+        if (e.key === "Enter" && e.ctrlKey) {
+            e.preventDefault();
+            void save();
         }
     }
 
@@ -416,30 +433,30 @@ function LinkWithNoteForm({ onBack }: { onBack: () => void }) {
                 <h4>Link with a note</h4>
             </div>
 
+            <div className="page-heading">
+                <span className="page-icon"><Icon icon={Globe} /></span>
+                <div className="page-heading-text">
+                    <input
+                        type="text"
+                        className="page-title"
+                        aria-label="Note title"
+                        placeholder="Note title"
+                        value={title}
+                        onInput={(e) => setTitle(e.currentTarget.value)}
+                        onKeyDown={saveOnCtrlEnter}
+                    />
+                    {pageUrl && <div className="page-meta">{new URL(pageUrl).hostname}</div>}
+                </div>
+            </div>
+
             <textarea
                 ref={textAreaRef}
                 rows={5}
                 value={text}
-                placeholder={keepTitle
-                    ? "The note's text."
-                    : "The first sentence becomes the note's title, the rest its text."}
+                placeholder="Your note about this page"
                 onInput={(e) => setText(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.ctrlKey) {
-                        e.preventDefault();
-                        void save();
-                    }
-                }}
+                onKeyDown={saveOnCtrlEnter}
             />
-
-            <label className="tn-checkbox">
-                <input
-                    type="checkbox"
-                    checked={keepTitle}
-                    onChange={(e) => setKeepTitle(e.currentTarget.checked)}
-                />
-                {" "}Keep page title as note title
-            </label>
 
             <button type="submit" className="btn btn-primary primary-action" onClick={save}>
                 <span className="action-label">Save</span>
@@ -564,30 +581,6 @@ async function sendMessage(message: object) {
         console.log("Calling browser runtime failed:", e);
         alert("Calling browser runtime failed. Refreshing page might help.");
     }
-}
-
-/**
- * Splits the text of a link note into the note's title and content: the first sentence or line is
- * the title, unless the page title is kept, in which case all of the text is content.
- */
-export function parseLinkNote(text: string, keepTitle: boolean) {
-    const trimmed = text.trim();
-
-    if (!trimmed) {
-        return { title: "", content: "" };
-    }
-
-    if (keepTitle) {
-        return { title: "", content: trimmed };
-    }
-
-    const match = /^(.*?)([.?!]\s|\n)/.exec(trimmed);
-    if (!match) {
-        return { title: trimmed, content: "" };
-    }
-
-    const title = match[0].trim();
-    return { title, content: trimmed.substring(title.length).trim() };
 }
 
 /** Escapes plain text as HTML, with one paragraph per line. */

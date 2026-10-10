@@ -6,7 +6,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 
-import { basicIcon, parseLinkNote, Popup, previewDocument, shortcutsByCommand, textToHtml } from "./main";
+import { basicIcon, Popup, previewDocument, shortcutsByCommand, textToHtml } from "./main";
 
 const DISCONNECTED = "This action can't be performed without active connection to Trilium.";
 const UNREACHABLE = "This action is not available on this page.";
@@ -27,7 +27,7 @@ const PAGE = {
     clipType: "page",
     labels: { publishedDate: "2024-05-01" }
 };
-const tabsQuery = vi.fn(async (): Promise<{ id?: number }[]> => [ { id: 7 } ]);
+const tabsQuery = vi.fn(async (): Promise<{ id?: number, title?: string, url?: string }[]> => [ { id: 7 } ]);
 const SELECTION = {
     title: "Page title",
     content: `<p>A quote</p><img src="i2">`,
@@ -328,15 +328,22 @@ describe("popup", () => {
 
     it("writes a link note in a view of its own, and goes back to the actions", async () => {
         expect(container.querySelector("textarea")).toBeNull();
+        tabsQuery.mockResolvedValueOnce([ { id: 7, title: "A page", url: "https://example.com/post" } ]);
         await click("Link with a note");
+        await flush();
         const textArea = container.querySelector("textarea");
         expect(textArea).not.toBeNull();
         expect(document.activeElement).toBe(textArea);
+        expect(textArea?.placeholder).toBe("Your note about this page");
         expect(captureButtons()).toHaveLength(0);
         expect(container.querySelector(".view-header h4")?.textContent).toBe("Link with a note");
-        expect(textArea?.placeholder).toBe("The first sentence becomes the note's title, the rest its text.");
+        const heading = container.querySelector(".save-link-with-note .page-heading");
+        expect(heading).not.toBeNull();
+        expect(heading?.querySelector(".page-icon svg path")).not.toBeNull();
+        expect(heading?.querySelector<HTMLInputElement>(".page-title")?.value).toBe("A page");
+        expect(heading?.querySelector(".page-meta")?.textContent).toBe("example.com");
+        expect(container.querySelector("input[type=checkbox]")).toBeNull();
         expect(shortcutOf("Save")).toEqual({ text: "Ctrl+Enter", keys: [ "Ctrl", "Enter" ] });
-        expect(container.querySelector(".hint")).toBeNull();
 
         await click("Back");
         expect(container.querySelector("textarea")).toBeNull();
@@ -344,56 +351,44 @@ describe("popup", () => {
         expect(closeWindow).not.toHaveBeenCalled();
     });
 
-    it("saves a link with a note on Ctrl+Enter", async () => {
+    it("saves the title and the text as they are, on Ctrl+Enter from either field", async () => {
+        tabsQuery.mockResolvedValueOnce([ { id: 7, title: "A page", url: "https://example.com/post" } ]);
         await click("Link with a note");
-        const textArea = container.querySelector("textarea");
-
-        await act(() => {
-            if (!textArea) return;
-            textArea.value = "Read later. It has <b>tips</b>\nand more";
-            textArea.dispatchEvent(new Event("input", { bubbles: true }));
-        });
+        await flush();
+        await type(".save-link-with-note .page-title", "  Read later. Soon ");
+        await type(".save-link-with-note textarea", " It has <b>tips</b>\nand more ");
         sendMessage.mockResolvedValueOnce(true);
         await act(async () => {
-            textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
+            container.querySelector(".save-link-with-note textarea")
+                ?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
         });
         expect(sendMessage).toHaveBeenCalledWith({
             name: "save-link-with-note",
-            title: "Read later.",
+            title: "Read later. Soon",
             content: "<p>It has &lt;b&gt;tips&lt;/b&gt;</p><p>and more</p>"
         });
         expect(closeWindow).toHaveBeenCalledOnce();
     });
 
-    it("keeps the note open when it could not be saved, and keeps the page title on request", async () => {
+    it("keeps the note open when it could not be saved, and leaves an empty title to the page", async () => {
+        tabsQuery.mockResolvedValueOnce([ {} ]);
         await click("Link with a note");
-        const textArea = container.querySelector("textarea");
-        const keepTitle = container.querySelector<HTMLInputElement>("input[type=checkbox]");
-        expect(textArea).not.toBeNull();
-        expect(keepTitle?.checked).toBe(false);
-
-        await act(() => {
-            if (!textArea || !keepTitle) return;
-            textArea.value = "First. Second.";
-            textArea.dispatchEvent(new Event("input", { bubbles: true }));
-            keepTitle.click();
-        });
-        expect(keepTitle?.checked).toBe(true);
-        expect(textArea?.placeholder).toBe("The note's text.");
+        await flush();
+        const title = container.querySelector<HTMLInputElement>(".save-link-with-note .page-title");
+        expect(title?.value).toBe("");
+        expect(container.querySelector(".save-link-with-note .page-meta")).toBeNull();
 
         await act(async () => {
-            textArea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            title?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
         });
         expect(sendMessage).not.toHaveBeenCalledWith(expect.objectContaining({ name: "save-link-with-note" }));
 
         sendMessage.mockResolvedValueOnce(undefined);
-        await click("Save");
-        expect(sendMessage).toHaveBeenCalledWith({
-            name: "save-link-with-note",
-            title: "",
-            content: "<p>First. Second.</p>"
+        await act(async () => {
+            title?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
         });
-        expect(textArea?.value).toBe("First. Second.");
+        expect(sendMessage).toHaveBeenCalledWith({ name: "save-link-with-note", title: "", content: "" });
+        expect(container.querySelector(".save-link-with-note")).not.toBeNull();
         expect(closeWindow).not.toHaveBeenCalled();
     });
 
@@ -465,16 +460,6 @@ describe("icons", () => {
         expect(basicIcon(Crop)).toBe(Crop.packs.basic);
         expect(() => basicIcon({ name: "brand", defaultPack: "brands", packs: {} }))
             .toThrow("Boxicons has no basic variant of 'brand'.");
-    });
-});
-
-describe("parseLinkNote", () => {
-    it("takes the first sentence or line as the title, unless the page title is kept", () => {
-        expect(parseLinkNote("   ", false)).toEqual({ title: "", content: "" });
-        expect(parseLinkNote(" Great read! Worth it. ", false)).toEqual({ title: "Great read!", content: "Worth it." });
-        expect(parseLinkNote("First line\nsecond line", false)).toEqual({ title: "First line", content: "second line" });
-        expect(parseLinkNote("Just a title", false)).toEqual({ title: "Just a title", content: "" });
-        expect(parseLinkNote(" Great read! Worth it. ", true)).toEqual({ title: "", content: "Great read! Worth it." });
     });
 });
 
