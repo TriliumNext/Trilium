@@ -54,10 +54,11 @@ describe("popup", () => {
         vi.restoreAllMocks();
     });
 
-    it("asks for the connection status and shows it in the header and the footer", async () => {
+    it("asks for the connection status and shows it in the footer", async () => {
         expect(sendMessage).toHaveBeenCalledWith({ name: "send-trilium-search-status" });
         expect(status()).toEqual({ dot: "status-dot status-dot-pending", text: "Looking for Trilium…" });
         expect(captureButtons()).toHaveLength(5);
+        expect(container.querySelector(".popup-header .status-dot")).toBeNull();
         expect(captureButtons().every((button) => !button.disabled)).toBe(true);
 
         await receive({ name: "trilium-search-status", triliumSearch: { status: "found-desktop", port: 37840, url: "" } });
@@ -468,7 +469,7 @@ function captureButtons() {
 
 function status() {
     return {
-        dot: container.querySelector<HTMLElement>(".status-dot")?.className,
+        dot: container.querySelector<HTMLElement>(".connection > span > .status-dot")?.className,
         text: container.querySelector(".connection > span")?.textContent
     };
 }

@@ -105,7 +105,6 @@ export function Popup() {
             <div className="popup-header">
                 <img className="logo" src="/icons/48.png" alt="" />
                 <h3>Trilium Web Clipper</h3>
-                <span className={`status-dot status-dot-${status.kind}`} title={status.text} />
 
                 <div className="popup-header-buttons">
                     <button className="icon-action" title="Options" aria-label="Options" onClick={() => browser.runtime.openOptionsPage()}>
@@ -141,7 +140,10 @@ export function Popup() {
             {body}
 
             <div className="connection">
-                <span className={`status-${status.kind}`} title={status.title}>{status.text}</span>
+                <span className={`status-${status.kind}`} title={status.title}>
+                    <span className={`status-dot status-dot-${status.kind}`} />
+                    {status.text}
+                </span>
 
                 <button
                     className="icon-action"

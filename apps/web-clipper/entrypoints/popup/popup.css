@@ -30,30 +30,6 @@ body {
         margin-inline-start: auto;
     }
 
-    .status-dot {
-        flex-shrink: 0;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-
-    .status-dot-pending {
-        background: var(--muted-text-color);
-        opacity: 0.5;
-    }
-
-    .status-dot-ok {
-        background: var(--status-ok-color);
-    }
-
-    .status-dot-warning {
-        background: var(--status-warning-color);
-    }
-
-    .status-dot-error {
-        background: var(--status-error-color);
-    }
-
     .callout {
         padding: 8px 10px;
         border-radius: 6px;
@@ -274,21 +250,50 @@ body {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding-top: 8px;
+        min-height: 26px;
+        margin: 0 -12px -12px;
+        padding: 4px 12px;
         border-top: 1px solid var(--main-border-color);
         color: var(--muted-text-color);
         --icon-button-size: 26px;
-    }
 
-    .status-ok {
-        color: var(--status-ok-color);
-    }
+        > span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
 
-    .status-warning {
-        color: var(--status-warning-color);
-    }
+        .status-dot {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
 
-    .status-error {
-        color: var(--status-error-color);
+        .status-dot-pending {
+            background: var(--muted-text-color);
+            opacity: 0.5;
+        }
+
+        .status-dot-ok {
+            background: var(--status-ok-color);
+        }
+
+        .status-dot-warning {
+            background: var(--status-warning-color);
+        }
+
+        .status-dot-error {
+            background: var(--status-error-color);
+        }
+
+        .icon-action {
+            transition: opacity 150ms ease-out;
+        }
+
+        &:has(.status-ok, .status-pending):not(:hover, :focus-within) .icon-action {
+            opacity: 0;
+        }
     }
 }
