@@ -1,4 +1,6 @@
 import Crop from "@boxicons/js/icons/Crop";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -313,6 +315,14 @@ describe("previewDocument", () => {
             .toEqual([ "https://example.com/a.png", "https://example.com/b.png" ]);
         expect(doc.querySelector("p")?.textContent).toBe("Body");
         expect(doc.querySelector("style")?.textContent).toContain("max-width: 100%");
+    });
+
+    it("colors links with the theme's link colors, which the frame cannot read from the popup", () => {
+        const theme = readFileSync(join(import.meta.dirname, "../../assets/theme.css"), "utf8");
+        const [ light, dark ] = [ ...theme.matchAll(/--link-color: (#[0-9a-f]+);/g) ].map((match) => match[1]);
+        expect(light).toBeDefined();
+        expect(dark).toBeDefined();
+        expect(previewDocument(PAGE)).toContain(`color: light-dark(${light}, ${dark})`);
     });
 });
 

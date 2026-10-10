@@ -46,7 +46,7 @@ const PREVIEW_STYLE = `
     h1 { font-size: 1.3em; } h2 { font-size: 1.15em; } h3, h4, h5, h6 { font-size: 1em; }
     img, video, svg, iframe { max-width: 100%; height: auto; }
     pre { white-space: pre-wrap; }
-    a { pointer-events: none; }
+    a { color: light-dark(#0076af, #95c3d9); text-decoration: none; pointer-events: none; }
 `;
 
 const root = document.getElementById("root");
