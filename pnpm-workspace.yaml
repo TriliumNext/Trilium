@@ -23,16 +23,16 @@ overrides:
   # facets to work. A partial bump leaves two copies in the tree, which breaks
   # both typechecking (nominal type clashes) and runtime (lint markers, etc.).
   # Keep every core singleton pinned here so the whole tree resolves to one copy.
-  "@codemirror/view": "6.43.13"
+  "@codemirror/view": "6.43.14"
   "@codemirror/state": "6.7.6"
-  "@codemirror/language": "6.12.4"
+  "@codemirror/language": "6.13.1"
   "@codemirror/commands": "6.11.1"
   "@codemirror/autocomplete": "6.20.3"
   "@codemirror/lint": "6.9.7"
   "@codemirror/search": "6.7.2"
   "@lezer/common": "1.5.3"
   "@lezer/highlight": "1.2.5"
-  "@lezer/lr": "1.4.10"
+  "@lezer/lr": "1.4.11"
   # The AI SDK packages each pin @ai-sdk/provider-utils to an exact patch, and they do not move in
   # step: `ai` and the OpenAI/Google providers ask for one, the Anthropic provider for another. Two
   # copies in the tree mean two declarations of the `unique symbol` that marks a `Schema`, so a tool
