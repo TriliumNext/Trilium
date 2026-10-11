@@ -69,7 +69,7 @@
     "tabulator-tables": "6.6.1",
     "temporal-polyfill": "1.0.5",
     "terra-draw": "1.37.0",
-    "terra-draw-maplibre-gl-adapter": "1.4.1"
+    "terra-draw-maplibre-gl-adapter": "1.5.0"
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.3",
