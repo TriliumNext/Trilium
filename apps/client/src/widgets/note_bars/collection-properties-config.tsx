@@ -92,6 +92,9 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
             }
         ]
     },
+    timeline: {
+        properties: []
+    },
     geoMap: {
         properties: [
             {

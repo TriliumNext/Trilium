@@ -189,6 +189,48 @@ export default function buildHiddenSubtreeTemplates() {
                 ]
             },
             {
+                id: "_template_timeline",
+                type: "book",
+                title: t("hidden_subtree_templates.timeline"),
+                icon: "bx bx-time-five",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "collection",
+                        type: "label"
+                    },
+                    {
+                        name: "viewType",
+                        type: "label",
+                        value: "timeline"
+                    },
+                    {
+                        name: "hidePromotedAttributes",
+                        type: "label"
+                    },
+                    hideSubtreeAttributes,
+                    {
+                        name: "label:startDate",
+                        type: "label",
+                        value: `promoted,alias=${t("hidden_subtree_templates.start-date")},single,date`,
+                        isInheritable: true
+                    },
+                    {
+                        name: "label:endDate",
+                        type: "label",
+                        value: `promoted,alias=${t("hidden_subtree_templates.end-date")},single,date`,
+                        isInheritable: true
+                    },
+                    {
+                        name: "beta",
+                        type: "label"
+                    }
+                ]
+            },
+            {
                 id: "_template_table",
                 type: "book",
                 title: t("hidden_subtree_templates.table"),

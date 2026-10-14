@@ -31,6 +31,7 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     geoMap: "81SGnPGMk7Xc",
     board: "CtBQqbwXDx1w",
     presentation: "zP3PMqaG71Ct",
+    timeline: "V46sRfVSIuwP",
     dashboard: "IF7Q6I9x7zuw"
 };
 

@@ -1,0 +1,47 @@
+.timeline-view .timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25em;
+
+    .timeline-row-title {
+        flex-grow: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .timeline-row-add {
+        visibility: hidden;
+    }
+
+    &:hover .timeline-row-add,
+    .timeline-row-add:focus-visible {
+        visibility: visible;
+    }
+}
+
+.timeline-view .timeline-new-row {
+    color: var(--muted-text-color);
+}
+
+.timeline-view .timeline-attribute-cell {
+    min-height: 1.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.timeline-view .timeline-attribute-cell-editor {
+    /* The promoted-attribute editor names its field; the column header already does. */
+    label:not(.tn-checkbox) {
+        display: none;
+    }
+
+    .promoted-attribute-cell {
+        margin: 0;
+        padding: 0;
+    }
+}

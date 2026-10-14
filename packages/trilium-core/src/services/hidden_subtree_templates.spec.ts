@@ -43,6 +43,7 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",
+            "_template_timeline",
             "_template_table",
             "_template_geo_map",
             "_template_board",
@@ -60,6 +61,7 @@ describe("buildHiddenSubtreeTemplates", () => {
         expect(viewTypeOf(childById(templates, "_template_list_view"))).toBe("list");
         expect(viewTypeOf(childById(templates, "_template_grid_view"))).toBe("grid");
         expect(viewTypeOf(childById(templates, "_template_calendar"))).toBe("calendar");
+        expect(viewTypeOf(childById(templates, "_template_timeline"))).toBe("timeline");
         expect(viewTypeOf(childById(templates, "_template_table"))).toBe("table");
         expect(viewTypeOf(childById(templates, "_template_geo_map"))).toBe("geoMap");
         expect(viewTypeOf(childById(templates, "_template_board"))).toBe("board");
@@ -73,6 +75,7 @@ describe("buildHiddenSubtreeTemplates", () => {
             "_template_list_view",
             "_template_grid_view",
             "_template_calendar",
+            "_template_timeline",
             "_template_table",
             "_template_geo_map",
             "_template_board",
@@ -138,7 +141,7 @@ describe("buildHiddenSubtreeTemplates", () => {
 
     it("applies the hidden-subtree label on the templates that declare it", () => {
         const templates = buildHiddenSubtreeTemplates();
-        const offByDefault = ["_template_calendar", "_template_table", "_template_geo_map"];
+        const offByDefault = ["_template_calendar", "_template_timeline", "_template_table", "_template_geo_map"];
 
         for (const id of offByDefault) {
             const item = childById(templates, id);

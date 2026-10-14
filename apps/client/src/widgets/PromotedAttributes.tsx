@@ -22,7 +22,7 @@ import FormAutocomplete from "./react/FormAutocomplete";
 import { useNoteContext, useNoteLabel, useTriliumEvent, useUniqueName } from "./react/hooks";
 import NoteAutocomplete from "./react/NoteAutocomplete";
 
-interface Cell {
+export interface Cell {
     uniqueId: string;
     definitionAttr: FAttribute;
     definition: DefinitionObject;
@@ -177,7 +177,7 @@ export function buildPromotedCells(note: FNote): Cell[] {
     return cells;
 }
 
-function PromotedAttributeCell(props: CellProps) {
+export function PromotedAttributeCell(props: CellProps) {
     const { valueName, valueAttr, definition } = props.cell;
     const inputId = useUniqueName(`value-${valueAttr.name}`);
 

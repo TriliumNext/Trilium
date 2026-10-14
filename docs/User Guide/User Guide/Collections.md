@@ -9,6 +9,10 @@ Collections are a unique type of note that don't have content, but instead displ
 
     <figure class="image"><img style="aspect-ratio:1651/810;" src="Collections_collection_calendar.webp" width="1651" height="810"></figure>
 
+=== "<span class="tn-icon bx bx-time-five"></span> Timeline"
+
+    <a class="reference-link" href="Collections/Timeline.md">Timeline</a> displays the notes as bars on a horizontal time axis, one row per note, nested like the note tree.
+
 === "<span class="tn-icon bx bx-table"></span> Table"
 
     <a class="reference-link" href="Collections/Table.md">Table</a> displays each note as a row in a table, with <a class="reference-link" href="Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> being shown as well. This makes it easy to visualize attributes of notes, as well as making them easily editable.

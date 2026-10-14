@@ -295,6 +295,9 @@ importers:
       fullcalendar:
         specifier: 7.1.1
         version: 7.1.1(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5)
+      fullcalendar-scheduler:
+        specifier: 7.1.1
+        version: 7.1.1(fullcalendar@7.1.1(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5))(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5)
       gridstack:
         specifier: 14.0.0
         version: 14.0.0
@@ -2933,6 +2936,9 @@ packages:
     resolution: {integrity: sha512-WaZw5t4K+JlLDw/1ucnjnOznXJJ/86bZWgeNIh8Xac62/+nn0VMO4HqCFKk9ylFnrng4zLy4iAjkFuH6jjS3Ow==}
     peerDependencies:
       temporal-polyfill: ^1.0.1
+
+  '@full-ui/headless-grid@7.1.1':
+    resolution: {integrity: sha512-HdBvXhBzpUuYn3+QFcNKCBiNEnjgk2YguHMVuBT//S+L54WOOzGP+9JoTWgTKkZWIQCqjBWFn4nwIIW8lOCBPA==}
 
   '@fullcalendar/core@7.1.1':
     resolution: {integrity: sha512-QYTmaq52uxvGLk9EX60p+4zYIE+baGDdbYEITW4iovevohlpl1Jg7u3X2hfW1//yk0cs7d1Kd3yOBcaMnObITg==}
@@ -7639,6 +7645,12 @@ packages:
     resolution: {integrity: sha512-WvJ193OHa0GHPEL+AycEJgxvBEwyfRkN1vhjca23OaPVMCaLCXTd5qAu82AjTcgP1UJmytkOKb63Ypde7raDIg==}
     engines: {node: '>=0.6'}
     deprecated: This package is no longer supported.
+
+  fullcalendar-scheduler@7.1.1:
+    resolution: {integrity: sha512-H30LsEF6tN4UIw/BGpM9dOJWE7RWID8Dx0I0xuzRgfUXaW0fh41FDAiRBcJmvOVxuViCFJDawTUftB+rBsmUtg==}
+    peerDependencies:
+      fullcalendar: 7.1.1
+      temporal-polyfill: ^1.0.1
 
   fullcalendar@7.1.1:
     resolution: {integrity: sha512-W+0ji7pvvb4miUMLHXnx86GgA3uRVqGfxJRg1Ibph9w9jbMVyydDv26XuoH7LjS7Q6MRTkzNEw2UxO/3Q3L/+w==}
@@ -13991,6 +14003,8 @@ snapshots:
     dependencies:
       temporal-polyfill: 1.0.5
 
+  '@full-ui/headless-grid@7.1.1': {}
+
   '@fullcalendar/core@7.1.1(@full-ui/headless-calendar@7.1.1(temporal-polyfill@1.0.5))(temporal-polyfill@1.0.5)':
     dependencies:
       '@full-ui/headless-calendar': 7.1.1(temporal-polyfill@1.0.5)
@@ -19812,6 +19826,17 @@ snapshots:
       inherits: 2.0.4
       mkdirp: 0.5.6
       rimraf: 2.7.1
+
+  fullcalendar-scheduler@7.1.1(fullcalendar@7.1.1(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5))(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5):
+    dependencies:
+      '@full-ui/headless-calendar': 7.1.1(temporal-polyfill@1.0.5)
+      '@full-ui/headless-grid': 7.1.1
+      '@fullcalendar/core': 7.1.1(@full-ui/headless-calendar@7.1.1(temporal-polyfill@1.0.5))(temporal-polyfill@1.0.5)
+      fullcalendar: 7.1.1(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5)
+      preact: 11.0.1(preact-render-to-string@6.8.0)
+      temporal-polyfill: 1.0.5
+    transitivePeerDependencies:
+      - preact-render-to-string
 
   fullcalendar@7.1.1(preact-render-to-string@6.8.0)(temporal-polyfill@1.0.5):
     dependencies:
