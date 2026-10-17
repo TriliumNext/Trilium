@@ -3243,7 +3243,6 @@
     "search_notes_limited_few": "{{count}} toradh san iomlán, teoranta do {{limit}}",
     "search_notes_limited_many": "{{count}} toradh san iomlán, teoranta do {{limit}}",
     "search_notes_limited_other": "{{count}} toradh san iomlán, teoranta do {{limit}}",
-    "search_notes_scope": "Cuardaithe i <Note/>",
     "child_notes_count_one": "({{count}} páiste)",
     "child_notes_count_two": "({{count}} páistí)",
     "child_notes_count_few": "({{count}} páistí)",

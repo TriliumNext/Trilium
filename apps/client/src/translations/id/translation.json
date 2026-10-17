@@ -2223,7 +2223,6 @@
     "tool_call_no_result": "Belum ada hasil.",
     "search_notes_count_other": "({{count}} catatan)",
     "search_notes_limited_other": "{{count}} total hasil, dibatasi hingga {{limit}}",
-    "search_notes_scope": "Dicari dalam <Note/>",
     "child_notes_count_other": "({{count}} turunan)",
     "child_count_other": "{{count}} turunan",
     "search_help_count_other": "({{count}} halaman)",

@@ -3246,7 +3246,6 @@
     "search_notes_limited_one": "{{count}} resultado en total; limitado a {{limit}}",
     "search_notes_limited_many": "{{count}} resultados en total; limitados a {{limit}}",
     "search_notes_limited_other": "{{count}} resultados en total; limitados a {{limit}}",
-    "search_notes_scope": "Buscado en <Note/>",
     "child_notes_count_one": "({{count}} nota hija)",
     "child_notes_count_many": "({{count}} notas hijas)",
     "child_notes_count_other": "({{count}} notas hijas)",
