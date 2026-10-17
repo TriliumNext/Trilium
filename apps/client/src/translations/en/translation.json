@@ -4145,7 +4145,10 @@
     "sample_wardley": "Wardley Map",
     "sample_cynefin": "Cynefin",
     "sample_swimlane": "Swimlane",
-    "sample_railroad": "Railroad"
+    "sample_railroad": "Railroad",
+    "sample_event_modeling": "Event Modeling",
+    "sample_use_case": "Use Case",
+    "sample_agentflow": "Agentflow"
   },
   "mind-map": {
     "addChild": "Add child",

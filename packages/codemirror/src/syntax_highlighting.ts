@@ -1,4 +1,4 @@
-import { LanguageSupport, type StreamParser } from "@codemirror/language";
+import { LanguageDescription, LanguageSupport, type StreamParser } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import { SupportedMimeTypes } from "@triliumnext/commons";
 
@@ -12,8 +12,27 @@ async function buildJavaScript() {
 }
 
 async function buildMermaid() {
-    const { mermaid, foldByIndent } = (await import('codemirror-lang-mermaid'));
+    const { mermaid, foldByIndent } = (await import("./languages/mermaid/index.js"));
     return [ mermaid(), foldByIndent() ];
+}
+
+/**
+ * Markdown with highlighted fenced code blocks. `@codemirror/language-data` has no Mermaid entry,
+ * so `mermaid` blocks get the grammar Mermaid notes use, loaded on the first such block.
+ */
+async function buildMarkdown() {
+    const { markdown, markdownLanguage } = await import("@codemirror/lang-markdown");
+    const { languages } = await import("@codemirror/language-data");
+    const mermaidDescription = LanguageDescription.of({
+        name: "Mermaid",
+        alias: [ "mmd" ],
+        extensions: [ "mmd", "mermaid" ],
+        load: async () => (await import("./languages/mermaid/index.js")).mermaid()
+    });
+    return markdown({
+        base: markdownLanguage,
+        codeLanguages: [ mermaidDescription, ...languages ]
+    });
 }
 
 async function buildJson() {
@@ -102,14 +121,7 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-fsharp": async () => (await import('@codemirror/legacy-modes/mode/mllike')).fSharp,
     "text/x-gas": async () => (await import('@codemirror/legacy-modes/mode/gas')).gas,
     "text/x-gdscript": async () => (await import('./languages/gdscript.js')).gdscript,
-    "text/x-gfm": async () => {
-        const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
-        const { languages } = (await import('@codemirror/language-data'));
-        return markdown({
-            base: markdownLanguage,
-            codeLanguages: languages
-        });
-    },
+    "text/x-gfm": buildMarkdown,
     "text/x-go": async () => (await import('@codemirror/legacy-modes/mode/go')).go,
     "text/x-groovy": async () => (await import('@codemirror/legacy-modes/mode/groovy')).groovy,
     "text/x-gss": async () => (await import('@codemirror/legacy-modes/mode/css')).gss,
@@ -129,11 +141,7 @@ const byMimeType: Record<SupportedMimeTypes, (() => Promise<StreamParser<unknown
     "text/x-livescript": async () => (await import('@codemirror/legacy-modes/mode/livescript')).liveScript,
     "text/x-lua": async () => (await import('@codemirror/legacy-modes/mode/lua')).lua,
     "text/x-mariadb": async () => (await import('@codemirror/legacy-modes/mode/sql')).sqlite,
-    "text/x-markdown": async () => {
-        const { markdown, markdownLanguage } = (await import('@codemirror/lang-markdown'));
-        const { languages } = (await import('@codemirror/language-data'));
-        return markdown({ base: markdownLanguage, codeLanguages: languages });
-    },
+    "text/x-markdown": buildMarkdown,
     "text/x-mathematica": async () => (await import('@codemirror/legacy-modes/mode/mathematica')).mathematica,
     "text/x-modelica": async () => (await import('@codemirror/legacy-modes/mode/modelica')).modelica,
     "text/x-mscgen": async () => (await import('@codemirror/legacy-modes/mode/mscgen')).mscgen,

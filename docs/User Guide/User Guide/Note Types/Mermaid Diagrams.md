@@ -28,6 +28,8 @@ It's possible to switch between the two layouts at any time by pressing the <sp
 
 *   The source code of the diagram (in Mermaid format) is displayed on the left or bottom side of the note (depending on the layout).
     *   Changing the diagram code will refresh automatically the diagram.
+    *   The front matter (the block between `---` lines at the start of the diagram, which holds its title and configuration) is highlighted as YAML, and so are the node properties of flowcharts and Kanban boards (such as `@{ shape: tool }`). Configuration directives (`%%{init: …}%%`) are highlighted apart from comments, and so are the accessibility title and description (`accTitle:` and `accDescr:`).
+    *   <kbd>Ctrl</kbd>+<kbd>/</kbd> (Mac: <kbd>⌘</kbd>+<kbd>/</kbd>) comments out the current or selected lines with `%%`, or with `#` in the front matter. Pressing it again on commented lines removes the comment marker.
 *   The preview of the diagram is displayed at the right or top side of the note (depending on the layout):
     *   There are dedicated buttons at the bottom-right of the preview to control the zoom in, zoom out or fit the diagram.
     *   The preview can be moved around by holding the left mouse button and dragging.

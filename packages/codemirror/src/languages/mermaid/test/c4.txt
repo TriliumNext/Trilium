@@ -1,0 +1,82 @@
+# C4
+
+C4Context
+
+==>
+
+C4Diagram(DiagramName)
+
+# Title
+
+C4Context
+title System Context diagram
+
+==>
+
+C4Diagram(DiagramName,Title,TitleText)
+
+# Person element
+
+C4Context
+Person(customerA, "Banking Customer A", "A customer of the bank")
+
+==>
+
+C4Diagram(DiagramName,Element(FunctionName,ArgumentList(Value,String,String)))
+
+# System element
+
+C4Context
+System(SystemAA, "Internet Banking System")
+
+==>
+
+C4Diagram(DiagramName,Element(FunctionName,ArgumentList(Value,String)))
+
+# Relationship
+
+C4Context
+Rel(customerA, SystemAA, "Uses")
+
+==>
+
+C4Diagram(DiagramName,Element(FunctionName,ArgumentList(Value,Value,String)))
+
+# Boundary with body
+
+C4Context
+Boundary(b1, "BankBoundary") {
+  System(SystemA, "Banking System")
+}
+
+==>
+
+C4Diagram(DiagramName,Element(FunctionName,ArgumentList(Value,String),Body(Element(FunctionName,ArgumentList(Value,String)))))
+
+# Key-value argument
+
+C4Context
+UpdateElementStyle(customerA, $bgColor="grey")
+
+==>
+
+C4Diagram(DiagramName,Element(FunctionName,ArgumentList(Value,KeyValue(Key,String))))
+
+# Comment
+
+C4Container
+%% a comment
+Container(web, "Web App")
+
+==>
+
+C4Diagram(DiagramName,LineComment,Element(FunctionName,ArgumentList(Value,String)))
+
+# Comment after title
+
+C4Context
+title %% comment
+
+==>
+
+C4Diagram(DiagramName,Title,LineComment,⚠)

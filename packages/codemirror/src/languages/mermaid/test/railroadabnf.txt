@@ -1,0 +1,18 @@
+# ABNF railroad
+
+railroad-abnf-beta
+
+==>
+
+RailroadAbnfDiagram(DiagramName)
+
+# Repeats, number values and groups
+
+railroad-abnf-beta
+  title Numbers
+  number = ["-"] 1*DIGIT 2DIGIT *3(a / b) ;
+  DIGIT = %x30-39 / %d48.49 / %b101 ;
+
+==>
+
+RailroadAbnfDiagram(DiagramName,Title(Keyword,TitleText),Rule(RuleName,"=",Optional("[",String,"]"),Repeat,NonTerminal,Repeat,NonTerminal,Repeat,Group("(",NonTerminal,"/",NonTerminal,")"),";"),Rule(RuleName,"=",NumVal,"/",NumVal,"/",NumVal,";"))

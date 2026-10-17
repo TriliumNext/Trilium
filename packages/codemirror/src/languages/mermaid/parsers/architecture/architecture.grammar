@@ -1,0 +1,54 @@
+@top ArchitectureDiagram {
+  document
+}
+
+@skip { whitespace | LineComment }
+
+document {
+  DiagramName statement*
+}
+
+statement {
+  Group |
+  Service |
+  Junction |
+  Edge
+}
+
+Group { GroupKeyword NodeId Icon? Label? InClause? }
+
+Service { ServiceKeyword NodeId Icon? Label? InClause? }
+
+Junction { JunctionKeyword NodeId InClause? }
+
+InClause { InKeyword NodeId }
+
+Edge {
+  NodeId GroupRef? ":" Port Arrow Port ":" NodeId GroupRef?
+}
+
+GroupRef { "{" (GroupKeyword | NodeId) "}" }
+
+Port { identifier }
+
+NodeId { identifier }
+
+GroupKeyword { kw<"group"> }
+ServiceKeyword { kw<"service"> }
+JunctionKeyword { kw<"junction"> }
+InKeyword { kw<"in"> }
+
+kw<term> { @specialize<identifier, term> }
+
+@external tokens diagramName from "./tokens.js" { DiagramName }
+@external tokens iconToken from "./tokens.js" { Icon }
+@external tokens labelToken from "./tokens.js" { Label }
+
+@tokens {
+  whitespace { $[ \t\r\n]+ }
+  LineComment { "%%" ![\n]* }
+  identifier { $[a-zA-Z_] $[a-zA-Z0-9_]* }
+  Arrow { "<"? "-"+ ">"? }
+}
+
+@external propSource architectureHighlighting from "./highlight.js"

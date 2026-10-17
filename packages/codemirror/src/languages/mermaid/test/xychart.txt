@@ -1,0 +1,65 @@
+# XYChart
+
+xychart-beta
+
+==>
+
+XYChartDiagram(DiagramName)
+
+# Orientation
+
+xychart-beta horizontal
+
+==>
+
+XYChartDiagram(DiagramName,Orientation)
+
+# Title
+
+xychart-beta
+    title "Sales Revenue"
+
+==>
+
+XYChartDiagram(DiagramName,TitleClause(Title,String))
+
+# X Axis Category List
+
+xychart-beta
+    x-axis [jan, feb, mar]
+
+==>
+
+XYChartDiagram(DiagramName,XAxisClause(XAxis,List(Word,Word,Word)))
+
+# Y Axis With Range
+
+xychart-beta
+    y-axis "Revenue" 4000 --> 11000
+
+==>
+
+XYChartDiagram(DiagramName,YAxisClause(YAxis,String,Number,Arrow,Number))
+
+# Bar And Line
+
+xychart-beta
+    bar [5000, 6000, 7500]
+    line [5000, 6000, 7500]
+
+==>
+
+XYChartDiagram(DiagramName,BarClause(Bar,List(Number,Number,Number)),LineClause(Line,List(Number,Number,Number)))
+
+# All Features
+
+xychart-beta
+    title "Sales Revenue"
+    x-axis [jan, feb, mar, apr, may]
+    y-axis "Revenue (in $)" 4000 --> 11000
+    bar [5000, 6000, 7500, 8200, 9500]
+    line [5000, 6000, 7500, 8200, 9500]
+
+==>
+
+XYChartDiagram(DiagramName,TitleClause(Title,String),XAxisClause(XAxis,List(Word,Word,Word,Word,Word)),YAxisClause(YAxis,String,Number,Arrow,Number),BarClause(Bar,List(Number,Number,Number,Number,Number)),LineClause(Line,List(Number,Number,Number,Number,Number)))
