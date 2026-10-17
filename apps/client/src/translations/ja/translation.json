@@ -3294,7 +3294,8 @@
       "read_web_page": "Web ページの読み込み",
       "note_moved_from": "<Note/> from <From/> to <To/>",
       "note_moved": "<Note/> to <To/>",
-      "attachment_in_note": "<Title/> in <Note/>"
+      "attachment_in_note": "<Title/> in <Note/>",
+      "search_in_subtree": "<Query/> in <Subtree/>"
     },
     "base_url": "ベース URL",
     "base_url_description": "オプション。プロキシやゲートウェイ経由で同じ API に接続します。モデルを自前で実行したい場合は、代わりに Ollama または LM Studio のプロバイダーを追加してください。",
