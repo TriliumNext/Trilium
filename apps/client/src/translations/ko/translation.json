@@ -86,13 +86,20 @@
     "bulk_actions": "대량 작업",
     "include_descendants": "선택한 노트의 하위 노트 포함",
     "chosen_actions": "선택한 작업",
-    "execute_bulk_actions": "대량 작업 실행",
+    "execute_bulk_actions_other": "노트 {{count}}개에 적용",
     "bulk_actions_executed": "대량 작업이 성공적으로 실행되었습니다.",
-    "none_yet": "아직 없습니다... 위에 있는 가능한 작업 중 하나를 클릭하여 작업을 추가하세요.",
+    "none_yet": "아직 작업이 없습니다. 아래의 작업 추가를 사용해 작업을 선택하세요.",
     "labels": "라벨",
     "relations": "관계",
     "notes": "노트",
-    "other": "기타"
+    "other": "기타",
+    "selected_notes": "선택한 노트",
+    "remove_from_selection": "선택 해제",
+    "add_action": "작업 추가",
+    "remove_action": "이 작업 제거",
+    "no_actions_to_execute": "먼저 작업을 추가하세요.",
+    "no_notes_to_execute_on": "선택한 노트가 더 이상 존재하지 않습니다.",
+    "affected_note_count_other": "작업은 총 {{count}}개 노트에 적용됩니다."
   },
   "i18n": {
     "saturday": "토요일",
@@ -858,8 +865,8 @@
     "add_a_new_attribute": "새로운 속성 추가",
     "add_new_label": "새 라벨 추가 <kbd data-command=\"addNewLabel\"></kbd>",
     "add_new_relation": "새 관계 추가 <kbd data-command=\"addNewRelation\"></kbd>",
-    "add_new_label_definition": "새로운 라벨 정의 추가",
-    "add_new_relation_definition": "새로운 관계 정의 추가",
+    "add_new_label_definition": "새 라벨 정의 추가...",
+    "add_new_relation_definition": "새 관계 정의 추가...",
     "placeholder": "여기에 라벨과 관계를 입력하세요"
   },
   "attribute_list_panel": {
@@ -894,90 +901,106 @@
     "remove_this_search_action": "이 검색 작업 제거"
   },
   "execute_script": {
-    "execute_script": "스크립트 실행"
+    "execute_script": "스크립트 실행",
+    "description": "각 노트에서 백엔드 스크립트를 실행합니다. 스크립트는 note 변수를 통해 노트를 읽고 수정하며, 실행 후 노트를 저장합니다."
   },
   "add_label": {
     "add_label": "라벨 추가",
     "label_name_placeholder": "라벨 이름",
     "label_name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
-    "new_value_placeholder": "새 값"
+    "new_value_placeholder": "새 값",
+    "description": "각 노트에 지정한 값 또는 빈 값으로 라벨을 추가합니다. 이미 같은 라벨이 있어도 추가되므로 한 노트에 동일한 라벨이 두 개 생길 수 있습니다."
   },
   "delete_label": {
     "delete_label": "라벨 삭제",
     "label_name_placeholder": "라벨 이름",
-    "label_name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다."
+    "label_name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
+    "description": "각 노트에 직접 설정된 해당 라벨을 제거합니다."
   },
   "rename_label": {
     "rename_label": "라벨 이름 변경",
     "old_name_placeholder": "이전 이름",
     "new_name_placeholder": "새 이름",
-    "name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다."
+    "name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
+    "description": "각 노트에 직접 설정된 해당 라벨의 이름을 변경하고 값은 유지합니다."
   },
   "update_label_value": {
     "update_label_value": "라벨 값 업데이트",
     "label_name_placeholder": "라벨 이름",
     "label_name_title": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
-    "new_value_placeholder": "새 값"
+    "new_value_placeholder": "새 값",
+    "description": "각 노트에 직접 설정된 해당 라벨의 값을 지정합니다. 상속된 라벨은 변경하지 않습니다."
   },
   "delete_note": {
-    "delete_note": "노트 삭제"
+    "delete_note": "노트 삭제",
+    "description": "각 노트와 복제본을 삭제하고, 다른 곳에 복제되지 않은 자식 노트도 삭제합니다. 삭제된 노트는 완전히 지워지기 전까지 최근 변경 사항에서 복원할 수 있습니다."
   },
   "save_revision": {
     "save_revision": "수정본 저장",
-    "revision_name_placeholder": "수정본 이름 (선택 사항)"
+    "revision_name_placeholder": "수정본 이름 (선택 사항)",
+    "description": "각 노트의 수정본을 저장하며 이름을 선택적으로 지정할 수 있습니다. 보호된 세션이 활성화되어 있지 않으면 보호된 노트는 건너뜁니다."
   },
   "delete_revisions": {
-    "delete_note_revisions": "노트 수정본 삭제"
+    "delete_note_revisions": "노트 수정본 삭제",
+    "description": "각 노트의 모든 수정본을 영구 삭제합니다. 노트 자체는 유지됩니다."
   },
   "move_note": {
     "move_note": "노트 이동",
-    "target_parent_note": "대상 상위 노트"
+    "target_parent_note": "대상 상위 노트",
+    "description": "각 노트를 대상 노트 아래로 이동합니다. 부모가 여러 개인 노트는 대신 대상 위치에 복제하고, 대상 노트의 부모처럼 이동할 수 없는 노트는 원래 위치에 남습니다."
   },
   "convert_note": {
-    "convert_note": "변환",
+    "convert_note": "노트 변환",
     "choose_conversion": "(변환 선택)",
     "conversion_htmlToMarkdown": "텍스트 노트 → Markdown 노트(일부 손실 가능)",
     "conversion_markdownToHtml": "Markdown 노트 → 텍스트 노트",
     "warning": "노트를 변환하면 일부 서식이 손실되어 나중에 직접 수정해야 할 수 있습니다. 복원할 수 있도록 변환할 각 노트의 수정본을 미리 저장합니다. 계속하시겠습니까?",
-    "warning_risky": "기능이 서로 다른 두 형식 간에 변환하므로 일부 서식이 손실되거나 지원되지 않는 요소가 제거될 수 있습니다.<br><br>이 위험을 감수하고 변환을 계속하시겠습니까?<br><br>원래 형식으로 되돌릴 수 있도록 변환된 각 노트의 수정본을 미리 저장합니다."
+    "warning_risky": "기능이 서로 다른 두 형식 간에 변환하므로 일부 서식이 손실되거나 지원되지 않는 요소가 제거될 수 있습니다.<br><br>이 위험을 감수하고 변환을 계속하시겠습니까?<br><br>원래 형식으로 되돌릴 수 있도록 변환된 각 노트의 수정본을 미리 저장합니다.",
+    "description": "텍스트 노트를 Markdown으로, Markdown 노트를 텍스트로 변환합니다. 변환 전에 각 노트의 수정본을 저장하며 다른 유형의 노트는 변경하지 않습니다."
   },
   "rename_note": {
-    "rename_note": "노트 이름 변경"
+    "rename_note": "노트 이름 변경",
+    "description": "각 노트의 제목을 설정합니다. ${ 와 } 사이의 표현식은 각 노트에 맞게 채워집니다. 예를 들어 ${note.title}은 현재 노트 제목을 나타냅니다.",
+    "placeholder": "예: NEW: ${note.title}"
   },
   "add_relation": {
     "add_relation": "관계 추가",
     "relation_name": "관계 이름",
     "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
-    "target_note": "대상 노트"
+    "target_note": "대상 노트",
+    "description": "각 노트에서 대상 노트로 향하는 관계를 추가합니다. 같은 이름의 관계가 이미 있어도 추가합니다."
   },
   "delete_relation": {
     "delete_relation": "관계 삭제",
     "relation_name": "관계 이름",
-    "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다."
+    "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
+    "description": "각 노트에 직접 설정된 해당 관계를 제거합니다."
   },
   "rename_relation": {
     "rename_relation": "관계 이름 변경",
     "old_name": "이전 이름",
     "new_name": "새 이름",
-    "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다."
+    "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
+    "description": "각 노트에 직접 설정된 해당 관계의 이름을 변경하고 대상은 유지합니다."
   },
   "update_relation_target": {
     "relation_name": "관계 이름",
     "allowed_characters": "영숫자 문자, 밑줄, 콜론은 허용됩니다.",
     "target_note": "대상 노트",
-    "update_relation_target": "관계 대상 업데이트"
+    "update_relation_target": "관계 대상 업데이트",
+    "description": "각 노트에 직접 설정된 해당 관계가 대상 노트를 가리키도록 변경합니다."
   },
   "attachments_actions": {
     "open_externally": "외부에서 열기",
     "open_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_custom": "사용자 지정 앱으로 열기",
+    "open_custom": "사용자 지정 앱으로 열기...",
     "open_custom_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
     "download": "다운로드",
-    "rename_attachment": "첨부 파일 이름 변경",
-    "upload_new_revision": "새 수정본 업로드",
+    "rename_attachment": "첨부 파일 이름 변경...",
+    "upload_new_revision": "새 수정본 업로드...",
     "copy_link_to_clipboard": "참조를 클립보드에 복사",
-    "convert_attachment_into_note": "첨부 파일을 노트로 변환하기",
-    "delete_attachment": "첨부 파일 삭제",
+    "convert_attachment_into_note": "첨부 파일을 노트로 변환...",
+    "delete_attachment": "첨부 파일 삭제...",
     "upload_success": "새 첨부 파일 수정본을 업로드했습니다.",
     "upload_failed": "새 첨부 파일 수정본을 업로드하지 못했습니다.",
     "open_externally_detail_page": "첨부 파일을 외부에서 열려면 먼저 첨부 파일 상세 페이지를 연 다음 작업을 다시 실행하세요.",
@@ -986,7 +1009,8 @@
     "delete_success": "첨부 파일 '{{title}}'이 삭제되었습니다.",
     "convert_confirm": "\"{{title}}\" 첨부 파일을 별도 노트로 변환하시겠습니까?",
     "convert_success": "\"{{title}}\" 첨부 파일을 노트로 변환했습니다.",
-    "enter_new_name": "새 첨부 파일의 이름을 입력하세요"
+    "enter_new_name": "새 첨부 파일의 이름을 입력하세요",
+    "rename_attachment_title": "첨부 파일 이름 변경"
   },
   "calendar": {
     "mon": "월",
@@ -1093,7 +1117,7 @@
     "zoom_out": "축소",
     "reset_zoom_level": "확대/축소 수준 초기화",
     "zoom_in": "확대",
-    "configure_launchbar": "실행 표시줄 구성",
+    "configure_launchbar": "실행 표시줄 구성...",
     "show_shared_notes_subtree": "공유 노트 하위 트리 보기",
     "show_deleted_notes": "삭제된 노트 보기",
     "advanced": "고급",
@@ -1140,20 +1164,20 @@
     "word_wrap_auto_description": "글로벌 설정을 따라가세요",
     "word_wrap_on": "계속",
     "word_wrap_off": "끄기",
-    "convert_into_attachment": "첨부 파일로 전환",
+    "convert_into_attachment": "첨부 파일로 변환...",
     "re_render_note": "노트 다시 렌더링",
     "search_in_note": "노트에서 검색",
     "note_source": "노트 소스",
     "note_attachments": "노트 첨부 파일",
-    "note_attributes": "노트 속성",
+    "note_attributes": "노트 속성...",
     "view_ocr_text": "OCR 텍스트 보기",
     "open_note_externally": "노트를 외부에서 열기",
     "open_note_externally_title": "파일을 외부 애플리케이션에서 열고 변경 사항을 감시합니다. 수정한 버전을 나중에 Trilium에 다시 업로드할 수 있습니다.",
-    "open_note_custom": "노트를 사용자 지정 앱으로 열기",
+    "open_note_custom": "사용자 지정 앱으로 노트 열기...",
     "open_note_on_server": "서버에서 노트 열기",
-    "import_files": "파일 가져오기",
-    "export_note": "노트 내보내기",
-    "delete_note": "노트 삭제",
+    "import_files": "파일 가져오기...",
+    "export_note": "노트 내보내기...",
+    "delete_note": "노트 삭제...",
     "print_note": "노트 인쇄...",
     "print_or_export_to_pdf": "PDF로 출력/내보내기...",
     "view_revisions": "노트 수정본...",
@@ -1163,8 +1187,8 @@
     "convert_into_attachment_failed": "'{{title}}' 노트 변환은 실패했습니다.",
     "convert_into_attachment_successful": "\"{{title}}\" 노트를 첨부 파일로 변환했습니다.",
     "convert_into_attachment_prompt": "\"{{title}}\" 노트를 상위 노트의 첨부 파일로 변환하시겠습니까?",
-    "convert_to_markdown": "Markdown 노트로 변환하기",
-    "convert_to_text": "텍스트 노트로 변환",
+    "convert_to_markdown": "Markdown 노트로 변환...",
+    "convert_to_text": "텍스트 노트로 변환...",
     "convert_format_warning": "변환 과정에서 일부 서식이 손실되어 나중에 직접 수정해야 할 수 있습니다. 복원할 수 있도록 현재 노트의 수정본을 미리 저장합니다. 계속하시겠습니까?",
     "convert_format_warning_risky": "기능이 서로 다른 두 형식 간에 변환하므로 일부 서식이 손실되거나 지원되지 않는 요소가 제거될 수 있습니다.<br><br>이 위험을 감수하고 변환을 계속하시겠습니까?<br><br>원래 형식으로 되돌릴 수 있도록 현재 노트의 수정본을 미리 저장합니다.",
     "convert_to_markdown_successful": "노트가 Markdown으로 변환되었습니다.",
@@ -1173,7 +1197,8 @@
     "export_as_image": "이미지로 내보내기",
     "export_as_image_png": "PNG (래스터)",
     "export_as_image_svg": "SVG (벡터)",
-    "note_map": "노트 맵"
+    "note_map": "노트 맵",
+    "note_attributes_title": "노트 속성"
   },
   "onclick_button": {
     "no_click_handler": "버튼 위젯 '{{componentId}}'에는 정의된 클릭 핸들러가 없습니다"
@@ -1275,7 +1300,8 @@
     "open_all_in_tabs": "모두 열기",
     "open_all_in_tabs_tooltip": "새 탭에서 모든 결과를 열기",
     "open_all_confirm_other": "노트 {{count}}개를 새 탭에서 엽니다. 계속하시겠습니까?",
-    "open_all_limit_exceeded": "한 번에 열 수 있는 노트가 너무 많습니다({{count}}). 최대 {{max}}개까지 열 수 있으므로 먼저 결과 범위를 좁혀보세요."
+    "open_all_limit_exceeded": "한 번에 열 수 있는 노트가 너무 많습니다({{count}}). 최대 {{max}}개까지 열 수 있으므로 먼저 결과 범위를 좁혀보세요.",
+    "included_notes": "포함된 노트"
   },
   "edited_notes": {
     "no_edited_notes_found": "아직 이날 편집한 노트가 없습니다..."
@@ -1289,7 +1315,7 @@
   },
   "image_properties": {
     "copy_reference_to_clipboard": "참조를 클립보드에 복사",
-    "upload_new_revision": "새 수정본 업로드",
+    "upload_new_revision": "새 수정본 업로드...",
     "upload_success": "새 이미지 수정본이 업로드되었습니다.",
     "upload_failed": "새 이미지 수정본을 업로드하지 못했습니다: {{message}}"
   },
@@ -1344,7 +1370,7 @@
     "select_values_placeholder": "옵션을 선택하거나 새로 만드세요",
     "values_placeholder": "값을 입력하고 Enter 키를 누르세요",
     "add_value": "이 값 추가",
-    "create_attribute": "새 속성 생성",
+    "create_attribute": "새 속성 생성...",
     "edit_attribute": "이 속성 편집",
     "delete_attribute": "이 속성 삭제",
     "delete_confirmation": "이 컬렉션의 모든 노트에서 <strong>{{name}}</strong> 및 해당 값을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
@@ -1574,12 +1600,12 @@
     "unprotecting-in-progress-count": "보호 무방화 진행 중: {{count}}"
   },
   "relation_map": {
-    "remove_note": "노트 제거",
-    "edit_title": "제목 수정",
+    "remove_note": "노트 제거...",
+    "edit_title": "제목 편집...",
     "rename_note": "노트 이름 변경",
     "enter_new_title": "새 노트 제목 입력:",
-    "rename_relation": "관계 이름 변경",
-    "remove_relation": "관계 제거",
+    "rename_relation": "관계 이름 변경...",
+    "remove_relation": "관계 제거...",
     "confirm_remove_relation": "관계를 제거하시겠습니까?",
     "specify_new_relation_name": "새로운 관계 이름을 지정하세요 (허용되는 문자: 영숫자, 콜론, 밑줄):",
     "connection_exists": "이 노트들 사이의 '{{name}}' 연결고리는 이미 존재합니다.",
@@ -1604,7 +1630,8 @@
       "paste_notes": "복사하거나 잘라낸 노트 붙여넣기",
       "cancel_adding_note": "노트 추가 취소",
       "close_note_pane": "노트 패널 닫기"
-    }
+    },
+    "rename_relation_heading": "관계 이름 변경"
   },
   "render": {
     "setup_title": "이 노트 안에 사용자 지정 HTML 또는 Preact JSX를 표시합니다",
@@ -2320,11 +2347,11 @@
     "insert-child-note": "하위 노트 삽입",
     "archive": "보관",
     "unarchive": "보관 해제",
-    "delete": "삭제",
+    "delete": "삭제...",
     "search-in-subtree": "하위 트리에서 검색",
     "hoist-note": "이 노트를 루트로 보기",
     "unhoist-note": "이 노트를 루트로 보기 해제",
-    "edit-branch-prefix": "브랜치 접두사 편집",
+    "edit-branch-prefix": "브랜치 접두사 편집...",
     "advanced": "고급",
     "expand-subtree": "하위 트리 펼치기",
     "collapse-subtree": "하위 트리 접기",
@@ -2332,7 +2359,7 @@
     "show-subtree": "하위 트리 표시",
     "sort-by": "정렬 순서...",
     "recent-changes-in-subtree": "하위 트리의 최근 변경 사항",
-    "convert-to-attachment": "첨부 파일로 변환",
+    "convert-to-attachment": "첨부 파일로 변환...",
     "copy-note-path-to-clipboard": "노트 경로를 클립보드에 복사",
     "protect-subtree": "하위 트리 보호",
     "unprotect-subtree": "하위 트리 보호 해제",
@@ -2342,9 +2369,9 @@
     "paste-into": "붙여넣기",
     "paste-after": "뒤에 붙여넣기",
     "duplicate": "복제본 만들기",
-    "export": "내보내기",
-    "import-into-note": "노트로 가져오기",
-    "apply-bulk-actions": "대량 작업 적용",
+    "export": "내보내기...",
+    "import-into-note": "노트로 가져오기...",
+    "apply-bulk-actions": "대량 작업 적용...",
     "converted-to-attachments_other": "노트 {{count}}개를 첨부 파일로 변환했습니다.",
     "convert-to-attachment-confirm": "선택한 노트를 각 상위 노트의 첨부 파일로 변환하시겠습니까? 이미지 노트에만 적용하며 다른 노트는 건너뜁니다.",
     "open-in-popup": "빠른 편집",
@@ -2450,7 +2477,7 @@
     "save_as_note": "노트로 저장",
     "save_note_failed": "메시지에서 노트를 생성하는 데 실패했습니다.",
     "regenerate": "다시 생성",
-    "delete_message": "메시지 삭제",
+    "delete_message": "메시지 삭제...",
     "delete_message_confirm": "이 메시지를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
     "attach_file": "이미지, PDF 또는 텍스트 파일 첨부",
     "remove_attachment": "첨부 파일 제거",
@@ -2502,7 +2529,20 @@
     "manage_search_providers": "검색 제공자 관리…",
     "web_search_builtin_unsupported": "이 모델에는 기본 제공 웹 검색 기능이 없습니다. 대신 검색 제공자를 선택하세요.",
     "web_search_provider_unsupported": "이 모델의 제공자는 자체 도구를 사용해 웹을 검색합니다.",
-    "searched_with": "{{name}}으로 검색함"
+    "searched_with": "{{name}}으로 검색함",
+    "tool_approval_prompt": "이 도구 호출을 허용하시겠습니까?",
+    "tool_approval_allow": "허용",
+    "tool_approval_deny": "거부",
+    "tool_approval_declined": "거부됨",
+    "tool_approval_allow_for_chat": "이 채팅에서 {{tool}} 도구 항상 허용",
+    "allowed_tools": "이 채팅에서 허용됨",
+    "permissions": "권한",
+    "permission_mode_always_ask": "항상 확인",
+    "permission_mode_always_ask_description": "읽기 작업을 포함한 모든 작업 전에 확인합니다.",
+    "permission_mode_ask_before_changes": "변경 전 확인",
+    "permission_mode_ask_before_changes_description": "노트를 변경하기 전에만 확인합니다.",
+    "permission_mode_dont_ask": "확인하지 않음",
+    "permission_mode_dont_ask_description": "변경을 포함한 모든 작업을 확인 없이 실행합니다."
   },
   "sidebar_chat": {
     "title": "AI 채팅",
@@ -2515,10 +2555,10 @@
     "recent_chats": "최근 대화",
     "no_chats": "이전 대화가 없습니다",
     "view_all_chats": "모든 채팅 보기",
-    "rename": "이름 바꾸기",
+    "rename": "이름 바꾸기...",
     "rename_title": "채팅 이름 변경",
     "rename_message": "이 채팅에 새로운 이름을 입력하세요:",
-    "delete": "삭제",
+    "delete": "삭제...",
     "delete_chat": "채팅 삭제",
     "delete_confirm": "이 채팅을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
   },
@@ -2545,7 +2585,7 @@
   },
   "highlights_list_2": {
     "title_with_count_other": "하이라이트 {{count}}개",
-    "menu_configure": "하이라이트 리스트 설정하기...",
+    "menu_configure": "하이라이트 목록 설정",
     "no_highlights": "하이라이트는 찾지 못했습니다."
   },
   "quick-search": {
@@ -2731,14 +2771,14 @@
     "add-custom-widget": "사용자 지정 위젯 추가",
     "add-spacer": "여백 추가",
     "delete": "삭제 <kbd data-command=\"deleteNotes\"></kbd>",
-    "reset": "초기화",
+    "reset": "초기화...",
     "move-to-visible-launchers": "표시 중인 실행 항목으로 이동",
     "move-to-available-launchers": "사용 가능한 실행 항목으로 이동",
     "duplicate-launcher": "실행 항목 복제 <kbd data-command=\"duplicateSubtree\">"
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "실행 표시줄에서 제거",
-    "configure_launch_bar": "실행 표시줄 구성",
+    "configure_launch_bar": "실행 표시줄 구성...",
     "launch_bar_orientation": "실행 표시줄 방향",
     "will_reload_frontend": "(앱을 다시 불러올 예정입니다)"
   },
@@ -2903,15 +2943,46 @@
     "draw-circle-toast-title": "원 그리기",
     "draw-circle-instruction": "지도에서 중심점을 클릭한 다음 원의 반경이 될 위치를 다시 클릭하세요. 중심점에서 바깥쪽으로 드래그할 수도 있습니다. Escape 키를 눌러 취소할 수 있습니다.",
     "image-unavailable": "이 맵의 이미지를 불러올 수 없습니다. map:image 관계가 가리키는 노트가 이미지인지 확인하세요.",
-    "image-svg-unsupported": "SVG 이미지는 맵으로 사용할 수 없습니다. 대신 이미지를 PNG, JPEG 또는 WebP로 변환하세요."
+    "image-svg-unsupported": "SVG 이미지는 맵으로 사용할 수 없습니다. 대신 이미지를 PNG, JPEG 또는 WebP로 변환하세요.",
+    "properties": "지리 맵 속성...",
+    "properties-title": "지리 맵 속성",
+    "general": "일반",
+    "image-note": "이미지 노트",
+    "image-note-description": "PNG, JPEG, WebP 또는 GIF 이미지입니다. SVG 이미지는 사용할 수 없습니다.",
+    "image-note-placeholder": "이미지 노트 검색",
+    "image-too-large": "이 이미지의 크기는 {{width}} × {{height}}픽셀입니다. 일부 기기는 긴 쪽이 {{limit}}픽셀을 넘는 이미지를 표시하지 못합니다. 그런 기기에서는 마커와 도형은 표시되지만 이미지는 표시되지 않습니다.",
+    "coordinates": "좌표",
+    "coordinates-description": "이미지에서 위치를 측정하는 방식입니다. 왼쪽 위 모서리부터의 픽셀 좌표 또는 비디오 게임에서 사용하는 좌표처럼 직접 지정한 좌표를 사용할 수 있습니다.",
+    "coordinates-pixels": "이미지 픽셀",
+    "coordinates-custom": "사용자 지정",
+    "coordinates-inherited": "이 모서리 좌표는 부모 노트 또는 템플릿에서 가져왔으므로 해당 위치에서만 제거할 수 있습니다.",
+    "top-left-corner": "왼쪽 위 모서리",
+    "bottom-right-corner": "오른쪽 아래 모서리",
+    "coordinates-invalid": "두 모서리의 x와 y 좌표가 각각 달라야 하므로 변경 사항을 저장하지 않았습니다.",
+    "dark-image": "어두운 이미지",
+    "dark-image-description": "어두운 이미지 위에서도 읽을 수 있도록 마커 제목을 밝은 색으로 표시합니다.",
+    "background": "배경",
+    "background-type": "유형",
+    "background-map": "벡터 및 래스터",
+    "background-image": "사용자 지정 이미지",
+    "background-map-description": "벡터 또는 래스터 스타일 중 하나로 표시하는 세계 지도입니다.",
+    "background-image-description": "평면도나 판타지 지도처럼 직접 준비한 이미지 위에 마커와 도형을 배치합니다.",
+    "background-image-inherited": "이 맵의 이미지는 부모 노트 또는 템플릿에서 가져왔으므로 해당 위치에서만 끌 수 있습니다.",
+    "background-tiles": "사용자 지정 타일셋",
+    "background-tiles-description": "선택한 서버의 래스터 타일로 그리는 세계 지도입니다.",
+    "tiles-url": "타일 URL",
+    "tiles-url-description": "타일 하나의 주소입니다. 확대 수준과 타일 위치에는 {z}, {x}, {y}를 사용합니다. 고해상도 타일 서버에서 @2x가 필요한 위치에는 {r}을 사용할 수 있습니다.",
+    "tiles-url-invalid": "타일 URL은 http:// 또는 https://로 시작하고 {z}, {x}, {y}를 포함해야 하므로 변경 사항을 저장하지 않았습니다.",
+    "dark-tiles": "어두운 타일셋",
+    "dark-tiles-description": "어두운 타일 위에서도 읽을 수 있도록 마커 제목을 밝은 색으로 표시합니다."
   },
   "geo-map-context": {
     "open-location": "위치 열기",
-    "remove-from-map": "맵에서 제거",
+    "remove-from-map": "맵에서 제거...",
     "add-note": "이 위치에 마커 추가",
     "move-marker": "다른 위치로 이동",
     "remove-from-map-confirmation": "지도에서 \"{{title}}\" 노트를 제거하시겠습니까?",
-    "delete-note": "노트 삭제",
+    "delete-note": "노트 삭제...",
     "delete-note-confirmation": "\"{{title}}\" 노트를 삭제하시겠습니까? 트랙은 자체 노트에서 그려지므로 지도에서 트랙만 제거할 수 없습니다."
   },
   "help-button": {
@@ -3129,7 +3200,7 @@
   "note_language": {
     "not_set": "설정된 언어 없음",
     "configure-languages": "언어 구성하기...",
-    "help-on-languages": "콘텐츠 언어에 대한 도움말...",
+    "help-on-languages": "콘텐츠 언어 도움말",
     "not_set_with_default": "언어 설정 안 함 — {{- language}}"
   },
   "content_language": {
@@ -3184,7 +3255,9 @@
     "html_support_enabled": "지원되지 않는 HTML 태그 유지",
     "html_support_description": "편집기 자체에서 지원하지 않는 HTML 태그를 유지합니다. 해당 태그 목록은 옵션 → 기타 → HTML 가져오기 태그에서 확인할 수 있습니다. 이러한 태그는 직접 편집할 수 없는 블록으로 표시되며, 인식되지 않는 태그는 편집 중에 전혀 보이지 않을 수도 있습니다. 이 옵션을 끄면 해당 태그는 노트를 처음 편집하고 저장할 때 제거되며, 가져오기에는 이 설정의 영향을 받지 않습니다.",
     "mathlive_enabled": "MathLive 시각적 편집기",
-    "mathlive_description": "수식을 시각적 편집기로 편집할 수 있습니다."
+    "mathlive_description": "수식을 시각적 편집기로 편집할 수 있습니다.",
+    "sticky_table_headers_enabled": "표 머리글 행 고정",
+    "sticky_table_headers_description": "표의 나머지 부분을 스크롤하는 동안 머리글 행을 노트 상단에 유지합니다."
   },
   "table_view": {
     "new-row": "새 행",
@@ -3200,17 +3273,19 @@
     "row-insert-child": "하위 노트 삽입",
     "add-column-to-the-left": "왼쪽에 열 추가",
     "add-column-to-the-right": "오른쪽에 열 추가",
-    "edit-column": "열 편집",
+    "edit-column": "열 편집...",
     "delete_column_confirmation": "이 칼럼을 삭제하시겠습니까? 해당 속성은 모든 노트에서 제거됩니다.",
-    "delete-column": "열 삭제",
-    "new-column-label": "라벨",
-    "new-column-relation": "관계"
+    "delete-column": "열 삭제...",
+    "new-column-label": "라벨...",
+    "new-column-relation": "관계...",
+    "properties": "표 속성...",
+    "properties-title": "표 속성"
   },
   "book_properties_config": {
     "hide-weekends": "주말 숨기기",
     "display-week-numbers": "주간 번호 표시",
     "map-style": "맵 스타일",
-    "max-nesting-depth": "최대 중첩 깊이:",
+    "max-nesting-depth": "최대 중첩 깊이",
     "raster": "래스터",
     "vector_light": "벡터(밝게)",
     "vector_dark": "벡터(어둡게)",
@@ -3220,10 +3295,11 @@
     "presentation-theme": "테마",
     "board-inbox-column": "받은 편지함 열 표시",
     "board-inbox-column-help": "열에 할당되지 않은 하위 노트를 나열하는 받은 편지함 열을 표시합니다.",
-    "vector_auto": "벡터(자동)"
+    "vector_auto": "벡터(자동)",
+    "max-nesting-depth-description": "컬렉션 자식 노트 아래로 몇 단계까지 표시할지 지정합니다. 0은 자식 노트만, 1은 그 자식 노트까지 표시하며, 이후에도 같은 방식으로 확장됩니다. 모든 단계를 표시하려면 비워 두세요."
   },
   "table_context_menu": {
-    "delete_row": "행 삭제",
+    "delete_row": "행 삭제...",
     "insert_rows_above": "위에 행 삽입",
     "insert_rows_below": "아래에 행 삽입",
     "insert_columns_left": "왼쪽에 열 삽입",
@@ -3347,7 +3423,7 @@
     "change-note-icon": "아이콘 변경",
     "general": "일반",
     "show-archived": "보관된 카드 및 열 표시",
-    "properties": "보드 속성",
+    "properties": "보드 속성...",
     "properties-title": "보드 속성",
     "card-templates": "카드 템플릿",
     "card-templates-hint": "새 보드 카드를 만들 때 사용할 노트 유형과 노트 템플릿을 선택하세요.",
@@ -3393,7 +3469,7 @@
   },
   "dashboard_view": {
     "refresh-widget": "새로 고침",
-    "remove-widget": "대시보드에서 제거",
+    "remove-widget": "대시보드에서 제거...",
     "empty-hint": "모든 하위 노트는 위젯이 됩니다. 트리에서 노트를 드래그하거나 새로 만들어 보세요."
   },
   "presentation_view": {
@@ -3417,7 +3493,7 @@
     "duration_minutes": "{{minutes}}분",
     "duration_hours": "{{hours}}시간",
     "duration_hours_minutes": "{{hours}}시간 {{minutes}}분",
-    "properties": "캘린더 속성",
+    "properties": "캘린더 속성...",
     "event_templates": "일정 템플릿",
     "event_templates_hint": "새 캘린더 일정을 만들 때 사용할 노트 유형과 노트 템플릿을 선택하세요.",
     "new_template_name": "새 일정 템플릿",
@@ -3427,7 +3503,8 @@
     "general": "일반",
     "event_attributes": "일정 속성",
     "event_attributes_hint": "일정에 표시할 속성과 표시 순서를 선택하세요. 새 속성은 직접 켜기 전까지 숨겨집니다.",
-    "event_attributes_overridden": "이 캘린더에는 calendar:displayedAttributes 라벨이 있으므로 여기서 선택한 속성 대신 해당 라벨에 나열된 속성이 일정에 표시됩니다."
+    "event_attributes_overridden": "이 캘린더에는 calendar:displayedAttributes 라벨이 있으므로 여기서 선택한 속성 대신 해당 라벨에 나열된 속성이 일정에 표시됩니다.",
+    "properties-title": "캘린더 속성"
   },
   "ocr": {
     "extracted_text": "추출된 텍스트 (OCR)",
@@ -3443,7 +3520,8 @@
     "processing_failed": "OCR 처리 시작 실패",
     "text_filtered_low_confidence": "OCR은 텍스트를 {{confidence}}% 신뢰도로 감지했지만, 최소 임계값이 {{threshold}}%라서 버려졌습니다.",
     "open_media_settings": "설정 열기",
-    "view_extracted_text": "추출된 텍스트 보기 (OCR)"
+    "view_extracted_text": "추출된 텍스트 보기 (OCR)",
+    "no_text_recognized": "OCR에서 인식할 텍스트를 찾지 못했습니다."
   },
   "command_palette": {
     "tree-action-name": "트리: {{name}}",
@@ -3574,7 +3652,16 @@
     "clipped_note_details": "이 노트는 웹페이지에서 가져왔습니다. 클릭하면 페이지 설명, 작성자, 날짜를 볼 수 있습니다.",
     "clipped_note_author": "작성자",
     "clipped_note_published": "게시일",
-    "clipped_note_modified": "수정일"
+    "clipped_note_modified": "수정일",
+    "read_only_locked": "읽기 전용",
+    "read_only_locked_description": "이 노트는 Trilium에서 제공하므로 편집할 수 없습니다.",
+    "template": "템플릿",
+    "template_description": "이 노트는 템플릿입니다. 이 템플릿으로 생성된 노트는 속성을 상속하므로, 여기에서 속성을 변경하면 해당 노트 모두에 변경 사항이 적용됩니다.",
+    "template_scope_global": "모든 위치에서 사용 가능",
+    "template_scope_workspace": "해당 워크스페이스 내에서만 사용 가능",
+    "template_scope_workspace_unavailable": "이 템플릿은 워크스페이스에 속하지 않습니다.",
+    "workspace_template": "워크스페이스 템플릿",
+    "template_properties": "템플릿 속성..."
   },
   "status_bar": {
     "language_title": "콘텐츠 언어 변경",
@@ -4476,7 +4563,16 @@
     "starting": "전사를 시작하는 중…",
     "stop": "전사 중지",
     "stopping": "전사 내용을 마무리하는 중…",
-    "title_keeping_recordings": "{{title}} (문제 해결용 오디오 보관)"
+    "title_keeping_recordings": "{{title}} (문제 해결용 오디오 보관)",
+    "stop_with_issue": "전사 중지(일부 오디오가 전사되지 않고 있음)",
+    "not_captured_microphone": "마이크 입력을 캡처하지 못해 사용자 발언이 전사되지 않고 있습니다. 마이크가 연결되어 있고 Trilium에 마이크 사용 권한이 있는지 확인한 뒤 전사를 다시 시작하세요.",
+    "not_captured_system": "회의 오디오를 캡처하지 못해 다른 참석자의 발언이 전사되지 않고 있습니다. 시스템에서 화면 또는 오디오 녹음 권한을 요청하면 Trilium에 허용한 뒤 전사를 다시 시작하세요.",
+    "no_audio_microphone": "10초 동안 마이크에서 오디오가 들어오지 않아 사용자 발언이 전사되지 않고 있습니다. 전사를 중지한 뒤 다시 시작하세요.",
+    "no_audio_system": "10초 동안 회의 오디오가 들어오지 않아 다른 참석자의 발언이 전사되지 않고 있습니다. 전사를 중지한 뒤 다시 시작하세요.",
+    "silent_microphone": "15초 동안 마이크에서 무음만 입력되었습니다. 음소거 상태가 아닌지, 시스템 기본 마이크로 설정되어 있는지 확인하세요.",
+    "silent_system": "1분 동안 회의 오디오에서 무음만 감지되었습니다. 다른 참석자가 말하고 있다면 회의 소리가 시스템 기본 스피커 또는 헤드폰으로 재생되는지 확인하세요.",
+    "consent": "회의가 전사되고 있음을 모든 참석자에게 알리고 동의를 받으세요.",
+    "consent_keeping_recordings": "회의가 전사되고 오디오도 보관된다는 사실을 모든 참석자에게 알리고 동의를 받으세요."
   },
   "transcript": {
     "speaker_me": "나",
@@ -4487,7 +4583,11 @@
     "unreadable": "이 전사 내용을 읽을 수 없습니다.",
     "speaking": "말하는 중…",
     "offset": "전사 시작 후 {{offset}} 경과",
-    "cleanup": "군더더기 말 숨기기"
+    "cleanup": "군더더기 말 숨기기",
+    "not_captured": "캡처되지 않음",
+    "no_audio": "오디오 없음",
+    "silent": "무음만 감지됨",
+    "copy": "전사 내용 복사"
   },
   "resource_download": {
     "title": "다운로드 필요",
@@ -4548,5 +4648,50 @@
     "unknown_description": "Trilium에서 다운로드한 파일이 아닙니다.",
     "delete_foreign_confirmation": "{{name}} 항목을 삭제하시겠습니까? 이 앱의 어떤 기능에서도 사용하지 않습니다.",
     "unverified": "아직 검사하지 않음"
+  },
+  "note_chips": {
+    "more": "+{{count}}개 더 보기"
+  },
+  "template_field": {
+    "preview": "미리보기: {{result}}",
+    "error_unclosed": "이 ${ 표현식에는 닫는 괄호가 없으므로 제목에 일반 텍스트로 남습니다.",
+    "error_unsupported": "${ 와 } 사이에는 note.title 같은 속성이나 note.getLabelValue('name') 같은 메서드만 사용할 수 있습니다.",
+    "error_unknown_variable": "“{{name}}”이라는 변수가 없습니다.",
+    "error_property_not_allowed": "“{{name}}” 속성은 템플릿에서 사용할 수 없습니다.",
+    "error_method_not_allowed": "“{{name}}” 메서드는 템플릿에서 사용할 수 없습니다.",
+    "error_method_not_on_value": "“{{name}}” 앞의 값에는 해당 메서드가 없습니다.",
+    "variable_note": "이름을 변경할 노트",
+    "member_title": "노트의 제목",
+    "member_note_id": "노트의 ID",
+    "member_type": "텍스트 또는 코드 같은 노트 유형",
+    "member_mime": "노트의 MIME 유형",
+    "member_date_created_obj": "format('…')과 함께 사용할 생성 날짜",
+    "member_utc_date_created_obj": "format('…')과 함께 사용할 UTC 생성 날짜",
+    "member_date_created": "노트 생성 시각(현지 시간)",
+    "member_date_modified": "노트 최종 수정 시각(현지 시간)",
+    "member_utc_date_created": "노트 생성 시각(UTC)",
+    "member_utc_date_modified": "노트 최종 수정 시각(UTC)",
+    "member_is_protected": "노트의 보호 여부",
+    "member_get_label_value": "지정한 이름의 라벨 값",
+    "member_get_relation_value": "지정한 이름의 관계가 가리키는 노트 ID",
+    "member_format": "지정한 형식의 날짜(예: YYYY-MM-DD)"
+  },
+  "compress-images-menu": "이미지 압축...",
+  "compress-image-menu": "이미지 압축...",
+  "template_properties": {
+    "title": "템플릿 속성",
+    "title_template": "생성되는 노트의 기본 제목",
+    "title_template_description": "생성 시점(now)과 노트가 생성되는 상위 노트(parentNote)를 참조할 수 있습니다.",
+    "title_template_placeholder": "회의 ${now.format('YYYY-MM-DD')}",
+    "new_notes": "새 노트",
+    "default_parent": "생성되는 노트의 기본 위치",
+    "default_parent_description": "텍스트 노트에서 @ 자동완성으로 생성하는 경우처럼 별도의 위치를 지정하지 않았을 때 노트가 배치되는 위치입니다.",
+    "default_parent_placeholder": "노트가 생성될 위치"
+  },
+  "doc_notes": {
+    "hidden": "<p>숨겨진 노트 트리는 사용자에게 대부분 표시할 필요가 없는 애플리케이션 수준의 다양한 데이터를 저장하는 데 사용됩니다.</p><p>작업 내용을 충분히 이해한 경우에만 수정하세요. 이 하위 트리를 잘못 변경하면 애플리케이션이 비정상 종료될 수 있습니다.</p>",
+    "launchbar_command_launcher": "<p>이 실행 표시줄 작업의 키보드 단축키는 옵션 -&gt; 단축키에서 설정할 수 있습니다.</p>",
+    "launchbar_history_navigation": "<p>뒤로 및 앞으로 버튼을 사용하여 탐색 기록에서 이전 페이지와 다음 페이지로 이동할 수 있습니다.</p><p>이 실행 표시줄 버튼은 데스크톱 버전에서만 작동합니다. 서버 버전에서는 브라우저 자체의 뒤로 및 앞으로 버튼을 사용할 수 있으므로 이 기능은 무시됩니다.</p>",
+    "launchbar_intro": "<p>실행 표시줄 설정에 오신 것을 환영합니다.</p><p>여기에서 다음 작업을 수행할 수 있습니다.</p><ul><li>사용 가능한 실행 항목을 드래그하여 표시 목록으로 이동하면 실행 표시줄에 추가됩니다.</li><li>표시된 실행 항목을 드래그하여 사용 가능한 목록으로 이동하면 실행 표시줄에서 숨겨집니다.</li><li>목록의 항목을 드래그하여 순서를 변경할 수 있습니다.</li><li>\"표시된 실행 항목\" 폴더를 마우스 오른쪽 버튼으로 클릭하여 새 실행 항목을 만들 수 있습니다.</li><li>기본 설정으로 되돌리려면 컨텍스트 메뉴에서 \"초기화\"를 선택하세요.</li></ul>"
   }
 }
