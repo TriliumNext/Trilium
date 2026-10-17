@@ -3155,7 +3155,21 @@
     "manage_search_providers": "検索プロバイダーの管理…",
     "web_search_builtin_unsupported": "このモデルには組み込みのウェブ検索機能がありません。代わりに検索プロバイダーを選択してください。",
     "web_search_provider_unsupported": "このモデルのプロバイダーは、独自のツールを使用してウェブ検索を行います。",
-    "searched_with": "{{name}} で検索しました"
+    "searched_with": "{{name}} で検索しました",
+    "tool_approval_prompt": "このツール呼び出しを許可しますか？",
+    "tool_approval_allow": "許可",
+    "tool_approval_deny": "拒否",
+    "tool_approval_declined": "拒否されました",
+    "tool_approval_allow_for_chat": "このチャットでは常に {{tool}} を許可",
+    "allowed_tools": "このチャットで許可済み",
+    "allowed_tools_count_other": "{{count}} 個のツール",
+    "permissions": "権限",
+    "permission_mode_always_ask": "常に確認",
+    "permission_mode_always_ask_description": "読み取りを含め、すべてのアクションの前に確認",
+    "permission_mode_ask_before_changes": "変更の前に確認",
+    "permission_mode_ask_before_changes_description": "ノートを変更する前のみ確認",
+    "permission_mode_dont_ask": "確認しない",
+    "permission_mode_dont_ask_description": "変更を含め、すべてを自動的に実行"
   },
   "sidebar_chat": {
     "title": "AI チャット",
