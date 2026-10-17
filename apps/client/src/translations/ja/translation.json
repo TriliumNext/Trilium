@@ -836,7 +836,8 @@
     "open_all_in_tabs_tooltip": "すべての結果を新しいタブで開く",
     "open_all_confirm_other": "{{count}} 件のノートを新しいタブで開きます。続行しますか？",
     "dashboard": "ダッシュボード",
-    "open_all_limit_exceeded": "一度に開こうとしているノートが多すぎます（{{count}}）。上限は {{max}} です。先に検索結果を絞り込んでください。"
+    "open_all_limit_exceeded": "一度に開こうとしているノートが多すぎます（{{count}}）。上限は {{max}} です。先に検索結果を絞り込んでください。",
+    "included_notes": "含まれるノート"
   },
   "note_types": {
     "geo-map": "ジオマップ",
@@ -1010,7 +1011,9 @@
     "delete_column_confirmation": "この列を本当に削除してもよろしいですか？対応する属性はすべてのノートから削除されます。",
     "delete-column": "列を削除...",
     "new-column-label": "ラベル...",
-    "new-column-relation": "リレーション..."
+    "new-column-relation": "リレーション...",
+    "properties": "表 プロパティ...",
+    "properties-title": "表 プロパティ"
   },
   "search_script": {
     "title": "検索スクリプト:",
@@ -1918,7 +1921,9 @@
     "html_support_enabled": "サポートされていない HTML タグを保持する",
     "html_support_description": "「オプション」→「その他」→「HTMLインポートタグ」に記載されている、エディタが独自機能を持たないHTMLタグを保持します。これらは直接編集できないブロックとして表示されますが、認識されないタグは編集画面上で全く表示されない場合もあります。この設定を無効にすると、該当するタグは、ノートを最初に編集・保存した時点で削除されます（インポート処理自体には影響しません）。",
     "mathlive_enabled": "MathLive ビジュアルエディター",
-    "mathlive_description": "ビジュアルエディターを使用して数式を編集できます。"
+    "mathlive_description": "ビジュアルエディターを使用して数式を編集できます。",
+    "sticky_table_headers_enabled": "表のヘッダー行を固定",
+    "sticky_table_headers_description": "表の残りの部分をスクロールしている間も、ヘッダー行がノートの上部に表示されたままになるようにします。"
   },
   "table_context_menu": {
     "delete_row": "行を削除...",
@@ -2507,7 +2512,38 @@
     "draw-circle-toast-title": "円を描画",
     "draw-circle-instruction": "マップ上の中心をクリックし、円の半径となる位置を再度クリックします。中心からドラッグして描画することもできます。Esc キーを押すとキャンセルされます。",
     "image-unavailable": "このマップの画像を読み込めませんでした。map:image のリレーションが指し示しているノートが画像であることを確認してください。",
-    "image-svg-unsupported": "SVG 画像はマップとして使用できません。代わりに PNG、JPEG、または WebP 形式に変換してください。"
+    "image-svg-unsupported": "SVG 画像はマップとして使用できません。代わりに PNG、JPEG、または WebP 形式に変換してください。",
+    "properties": "ジオマップ プロパティ...",
+    "properties-title": "ジオマップ プロパティ",
+    "general": "一般",
+    "image-note": "画像ノート",
+    "image-note-description": "PNG、JPEG、WebP、または GIF 形式の画像。SVG形式の画像は使用できません。",
+    "image-note-placeholder": "画像ノートを検索",
+    "image-too-large": "この画像のサイズは {{width}} × {{height}} ピクセルです。一部のデバイスでは、長辺が {{limit}} ピクセルを超える画像を表示できません。その場合、マーカーや図形は表示されますが、画像自体は表示されません。",
+    "coordinates": "座標",
+    "coordinates-description": "画像上の位置の測定方法: 左上隅を起点とするピクセル単位、またはビデオゲームなどで使われるような独自の座標系で測定されます。",
+    "coordinates-pixels": "画像ピクセル",
+    "coordinates-custom": "カスタム",
+    "coordinates-inherited": "これらの角は親ノートまたはテンプレートから引き継がれているため、そちらでしか削除できません。",
+    "top-left-corner": "左上の角",
+    "bottom-right-corner": "右下の角",
+    "coordinates-invalid": "2 つの角は x 座標と y 座標の双方が異なっている必要があるため、この変更は保存されませんでした。",
+    "dark-image": "暗い画像",
+    "dark-image-description": "マーカーのタイトルを明るい色で表示し、暗い画像の上からでも読み取れるようにします。",
+    "background": "背景",
+    "background-type": "タイプ",
+    "background-map": "ベクター＆ラスター",
+    "background-image": "カスタム画像",
+    "background-map-description": "ベクターまたはラスター形式のいずれかのスタイルによる世界地図。",
+    "background-image-description": "間取り図やファンタジー地図など、自分で作成した画像に、マーカーや図形を配置できます。",
+    "background-image-inherited": "このマップの画像は親ノートまたはテンプレートから引き継がれているため、そちらでしか無効にできません。",
+    "background-tiles": "カスタムタイルセット",
+    "background-tiles-description": "任意のサーバーから取得したラスタータイルを使用して描画される世界地図。",
+    "tiles-url": "タイル URL",
+    "tiles-url-description": "タイル 1 枚のアドレスです。ズームレベルとタイルの位置が入る箇所には、それぞれ {z}、{x}、{y} を指定します。高解像度タイルを提供するサーバーの場合は {r} を指定できます（この場合、サーバー側では @2x が想定されます）。",
+    "tiles-url-invalid": "タイル URL は http:// または https:// で始まり、{z}、{x}、{y} を含んでいる必要があります。そのため、今回の変更は保存されませんでした。",
+    "dark-tiles": "ダークタイルセット",
+    "dark-tiles-description": "マーカーのタイトルを明るい色で表示します。これにより、暗いタイル上でもタイトルを読み取ることができます。"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2532,7 +2568,7 @@
     "hide-weekends": "週末を非表示",
     "display-week-numbers": "週番号を表示",
     "map-style": "マップスタイル",
-    "max-nesting-depth": "最大階層の深さ:",
+    "max-nesting-depth": "最大ネスト深度",
     "show-scale": "スケールを表示",
     "raster": "Raster",
     "vector_light": "Vector（ライト）",
@@ -2542,7 +2578,8 @@
     "presentation-theme": "テーマ",
     "board-inbox-column": "インボックス列を表示",
     "board-inbox-column-help": "インボックス列を表示します。この列には、どの列にも割り当てられていない子ノートが一覧表示されます。",
-    "vector_auto": "Vector (自動)"
+    "vector_auto": "Vector (自動)",
+    "max-nesting-depth-description": "コレクションの子要素から何階層下まで表示するかを指定: 0 は子要素のみを表示し、1 はその子要素のさらに下の階層まで表示され、空欄にすると、すべての階層が表示されます。"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -3329,7 +3366,9 @@
     "view_extracted_text": "抽出されたテキスト（OCR）を表示",
     "processing_complete": "OCR 処理が完了しました。",
     "text_filtered_low_confidence": "OCR は {{confidence}}% の信頼度でテキストを検出しましたが、最小しきい値が {{threshold}}% であるため、破棄されました。",
-    "open_media_settings": "設定を開く"
+    "open_media_settings": "設定を開く",
+    "no_text_recognized": "OCR で認識できるテキストは見つかりませんでした。",
+    "pages_failed_other": "{{count}} ページで OCR 処理に失敗したため、それらのページのテキストは欠落しています。理由はログに記載されています。"
   },
   "database": {
     "title": "データベース",
