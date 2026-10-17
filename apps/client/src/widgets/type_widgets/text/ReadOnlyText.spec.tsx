@@ -485,8 +485,8 @@ describe("ReadOnlyText tabs", () => {
 
         second.click();
         label?.querySelector("b")?.click();
-        expect(first.parentElement?.classList.contains("trilium-tab--active")).toBe(true);
-        expect(second.parentElement?.classList.contains("trilium-tab--active")).toBe(false);
+        expect(first.classList.contains("trilium-tab-title--active")).toBe(true);
+        expect(second.classList.contains("trilium-tab-title--active")).toBe(false);
 
         await act(async () => render(null, harness.container));
         harness.container.remove();

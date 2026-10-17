@@ -53,6 +53,7 @@ export default function CodeEmbed({
                 rootRef={rootRef}
                 className="code-embed-content"
                 isEditing={isEditing}
+                hasCaretNavigation
                 preview={shownPreview}
             >
                 <CodeEmbedEditor

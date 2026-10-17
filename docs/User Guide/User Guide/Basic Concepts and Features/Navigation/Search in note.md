@@ -27,3 +27,12 @@ Local search allows you to search within the currently displayed note. 
 *   Options:
     *   _Case sensitive_ – the search will distinguish upper case characters from lower case (e.g. searching for Hello will not match `hello`).
     *   _Match words_ - the search will find only exact word matches (e.g. searching for `Java` will not match `JavaScript`).
+
+## Included notes
+
+In a <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> note, the search also finds the text of the notes included with <a class="reference-link" href="../../Note%20Types/Text/Include%20Note.md">Include Note</a>, in the order they appear in the note.
+
+*   The text of included text and code notes and of embedded code files, such as a `.js` or `.txt` attachment, is searched. The title of an include and the content of other notes, such as a collection or a drawing, are not.
+*   The up and down arrows move through the results of an include as through the rest of the note.
+*   A result in a collapsed _Expandable_ include expands the include while that result is the current one, and collapses it again once the search moves on.
+*   _Replace_ and _Replace all_ change an included note only while its _Editable_ button is on. While the current result is in an include that cannot be edited, _Replace_ is disabled, and _Replace all_ leaves such results unchanged.

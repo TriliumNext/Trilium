@@ -55,6 +55,7 @@ export default function TextEmbed({
             rootRef={rootRef}
             className="text-embed-content"
             isEditing={isEditing}
+            hasCaretNavigation
             preview={shownPreview}
         >
             <TextEmbedEditor

@@ -156,7 +156,13 @@ export function ReadOnlyTextContent({
         const disposeTableScroll = applyTableScroll(container);
         const disposeStickyTableHeaders = applyStickyTableHeaders(container);
         applyMath(container);
-        applyTabs(container, { placeholder: t("text-editor.ck.tab-title") });
+        const disposeTabs = applyTabs(container, {
+            placeholder: t("text-editor.ck.tab-title"),
+            scrollLabels: {
+                start: t("text-editor.ck.scroll-to-the-previous-tabs"),
+                end: t("text-editor.ck.scroll-to-the-next-tabs")
+            }
+        });
         const tabTitles = container.querySelectorAll<HTMLElement>(`.${TAB_CLASSES.tabTitle}`);
         const disposeTabTitles = [ ...tabTitles ]
             .filter((title) => title.hasChildNodes())
@@ -166,6 +172,7 @@ export function ReadOnlyTextContent({
         return () => {
             disposeTableScroll();
             disposeStickyTableHeaders();
+            disposeTabs();
             for (const dispose of disposeTabTitles) {
                 dispose();
             }

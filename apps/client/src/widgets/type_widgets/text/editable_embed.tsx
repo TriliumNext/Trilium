@@ -1,4 +1,4 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, EmbedEdge } from "@triliumnext/ckeditor5";
 import { type ComponentChildren, createContext, type RefObject } from "preact";
 import { Suspense } from "preact/compat";
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -8,7 +8,8 @@ import type { ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { useNoteLabelBoolean } from "../../react/hooks";
 import {
-    type ContentEmbedToolProvider, registerContentEmbedTools, useIsContentEmbedEditable
+    type ContentEmbedToolProvider, registerContentEmbedTools, registerEmbedCaretTarget,
+    useIsContentEmbedEditable
 } from "./content_embed_tools";
 
 /**
@@ -68,6 +69,11 @@ interface EditableEmbedContentProps {
     rootRef: RefObject<HTMLDivElement | null>;
     className: string;
     isEditing: boolean;
+    /**
+     * Whether the arrow keys move the caret between the editor and the text editor around the
+     * embed. The editor opts in with `useEmbedCaretNavigation()`.
+     */
+    hasCaretNavigation?: boolean;
     /** The rendered content, shown while the content is not edited. */
     preview: HTMLElement;
     /** The editor, loaded on demand, which replaces the preview while `isEditing`. */
@@ -76,15 +82,77 @@ interface EditableEmbedContentProps {
 
 /** The content of an embed: its preview, replaced by its editor while it is edited. */
 export function EditableEmbedContent({
-    rootRef, className, isEditing, preview, children
+    rootRef, className, isEditing, hasCaretNavigation, preview, children
 }: EditableEmbedContentProps) {
     const previewView = <EmbedPreview element={preview} />;
 
     return (
         <div ref={rootRef} className={className}>
-            {isEditing ? <Suspense fallback={previewView}>{children}</Suspense> : previewView}
+            {isEditing ? (
+                <CaretNavigationContext.Provider value={hasCaretNavigation ? rootRef : null}>
+                    <Suspense fallback={previewView}>{children}</Suspense>
+                </CaretNavigationContext.Provider>
+            ) : previewView}
         </div>
     );
+}
+
+/**
+ * An editor in an embed that the caret enters from the text editor around the embed, and leaves,
+ * with the arrow keys. The `ContentEmbedCaret` plugin of a text editor and `CodeMirror` are ones.
+ */
+export interface EmbeddedCaretEditor {
+    /** Focuses the editor with the caret at `edge` of its content. */
+    focusAt(edge: EmbedEdge): void;
+    /**
+     * The edge of the content that the arrow key of `event` moves the caret past, or `null` for
+     * any other key, while the caret stays in the content and while a list of the editor, such as
+     * its completions, takes the key.
+     */
+    getEdgeLeftBy(event: KeyboardEvent): EmbedEdge | null;
+}
+
+/**
+ * Lets the arrow keys move the caret between `getEditor()`, the editor of an embed, and the text
+ * editor around the embed, while its `EditableEmbedContent` has `hasCaretNavigation`.
+ * `getEditor()` returns `null` while the editor is not ready.
+ */
+export function useEmbedCaretNavigation(
+    getEditor: () => EmbeddedCaretEditor | null | undefined
+) {
+    const rootRef = useContext(CaretNavigationContext);
+    const getEditorRef = useRef(getEditor);
+    getEditorRef.current = getEditor;
+
+    useEffect(() => {
+        const root = rootRef?.current;
+        if (!root) return;
+
+        // The capture phase runs before the editor handles the key.
+        const onKeyDown = (event: KeyboardEvent) => {
+            const edge = getEditorRef.current()?.getEdgeLeftBy(event);
+            if (edge && leaveContentEmbed(root, edge)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        };
+        root.addEventListener("keydown", onKeyDown, { capture: true });
+        const unregister = registerEmbedCaretTarget(root, {
+            enter(edge) {
+                const editor = getEditorRef.current();
+                // A collapsed Expandable embed hides its content, so the caret steps over it.
+                if (!editor || root.closest("[hidden]")) return false;
+
+                editor.focusAt(edge);
+                return true;
+            }
+        });
+
+        return () => {
+            root.removeEventListener("keydown", onKeyDown, { capture: true });
+            unregister();
+        };
+    }, [ rootRef ]);
 }
 
 /**
@@ -211,12 +279,25 @@ type EditorRootElement = HTMLElement & { ckeditorInstance?: CKTextEditor };
 
 const EDITOR_ROOT_SELECTOR = ".ck-editor__editable:not(.ck-editor__nested-editable)";
 
+/** The content box of an embed whose editor has caret navigation, or `null`. */
+const CaretNavigationContext = createContext<RefObject<HTMLElement | null> | null>(null);
+
 const EDITABLE_FLAG_TOOLS: ContentEmbedToolProvider = {
     hasEditableFlag: true,
     getTools: () => [],
     execute: () => {},
     subscribe: () => () => {}
 };
+
+/**
+ * Puts the caret of the text editor around `element` beside its embed, past `edge`. Returns
+ * `false` when `element` is in no embed of a text editor.
+ */
+function leaveContentEmbed(element: HTMLElement, edge: EmbedEdge) {
+    const editor = findTextEditorAround(element);
+    return !!editor?.plugins.has("ContentEmbedCaret")
+        && editor.plugins.get("ContentEmbedCaret").leaveEmbed(element, edge);
+}
 
 function EmbedPreview({ element }: { element: HTMLElement }) {
     const containerRef = useRef<HTMLDivElement>(null);

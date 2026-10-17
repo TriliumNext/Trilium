@@ -219,6 +219,11 @@ export default class FindInLinkWidgets extends Plugin {
         state.highlightedResult = state.results.first;
     }
 
+    /** Whether the replace commands replace `result`, which a match in a link widget is not. */
+    canReplace(result: FindResultType): boolean {
+        return !isWidgetResult(result as MarkedFindResult);
+    }
+
 }
 
 /** Reports every match as a character range, as `findByTextCallback()` does. */
@@ -274,3 +279,9 @@ function isWidgetResult(value: MarkedFindResult): boolean {
 }
 
 const SEARCHABLE_WIDGETS = new Set([ "reference", "linkMention", "linkEmbed" ]);
+
+declare module "ckeditor5" {
+    interface PluginsMap {
+        [FindInLinkWidgets.pluginName]: FindInLinkWidgets;
+    }
+}

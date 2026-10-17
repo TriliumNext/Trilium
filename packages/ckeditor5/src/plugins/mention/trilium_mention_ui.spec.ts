@@ -105,14 +105,20 @@ describe("TriliumMentionUI", () => {
 
     it("shows a marker's list the query typed after it, the caret and the editable", () => {
         expect(TriliumMentionUI.pluginName).toBe("TriliumMentionUI");
+        const plugin = editor.plugins.get(TriliumMentionUI);
+        expect(plugin.isListShown).toBe(false);
 
         type("@my no");
+        expect(plugin.isListShown).toBe(true);
         expect(notes.state?.query).toBe("my no");
         expect(notes.state?.caretRect().height).toBeGreaterThan(0);
         expect(notes.state?.editable).toBe(editor.editing.view.getDomRoot());
         type("te");
         expect(notes.state?.query).toBe("my note");
         expect(labels.show).not.toHaveBeenCalled();
+
+        press(keyCodes.esc);
+        expect(plugin.isListShown).toBe(false);
     });
 
     it("closes one marker's list when another marker is typed", () => {

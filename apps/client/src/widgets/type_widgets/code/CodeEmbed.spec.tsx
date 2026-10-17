@@ -13,7 +13,8 @@ import LoadResults from "../../../services/load_results";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import { getContentEmbedTools } from "../text/content_embed_tools";
+import { CodeMirrorFindTarget } from "../../find_in_code";
+import { getContentEmbedTools, getEmbedFindTarget } from "../text/content_embed_tools";
 import CodeEmbed from "./CodeEmbed";
 
 const renderCodePreview = vi.hoisted(() => vi.fn(async (content: string, _mime: string) => {
@@ -69,6 +70,43 @@ describe("CodeEmbed", () => {
         expect(editor.scheduleSave).toHaveBeenCalledOnce();
         const getContent = vi.mocked(editor.scheduleSave).mock.calls[0][0];
         expect(getContent()).toBe("# print(1)");
+    });
+
+    it("lets the find search the editor while the toggle is on", async () => {
+        const { figure } = await mount(buildCodeNote("print(1)\nprint(2)"), buildEditor(), {
+            isEditable: true
+        });
+        const view = await findView(figure);
+        const target = getEmbedFindTarget(figure);
+        if (!(target instanceof CodeMirrorFindTarget)) throw new Error("Expected a code target.");
+        const onContentChange = vi.fn();
+        const stopWatching = target.watchContent(onContentChange);
+
+        expect(await target.find("print", { matchCase: false, wholeWord: false })).toBe(2);
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
+        act(() => target.highlight(1));
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(1);
+        act(() => target.highlight(null));
+        expect(figure.querySelectorAll(".cm-activeMatch")).toHaveLength(0);
+        expect(target.getFirstMatchBelow(-Infinity)).toBe(0);
+        expect(target.getFirstMatchBelow(Infinity)).toBeNull();
+        expect(onContentChange).not.toHaveBeenCalled();
+
+        expect(await target.replace(1, "log")).toBe(1);
+        expect(view.state.doc.toString()).toBe("print(1)\nlog(2)");
+        expect(onContentChange).toHaveBeenCalledOnce();
+        expect(target.close(0)).toBe(true);
+        expect([ view.state.selection.main.from, view.state.selection.main.to ]).toEqual([ 0, 5 ]);
+        stopWatching();
+        act(() => view.dispatch({ changes: { from: 0, insert: "#" } }));
+        expect(onContentChange).toHaveBeenCalledOnce();
+
+        await act(async () => {
+            delete figure.dataset.editable;
+            await Promise.resolve();
+        });
+        expect(getEmbedFindTarget(figure)).toBeNull();
+        expect(await target.find("print", { matchCase: false, wholeWord: false })).toBe(0);
     });
 
     it("releases the editor and previews the edited content once the toggle goes off", async () => {

@@ -41,7 +41,7 @@ import { convertImageToDrawing } from "../canvas/image_to_drawing";
 import { TypeWidgetProps } from "../type_widget";
 import AttachmentSaves, { useNoteEditor } from "./attachment_saves";
 import CKEditor, { CKEditorApi, NotificationEventData, NotificationEventInfo } from "./CKEditor";
-import { getContentEmbedTools } from "./content_embed_tools";
+import { enterContentEmbed, getContentEmbedTools } from "./content_embed_tools";
 import { useEmbedEditors } from "./editable_embed";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
 import linkEmbedService from "../../../services/link_embed";
@@ -319,6 +319,7 @@ export default function EditableText({
         copyBlockReference: () => copyReference(),
         copyTabReference: () => void copyReference(copyTabReference),
         getContentEmbedTools,
+        enterContentEmbed,
         // Link preview functionality. The insert flow itself lives in the editor (a balloon form),
         // so the host only has to supply the metadata and the rendering.
         async fetchLinkMetadata(url: string) {

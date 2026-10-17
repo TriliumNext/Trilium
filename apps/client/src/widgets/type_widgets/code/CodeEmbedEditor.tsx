@@ -3,9 +3,12 @@ import { useEffect, useLayoutEffect, useRef } from "preact/hooks";
 
 import type FNote from "../../../entities/fnote";
 import type { ContentEditor } from "../../../services/content_renderer";
+import { CodeMirrorFindTarget } from "../../find_in_code";
 import {
     useNoteLabelInt, useNoteLabelOptionalBool, useTriliumOptionBool
 } from "../../react/hooks";
+import { registerEmbedFindTarget } from "../text/content_embed_tools";
+import { useEmbedCaretNavigation } from "../text/editable_embed";
 import { CodeEditor } from "./Code";
 
 export interface CodeEmbedEditorProps {
@@ -27,6 +30,15 @@ export default function CodeEmbedEditor({
     const [ noteTabWidth ] = useNoteLabelInt(note, "tabWidth");
     const [ noteUseTabs ] = useNoteLabelOptionalBool(note, "indentWithTabs");
     const [ noteWrapLines ] = useNoteLabelOptionalBool(note, "wrapLines");
+    useEmbedCaretNavigation(() => viewRef.current);
+
+    // Runs after the effects of `CodeMirror`, which creates the view.
+    useEffect(() => {
+        const view = viewRef.current;
+        if (!view) return;
+
+        return registerEmbedFindTarget(view.dom, new CodeMirrorFindTarget(view));
+    }, []);
 
     // Runs after the effects of `CodeMirror`, which empties the document as it mounts.
     useEffect(() => {

@@ -16,6 +16,12 @@
 | Alt+↑ | ⌥+↑ |  |
 | Move blocks (lists, paragraphs, etc.) down | Ctrl+↑ | ⌘+↑ |
 | Alt+↓ | ⌥+↓ |  |
+| Move the selected content to another column of a <a class="reference-link" href="Multicolumn%20layout.md">Multicolumn layout</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
+| Move the current column of a multicolumn layout | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
+| Add a column after or before the current one in a multicolumn layout | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
+| Move the selected content to another tab in <a class="reference-link" href="Content%20tabs.md">Content tabs</a> | Ctrl+←, Ctrl+→, Ctrl+Shift+Home, Ctrl+Shift+End | ⌘+←, ⌘+→, ⌘+⇧+Home, ⌘+⇧+End |
+| Move the current tab of a tabs block | Ctrl+Alt+←, Ctrl+Alt+→, Ctrl+Alt+Home, Ctrl+Alt+End | ⌘+⌥+←, ⌘+⌥+→, ⌘+⌥+Home, ⌘+⌥+End |
+| Add a tab after or before the current one in a tabs block | Ctrl+Enter, Ctrl+Shift+Enter | ⌘+Enter, ⌘+⇧+Enter |
 
 ## Common shortcuts
 

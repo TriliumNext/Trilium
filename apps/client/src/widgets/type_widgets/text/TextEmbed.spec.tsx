@@ -1,3 +1,4 @@
+import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import { render } from "preact";
 import { useContext } from "preact/hooks";
 import { act } from "preact/test-utils";
@@ -11,10 +12,12 @@ import froca from "../../../services/froca";
 import LoadResults from "../../../services/load_results";
 import type { ContentEditor } from "../../../services/content_renderer";
 import { buildNote } from "../../../test/easy-froca";
+import { TextEditorFindTarget } from "../../find_in_text";
+import MergedFind from "../../merged_find";
 import { useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import type { TypeWidgetProps } from "../type_widget";
-import { getContentEmbedTools } from "./content_embed_tools";
+import { getContentEmbedTools, getEmbedFindTarget } from "./content_embed_tools";
 import { NestedEmbedContext } from "./editable_embed";
 import TextEmbed from "./TextEmbed";
 
@@ -72,6 +75,30 @@ afterEach(() => {
 });
 
 describe("TextEmbed", () => {
+    it("lets the find search its text editor once the editor is ready", async () => {
+        const { figure } = await mount(buildTextNote("ready"), buildEditor(), { isEditable: true });
+        await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });
+        const { parentComponent, ntxId } = editorProps.mock.calls[0][0] as TypeWidgetProps;
+        const root = figure.querySelector<HTMLElement>(".ck-editor__editable");
+        const modelDocument = { on: vi.fn(), off: vi.fn() };
+        const editor = {
+            editing: { view: { getDomRoot: () => root } },
+            model: { document: modelDocument }
+        } as unknown as CKTextEditor;
+
+        act(() => {
+            parentComponent?.handleEvent("textEditorRefreshed", { ntxId: "_other", editor });
+        });
+        expect(getEmbedFindTarget(figure)).toBeNull();
+        act(() => {
+            parentComponent?.handleEvent("textEditorRefreshed", { ntxId, editor });
+        });
+        const target = getEmbedFindTarget(figure);
+        expect(target instanceof MergedFind && target.host instanceof TextEditorFindTarget
+            && target.host.editor).toBe(editor);
+        expect(modelDocument.on).toHaveBeenCalledWith("change:data", expect.any(Function));
+    });
+
     it("uses the floating toolbar inside an editor that has one", async () => {
         const { figure } = await mount(buildTextNote("floating"), buildEditor(), { isEditable: true });
         await vi.waitFor(() => expect(editorProps).toHaveBeenCalled(), { timeout: 5000 });

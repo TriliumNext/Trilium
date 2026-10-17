@@ -71,19 +71,39 @@ export function hasMoveModifier(e: KeyboardEvent): boolean {
  * container — see #10095). Without this cleanup the orphaned listener stays attached, captures
  * the keystroke first and runs editor.execute() against the destroyed editor — silently
  * swallowing the shortcut until a reload.
+ *
+ * The keys pressed in the content of an embed, such as in its editor, are skipped.
  */
 export function addEditingKeydownCapture(plugin: Plugin, handleKeydown: (e: KeyboardEvent) => void) {
 	const editor = plugin.editor;
+	const onKeydown = (e: KeyboardEvent) => {
+		if (isFromEditable(editor, e)) {
+			handleKeydown(e);
+		}
+	};
 	editor.editing.view.once('render', () => {
 		const domRoot = editor.editing.view.getDomRoot();
 		/* v8 ignore next 1 -- domRoot is always set while the editor is alive; only null after destroy */
 		if (!domRoot) return;
 
-		domRoot.addEventListener('keydown', handleKeydown, { capture: true });
+		domRoot.addEventListener('keydown', onKeydown, { capture: true });
 		plugin.listenTo(editor, 'destroy', () => {
-			domRoot.removeEventListener('keydown', handleKeydown, { capture: true });
+			domRoot.removeEventListener('keydown', onKeydown, { capture: true });
 		});
 	});
+}
+
+/**
+ * Whether `event` comes from an editable of `editor`, such as its root, a caption or a table cell,
+ * rather than from the content of an embed, which the wrapper of the embed marks with
+ * `data-cke-ignore-events`.
+ */
+export function isFromEditable(editor: Editor, event: Event) {
+	const root = editor.editing.view.getDomRoot();
+	const target = event.target instanceof Element ? event.target : null;
+	const embedWrapper = target?.closest('[data-cke-ignore-events]');
+	return !!root && !!target && root.contains(target)
+		&& !(embedWrapper && root.contains(embedWrapper));
 }
 
 abstract class MoveBlockUpDownCommand extends Command {

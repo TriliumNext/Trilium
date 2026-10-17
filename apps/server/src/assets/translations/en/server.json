@@ -473,7 +473,9 @@
     "heading-link": "Link to This Section",
     "previous": "Previous",
     "next": "Next",
-    "page-navigation": "Previous and next pages"
+    "page-navigation": "Previous and next pages",
+    "previous-tabs": "Scroll to the previous tabs",
+    "next-tabs": "Scroll to the next tabs"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

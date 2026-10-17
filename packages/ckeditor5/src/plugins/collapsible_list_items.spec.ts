@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createTestEditor, getEditorElement } from "../../test/editor-kit.js";
 import CollapsibleListItems, { LIST_COLLAPSED_ATTRIBUTE, ToggleListCollapseCommand } from "./collapsible_list_items.js";
+import FindReveal from "./find_reveal.js";
 
 // Lists are flat in the model: sibling blocks related by listIndent/listItemId.
 const LIST_FIXTURE =
@@ -639,6 +640,24 @@ describe("CollapsibleListItems", () => {
 
             expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
             expect(getComputedStyle(nested).display).toBe("none");
+        });
+
+        it("reveals a collapsed item around a position that FindReveal shows", async () => {
+            const findEditor = await createTestEditor([
+                CollapsibleListItems, List, TodoList, Paragraph, Typing, Undo, FindAndReplace,
+                FindReveal
+            ]);
+            setModelData(findEditor.model, LIST_FIXTURE);
+            findEditor.execute("toggleListCollapse");
+            const { li } = collapsedItem(findEditor);
+            const findReveal = findEditor.plugins.get(FindReveal);
+
+            findReveal.show(findEditor.model.createPositionAt(getBlock(findEditor, 1), 0));
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(true);
+
+            findReveal.show(null);
+            expect(li.classList.contains("trilium-list-temporarily-expanded")).toBe(false);
+            expect(getBlock(findEditor, 0).getAttribute(LIST_COLLAPSED_ATTRIBUTE)).toBe(true);
         });
 
         it("does not permanently expand when the search closes with the highlight inside the item", async () => {

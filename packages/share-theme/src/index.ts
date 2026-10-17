@@ -23,6 +23,7 @@ import setupAppView from "./content/app_view.js";
 import setupMermaid from "./content/mermaid.js";
 import "virtual:code-themes.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
+import "@triliumnext/ckeditor5/src/theme/scrollable_bar.css";
 import "@triliumnext/ckeditor5/src/theme/tabs.css";
 import "@triliumnext/ckeditor5/src/theme/multicolumn.css";
 import "@triliumnext/ckeditor5/src/theme/collapsible_blocks.css";
@@ -120,7 +121,11 @@ function setupStickyTableHeaders() {
 function setupTabs() {
     const content = document.getElementById("content");
     if (content) {
-        applyTabs(content, { placeholder: content.dataset.tabTitlePlaceholder ?? "" });
+        const { tabTitlePlaceholder, tabPreviousLabel, tabNextLabel } = content.dataset;
+        applyTabs(content, {
+            placeholder: tabTitlePlaceholder ?? "",
+            scrollLabels: { start: tabPreviousLabel ?? "", end: tabNextLabel ?? "" }
+        });
     }
 
     // The browser does not scroll to a fragment inside a hidden panel.

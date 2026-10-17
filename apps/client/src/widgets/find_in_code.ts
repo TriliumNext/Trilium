@@ -1,8 +1,11 @@
 // ck-find-result and ck-find-result_selected are the styles ck-editor
 // uses for highlighting matches, use the same one on CodeMirror
 // for consistency
+import type VanillaCodeMirror from "@triliumnext/codemirror";
+
 import utils from "../services/utils.js";
 import type FindWidget from "./find.js";
+import type { FindOptions, FindTarget } from "./merged_find";
 
 const FIND_RESULT_SELECTED_CSS_CLASSNAME = "ck-find-result_selected";
 const FIND_RESULT_CSS_CLASSNAME = "ck-find-result";
@@ -85,6 +88,99 @@ export default class FindInCode {
                 this.searchParameters.matchCase,
                 this.searchParameters.wholeWord);
         }
+    }
+
+}
+
+/** Searches a code editor, such as the editor of a code note in an embed. */
+export class CodeMirrorFindTarget implements FindTarget {
+
+    private search: { term: string; options: FindOptions } | null = null;
+
+    constructor(private readonly view: VanillaCodeMirror) {}
+
+    async find(term: string, options: FindOptions) {
+        this.search = { term, options };
+        if (!this.isAlive()) {
+            return 0;
+        }
+
+        const { totalFound } = await this.view.performFind(
+            term, options.matchCase, options.wholeWord, false
+        );
+        return totalFound;
+    }
+
+    highlight(index: number | null) {
+        if (!this.isAlive()) {
+            return;
+        }
+
+        if (index === null) {
+            this.view.clearActiveMatch();
+        } else {
+            void this.view.findNext(0, 0, index);
+        }
+    }
+
+    getFirstMatchBelow(top: number) {
+        const { view } = this;
+        const index = view.getSearchMatches()
+            .findIndex((match) => view.lineBlockAt(match.from).top + view.documentTop >= top);
+        return index >= 0 ? index : null;
+    }
+
+    canReplace() {
+        return true;
+    }
+
+    async replace(index: number, text: string) {
+        if (this.isAlive()) {
+            await this.view.findNext(0, 0, index);
+            await this.view.replace(text);
+        }
+        return this.searchAgain();
+    }
+
+    async replaceAll(text: string) {
+        if (this.isAlive()) {
+            await this.view.replaceAll(text);
+        }
+        return this.searchAgain();
+    }
+
+    close(index: number | null) {
+        if (!this.isAlive()) {
+            return false;
+        }
+
+        const match = index === null ? undefined : this.view.getSearchMatches()[index];
+        this.view.cleanSearch();
+        if (!match) {
+            return false;
+        }
+
+        this.view.dispatch({ selection: { anchor: match.from, head: match.to } });
+        this.view.focus();
+        return true;
+    }
+
+    watchContent(callback: () => void) {
+        return this.view.addUpdateListener((update) => {
+            if (update.docChanged) {
+                callback();
+            }
+        });
+    }
+
+    /** Searches again after a replace, whose matches the editor does not follow. */
+    private async searchAgain() {
+        return this.search ? this.find(this.search.term, this.search.options) : 0;
+    }
+
+    /** Whether the editor is still in the page, which a destroyed one leaves. */
+    private isAlive() {
+        return this.view.dom.isConnected;
     }
 
 }

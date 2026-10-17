@@ -373,6 +373,7 @@ export default class FindWidget extends NoteContextAwareWidget {
             this.$currentFound.text(nextFound + 1);
 
             await this.handler?.findNext(direction, currentFound, nextFound);
+            this.updateReplaceButton();
         }
     }
 
@@ -386,13 +387,35 @@ export default class FindWidget extends NoteContextAwareWidget {
             return { totalFound: 0, currentFound: 0 };
         }
         const { totalFound, currentFound } = await this.handler.performFind(searchTerm, matchCase, wholeWord);
-
-        this.$totalFound.text(totalFound);
-        this.$currentFound.text(currentFound);
+        this.showResult({ totalFound, currentFound });
 
         this.searchTerm = searchTerm;
 
         return { totalFound, currentFound };
+    }
+
+    /**
+     * Marks the counters as out of date, as when the content of an embed changed, so that the next
+     * Enter searches again.
+     */
+    invalidateResults() {
+        if (this.$widget.is(":visible")) {
+            this.$totalFound.text("?");
+        }
+    }
+
+    private showResult({ totalFound, currentFound }: FindResult) {
+        this.$totalFound.text(totalFound);
+        this.$currentFound.text(currentFound);
+        this.updateReplaceButton();
+    }
+
+    /** Disables "Replace" while the current match is in content that cannot change. */
+    private updateReplaceButton() {
+        const canReplace = this.handler && "canReplace" in this.handler
+            ? this.handler.canReplace()
+            : true;
+        this.$replaceButton.prop("disabled", !canReplace);
     }
 
     async closeSearch() {
@@ -413,14 +436,20 @@ export default class FindWidget extends NoteContextAwareWidget {
     async replace() {
         const replaceText = String(this.$replaceTextInput.val());
         if (this.handler && "replace" in this.handler) {
-            await this.handler.replace(replaceText);
+            const result = await this.handler.replace(replaceText);
+            if (result) {
+                this.showResult(result);
+            }
         }
     }
 
     async replaceAll() {
         const replaceText = String(this.$replaceTextInput.val());
         if (this.handler && "replace" in this.handler) {
-            await this.handler.replaceAll(replaceText);
+            const result = await this.handler.replaceAll(replaceText);
+            if (result) {
+                this.showResult(result);
+            }
         }
     }
 

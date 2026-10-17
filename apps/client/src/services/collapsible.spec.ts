@@ -39,6 +39,22 @@ describe("expandAncestorDetails", () => {
         expect(match.closest("details")?.open).toBe(true);
     });
 
+    it("opens no ancestor outside the boundary", () => {
+        const match = mount(`
+            <details class="outer"><summary>o</summary>
+                <div class="boundary">
+                    <details class="inner"><summary>i</summary><span class="m">hit</span></details>
+                </div>
+            </details>`, ".m");
+        const boundary = match.closest(".boundary");
+        if (!boundary) throw new Error("No boundary.");
+
+        revealElement(match, boundary);
+
+        expect(match.closest<HTMLDetailsElement>("details.inner")?.open).toBe(true);
+        expect(match.closest<HTMLDetailsElement>("details.outer")?.open).toBe(false);
+    });
+
     it("is a no-op when there is no <details> ancestor", () => {
         const match = mount(`<p><span class="m">hit</span></p>`, ".m");
         expect(() => expandAncestorDetails(match)).not.toThrow();
@@ -78,13 +94,13 @@ describe("revealElement", () => {
                     `<details><summary>s</summary><span class="m">hit</span></details>` +
                 `</div></section>` +
             `</div>`;
-        applyTabs(container, { placeholder: "" });
+        applyTabs(container, { placeholder: "", scrollLabels: { start: "", end: "" } });
         const match = container.querySelector(".m");
         expect(match).not.toBeNull();
 
         revealElement(match as Element);
 
         expect(container.querySelector("details")?.open).toBe(true);
-        expect(container.querySelector(".trilium-tab--active > .trilium-tab-title")?.textContent).toBe("B");
+        expect(container.querySelector(".trilium-tab-title--active")?.textContent).toBe("B");
     });
 });

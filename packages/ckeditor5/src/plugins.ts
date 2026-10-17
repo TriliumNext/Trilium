@@ -62,6 +62,7 @@ import AdmonitionToolbar from "./plugins/admonition/admonition_toolbar.js";
 import ContentEmbedBoxSizeDropdown
     from "./plugins/content_embed/content_embed_box_size_dropdown.js";
 import ContentEmbedToolbar from "./plugins/content_embed/content_embed_toolbar.js";
+import ContentEmbedCaret from "./plugins/content_embed/content_embed_caret.js";
 import LinkEmbedToolbar from "./plugins/link_embed/link_embed_toolbar.js";
 import TodoListMultistate from "./plugins/todo_list_multistate/todo_list_multistate.js";
 import TodoListUncheckOnEnter from "./plugins/todo_list_uncheck_on_enter.js";
@@ -111,6 +112,7 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     AdmonitionToolbar,
     ContentEmbedBoxSizeDropdown,
     ContentEmbedToolbar,
+    ContentEmbedCaret,
     LinkEmbedToolbar,
     TodoListMultistate,
     CollapsibleListItems,

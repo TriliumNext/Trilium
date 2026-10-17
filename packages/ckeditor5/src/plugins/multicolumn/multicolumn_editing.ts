@@ -19,7 +19,8 @@ import {
     LAYOUT_WIDGET_PROPERTY, MAX_COLUMNS, MIN_COLUMNS, RATIOS_ATTRIBUTE, RATIOS_DATA_ATTRIBUTE
 } from "./constants.js";
 import {
-    ColumnLayoutCommand, InsertMulticolumnLayoutCommand, RemoveMulticolumnLayoutCommand,
+    ColumnLayoutCommand, InsertLayoutColumnCommand, InsertMulticolumnLayoutCommand,
+    MoveLayoutColumnCommand, MoveToLayoutColumnCommand, RemoveMulticolumnLayoutCommand,
     setColumnCount
 } from "./multicolumn_commands.js";
 
@@ -42,6 +43,9 @@ export default class MulticolumnEditing extends Plugin {
         editor.commands.add("multicolumnLayout", new InsertMulticolumnLayoutCommand(editor));
         editor.commands.add("columnLayout", new ColumnLayoutCommand(editor));
         editor.commands.add("removeMulticolumnLayout", new RemoveMulticolumnLayoutCommand(editor));
+        editor.commands.add("insertLayoutColumn", new InsertLayoutColumnCommand(editor));
+        editor.commands.add("moveLayoutColumn", new MoveLayoutColumnCommand(editor));
+        editor.commands.add("moveToLayoutColumn", new MoveToLayoutColumnCommand(editor));
 
         this.registerSchema();
         this.registerConversion();

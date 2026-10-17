@@ -39,7 +39,10 @@ vi.mock("../../../services/shortcuts", async (importOriginal) => ({
     removeIndividualBinding
 }));
 
-import { registerContentEmbedTools } from "./content_embed_tools";
+import { HtmlFindTarget } from "../../find_in_html";
+import {
+    getEmbedFindTarget, registerContentEmbedTools, revealContentEmbed
+} from "./content_embed_tools";
 import ContentEmbed, {
     getNoteActions,
     type ContentEmbedProps,
@@ -291,6 +294,34 @@ describe("ContentEmbed", () => {
         act(() => render(null, container));
         renderBox({ boxSize: "full" });
         expect(contentBox().hidden).toBe(false);
+    });
+
+    it("lets the find search text, and shows a collapsed box for a current match", async () => {
+        container.classList.add("include-note");
+        renderBox({ boxSize: "expandable" });
+        const target = getEmbedFindTarget(container);
+        expect(target).toBeInstanceOf(HtmlFindTarget);
+        expect(await target?.find("body", { matchCase: false, wholeWord: false })).toBe(1);
+        target?.close(null);
+
+        act(() => revealContentEmbed(container, true));
+        expect(contentBox().hidden).toBe(false);
+        expect(button("include-note-toggle").getAttribute("aria-expanded")).toBe("true");
+        act(() => revealContentEmbed(container, false));
+        expect(contentBox().hidden).toBe(true);
+
+        // Collapsing drops the reveal, and expanding keeps the box open once the find moves on.
+        act(() => revealContentEmbed(container, true));
+        click(button("include-note-toggle"));
+        expect(contentBox().hidden).toBe(true);
+        click(button("include-note-toggle"));
+        act(() => revealContentEmbed(container, true));
+        act(() => revealContentEmbed(container, false));
+        expect(contentBox().hidden).toBe(false);
+
+        act(() => render(null, container));
+        renderBox({ contentType: "book" });
+        expect(getEmbedFindTarget(container)).toBeNull();
     });
 
     it("toggles an expandable box on a click on its title row, but its buttons and link", () => {

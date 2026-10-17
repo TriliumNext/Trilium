@@ -8,6 +8,8 @@ import {
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createTestEditor } from "../../../test/editor-kit.js";
+import FindReveal from "../find_reveal.js";
 import Tabs from "./tabs.js";
 
 const TWO_TABS =
@@ -40,7 +42,7 @@ describe("TabsEditing", () => {
 
     function activeTitles() {
         const root = editor.editing.view.getDomRoot();
-        return [...root?.querySelectorAll(".trilium-tab--active > .trilium-tab-title") ?? []]
+        return [...root?.querySelectorAll(".trilium-tab-title--active") ?? []]
             .map(title => title.textContent);
     }
 
@@ -62,6 +64,25 @@ describe("TabsEditing", () => {
 
         editor.plugins.get("TabsEditing").showTabsAroundDomNode(document.createElement("p"));
         expect(activeTitles()).toEqual(["Linux"]);
+    });
+
+    it("shows the tab around a position that FindReveal shows", async () => {
+        const revealEditor = await createTestEditor([
+            Essentials, FindAndReplaceEditing, Paragraph, FindReveal, Tabs
+        ]);
+        revealEditor.setData(TWO_TABS);
+        const tabs = revealEditor.model.document.getRoot()?.getChild(0);
+        const linuxTab = tabs?.is("element") ? tabs.getChild(1) : null;
+        if (!linuxTab?.is("element")) throw new Error("Expected a second tab.");
+        const activeTabs = () => [ ...revealEditor.editing.view.getDomRoot()
+            ?.querySelectorAll(".trilium-tab-title--active") ?? [] ]
+            .map(title => title.textContent);
+        expect(activeTabs()).toEqual([ "Windows" ]);
+
+        revealEditor.plugins.get(FindReveal)
+            .show(revealEditor.model.createPositionAt(linuxTab, "end"));
+
+        expect(activeTabs()).toEqual([ "Linux" ]);
     });
 
     it("leaves Enter outside a title to the editor, and attribute changes to the post-fixer", () => {

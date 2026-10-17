@@ -1,4 +1,5 @@
-import { render } from "preact";
+import type { EmbedEdge } from "@triliumnext/ckeditor5";
+import { createRef, render } from "preact";
 import { useRef } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,10 +7,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ContentEditor } from "../../../services/content_renderer";
 import options from "../../../services/options";
 import { buildNote } from "../../../test/easy-froca";
-import { type ContentEmbedToolProvider, getContentEmbedTools } from "./content_embed_tools";
 import {
-    type EditableEmbedOptions, NestedEmbedContext, useEditableEmbed, useEmbedEditors,
-    useEmbedPreview, useNestedEditor
+    type ContentEmbedToolProvider, enterContentEmbed, getContentEmbedTools
+} from "./content_embed_tools";
+import {
+    EditableEmbedContent, type EditableEmbedOptions, type EmbeddedCaretEditor, NestedEmbedContext,
+    useEditableEmbed, useEmbedCaretNavigation, useEmbedEditors, useEmbedPreview, useNestedEditor
 } from "./editable_embed";
 
 const figures: HTMLElement[] = [];
@@ -211,9 +214,132 @@ describe("useNestedEditor", () => {
     });
 });
 
+describe("useEmbedCaretNavigation", () => {
+    it("lets the caret enter an editor with caret navigation, unless its content is hidden", () => {
+        const editor = buildCaretEditor(null);
+        const { figure, unmount } = mountCaretProbe(editor);
+
+        expect(enterContentEmbed(figure, "end")).toBe(true);
+        expect(editor.focusAt).toHaveBeenCalledExactlyOnceWith("end");
+
+        figure.hidden = true;
+        expect(enterContentEmbed(figure, "start")).toBe(false);
+        figure.hidden = false;
+
+        unmount();
+        expect(enterContentEmbed(figure, "start")).toBe(false);
+        expect(editor.focusAt).toHaveBeenCalledOnce();
+
+        const notReady = mountCaretProbe(null);
+        expect(enterContentEmbed(notReady.figure, "start")).toBe(false);
+        notReady.unmount();
+    });
+
+    it("leaves through the text editor around the embed, at the edge the editor reports", () => {
+        const editor = buildCaretEditor("end");
+        const { figure, leaveEmbed, pressKey, unmount } = mountCaretProbe(editor);
+        const onKeyDown = vi.fn();
+        figure.addEventListener("keydown", onKeyDown);
+
+        expect(pressKey()).toBe(true);
+        expect(leaveEmbed).toHaveBeenCalledExactlyOnceWith(
+            figure.querySelector(".caret-content"), "end"
+        );
+        expect(onKeyDown).not.toHaveBeenCalled();
+
+        leaveEmbed.mockReturnValue(false);
+        expect(pressKey()).toBe(false);
+        editor.getEdgeLeftBy.mockReturnValue(null);
+        expect(pressKey()).toBe(false);
+        expect(leaveEmbed).toHaveBeenCalledTimes(2);
+        expect(onKeyDown).toHaveBeenCalledTimes(2);
+        unmount();
+
+        const outside = mountCaretProbe(buildCaretEditor("end"), { hasHost: false });
+        expect(outside.pressKey()).toBe(false);
+        outside.unmount();
+    });
+
+    it("does nothing in an embed without caret navigation", () => {
+        const editor = buildCaretEditor("end");
+        const { figure, pressKey, unmount } =
+            mountCaretProbe(editor, { hasCaretNavigation: false });
+
+        expect(enterContentEmbed(figure, "start")).toBe(false);
+        expect(pressKey()).toBe(false);
+        expect(editor.getEdgeLeftBy).not.toHaveBeenCalled();
+        unmount();
+    });
+});
+
 interface ProbeState {
     canEdit: boolean;
     isEditing: boolean;
+}
+
+interface CaretProbeOptions {
+    hasCaretNavigation?: boolean;
+    /** Whether a text editor with the `ContentEmbedCaret` plugin is around the embed. */
+    hasHost?: boolean;
+}
+
+/**
+ * Renders an editor that uses `useEmbedCaretNavigation()` in an embed, as the content of an
+ * `EditableEmbedContent` in the editable of a text editor.
+ */
+function mountCaretProbe(
+    editor: EmbeddedCaretEditor | null,
+    { hasCaretNavigation = true, hasHost = true }: CaretProbeOptions = {}
+) {
+    const leaveEmbed = vi.fn((_element: HTMLElement, _edge: string) => true);
+    const host = buildEditable({
+        editor: { plugins: { has: () => hasHost, get: () => ({ leaveEmbed }) } }
+    });
+    const figure = document.createElement("figure");
+    figure.className = "include-note";
+    host.append(figure);
+    document.body.append(host);
+
+    function Probe() {
+        useEmbedCaretNavigation(() => editor);
+        return <div className="caret-editor" tabIndex={-1} />;
+    }
+    act(() => render(
+        <EditableEmbedContent
+            rootRef={createRef()}
+            className="caret-content"
+            isEditing
+            hasCaretNavigation={hasCaretNavigation}
+            preview={document.createElement("div")}
+        >
+            <Probe />
+        </EditableEmbedContent>,
+        figure
+    ));
+
+    return {
+        figure,
+        leaveEmbed,
+        /** Presses an arrow key in the editor, and returns whether a listener prevented it. */
+        pressKey() {
+            const event = new KeyboardEvent("keydown", {
+                key: "ArrowDown", bubbles: true, cancelable: true
+            });
+            figure.querySelector(".caret-editor")?.dispatchEvent(event);
+            return event.defaultPrevented;
+        },
+        unmount() {
+            act(() => render(null, figure));
+            host.remove();
+        }
+    };
+}
+
+function buildCaretEditor(edge: EmbedEdge | null) {
+    return {
+        focusAt: vi.fn(),
+        getEdgeLeftBy: vi.fn((_event: KeyboardEvent): EmbedEdge | null => edge)
+    };
 }
 
 /** Renders a component that uses `useEditableEmbed()`, in the markup of an embed. */

@@ -14,10 +14,12 @@ import { Badge } from "../../react/Badge";
 import { useFocusWithin } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import OverlayControlGroup, { OverlayControlButton } from "../../react/OverlayControlGroup";
+import { HtmlFindTarget } from "../../find_in_html";
 import ScrollableLabel from "../../react/ScrollableLabel";
 import {
-    type ContentEmbedEvent, getContentEmbedTools, showContentEmbedFullscreen,
-    useIsContentEmbedEditable, watchContentEmbedTools
+    type ContentEmbedEvent, getContentEmbedTools, registerEmbedFindTarget,
+    showContentEmbedFullscreen, useContentEmbedFindReveal, useIsContentEmbedEditable,
+    watchContentEmbedTools
 } from "./content_embed_tools";
 import { findTextEditorAround } from "./editable_embed";
 
@@ -68,9 +70,15 @@ export default function ContentEmbed({
     useFullscreenEvents(contentRef);
     useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
+    const [ isRevealed, setIsRevealed ] = useContentEmbedFindReveal(contentRef);
+    const isOpen = isExpanded || isRevealed;
     const focusContentAfterRender = useFocusAfterRender(contentRef);
     const isExpandable = boxSize === "expandable";
     const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
+    const toggleExpanded = () => {
+        setIsExpanded(!isOpen);
+        setIsRevealed(false);
+    };
 
     useLayoutEffect(() => {
         contentRef.current?.append(content);
@@ -79,6 +87,12 @@ export default function ContentEmbed({
             content.remove();
         };
     }, [ content ]);
+
+    // While an editor in the content is open, the target of the editor searches instead.
+    useEffect(() => {
+        if (!SEARCHABLE_CONTENT_TYPES.has(contentType)) return;
+        return registerEmbedFindTarget(content, new HtmlFindTarget(content));
+    }, [ content, contentType ]);
 
     useLayoutEffect(() => {
         // The box mounts after an upload, by which time the focus can have left the editor.
@@ -94,20 +108,20 @@ export default function ContentEmbed({
                 className="include-note-title-row"
                 onClick={(e) => {
                     if (isExpandable && isTogglingClick(e)) {
-                        setIsExpanded(!isExpanded);
+                        toggleExpanded();
                     }
                 }}
                 onContextMenu={(e) => openMenuOnRightClick(e, notePath, viewScope)}
             >
                 {isExpandable && (
                     <ActionButton
-                        className={clsx("include-note-toggle", isExpanded && "expanded")}
+                        className={clsx("include-note-toggle", isOpen && "expanded")}
                         icon="bx bx-chevron-right"
                         text=""
-                        aria-expanded={isExpanded}
+                        aria-expanded={isOpen}
                         onClick={(e) => {
                             e.stopPropagation();
-                            setIsExpanded(!isExpanded);
+                            toggleExpanded();
                         }}
                     />
                 )}
@@ -151,7 +165,7 @@ export default function ContentEmbed({
                 <div
                     ref={contentRef}
                     className={`include-note-content type-${contentType}`}
-                    hidden={isExpandable && !isExpanded}
+                    hidden={isExpandable && !isOpen}
                     tabIndex={-1}
                 >
                     {hasFullscreen && (
@@ -337,6 +351,9 @@ function useFocusAfterRender(ref: RefObject<HTMLElement | null>) {
 
 const FOCUSABLE_SELECTOR = "[tabindex], a[href], iframe, webview, "
     + ":is(button, input, select, textarea):not(:disabled)";
+
+/** The content types whose rendered content "Search in note" searches. */
+const SEARCHABLE_CONTENT_TYPES = new Set([ "text", "code", "markdown" ]);
 
 /**
  * The element that a click at (`x`, `y`) would focus: the closest focusable element under that

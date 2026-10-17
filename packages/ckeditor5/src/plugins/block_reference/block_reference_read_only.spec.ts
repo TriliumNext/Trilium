@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } from "vitest";
 
-import { applyTabs } from "../tabs/tabs_read_only.js";
+import { applyTabs, getTabTitle } from "../tabs/tabs_read_only.js";
 import { getBlockRangeElements, showBlockReference } from "./block_reference_read_only.js";
 
 const SPACER = "<div style=\"height: 1000px\"></div>";
@@ -109,20 +109,22 @@ describe("showBlockReference", () => {
             + "<section class=\"trilium-tab\" data-trilium-block-id=\"bare\"><p>c</p></section>"
             + "</div>" + SPACER
         );
-        applyTabs(scroller, { placeholder: "" });
+        applyTabs(scroller, { placeholder: "", scrollLabels: { start: "", end: "" } });
         const activeTitle = () =>
-            scroller.querySelector(".trilium-tab--active > .trilium-tab-title");
+            scroller.querySelector(".trilium-tab-title--active");
         expect(activeTitle()?.textContent).toBe("A");
 
         showBlockReference(scroller, "a");
         expect(activeTitle()?.textContent).toBe("B");
 
         showBlockReference(scroller, "t");
-        const title = getBlock(scroller, "t").querySelector(".trilium-tab-title");
+        const title = getTabTitle(getBlock(scroller, "t"));
         const panel = getBlock(scroller, "t").querySelector(".trilium-tab-panel");
         const titleTop = title?.getBoundingClientRect().top ?? NaN;
         const height = (panel?.getBoundingClientRect().bottom ?? NaN) - titleTop;
-        expect(titleTop - scroller.getBoundingClientRect().top).toBeCloseTo((400 - height) / 2);
+        // The scroll offset is a whole number of pixels.
+        const offset = titleTop - scroller.getBoundingClientRect().top;
+        expect(Math.abs(offset - (400 - height) / 2)).toBeLessThanOrEqual(0.5);
 
         showBlockReference(scroller, "bare");
         expect(getOffset(scroller, "bare"))

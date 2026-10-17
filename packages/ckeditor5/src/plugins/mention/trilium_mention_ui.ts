@@ -66,6 +66,11 @@ export default class TriliumMentionUI extends Plugin {
         return "TriliumMentionUI" as const;
     }
 
+    /** Whether a list shows entries, which take the arrow keys. */
+    get isListShown() {
+        return !!this._open?.hostedList.element;
+    }
+
     init() {
         const editor = this.editor;
 
@@ -84,7 +89,7 @@ export default class TriliumMentionUI extends Plugin {
 
         clickOutsideHandler({
             emitter: this._domEmitter,
-            activator: () => !!this._open?.hostedList.element,
+            activator: () => this.isListShown,
             /* v8 ignore next -- `clickOutsideHandler` only calls `contextElements()` once the activator reported the list showing, so its element is never null */
             contextElements: () => {
                 const element = this._open?.hostedList.element;

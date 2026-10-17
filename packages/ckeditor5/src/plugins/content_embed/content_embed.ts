@@ -928,7 +928,7 @@ function getSelectedContentEmbed( editor: Editor ) {
 }
 
 /** The embed whose rendering contains `domElement`, or `null`. */
-function getContentEmbedAt( editor: Editor, domElement: Element ) {
+export function getContentEmbedAt( editor: Editor, domElement: Element ) {
 	const embedElement = domElement.closest<HTMLElement>( '.include-note' );
 	const viewElement = embedElement
 		&& editor.editing.view.domConverter.mapDomToView( embedElement );
@@ -939,7 +939,9 @@ function getContentEmbedAt( editor: Editor, domElement: Element ) {
 	return editor.editing.mapper.toModelElement( viewElement ) ?? null;
 }
 
-function isContentEmbed( node: ModelNode | ModelDocumentFragment | null ): node is ModelElement {
+export function isContentEmbed(
+	node: ModelNode | ModelDocumentFragment | null
+): node is ModelElement {
 	return !!node?.is( 'element', 'contentEmbed' );
 }
 
@@ -967,7 +969,7 @@ function isEmbedConvertibleToLink( editor: Editor, embed: ModelElement ) {
 }
 
 /** The caption of `embed`, or `null`. */
-function getCaption( embed: ModelElement ) {
+export function getCaption( embed: ModelElement ) {
 	return Array.from( embed.getChildren() )
 		.find( ( child ): child is ModelElement => child.is( 'element', 'caption' ) ) ?? null;
 }
@@ -1086,7 +1088,10 @@ function openContentEmbedMenu( editor: Editor, anchor: HTMLElement | null ) {
 }
 
 /** The rendered `<figure>` of `embed`, or `null`. */
-function getContentEmbedDom( editor: Editor, embed: ModelElement | null ): HTMLElement | null {
+export function getContentEmbedDom(
+	editor: Editor,
+	embed: ModelElement | null
+): HTMLElement | null {
 	const viewElement = embed && editor.editing.mapper.toViewElement( embed );
 	const domElement = viewElement && editor.editing.view.domConverter.mapViewToDom( viewElement );
 	return domElement instanceof HTMLElement ? domElement : null;

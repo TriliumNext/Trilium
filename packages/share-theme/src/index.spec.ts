@@ -103,7 +103,8 @@ describe("share theme entry", () => {
 
     it("enhances a text note's content and reveals the tab panel the address points to", () => {
         document.body.className = "type-text";
-        document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab">`
+        document.body.innerHTML = `<div id="content" data-tab-title-placeholder="Tab"`
+            + ` data-tab-previous-label="Back" data-tab-next-label="On">`
             + `<blockquote><figure class="include-note"></figure></blockquote></div>`;
         const panel = { scrollIntoView: vi.fn() };
         mocks.revealFragment.mockReturnValue(panel);
@@ -117,7 +118,10 @@ describe("share theme entry", () => {
         expect(mocks.applyTableScroll.mock.calls)
             .toEqual([ [ content ], [ content?.querySelector(".include-note") ] ]);
         expect(mocks.applyStickyTableHeaders.mock.calls).toEqual([ [ content ] ]);
-        expect(mocks.applyTabs).toHaveBeenCalledWith(content, { placeholder: "Tab" });
+        expect(mocks.applyTabs).toHaveBeenCalledWith(content, {
+            placeholder: "Tab",
+            scrollLabels: { start: "Back", end: "On" }
+        });
         expect(panel.scrollIntoView).toHaveBeenCalledOnce();
 
         window.dispatchEvent(new Event("hashchange"));
@@ -160,7 +164,10 @@ describe("share theme entry", () => {
         document.dispatchEvent(new Event("DOMContentLoaded"));
 
         expect(mocks.applyTabs)
-            .toHaveBeenCalledWith(document.getElementById("content"), { placeholder: "" });
+            .toHaveBeenCalledWith(document.getElementById("content"), {
+                placeholder: "",
+                scrollLabels: { start: "", end: "" }
+            });
 
         mocks.applyTabs.mockClear();
         document.body.className = "type-text";

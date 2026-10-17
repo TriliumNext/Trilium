@@ -141,6 +141,11 @@ declare global {
          */
         getContentEmbedTools?(embed: HTMLElement): ContentEmbedToolProvider | null;
         /**
+         * Focuses the editor that `embed` shows, with the caret at `edge` of its content, and
+         * returns whether it did. Hosts without embeds leave it out.
+         */
+        enterContentEmbed?(embed: HTMLElement, edge: "start" | "end"): boolean;
+        /**
          * Gives the focus to what the embed of the attachment shows, once it renders. Hosts
          * without embeds leave it out.
          */

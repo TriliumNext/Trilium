@@ -1693,7 +1693,9 @@ export function useImperativeSearchHighlighlighting(
 
         // Reveal matches that landed inside collapsed <details> blocks, which are highlighted in
         // the DOM but hidden until the block is expanded.
-        el.querySelectorAll<HTMLElement>(".ck-find-result").forEach(expandAncestorDetails);
+        for (const match of el.querySelectorAll<HTMLElement>(".ck-find-result")) {
+            expandAncestorDetails(match);
+        }
     };
 }
 

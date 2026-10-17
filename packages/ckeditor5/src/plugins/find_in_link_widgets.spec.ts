@@ -310,6 +310,19 @@ describe("FindInLinkWidgets", () => {
         expect(editor.getData()).toContain('class="reference-link"');
         expect(editor.getData()).not.toContain("broken");
     });
+
+    it("tells which results the replace commands replace", () => {
+        setModelData(
+            editor.model,
+            '<paragraph><reference href="#root/ref"></reference> match</paragraph>'
+        );
+        editor.execute("find", "match");
+
+        const results = [ ...editor.plugins.get(FindAndReplaceEditing).state?.results ?? [] ];
+        const plugin = editor.plugins.get(FindInLinkWidgets);
+        expect(resultElementNames(results)).toEqual([ "reference", "text" ]);
+        expect(results.map((result) => plugin.canReplace(result))).toEqual([ false, true ]);
+    });
 });
 
 function findCount(

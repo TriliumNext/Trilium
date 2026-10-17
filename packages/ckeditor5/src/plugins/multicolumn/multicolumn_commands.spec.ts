@@ -20,6 +20,14 @@ function layout(ratios: string, ...columns: string[]) {
     return `<multicolumnLayout columnRatios="${ratios}">${content.join("")}</multicolumnLayout>`;
 }
 
+/** A layout with the given weights whose columns hold the given model content. */
+function columns(ratios: string, ...contents: string[]) {
+    const content = contents.map(inner => `<multicolumnColumn>${inner}</multicolumnColumn>`);
+    return `<multicolumnLayout columnRatios="${ratios}">${content.join("")}</multicolumnLayout>`;
+}
+
+const TABLE = "<table><tableRow><tableCell><paragraph>T</paragraph></tableCell></tableRow></table>";
+
 /** An empty bulleted item and an empty checked to-do item, in model notation. */
 const EMPTY_BULLET = "<paragraph listIndent=\"0\" listItemId=\"a\" listType=\"bulleted\">" +
     "</paragraph>";
@@ -381,6 +389,164 @@ describe("multicolumn commands", () => {
             editor.execute("undo");
 
             expect(editor.getData()).toBe(before);
+        });
+    });
+
+    describe("moveToLayoutColumn", () => {
+        it("moves the touched blocks to a later column's start or an earlier column's end", () => {
+            setModelData(editor.model, columns("1-1",
+                "<paragraph>A</paragraph><paragraph>B[x</paragraph><paragraph>y]C</paragraph>" +
+                "<paragraph>D</paragraph>",
+                "<paragraph>E</paragraph>"));
+            const before = editor.getData();
+
+            editor.execute("moveToLayoutColumn", { target: "next" });
+            expect(modelWithSelection()).toBe(columns("1-1",
+                "<paragraph>A</paragraph><paragraph>D</paragraph>",
+                "<paragraph>B[x</paragraph><paragraph>y]C</paragraph><paragraph>E</paragraph>"));
+
+            editor.execute("moveToLayoutColumn", { target: "previous" });
+            expect(modelWithSelection()).toBe(columns("1-1",
+                "<paragraph>A</paragraph><paragraph>D</paragraph><paragraph>B[x</paragraph>" +
+                "<paragraph>y]C</paragraph>",
+                "<paragraph>E</paragraph>"));
+
+            editor.execute("undo");
+            editor.execute("undo");
+            expect(editor.getData()).toBe(before);
+        });
+
+        it("fills an empty target, refills the source and ignores targets past an end", () => {
+            setModelData(editor.model, layout("1-1-1-1", "A", "[B]", "C", "D"));
+
+            editor.execute("moveToLayoutColumn", { target: "last" });
+            expect(modelWithSelection()).toBe(columns("1-1-1-1",
+                "<paragraph>A</paragraph>", "<paragraph></paragraph>", "<paragraph>C</paragraph>",
+                "<paragraph>[B]</paragraph><paragraph>D</paragraph>"));
+
+            const atLast = modelWithSelection();
+            editor.execute("moveToLayoutColumn", { target: "next" });
+            editor.execute("moveToLayoutColumn", { target: "last" });
+            expect(modelWithSelection()).toBe(atLast);
+
+            setModelData(editor.model, layout("1-1", "[A]", ""));
+            editor.execute("moveToLayoutColumn", { target: "next" });
+            expect(modelWithSelection()).toBe(layout("1-1", "", "[A]"));
+
+            editor.execute("moveToLayoutColumn", { target: "first" });
+            expect(modelWithSelection()).toBe(layout("1-1", "[A]", ""));
+        });
+
+        it("leaves out the block that the selection ends at the start of", () => {
+            setModelData(editor.model, columns("1-1",
+                "<paragraph>[A</paragraph><paragraph>]B</paragraph>", "<paragraph>C</paragraph>"));
+
+            editor.execute("moveToLayoutColumn", { target: "next" });
+
+            expect(modelWithSelection()).toBe(columns("1-1",
+                "<paragraph>B</paragraph>", "<paragraph>[A]</paragraph><paragraph>C</paragraph>"));
+        });
+
+        it("moves every block of a list item that the selection touches", () => {
+            const item = (id: string, text: string) => "<paragraph listIndent=\"0\" " +
+                `listItemId="${id}" listType="bulleted">${text}</paragraph>`;
+            const itemA = item("a", "A1") + item("a", "A[2]") + item("a", "A3");
+            setModelData(editor.model, columns("1-1",
+                itemA + item("b", "B"), "<paragraph>C</paragraph>"));
+
+            editor.execute("moveToLayoutColumn", { target: "next" });
+
+            expect(modelWithSelection()).toBe(columns("1-1",
+                item("b", "B"), `${itemA}<paragraph>C</paragraph>`));
+        });
+
+        it("moves a selected object", () => {
+            setModelData(editor.model, columns("1-1",
+                `<paragraph>A</paragraph>[${TABLE}]`, "<paragraph>C</paragraph>"));
+
+            editor.execute("moveToLayoutColumn", { target: "next" });
+
+            expect(modelWithSelection()).toBe(columns("1-1",
+                "<paragraph>A</paragraph>", `[${TABLE}]<paragraph>C</paragraph>`));
+        });
+
+        it("is enabled only for a selection inside one column", () => {
+            const command = editor.commands.get("moveToLayoutColumn");
+            setModelData(editor.model, layout("1-1", "[A]", "B"));
+            expect(command?.isEnabled).toBe(true);
+
+            setModelData(editor.model, layout("1-1", "A[]", "B"));
+            expect(command?.isEnabled).toBe(false);
+
+            setModelData(editor.model, `[${layout("1-1", "A", "B")}]`);
+            expect(command?.isEnabled).toBe(false);
+
+            setModelData(editor.model, "<paragraph>[A]</paragraph>");
+            expect(command?.isEnabled).toBe(false);
+            editor.execute("moveToLayoutColumn", { target: "next" });
+            expect(modelWithSelection()).toBe("<paragraph>[A]</paragraph>");
+        });
+    });
+
+    describe("moveLayoutColumn", () => {
+        it("moves the current column and its width where the layout has the new order", () => {
+            setModelData(editor.model, layout("1-3", "A[]", "B"));
+
+            editor.execute("moveLayoutColumn", { target: "next" });
+            expect(modelWithSelection()).toBe(layout("3-1", "B", "A[]"));
+
+            editor.execute("moveLayoutColumn", { target: "previous" });
+            expect(modelWithSelection()).toBe(layout("1-3", "A[]", "B"));
+        });
+
+        it("keeps the widths where the layout lacks the new order, and ignores the ends", () => {
+            setModelData(editor.model, layout("1-2-1", "A[]", "B", "C"));
+
+            editor.execute("moveLayoutColumn", { target: "last" });
+            expect(modelWithSelection()).toBe(layout("1-2-1", "B", "C", "A[]"));
+
+            editor.execute("moveLayoutColumn", { target: "next" });
+            editor.execute("moveLayoutColumn", { target: "last" });
+            expect(modelWithSelection()).toBe(layout("1-2-1", "B", "C", "A[]"));
+
+            editor.execute("moveLayoutColumn", { target: "first" });
+            expect(modelWithSelection()).toBe(layout("1-2-1", "A[]", "B", "C"));
+        });
+
+        it("is enabled only inside a column", () => {
+            const command = editor.commands.get("moveLayoutColumn");
+            setModelData(editor.model, layout("1-1", "A[]", "B"));
+            expect(command?.isEnabled).toBe(true);
+
+            setModelData(editor.model, "<paragraph>A[]</paragraph>");
+            expect(command?.isEnabled).toBe(false);
+            editor.execute("moveLayoutColumn", { target: "next" });
+            expect(modelWithSelection()).toBe("<paragraph>A[]</paragraph>");
+        });
+    });
+
+    describe("insertLayoutColumn", () => {
+        it("adds an empty column after or before the current one, with equal widths", () => {
+            setModelData(editor.model, layout("1-3", "A[]", "B"));
+
+            editor.execute("insertLayoutColumn", { position: "after" });
+            expect(modelWithSelection()).toBe(layout("1-1-1", "A", "[]", "B"));
+
+            editor.execute("insertLayoutColumn", { position: "before" });
+            expect(modelWithSelection()).toBe(layout("1-1-1-1", "A", "[]", "", "B"));
+        });
+
+        it("is disabled with four columns and outside a column", () => {
+            const command = editor.commands.get("insertLayoutColumn");
+            setModelData(editor.model, layout("1-1-1-1", "A[]", "B", "C", "D"));
+            expect(command?.isEnabled).toBe(false);
+            editor.execute("insertLayoutColumn", { position: "after" });
+            expect(modelWithSelection()).toBe(layout("1-1-1-1", "A[]", "B", "C", "D"));
+
+            setModelData(editor.model, "<paragraph>A[]</paragraph>");
+            expect(command?.isEnabled).toBe(false);
+            editor.execute("insertLayoutColumn", { position: "after" });
+            expect(modelWithSelection()).toBe("<paragraph>A[]</paragraph>");
         });
     });
 });
