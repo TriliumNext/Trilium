@@ -1,15 +1,16 @@
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import type { CKTextEditor, InlineEmbedSource } from "@triliumnext/ckeditor5";
 import { attachmentIcon } from "@triliumnext/commons";
 import { h, type JSX } from "preact";
 
 import appContext from "../../../components/app_context";
 import linkContextMenu from "../../../menus/link_context_menu";
 import content_renderer, {
-    type AttachmentEditor, type NoteEditor
+    type AttachmentEditor, CONTENT_RENDERERS, type NoteEditor
 } from "../../../services/content_renderer";
 import { getEmbedCaption } from "../../../services/content_renderer_text";
 import froca from "../../../services/froca";
 import link, { ViewScope } from "../../../services/link";
+import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
 import utils from "../../../services/utils";
 import { watchContentEmbedTools } from "./content_embed_tools";
 import ContentEmbed, { getNoteActions, TinyContentEmbed } from "./ContentEmbed";
@@ -150,6 +151,37 @@ export async function loadEmbeddedAttachment(
 }
 
 /**
+ * Fills an embed box with what an embed that keeps its source in the note shows, through the
+ * component of the `SourceEmbedType` of its language. The box has no title row.
+ */
+export async function loadInlineEmbed(
+    source: InlineEmbedSource,
+    $el: JQuery<HTMLElement>,
+    boxSize: string | undefined,
+    { isFocused }: { isFocused: boolean }
+) {
+    const type = getSourceEmbedTypeByLanguage(source.language);
+    if (!type) return;
+
+    const el = $el[0];
+    const [ component, { InlineSourceEmbed } ] = await Promise.all([
+        type.load(),
+        CONTENT_RENDERERS.file.sourceEmbed()
+    ]);
+    const $renderedContent = $('<div class="rendered-content">');
+    const container = $('<div class="source-embed">').appendTo($renderedContent)[0];
+    await content_renderer.mountInteractiveWidget(h(InlineSourceEmbed, { source, component }), container);
+
+    const box = h(ContentEmbed, {
+        boxSize: boxSize ?? getEmbedBoxSize(el),
+        content: $renderedContent[0],
+        contentType: type.contentType,
+        ...(isFocused ? { isFocusedOnMount: true } : {})
+    });
+    await mountEmbedBox(el, box, $renderedContent);
+}
+
+/**
  * Mounts `box` in the embed `el`. An embed that left the page while it loaded gets no box,
  * and `content` rendered for it is disposed: `watchContentEmbeds()` has already passed it.
  */
@@ -206,8 +238,13 @@ function getWrapper(el: HTMLElement) {
  * opens from the embed, so that the text editor that contains it stays focused.
  */
 export async function openContentEmbedMenu(embed: HTMLElement, anchor: HTMLElement) {
-    const { noteId, attachmentId, block } = embed.dataset;
+    const { noteId, attachmentId, block, language } = embed.dataset;
     const origin = linkContextMenu.getOriginBelow(anchor, embed);
+
+    if (language) {
+        await linkContextMenu.openEmbedContextMenu(origin);
+        return;
+    }
 
     if (attachmentId) {
         const attachment = await froca.getAttachment(attachmentId, true);

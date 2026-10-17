@@ -2,6 +2,9 @@ import { Plugin, WidgetToolbarRepository, isWidget, type ViewElement } from "cke
 import ContentEmbed, {
     CONVERT_EMBED_TO_LINK_COMMAND,
     CONTENT_EMBED_MENU,
+    CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
+    DISPLAY_MODE_BUTTONS,
+    DISPLAY_MODES,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -26,6 +29,8 @@ export default class ContentEmbedToolbar extends Plugin {
         widgetToolbarRepository.register("contentEmbed", {
             items: [
                 TOGGLE_EDITABLE_COMMAND_NAME,
+                CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
+                ...DISPLAY_MODES.map((mode) => DISPLAY_MODE_BUTTONS[mode]),
                 CONTENT_EMBED_TOOLS,
                 CONTENT_EMBED_BOX_SIZE_DROPDOWN,
                 TOGGLE_TITLE_COMMAND_NAME,

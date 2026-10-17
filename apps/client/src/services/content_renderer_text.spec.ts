@@ -676,15 +676,15 @@ describe("rewriteMermaidDiagramsInContainer", () => {
         const container = document.createElement("div");
         container.innerHTML = `<pre><code class="language-js">x</code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
-        expect(container.querySelector("div.mermaid-diagram")).toBeNull();
+        expect(container.querySelector("div.rendered-mermaid-diagram")).toBeNull();
         expect(container.querySelector("pre")).not.toBeNull();
     });
 
-    it("converts mermaid pre/code blocks into mermaid-diagram divs", async () => {
+    it("converts mermaid pre/code blocks into rendered-mermaid-diagram divs", async () => {
         const container = document.createElement("div");
         container.innerHTML = `<pre><code class="language-mermaid">graph TD;A--&gt;B;</code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
-        const div = container.querySelector("div.mermaid-diagram");
+        const div = container.querySelector("div.rendered-mermaid-diagram");
         expect(div).not.toBeNull();
         expect(div?.textContent).toContain("graph TD;");
         expect(div?.hasAttribute("data-trilium-block-id")).toBe(false);
@@ -696,7 +696,7 @@ describe("rewriteMermaidDiagramsInContainer", () => {
         container.innerHTML = `<pre><code class="language-mermaid" data-trilium-block-id="d1">`
             + `graph TD;A--&gt;B;</code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
-        const diagram = container.querySelector("div.mermaid-diagram");
+        const diagram = container.querySelector("div.rendered-mermaid-diagram");
         expect(diagram?.getAttribute("data-trilium-block-id")).toBe("d1");
     });
 
@@ -706,7 +706,7 @@ describe("rewriteMermaidDiagramsInContainer", () => {
         // rewritten div ends up with an empty body.
         container.innerHTML = `<pre><code class="language-mermaid"></code></pre>`;
         await rewriteMermaidDiagramsInContainer(container);
-        const div = container.querySelector("div.mermaid-diagram");
+        const div = container.querySelector("div.rendered-mermaid-diagram");
         expect(div).not.toBeNull();
         expect(div?.innerHTML).toBe("");
     });
@@ -722,7 +722,7 @@ describe("applyInlineMermaid", () => {
         const container = document.createElement("div");
         for (const source of sources) {
             const div = document.createElement("div");
-            div.className = "mermaid-diagram";
+            div.className = "rendered-mermaid-diagram";
             div.textContent = source;
             container.appendChild(div);
         }
@@ -740,7 +740,7 @@ describe("applyInlineMermaid", () => {
         const container = makeContainer(["graph A"]);
         await applyInlineMermaid(container);
         expect(mermaidInitialize).toHaveBeenCalledTimes(1);
-        const visible = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const visible = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         expect(visible.innerHTML).toBe("<svg>graph A</svg>");
         expect(visible.getAttribute("data-processed")).toBe("true");
     });
@@ -756,7 +756,7 @@ describe("applyInlineMermaid", () => {
         expect(renderCount).toBe(1);
 
         // Reset the visible node so we can observe the cached repaint.
-        const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const node = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         node.removeAttribute("data-processed");
         node.innerHTML = "graph CACHE";
         mermaidInitialize.mockClear();
@@ -775,7 +775,7 @@ describe("applyInlineMermaid", () => {
 
         // Edit the diagram source in place; the old SVG should be used as the
         // positional placeholder for the new (uncached) source.
-        const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const node = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         const previousSvg = node.innerHTML;
         node.textContent = "graph V2";
 
@@ -794,9 +794,9 @@ describe("applyInlineMermaid", () => {
         await applyInlineMermaid(container);
 
         // Remove the second diagram so its cached source must be evicted.
-        container.querySelectorAll("div.mermaid-diagram")[1].remove();
+        container.querySelectorAll("div.rendered-mermaid-diagram")[1].remove();
         // First node is now a cache hit (its source is unchanged); reset to verify.
-        const remaining = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const remaining = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         remaining.removeAttribute("data-processed");
         remaining.innerHTML = "graph KEEP";
 
@@ -812,7 +812,7 @@ describe("applyInlineMermaid", () => {
         };
         await applyInlineMermaid(container);
         expect(error).toHaveBeenCalled();
-        const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const node = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         // The failure is rendered into the node (not left as raw source), so it's
         // visible in the UI instead of swallowed to the console.
         expect(node.classList.contains("mermaid-error")).toBe(true);
@@ -829,7 +829,7 @@ describe("applyInlineMermaid", () => {
             return { svg: `<svg>${source}</svg>` };
         };
         await applyInlineMermaid(container);
-        const [ ok, bad ] = container.querySelectorAll<HTMLElement>("div.mermaid-diagram");
+        const [ ok, bad ] = container.querySelectorAll<HTMLElement>("div.rendered-mermaid-diagram");
         // The good diagram still renders; only the failing one shows the error.
         expect(ok.innerHTML).toBe("<svg>graph OK</svg>");
         expect(bad.classList.contains("mermaid-error")).toBe(true);
@@ -844,7 +844,7 @@ describe("applyInlineMermaid", () => {
 
         // Break the source: the stale render must not mask the failure — otherwise
         // the diagram looks fine until a full refresh.
-        const node = container.querySelector("div.mermaid-diagram") as HTMLElement;
+        const node = container.querySelector("div.rendered-mermaid-diagram") as HTMLElement;
         node.textContent = "graph BROKEN";
         mermaidRenderImpl = () => {
             throw new Error("still broken");

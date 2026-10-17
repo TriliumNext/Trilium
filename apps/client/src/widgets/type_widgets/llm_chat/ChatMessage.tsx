@@ -33,7 +33,7 @@ function shortenNumber(n: number): string {
 function MarkdownContent({ html, isStreaming }: { html: string; isStreaming?: boolean }) {
     return (
         <>
-            <ReadOnlyTextContent html={html} className="llm-chat-markdown" />
+            <ReadOnlyTextContent html={html} className="llm-chat-markdown" isChanging={isStreaming} />
             {isStreaming && <span className="llm-chat-cursor" />}
         </>
     );

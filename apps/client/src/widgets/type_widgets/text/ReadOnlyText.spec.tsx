@@ -28,23 +28,25 @@ import NoteContext from "../../../components/note_context";
 import LoadResults from "../../../services/load_results";
 import { buildNote } from "../../../test/easy-froca";
 import { ParentComponent } from "../../react/react_utils";
-import ReadOnlyText from "./ReadOnlyText";
+import ReadOnlyText, { ReadOnlyTextContent } from "./ReadOnlyText";
 
 // Imported by ReadOnlyText only for its content styles; irrelevant (and heavy) in happy-dom.
 vi.mock("@triliumnext/ckeditor5", () => ({}));
 
-const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote } = vi.hoisted(() => {
+const { watchContentEmbeds, stopWatchingEmbeds, loadEmbeddedNote, loadInlineEmbed } = vi.hoisted(() => {
     const stop = vi.fn();
     return {
         watchContentEmbeds: vi.fn(() => stop),
         stopWatchingEmbeds: stop,
-        loadEmbeddedNote: vi.fn(async () => {})
+        loadEmbeddedNote: vi.fn(async () => {}),
+        loadInlineEmbed: vi.fn(async () => {})
     };
 });
 vi.mock("./utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("./utils")>(),
     watchContentEmbeds,
-    loadEmbeddedNote
+    loadEmbeddedNote,
+    loadInlineEmbed
 }));
 
 const disposeStickyTableHeaders = vi.hoisted(() => vi.fn());
@@ -439,6 +441,84 @@ describe("ReadOnlyText embedded notes", () => {
             .toHaveBeenCalledWith("src1", expect.anything(), undefined, { block: "b1:b2" });
         await act(async () => render(null, harness.container));
         harness.container.remove();
+    });
+});
+
+describe("ReadOnlyText Mermaid diagrams", () => {
+    const html = `<pre data-box-size="small" data-display-mode="source" data-hide-title="true"`
+        + ` style="--include-note-height:12em;"><code class="language-mermaid">graph TD;</code></pre>`
+        + `<pre><code class="language-mermaid" data-trilium-display-mode="split">graph LR;</code></pre>`
+        + `<pre><code class="language-javascript">let a;</code></pre>`;
+
+    afterEach(() => {
+        vi.stubGlobal("glob", { ...glob, device: "desktop" });
+    });
+
+    async function mountContent(isChanging?: boolean) {
+        const container = document.createElement("div");
+        document.body.append(container);
+        await act(async () => render(<ReadOnlyTextContent html={html} isChanging={isChanging} />, container));
+        return {
+            container,
+            async unmount() {
+                await act(async () => render(null, container));
+                container.remove();
+            }
+        };
+    }
+
+    it("shows each diagram in the embed box of the editor, read-only", async () => {
+        loadInlineEmbed.mockClear();
+        const { container, unmount } = await mountContent();
+
+        expect(loadInlineEmbed).toHaveBeenCalledTimes(2);
+        const embeds = loadInlineEmbed.mock.calls.map((call: unknown[]) => {
+            const [ source, $el, boxSize, options ] = call as [
+                { language: string; getSource(): string; isReadOnly(): boolean },
+                JQuery<HTMLElement>, string, object
+            ];
+            const figure = $el[0];
+            return {
+                language: source.language,
+                source: source.getSource(),
+                isReadOnly: source.isReadOnly(),
+                boxSize,
+                options,
+                isInPage: figure.isConnected && figure.matches("figure.include-note"),
+                data: { ...figure.dataset },
+                height: figure.style.getPropertyValue("--include-note-height")
+            };
+        });
+        expect(embeds).toEqual([
+            {
+                language: "mermaid", source: "graph TD;", isReadOnly: true, boxSize: "small",
+                options: { isFocused: false }, isInPage: true,
+                data: { boxSize: "small", displayMode: "source", hideTitle: "true" },
+                height: "12em"
+            },
+            {
+                language: "mermaid", source: "graph LR;", isReadOnly: true, boxSize: "medium",
+                options: { isFocused: false }, isInPage: true,
+                data: { boxSize: "medium", hideTitle: "true" },
+                height: ""
+            }
+        ]);
+        expect(container.querySelector("code.language-javascript")).not.toBeNull();
+        expect(container.querySelector(".rendered-mermaid-diagram")).toBeNull();
+        await unmount();
+    });
+
+    it("draws the diagrams in place while the content changes, and when printing", async () => {
+        loadInlineEmbed.mockClear();
+        const changing = await mountContent(true);
+        expect(changing.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await changing.unmount();
+
+        vi.stubGlobal("glob", { ...glob, device: "print" });
+        const printed = await mountContent();
+        expect(printed.container.querySelectorAll(".rendered-mermaid-diagram")).toHaveLength(2);
+        await printed.unmount();
+        expect(loadInlineEmbed).not.toHaveBeenCalled();
     });
 });
 

@@ -52,3 +52,7 @@ It's possible to switch between the two layouts at any time by pressing the <sp
 If there is an error in the source code, the error will be displayed in an information pane.
 
 During the state of an error, the diagram will no longer be rendered and the previously working diagram will remain in the preview section.
+
+## Diagrams in a text note
+
+To show a diagram inside a <a class="reference-link" href="Text.md">Text</a> note instead of in a note of its own, insert one with the <span class="tn-icon cke cke-trilium-mermaid-insert"></span> _Mermaid diagram_ button of the <span class="tn-icon cke cke-plus"></span> _Insert_ menu. It has the same views, zoom and error display as a Mermaid note, and its source stays in the text note as a code block. See _Mermaid diagram_ in <a class="reference-link" href="Text/Insert%20buttons.md">Insert buttons</a>.

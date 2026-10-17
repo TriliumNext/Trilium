@@ -19,6 +19,7 @@ export type { ImageEditingSourceConfig } from "./plugins/image_editing_source.js
 export type { FileUploadData, FileUploadEvent } from "./plugins/file_upload/fileuploadediting.js";
 export type { PasteTarget } from "./plugins/cuttonote.js";
 export type { ContentEmbedState } from "./plugins/content_embed/content_embed.js";
+export type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
 export type { AttachmentLinkChange } from "./plugins/referencelink.js";
 export type { default as TriliumEmojiMention, EmojiSuggestion } from "./plugins/mention/emoji_mention.js";
 export type { default as TriliumSlashCommands, SlashCommandConfig, SlashCommandDefinition, SlashCommandItem } from "./plugins/mention/slash_commands.js";

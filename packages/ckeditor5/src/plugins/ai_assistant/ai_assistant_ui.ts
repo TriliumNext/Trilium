@@ -850,31 +850,30 @@ export default class AiAssistantUI extends Plugin {
     }
 
     /**
-     * Turns the `language-mermaid` code blocks of a finished response into rendered diagrams, so
-     * the review shows what committing it will show. The response is Markdown rendered to note
-     * HTML, in which a diagram is a code block — the editor only makes one a diagram when the
-     * content is upcast into the model, which the assistant deliberately postpones until commit.
-     *
-     * Soft-coupled to the Mermaid feature by name: a build without it — or one whose host supplies
-     * no diagram library — leaves the source standing, which is also all a commit could produce
-     * there, rather than emptying the block in favour of a diagram that will never arrive.
+     * Turns the code blocks of a finished response in an inline embed language, such as
+     * `language-mermaid`, into what they render, so the review shows what committing it will
+     * show. The response is Markdown rendered to note HTML; the editor only makes such a block an
+     * embed when the content is upcast into the model, which the assistant postpones until commit.
+     * Without `contentEmbed.renderInlinePreview`, the blocks stay as source.
      */
     private _renderPreviewDiagrams(preview: HTMLElement): void {
-        const editor = this.editor;
-        if (!editor.plugins.has("MermaidEditing") || !editor.config.get("mermaid")?.lazyLoad) {
+        const config = this.editor.config.get("contentEmbed");
+        const render = config?.renderInlinePreview;
+        if (!render) {
             return;
         }
 
-        const mermaid = editor.plugins.get("MermaidEditing");
-        // The `<pre>` is replaced along with the `<code>` it holds: a diagram left inside one is
-        // framed as a code block in the preview and nowhere else.
-        for (const pre of preview.querySelectorAll("pre:has(> code.language-mermaid)")) {
-            /* v8 ignore next -- defensive fallback: textContent on an element is always a string */
-            const source = pre.textContent ?? "";
-            const diagram = preview.ownerDocument.createElement("div");
-            diagram.className = "ck-ai-assistant-form__diagram";
-            pre.replaceWith(diagram);
-            void mermaid.renderMermaid(diagram, source);
+        for (const language of config.inlineLanguages ?? []) {
+            // The `<pre>` is replaced along with its `<code>`: a diagram left inside one is framed
+            // as a code block.
+            for (const pre of preview.querySelectorAll(`pre:has(> code.language-${language})`)) {
+                /* v8 ignore next -- defensive fallback: textContent on an element is always a string */
+                const source = pre.textContent ?? "";
+                const diagram = preview.ownerDocument.createElement("div");
+                diagram.className = "ck-ai-assistant-form__diagram";
+                pre.replaceWith(diagram);
+                render(language, source, diagram);
+            }
         }
     }
 

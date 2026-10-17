@@ -116,17 +116,20 @@ export class ContentEmbedToolsView extends View {
     /** Shows the tools of the provider. Returns whether the views were created again. */
     private showTools() {
         const tools = this.provider?.getTools() ?? [];
+        // The Editable toggle and the display modes come before the tools.
+        const isAfterItems = !!(this.provider?.hasEditableFlag || this.provider?.hasDisplayModes);
         const keys = tools.map(tool => JSON.stringify([
             tool.group,
             tool.id,
             tool.children?.map(child => [ child.group, child.id, child.keystroke ])
         ]));
+        keys.push(String(isAfterItems));
         const isNewSet = keys.length !== this.toolKeys.length
             || keys.some((key, index) => key !== this.toolKeys[index]);
 
         if (isNewSet) {
             this.toolKeys = keys;
-            this.createViews(tools);
+            this.createViews(tools, isAfterItems);
         }
 
         for (const [ index, tool ] of tools.entries()) {
@@ -137,11 +140,17 @@ export class ContentEmbedToolsView extends View {
         return isNewSet;
     }
 
-    /** Creates a view for each tool, with a separator between groups. */
-    private createViews(tools: ContentEmbedTool[]) {
+    /**
+     * Creates a view for each tool, with a separator between groups, and before the first one
+     * when `isAfterItems`.
+     */
+    private createViews(tools: ContentEmbedTool[], isAfterItems: boolean) {
         this.items.clear();
         this.views = [];
         this.updaters = [];
+        if (isAfterItems && tools.length) {
+            this.items.add(new ToolbarSeparatorView(this.locale));
+        }
 
         let group: string | undefined;
         for (const tool of tools) {

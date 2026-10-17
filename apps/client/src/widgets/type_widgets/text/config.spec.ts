@@ -84,7 +84,6 @@ vi.mock("../../../services/syntax_highlight.js", async (importOriginal) => ({
 }));
 
 // Heavy modules pulled in lazily by the editor config — replace with light stubs.
-vi.mock("mermaid", () => ({ default: { name: "mermaid-stub" } }));
 vi.mock("@triliumnext/highlightjs", () => ({ default: { name: "hljs-stub" } }));
 vi.mock("../../../services/math.js", () => ({ default: { name: "katex-stub" } }));
 
@@ -107,7 +106,7 @@ interface DynamicConfig {
         download(src: string): void;
     };
     math: { enableMathField: boolean; lazyLoad(): Promise<void> };
-    mermaid: { lazyLoad(): Promise<unknown> };
+    contentEmbed: { inlineLanguages: string[] };
     syntaxHighlighting: { loadHighlightJs(): Promise<{ default: unknown }> };
     mention?: {
         feeds: unknown[];
@@ -540,18 +539,22 @@ describe("CK config - image actions", () => {
 });
 
 describe("CK config - lazy loaders", () => {
-    it("lazy-loads KaTeX, Mermaid and highlight.js on demand", async () => {
+    it("lazy-loads KaTeX and highlight.js on demand", async () => {
         const config = await buildDynamicConfig();
 
         await config.math.lazyLoad();
         expect((window as unknown as { katex: unknown }).katex).toEqual({ name: "katex-stub" });
 
-        const mermaid = await config.mermaid.lazyLoad();
-        expect(mermaid).toEqual({ name: "mermaid-stub" });
-
         const hljs = await config.syntaxHighlighting.loadHighlightJs();
         expect(hljs.default).toEqual({ name: "hljs-stub" });
         expect(ensureMimeTypesForHighlighting).toHaveBeenCalled();
+    });
+});
+
+describe("CK config - inline embeds", () => {
+    it("keeps the source of every source embed type inline, as a code block of its language", async () => {
+        const config = await buildDynamicConfig();
+        expect(config.contentEmbed.inlineLanguages).toEqual([ "mermaid" ]);
     });
 });
 

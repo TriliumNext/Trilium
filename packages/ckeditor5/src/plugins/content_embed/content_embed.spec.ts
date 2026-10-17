@@ -28,7 +28,11 @@ import ContentEmbed, {
     COMMAND_NAME,
     CONVERT_EMBED_TO_LINK_COMMAND,
     CONVERT_LINK_TO_EMBED_COMMAND,
+    CONTENT_EMBED_DISPLAY_MODE_COMMAND,
+    CONTENT_EMBED_DISPLAY_MODE_SEPARATOR,
     CONTENT_EMBED_MENU,
+    DISPLAY_MODE_BUTTONS,
+    DISPLAY_MODES,
     TOGGLE_CAPTION_COMMAND_NAME,
     TOGGLE_EDITABLE_COMMAND_NAME,
     TOGGLE_TITLE_COMMAND_NAME
@@ -916,7 +920,7 @@ describe("ContentEmbed with attachments", () => {
 
         const states = [ embed, note, tiny, unsized ]
             .map((wrapper) => plugin.getEmbedStateAt(wrapper));
-        const notEditable = { isEditable: false, isEditableToggleable: false };
+        const notEditable = { isEditable: false, isEditableToggleable: false, displayMode: null };
         expect(states).toEqual([ {
             ...notEditable, boxSize: "small", isTitleShown: true, isTitleToggleable: true,
             hasCaption: false, isCaptionToggleable: true, isConvertibleToLink: true
@@ -1546,6 +1550,141 @@ describe("ContentEmbed editable flag", () => {
         command.execute();
 
         expect(editor.getData()).toBe(before);
+    });
+});
+
+describe("ContentEmbed display mode", () => {
+    const SPLIT = "<figure class=\"include-note\" data-attachment-id=\"a1\""
+        + " data-box-size=\"medium\" data-display-mode=\"split\">&nbsp;</figure>";
+    let editor: ClassicEditor;
+    let getContentEmbedTools: ReturnType<typeof vi.fn>;
+
+    beforeEach(async () => {
+        getContentEmbedTools = vi.fn(() => ({ hasDisplayModes: true }));
+        installGlobMock({
+            getComponentByEl: () => ({
+                loadEmbeddedAttachment: vi.fn(), loadEmbeddedNote: vi.fn(), getContentEmbedTools
+            })
+        });
+
+        editor = await createTestEditor([ Essentials, Paragraph, Undo, Widget, ContentEmbed ]);
+    });
+
+    function getCommand() {
+        const command = editor.commands.get(CONTENT_EMBED_DISPLAY_MODE_COMMAND);
+        if (!command) {
+            throw new Error("Expected the display mode command.");
+        }
+        return command;
+    }
+
+    function getRenderedEmbed() {
+        const embed = editor.editing.view.getDomRoot()?.querySelector("figure.include-note");
+        if (!embed) {
+            throw new Error("Expected a rendered embed.");
+        }
+        return embed;
+    }
+
+    it("loads and saves the mode, drops an unknown one, and marks the embed it renders", () => {
+        editor.setData(SPLIT);
+        expect(getModelData(editor.model, { withoutSelection: true }))
+            .toContain("displayMode=\"split\"");
+        expect(editor.getData()).toBe(SPLIT);
+        expect(getRenderedEmbed().getAttribute("data-display-mode")).toBe("split");
+
+        editor.setData(SPLIT.replace("\"split\"", "\"other\""));
+        expect(getModelData(editor.model, { withoutSelection: true })).not.toContain("displayMode");
+        expect(getRenderedEmbed().hasAttribute("data-display-mode")).toBe(false);
+    });
+
+    it("tells the mode, which follows the Editable flag until one is picked", () => {
+        editor.setData(SPLIT.replace(" data-display-mode=\"split\"", ""));
+        const embed = editor.model.document.getRoot()?.getChild(0) ?? null;
+        editor.model.change((writer) => writer.setSelection(embed, "on"));
+        const command = getCommand();
+        expect([ command.isEnabled, command.value ]).toEqual([ true, "preview" ]);
+
+        editor.model.change((writer) => {
+            const embed = editor.model.document.selection.getSelectedElement();
+            if (embed) writer.setAttribute("editable", true, embed);
+        });
+        expect(command.value).toBe("split");
+    });
+
+    it("switches the mode as one undo step, keeping the Editable flag", () => {
+        const embed = insertContentEmbed(editor, "n1", "medium");
+        editor.model.change((writer) => writer.setAttribute("editable", true, embed));
+        const wrapper = getRenderedEmbed().querySelector(".include-note-wrapper");
+
+        editor.execute(CONTENT_EMBED_DISPLAY_MODE_COMMAND, { value: "source" });
+        expect(getCommand().value).toBe("source");
+        expect(getRenderedEmbed().getAttribute("data-display-mode")).toBe("source");
+        expect(editor.getData()).toContain("data-display-mode=\"source\"");
+        expect(editor.getData()).toContain("data-editable=\"true\"");
+
+        editor.execute("undo");
+        expect(getCommand().value).toBe("split");
+        expect(getRenderedEmbed().hasAttribute("data-display-mode")).toBe(false);
+        expect(getRenderedEmbed().querySelector(".include-note-wrapper")).toBe(wrapper);
+    });
+
+    it("is offered only for content that has display modes", () => {
+        insertContentEmbed(editor, "n1", "medium");
+        expect(getCommand().isEnabled).toBe(true);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect(getCommand().isEnabled).toBe(false);
+        expect(getCommand().value).toBeNull();
+        expect(editor.plugins.get(ContentEmbed).getEmbedStateAt(getRenderedEmbed()))
+            .toMatchObject({ displayMode: null });
+
+        getContentEmbedTools.mockReturnValue({ hasDisplayModes: true });
+        expect(editor.plugins.get(ContentEmbed).getEmbedStateAt(getRenderedEmbed()))
+            .toMatchObject({ displayMode: "preview" });
+    });
+
+    it("separates the display modes from the Editable toggle, while both show", () => {
+        const separator = editor.ui.componentFactory.create(CONTENT_EMBED_DISPLAY_MODE_SEPARATOR);
+        separator.render();
+        insertContentEmbed(editor, "n1", "medium");
+        const isShown = () => !separator.element?.classList.contains("ck-hidden");
+        expect(separator.element?.classList.contains("ck-toolbar__separator")).toBe(true);
+        expect(isShown()).toBe(false);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true, hasDisplayModes: true });
+        editor.ui.update();
+        expect(isShown()).toBe(true);
+
+        getContentEmbedTools.mockReturnValue({ hasEditableFlag: true });
+        editor.ui.update();
+        expect(isShown()).toBe(false);
+    });
+
+    it("offers a button per mode, on while it is the mode and shown only while enabled", () => {
+        const buttons = DISPLAY_MODES.map((mode) => {
+            const button = editor.ui.componentFactory.create(DISPLAY_MODE_BUTTONS[mode]);
+            if (!(button instanceof ButtonView)) {
+                throw new Error("Expected a button.");
+            }
+            return button;
+        });
+        const focus = vi.spyOn(editor.editing.view, "focus");
+        insertContentEmbed(editor, "n1", "medium");
+        expect(buttons.map((button) => button.label))
+            .toEqual([ "Source view", "Split view", "Preview" ]);
+        expect(buttons.map((button) => [ button.isOn, button.isVisible ]))
+            .toEqual([ [ false, true ], [ false, true ], [ true, true ] ]);
+
+        buttons[0].fire("execute");
+        expect(getCommand().value).toBe("source");
+        expect(buttons.map((button) => button.isOn)).toEqual([ true, false, false ]);
+        expect(focus).toHaveBeenCalled();
+
+        getContentEmbedTools.mockReturnValue(null);
+        editor.ui.update();
+        expect(buttons.map((button) => button.isVisible)).toEqual([ false, false, false ]);
     });
 });
 

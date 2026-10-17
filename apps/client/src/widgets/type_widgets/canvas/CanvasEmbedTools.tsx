@@ -30,6 +30,7 @@ import {
     type ContentEmbedTool,
     type ContentEmbedToolbarItem,
     type ContentEmbedToolProvider,
+    needsFullscreenButton,
     showContentEmbedFullscreen
 } from "../text/content_embed_tools";
 import { getBoundedView, MAX_ZOOM, MIN_ZOOM } from "./drawing_view";
@@ -337,9 +338,7 @@ export class CanvasTools implements ContentEmbedToolProvider {
      * for it.
      */
     private getFullscreenTools(): ContentEmbedTool[] {
-        const embed = this.rootRef.current?.closest<HTMLElement>(".include-note");
-        const { hideTitle, boxSize } = embed?.dataset ?? {};
-        if (hideTitle !== "true" || (boxSize !== "medium" && boxSize !== "full")) {
+        if (!needsFullscreenButton(this.rootRef.current?.closest<HTMLElement>(".include-note"))) {
             return [];
         }
 

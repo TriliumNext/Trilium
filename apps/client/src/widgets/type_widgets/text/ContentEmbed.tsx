@@ -30,13 +30,16 @@ export interface ContentEmbedAction {
 
 export interface ContentEmbedProps {
     boxSize?: string;
-    /** The link to the embedded note or attachment, shown as the title. */
-    title: HTMLElement;
+    /**
+     * The link to the embedded note or attachment, shown as the title. Content kept in the note
+     * itself has none, and no title row.
+     */
+    title?: HTMLElement;
     /** The rendered note or attachment. */
     content: HTMLElement;
     contentType: string;
     /** The note opened by the buttons in the title row. */
-    notePath: string;
+    notePath?: string;
     viewScope?: ViewScope;
     /** Whether the embed shows only some blocks of its note, from a block reference. */
     isExcerpt?: boolean;
@@ -69,7 +72,7 @@ export default function ContentEmbed({
     useWindowShortcuts(contentRef);
     const [ isExpanded, setIsExpanded ] = useState(false);
     const focusContentAfterRender = useFocusAfterRender(contentRef);
-    const isExpandable = boxSize === "expandable";
+    const isExpandable = boxSize === "expandable" && !!title && !!notePath;
     const hasFullscreen = !isExcerpt && (boxSize === "medium" || boxSize === "full");
 
     useLayoutEffect(() => {
@@ -90,7 +93,7 @@ export default function ContentEmbed({
 
     return (
         <>
-            <div
+            {title && notePath && <div
                 className="include-note-title-row"
                 onClick={(e) => {
                     if (isExpandable && isTogglingClick(e)) {
@@ -143,7 +146,7 @@ export default function ContentEmbed({
                     />
                 )}
                 <MoreActionsButton notePath={notePath} viewScope={viewScope} />
-            </div>
+            </div>}
             <div
                 ref={bodyRef}
                 className={clsx("include-note-body", isContentActive && "active")}

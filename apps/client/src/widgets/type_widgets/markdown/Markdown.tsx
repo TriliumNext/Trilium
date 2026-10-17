@@ -139,6 +139,7 @@ function MarkdownPreview({ ntxId }: { ntxId: TypeWidgetProps["ntxId"] }) {
             ntxId={ntxId}
             className="markdown-preview"
             contentRef={setPreviewEl}
+            isChanging
         />
     );
 }

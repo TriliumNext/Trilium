@@ -1,5 +1,7 @@
 import "ckeditor5";
 
+import type { InlineEmbedSource } from "./plugins/content_embed/inline_source.js";
+
 declare global {
     interface Component {
         componentId: string;
@@ -73,6 +75,11 @@ declare global {
          * then turn on and off. The embed carries `data-editable="true"` while it is on.
          */
         hasEditableFlag?: boolean;
+        /**
+         * Whether the content shows its source, its rendering or both, which the toolbar and the
+         * menu of the embed then switch. The embed carries the mode as `data-display-mode`.
+         */
+        hasDisplayModes?: boolean;
     }
 
     interface EditorComponent extends Component {
@@ -110,6 +117,16 @@ declare global {
             attachmentId: string,
             $el: JQuery<HTMLElement>,
             boxSize?: string
+        ): void;
+        /**
+         * Fills an embed box with what `source` shows, for an embed that keeps its content in the
+         * note. Hosts without such embeds leave it out.
+         */
+        loadInlineEmbed?(
+            source: InlineEmbedSource,
+            $el: JQuery<HTMLElement>,
+            boxSize: string | undefined,
+            options: { isFocused: boolean }
         ): void;
         /** The href of a reference link to the attachment, or `null` once it is deleted. */
         getAttachmentHref(attachmentId: string): Promise<string | null>;

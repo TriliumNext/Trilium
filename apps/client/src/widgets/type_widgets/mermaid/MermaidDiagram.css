@@ -1,0 +1,43 @@
+.mermaid-diagram {
+    height: var(--include-note-height, 20em);
+    text-align: start;
+
+    pre.code-embed-editor {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+.include-note {
+    &[data-box-size="small"] .mermaid-diagram {
+        height: var(--include-note-height, 10em);
+    }
+
+    &[data-box-size="full"] .mermaid-diagram {
+        height: 50em;
+    }
+}
+
+.include-note-content:fullscreen .mermaid-diagram {
+    height: 100%;
+}
+
+.include-note {
+    /* The corners of the embed box that the diagram touches. */
+    --_mermaid-diagram-top-radius: 0;
+    --_mermaid-diagram-bottom-radius: var(--_include-note-bottom-border-radius, 8px);
+
+    &[data-hide-title="true"]:not([data-box-size="tiny"], [data-box-size="expandable"]) {
+        --_mermaid-diagram-top-radius: var(--_include-note-top-border-radius, 8px);
+    }
+
+    &:has(> figcaption) {
+        --_mermaid-diagram-bottom-radius: 0;
+    }
+}
+
+.include-note-content:not(:fullscreen) .mermaid-diagram {
+    overflow: hidden;
+    border-radius: var(--_mermaid-diagram-top-radius) var(--_mermaid-diagram-top-radius)
+                   var(--_mermaid-diagram-bottom-radius) var(--_mermaid-diagram-bottom-radius);
+}

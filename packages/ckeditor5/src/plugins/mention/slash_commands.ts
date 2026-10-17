@@ -53,8 +53,8 @@ import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, getDate
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
-import type { MermaidSample } from "../mermaid/mermaid_ui.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
+import { insertMermaidDiagram, type MermaidSample } from "../mermaid/mermaid_ui.js";
 import { getDefaultRatios, MAX_COLUMNS, MIN_COLUMNS } from "../multicolumn/constants.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import SnippetsEditing from "../snippets/snippetsediting.js";
@@ -552,15 +552,14 @@ function buildMermaidSlashCommands(editor: Editor): SlashCommandDefinition[] {
     const t = editor.locale.t;
     const samples = (editor.config.get("mermaid.samples") ?? []) as MermaidSample[];
 
-    // The blank diagram. Replaces CKEditor's built-in `insertMermaidCommand` slash command (removed
-    // via `removeCommands`), which uses a generic icon.
     const blank: SlashCommandDefinition = {
         id: "mermaid",
         title: t("Mermaid diagram"),
         description: t("Insert an empty Mermaid diagram"),
         aliases: [ "mermaid", "diagram", "flowchart" ],
         icon: bxNetworkChart,
-        commandName: INSERT_MERMAID_COMMAND
+        commandName: INSERT_INLINE_EMBED_COMMAND,
+        execute: insertMermaidDiagram
     };
 
     const templates = samples.map((sample, index) => ({
@@ -571,8 +570,8 @@ function buildMermaidSlashCommands(editor: Editor): SlashCommandDefinition[] {
         description: t("Insert a \"%0\" Mermaid diagram template", sample.name),
         aliases: [ "mermaid", "diagram", sample.name ],
         icon: bxNetworkChart,
-        // Inserts a mermaid block pre-filled with the sample source (see insertMermaidCommand).
-        execute: (target: Editor) => target.execute(INSERT_MERMAID_COMMAND, { source: sample.content })
+        commandName: INSERT_INLINE_EMBED_COMMAND,
+        execute: (target: Editor) => insertMermaidDiagram(target, sample.content)
     }));
 
     return [ blank, ...templates ];

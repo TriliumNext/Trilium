@@ -6,6 +6,25 @@ export function getMermaidConfig(): MermaidConfig {
     return getSharedMermaidConfig(parseMermaidTheme(documentStyle.getPropertyValue("--mermaid-theme")));
 }
 
+let renderId = 0;
+
+/** Renders the Mermaid `source` to an SVG string, or `""` for empty source. Throws on bad syntax. */
+export async function renderMermaidSvg(source: string) {
+    if (!source.trim()) {
+        return "";
+    }
+
+    const mermaid = (await import("mermaid")).default;
+    mermaid.initialize({
+        startOnLoad: false,
+        ...(getMermaidConfig() as any),
+    });
+
+    renderId++;
+    const { svg } = await mermaid.render(`mermaid-graph-${renderId}`, source);
+    return postprocessMermaidSvg(svg);
+}
+
 /**
  * Processes the output of a Mermaid SVG render before it should be delivered to the user.
  *

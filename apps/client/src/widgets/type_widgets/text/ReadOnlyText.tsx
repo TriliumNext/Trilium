@@ -25,6 +25,7 @@ import { applyLinkEmbeds } from "../../../services/link_embed";
 import { renderMathInElement } from "../../../services/math";
 import { trackPendingRender } from "../../../services/pending_renders";
 import { consumeSearchTerms } from "../../../services/search_jump";
+import { getSourceEmbedTypeByLanguage } from "../../../services/source_embeds";
 import { formatCodeBlocks } from "../../../services/syntax_highlight";
 import { isContentRightToLeft } from "../../../utils/formatters";
 import {
@@ -38,6 +39,7 @@ import { applyReferenceLinks } from "./read_only_helper";
 import {
     loadEmbeddedAttachment,
     loadEmbeddedNote,
+    loadInlineEmbed,
     refreshEmbeddedNote,
     setupImageOpening,
     watchContentEmbeds
@@ -108,6 +110,11 @@ interface ReadOnlyTextContentProps {
     className?: string;
     /** Optional external ref to the rendered content div (e.g. to drive scroll sync). */
     contentRef?: Ref<HTMLDivElement>;
+    /**
+     * Whether `html` changes as it is typed or streamed. Mermaid diagrams then draw in place,
+     * keeping the last drawing while the next renders, instead of in an embed box each.
+     */
+    isChanging?: boolean;
 }
 
 /**
@@ -117,8 +124,10 @@ interface ReadOnlyTextContentProps {
  * whenever `html` changes.
  */
 export function ReadOnlyTextContent({
-    html, noteId, ntxId, dir, className, contentRef: externalContentRef
+    html, noteId, ntxId, dir, className, contentRef: externalContentRef, isChanging = false
 }: ReadOnlyTextContentProps) {
+    // Printing snapshots the page, before an embed box would have drawn its diagram.
+    const hasDiagramEmbeds = !isChanging && glob.device !== "print";
     const contentRef = useSyncedRef(externalContentRef);
     const [ codeBlockWordWrap ] = useTriliumOptionBool("codeBlockWordWrap");
     const [ codeBlockTabWidth ] = useTriliumOption("codeBlockTabWidth");
@@ -144,8 +153,9 @@ export function ReadOnlyTextContent({
         // simply paint when ready; a caller that snapshots the DOM instead (printing) has to wait for
         // them, so the work is registered rather than dropped on the floor.
         trackPendingRender(container, Promise.all([
-            rewriteMermaidDiagramsInContainer(container),
-            applyInlineMermaid(container),
+            ...(hasDiagramEmbeds
+                ? [ applySourceEmbeds(container) ]
+                : [ rewriteMermaidDiagramsInContainer(container), applyInlineMermaid(container) ]),
             applyContentEmbeds(container),
             applyLinkEmbeds(container),
             applyReferenceLinks(container, noteId),
@@ -170,12 +180,12 @@ export function ReadOnlyTextContent({
                 dispose();
             }
         };
-    }, [ html, noteId, ntxId, contentRef ]);
+    }, [ html, noteId, ntxId, contentRef, hasDiagramEmbeds ]);
 
     useEffect(() => {
         if (!contentRef.current) return;
         return watchContentEmbeds(contentRef.current);
-    }, [ contentRef ]);
+    }, [ contentRef, hasDiagramEmbeds ]);
 
     useTriliumEvent("entitiesReloaded", () => {
         if (contentRef.current) applyNoteImageVersions(contentRef.current);
@@ -195,6 +205,8 @@ export function ReadOnlyTextContent({
 
     return (
         <RawHtmlBlock
+            // The drawings in place replace the code blocks, which the embed boxes need again.
+            key={hasDiagramEmbeds ? "embeds" : "drawings"}
             containerRef={contentRef}
             className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap", className)}
             tabindex={100}
@@ -225,6 +237,44 @@ function applyContentEmbeds(container: HTMLDivElement) {
         } else if (noteId) {
             loaded.push(loadEmbeddedNote(noteId, $(embeddedNote), undefined, { block }));
         }
+    }
+    return Promise.all(loaded);
+}
+
+/**
+ * Shows each code block that keeps the source of an embed, such as a Mermaid diagram, in the embed
+ * box the editor shows it in, read-only.
+ */
+function applySourceEmbeds(container: HTMLDivElement) {
+    const loaded: Promise<unknown>[] = [];
+    for (const code of container.querySelectorAll<HTMLElement>("pre > code[class*='language-']")) {
+        const pre = code.parentElement;
+        const language = [ ...code.classList ]
+            .find((name) => name.startsWith("language-"))?.slice("language-".length);
+        if (!pre || !language || !getSourceEmbedTypeByLanguage(language)) continue;
+
+        const figure = document.createElement("figure");
+        figure.className = "include-note";
+        const { boxSize, displayMode } = pre.dataset;
+        figure.dataset.boxSize = boxSize === "small" || boxSize === "full" ? boxSize : "medium";
+        if (displayMode) {
+            figure.dataset.displayMode = displayMode;
+        }
+        figure.dataset.hideTitle = "true";
+        const style = pre.getAttribute("style");
+        if (style) {
+            figure.setAttribute("style", style);
+        }
+        pre.replaceWith(figure);
+
+        const source = code.textContent;
+        loaded.push(loadInlineEmbed({
+            language,
+            getSource: () => source,
+            setSource: () => {},
+            subscribe: () => () => {},
+            isReadOnly: () => true
+        }, $(figure), figure.dataset.boxSize, { isFocused: false }));
     }
     return Promise.all(loaded);
 }

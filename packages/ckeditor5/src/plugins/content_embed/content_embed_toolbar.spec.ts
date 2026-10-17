@@ -102,13 +102,17 @@ describe("ContentEmbedToolbar", () => {
         expect(requires).toContain(ContentEmbedTools);
     });
 
-    it("offers the Editable toggle, the content's tools, then the embed's own items", () => {
+    it("offers Editable, the display modes, the content's tools, then the embed's items", () => {
         const repository = editor.plugins.get(WidgetToolbarRepository) as unknown as {
             _toolbarDefinitions: Map<string, { itemsConfig: string[] }>;
         };
 
         expect(repository._toolbarDefinitions.get("contentEmbed")?.itemsConfig).toEqual([
             TOGGLE_EDITABLE_COMMAND_NAME,
+            "contentEmbedDisplayModeSeparator",
+            "contentEmbedDisplayMode:source",
+            "contentEmbedDisplayMode:split",
+            "contentEmbedDisplayMode:preview",
             CONTENT_EMBED_TOOLS,
             "contentEmbedBoxSizeDropdown",
             TOGGLE_TITLE_COMMAND_NAME,

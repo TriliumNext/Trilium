@@ -7,13 +7,13 @@ import { copyHtmlWithToast, copyTextWithToast } from "../../../services/clipboar
 import { t } from "../../../services/i18n.js";
 import imageService from "../../../services/image.js";
 import { getNoteImageSourceToLoad } from "../../../services/image_urls.js";
-import { getMermaidConfig } from "../../../services/mermaid.js";
 import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import options from "../../../services/options.js";
 import { sanitizeNoteContentHtml } from "../../../services/sanitize_content.js";
+import { getSourceEmbedTypeByLanguage, SOURCE_EMBED_TYPES } from "../../../services/source_embeds.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { getTaskStateDefinitions, openCustomTaskStateConfig } from "../../../services/task_states.js";
-import { isMac, isMobile, openInAppHelpFromUrl } from "../../../services/utils.js";
+import { isMac, isMobile } from "../../../services/utils.js";
 import { resolveContentLanguage } from "../../../utils/formatters.js";
 import SAMPLE_DIAGRAMS from "../mermaid/sample_diagrams.js";
 import buildAiAssistantStream, { type AiNoteLocationProvider, buildAiAssistantQuickActions } from "./ai_assistant_stream.js";
@@ -69,10 +69,13 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             enableMathField: options.get("mathFieldEnabled") !== "false"
         },
         mermaid: {
-            lazyLoad: async () => (await import("mermaid")).default, // FIXME
-            config: getMermaidConfig(),
-            samples: SAMPLE_DIAGRAMS,
-            openHelp: () => openInAppHelpFromUrl("s1aBHPd79XYj")
+            samples: SAMPLE_DIAGRAMS
+        },
+        contentEmbed: {
+            inlineLanguages: SOURCE_EMBED_TYPES.map((type) => type.language),
+            renderInlinePreview: (language, source, container) => {
+                void getSourceEmbedTypeByLanguage(language)?.renderPreview(source, container);
+            }
         },
         image: {
             styles: {
@@ -205,10 +208,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             copyHtml: copyHtmlWithToast
         },
         slashCommand: {
-            // Drop CKEditor's built-in slash commands whose title/icon the palette re-defines: the
-            // Mermaid one (generic icon) and the list ones (Title Case titles, normalized to
-            // sentence case).
-            removeCommands: ["insertMermaidCommand", "bulletedList", "numberedList"],
+            // Drop CKEditor's built-in list slash commands, whose Title Case titles the palette
+            // re-defines in sentence case.
+            removeCommands: ["bulletedList", "numberedList"],
             list: createSlashCommandList
         },
         snippets: {

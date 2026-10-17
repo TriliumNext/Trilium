@@ -458,6 +458,10 @@ describe("openContextMenu", () => {
         const selectEmbedAt = vi.fn();
         let hasPlugin = true;
         let state: Record<string, unknown> | null;
+        const getBoxSizes = vi.fn(() => [
+            { value: "tiny", label: "Tiny" },
+            { value: "medium", label: "Medium" }
+        ]);
         let editable: HTMLElement;
 
         beforeEach(() => {
@@ -478,10 +482,7 @@ describe("openContextMenu", () => {
                     get: () => ({
                         selectEmbedAt,
                         getEmbedStateAt: () => state,
-                        getBoxSizes: () => [
-                            { value: "tiny", label: "Tiny" },
-                            { value: "medium", label: "Medium" }
-                        ]
+                        getBoxSizes
                     })
                 },
                 commands: { get: () => undefined },
@@ -566,6 +567,7 @@ describe("openContextMenu", () => {
             const items = await openOn(editable.querySelector("a"));
             expect(pick(items[7].items[0]))
                 .toEqual([ [ "contentEmbedBoxSize", { value: "tiny" } ] ]);
+            expect(getBoxSizes).toHaveBeenLastCalledWith(embed());
             expect(pick(items[8])).toEqual([ [ "toggleContentEmbedTitle", undefined ] ]);
             expect(pick(items[9]))
                 .toEqual([ [ "toggleContentEmbedCaption", { focusCaptionOnShow: true } ] ]);
@@ -597,6 +599,23 @@ describe("openContextMenu", () => {
             state = { ...state, isEditable: false };
             expect((await openOn(editable.querySelector("a")))[7])
                 .toMatchObject({ title: "link_context_menu.editable", checked: false });
+        });
+
+        it("offers the display modes above the size, for content that has them", async () => {
+            state = { ...state, displayMode: "source" };
+            const items = await openOn(editable.querySelector("a"));
+
+            expect(items.slice(6, 12)).toMatchObject([
+                { kind: "separator" },
+                { title: "display_mode.source", uiIcon: "bx bx-code", checked: true },
+                { title: "display_mode.split", uiIcon: "bx bxs-dock-left", checked: false },
+                { title: "display_mode.preview", uiIcon: "bx bx-show", checked: false },
+                { kind: "separator" },
+                { title: "link_context_menu.include_size" }
+            ]);
+            expect(items).toHaveLength(17);
+            expect(pick(items[9]))
+                .toEqual([ [ "contentEmbedDisplayMode", { value: "preview" } ] ]);
         });
 
         it("appends the commands of an embedded note, its conversion in a group of its own", async () => {

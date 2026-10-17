@@ -7,6 +7,7 @@ import {
     CKTextEditor,
     type FileUploadData,
     type FileUploadEvent,
+    type InlineEmbedSource,
     SnippetDefinition
 } from "@triliumnext/ckeditor5";
 import { deferred, formatBlockRange, parseBlockRange } from "@triliumnext/commons";
@@ -50,6 +51,7 @@ import {
     getAttachmentHref,
     loadEmbeddedAttachment,
     loadEmbeddedNote,
+    loadInlineEmbed,
     openContentEmbedMenu,
     refreshEmbeddedNote,
     setupImageOpening,
@@ -294,6 +296,14 @@ export default function EditableText({
                 attachmentEditor: embedAttachmentEditor,
                 isFocused
             });
+        },
+        loadInlineEmbed(
+            source: InlineEmbedSource,
+            $el: JQuery<HTMLElement>,
+            boxSize: string | undefined,
+            options: { isFocused: boolean }
+        ) {
+            return loadInlineEmbed(source, $el, boxSize, options);
         },
         focusContentEmbed(attachmentId: string) {
             focusedAttachmentIdRef.current = attachmentId;

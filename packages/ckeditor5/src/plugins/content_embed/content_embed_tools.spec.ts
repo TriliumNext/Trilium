@@ -153,6 +153,21 @@ describe("ContentEmbedTools", () => {
         expect(getButtons(tools)[2]?.element?.classList.contains("undo")).toBe(true);
     });
 
+    it("separates the tools from the Editable toggle and the display modes before them", () => {
+        const tools = createView();
+        provider = { ...provider, hasEditableFlag: true };
+        selectEmbed();
+        expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
+
+        provider = { ...provider, hasEditableFlag: false, hasDisplayModes: true };
+        editor.ui.update();
+        expect(getItems(tools)).toEqual([ "|", "1", "2" ]);
+
+        provider = { ...provider, hasDisplayModes: false };
+        editor.ui.update();
+        expect(getItems(tools)).toEqual([ "1", "2" ]);
+    });
+
     it("shows the children of a tool in a menu, without taking the focus", () => {
         const tools = createView();
         selectEmbed();

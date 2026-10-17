@@ -1,6 +1,7 @@
 import { Plugin, type ListDropdownButtonDefinition, Collection, ViewModel, createDropdown, addListToDropdown, DropdownButtonView, type Command } from "ckeditor5";
 import ContentEmbed, {
-    BOX_SIZE_COMMAND_NAME, BOX_SIZES, type BoxSizeValue, getBoxSizeLabel, isToolbarItemHidden
+    BOX_SIZE_COMMAND_NAME, BOX_SIZES, type BoxSizeValue, getBoxSizeLabel, INLINE_BOX_SIZES,
+    isToolbarItemHidden
 } from "./content_embed.js";
 
 export const CONTENT_EMBED_BOX_SIZE_DROPDOWN = "contentEmbedBoxSizeDropdown";
@@ -54,6 +55,7 @@ export default class ContentEmbedBoxSizeDropdown extends Plugin {
     private _getBoxSizeListItemDefinitions(): Collection<ListDropdownButtonDefinition> {
         const editor = this.editor;
         const command = editor.commands.get(BOX_SIZE_COMMAND_NAME) as Command & { value: BoxSizeValue | null };
+        const contentEmbed = editor.plugins.get(ContentEmbed);
         const itemDefinitions = new Collection<ListDropdownButtonDefinition>();
 
         for (const size of BOX_SIZES) {
@@ -70,6 +72,8 @@ export default class ContentEmbedBoxSizeDropdown extends Plugin {
             definition.model.bind("isOn").to(command, "value", value => {
                 return value === size;
             });
+            definition.model.bind("isVisible").to(contentEmbed, "isSelectedEmbedInline",
+                isInline => !isInline || INLINE_BOX_SIZES.includes(size));
 
             itemDefinitions.add(definition);
         }

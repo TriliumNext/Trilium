@@ -25,7 +25,7 @@ import InsertDateTimePlugin, { COMMAND_NAME as INSERT_DATE_TIME_COMMAND, DATE_TI
 import { COMMAND_NAME as INTERNAL_LINK_COMMAND } from "../internallink.js";
 import { COMMAND_NAME as MARKDOWN_IMPORT_COMMAND } from "../markdownimport.js";
 import MathUI from "../math/math_ui.js";
-import { INSERT_MERMAID_COMMAND } from "../mermaid/insert_mermaid_command.js";
+import { INSERT_INLINE_EMBED_COMMAND } from "../content_embed/inline_source.js";
 import { BUTTON_ICON_SIZE, createLayoutFigure } from "../multicolumn/multicolumn_ui.js";
 import TriliumSnippets from "../snippets/snippets.js";
 import type { SnippetDefinition } from "../snippets/snippetsconfig.js";
@@ -596,7 +596,7 @@ describe("buildTriliumSlashCommands", () => {
         [ "bulletedList", "Bulleted list", "bulletedList" ],
         [ "numberedList", "Numbered list", "numberedList" ],
         [ "todoList", "To-do list", "todoList" ],
-        [ "mermaid", "Mermaid diagram", INSERT_MERMAID_COMMAND ]
+        [ "mermaid", "Mermaid diagram", INSERT_INLINE_EMBED_COMMAND ]
     ])("defines %s, running its command with an icon and a description", (id, title, commandName) => {
         const entry = definition(id);
 
@@ -849,15 +849,17 @@ describe("buildTriliumSlashCommands", () => {
     // The samples come from `mermaid.samples`, which the editor already carries for the Mermaid UI —
     // it was passed to the builder separately back when the host built these definitions.
     it("builds one entry per Mermaid sample, inserting that sample's source", () => {
-        const { fake, executeSpy } = makeFakeEditor();
+        const execute = vi.spyOn(editor, "execute").mockReturnValue(undefined);
         const sample = definition("mermaid-sample-0");
 
         expect(sample.title).toBe("Mermaid diagram: Flowchart");
         expect(sample.description).toBe("Insert a \"Flowchart\" Mermaid diagram template");
         expect(sample.aliases).toContain("Flowchart");
 
-        sample.execute?.(fake);
-        expect(executeSpy).toHaveBeenCalledWith(INSERT_MERMAID_COMMAND, { source: "graph TD;" });
+        sample.execute?.(editor);
+        expect(execute).toHaveBeenCalledWith(
+            INSERT_INLINE_EMBED_COMMAND, { language: "mermaid", source: "graph TD;" }
+        );
     });
 
     it("carries no sample entries when the editor configures none", async () => {

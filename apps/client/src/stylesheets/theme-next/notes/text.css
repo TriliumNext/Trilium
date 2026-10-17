@@ -706,8 +706,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
  */
 
 .attachment-content-wrapper pre,
-:root .ck-content pre,
-.ck-mermaid__editing-view {
+:root .ck-content pre {
     border: 0;
     border-radius: 6px;
     box-shadow: var(--code-block-box-shadow);
@@ -773,8 +772,7 @@ html .note-detail-editable-text > :not(figure, .include-note, hr):first-child {
 }
 
 .attachment-content-wrapper pre code,
-:root .ck-content pre code,
-.ck-mermaid__editing-view {
+:root .ck-content pre code {
     display: block;
     padding: var(--padding-size, 1em);
     overflow: auto;

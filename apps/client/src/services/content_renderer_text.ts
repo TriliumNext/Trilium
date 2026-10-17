@@ -201,7 +201,7 @@ export async function rewriteMermaidDiagramsInContainer(container: HTMLDivElemen
         }
 
         const div = document.createElement("div");
-        div.classList.add("mermaid-diagram");
+        div.classList.add("rendered-mermaid-diagram");
         div.textContent = code.textContent;
         const blockId = code.getAttribute(BLOCK_ID_ATTRIBUTE);
         if (blockId) {
@@ -231,7 +231,7 @@ const mermaidLastRenderedByPosition = new WeakMap<HTMLElement, string[]>();
 let mermaidRenderId = 0;
 
 export async function applyInlineMermaid(container: HTMLDivElement) {
-    const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.mermaid-diagram"));
+    const nodes = Array.from(container.querySelectorAll<HTMLElement>("div.rendered-mermaid-diagram"));
     if (!nodes.length) {
         mermaidLastRenderedByPosition.delete(container);
         return;
