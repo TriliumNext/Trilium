@@ -2573,7 +2573,6 @@
     "tool_call_no_result": "Chưa có kết quả.",
     "search_notes_count_other": "({{count}} Ghi chú)",
     "search_notes_limited_other": "Tổng số {{count}} kết quả, giới hạn ở {{limit}}",
-    "search_notes_scope": "Đã tìm kiếm trong <Note/>",
     "child_notes_count_other": "({{count}} Ghi chú con)",
     "child_count_other": "{{count}} Ghi chú con",
     "search_help_count_other": "({{count}} Trang)",

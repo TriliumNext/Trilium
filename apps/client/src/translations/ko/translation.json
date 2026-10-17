@@ -2487,7 +2487,6 @@
     "remove_unreadable_attachments": "{{- model}} 모델이 읽을 수 없는 첨부 파일 제거",
     "search_notes_count_other": "({{count}} 노트)",
     "search_notes_limited_other": "총 {{count}}개 결과, {{limit}}개로 제한됨",
-    "search_notes_scope": "<Note/>에서 검색",
     "child_notes_count_other": "({{count}}개 자식 노트)",
     "child_count_other": "자식 노트 {{count}}개",
     "search_help_count_other": "({{count}}개 페이지)",

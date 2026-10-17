@@ -3128,7 +3128,6 @@
     "tool_call_no_result": "まだ結果はありません。",
     "search_notes_count_other": "（{{count}} 件のノート）",
     "search_notes_limited_other": "合計 {{count}} 件の結果、{{limit}} 件まで表示",
-    "search_notes_scope": "<Note/> 内を検索",
     "child_notes_count_other": "（{{count}} 件の子ノート）",
     "child_count_other": "{{count}} 件の子ノート",
     "search_help_count_other": "（{{count}} ページ）",

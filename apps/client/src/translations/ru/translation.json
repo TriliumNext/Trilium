@@ -3112,7 +3112,6 @@
     "search_notes_limited_one": "Всего {{count}} результат, ограничено до {{limit}}",
     "search_notes_limited_few": "Всего {{count}} результата, ограничено до {{limit}}",
     "search_notes_limited_many": "Всего {{count}} результатов, ограничено до {{limit}}",
-    "search_notes_scope": "Выполнен поиск в <Note/>",
     "child_notes_count_one": "({{count}} дочерняя)",
     "child_notes_count_few": "({{count}} дочерние)",
     "child_notes_count_many": "({{count}} дочерних)",

@@ -3140,7 +3140,6 @@
     "tool_call_no_result": "尚无结果。",
     "search_notes_count_other": "（{{count}} 条笔记）",
     "search_notes_limited_other": "共 {{count}} 条结果，仅显示前 {{limit}} 条",
-    "search_notes_scope": "已在 <Note/> 中搜索",
     "child_notes_count_other": "（{{count}} 个子笔记）",
     "child_count_other": "{{count}} 个子笔记",
     "search_help_count_other": "（{{count}} 个页面）",

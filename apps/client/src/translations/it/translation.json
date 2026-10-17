@@ -3044,7 +3044,6 @@
     "search_notes_limited_one": "{{count}} risultato totale, limitato a {{limit}}",
     "search_notes_limited_many": "{{count}} risultati totali, limitati a {{limit}}",
     "search_notes_limited_other": "{{count}} risultati totali, limitati a {{limit}}",
-    "search_notes_scope": "Cercato in <Note/>",
     "child_notes_count_one": "({{count}} figlio)",
     "child_notes_count_many": "({{count}} bambini)",
     "child_notes_count_other": "({{count}} bambini)",
