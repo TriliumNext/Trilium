@@ -12,6 +12,10 @@ import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 let messagingProvider!: MessagingProvider;
 let lastSyncedPush: number;
 
+/** A client further behind than this on reconnecting is told to reload instead. */
+const MAX_CATCH_UP_CHANGES = 2000;
+const caughtUpClients = new Set<string>();
+
 function init() {
     messagingProvider = getMessagingProvider();
 
@@ -23,7 +27,7 @@ function init() {
             log.info(`JS Info: ${message.info}`);
         } else if (message.type === "ping") {
             await syncMutexService.doExclusively(() => {
-                messagingProvider.sendMessageToClient(clientId, buildPingMessage());
+                messagingProvider.sendMessageToClient(clientId, buildCatchUpMessage(clientId, message.lastEntityChangeId) ?? buildPingMessage());
             });
         } else {
             log.error("Unrecognized message: ");
@@ -139,6 +143,38 @@ function buildPingMessage(): WebSocketMessage {
         type: "ping",
         protectedSessionAvailable: protectedSessionService.isProtectedSessionAvailable()
     };
+}
+
+/**
+ * Changes are broadcast only to clients connected at the time, so one that was disconnected (e.g. a
+ * laptop asleep) misses them. Its pings report the last change it has, so the first ping of each
+ * connection is answered with what it missed. Later pings are skipped: their changes are broadcast.
+ */
+function buildCatchUpMessage(clientId: string, lastEntityChangeId: unknown): WebSocketMessage | null {
+    if (caughtUpClients.has(clientId)) {
+        return null;
+    }
+    // Bounded; a client forgotten here is only re-checked against changes it already has.
+    if (caughtUpClients.size >= 1000) {
+        caughtUpClients.clear();
+    }
+    caughtUpClients.add(clientId);
+
+    if (typeof lastEntityChangeId !== "number" || lastEntityChangeId <= 0) {
+        return null;
+    }
+
+    const entityChangeIds = getSql().getColumn<number>(
+        "SELECT id FROM entity_changes WHERE id > ? ORDER BY id LIMIT ?",
+        [ lastEntityChangeId, MAX_CATCH_UP_CHANGES + 1 ]
+    );
+    if (entityChangeIds.length === 0) {
+        return null;
+    }
+    if (entityChangeIds.length > MAX_CATCH_UP_CHANGES) {
+        return { type: "reload-frontend", reason: "too many changes were made while disconnected" };
+    }
+    return buildFrontendUpdateMessage(entityChangeIds);
 }
 
 function buildFrontendUpdateMessage(entityChangeIds: number[]): WebSocketMessage | null {
