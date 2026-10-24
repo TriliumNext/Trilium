@@ -284,6 +284,23 @@ describe("createToolbarGroupMenuHost", () => {
             expect(runs).toEqual([ "iso" ]);
         });
 
+        it("keeps its submenu open under the pointer, until the pointer turns to another tile", async () => {
+            const { menu, tile } = showTiles();
+            const layer = () => menu.querySelector(":scope > div.dropdown-submenu > .dropdown-menu");
+            const point = (element: Element | undefined) =>
+                element?.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, movementX: 5 }));
+
+            tile.click();
+            await vi.waitFor(() => expect(layer()).not.toBeNull());
+            point(tile);
+            await new Promise((resolve) => setTimeout(resolve));
+            expect(layer()).not.toBeNull();
+
+            point([ ...menu.querySelectorAll(".tn-menu-action") ].find((action) => action.textContent === "Math"));
+            await vi.waitFor(() => expect(layer()).toBeNull());
+            expect(tile.getAttribute("aria-expanded")).toBe("false");
+        });
+
         it("opens its submenu from the keys with Enter, Right moving on to the next tile", async () => {
             const { menu, runs } = showTiles();
             const key = (name: string) =>

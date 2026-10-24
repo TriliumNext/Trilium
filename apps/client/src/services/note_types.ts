@@ -370,7 +370,15 @@ function getTemplateItems(data: NoteTypeData, group: BuiltInTemplateGroup | "use
 }
 
 function getUserTemplates(command: TreeCommandNames | undefined, templateNotes: FNote[], newTemplates: Set<string>) {
-    const header: MenuItem<TreeCommandNames> = { title: t("note_type_chooser.templates"), kind: "header" };
+    const header: MenuItem<TreeCommandNames> = {
+        title: t("note_type_chooser.templates"),
+        kind: "header",
+        actions: [ {
+            icon: "bx bx-cog",
+            caption: t("note_type_chooser.manage_templates"),
+            callback: () => void appContext.triggerCommand("showOptions", { section: "_optionsContentManager" })
+        } ]
+    };
     return withLeading(header, getUserTemplateRows(command, templateNotes, newTemplates));
 }
 

@@ -12,7 +12,7 @@ import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, MenuList } from "./FormList";
 import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
-import { SvgIcon } from "./Icon";
+import Icon, { SvgIcon } from "./Icon";
 import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
 import Popup, { type PopupProps } from "./Popup";
 
@@ -53,11 +53,17 @@ export interface MenuProps<T> extends Pick<PopupProps, "anchor" | "offset" | "co
     isWanted?(): boolean;
     items?: MenuItem<T>[];
     /**
-     * For a menu of {@link items}: offers an input at its top that filters every item, at any depth,
-     * as `MenuCommandItem.filterable` does for a submenu. Placed above its anchor, the menu is
-     * drawn bottom-up: the input at the bottom, and the first row lowest and active as it opens.
+     * For a menu of {@link items}, or of components whose rows `MenuItemRows` draws: offers an
+     * input at its top that filters every item, at any depth, as `MenuCommandItem.filterable` does
+     * for a submenu. Placed above its anchor, the menu is drawn bottom-up: the input at the bottom,
+     * and the first row lowest and active as it opens.
      */
     filterable?: boolean;
+    /**
+     * For a {@link filterable} menu placed above its anchor: keeps the input at the bottom, but
+     * draws the rows in their own order, the first one at the top, as in the note tree.
+     */
+    keepOrder?: boolean;
     /** Called when one of {@link items} is pressed with the primary button, or run from the keyboard. */
     onSelect?(item: MenuCommandItem<T>, e: MouseEvent | KeyboardEvent): void;
     children?: ComponentChildren;
@@ -82,7 +88,7 @@ const ACTION_TOOLTIP = { placement: "top", animation: false } as const;
 /** How long typed letters keep adding to the text a row is looked up by. */
 const TYPEAHEAD_TIMEOUT = 500;
 
-export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
+export default function Menu<T>({ id, className, anchor, placement, bottomSheet, inline, startAt, items, filterable, keepOrder, onSelect, children, onClose, onDismiss, isWanted, elementRef, ...popupProps }: MenuProps<T>) {
     const menuRef = useRef<HTMLDivElement | null>(null);
     // The submenus' layers render into the menu element, which rows reach through the context.
     const [ layerHost, setLayerHost ] = useState<HTMLElement | null>(null);
@@ -93,15 +99,22 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
         else if (elementRef) elementRef.current = element;
     }, [ elementRef ]);
     const [ open, setOpen ] = useState<OpenSubmenu[]>([]);
+    /** The submenus whose layer waited out the stylesheet's opening delay. */
+    const shownSubmenus = useRef(new WeakSet<OpenSubmenu>()).current;
 
     const openSubmenu = useCallback((level: number, rowId?: string, anchor?: HTMLElement, chosen = false) => {
         setOpen((current) => {
             if (rowId ? current[level]?.id === rowId : current.length <= level) return current;
             const kept = current.slice(0, level);
-            const immediate = chosen || !!current[level];
+            const replaced = current[level];
+            const immediate = chosen
+                || (!!replaced && (replaced.immediate || shownSubmenus.has(replaced)));
             return rowId && anchor ? [ ...kept, { id: rowId, anchor, immediate } ] : kept;
         });
-    }, []);
+    }, [ shownSubmenus ]);
+    const submenuShown = useCallback((submenu: OpenSubmenu) => {
+        shownSubmenus.add(submenu);
+    }, [ shownSubmenus ]);
     const [ dropStart, setDropStartLevels ] = useState<boolean[]>([]);
     const setDropStart = useCallback((level: number, value: boolean) => {
         setDropStartLevels((current) => {
@@ -120,6 +133,9 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     /** The filter as the keys last left it, ahead of the render that shows it: keys come faster. */
     const filterRef = useRef<MenuFilter | undefined>(undefined);
     const setFilter = useCallback((next: MenuFilter | undefined) => {
+        const previous = filterRef.current;
+        if (previous && previous.level !== next?.level) holdWidth(menuRef.current, previous.level, false);
+        if (next) holdWidth(menuRef.current, next.level, true);
         filterRef.current = next;
         setFilterState(next);
     }, []);
@@ -128,6 +144,8 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
     /** The placement above its anchor of a filterable menu, which is then drawn bottom-up. */
     const [ upwardPlacement, setUpwardPlacement ] = useState<Placement>();
     const bottomUp = !!upwardPlacement;
+    /** Whether the top level's rows are drawn in reverse, the first row lowest. */
+    const isReversed = bottomUp && !keepOrder;
     /** Whether the menu has asked to close, which it does once. */
     const closed = useRef(false);
     const close = useCallback(() => {
@@ -159,8 +177,15 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             activateFirstRowRef.current(row.level);
         });
     }, [ rows ]);
+    const closeSubmenu = (level: number) => {
+        const opener = open[level];
+        if (!opener) return;
+        openSubmenu(level);
+        if (active && active.level > level) setActive(level, opener.id);
+    };
     const context: MenuContextValue = {
-        open, openSubmenu, active, setActive, rows, registerRow, keyboardDriven, dropStart, setDropStart, close, filter, setFilter, layerHost
+        open, openSubmenu, closeSubmenu, submenuShown, active, setActive, rows, registerRow,
+        keyboardDriven, isReversed, dropStart, setDropStart, close, filter, setFilter, layerHost
     };
 
     /** The ids of the rows the keys can stand on at `level`, in the order they stand in. */
@@ -176,11 +201,11 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
 
     /**
      * Makes the first row at `level` that runs something the active one, if the level has rendered.
-     * The first row of a bottom-up menu is the lowest one.
+     * The first row of a reversed menu is the lowest one.
      */
     function activateFirstRow(level: number) {
         const runnable = navigableRows(level).filter((rowId) => !rows.get(rowId)?.custom);
-        const first = level === 0 && bottomUp ? runnable.at(-1) : runnable[0];
+        const first = level === 0 && isReversed ? runnable.at(-1) : runnable[0];
         if (first) setActive(level, first);
         return !!first;
     }
@@ -213,7 +238,9 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
         const level = (filter ?? lastFilter.current)?.level;
         lastFilter.current = filter;
         if (level === undefined) return;
-        if (!activateFirstRow(level + 1)) pendingFirstRow.current = level + 1;
+        // Rows that `MenuItemRows` draws in a component of its own render after this effect.
+        activateFirstRow(level + 1);
+        pendingFirstRow.current = level + 1;
         // Typing into the input moves the active row, as the keys do.
         if (filter) setKeyboardDriven(true);
 
@@ -376,7 +403,7 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             const rowId = open[parent]?.id;
             if (rowId && rows.get(rowId)?.filterable) target = { rowId, level: parent };
         }
-        if (!target && filterable && items) target = TOP_LEVEL;
+        if (!target && filterable) target = TOP_LEVEL;
         if (!target) return false;
         // The submenus open inside it give way to the list of matches.
         openSubmenu(target.level + 1);
@@ -391,15 +418,18 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
         // A menu already closing, as one whose row ran before it was placed, leaves focus alone.
         if (closed.current || isWanted?.() === false) return;
         menuRef.current?.focus({ preventScroll: true });
-        if (!startAt && !isBottomUp) return;
+        const isLowestFirst = isBottomUp && !keepOrder;
+        if (!startAt && !isLowestFirst) return;
         const rowIds = navigableRows(0);
-        // A bottom-up menu starts at its lowest row, however it was opened.
-        const first = startAt === "first" && !isBottomUp ? rowIds[0] : rowIds.at(-1);
+        // A reversed menu starts at its lowest row, however it was opened.
+        const first = startAt === "first" && !isLowestFirst ? rowIds[0] : rowIds.at(-1);
         if (first) setActive(0, first);
+        // Rows that are still loading get the first row once they render.
+        else if (isLowestFirst || startAt === "first") pendingFirstRow.current = 0;
         setKeyboardDriven(true);
     }
 
-    const topLevelFilter = items && filterable
+    const topLevelFilter = filterable
         ? { ...TOP_LEVEL, text: filter?.level === TOP_LEVEL.level ? filter.text : "" }
         : undefined;
     const defaultPlacement = anchor instanceof HTMLElement ? "bottom-start" : "right-start";
@@ -450,7 +480,7 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             >
                 <MenuList filter={topLevelFilter} bottomUp={bottomUp}>
                     {items
-                        ? <MenuItems items={items} bottomUp={bottomUp} onSelect={onSelect} />
+                        ? <MenuItems items={items} bottomUp={isReversed} onSelect={onSelect} />
                         : children}
                 </MenuList>
                 {/* The submenus' layers follow the scroller in here, portaled by their rows. */}
@@ -466,11 +496,15 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
  */
 export function MenuItemRows<T>({ items }: { items: MenuItem<T>[] }) {
     const menu = useContext(MenuContext);
+    const level = useContext(MenuLevelContext);
     return (
-        <MenuItems items={items} onSelect={(item, e) => {
-            item.handler?.(item, e);
-            if (!item.items) menu?.close();
-        }} />
+        <MenuItems
+            items={items} bottomUp={level === 0 && !!menu?.isReversed}
+            onSelect={(item, e) => {
+                item.handler?.(item, e);
+                if (!item.items) menu?.close();
+            }}
+        />
     );
 }
 
@@ -509,14 +543,19 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
     if (bottomUp) matches.reverse();
     return <>
         {matches.length === 0 && <li className="tn-menu-filter-empty" role="none">{t("menu.no_matches")}</li>}
-        {matches.map(([ index, { item, title, path } ]) => (
+        {matches.map(([ index, { item, title, isName, path } ]) => (
             <FormListItem
                 key={index}
                 icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
-                closeOnSelect={false} onClick={(e) => onSelect?.(item, e)}
+                className={item.className} closeOnSelect={false}
+                onClick={(e) => onSelect?.(item, e)}
+                onMiddleClick={item.middleClickHandler} onContextMenu={item.contextMenuHandler}
             >
-                <span className="tn-menu-filter-title">{highlightMatch(title, text)}</span>
+                <span className={clsx("tn-menu-filter-title", isName && "tn-menu-name")}>
+                    {highlightMatch(title, text)}
+                    {item.titleIcon && <Icon icon={item.titleIcon} />}
+                </span>
                 {path.length > 0 && <span className="tn-menu-filter-path">{path.join(" › ")}</span>}
             </FormListItem>
         ))}
@@ -527,14 +566,19 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
     if ("kind" in row) {
         if (row.kind === "separator") return <FormDropdownDivider />;
         // Its title is text, as it can be a name the user wrote.
-        if (row.kind === "header") return <FormListHeader text={row.title} />;
+        if (row.kind === "header") return <FormListHeader text={row.title} actions={row.actions} />;
         if (row.kind === "actions") return <MenuActions items={row.items} className={row.className} onSelect={onSelect} />;
         return <FormListCustomItem><row.componentFn /></FormListCustomItem>;
     }
 
-    const { title, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges, className, keyboardShortcut, shortcut, trailingIcon, items } = row;
+    const {
+        title, titleIcon, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges,
+        className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
+        middleClickHandler, contextMenuHandler
+    } = row;
     // Callers pass HTML: titles escaped with `escapeHtml()` or boxed by `menuName()`.
-    const label = <span dangerouslySetInnerHTML={{ __html: title }} />;
+    const titleHtml = <span dangerouslySetInnerHTML={{ __html: title }} />;
+    const label = titleIcon ? <span>{titleHtml}<Icon icon={titleIcon} /></span> : titleHtml;
     // `onSelect` decides whether the menu closes, as `contextMenu` does.
     const select = (e: MouseEvent) => onSelect?.(row, e);
 
@@ -544,6 +588,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
                 icon={uiIcon ?? "bx bx-empty"} title={label} disabled={enabled === false}
                 className={className} onDropdownToggleClicked={select} split={!!(row.command || row.handler)}
                 filterable={row.filterable}
+                onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
             >
                 <MenuItems items={items} onSelect={onSelect} />
             </FormDropdownSubmenu>
@@ -556,8 +601,9 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
             icon={"uiIcon" in row || "checked" in row ? uiIcon : null}
             iconClassName={iconColorClass} checked={checked} checkable={"checked" in row} disabled={enabled === false}
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
-            keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingIcon={trailingIcon} closeOnSelect={false}
-            onClick={select}
+            keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
+            trailingIcon={trailingIcon} closeOnSelect={false}
+            onClick={select} onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
         >
             {label}
         </FormListItem>
@@ -632,9 +678,12 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
             aria-checked={checked}
             className={clsx("tn-menu-action", menu?.active?.id === id && "tn-menu-active")}
             disabled={disabled} tabIndex={menu ? -1 : undefined}
-            // The keyboard goes on from the action the pointer last pointed at, as from a row.
+            // As over a row, the pointer closes the submenu open at this level, and the keyboard
+            // goes on from the action it last pointed at.
             onPointerMove={(e) => {
-                if (menu && !disabled && menu.active?.id !== id && pointerMoved(e)) menu.setActive(level, id);
+                if (!menu || !pointerMoved(e)) return;
+                menu.closeSubmenu(level);
+                if (!disabled && menu.active?.id !== id) menu.setActive(level, id);
             }}
             // A press keeps focus where it was, as on a row.
             onMouseDown={(e) => e.preventDefault()}
@@ -655,6 +704,8 @@ interface MenuMatch<T> {
     item: MenuCommandItem<T>;
     /** The title as text. */
     title: string;
+    /** Whether the title is a name boxed by `menuName()`, whose width the match caps as well. */
+    isName: boolean;
     /** The titles of the submenus the item stands in, outermost first. */
     path: string[];
 }
@@ -685,7 +736,7 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
             const haystack = [ ...path, title ].join(" ").toLowerCase();
             if (!words.every((word) => haystack.includes(word))) continue;
             const rank = lowerTitle.startsWith(query) ? 0 : lowerTitle.includes(query) ? 1 : 2;
-            found.push({ item, title, path, rank });
+            found.push({ item, title, isName: isMenuName(item.title), path, rank });
         }
     }
 
@@ -693,14 +744,24 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
     return found.sort((a, b) => a.rank - b.rank);
 }
 
-/**
- * The text an item's title shows. Titles are HTML, read through a `<template>`, whose content is
- * inert: an `<img>` in it neither loads nor runs its handlers, as one in a detached `<div>` would.
- */
+/** The text an item's title shows. */
 function textOf(html: string) {
+    return parseTitle(html).textContent ?? "";
+}
+
+/** Whether an item's title is a name boxed by `menuName()`. */
+function isMenuName(html: string) {
+    return !!parseTitle(html).querySelector(".tn-menu-name");
+}
+
+/**
+ * An item's title, which is HTML, read through a `<template>`, whose content is inert: an `<img>`
+ * in it neither loads nor runs its handlers, as one in a detached `<div>` would.
+ */
+function parseTitle(html: string) {
     const template = document.createElement("template");
     template.innerHTML = html;
-    return template.content.textContent ?? "";
+    return template.content;
 }
 
 /** `title` with the first place the typed text, or else one of its words, occurs in it marked. */
@@ -741,6 +802,17 @@ function hasRowBefore(row: Element | undefined) {
 /** The filter input of the submenu open in `menu`, if one is. */
 function filterInputIn(menu: HTMLElement | null) {
     return menu?.querySelector<HTMLInputElement>(FILTER_INPUT) ?? null;
+}
+
+/**
+ * Holds the frame of the level a filter at `level` filters at no less than its current width, so
+ * the matches do not resize it as they change, or with `hold` false releases it. Called before the
+ * filter renders, while the frame still shows the rows the width is taken from.
+ */
+function holdWidth(menu: HTMLElement | null, level: number, hold: boolean) {
+    const input = menu?.querySelector<HTMLElement>(`${FILTER_INPUT}[data-level="${level + 1}"]`);
+    const frame = input?.closest<HTMLElement>(".dropdown-menu");
+    if (frame) frame.style.minWidth = hold ? `${frame.offsetWidth}px` : "";
 }
 
 /**

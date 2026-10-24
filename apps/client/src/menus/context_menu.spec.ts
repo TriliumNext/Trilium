@@ -640,17 +640,28 @@ describe("contextMenu", () => {
             });
         });
 
-        it("waits before the first submenu it opens under the pointer, and not before one that replaces it", async () => {
+        it("waits before a submenu it opens under the pointer, unless it replaces one in view", async () => {
+            const layer = () => menuElement()?.querySelector("div.dropdown-submenu > .dropdown-menu");
             /** Whether the open layer skips the stylesheet's opening delay and fade. */
-            const immediate = () => menuElement()?.querySelector("div.dropdown-submenu > .dropdown-menu")?.classList.contains("tn-menu-immediate");
+            const immediate = () => layer()?.classList.contains("tn-menu-immediate");
             await openMenu();
 
             // The pointer might only be passing over the row.
             hover(row("Insert child note"));
-            await vi.waitFor(() => expect(layers()).toHaveLength(1));
+            await vi.waitFor(() => expect(layers()).toEqual([ [ "Text", "Code" ] ]));
             expect(immediate()).toBe(false);
 
-            // One submenu is open, so the user is going through them: its sibling shows at once.
+            // It passed on before that submenu showed, so the next one waits as well.
+            hover(row("Templates"));
+            await vi.waitFor(() => expect(layers()).toEqual([ [ "Meeting" ] ]));
+            expect(immediate()).toBe(false);
+
+            // The browser starts the fade once the delay is over. With a submenu in view, the user
+            // is going through them, so its sibling shows at once, and so does the one after.
+            layer()?.dispatchEvent(new Event("animationstart", { bubbles: true }));
+            hover(row("Insert child note"));
+            await vi.waitFor(() => expect(layers()).toEqual([ [ "Text", "Code" ] ]));
+            expect(immediate()).toBe(true);
             hover(row("Templates"));
             await vi.waitFor(() => expect(layers()).toEqual([ [ "Meeting" ] ]));
             expect(immediate()).toBe(true);
@@ -915,11 +926,15 @@ describe("contextMenu", () => {
                         { kind: "separator" as const },
                         { title: "Collection", items: [ { title: "Table" }, { title: "Board", badges: [ { title: "New" } ] } ] },
                         { kind: "header" as const, title: "Templates" },
+                        // As `menuName()` boxes a name.
+                        { title: "<span class=\"tn-menu-name\">Weekly review</span>" },
                         { title: "Meeting &amp; <b>notes</b>" }
                     ]
                 }
             ];
-            const unfiltered = [ "Text|", "Code|", "Collection|", "Meeting & notes|" ];
+            const unfiltered = [
+                "Text|", "Code|", "Collection|", "Weekly review|", "Meeting & notes|"
+            ];
 
             async function openFilterable(picked: string[] = []) {
                 buildPage();
@@ -1058,6 +1073,13 @@ describe("contextMenu", () => {
                 // The title is HTML; what is matched and shown is its text, and none of its markup.
                 await vi.waitFor(() => expect(layer().rows).toEqual([ "Meeting & notes|" ]));
                 expect(menuElement()?.querySelector(".tn-menu-filter-title b")).toBeNull();
+                expect(menuElement()?.querySelector(".tn-menu-filter-title.tn-menu-name")).toBeNull();
+
+                // A name keeps the box that caps its width.
+                edit("week");
+                await vi.waitFor(() => expect(layer().rows).toEqual([ "Weekly review|" ]));
+                expect(menuElement()?.querySelector(".tn-menu-filter-title")?.classList)
+                    .toContain("tn-menu-name");
 
                 edit("& nzz");
                 await vi.waitFor(() => expect(layer().empty).toBe(true));
@@ -1173,6 +1195,40 @@ describe("contextMenu", () => {
                     height = 400;
                     await relayout();
                     expect(submenuLayer()?.style.top).toBe(top);
+                } finally {
+                    vi.restoreAllMocks();
+                }
+            });
+
+            it("holds its width while filtered, widening only for a wider match", async () => {
+                // As wide as its longest row, and no narrower than its `min-width`.
+                const width = function (this: HTMLElement) {
+                    if (!this.matches(".dropdown-menu")) return 0;
+                    const rows = [ ...this.querySelectorAll("li.dropdown-item") ].map((row) => row.textContent?.length ?? 0);
+                    return Math.max(parseFloat(this.style.minWidth) || 0, 10 * Math.max(0, ...rows));
+                };
+                vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(width);
+                const submenuLayer = () => menuElement()?.querySelector<HTMLElement>("div.dropdown-submenu > .dropdown-menu");
+                try {
+                    await openFilterable();
+                    await openSubmenuByKeys();
+                    // "Meeting & notes".
+                    expect(submenuLayer()?.offsetWidth).toBe(150);
+                    expect(submenuLayer()?.style.minWidth).toBe("");
+
+                    type("py");
+                    await vi.waitFor(() => expect(layer().rows).toEqual([ "Python|Code" ]));
+                    expect(submenuLayer()?.style.minWidth).toBe("150px");
+                    // "Board" with its badge and path, wider than the submenu was.
+                    edit("collection");
+                    await vi.waitFor(() => expect(layer().rows).toHaveLength(2));
+                    edit("tab");
+                    await vi.waitFor(() => expect(layer().rows).toEqual([ "Table|Collection" ]));
+                    expect(submenuLayer()?.style.minWidth).toBe("180px");
+
+                    edit("");
+                    await vi.waitFor(() => expect(layer().rows).toEqual(unfiltered));
+                    expect(submenuLayer()?.style.minWidth).toBe("");
                 } finally {
                     vi.restoreAllMocks();
                 }
@@ -1557,6 +1613,39 @@ describe("contextMenu", () => {
             // 600px overflows by 155px to the right of the pointer and by 55px to its left.
             const menu = await place({ x: 550, y: 20, width: 600, height: 300 });
             expect([ menu.style.left, menu.style.top ]).toEqual([ "5px", "20px" ]);
+        });
+
+        it("opens below or above the element it is anchored to, centered on request", async () => {
+            buildPage();
+            const contextMenu = await buildContextMenu();
+            vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1000);
+            vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
+            vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(200);
+            vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(300);
+            const button = document.createElement("button");
+            document.body.append(button);
+            let buttonRect = DOMRect.fromRect({ x: 100, y: 200, width: 400, height: 30 });
+            vi.spyOn(button, "getBoundingClientRect").mockImplementation(() => buttonRect);
+
+            /** Where the menu is placed against `button`, which it is hidden again after. */
+            async function placedAt(centered?: boolean) {
+                await contextMenu.show({
+                    anchor: button, centered, items, selectMenuItemHandler: () => {}
+                });
+                const menu = menuElement();
+                if (!menu) throw new Error("expected the menu to render");
+                await vi.waitFor(() => expect(menu.style.visibility).toBe("visible"));
+                const position = [ menu.style.left, menu.style.top ];
+                await contextMenu.hide();
+                return position;
+            }
+
+            expect(await placedAt()).toEqual([ "100px", "230px" ]);
+            expect(await placedAt(true)).toEqual([ "200px", "230px" ]);
+
+            buttonRect = DOMRect.fromRect({ x: 100, y: 600, width: 400, height: 30 });
+            expect(await placedAt()).toEqual([ "100px", "300px" ]);
+            expect(await placedAt(true)).toEqual([ "200px", "300px" ]);
         });
 
         it("caps its height to the viewport so that it scrolls", async () => {

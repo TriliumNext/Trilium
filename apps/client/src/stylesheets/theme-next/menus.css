@@ -166,6 +166,10 @@ html body .dropdown-item[disabled] {
     margin-inline-start: 16px;
 }
 
+.dropdown-item span.menu-trailing-text {
+    color: var(--menu-item-keyboard-shortcut-color) !important;
+}
+
 .dropdown-divider,
 .excalidraw .context-menu hr {
     position: relative;
@@ -231,6 +235,10 @@ body[dir=rtl] .dropdown-submenu .dropdown-toggle::after {
     inset-inline-start: calc(0px - var(--menu-padding-size));
     inset-inline-end: calc(0px - var(--menu-padding-size));
     border-top: 1px solid var(--menu-item-delimiter-color);
+}
+
+.dropdown-divider:has(+ li > .dropdown-header) {
+    display: none;
 }
 
 /* Static menus (used as a list, such as on the note revisions dialog) */

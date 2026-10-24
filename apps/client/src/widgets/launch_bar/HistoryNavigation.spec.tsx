@@ -34,8 +34,13 @@ afterEach(() => {
 describe("getHistoryItems", () => {
     it("lists the notes on either side of the current one in Electron, nearest first", async () => {
         buildNote({ id: "html", title: "<b>Bold</b>" });
+        buildNote({
+            id: "work",
+            title: "Work",
+            children: [ { id: "rdep", title: "R&D", children: [ { id: "plan", title: "Plan" } ] } ]
+        });
         const navigationGoToIndex = vi.fn();
-        const urls = [ "note1", "", "html", "note3", "note4", "note5" ].map(urlOf);
+        const urls = [ "note1", "", "html", "note3", "work/rdep/plan", "note5" ].map(urlOf);
         stubElectronHistory(urls, 3, navigationGoToIndex);
 
         const back = await getHistoryItems("back");
@@ -43,8 +48,10 @@ describe("getHistoryItems", () => {
             .toEqual([ "&lt;b&gt;Bold&lt;&#x2F;b&gt;", "Note 1" ]);
         expect(back[1].uiIcon).toBe(froca.getNoteFromCache("note1")?.getIcon());
 
+        // The title is HTML; the path is text.
         const forward = await getHistoryItems("forward");
-        expect(forward.map((item) => item.title)).toEqual([ "Note 4", "Note 5" ]);
+        expect(forward.map(({ title, trailingText }) => [ title, trailingText ]))
+            .toEqual([ [ "Plan", "Work › R&D" ], [ "Note 5", undefined ] ]);
 
         select(back[1]);
         expect(navigationGoToIndex).toHaveBeenLastCalledWith(0);

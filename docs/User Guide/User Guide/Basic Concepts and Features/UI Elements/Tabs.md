@@ -13,7 +13,11 @@ Depending on the <a class="reference-link" href="Vertical%20and%20horizontal%20
 ## Interaction
 
 *   To create a new tab, press the <span class="tn-icon bx bx-plus"></span> button that is to the right of the last tab.
-*   Right-clicking the <span class="tn-icon bx bx-plus"></span> button shows a menu with _New tab_ and, if there are any <a class="reference-link" href="../Navigation/Workspaces.md">Workspaces</a>, one entry per workspace, which opens the workspace in a new tab, hoisted into it.
+*   Right-clicking or pressing and holding the <span class="tn-icon bx bx-plus"></span> button shows a menu with:
+    *   _New tab_.
+    *   If there are any <a class="reference-link" href="../Navigation/Workspaces.md">Workspaces</a>, one entry per workspace, which opens the workspace in a new tab, hoisted into it.
+    *   _Recently changed notes_: up to 15 notes, the most recently changed first, with the path of each note on the right. Notes that are already open in a tab are not listed, and in a [hoisted note](../Navigation/Note%20Hoisting.md) only its descendants are. Selecting a note opens it in a new tab.
+    *   _All recent changes_, which opens the <a class="reference-link" href="Recent%20Changes.md">Recent Changes</a> dialog.
 *   To close a tab, press the corresponding <span class="tn-icon bx bx-x"></span> button.
 *   For multitasking, tabs can be used alongside <a class="reference-link" href="Split%20View.md">Split View</a>. Each tab can have one or more notes, displayed horizontally.
 *   Tabs can be reordered by drag-and-dropping it into a new position.

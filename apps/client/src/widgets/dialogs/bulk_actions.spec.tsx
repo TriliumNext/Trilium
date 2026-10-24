@@ -2,7 +2,8 @@ import { act } from "preact/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Component from "../../components/component";
-import bulk_action from "../../services/bulk_action";
+import contextMenu, { type MenuCommandItem } from "../../menus/context_menu";
+import bulk_action, { ACTION_GROUPS } from "../../services/bulk_action";
 import froca from "../../services/froca";
 import noteAttributeCache from "../../services/note_attribute_cache";
 import { buildNote } from "../../test/easy-froca";
@@ -128,19 +129,30 @@ describe("BulkActionsDialog", () => {
             .toBe("bulk_actions.none_yet");
     });
 
-    it("adds the action picked from the add menu at the foot of the actions card", async () => {
+    it("adds the action picked from the add row's menu at the foot of the card", async () => {
+        const show = vi.spyOn(contextMenu, "show").mockResolvedValue();
         await open([ "n1" ]);
-        const toggle = container.querySelector<HTMLButtonElement>(".bulk-actions-chosen-actions .tn-card-section:last-child .dropdown button");
-        expect(toggle?.textContent).toContain("bulk_actions.add_action");
-        await act(async () => toggle?.click());
+        const adder = container.querySelector<HTMLButtonElement>(".bulk-actions-chosen-actions"
+            + " > .tn-card-body > .tn-card-adders:last-child > .tn-card-adder");
+        expect(adder?.textContent).toContain("bulk_actions.add_action");
+        await act(async () => adder?.click());
+        await vi.waitFor(() => expect(show).toHaveBeenCalledOnce());
 
-        const item = [ ...document.querySelectorAll<HTMLElement>(".action-add-menu .dropdown-item") ]
-            .find((el) => el.textContent?.includes("move_note.move_note"));
-        expect(item).toBeDefined();
-        expect(item?.querySelector(".bx-note.bulk-action-marker-move")).not.toBeNull();
-        expect(item?.getAttribute("title") ?? item?.getAttribute("data-bs-original-title"))
-            .toBe("move_note.description");
-        await act(async () => item?.click());
+        const { anchor, items } = show.mock.calls[0][0];
+        expect(anchor).toBe(adder);
+        expect(items.flatMap((item) => ("kind" in item && item.kind === "header"
+            ? [ item.title ]
+            : [])))
+            .toStrictEqual(ACTION_GROUPS.map(({ title }) => title));
+        expect(items[0]).toMatchObject({ kind: "header" });
+
+        const item = items.find((entry): entry is MenuCommandItem<unknown> =>
+            !("kind" in entry) && entry.title === "move_note.move_note");
+        expect(item).toMatchObject({
+            uiIcon: "bx bx-note bulk-action-marker-move",
+            tooltip: "move_note.description"
+        });
+        await act(async () => item?.handler?.(item, new MouseEvent("click")));
 
         expect(server.post).toHaveBeenCalledWith("notes/_bulkAction/attributes", {
             type: "label",

@@ -4,6 +4,7 @@ import { JSX, HTMLAttributes, type RefObject } from "preact";
 import { useCallback, useContext, useLayoutEffect, useRef, useState } from "preact/hooks";
 import clsx from "clsx";
 
+import type { MenuItem } from "../../menus/context_menu";
 import Button from "./Button";
 import {
     type FilterRole, FilterPassthrough, filterRoleClass, useFilterMatch, useIsFiltering
@@ -272,8 +273,7 @@ function holdsSmallControl(element: HTMLElement) {
 
 // #region Item Creation Row
 
-/** One button of an {@link ItemCreationRow}. */
-export interface ItemCreationRowButton {
+interface ItemCreationRowButtonBase {
     label: string;
     /** An icon class, `bx` prefix included. */
     icon?: string;
@@ -281,8 +281,16 @@ export interface ItemCreationRowButton {
     disabled?: boolean;
     /** The button's `name` attribute, which tests find it by. */
     name?: string;
-    onClick: (event: MouseEvent) => void;
 }
+
+/**
+ * One button of an {@link ItemCreationRow}: one that creates the entry on a press, or one that
+ * opens a context menu of the entries it can create.
+ */
+export type ItemCreationRowButton = ItemCreationRowButtonBase & (
+    | { onClick: (event: MouseEvent) => void; menu?: undefined }
+    | { menu: MenuItem<string>[]; onClick?: undefined }
+);
 
 interface ItemCreationRowProps {
     buttons: ItemCreationRowButton[];
@@ -295,28 +303,59 @@ interface ItemCreationRowProps {
  * the card rather than as a button, so the row reads as the foot of the list above it.
  */
 export function ItemCreationRow({ buttons, elementRef, onKeyDown }: ItemCreationRowProps) {
+    // The position of the button whose menu is open.
+    const [ openMenuIndex, setOpenMenuIndex ] = useState<number>();
+
     return (
         // Transparent: each button paints itself, and the gaps show the card through.
         <section ref={elementRef} className="tn-card-section tn-card-adders" onKeyDown={onKeyDown}>
-            {buttons.map((button, index) => (
-                <Button
-                    // The position in the row: two buttons can share a label.
-                    key={index}
-                    name={button.name}
-                    // Not a command button: the theme gives those a background, a shadow and a
-                    // minimum width, none of which suit a segment.
-                    kind="lowProfile"
-                    className="tn-card-adder"
-                    text={<>
-                        {button.icon && <Icon icon={button.icon} />}
-                        <span>{button.label}</span>
-                    </>}
-                    disabled={button.disabled}
-                    onClick={button.onClick}
-                />
-            ))}
+            {buttons.map((button, index) => {
+                const { menu } = button;
+                return (
+                    <Button
+                        // The position in the row: two buttons can share a label.
+                        key={index}
+                        name={button.name}
+                        // Not a command button: the theme gives those a background, a shadow and a
+                        // minimum width, none of which suit a segment.
+                        kind="lowProfile"
+                        className="tn-card-adder"
+                        text={<>
+                            {button.icon && <Icon icon={button.icon} />}
+                            <span>{button.label}</span>
+                        </>}
+                        disabled={button.disabled}
+                        aria-haspopup={menu ? "menu" : undefined}
+                        aria-expanded={menu ? openMenuIndex === index : undefined}
+                        onClick={menu
+                            ? (event) => void openItemCreationMenu(event.currentTarget, menu, {
+                                onShow: () => setOpenMenuIndex(index),
+                                onHide: () => setOpenMenuIndex(undefined)
+                            })
+                            : button.onClick}
+                    />
+                );
+            })}
         </section>
     );
+}
+
+/**
+ * Opens `items` as a context menu centered below `button`, or above it where there is no room
+ * below. The press that put the menu away opens nothing.
+ */
+async function openItemCreationMenu(
+    button: HTMLButtonElement,
+    items: MenuItem<string>[],
+    { onShow, onHide }: { onShow: () => void; onHide: () => void }
+) {
+    // Loaded on demand: the login and setup pages show cards but no menus.
+    const { default: contextMenu } = await import("../../menus/context_menu");
+    if (contextMenu.dismissedByLastPress) return;
+
+    await contextMenu.show({
+        anchor: button, centered: true, items, selectMenuItemHandler: () => {}, onShow, onHide
+    });
 }
 
 // #endregion

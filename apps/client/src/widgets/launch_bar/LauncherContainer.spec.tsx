@@ -9,11 +9,15 @@ import { TREE_CLIPBOARD_TYPE } from "../react/hooks.js";
 import { ParentComponent } from "../react/react_utils.js";
 import LauncherContainer, { useLauncherChildNotes } from "./LauncherContainer.js";
 
-const h = vi.hoisted(() => ({ isElectron: false }));
+const h = vi.hoisted(() => ({ isElectron: false, showLauncherContextMenu: vi.fn() }));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
     isElectron: () => h.isElectron
+}));
+vi.mock("../../menus/launcher_button_context_menu", async (importOriginal) => ({
+    ...await importOriginal<typeof import("../../menus/launcher_button_context_menu")>(),
+    showLauncherContextMenu: h.showLauncherContextMenu
 }));
 vi.mock("./RecordMeetingButton", () => ({
     default: () => <span className="record-meeting-button" />
@@ -161,5 +165,40 @@ describe("LauncherContainer", () => {
             bar?.dispatchEvent(dragOver);
         });
         expect(document.body.querySelector(".launcher-drop-indicator")).not.toBeNull();
+    });
+
+    it("shows a cloned note with #bookmarkFolder as a folder of its children", async () => {
+        buildNote({
+            id: "_lbVisibleLaunchers",
+            title: "Visible Launchers",
+            children: [ {
+                id: "clonedFolder",
+                title: "Cloned folder",
+                "#bookmarkFolder": "",
+                children: [ { id: "child", title: "Child" } ]
+            } ]
+        });
+        container = document.createElement("div");
+        document.body.appendChild(container);
+        act(() => render(
+            <ParentComponent.Provider value={new Component()}>
+                <LauncherContainer isHorizontalLayout={false} />
+            </ParentComponent.Provider>, container));
+        await flush();
+
+        const slot = container.querySelector(".launcher-slot[data-launcher-id='clonedFolder']");
+        expect(slot?.querySelector(".custom-note-launcher")).toBeNull();
+        const button = slot?.querySelector(".right-dropdown-button");
+        expect(button).not.toBeNull();
+
+        // "Remove from launch bar" removes this placement, not a bookmark of the note.
+        act(() => {
+            button?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        });
+        expect(h.showLauncherContextMenu).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ noteId: "clonedFolder" }),
+            expect.anything(),
+            { parentNoteId: "_lbVisibleLaunchers" }
+        );
     });
 });

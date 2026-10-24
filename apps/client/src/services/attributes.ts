@@ -45,22 +45,21 @@ export async function setRelation(noteId: string, name: string, value: string = 
  * @param value the boolean value to set for the label.
  */
 export async function setBooleanWithInheritance(note: FNote, labelName: string, value: boolean) {
-    const actualValue = note.isLabelTruthy(labelName);
-    if (actualValue === value) return;
-    const hasInheritedValue = !note.hasOwnedLabel(labelName) && note.hasLabel(labelName);
+    if (note.isLabelTruthy(labelName) === value) return;
 
-    if (hasInheritedValue) {
-        if (value) {
-            await setLabel(note.noteId, labelName, "");
-        } else {
-            // Label is inherited - override to false.
-            await setLabel(note.noteId, labelName, "false");
-        }
-    } else if (value) {
-        await setLabel(note.noteId, labelName, "");
-    } else {
-        await removeOwnedLabelByName(note, labelName);
+    const inheritedLabel = note.getLabels(labelName).find((label) => label.noteId !== note.noteId);
+    const inheritedValue = !!inheritedLabel && inheritedLabel.value !== "false";
+
+    if (value === inheritedValue) {
+        await removeOwnedAttributesByNameOrType(note, "label", labelName);
+        return;
     }
+
+    // `set-attribute` updates one owned label and leaves its duplicates in effect.
+    for (const duplicate of note.getOwnedLabels(labelName).slice(1)) {
+        await removeAttributeById(note.noteId, duplicate.attributeId);
+    }
+    await setLabel(note.noteId, labelName, value ? "" : "false");
 }
 
 async function removeAttributeById(noteId: string, attributeId: string) {

@@ -8,7 +8,10 @@ import { ParentComponent } from "../react/react_utils";
 
 vi.mock("bootstrap", () => ({
     Dropdown: { getOrCreateInstance: () => ({ dispose() {} }) },
-    Tooltip: class { static getInstance() { return null; } }
+    Tooltip: class {
+        static getInstance() { return null; }
+        dispose() {}
+    }
 }));
 
 vi.mock("../../services/i18n", () => ({

@@ -414,13 +414,11 @@ export default function ChatInputBar({
                                 <Fragment key={group.id}>
                                     <FormListHeader
                                         text={group.name}
-                                        action={
-                                            <ActionButton
-                                                icon="bx bx-edit"
-                                                text={t("llm_chat.edit_models")}
-                                                onClick={() => openEditModels(group.id)}
-                                            />
-                                        }
+                                        actions={[ {
+                                            icon: "bx bx-edit",
+                                            caption: t("llm_chat.edit_models"),
+                                            callback: () => openEditModels(group.id)
+                                        } ]}
                                     />
                                     {group.models.length > 0 ? group.models.map(model => (
                                         <FormListItem

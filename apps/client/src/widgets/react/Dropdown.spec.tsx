@@ -117,6 +117,46 @@ describe("Dropdown", () => {
         expect(picked).toEqual([ "JavaScript" ]);
     });
 
+    it("clears the filter from a button in place of its magnifier, and stays up with focus in the input", async () => {
+        const { toggle } = renderDropdown({
+            filterable: true, items: [ { title: "Python" }, { title: "JavaScript" } ]
+        }, null);
+        const key = (name: string) => {
+            const event = new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true });
+            (document.activeElement ?? document.body).dispatchEvent(event);
+        };
+        const input = () => popup()?.querySelector<HTMLInputElement>("input.tn-menu-filter-input") ?? null;
+        const box = () => input()?.closest(".tn-menu-filter-box");
+        const magnifier = () => box()?.querySelector(".bx-search") ?? null;
+        const clearButton = () => box()?.querySelector<HTMLButtonElement>("button.bx-x") ?? null;
+        const rowCount = () => popup()?.querySelectorAll("li.dropdown-item").length;
+
+        click(toggle);
+        await vi.waitFor(() => expect(document.activeElement).toBe(popup()));
+        expect(magnifier()).not.toBeNull();
+        expect(clearButton()).toBeNull();
+
+        key("j");
+        await vi.waitFor(() => expect(document.activeElement).toBe(input()));
+        expect(rowCount()).toBe(1);
+        expect(magnifier()).toBeNull();
+        const button = clearButton();
+        if (!button) throw new Error("expected the clear button");
+        // A press keeps focus in the input.
+        const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0 });
+        button.dispatchEvent(press);
+        expect(press.defaultPrevented).toBe(true);
+
+        click(button);
+        await vi.waitFor(() => expect(input()?.value).toBe(""));
+        expect(rowCount()).toBe(2);
+        expect(document.activeElement).toBe(input());
+        expect(clearButton()).toBeNull();
+        expect(magnifier()).not.toBeNull();
+        await new Promise((resolve) => setTimeout(resolve));
+        expect(popup()).not.toBeNull();
+    });
+
     it("filters the rows a filterable submenu of components draws from data, on a desktop and on a phone", async () => {
         for (const onMobile of [ false, true ]) {
             layout.onMobile = onMobile;

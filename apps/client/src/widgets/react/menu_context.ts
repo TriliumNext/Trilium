@@ -15,7 +15,7 @@ export interface OpenSubmenu {
     anchor: HTMLElement;
     /**
      * Shows the layer without the stylesheet's opening delay and fade: it replaces a submenu that
-     * was open, or a key or a press chose it, so it is not a pointer passing over its row.
+     * was in view, or a key or a press chose it, so it is not a pointer passing over its row.
      */
     immediate: boolean;
 }
@@ -63,6 +63,13 @@ export interface MenuContextValue {
      * deeper, or without a row only closes them.
      */
     openSubmenu(level: number, id?: string, anchor?: HTMLElement, chosen?: boolean): void;
+    /**
+     * Closes the submenus open at `level` and deeper. If the active row is inside them, the row
+     * that opened them becomes active, so the keys continue from there.
+     */
+    closeSubmenu(level: number): void;
+    /** Records that the layer of `submenu` is past the stylesheet's opening delay, and in view. */
+    submenuShown(submenu: OpenSubmenu): void;
     active?: ActiveRow;
     setActive(level: number, id: string): void;
     /** The rows by id, as they registered. */
@@ -71,6 +78,8 @@ export interface MenuContextValue {
     registerRow(id: string, row: RowEntry | undefined): void;
     /** Whether the keys moved the menu since the pointer last did. */
     keyboardDriven: boolean;
+    /** Whether the top level's rows are drawn in reverse, the first row lowest. */
+    isReversed: boolean;
     /**
      * Whether the submenus of each level's rows open towards the start, indexed by level. Only the
      * placement follows it; a row's arrow points to the end, as in the operating system's menus.

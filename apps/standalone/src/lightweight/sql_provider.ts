@@ -118,6 +118,11 @@ class WasmStatement implements Statement {
                 }
                 stmt.reset();
                 return { value: undefined, done: true };
+            },
+            // Called by `break` or `return` inside a `for...of` loop.
+            return(): IteratorResult<unknown> {
+                stmt.reset();
+                return { value: undefined, done: true };
             }
         };
     }
