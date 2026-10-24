@@ -168,6 +168,46 @@ describe("Set boolean with inheritance", () => {
         expect(server.remove).not.toHaveBeenCalled();
     });
 
+    it("removes every owned duplicate to restore the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoFalse", title: "Owns false twice", "#foo": [ "false", "false" ] } ]
+        });
+        const note = froca.notes["twoFalse"];
+        const [ first, second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", true);
+        expect(server.remove).toHaveBeenCalledTimes(2);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${first.attributeId}`);
+        expect(server.remove).toHaveBeenCalledWith(`notes/twoFalse/attributes/${second.attributeId}`);
+        expect(server.put).not.toHaveBeenCalled();
+    });
+
+    it("removes the owned duplicates before overriding the inherited value", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [ { id: "twoTrue", title: "Owns true twice", "#foo": [ "", "" ] } ]
+        });
+        const note = froca.notes["twoTrue"];
+        const [ , second ] = note.getOwnedLabels("foo");
+
+        await setBooleanWithInheritance(note, "foo", false);
+        expect(server.remove).toHaveBeenCalledExactlyOnceWith(
+            `notes/twoTrue/attributes/${second.attributeId}`
+        );
+        expect(server.put).toHaveBeenCalledExactlyOnceWith(`notes/twoTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        // `set-attribute` updates whichever owned label it finds, so only one can be left by then.
+        expect(vi.mocked(server.remove).mock.invocationCallOrder[0])
+            .toBeLessThan(vi.mocked(server.put).mock.invocationCallOrder[0]);
+    });
+
     it("waits for the label write and surfaces its failure", async () => {
         const note = buildNote({ title: "New note" });
         vi.mocked(server.put).mockRejectedValueOnce(new Error("offline"));

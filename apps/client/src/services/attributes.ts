@@ -51,10 +51,15 @@ export async function setBooleanWithInheritance(note: FNote, labelName: string, 
     const inheritedValue = !!inheritedLabel && inheritedLabel.value !== "false";
 
     if (value === inheritedValue) {
-        await removeOwnedLabelByName(note, labelName);
-    } else {
-        await setLabel(note.noteId, labelName, value ? "" : "false");
+        await removeOwnedAttributesByNameOrType(note, "label", labelName);
+        return;
     }
+
+    // `set-attribute` updates one owned label and leaves its duplicates in effect.
+    for (const duplicate of note.getOwnedLabels(labelName).slice(1)) {
+        await removeAttributeById(note.noteId, duplicate.attributeId);
+    }
+    await setLabel(note.noteId, labelName, value ? "" : "false");
 }
 
 async function removeAttributeById(noteId: string, attributeId: string) {
