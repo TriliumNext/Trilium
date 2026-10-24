@@ -138,6 +138,36 @@ describe("Set boolean with inheritance", () => {
         }, undefined);
     });
 
+    it("compares with the inherited value when the note owns the label too", async () => {
+        buildNote({
+            title: "Parent note",
+            "#foo(inheritable)": "",
+            "children": [
+                { id: "ownsTrue", title: "Owns true", "#foo": "" },
+                { id: "ownsFalse", title: "Owns false", "#foo": "false" }
+            ]
+        });
+        const ownsTrue = froca.notes["ownsTrue"];
+        const ownsFalse = froca.notes["ownsFalse"];
+
+        const overrideId = ownsFalse.getOwnedLabel("foo")?.attributeId;
+        expect(overrideId).toBeTruthy();
+        await setBooleanWithInheritance(ownsFalse, "foo", true);
+        expect(server.remove).toHaveBeenCalledWith(`notes/ownsFalse/attributes/${overrideId}`);
+        expect(server.put).not.toHaveBeenCalled();
+
+        vi.clearAllMocks();
+        // Removing the owned label would leave the inherited one in effect.
+        await setBooleanWithInheritance(ownsTrue, "foo", false);
+        expect(server.put).toHaveBeenCalledWith(`notes/ownsTrue/set-attribute`, {
+            type: "label",
+            name: "foo",
+            value: "false",
+            isInheritable: false
+        }, undefined);
+        expect(server.remove).not.toHaveBeenCalled();
+    });
+
     it("waits for the label write and surfaces its failure", async () => {
         const note = buildNote({ title: "New note" });
         vi.mocked(server.put).mockRejectedValueOnce(new Error("offline"));

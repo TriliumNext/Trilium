@@ -222,7 +222,6 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
     }
 
     .tn-menu-filter-clear {
-        /* Takes the 1em of the magnifier it replaces, so the box keeps its size. */
         margin: calc((1em - var(--icon-button-size)) / 2);
     }
 
