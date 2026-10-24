@@ -23,7 +23,7 @@
     }
 }
 
-.action-add-menu .tn-icon {
+.tn-menu .tn-icon {
     --bulk-action-marker-cutout: var(--menu-background-color);
 }
 
