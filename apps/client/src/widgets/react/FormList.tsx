@@ -484,6 +484,8 @@ export interface FormDropdownSubmenuProps {
      * whether {@link onDropdownToggleClicked} is set.
      */
     split?: boolean;
+    /** Whether running {@link onDropdownToggleClicked} closes the menu, as `FormListItem` does. */
+    closeOnSelect?: boolean;
     disabled?: boolean;
     className?: string;
     /** Inside a menu, whether typing while the submenu is open filters it. See `MenuCommandItem.filterable`. */
@@ -506,7 +508,10 @@ export function FormDropdownSubmenu(props: FormDropdownSubmenuProps) {
     return <MenuSubmenu {...props} menu={menu} />;
 }
 
-function MenuSubmenu({ menu, icon, iconSvg, title, description, children, onDropdownToggleClicked, split = !!onDropdownToggleClicked, disabled, className, filterable, tile }: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
+function MenuSubmenu({
+    menu, icon, iconSvg, title, description, children, onDropdownToggleClicked,
+    split = !!onDropdownToggleClicked, closeOnSelect, disabled, className, filterable, tile
+}: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
     const openSubmenu = menu.open[level];
@@ -516,9 +521,15 @@ function MenuSubmenu({ menu, icon, iconSvg, title, description, children, onDrop
     // A phone's page that closes keeps being drawn until it has slid out.
     const pageSlide = useSlide(open);
 
+    function run(e: MouseEvent) {
+        onDropdownToggleClicked?.(e);
+        if (closeOnSelect) menu.close();
+    }
+
     /** Runs the row's own action for the keys, with the modifiers of the key that ran it. */
     function select(e: MouseEvent | KeyboardEvent) {
-        onDropdownToggleClicked?.(new MouseEvent("click", { ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey }));
+        const { ctrlKey, shiftKey, altKey, metaKey } = e;
+        run(new MouseEvent("click", { ctrlKey, shiftKey, altKey, metaKey }));
     }
 
     function onPointed(e: { currentTarget: HTMLLIElement }) {
@@ -612,7 +623,7 @@ function MenuSubmenu({ menu, icon, iconSvg, title, description, children, onDrop
                 e.stopPropagation();
                 if (disabled) return;
                 menu.openSubmenu(level, id, e.currentTarget, true);
-                if (!isMobile()) onDropdownToggleClicked?.(e);
+                if (!isMobile()) run(e);
             }}
         >
             <span className="dropdown-toggle">

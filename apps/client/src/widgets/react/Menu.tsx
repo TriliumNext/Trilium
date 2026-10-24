@@ -537,14 +537,16 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
     if (bottomUp) matches.reverse();
     return <>
         {matches.length === 0 && <li className="tn-menu-filter-empty" role="none">{t("menu.no_matches")}</li>}
-        {matches.map(([ index, { item, title, path } ]) => (
+        {matches.map(([ index, { item, title, isName, path } ]) => (
             <FormListItem
                 key={index}
                 icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
                 closeOnSelect={false} onClick={(e) => onSelect?.(item, e)}
             >
-                <span className="tn-menu-filter-title">{highlightMatch(title, text)}</span>
+                <span className={clsx("tn-menu-filter-title", isName && "tn-menu-name")}>
+                    {highlightMatch(title, text)}
+                </span>
                 {path.length > 0 && <span className="tn-menu-filter-path">{path.join(" › ")}</span>}
             </FormListItem>
         ))}
@@ -687,6 +689,8 @@ interface MenuMatch<T> {
     item: MenuCommandItem<T>;
     /** The title as text. */
     title: string;
+    /** Whether the title is a name boxed by `menuName()`, whose width the match caps as well. */
+    isName: boolean;
     /** The titles of the submenus the item stands in, outermost first. */
     path: string[];
 }
@@ -717,7 +721,7 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
             const haystack = [ ...path, title ].join(" ").toLowerCase();
             if (!words.every((word) => haystack.includes(word))) continue;
             const rank = lowerTitle.startsWith(query) ? 0 : lowerTitle.includes(query) ? 1 : 2;
-            found.push({ item, title, path, rank });
+            found.push({ item, title, isName: isMenuName(item.title), path, rank });
         }
     }
 
@@ -725,14 +729,24 @@ function filterMenuItems<T>(items: MenuItem<T>[], text: string): MenuMatch<T>[] 
     return found.sort((a, b) => a.rank - b.rank);
 }
 
-/**
- * The text an item's title shows. Titles are HTML, read through a `<template>`, whose content is
- * inert: an `<img>` in it neither loads nor runs its handlers, as one in a detached `<div>` would.
- */
+/** The text an item's title shows. */
 function textOf(html: string) {
+    return parseTitle(html).textContent ?? "";
+}
+
+/** Whether an item's title is a name boxed by `menuName()`. */
+function isMenuName(html: string) {
+    return !!parseTitle(html).querySelector(".tn-menu-name");
+}
+
+/**
+ * An item's title, which is HTML, read through a `<template>`, whose content is inert: an `<img>`
+ * in it neither loads nor runs its handlers, as one in a detached `<div>` would.
+ */
+function parseTitle(html: string) {
     const template = document.createElement("template");
     template.innerHTML = html;
-    return template.content.textContent ?? "";
+    return template.content;
 }
 
 /** `title` with the first place the typed text, or else one of its words, occurs in it marked. */

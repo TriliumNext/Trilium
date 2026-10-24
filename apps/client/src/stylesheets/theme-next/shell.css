@@ -477,56 +477,6 @@ body .calendar-dropdown-widget .calendar-body a.calendar-date-active {
 }
 
 /*
- * Bookmarks folder popup
- */
-
-div.bookmark-folder-widget {
-    min-width: auto;
-    max-width: 40vw;
-    padding: 0;
-    font-size: 1.1em;
-}
-
-div.bookmark-folder-widget .children-notes {
-    margin: 0;
-}
-
-/* Item */
-div.bookmark-folder-widget span.note-link {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    border-radius: 6px;
-    padding: 6px 25px;
-}
-
-/* Item: the parent note */
-div.bookmark-folder-widget .parent-note .note-link {
-    padding: 6px 8px;
-    font-weight: bold;
-}
-
-div.bookmark-folder-widget .note-link:hover {
-    background: var(--hover-item-background-color);
-}
-
-div.bookmark-folder-widget .note-link a {
-    padding-inline-start: 8px;
-    color: var(--menu-text-color);
-    cursor: default;
-}
-
-div.bookmark-folder-widget .note-link:hover a {
-    color: var(--hover-item-text-color);
-}
-
-/* The item's icon */
-div.bookmark-folder-widget .note-link .tn-icon {
-    color: var(--menu-item-icon-color);
-    font-size: 1.2em;
-}
-
-/*
  * QUICK SEARCH BOX
  */
 

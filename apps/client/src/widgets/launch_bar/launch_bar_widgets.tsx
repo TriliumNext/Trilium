@@ -59,6 +59,7 @@ export function LaunchBarDropdownButton({
     children, icon, launcherNote, parentNoteId, buttonProps, panel, ...props
 }: Pick<
     DropdownProps, "title" | "children" | "onShown" | "autoClose" | "dropdownRef" | "buttonProps"
+        | "filterable" | "keepOrder"
 > & {
     icon: string,
     launcherNote?: FNote,

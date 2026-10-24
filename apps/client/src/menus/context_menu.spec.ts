@@ -926,11 +926,15 @@ describe("contextMenu", () => {
                         { kind: "separator" as const },
                         { title: "Collection", items: [ { title: "Table" }, { title: "Board", badges: [ { title: "New" } ] } ] },
                         { kind: "header" as const, title: "Templates" },
+                        // As `menuName()` boxes a name.
+                        { title: "<span class=\"tn-menu-name\">Weekly review</span>" },
                         { title: "Meeting &amp; <b>notes</b>" }
                     ]
                 }
             ];
-            const unfiltered = [ "Text|", "Code|", "Collection|", "Meeting & notes|" ];
+            const unfiltered = [
+                "Text|", "Code|", "Collection|", "Weekly review|", "Meeting & notes|"
+            ];
 
             async function openFilterable(picked: string[] = []) {
                 buildPage();
@@ -1069,6 +1073,13 @@ describe("contextMenu", () => {
                 // The title is HTML; what is matched and shown is its text, and none of its markup.
                 await vi.waitFor(() => expect(layer().rows).toEqual([ "Meeting & notes|" ]));
                 expect(menuElement()?.querySelector(".tn-menu-filter-title b")).toBeNull();
+                expect(menuElement()?.querySelector(".tn-menu-filter-title.tn-menu-name")).toBeNull();
+
+                // A name keeps the box that caps its width.
+                edit("week");
+                await vi.waitFor(() => expect(layer().rows).toEqual([ "Weekly review|" ]));
+                expect(menuElement()?.querySelector(".tn-menu-filter-title")?.classList)
+                    .toContain("tn-menu-name");
 
                 edit("& nzz");
                 await vi.waitFor(() => expect(layer().empty).toBe(true));
