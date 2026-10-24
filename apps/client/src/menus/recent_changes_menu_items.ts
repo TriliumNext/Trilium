@@ -42,7 +42,17 @@ export async function getRecentlyChangedNotesMenuItems(): Promise<MenuItem<Comma
     return [ { kind: "header", title: t("tab_row.recently_changed_notes") }, ...noteItems ];
 }
 
+/** Returns the recently changed notes as menu rows, or no rows when they cannot be loaded. */
 async function getRecentlyChangedNoteItems(): Promise<MenuCommandItem<CommandNames>[]> {
+    try {
+        return await loadRecentlyChangedNoteItems();
+    } catch (e) {
+        console.error("Failed to load the recently changed notes:", e);
+        return [];
+    }
+}
+
+async function loadRecentlyChangedNoteItems(): Promise<MenuCommandItem<CommandNames>[]> {
     const hoistedNoteId = hoistedNoteService.getHoistedNoteId();
     const openNoteIds = new Set<string>();
     for (const noteContext of appContext.tabManager.getNoteContexts()) {

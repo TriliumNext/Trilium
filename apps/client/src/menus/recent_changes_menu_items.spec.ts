@@ -96,19 +96,29 @@ describe("getRecentChangesMenuItems", () => {
         ]);
     });
 
-    it("keeps only the dialog entry when no note qualifies", async () => {
-        mocks.noteContexts = [ { noteId: "html" } ];
-        mocks.get.mockResolvedValueOnce([ "html" ]);
-
-        expect(await getRecentChangesMenuItems()).toEqual([
+    it("keeps only the dialog entry when no note qualifies or the request fails", async () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+        const onlyShowAll = [
             { kind: "header", title: "tab_row.recently_changed_notes" },
             SHOW_ALL
-        ]);
+        ];
+
+        mocks.noteContexts = [ { noteId: "html" } ];
+        mocks.get.mockResolvedValueOnce([ "html" ]);
+        expect(await getRecentChangesMenuItems()).toEqual(onlyShowAll);
+
+        const error = new Error("Offline");
+        mocks.get.mockRejectedValueOnce(error);
+        expect(await getRecentChangesMenuItems()).toEqual(onlyShowAll);
+        expect(consoleError).toHaveBeenCalledWith(expect.any(String), error);
+        consoleError.mockRestore();
     });
 });
 
 describe("getRecentlyChangedNotesMenuItems", () => {
     it("lists the heading and the notes without the dialog entry, or nothing", async () => {
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
         mocks.get.mockResolvedValueOnce([ "plan3" ]);
         expect((await getRecentlyChangedNotesMenuItems()).map(describeItem)).toEqual([
             [ "header", "tab_row.recently_changed_notes" ],
@@ -117,6 +127,10 @@ describe("getRecentlyChangedNotesMenuItems", () => {
 
         mocks.get.mockResolvedValueOnce([]);
         expect(await getRecentlyChangedNotesMenuItems()).toEqual([]);
+
+        mocks.get.mockRejectedValueOnce(new Error("Offline"));
+        expect(await getRecentlyChangedNotesMenuItems()).toEqual([]);
+        consoleError.mockRestore();
     });
 });
 

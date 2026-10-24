@@ -46,16 +46,16 @@ export async function notePathMenuItem<T>(
     notePath: string,
     handler: () => void
 ): Promise<MenuCommandItem<T>> {
-    const titles = await tree.getNotePathTitleComponents(notePath)
-    const title = titles.pop() ?? ""
-    const noteId = notePath.split("/").at(-1) ?? ""
+    const titles = await tree.getNotePathTitleComponents(notePath);
+    const title = titles.pop() ?? "";
+    const noteId = notePath.split("/").at(-1) ?? "";
 
     return {
         title: escapeHtml(title),
         trailingText: titles.join(NOTE_PATH_TITLE_SEPARATOR) || undefined,
         uiIcon: froca.getNoteFromCache(noteId)?.getIcon(),
         handler
-    }
+    };
 }
 
 /** A row that opens `items` as a submenu, enabled while any of their commands is. */
