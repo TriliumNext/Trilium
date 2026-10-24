@@ -7,9 +7,9 @@ import { isExperimentalFeatureEnabled } from "../../services/experimental_featur
 import froca from "../../services/froca";
 import { isDesktop, isElectron, isMobile } from "../../services/utils";
 import TabSwitcher from "../mobile_widgets/TabSwitcher";
-import { useTriliumEvent } from "../react/hooks";
+import { useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
-import BookmarkButtons from "./BookmarkButtons";
+import BookmarkButtons, { BookmarkFolder } from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
 import ColorSchemeSwitcher from "./ColorSchemeSwitcher";
 import { CustomNoteLauncher } from "./GenericButtons";
@@ -71,15 +71,8 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
 }
 
 function Launcher({ note, isHorizontalLayout }: { note: FNote, isHorizontalLayout: boolean }) {
-    // A note cloned into the launch bar opens itself.
     if (note.type !== "launcher") {
-        return (
-            <CustomNoteLauncher
-                launcherNote={note}
-                getTargetNoteId={() => note.noteId}
-                parentNoteId={getVisibleLaunchersRootId()}
-            />
-        );
+        return <ClonedNoteLauncher note={note} />;
     }
 
     const launcherType = note.getLabelValue("launcherType");
@@ -99,6 +92,23 @@ function Launcher({ note, isHorizontalLayout }: { note: FNote, isHorizontalLayou
         default:
             console.warn(`Unrecognized launcher type '${launcherType}' for launcher '${note.noteId}' title '${note.title}'`);
     }
+}
+
+/** A note cloned into the launch bar opens itself, or lists its children with `#bookmarkFolder`. */
+function ClonedNoteLauncher({ note }: { note: FNote }) {
+    const [ isFolder ] = useNoteLabelBoolean(note, "bookmarkFolder");
+    const parentNoteId = getVisibleLaunchersRootId();
+
+    if (isFolder) {
+        return <BookmarkFolder note={note} parentNoteId={parentNoteId} />;
+    }
+    return (
+        <CustomNoteLauncher
+            launcherNote={note}
+            getTargetNoteId={() => note.noteId}
+            parentNoteId={parentNoteId}
+        />
+    );
 }
 
 function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {

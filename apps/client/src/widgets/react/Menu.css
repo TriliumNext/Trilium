@@ -46,7 +46,7 @@ body.desktop:not(.motion-disabled) .dropdown-submenu > .dropdown-menu.tn-menu {
     animation-fill-mode: backwards;
 }
 
-/* A submenu that replaces an open one, or that a key or a press opened, shows at once. */
+/* A submenu that replaces one in view, or that a key or a press opened, shows at once. */
 body.desktop .dropdown-submenu > .dropdown-menu.tn-menu.tn-menu-immediate {
     animation: none;
 }
@@ -219,6 +219,11 @@ body.desktop .dropdown-item.dropdown-submenu.submenu-open,
         border-radius: 6px;
         color: var(--muted-text-color);
         cursor: text;
+    }
+
+    .tn-menu-filter-clear {
+        /* Takes the 1em of the magnifier it replaces, so the box keeps its size. */
+        margin: calc((1em - var(--icon-button-size)) / 2);
     }
 
     .tn-menu-filter-input,

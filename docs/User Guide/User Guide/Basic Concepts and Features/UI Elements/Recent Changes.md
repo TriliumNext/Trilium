@@ -5,7 +5,9 @@
 
 *   For an overview of the changes across all documents, press the <span class="tn-icon bx bx-history"></span> button in the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>.
     *   If there is a [hoisted note](../Navigation/Note%20Hoisting.md) or a [workspace](../Navigation/Workspaces.md), the list of recent changes will be limited to the descendents of the hoisted note, or the workspace.
+    *   Right-clicking or pressing and holding the button lists up to 15 of the most recently changed notes that are not open in a tab. Selecting a note opens it in a new tab.
 *   To limit the list of recent changes to a note and its descendants, look for the corresponding option in the <a class="reference-link" href="Note%20Tree/Note%20tree%20contextual%20menu.md">Note tree contextual menu</a> → Advanced.
+*   Right-clicking or pressing and holding the <span class="tn-icon bx bx-plus"></span> button of the <a class="reference-link" href="Tabs.md">Tabs</a> bar lists the most recently changed notes that are not open in a tab. _Show all recent changes_, at the bottom of that menu, opens this dialog.
 
 ## Interaction
 

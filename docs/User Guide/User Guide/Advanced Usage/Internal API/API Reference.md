@@ -7641,6 +7641,42 @@ Miscellaneous utilities
     ]
     ```
 
+### Get recently changed note IDs
+
+`GET /api/recent-changes/{ancestorNoteId}/note-ids` · `getRecentlyChangedNoteIds`
+
+Returns the IDs of the most recently modified live notes under the ancestor, newest first. Under `root`, notes found only in the hidden subtree are left out.
+
+**Authorization**: `sessionAuth` or `tokenAuth`
+
+**Path parameters**
+
+| Name | Description |
+| --- | --- |
+| `ancestorNoteId`  <br>_required_ | `string` |
+
+**Query parameters**
+
+| Name | Description |
+| --- | --- |
+| `limit`  <br>_required_ | `integer`  <br>The maximum number of note IDs to return. |
+
+**Responses**
+
+=== "200: Note IDs, newest first"
+
+    *   `application/json`: `array of string`
+
+    ```json
+    [
+        "string"
+    ]
+    ```
+
+=== "400: Missing or non-positive limit"
+
+    No content.
+
 ### Get icon usage statistics
 
 `GET /api/other/icon-usage` · `getIconUsage`

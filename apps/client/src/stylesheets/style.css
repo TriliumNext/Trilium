@@ -63,7 +63,7 @@ body#trilium-app.backdrop-effects-disabled *::after {
 }
 
 :root {
-    --submenu-opening-delay: 150ms;
+    --submenu-opening-delay: 250ms;
     --launcher-pane-size: 53px;
     --bs-body-color: var(--main-text-color);
     /* What a menu, the sidebar or a dialog dims the page behind it with in the phone layout. */

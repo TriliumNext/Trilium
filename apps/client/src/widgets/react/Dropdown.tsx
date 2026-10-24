@@ -27,8 +27,13 @@ export interface DropdownProps extends Pick<HTMLAttributes<HTMLDivElement>, "id"
      * `handler`, then closes the menu.
      */
     items?: MenuItem<unknown>[];
-    /** For a {@link Dropdown} of {@link items}, offers an input at its top that filters them. */
+    /**
+     * For a {@link Dropdown} of {@link items}, or of children whose rows `MenuItemRows` draws,
+     * offers an input at its top that filters them.
+     */
     filterable?: boolean;
+    /** For a {@link filterable} menu above its toggle, keeps the rows in their own order. */
+    keepOrder?: boolean;
     title?: string;
     dropdownContainerStyle?: CSSProperties;
     dropdownContainerClassName?: string;
@@ -110,6 +115,7 @@ export default function Dropdown(props: DropdownProps) {
                     isWanted={isWanted}
                     items={props.items}
                     filterable={props.filterable}
+                    keepOrder={props.keepOrder}
                     onSelect={(item, e) => {
                         item.handler?.(item, e);
                         if (!item.items) close();

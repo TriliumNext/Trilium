@@ -4547,6 +4547,39 @@ paths:
                       type: string
                       format: date-time
                       
+  /api/recent-changes/{ancestorNoteId}/note-ids:
+    get:
+      tags: [Utilities]
+      summary: Get recently changed note IDs
+      description: |
+        Returns the IDs of the most recently modified live notes under the ancestor, newest first.
+        Under `root`, notes found only in the hidden subtree are left out.
+      operationId: getRecentlyChangedNoteIds
+      parameters:
+        - name: ancestorNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: true
+          description: The maximum number of note IDs to return.
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Note IDs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Missing or non-positive limit
+
   /api/other/icon-usage:
     get:
       tags: [Utilities]

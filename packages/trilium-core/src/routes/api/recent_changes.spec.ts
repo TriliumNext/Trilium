@@ -129,6 +129,69 @@ describe("Recent changes API (core)", () => {
         expect(res.body.length).toBe(0);
     });
 
+    describe("recently changed note IDs", () => {
+        function setModified(noteId: string, utcDateModified: string) {
+            getSql().execute(
+                "UPDATE notes SET utcDateModified = ? WHERE noteId = ?",
+                [ utcDateModified, noteId ]
+            );
+        }
+
+        function getNoteIds(ancestorNoteId: string, limit?: string) {
+            return api.get<string[]>(`/api/recent-changes/${ancestorNoteId}/note-ids`, {
+                query: limit === undefined ? {} : { limit }
+            });
+        }
+
+        it("lists live notes under the ancestor once each, newest first", async () => {
+            const parent = await createTextNote(api, { title: "Changed parent" });
+            const createChild = (title: string) =>
+                createTextNote(api, { parentNoteId: parent.noteId, title });
+            const oldest = await createChild("Oldest");
+            const newest = await createChild("Newest");
+            const middle = await createChild("Middle");
+            const deleted = await createChild("Deleted");
+            const cloneTarget = await createChild("Clone target");
+            const clonePath = `/api/notes/${newest.noteId}/clone-to-note/${cloneTarget.noteId}`;
+            expect((await api.put(clonePath, { body: {} })).status).toBe(200);
+            setModified(oldest.noteId, "2099-01-01 00:00:01.000Z");
+            setModified(middle.noteId, "2099-01-01 00:00:02.000Z");
+            setModified(newest.noteId, "2099-01-01 00:00:03.000Z");
+            const del = await api.delete(`/api/notes/${deleted.noteId}`, {
+                query: { taskId: "recent-changes-note-ids", last: "true" }
+            });
+            expect(del.status).toBe(204);
+            setModified(deleted.noteId, "2099-01-01 00:00:04.000Z");
+
+            const res = await getNoteIds(parent.noteId, "2");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([ newest.noteId, middle.noteId ]);
+
+            const all = await getNoteIds(parent.noteId, "10");
+            expect(all.body.slice(0, 3)).toEqual([ newest.noteId, middle.noteId, oldest.noteId ]);
+            expect(all.body).toHaveLength(4);
+            expect(all.body).not.toContain(parent.noteId);
+        });
+
+        it("leaves out the hidden subtree under root", async () => {
+            const visible = await createTextNote(api, { title: "Visible change" });
+            const hidden = await createTextNote(api, { parentNoteId: "_search", title: "Hidden" });
+            setModified(visible.noteId, "2099-02-01 00:00:01.000Z");
+            setModified(hidden.noteId, "2099-02-01 00:00:02.000Z");
+            setModified("_hidden", "2099-02-01 00:00:03.000Z");
+
+            const res = await getNoteIds("root", "1");
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual([ visible.noteId ]);
+            expect((await getNoteIds("_hidden", "1")).body).toEqual([ hidden.noteId ]);
+        });
+
+        it("rejects a missing or non-positive limit", async () => {
+            expect((await getNoteIds("root")).status).toBe(400);
+            expect((await getNoteIds("root", "0")).status).toBe(400);
+        });
+    });
+
     describe("protected notes", () => {
         let protectedNoteId: string;
 

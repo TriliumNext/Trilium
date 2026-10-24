@@ -17,6 +17,7 @@ It is part of the <a class="reference-link" href="Status%20bar.md">Status bar</
     *   Right clicking will open a menu with multiple options such as opening the note in a different tab/split/window, hoisting, moving/cloning the note, duplicating as well as changing the color of the note.
 *   Clicking the arrow next to each segment will reveal the child notes of the segment on the left.
     *   Clicking on an icon will navigate to that particular note.
+    *   To find a child note by its title, start typing: the field at the bottom of the menu filters the list.
     *   It's also possible to create a new child note from here.
     *   The menu can optionally hide the archived notes.
 *   If the current note is deep within a hierarchy, the segments will collapse into a \[…\] button in order not to occupy too much space.

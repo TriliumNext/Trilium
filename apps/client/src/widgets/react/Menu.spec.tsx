@@ -1,11 +1,12 @@
 import { Tooltip } from "bootstrap";
 import { render } from "preact";
+import { useState } from "preact/hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MenuItem } from "../../menus/context_menu";
+import type { MenuHeaderAction, MenuHeaderActions, MenuItem } from "../../menus/context_menu";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "./FormList";
-import Menu, { bottomUpOrder, type MenuProps } from "./Menu";
+import Menu, { bottomUpOrder, MenuItemRows, type MenuProps } from "./Menu";
 import { shouldDropStart } from "./menu_context";
 
 vi.mock("../../services/keyboard_actions", async (importOriginal) => {
@@ -136,13 +137,18 @@ describe("Menu with declared rows", () => {
         expect(toggle?.querySelector(".description")?.previousElementSibling?.textContent).toBe("Search");
     });
 
-    it("draws the description of an item under its title", () => {
+    it("draws the description of an item under its title, and its trailing text at the end", () => {
         render(<Menu anchor={{ x: 10, y: 10 }} onClose={vi.fn()} items={[
-            { title: "Auto", description: "Follow the global setting", checked: true }
+            { title: "Auto", description: "Follow the global setting", checked: true },
+            { title: "Plan", trailingText: "Work › R&D" }
         ]} />, host);
         const description = document.querySelector(".dropdown-item .description");
         expect(description?.textContent).toBe("Follow the global setting");
         expect(description?.previousElementSibling?.textContent).toBe("Auto");
+
+        const trailingText = document.querySelector(".dropdown-item .menu-trailing-text");
+        expect(trailingText?.textContent).toBe("Work › R&D");
+        expect(trailingText?.previousElementSibling?.textContent).toBe("Plan");
     });
 
     it("closes the menu after running a row, but not for a row that opens a submenu or is disabled", async () => {
@@ -273,6 +279,41 @@ describe("Menu with declared rows", () => {
         expect(toggled).toHaveBeenCalledOnce();
     });
 
+    it("closes the menu after a split row's own action only when asked to", async () => {
+        const onClose = vi.fn();
+        render((
+            <Menu anchor={{ x: 10, y: 10 }} onClose={onClose}>
+                <FormDropdownSubmenu
+                    title="Duplicate" icon="bx bx-outline" onDropdownToggleClicked={vi.fn()}
+                >
+                    <FormListItem>This note only</FormListItem>
+                </FormDropdownSubmenu>
+                <FormDropdownSubmenu
+                    title="Open" icon="bx bx-folder" onDropdownToggleClicked={vi.fn()} closeOnSelect
+                >
+                    <FormListItem>Child</FormListItem>
+                </FormDropdownSubmenu>
+            </Menu>
+        ), host);
+        const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+        if (!menu) throw new Error("expected the menu to render");
+
+        key(menu, "ArrowUp");
+        await vi.waitFor(() => expect(activeTitle(menu)).toBe("Open"));
+        key(menu, "Enter");
+        expect(onClose).toHaveBeenCalledOnce();
+
+        press(rowTitled("Duplicate"));
+        const arrow = rowTitled("Open").querySelector<HTMLElement>(".tn-menu-split-toggle");
+        if (!arrow) throw new Error("expected the split row to draw its arrow as a target");
+        press(arrow);
+        await vi.waitFor(() => expect(layers(menu)).toEqual([ [ "Child" ] ]));
+        expect(onClose).toHaveBeenCalledOnce();
+
+        press(rowTitled("Open"));
+        expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
     it("neither opens nor runs a disabled submenu row", async () => {
         const toggled = vi.fn();
         render((
@@ -389,6 +430,25 @@ describe("Menu with an action row", () => {
         expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ command: "cut" }), expect.any(KeyboardEvent));
     });
 
+    it("closes a row's submenu once the pointer turns to the actions, a disabled one included", async () => {
+        const { menu } = renderMenu();
+        const layers = () => menu.querySelectorAll(":scope > div.dropdown-submenu > .dropdown-menu").length;
+        const [ cut, copy ] = menu.querySelectorAll<HTMLElement>(".tn-menu-action");
+        const more = [ ...menu.querySelectorAll<HTMLElement>("li.dropdown-item") ]
+            .find((row) => row.querySelector(":scope > span")?.textContent === "More");
+        if (!cut || !copy || !more) throw new Error("expected the actions and the More row to render");
+        const point = (element: HTMLElement) =>
+            element.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, movementX: 3 }));
+
+        for (const action of [ cut, copy ]) {
+            more.dispatchEvent(new PointerEvent("pointerenter"));
+            await vi.waitFor(() => expect(layers()).toBe(1));
+            point(action);
+            await vi.waitFor(() => expect(layers()).toBe(0));
+        }
+        expect(more.classList).not.toContain("submenu-open");
+    });
+
     it("sets an action's badge over the corner of its icon, which gives way around it", () => {
         const { menu } = renderMenu();
         const icons = [ ...menu.querySelectorAll(".tn-menu-action-icon") ].map((icon) =>
@@ -449,6 +509,90 @@ describe("Menu with an action row", () => {
         await vi.waitFor(() => expect(active(menu)).toBe("Delete"));
         key(menu, "ArrowRight");
         await vi.waitFor(() => expect(active(menu)).toBe("Cut"));
+    });
+});
+
+describe("Menu with heading actions", () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    afterEach(() => render(null, host));
+
+    function renderMenu() {
+        const calls: string[] = [];
+        const onSelect = vi.fn();
+        const action = (caption: string, icon: string): MenuHeaderAction =>
+            ({ caption, icon, callback: (e) => calls.push(`${caption} ${e.type}`) });
+        // Four, as a script can pass, past the three the type allows.
+        const actions = [ action("Help", "bx bx-help-circle"), action("Options", "bx bx-cog"),
+            action("Reset", "bx bx-reset"), action("Extra", "bx bx-plus") ];
+        const items: MenuItem<string>[] = [
+            { kind: "header", title: "Sort", actions: actions as MenuHeaderActions },
+            { title: "By title", command: "title" },
+            { title: "More", items: [ { title: "Inner", command: "inner" } ] }
+        ];
+        render(<Menu
+            anchor={{ x: 10, y: 10 }} items={items} onSelect={onSelect}
+            onClose={() => calls.push("close")}
+        />, host);
+
+        const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+        const buttons = [ ...menu?.querySelectorAll<HTMLButtonElement>(
+            "h6.dropdown-header > .tn-menu-header-actions > button") ?? [] ];
+        if (!menu || !buttons.length) throw new Error("expected the menu and the heading's actions");
+        return { menu, buttons, calls, onSelect };
+    }
+
+    const key = (menu: HTMLElement, name: string) =>
+        menu.dispatchEvent(new KeyboardEvent("keydown", { key: name, bubbles: true, cancelable: true }));
+
+    it("draws at most three icon buttons after the title, named by tooltips and skipped by the keys", async () => {
+        const { menu, buttons } = renderMenu();
+        const tooltipText = (button: HTMLElement) => {
+            const tooltip = Tooltip.getInstance(button);
+            if (!tooltip) return undefined;
+            tooltip.show();
+            const text = document.querySelector(".tooltip:last-of-type .tooltip-inner")?.textContent;
+            tooltip.hide();
+            return text;
+        };
+
+        expect(menu.querySelector("h6.dropdown-header")?.textContent).toBe("Sort");
+        expect(buttons.map((button) => [ ...button.classList ].join(" "))).toEqual([
+            "icon-action bx bx-help-circle",
+            "icon-action bx bx-cog",
+            "icon-action bx bx-reset"
+        ]);
+        await vi.waitFor(() => expect(buttons.map(tooltipText)).toEqual([ "Help", "Options", "Reset" ]));
+
+        key(menu, "ArrowDown");
+        await vi.waitFor(() => expect(menu.querySelector("li.tn-menu-active > span")?.textContent).toBe("By title"));
+    });
+
+    it("closes the menu, then runs the action, keeping the focus and running no row", () => {
+        const { buttons, calls, onSelect } = renderMenu();
+        const [ , options ] = buttons;
+        if (!options) throw new Error("expected the Options action");
+
+        const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
+        options.dispatchEvent(press);
+        options.click();
+
+        expect(press.defaultPrevented).toBe(true);
+        expect(calls).toEqual([ "close", "Options click" ]);
+        expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it("closes a row's submenu once the pointer turns to the heading's actions", async () => {
+        const { menu, buttons: [ help ] } = renderMenu();
+        const layers = () => menu.querySelectorAll(":scope > div.dropdown-submenu > .dropdown-menu").length;
+        const more = [ ...menu.querySelectorAll<HTMLElement>("li.dropdown-item") ]
+            .find((row) => row.querySelector(":scope > span")?.textContent === "More");
+        if (!help || !more) throw new Error("expected the Help action and the More row");
+
+        more.dispatchEvent(new PointerEvent("pointerenter"));
+        await vi.waitFor(() => expect(layers()).toBe(1));
+        help.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, movementX: 3 }));
+        await vi.waitFor(() => expect(layers()).toBe(0));
     });
 });
 
@@ -540,6 +684,7 @@ describe("Menu of items above its anchor", () => {
         await vi.waitFor(() => expect(rowsOf(list()))
             .toEqual([ "JavaScript", "Plain text", "Python" ]));
         expect(activeRow(menu)).toBe("Python");
+        expect(menu.style.minWidth).toBe("200px");
         key(menu, "ArrowUp");
         await vi.waitFor(() => expect(activeRow(menu)).toBe("Plain text"));
     });
@@ -580,5 +725,53 @@ describe("Menu of items above its anchor", () => {
         await vi.waitFor(() => expect(menu.querySelectorAll("li")).toHaveLength(1));
         window.dispatchEvent(new Event("resize"));
         await vi.waitFor(() => expect(menu.style.top).toBe("610px"));
+    });
+
+    it("filters the rows MenuItemRows draws, bottom-up, once they load", async () => {
+        const items: MenuItem<unknown>[] = [
+            { title: "Python" }, { title: "JavaScript" }, { kind: "separator" }, { title: "New" }
+        ];
+        let load = () => {};
+        function LoadedRows() {
+            const [ isLoaded, setIsLoaded ] = useState(false);
+            load = () => setIsLoaded(true);
+            return isLoaded ? <MenuItemRows items={items} /> : null;
+        }
+        const menu = await openAt(700, {
+            filterable: true, placement: "top", children: <LoadedRows />
+        });
+        const box = menu.querySelector(":scope > .tn-menu-filterable");
+        const list = () => box?.querySelector(":scope > .tn-menu-scroll");
+        expect(classesOf(box)).toEqual([ "tn-menu-scroll", "tn-menu-filter" ]);
+        expect(activeRow(menu)).toBeUndefined();
+
+        load();
+        await vi.waitFor(() => expect(rowsOf(list()))
+            .toEqual([ "New", "---", "JavaScript", "Python" ]));
+        await vi.waitFor(() => expect(activeRow(menu)).toBe("Python"));
+
+        key(menu, "j");
+        await vi.waitFor(() => expect(rowsOf(list())).toEqual([ "JavaScript" ]));
+        expect(activeRow(menu)).toBe("JavaScript");
+    });
+
+    it("keeps the order of its rows with keepOrder, the best match first", async () => {
+        const menu = await openAt(700, { filterable: true, keepOrder: true, items: [
+            { title: "Python" }, { title: "JavaScript" }, { title: "Plain text" },
+            { kind: "separator" }, { title: "Markdown" }
+        ] });
+        const box = menu.querySelector(":scope > .tn-menu-filterable");
+        const list = () => box?.querySelector(":scope > .tn-menu-scroll");
+        // The input stays next to the toggle.
+        expect(classesOf(box)).toEqual([ "tn-menu-scroll", "tn-menu-filter" ]);
+        expect(rowsOf(list())).toEqual([ "Python", "JavaScript", "Plain text", "---", "Markdown" ]);
+        expect(activeRow(menu)).toBeUndefined();
+
+        key(menu, "p");
+        await vi.waitFor(() => expect(rowsOf(list()))
+            .toEqual([ "Python", "Plain text", "JavaScript" ]));
+        expect(activeRow(menu)).toBe("Python");
+        key(menu, "ArrowDown");
+        await vi.waitFor(() => expect(activeRow(menu)).toBe("Plain text"));
     });
 });

@@ -6,13 +6,12 @@ import "./bulk_actions.css";
 import { BulkActionAffectedNotes } from "@triliumnext/commons";
 import server from "../../services/server";
 import Button from "../react/Button";
-import { Card, CardSection } from "../react/Card";
+import { Card, CardSection, ItemCreationRow } from "../react/Card";
 import NoItems from "../react/NoItems";
 import { OptionsRowWithToggle } from "../type_widgets/options/components/OptionsRow";
-import bulk_action from "../../services/bulk_action";
-import AddBulkActionButton from "../bulk_actions/AddBulkActionButton";
+import bulk_action, { ACTION_GROUPS } from "../../services/bulk_action";
 import { TemplatePreviewNoteContext } from "../bulk_actions/TemplateField";
-import Icon from "../react/Icon";
+import type { MenuItem } from "../../menus/context_menu";
 import dialog from "../../services/dialog";
 import toast from "../../services/toast";
 import AbstractBulkAction from "../bulk_actions/abstract_bulk_action";
@@ -20,6 +19,7 @@ import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { useTriliumEvent } from "../react/hooks";
 import NoteChips from "../react/NoteChips";
+import { escapeHtml } from "../../services/utils";
 
 export default function BulkActionsDialog() {
     const [ selectedOrActiveNoteIds, setSelectedOrActiveNoteIds ] = useState<string[]>();
@@ -157,13 +157,11 @@ export default function BulkActionsDialog() {
                 <TemplatePreviewNoteContext.Provider value={selectedOrActiveNoteIds?.[0]}>
                     <ExistingActionsList existingActions={existingActions} />
                 </TemplatePreviewNoteContext.Provider>
-                <CardSection className="bulk-actions-add-action">
-                    <AddBulkActionButton
-                        noteId="_bulkAction"
-                        buttonClassName="btn-secondary btn-micro"
-                        text={<><Icon icon="bx bx-plus" />{" "}{t("bulk_actions.add_action")}</>}
-                    />
-                </CardSection>
+                <ItemCreationRow buttons={[ {
+                    label: t("bulk_actions.add_action"),
+                    icon: "bx bx-plus",
+                    menu: buildAddActionMenu()
+                } ]} />
             </Card>
         </Modal>
     );
@@ -183,4 +181,17 @@ function ExistingActionsList({ existingActions }: { existingActions: AbstractBul
             <Fragment key={action.attribute.attributeId}>{action.doRender()}</Fragment>
         ))}
     </>;
+}
+
+/** Every bulk action, under the heading of its group in {@link ACTION_GROUPS}. */
+function buildAddActionMenu(): MenuItem<string>[] {
+    return ACTION_GROUPS.flatMap(({ title, actions }): MenuItem<string>[] => [
+        { kind: "header", title },
+        ...actions.map(({ actionName, actionTitle, actionIcon, actionDescription }) => ({
+            title: escapeHtml(actionTitle),
+            uiIcon: actionIcon,
+            tooltip: actionDescription,
+            handler: () => bulk_action.addAction("_bulkAction", actionName)
+        }))
+    ]);
 }

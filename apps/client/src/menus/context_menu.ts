@@ -8,10 +8,20 @@ import { onSystemBack } from "../services/system_back.js";
 import utils from "../services/utils.js";
 import { suspendModalFocusTraps } from "../widgets/react/modal_focustrap";
 
-export interface ContextMenuOptions<T> {
-    x: number;
-    y: number;
-    orientation?: "left";
+/**
+ * Where the menu opens: beside a point, towards the right unless `orientation` says otherwise, or
+ * below an element, and above it where there is no room below. Along the element, it lines up with
+ * the element's start unless `centered` is set.
+ */
+export type ContextMenuOptions<T> = ContextMenuBaseOptions<T> & (
+    | { x: number; y: number; orientation?: "left"; anchor?: undefined; centered?: undefined }
+    | {
+        anchor: HTMLElement; centered?: boolean;
+        x?: undefined; y?: undefined; orientation?: undefined;
+    }
+);
+
+interface ContextMenuBaseOptions<T> {
     selectMenuItemHandler: MenuHandler<T>;
     items: MenuItem<T>[];
     /** Offers an input at the top of the menu that filters its items. */
@@ -35,6 +45,21 @@ export interface MenuSeparatorItem {
 export interface MenuHeader {
     title: string;
     kind: "header";
+    /** Icon buttons at the end of the heading, for secondary actions such as help or options. */
+    actions?: MenuHeaderActions;
+}
+
+/** The actions of a {@link MenuHeader}: at most three. */
+export type MenuHeaderActions = [] | [MenuHeaderAction] | [MenuHeaderAction, MenuHeaderAction]
+    | [MenuHeaderAction, MenuHeaderAction, MenuHeaderAction];
+
+export interface MenuHeaderAction {
+    /** The classes of the icon, such as `bx bx-help-circle`. */
+    icon: string;
+    /** The name of the action, shown as the button's tooltip. */
+    caption: string;
+    /** Called after the menu closes. */
+    callback: (e: MouseEvent) => void;
 }
 
 /** A row of items side by side, each drawn as its icon over its title. */
@@ -96,6 +121,8 @@ export interface MenuCommandItem<T> {
     checked?: boolean;
     /** Classes put on the item itself, for a menu styling one of its entries differently. */
     className?: string;
+    /** Plain text at the trailing edge of the item, where a shortcut would go, such as a note's path. */
+    trailingText?: string;
     /** An icon shown at the trailing edge of the item, where a shortcut would go. */
     trailingIcon?: string;
     /**
@@ -198,8 +225,12 @@ class ContextMenu {
             // The id and classes the stylesheets, themes and `floating_layers` know this menu by.
             id: "context-menu-container",
             className: "dropdown-menu-sm dropend",
-            anchor: { x: options.x, y: options.y },
-            placement: options.orientation === "left" ? "left-start" : "right-start",
+            ...(options.anchor
+                ? { anchor: options.anchor, placement: options.centered ? "bottom" : undefined }
+                : {
+                    anchor: { x: options.x, y: options.y },
+                    placement: options.orientation === "left" ? "left-start" : "right-start"
+                }),
             // Already where the screen shows it: see the host above.
             container: this.host,
             bottomSheet: utils.isMobile() && utils.isNarrowLayout()

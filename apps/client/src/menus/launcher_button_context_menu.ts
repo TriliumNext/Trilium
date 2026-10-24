@@ -2,6 +2,7 @@ import type { ToggleInParentResponse } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
+import { setBooleanWithInheritance } from "../services/attributes.js";
 import branchService from "../services/branches.js";
 import { t } from "../services/i18n.js";
 import options from "../services/options.js";
@@ -48,6 +49,15 @@ async function removeFromLaunchBar(launcherNote: FNote, parentNoteId: string | u
         return;
     }
 
+    // A note dropped onto the launch bar is a clone, so removing it deletes the clone. When the
+    // clone is the note's last placement, the server refuses and the clone moves like a launcher.
+    if (launcherNote.type !== "launcher") {
+        const resp = await server.put<ToggleInParentResponse>(
+            `notes/${launcherNote.noteId}/toggle-in-parent/${launcherBranch.parentNoteId}/false`
+        );
+        if (resp.success) return;
+    }
+
     const isMobileLauncher = launcherBranch.parentNoteId === "_lbMobileVisibleLaunchers";
     // Branch IDs in the hidden subtree follow the `${parentNoteId}_${noteId}` convention,
     // so the branch linking `_lb(Mobile)?Root` to the "available" launchers root is predictable.
@@ -79,7 +89,8 @@ const REMOVE_COMMAND = "__removeFromLaunchBar__";
 /**
  * Displays the launch bar icon context menu. When the launcher can be removed (i.e. it is a direct
  * child of the visible launchers root or of `_lbBookmarks`), a "Remove from launch bar" entry is
- * appended. Extra items can be supplied to preserve launcher-specific actions (e.g. "Open in new tab").
+ * appended, after a "Show as a folder" toggle for a bookmark or a dropped note. Extra items can be
+ * supplied to preserve launcher-specific actions (e.g. "Open in new tab").
  */
 export async function showLauncherContextMenu<T extends string>(
     launcherNote: FNote | null | undefined,
@@ -91,14 +102,15 @@ export async function showLauncherContextMenu<T extends string>(
     // Widget-specific items (e.g. "Open in new tab" for note launchers, history entries, "Remove from launch bar").
     const widgetItems = [...(options.extraItems ?? [])] as MenuItem<string>[];
 
-    if (canRemoveFromLaunchBar(launcherNote, options.parentNoteId)) {
-        if (widgetItems.length > 0) {
-            widgetItems.push({ kind: "separator" });
+    if (launcherNote && canRemoveFromLaunchBar(launcherNote, options.parentNoteId)) {
+        // Bookmarks and dropped notes are regular notes, which `#bookmarkFolder` shows as folders.
+        if (launcherNote.type !== "launcher") {
+            pushGroup(widgetItems, buildShowAsFolderItem(launcherNote));
         }
-        widgetItems.push({
+        pushGroup(widgetItems, {
             title: t("launcher_button_context_menu.remove_from_launch_bar"),
             command: REMOVE_COMMAND,
-            uiIcon: "bx bx-x-circle"
+            uiIcon: "bx bx-x-circle destructive-action-icon"
         });
     }
 
@@ -122,6 +134,24 @@ export async function showLauncherContextMenu<T extends string>(
             options.onCommand?.(command as T | undefined);
         }
     });
+}
+
+/** Appends `item` to `items` as a group of its own. */
+function pushGroup(items: MenuItem<string>[], item: MenuItem<string>) {
+    if (items.length > 0) {
+        items.push({ kind: "separator" });
+    }
+    items.push(item);
+}
+
+function buildShowAsFolderItem(note: FNote): MenuItem<string> {
+    const isFolder = note.isLabelTruthy("bookmarkFolder");
+    return {
+        title: t("launcher_button_context_menu.show_as_folder"),
+        uiIcon: "bx bx-folder",
+        checked: isFolder,
+        handler: () => setBooleanWithInheritance(note, "bookmarkFolder", !isFolder)
+    };
 }
 
 /**

@@ -331,9 +331,19 @@ describe("getUserTemplates", () => {
         // The template is not among the new ones -> no badge.
         withTemplates([userTpl.noteId]);
         const restore = withTemplatesRoot([]);
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockImplementation(async () => undefined);
         try {
             const items: any[] = await noteTypesService.getNoteTypeItems("cmd2" as never);
-            expect(items.some((i) => i.kind === "header")).toBe(true);
+            const header = items.find((i) => i.kind === "header" && i.title === "note_type_chooser.templates");
+            expect(header).toBeTruthy();
+            // The heading's one action opens the Content Manager.
+            expect(header.actions).toHaveLength(1);
+            const [ manage ] = header.actions;
+            expect(manage.icon).toBe("bx bx-cog");
+            expect(manage.caption).toBe("note_type_chooser.manage_templates");
+            manage.callback(new MouseEvent("click"));
+            expect(triggerCommand).toHaveBeenCalledWith("showOptions", { section: "_optionsContentManager" });
+
             const tplItem = items.find((i) => i.templateNoteId === userTpl.noteId);
             expect(tplItem).toBeTruthy();
             expect(tplItem.title).toBe("My Template");
@@ -343,6 +353,7 @@ describe("getUserTemplates", () => {
             // Old template -> no "new" badge.
             expect(tplItem.badges).toBeUndefined();
         } finally {
+            triggerCommand.mockRestore();
             restore();
         }
     });
