@@ -77,7 +77,8 @@
     "note-panels": "Painéil nótaí",
     "show-note-map": "Taispeánann sé léarscáil na nótaí sa phána ar dheis",
     "focus-collection-properties": "Bogann sé an fócas chuig roghnóir chineál an amhairc don bhailiúchán",
-    "focus-formatting-toolbar": "Bogann sé an fócas idir an barra uirlisí formáidithe seasta agus an t-eagarthóir"
+    "focus-formatting-toolbar": "Bogann sé an fócas idir an barra uirlisí formáidithe seasta agus an t-eagarthóir",
+    "peek-left-pane": "Breathnaigh ar chrann na nótaí mar phainéal sealadach a bhíonn ar snámh os cionn an ábhair"
   },
   "keyboard_action_names": {
     "back-in-note-history": "Ar ais i Stair na Nótaí",
@@ -187,7 +188,8 @@
     "show-note-map": "Léarscáil Nótaí an Chláir",
     "show-note-info": "Eolas faoi Nótaí an Chláir",
     "show-note-paths": "Taispeáin Conairí Nótaí",
-    "toggle-similar-notes": "Scoránaigh Nótaí Cosúla"
+    "toggle-similar-notes": "Scoránaigh Nótaí Cosúla",
+    "peek-left-pane": "Pána Réamhamhairc Crann"
   },
   "login": {
     "title": "Logáil Isteach",
@@ -403,7 +405,10 @@
     "heading-link": "Nasc chuig an rannán seo",
     "previous": "Roimhe seo",
     "next": "Ar Aghaidh",
-    "page-navigation": "Leathanaigh roimhe seo agus an chéad leathanach eile"
+    "page-navigation": "Leathanaigh roimhe seo agus an chéad leathanach eile",
+    "previous-tabs": "Scrollaigh chuig na cluaisíní roimhe seo",
+    "next-tabs": "Scrollaigh chuig na cluaisíní eile",
+    "copy-code": "Cóipeáil an cód"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Sleachta Téacs",
@@ -599,5 +604,14 @@
     "delete-while-downloading": "Tá {{- title}} á íoslódáil. Cealaigh an íoslódáil sula scriosann tú é.",
     "not-foreign": "Ní iontráil neamhúsáidte i bhfillteán na n-acmhainní é {{- name}}.",
     "stalled": "Cuireadh stop le híoslódáil {{name}}: níor tháinig aon rud ar feadh {{seconds}} soicind. Seiceáil do nasc, ansin bain triail as arís."
+  },
+  "share_target": {
+    "default-title": "Ábhar comhroinnte",
+    "nothing-to-share": "Níl aon rud le roinnt: ní bhfuarthas téacs, nasc ná comhaid ar bith.",
+    "rejected": "Diúltaíodh don scair: {{- reason}}",
+    "other-page": "Ní féidir ach le roghchlár comhroinnte an chórais ábhar a sheoladh chuig an seoladh seo."
+  },
+  "llm_providers": {
+    "flatpak_sandbox": "Ritheann Trilium mar Flatpak, mar sin ní féidir leis cláir a shuiteáiltear lasmuigh dá bhosca gainimh a thosú, mar shampla {{- cli}}. Chun {{- cli}} a úsáid:\n\n1. Suiteáil é ar an ríomhaire seo agus logáil isteach ann ó theirminéal.\n2. Tabhair cead do Trilium cláir a thosú lasmuigh dá bhosca gainimh tríd an méid seo a rith i dteirminéal:\n\n{{- grantCommand}}\n\n3. Atosaigh Trilium.\n\nLeis seo, bíonn an rochtain chéanna ag Trilium ar do ríomhaire is a bheadh aige dá mbeadh sé suiteáilte lasmuigh de Flatpak. Chun an cead sin a tharraingt siar, rith:\n\n{{- revokeCommand}}"
   }
 }
