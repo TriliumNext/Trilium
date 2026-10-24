@@ -104,6 +104,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             if (deltaX > DRAG_START_THRESHOLD) {
                 /* Disable the transitions since they affect performance, they are going to reenabled once drag ends. */
                 this.sidebarEl.style.transition = "none";
+                this.sidebarEl.classList.add("dragging");
                 if (this.detailEl) this.detailEl.style.transition = "none";
 
                 this.dragState = DRAG_STATE_DRAGGING;
@@ -128,6 +129,8 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             this.dragState = DRAG_STATE_NONE;
             return;
         }
+
+        this.sidebarEl.classList.remove("dragging");
 
         // Snap the tree open only if the user swiped over a threshold.
         const isOpen = this.translatePercentage > -(100 - DRAG_OPEN_THRESHOLD);
@@ -176,7 +179,9 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         const direction = glob.isRtl ? -1 : 1;
         const openness = 100 + translatePercentage;
         this.sidebarEl.style.transform = `translateX(${-direction * STACK_PARALLAX * (100 - openness) / 100}%)`;
-        if (this.detailEl) this.detailEl.style.transform = `translateX(${direction * openness}%)`;
+        // At rest the note carries no transform: one makes it a stacking context, which keeps a
+        // dialog it renders under Bootstrap's backdrop.
+        if (this.detailEl) this.detailEl.style.transform = openness ? `translateX(${direction * openness}%)` : "";
     }
 
     #setSidebarOpen(isOpen: boolean) {

@@ -77,7 +77,9 @@ describe("SidebarContainer", () => {
             document.body.innerHTML = "";
         });
 
-        it("slides the note off the tree, which lies under it", () => {
+        // A transform on the note makes it a stacking context, which traps a dialog the note renders
+        // under Bootstrap's backdrop.
+        it("slides the note off the tree, which lies under it, and leaves no transform on it at rest", () => {
             const sidebar = render(true);
 
             sidebar.activeScreenChangedEvent({ activeScreen: "tree" });
@@ -85,8 +87,22 @@ describe("SidebarContainer", () => {
             expect(tree.style.transform).toBe("translateX(0%)");
 
             sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
-            expect(detail.style.transform).toBe("translateX(0%)");
+            expect(detail.style.transform).toBe("");
             expect(tree.style.transform).toBe("translateX(-30%)");
+        });
+
+        it("marks the tree as dragged while a swipe from the edge reveals it", () => {
+            render(true);
+            const touch = (type: string, clientX: number) => document.dispatchEvent(
+                Object.assign(new Event(type, { cancelable: true }), { touches: [ { clientX } ] }));
+
+            touch("touchstart", 5);
+            touch("touchmove", 40);
+            expect(tree.classList.contains("dragging")).toBe(true);
+
+            touch("touchmove", 80);
+            touch("touchend", 80);
+            expect(tree.classList.contains("dragging")).toBe(false);
         });
 
         it("goes back from the note to the tree on the system back, and not from the tree", () => {

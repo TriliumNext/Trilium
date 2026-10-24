@@ -1891,12 +1891,16 @@ pre.code-embed-editor.read-only .cm-activeLine {
         width: 100%;
         transition: transform 250ms ease-in-out;
         background: var(--main-background-color);
-        z-index: 0;
+
+        &:not(.show, .dragging) {
+            visibility: hidden;
+            transition: transform 250ms ease-in-out, visibility 0s 250ms;
+        }
     }
 
     #detail-container {
+        position: relative;
         width: 100%;
-        z-index: 1;
         background: var(--main-background-color);
         transition: transform 250ms ease-in-out;
 
