@@ -16,7 +16,8 @@ import { renderShortcutKbds } from "./shortcut_kbd";
 
 const cachedIsMobile = isMobile();
 
-export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement>, "tabIndex" | "aria-pressed"> {
+export interface ButtonProps extends Pick<ButtonHTMLAttributes<HTMLButtonElement>,
+    "tabIndex" | "aria-pressed" | "aria-haspopup" | "aria-expanded"> {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement | null>;

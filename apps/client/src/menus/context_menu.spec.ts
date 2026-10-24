@@ -1615,6 +1615,39 @@ describe("contextMenu", () => {
             expect([ menu.style.left, menu.style.top ]).toEqual([ "5px", "20px" ]);
         });
 
+        it("opens below or above the element it is anchored to, centered on request", async () => {
+            buildPage();
+            const contextMenu = await buildContextMenu();
+            vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(1000);
+            vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(800);
+            vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(200);
+            vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(300);
+            const button = document.createElement("button");
+            document.body.append(button);
+            let buttonRect = DOMRect.fromRect({ x: 100, y: 200, width: 400, height: 30 });
+            vi.spyOn(button, "getBoundingClientRect").mockImplementation(() => buttonRect);
+
+            /** Where the menu is placed against `button`, which it is hidden again after. */
+            async function placedAt(centered?: boolean) {
+                await contextMenu.show({
+                    anchor: button, centered, items, selectMenuItemHandler: () => {}
+                });
+                const menu = menuElement();
+                if (!menu) throw new Error("expected the menu to render");
+                await vi.waitFor(() => expect(menu.style.visibility).toBe("visible"));
+                const position = [ menu.style.left, menu.style.top ];
+                await contextMenu.hide();
+                return position;
+            }
+
+            expect(await placedAt()).toEqual([ "100px", "230px" ]);
+            expect(await placedAt(true)).toEqual([ "200px", "230px" ]);
+
+            buttonRect = DOMRect.fromRect({ x: 100, y: 600, width: 400, height: 30 });
+            expect(await placedAt()).toEqual([ "100px", "300px" ]);
+            expect(await placedAt(true)).toEqual([ "200px", "300px" ]);
+        });
+
         it("caps its height to the viewport so that it scrolls", async () => {
             const menu = await place({ x: 10, y: 20, width: 200, height: 2000 });
             expect(menu.style.maxHeight).toBe("790px");
