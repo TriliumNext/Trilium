@@ -158,6 +158,10 @@ export interface FormListItemOpts {
     selected?: boolean;
     container?: boolean;
     onClick?: (e: MouseEvent) => void;
+    /** Runs on a middle click on the row, which leaves the menu open. */
+    onMiddleClick?: (e: MouseEvent) => void;
+    /** Runs on a right-click on the row, which a menu ignores otherwise. */
+    onContextMenu?: (e: MouseEvent) => void;
     description?: string;
     className?: string;
     rtl?: boolean;
@@ -196,7 +200,12 @@ const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
     animation: false
 };
 
-export function FormListItem({ className, icon, iconSvg, iconClassName, value, title, active, disabled, checked, checkable, container, onClick, selected, rtl, description, itemRef: externalItemRef, keyboardShortcut, shortcut, trailingText, trailingIcon, closeOnSelect, ...contentProps }: FormListItemOpts) {
+export function FormListItem({
+    className, icon, iconSvg, iconClassName, value, title, active, disabled, checked, checkable,
+    container, onClick, onMiddleClick, onContextMenu, selected, rtl, description,
+    itemRef: externalItemRef, keyboardShortcut, shortcut, trailingText, trailingIcon, closeOnSelect,
+    ...contentProps
+}: FormListItemOpts) {
     const itemRef = useSyncedRef<HTMLLIElement>(externalItemRef, null);
     // Inside a `Menu` the row is one of its items; elsewhere, as in a dropdown, it stands alone.
     const menu = useContext(MenuContext);
@@ -270,11 +279,14 @@ export function FormListItem({ className, icon, iconSvg, iconClassName, value, t
             // stays in focus. A field inside the row takes focus as it would anywhere.
             onMouseDown={(e) => {
                 if (e.button === 0 && !(e.target instanceof Element && e.target.closest(TEXT_ENTRY))) e.preventDefault();
+                preventMiddlePress(e, onMiddleClick);
             }}
             // The row runs on the release, so a press can still be taken back by moving off.
             onClick={(e) => {
                 if (!disabled) run(e);
             }}
+            onAuxClick={middleClickHandler(onMiddleClick, disabled)}
+            onContextMenu={onContextMenu}
             dir={rtl ? "rtl" : undefined}
         >
             {/* One classless span holds the row, as the rows of a menu are laid out. */}
@@ -442,7 +454,7 @@ export function FormListHeader({ text, actions = [] }: FormListHeaderOpts) {
                         className="tn-menu-header-actions"
                         // As over a row, the pointer closes the submenu open at this level.
                         onPointerMove={(e) => {
-                            if (menu?.open[level] && pointerMoved(e)) menu.openSubmenu(level);
+                            if (menu && pointerMoved(e)) menu.closeSubmenu(level);
                         }}
                         // A press keeps focus where it was, as on a row.
                         onMouseDown={(e) => e.preventDefault()}
@@ -486,6 +498,10 @@ export interface FormDropdownSubmenuProps {
     split?: boolean;
     /** Whether running {@link onDropdownToggleClicked} closes the menu, as `FormListItem` does. */
     closeOnSelect?: boolean;
+    /** Runs on a middle click on the row, which leaves the menu open. Not for a {@link tile}. */
+    onMiddleClick?: (e: MouseEvent) => void;
+    /** Runs on a right-click on the row, which a menu ignores otherwise. Not for a {@link tile}. */
+    onContextMenu?: (e: MouseEvent) => void;
     disabled?: boolean;
     className?: string;
     /** Inside a menu, whether typing while the submenu is open filters it. See `MenuCommandItem.filterable`. */
@@ -510,7 +526,8 @@ export function FormDropdownSubmenu(props: FormDropdownSubmenuProps) {
 
 function MenuSubmenu({
     menu, icon, iconSvg, title, description, children, onDropdownToggleClicked,
-    split = !!onDropdownToggleClicked, closeOnSelect, disabled, className, filterable, tile
+    split = !!onDropdownToggleClicked, closeOnSelect, onMiddleClick, onContextMenu, disabled,
+    className, filterable, tile
 }: FormDropdownSubmenuProps & { menu: MenuContextValue }) {
     const level = useContext(MenuLevelContext);
     const id = useUniqueName("menu-row");
@@ -570,7 +587,7 @@ function MenuSubmenu({
                 // opens its own only on a press.
                 onPointerMove={(e) => {
                     if (!pointerMoved(e)) return;
-                    if (openSubmenu && !open) menu.openSubmenu(level);
+                    if (!open) menu.closeSubmenu(level);
                     if (!disabled && !isActive) menu.setActive(level, id);
                 }}
                 // As any row: the press keeps focus where it was, and the release acts.
@@ -617,6 +634,7 @@ function MenuSubmenu({
             // As any row: the press keeps focus where it was, and the release acts.
             onMouseDown={(e) => {
                 if (e.button === 0) e.preventDefault();
+                preventMiddlePress(e, onMiddleClick);
             }}
             onClick={(e) => {
                 // The dropdown's `closeOnClickInside` would close the whole menu.
@@ -625,6 +643,8 @@ function MenuSubmenu({
                 menu.openSubmenu(level, id, e.currentTarget, true);
                 if (!isMobile()) run(e);
             }}
+            onAuxClick={middleClickHandler(onMiddleClick, disabled)}
+            onContextMenu={onContextMenu}
         >
             <span className="dropdown-toggle">
                 {iconSvg ? <SvgIcon svg={iconSvg} /> : <Icon icon={icon} />}
@@ -899,6 +919,25 @@ function actsOnClick(target: EventTarget | null, row: HTMLElement) {
     const acting = target instanceof Element ? target.closest(ACTING_ELEMENTS) : null;
     return !!acting && row.contains(acting) && acting !== row
         && acting.getAttribute("aria-disabled") !== "true" && !acting.matches(":disabled");
+}
+
+/**
+ * Cancels a middle press on a row with `onMiddleClick`. The press starts autoscrolling, and pastes
+ * on Linux.
+ */
+function preventMiddlePress(e: MouseEvent, onMiddleClick: ((e: MouseEvent) => void) | undefined) {
+    if (e.button === 1 && onMiddleClick) e.preventDefault();
+}
+
+/** An `auxclick` handler running `onMiddleClick`, which browsers fire for the right button too. */
+function middleClickHandler(
+    onMiddleClick: ((e: MouseEvent) => void) | undefined,
+    disabled?: boolean
+) {
+    if (!onMiddleClick) return undefined;
+    return (e: MouseEvent) => {
+        if (e.button === 1 && !disabled) onMiddleClick(e);
+    };
 }
 
 /**

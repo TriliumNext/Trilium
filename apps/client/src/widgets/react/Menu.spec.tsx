@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MenuHeaderAction, MenuHeaderActions, MenuItem } from "../../menus/context_menu";
 import { formatShortcut, joinShortcut } from "../../services/keyboard_shortcut_display";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "./FormList";
-import Menu, { bottomUpOrder, MenuItemRows, type MenuProps } from "./Menu";
+import Menu, { bottomUpOrder, MenuItemRows, type MenuProps, MenuTile } from "./Menu";
 import { shouldDropStart } from "./menu_context";
 
 vi.mock("../../services/keyboard_actions", async (importOriginal) => {
@@ -447,6 +447,57 @@ describe("Menu with an action row", () => {
             await vi.waitFor(() => expect(layers()).toBe(0));
         }
         expect(more.classList).not.toContain("submenu-open");
+    });
+
+    it("goes on from a submenu's row once the pointer leaves for what is not a row", async () => {
+        render((
+            <Menu anchor={{ x: 10, y: 10 }} onClose={vi.fn()}>
+                <FormListHeader
+                    text="Group"
+                    actions={[ { icon: "bx bx-plus", caption: "Add", callback: vi.fn() } ]}
+                />
+                <li className="tn-menu-actions" role="group">
+                    <MenuTile
+                        icon="bx bx-copy" title="Copy" tooltip="Copy" disabled onSelect={vi.fn()}
+                    />
+                    <FormDropdownSubmenu tile disabled icon="bx bx-grid" title="Tiles">
+                        <FormListItem>Tile</FormListItem>
+                    </FormDropdownSubmenu>
+                </li>
+                <FormListItem onClick={vi.fn()}>Rename</FormListItem>
+                <FormDropdownSubmenu icon="bx bx-dots-horizontal" title="More">
+                    <FormListItem onClick={vi.fn()}>Inner</FormListItem>
+                </FormDropdownSubmenu>
+            </Menu>
+        ), host);
+        const menu = document.querySelector<HTMLElement>(".tn-popup.tn-menu");
+        const more = menu?.querySelector<HTMLElement>("li.dropdown-submenu");
+        const targets = [
+            ...menu?.querySelectorAll<HTMLElement>(".tn-menu-action") ?? [],
+            menu?.querySelector<HTMLElement>(".tn-menu-header-actions")
+        ];
+        if (!menu || !more || targets.length !== 3) throw new Error("expected the menu to render");
+        const layer = () => menu.querySelector(":scope > div.dropdown-submenu > .dropdown-menu");
+        const point = (element: Element) =>
+            element.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, movementX: 3 }));
+
+        // A disabled action, a disabled submenu tile and a heading's actions.
+        for (const target of targets) {
+            if (!target) throw new Error("expected the target to render");
+            point(more);
+            const inner = await vi.waitFor(() => {
+                const row = layer()?.querySelector("li.dropdown-item");
+                if (!row) throw new Error("expected the submenu to open");
+                return row;
+            });
+            point(inner);
+            await vi.waitFor(() => expect(active(menu)).toBe("Inner"));
+            point(target);
+            await vi.waitFor(() => expect(layer()).toBeNull());
+
+            key(menu, "ArrowUp");
+            await vi.waitFor(() => expect(active(menu)).toBe("Rename"));
+        }
     });
 
     it("sets an action's badge over the corner of its icon, which gives way around it", () => {

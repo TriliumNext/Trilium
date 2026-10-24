@@ -2931,7 +2931,7 @@
     "new_tab": "New tab",
     "leave_full_screen": "Leave full screen",
     "add_new_tab_hint": "Right click or hold for more options.",
-    "show_all_recent_changes": "Show all recent changes",
+    "show_all_recent_changes": "All recent changes",
     "recently_changed_notes": "Recently changed notes"
   },
   "toc": {
@@ -3015,7 +3015,7 @@
   },
   "launcher_button_context_menu": {
     "remove_from_launch_bar": "Remove from launch bar",
-    "show_as_folder": "Show as a folder",
+    "show_as_folder": "Folder",
     "configure_launch_bar": "Configure launch bar...",
     "launch_bar_orientation": "Launch bar orientation",
     "will_reload_frontend": "(will reload app)"

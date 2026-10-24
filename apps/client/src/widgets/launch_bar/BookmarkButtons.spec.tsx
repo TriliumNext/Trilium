@@ -1,17 +1,23 @@
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { BookmarkFolder } from "./BookmarkButtons";
+import { launchCustomNoteLauncher } from "./GenericButtons";
 
-const h = vi.hoisted(() => ({ isMobile: false, opened: [] as string[] }));
+const h = vi.hoisted(() => ({ isMobile: false, opened: [] as string[], openContextMenu: vi.fn() }));
 
 vi.mock("../../services/utils", async (importOriginal) => ({
     ...await importOriginal<typeof import("../../services/utils")>(),
     isMobile: () => h.isMobile
 }));
+vi.mock("../../menus/link_context_menu", async (importOriginal) => {
+    const original = await importOriginal<typeof import("../../menus/link_context_menu")>();
+    return { default: { ...original.default, openContextMenu: h.openContextMenu } };
+});
 vi.mock("./GenericButtons", async (importOriginal) => ({
     ...await importOriginal<typeof import("./GenericButtons")>(),
     launchCustomNoteLauncher: vi.fn(async (_e: MouseEvent, { launcherNote, getTargetNoteId }: {
@@ -25,6 +31,7 @@ vi.mock("./GenericButtons", async (importOriginal) => ({
 afterEach(() => {
     h.isMobile = false;
     h.opened.length = 0;
+    vi.clearAllMocks();
     document.body.classList.remove("motion-disabled");
 });
 
@@ -92,10 +99,25 @@ describe("BookmarkFolder", () => {
         return row;
     }
 
-    const press = (element: HTMLElement) => {
-        const init = { bubbles: true, cancelable: true, button: 0 };
+    const press = (element: HTMLElement, modifiers: MouseEventInit = {}) => {
+        const init = { bubbles: true, cancelable: true, button: 0, ...modifiers };
         element.dispatchEvent(new MouseEvent("mousedown", init));
         element.dispatchEvent(new MouseEvent("click", init));
+    };
+
+    /** Presses the middle button on `element`, returning whether the press was canceled. */
+    const middleClick = (element: HTMLElement) => {
+        const init = { bubbles: true, cancelable: true, button: 1 };
+        const down = new MouseEvent("mousedown", init);
+        element.dispatchEvent(down);
+        element.dispatchEvent(new MouseEvent("auxclick", init));
+        return down.defaultPrevented;
+    };
+    const rightClick = (element: HTMLElement) => {
+        const init = { bubbles: true, cancelable: true, button: 2 };
+        // Browsers fire `auxclick` for the right button as well as the middle one.
+        element.dispatchEvent(new MouseEvent("auxclick", init));
+        element.dispatchEvent(new MouseEvent("contextmenu", init));
     };
 
     async function type(input: HTMLInputElement, text: string) {
@@ -211,6 +233,49 @@ describe("BookmarkFolder", () => {
         expect(h.opened).toEqual([ "item16", "few" ]);
     });
 
+    it("opens a note as a link to it does: middle click, right-click and Shift", async () => {
+        const triggerCommand = vi.spyOn(appContext, "triggerCommand")
+            .mockReturnValue(undefined as never);
+        const folder = buildNote({
+            title: "Links",
+            children: [
+                ...Array.from({ length: 15 }, (_, index) => ({
+                    id: `link${index + 1}`, title: `Link ${index + 1}`
+                })),
+                { id: "branch", title: "Branch", children: [ { id: "leaf", title: "Leaf" } ] }
+            ]
+        });
+        const menu = await openMenu(folder, 17);
+
+        // A plain row, a split row and a filtered match: the middle button opens a new tab and
+        // leaves the menu open, the right one opens the link menu.
+        const rows = [ rowTitled(rowsOf(menu), "Link 1"), rowTitled(rowsOf(menu), "Branch") ];
+        for (const row of rows) {
+            expect(middleClick(row)).toBe(true);
+            rightClick(row);
+        }
+        const input = filterInputOf(menu);
+        if (!input) throw new Error("expected the folder's menu to offer a filter");
+        await type(input, "Link 15");
+        const match = await vi.waitFor(() => rowTitled(rowsOf(menu), "Link 15"));
+        expect(middleClick(match)).toBe(true);
+        rightClick(match);
+
+        expect(h.opened).toEqual([ "link1", "branch", "link15" ]);
+        expect(vi.mocked(launchCustomNoteLauncher).mock.calls.map(([ e ]) => e.type))
+            .toEqual([ "auxclick", "auxclick", "auxclick" ]);
+        expect(h.openContextMenu.mock.calls.map(([ notePath ]) => notePath))
+            .toEqual([ "link1", "branch", "link15" ]);
+        expect(popup()).not.toBeNull();
+
+        // Shift opens a new window, and the menu closes.
+        press(match, { shiftKey: true });
+        expect(triggerCommand).toHaveBeenCalledWith("openInWindow", { notePath: "link15" });
+        expect(h.opened).toHaveLength(3);
+        await vi.waitFor(() => expect(popup()).toBeNull());
+        triggerCommand.mockRestore();
+    });
+
     it("lists a submenu's note above its children on a phone, without split rows", async () => {
         h.isMobile = true;
         // Without slides, a page opens as soon as its row is tapped.
@@ -230,6 +295,9 @@ describe("BookmarkFolder", () => {
         });
         expect(h.opened).toEqual([]);
         expect(pageRows.map(kindOf)).toEqual([ "note", "child" ]);
+        // A long press opens no link menu.
+        rightClick(pageRows[1]);
+        expect(h.openContextMenu).not.toHaveBeenCalled();
 
         press(pageRows[0]);
         expect(h.opened).toEqual([ "branch" ]);

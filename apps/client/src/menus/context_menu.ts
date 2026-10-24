@@ -76,6 +76,11 @@ export interface MenuItemBadge {
 
 export interface MenuCommandItem<T> {
     title: string;
+    /**
+     * The classes of an icon right after the title, such as a protected note's lock. Unlike markup
+     * in the title, a filtered menu keeps it.
+     */
+    titleIcon?: string;
     /** A second line below the title, in smaller text. */
     description?: string;
     command?: T;
@@ -109,6 +114,10 @@ export interface MenuCommandItem<T> {
     notePreset?: NotePresetId;
     enabled?: boolean;
     handler?: MenuHandler<T>;
+    /** Runs on a middle click on the item, which leaves the menu open. */
+    middleClickHandler?: (e: MouseEvent) => void;
+    /** Runs on a right-click on the item, which a menu ignores otherwise. */
+    contextMenuHandler?: (e: MouseEvent) => void;
     items?: MenuItem<T>[] | null;
     shortcut?: string;
     keyboardShortcut?: KeyboardActionNames;

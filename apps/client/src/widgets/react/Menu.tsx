@@ -12,7 +12,7 @@ import { t } from "../../services/i18n";
 import { isMobile } from "../../services/utils";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListCustomItem, FormListHeader, FormListItem, MenuList } from "./FormList";
 import { useStaticTooltipWithKeyboardShortcut, useUniqueName } from "./hooks";
-import { SvgIcon } from "./Icon";
+import Icon, { SvgIcon } from "./Icon";
 import { type ActiveRow, isRightToLeft, MenuContext, type MenuContextValue, type MenuFilter, MenuFilterContext, MenuLevelContext, type OpenSubmenu, pointerMoved, type RowEntry, shouldDropStart } from "./menu_context";
 import Popup, { type PopupProps } from "./Popup";
 
@@ -177,9 +177,15 @@ export default function Menu<T>({ id, className, anchor, placement, bottomSheet,
             activateFirstRowRef.current(row.level);
         });
     }, [ rows ]);
+    const closeSubmenu = (level: number) => {
+        const opener = open[level];
+        if (!opener) return;
+        openSubmenu(level);
+        if (active && active.level > level) setActive(level, opener.id);
+    };
     const context: MenuContextValue = {
-        open, openSubmenu, submenuShown, active, setActive, rows, registerRow, keyboardDriven,
-        isReversed, dropStart, setDropStart, close, filter, setFilter, layerHost
+        open, openSubmenu, closeSubmenu, submenuShown, active, setActive, rows, registerRow,
+        keyboardDriven, isReversed, dropStart, setDropStart, close, filter, setFilter, layerHost
     };
 
     /** The ids of the rows the keys can stand on at `level`, in the order they stand in. */
@@ -542,10 +548,13 @@ function FilteredMenuItems<T>({ items, text, bottomUp, onSelect }: {
                 key={index}
                 icon={item.uiIcon ?? "bx bx-empty"} iconClassName={item.iconColorClass}
                 badges={item.badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
-                closeOnSelect={false} onClick={(e) => onSelect?.(item, e)}
+                className={item.className} closeOnSelect={false}
+                onClick={(e) => onSelect?.(item, e)}
+                onMiddleClick={item.middleClickHandler} onContextMenu={item.contextMenuHandler}
             >
                 <span className={clsx("tn-menu-filter-title", isName && "tn-menu-name")}>
                     {highlightMatch(title, text)}
+                    {item.titleIcon && <Icon icon={item.titleIcon} />}
                 </span>
                 {path.length > 0 && <span className="tn-menu-filter-path">{path.join(" › ")}</span>}
             </FormListItem>
@@ -562,9 +571,14 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
         return <FormListCustomItem><row.componentFn /></FormListCustomItem>;
     }
 
-    const { title, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges, className, keyboardShortcut, shortcut, trailingText, trailingIcon, items } = row;
+    const {
+        title, titleIcon, description, tooltip, uiIcon, iconColorClass, checked, enabled, badges,
+        className, keyboardShortcut, shortcut, trailingText, trailingIcon, items,
+        middleClickHandler, contextMenuHandler
+    } = row;
     // Callers pass HTML: titles escaped with `escapeHtml()` or boxed by `menuName()`.
-    const label = <span dangerouslySetInnerHTML={{ __html: title }} />;
+    const titleHtml = <span dangerouslySetInnerHTML={{ __html: title }} />;
+    const label = titleIcon ? <span>{titleHtml}<Icon icon={titleIcon} /></span> : titleHtml;
     // `onSelect` decides whether the menu closes, as `contextMenu` does.
     const select = (e: MouseEvent) => onSelect?.(row, e);
 
@@ -574,6 +588,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
                 icon={uiIcon ?? "bx bx-empty"} title={label} disabled={enabled === false}
                 className={className} onDropdownToggleClicked={select} split={!!(row.command || row.handler)}
                 filterable={row.filterable}
+                onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
             >
                 <MenuItems items={items} onSelect={onSelect} />
             </FormDropdownSubmenu>
@@ -588,7 +603,7 @@ function MenuItemRow<T>({ row, onSelect }: { row: MenuItem<T>, onSelect: MenuPro
             description={description} title={tooltip} className={className} badges={badges?.map((badge) => ({ className: badge.className, text: badge.title }))}
             keyboardShortcut={keyboardShortcut} shortcut={shortcut} trailingText={trailingText}
             trailingIcon={trailingIcon} closeOnSelect={false}
-            onClick={select}
+            onClick={select} onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
         >
             {label}
         </FormListItem>
@@ -667,7 +682,7 @@ export function MenuTile({ icon, iconSvg, iconBadge, title, tooltip, keyboardSho
             // goes on from the action it last pointed at.
             onPointerMove={(e) => {
                 if (!menu || !pointerMoved(e)) return;
-                if (menu.open[level]) menu.openSubmenu(level);
+                menu.closeSubmenu(level);
                 if (!disabled && menu.active?.id !== id) menu.setActive(level, id);
             }}
             // A press keeps focus where it was, as on a row.

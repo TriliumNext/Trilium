@@ -3,11 +3,13 @@ import "./BookmarkButtons.css";
 import { CSSProperties } from "preact";
 import { useContext, useMemo } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import type FNote from "../../entities/fnote";
 import type { MenuCommandItem } from "../../menus/context_menu";
 import { menuName } from "../../menus/context_menu_utils";
+import link_context_menu from "../../menus/link_context_menu";
 import { t } from "../../services/i18n";
-import { isMobile } from "../../services/utils";
+import { isCtrlKey, isMobile } from "../../services/utils";
 import { FormDropdownSubmenu, FormListItem } from "../react/FormList";
 import {
     useChildNotes, useNote, useNoteIcon, useNoteLabelBoolean, useNoteProperty
@@ -160,6 +162,7 @@ function NoteRow({ note, className, submenuDepth }: NoteRowProps) {
     const [ isSubtreeHidden ] = useNoteLabelBoolean(note, "subtreeHidden");
     const label = <span className="tn-menu-name">{title}</span>;
     const open = (e: MouseEvent) => openNote(e, note);
+    const { middleClickHandler, contextMenuHandler } = getLinkHandlers(note);
 
     if (submenuDepth !== undefined && submenuDepth <= MAX_SUBMENU_DEPTH
             && note.hasChildren() && !isSubtreeHidden) {
@@ -167,13 +170,21 @@ function NoteRow({ note, className, submenuDepth }: NoteRowProps) {
             <FormDropdownSubmenu
                 icon={icon} title={label} className={className}
                 onDropdownToggleClicked={open} closeOnSelect filterable={hasManyChildren(note)}
+                onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
             >
                 <FolderRows note={note} depth={submenuDepth} />
             </FormDropdownSubmenu>
         );
     }
 
-    return <FormListItem icon={icon} className={className} onClick={open}>{label}</FormListItem>;
+    return (
+        <FormListItem
+            icon={icon} className={className} onClick={open}
+            onMiddleClick={middleClickHandler} onContextMenu={contextMenuHandler}
+        >
+            {label}
+        </FormListItem>
+    );
 }
 
 /** Whether the submenu of `note`'s children offers a filter input above them. */
@@ -186,10 +197,34 @@ function toMenuItem(note: FNote): MenuCommandItem<unknown> {
     return {
         title: menuName(note.title),
         uiIcon: note.getIcon(),
-        handler: (_item, e) => openNote(e, note)
+        handler: (_item, e) => openNote(e, note),
+        ...getLinkHandlers(note)
     };
 }
 
+/** Opens `note` as its launcher does, and in a new window on Shift, as a link to it does. */
 function openNote(e: MouseEvent | KeyboardEvent, note: FNote) {
+    if (e.shiftKey && !isCtrlKey(e)) {
+        void appContext.triggerCommand("openInWindow", { notePath: note.noteId });
+    } else {
+        launchNote(e, note);
+    }
+}
+
+/**
+ * The middle click and right-click of a link to `note`: a new tab, made active with Shift, and the
+ * link menu. A phone has no link menu: `Menu` ignores a long press there.
+ */
+function getLinkHandlers(note: FNote) {
+    return {
+        middleClickHandler: (e: MouseEvent) => launchNote(e, note),
+        contextMenuHandler: isMobile() ? undefined : (e: MouseEvent) => {
+            e.preventDefault();
+            void link_context_menu.openContextMenu(note.noteId, e);
+        }
+    };
+}
+
+function launchNote(e: MouseEvent | KeyboardEvent, note: FNote) {
     void launchCustomNoteLauncher(e, { launcherNote: note, getTargetNoteId: () => note.noteId });
 }

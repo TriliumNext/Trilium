@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type NoteContext from "../../components/note_context";
 import type { MenuCommandItem } from "../../menus/context_menu";
+import froca from "../../services/froca";
 import protectedSessionHolder from "../../services/protected_session_holder";
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
@@ -78,6 +79,52 @@ describe("BreadcrumbSeparator", () => {
         expect(hasFilterInput("parent")).toBe(true);
         expect(hasFilterInput("leaf")).toBe(false);
     });
+
+    it("keeps the lock of a protected match and the dimming of an archived one", async () => {
+        vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(true);
+        buildNote({
+            id: "vault",
+            title: "Vault",
+            children: [
+                { id: "plans", title: "Plans" },
+                { id: "plays", title: "Plays", "#archived": "" }
+            ]
+        });
+        const plans = froca.getNoteFromCache("plans");
+        if (!plans) throw new Error("expected the protected child to be built");
+        plans.isProtected = true;
+
+        let container: HTMLElement | undefined;
+        act(() => {
+            container = renderInto(
+                <BreadcrumbSeparator
+                    notePath="root/vault" noteContext={undefined} hideArchivedNotes={false}
+                />
+            );
+        });
+        act(() => container?.querySelector("button")?.click());
+        const input = document.querySelector<HTMLInputElement>(
+            ".breadcrumb-child-list .tn-menu-filter-input"
+        );
+        if (!input) throw new Error("expected the menu to offer a filter");
+        await act(async () => {
+            input.value = "pla";
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        const matches = await vi.waitFor(() => {
+            const found = [ ...document.querySelectorAll<HTMLElement>(
+                ".breadcrumb-child-list li.dropdown-item"
+            ) ];
+            expect(found.map((row) => row.querySelector(".tn-menu-filter-title")?.textContent))
+                .toEqual([ "Plans", "Plays" ]);
+            return found;
+        });
+        const lock = ".tn-menu-filter-title .protected-icon.bx-lock-alt";
+        expect(matches.map((row) => !!row.querySelector(lock))).toEqual([ true, false ]);
+        expect(matches.map((row) => row.classList.contains("archived"))).toEqual([ false, true ]);
+        vi.restoreAllMocks();
+    });
 });
 
 describe("noteTitleHtml", () => {
@@ -123,6 +170,21 @@ describe("buildChildNoteItems", () => {
         const first = items[0] as MenuCommandItem<unknown>;
         first.handler?.(first, new MouseEvent("click"));
         expect(setNote).toHaveBeenCalledWith("root/parent/rnd");
+    });
+
+    it("gives a protected child its lock apart from its title, which the filter matches", () => {
+        vi.spyOn(protectedSessionHolder, "isProtectedSessionAvailable").mockReturnValue(true);
+        const secret = buildNote({ id: "secret", title: "Secret" });
+        secret.isProtected = true;
+        const props = { notePath: "root/parent", noteContext: undefined, hideArchivedNotes: false };
+        const items = buildChildNoteItems([ secret, ...children().slice(1, 2) ], props);
+        expect(items.slice(0, 2)).toEqual([
+            expect.objectContaining({
+                title: "Secret", titleIcon: "bx bx-lock-alt protected-icon"
+            }),
+            expect.objectContaining({ title: "R&amp;D", titleIcon: undefined })
+        ]);
+        vi.restoreAllMocks();
     });
 
     it("leaves out hidden archived notes, and the separator once no child is left", () => {

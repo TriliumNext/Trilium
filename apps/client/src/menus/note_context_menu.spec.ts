@@ -22,6 +22,8 @@ vi.mock("../services/utils.js", () => ({
     default: { escapeHtml: (s: string) => s, isMac: () => false },
     reuseAcrossHotReloads: <T>(_hot: unknown, create: () => T) => create()
 }));
+// `context_menu_utils` imports `tree`, whose imports fail against the partial mocks above.
+vi.mock("../services/tree.js", () => ({ default: {}, NOTE_PATH_TITLE_SEPARATOR: " › " }));
 vi.mock("./context_menu.js", () => ({ default: { show: vi.fn() } }));
 vi.mock("./code_editor_context_menu.js", () => ({
     buildCodeEditorContextMenuItems: vi.fn(async () => null)

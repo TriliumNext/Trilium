@@ -63,6 +63,11 @@ export interface MenuContextValue {
      * deeper, or without a row only closes them.
      */
     openSubmenu(level: number, id?: string, anchor?: HTMLElement, chosen?: boolean): void;
+    /**
+     * Closes the submenus open at `level` and deeper. If the active row is inside them, the row
+     * that opened them becomes active, so the keys continue from there.
+     */
+    closeSubmenu(level: number): void;
     /** Records that the layer of `submenu` is past the stylesheet's opening delay, and in view. */
     submenuShown(submenu: OpenSubmenu): void;
     active?: ActiveRow;
