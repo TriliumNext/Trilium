@@ -48,6 +48,8 @@ const MAX_TREE_PREVIEW_ROWS = 12;
 const SWIPE_START = 10;
 /** How long a finger can rest before release and still count as a flick. */
 const FLICK_WINDOW = 100;
+/** The least travel a whole slide takes, so a press by the edge does not throw the slide across. */
+const MIN_ROOM = 48;
 
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
@@ -84,6 +86,8 @@ interface SwipeGesture {
     /** How fast, in px/ms, the finger last moved toward the other tab. */
     velocity: number;
     swipe?: TabSwipe;
+    /** How far the finger can travel toward the other tab before it reaches the edge of the screen. */
+    room?: number;
 }
 
 /**
@@ -121,6 +125,7 @@ export function useTabSwipe(enabled: boolean) {
                     return;
                 }
                 gesture.swipe = new TabSwipe(direction);
+                gesture.room = getRoom(gesture.x, gesture.swipe.slide);
                 swipedRef.current = true;
             }
 
@@ -129,7 +134,7 @@ export function useTabSwipe(enabled: boolean) {
             if (elapsed > 0) gesture.velocity = toward * (e.clientX - gesture.lastX) / elapsed;
             gesture.lastX = e.clientX;
             gesture.lastTime = e.timeStamp;
-            gesture.swipe.move(toward * dx / getSlideWidth());
+            gesture.swipe.move(toward * dx / (gesture.room ?? window.innerWidth));
         },
         onPointerEnd(e: PointerEvent) {
             const gesture = gestureRef.current;
@@ -154,9 +159,12 @@ export function getSwipeDirection(dx: number, dy: number, isRtl: boolean): Swipe
     return (dx < 0) !== isRtl ? "next" : "previous";
 }
 
-/** The distance a finger travels for the slide to go all the way to the other tab. */
-function getSlideWidth() {
-    return document.getElementById("mobile-rest-container")?.offsetWidth || window.innerWidth;
+/**
+ * How far a finger pressed at `x` travels for the slide to go all the way to the other tab: up to the
+ * edge it heads for, as the tab switcher button can sit close to either one.
+ */
+function getRoom(x: number, slide: "left" | "right") {
+    return Math.max(MIN_ROOM, slide === "left" ? x : window.innerWidth - x);
 }
 
 function TabBarModal({ mainNoteContexts, shown, setShown }: {

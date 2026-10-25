@@ -133,37 +133,41 @@ describe("tab swipe", () => {
             />;
         }
         // Each move is [ clientX, ms since the press ]; the finger lifts `liftAfter` ms after the last.
-        const press = (button: HTMLButtonElement, moves: [ number, number ][], liftAfter = 200) => {
+        const press = (button: HTMLButtonElement, startX: number, moves: [ number, number ][], liftAfter = 200) => {
             const send = (type: string, clientX: number, time: number) => {
                 const event = new PointerEvent(type, { bubbles: true, isPrimary: true, pointerId: 1, clientX, clientY: 10 });
                 Object.defineProperty(event, "timeStamp", { value: time });
                 button.dispatchEvent(event);
             };
-            send("pointerdown", 100, 0);
+            send("pointerdown", startX, 0);
             for (const [ clientX, time ] of moves) send("pointermove", clientX, time);
-            const [ lastX, lastTime ] = moves.at(-1) ?? [ 100, 0 ];
+            const [ lastX, lastTime ] = moves.at(-1) ?? [ startX, 0 ];
             send("pointerup", lastX, lastTime + liftAfter);
             button.click();
         };
 
         const button = renderInto(<SwipeButton enabled />).querySelector("button");
         if (!button) throw new Error("No button");
-        // Without view transitions, the tab switches on release; the window is 1024px wide.
-        press(button, [ [ 90, 200 ], [ 60, 400 ] ]);
+        // Without view transitions, the tab switches on release. The window is 1024px wide, and a
+        // swipe has the room from where it starts to the edge it heads for.
+        press(button, 600, [ [ 590, 200 ], [ 560, 400 ] ]);
         expect(triggerCommand).not.toHaveBeenCalled();
-        press(button, [ [ 90, 200 ], [ 60, 400 ], [ -300, 600 ] ]);
-        expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ] ]);
-        press(button, [ [ 120, 16 ], [ 170, 32 ] ], 8);
-        expect(triggerCommand.mock.calls).toEqual([ [ "activateNextTab" ], [ "activatePreviousTab" ] ]);
+        press(button, 900, [ [ 910, 200 ], [ 960, 400 ] ]);
+        expect(triggerCommand.mock.calls).toEqual([ [ "activatePreviousTab" ] ]);
+        press(button, 600, [ [ 590, 200 ], [ 300, 400 ] ]);
+        expect(triggerCommand).toHaveBeenLastCalledWith("activateNextTab");
+        press(button, 600, [ [ 620, 16 ], [ 670, 32 ] ], 8);
+        expect(triggerCommand).toHaveBeenLastCalledWith("activatePreviousTab");
+        expect(triggerCommand).toHaveBeenCalledTimes(3);
         expect(onTap).not.toHaveBeenCalled();
 
-        press(button, []);
+        press(button, 600, []);
         expect(onTap).toHaveBeenCalledTimes(1);
 
         const single = renderInto(<SwipeButton enabled={false} />).querySelector("button");
         if (!single) throw new Error("No button");
-        press(single, [ [ -500, 200 ] ]);
-        expect(triggerCommand).toHaveBeenCalledTimes(2);
+        press(single, 600, [ [ 100, 200 ] ]);
+        expect(triggerCommand).toHaveBeenCalledTimes(3);
         expect(onTap).toHaveBeenCalledTimes(2);
     });
 });
