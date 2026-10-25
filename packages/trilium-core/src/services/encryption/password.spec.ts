@@ -83,6 +83,24 @@ describe("password service (real DB)", () => {
             )) as Uint8Array;
             expect(Array.from(dataKeyAfter)).toEqual(Array.from(dataKeyBefore));
         });
+
+        it("lets one of two overlapping changes win and keeps what it stored usable", async () => {
+            const current = "brandNewPass-123";
+            const dataKeyBefore = (await passwordEncryptionService.getDataKey(current)) as Uint8Array;
+
+            const results = await Promise.all([ "overlapA-1", "overlapB-2" ].map((newPassword) =>
+                getContext().init(() => passwordService.changePassword(current, newPassword))
+            ));
+
+            expect(results.map((result) => result.success).sort()).toEqual([ false, true ]);
+            const winner = results[0].success ? "overlapA-1" : "overlapB-2";
+            const loser = results[0].success ? "overlapB-2" : "overlapA-1";
+
+            expect(await passwordEncryptionService.verifyPassword(winner)).toBe(true);
+            expect(await passwordEncryptionService.verifyPassword(loser)).toBe(false);
+            const dataKeyAfter = (await passwordEncryptionService.getDataKey(winner)) as Uint8Array;
+            expect(Array.from(dataKeyAfter)).toEqual(Array.from(dataKeyBefore));
+        });
     });
 
     describe("resetPassword", () => {
@@ -123,6 +141,24 @@ describe("password service (real DB)", () => {
             const dataKey = (await passwordEncryptionService.getDataKey(
                 freshPassword
             )) as Uint8Array;
+            expect(dataKey).toBeInstanceOf(Uint8Array);
+            expect(dataKey.length).toBe(16);
+        });
+
+        it("lets one of two overlapping first-time sets win and keeps what it stored usable", async () => {
+            getContext().init(() => passwordService.resetPassword());
+
+            const results = await Promise.allSettled([ "firstA-1", "firstB-2" ].map((password) =>
+                getContext().init(() => passwordService.setPassword(password))
+            ));
+
+            expect(results.map((result) => result.status).sort()).toEqual([ "fulfilled", "rejected" ]);
+            const winner = results[0].status === "fulfilled" ? "firstA-1" : "firstB-2";
+            const loser = results[0].status === "fulfilled" ? "firstB-2" : "firstA-1";
+
+            expect(await passwordEncryptionService.verifyPassword(winner)).toBe(true);
+            expect(await passwordEncryptionService.verifyPassword(loser)).toBe(false);
+            const dataKey = (await passwordEncryptionService.getDataKey(winner)) as Uint8Array;
             expect(dataKey).toBeInstanceOf(Uint8Array);
             expect(dataKey.length).toBe(16);
         });
