@@ -57,7 +57,7 @@
     "react-window": "2.4.1",
     "react-zoom-pan-pinch": "4.2.0",
     "reveal.js": "6.0.2",
-    "tabulator-tables": "6.6.1",
+    "tabulator-tables": "6.7.0",
     "temporal-polyfill": "1.0.6"
   },
   "devDependencies": {
