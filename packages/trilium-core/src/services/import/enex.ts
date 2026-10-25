@@ -69,6 +69,9 @@ let resource: Resource;
 let task: EnexTask;
 
 async function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote): Promise<BNote> {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     // Imported dynamically so sax's module initialization is deferred to the first ENEX import
     // rather than running at server startup (enex.ts is otherwise in the eager route graph).
     const sax = (await import("sax")).default;
@@ -83,7 +86,7 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
         content: "",
         type: "text",
         mime: "text/html",
-        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+        isProtected
     }).note;
 
     // Root created; keep the imported notes in their ENEX order under an inherited #newNotesOnTop (the root
@@ -279,7 +282,7 @@ async function importEnex(taskContext: TaskContext<"importNotes">, file: File, p
             utcDateCreated,
             type: "text",
             mime: "text/html",
-            isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+            isProtected
         }).note;
 
         /* v8 ignore next -- the note object is created with an attributes array on <note>, so the [] fallback is unreachable */

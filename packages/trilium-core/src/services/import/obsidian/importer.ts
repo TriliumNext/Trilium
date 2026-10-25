@@ -65,11 +65,14 @@ interface VaultNote {
 }
 
 async function importObsidian(taskContext: TaskContext<"importNotes">, source: ZipSource, importRootNote: BNote, fileName?: string): Promise<BNote> {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = !!(importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable());
     const { notes, attachments, types, vaultRoot } = await parseVault(source);
     taskContext.setTotalCount(notes.length);
     const renderedNotes = await renderNotes(notes);
 
-    return createNotes(importRootNote, notes, renderedNotes, attachments, types, vaultTitle(vaultRoot, fileName), taskContext);
+    return createNotes(importRootNote, notes, renderedNotes, attachments, types, vaultTitle(vaultRoot, fileName), isProtected, taskContext);
 }
 
 /**
@@ -147,10 +150,7 @@ async function parseVault(source: ZipSource): Promise<{ notes: VaultNote[]; atta
  * container note for its folder (created on demand by {@link ensureFolder}, so a folder note exists before
  * its children), with its Markdown rendered to HTML. Returns the import root.
  */
-function createNotes(importRootNote: BNote, notes: VaultNote[], renderedNotes: Map<VaultNote, string>, attachments: Map<string, Uint8Array>, types: Map<string, string>, rootTitle: string, taskContext: TaskContext<"importNotes">): BNote {
-    /* v8 ignore next -- the protected branch needs a protected import root with an active protected session, which the in-memory test DB has no way to set up */
-    const isProtected = !!(importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable());
-
+function createNotes(importRootNote: BNote, notes: VaultNote[], renderedNotes: Map<VaultNote, string>, attachments: Map<string, Uint8Array>, types: Map<string, string>, rootTitle: string, isProtected: boolean, taskContext: TaskContext<"importNotes">): BNote {
     const rootNote = noteService.createNewNote({ parentNoteId: importRootNote.noteId, title: rootTitle, content: "", type: "text", mime: "text/html", isProtected }).note;
     rootNote.addLabel("iconClass", "bx bx-import");
 

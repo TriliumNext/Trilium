@@ -79,6 +79,9 @@ interface ImportZipOpts {
 }
 
 async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSource, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     /** maps from original noteId (in ZIP file) to newly generated noteId */
     const noteIdMap: Record<string, string> = {};
     /** type maps from original attachmentId (in ZIP file) to newly generated attachmentId */
@@ -343,7 +346,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
             prefix: noteMeta?.prefix || "",
             isExpanded: !!noteMeta?.isExpanded,
             notePosition: noteMeta && firstNote ? noteMeta.notePosition : undefined,
-            isProtected: importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+            isProtected
         });
 
         createdNoteIds.add(note.noteId);
@@ -678,8 +681,6 @@ async function importZip(taskContext: TaskContext<"importNotes">, source: ZipSou
         content = processNoteContent(noteMeta, type, mime, content, filePath);
 
         let note = becca.getNote(noteId);
-
-        const isProtected = importRootNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
 
         if (note) {
             // only skeleton was created because of altered order of cloned notes in ZIP, we need to update

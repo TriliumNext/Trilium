@@ -234,6 +234,9 @@ function convertTextToHtml(text: string) {
 }
 
 async function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
 
     const markdownContent = processStringOrBuffer(file.buffer);
@@ -253,7 +256,7 @@ async function importMarkdown(taskContext: TaskContext<"importNotes">, file: Fil
         content: htmlContent,
         type: "text",
         mime: "text/html",
-        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+        isProtected
     });
 
     for (const attribute of attributes) {
@@ -266,6 +269,9 @@ async function importMarkdown(taskContext: TaskContext<"importNotes">, file: Fil
 }
 
 async function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
+    // Decided before the first await: a protected session that closes during the conversions then
+    // fails the save instead of storing the content unprotected.
+    const isProtected = parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable();
     let content = processStringOrBuffer(file.buffer);
 
     // Try to get title from HTML first, fall back to filename
@@ -285,7 +291,7 @@ async function importHtml(taskContext: TaskContext<"importNotes">, file: File, p
         content,
         type: "text",
         mime: "text/html",
-        isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
+        isProtected
     });
 
     taskContext.increaseProgressCount();
