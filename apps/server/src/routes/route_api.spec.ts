@@ -1,8 +1,10 @@
-import { cls, NotFoundError } from "@triliumnext/core";
+import { cls, getLog, NotFoundError } from "@triliumnext/core";
 import express from "express";
 import { existsSync } from "fs";
+import http, { type Server } from "http";
+import type { AddressInfo } from "net";
 import request from "supertest";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
     apiResultHandler,
@@ -344,5 +346,54 @@ describe("internalRoute without a result handler", () => {
         const res = await request(app).get("/no-handler/reject-http").timeout(2000).expect(404);
 
         expect(res.body).toEqual({ message: "missing" });
+    });
+});
+
+describe("internalRoute response delivery", () => {
+    let server: Server;
+    let port: number;
+
+    beforeAll(async () => {
+        route("get", "/delivery/large", [], () => ({ payload: "x".repeat(64 * 1024 * 1024) }), apiResultHandler);
+        route("get", "/delivery/small", [], () => ({ ok: true }), apiResultHandler);
+
+        const app = express();
+        app.use(router);
+        server = app.listen(0);
+        await new Promise((resolve) => server.once("listening", resolve));
+        port = (server.address() as AddressInfo).port;
+    });
+
+    afterAll(() => {
+        server.close();
+    });
+
+    it("logs a client that disconnects before the response is delivered", async () => {
+        const info = vi.spyOn(getLog(), "info");
+
+        await new Promise<void>((resolve, reject) => {
+            const req = http.get({ port, path: "/delivery/large?logMarkerId=m1" }, (res) => {
+                res.once("data", () => {
+                    req.destroy();
+                    resolve();
+                });
+            });
+            req.on("error", (e: NodeJS.ErrnoException) => e.code === "ECONNRESET" ? resolve() : reject(e));
+        });
+
+        await vi.waitFor(() => expect(info).toHaveBeenCalledWith(expect.stringMatching(
+            /^Aborted 200 GET \/delivery\/large\?logMarkerId=m1 after \d+ms: the client disconnected before receiving the \d+-byte response$/
+        )));
+        info.mockRestore();
+    });
+
+    it("logs nothing extra for a response the client receives in full", async () => {
+        const info = vi.spyOn(getLog(), "info");
+
+        await request(server).get("/delivery/small").expect(200);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        expect(info.mock.calls.flat().some((line) => String(line).startsWith("Aborted"))).toBe(false);
+        info.mockRestore();
     });
 });

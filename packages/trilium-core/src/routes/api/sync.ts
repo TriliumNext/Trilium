@@ -158,7 +158,9 @@ function getChanged(req: Request) {
     }
 
     let lastEntityChangeId = parseInt(req.query.lastEntityChangeId);
+    const requestedEntityChangeId = lastEntityChangeId;
     const clientInstanceId = req.query.instanceId;
+    const logMarkerId = typeof req.query.logMarkerId === "string" ? req.query.logMarkerId : "?";
 
     // Optional per-client limit: blob rows whose content exceeds this many bytes are served with
     // empty content (a stub). Only clients that opt in (currently mobile) send it; the entity_change
@@ -227,10 +229,6 @@ function getChanged(req: Request) {
         }
     }
 
-    if (entityChangeRecords.length > 0) {
-        getLog().info(`Returning ${entityChangeRecords.length} entity changes in ${Date.now() - startTime}ms`);
-    }
-
     // `outstandingPullCount` is a progress estimate returned on every pull request. Counting with
     // only `isSynced` + `id` is an index-only range scan on IDX_entity_changes_isSynced_id; adding
     // an `instanceId != ?` filter (instanceId is not in the index) forces a table lookup per row,
@@ -248,6 +246,12 @@ function getChanged(req: Request) {
             AND id > ?`,
         [lastEntityChangeId]
     );
+
+    if (entityChangeRecords.length > 0) {
+        getLog().info(`Sync ${logMarkerId}: returning ${entityChangeRecords.length} entity changes `
+            + `after entity change ${requestedEntityChangeId} (~${estimatedResponseBytes} bytes, `
+            + `${outstandingPullCount} outstanding) in ${Date.now() - startTime}ms`);
+    }
 
     return {
         entityChanges: entityChangeRecords,

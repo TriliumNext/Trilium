@@ -131,6 +131,16 @@ function handleResponse(resultHandler: ApiResultHandler, req: express.Request, r
 
     const responseLength = resultHandler(req, res, result);
     getLog().request(req, res, Date.now() - start, responseLength);
+
+    // The request log above measures only the handler, so a client that times out during the
+    // transfer would otherwise leave nothing but a successful entry behind.
+    res.once("close", () => {
+        if (!res.writableFinished) {
+            const elapsedMs = Date.now() - start;
+            getLog().info(`Aborted ${res.statusCode} ${req.method} ${req.url} after ${elapsedMs}ms: `
+                + `the client disconnected before receiving the ${responseLength}-byte response`);
+        }
+    });
 }
 
 function handleException(e: unknown | Error, method: HttpMethod, path: string, res: express.Response) {

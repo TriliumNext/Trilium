@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import consistencyChecksService from "../../services/consistency_checks";
 import entityChangesService from "../../services/entity_changes";
+import { getLog } from "../../services/log";
 import optionService from "../../services/options";
 import { getSql } from "../../services/sql/index";
 import sqlInit from "../../services/sql_init";
@@ -155,6 +156,19 @@ describe("Sync API (core)", () => {
             expect(Array.isArray(res.body.entityChanges)).toBe(true);
             expect(res.body.entityChanges.length).toBeGreaterThan(0);
             expect(typeof res.body.outstandingPullCount).toBe("number");
+        });
+
+        it("logs the returned changes under the client's log marker", async () => {
+            const info = vi.spyOn(getLog(), "info");
+
+            const res = await api.get("/api/sync/changed", {
+                query: { instanceId: "someOtherInstance", lastEntityChangeId: "0", logMarkerId: "marker1234" }
+            });
+
+            expect(res.status).toBe(200);
+            expect(info).toHaveBeenCalledWith(expect.stringMatching(
+                /^Sync marker1234: returning \d+ entity changes after entity change 0 \(~\d+ bytes, \d+ outstanding\) in \d+ms$/
+            ));
         });
 
         it("advances past batches that are fully filtered out by instanceId", async () => {
