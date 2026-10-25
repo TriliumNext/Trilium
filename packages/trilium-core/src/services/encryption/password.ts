@@ -1,4 +1,5 @@
 import type { ChangePasswordResponse } from "@triliumnext/commons";
+import { t } from "i18next";
 import events from "../events.js";
 import options from "../options.js";
 import protectedSessionService from "../protected_session.js";
@@ -63,7 +64,7 @@ export async function changePassword(
         if (PASSWORD_OPTIONS.some((name) => now[name] !== stored[name])) {
             return {
                 success: false,
-                message: "The password was changed by another request at the same time"
+                message: t("password.changed-concurrently")
             };
         }
 

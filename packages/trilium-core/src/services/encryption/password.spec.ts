@@ -98,6 +98,9 @@ describe("password service (real DB)", () => {
             ));
 
             expect(results.map((result) => result.success).sort()).toEqual([ false, true ]);
+            expect(results.find((result) => !result.success)?.message).toBe(
+                "The password was changed somewhere else at the same time. Enter the current password and try again."
+            );
             const winner = results[0].success ? "overlapA-1" : "overlapB-2";
             const loser = results[0].success ? "overlapB-2" : "overlapA-1";
 
