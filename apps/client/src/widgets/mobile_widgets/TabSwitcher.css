@@ -18,6 +18,7 @@
 }
 
 html[data-tab-slide] {
+    --tab-slide-gap: 12px;
     view-transition-name: none;
 
     #mobile-rest-container {
@@ -27,6 +28,10 @@ html[data-tab-slide] {
     /* Named so it paints over the sliding content, which runs under it on iOS. */
     #mobile-bottom-bar {
         view-transition-name: tab-launch-bar;
+    }
+
+    &::view-transition-group(tab-content) {
+        background: color-mix(in srgb, var(--main-text-color) 20%, var(--main-background-color));
     }
 
     &::view-transition-old(tab-content),
@@ -48,10 +53,10 @@ html[data-tab-slide="right"] {
     &::view-transition-new(tab-content) { animation-name: tab-slide-in-from-left; }
 }
 
-@keyframes tab-slide-out-left { to { transform: translateX(-100%); } }
-@keyframes tab-slide-in-from-right { from { transform: translateX(100%); } }
-@keyframes tab-slide-out-right { to { transform: translateX(100%); } }
-@keyframes tab-slide-in-from-left { from { transform: translateX(-100%); } }
+@keyframes tab-slide-out-left { to { transform: translateX(calc(-100% - var(--tab-slide-gap))); } }
+@keyframes tab-slide-in-from-right { from { transform: translateX(calc(100% + var(--tab-slide-gap))); } }
+@keyframes tab-slide-out-right { to { transform: translateX(calc(100% + var(--tab-slide-gap))); } }
+@keyframes tab-slide-in-from-left { from { transform: translateX(calc(-100% - var(--tab-slide-gap))); } }
 
 .modal.tab-bar-modal {
     .modal-dialog {
