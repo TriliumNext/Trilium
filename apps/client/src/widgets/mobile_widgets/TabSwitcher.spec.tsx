@@ -125,9 +125,11 @@ describe("tab swipe", () => {
     it("switches tabs on a swipe anywhere on a launch bar that fits, whose click then is not a tap", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
         const tabManager = appContext.tabManager;
-        const fakeContext = (ntxId: string) => ({ ntxId }) as NoteContext;
+        const tabs = [ "a", "b", "c" ].map((ntxId) => ({ ntxId }) as NoteContext);
+        let activeNtxId = "b";
         appContext.tabManager = {
-            getMainNoteContexts: () => [ fakeContext("a"), fakeContext("b") ]
+            getMainNoteContexts: () => tabs,
+            getActiveMainContext: () => tabs.find((tab) => tab.ntxId === activeNtxId)
         } as unknown as typeof appContext.tabManager;
         const onTap = vi.fn();
         function LaunchBar() {
@@ -173,6 +175,13 @@ describe("tab swipe", () => {
         press(button, 600, []);
         expect(onTap).toHaveBeenCalledTimes(1);
 
+        // The first tab has no tab before it, and the swipe toward one is not a tap either.
+        activeNtxId = "a";
+        press(button, 900, [ [ 910, 200 ], [ 960, 400 ] ]);
+        expect(triggerCommand).toHaveBeenCalledTimes(3);
+        expect(onTap).toHaveBeenCalledTimes(1);
+        activeNtxId = "b";
+
         // A bar with more launchers than fit scrolls sideways instead.
         const scroller = button.parentElement;
         if (!scroller) throw new Error("No container");
@@ -189,8 +198,10 @@ describe("tab swipe", () => {
     it("ends a swipe released off the launch bar, and one still running as the bar unmounts", () => {
         const triggerCommand = vi.spyOn(appContext, "triggerCommand").mockResolvedValue(undefined);
         const tabManager = appContext.tabManager;
+        const tabs = [ { ntxId: "a" }, { ntxId: "b" } ];
         appContext.tabManager = {
-            getMainNoteContexts: () => [ { ntxId: "a" }, { ntxId: "b" } ]
+            getMainNoteContexts: () => tabs,
+            getActiveMainContext: () => tabs[0]
         } as unknown as typeof appContext.tabManager;
         function LaunchBar() {
             const containerRef = useRef<HTMLDivElement>(null);

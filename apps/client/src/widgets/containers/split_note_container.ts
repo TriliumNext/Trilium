@@ -4,6 +4,7 @@ import NoteContext from "../../components/note_context.js";
 import splitService from "../../services/resizer.js";
 import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
+import { getTabToward } from "../mobile_widgets/tab_swipe.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import FlexContainer from "./flex_container.js";
 
@@ -399,13 +400,7 @@ function recursiveCleanup(widget: Component) {
     }
 }
 
-/** The tabs before and after the active one, around the ends. */
+/** The tabs before and after the active one, which a swipe on mobile leads to. */
 function getNeighbourTabs() {
-    const tabs = appContext.tabManager.getMainNoteContexts();
-    const index = tabs.findIndex((tab) => tab.ntxId === appContext.tabManager.getActiveMainContext()?.ntxId);
-    if (index < 0 || tabs.length < 2) return [];
-
-    const next = tabs[(index + 1) % tabs.length];
-    const previous = tabs[(index - 1 + tabs.length) % tabs.length];
-    return next === previous ? [ next ] : [ next, previous ];
+    return [ getTabToward("next"), getTabToward("previous") ].filter((tab) => !!tab);
 }

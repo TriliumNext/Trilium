@@ -211,6 +211,14 @@ export function isTabSwipeActive() {
     return !!activeTransition || !!activeSplitSlide;
 }
 
+/** The tab next to the active one toward `direction`, if the active one is not the last that way. */
+export function getTabToward(direction: SwipeDirection) {
+    const tabs = appContext.tabManager.getMainNoteContexts();
+    const index = tabs.findIndex((tab) => tab.ntxId === appContext.tabManager.getActiveMainContext()?.ntxId);
+    if (index < 0) return;
+    return tabs[index + (direction === "next" ? 1 : -1)];
+}
+
 /**
  * The splits to slide toward the tab `direction` leads to, on the note screen of a phone: both tabs
  * must show their note in a single split, and the incoming one must have been rendered.
@@ -218,12 +226,9 @@ export function isTabSwipeActive() {
 function findSplitSlide(direction: SwipeDirection): SplitSlide | undefined {
     if (!isNarrowLayout() || document.getElementById("mobile-sidebar-wrapper")?.classList.contains("show")) return;
 
-    const tabs = appContext.tabManager.getMainNoteContexts();
     const current = appContext.tabManager.getActiveMainContext();
-    const index = tabs.findIndex((tab) => tab.ntxId === current?.ntxId);
-    if (!current || index < 0 || tabs.length < 2) return;
-    const target = tabs[(index + (direction === "next" ? 1 : -1) + tabs.length) % tabs.length];
-    if (!target.ntxId || (getTabNavigation(target.ntxId)?.screen ?? "detail") !== "detail") return;
+    const target = getTabToward(direction);
+    if (!current || !target?.ntxId || (getTabNavigation(target.ntxId)?.screen ?? "detail") !== "detail") return;
     if (current.getSubContexts().length !== 1 || target.getSubContexts().length !== 1) return;
 
     const container = document.querySelector<HTMLElement>("#detail-container > .split-note-container-widget");

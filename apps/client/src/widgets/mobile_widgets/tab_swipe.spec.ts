@@ -195,6 +195,8 @@ describe("TabSwipe", () => {
         const { tabManager } = appContext;
         let startViewTransition: ReturnType<typeof vi.fn>;
         let splits: HTMLElement;
+        let tabs: NoteContext[];
+        let active: NoteContext | undefined;
 
         beforeEach(() => {
             vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
@@ -209,9 +211,10 @@ describe("TabSwipe", () => {
                 noteContext.getSubContexts = () => [ noteContext ];
                 return noteContext;
             };
-            const tabs = [ tab("first"), tab("second") ];
+            tabs = [ tab("first"), tab("second"), tab("third") ];
+            active = tabs[0];
             appContext.tabManager = {
-                getActiveMainContext: () => tabs[0],
+                getActiveMainContext: () => active,
                 getMainNoteContexts: () => tabs
             } as unknown as typeof tabManager;
 
@@ -256,6 +259,7 @@ describe("TabSwipe", () => {
         });
 
         it("runs back without switching tabs when released short, and slides the other way for the previous tab", async () => {
+            active = tabs[2];
             const swipe = new TabSwipe("previous");
             expect(document.documentElement.dataset.tabDrag).toBe("right");
             swipe.move(0.1);

@@ -168,7 +168,7 @@ describe("SplitNoteContainer", () => {
         try {
             const container = new SplitNoteContainer(() => new NoteWrapperWidget().child(<Probe />));
             container.render();
-            // The active tab, and three in the background; the last is before the first, around the end.
+            // The first tab is active: the second is next to it, and the last is not, around the end.
             const tabs = [ "first", "second", "third", "fourth" ].map((ntxId) => new NoteContext(ntxId));
             await act(async () => {
                 for (const noteContext of tabs) {
@@ -194,14 +194,13 @@ describe("SplitNoteContainer", () => {
             await act(async () => {
                 await vi.advanceTimersByTimeAsync(1000);
             });
-            expect(readProbes()).toEqual([ "first-note", "second-note", "", "fourth-note" ]);
             // Still hidden: only the active tab is shown.
             expect(container.$widget.find("[data-ntx-id=second]").hasClass("hidden-ext")).toBe(true);
 
             await act(async () => {
                 await vi.advanceTimersByTimeAsync(5000);
             });
-            expect(readProbes()[2]).toBe("");
+            expect(readProbes()).toEqual([ "first-note", "second-note", "", "" ]);
         } finally {
             vi.useRealTimers();
             window.glob.device = device;
