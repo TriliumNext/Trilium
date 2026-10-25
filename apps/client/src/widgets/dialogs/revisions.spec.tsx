@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { buildNote } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
-import { RevisionContentText, seedLinkPreviewTitles } from "./revisions";
+import { RevisionContentDiff, RevisionContentText, seedLinkPreviewTitles } from "./revisions";
 
 vi.mock("../../services/i18n", () => ({ t: (key: string) => key }));
 
@@ -97,6 +97,23 @@ describe("RevisionContentText", () => {
         const container = await renderRevision('<p>before</p><p><span class="link-mention" data-title="No URL"></span></p>');
 
         expect(container.querySelector("a.link-embed-mention")).toBeNull();
+    });
+});
+
+describe("RevisionContentDiff", () => {
+    it("marks the list items whose first paragraph is aligned", async () => {
+        const list = "<ul><li><p style=\"text-align:center;\">a</p></li><li>b</li></ul>";
+        const container = renderInto(<RevisionContentDiff
+            noteContent={`<p>before</p>${list}`}
+            itemContent={`<p>after</p>${list}`}
+            itemType="text"
+        />);
+
+        await vi.waitFor(() => {
+            const items = container.querySelectorAll(".ck-content li");
+            expect([ ...items ].map((item) => item.className))
+                .toEqual([ "trilium-list-item-aligned-center", "" ]);
+        });
     });
 });
 

@@ -8,7 +8,7 @@ import clsx from "clsx";
 import { diffWords } from "diff";
 import HtmlDiff from "htmldiff-js";
 import { type CSSProperties, Fragment } from "preact";
-import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
@@ -707,11 +707,18 @@ export function RevisionContentText({ content, noteId }: {
     return <RawHtmlBlock containerRef={contentRef} className="ck-content" html={sanitizeNoteContentHtml(content as string)} />;
 }
 
-function RevisionContentDiff({ noteContent, itemContent, itemType }: {
+export function RevisionContentDiff({ noteContent, itemContent, itemType }: {
     noteContent?: string,
     itemContent: string | Uint8Array | undefined,
     itemType: string
 }) {
+    const contentRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        if (contentRef.current) {
+            applyListItemAlignment(contentRef.current);
+        }
+    }, [ noteContent, itemContent, itemType ]);
+
     if (typeof itemContent !== "string") {
         return (
             <div className="revision-diff-content">
@@ -743,6 +750,7 @@ function RevisionContentDiff({ noteContent, itemContent, itemType }: {
     }
 
     return <SanitizedHtml
+        containerRef={contentRef}
         className={clsx("revision-diff-content", itemType === "text" ? "ck-content" : "revision-diff-code")}
         html={diffHtml}
     />;
