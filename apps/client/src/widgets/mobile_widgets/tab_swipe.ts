@@ -1,4 +1,6 @@
 import appContext, { type CommandNames } from "../../components/app_context";
+import { isNarrowLayout } from "../../services/utils";
+import { getTabNavigation } from "./tab_navigation";
 
 export type SwipeDirection = "next" | "previous";
 
@@ -16,13 +18,23 @@ const SPRING_MAX_DURATION = 1000;
 const HOLD_DURATION = 1e9;
 
 let activeTransition: ViewTransition | undefined;
+let activeSplitSlide: SplitSlide | undefined;
+
+/** The note splits of a tab switch that slides them: their container and the incoming tab's split. */
+interface SplitSlide {
+    container: HTMLElement;
+    incoming: HTMLElement;
+}
 
 /**
- * A tab switch whose slide follows the finger. The tab switches as the swipe starts, inside a view
- * transition whose animations stay paused while `move()` sets how far they have run. `release()`
- * carries them on to the other tab, or back to the first one and switches back to it, on a spring
- * that starts at the finger's speed. Without view
- * transitions, or with animations off, the tab switches on release instead.
+ * A tab switch whose slide follows the finger. `release()` carries the slide on to the other tab, or
+ * back to the first one, on a spring that starts at the finger's speed.
+ *
+ * Between the notes of two tabs on a phone, the slide moves the tabs' note splits themselves, and the
+ * tab switches once it settles on the other one. Otherwise the tab switches as the swipe starts,
+ * inside a view transition whose animations stay paused while `move()` sets how far they have run,
+ * and a slide that runs back switches back. Without view transitions, or with animations off, the
+ * tab switches on release instead.
  */
 export class TabSwipe {
     /** Which way the content slides: toward the start for the next tab. */
@@ -36,20 +48,29 @@ export class TabSwipe {
     private animations?: Animation[];
     private hold?: Animation;
     private skipped = false;
+    private splitSlide?: SplitSlide;
 
     constructor(direction: SwipeDirection) {
         this.direction = direction;
         this.slide = (direction === "next") !== glob.isRtl ? "left" : "right";
 
-        const canSlide = typeof document.startViewTransition === "function"
-            && !document.body.classList.contains("motion-disabled");
-        if (canSlide) this.#startTransition();
+        if (document.body.classList.contains("motion-disabled")) return;
+        this.splitSlide = findSplitSlide(direction);
+        if (this.splitSlide) {
+            this.#startSplitSlide(this.splitSlide);
+        } else if (typeof document.startViewTransition === "function") {
+            this.#startTransition();
+        }
     }
 
     /** Moves the slide to `progress`, from 0 (the tab the swipe started on) to 1 (the other tab). */
     move(progress: number) {
         this.progress = Math.min(1, Math.max(0, progress));
-        this.#seek();
+        if (this.splitSlide) {
+            this.#placeSplits(this.splitSlide);
+        } else {
+            this.#seek();
+        }
     }
 
     /**
@@ -59,13 +80,36 @@ export class TabSwipe {
     release(velocity: number, room = window.innerWidth) {
         this.commit = this.progress >= COMMIT_PROGRESS || velocity >= COMMIT_VELOCITY;
         this.releaseVelocity = velocity / room;
-        if (!this.transition) {
+        if (this.splitSlide) {
+            void this.#settleSplitSlide(this.splitSlide);
+        } else if (!this.transition) {
             if (this.commit) void appContext.triggerCommand(getCommand(this.direction));
         } else if (this.animations) {
             void this.#settle();
         } else if (this.skipped) {
             this.#switchBackIfCanceled();
         }
+    }
+
+    #startSplitSlide(slide: SplitSlide) {
+        activeSplitSlide = slide;
+        document.documentElement.dataset.tabDrag = this.slide;
+        slide.incoming.classList.add("tab-slide-incoming");
+    }
+
+    #placeSplits({ container }: SplitSlide) {
+        const offset = (this.slide === "left" ? -1 : 1) * this.progress;
+        container.style.transform = offset ? `translateX(calc((100% + var(--tab-slide-gap)) * ${offset}))` : "";
+    }
+
+    async #settleSplitSlide(slide: SplitSlide) {
+        await this.#spring(this.commit ? 1 : 0);
+        // The incoming split stays in place until the switch shows it in its own right.
+        if (this.commit) await appContext.triggerCommand(getCommand(this.direction));
+        slide.container.style.transform = "";
+        slide.incoming.classList.remove("tab-slide-incoming");
+        delete document.documentElement.dataset.tabDrag;
+        if (activeSplitSlide === slide) activeSplitSlide = undefined;
     }
 
     #startTransition() {
@@ -164,7 +208,28 @@ export class TabSwipe {
 
 /** Whether a swipe's slide is still running, during which another swipe does not start. */
 export function isTabSwipeActive() {
-    return !!activeTransition;
+    return !!activeTransition || !!activeSplitSlide;
+}
+
+/**
+ * The splits to slide toward the tab `direction` leads to, on the note screen of a phone: both tabs
+ * must show their note in a single split, and the incoming one must have been rendered.
+ */
+function findSplitSlide(direction: SwipeDirection): SplitSlide | undefined {
+    if (!isNarrowLayout() || document.getElementById("mobile-sidebar-wrapper")?.classList.contains("show")) return;
+
+    const tabs = appContext.tabManager.getMainNoteContexts();
+    const current = appContext.tabManager.getActiveMainContext();
+    const index = tabs.findIndex((tab) => tab.ntxId === current?.ntxId);
+    if (!current || index < 0 || tabs.length < 2) return;
+    const target = tabs[(index + (direction === "next" ? 1 : -1) + tabs.length) % tabs.length];
+    if (!target.ntxId || (getTabNavigation(target.ntxId)?.screen ?? "detail") !== "detail") return;
+    if (current.getSubContexts().length !== 1 || target.getSubContexts().length !== 1) return;
+
+    const container = document.querySelector<HTMLElement>("#detail-container > .split-note-container-widget");
+    const incoming = container?.querySelector<HTMLElement>(`:scope > [data-ntx-id="${target.ntxId}"]`);
+    if (!container || !incoming?.classList.contains("note-split") || incoming.classList.contains("empty-note")) return;
+    return { container, incoming };
 }
 
 function getCommand(direction: SwipeDirection): CommandNames {

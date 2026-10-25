@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import appContext from "../../components/app_context";
+import type NoteContext from "../../components/note_context";
+import { forgetTabs, setTabScreen } from "./tab_navigation";
 import { isTabSwipeActive, TabSwipe } from "./tab_swipe";
 
 describe("TabSwipe", () => {
@@ -187,5 +189,96 @@ describe("TabSwipe", () => {
 
         glob.isRtl = true;
         expect(new TabSwipe("next").slide).toBe("right");
+    });
+
+    describe("on the note screen of a phone", () => {
+        const { tabManager } = appContext;
+        let startViewTransition: ReturnType<typeof vi.fn>;
+        let splits: HTMLElement;
+
+        beforeEach(() => {
+            vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+                matches: true, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn()
+            }) as unknown as MediaQueryList);
+            const pending = new Promise<void>(() => {});
+            startViewTransition = vi.fn(() => ({ ready: pending, finished: pending }));
+            document.startViewTransition = startViewTransition as unknown as typeof document.startViewTransition;
+
+            const tab = (ntxId: string) => {
+                const noteContext = { ntxId } as NoteContext;
+                noteContext.getSubContexts = () => [ noteContext ];
+                return noteContext;
+            };
+            const tabs = [ tab("first"), tab("second") ];
+            appContext.tabManager = {
+                getActiveMainContext: () => tabs[0],
+                getMainNoteContexts: () => tabs
+            } as unknown as typeof tabManager;
+
+            document.body.innerHTML = `
+                <div id="mobile-rest-container">
+                    <div id="mobile-sidebar-wrapper"></div>
+                    <div id="detail-container"><div class="split-note-container-widget">
+                        <div class="note-split visible" data-ntx-id="first"></div>
+                        <div class="note-split hidden-ext" data-ntx-id="second"></div>
+                    </div></div>
+                </div>`;
+            const container = document.querySelector<HTMLElement>(".split-note-container-widget");
+            if (!container) throw new Error("expected the splits");
+            splits = container;
+        });
+
+        afterEach(() => {
+            appContext.tabManager = tabManager;
+            forgetTabs([ "second" ]);
+            document.body.innerHTML = "";
+        });
+
+        const incoming = () => splits.querySelector<HTMLElement>("[data-ntx-id=second]");
+
+        it("slides the two tabs' notes, and switches tabs only once the slide settles", async () => {
+            const swipe = new TabSwipe("next");
+            expect(startViewTransition).not.toHaveBeenCalled();
+            expect(isTabSwipeActive()).toBe(true);
+            expect(document.documentElement.dataset.tabDrag).toBe("left");
+            expect(incoming()?.classList.contains("tab-slide-incoming")).toBe(true);
+
+            swipe.move(0.5);
+            expect(splits.style.transform).toBe("translateX(calc((100% + var(--tab-slide-gap)) * -0.5))");
+            expect(log).toEqual([]);
+
+            swipe.release(0.5);
+            await vi.waitFor(() => expect(isTabSwipeActive()).toBe(false));
+            expect(log).toEqual([ "activateNextTab" ]);
+            expect(splits.style.transform).toBe("");
+            expect(incoming()?.classList.contains("tab-slide-incoming")).toBe(false);
+            expect(document.documentElement.dataset.tabDrag).toBeUndefined();
+        });
+
+        it("runs back without switching tabs when released short, and slides the other way for the previous tab", async () => {
+            const swipe = new TabSwipe("previous");
+            expect(document.documentElement.dataset.tabDrag).toBe("right");
+            swipe.move(0.1);
+            expect(splits.style.transform).toBe("translateX(calc((100% + var(--tab-slide-gap)) * 0.1))");
+
+            swipe.release(0);
+            await vi.waitFor(() => expect(isTabSwipeActive()).toBe(false));
+            expect(log).toEqual([]);
+            expect(splits.style.transform).toBe("");
+            expect(incoming()?.classList.contains("tab-slide-incoming")).toBe(false);
+        });
+
+        it("keeps the view transition for a tab not shown yet, or one left on its tree", () => {
+            incoming()?.classList.add("empty-note");
+            new TabSwipe("next");
+            expect(startViewTransition).toHaveBeenCalledTimes(1);
+            expect(incoming()?.classList.contains("tab-slide-incoming")).toBe(false);
+
+            incoming()?.classList.remove("empty-note");
+            setTabScreen("second", "tree");
+            new TabSwipe("next");
+            expect(startViewTransition).toHaveBeenCalledTimes(2);
+            expect(document.documentElement.dataset.tabDrag).toBeUndefined();
+        });
     });
 });
