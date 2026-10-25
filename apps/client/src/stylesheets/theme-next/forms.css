@@ -126,7 +126,8 @@ input::selection,
 
 /* Input groups */
 
-.input-group {
+.input-group,
+:root .ck.ck-input-color {
     /* Named rather than written into the padding alone, so that a field drawing an indicator of its
        own can place it against the group's edge — which is this much further out than the field's. */
     --input-group-padding-inline-end: 8px;
@@ -140,11 +141,13 @@ input::selection,
     flex-wrap: nowrap;
 }
 
-.input-group:hover {
+.input-group:hover,
+:root .ck.ck-input-color:hover {
     background: var(--input-hover-background);
 }
 
-.input-group:focus-within {
+.input-group:focus-within,
+:root .ck.ck-input-color:focus-within {
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
     background: var(--input-focus-background);
@@ -157,7 +160,8 @@ input::selection,
 .input-group input:focus,
 .input-group .form-control,
 .input-group .form-control:hover,
-.input-group .form-control:focus {
+.input-group .form-control:focus,
+:root .ck.ck-input-color > input.ck.ck-input-text {
     /* Ignore the focus outline for the inputs that are children of an input group */
     outline: unset;
 

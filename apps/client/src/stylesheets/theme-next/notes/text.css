@@ -653,6 +653,51 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 }
 
 /*
+ * Color inputs
+ */
+
+:root .ck.ck-input-color {
+    --input-group-padding-inline-end: 0;
+    --ck-input-color-preview-border-radius: 4px;
+}
+
+:root .ck.ck-input-color > .ck.ck-dropdown > button.ck.ck-input-color__button {
+    box-shadow: none;
+    border-color: transparent;
+    background: transparent;
+}
+
+:root .ck.ck-input-color__button__preview {
+    --ck-color-input-border: transparent;
+}
+
+:root .ck.ck-input-color__button:focus-visible > .ck-input-color__button__preview {
+    outline: 2px solid var(--input-focus-outline-color);
+    outline-offset: 2px;
+}
+
+/* No color, drawn as the reset cell of ColorPicker.css */
+:root .ck.ck-input-color__button__preview:not(:has(> .ck-hidden)) {
+    background: var(--note-color-picker-clear-color-cell-background);
+
+    &::after {
+        content: "\ec8d";
+        display: flex;
+        position: absolute;
+        inset: 0;
+        justify-content: center;
+        align-items: center;
+        font-family: boxicons;
+        font-size: 16px;
+        color: var(--note-color-picker-clear-color-cell-color);
+    }
+
+    > .ck-input-color__button__preview__no-color-indicator {
+        visibility: hidden;
+    }
+}
+
+/*
  * Button groups
  */
 
