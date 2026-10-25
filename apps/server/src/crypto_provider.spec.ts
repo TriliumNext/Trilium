@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { describe, expect, it } from "vitest";
 
 import NodejsCryptoProvider from "./crypto_provider.js";
@@ -52,5 +53,29 @@ describe("NodejsCryptoProvider base64", () => {
     it("returns empty for empty input", () => {
         expect(provider.base64Encode(new Uint8Array(0))).toBe("");
         expect(provider.base64Decode("")).toHaveLength(0);
+    });
+});
+
+describe("NodejsCryptoProvider scrypt", () => {
+    it("derives the same key as scryptSync", async () => {
+        const options = { N: 1024, r: 8, p: 1 };
+        const expected = crypto.scryptSync("password", "salt", 32, options);
+        const derived = await provider.scrypt("password", "salt", 32, options);
+
+        expect(derived).toBeInstanceOf(Uint8Array);
+        expect(Array.from(derived)).toEqual(Array.from(expected));
+
+        const bytes = await provider.scrypt(new TextEncoder().encode("password"), new TextEncoder().encode("salt"), 32, options);
+        expect(Array.from(bytes)).toEqual(Array.from(expected));
+    });
+
+    it("leaves the event loop free while it derives", async () => {
+        let immediateRan = false;
+        const derivation = provider.scrypt("password", "salt", 64).then(() => immediateRan);
+        setImmediate(() => {
+            immediateRan = true;
+        });
+
+        expect(await derivation).toBe(true);
     });
 });
