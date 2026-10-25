@@ -52,7 +52,7 @@ vi.mock("../../react/hooks", async (importOriginal) => ({
 
 vi.mock("./components/OptionsPageHeader", () => ({ default: () => <div className="header-stub" /> }));
 
-import OtherSettings from "./other";
+import OtherSettings, { getSearchEngineChoice } from "./other";
 
 let host: HTMLElement;
 
@@ -86,25 +86,70 @@ function open() {
 const button = (name: string) => host.querySelector<HTMLButtonElement>(`button[name='${name}']`);
 
 describe("the search engine settings", () => {
-    it("marks the engine currently in use, and takes both its name and its address when one is picked", () => {
-        mocks.stored = { ...mocks.stored, customSearchEngineUrl: "https://www.google.com/search?q={keyword}" };
+    const engine = () => host.querySelector<HTMLSelectElement>(".search-engine-choice select");
+    const urlBox = () => host.querySelector<HTMLInputElement>("input[type='url']");
+    function choose(value: string) {
+        const select = engine();
+        expect(select).not.toBeNull();
+        act(() => {
+            if (!select) return;
+            select.value = value;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+    }
+
+    it("offers none, the presets and custom, picking the entry from the stored URL", () => {
         open();
+        expect([ ...engine()?.options ?? [] ].map((option) => option.text)).toEqual([
+            "search_engine.none", "search_engine.duckduckgo", "search_engine.bing",
+            "search_engine.baidu", "search_engine.google", "search_engine.custom"
+        ]);
+        expect(urlBox()).toBeNull();
 
-        const chips = [ ...host.querySelectorAll(".search-engine-templates .ext-badge") ];
-        expect(chips).toHaveLength(5);
-        expect(chips.filter((chip) => chip.className.includes("selected"))).toHaveLength(1);
-
-        act(() => (chips[0] as HTMLElement).click());
-        expect(mocks.saved.map(([ name ]) => name)).toEqual([ "customSearchEngineName", "customSearchEngineUrl" ]);
+        // An empty URL is DuckDuckGo, as the context menu falls back to it.
+        expect(getSearchEngineChoice("")).toBe("https://duckduckgo.com/?q={keyword}");
+        expect(getSearchEngineChoice("none")).toBe("none");
+        expect(getSearchEngineChoice("https://www.bing.com/search?q={keyword}"))
+            .toBe("https://www.bing.com/search?q={keyword}");
+        expect(getSearchEngineChoice("https://example.com/?s={keyword}")).toBe("custom");
     });
 
-    it("turns the web search off with the none preset", () => {
+    it("stores the name and address of a preset, and the sentinel for none", () => {
         open();
-        const none = host.querySelector(".search-engine-templates .ext-badge:last-child");
-        expect(none?.textContent).toBe("search_engine.none");
 
-        act(() => (none as HTMLElement).click());
-        expect(mocks.saved).toEqual([ [ "customSearchEngineName", "" ], [ "customSearchEngineUrl", "none" ] ]);
+        choose("https://www.google.com/search?q={keyword}");
+        choose("none");
+        expect(mocks.saved).toEqual([
+            [ "customSearchEngineName", "search_engine.google" ],
+            [ "customSearchEngineUrl", "https://www.google.com/search?q={keyword}" ],
+            [ "customSearchEngineName", "" ],
+            [ "customSearchEngineUrl", "none" ]
+        ]);
+    });
+
+    it("shows the name and URL fields only for a custom engine", () => {
+        const store = (url: string) => {
+            mocks.stored = { ...mocks.stored, customSearchEngineUrl: url };
+        };
+        store("https://example.com/?s={keyword}");
+        open();
+        expect(urlBox()?.type).toBe("url");
+        expect(urlBox()?.value).toBe("https://example.com/?s={keyword}");
+
+        // Switching from a preset keeps its values to edit; from none, it clears the sentinel.
+        store("https://www.bing.com/search?q={keyword}");
+        open();
+        choose("custom");
+        expect(urlBox()).not.toBeNull();
+        expect(mocks.saved).toEqual([]);
+
+        store("none");
+        open();
+        choose("custom");
+        expect(mocks.saved).toEqual([
+            [ "customSearchEngineName", "" ],
+            [ "customSearchEngineUrl", "" ]
+        ]);
     });
 });
 
