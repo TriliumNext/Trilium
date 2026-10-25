@@ -2,7 +2,10 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // All mutable mock state lives in a hoisted holder so the (hoisted) vi.mock
 // factory below can reference it.
-const h = vi.hoisted(() => ({ triggerCommand: vi.fn() }));
+const h = vi.hoisted(() => ({
+    triggerCommand: vi.fn(),
+    options: {} as Record<string, string>
+}));
 
 vi.mock("../components/app_context.js", () => ({
     default: { triggerCommand: h.triggerCommand }
@@ -16,7 +19,9 @@ vi.mock("../services/block_reference.js", () => ({
 }));
 vi.mock("../services/clipboard_ext.js", () => ({ copyHtml: vi.fn(), copyTextWithToast: vi.fn() }));
 vi.mock("../services/i18n.js", () => ({ t: (key: string) => key }));
-vi.mock("../services/options.js", () => ({ default: { get: () => "" } }));
+vi.mock("../services/options.js", () => ({
+    default: { get: (name: string) => h.options[name] ?? "" }
+}));
 vi.mock("../services/server.js", () => ({ default: { post: vi.fn() } }));
 vi.mock("../services/utils.js", () => ({
     default: { escapeHtml: (s: string) => s, isMac: () => false },
@@ -161,6 +166,7 @@ function submenu(items: MenuItem<any>[], title: string): MenuItem<any>[] {
 describe("buildNoteContextMenuItems", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        h.options = {};
     });
 
     it("offers copy, copy-as-markdown and the search rows for a plain selection", async () => {
@@ -269,6 +275,23 @@ describe("buildNoteContextMenuItems", () => {
         expect(h.triggerCommand).toHaveBeenCalledWith("searchNotes", {
             searchString: "trilium notes"
         });
+    });
+
+    it("searches with the configured engine, and leaves the web search out when it is none", async () => {
+        const host = browserLikeHost();
+        h.options = {
+            customSearchEngineName: "Google",
+            customSearchEngineUrl: "https://www.google.com/search?q={keyword}"
+        };
+        run(await build({ selectionText: "trilium" }, host), "electron_context_menu.search_online");
+        expect(host.openExternal).toHaveBeenCalledWith("https://www.google.com/search?q=trilium");
+
+        h.options = { customSearchEngineName: "", customSearchEngineUrl: "none" };
+        expect(titles(await build())).toEqual([
+            "electron_context_menu.copy",
+            "---",
+            "electron_context_menu.search_in_trilium"
+        ]);
     });
 
     it("puts the text tools of a code editor below the clipboard rows", async () => {

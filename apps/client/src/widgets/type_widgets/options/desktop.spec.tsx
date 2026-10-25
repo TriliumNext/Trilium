@@ -121,10 +121,19 @@ describe("the search engine settings", () => {
         open();
 
         const chips = [ ...host.querySelectorAll(".search-engine-templates .ext-badge") ];
-        expect(chips).toHaveLength(4);
+        expect(chips).toHaveLength(5);
         expect(chips.filter((chip) => chip.className.includes("selected"))).toHaveLength(1);
 
         act(() => (chips[0] as HTMLElement).click());
         expect(mocks.saved.map(([ name ]) => name)).toEqual([ "customSearchEngineName", "customSearchEngineUrl" ]);
+    });
+
+    it("turns the web search off with the none preset", () => {
+        open();
+        const none = host.querySelector(".search-engine-templates .ext-badge:last-child");
+        expect(none?.textContent).toBe("search_engine.none");
+
+        act(() => (none as HTMLElement).click());
+        expect(mocks.saved).toEqual([ [ "customSearchEngineName", "" ], [ "customSearchEngineUrl", "none" ] ]);
     });
 });

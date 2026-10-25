@@ -13,6 +13,9 @@ import { splitMenuItem } from "./context_menu_utils.js";
 import { buildTableContextMenuSections, hasTableCellSelection } from "./table_context_menu.js";
 import { buildAiActionsMenuItem, getTextEditorAtSelection } from "./text_editor_context_menu.js";
 
+/** The `customSearchEngineUrl` that turns off searching the web from the context menu. */
+export const NO_SEARCH_ENGINE = "none";
+
 /** What the pointer was over when the menu was summoned. */
 export interface ContextMenuTarget {
     /** URL of the link under the pointer, or an empty string. */
@@ -265,30 +268,20 @@ export async function buildNoteContextMenuItems(
             ? `${selectionText.slice(0, 13)}…`
             : selectionText;
 
-        const customSearchEngineName = options.get("customSearchEngineName");
-        const customSearchEngineUrl = options.get("customSearchEngineUrl") as string;
-        let searchEngineName;
-        let searchEngineUrl;
-        if (customSearchEngineName && customSearchEngineUrl) {
-            searchEngineName = customSearchEngineName;
-            searchEngineUrl = customSearchEngineUrl;
-        } else {
-            searchEngineName = "DuckDuckGo";
-            searchEngineUrl = "https://duckduckgo.com/?q={keyword}";
-        }
-
-        const searchUrl = searchEngineUrl.replace("{keyword}", encodeURIComponent(selectionText));
-
         items.push({ kind: "separator" });
 
-        items.push({
-            title: t("electron_context_menu.search_online", {
-                term: utils.escapeHtml(shortenedSelection),
-                searchEngine: utils.escapeHtml(searchEngineName)
-            }),
-            uiIcon: "bx bx-search-alt",
-            handler: () => host.openExternal(searchUrl)
-        });
+        const searchEngine = getSearchEngine();
+        if (searchEngine) {
+            const searchUrl = searchEngine.url.replace("{keyword}", encodeURIComponent(selectionText));
+            items.push({
+                title: t("electron_context_menu.search_online", {
+                    term: utils.escapeHtml(shortenedSelection),
+                    searchEngine: utils.escapeHtml(searchEngine.name)
+                }),
+                uiIcon: "bx bx-search-alt",
+                handler: () => host.openExternal(searchUrl)
+            });
+        }
 
         items.push({
             title: t("electron_context_menu.search_in_trilium", { term: utils.escapeHtml(shortenedSelection) }),
@@ -300,6 +293,14 @@ export async function buildNoteContextMenuItems(
     }
 
     return items;
+}
+
+function getSearchEngine(): { name: string; url: string } | null {
+    const name = options.get("customSearchEngineName");
+    const url = options.get("customSearchEngineUrl");
+    if (url === NO_SEARCH_ENGINE) return null;
+    if (name && url) return { name, url };
+    return { name: "DuckDuckGo", url: "https://duckduckgo.com/?q={keyword}" };
 }
 
 /**

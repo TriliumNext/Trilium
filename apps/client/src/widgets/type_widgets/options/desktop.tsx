@@ -2,6 +2,7 @@ import "./desktop.css";
 
 import { useMemo } from "preact/hooks";
 
+import { NO_SEARCH_ENGINE } from "../../../menus/note_context_menu";
 import { t } from "../../../services/i18n";
 import utils, { isElectron } from "../../../services/utils";
 import { Badge } from "../../react/Badge";
@@ -124,7 +125,8 @@ function SearchEngineSettings() {
             { url: "https://duckduckgo.com/?q={keyword}", name: t("search_engine.duckduckgo") },
             { url: "https://www.bing.com/search?q={keyword}", name: t("search_engine.bing"), icon: "bx bxl-bing" },
             { url: "https://www.baidu.com/s?wd={keyword}", name: t("search_engine.baidu"), icon: "bx bxl-baidu" },
-            { url: "https://www.google.com/search?q={keyword}", name: t("search_engine.google"), icon: "bx bxl-google" }
+            { url: "https://www.google.com/search?q={keyword}", name: t("search_engine.google"), icon: "bx bxl-google" },
+            { url: NO_SEARCH_ENGINE, name: "", label: t("search_engine.none"), icon: "bx bx-block" }
         ];
     }, []);
 
@@ -139,7 +141,7 @@ function SearchEngineSettings() {
                         <Badge
                             key={engine.url}
                             icon={engine.icon}
-                            text={engine.name}
+                            text={engine.label ?? engine.name}
                             className={customSearchEngineUrl === engine.url ? "selected" : ""}
                             onClick={() => {
                                 setCustomSearchEngineName(engine.name);
