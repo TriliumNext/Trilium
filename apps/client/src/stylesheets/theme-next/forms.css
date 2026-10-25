@@ -308,8 +308,9 @@ select.form-control:focus,
 .select-button.dropdown-toggle.btn:focus,
 .select-button.focus-outline:focus,
 :root .ck.ck-labeled-field-view__input-wrapper > .ck.ck-dropdown
-    > button.ck.ck-dropdown__button:focus,
-:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown > button.ck.ck-dropdown__button:focus {
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on),
+:root .ck.ck-emoji__skin-tone > .ck.ck-dropdown
+    > button.ck.ck-dropdown__button:is(:focus, .ck-on) {
     box-shadow: unset;
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
