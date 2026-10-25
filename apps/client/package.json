@@ -62,7 +62,7 @@
     "preact": "11.0.1",
     "qrcode-generator": "2.0.4",
     "react-i18next": "17.1.0",
-    "react-window": "2.4.1",
+    "react-window": "2.5.0",
     "react-zoom-pan-pinch": "4.2.0",
     "reveal.js": "6.0.2",
     "rrule": "2.8.1",
