@@ -190,7 +190,7 @@ function useTabSwipe() {
             if (!gesture?.swipe) return;
 
             const isFlick = e.type === "pointerup" && e.timeStamp - gesture.lastTime <= FLICK_WINDOW;
-            gesture.swipe.release(isFlick ? gesture.velocity : 0);
+            gesture.swipe.release(isFlick ? gesture.velocity : 0, gesture.room);
         },
         takeSwipe() {
             const swiped = swipedRef.current;

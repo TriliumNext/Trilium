@@ -12,8 +12,11 @@ describe("TabSwipe", () => {
         vi.spyOn(appContext, "triggerCommand").mockImplementation(async (name) => {
             log.push(name);
         });
+        let now = 0;
         vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-            callback(0);
+            now += 16;
+            const time = now;
+            setTimeout(() => callback(time));
             return 0;
         });
     });
@@ -28,20 +31,30 @@ describe("TabSwipe", () => {
     /** A view transition whose slide animates the content's two sides and is held open by `TabSwipe`. */
     function fakeTransition({ skipped = false } = {}) {
         const root = document.documentElement;
-        const animation = (target: Element, pseudoElement: string) => ({
-            currentTime: 0,
-            playbackRate: 1,
-            paused: false,
-            effect: { target, pseudoElement, getComputedTiming: () => ({ duration: 250 }) },
-            pause() {
-                this.paused = true;
-            },
-            play() {
-                this.paused = false;
-                this.currentTime = this.playbackRate > 0 ? 250 : 0;
-            },
-            finished: Promise.resolve()
-        });
+        const animation = (target: Element, pseudoElement: string) => {
+            let currentTime = 0;
+            return {
+                /** Every position the slide was moved to. */
+                positions: [] as number[],
+                get currentTime() {
+                    return currentTime;
+                },
+                set currentTime(time: number) {
+                    currentTime = time;
+                    this.positions.push(time);
+                },
+                playbackRate: 1,
+                paused: false,
+                effect: { target, pseudoElement, getComputedTiming: () => ({ duration: 250 }) },
+                pause() {
+                    this.paused = true;
+                },
+                finish() {
+                    this.paused = false;
+                    currentTime = this.playbackRate > 0 ? 250 : 0;
+                }
+            };
+        };
         const outgoing = animation(root, "::view-transition-old(tab-content)");
         const incoming = animation(root, "::view-transition-new(tab-content)");
         const unrelated = animation(document.body, "");
@@ -81,9 +94,17 @@ describe("TabSwipe", () => {
         expect(outgoing.currentTime).toBe(250);
 
         swipe.move(0.4);
+        outgoing.positions.length = 0;
         swipe.release(0);
-        expect(outgoing.playbackRate).toBeGreaterThan(0);
         await finished;
+        // The spring carries the slide on from where the finger left it, without passing the end.
+        expect(outgoing.positions.length).toBeGreaterThan(5);
+        expect(outgoing.positions).toEqual([ ...outgoing.positions ].sort((a, b) => a - b));
+        expect(outgoing.positions[0]).toBe(100);
+        expect(outgoing.positions.at(-1)).toBe(250);
+        expect(outgoing.currentTime).toBe(250);
+        // A paused animation would keep the transition from ending.
+        expect(outgoing.paused).toBe(false);
         await vi.waitFor(() => expect(isTabSwipeActive()).toBe(false));
         expect(log).toEqual([ "activateNextTab", "end" ]);
         expect(document.documentElement.dataset.tabSlide).toBeUndefined();
@@ -96,9 +117,28 @@ describe("TabSwipe", () => {
         await vi.waitFor(() => expect(outgoing.paused).toBe(true));
         swipe.move(0.1);
         swipe.release(0);
-        expect(outgoing.playbackRate).toBeLessThan(0);
         await finished;
+        expect(outgoing.positions.at(-1)).toBe(0);
+        expect(outgoing.currentTime).toBe(0);
         expect(log).toEqual([ "activateNextTab", "activatePreviousTab", "end" ]);
+    });
+
+    it("starts the spring at the speed of the finger", async () => {
+        const firstStep = async (velocity: number) => {
+            const { outgoing, finished } = fakeTransition();
+            const swipe = new TabSwipe("next");
+            await vi.waitFor(() => expect(outgoing.paused).toBe(true));
+            swipe.move(0.5);
+            outgoing.positions.length = 0;
+            swipe.release(velocity, 400);
+            await finished;
+            return outgoing.positions[1] - outgoing.positions[0];
+        };
+
+        const resting = await firstStep(0);
+        const flicked = await firstStep(2);
+        expect(resting).toBeGreaterThan(0);
+        expect(flicked).toBeGreaterThan(2 * resting);
     });
 
     it("settles a flick released before the slide takes over", async () => {
@@ -109,6 +149,8 @@ describe("TabSwipe", () => {
         swipe.release(1);
         await finished;
         expect(outgoing.currentTime).toBe(250);
+        // A paused animation would keep the transition from ending.
+        expect(outgoing.paused).toBe(false);
         expect(log).toEqual([ "activatePreviousTab", "end" ]);
     });
 

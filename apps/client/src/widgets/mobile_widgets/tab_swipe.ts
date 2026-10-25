@@ -6,8 +6,12 @@ export type SwipeDirection = "next" | "previous";
 const COMMIT_PROGRESS = 0.3;
 /** How fast, in px/ms, a released flick must move toward the other tab to switch whatever its distance. */
 const COMMIT_VELOCITY = 0.3;
-/** How much faster than the full slide the rest of it plays once released. */
-const SETTLE_RATE = 1.5;
+/** The stiffness of the spring that finishes a released slide, per ms: it settles in about 300 ms. */
+const SPRING_OMEGA = 0.022;
+/** How close to its end, in progress, the spring counts as settled. */
+const SPRING_REST = 0.002;
+/** The longest the spring runs, in ms, whatever it started from. */
+const SPRING_MAX_DURATION = 1000;
 /** Longer than any swipe is held; the animation holding the transition open is canceled long before. */
 const HOLD_DURATION = 1e9;
 
@@ -16,7 +20,8 @@ let activeTransition: ViewTransition | undefined;
 /**
  * A tab switch whose slide follows the finger. The tab switches as the swipe starts, inside a view
  * transition whose animations stay paused while `move()` sets how far they have run. `release()`
- * plays them on to the other tab, or back to the first one and switches back to it. Without view
+ * carries them on to the other tab, or back to the first one and switches back to it, on a spring
+ * that starts at the finger's speed. Without view
  * transitions, or with animations off, the tab switches on release instead.
  */
 export class TabSwipe {
@@ -25,6 +30,8 @@ export class TabSwipe {
     private readonly direction: SwipeDirection;
     private progress = 0;
     private commit?: boolean;
+    /** How fast the slide was moving toward the other tab as the finger lifted, in progress per ms. */
+    private releaseVelocity = 0;
     private transition?: ViewTransition;
     private animations?: Animation[];
     private hold?: Animation;
@@ -45,9 +52,13 @@ export class TabSwipe {
         this.#seek();
     }
 
-    /** Ends the swipe; `velocity` is how fast, in px/ms, the finger was moving toward the other tab. */
-    release(velocity: number) {
+    /**
+     * Ends the swipe; `velocity` is how fast, in px/ms, the finger was moving toward the other tab,
+     * and `room` how far, in px, it travels for the whole slide.
+     */
+    release(velocity: number, room = window.innerWidth) {
         this.commit = this.progress >= COMMIT_PROGRESS || velocity >= COMMIT_VELOCITY;
+        this.releaseVelocity = velocity / room;
         if (!this.transition) {
             if (this.commit) void appContext.triggerCommand(getCommand(this.direction));
         } else if (this.animations) {
@@ -103,19 +114,41 @@ export class TabSwipe {
     }
 
     async #settle() {
-        const animations = this.animations ?? [];
-        for (const animation of animations) {
-            animation.playbackRate = this.commit ? SETTLE_RATE : -SETTLE_RATE;
-            animation.play();
-        }
-        await Promise.all(animations.map((animation) => animation.finished));
+        const target = this.commit ? 1 : 0;
+        await this.#spring(target);
 
+        // Finished, not paused, so that the transition can end once the hold is canceled.
+        for (const animation of this.animations ?? []) {
+            animation.playbackRate = target ? 1 : -1;
+            animation.finish();
+        }
         if (!this.commit) {
             await appContext.triggerCommand(getCommand(getOpposite(this.direction)));
             // The transition reveals the page as it ends, so the first tab is drawn before that.
             await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
         }
         this.hold?.cancel();
+    }
+
+    /** Moves the slide to `target` on a critically damped spring, which settles without bouncing. */
+    #spring(target: number) {
+        const offset = this.progress - target;
+        const velocity = this.releaseVelocity;
+        return new Promise<void>((resolve) => {
+            let start: number | undefined;
+            const step = (time: number) => {
+                start ??= time;
+                const elapsed = time - start;
+                const position = (offset + (velocity + SPRING_OMEGA * offset) * elapsed)
+                    * Math.exp(-SPRING_OMEGA * elapsed);
+                const isSettled = (elapsed > 0 && Math.abs(position) < SPRING_REST)
+                    || elapsed >= SPRING_MAX_DURATION;
+                this.move(isSettled ? target : target + position);
+                if (isSettled) resolve();
+                else requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        });
     }
 
     #switchBackIfCanceled() {
