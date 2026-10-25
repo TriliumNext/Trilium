@@ -5,10 +5,11 @@ import { useEffect, useMemo } from "preact/hooks";
 
 import { t } from "../services/i18n.js";
 import ActionButton from "./react/ActionButton.jsx";
+import { Card, OptionCardSection } from "./react/Card.jsx";
+import FormToggle from "./react/FormToggle.jsx";
 import { useTriliumOptionBool, useUniqueName } from "./react/hooks.jsx";
 import { suspendModalFocusTraps } from "./react/modal_focustrap.js";
 import Popup from "./react/Popup.jsx";
-import { OptionsRowWithToggle } from "./type_widgets/options/components/OptionsRow.jsx";
 
 export interface TreeSettingsProps {
     /** The tree toolbar. The popup opens above its inline-end edge. */
@@ -57,31 +58,39 @@ export default function TreeSettings(props: TreeSettingsProps) {
                 />
             </div>
 
-            <OptionsRowWithToggle
-                name="hide-archived-notes"
-                label={t("note_tree.hide-archived-notes")}
-                currentValue={isArchivedHidden}
-                onChange={async (isHidden) => {
-                    await setArchivedHidden(isHidden);
-                    onHideArchivedNotesChange();
-                }}
-            />
+            <Card>
+                <OptionCardSection
+                    name="hide-archived-notes"
+                    label={t("note_tree.hide-archived-notes")}
+                >
+                    <FormToggle
+                        currentValue={isArchivedHidden}
+                        onChange={async (isHidden) => {
+                            await setArchivedHidden(isHidden);
+                            onHideArchivedNotesChange();
+                        }}
+                    />
+                </OptionCardSection>
 
-            <OptionsRowWithToggle
-                name="auto-collapse-note-tree"
-                label={t("note_tree.automatically-collapse-notes")}
-                description={t("note_tree.automatically-collapse-notes-title")}
-                currentValue={isAutoCollapsed}
-                onChange={setAutoCollapsed}
-            />
+                <OptionCardSection
+                    name="auto-collapse-note-tree"
+                    label={t("note_tree.automatically-collapse-notes")}
+                    description={t("note_tree.automatically-collapse-notes-title")}
+                >
+                    <FormToggle currentValue={isAutoCollapsed} onChange={setAutoCollapsed} />
+                </OptionCardSection>
 
-            <OptionsRowWithToggle
-                name="follow-active-note"
-                label={t("note_tree.follow-active-note")}
-                description={t("note_tree.follow-active-note-title")}
-                currentValue={isFollowingActiveNote}
-                onChange={setFollowingActiveNote}
-            />
+                <OptionCardSection
+                    name="follow-active-note"
+                    label={t("note_tree.follow-active-note")}
+                    description={t("note_tree.follow-active-note-title")}
+                >
+                    <FormToggle
+                        currentValue={isFollowingActiveNote}
+                        onChange={setFollowingActiveNote}
+                    />
+                </OptionCardSection>
+            </Card>
         </Popup>
     );
 }

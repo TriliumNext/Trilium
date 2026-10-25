@@ -53,13 +53,17 @@ describe("TreeSettings", () => {
         });
     }
 
-    it("shows each option as a toggle holding its value, with no save button", () => {
+    it("shows each option as a toggle in a card section of its own, with no save button", () => {
         const popup = open();
 
         expect(popup.getAttribute("role")).toBe("dialog");
         const title = popup.querySelector(".tree-settings-title");
         expect(title?.textContent).toBe("note_tree.tree-settings-title");
         expect(popup.getAttribute("aria-labelledby")).toBe(title?.id);
+        expect(popup.querySelectorAll(".tn-card")).toHaveLength(1);
+        const sections = [ ...popup.querySelectorAll(".tn-card .tn-card-section") ];
+        expect(sections.map((section) => section.querySelectorAll("input.switch-toggle").length))
+            .toEqual([ 1, 1, 1 ]);
         expect(toggleNamed(popup, "hide-archived-notes").checked).toBe(false);
         expect(toggleNamed(popup, "auto-collapse-note-tree").checked).toBe(true);
         expect(toggleNamed(popup, "follow-active-note").checked).toBe(true);
