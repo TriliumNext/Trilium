@@ -3671,9 +3671,13 @@
     "back": "1つ上の階層へ移動",
     "loading": "読み込み中...",
     "empty": "このノートには子ノートがありません。",
-    "children_count_other": "{{count}} ノート",
+    "children_count_other": "{{count}} 件の子ノート",
     "add_child": "子ノートを追加",
-    "more_actions": "その他の操作"
+    "more_actions": "その他の操作",
+    "current_note": "このノート",
+    "children_hidden": "子ノートはツリー上で非表示になっています",
+    "workspaces": "ワークスペース",
+    "bookmarks": "ブックマーク"
   },
   "text-editor": {
     "validation-errors": {
