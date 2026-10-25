@@ -17,7 +17,7 @@ import { availableParallelism, totalmem } from "node:os";
 import { getLog } from "@triliumnext/core";
 
 import type { WorkerJob, WorkerMessage, WorkerReply } from "./worker_channel.js";
-import { resolveWorkerEntry, spawnWorker, type WorkerHandle, workerEnv } from "./worker_host.js";
+import { resolveWorkerEntry, spawnerPending, spawnWorker, type WorkerHandle, workerEnv } from "./worker_host.js";
 
 export interface ProcessPoolOptions {
     /** Prefix for the pool's log lines, e.g. `Image Compression Tool`. */
@@ -81,6 +81,12 @@ export function createProcessPool<Req, Res>(options: ProcessPoolOptions): Proces
     async function run(request: Req): Promise<Res | null> {
         if (!entry()) {
             return disable("no worker entry point was found");
+        }
+
+        const pendingSpawner = spawnerPending();
+
+        if (pendingSpawner) {
+            await pendingSpawner;
         }
 
         const worker = await acquire();

@@ -110,3 +110,28 @@ describe("workerEnv", () => {
             .toEqual({ PATH: "/bin", NODE_OPTIONS: "--x" });
     });
 });
+
+describe("spawnerPending", () => {
+    it("holds the spawner's readiness until it settles, and nothing for a spawner that is ready", async () => {
+        const { setWorkerSpawner, spawnerPending } = await import("./worker_host.js");
+        let markReady = () => {};
+        const spawner = () => {
+            throw new Error("not called");
+        };
+
+        expect(spawnerPending()).toBeNull();
+
+        setWorkerSpawner(spawner, new Promise<void>((resolve) => {
+            markReady = resolve;
+        }));
+        const pending = spawnerPending();
+        expect(pending).toBeInstanceOf(Promise);
+
+        markReady();
+        await pending;
+        expect(spawnerPending()).toBeNull();
+
+        setWorkerSpawner(null);
+        expect(spawnerPending()).toBeNull();
+    });
+});

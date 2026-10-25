@@ -46,4 +46,30 @@ describe("core extensions", () => {
         expect(h.setBeccaReplicaSink).toHaveBeenCalledWith(h.replica satisfies BeccaReplicaSink);
         expect(h.replica.start).toHaveBeenCalledTimes(1);
     });
+
+    it("starts the replica only once the spawner can start processes", async () => {
+        const { setWorkerSpawner } = await import("./workers/worker_host.js");
+        let markReady = () => {};
+
+        setWorkerSpawner(() => {
+            throw new Error("not called");
+        }, new Promise<void>((resolve) => {
+            markReady = resolve;
+        }));
+
+        try {
+            createCoreExtensions();
+            h.replica.start.mockClear();
+            h.load();
+            startSearchReplica();
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(h.replica.start).not.toHaveBeenCalled();
+
+            markReady();
+            await new Promise((resolve) => setImmediate(resolve));
+            expect(h.replica.start).toHaveBeenCalledTimes(1);
+        } finally {
+            setWorkerSpawner(null);
+        }
+    });
 });

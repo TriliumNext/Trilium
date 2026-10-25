@@ -44,9 +44,30 @@ export interface WorkerEntry {
     execArgv: string[];
 }
 
-/** Replaces the spawner for every pool; `null` restores the `child_process.fork` default. */
-export function setWorkerSpawner(spawner: WorkerSpawner | null) {
+/**
+ * Replaces the spawner for every pool; `null` restores the `child_process.fork` default.
+ *
+ * `ready` settles once the spawner can start processes. Electron's `utilityProcess.fork()` throws
+ * before the app's `ready` event, which the desktop boot can reach the first spawn ahead of.
+ */
+export function setWorkerSpawner(spawner: WorkerSpawner | null, ready?: Promise<void>) {
     currentSpawner = spawner ?? forkSpawner;
+    pendingReady = null;
+
+    if (ready) {
+        const gate: Promise<void> = ready.then(() => {
+            if (pendingReady === gate) {
+                pendingReady = null;
+            }
+        });
+
+        pendingReady = gate;
+    }
+}
+
+/** Settles once the current spawner can start processes; `null` when it already can. */
+export function spawnerPending(): Promise<void> | null {
+    return pendingReady;
 }
 
 export function spawnWorker(entryFile: string, options: WorkerSpawnOptions): WorkerHandle {
@@ -149,3 +170,4 @@ const forkSpawner: WorkerSpawner = (entryFile, { execArgv, env }) => {
 };
 
 let currentSpawner: WorkerSpawner = forkSpawner;
+let pendingReady: Promise<void> | null = null;

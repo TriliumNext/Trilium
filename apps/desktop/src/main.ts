@@ -245,7 +245,8 @@ export async function main() {
         : ipcMessaging;
 
     // A packaged build has the RunAsNode fuse off, so child_process.fork cannot start workers.
-    setWorkerSpawner(utilityProcessSpawner);
+    // A utility process can only start once the app is ready.
+    setWorkerSpawner(utilityProcessSpawner, app.whenReady());
     const extensions = createCoreExtensions();
 
     await initializeCore({

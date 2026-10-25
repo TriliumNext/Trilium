@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ProcessPoolOptions } from "./process_pool.js";
-import type { WorkerHandle, WorkerSpawnOptions } from "./worker_host.js";
+import type { WorkerHandle, WorkerSpawner, WorkerSpawnOptions } from "./worker_host.js";
 
 const h = vi.hoisted(() => ({
     logs: [] as string[],
@@ -71,6 +71,20 @@ let workers: FakeWorker[];
 let spawns: { file: string; options: WorkerSpawnOptions }[];
 let spawnError: Error | undefined;
 
+const fakeSpawner: WorkerSpawner = (file, options) => {
+    if (spawnError) {
+        throw spawnError;
+    }
+
+    spawns.push({ file, options });
+
+    const worker = new FakeWorker(4000 + workers.length);
+
+    workers.push(worker);
+
+    return worker;
+};
+
 async function createPool(overrides: Partial<ProcessPoolOptions> = {}) {
     const { createProcessPool } = await import("./process_pool.js");
 
@@ -108,19 +122,7 @@ beforeEach(async () => {
 
     const host = await import("./worker_host.js");
 
-    host.setWorkerSpawner((file, options) => {
-        if (spawnError) {
-            throw spawnError;
-        }
-
-        spawns.push({ file, options });
-
-        const worker = new FakeWorker(4000 + workers.length);
-
-        workers.push(worker);
-
-        return worker;
-    });
+    host.setWorkerSpawner(fakeSpawner);
 });
 
 afterEach(() => {
@@ -128,6 +130,30 @@ afterEach(() => {
 });
 
 describe("createProcessPool", () => {
+    it("starts no worker until the spawner is ready", async () => {
+        const host = await import("./worker_host.js");
+        let markReady = () => {};
+
+        host.setWorkerSpawner(fakeSpawner, new Promise<void>((resolve) => {
+            markReady = resolve;
+        }));
+
+        const pool = await createPool();
+        const result = pool.run("early");
+
+        await flush();
+        expect(workers).toHaveLength(0);
+
+        markReady();
+        await flush();
+        expect(workers).toHaveLength(1);
+
+        workers[0].announce();
+        await flush();
+        workers[0].answer("EARLY");
+        await expect(result).resolves.toBe("EARLY");
+    });
+
     it("runs a job in a worker and relays its logs", async () => {
         process.env.TRILIUM_SAFE_MODE = "1";
 

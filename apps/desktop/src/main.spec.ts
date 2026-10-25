@@ -102,7 +102,8 @@ vi.mock("electron", () => {
         quit: (...a: unknown[]) => h.quit(...a),
         exit: (...a: unknown[]) => h.exit(...a),
         relaunch: (...a: unknown[]) => h.relaunch(...a),
-        requestSingleInstanceLock: () => h.isPrimaryInstance
+        requestSingleInstanceLock: () => h.isPrimaryInstance,
+        whenReady: () => Promise.resolve()
     };
     const BrowserWindow = {
         getAllWindows: () => h.allWindows

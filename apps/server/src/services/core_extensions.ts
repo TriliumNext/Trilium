@@ -13,6 +13,7 @@ import {
 
 import { createReplicaSearchExecutor, type ReplicaSearchExecutor } from "./search_replica/replica_client.js";
 import { createPooledContentJobExecutor } from "./workers/content_job_executor.js";
+import { spawnerPending } from "./workers/worker_host.js";
 
 export interface CoreExtensions {
     /** Passed to `initializeCore()` as `contentJobs`. */
@@ -58,7 +59,7 @@ export function startSearchReplica() {
     const replica = searchReplica;
 
     if (replica) {
-        void becca_loader.beccaLoaded.then(() => replica.start());
+        void Promise.all([ becca_loader.beccaLoaded, spawnerPending() ]).then(() => replica.start());
     }
 }
 
