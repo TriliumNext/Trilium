@@ -319,7 +319,11 @@ paths:
                   default: html
         get:
             summary: Export a subtree
-            description: Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId
+            description: >-
+                Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId.
+                Protected notes are exported as "[protected]", without their content or attachments, even while
+                the protected session is open. The "share" format refuses a subtree that contains a protected note
+                with NOTE_IS_PROTECTED.
             tags: [Notes]
             operationId: exportNoteSubtree
             responses:

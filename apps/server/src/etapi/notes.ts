@@ -170,13 +170,20 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default), 'markdown' or 'share'.`);
         }
 
+        // Protected content never leaves through ETAPI, even while the protected session is open.
+        // The share format cannot leave it out, so it refuses a subtree that holds any.
+        const protectedNote = format === "share" ? note.getSubtree({ includeHidden: true }).notes.find((n) => n.isProtected) : undefined;
+        if (protectedNote) {
+            throw new eu.EtapiError(400, "NOTE_IS_PROTECTED", `Note '${protectedNote.noteId}' is protected and cannot be exported through ETAPI in the 'share' format.`);
+        }
+
         const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
         // technically a branch is being exported (includes prefix), but it's such a minor difference yet usability pain
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
         const branch = note.getParentBranches()[0];
 
-        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
+        void zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res, true, { excludeProtected: true });
     });
 
     eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {

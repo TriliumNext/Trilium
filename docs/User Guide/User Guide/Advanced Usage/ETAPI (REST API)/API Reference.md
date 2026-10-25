@@ -649,7 +649,7 @@ New content of the note. Send text (such as the HTML of a text note) as `text/pl
 
 `GET /notes/{noteId}/export` · `exportNoteSubtree`
 
-Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId
+Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId. Protected notes are exported as "\[protected\]", without their content or attachments, even while the protected session is open. The "share" format refuses a subtree that contains a protected note with NOTE\_IS\_PROTECTED.
 
 **Authorization**: `EtapiTokenAuth` or `EtapiBasicAuth`
 

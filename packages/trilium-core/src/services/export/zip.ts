@@ -4,6 +4,7 @@ import sanitize from "sanitize-filename";
 
 import packageInfo from "../../../package.json" with { type: "json" };
 import becca from "../../becca/becca.js";
+import type BAttachment from "../../becca/entities/battachment.js";
 import type BAttribute from "../../becca/entities/battribute.js";
 import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
@@ -115,6 +116,19 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         return getUniqueFilename(existingFileNames, `${base}${extension}`);
     }
 
+    /**
+     * Whether the export can carry the title and content of `entity`: an unprotected one always,
+     * a protected one only while the protected session is open and `excludeProtected` is not set.
+     */
+    function isReadable(entity: BNote | BAttachment) {
+        return !entity.isProtected
+            || (!zipExportOptions?.excludeProtected && protectedSessionService.isProtectedSessionAvailable());
+    }
+
+    function getTitle(note: BNote) {
+        return isReadable(note) ? note.getTitleOrProtected() : "[protected]";
+    }
+
     function createNoteMeta(branch: BBranch, parentMeta: Partial<NoteMeta>, existingFileNames: Record<string, number>): NoteMeta | null {
         const note = branch.getNote();
 
@@ -122,7 +136,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return null;
         }
 
-        const title = note.getTitleOrProtected();
+        const title = getTitle(note);
         const completeTitle = branch.prefix ? `${branch.prefix} - ${title}` : title;
         let baseFileName = sanitize(completeTitle);
         if (format === "share") {
@@ -147,7 +161,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 isClone: true,
                 noteId: note.noteId,
                 notePath,
-                title: note.getTitleOrProtected(),
+                title: getTitle(note),
                 prefix: branch.prefix,
                 dataFileName: fileName,
                 type: "text", // export will have text description
@@ -160,7 +174,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         meta.isClone = false;
         meta.noteId = note.noteId;
         meta.notePath = notePath;
-        meta.title = note.getTitleOrProtected();
+        meta.title = getTitle(note);
         meta.notePosition = branch.notePosition;
         meta.prefix = branch.prefix;
         meta.isExpanded = branch.isExpanded;
@@ -192,7 +206,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         note.sortChildren();
         const childBranches = note.getChildBranches().filter((branch) => branch?.noteId !== "_hidden");
 
-        let shouldIncludeFile = (!note.isProtected || protectedSessionService.isProtectedSessionAvailable());
+        let shouldIncludeFile = isReadable(note);
         if (format !== "share") {
             shouldIncludeFile = shouldIncludeFile && (note.getContent().length > 0 || childBranches.length === 0);
         }
@@ -205,7 +219,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             meta.dataFileName = getDataFileName(note.type, note.mime, baseFileName, existingFileNames);
         }
 
-        const attachments = note.getAttachments();
+        const attachments = note.getAttachments().filter(isReadable);
         meta.attachments = attachments
             .toSorted((a, b) => ((a.attachmentId ?? "").localeCompare(b.attachmentId ?? "", "en") ?? 1))
             .map((attachment) => {
@@ -544,7 +558,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     }
 
     const note = branch.getNote();
-    const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${note.getTitleOrProtected()}.zip`;
+    const zipFileName = `${branch.prefix ? `${branch.prefix} - ` : ""}${getTitle(note)}.zip`;
 
     if (setHeaders && "setHeader" in res) {
         res.setHeader("Content-Disposition", getContentDisposition(zipFileName));

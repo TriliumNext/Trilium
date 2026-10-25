@@ -18,6 +18,13 @@ export interface AdvancedExportOptions {
     skipExtraFiles?: boolean;
 
     /**
+     * If `true`, protected notes are exported as `[protected]` with no content or attachments even
+     * while the protected session is open. ETAPI sets it because its callers never read protected
+     * content. The `share` format does not honor it: its pages read titles from becca.
+     */
+    excludeProtected?: boolean;
+
+    /**
      * Provides a custom function to rewrite the links found in HTML or Markdown notes. This method is called for every note imported, if it's of the right type.
      *
      * @param originalRewriteLinks the original rewrite links function. Can be used to access the default behaviour without having to reimplement it.
