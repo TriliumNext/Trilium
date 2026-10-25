@@ -1,5 +1,6 @@
 #launcher-container .mobile-tab-switcher {
     position: relative;
+    touch-action: pan-y;
 
     &::after {
         content: attr(data-tab-count);
@@ -11,6 +12,42 @@
         transform: translate(-50%, -50%);
     }
 }
+
+html[data-tab-slide] {
+    view-transition-name: none;
+
+    #mobile-rest-container {
+        view-transition-name: tab-content;
+    }
+
+    /* Named so it paints over the sliding content, which runs under it on iOS. */
+    #mobile-bottom-bar {
+        view-transition-name: tab-launch-bar;
+    }
+
+    &::view-transition-old(tab-content),
+    &::view-transition-new(tab-content) {
+        animation-duration: 250ms;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: both;
+        mix-blend-mode: normal;
+    }
+}
+
+html[data-tab-slide="left"] {
+    &::view-transition-old(tab-content) { animation-name: tab-slide-out-left; }
+    &::view-transition-new(tab-content) { animation-name: tab-slide-in-from-right; }
+}
+
+html[data-tab-slide="right"] {
+    &::view-transition-old(tab-content) { animation-name: tab-slide-out-right; }
+    &::view-transition-new(tab-content) { animation-name: tab-slide-in-from-left; }
+}
+
+@keyframes tab-slide-out-left { to { transform: translateX(-100%); } }
+@keyframes tab-slide-in-from-right { from { transform: translateX(100%); } }
+@keyframes tab-slide-out-right { to { transform: translateX(100%); } }
+@keyframes tab-slide-in-from-left { from { transform: translateX(-100%); } }
 
 .modal.tab-bar-modal {
     .modal-dialog {

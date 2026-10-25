@@ -43,9 +43,13 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
 /** The most rows a tree card renders, more than its height shows. */
 const MAX_TREE_PREVIEW_ROWS = 12;
 
+/** How far a sideways swipe across the tab switcher button travels before it switches tabs. */
+const SWIPE_THRESHOLD = 30;
+
 export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
     const [ shown, setShown ] = useState(false);
     const mainNoteContexts = useMainNoteContexts();
+    const swipe = useTabSwipe(mainNoteContexts.length > 1);
 
     return (
         <>
@@ -54,12 +58,96 @@ export default function TabSwitcher({ launcherNote }: LauncherNoteProps) {
                 className="mobile-tab-switcher"
                 icon="bx bx-rectangle"
                 text="Tabs"
-                onClick={() => setShown(true)}
+                onClick={() => {
+                    if (!swipe.takeSwipe()) setShown(true);
+                }}
+                onPointerDown={swipe.onPointerDown}
+                onPointerMove={swipe.onPointerMove}
+                onPointerUp={swipe.onPointerEnd}
+                onPointerCancel={swipe.onPointerEnd}
                 data-tab-count={mainNoteContexts.length > 99 ? "∞" : mainNoteContexts.length}
             />
             {createPortal(<TabBarModal mainNoteContexts={mainNoteContexts} shown={shown} setShown={setShown} />, document.body)}
         </>
     );
+}
+
+/**
+ * Switches to the next or the previous tab on a sideways swipe across the tab switcher button. The
+ * click that ends a swipe is not a tap, so `takeSwipe()` tells the button not to open the switcher.
+ */
+export function useTabSwipe(enabled: boolean) {
+    const startRef = useRef<{ x: number, y: number, pointerId: number } | null>(null);
+    const swipedRef = useRef(false);
+
+    return {
+        onPointerDown(e: PointerEvent) {
+            swipedRef.current = false;
+            startRef.current = enabled && e.isPrimary
+                ? { x: e.clientX, y: e.clientY, pointerId: e.pointerId }
+                : null;
+        },
+        onPointerMove(e: PointerEvent) {
+            const start = startRef.current;
+            if (!start || start.pointerId !== e.pointerId) return;
+
+            const direction = getSwipeDirection(e.clientX - start.x, e.clientY - start.y, glob.isRtl);
+            if (!direction) return;
+            startRef.current = null;
+            swipedRef.current = true;
+            switchTabWithSlide(direction);
+        },
+        onPointerEnd() {
+            startRef.current = null;
+        },
+        takeSwipe() {
+            const swiped = swipedRef.current;
+            swipedRef.current = false;
+            return swiped;
+        }
+    };
+}
+
+/** The tab a swipe by `dx`, `dy` switches to, if it is long and level enough to be one. */
+export function getSwipeDirection(dx: number, dy: number, isRtl: boolean): "next" | "previous" | undefined {
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < 2 * Math.abs(dy)) return;
+    // A swipe toward the start brings in the next tab from the end, as in Safari.
+    return (dx < 0) !== isRtl ? "next" : "previous";
+}
+
+let tabSlide: ViewTransition | undefined;
+
+/**
+ * Switches tabs while the content area slides, the outgoing tab out and the incoming one in, through
+ * a view transition. Without view transitions, or with animations off, the tab switches at once.
+ */
+export async function switchTabWithSlide(direction: "next" | "previous") {
+    const command = direction === "next" ? "activateNextTab" : "activatePreviousTab";
+    const canSlide = typeof document.startViewTransition === "function"
+        && !document.body.classList.contains("motion-disabled");
+    if (!canSlide) {
+        await appContext.triggerCommand(command);
+        return;
+    }
+
+    const movesLeft = (direction === "next") !== glob.isRtl;
+    document.documentElement.dataset.tabSlide = movesLeft ? "left" : "right";
+    // The browser renders no frames until the update finishes, so it must not wait for one; what
+    // Preact renders later still shows, as the incoming side of the slide is live.
+    const transition = document.startViewTransition(async () => {
+        await appContext.triggerCommand(command);
+    });
+    // A skipped slide (another swipe, a timeout) still switches the tab.
+    transition.ready.catch(() => {});
+    tabSlide = transition;
+    try {
+        await transition.finished;
+    } finally {
+        if (tabSlide === transition) {
+            delete document.documentElement.dataset.tabSlide;
+            tabSlide = undefined;
+        }
+    }
 }
 
 function TabBarModal({ mainNoteContexts, shown, setShown }: {
