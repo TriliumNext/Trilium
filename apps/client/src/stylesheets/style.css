@@ -1920,6 +1920,14 @@ pre.code-embed-editor.read-only .cm-activeLine {
         opacity: 0;
     }
 
+    #mobile-rest-container.instant-screen-change {
+        > #mobile-sidebar-wrapper,
+        > #detail-container,
+        > #detail-container::before {
+            transition: none !important;
+        }
+    }
+
     body[dir="rtl"] #detail-container::before {
         background: linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent);
     }

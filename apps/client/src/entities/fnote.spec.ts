@@ -194,6 +194,31 @@ describe("FNote branches & children", () => {
         expect(child.getParentNotes().map((n) => n.noteId)).toContain(parent.noteId);
     });
 
+    it("leaves the share root, the bookmarks and saved searches out of the real parents", () => {
+        const first = buildNote({ title: "First", children: [ { id: "cloned", title: "Cloned" } ] });
+        const cloned = froca.notes["cloned"];
+        if (!cloned) throw new Error("expected the cloned note");
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId ]);
+
+        const second = buildNote({ title: "Second" });
+        const parents = [
+            buildNote({ id: "_share", title: "Share" }),
+            buildNote({ id: "_lbBookmarks", title: "Bookmarks" }),
+            buildNote({ title: "Saved search", type: "search" }),
+            second
+        ];
+        for (const parent of parents) {
+            const branchId = `${parent.noteId}_cloned`;
+            froca.branches[branchId] = new FBranch(froca, {
+                branchId, noteId: "cloned", parentNoteId: parent.noteId, notePosition: 0, fromSearchNote: false
+            });
+            parent.addChild("cloned", branchId, false);
+            cloned.addParent(parent.noteId, branchId, false);
+        }
+
+        expect(cloned.getRealParentNotes().map((n) => n.noteId)).toEqual([ first.noteId, second.noteId ]);
+    });
+
     it("getChildNotes / getSubtreeNoteIds / getSubtreeNotes traverse the tree and skip archived", async () => {
         const root = buildNote({
             title: "root",

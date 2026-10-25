@@ -8,6 +8,7 @@ body.mobile.ios {
     --dropdown-backdrop-filter: blur(16px) saturate(1.5) brightness(1.15);
     --mobile-sheet-margin: 8px;
     --mobile-sheet-radius: 28px;
+    --grouped-card-radius: 22px;
     --mobile-screen-corner-radius: calc(var(--mobile-sheet-radius) + var(--mobile-sheet-margin));
     --mobile-sheet-corner-radius: calc(var(--mobile-screen-corner-radius) - var(--mobile-sheet-margin));
 
@@ -58,65 +59,106 @@ body.mobile.ios {
     }
 
     .mobile-note-navigator {
-        --navigator-group-inset: 16px;
-        --navigator-group-radius: 22px;
-        --navigator-row-padding: 16px;
+        --navigator-group-radius: var(--grouped-card-radius);
+        --navigator-group-spacing: 22px;
+        --navigator-group-background: var(--grouped-card-background-color);
+        --navigator-separator-color: var(--main-border-color);
+        /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
+        --navigator-separator-inset: calc(var(--navigator-row-padding) + 1.2em + 12px);
         background: var(--grouped-background-color);
 
         .mobile-navigator-toolbar {
             background: transparent;
         }
 
-        .mobile-navigator-current-tile,
-        .mobile-navigator-list {
-            margin-inline: var(--navigator-group-inset);
-            border-radius: var(--navigator-group-radius);
-            background: var(--grouped-card-background-color);
-        }
-
-        .mobile-navigator-current-tile {
-            margin-block-start: 8px;
-            padding-inline: var(--navigator-row-padding);
-            border-bottom: 0;
-        }
-
         .mobile-navigator-children-label {
-            padding: 22px calc(var(--navigator-group-inset) + var(--navigator-row-padding)) 8px;
+            padding-block-end: 8px;
             font-size: 0.95em;
             letter-spacing: normal;
             text-transform: none;
             opacity: 1;
         }
 
-        .mobile-navigator-list {
-            overflow: hidden;
-        }
-
         .mobile-navigator-row {
-            position: relative;
             min-height: 52px;
-            padding-inline: var(--navigator-row-padding);
-            border-bottom: 0;
-
-            /* Starts under the title: the padding, the 1.2em icon and the 12px gap before it. */
-            &:not(:last-of-type)::after {
-                content: "";
-                position: absolute;
-                inset-block-end: 0;
-                inset-inline: calc(var(--navigator-row-padding) + 1.2em + 12px) 0;
-                height: 1px;
-                background: var(--main-border-color);
-            }
-
-            &.is-active {
-                border-inline-start: 0;
-                padding-inline-start: var(--navigator-row-padding);
-                background: var(--hover-item-background-color);
-            }
         }
 
         .mobile-navigator-row-chevron {
             opacity: 0.35;
+        }
+    }
+
+    .modal.options-dialog {
+        --modal-background-color: var(--grouped-background-color);
+
+        .modal-header {
+            background-color: color-mix(in srgb, var(--grouped-card-background-color) 60%, var(--grouped-background-color));
+        }
+
+        .tn-card {
+            --card-border-radius: var(--grouped-card-radius);
+            --card-padding-inline: 16px;
+            --card-section-gap: 0px;
+            --card-background-color: var(--grouped-card-background-color);
+        }
+
+        .tn-card-heading,
+        .tn-card-description {
+            padding-inline: var(--card-padding-inline);
+        }
+
+        .tn-card-heading {
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: normal;
+            text-transform: none;
+            color: var(--muted-text-color);
+        }
+
+        .tn-card-body .tn-card-section {
+            position: relative;
+
+            &.tn-card-section-nested {
+                background-color: var(--card-background-color);
+            }
+
+            &.font-option.disabled {
+                opacity: 1;
+
+                > * {
+                    opacity: 0.5;
+                }
+            }
+
+            &:not(:last-of-type)::before {
+                content: "";
+                position: absolute;
+                inset-block-end: 0;
+                inset-inline: var(--card-padding-inline) 0;
+                height: 1px;
+                background: var(--main-border-color);
+            }
+        }
+
+        .options-mobile-nav .dropdown-menu {
+            --mobile-menu-group-radius: var(--grouped-card-radius);
+            --card-background-color: var(--grouped-card-background-color);
+            --menu-background-color: transparent;
+
+            .dropdown-item {
+                position: relative;
+                border-bottom: 0 !important;
+
+                /* Starts under the name: the item's padding, the 1.4em icon and its 4px margin. */
+                &:not(:last-of-type)::after {
+                    content: "";
+                    position: absolute;
+                    inset-block-end: 0;
+                    inset-inline: calc(var(--dropdown-menu-padding-horizontal) + 1.4em + 4px) 0;
+                    height: 1px;
+                    background: var(--main-border-color);
+                }
+            }
         }
     }
 }
@@ -152,10 +194,36 @@ body.mobile.ios {
             .dropdown-menu.mobile-bottom-menu
         ).show {
             --menu-background-color: var(--glass-background);
-            --mobile-menu-group-radius: calc(var(--mobile-sheet-radius) - var(--menu-padding-size));
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-radius);
+            --mobile-menu-corner-radius: calc(var(--mobile-sheet-radius) - var(--menu-padding-size));
+            --mobile-menu-bottom-corner-radius: calc(var(--mobile-sheet-bottom-radius) - var(--menu-padding-size));
             border: 0;
-            border-radius: var(--mobile-sheet-radius);
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
             box-shadow: var(--glass-shadow);
+
+            .tn-menu-scroll {
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:first-child,
+                > .form-list-row:first-child > .form-list-col:first-child > .dropdown-item {
+                    border-start-start-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :first-child.dropdown-item,
+                > :first-child > .tn-menu-action:last-child,
+                > .form-list-row:first-child > .form-list-col:last-child > .dropdown-item {
+                    border-start-end-radius: var(--mobile-menu-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:first-child > .dropdown-item {
+                    border-end-start-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+
+                > :last-child.dropdown-item,
+                > .form-list-row:last-child > .form-list-col:last-child > .dropdown-item {
+                    border-end-end-radius: var(--mobile-menu-bottom-corner-radius);
+                }
+            }
         }
 
         :is(
@@ -167,7 +235,7 @@ body.mobile.ios {
         }
 
         :is(#context-menu-container, .dropdown-menu).mobile-bottom-menu.show {
-            --mobile-sheet-radius: var(--mobile-sheet-corner-radius);
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
             padding-bottom: var(--menu-padding-size) !important;
         }
 
@@ -196,7 +264,7 @@ body.mobile.ios {
         }
 
         .mobile-navigator-scroll {
-            padding-bottom: var(--mobile-bottom-bar-height);
+            padding-bottom: calc(var(--mobile-bottom-bar-height) + var(--navigator-group-spacing));
         }
 
         &:not(.keyboard-panel-open) #root-widget:not(.virtual-keyboard-opened) {
@@ -257,16 +325,16 @@ body.mobile.ios {
         /* The blur goes on `.modal-dialog`: WebKit draws a scroller's `backdrop-filter` without its
            rounded corners. */
         .modal-dialog:not(.modal-dialog-full-page-on-mobile, .modal-dialog-tall) {
-            --mobile-sheet-radius: var(--mobile-sheet-corner-radius);
+            --mobile-sheet-bottom-radius: var(--mobile-sheet-corner-radius);
             bottom: var(--mobile-sheet-margin);
             width: calc(100% - 2 * var(--mobile-sheet-margin));
-            border-radius: var(--mobile-sheet-radius);
+            border-radius: var(--mobile-sheet-radius) var(--mobile-sheet-radius) var(--mobile-sheet-bottom-radius) var(--mobile-sheet-bottom-radius);
             background: var(--glass-background);
             backdrop-filter: var(--dropdown-backdrop-filter);
             box-shadow: var(--glass-shadow);
 
             > .modal-content {
-                border-radius: var(--mobile-sheet-radius);
+                border-radius: inherit;
                 background: transparent !important;
                 box-shadow: none;
             }
@@ -277,16 +345,17 @@ body.mobile.ios {
             }
         }
 
-        /* Each button after the title is a 40px circle with the 8px margin from dialogs.css. */
+        /* Each button after the title is a 44px circle with the 8px margin from dialogs.css. */
         .modal .modal-header {
-            --modal-header-trailing-width: 48px;
+            --modal-header-trailing-width: 52px;
+            padding-block: 12px !important;
 
             &:has(> .modal-title:nth-last-child(3)) {
-                --modal-header-trailing-width: 96px;
+                --modal-header-trailing-width: 104px;
             }
 
             &:has(> .modal-title:nth-last-child(4)) {
-                --modal-header-trailing-width: 144px;
+                --modal-header-trailing-width: 156px;
             }
 
             .modal-title,
@@ -309,19 +378,34 @@ body.mobile.ios {
                 display: none;
             }
 
-            /* The close button follows the master-detail header; the back button, 32px with a 4px
-               gap, takes part of its width. */
+            /* The close button follows the master-detail header; the back button, 44px with an 8px
+               gap, takes its width. */
             .tn-master-detail-header {
-                padding-inline-start: 48px;
+                padding-inline-start: 52px;
 
                 &:has(> button.icon-action) {
-                    padding-inline-start: 12px;
+                    padding-inline-start: 0;
+                }
+
+                > button.icon-action {
+                    --icon-button-size: 44px;
+                    --icon-button-icon-ratio: 0.55;
+                    --icon-button-color: var(--main-text-color);
+                    --icon-button-hover-color: var(--main-text-color);
+                    --icon-button-hover-background: var(--glass-background);
+                    flex-shrink: 0;
+                    margin-inline-end: 4px;
+                    border-radius: 50%;
+                    background: var(--glass-background);
+                    backdrop-filter: var(--dropdown-backdrop-filter);
+                    box-shadow: var(--glass-edge);
                 }
             }
 
             :is(.btn-close, .help-button, .custom-title-bar-button) {
-                --modal-control-button-size: 40px;
+                --modal-control-button-size: 44px;
                 flex-shrink: 0;
+                margin-block: 0;
                 margin-inline-end: 0;
                 font-size: 22px;
                 backdrop-filter: var(--dropdown-backdrop-filter);

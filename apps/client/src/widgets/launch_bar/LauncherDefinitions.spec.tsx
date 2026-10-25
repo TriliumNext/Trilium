@@ -64,6 +64,25 @@ describe("useCommandLauncherContextMenu", () => {
         expect(options).toEqual({ extraItems: SECTION });
     });
 
+    it("holds through a jitter, but not through a press that moves on, as a swipe across the bar does", async () => {
+        vi.useFakeTimers();
+        const button = renderProbe("showRecentChanges");
+        const press = (type: string, clientX: number) => button.dispatchEvent(
+            new PointerEvent(type, { bubbles: true, button: 0, clientX, clientY: 10 }));
+
+        press("pointerdown", 100);
+        press("pointermove", 130);
+        vi.advanceTimersByTime(500);
+        await Promise.resolve();
+        expect(mocks.showLauncherContextMenu).not.toHaveBeenCalled();
+        press("pointerup", 130);
+
+        press("pointerdown", 100);
+        press("pointermove", 104);
+        vi.advanceTimersByTime(500);
+        await vi.waitFor(() => expect(mocks.showLauncherContextMenu).toHaveBeenCalledOnce());
+    });
+
     it("leaves a command without a section to the default launcher menu", () => {
         const button = renderProbe("showDeletedNotes");
 
