@@ -293,7 +293,10 @@
     "pin_tab": "タブを固定",
     "unpin_tab": "タブの固定を解除",
     "pinned_prefix": "固定済み: ",
-    "leave_full_screen": "全画面表示を終了"
+    "leave_full_screen": "全画面表示を終了",
+    "add_new_tab_hint": "右クリックまたは長押しでその他のオプションを表示します。",
+    "show_all_recent_changes": "最近の変更すべて",
+    "recently_changed_notes": "最近変更されたノート"
   },
   "tasks": {
     "due": {
@@ -1754,7 +1757,8 @@
     "subtree-hidden-moved-description-other": "このノートのツリーでは子ノートは非表示になっています。",
     "follow-active-note": "アクティブなノートに追従",
     "follow-active-note-title": "ツリーをスクロールし、親ノードを展開してアクティブなノートを表示します。無効にすると、ツリーは固定されたままとなり、背景のハイライトのみが更新されます。",
-    "show-all-notes": "すべてのノートを表示"
+    "show-all-notes": "すべてのノートを表示",
+    "back-to-tree": "ノートツリー"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -2224,7 +2228,8 @@
     "modal_title": "ノートタイプを選択",
     "templates": "テンプレート",
     "location": "位置",
-    "location_placeholder": "空欄の場合はデフォルトの位置を使用"
+    "location_placeholder": "空欄の場合はデフォルトの位置を使用",
+    "manage_templates": "コンテンツマネージャーでテンプレートを管理"
   },
   "prompt": {
     "title": "プロンプト",
@@ -3357,7 +3362,8 @@
       "note_moved_from": "<Note/> from <From/> to <To/>",
       "note_moved": "<Note/> to <To/>",
       "attachment_in_note": "<Title/> in <Note/>",
-      "search_in_subtree": "<Query/> in <Subtree/>"
+      "search_in_subtree": "<Query/> in <Subtree/>",
+      "add_attribute": "属性を追加"
     },
     "base_url": "ベース URL",
     "base_url_description": "オプション。プロキシやゲートウェイ経由で同じ API に接続します。モデルを自前で実行したい場合は、代わりに Ollama または LM Studio のプロバイダーを追加してください。",
@@ -3384,7 +3390,7 @@
     "provider_group_local": "ローカル / セルフホスト",
     "provider_group_local_description": "API キーや利用料は不要です。ノートはモデルを実行しているマシン内でのみ処理されます。",
     "provider_group_custom": "カスタムエンドポイント",
-    "provider_group_custom_description": "OpenAI 互換の API であれば、ローカル環境かホスト型サービス（OpenRouter、Groq、Mistral など）を問わず利用可能です。コストやプライバシーは、どのサービスを利用するかによって異なります。",
+    "provider_group_custom_description": "OpenAI 互換の API であれば、ローカル環境でもホスト型でも利用可能です（Groq, Mistral, Togetherなど）。利用にかかる費用やプライバシーは、接続先によって異なります。",
     "provider_openai_compatible": "OpenAI 互換",
     "provider_desc_openai_compatible": "Trillium を OpenAI API に対応する任意のエンドポイントに接続してください。",
     "api_key_optional_description": "オプション。エンドポイントが認証プロキシまたはゲートウェイの背後にある場合にのみ必要です。",
@@ -3588,7 +3594,8 @@
     "remove_from_launch_bar": "ランチャーバーから削除",
     "configure_launch_bar": "ランチャーバーの設定...",
     "launch_bar_orientation": "ランチャーバーの向き",
-    "will_reload_frontend": "（アプリが再読み込みされます）"
+    "will_reload_frontend": "（アプリが再読み込みされます）",
+    "show_as_folder": "フォルダー"
   },
   "display_mode": {
     "source": "ソースビュー",
@@ -3924,7 +3931,8 @@
       "move-down": "下に移動",
       "image-position": "画像の位置",
       "list": "リスト",
-      "list-type": "リストタイプ"
+      "list-type": "リストタイプ",
+      "insert-a-preview-of-a-web-page-or-a-video": "ウェブページや動画のプレビューを挿入"
     },
     "toolbar-groups": {
       "text-formatting": "テキストの書式設定",
@@ -4644,7 +4652,8 @@
     "no_matches": "一致するものはありません",
     "filter": "フィルター",
     "filter_placeholder": "入力して絞り込み…",
-    "back": "戻る"
+    "back": "戻る",
+    "clear_filter": "フィルターを解除"
   },
   "block_reference": {
     "copy_other": "これら {{count}} 件のブロックへの参照をコピー",
