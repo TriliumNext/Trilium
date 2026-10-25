@@ -29,10 +29,17 @@ describe("export with conversions that finish out of order", () => {
         getContext().init(() => buildFixture());
     });
 
-    afterEach(() => initContentJobExecutor());
+    afterEach(() => {
+        initContentJobExecutor();
+        vi.useRealTimers();
+    });
 
     for (const format of FORMATS) {
         it(`writes the same ${format} entries as converting one note at a time`, async () => {
+            // The entries that belong to no note (the meta file, navigation, index, style) are dated
+            // when they are written, so both exports read the same clock.
+            vi.useFakeTimers({ toFake: [ "Date" ], now: new Date("2026-06-01T12:00:00Z") });
+
             const sequential = shuffledExecutor({ delays: false });
             initContentJobExecutor(sequential);
             const expected = await withoutConcurrentPrepare(() => exportEntries(format));
