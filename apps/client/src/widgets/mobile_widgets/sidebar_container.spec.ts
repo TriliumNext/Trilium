@@ -180,6 +180,31 @@ describe("SidebarContainer", () => {
             expect(getTabNavigation("opened")?.screen).toBe("tree");
         });
 
+        it("shows the tree of a tab left without a note, but not of a split or a tab in the background", () => {
+            const sidebar = render(true);
+            const triggerCommand = vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);
+            const context = (ntxId: string, isMainContext = true) => ({
+                ntxId,
+                isMainContext: () => isMainContext,
+                getMainContext: () => ({ ntxId: isMainContext ? ntxId : "blank" })
+            }) as unknown as NoteContext;
+
+            sidebar.activeContextChangedEvent({ noteContext: context("blank") });
+            expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "detail" });
+            sidebar.activeScreenChangedEvent({ activeScreen: "detail" });
+
+            // A tab opened in the background, and a split opened empty in the active tab.
+            triggerCommand.mockClear();
+            sidebar.noteSwitchedEvent({ noteContext: context("background"), notePath: null });
+            sidebar.noteSwitchedEvent({ noteContext: context("split", false), notePath: null });
+            sidebar.noteSwitchedEvent({ noteContext: context("blank"), notePath: "root/note" });
+            expect(triggerCommand).not.toHaveBeenCalled();
+
+            sidebar.noteSwitchedEvent({ noteContext: context("blank"), notePath: null });
+            expect(triggerCommand).toHaveBeenLastCalledWith("setActiveScreen", { screen: "tree" });
+            expect(tree.classList.contains("show")).toBe(true);
+        });
+
         it("swaps the screen in place on a tab switch, and slides it within a tab", () => {
             const sidebar = render(true);
             vi.spyOn(sidebar, "triggerCommand").mockImplementation(() => undefined);

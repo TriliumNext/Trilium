@@ -6,10 +6,11 @@ import FBranch from "../../entities/fbranch";
 import type FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import type LoadResults from "../../services/load_results";
+import search from "../../services/search";
 import { buildNote, buildNotes } from "../../test/easy-froca";
 import { renderInto } from "../../test/render";
 import { ParentComponent } from "../react/react_utils";
-import { getListedChildCount, TitleWithIndicators } from "./MobileNoteNavigator";
+import { getListedChildCount, TitleWithIndicators, WorkspaceBadges } from "./MobileNoteNavigator";
 
 vi.mock("../../services/i18n", () => ({
     t: (key: string, options?: object) => (options ? `${key} ${JSON.stringify(options)}` : key),
@@ -91,5 +92,35 @@ describe("TitleWithIndicators", () => {
         expect(clone).not.toBeNull();
         expect(clone?.getAttribute("aria-label")).toContain("Second");
         expect(container.querySelector(".shared-indicator")).not.toBeNull();
+    });
+});
+
+describe("WorkspaceBadges", () => {
+    it("lists the workspaces and hoists the tab into the one tapped", async () => {
+        const workspace = buildNote({ title: "Work", "#workspace": "", "#workspaceIconClass": "bx bx-briefcase" });
+        const searchForNotes = vi.spyOn(search, "searchForNotes").mockResolvedValue([ workspace ]);
+        const triggerCommand = vi.fn();
+        const parent = {
+            componentId: "cid", registerHandler: () => {}, removeHandler: () => {}, triggerCommand
+        } as unknown as Component;
+
+        let container = document.body;
+        await act(async () => {
+            container = renderInto(
+                <ParentComponent.Provider value={parent}>
+                    <WorkspaceBadges />
+                </ParentComponent.Provider>
+            );
+        });
+
+        // The search resolves after the effect that starts it.
+        await act(async () => {});
+        expect(searchForNotes).toHaveBeenCalledWith("#workspace #!template");
+        const badges = [ ...container.querySelectorAll(".mobile-navigator-workspace") ];
+        expect(badges.map((badge) => badge.textContent)).toEqual([ "Work" ]);
+        expect(badges[0]?.querySelector(".bx-briefcase")).not.toBeNull();
+
+        (badges[0] as HTMLElement | undefined)?.click();
+        expect(triggerCommand).toHaveBeenCalledWith("hoistNote", { noteId: workspace.noteId });
     });
 });

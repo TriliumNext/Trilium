@@ -1,7 +1,7 @@
 import "./MobileNoteNavigator.css";
 
 import clsx from "clsx";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import type Component from "../../components/component";
 import type FNote from "../../entities/fnote";
@@ -12,6 +12,7 @@ import froca from "../../services/froca";
 import hoisted_note from "../../services/hoisted_note";
 import { t } from "../../services/i18n";
 import note_create from "../../services/note_create";
+import search from "../../services/search";
 import { onSystemBack, type SystemBackHandler } from "../../services/system_back";
 import tree from "../../services/tree";
 import utils, { isIOS } from "../../services/utils";
@@ -32,6 +33,7 @@ import {
 } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoItems from "../react/NoItems";
+import { ParentComponent } from "../react/react_utils";
 import { getLastSegment, getSpotlightedNoteId, getTreeStack, setTabTree } from "./tab_navigation";
 
 /**
@@ -263,6 +265,7 @@ export default function MobileNoteNavigator() {
 
             <div ref={scrollRef} className={clsx("mobile-navigator-scroll", showInitialLoader && "is-pending")}>
                 <div ref={bodyRef} className="mobile-navigator-body">
+                    {!isHoisted && currentParentId === "root" && <WorkspaceBadges />}
                     {parentNote && (
                         <div
                             className={clsx("mobile-navigator-current-tile", parentColorClass, {
@@ -398,12 +401,63 @@ function HoistedNoteBadge({ hoistedNoteId }: { hoistedNoteId: string }) {
             </>}
             tooltip={t("breadcrumb.hoisted_badge_title")}
             onClick={() => hoisted_note.unhoist()}
-            style={workspaceColor ? {
-                "--color": workspaceColor,
-                "color": getReadableTextColor(workspaceColor)
-            } as Record<string, string> : undefined}
+            style={workspaceColorStyle(workspaceColor)}
         />
     );
+}
+
+/**
+ * The workspace notes, as the empty tab lists them, for the root column of a tab that is not
+ * hoisted. Tapping one hoists the tab into it.
+ */
+export function WorkspaceBadges() {
+    const [ workspaceNotes, setWorkspaceNotes ] = useState<FNote[]>([]);
+    const parentComponent = useContext(ParentComponent);
+
+    const refresh = useCallback(() => {
+        search.searchForNotes("#workspace #!template").then(setWorkspaceNotes);
+    }, []);
+    useEffect(refresh, [ refresh ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.getAttributeRows().some((attr) => attr.name === "workspace")) refresh();
+    });
+
+    if (!workspaceNotes.length) return null;
+
+    return (
+        <div className="mobile-navigator-workspaces">
+            {workspaceNotes.map((workspaceNote) => (
+                <WorkspaceBadge
+                    key={workspaceNote.noteId}
+                    note={workspaceNote}
+                    onClick={() => parentComponent?.triggerCommand("hoistNote", { noteId: workspaceNote.noteId })}
+                />
+            ))}
+        </div>
+    );
+}
+
+function WorkspaceBadge({ note, onClick }: { note: FNote, onClick: () => void }) {
+    const icon = useNoteIcon(note);
+    const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
+    const [ workspaceColor ] = useNoteLabel(note, "workspaceTabBackgroundColor");
+    const title = useNoteTitle(note.noteId, undefined);
+
+    return (
+        <Badge
+            className="mobile-navigator-workspace"
+            icon={workspaceIconClass || icon}
+            text={title ?? note.title}
+            onClick={onClick}
+            style={workspaceColorStyle(workspaceColor)}
+        />
+    );
+}
+
+/** Paints a badge in the workspace's `#workspaceTabBackgroundColor`, with a text color readable on it. */
+function workspaceColorStyle(workspaceColor: string | null | undefined) {
+    if (!workspaceColor) return undefined;
+    return { "--color": workspaceColor, "color": getReadableTextColor(workspaceColor) } as Record<string, string>;
 }
 
 interface NavigatorRowProps {

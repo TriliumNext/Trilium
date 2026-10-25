@@ -8,6 +8,7 @@ So far workspace consists of these features:
     
     ![](1_Workspaces_image.jpg)
 *   opening a workspace in a new tab: right-click the <span class="tn-icon bx bx-plus"></span> button of the <a class="reference-link" href="../UI%20Elements/Tabs.md">Tabs</a> bar and select the workspace.
+*   on a phone, the workspaces are listed at the top of the <a class="reference-link" href="../UI%20Elements/Note%20Tree.md">Note Tree</a> while it shows the root of a tab that is not hoisted, such as a new tab. Tap one to enter it.
 *   visual identification of workspace in tabs:  
     ![](Workspaces_image.jpg)
 

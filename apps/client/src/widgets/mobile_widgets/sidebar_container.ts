@@ -217,6 +217,19 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         this.#switchToTab(noteContext);
     }
 
+    /**
+     * Shows the tree of the active tab once `NoteContext.setEmpty()` leaves it without a note, as
+     * a new tab is. Splits and tabs opened in the background keep their screen.
+     */
+    noteSwitchedEvent({ noteContext, notePath }: EventData<"noteSwitched">) {
+        if (notePath || !isNarrowLayout()) return;
+        if (!noteContext.isMainContext() || noteContext.ntxId !== this.activeTabId) return;
+
+        this.#setInitialState();
+        this.#withoutTransition(() => this.#setSidebarOpen(true));
+        this.triggerCommand("setActiveScreen", { screen: this.screenName });
+    }
+
     #switchToTab(noteContext: NoteContext) {
         const tabId = noteContext.getMainContext().ntxId;
         if (!tabId || tabId === this.activeTabId) return;
