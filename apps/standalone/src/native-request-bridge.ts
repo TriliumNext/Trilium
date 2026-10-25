@@ -18,7 +18,9 @@ import { toBase64 } from "./services/capacitor_download.js";
  * - `{"type":"end","id"}` once the body is complete, or `{"type":"error","id","message"}`.
  *
  * Android's `shouldInterceptRequest` exposes no request body, so both platforms forward only GET
- * and HEAD; a request with a body goes through `standaloneApi.localFetch`.
+ * and HEAD. A local request with any other method goes through `standaloneApi.localFetch`: the
+ * client's `server.ts` calls it directly, and `window.fetch` is wrapped so a script's
+ * `fetch("/custom/…", { method: "POST" })` reaches it too.
  *
  * Returns whether a native channel was found; without one the page registers its service worker.
  */
@@ -33,6 +35,7 @@ export function installNativeRequestBridge(): boolean {
     bridgeWindow.__triliumNativeRequest = (request) => {
         void answer(channel, request);
     };
+    routeLocalRequestBodiesToWorker();
     // The native side holds every request it intercepted until this arrives.
     channel.postMessage(JSON.stringify({ type: "ready" }));
     return true;
@@ -102,6 +105,23 @@ async function answer(channel: RequestChannel, request: NativeRequest) {
         console.warn("[RequestBridge] Local request failed", request.url, err);
         send({ type: "error", message: err instanceof Error ? err.message : String(err) });
     }
+}
+
+/**
+ * Wraps `window.fetch` so a same-origin local request with a method the native side does not
+ * forward goes to `localFetch()` with its body, as it did through the service worker.
+ */
+function routeLocalRequestBodiesToWorker() {
+    const networkFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+        const request = new Request(input, init);
+        const url = new URL(request.url);
+        if (request.method === "GET" || request.method === "HEAD"
+                || url.origin !== location.origin || !isLocalApiRequest(url)) {
+            return networkFetch(input, init);
+        }
+        return localFetch(request);
+    };
 }
 
 /**
