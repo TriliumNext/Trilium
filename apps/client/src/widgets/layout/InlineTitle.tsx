@@ -82,7 +82,12 @@ export default function InlineTitle() {
  * navigation stack on iPhones) keeps its title in view while it moves.
  */
 export function observeTitleInView(title: HTMLElement, onChange: (isInView: boolean) => void) {
-    const observer = new IntersectionObserver((entries) => onChange(entries[0].isIntersecting), {
+    const observer = new IntersectionObserver(([ entry ]) => {
+        // A title with no box sits in a hidden tab, which shows it again as it was left.
+        const { width, height } = entry.boundingClientRect;
+        if (!entry.isIntersecting && !width && !height) return;
+        onChange(entry.isIntersecting);
+    }, {
         root: title.closest(".scrolling-container"),
         threshold: 0.85
     });
