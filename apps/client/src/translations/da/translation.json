@@ -715,7 +715,7 @@
     "show_all_in_search": "Vis alle i søgning",
     "print_landscape": "Ved eksport til PDF ændres sidens retning til liggende i stedet for stående.",
     "print_page_size": "Ved eksport til PDF ændres sidens størrelse. Understøttede værdier: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
-    "print_scale": "Ved eksport til PDF ændres skalaen af det rendrede indhold. Værdier fra 0,1 (10 %) til 2 (200 %), standard er 1 (100 %).",
+    "print_scale": "Ved eksport til PDF ændres skalaen af det rendrede indhold. Værdier fra 0.1 (10 %) til 2 (200 %), standard er 1 (100 %).",
     "print_margins": "Ved eksport til PDF angives sidemarginer. Brug <code>default</code>, <code>none</code>, <code>minimum</code> eller egne værdier som <code>top,right,bottom,left</code> i millimeter.",
     "color_type": "Farve",
     "relation_type": "Relation",
