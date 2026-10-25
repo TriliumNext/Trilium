@@ -159,11 +159,15 @@ export function usePeekDismiss(active: boolean, onDismiss: () => void, { keepOpe
     }, [ active, onDismiss, keepOpenSelector, focusSelector ]);
 }
 
+/** Running {@link watchPeekDismiss} calls; a new peek starts before the old one stops. */
+let openPeekCount = 0;
+
 /**
  * Closes a peek on an outside press or Escape until the returned function is called; the
  * framework-free core of {@link usePeekDismiss}. Presses over the content area land on the pane's
  * backdrop and so reach this listener; presses on chrome the backdrop doesn't cover (toolbar, tabs)
  * are caught directly. Capture phase so a child's `stopPropagation` can't keep a stale peek open.
+ * While it runs, `body` has the `peek-pane-open` class.
  */
 export function watchPeekDismiss(onDismiss: () => void, dismissOptions: PeekDismissOptions) {
     const { keepOpenSelector, focusSelector } = dismissOptions;
@@ -181,8 +185,12 @@ export function watchPeekDismiss(onDismiss: () => void, dismissOptions: PeekDism
 
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown);
+    openPeekCount++;
+    document.body.classList.add("peek-pane-open");
     return () => {
         document.removeEventListener("pointerdown", onPointerDown, true);
         document.removeEventListener("keydown", onKeyDown);
+        openPeekCount--;
+        document.body.classList.toggle("peek-pane-open", openPeekCount > 0);
     };
 }

@@ -71,8 +71,9 @@
     isolation: isolate;
 }
 
-/* The text editor draws the grip of the focused block in `.ck-body`, outside `#center-pane`. */
-body:has(.peek-pane-host.peek) .ck-block-toolbar-button {
+/* The text editor draws the grip of the focused block in `.ck-body`, outside `#center-pane`.
+   A class, not `body:has()`: Chromium restyles all of `body` when a `:has()` on it can change. */
+body.peek-pane-open .ck-block-toolbar-button {
     visibility: hidden;
 }
 

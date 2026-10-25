@@ -298,6 +298,19 @@ describe("usePeekDismiss", () => {
         expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
+    it("marks the body while any peek is open, including two that overlap", () => {
+        const stopLeft = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#left-pane" });
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        // The next peek starts before the previous one is dismissed.
+        const stopRight = watchPeekDismiss(vi.fn(), { keepOpenSelector: "#right-pane" });
+        stopLeft();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(true);
+
+        stopRight();
+        expect(document.body.classList.contains("peek-pane-open")).toBe(false);
+    });
+
     it("hands the focus back to what opened the peek, where it was told what that is", () => {
         document.body.innerHTML = `<button class="peek-button"></button>`;
         const onDismiss = vi.fn();
