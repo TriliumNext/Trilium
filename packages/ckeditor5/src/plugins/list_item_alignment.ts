@@ -1,6 +1,6 @@
 import {
-    _getAllListItemBlocks, _isListItemBlock, ListEditing, type ModelElement, type ModelItem,
-    type ModelWriter, Plugin, type UpcastElementEvent
+    ListEditing, type ModelElement, type ModelItem, type ModelWriter, Plugin,
+    type UpcastElementEvent
 } from "ckeditor5";
 
 import {
@@ -72,7 +72,7 @@ export default class ListItemAlignment extends Plugin {
     private syncAlignments(writer: ModelWriter) {
         const blocks = new Set<ModelElement>();
         const add = (item: ModelItem | null) => {
-            if (_isListItemBlock(item)) {
+            if (isListBlock(item)) {
                 blocks.add(item);
             }
         };
@@ -102,7 +102,7 @@ export default class ListItemAlignment extends Plugin {
             if (synced.has(block)) {
                 continue;
             }
-            const itemBlocks = _getAllListItemBlocks(block);
+            const itemBlocks = getItemBlocks(block);
             const paragraph = itemBlocks.find((itemBlock) => itemBlock.is("element", "paragraph"));
             const alignment = paragraph?.getAttribute("alignment");
             const value = isListItemAlignment(alignment) ? alignment : undefined;
@@ -121,6 +121,40 @@ export default class ListItemAlignment extends Plugin {
         }
         return isChanged;
     }
+}
+
+function isListBlock(item: ModelItem | null): item is ModelElement {
+    return !!item && item.is("element") && item.hasAttribute("listItemId");
+}
+
+/**
+ * The blocks of the list item that holds `block`, in document order. The blocks of one item can
+ * have a nested list between them, at a higher indent.
+ */
+function getItemBlocks(block: ModelElement) {
+    const indent = block.getAttribute("listIndent") as number;
+    const itemId = block.getAttribute("listItemId");
+    const blocks = [ block ];
+    for (const direction of [ "previousSibling", "nextSibling" ] as const) {
+        for (
+            let sibling = block[direction];
+            isListBlock(sibling) && (sibling.getAttribute("listIndent") as number) >= indent;
+            sibling = sibling[direction]
+        ) {
+            if (sibling.getAttribute("listIndent") !== indent) {
+                continue;
+            }
+            if (sibling.getAttribute("listItemId") !== itemId) {
+                break;
+            }
+            if (direction === "previousSibling") {
+                blocks.unshift(sibling);
+            } else {
+                blocks.push(sibling);
+            }
+        }
+    }
+    return blocks;
 }
 
 declare module "ckeditor5" {

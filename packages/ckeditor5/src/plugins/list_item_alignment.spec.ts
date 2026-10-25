@@ -70,6 +70,25 @@ describe("ListItemAlignment", () => {
         expect(values()).toEqual([ undefined, undefined, "right", "right", undefined ]);
     });
 
+    it("treats the blocks around a nested list as one item", async () => {
+        const editor = await createEditor();
+        setModelData(editor.model,
+            `<paragraph ${ITEM} listItemId="a" alignment="center">First</paragraph>` +
+            `<paragraph listIndent="1" listType="bulleted" listItemId="n">Nested</paragraph>` +
+            `<paragraph ${ITEM} listItemId="a">After the nested list</paragraph>` +
+            `<paragraph ${ITEM} listItemId="b">Next item</paragraph>`);
+
+        const values = () => [ 0, 1, 2, 3 ]
+            .map((index) => getBlock(editor, index).getAttribute("listItemAlignment"));
+        expect(values()).toEqual([ "center", undefined, "center", undefined ]);
+        expect(getItemClasses(editor)).toEqual([ CENTER, "", "" ]);
+
+        // Aligning a later block leaves the item to its first paragraph.
+        const after = getBlock(editor, 2);
+        editor.model.change((writer) => writer.setAttribute("alignment", "right", after));
+        expect(values()).toEqual([ "center", undefined, "center", undefined ]);
+    });
+
     it("leaves the attribute alone for typing and inline formatting", async () => {
         const editor = await createEditor();
         setModelData(editor.model,
