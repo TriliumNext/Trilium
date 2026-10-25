@@ -94,14 +94,14 @@ export default class FNote {
 
     update(row: FNoteRow) {
         this.noteId = row.noteId;
-        this.title = row.title;
         this.isProtected = !!row.isProtected;
         this.type = row.type;
 
-        // The server can send a row without a mime: becca materialises "skeleton" notes for
-        // entities that arrive out of order during sync, and their undefined mime/title are dropped
-        // outright by JSON serialisation. Defaulting keeps the mime predicates (isTriliumScript(),
-        // isJavaScript(), ...) from throwing until the real row syncs in.
+        // The server can send a row without a mime or title: becca materialises "skeleton" notes
+        // for entities that arrive out of order during sync, and JSON serialisation drops their
+        // undefined mime/title. Defaulting keeps the mime predicates (isTriliumScript(), ...) and
+        // title consumers (escapeHtml() in the tree) from throwing until the real row syncs in.
+        this.title = row.title ?? "";
         this.mime = row.mime ?? "";
 
         this.blobId = row.blobId;

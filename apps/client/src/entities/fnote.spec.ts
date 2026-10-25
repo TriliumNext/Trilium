@@ -1226,6 +1226,16 @@ describe("FNote system-note predicates", () => {
         expect(note.getScriptEnv()).toBeNull();
     });
 
+    it("title stays a string when a note row arrives without a title", () => {
+        const note = makeNote({ title: "Real title" });
+
+        // The same skeleton row as above; `NoteTreeWidget.getTitleHtml()` passes the title to
+        // `escapeHtml()`, which calls `.replace()` on it.
+        note.update({ noteId: note.noteId, blobId: "blob1", isProtected: false } as unknown as FNoteRow);
+
+        expect(note.title).toBe("");
+    });
+
     it("getScriptEnv returns frontend / backend / null", () => {
         expect(makeNote({ type: "code", mime: "text/html" }).getScriptEnv()).toBe("frontend");
         expect(makeNote({ type: "code", mime: "application/javascript;env=frontend" }).getScriptEnv()).toBe("frontend");
